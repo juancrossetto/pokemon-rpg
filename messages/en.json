@@ -1,0 +1,131 @@
+{
+  "meta": {
+    "title": "Pokémon RPG",
+    "description": "Catch, train, and battle — climb the ranking until you're number one."
+  },
+  "loading": {
+    "syncing": "Syncing..."
+  },
+  "nav": {
+    "brand": "Pokémon RPG",
+    "home": "Home",
+    "pokedex": "Pokédex",
+    "team": "My team",
+    "battle": "Battle",
+    "login": "Log in",
+    "register": "Create account",
+    "logout": "Log out"
+  },
+  "home": {
+    "eyebrow": "Season 1",
+    "title": "Train. Battle. Climb the ranking.",
+    "subtitle": "A browser-based capture-and-battle RPG, inspired by the forum games of the 2000s.",
+    "pokedexLink": "View Pokédex",
+    "register": "Create account",
+    "greeting": "Hi, {username}",
+    "noTeamTitle": "You haven't chosen your starter yet",
+    "noTeamSubtitle": "Choose your first Pokémon to start training and battling.",
+    "chooseStarterLink": "Choose starter",
+    "activeSquad": "Active Squad",
+    "manage": "Manage",
+    "emptySlot": "Empty slot"
+  },
+  "pokedex": {
+    "eyebrow": "Database",
+    "title": "Pokédex",
+    "subtitle": "{count} species loaded from PokeAPI",
+    "stats": {
+      "hp": "HP",
+      "atk": "Atk",
+      "spd": "Spd"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Log in",
+      "submitting": "Logging in...",
+      "error": "Wrong email or password",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Create one"
+    },
+    "register": {
+      "title": "Create account",
+      "email": "Email",
+      "username": "Trainer name",
+      "password": "Password",
+      "passwordHint": "At least 8 characters",
+      "country": "Country (code, e.g. US)",
+      "submit": "Create account",
+      "submitting": "Creating...",
+      "success": "Account created. Logging in...",
+      "errors": {
+        "invalid_input": "Check the entered data",
+        "email_taken": "An account with that email already exists",
+        "username_taken": "That trainer name is already taken"
+      },
+      "hasAccount": "Already have an account?",
+      "loginLink": "Log in"
+    }
+  },
+  "starter": {
+    "title": "Choose your starter Pokémon",
+    "subtitle": "This choice is permanent — you can't change it later.",
+    "choose": "Choose"
+  },
+  "team": {
+    "title": "My team",
+    "systemStatus": "Status",
+    "statusOptimal": "OPTIMAL",
+    "level": "Lv. {level}",
+    "emptySlot": "Empty slot",
+    "slotAvailable": "Slot {slot} available",
+    "unspentPoints": "{count} unspent points",
+    "autoHeal": "Auto-Heal",
+    "expToNext": "{xp} to next level",
+    "heldItem": "HELD ITEM",
+    "noItem": "None",
+    "moves": "MOVES",
+    "stats": {
+      "hp": "HP",
+      "exp": "EXP",
+      "atk": "ATK",
+      "def": "DEF",
+      "spAtk": "SP.ATK",
+      "spDef": "SP.DEF",
+      "speed": "SPEED"
+    }
+  },
+  "battle": {
+    "title": "Battle",
+    "subtitle": "Explore to find a wild Pokémon and earn experience.",
+    "explore": "Explore",
+    "run": "Run",
+    "hp": "HP",
+    "level": "Lv. {level}",
+    "resultWon": "You won the battle!",
+    "resultLost": "Your Pokémon fainted. Heal it in My team before continuing.",
+    "resultFled": "You fled the battle.",
+    "resultCaught": "You caught the Pokémon! It's now in your team.",
+    "goHeal": "Go to My team",
+    "superEffective": "Super effective!",
+    "notVeryEffective": "Not very effective",
+    "noEffect": "No effect",
+    "fight": "Fight",
+    "pokemonMenu": "Pokémon",
+    "bag": "Bag",
+    "pokeballsLabel": "Poké Balls",
+    "potionsLabel": "Potions",
+    "fainted": "Fainted",
+    "mustSwitchPrompt": "Your Pokémon fainted! Choose who to send out.",
+    "back": "Back",
+    "leveledUp": "Leveled up to Lv. {level}!",
+    "errors": {
+      "noLead": "You need a Pokémon in your team to battle.",
+      "faintedLead": "Your Pokémon has fainted — heal it in My team first.",
+      "noEnergy": "You're out of energy. Wait for it to regenerate."
+    }
+  }
+}

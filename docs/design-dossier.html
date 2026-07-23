@@ -1,0 +1,492 @@
+<title>Dossier de diseño — Pokémon-like RPG</title>
+<style>
+  :root {
+    --ink: #1b241f;
+    --ink-soft: #445048;
+    --bg: #eef1e7;
+    --panel: #e3e7da;
+    --panel-line: rgba(27, 36, 31, 0.14);
+    --accent: #b8621f;
+    --accent-soft: #b8621f22;
+    --good: #3c6e4a;
+    --warn: #a4531f;
+    --pending: #6b6152;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e9e7da;
+      --ink-soft: #b7bcae;
+      --bg: #11150f;
+      --panel: #191f16;
+      --panel-line: rgba(233, 231, 218, 0.14);
+      --accent: #e0913f;
+      --accent-soft: #e0913f26;
+      --good: #7fbb8d;
+      --warn: #e0913f;
+      --pending: #a49d8c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e9e7da;
+    --ink-soft: #b7bcae;
+    --bg: #11150f;
+    --panel: #191f16;
+    --panel-line: rgba(233, 231, 218, 0.14);
+    --accent: #e0913f;
+    --accent-soft: #e0913f26;
+    --good: #7fbb8d;
+    --warn: #e0913f;
+    --pending: #a49d8c;
+  }
+  :root[data-theme="light"] {
+    --ink: #1b241f;
+    --ink-soft: #445048;
+    --bg: #eef1e7;
+    --panel: #e3e7da;
+    --panel-line: rgba(27, 36, 31, 0.14);
+    --accent: #b8621f;
+    --accent-soft: #b8621f22;
+    --good: #3c6e4a;
+    --warn: #a4531f;
+    --pending: #6b6152;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 3.2rem 1.5rem 5rem;
+  }
+  h1, h2, h3 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .eyebrow {
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.5rem;
+  }
+  .mono {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  }
+
+  /* Masthead */
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 1.6rem;
+    margin-bottom: 2.6rem;
+  }
+  .masthead h1 { font-size: 2.1rem; line-height: 1.15; }
+  .masthead .sub {
+    color: var(--ink-soft);
+    font-size: 1.02rem;
+    margin-top: 0.5rem;
+    max-width: 56ch;
+  }
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.2rem;
+    margin-top: 1.1rem;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+  }
+  .meta-row span b { color: var(--ink); font-weight: 600; }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 999px;
+    padding: 0.22rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  section { margin-bottom: 2.8rem; }
+  section > h2 { font-size: 1.35rem; margin-bottom: 0.9rem; }
+  section > .eyebrow + h2 { margin-top: 0; }
+  p { margin: 0 0 0.9rem; }
+  p:last-child { margin-bottom: 0; }
+
+  .lede {
+    font-size: 1.08rem;
+    color: var(--ink);
+  }
+
+  blockquote {
+    margin: 1.2rem 0;
+    padding: 0.9rem 1.2rem;
+    border-left: 3px solid var(--accent);
+    background: var(--panel);
+    border-radius: 0 6px 6px 0;
+    font-size: 0.98rem;
+  }
+  blockquote cite {
+    display: block;
+    margin-top: 0.5rem;
+    font-style: normal;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+  blockquote a { color: inherit; }
+
+  /* Stat grid — trainer attributes */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.7rem;
+    margin: 1.1rem 0;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 8px;
+    padding: 0.75rem 0.85rem;
+  }
+  .stat .label {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .stat .role {
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+  }
+
+  /* Decisions table */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--panel-line); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; min-width: 560px; }
+  th, td { text-align: left; padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--panel-line); vertical-align: top; }
+  th {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--panel);
+  }
+  tr:last-child td { border-bottom: none; }
+  td.choice { font-weight: 600; white-space: nowrap; }
+  td.why { color: var(--ink-soft); }
+  .flag { display: inline-block; font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 5px; font-weight: 700; }
+  .flag.pending { background: var(--pending); color: var(--bg); }
+
+  /* Two-column split */
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.4rem;
+  }
+  @media (max-width: 600px) { .split { grid-template-columns: 1fr; } }
+  .split h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+  .split ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; }
+  .split li { margin-bottom: 0.4rem; }
+  .col-yes h3 { color: var(--good); }
+  .col-no h3 { color: var(--warn); }
+
+  /* Phases */
+  .phases { display: flex; flex-direction: column; gap: 0; border-left: 2px solid var(--panel-line); margin-left: 0.4rem; }
+  .phase {
+    position: relative;
+    padding: 0 0 1.5rem 1.6rem;
+  }
+  .phase:last-child { padding-bottom: 0; }
+  .phase::before {
+    content: attr(data-n);
+    position: absolute;
+    left: -0.95rem;
+    top: 0;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    font-family: ui-monospace, monospace;
+    font-weight: 700;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .phase h3 { font-size: 0.98rem; margin-bottom: 0.25rem; }
+  .phase p { font-size: 0.88rem; color: var(--ink-soft); }
+
+  /* Open questions checklist */
+  .checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.65rem; }
+  .checklist li {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.92rem;
+  }
+  .checklist input[type="checkbox"] {
+    margin-top: 0.2rem;
+    accent-color: var(--accent);
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+
+  .callout {
+    border: 1px solid var(--panel-line);
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    font-size: 0.9rem;
+  }
+  .callout .eyebrow { margin-bottom: 0.4rem; }
+  .callout a { color: var(--accent); }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; }
+
+  .sources { font-size: 0.78rem; color: var(--ink-soft); }
+  .sources a { color: var(--ink-soft); }
+
+  footer {
+    border-top: 2px solid var(--ink);
+    padding-top: 1.4rem;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+</style>
+
+<div class="page">
+
+  <div class="masthead">
+    <p class="eyebrow">Dossier de diseño · v0.4</p>
+    <h1>Pokémon-like RPG por navegador</h1>
+    <p class="sub">Inspirado en Pokemon PRO (Pokemon RPG Online) del foro CemZoo. Documento vivo — diseño completo, scaffold del repo armado y verificado con datos reales.</p>
+    <div class="meta-row">
+      <span class="status-pill">● Fase: scaffold verificado</span>
+      <span>Actualizado: <b>22 jul 2026</b></span>
+      <span>Repo: <b>~/Developer/pokemon-rpg (sin commitear)</b></span>
+    </div>
+  </div>
+
+  <section>
+    <p class="eyebrow">La idea</p>
+    <h2>Pitch</h2>
+    <p class="lede">Un juego web de captura, entrenamiento y batalla de criaturas — sin mapa explorable, todo por pantallas de tipo dashboard (equipo, batalla, gimnasios, ranking, intercambio). Login propio, multiidioma desde el día uno. El objetivo, como el original: subir en el ranking hasta ser el número uno.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Lo que ya sabemos de la referencia</p>
+    <h2>PRO4 / CemZoo — lo distintivo</h2>
+    <p>El juego original <em>no</em> era un simulador 1:1 de los títulos oficiales: no existían EVs ni IVs. En su lugar, el <strong>entrenador</strong> tenía sus propios atributos, que se sumaban a la estrategia de combate junto al Pokémon.</p>
+    <div class="stat-grid">
+      <div class="stat"><div class="label">Fuerza</div><div class="role">Poder de ataque</div></div>
+      <div class="stat"><div class="label">Velocidad</div><div class="role">Orden de turnos</div></div>
+      <div class="stat"><div class="label">Destreza</div><div class="role">Defensa</div></div>
+      <div class="stat"><div class="label">Inteligencia</div><div class="role">Desbloquea ataques + XP</div></div>
+      <div class="stat"><div class="label">Constitución</div><div class="role">Puntos de vida</div></div>
+    </div>
+    <blockquote>
+      "Lo que hacía especial a PRO de CemZoo es que no era un simulador de los GB/GBA/DS — al no existir EVs ni IVs, casi todo se basaba en la habilidad y estrategia al atacar, lo que lo hacía interesante porque no necesitabas elegir un Pokémon 'uber' para ser el mejor."
+      <cite>— Reseña de PRO4, 2013 · <a href="https://neorockettodan.wordpress.com/2013/05/05/pro4-un-interesante-juego-online-de-pokemon/" target="_blank" rel="noopener">neorockettodan.wordpress.com</a></cite>
+    </blockquote>
+    <p>Esto valida bastante la elección de "app por pantallas, sin overworld": el original ya tenía interfaz minimalista, liviana y sin lag — el foco estaba en la estrategia de combate, no en la ambientación visual.</p>
+    <p class="sources">No encontré documentación técnica más profunda (fórmulas de daño, mecánica exacta de intercambio, cooldowns de gimnasio) — el juego y el foro llevan años inactivos. Esa parte la completamos con tu memoria, abajo.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Resuelto — el corazón del juego</p>
+    <h2>Puntos manuales por Pokémon</h2>
+    <p class="lede">La mecánica que recordás y que define todo: al subir de nivel, cada Pokémon te da <strong>puntos que asignás a mano</strong>. Dos Pokémon de la misma especie terminan distintos según cómo los criaste.</p>
+    <p>Esto reemplaza el sistema EV/IV oficial por algo <em>que controla el jugador</em> — es exactamente lo que hacía a PRO estratégico en vez de un min-max de tablas. Es tu diferenciador principal: la habilidad está en cómo distribuís, no en qué Pokémon "uber" conseguís.</p>
+    <div class="callout" style="margin-top:1rem">
+      <p class="eyebrow">A definir cuando lleguemos al balance</p>
+      <p>Cuántos puntos por nivel, si hay tope por atributo, y si se puede resetear la distribución (con costo) o es permanente. No urge ahora — es afinado de balance, no arquitectura.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Resuelto — reglas de sistemas</p>
+    <h2>Tus respuestas, bajadas a reglas</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Sistema</th><th>Regla decidida</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="choice">Progresión</td><td class="why">Puntos manuales por Pokémon al subir de nivel (ver arriba). El "entrenador" del PRO original se fusiona en esto: los stats los lleva la criatura.</td></tr>
+          <tr><td class="choice">Intercambio</td><td class="why">No hay trade cara a cara. En su lugar, un <strong>mercado de compra/venta</strong> (auction house) — encaja con no tener foro. Modelo tipo Poke Idle World.</td></tr>
+          <tr><td class="choice">Economía</td><td class="why">Sí. Consumibles comerciables: bayas, piedras de evolución, poké balls, pociones. <strong>Moneda 100% interna</strong> — nada de dinero real (ver nota).</td></tr>
+          <tr><td class="choice">Gimnasios</td><td class="why">Sí, con <strong>horarios / cooldown</strong> para que ganar medallas no sea trivial (tu preferencia; el PRO original quizá no los tenía).</td></tr>
+          <tr><td class="choice">Ranking</td><td class="why">Global <strong>y segmentado</strong>: por país y por especie. "3er mejor Tyranitar de Argentina" es un objetivo alcanzable y motivador — feature estrella.</td></tr>
+          <tr><td class="choice">Equipo</td><td class="why">6 activos (estándar Pokémon) + almacenamiento tipo "PC" para el resto.</td></tr>
+          <tr><td class="choice">Clanes / guilds</td><td class="why">Sí — feature social nueva. Pertenencia, ranking de clanes, y probablemente chat interno.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Ritmo de juego y economía</p>
+    <h2>Energía: el mismo sistema resuelve dos problemas</h2>
+    <p>Coincide con lo que recordás de PRO — batallas/movimientos limitados por hora/día. Tiene nombre: <strong>sistema de stamina/energía</strong>, clásico de juegos con enganche diario (y el corazón de cualquier idle game, como tu referencia de Poke Idle World).</p>
+    <div class="split">
+      <div class="col-yes">
+        <h3>Por qué funciona</h3>
+        <ul>
+          <li>Crea el hábito de entrar varias veces al día en vez de una sesión larga semanal</li>
+          <li>Protege el servidor de farmeo 24/7 con scripts, siendo solo un dev</li>
+          <li>Limita el caudal de moneda que entra a la economía — es tu control de inflación principal</li>
+        </ul>
+      </div>
+      <div class="col-no">
+        <h3>Sumideros que le hacen contrapeso</h3>
+        <ul>
+          <li>Comisión del mercado al vender (~5%, como el auction house de WoW) — esa plata desaparece</li>
+          <li>Costo de entrada a gimnasios</li>
+          <li>Costo de resetear la distribución de puntos de un Pokémon</li>
+          <li>Costo de criar (cuando entre breeding, ver abajo)</li>
+        </ul>
+      </div>
+    </div>
+    <p class="sources">Diseño a afinar después: energía máxima, ritmo de regeneración, si PvP cuesta menos que PvE (para incentivar el enfrentamiento entre jugadores). No bloquea la arquitectura.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Diferido — no bloquea el MVP</p>
+    <h2>Cría / breeding</h2>
+    <p>Juntar dos Pokémon para producir una cría que hereda parte de las características de los padres (en juegos oficiales: IVs, movimientos especiales). Acá podría heredar parte de los <strong>puntos ya invertidos</strong> de los padres — le da un uso a Pokémon que no usás en batalla y es otro sumidero de economía. Se puede sumar en una fase posterior sin romper nada de lo ya definido; no es core loop.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Resuelto por consecuencia directa</p>
+    <h2>Combate, captura y onboarding</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Mecánica</th><th>Regla</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="choice">Encuentros salvajes</td><td class="why">Sin mapa, pero hace falta capturar: botón "Explorar zona X" genera un encuentro al azar, consume energía — mismo sistema que las batallas PvE, no se inventa nada nuevo.</td></tr>
+          <tr><td class="choice">Fórmula de daño</td><td class="why">Se reutiliza la lógica probada de los juegos oficiales: poder del ataque, atq/def del Pokémon, STAB, efectividad de tipo (desde PokeAPI), variación aleatoria.</td></tr>
+          <tr><td class="choice">Orden de turnos</td><td class="why">Lo decide la Velocidad del Pokémon (stat base + puntos invertidos) — coherente con que los stats del "entrenador" del PRO original ahora viven en la criatura.</td></tr>
+          <tr><td class="choice">Curación</td><td class="why">Centro de curación: gratis pero con tiempo de regeneración, o pago para instantáneo. Otro sumidero de economía.</td></tr>
+          <tr><td class="choice">Onboarding</td><td class="why">3 iniciales para elegir al arrancar + combate tutorial contra un rival.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Decisiones de diseño — última ronda</p>
+    <h2>Rareza, contenido y alcance de idiomas</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Sistema</th><th>Regla decidida</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="choice">Shinies</td><td class="why">Tan raros como el juego oficial (~1/4096). Prestigio real, mueven el mercado por escasez genuina, no por volumen.</td></tr>
+          <tr><td class="choice">Contenido PvE</td><td class="why">Arranca sin narrativa/campaña — zonas de grindeo puro. Se suma historia/hitos en una fase posterior, una vez validado que el core (batallar/progresar) engancha.</td></tr>
+          <tr><td class="choice">Orden de gimnasios</td><td class="why">Secuencial fijo, como los juegos oficiales — progresión clara y curva de dificultad controlada para nuevos jugadores.</td></tr>
+          <tr><td class="choice">Idiomas de lanzamiento</td><td class="why">Español, Inglés y Portugués. Brasil tiene una comunidad enorme de fan-games Pokémon — mismo público que jugaba PRO/CemZoo.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Capa de datos</p>
+    <h2>Qué resuelve PokeAPI (y qué no)</h2>
+    <div class="split">
+      <div class="col-yes">
+        <h3>Cubre PokeAPI</h3>
+        <ul>
+          <li>Pokémon: stats base, sprites, tipos, evoluciones</li>
+          <li>Ataques: poder, precisión, PP, categoría</li>
+          <li>Tabla de efectividades por tipo</li>
+          <li>Habilidades, objetos, naturalezas</li>
+        </ul>
+      </div>
+      <div class="col-no">
+        <h3>Hay que construirlo</h3>
+        <ul>
+          <li>Puntos manuales por Pokémon (progresión propia)</li>
+          <li>Gimnasios con horarios + medallas</li>
+          <li>Ranking segmentado (país × especie)</li>
+          <li>Mercado de compra/venta + economía interna</li>
+          <li>Clanes / guilds</li>
+        </ul>
+      </div>
+    </div>
+    <p class="sources">Gratuita, sin auth, sin rate limit duro desde 2018 — pero pide cachear localmente por fair use. Se descarga una vez a tu propia DB, nunca se llama en vivo desde producción. Fuente: <a href="https://pokeapi.co/docs/v2" target="_blank" rel="noopener">pokeapi.co/docs/v2</a>.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Decisiones tomadas</p>
+    <h2>Bitácora</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Decisión</th><th>Elegido</th><th>Por qué</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Formato de mundo</td><td class="choice">Pantallas / menús</td><td class="why">Sin overworld en tiempo real — fiel al original, mucho más simple de construir en solitario</td></tr>
+          <tr><td>Sistema de batalla</td><td class="choice">Por turnos clásico</td><td class="why">Consistente con PRO; no requiere sincronización estricta tipo Showdown</td></tr>
+          <tr><td>Alcance MVP</td><td class="choice">Completo</td><td class="why">Gimnasios, medallas, ranking, mercado, clanes y batallas desde el arranque, no un recorte</td></tr>
+          <tr><td>Fuente de datos</td><td class="choice">PokeAPI</td><td class="why">Pokémon real para prototipar rápido, cacheado en DB propia</td></tr>
+          <tr><td>Intercambio</td><td class="choice">Mercado, no trade P2P</td><td class="why">Auction house de compra/venta con moneda interna (modelo Poke Idle World); encaja sin foro</td></tr>
+          <tr><td>Monetización</td><td class="choice">Moneda interna only</td><td class="why">Sin dinero real: evita sumar peso legal/regulatorio sobre el riesgo de IP</td></tr>
+          <tr><td>Stack</td><td class="choice mono">Next.js · Node/Socket.io · Postgres/Prisma · Redis</td><td class="why">Mismo ecosistema que otros proyectos personales (Loguers, crm-front)</td></tr>
+          <tr><td>Equipo</td><td class="choice">Solo vos, por ahora</td><td class="why">Priorizar assets/libs que no dependan de arte propio</td></tr>
+          <tr><td>IP: Pokémon real vs. propio</td><td class="choice"><span class="flag pending">PENDIENTE</span></td><td class="why">Prototipar con Pokémon real; decidir antes de un lanzamiento público (riesgo legal si escala)</td></tr>
+          <tr><td>Plata real</td><td class="choice">Descartada</td><td class="why">Con Pokémon real, monetizar activos con marca ajena es un target legal directo (peor que ser un fan-game gratis). Economía 100% virtual, sin cash-out, en cualquier escenario de IP</td></tr>
+          <tr><td>Ritmo de juego</td><td class="choice">Energía / stamina</td><td class="why">Tope de batallas PvE por hora/día que regenera con el tiempo — hábito de check-in diario + control natural de la inflación (limita el caudal de moneda que entra)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Orden de construcción</p>
+    <h2>Fases (alcance completo, construido en partes)</h2>
+    <div class="phases">
+      <div class="phase" data-n="1"><h3>Auth + datos base</h3><p>Login, perfil, i18n scaffolding, seed de PokeAPI a la DB propia.</p></div>
+      <div class="phase" data-n="2"><h3>Núcleo de juego</h3><p>Equipo/colección + motor de batalla por turnos contra NPC. Acá se valida si el core es divertido antes de seguir.</p></div>
+      <div class="phase" data-n="3"><h3>Gimnasios y medallas</h3><p>Reutilizan el motor de batalla ya construido en la fase 2.</p></div>
+      <div class="phase" data-n="4"><h3>PvP y ranking segmentado</h3><p>Matchmaking en tiempo real (Socket.io + Redis) + leaderboards global / país / especie.</p></div>
+      <div class="phase" data-n="5"><h3>Economía y mercado</h3><p>El más delicado: transacciones atómicas en el auction house para que no se dupliquen ni se pierdan objetos/criaturas si se corta la conexión a mitad de operación.</p></div>
+      <div class="phase" data-n="6"><h3>Clanes / guilds</h3><p>Pertenencia, ranking de clanes, chat interno. Capa social sobre el resto ya construido.</p></div>
+      <div class="phase" data-n="7"><h3>Pulido</h3><p>i18n completo, balance de puntos por Pokémon, anti-cheat server-authoritative.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="callout">
+      <p class="eyebrow">Nota legal + monetización</p>
+      <p><strong>IP:</strong> un lanzamiento público o monetizado usando nombres/sprites reales de Pokémon tiene riesgo legal real — Nintendo/The Pokémon Company mandó cease-and-desist a fan games similares (Leaf on Fire, Hypno Town) y demandó a Palworld. PRO y PokeMMO operan en zona gris tolerada, no autorizada. No bloquea el prototipo, pero conviene decidir antes de un lanzamiento visible. Fuente: <a href="https://stories.avvo.com/news/pokemon-fine-art-suing-users.html" target="_blank" rel="noopener">avvo.com</a>.</p>
+      <p style="margin-top:0.7rem"><strong>Dinero real:</strong> Poke Idle World (la referencia de economía) tiene un componente de dinero real / cripto. <em>No copiar eso.</em> Sumar transacciones con dinero real encima de IP ajena multiplica el riesgo legal y regulatorio. El mercado usa moneda 100% interna, sin cash-out.</p>
+    </div>
+  </section>
+
+  <footer>
+    <strong>Scaffold verificado:</strong> Next.js + TypeScript + Tailwind + next-intl (ES/EN/PT probado en navegador) + Prisma con el schema completo de arriba + seed real de Gen 1 (151 especies, 145 movimientos) corrido contra una Postgres local — datos confirmados contra el juego oficial. Todavía sin commitear a git. Único ítem de diseño pendiente: IP (Pokémon real vs. criaturas propias), diferida a antes de un lanzamiento público.
+  </footer>
+
+</div>

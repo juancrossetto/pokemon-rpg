@@ -1,0 +1,131 @@
+{
+  "meta": {
+    "title": "Pokémon RPG",
+    "description": "Capture, treine e batalhe — suba no ranking até ser o número um."
+  },
+  "loading": {
+    "syncing": "Sincronizando..."
+  },
+  "nav": {
+    "brand": "Pokémon RPG",
+    "home": "Início",
+    "pokedex": "Pokédex",
+    "team": "Meu time",
+    "battle": "Batalha",
+    "login": "Entrar",
+    "register": "Criar conta",
+    "logout": "Sair"
+  },
+  "home": {
+    "eyebrow": "Temporada 1",
+    "title": "Treine. Batalhe. Suba no ranking.",
+    "subtitle": "Um RPG de captura e batalha via navegador, inspirado nos jogos de fórum dos anos 2000.",
+    "pokedexLink": "Ver Pokédex",
+    "register": "Criar conta",
+    "greeting": "Olá, {username}",
+    "noTeamTitle": "Você ainda não escolheu seu inicial",
+    "noTeamSubtitle": "Escolha seu primeiro Pokémon para começar a treinar e batalhar.",
+    "chooseStarterLink": "Escolher inicial",
+    "activeSquad": "Time ativo",
+    "manage": "Gerenciar",
+    "emptySlot": "Espaço vazio"
+  },
+  "pokedex": {
+    "eyebrow": "Banco de dados",
+    "title": "Pokédex",
+    "subtitle": "{count} espécies carregadas da PokeAPI",
+    "stats": {
+      "hp": "HP",
+      "atk": "Atq",
+      "spd": "Vel"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar",
+      "email": "Email",
+      "password": "Senha",
+      "submit": "Entrar",
+      "submitting": "Entrando...",
+      "error": "Email ou senha incorretos",
+      "noAccount": "Não tem uma conta?",
+      "registerLink": "Criar uma"
+    },
+    "register": {
+      "title": "Criar conta",
+      "email": "Email",
+      "username": "Nome de treinador",
+      "password": "Senha",
+      "passwordHint": "Mínimo 8 caracteres",
+      "country": "País (código, ex. BR)",
+      "submit": "Criar conta",
+      "submitting": "Criando...",
+      "success": "Conta criada. Entrando...",
+      "errors": {
+        "invalid_input": "Revise os dados inseridos",
+        "email_taken": "Já existe uma conta com esse email",
+        "username_taken": "Esse nome de treinador já está em uso"
+      },
+      "hasAccount": "Já tem uma conta?",
+      "loginLink": "Entrar"
+    }
+  },
+  "starter": {
+    "title": "Escolha seu Pokémon inicial",
+    "subtitle": "Essa escolha é definitiva — não dá pra mudar depois.",
+    "choose": "Escolher"
+  },
+  "team": {
+    "title": "Meu time",
+    "systemStatus": "Status",
+    "statusOptimal": "ÓTIMO",
+    "level": "Nv. {level}",
+    "emptySlot": "Espaço vazio",
+    "slotAvailable": "Espaço {slot} disponível",
+    "unspentPoints": "{count} pontos não usados",
+    "autoHeal": "Auto-curar",
+    "expToNext": "{xp} para o próximo nível",
+    "heldItem": "ITEM SEGURADO",
+    "noItem": "Nenhum",
+    "moves": "MOVIMENTOS",
+    "stats": {
+      "hp": "HP",
+      "exp": "EXP",
+      "atk": "ATQ",
+      "def": "DEF",
+      "spAtk": "AT.ESP",
+      "spDef": "DEF.ESP",
+      "speed": "VEL"
+    }
+  },
+  "battle": {
+    "title": "Batalha",
+    "subtitle": "Explore para encontrar um Pokémon selvagem e ganhar experiência.",
+    "explore": "Explorar",
+    "run": "Fugir",
+    "hp": "HP",
+    "level": "Nv. {level}",
+    "resultWon": "Você venceu a batalha!",
+    "resultLost": "Seu Pokémon desmaiou. Cure-o em Meu time antes de continuar.",
+    "resultFled": "Você fugiu da batalha.",
+    "resultCaught": "Você capturou o Pokémon! Ele já está no seu time.",
+    "goHeal": "Ir para Meu time",
+    "superEffective": "Muito eficaz!",
+    "notVeryEffective": "Pouco eficaz",
+    "noEffect": "Sem efeito",
+    "fight": "Lutar",
+    "pokemonMenu": "Pokémon",
+    "bag": "Mochila",
+    "pokeballsLabel": "Poké Balls",
+    "potionsLabel": "Poções",
+    "fainted": "Desmaiado",
+    "mustSwitchPrompt": "Seu Pokémon desmaiou! Escolha quem enviar.",
+    "back": "Voltar",
+    "leveledUp": "Subiu para o Nv. {level}!",
+    "errors": {
+      "noLead": "Você precisa de um Pokémon no seu time para batalhar.",
+      "faintedLead": "Seu Pokémon está desmaiado — cure-o em Meu time primeiro.",
+      "noEnergy": "Sua energia acabou. Espere ela regenerar."
+    }
+  }
+}

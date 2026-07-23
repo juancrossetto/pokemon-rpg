@@ -1,0 +1,329 @@
+// Pokemon-like RPG — ver dossier de diseño para el porqué de cada decisión.
+// Efectividad de tipos NO vive acá: son 18 tipos fijos, se cachean como
+// constante en código desde PokeAPI (prisma no es el lugar para eso).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Cuenta y economía ----------
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  username        String   @unique
+  passwordHash    String
+  country         String // ISO-3166 alpha-2, define el segmento del ranking
+  locale          String   @default("es")
+  coins           Int      @default(0)
+  energy          Int      @default(20)
+  energyMax       Int      @default(20)
+  energyUpdatedAt DateTime @default(now()) // para calcular regeneración sin cron
+  createdAt       DateTime @default(now())
+
+  pokemon        PokemonInstance[]
+  inventory      InventoryItem[]
+  gymAttempts    GymAttempt[]
+  badges         Badge[]
+  listingsSold   MarketListing[]   @relation("Seller")
+  listingsBought MarketListing[]   @relation("Buyer")
+  clanMembership ClanMember?
+  ledClan        Clan?             @relation("ClanLeader")
+  battlesAsUser  BattleLog[]       @relation("BattleUser")
+  battlesAsOpp   BattleLog[]       @relation("BattleOpponent")
+  battleSessions BattleSession[]
+}
+
+// ---------- Datos de Pokémon (seed desde PokeAPI, ver scripts/seed) ----------
+
+model Species {
+  id            Int       @id // pokedex id, mismo que en PokeAPI
+  name          String    @unique
+  types         String[] // 1 o 2 tipos, ej. ["fire"] o ["grass", "poison"]
+  baseHp        Int
+  baseAttack    Int
+  baseDefense   Int
+  baseSpAtk     Int
+  baseSpDef     Int
+  baseSpeed     Int
+  spriteUrl     String
+  generation    Int
+  captureRate   Int       @default(45) // 0-255, de PokeAPI — más alto = más fácil de atrapar
+  evolvesFromId Int?
+  evolvesFrom   Species?  @relation("Evolution", fields: [evolvesFromId], references: [id])
+  evolvesTo     Species[] @relation("Evolution")
+
+  learnableMoves SpeciesMove[]
+  instances      PokemonInstance[]
+  battleSessions BattleSession[]
+}
+
+enum MoveCategory {
+  PHYSICAL
+  SPECIAL
+  STATUS
+}
+
+model Move {
+  id         Int          @id // move id de PokeAPI
+  name       String       @unique
+  type       String
+  category   MoveCategory
+  power      Int? // null para movimientos de estado
+  accuracy   Int? // null = nunca falla
+  pp         Int
+  priority   Int          @default(0)
+  effectText String?
+
+  learnableBy SpeciesMove[]
+  knownBy     PokemonMove[]
+}
+
+model SpeciesMove {
+  speciesId  Int
+  moveId     Int
+  learnLevel Int
+
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  move    Move    @relation(fields: [moveId], references: [id], onDelete: Cascade)
+
+  @@id([speciesId, moveId])
+}
+
+// ---------- Pokémon de un jugador ----------
+
+model PokemonInstance {
+  id        String   @id @default(cuid())
+  ownerId   String
+  speciesId Int
+  nickname  String?
+  level     Int      @default(5)
+  xp        Int      @default(0)
+  currentHp Int
+  isShiny   Boolean  @default(false)
+  teamSlot  Int? // 1-6 = en equipo activo, null = en almacenamiento (PC)
+  caughtAt  DateTime @default(now())
+
+  // Puntos manuales por Pokémon — el diferenciador de diseño del proyecto.
+  // Ver dossier: reemplaza EV/IV por progresión que controla el jugador.
+  unspentPoints  Int @default(0)
+  ptStrength     Int @default(0) // ataque
+  ptSpeed        Int @default(0) // orden de turnos
+  ptDexterity    Int @default(0) // defensa
+  ptIntelligence Int @default(0) // desbloquea movimientos + xp
+  ptConstitution Int @default(0) // HP
+
+  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  species        Species         @relation(fields: [speciesId], references: [id])
+  moves          PokemonMove[]
+  listing        MarketListing?
+  battleSessions BattleSession[]
+
+  @@index([ownerId])
+  @@index([speciesId])
+}
+
+model PokemonMove {
+  pokemonInstanceId String
+  moveId            Int
+  slot              Int // 1-4
+
+  pokemon PokemonInstance @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
+  move    Move            @relation(fields: [moveId], references: [id])
+
+  @@id([pokemonInstanceId, slot])
+}
+
+// ---------- Gimnasios y medallas ----------
+
+model Gym {
+  id            String @id @default(cuid())
+  order         Int    @unique // orden secuencial fijo, 1..N
+  name          String
+  leaderName    String
+  cooldownHours Int    @default(24)
+
+  attempts GymAttempt[]
+  badges   Badge[]
+}
+
+model GymAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  gymId       String
+  attemptedAt DateTime @default(now())
+  won         Boolean
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gym  Gym  @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@index([userId, gymId])
+}
+
+model Badge {
+  id       String   @id @default(cuid())
+  userId   String
+  gymId    String
+  earnedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gym  Gym  @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gymId])
+}
+
+// ---------- Economía: objetos y mercado ----------
+
+enum ItemType {
+  BERRY
+  EVOLUTION_STONE
+  POKEBALL
+  POTION
+}
+
+model Item {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  type            ItemType
+  effectText      String?
+  buyPrice        Int
+  catchMultiplier Float? // solo para type=POKEBALL (null = no aplica). Master Ball usa un valor
+  // altísimo (255) para que la fórmula de captura dé siempre "atrapado".
+  healAmount      Int? // solo para type=POTION (null = no aplica). Full Restore usa un valor
+  // altísimo (9999) para que la curación quede siempre acotada al HP máximo.
+
+  inventoryOf InventoryItem[]
+}
+
+model InventoryItem {
+  userId   String
+  itemId   String
+  quantity Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([userId, itemId])
+}
+
+enum ListingKind {
+  POKEMON
+  ITEM
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+}
+
+model MarketListing {
+  id                String        @id @default(cuid())
+  sellerId          String
+  kind              ListingKind
+  pokemonInstanceId String?       @unique // solo si kind = POKEMON
+  itemId            String? // solo si kind = ITEM
+  quantity          Int? // solo si kind = ITEM
+  price             Int
+  status            ListingStatus @default(ACTIVE)
+  createdAt         DateTime      @default(now())
+  buyerId           String?
+  soldAt            DateTime?
+
+  seller  User             @relation("Seller", fields: [sellerId], references: [id])
+  buyer   User?            @relation("Buyer", fields: [buyerId], references: [id])
+  pokemon PokemonInstance? @relation(fields: [pokemonInstanceId], references: [id])
+
+  @@index([status, kind])
+}
+
+// ---------- Clanes ----------
+
+enum ClanRole {
+  LEADER
+  OFFICER
+  MEMBER
+}
+
+model Clan {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  tag       String   @unique // 3-5 caracteres, se muestra junto al nombre
+  leaderId  String   @unique
+  createdAt DateTime @default(now())
+
+  leader  User         @relation("ClanLeader", fields: [leaderId], references: [id])
+  members ClanMember[]
+}
+
+model ClanMember {
+  userId   String   @id
+  clanId   String
+  role     ClanRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clan Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
+
+  @@index([clanId])
+}
+
+// ---------- Batallas (historial — el ranking se calcula a partir de esto) ----------
+
+enum BattleKind {
+  PVE_WILD
+  PVE_GYM
+  PVP
+}
+
+model BattleLog {
+  id         String     @id @default(cuid())
+  kind       BattleKind
+  userId     String
+  opponentId String? // null si es PVE
+  gymId      String?
+  userWon    Boolean
+  createdAt  DateTime   @default(now())
+
+  user     User  @relation("BattleUser", fields: [userId], references: [id], onDelete: Cascade)
+  opponent User? @relation("BattleOpponent", fields: [opponentId], references: [id])
+
+  @@index([userId])
+}
+
+// Batalla PvE en curso — se resuelve turno a turno vía Server Actions.
+// El Pokémon salvaje no es un PokemonInstance real, es efímero: su HP y
+// movimientos viven solo acá mientras dura el combate.
+enum BattleSessionStatus {
+  ACTIVE
+  WON
+  LOST
+  FLED
+  CAUGHT
+}
+
+model BattleSession {
+  id                String              @id @default(cuid())
+  userId            String
+  pokemonInstanceId String
+  wildSpeciesId     Int
+  wildLevel         Int
+  wildCurrentHp     Int
+  wildMaxHp         Int
+  wildMoveIds       Int[]
+  status            BattleSessionStatus @default(ACTIVE)
+  log               String[]            @default([])
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pokemonInstance PokemonInstance @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
+  wildSpecies     Species         @relation(fields: [wildSpeciesId], references: [id])
+
+  @@index([userId, status])
+}

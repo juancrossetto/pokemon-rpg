@@ -1,0 +1,131 @@
+{
+  "meta": {
+    "title": "Pokémon RPG",
+    "description": "Capturá, entrená y batallá — sube en el ranking hasta ser el número uno."
+  },
+  "loading": {
+    "syncing": "Sincronizando..."
+  },
+  "nav": {
+    "brand": "Pokémon RPG",
+    "home": "Inicio",
+    "pokedex": "Pokédex",
+    "team": "Mi equipo",
+    "battle": "Batalla",
+    "login": "Iniciar sesión",
+    "register": "Crear cuenta",
+    "logout": "Cerrar sesión"
+  },
+  "home": {
+    "eyebrow": "Temporada 1",
+    "title": "Entrená. Batallá. Subí en el ranking.",
+    "subtitle": "Un RPG de captura y batalla por navegador, inspirado en los juegos de foro de los 2000.",
+    "pokedexLink": "Ver Pokédex",
+    "register": "Crear cuenta",
+    "greeting": "Hola, {username}",
+    "noTeamTitle": "Todavía no elegiste tu inicial",
+    "noTeamSubtitle": "Elegí tu primer Pokémon para empezar a entrenar y batallar.",
+    "chooseStarterLink": "Elegir inicial",
+    "activeSquad": "Equipo activo",
+    "manage": "Administrar",
+    "emptySlot": "Espacio vacío"
+  },
+  "pokedex": {
+    "eyebrow": "Base de datos",
+    "title": "Pokédex",
+    "subtitle": "{count} especies cargadas desde PokeAPI",
+    "stats": {
+      "hp": "HP",
+      "atk": "Atq",
+      "spd": "Vel"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "email": "Email",
+      "password": "Contraseña",
+      "submit": "Entrar",
+      "submitting": "Entrando...",
+      "error": "Email o contraseña incorrectos",
+      "noAccount": "¿No tenés cuenta?",
+      "registerLink": "Creá una"
+    },
+    "register": {
+      "title": "Crear cuenta",
+      "email": "Email",
+      "username": "Nombre de entrenador",
+      "password": "Contraseña",
+      "passwordHint": "Mínimo 8 caracteres",
+      "country": "País (código, ej. AR)",
+      "submit": "Crear cuenta",
+      "submitting": "Creando...",
+      "success": "Cuenta creada. Iniciando sesión...",
+      "errors": {
+        "invalid_input": "Revisá los datos ingresados",
+        "email_taken": "Ya existe una cuenta con ese email",
+        "username_taken": "Ese nombre de entrenador ya está en uso"
+      },
+      "hasAccount": "¿Ya tenés cuenta?",
+      "loginLink": "Iniciá sesión"
+    }
+  },
+  "starter": {
+    "title": "Elegí tu Pokémon inicial",
+    "subtitle": "Esta elección es para siempre — no se puede cambiar después.",
+    "choose": "Elegir"
+  },
+  "team": {
+    "title": "Mi equipo",
+    "systemStatus": "Estado",
+    "statusOptimal": "ÓPTIMO",
+    "level": "Nv. {level}",
+    "emptySlot": "Espacio vacío",
+    "slotAvailable": "Espacio {slot} disponible",
+    "unspentPoints": "{count} puntos sin asignar",
+    "autoHeal": "Auto-curar",
+    "expToNext": "{xp} para el próximo nivel",
+    "heldItem": "OBJETO EQUIPADO",
+    "noItem": "Ninguno",
+    "moves": "MOVIMIENTOS",
+    "stats": {
+      "hp": "HP",
+      "exp": "EXP",
+      "atk": "ATQ",
+      "def": "DEF",
+      "spAtk": "AT.ESP",
+      "spDef": "DEF.ESP",
+      "speed": "VEL"
+    }
+  },
+  "battle": {
+    "title": "Batalla",
+    "subtitle": "Explorá para encontrar un Pokémon salvaje y ganar experiencia.",
+    "explore": "Explorar",
+    "run": "Huir",
+    "hp": "HP",
+    "level": "Nv. {level}",
+    "resultWon": "¡Ganaste la batalla!",
+    "resultLost": "Tu Pokémon se debilitó. Curalo en Mi equipo antes de seguir.",
+    "resultFled": "Huiste de la batalla.",
+    "resultCaught": "¡Atrapaste al Pokémon! Ya está en tu equipo.",
+    "goHeal": "Ir a Mi equipo",
+    "superEffective": "¡Muy efectivo!",
+    "notVeryEffective": "Poco efectivo",
+    "noEffect": "Sin efecto",
+    "fight": "Luchar",
+    "pokemonMenu": "Pokémon",
+    "bag": "Mochila",
+    "pokeballsLabel": "Poké Balls",
+    "potionsLabel": "Pociones",
+    "fainted": "Debilitado",
+    "mustSwitchPrompt": "¡Tu Pokémon se debilitó! Elegí a quién enviar.",
+    "back": "Volver",
+    "leveledUp": "¡Subió a Nv. {level}!",
+    "errors": {
+      "noLead": "Necesitás un Pokémon en tu equipo para batallar.",
+      "faintedLead": "Tu Pokémon está debilitado — curalo en Mi equipo primero.",
+      "noEnergy": "No te queda energía. Esperá a que se regenere."
+    }
+  }
+}

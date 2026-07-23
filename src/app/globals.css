@@ -1,26 +1,407 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Rotom-OS design system — ver design-import/stitch_pok_mon_explorer_hub */
+  --color-surface: #131313;
+  --color-surface-dim: #131313;
+  --color-surface-bright: #393939;
+  --color-surface-container-lowest: #0e0e0e;
+  --color-surface-container-low: #1b1c1c;
+  --color-surface-container: #202020;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #353535;
+  --color-on-surface: #e5e2e1;
+  --color-on-surface-variant: #e9bcb6;
+  --color-inverse-surface: #e5e2e1;
+  --color-inverse-on-surface: #303030;
+  --color-outline: #af8782;
+  --color-outline-variant: #5e3f3a;
+  --color-surface-tint: #ffb4a9;
+  --color-primary: #ffb4a9;
+  --color-on-primary: #690002;
+  --color-primary-container: #ff5544;
+  --color-on-primary-container: #5c0001;
+  --color-inverse-primary: #c00008;
+  --color-secondary: #bcc2ff;
+  --color-on-secondary: #00189a;
+  --color-secondary-container: #2638b8;
+  --color-on-secondary-container: #aab3ff;
+  --color-tertiary: #f2c000;
+  --color-on-tertiary: #3d2f00;
+  --color-tertiary-container: #d1a600;
+  --color-on-tertiary-container: #4f3d00;
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+  --color-primary-fixed: #ffdad5;
+  --color-primary-fixed-dim: #ffb4a9;
+  --color-on-primary-fixed: #410001;
+  --color-on-primary-fixed-variant: #930004;
+  --color-secondary-fixed: #dfe0ff;
+  --color-secondary-fixed-dim: #bcc2ff;
+  --color-on-secondary-fixed: #000b62;
+  --color-on-secondary-fixed-variant: #2335b5;
+  --color-tertiary-fixed: #ffe08d;
+  --color-tertiary-fixed-dim: #f2c000;
+  --color-on-tertiary-fixed: #241a00;
+  --color-on-tertiary-fixed-variant: #584400;
+  --color-background: #131313;
+  --color-on-background: #e5e2e1;
+  --color-surface-variant: #353535;
+  --color-electric-yellow: #ffcb05;
+  --color-water-blue: #3b4cca;
+  --color-pokeball-red: #ee1515;
+  --color-glass-surface: rgba(33, 33, 33, 0.7);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-surface: var(--color-surface);
+  --color-surface-dim: var(--color-surface-dim);
+  --color-surface-bright: var(--color-surface-bright);
+  --color-surface-container-lowest: var(--color-surface-container-lowest);
+  --color-surface-container-low: var(--color-surface-container-low);
+  --color-surface-container: var(--color-surface-container);
+  --color-surface-container-high: var(--color-surface-container-high);
+  --color-surface-container-highest: var(--color-surface-container-highest);
+  --color-on-surface: var(--color-on-surface);
+  --color-on-surface-variant: var(--color-on-surface-variant);
+  --color-inverse-surface: var(--color-inverse-surface);
+  --color-inverse-on-surface: var(--color-inverse-on-surface);
+  --color-outline: var(--color-outline);
+  --color-outline-variant: var(--color-outline-variant);
+  --color-surface-tint: var(--color-surface-tint);
+  --color-primary: var(--color-primary);
+  --color-on-primary: var(--color-on-primary);
+  --color-primary-container: var(--color-primary-container);
+  --color-on-primary-container: var(--color-on-primary-container);
+  --color-inverse-primary: var(--color-inverse-primary);
+  --color-secondary: var(--color-secondary);
+  --color-on-secondary: var(--color-on-secondary);
+  --color-secondary-container: var(--color-secondary-container);
+  --color-on-secondary-container: var(--color-on-secondary-container);
+  --color-tertiary: var(--color-tertiary);
+  --color-on-tertiary: var(--color-on-tertiary);
+  --color-tertiary-container: var(--color-tertiary-container);
+  --color-on-tertiary-container: var(--color-on-tertiary-container);
+  --color-error: var(--color-error);
+  --color-on-error: var(--color-on-error);
+  --color-error-container: var(--color-error-container);
+  --color-on-error-container: var(--color-on-error-container);
+  --color-background: var(--color-background);
+  --color-on-background: var(--color-on-background);
+  --color-surface-variant: var(--color-surface-variant);
+  --color-electric-yellow: var(--color-electric-yellow);
+  --color-water-blue: var(--color-water-blue);
+  --color-pokeball-red: var(--color-pokeball-red);
+  --color-glass-surface: var(--color-glass-surface);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+
+  /* xs/sm/md/lg/xl NO se agregan acá: Tailwind v4 resuelve max-w-*, w-*, etc.
+     contra la misma escala de --spacing, y esos nombres pisarían max-w-md,
+     max-w-lg, etc. (bug real, encontrado en el navegador). El equivalente
+     numérico nativo de Tailwind ya da los mismos px: 1=4px, 2=8px, 4=16px,
+     6=24px, 8=32px — se usa eso en vez de xs/sm/md/lg/xl. */
+  --spacing-gutter: 16px;
+  --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 40px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-sans);
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+@layer utilities {
+  .glass-panel {
+    background: var(--color-surface-container-low);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glow-active {
+    box-shadow: 0 0 15px var(--color-pokeball-red);
+  }
+
+  .health-bar-fill {
+    background: linear-gradient(90deg, #4ade80, #22c55e);
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
+    transition: width 0.3s ease;
+  }
+  .health-bar-fill.yellow {
+    background: linear-gradient(90deg, #facc15, #eab308);
+  }
+  .health-bar-fill.red {
+    background: linear-gradient(90deg, #f87171, #ef4444);
+  }
+
+  .text-display-lg {
+    font-size: 48px;
+    line-height: 56px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  .text-headline-lg {
+    font-size: 32px;
+    line-height: 40px;
+    font-weight: 600;
+  }
+  .text-headline-md {
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+  }
+  .text-body-lg {
+    font-size: 18px;
+    line-height: 28px;
+    font-weight: 400;
+  }
+  .text-body-md {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+  }
+  .text-label-md {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+  }
+  .text-label-sm {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+
+  @media (min-width: 768px) {
+    .text-headline-lg {
+      font-size: 32px;
+      line-height: 40px;
+    }
+  }
+}
+
+@keyframes pokeball-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pokeball-pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+.pokeball-spin-group {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pokeball-spin 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.pokeball-pulse-button {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pokeball-pulse 1s ease-in-out infinite;
+}
+
+/* ---------- Animaciones de batalla ---------- */
+
+@keyframes sprite-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-10px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-6px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+.sprite-shake {
+  animation: sprite-shake 0.4s ease-in-out;
+}
+
+@keyframes sprite-flash {
+  0%,
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    filter: brightness(2.2) saturate(0.3);
+  }
+}
+.sprite-flash {
+  animation: sprite-flash 0.3s ease-in-out;
+}
+
+@keyframes lunge-right {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(24px) scale(1.05);
+  }
+}
+.sprite-lunge-right {
+  animation: lunge-right 0.35s ease-in-out;
+}
+
+@keyframes lunge-left {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-24px) scale(1.05);
+  }
+}
+.sprite-lunge-left {
+  animation: lunge-left 0.35s ease-in-out;
+}
+
+@keyframes damage-popup {
+  0% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(-8px) scale(1.15);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-28px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-40px) scale(1);
+    opacity: 0;
+  }
+}
+.damage-popup {
+  animation: damage-popup 0.9s ease-out forwards;
+}
+
+@keyframes sprite-faint {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+.sprite-faint {
+  animation: sprite-faint 0.6s ease-in forwards;
+}
+
+@keyframes sprite-enter {
+  0% {
+    transform: translateY(16px) scale(0.85);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+.sprite-enter {
+  animation: sprite-enter 0.4s ease-out;
+}
+
+/* Cambio de Pokémon: recall (absorbido por la ball) + throw (ball
+   tirada, pulsando mientras "viaja") antes de que entre el reemplazo. */
+@keyframes sprite-recall {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.1) translateY(-18px);
+    opacity: 0;
+  }
+}
+.sprite-recall {
+  animation: sprite-recall 0.45s ease-in forwards;
+}
+
+@keyframes pokeball-appear {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.pokeball-appear-icon {
+  animation: pokeball-appear 0.25s ease-out forwards;
+}
+.pokeball-throw-icon {
+  animation: pokeball-appear 0.25s ease-out, pokeball-pulse 0.7s ease-in-out 0.25s infinite;
+}
+
+@keyframes heal-glow {
+  0%,
+  100% {
+    filter: brightness(1) drop-shadow(0 0 0 rgba(52, 211, 153, 0));
+  }
+  50% {
+    filter: brightness(1.3) drop-shadow(0 0 12px rgba(52, 211, 153, 0.8));
+  }
+}
+.sprite-heal {
+  animation: heal-glow 0.6s ease-in-out;
+}
+
+@keyframes panel-swap {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.panel-swap {
+  animation: panel-swap 0.18s ease-out;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.4);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(238, 21, 21, 0.4);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-pokeball-red);
 }

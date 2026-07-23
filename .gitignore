@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# cache local de PokeAPI (fair-use: nunca commiteamos las respuestas crudas)
+/.cache/
+
+# mockups de Stitch importados como referencia — no son código del proyecto
+/design-import/
