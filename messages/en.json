@@ -22,7 +22,11 @@
     "language": "Language",
     "trainer": "Trainer",
     "inBattle": "In battle",
-    "inGym": "In the gym"
+    "inGym": "In the gym",
+    "ranking": "Ranking",
+    "clans": "Clans",
+    "pvp": "PvP",
+    "more": "More"
   },
   "home": {
     "eyebrow": "Season 1",
@@ -396,6 +400,115 @@
       "in_battle": "You can't deposit a Pokémon in the middle of a battle.",
       "last_team_member": "You can't deposit your last active Pokémon.",
       "rate_limited": "Too many actions in a row. Give it a moment."
+    }
+  },
+  "ranking": {
+    "title": "Ranking",
+    "subtitle": "The top trainers and Pokémon — global, by country and by species.",
+    "you": "You",
+    "views": {
+      "trainers": "Trainers",
+      "species": "Species",
+      "ladder": "PvP ladder"
+    },
+    "filters": {
+      "global": "Global",
+      "myCountry": "My country",
+      "country": "Country",
+      "species": "Species",
+      "apply": "View"
+    },
+    "badgeCount": "{count, plural, =1 {1 badge} other {# badges}}",
+    "power": "Power {value}",
+    "levelShort": "Lv. {level}",
+    "yourRank": "Your rank: #{rank} of {total}",
+    "speciesCaption": "{count, plural, =1 {1 {name} registered} other {# {name} registered}}",
+    "emptyTrainers": "No trainers on this leaderboard yet.",
+    "emptySpecies": "Nobody owns a {name} in this segment yet.",
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {total}"
+    },
+    "emptyLadder": "Nobody has played PvP matches in this segment yet.",
+    "yourLadderRank": "Your ladder rank: #{rank} · {rating} pts",
+    "record": "{wins}W - {losses}L"
+  },
+  "clans": {
+    "title": "Clans",
+    "subtitle": "Join a clan, compete as a team and climb the clan ranking.",
+    "directoryTitle": "Clan ranking",
+    "emptyDirectory": "No clans yet. Be the first to create one!",
+    "createTitle": "Create a clan",
+    "createCost": "Creating a clan costs {cost} coins.",
+    "nameLabel": "Name",
+    "namePlaceholder": "The Guardians",
+    "tagLabel": "Tag",
+    "tagPlaceholder": "GRD",
+    "createButton": "Create clan",
+    "creating": "Creating…",
+    "noFunds": "Not enough coins",
+    "yourClanRole": "Your role: {role}",
+    "memberCount": "{count}/{max}",
+    "badgeTotal": "{count, plural, =1 {1 badge} other {# badges}}",
+    "power": "Power {value}",
+    "membersTitle": "Members",
+    "backToDirectory": "Back to directory",
+    "join": "Join",
+    "joining": "Joining…",
+    "full": "Clan full",
+    "leave": "Leave",
+    "leaving": "Leaving…",
+    "confirmLeave": "Are you sure you want to leave the clan?",
+    "disband": "Disband",
+    "disbanding": "Disbanding…",
+    "confirmDisband": "This deletes the clan for everyone. Continue?",
+    "promote": "Promote",
+    "demote": "Demote",
+    "makeLeader": "Make leader",
+    "kick": "Kick",
+    "saving": "Saving…",
+    "confirmKick": "Kick {name} from the clan?",
+    "confirmTransfer": "Transfer leadership to {name}? You become an officer.",
+    "leaderLeaveHint": "As leader, to leave you must first transfer leadership or disband the clan.",
+    "roles": {
+      "LEADER": "Leader",
+      "OFFICER": "Officer",
+      "MEMBER": "Member"
+    }
+  },
+  "pvp": {
+    "title": "PvP battle",
+    "subtitle": "Face other trainers and climb the rating ladder.",
+    "rating": "Rating",
+    "wins": "{count} wins",
+    "losses": "{count} losses",
+    "winRate": "{pct}% win rate",
+    "findMatch": "Find match",
+    "searching": "Searching…",
+    "noTeam": "No team",
+    "noEnergy": "No energy",
+    "energyCost": "Costs 1 energy · you have {energy}",
+    "viewLadder": "View ladder",
+    "historyTitle": "History",
+    "emptyHistory": "You have not played any PvP matches yet.",
+    "win": "Won",
+    "loss": "Lost",
+    "vs": "vs",
+    "vsShort": "VS",
+    "backToPvp": "Back to PvP",
+    "youWon": "You won!",
+    "youLost": "You lost",
+    "winner": "Winner",
+    "battleLog": "Battle rundown",
+    "defeated": "of {owner} defeated",
+    "noKos": "No Pokémon fainted in this battle.",
+    "turnsPlayed": "{count, plural, =1 {1 turn} other {# turns}} played.",
+    "errors": {
+      "no_team": "You need at least one Pokémon in your team to fight.",
+      "no_opponents": "No opponents available right now. Try again later.",
+      "no_energy": "You do not have enough energy to find a match.",
+      "rate_limited": "Too many matches in a row. Give it a moment."
     }
   }
 }

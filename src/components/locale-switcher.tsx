@@ -22,9 +22,12 @@ const LOCALE_SHORT: Record<(typeof routing.locales)[number], string> = {
 export function LocaleSwitcher({
   currentLocale,
   label,
+  variant = "dropdown",
 }: {
   currentLocale: string;
   label: string;
+  /** `inline` = all locales as buttons (mobile sheets). `dropdown` = compact menu. */
+  variant?: "dropdown" | "inline";
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -49,6 +52,45 @@ export function LocaleSwitcher({
     };
   }, [open]);
 
+  if (variant === "inline") {
+    return (
+      <div
+        role="listbox"
+        aria-label={label}
+        className="flex w-full gap-1 rounded-lg border border-white/10 bg-black/20 p-1"
+      >
+        {routing.locales.map((locale) => {
+          const isActive = locale === active;
+          return (
+            <Link
+              key={locale}
+              href={pathname}
+              locale={locale}
+              role="option"
+              aria-selected={isActive}
+              aria-label={LOCALE_LABEL[locale]}
+              title={LOCALE_LABEL[locale]}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 transition-colors ${
+                isActive
+                  ? "bg-pokeball-red/20 text-on-surface ring-1 ring-pokeball-red/40"
+                  : "text-on-surface-variant hover:bg-white/5 hover:text-on-surface"
+              }`}
+            >
+              <FlagIcon
+                code={LOCALE_FLAG[locale]}
+                title={LOCALE_SHORT[locale]}
+                className="h-3.5 w-auto rounded-[2px]"
+              />
+              <span className="text-[11px] font-semibold uppercase tracking-wide">
+                {LOCALE_SHORT[locale]}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div ref={rootRef} className="relative">
       <button
@@ -71,7 +113,7 @@ export function LocaleSwitcher({
       {open && (
         <ul
           role="listbox"
-          className="absolute right-0 top-full mt-1.5 min-w-40 rounded-lg border border-white/10 bg-background/98 backdrop-blur-xl shadow-2xl py-1 z-50"
+          className="absolute right-0 top-full mt-1.5 min-w-40 rounded-lg border border-white/10 bg-background/98 backdrop-blur-xl shadow-2xl py-1 z-[70]"
         >
           {routing.locales.map((locale) => {
             const isActive = locale === active;

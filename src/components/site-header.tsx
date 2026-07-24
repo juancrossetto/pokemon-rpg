@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
+import { MobileChrome } from "@/components/mobile-chrome";
 import type { CombatLock } from "@/lib/battle-lock";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
@@ -23,6 +24,32 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
     lock?.kind === "battle" ? "/battle" : lock?.kind === "gym" ? `/gyms/${lock.gymId}/run` : null;
   const lockedLabel = lock?.kind === "battle" ? t("inBattle") : lock?.kind === "gym" ? t("inGym") : null;
 
+  const primary = session?.user
+    ? [
+        { href: "/", label: t("home"), icon: "dashboard" },
+        { href: "/team", label: t("teamShort"), icon: "group" },
+        { href: "/battle", label: t("battle"), icon: "swords" },
+        { href: "/gyms", label: t("gyms"), icon: "military_tech" },
+      ]
+    : [
+        { href: "/", label: t("home"), icon: "dashboard" },
+        { href: "/pokedex", label: t("pokedex"), icon: "auto_stories" },
+      ];
+
+  const moreLinks = session?.user
+    ? [
+        { href: "/pokedex", label: t("pokedex"), icon: "auto_stories" },
+        { href: "/market", label: t("market"), icon: "storefront" },
+        { href: "/pvp", label: t("pvp"), icon: "sports_mma" },
+        { href: "/ranking", label: t("ranking"), icon: "trophy" },
+        { href: "/clans", label: t("clans"), icon: "groups" },
+        { href: "/pc", label: t("pc"), icon: "storage" },
+      ]
+    : [
+        { href: "/login", label: t("login"), icon: "login" },
+        { href: "/register", label: t("register"), icon: "person_add" },
+      ];
+
   return (
     <>
       {/* TopAppBar (desktop) */}
@@ -34,7 +61,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
           >
             {t("brand")}
           </Link>
-          <div className="flex gap-1 ml-4 items-center">
+          <div className="flex gap-1 ml-4 items-center flex-wrap">
             {lockedHref && lockedLabel ? (
               <Link
                 href={lockedHref}
@@ -68,10 +95,28 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
                       {t("battle")}
                     </Link>
                     <Link
+                      href="/pvp"
+                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
+                    >
+                      {t("pvp")}
+                    </Link>
+                    <Link
                       href="/gyms"
                       className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
                     >
                       {t("gyms")}
+                    </Link>
+                    <Link
+                      href="/ranking"
+                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
+                    >
+                      {t("ranking")}
+                    </Link>
+                    <Link
+                      href="/clans"
+                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
+                    >
+                      {t("clans")}
                     </Link>
                     <Link
                       href="/market"
@@ -127,69 +172,23 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         </div>
       </nav>
 
-      {/* BottomNavBar (mobile) */}
-      <nav className="fixed bottom-0 inset-x-0 z-50 flex md:hidden items-stretch h-14 bg-background/98 backdrop-blur-xl border-t border-white/10 shadow-2xl pb-[env(safe-area-inset-bottom)]">
-        {lockedHref && lockedLabel ? (
-          <Link
-            href={lockedHref}
-            className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-0.5 text-pokeball-red"
-          >
-            <span className="material-symbols-outlined text-[22px]">
-              {lock?.kind === "gym" ? "military_tech" : "swords"}
-            </span>
-            <span className="text-[10px] leading-none truncate max-w-full font-bold">{lockedLabel}</span>
-          </Link>
-        ) : (
-          <>
-            <Link
-              href="/"
-              className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-0.5 text-pokeball-red"
-            >
-              <span className="material-symbols-outlined text-[22px]">dashboard</span>
-              <span className="text-[10px] leading-none truncate max-w-full">{t("home")}</span>
-            </Link>
-            <Link
-              href="/pokedex"
-              className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-0.5 text-on-surface-variant hover:text-pokeball-red transition-colors"
-            >
-              <span className="material-symbols-outlined text-[22px]">auto_stories</span>
-              <span className="text-[10px] leading-none truncate max-w-full">{t("pokedex")}</span>
-            </Link>
-            {session?.user && (
-              <>
-                <Link
-                  href="/team"
-                  className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-0.5 text-on-surface-variant hover:text-pokeball-red transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[22px]">group</span>
-                  <span className="text-[10px] leading-none truncate max-w-full">{t("teamShort")}</span>
-                </Link>
-                <Link
-                  href="/battle"
-                  className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-0.5 text-on-surface-variant hover:text-pokeball-red transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[22px]">swords</span>
-                  <span className="text-[10px] leading-none truncate max-w-full">{t("battle")}</span>
-                </Link>
-                <Link
-                  href="/market"
-                  className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-0.5 text-on-surface-variant hover:text-pokeball-red transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[22px]">storefront</span>
-                  <span className="text-[10px] leading-none truncate max-w-full">{t("market")}</span>
-                </Link>
-                <Link
-                  href="/gyms"
-                  className="flex flex-col items-center justify-center text-on-surface-variant hover:text-pokeball-red transition-colors px-4 py-1 text-label-sm"
-                >
-                  <span className="material-symbols-outlined">military_tech</span>
-                  {t("gyms")}
-                </Link>
-              </>
-            )}
-          </>
-        )}
-      </nav>
+      <MobileChrome
+        brand={t("brand")}
+        locale={locale}
+        languageLabel={t("language")}
+        coins={user?.coins ?? null}
+        userName={session?.user ? (session.user.name ?? "?") : null}
+        logoutLabel={t("logout")}
+        trainerLabel={t("trainer")}
+        lockedHref={lockedHref}
+        lockedLabel={lockedLabel}
+        lockedIcon={lock?.kind === "gym" ? "military_tech" : "swords"}
+        primary={primary}
+        moreLinks={moreLinks}
+        moreLabel={t("more")}
+        loginLabel={t("login")}
+        registerLabel={t("register")}
+      />
     </>
   );
 }

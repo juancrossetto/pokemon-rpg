@@ -73,10 +73,10 @@ export default async function GymLeaderPage({
         <p className="text-label-sm uppercase text-on-surface-variant mb-1">{t("leaderAnalysis")}</p>
         <h1 className="text-headline-lg md:text-display-lg text-white mb-6">{gym.name}</h1>
 
-        <div className="glass-panel rounded-xl border border-white/10 p-6 mb-4 flex items-center gap-5">
+        <div className="glass-panel rounded-xl border border-white/10 p-4 mb-4 flex flex-col sm:flex-row sm:items-center gap-4">
           {leaderPortrait ? (
             <div
-              className="w-28 h-36 sm:w-32 sm:h-40 rounded-xl overflow-hidden shrink-0 border-2 bg-surface-container-high"
+              className="w-24 h-32 sm:w-32 sm:h-40 rounded-xl overflow-hidden shrink-0 border-2 bg-surface-container-high self-start"
               style={{ borderColor: color, boxShadow: `0 0 20px ${color}44` }}
             >
               <Image
@@ -90,7 +90,7 @@ export default async function GymLeaderPage({
             </div>
           ) : (
             <div
-              className="w-28 h-28 rounded-full flex items-center justify-center shrink-0 border-2"
+              className="w-24 h-24 rounded-full flex items-center justify-center shrink-0 border-2 self-start"
               style={{ backgroundColor: `${color}22`, borderColor: color }}
             >
               <span className="material-symbols-outlined text-[40px]" style={{ color }}>
@@ -98,8 +98,8 @@ export default async function GymLeaderPage({
               </span>
             </div>
           )}
-          <div>
-            <h2 className="text-headline-md text-on-surface">{gym.leaderName}</h2>
+          <div className="min-w-0">
+            <h2 className="text-headline-md text-on-surface truncate">{gym.leaderName}</h2>
             <p className="text-label-md" style={{ color }}>
               {t("primaryType", { type: gym.type })}
             </p>
@@ -129,46 +129,47 @@ export default async function GymLeaderPage({
           <p className="text-label-md text-on-surface-variant">{t("trainerCount", { count: gym.trainers.length })}</p>
         </div>
 
-        <div className="glass-panel rounded-xl border border-tertiary/40 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="glass-panel rounded-xl border border-tertiary/40 p-4 sm:p-6 flex flex-col gap-4">
+          <div className="flex items-center gap-3 min-w-0">
             <Image src={gymBadgeImageUrl(gym.type)} alt={gym.badgeName} width={40} height={40} className="shrink-0" />
-            <div>
+            <div className="min-w-0">
               <p className="text-label-sm uppercase text-on-surface-variant">{t("targetReward")}</p>
-              <p className="text-headline-md text-on-surface">{gym.badgeName}</p>
+              <p className="text-headline-md text-on-surface truncate">{gym.badgeName}</p>
             </div>
           </div>
 
+          <div className="flex flex-col items-stretch sm:items-end gap-2 w-full">
           {badge ? (
-            <div className="flex flex-col items-end gap-2">
-              <span className="flex items-center gap-1 text-label-md text-tertiary">
+            <>
+              <span className="flex items-center gap-1 text-label-md text-tertiary self-start sm:self-end">
                 <span className="material-symbols-outlined text-[18px]">check_circle</span>
                 {t("badgeEarned")}
               </span>
               {!locked && !activeRun && (
                 <>
-                  <p className="text-label-sm text-on-surface-variant text-right max-w-[220px]">{t("rematchHint")}</p>
+                  <p className="text-label-sm text-on-surface-variant sm:text-right max-w-full sm:max-w-[220px]">{t("rematchHint")}</p>
                   <StartGymRunButton gymId={gymId} locale={locale} label={t("rematch")} errors={errors} />
                 </>
               )}
               {activeRun && (
                 <Link
                   href={`/gyms/${gymId}/run`}
-                  className="flex items-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
+                  className="flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white hover:bg-pokeball-red/80 transition-colors w-full sm:w-auto"
                 >
                   <span className="material-symbols-outlined text-[18px]">play_arrow</span>
                   {t("continueRun", { cleared: activeRun.clearedTrainerSlots, total: gym.trainers.length })}
                 </Link>
               )}
-            </div>
+            </>
           ) : locked ? (
-            <span className="flex items-center gap-1 text-label-md text-on-surface-variant">
+            <span className="flex items-center gap-1 text-label-md text-on-surface-variant self-start sm:self-end">
               <span className="material-symbols-outlined text-[18px]">lock</span>
               {t("locked")}
             </span>
           ) : activeRun ? (
             <Link
               href={`/gyms/${gymId}/run`}
-              className="flex items-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white hover:bg-pokeball-red/80 transition-colors w-full sm:w-auto"
             >
               <span className="material-symbols-outlined text-[18px]">play_arrow</span>
               {t("continueRun", { cleared: activeRun.clearedTrainerSlots, total: gym.trainers.length })}
@@ -176,6 +177,7 @@ export default async function GymLeaderPage({
           ) : (
             <StartGymRunButton gymId={gymId} locale={locale} label={t("startChallenge")} errors={errors} />
           )}
+          </div>
         </div>
       </div>
     </div>

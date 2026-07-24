@@ -22,7 +22,11 @@
     "language": "Idioma",
     "trainer": "Entrenador",
     "inBattle": "En combate",
-    "inGym": "En el gimnasio"
+    "inGym": "En el gimnasio",
+    "ranking": "Ranking",
+    "clans": "Clanes",
+    "pvp": "PvP",
+    "more": "Más"
   },
   "home": {
     "eyebrow": "Temporada 1",
@@ -396,6 +400,115 @@
       "in_battle": "No podés depositar un Pokémon en medio de una batalla.",
       "last_team_member": "No podés depositar tu último Pokémon activo.",
       "rate_limited": "Demasiadas operaciones seguidas. Esperá un momento."
+    }
+  },
+  "ranking": {
+    "title": "Ranking",
+    "subtitle": "Los mejores entrenadores y Pokémon — global, por país y por especie.",
+    "you": "Vos",
+    "views": {
+      "trainers": "Entrenadores",
+      "species": "Especies",
+      "ladder": "Ladder PvP"
+    },
+    "filters": {
+      "global": "Global",
+      "myCountry": "Mi país",
+      "country": "País",
+      "species": "Especie",
+      "apply": "Ver"
+    },
+    "badgeCount": "{count, plural, =1 {1 medalla} other {# medallas}}",
+    "power": "Poder {value}",
+    "levelShort": "Nv. {level}",
+    "yourRank": "Tu posición: #{rank} de {total}",
+    "speciesCaption": "{count, plural, =1 {1 {name} registrado} other {# {name} registrados}}",
+    "emptyTrainers": "Todavía no hay entrenadores en este ranking.",
+    "emptySpecies": "Nadie tiene un {name} todavía en este segmento.",
+    "pagination": {
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "pageOf": "Página {page} de {total}"
+    },
+    "emptyLadder": "Todavía nadie jugó partidos PvP en este segmento.",
+    "yourLadderRank": "Tu posición en el ladder: #{rank} · {rating} pts",
+    "record": "{wins}V - {losses}D"
+  },
+  "clans": {
+    "title": "Clanes",
+    "subtitle": "Uníte a un clan, competí en equipo y escalá el ranking de clanes.",
+    "directoryTitle": "Ranking de clanes",
+    "emptyDirectory": "Todavía no hay clanes. ¡Creá el primero!",
+    "createTitle": "Crear un clan",
+    "createCost": "Crear un clan cuesta {cost} monedas.",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Los Guardianes",
+    "tagLabel": "Tag",
+    "tagPlaceholder": "GRD",
+    "createButton": "Crear clan",
+    "creating": "Creando…",
+    "noFunds": "Sin monedas",
+    "yourClanRole": "Tu rol: {role}",
+    "memberCount": "{count}/{max}",
+    "badgeTotal": "{count, plural, =1 {1 medalla} other {# medallas}}",
+    "power": "Poder {value}",
+    "membersTitle": "Miembros",
+    "backToDirectory": "Volver al listado",
+    "join": "Unirse",
+    "joining": "Uniéndote…",
+    "full": "Clan lleno",
+    "leave": "Salir",
+    "leaving": "Saliendo…",
+    "confirmLeave": "¿Seguro que querés salir del clan?",
+    "disband": "Disolver",
+    "disbanding": "Disolviendo…",
+    "confirmDisband": "Esto elimina el clan para todos. ¿Continuar?",
+    "promote": "Ascender",
+    "demote": "Degradar",
+    "makeLeader": "Hacer líder",
+    "kick": "Expulsar",
+    "saving": "Guardando…",
+    "confirmKick": "¿Expulsar a {name} del clan?",
+    "confirmTransfer": "¿Transferir el liderazgo a {name}? Vos pasás a oficial.",
+    "leaderLeaveHint": "Como líder, para salir primero transferí el liderazgo o disolvé el clan.",
+    "roles": {
+      "LEADER": "Líder",
+      "OFFICER": "Oficial",
+      "MEMBER": "Miembro"
+    }
+  },
+  "pvp": {
+    "title": "Combate PvP",
+    "subtitle": "Enfrentá a otros entrenadores y escalá el ladder por rating.",
+    "rating": "Rating",
+    "wins": "{count} victorias",
+    "losses": "{count} derrotas",
+    "winRate": "{pct}% de victorias",
+    "findMatch": "Buscar rival",
+    "searching": "Buscando…",
+    "noTeam": "Sin equipo",
+    "noEnergy": "Sin energía",
+    "energyCost": "Cuesta 1 energía · tenés {energy}",
+    "viewLadder": "Ver ladder",
+    "historyTitle": "Historial",
+    "emptyHistory": "Todavía no jugaste ningún combate PvP.",
+    "win": "Ganó",
+    "loss": "Perdió",
+    "vs": "vs",
+    "vsShort": "VS",
+    "backToPvp": "Volver a PvP",
+    "youWon": "¡Ganaste!",
+    "youLost": "Perdiste",
+    "winner": "Ganador",
+    "battleLog": "Desarrollo del combate",
+    "defeated": "de {owner} venció a",
+    "noKos": "Ningún Pokémon cayó en este combate.",
+    "turnsPlayed": "Se jugaron {count, plural, =1 {1 turno} other {# turnos}}.",
+    "errors": {
+      "no_team": "Necesitás al menos un Pokémon en tu equipo para pelear.",
+      "no_opponents": "No hay rivales disponibles por ahora. Probá más tarde.",
+      "no_energy": "No te alcanza la energía para buscar un combate.",
+      "rate_limited": "Demasiados combates seguidos. Esperá un momento."
     }
   }
 }

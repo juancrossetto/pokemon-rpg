@@ -26,18 +26,25 @@ model User {
   energyUpdatedAt DateTime @default(now()) // para calcular regeneración sin cron
   createdAt       DateTime @default(now())
 
-  pokemon        PokemonInstance[]
-  inventory      InventoryItem[]
-  gymAttempts    GymAttempt[]
-  gymRuns        GymRun[]
-  badges         Badge[]
-  listingsSold   MarketListing[]   @relation("Seller")
-  listingsBought MarketListing[]   @relation("Buyer")
-  clanMembership ClanMember?
-  ledClan        Clan?             @relation("ClanLeader")
-  battlesAsUser  BattleLog[]       @relation("BattleUser")
-  battlesAsOpp   BattleLog[]       @relation("BattleOpponent")
-  battleSessions BattleSession[]
+  // Ladder PvP (dossier fase 4). Rating Elo + récord; segmento del ranking PvP.
+  pvpRating Int @default(1000)
+  pvpWins   Int @default(0)
+  pvpLosses Int @default(0)
+
+  pokemon         PokemonInstance[]
+  inventory       InventoryItem[]
+  gymAttempts     GymAttempt[]
+  gymRuns         GymRun[]
+  badges          Badge[]
+  listingsSold    MarketListing[]   @relation("Seller")
+  listingsBought  MarketListing[]   @relation("Buyer")
+  clanMembership  ClanMember?
+  ledClan         Clan?             @relation("ClanLeader")
+  battlesAsUser   BattleLog[]       @relation("BattleUser")
+  battlesAsOpp    BattleLog[]       @relation("BattleOpponent")
+  battleSessions  BattleSession[]
+  pvpAsChallenger PvpMatch[]        @relation("PvpChallenger")
+  pvpAsOpponent   PvpMatch[]        @relation("PvpOpponent")
 }
 
 // ---------- Datos de Pokémon (seed desde PokeAPI, ver scripts/seed) ----------
@@ -137,7 +144,7 @@ model PokemonMove {
   pokemonInstanceId String
   moveId            Int
   slot              Int // 1-4
-  currentPp         Int @default(0) // se setea al aprender; 0 se trata como "lleno" hasta la 1ª batalla
+  currentPp         Int    @default(0) // se setea al aprender; 0 se trata como "lleno" hasta la 1ª batalla
 
   pokemon PokemonInstance @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
   move    Move            @relation(fields: [moveId], references: [id])
@@ -436,17 +443,17 @@ model BattleSession {
   gymTrainerId      String? // entrenador subordinado actual — null = está peleando contra el líder
   gymPokemonSlot    Int? // slot del equipo actual (del entrenador o del líder) que se está peleando
   // Estado de combate en sesión (se limpia al cambiar de Pokémon / fin de batalla).
-  playerStatus     StatusCondition?
-  wildStatus       StatusCondition?
-  playerSleepTurns Int                @default(0)
-  wildSleepTurns   Int                @default(0)
-  playerAtkStage   Int                @default(0)
-  playerDefStage   Int                @default(0)
-  playerSpeStage   Int                @default(0)
-  wildAtkStage     Int                @default(0)
-  wildDefStage     Int                @default(0)
-  wildSpeStage     Int                @default(0)
-  fleeAttempts     Int                @default(0) // fallos de huida; sube la chance (Gen III)
+  playerStatus      StatusCondition?
+  wildStatus        StatusCondition?
+  playerSleepTurns  Int                 @default(0)
+  wildSleepTurns    Int                 @default(0)
+  playerAtkStage    Int                 @default(0)
+  playerDefStage    Int                 @default(0)
+  playerSpeStage    Int                 @default(0)
+  wildAtkStage      Int                 @default(0)
+  wildDefStage      Int                 @default(0)
+  wildSpeStage      Int                 @default(0)
+  fleeAttempts      Int                 @default(0) // fallos de huida; sube la chance (Gen III)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
@@ -458,4 +465,29 @@ model BattleSession {
   gymTrainer      GymTrainer?     @relation(fields: [gymTrainerId], references: [id])
 
   @@index([userId, status])
+}
+
+// ---------- PvP ----------
+
+// Partido PvP ya resuelto (simulación server-authoritative). Guarda el
+// resultado, la cadena de KOs para reconstruir la narrativa y los ratings
+// antes/después de ambos lados para poder mostrar el delta.
+model PvpMatch {
+  id                     String   @id @default(cuid())
+  challengerId           String
+  opponentId             String
+  winnerId               String // challengerId u opponentId
+  challengerRatingBefore Int
+  challengerRatingAfter  Int
+  opponentRatingBefore   Int
+  opponentRatingAfter    Int
+  koLog                  String[] @default([]) // "ladoNombre>ladoNombre" por KO
+  turns                  Int      @default(0)
+  createdAt              DateTime @default(now())
+
+  challenger User @relation("PvpChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent   User @relation("PvpOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  @@index([challengerId, createdAt])
+  @@index([opponentId, createdAt])
 }

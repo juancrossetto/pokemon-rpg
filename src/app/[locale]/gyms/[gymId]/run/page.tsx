@@ -63,17 +63,21 @@ export default async function GymRunPage({
                   current ? "border-pokeball-red/60" : cleared ? "border-tertiary/40" : "border-white/10 opacity-60"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
                     <p className="text-label-sm text-on-surface-variant">{t("subordinate", { n: trainer.slot })}</p>
-                    <h2 className="text-headline-md text-on-surface">{trainer.name}</h2>
+                    <h2 className="text-lg sm:text-headline-md text-on-surface truncate">{trainer.name}</h2>
                   </div>
                   <span
-                    className={`flex items-center gap-1 text-label-sm ${
-                      cleared ? "text-tertiary" : current ? "text-pokeball-red" : "text-on-surface-variant"
+                    className={`inline-flex self-start sm:self-auto items-center gap-1 rounded-full border px-2.5 py-1 text-label-sm shrink-0 ${
+                      cleared
+                        ? "border-tertiary/40 text-tertiary bg-tertiary/10"
+                        : current
+                          ? "border-pokeball-red/40 text-pokeball-red bg-pokeball-red/10"
+                          : "border-white/10 text-on-surface-variant bg-white/5"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[18px]">
+                    <span className="material-symbols-outlined text-[16px]">
                       {cleared ? "check_circle" : current ? "swords" : "lock"}
                     </span>
                     {cleared ? t("statusCleared") : current ? t("statusPending") : t("statusLocked")}
@@ -100,17 +104,19 @@ export default async function GymRunPage({
               leaderUnlocked ? "border-tertiary/60" : "border-white/10 opacity-60"
             }`}
           >
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <p className="text-label-sm text-on-surface-variant">{t("leaderAnalysis")}</p>
-                <h2 className="text-headline-md text-on-surface">{gym.leaderName}</h2>
+                <h2 className="text-lg sm:text-headline-md text-on-surface truncate">{gym.leaderName}</h2>
               </div>
               <span
-                className={`flex items-center gap-1 text-label-sm ${
-                  leaderUnlocked ? "text-tertiary" : "text-on-surface-variant"
+                className={`inline-flex self-start sm:self-auto items-center gap-1 rounded-full border px-2.5 py-1 text-label-sm shrink-0 ${
+                  leaderUnlocked
+                    ? "border-tertiary/40 text-tertiary bg-tertiary/10"
+                    : "border-white/10 text-on-surface-variant bg-white/5"
                 }`}
               >
-                <span className="material-symbols-outlined text-[18px]">{leaderUnlocked ? "military_tech" : "lock"}</span>
+                <span className="material-symbols-outlined text-[16px]">{leaderUnlocked ? "military_tech" : "lock"}</span>
                 {leaderUnlocked ? t("statusPending") : t("statusLocked")}
               </span>
             </div>

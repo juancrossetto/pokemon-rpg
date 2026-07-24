@@ -95,48 +95,79 @@ export default async function GymsPage({
                   }}
                 />
 
-                <div className="relative flex gap-3 p-3">
+                <div className="relative flex flex-col sm:flex-row gap-3 p-3">
                   {/* Portrait */}
-                  <div
-                    className="relative w-20 h-24 sm:w-24 sm:h-28 rounded-lg overflow-hidden shrink-0 border"
-                    style={{ borderColor: `${color}88`, boxShadow: `0 0 16px ${color}22` }}
-                  >
-                    {portrait ? (
-                      <Image
-                        src={portrait}
-                        alt={gym.leaderName}
-                        fill
-                        sizes="96px"
-                        className="object-cover object-top"
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center"
-                        style={{ backgroundColor: `${color}22` }}
-                      >
-                        <span className="material-symbols-outlined text-[28px]" style={{ color }}>
-                          {typeIcon(gym.type)}
-                        </span>
-                      </div>
-                    )}
-                    <span
-                      className="absolute top-1 left-1 rounded px-1 py-0.5 text-[10px] font-mono font-bold text-white/90 backdrop-blur-sm"
-                      style={{ backgroundColor: `${color}cc` }}
+                  <div className="flex gap-3 sm:contents">
+                    <div
+                      className="relative w-16 h-20 sm:w-24 sm:h-28 rounded-lg overflow-hidden shrink-0 border"
+                      style={{ borderColor: `${color}88`, boxShadow: `0 0 16px ${color}22` }}
                     >
-                      #{gym.order}
-                    </span>
-                    {locked && (
-                      <div className="absolute inset-0 bg-black/45 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-white/80 text-[22px]">lock</span>
+                      {portrait ? (
+                        <Image
+                          src={portrait}
+                          alt={gym.leaderName}
+                          fill
+                          sizes="96px"
+                          className="object-cover object-top"
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center"
+                          style={{ backgroundColor: `${color}22` }}
+                        >
+                          <span className="material-symbols-outlined text-[28px]" style={{ color }}>
+                            {typeIcon(gym.type)}
+                          </span>
+                        </div>
+                      )}
+                      <span
+                        className="absolute top-1 left-1 rounded px-1 py-0.5 text-[10px] font-mono font-bold text-white/90 backdrop-blur-sm"
+                        style={{ backgroundColor: `${color}cc` }}
+                      >
+                        #{gym.order}
+                      </span>
+                      {locked && (
+                        <div className="absolute inset-0 bg-black/45 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-white/80 text-[22px]">lock</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Title row (mobile: beside portrait) */}
+                    <div className="flex-1 min-w-0 flex sm:hidden items-start justify-between gap-2 py-0.5">
+                      <div className="min-w-0">
+                        <h2 className="text-base font-semibold text-white leading-tight truncate">{gym.name}</h2>
+                        <p className="text-label-sm text-on-surface-variant truncate">
+                          {t("leaderLabel", { name: gym.leaderName })}
+                        </p>
+                        <p className="text-label-sm capitalize mt-0.5" style={{ color }}>
+                          {gym.type}
+                        </p>
                       </div>
-                    )}
+                      <div
+                        className={`shrink-0 w-10 h-10 rounded-lg border flex items-center justify-center ${
+                          badgeEarned
+                            ? "border-tertiary/50 bg-tertiary/10"
+                            : "border-white/10 bg-surface-container-high/80"
+                        }`}
+                        title={gym.badgeName}
+                      >
+                        <Image
+                          src={badgeSrc}
+                          alt={gym.badgeName}
+                          width={24}
+                          height={24}
+                          className={`object-contain ${badgeEarned ? "drop-shadow-[0_0_6px_rgba(242,192,0,0.55)]" : "opacity-80"}`}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Body */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-between gap-1.5 py-0.5">
-                    <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0 flex flex-col justify-between gap-2 py-0.5">
+                    <div className="hidden sm:flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h2 className="text-label-lg sm:text-headline-md text-white leading-tight truncate">{gym.name}</h2>
+                        <h2 className="text-headline-md text-white leading-tight truncate">{gym.name}</h2>
                         <p className="text-label-sm text-on-surface-variant truncate">
                           {t("leaderLabel", { name: gym.leaderName })}
                           <span className="mx-1.5 text-white/20">·</span>
@@ -164,7 +195,7 @@ export default async function GymsPage({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                       <div className="flex -space-x-1.5">
                         {gym.team.map((member) => (
                           <div
@@ -184,10 +215,10 @@ export default async function GymsPage({
                           </div>
                         ))}
                       </div>
-                      <span className="text-label-sm text-electric-yellow font-mono shrink-0">
+                      <span className="text-label-sm text-electric-yellow font-mono">
                         {t("coinReward", { coins: gym.coinReward })}
                       </span>
-                      <div className="ml-auto shrink-0">{statusChip}</div>
+                      <div className="sm:ml-auto">{statusChip}</div>
                     </div>
                   </div>
                 </div>
