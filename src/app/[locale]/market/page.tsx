@@ -26,6 +26,7 @@ import {
 import { buyListing, cancelListing, listItem, listPokemon } from "@/actions/market";
 import type { Prisma } from "@/generated/prisma/client";
 import { itemSpriteUrl } from "@/lib/item-sprites";
+import { redirectIfInBattle } from "@/lib/battle-lock";
 
 const TABS = ["browse", "sell", "mine", "bought"] as const;
 type Tab = (typeof TABS)[number];
@@ -98,6 +99,7 @@ export default async function MarketPage({
     return null;
   }
   const userId = session.user.id;
+  await redirectIfInBattle(userId, locale);
   const tab: Tab = pickCode(query.tab, TABS) ?? "browse";
   // Los códigos vienen del querystring: sin lista blanca, ?error=loquesea
   // termina en t(`errors.loquesea`) y se le muestra la clave cruda al jugador.

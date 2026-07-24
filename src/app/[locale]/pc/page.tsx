@@ -8,6 +8,7 @@ import { calculateMaxHp } from "@/lib/stats";
 import { PC_ERRORS, PC_NOTICES, pickCode } from "@/lib/feedback-codes";
 import { TEAM_SIZE } from "@/lib/market-rules";
 import { depositPokemon, withdrawPokemon } from "@/actions/pc";
+import { redirectIfInBattle } from "@/lib/battle-lock";
 
 export default async function PcPage({
   params,
@@ -23,6 +24,8 @@ export default async function PcPage({
     redirect({ href: "/login", locale });
     return null;
   }
+
+  await redirectIfInBattle(session.user.id, locale);
 
   // Lista blanca: los códigos llegan por querystring y sin validarlos
   // ?error=loquesea le muestra la clave de traducción cruda al jugador.

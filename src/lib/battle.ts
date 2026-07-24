@@ -1,4 +1,5 @@
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
+import type { StatusCondition } from "@/lib/status";
 
 export interface CombatantStats {
   level: number;
@@ -18,11 +19,21 @@ export interface MoveSnapshot {
   power: number | null;
   accuracy: number | null;
   priority: number;
+  pp?: number;
 }
 
-// Orden de turno oficial: prioridad del movimiento primero (ej. Ataque
-// Rápido siempre pega antes sin importar velocidad), y recién ahí Velocidad
-// del Pokémon como desempate.
+export const STRUGGLE_MOVE: MoveSnapshot = {
+  id: -1,
+  name: "struggle",
+  // Tipeless: en los juegos modernos Struggle pega a Fantasma (Normal no).
+  type: "typeless",
+  category: "PHYSICAL",
+  power: 50,
+  accuracy: null,
+  priority: 0,
+  pp: 1,
+};
+
 export function playerActsFirst(
   playerMove: MoveSnapshot,
   wildMove: MoveSnapshot,
@@ -39,22 +50,33 @@ export interface MoveResult {
   hit: boolean;
   damage: number;
   effectiveness: number;
+  critical: boolean;
 }
 
-// Fórmula de daño estilo Gen III+, simplificada: sin críticos, sin ítems,
-// sin efectos de estado (parálisis/quemadura/etc) — eso queda para una
-// fase posterior. STAB + efectividad de tipo + variación aleatoria sí están.
+export interface ResolveOptions {
+  /** Quemadura reduce daño físico a la mitad. */
+  attackerBurned?: boolean;
+}
+
+/**
+ * Fórmula Gen III+ con STAB, tipo, variación, crítico (1/16 → ×1.5)
+ * y burn en físicos.
+ */
 export function resolveMoveUse(
   attacker: CombatantStats,
   defender: CombatantStats,
   move: MoveSnapshot,
+  options: ResolveOptions = {},
 ): MoveResult {
   const hit = move.accuracy === null ? true : Math.random() * 100 < move.accuracy;
   if (!hit || move.category === "STATUS" || move.power === null) {
-    return { hit, damage: 0, effectiveness: 1 };
+    return { hit, damage: 0, effectiveness: 1, critical: false };
   }
 
-  const atkStat = move.category === "PHYSICAL" ? attacker.atk : attacker.spAtk;
+  let atkStat = move.category === "PHYSICAL" ? attacker.atk : attacker.spAtk;
+  if (move.category === "PHYSICAL" && options.attackerBurned) {
+    atkStat = Math.max(1, Math.floor(atkStat * 0.5));
+  }
   const defStat = move.category === "PHYSICAL" ? defender.def : defender.spDef;
 
   const base = Math.floor(
@@ -63,28 +85,45 @@ export function resolveMoveUse(
 
   const stab = attacker.types.includes(move.type) ? 1.5 : 1;
   const effectiveness = getTypeEffectiveness(move.type, defender.types);
+  const critical = Math.random() < 1 / 16;
+  const critMult = critical ? 1.5 : 1;
   const randomFactor = 0.85 + Math.random() * 0.15;
 
-  const damage = Math.max(0, Math.floor(base * stab * effectiveness * randomFactor));
-  return { hit, damage, effectiveness };
+  const damage = Math.max(
+    0,
+    Math.floor(base * stab * effectiveness * critMult * randomFactor),
+  );
+  return { hit, damage, effectiveness, critical };
 }
 
-// Curva simple de XP por victoria PvE — el nivel del salvaje pesa más que
-// una fórmula fija, para que enfrentar rivales más fuertes valga la pena.
 export function xpForVictory(wildLevel: number): number {
   return wildLevel * 12;
 }
 
-// Un evento por golpe/uso de movimiento dentro de un turno — el cliente
-// reproduce esta lista en secuencia (shake, popup de daño, barra de HP)
-// en vez de saltar directo al estado final.
+export type SkipReason = "asleep" | "paralyzed" | "disobey";
+
 export interface TurnEvent {
   side: "player" | "wild";
   moveName: string;
+  moveType: string;
   hit: boolean;
   isStatus: boolean;
   damage: number;
   effectiveness: number;
   hpAfter: number;
+  critical?: boolean;
+  skipped?: SkipReason | null;
+  statusApplied?: StatusCondition | null;
+  statChange?: { stat: "atk" | "def" | "spe"; stages: number } | null;
+  residualDamage?: number;
+  residualHpAfter?: number;
+  recoilDamage?: number;
+  /** PP restante del movimiento del jugador tras usarlo (si aplica). */
+  playerPpAfter?: number;
 }
 
+export function effectivePp(currentPp: number | null | undefined, maxPp: number | null | undefined): number {
+  const max = maxPp ?? 20;
+  if (currentPp == null || currentPp <= 0) return max;
+  return Math.min(currentPp, max);
+}

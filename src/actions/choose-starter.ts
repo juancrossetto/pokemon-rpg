@@ -36,6 +36,7 @@ export async function chooseStarter(speciesId: number, locale: string) {
   const species = await prisma.species.findUniqueOrThrow({ where: { id: speciesId } });
   const currentHp = calculateMaxHp(species.baseHp, STARTER_LEVEL);
   const moveIds = await getMovesetForLevel(speciesId, STARTER_LEVEL);
+  const moves = await prisma.move.findMany({ where: { id: { in: moveIds } } });
 
   const [pokeBall, potion, oranBerry] = await Promise.all([
     prisma.item.findUnique({ where: { name: "Poke Ball" } }),
@@ -57,7 +58,10 @@ export async function chooseStarter(speciesId: number, locale: string) {
         currentHp,
         teamSlot: 1,
         moves: {
-          create: moveIds.map((moveId, i) => ({ moveId, slot: i + 1 })),
+          create: moveIds.map((moveId, i) => {
+            const m = moves.find((x) => x.id === moveId);
+            return { moveId, slot: i + 1, currentPp: m?.pp ?? 20 };
+          }),
         },
       },
     }),

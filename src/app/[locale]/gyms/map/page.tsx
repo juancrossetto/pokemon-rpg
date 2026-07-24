@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { typeColor } from "@/lib/type-colors";
 import { computeGymStatuses } from "@/lib/gym-status";
 import { GYM_MAP_POINTS } from "@/lib/gym-map";
+import { redirectIfInBattle } from "@/lib/battle-lock";
 
 export default async function GymMapPage({
   params,
@@ -17,6 +18,8 @@ export default async function GymMapPage({
     redirect({ href: "/login", locale });
     return null;
   }
+
+  await redirectIfInBattle(session.user.id, locale);
 
   const statuses = await computeGymStatuses(session.user.id);
   const badgeCount = statuses.filter((s) => s.badgeEarned).length;

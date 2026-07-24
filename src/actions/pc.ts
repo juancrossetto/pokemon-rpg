@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { lockUsers } from "@/lib/db-locks";
 import { allowAction } from "@/lib/rate-limit";
 import { TEAM_SIZE } from "@/lib/market-rules";
+import { blockIfInCombat } from "@/lib/battle-lock";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const MOVE_LIMIT = 30;
@@ -33,6 +34,8 @@ export async function withdrawPokemon(locale: string, formData: FormData) {
     return;
   }
   const userId = session.user.id;
+
+  if (await blockIfInCombat(userId, locale)) return;
 
   if (!allowAction(`pc:move:${userId}`, MOVE_LIMIT, RATE_LIMIT_WINDOW_MS)) {
     backToPc(locale, { error: "rate_limited" });
@@ -93,6 +96,8 @@ export async function depositPokemon(locale: string, formData: FormData) {
     return;
   }
   const userId = session.user.id;
+
+  if (await blockIfInCombat(userId, locale)) return;
 
   if (!allowAction(`pc:move:${userId}`, MOVE_LIMIT, RATE_LIMIT_WINDOW_MS)) {
     backToPc(locale, { error: "rate_limited" });

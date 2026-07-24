@@ -1,0 +1,144 @@
+import { prisma } from "@/lib/prisma";
+import { STRUGGLE_MOVE, type MoveSnapshot, type TurnEvent } from "@/lib/battle";
+import { pickWildMove } from "@/lib/battle-ai";
+import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
+import { calculateMaxHp } from "@/lib/stats";
+import { resolveWildCounter, type SideBattleState } from "@/lib/resolve-action";
+import type { StatusCondition } from "@/lib/status";
+
+type BattleWithFighters = {
+  id: string;
+  wildCurrentHp: number;
+  wildMaxHp: number;
+  wildLevel: number;
+  wildMoveIds: number[];
+  wildMovePp: number[];
+  playerStatus: StatusCondition | null;
+  wildStatus: StatusCondition | null;
+  playerSleepTurns: number;
+  wildSleepTurns: number;
+  playerAtkStage: number;
+  playerDefStage: number;
+  playerSpeStage: number;
+  wildAtkStage: number;
+  wildDefStage: number;
+  wildSpeStage: number;
+  pokemonInstance: {
+    id: string;
+    currentHp: number;
+    level: number;
+    nickname: string | null;
+    ptStrength: number;
+    ptDexterity: number;
+    ptIntelligence: number;
+    ptSpeed: number;
+    species: {
+      name: string;
+      types: string[];
+      baseHp: number;
+      baseAttack: number;
+      baseDefense: number;
+      baseSpAtk: number;
+      baseSpDef: number;
+      baseSpeed: number;
+    };
+  };
+  wildSpecies: {
+    name: string;
+    types: string[];
+    baseAttack: number;
+    baseDefense: number;
+    baseSpAtk: number;
+    baseSpDef: number;
+    baseSpeed: number;
+  };
+};
+
+export async function runWildCounterAttack(battle: BattleWithFighters): Promise<{
+  events: TurnEvent[];
+  playerHp: number;
+  wildHp: number;
+  counterAttack: TurnEvent | null;
+  statePatch: Record<string, unknown>;
+}> {
+  const instance = battle.pokemonInstance;
+  const playerMaxHp = calculateMaxHp(instance.species.baseHp, instance.level);
+  const playerBase = playerCombatantStats(instance.species, instance.level, instance);
+  const wildBase = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
+
+  let playerState: SideBattleState = {
+    hp: instance.currentHp,
+    maxHp: playerMaxHp,
+    status: battle.playerStatus ?? null,
+    sleepTurns: battle.playerSleepTurns ?? 0,
+    stages: {
+      atk: battle.playerAtkStage ?? 0,
+      def: battle.playerDefStage ?? 0,
+      spe: battle.playerSpeStage ?? 0,
+    },
+    name: instance.nickname ?? instance.species.name,
+    baseStats: playerBase,
+  };
+  let wildState: SideBattleState = {
+    hp: battle.wildCurrentHp,
+    maxHp: battle.wildMaxHp,
+    status: battle.wildStatus ?? null,
+    sleepTurns: battle.wildSleepTurns ?? 0,
+    stages: {
+      atk: battle.wildAtkStage ?? 0,
+      def: battle.wildDefStage ?? 0,
+      spe: battle.wildSpeStage ?? 0,
+    },
+    name: battle.wildSpecies.name,
+    baseStats: wildBase,
+  };
+
+  const wildMoves = await prisma.move.findMany({ where: { id: { in: battle.wildMoveIds } } });
+  const snapshots: MoveSnapshot[] = battle.wildMoveIds
+    .map((id) => wildMoves.find((m) => m.id === id))
+    .filter((m): m is NonNullable<typeof m> => !!m);
+
+  let wildMovePp =
+    (battle.wildMovePp?.length ?? 0) === battle.wildMoveIds.length && battle.wildMovePp
+      ? [...battle.wildMovePp]
+      : snapshots.map((m) => m.pp ?? 20);
+
+  const pick = pickWildMove(
+    snapshots.length > 0 ? snapshots : [STRUGGLE_MOVE],
+    wildBase,
+    playerBase,
+    playerState.hp,
+    wildMovePp,
+  );
+  const noPp = wildMovePp.length > 0 && wildMovePp.every((pp) => pp <= 0);
+  const wildMove = pick.id < 0 || noPp || snapshots.length === 0 ? STRUGGLE_MOVE : pick;
+  const wi = snapshots.findIndex((m) => m.id === wildMove.id);
+  if (wi >= 0 && wildMovePp[wi] > 0) wildMovePp[wi] -= 1;
+
+  const outcome = resolveWildCounter(wildMove, playerState, wildState);
+  playerState = outcome.player;
+  wildState = outcome.wild;
+
+  const counterAttack = outcome.events[0] ?? null;
+
+  return {
+    events: outcome.events,
+    playerHp: playerState.hp,
+    wildHp: wildState.hp,
+    counterAttack,
+    statePatch: {
+      wildCurrentHp: wildState.hp,
+      wildMovePp,
+      playerStatus: playerState.status,
+      wildStatus: wildState.status,
+      playerSleepTurns: playerState.sleepTurns,
+      wildSleepTurns: wildState.sleepTurns,
+      playerAtkStage: playerState.stages.atk,
+      playerDefStage: playerState.stages.def,
+      playerSpeStage: playerState.stages.spe,
+      wildAtkStage: wildState.stages.atk,
+      wildDefStage: wildState.stages.def,
+      wildSpeStage: wildState.stages.spe,
+    },
+  };
+}

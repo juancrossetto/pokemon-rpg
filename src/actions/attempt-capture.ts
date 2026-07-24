@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { attemptCapture as rollCapture } from "@/lib/capture";
-import { resolveMoveUse, type TurnEvent } from "@/lib/battle";
-import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
+import type { TurnEvent } from "@/lib/battle";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { calculateMaxHp, calculateStat, xpForLevel } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
+import { captureStatusBonus } from "@/lib/status";
+import { runWildCounterAttack } from "@/lib/wild-counter";
+import { revalidateCombatUi } from "@/lib/battle-lock";
 
 const MAX_LOG_LINES = 20;
 const TEAM_SIZE = 6;
@@ -29,7 +31,7 @@ export interface AttemptCaptureResult {
   caught: boolean;
   shakes: number;
   ballName: string;
-  counterAttack: TurnEvent | null; // si falla, el salvaje contraataca
+  counterAttack: TurnEvent | null;
   playerHpAfter: number;
   outcome: "caught" | "continues" | "lost" | "fainted";
   capturedPokemon: CapturedPokemonInfo | null;
@@ -58,14 +60,13 @@ export async function attemptCapture(
     }),
   ]);
   if (!battle) return null;
-  if (battle.gymId) return null; // no se puede atrapar el Pokémon de un líder de gimnasio
+  if (battle.gymId) return null;
   if (!inventoryItem || inventoryItem.quantity < 1) return null;
   if (inventoryItem.item.type !== "POKEBALL") return null;
 
   const ball = inventoryItem.item;
   const instance = battle.pokemonInstance;
 
-  // La ball se consume siempre, atrape o no — como en los juegos reales.
   await prisma.inventoryItem.update({
     where: { userId_itemId: { userId, itemId } },
     data: { quantity: { decrement: 1 } },
@@ -76,31 +77,33 @@ export async function attemptCapture(
     battle.wildMaxHp,
     battle.wildSpecies.captureRate,
     ball.catchMultiplier ?? 1,
+    captureStatusBonus(battle.wildStatus),
   );
 
   if (roll.caught) {
     const openSlot = await nextOpenTeamSlot(userId);
     const moveIds = await getMovesetForLevel(battle.wildSpeciesId, battle.wildLevel);
-    const log = [
-      ...battle.log,
-      `¡Lanzaste ${ball.name}!`,
-      `¡Atrapaste a ${battle.wildSpecies.name}!`,
-    ].slice(-MAX_LOG_LINES);
+    const moves = await prisma.move.findMany({ where: { id: { in: moveIds } } });
+    const log = [...battle.log, `ball:${ball.name}`, `caught:${battle.wildSpecies.name}`].slice(
+      -MAX_LOG_LINES,
+    );
 
-    const [newInstance, learnedMoves] = await Promise.all([
-      prisma.pokemonInstance.create({
-        data: {
-          ownerId: userId,
-          speciesId: battle.wildSpeciesId,
-          level: battle.wildLevel,
-          xp: xpForLevel(battle.wildLevel),
-          currentHp: battle.wildCurrentHp,
-          teamSlot: openSlot,
-          moves: { create: moveIds.map((moveId, i) => ({ moveId, slot: i + 1 })) },
+    const newInstance = await prisma.pokemonInstance.create({
+      data: {
+        ownerId: userId,
+        speciesId: battle.wildSpeciesId,
+        level: battle.wildLevel,
+        xp: xpForLevel(battle.wildLevel),
+        currentHp: battle.wildCurrentHp,
+        teamSlot: openSlot,
+        moves: {
+          create: moveIds.map((moveId, i) => {
+            const m = moves.find((x) => x.id === moveId);
+            return { moveId, slot: i + 1, currentPp: m?.pp ?? 20 };
+          }),
         },
-      }),
-      prisma.move.findMany({ where: { id: { in: moveIds } } }),
-    ]);
+      },
+    });
 
     await prisma.$transaction([
       prisma.battleSession.update({
@@ -113,8 +116,9 @@ export async function attemptCapture(
     ]);
 
     revalidatePath(`/${locale}/team`);
+    revalidateCombatUi(locale);
 
-    const movesById = new Map(learnedMoves.map((m) => [m.id, m]));
+    const movesById = new Map(moves.map((m) => [m.id, m]));
     const species = battle.wildSpecies;
 
     return {
@@ -147,68 +151,20 @@ export async function attemptCapture(
     };
   }
 
-  // Falló: la ball se rompe y el salvaje ataca (el jugador "gastó" su turno).
-  const wildMoves = await prisma.move.findMany({ where: { id: { in: battle.wildMoveIds } } });
-  const wildMove = wildMoves[Math.floor(Math.random() * wildMoves.length)];
-  const playerStats = playerCombatantStats(instance.species, instance.level, instance);
-  const wildStats = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
-
-  const result = resolveMoveUse(wildStats, playerStats, wildMove);
-  const wildName = battle.wildSpecies.name;
-  let playerHp = instance.currentHp;
-  const log = [...battle.log, `¡Lanzaste ${ball.name}!`, `${wildName} se liberó...`];
-  let counterAttack: TurnEvent | null = null;
-
-  if (result.hit && wildMove.category !== "STATUS") {
-    playerHp = Math.max(0, playerHp - result.damage);
-    log.push(`${wildName} usó ${wildMove.name} e hizo ${result.damage} de daño.`);
-    if (result.effectiveness > 1) log.push("¡Es súper efectivo!");
-    else if (result.effectiveness > 0 && result.effectiveness < 1) log.push("No es muy efectivo...");
-    else if (result.effectiveness === 0) log.push("No tuvo efecto...");
-    counterAttack = {
-      side: "wild",
-      moveName: wildMove.name,
-      hit: true,
-      isStatus: false,
-      damage: result.damage,
-      effectiveness: result.effectiveness,
-      hpAfter: playerHp,
-    };
-  } else if (!result.hit) {
-    log.push(`${wildName} usó ${wildMove.name} pero falló.`);
-    counterAttack = {
-      side: "wild",
-      moveName: wildMove.name,
-      hit: false,
-      isStatus: false,
-      damage: 0,
-      effectiveness: 1,
-      hpAfter: playerHp,
-    };
-  } else {
-    log.push(`${wildName} usó ${wildMove.name}.`);
-    counterAttack = {
-      side: "wild",
-      moveName: wildMove.name,
-      hit: true,
-      isStatus: true,
-      damage: 0,
-      effectiveness: 1,
-      hpAfter: playerHp,
-    };
-  }
-
+  const counter = await runWildCounterAttack(battle);
+  const playerHp = counter.playerHp;
   const fainted = playerHp <= 0;
   const mustSwitch = fainted && (await hasHealthyBackup(userId, instance.id));
   const lostBattle = fainted && !mustSwitch;
-  if (fainted) log.push(`${instance.nickname ?? instance.species.name} se debilitó.`);
-  const finalLog = log.slice(-MAX_LOG_LINES);
+  const finalLog = [...battle.log, `ball:${ball.name}`, "brokeFree"].slice(-MAX_LOG_LINES);
 
   await prisma.$transaction([
     prisma.pokemonInstance.update({ where: { id: instance.id }, data: { currentHp: playerHp } }),
     prisma.battleSession.update({
       where: { id: battle.id },
-      data: lostBattle ? { status: "LOST", log: finalLog } : { log: finalLog },
+      data: lostBattle
+        ? { status: "LOST", log: finalLog, ...counter.statePatch }
+        : { log: finalLog, ...counter.statePatch },
     }),
     ...(lostBattle
       ? [prisma.battleLog.create({ data: { kind: "PVE_WILD" as const, userId, userWon: false } })]
@@ -221,7 +177,7 @@ export async function attemptCapture(
     caught: false,
     shakes: roll.shakes,
     ballName: ball.name,
-    counterAttack,
+    counterAttack: counter.counterAttack,
     playerHpAfter: playerHp,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
     capturedPokemon: null,
@@ -237,5 +193,5 @@ async function nextOpenTeamSlot(userId: string): Promise<number | null> {
   for (let slot = 1; slot <= TEAM_SIZE; slot++) {
     if (!taken.has(slot)) return slot;
   }
-  return null; // equipo lleno → va al almacenamiento (PC)
+  return null;
 }

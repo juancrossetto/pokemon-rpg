@@ -1,26 +1,30 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { submitBattleMove, type XpSummaryEntry } from "@/actions/battle-move";
 import { fleeBattle } from "@/actions/flee-battle";
 import { attemptCapture, type CapturedPokemonInfo } from "@/actions/attempt-capture";
 import { switchPokemon } from "@/actions/switch-pokemon";
 import { applyBattleItem } from "@/actions/use-item";
 import { setPokemonNickname } from "@/actions/rename-pokemon";
+import { abandonGymRun } from "@/actions/abandon-gym-run";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { PokeballIcon } from "@/components/pokeball-icon";
+import { BattleSprite } from "@/components/battle-sprite";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
 import { typeColor } from "@/lib/type-colors";
-import { gymBadgeImageUrl, gymLeaderImageUrl } from "@/lib/gym-art";
+import { gymBadgeImageUrl, gymLeaderPortraitUrl } from "@/lib/gym-art";
+import { playBattleSfx, unlockBattleAudio } from "@/lib/battle-sfx";
+import { statusLabelKey, type StatusCondition } from "@/lib/status";
 import type { TurnEvent } from "@/lib/battle";
 
-const LUNGE_MS = 320;
-const IMPACT_MS = 480;
-const STATUS_MS = 550;
-const MISS_MS = 450;
+const LUNGE_MS = 380;
+const IMPACT_MS = 560;
+const STATUS_MS = 620;
+const MISS_MS = 500;
 const THROW_MS = 700;
 const FAINT_MS = 650;
 const RECALL_MS = 450;
@@ -33,7 +37,10 @@ function delay(ms: number) {
 
 interface Combatant {
   name: string;
+  /** Nombre de especie (PokeAPI) — para el GIF animado de Showdown. */
+  speciesName: string;
   level: number;
+  /** Official artwork — fallback si el GIF falla. */
   spriteUrl: string;
 }
 
@@ -53,10 +60,19 @@ interface PotionStack {
 interface RosterMember {
   instanceId: string;
   name: string;
+  speciesName: string;
   level: number;
   spriteUrl: string;
   currentHp: number;
   maxHp: number;
+}
+
+export interface OpponentPartyMember {
+  slot: number;
+  name: string;
+  spriteUrl: string;
+  fainted: boolean;
+  active: boolean;
 }
 
 type View = "menu" | "moves" | "bag" | "team";
@@ -70,14 +86,21 @@ interface LogEntry {
 export interface BattleArenaProps {
   battleId: string;
   locale: string;
+  trainerName: string;
+  opponentName: string | null;
   player: Combatant & { instanceId: string; currentHp: number; maxHp: number };
   wild: Combatant & { currentHp: number; maxHp: number; types: string[] };
-  moves: { moveId: number; name: string; type: string; pp: number }[];
+  moves: { moveId: number; name: string; type: string; pp: number; maxPp: number }[];
   initialLog: string[];
   pokeballs: PokeballStack[];
   potions: PotionStack[];
-  roster: RosterMember[];
+  /** Equipo completo del jugador (incluye el activo). */
+  party: RosterMember[];
+  opponentParty: OpponentPartyMember[];
+  playerStatus: string | null;
+  wildStatus: string | null;
   gymId: string | null;
+  gymRunId: string | null;
   gymType: string | null;
   gymName: string | null;
   gymLeaderName: string | null;
@@ -87,36 +110,63 @@ export interface BattleArenaProps {
 export function BattleArena({
   battleId,
   locale,
+  trainerName,
+  opponentName,
   player,
   wild,
   moves,
   initialLog,
   pokeballs,
   potions,
-  roster,
+  party: initialParty,
+  opponentParty: initialOpponentParty,
+  playerStatus: initialPlayerStatus,
+  wildStatus: initialWildStatus,
   gymId,
+  gymRunId,
   gymType,
   gymName,
   gymLeaderName,
   gymBadgeName,
 }: BattleArenaProps) {
   const t = useTranslations("battle");
+  const tLog = useTranslations("battle.log");
   const tTeam = useTranslations("team");
+  const router = useRouter();
   const isGymBattle = gymId !== null;
-  const leaderImage = gymLeaderName ? gymLeaderImageUrl(gymLeaderName) : null;
+  const leaderPortrait = gymLeaderName ? gymLeaderPortraitUrl(gymLeaderName) : null;
+  const foeLabel = opponentName ?? t("wildFoe");
+
+  function translateBootLog(raw: string): string {
+    if (raw.startsWith("appear:")) return tLog("appear", { name: raw.slice(7) });
+    if (raw.startsWith("challengeTrainer:")) return raw; // shown as-is key fallback
+    if (raw.startsWith("sendOut:")) return tLog("used", { name: raw.slice(8), move: "—" }).replace("—", "");
+    return raw;
+  }
 
   const [activePlayer, setActivePlayer] = useState({
     instanceId: player.instanceId,
     name: player.name,
+    speciesName: player.speciesName,
     level: player.level,
     spriteUrl: player.spriteUrl,
   });
   const [playerHp, setPlayerHp] = useState(player.currentHp);
   const [playerMaxHp, setPlayerMaxHp] = useState(player.maxHp);
-  const [activeWild, setActiveWild] = useState({ name: wild.name, level: wild.level, spriteUrl: wild.spriteUrl, types: wild.types });
+  const [activeWild, setActiveWild] = useState({
+    name: wild.name,
+    speciesName: wild.speciesName,
+    level: wild.level,
+    spriteUrl: wild.spriteUrl,
+    types: wild.types,
+  });
   const [wildHp, setWildHp] = useState(wild.currentHp);
   const [wildMaxHp, setWildMaxHp] = useState(wild.maxHp);
-  const [log, setLog] = useState<LogEntry[]>(() => initialLog.map((text) => ({ text, side: "system" as const })));
+  const [playerStatus, setPlayerStatus] = useState<string | null>(initialPlayerStatus);
+  const [wildStatus, setWildStatus] = useState<string | null>(initialWildStatus);
+  const [log, setLog] = useState<LogEntry[]>(() =>
+    initialLog.map((text) => ({ text: translateBootLog(text), side: "system" as const })),
+  );
   const [attackingSide, setAttackingSide] = useState<"player" | "wild" | null>(null);
   const [shakingSide, setShakingSide] = useState<"player" | "wild" | null>(null);
   const [faintingSide, setFaintingSide] = useState<"player" | "wild" | null>(null);
@@ -127,6 +177,16 @@ export function BattleArena({
   const [ballAnim, setBallAnim] = useState<"recall" | "throw" | null>("throw");
   const [playerHealing, setPlayerHealing] = useState(false);
   const [damagePopup, setDamagePopup] = useState<{ side: "player" | "wild"; text: string; key: number } | null>(null);
+  const [moveFx, setMoveFx] = useState<{
+    key: number;
+    side: "player" | "wild";
+    moveName: string;
+    moveType: string;
+    mode: "hit" | "status" | "miss";
+    effectiveness: number;
+  } | null>(null);
+  const [arenaFlash, setArenaFlash] = useState<string | null>(null);
+  const [effPopup, setEffPopup] = useState<{ text: string; key: number } | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [outcome, setOutcome] = useState<Outcome>("ongoing");
   const [xpSummary, setXpSummary] = useState<XpSummaryEntry[] | null>(null);
@@ -137,13 +197,17 @@ export function BattleArena({
   const [defaultView, setDefaultView] = useState<View>("menu");
   const [ballStacks, setBallStacks] = useState(pokeballs);
   const [potionStacks, setPotionStacks] = useState(potions);
-  const [teamRoster, setTeamRoster] = useState(roster);
+  const [party, setParty] = useState(initialParty);
+  const [opponentParty, setOpponentParty] = useState(initialOpponentParty);
   const [mustSwitch, setMustSwitch] = useState(false);
   const [activeMoves, setActiveMoves] = useState(moves);
   const logEndRef = useRef<HTMLDivElement>(null);
   const [capturedInfo, setCapturedInfo] = useState<CapturedPokemonInfo | null>(null);
   const [nicknameInput, setNicknameInput] = useState("");
   const [savingNickname, setSavingNickname] = useState(false);
+  const [confirmLeaveGym, setConfirmLeaveGym] = useState(false);
+
+  const teamRoster = party.filter((m) => m.instanceId !== activePlayer.instanceId);
 
   const startErrors = {
     no_lead: t("errors.noLead"),
@@ -189,42 +253,148 @@ export function BattleArena({
   }
 
   function playEvent(event: TurnEvent): Promise<void> {
+    const activeId = activePlayer.instanceId;
     return new Promise((resolve) => {
+      const color = typeColor(event.moveType);
+      const fxKey = Date.now();
+      const mode = event.skipped ? "miss" : !event.hit ? "miss" : event.isStatus ? "status" : "hit";
+
+      if (event.skipped === "asleep" || event.skipped === "paralyzed" || event.skipped === "disobey") {
+        playBattleSfx("status");
+      } else if (!event.hit) {
+        playBattleSfx("miss");
+      } else if (event.critical) {
+        playBattleSfx("crit");
+      } else if (event.effectiveness > 1) {
+        playBattleSfx("superEffective");
+      } else if (!event.isStatus) {
+        playBattleSfx("hit");
+      } else {
+        playBattleSfx("status");
+      }
+
+      setMoveFx({
+        key: fxKey,
+        side: event.side,
+        moveName: event.moveName,
+        moveType: event.moveType,
+        mode: mode === "miss" ? "miss" : mode === "status" ? "status" : "hit",
+        effectiveness: event.effectiveness,
+      });
+
+      if (event.skipped) {
+        if (event.skipped === "asleep") appendLog(tLog("asleep", { name: nameFor(event.side) }), event.side);
+        else if (event.skipped === "paralyzed") appendLog(tLog("paralyzed", { name: nameFor(event.side) }), event.side);
+        else appendLog(tLog("disobey", { name: nameFor(event.side) }), event.side);
+        setTimeout(() => {
+          setMoveFx(null);
+          resolve();
+        }, STATUS_MS);
+        return;
+      }
+
       setAttackingSide(event.side);
+
       setTimeout(() => {
         setAttackingSide(null);
 
         if (!event.hit) {
-          appendLog(`¡${nameFor(event.side)} usó ${event.moveName} pero falló!`, event.side);
-          setTimeout(resolve, MISS_MS);
+          appendLog(tLog("miss", { name: nameFor(event.side), move: event.moveName }), event.side);
+          setTimeout(() => {
+            setMoveFx(null);
+            resolve();
+          }, MISS_MS);
           return;
         }
 
         if (event.isStatus) {
-          appendLog(`¡${nameFor(event.side)} usó ${event.moveName}!`, event.side);
-          setTimeout(resolve, STATUS_MS);
+          appendLog(tLog("used", { name: nameFor(event.side), move: event.moveName }), event.side);
+          if (event.statusApplied) {
+            const foe = event.side === "player" ? "wild" : "player";
+            const label = t(statusLabelKey(event.statusApplied as StatusCondition));
+            appendLog(tLog("statusApplied", { name: nameFor(foe), status: label }), foe);
+            if (foe === "wild") setWildStatus(event.statusApplied);
+            else setPlayerStatus(event.statusApplied);
+          }
+          if (event.statChange) {
+            const foe = event.side === "player" ? "wild" : "player";
+            const statKey =
+              event.statChange.stat === "atk"
+                ? "statAtk"
+                : event.statChange.stat === "def"
+                  ? "statDef"
+                  : "statSpe";
+            appendLog(
+              tLog("statChange", {
+                name: nameFor(foe),
+                stat: tLog(statKey),
+                dir: event.statChange.stages < 0 ? tLog("statDown") : tLog("statUp"),
+              }),
+              foe,
+            );
+          }
+          setArenaFlash(color);
+          setTimeout(() => setArenaFlash(null), 320);
+          setTimeout(() => {
+            setMoveFx(null);
+            resolve();
+          }, STATUS_MS);
           return;
         }
 
         const defenderSide = event.side === "player" ? "wild" : "player";
         setShakingSide(defenderSide);
-        setDamagePopup({ side: defenderSide, text: `-${event.damage}`, key: Date.now() });
+        setArenaFlash(color);
+        setDamagePopup({ side: defenderSide, text: `-${event.damage}`, key: fxKey });
         if (defenderSide === "wild") setWildHp(event.hpAfter);
-        else setPlayerHp(event.hpAfter);
+        else {
+          setPlayerHp(event.hpAfter);
+          setParty((prev) =>
+            prev.map((m) => (m.instanceId === activeId ? { ...m, currentHp: event.hpAfter } : m)),
+          );
+        }
 
-        appendLog(`¡${nameFor(event.side)} usó ${event.moveName}!`, event.side);
-        if (event.effectiveness > 1) appendLog("¡Es muy efectivo!", event.side);
-        else if (event.effectiveness > 0 && event.effectiveness < 1) appendLog("No es muy efectivo...", event.side);
-        else if (event.effectiveness === 0) appendLog("No tuvo efecto...", event.side);
-        appendLog(`¡${nameFor(defenderSide)} recibió ${event.damage} de daño!`, defenderSide);
+        if (event.effectiveness > 1) {
+          setEffPopup({ text: tLog("superEffective"), key: fxKey });
+        } else if (event.effectiveness > 0 && event.effectiveness < 1) {
+          setEffPopup({ text: tLog("notVeryEffective"), key: fxKey });
+        } else if (event.effectiveness === 0) {
+          setEffPopup({ text: tLog("noEffect"), key: fxKey });
+        } else if (event.critical) {
+          setEffPopup({ text: tLog("critical"), key: fxKey });
+        }
+
+        appendLog(tLog("used", { name: nameFor(event.side), move: event.moveName }), event.side);
+        if (event.critical) appendLog(tLog("critical"), event.side);
+        if (event.effectiveness > 1) appendLog(tLog("superEffective"), event.side);
+        else if (event.effectiveness > 0 && event.effectiveness < 1) appendLog(tLog("notVeryEffective"), event.side);
+        else if (event.effectiveness === 0) appendLog(tLog("noEffect"), event.side);
+        appendLog(tLog("damage", { name: nameFor(defenderSide), damage: event.damage }), defenderSide);
+
+        if (event.recoilDamage) {
+          appendLog(tLog("recoil", { name: nameFor(event.side), damage: event.recoilDamage }), event.side);
+          if (event.side === "player") setPlayerHp((hp) => Math.max(0, hp - (event.recoilDamage ?? 0)));
+          else setWildHp((hp) => Math.max(0, hp - (event.recoilDamage ?? 0)));
+        }
+        if (event.residualDamage && event.residualHpAfter != null) {
+          appendLog(
+            tLog("residual", { name: nameFor(event.side), damage: event.residualDamage }),
+            event.side,
+          );
+          if (event.side === "player") setPlayerHp(event.residualHpAfter);
+          else setWildHp(event.residualHpAfter);
+        }
 
         const defenderMaxHp = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
         if (event.hpAfter > 0 && event.hpAfter / defenderMaxHp <= 0.1) {
-          appendLog(`¡${nameFor(defenderSide)} está a punto de debilitarse!`, defenderSide);
+          appendLog(tLog("lowHp", { name: nameFor(defenderSide) }), defenderSide);
         }
 
+        setTimeout(() => setArenaFlash(null), 280);
         setTimeout(() => {
           setShakingSide(null);
+          setMoveFx(null);
+          setEffPopup(null);
           resolve();
         }, IMPACT_MS);
       }, LUNGE_MS);
@@ -232,19 +402,36 @@ export function BattleArena({
   }
 
   async function playFaintAndFinish(side: "player" | "wild", finalOutcome: Outcome) {
-    appendLog(`¡${nameFor(side)} se debilitó!`, side);
+    appendLog(tLog("fainted", { name: nameFor(side) }), side);
+    playBattleSfx("faint");
     setFaintingSide(side);
+    if (side === "wild") {
+      setOpponentParty((prev) =>
+        prev.map((m) => (m.active ? { ...m, fainted: true, active: false } : m)),
+      );
+    } else {
+      setParty((prev) =>
+        prev.map((m) =>
+          m.instanceId === activePlayer.instanceId ? { ...m, currentHp: 0 } : m,
+        ),
+      );
+    }
     await delay(FAINT_MS);
     setOutcome(finalOutcome);
+    if (finalOutcome === "won" || finalOutcome === "lost" || finalOutcome === "trainer_cleared") {
+      router.refresh();
+    }
   }
 
-  // El Pokémon activo se debilitó pero quedan otros con vida: los juegos
-  // reales no terminan el combate acá, fuerzan a elegir un reemplazo. El
-  // sprite se queda "caído" (no se limpia faintingSide) hasta que el
-  // reemplazo entra, para no mostrar un parpadeo del sprite debilitado.
   async function playFaintThenForceSwitch() {
-    appendLog(`¡${activePlayer.name} se debilitó!`, "player");
+    appendLog(tLog("fainted", { name: activePlayer.name }), "player");
+    playBattleSfx("faint");
     setFaintingSide("player");
+    setParty((prev) =>
+      prev.map((m) =>
+        m.instanceId === activePlayer.instanceId ? { ...m, currentHp: 0 } : m,
+      ),
+    );
     await delay(FAINT_MS);
     setMustSwitch(true);
     setView("team");
@@ -252,12 +439,36 @@ export function BattleArena({
 
   // Batalla de gimnasio: el Pokémon actual del oponente (entrenador o líder)
   // cayó pero le queda equipo — el combate sigue, no termina acá.
-  async function playWildFaintThenReveal(next: { name: string; level: number; spriteUrl: string; maxHp: number; types: string[] }) {
+  async function playWildFaintThenReveal(next: {
+    name: string;
+    speciesName: string;
+    level: number;
+    spriteUrl: string;
+    maxHp: number;
+    types: string[];
+  }) {
     appendLog(`¡${activeWild.name} debilitado!`, "wild");
     setFaintingSide("wild");
+    setOpponentParty((prev) => {
+      let promoted = false;
+      return prev.map((m) => {
+        if (m.active) return { ...m, fainted: true, active: false };
+        if (!m.fainted && !promoted) {
+          promoted = true;
+          return { ...m, active: true };
+        }
+        return m;
+      });
+    });
     await delay(FAINT_MS);
     setFaintingSide(null);
-    setActiveWild({ name: next.name, level: next.level, spriteUrl: next.spriteUrl, types: next.types });
+    setActiveWild({
+      name: next.name,
+      speciesName: next.speciesName,
+      level: next.level,
+      spriteUrl: next.spriteUrl,
+      types: next.types,
+    });
     setWildHp(next.maxHp);
     setWildMaxHp(next.maxHp);
     setWildEntering(true);
@@ -267,6 +478,7 @@ export function BattleArena({
 
   async function handleMove(moveId: number) {
     if (isAnimating || outcome !== "ongoing" || mustSwitch) return;
+    unlockBattleAudio();
     setIsAnimating(true);
     setView("menu");
 
@@ -281,15 +493,24 @@ export function BattleArena({
     }
 
     setPlayerMaxHp(result.playerMaxHp);
+    setPlayerStatus(result.playerStatus);
+    setWildStatus(result.wildStatus);
+    setActiveMoves((prev) =>
+      prev.map((m) => {
+        const upd = result.playerMovesPp.find((p) => p.moveId === m.moveId);
+        return upd ? { ...m, pp: upd.pp } : m;
+      }),
+    );
     if (result.xpGained) {
-      appendLog(`¡Ganaste ${result.xpGained} puntos de experiencia!`);
+      appendLog(`+${result.xpGained} XP`);
     }
     if (result.xpSummary) {
       setXpSummary(result.xpSummary);
     }
 
     if (result.badgeEarned) {
-      appendLog("¡Conseguiste la medalla!");
+      appendLog(t("badgeEarned"));
+      playBattleSfx("badge");
       setBadgeEarned(true);
     }
 
@@ -312,36 +533,23 @@ export function BattleArena({
   }
 
   async function handleFlee() {
-    if (isAnimating || mustSwitch || isGymBattle) return;
+    if (isAnimating || mustSwitch || isGymBattle || outcome !== "ongoing") return;
     setIsAnimating(true);
     setView("menu");
 
-    const result = await fleeBattle(battleId, locale);
-    if (!result) {
-      setIsAnimating(false);
-      return;
-    }
+    try {
+      const result = await fleeBattle(battleId, locale);
+      if (!result?.fled) return;
 
-    if (result.fled) {
-      appendLog("¡Escapaste con éxito!", "player");
+      appendLog(tLog("fled"), "player");
       setOutcome("fled");
+      // Refresca el layout para desbloquear el navbar ("In battle").
+      router.refresh();
+    } catch {
+      appendLog(tLog("fleeFailed"), "system");
+    } finally {
       setIsAnimating(false);
-      return;
     }
-
-    appendLog("¡No pudiste escapar!", "player");
-    if (result.counterAttack) {
-      await playEvent(result.counterAttack);
-    }
-    if (result.outcome === "lost") {
-      await playFaintAndFinish("player", "lost");
-    } else if (result.outcome === "fainted") {
-      await playFaintThenForceSwitch();
-    } else {
-      setView(defaultView);
-    }
-
-    setIsAnimating(false);
   }
 
   async function handleThrowBall(itemId: string, ballName: string) {
@@ -349,6 +557,7 @@ export function BattleArena({
     setIsAnimating(true);
     setView("menu");
     appendLog(`¡Lanzaste ${ballName}!`, "player");
+    playBattleSfx("ball");
 
     setBallStacks((prev) =>
       prev.map((b) => (b.itemId === itemId ? { ...b, quantity: b.quantity - 1 } : b)).filter((b) => b.quantity > 0),
@@ -395,6 +604,7 @@ export function BattleArena({
     }
     setCapturedInfo(null);
     setOutcome("caught");
+    router.refresh();
   }
 
   async function handleUsePotion(itemId: string) {
@@ -417,6 +627,11 @@ export function BattleArena({
     }
 
     setPlayerHp(result.healedTo);
+    setParty((prev) =>
+      prev.map((m) =>
+        m.instanceId === activePlayer.instanceId ? { ...m, currentHp: result.healedTo } : m,
+      ),
+    );
     appendLog(`Usaste ${result.itemName}. ${activePlayer.name} recuperó ${result.healedBy} HP.`, "player");
 
     if (result.counterAttack) {
@@ -466,16 +681,24 @@ export function BattleArena({
     setActivePlayer({
       instanceId: result.newPlayer.instanceId,
       name: result.newPlayer.name,
+      speciesName: result.newPlayer.speciesName,
       level: result.newPlayer.level,
       spriteUrl: result.newPlayer.spriteUrl,
     });
     setPlayerHp(member.currentHp);
     setPlayerMaxHp(result.newPlayer.maxHp);
     setActiveMoves(result.newPlayer.moves);
-    setTeamRoster((prev) => [
-      ...prev.filter((m) => m.instanceId !== member.instanceId),
-      { instanceId: outgoing.instanceId, name: outgoing.name, level: outgoing.level, spriteUrl: outgoing.spriteUrl, currentHp: playerHp, maxHp: playerMaxHp },
-    ]);
+    setParty((prev) =>
+      prev.map((m) => {
+        if (m.instanceId === outgoing.instanceId) {
+          return { ...m, currentHp: playerHp, maxHp: playerMaxHp };
+        }
+        if (m.instanceId === member.instanceId) {
+          return { ...m, maxHp: result.newPlayer.maxHp };
+        }
+        return m;
+      }),
+    );
     setPlayerEntering(true);
     setTimeout(() => setPlayerEntering(false), 400);
     if (forced) setMustSwitch(false);
@@ -617,10 +840,10 @@ export function BattleArena({
         {badgeEarned && gymType && (
           <div className="glass-panel rounded-xl border border-tertiary/40 p-6 w-full max-w-sm flex flex-col items-center gap-3">
             <p className="text-label-sm uppercase text-tertiary">{t("badgeEarned")}</p>
-            {leaderImage && (gymName || gymLeaderName) && (
+            {leaderPortrait && (gymName || gymLeaderName) && (
               <div className="flex items-center gap-3 w-full">
-                <div className="w-16 h-20 rounded-lg overflow-hidden border-2 border-tertiary/50 shrink-0">
-                  <Image src={leaderImage} alt={gymLeaderName ?? ""} width={64} height={80} className="w-full h-full object-cover object-top" />
+                <div className="w-16 h-20 rounded-lg overflow-hidden border-2 border-tertiary/50 shrink-0 bg-surface-container-high">
+                  <Image src={leaderPortrait} alt={gymLeaderName ?? ""} width={64} height={80} className="w-full h-full object-cover object-top" />
                 </div>
                 <div className="text-left">
                   {gymName && <p className="text-label-md text-on-surface font-bold">{gymName}</p>}
@@ -641,13 +864,50 @@ export function BattleArena({
           >
             {t("goHeal")}
           </Link>
-        ) : outcome === "trainer_cleared" && gymId ? (
-          <Link
-            href={`/gyms/${gymId}/run`}
-            className="rounded-lg bg-pokeball-red px-6 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
-          >
-            {t("backToCorridor")}
-          </Link>
+        ) : outcome === "trainer_cleared" && gymId && gymRunId ? (
+          <div className="w-full max-w-sm flex flex-col gap-3">
+            <p className="text-label-md text-on-surface-variant">{t("advancePrompt")}</p>
+            {!confirmLeaveGym ? (
+              <>
+                <Link
+                  href={`/gyms/${gymId}/run`}
+                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white font-bold hover:bg-pokeball-red/80 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  {t("continueChallenge")}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setConfirmLeaveGym(true)}
+                  className="w-full rounded-lg border border-white/20 px-6 py-2.5 text-label-md text-on-surface-variant hover:text-error hover:border-error/40 transition-colors"
+                >
+                  {t("leaveGym")}
+                </button>
+              </>
+            ) : (
+              <div className="glass-panel rounded-xl border border-error/40 p-4 text-left flex flex-col gap-3">
+                <p className="text-label-md text-error font-bold">{t("leaveGymTitle")}</p>
+                <p className="text-label-sm text-on-surface-variant">{t("leaveGymBody")}</p>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmLeaveGym(false)}
+                    className="w-full rounded-lg bg-pokeball-red px-4 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
+                  >
+                    {t("continueChallenge")}
+                  </button>
+                  <form action={abandonGymRun.bind(null, gymRunId, locale)}>
+                    <button
+                      type="submit"
+                      className="w-full rounded-lg border border-error/40 px-4 py-2 text-label-md text-error hover:bg-error/10 transition-colors"
+                    >
+                      {t("confirmLeaveGym")}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
         ) : isGymBattle ? (
           <Link
             href="/gyms"
@@ -666,10 +926,11 @@ export function BattleArena({
   const hasPotions = potionStacks.length > 0;
   const hasHealthyBackup = teamRoster.some((m) => m.currentHp > 0);
 
+  const seFlash = moveFx?.mode === "hit" && (moveFx.effectiveness ?? 1) > 1;
   const playerSpriteClass = [
-    "w-24 h-24 md:w-32 md:h-32 object-contain",
+    "w-28 h-28 md:w-40 md:h-40 object-contain drop-shadow-lg",
     attackingSide === "player" ? "sprite-lunge-right" : "",
-    shakingSide === "player" ? "sprite-shake sprite-flash" : "",
+    shakingSide === "player" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "player" ? "sprite-faint" : "",
     ballAnim === "recall" ? "sprite-recall" : "",
     playerEntering ? "sprite-enter" : "",
@@ -679,69 +940,261 @@ export function BattleArena({
     .join(" ");
 
   const wildSpriteClass = [
-    "w-24 h-24 md:w-32 md:h-32 object-contain scale-x-[-1]",
+    "w-28 h-28 md:w-40 md:h-40 object-contain drop-shadow-lg",
     attackingSide === "wild" ? "sprite-lunge-left" : "",
-    shakingSide === "wild" ? "sprite-shake sprite-flash" : "",
+    shakingSide === "wild" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "wild" ? "sprite-faint" : "",
     wildEntering ? "sprite-enter" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
+  const emptyPlayerSlots = Math.max(0, 6 - party.length);
+  const emptyOpponentSlots = Math.max(0, 6 - opponentParty.length);
+
   return (
-    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
-      <div className="mx-auto max-w-4xl">
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <HpCard name={activePlayer.name} levelLabel={t("level", { level: activePlayer.level })} currentHp={playerHp} maxHp={playerMaxHp} labelHp={t("hp")} />
-          <HpCard name={activeWild.name} levelLabel={t("level", { level: activeWild.level })} currentHp={wildHp} maxHp={wildMaxHp} labelHp={t("hp")} align="right" />
+    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-4 md:py-6">
+      <div className="mx-auto max-w-6xl flex flex-col gap-3">
+        {/* Mobile: opponent party strip */}
+        <div className="lg:hidden">
+          <PartySidebar
+            name={foeLabel}
+            portraitUrl={isGymBattle ? leaderPortrait : null}
+            align="right"
+            compact
+          >
+            {opponentParty.map((m) => (
+              <PartyIcon
+                key={`o-${m.slot}`}
+                spriteUrl={m.spriteUrl}
+                name={m.name}
+                fainted={m.fainted}
+                active={m.active}
+              />
+            ))}
+            {Array.from({ length: emptyOpponentSlots }).map((_, i) => (
+              <EmptyPartySlot key={`oe-${i}`} />
+            ))}
+          </PartySidebar>
         </div>
 
-        <div className="glass-panel rounded-xl border border-white/10 p-6 md:p-10 flex items-center justify-between gap-4 mb-4 relative overflow-hidden min-h-[180px]">
-          <div className="relative">
-            {damagePopup?.side === "player" && (
-              <span
-                key={damagePopup.key}
-                className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
-              >
-                {damagePopup.text}
-              </span>
-            )}
-            {!playerHidden && activePlayer.spriteUrl && (
-              <Image src={activePlayer.spriteUrl} alt={activePlayer.name} width={128} height={128} className={playerSpriteClass} />
-            )}
-            {ballAnim && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <PokeballIcon
-                  className={`w-10 h-10 drop-shadow-[0_0_8px_rgba(238,21,21,0.6)] ${
-                    ballAnim === "throw" ? "pokeball-throw-icon" : "pokeball-appear-icon"
-                  }`}
+        <div className="grid grid-cols-1 lg:grid-cols-[132px_minmax(0,1fr)_132px] gap-3 items-stretch">
+          {/* Player sidebar (desktop) */}
+          <div className="hidden lg:block">
+            <PartySidebar name={trainerName} portraitUrl={null} align="left">
+              {party.map((m) => (
+                <PartyIcon
+                  key={m.instanceId}
+                  spriteUrl={m.spriteUrl}
+                  name={m.name}
+                  fainted={m.currentHp <= 0}
+                  active={m.instanceId === activePlayer.instanceId}
+                  hpPct={(m.currentHp / m.maxHp) * 100}
                 />
+              ))}
+              {Array.from({ length: emptyPlayerSlots }).map((_, i) => (
+                <EmptyPartySlot key={`pe-${i}`} />
+              ))}
+            </PartySidebar>
+          </div>
+
+          {/* Arena */}
+          <div
+            className={`battle-arena-field relative overflow-hidden rounded-xl border border-white/10 min-h-[260px] md:min-h-[320px] ${
+              arenaFlash ? "arena-type-flash" : ""
+            }`}
+            style={arenaFlash ? ({ "--arena-flash-color": arenaFlash } as CSSProperties) : undefined}
+          >
+            <HpPlate
+              className="absolute top-3 right-3 z-20 w-[min(100%,220px)]"
+              name={activeWild.name}
+              levelLabel={t("level", { level: activeWild.level })}
+              currentHp={wildHp}
+              maxHp={wildMaxHp}
+              status={wildStatus}
+              align="right"
+            />
+            <HpPlate
+              className="absolute bottom-3 left-3 z-20 w-[min(100%,220px)]"
+              name={activePlayer.name}
+              levelLabel={t("level", { level: activePlayer.level })}
+              currentHp={playerHp}
+              maxHp={playerMaxHp}
+              status={playerStatus}
+              align="left"
+            />
+
+            {moveFx && (
+              <div
+                key={`banner-${moveFx.key}`}
+                className="move-banner absolute top-14 left-1/2 z-30 pointer-events-none"
+                style={{
+                  backgroundColor: `${typeColor(moveFx.moveType)}ee`,
+                  boxShadow: `0 0 18px ${typeColor(moveFx.moveType)}88`,
+                }}
+              >
+                <span className="uppercase text-[10px] tracking-wider opacity-90">{moveFx.moveType}</span>
+                <span className="font-black text-sm md:text-base">{moveFx.moveName}</span>
               </div>
             )}
-          </div>
 
-          <span className="text-headline-md text-pokeball-red font-black shrink-0">VS</span>
+            {moveFx?.mode === "hit" && (
+              <div
+                key={`beam-${moveFx.key}`}
+                className={`move-beam absolute top-[42%] z-10 pointer-events-none ${
+                  moveFx.side === "player" ? "move-beam-right" : "move-beam-left"
+                }`}
+                style={{
+                  background: `linear-gradient(90deg, transparent, ${typeColor(moveFx.moveType)}, transparent)`,
+                  boxShadow: `0 0 12px ${typeColor(moveFx.moveType)}`,
+                }}
+              />
+            )}
 
-          <div className="relative">
-            {damagePopup?.side === "wild" && (
+            {moveFx?.mode === "hit" && (
+              <div
+                key={`orb-${moveFx.key}`}
+                className={`move-orb absolute top-[42%] z-10 pointer-events-none ${
+                  moveFx.side === "player" ? "move-orb-right" : "move-orb-left"
+                }`}
+                style={{
+                  backgroundColor: typeColor(moveFx.moveType),
+                  boxShadow: `0 0 16px 4px ${typeColor(moveFx.moveType)}`,
+                }}
+              />
+            )}
+
+            {effPopup && (
               <span
-                key={damagePopup.key}
-                className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
+                key={`eff-${effPopup.key}`}
+                className="eff-popup absolute top-1/2 left-1/2 z-30 pointer-events-none text-label-md font-black tracking-wide"
               >
-                {damagePopup.text}
+                {effPopup.text}
               </span>
             )}
-            {activeWild.spriteUrl && (
-              <Image src={activeWild.spriteUrl} alt={activeWild.name} width={128} height={128} className={wildSpriteClass} />
-            )}
+
+            {/* Opponent sprite — upper right */}
+            <div className="absolute right-[8%] top-[18%] md:right-[12%] md:top-[14%] z-[1]">
+              {damagePopup?.side === "wild" && (
+                <span
+                  key={damagePopup.key}
+                  className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
+                >
+                  {damagePopup.text}
+                </span>
+              )}
+              {moveFx?.mode === "hit" && shakingSide === "wild" && (
+                <span
+                  key={`burst-w-${moveFx.key}`}
+                  className="move-impact absolute inset-0 m-auto pointer-events-none"
+                  style={{
+                    background: `radial-gradient(circle, ${typeColor(moveFx.moveType)}cc 0%, transparent 70%)`,
+                  }}
+                />
+              )}
+              {activeWild.spriteUrl && (
+                <BattleSprite
+                  speciesName={activeWild.speciesName}
+                  facing="front"
+                  fallbackUrl={activeWild.spriteUrl}
+                  alt={activeWild.name}
+                  width={160}
+                  height={160}
+                  className={wildSpriteClass}
+                />
+              )}
+            </div>
+
+            {/* Player sprite — lower left */}
+            <div className="absolute left-[6%] bottom-[14%] md:left-[10%] md:bottom-[12%] z-[1]">
+              {damagePopup?.side === "player" && (
+                <span
+                  key={damagePopup.key}
+                  className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
+                >
+                  {damagePopup.text}
+                </span>
+              )}
+              {moveFx?.mode === "hit" && shakingSide === "player" && (
+                <span
+                  key={`burst-p-${moveFx.key}`}
+                  className="move-impact absolute inset-0 m-auto pointer-events-none"
+                  style={{
+                    background: `radial-gradient(circle, ${typeColor(moveFx.moveType)}cc 0%, transparent 70%)`,
+                  }}
+                />
+              )}
+              {!playerHidden && activePlayer.spriteUrl && (
+                <BattleSprite
+                  speciesName={activePlayer.speciesName}
+                  facing="back"
+                  fallbackUrl={activePlayer.spriteUrl}
+                  alt={activePlayer.name}
+                  width={160}
+                  height={160}
+                  className={playerSpriteClass}
+                />
+              )}
+              {ballAnim && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <PokeballIcon
+                    className={`w-10 h-10 drop-shadow-[0_0_8px_rgba(238,21,21,0.6)] ${
+                      ballAnim === "throw" ? "pokeball-throw-icon" : "pokeball-appear-icon"
+                    }`}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Opponent sidebar (desktop) */}
+          <div className="hidden lg:block">
+            <PartySidebar
+              name={foeLabel}
+              portraitUrl={isGymBattle ? leaderPortrait : null}
+              align="right"
+            >
+              {opponentParty.map((m) => (
+                <PartyIcon
+                  key={`o-${m.slot}`}
+                  spriteUrl={m.spriteUrl}
+                  name={m.name}
+                  fainted={m.fainted}
+                  active={m.active}
+                />
+              ))}
+              {Array.from({ length: emptyOpponentSlots }).map((_, i) => (
+                <EmptyPartySlot key={`oe-${i}`} />
+              ))}
+            </PartySidebar>
           </div>
         </div>
 
-        <div className="glass-panel rounded-xl border border-white/10 p-4 mb-4 h-32 overflow-y-auto flex flex-col gap-1">
+        {/* Mobile: player party strip */}
+        <div className="lg:hidden">
+          <PartySidebar name={trainerName} portraitUrl={null} align="left" compact>
+            {party.map((m) => (
+              <PartyIcon
+                key={m.instanceId}
+                spriteUrl={m.spriteUrl}
+                name={m.name}
+                fainted={m.currentHp <= 0}
+                active={m.instanceId === activePlayer.instanceId}
+                hpPct={(m.currentHp / m.maxHp) * 100}
+              />
+            ))}
+            {Array.from({ length: emptyPlayerSlots }).map((_, i) => (
+              <EmptyPartySlot key={`pe-${i}`} />
+            ))}
+          </PartySidebar>
+        </div>
+
+        {/* Compact battle log */}
+        <div className="glass-panel rounded-lg border border-white/10 px-3 py-2 h-14 overflow-y-auto flex flex-col gap-0.5">
           {log.map((entry, i) => (
             <p
               key={i}
-              className={`text-label-md leading-snug ${
+              className={`text-label-sm leading-snug ${
                 entry.side === "player"
                   ? "text-left text-on-surface"
                   : entry.side === "wild"
@@ -798,6 +1251,17 @@ export function BattleArena({
 
           {view === "moves" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {activeMoves.every((m) => m.pp <= 0) && (
+                <button
+                  type="button"
+                  disabled={isAnimating}
+                  onClick={() => handleMove(activeMoves[0]?.moveId ?? 0)}
+                  className="w-full sm:col-span-2 glass-panel border border-error/40 rounded-lg p-3 text-left hover:border-error/70 active:scale-[0.98] transition-all disabled:opacity-40"
+                >
+                  <p className="text-label-md text-error font-bold">Struggle</p>
+                  <p className="text-label-sm text-on-surface-variant">PP 0 — recoil damage</p>
+                </button>
+              )}
               {activeMoves.map((m) => {
                 const eff = effectivenessInfo(m.type);
                 const color = typeColor(m.type);
@@ -805,7 +1269,7 @@ export function BattleArena({
                   <button
                     key={m.moveId}
                     type="button"
-                    disabled={isAnimating}
+                    disabled={isAnimating || m.pp <= 0}
                     onClick={() => handleMove(m.moveId)}
                     className="w-full glass-panel border border-white/10 rounded-lg p-3 text-left hover:border-pokeball-red/50 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   >
@@ -816,7 +1280,9 @@ export function BattleArena({
                       >
                         {m.type}
                       </span>
-                      <span className="text-label-sm text-on-surface-variant">PP {m.pp}</span>
+                      <span className="text-label-sm text-on-surface-variant">
+                        PP {m.pp}/{m.maxPp ?? m.pp}
+                      </span>
                     </div>
                     <p className="text-label-md text-on-surface font-bold mt-1">{m.name}</p>
                     <p className={`text-label-sm mt-1 ${eff.className}`}>{eff.label}</p>
@@ -936,39 +1402,134 @@ export function BattleArena({
   );
 }
 
-function HpCard({
+function PartySidebar({
+  name,
+  portraitUrl,
+  align,
+  compact,
+  children,
+}: {
+  name: string;
+  portraitUrl: string | null;
+  align: "left" | "right";
+  compact?: boolean;
+  children: ReactNode;
+}) {
+  if (compact) {
+    return (
+      <div className="glass-panel rounded-lg border border-white/10 px-3 py-2 flex items-center gap-3">
+        {portraitUrl && (
+          <div className="w-10 h-12 rounded overflow-hidden border border-white/15 shrink-0 bg-surface-container-high">
+            <Image src={portraitUrl} alt={name} width={40} height={48} className="w-full h-full object-cover object-top" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className={`text-label-sm text-on-surface font-bold truncate ${align === "right" ? "text-right" : ""}`}>
+            {name}
+          </p>
+          <div className={`mt-1 flex gap-1.5 ${align === "right" ? "justify-end" : ""}`}>{children}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="glass-panel rounded-xl border border-white/10 p-2.5 h-full flex flex-col gap-2">
+      <p className={`text-label-sm text-on-surface font-bold truncate px-0.5 ${align === "right" ? "text-right" : ""}`}>
+        {name}
+      </p>
+      {portraitUrl && (
+        <div className="mx-auto w-16 h-20 rounded-lg overflow-hidden border border-white/15 bg-surface-container-high">
+          <Image src={portraitUrl} alt={name} width={64} height={80} className="w-full h-full object-cover object-top" />
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-1.5 mt-auto">{children}</div>
+    </div>
+  );
+}
+
+function PartyIcon({
+  spriteUrl,
+  name,
+  fainted,
+  active,
+  hpPct,
+}: {
+  spriteUrl: string;
+  name: string;
+  fainted: boolean;
+  active: boolean;
+  hpPct?: number;
+}) {
+  return (
+    <div
+      title={name}
+      className={`relative aspect-square rounded-md border bg-surface-container-high/80 flex items-center justify-center overflow-hidden ${
+        active ? "border-pokeball-red/70 ring-1 ring-pokeball-red/40" : "border-white/10"
+      } ${fainted ? "opacity-35 grayscale" : ""}`}
+    >
+      {spriteUrl ? (
+        <Image src={spriteUrl} alt={name} width={40} height={40} className="w-9 h-9 object-contain" />
+      ) : (
+        <PokeballIcon className="w-5 h-5 opacity-40" />
+      )}
+      {typeof hpPct === "number" && !fainted && (
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
+          <div
+            className={`h-full ${hpPct > 50 ? "bg-emerald-400" : hpPct > 20 ? "bg-amber-400" : "bg-red-500"}`}
+            style={{ width: `${Math.max(0, Math.min(100, hpPct))}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmptyPartySlot() {
+  return (
+    <div className="aspect-square rounded-md border border-dashed border-white/10 bg-black/20 flex items-center justify-center">
+      <PokeballIcon className="w-4 h-4 opacity-25" />
+    </div>
+  );
+}
+
+function HpPlate({
   name,
   levelLabel,
   currentHp,
   maxHp,
-  labelHp,
+  status,
   align = "left",
+  className = "",
 }: {
   name: string;
   levelLabel: string;
   currentHp: number;
   maxHp: number;
-  labelHp: string;
+  status?: string | null;
   align?: "left" | "right";
+  className?: string;
 }) {
   const hpPct = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
   const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
 
   return (
-    <div className={`glass-panel rounded-xl border border-white/10 p-3 ${align === "right" ? "text-right" : ""}`}>
-      <div className="flex justify-between items-baseline">
-        <span className="text-label-md text-on-surface font-bold capitalize">{name}</span>
-        <span className="text-label-sm text-on-surface-variant">{levelLabel}</span>
+    <div
+      className={`rounded-lg border border-white/15 bg-black/55 backdrop-blur-sm px-2.5 py-1.5 shadow-lg ${className}`}
+    >
+      <div className={`flex items-baseline gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
+        <span className="text-label-md text-white font-bold capitalize truncate">{name}</span>
+        <span className="text-label-sm text-white/70 shrink-0">{levelLabel}</span>
+        {status && (
+          <span className="text-[10px] uppercase tracking-wide text-amber-300 shrink-0">{status}</span>
+        )}
       </div>
-      <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden mt-2">
+      <div className="h-2 bg-white/15 rounded-full overflow-hidden mt-1">
         <div className={`h-full health-bar-fill ${hpClass}`} style={{ width: `${hpPct}%` }} />
       </div>
-      <div className={`flex justify-between text-label-sm mt-1 text-on-surface-variant ${align === "right" ? "flex-row-reverse" : ""}`}>
-        <span>{labelHp}</span>
-        <span className="text-on-surface">
-          {currentHp}/{maxHp}
-        </span>
-      </div>
+      <p className={`text-[10px] text-white/70 mt-0.5 ${align === "right" ? "text-right" : ""}`}>
+        {Math.round(hpPct)}% · {currentHp}/{maxHp}
+      </p>
     </div>
   );
 }

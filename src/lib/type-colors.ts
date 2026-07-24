@@ -21,5 +21,5 @@ export const TYPE_COLORS: Record<string, string> = {
 };
 
 export function typeColor(type: string): string {
-  return TYPE_COLORS[type] ?? "#68A090";
+  return TYPE_COLORS[type.toLowerCase()] ?? "#68A090";
 }

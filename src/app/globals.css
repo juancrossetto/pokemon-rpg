@@ -124,6 +124,22 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
+  .team-card {
+    background:
+      linear-gradient(165deg, rgba(42, 42, 42, 0.92) 0%, rgba(20, 20, 20, 0.96) 55%, rgba(14, 14, 14, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 18px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .team-card:hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 24px 48px rgba(0, 0, 0, 0.42),
+      0 0 0 1px color-mix(in srgb, var(--type-accent, #ee1515) 25%, transparent);
+  }
+
   .glow-active {
     box-shadow: 0 0 15px var(--color-pokeball-red);
   }
@@ -221,6 +237,22 @@ body {
 
 /* ---------- Animaciones de batalla ---------- */
 
+.battle-arena-field {
+  background:
+    radial-gradient(ellipse 80% 50% at 70% 28%, rgba(56, 120, 72, 0.35), transparent 60%),
+    radial-gradient(ellipse 70% 45% at 25% 78%, rgba(40, 80, 50, 0.4), transparent 55%),
+    linear-gradient(180deg, #1a2a22 0%, #243830 42%, #1c2820 100%);
+}
+.battle-arena-field::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 38% 12% at 72% 48%, rgba(0, 0, 0, 0.28), transparent 70%),
+    radial-gradient(ellipse 42% 14% at 28% 82%, rgba(0, 0, 0, 0.35), transparent 70%);
+  pointer-events: none;
+}
+
 @keyframes sprite-shake {
   0%,
   100% {
@@ -254,6 +286,25 @@ body {
 }
 .sprite-flash {
   animation: sprite-flash 0.3s ease-in-out;
+}
+
+@keyframes sprite-flash-heavy {
+  0%,
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+  25% {
+    filter: brightness(3) saturate(0.2) hue-rotate(-10deg);
+  }
+  50% {
+    filter: brightness(1.4) saturate(1.4);
+  }
+  75% {
+    filter: brightness(2.4) saturate(0.4);
+  }
+}
+.sprite-flash-heavy {
+  animation: sprite-flash-heavy 0.45s ease-in-out;
 }
 
 @keyframes lunge-right {
@@ -390,6 +441,184 @@ body {
 }
 .panel-swap {
   animation: panel-swap 0.18s ease-out;
+}
+
+/* FX de movimientos: banner, proyectil, impacto y tint del arena */
+@keyframes move-banner-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.92);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -4px) scale(0.98);
+  }
+}
+.move-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  animation: move-banner-in 0.95s ease-out forwards;
+  white-space: nowrap;
+}
+
+@keyframes move-orb-right {
+  0% {
+    left: 18%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    left: 82%;
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+}
+@keyframes move-orb-left {
+  0% {
+    left: 82%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    left: 18%;
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+}
+.move-orb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+}
+.move-orb-right {
+  animation: move-orb-right 0.38s ease-in forwards;
+}
+.move-orb-left {
+  animation: move-orb-left 0.38s ease-in forwards;
+}
+
+@keyframes move-beam-right {
+  0% {
+    left: 22%;
+    width: 0;
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    left: 22%;
+    width: 56%;
+    opacity: 0;
+  }
+}
+@keyframes move-beam-left {
+  0% {
+    right: 22%;
+    width: 0;
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    right: 22%;
+    width: 56%;
+    opacity: 0;
+  }
+}
+.move-beam {
+  height: 4px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+.move-beam-right {
+  animation: move-beam-right 0.38s ease-out forwards;
+}
+.move-beam-left {
+  animation: move-beam-left 0.38s ease-out forwards;
+}
+
+@keyframes move-impact {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+.move-impact {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  animation: move-impact 0.45s ease-out forwards;
+}
+
+@keyframes arena-type-flash {
+  0% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+  35% {
+    box-shadow: inset 0 0 48px 8px color-mix(in srgb, var(--arena-flash-color) 45%, transparent);
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+}
+.arena-type-flash {
+  animation: arena-type-flash 0.45s ease-out;
+}
+
+@keyframes eff-popup {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -58%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -70%) scale(0.95);
+  }
+}
+.eff-popup {
+  color: #fff;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.8), 0 2px 0 rgba(0, 0, 0, 0.5);
+  animation: eff-popup 0.7s ease-out forwards;
 }
 
 ::-webkit-scrollbar {
