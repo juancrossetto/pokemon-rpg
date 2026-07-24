@@ -71,6 +71,7 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
         wildMaxHp,
         wildMoveIds,
         log: [`Un ${wildSpecies.name} salvaje apareció.`],
+        participantIds: [lead.id],
       },
     }),
   ]);

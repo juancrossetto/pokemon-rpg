@@ -1,0 +1,141 @@
+[
+  {
+    "order": 1,
+    "gym": "Pewter Gym",
+    "leader": "Brock",
+    "badgeName": "Boulder Badge",
+    "type": "rock",
+    "coinReward": 100,
+    "trainers": [
+      { "name": "Excursionista Rocío", "pokemon": [{ "name": "geodude", "level": 8 }] },
+      { "name": "Minero Beto", "pokemon": [{ "name": "geodude", "level": 10 }, { "name": "rhyhorn", "level": 11 }] }
+    ],
+    "pokemon": [
+      { "name": "geodude", "level": 12 },
+      { "name": "onix", "level": 14 }
+    ]
+  },
+  {
+    "order": 2,
+    "gym": "Cerulean Gym",
+    "leader": "Misty",
+    "badgeName": "Cascade Badge",
+    "type": "water",
+    "coinReward": 150,
+    "trainers": [
+      { "name": "Buceadora Mara", "pokemon": [{ "name": "shellder", "level": 13 }] },
+      { "name": "Pescador Iván", "pokemon": [{ "name": "horsea", "level": 14 }, { "name": "poliwag", "level": 15 }] }
+    ],
+    "pokemon": [
+      { "name": "staryu", "level": 18 },
+      { "name": "starmie", "level": 21 }
+    ]
+  },
+  {
+    "order": 3,
+    "gym": "Vermilion Gym",
+    "leader": "Lt. Surge",
+    "badgeName": "Thunder Badge",
+    "type": "electric",
+    "coinReward": 200,
+    "trainers": [
+      { "name": "Electricista Dani", "pokemon": [{ "name": "magnemite", "level": 14 }] },
+      { "name": "Técnico Ray", "pokemon": [{ "name": "voltorb", "level": 15 }, { "name": "magnemite", "level": 16 }] }
+    ],
+    "pokemon": [
+      { "name": "voltorb", "level": 21 },
+      { "name": "pikachu", "level": 18 },
+      { "name": "raichu", "level": 24 }
+    ]
+  },
+  {
+    "order": 4,
+    "gym": "Celadon Gym",
+    "leader": "Erika",
+    "badgeName": "Rainbow Badge",
+    "type": "grass",
+    "coinReward": 250,
+    "trainers": [
+      { "name": "Jardinera Flor", "pokemon": [{ "name": "oddish", "level": 19 }] },
+      { "name": "Herbolario Nico", "pokemon": [{ "name": "bellsprout", "level": 20 }, { "name": "paras", "level": 21 }] }
+    ],
+    "pokemon": [
+      { "name": "victreebel", "level": 29 },
+      { "name": "tangela", "level": 24 },
+      { "name": "vileplume", "level": 29 }
+    ]
+  },
+  {
+    "order": 5,
+    "gym": "Fuchsia Gym",
+    "leader": "Koga",
+    "badgeName": "Soul Badge",
+    "type": "poison",
+    "coinReward": 300,
+    "trainers": [
+      { "name": "Ninja Sota", "pokemon": [{ "name": "grimer", "level": 28 }] },
+      { "name": "Fumigador Kel", "pokemon": [{ "name": "zubat", "level": 29 }, { "name": "grimer", "level": 30 }] }
+    ],
+    "pokemon": [
+      { "name": "koffing", "level": 37 },
+      { "name": "muk", "level": 39 },
+      { "name": "koffing", "level": 37 },
+      { "name": "weezing", "level": 43 }
+    ]
+  },
+  {
+    "order": 6,
+    "gym": "Saffron Gym",
+    "leader": "Sabrina",
+    "badgeName": "Marsh Badge",
+    "type": "psychic",
+    "coinReward": 350,
+    "trainers": [
+      { "name": "Médium Alba", "pokemon": [{ "name": "drowzee", "level": 28 }] },
+      { "name": "Vidente Omar", "pokemon": [{ "name": "abra", "level": 29 }, { "name": "drowzee", "level": 31 }] }
+    ],
+    "pokemon": [
+      { "name": "kadabra", "level": 38 },
+      { "name": "mr-mime", "level": 37 },
+      { "name": "venomoth", "level": 38 },
+      { "name": "alakazam", "level": 43 }
+    ]
+  },
+  {
+    "order": 7,
+    "gym": "Cinnabar Gym",
+    "leader": "Blaine",
+    "badgeName": "Volcano Badge",
+    "type": "fire",
+    "coinReward": 400,
+    "trainers": [
+      { "name": "Bombero Iggy", "pokemon": [{ "name": "vulpix", "level": 32 }] },
+      { "name": "Vulcanólogo Theo", "pokemon": [{ "name": "growlithe", "level": 33 }, { "name": "ponyta", "level": 35 }] }
+    ],
+    "pokemon": [
+      { "name": "growlithe", "level": 42 },
+      { "name": "ponyta", "level": 40 },
+      { "name": "rapidash", "level": 42 },
+      { "name": "arcanine", "level": 47 }
+    ]
+  },
+  {
+    "order": 8,
+    "gym": "Viridian Gym",
+    "leader": "Giovanni",
+    "badgeName": "Earth Badge",
+    "type": "ground",
+    "coinReward": 500,
+    "trainers": [
+      { "name": "Excavador Bruno", "pokemon": [{ "name": "diglett", "level": 34 }] },
+      { "name": "Cazador Rex", "pokemon": [{ "name": "sandshrew", "level": 35 }, { "name": "rhyhorn", "level": 37 }] }
+    ],
+    "pokemon": [
+      { "name": "rhyhorn", "level": 45 },
+      { "name": "dugtrio", "level": 42 },
+      { "name": "nidoqueen", "level": 44 },
+      { "name": "nidoking", "level": 45 },
+      { "name": "rhydon", "level": 50 }
+    ]
+  }
+]

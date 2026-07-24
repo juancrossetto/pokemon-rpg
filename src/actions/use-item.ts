@@ -117,7 +117,22 @@ export async function applyBattleItem(
       data: lostBattle ? { status: "LOST", log: finalLog } : { log: finalLog },
     }),
     ...(lostBattle
-      ? [prisma.battleLog.create({ data: { kind: "PVE_WILD" as const, userId, userWon: false } })]
+      ? [
+          prisma.battleLog.create({
+            data: {
+              kind: battle.gymId ? ("PVE_GYM" as const) : ("PVE_WILD" as const),
+              userId,
+              userWon: false,
+              gymId: battle.gymId,
+            },
+          }),
+        ]
+      : []),
+    ...(lostBattle && battle.gymId
+      ? [prisma.gymAttempt.create({ data: { userId, gymId: battle.gymId, won: false } })]
+      : []),
+    ...(lostBattle && battle.gymRunId
+      ? [prisma.gymRun.update({ where: { id: battle.gymRunId }, data: { status: "ABANDONED" } })]
       : []),
   ]);
 

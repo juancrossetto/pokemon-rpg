@@ -24,6 +24,7 @@ export default async function BattlePage({
     include: {
       pokemonInstance: { include: { species: true, moves: { include: { move: true } } } },
       wildSpecies: true,
+      gym: { select: { type: true, name: true, leaderName: true, badgeName: true } },
     },
   });
 
@@ -105,6 +106,11 @@ export default async function BattlePage({
         pp: m.move.pp,
       })),
       initialLog: battle.log,
+      gymId: battle.gymId,
+      gymType: battle.gym?.type ?? null,
+      gymName: battle.gym?.name ?? null,
+      gymLeaderName: battle.gym?.leaderName ?? null,
+      gymBadgeName: battle.gym?.badgeName ?? null,
     };
   }
 

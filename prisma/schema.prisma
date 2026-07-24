@@ -29,6 +29,7 @@ model User {
   pokemon        PokemonInstance[]
   inventory      InventoryItem[]
   gymAttempts    GymAttempt[]
+  gymRuns        GymRun[]
   badges         Badge[]
   listingsSold   MarketListing[]   @relation("Seller")
   listingsBought MarketListing[]   @relation("Buyer")
@@ -58,9 +59,11 @@ model Species {
   evolvesFrom   Species?  @relation("Evolution", fields: [evolvesFromId], references: [id])
   evolvesTo     Species[] @relation("Evolution")
 
-  learnableMoves SpeciesMove[]
-  instances      PokemonInstance[]
-  battleSessions BattleSession[]
+  learnableMoves    SpeciesMove[]
+  instances         PokemonInstance[]
+  battleSessions    BattleSession[]
+  gymPokemon        GymPokemon[]
+  gymTrainerPokemon GymTrainerPokemon[]
 }
 
 enum MoveCategory {
@@ -143,13 +146,91 @@ model PokemonMove {
 
 model Gym {
   id            String @id @default(cuid())
-  order         Int    @unique // orden secuencial fijo, 1..N
+  order         Int    @unique // orden secuencial fijo, 1..N — desbloquea al tener la medalla del anterior
   name          String
   leaderName    String
-  cooldownHours Int    @default(24)
+  badgeName     String @default("") // nombre real de la medalla (ej. "Boulder Badge")
+  type          String // tipo principal del líder — define el ícono/color de la medalla
+  cooldownHours Int    @default(24) // solo aplica tras perder una batalla (no al abandonar la corrida)
+  coinReward    Int    @default(100)
 
-  attempts GymAttempt[]
-  badges   Badge[]
+  team           GymPokemon[]
+  trainers       GymTrainer[]
+  runs           GymRun[]
+  attempts       GymAttempt[]
+  badges         Badge[]
+  battleSessions BattleSession[]
+  battleLogs     BattleLog[]
+}
+
+// Equipo fijo del líder — no es un PokemonInstance real (no evoluciona, no
+// tiene puntos manuales), mismo criterio que el Pokémon salvaje efímero.
+model GymPokemon {
+  id        String @id @default(cuid())
+  gymId     String
+  speciesId Int
+  level     Int
+  slot      Int // orden en el equipo del líder, 1..N
+
+  gym     Gym     @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  species Species @relation(fields: [speciesId], references: [id])
+
+  @@unique([gymId, slot])
+}
+
+// Entrenadores subordinados que hay que vencer en orden antes de desbloquear
+// al líder — genéricos (no personajes con nombre propio de los juegos
+// oficiales), equipo más chico y débil que el del líder, mismo tipo temático.
+model GymTrainer {
+  id    String @id @default(cuid())
+  gymId String
+  slot  Int // orden dentro del gimnasio, 1..N, antes del líder
+  name  String
+
+  gym            Gym                 @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  team           GymTrainerPokemon[]
+  battleSessions BattleSession[]
+
+  @@unique([gymId, slot])
+}
+
+model GymTrainerPokemon {
+  id           String @id @default(cuid())
+  gymTrainerId String
+  speciesId    Int
+  level        Int
+  slot         Int
+
+  gymTrainer GymTrainer @relation(fields: [gymTrainerId], references: [id], onDelete: Cascade)
+  species    Species    @relation(fields: [speciesId], references: [id])
+
+  @@unique([gymTrainerId, slot])
+}
+
+enum GymRunStatus {
+  ACTIVE
+  WON
+  ABANDONED
+}
+
+// Un intento de gimnasio: agrupa la secuencia entrenadores→líder de una
+// corrida. Si se abandona (botón de salida) o se pierde una batalla dentro
+// de la corrida, se marca ABANDONED — la próxima vez se empieza desde el
+// entrenador 1 de nuevo, no se retoma donde quedó.
+model GymRun {
+  id                  String       @id @default(cuid())
+  userId              String
+  gymId               String
+  status              GymRunStatus @default(ACTIVE)
+  clearedTrainerSlots Int          @default(0)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gym            Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  battleSessions BattleSession[]
+
+  @@index([userId, gymId, status])
 }
 
 model GymAttempt {
@@ -292,6 +373,7 @@ model BattleLog {
 
   user     User  @relation("BattleUser", fields: [userId], references: [id], onDelete: Cascade)
   opponent User? @relation("BattleOpponent", fields: [opponentId], references: [id])
+  gym      Gym?  @relation(fields: [gymId], references: [id])
 
   @@index([userId])
 }
@@ -318,12 +400,22 @@ model BattleSession {
   wildMoveIds       Int[]
   status            BattleSessionStatus @default(ACTIVE)
   log               String[]            @default([])
+  participantIds    String[]            @default([]) // todos los Pokémon del jugador que pelearon en esta sesión (para repartir XP al terminar)
+  pendingXp         Int                 @default(0) // XP acumulada de KOs previos en la misma sesión, pendiente de repartir al terminar
+  gymId             String? // null = encuentro salvaje. Si tiene valor, wildSpecies/wildLevel/etc.
+  // reflejan al oponente ACTUAL (entrenador subordinado o líder), no uno efímero random.
+  gymRunId          String? // corrida de gimnasio a la que pertenece esta batalla (null = encuentro salvaje)
+  gymTrainerId      String? // entrenador subordinado actual — null = está peleando contra el líder
+  gymPokemonSlot    Int? // slot del equipo actual (del entrenador o del líder) que se está peleando
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   pokemonInstance PokemonInstance @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
   wildSpecies     Species         @relation(fields: [wildSpeciesId], references: [id])
+  gym             Gym?            @relation(fields: [gymId], references: [id])
+  gymRun          GymRun?         @relation(fields: [gymRunId], references: [id])
+  gymTrainer      GymTrainer?     @relation(fields: [gymTrainerId], references: [id])
 
   @@index([userId, status])
 }

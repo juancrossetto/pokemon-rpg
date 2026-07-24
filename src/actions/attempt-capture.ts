@@ -7,11 +7,23 @@ import { attemptCapture as rollCapture } from "@/lib/capture";
 import { resolveMoveUse, type TurnEvent } from "@/lib/battle";
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import { getMovesetForLevel } from "@/lib/moveset";
-import { xpForLevel } from "@/lib/stats";
+import { calculateMaxHp, calculateStat, xpForLevel } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 
 const MAX_LOG_LINES = 20;
 const TEAM_SIZE = 6;
+
+export interface CapturedPokemonInfo {
+  instanceId: string;
+  speciesId: number;
+  name: string;
+  level: number;
+  spriteUrl: string;
+  types: string[];
+  maxHp: number;
+  stats: { attack: number; defense: number; spAtk: number; spDef: number; speed: number };
+  moves: { moveId: number; name: string; type: string; pp: number }[];
+}
 
 export interface AttemptCaptureResult {
   caught: boolean;
@@ -20,6 +32,7 @@ export interface AttemptCaptureResult {
   counterAttack: TurnEvent | null; // si falla, el salvaje contraataca
   playerHpAfter: number;
   outcome: "caught" | "continues" | "lost" | "fainted";
+  capturedPokemon: CapturedPokemonInfo | null;
 }
 
 export async function attemptCapture(
@@ -45,6 +58,7 @@ export async function attemptCapture(
     }),
   ]);
   if (!battle) return null;
+  if (battle.gymId) return null; // no se puede atrapar el Pokémon de un líder de gimnasio
   if (!inventoryItem || inventoryItem.quantity < 1) return null;
   if (inventoryItem.item.type !== "POKEBALL") return null;
 
@@ -73,7 +87,7 @@ export async function attemptCapture(
       `¡Atrapaste a ${battle.wildSpecies.name}!`,
     ].slice(-MAX_LOG_LINES);
 
-    await prisma.$transaction([
+    const [newInstance, learnedMoves] = await Promise.all([
       prisma.pokemonInstance.create({
         data: {
           ownerId: userId,
@@ -85,6 +99,10 @@ export async function attemptCapture(
           moves: { create: moveIds.map((moveId, i) => ({ moveId, slot: i + 1 })) },
         },
       }),
+      prisma.move.findMany({ where: { id: { in: moveIds } } }),
+    ]);
+
+    await prisma.$transaction([
       prisma.battleSession.update({
         where: { id: battle.id },
         data: { status: "CAUGHT", log },
@@ -96,6 +114,9 @@ export async function attemptCapture(
 
     revalidatePath(`/${locale}/team`);
 
+    const movesById = new Map(learnedMoves.map((m) => [m.id, m]));
+    const species = battle.wildSpecies;
+
     return {
       caught: true,
       shakes: roll.shakes,
@@ -103,6 +124,26 @@ export async function attemptCapture(
       counterAttack: null,
       playerHpAfter: instance.currentHp,
       outcome: "caught",
+      capturedPokemon: {
+        instanceId: newInstance.id,
+        speciesId: species.id,
+        name: species.name,
+        level: battle.wildLevel,
+        spriteUrl: species.spriteUrl,
+        types: species.types,
+        maxHp: calculateMaxHp(species.baseHp, battle.wildLevel),
+        stats: {
+          attack: calculateStat(species.baseAttack, 0, battle.wildLevel),
+          defense: calculateStat(species.baseDefense, 0, battle.wildLevel),
+          spAtk: calculateStat(species.baseSpAtk, 0, battle.wildLevel),
+          spDef: calculateStat(species.baseSpDef, 0, battle.wildLevel),
+          speed: calculateStat(species.baseSpeed, 0, battle.wildLevel),
+        },
+        moves: moveIds.map((id) => {
+          const m = movesById.get(id)!;
+          return { moveId: m.id, name: m.name, type: m.type, pp: m.pp };
+        }),
+      },
     };
   }
 
@@ -183,6 +224,7 @@ export async function attemptCapture(
     counterAttack,
     playerHpAfter: playerHp,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
+    capturedPokemon: null,
   };
 }
 

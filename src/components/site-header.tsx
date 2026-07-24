@@ -38,6 +38,12 @@ export async function SiteHeader() {
                 >
                   {t("battle")}
                 </Link>
+                <Link
+                  href="/gyms"
+                  className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
+                >
+                  {t("gyms")}
+                </Link>
               </>
             )}
           </div>
@@ -124,6 +130,13 @@ export async function SiteHeader() {
             >
               <span className="material-symbols-outlined">swords</span>
               {t("battle")}
+            </Link>
+            <Link
+              href="/gyms"
+              className="flex flex-col items-center justify-center text-on-surface-variant hover:text-pokeball-red transition-colors px-4 py-1 text-label-sm"
+            >
+              <span className="material-symbols-outlined">military_tech</span>
+              {t("gyms")}
             </Link>
           </>
         )}

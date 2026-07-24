@@ -3,6 +3,7 @@ import { prisma } from "../../src/lib/prisma";
 import { fetchPokeApi, runWithConcurrency } from "./pokeapi-client";
 import { buildTypeChart, writeTypeChart } from "./type-chart";
 import { seedItems } from "./items";
+import { seedGyms } from "./gyms";
 
 // Gen 1 por defecto (151) — subí SEED_GEN_LIMIT para sumar más generaciones
 // una vez que el core del juego esté validado.
@@ -193,6 +194,7 @@ async function main() {
   await seedTypeChart();
   await seedSpeciesAndMoves();
   await seedItems();
+  await seedGyms();
   console.log("✓ Seed completo");
 }
 

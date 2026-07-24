@@ -59,13 +59,16 @@ export async function switchPokemon(
     type: m.move.type,
     pp: m.move.pp,
   }));
+  const participantIds = battle.participantIds.includes(newInstance.id)
+    ? battle.participantIds
+    : [...battle.participantIds, newInstance.id];
 
   if (forced) {
     const log = [...battle.log, `${oldName} no puede continuar. ¡Adelante, ${newName}!`].slice(-MAX_LOG_LINES);
 
     await prisma.battleSession.update({
       where: { id: battle.id },
-      data: { pokemonInstanceId: newInstance.id, log },
+      data: { pokemonInstanceId: newInstance.id, log, participantIds },
     });
 
     revalidatePath(`/${locale}/team`);
@@ -149,11 +152,27 @@ export async function switchPokemon(
       data: {
         pokemonInstanceId: newInstance.id,
         log: finalLog,
+        participantIds,
         ...(lostBattle ? { status: "LOST" } : {}),
       },
     }),
     ...(lostBattle
-      ? [prisma.battleLog.create({ data: { kind: "PVE_WILD" as const, userId, userWon: false } })]
+      ? [
+          prisma.battleLog.create({
+            data: {
+              kind: battle.gymId ? ("PVE_GYM" as const) : ("PVE_WILD" as const),
+              userId,
+              userWon: false,
+              gymId: battle.gymId,
+            },
+          }),
+        ]
+      : []),
+    ...(lostBattle && battle.gymId
+      ? [prisma.gymAttempt.create({ data: { userId, gymId: battle.gymId, won: false } })]
+      : []),
+    ...(lostBattle && battle.gymRunId
+      ? [prisma.gymRun.update({ where: { id: battle.gymRunId }, data: { status: "ABANDONED" } })]
       : []),
   ]);
 
