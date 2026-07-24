@@ -9,6 +9,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migraciones / introspect: preferí session/direct (5432). Runtime usa
+    // DATABASE_URL en transaction mode (6543) vía el adapter de PrismaPg.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });

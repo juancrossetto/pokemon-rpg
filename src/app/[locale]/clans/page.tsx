@@ -71,6 +71,7 @@ export default async function ClansPage({
                     ptDexterity: true,
                     ptIntelligence: true,
                     ptSpeed: true,
+                    ptConstitution: true,
                     species: { select: SPECIES_STATS_SELECT },
                   },
                 },

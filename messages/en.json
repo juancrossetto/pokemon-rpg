@@ -103,7 +103,27 @@
     "emptySlot": "Empty slot",
     "slotAvailable": "Slot {slot} available",
     "unspentPoints": "{count} unspent points",
-    "autoHeal": "Auto-Heal",
+    "allocateShow": "Allocate",
+    "allocateHide": "Close",
+    "allocateHint": "Spend points earned on level-up. Each attribute caps at 99.",
+    "allocateRemaining": "Available",
+    "allocateReset": "Reset",
+    "allocateConfirm": "Confirm (+{count})",
+    "allocateSaving": "Saving…",
+    "allocateErrors": {
+      "unauthorized": "You need to sign in",
+      "not_found": "Pokémon not found",
+      "invalid": "Invalid distribution",
+      "in_combat": "You can't allocate points in combat"
+    },
+    "attrs": {
+      "ptStrength": "Strength",
+      "ptDexterity": "Dexterity",
+      "ptIntelligence": "Intelligence",
+      "ptSpeed": "Speed",
+      "ptConstitution": "Constitution"
+    },
+    "autoHeal": "Pokémon Center",
     "openPc": "Storage PC",
     "expToNext": "{xp} to next level",
     "heldItem": "HELD ITEM",

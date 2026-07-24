@@ -45,6 +45,7 @@ type TeamRow = {
   ptDexterity: number;
   ptIntelligence: number;
   ptSpeed: number;
+  ptConstitution: number;
   species: {
     name: string;
     baseHp: number;
@@ -61,7 +62,7 @@ type TeamRow = {
 function buildTeam(rows: TeamRow[]): PvpTeam {
   return rows.map((p) => ({
     name: p.nickname ?? p.species.name,
-    maxHp: calculateMaxHp(p.species.baseHp, p.level),
+    maxHp: calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution),
     stats: playerCombatantStats(p.species, p.level, p),
     moves: p.moves.map((m) => ({
       id: m.move.id,

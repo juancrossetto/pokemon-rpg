@@ -4,7 +4,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 
 // Subí este número cuando cambie el schema y el HMR deje un client viejo
 // en globalThis (p. ej. campos nuevos como currentPp / wildMovePp).
-const PRISMA_CLIENT_EPOCH = 4;
+const PRISMA_CLIENT_EPOCH = 5;
 
 // Patrón singleton: en dev, Next.js recarga módulos en caliente y crearía
 // una PrismaClient nueva (con su propio pool) en cada reload.
@@ -15,6 +15,10 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 if (globalForPrisma.prismaClientEpoch !== PRISMA_CLIENT_EPOCH) {
+  // Sin esto, cada bump de epoch deja un Pool zombie y satura Supavisor
+  // (EMAXCONNSESSION / pool_size).
+  void globalForPrisma.pgPool?.end().catch(() => undefined);
+  globalForPrisma.pgPool = undefined;
   globalForPrisma.prisma = undefined;
   globalForPrisma.prismaClientEpoch = PRISMA_CLIENT_EPOCH;
 }
@@ -50,6 +54,15 @@ function isLocalPrismaDev(connectionString: string): boolean {
   }
 }
 
+/** Supavisor / pooler de Supabase (session :5432 o transaction :6543). */
+function isSupabasePooler(connectionString: string): boolean {
+  try {
+    return new URL(connectionString).hostname.includes("pooler.supabase.com");
+  } catch {
+    return false;
+  }
+}
+
 function isTransientConnectionError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const err = error as {
@@ -63,7 +76,9 @@ function isTransientConnectionError(error: unknown): boolean {
     msg.includes("connectionclosed") ||
     msg.includes("server has closed the connection") ||
     msg.includes("connection terminated") ||
-    msg.includes("connection refused")
+    msg.includes("connection refused") ||
+    msg.includes("emaxconnsession") ||
+    msg.includes("max clients reached")
   );
 }
 
@@ -74,14 +89,16 @@ function createPool(): Pool {
   }
 
   const localDev = isLocalPrismaDev(connectionString);
+  const supabase = isSupabasePooler(connectionString);
+  // Session mode (:5432) limita clientes a pool_size (~15). En Next dev el HMR
+  // y varios pools suman rápido → EMAXCONNSESSION. Transaction mode (:6543)
+  // + max bajo es lo correcto para app.
+  const max = localDev || supabase ? 1 : process.env.NODE_ENV === "production" ? 5 : 2;
 
   const pool = new Pool({
     connectionString: cleanConnectionString(connectionString),
-    // prisma dev (PGlite detrás) se cae con varias conexiones concurrentes
-    // → P1017. Con max:1 el pool serializa y evita ConnectionClosed.
-    max: localDev ? 1 : process.env.NODE_ENV === "production" ? 10 : 5,
-    // Reciclar idle antes de que el proxy local corte la conexión.
-    idleTimeoutMillis: localDev ? 5_000 : 20_000,
+    max,
+    idleTimeoutMillis: localDev || supabase ? 5_000 : 20_000,
     connectionTimeoutMillis: 10_000,
     allowExitOnIdle: true,
   });
@@ -105,7 +122,7 @@ function createPrismaClient(): PrismaClient {
 
   const base = new PrismaClient({ adapter });
 
-  // Reintento corto ante cortes del proxy local de prisma dev.
+  // Reintento corto ante cortes del proxy / pool lleno momentáneo.
   return base.$extends({
     query: {
       async $allOperations({ args, query }) {
@@ -117,7 +134,7 @@ function createPrismaClient(): PrismaClient {
           } catch (error) {
             lastError = error;
             if (!isTransientConnectionError(error) || i === attempts - 1) throw error;
-            await new Promise((resolve) => setTimeout(resolve, 50 * (i + 1)));
+            await new Promise((resolve) => setTimeout(resolve, 80 * (i + 1)));
           }
         }
         throw lastError;

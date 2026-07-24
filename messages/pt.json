@@ -103,7 +103,27 @@
     "emptySlot": "Espaço vazio",
     "slotAvailable": "Espaço {slot} disponível",
     "unspentPoints": "{count} pontos não usados",
-    "autoHeal": "Auto-curar",
+    "allocateShow": "Distribuir",
+    "allocateHide": "Fechar",
+    "allocateHint": "Gaste pontos ganhos ao subir de nível. Cada atributo tem teto 99.",
+    "allocateRemaining": "Disponíveis",
+    "allocateReset": "Reiniciar",
+    "allocateConfirm": "Confirmar (+{count})",
+    "allocateSaving": "Salvando…",
+    "allocateErrors": {
+      "unauthorized": "Você precisa entrar",
+      "not_found": "Pokémon não encontrado",
+      "invalid": "Distribuição inválida",
+      "in_combat": "Não é possível distribuir pontos em combate"
+    },
+    "attrs": {
+      "ptStrength": "Força",
+      "ptDexterity": "Destreza",
+      "ptIntelligence": "Inteligência",
+      "ptSpeed": "Velocidade",
+      "ptConstitution": "Constituição"
+    },
+    "autoHeal": "Centro Pokémon",
     "openPc": "PC de armazenamento",
     "expToNext": "{xp} para o próximo nível",
     "heldItem": "ITEM SEGURADO",

@@ -4,11 +4,6 @@ import { calculateMaxHp, calculateStat } from "@/lib/stats";
 // El "poder" de un Pokémon se calcula con las MISMAS fórmulas que usa el
 // combate (ver stats.ts y la ficha del mercado), así el ranking refleja la
 // fuerza real en batalla y no un número inventado. Suma de los 6 stats.
-//
-// Nota de balance: calculateMaxHp no considera ptConstitution (igual que el
-// motor de combate hoy), así que Constitución no pesa en el poder. Es una
-// inconsistencia preexistente del juego, no del ranking — se resuelve cuando
-// se afine el balance (fase 7), y ahí este número se ajusta solo.
 
 export type PowerInput = {
   level: number;
@@ -16,6 +11,7 @@ export type PowerInput = {
   ptDexterity: number;
   ptIntelligence: number;
   ptSpeed: number;
+  ptConstitution: number;
   species: {
     baseHp: number;
     baseAttack: number;
@@ -29,7 +25,7 @@ export type PowerInput = {
 export function pokemonPower(p: PowerInput): number {
   const s = p.species;
   return (
-    calculateMaxHp(s.baseHp, p.level) +
+    calculateMaxHp(s.baseHp, p.level, p.ptConstitution) +
     calculateStat(s.baseAttack, p.ptStrength, p.level) +
     calculateStat(s.baseDefense, p.ptDexterity, p.level) +
     calculateStat(s.baseSpAtk, p.ptIntelligence, p.level) +

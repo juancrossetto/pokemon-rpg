@@ -48,7 +48,7 @@ export default async function GymMapPage({
         </div>
 
         <div className="glass-panel rounded-xl border border-white/10 p-2 sm:p-3">
-          <div className="relative w-full aspect-[1177/1056] rounded-lg overflow-hidden bg-[#1a2a3a]">
+          <div className="relative w-full aspect-[736/649] rounded-lg overflow-hidden bg-[#1a2a3a]">
             <Image
               src={KANTO_MAP_IMAGE}
               alt={t("mapTitle")}
@@ -58,7 +58,7 @@ export default async function GymMapPage({
               className="object-cover opacity-90"
             />
             {/* Vignette para que los pines de medalla lean mejor sobre el mapa claro */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/35" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
 
             {statuses.map(({ gym, badgeEarned, locked }) => {
               const point = pointByOrder.get(gym.order);

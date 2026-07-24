@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidateCombatUi } from "@/lib/battle-lock";
-import { calculateMaxHp, xpForLevel } from "@/lib/stats";
+import { calculateMaxHp, xpForLevel, UNSPENT_POINTS_PER_LEVEL } from "@/lib/stats";
 import {
   effectivePp,
   playerActsFirst,
@@ -22,7 +22,6 @@ import { hasHealthyBackup } from "@/lib/team";
 import { getMovesetForLevel } from "@/lib/moveset";
 
 const MAX_LOG_LINES = 20;
-const UNSPENT_POINTS_PER_LEVEL = 3;
 
 export interface XpSummaryEntry {
   instanceId: string;
@@ -64,19 +63,20 @@ function applyXpGain(
   currentHp: number,
   unspentPoints: number,
   baseHp: number,
+  ptConstitution: number,
   xpEarned: number,
 ) {
   const newXpTotal = currentXp + xpEarned;
   let newLevel = currentLevel;
   let newUnspentPoints = unspentPoints;
-  let newMaxHp = calculateMaxHp(baseHp, newLevel);
+  let newMaxHp = calculateMaxHp(baseHp, newLevel, ptConstitution);
   let newCurrentHp = currentHp;
 
   while (newXpTotal >= xpForLevel(newLevel + 1)) {
     newLevel += 1;
     newUnspentPoints += UNSPENT_POINTS_PER_LEVEL;
     const previousMaxHp = newMaxHp;
-    newMaxHp = calculateMaxHp(baseHp, newLevel);
+    newMaxHp = calculateMaxHp(baseHp, newLevel, ptConstitution);
     newCurrentHp += newMaxHp - previousMaxHp;
   }
 
@@ -135,7 +135,11 @@ export async function submitBattleMove(
       : wildMoveSnapshots.map((m) => m.pp ?? 20);
 
   const instance = battle.pokemonInstance;
-  const playerMaxHpBase = calculateMaxHp(instance.species.baseHp, instance.level);
+  const playerMaxHpBase = calculateMaxHp(
+    instance.species.baseHp,
+    instance.level,
+    instance.ptConstitution,
+  );
   const playerBase = playerCombatantStats(instance.species, instance.level, instance);
   const wildBase = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
 
@@ -397,6 +401,7 @@ export async function submitBattleMove(
         isActive ? playerHp : p.currentHp,
         p.unspentPoints,
         p.species.baseHp,
+        p.ptConstitution,
         share,
       );
       xpSummary.push({
