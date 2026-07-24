@@ -1,10 +1,21 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { typeColor } from "@/lib/type-colors";
+import { redirectIfInBattle } from "@/lib/battle-lock";
 
-export default async function PokedexPage() {
-  const t = await getTranslations("pokedex");
+export default async function PokedexPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const [t, session] = await Promise.all([getTranslations("pokedex"), auth()]);
+  if (session?.user) {
+    await redirectIfInBattle(session.user.id, locale);
+  }
+
   const species = await prisma.species.findMany({ orderBy: { id: "asc" } });
 
   return (

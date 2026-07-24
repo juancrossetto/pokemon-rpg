@@ -41,12 +41,14 @@ export async function startGymRunBattle(gymRunId: string, locale: string) {
     firstMon.level,
   );
   const wildMoveIds = await getMovesetForLevel(firstMon.speciesId, firstMon.level);
+  const wildMoves = await prisma.move.findMany({ where: { id: { in: wildMoveIds } } });
+  const wildMovePp = wildMoveIds.map((id) => wildMoves.find((m) => m.id === id)?.pp ?? 20);
   const opponentSpecies = await prisma.species.findUniqueOrThrow({ where: { id: firstMon.speciesId } });
 
   const introLog =
     opponent.kind === "trainer"
-      ? [`¡${opponent.trainerName} te desafía!`, `¡Manda a ${opponentSpecies.name}!`]
-      : [`¡${run.gym.leaderName} del ${run.gym.name} te desafía!`, `¡Manda a ${opponentSpecies.name}!`];
+      ? [`challengeTrainer:${opponent.trainerName}`, `sendOut:${opponentSpecies.name}`]
+      : [`challengeLeader:${run.gym.leaderName}:${run.gym.name}`, `sendOut:${opponentSpecies.name}`];
 
   await prisma.battleSession.create({
     data: {
@@ -61,6 +63,7 @@ export async function startGymRunBattle(gymRunId: string, locale: string) {
       wildCurrentHp: wildMaxHp,
       wildMaxHp,
       wildMoveIds,
+      wildMovePp,
       log: introLog,
       participantIds: [lead.id],
     },

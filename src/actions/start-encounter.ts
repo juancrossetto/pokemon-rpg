@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { getCurrentEnergy } from "@/lib/energy";
+import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
 
 const ENCOUNTER_ENERGY_COST = 1;
 const LEVEL_RANGE = 2;
@@ -26,10 +27,17 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
 
   const existing = await prisma.battleSession.findFirst({
     where: { userId, status: "ACTIVE" },
+    orderBy: { updatedAt: "desc" },
   });
   if (existing) {
     revalidatePath(`/${locale}/battle`);
     redirect({ href: "/battle", locale });
+    return;
+  }
+
+  const gymRun = await getActiveGymRun(userId);
+  if (gymRun) {
+    redirect({ href: `/gyms/${gymRun.gymId}/run`, locale });
     return;
   }
 
@@ -55,6 +63,8 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
   const wildSpecies = await prisma.species.findUniqueOrThrow({ where: { id: wildSpeciesId } });
   const wildMaxHp = calculateMaxHp(wildSpecies.baseHp, wildLevel);
   const wildMoveIds = await getMovesetForLevel(wildSpeciesId, wildLevel);
+  const wildMoves = await prisma.move.findMany({ where: { id: { in: wildMoveIds } } });
+  const wildMovePp = wildMoveIds.map((id) => wildMoves.find((m) => m.id === id)?.pp ?? 20);
 
   await prisma.$transaction([
     prisma.user.update({
@@ -70,12 +80,14 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
         wildCurrentHp: wildMaxHp,
         wildMaxHp,
         wildMoveIds,
-        log: [`Un ${wildSpecies.name} salvaje apareció.`],
+        wildMovePp,
+        log: [`appear:${wildSpecies.name}`],
         participantIds: [lead.id],
       },
     }),
   ]);
 
   revalidatePath(`/${locale}/battle`);
+  revalidateCombatUi(locale);
   redirect({ href: "/battle", locale });
 }

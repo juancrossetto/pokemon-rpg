@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { resolveMoveUse, type TurnEvent } from "@/lib/battle";
-import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
+import type { TurnEvent } from "@/lib/battle";
+import { effectivePp } from "@/lib/battle";
 import { calculateMaxHp } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
+import { runWildCounterAttack } from "@/lib/wild-counter";
 
 const MAX_LOG_LINES = 20;
 
@@ -14,11 +15,12 @@ export interface SwitchPokemonResult {
   newPlayer: {
     instanceId: string;
     name: string;
+    speciesName: string;
     level: number;
     spriteUrl: string;
     currentHp: number;
     maxHp: number;
-    moves: { moveId: number; name: string; type: string; pp: number }[];
+    moves: { moveId: number; name: string; type: string; pp: number; maxPp: number }[];
   };
   counterAttack: TurnEvent | null;
   outcome: "continues" | "lost" | "fainted";
@@ -28,9 +30,6 @@ export async function switchPokemon(
   sessionId: string,
   newInstanceId: string,
   locale: string,
-  // Un cambio voluntario gasta el turno (el salvaje ataca al que entra). Un
-  // cambio forzado por debilitamiento no: el turno ya se gastó cuando el
-  // Pokémon anterior cayó, así que el que entra no recibe golpe gratis.
   forced = false,
 ): Promise<SwitchPokemonResult | null> {
   const session = await auth();
@@ -51,24 +50,35 @@ export async function switchPokemon(
     return null;
   }
 
-  const oldName = battle.pokemonInstance.nickname ?? battle.pokemonInstance.species.name;
   const newName = newInstance.nickname ?? newInstance.species.name;
   const newMoves = newInstance.moves.map((m) => ({
     moveId: m.moveId,
     name: m.move.name,
     type: m.move.type,
-    pp: m.move.pp,
+    pp: effectivePp(m.currentPp, m.move.pp),
+    maxPp: m.move.pp,
   }));
   const participantIds = battle.participantIds.includes(newInstance.id)
     ? battle.participantIds
     : [...battle.participantIds, newInstance.id];
 
-  if (forced) {
-    const log = [...battle.log, `${oldName} no puede continuar. ¡Adelante, ${newName}!`].slice(-MAX_LOG_LINES);
+  const clearPlayerStatus = {
+    playerStatus: null as null,
+    playerSleepTurns: 0,
+    playerAtkStage: 0,
+    playerDefStage: 0,
+    playerSpeStage: 0,
+  };
 
+  if (forced) {
     await prisma.battleSession.update({
       where: { id: battle.id },
-      data: { pokemonInstanceId: newInstance.id, log, participantIds },
+      data: {
+        pokemonInstanceId: newInstance.id,
+        participantIds,
+        ...clearPlayerStatus,
+        log: [...battle.log, `switchForced:${newName}`].slice(-MAX_LOG_LINES),
+      },
     });
 
     revalidatePath(`/${locale}/team`);
@@ -77,6 +87,7 @@ export async function switchPokemon(
       newPlayer: {
         instanceId: newInstance.id,
         name: newName,
+        speciesName: newInstance.species.name,
         level: newInstance.level,
         spriteUrl: newInstance.species.spriteUrl,
         currentHp: newInstance.currentHp,
@@ -88,68 +99,20 @@ export async function switchPokemon(
     };
   }
 
-  // Cambiar de Pokémon gasta el turno completo: el salvaje ataca al que entra.
-  const wildMoves = await prisma.move.findMany({ where: { id: { in: battle.wildMoveIds } } });
-  const wildMove = wildMoves[Math.floor(Math.random() * wildMoves.length)];
-  const wildStats = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
-  const newPlayerStats = playerCombatantStats(newInstance.species, newInstance.level, newInstance);
+  const counter = await runWildCounterAttack({
+    ...battle,
+    pokemonInstance: {
+      ...newInstance,
+      species: newInstance.species,
+    },
+    ...clearPlayerStatus,
+  });
 
-  const result = resolveMoveUse(wildStats, newPlayerStats, wildMove);
-  const wildName = battle.wildSpecies.name;
-  let playerHp = newInstance.currentHp;
-  const log = [...battle.log, `¡Volvé, ${oldName}! ¡Adelante, ${newName}!`];
-  let counterAttack: TurnEvent | null = null;
-
-  if (result.hit && wildMove.category !== "STATUS") {
-    playerHp = Math.max(0, playerHp - result.damage);
-    log.push(`${wildName} usó ${wildMove.name} e hizo ${result.damage} de daño.`);
-    if (result.effectiveness > 1) log.push("¡Es súper efectivo!");
-    else if (result.effectiveness > 0 && result.effectiveness < 1) log.push("No es muy efectivo...");
-    else if (result.effectiveness === 0) log.push("No tuvo efecto...");
-    counterAttack = {
-      side: "wild",
-      moveName: wildMove.name,
-      moveType: wildMove.type,
-      category: wildMove.category,
-      hit: true,
-      isStatus: false,
-      damage: result.damage,
-      effectiveness: result.effectiveness,
-      hpAfter: playerHp,
-    };
-  } else if (!result.hit) {
-    log.push(`${wildName} usó ${wildMove.name} pero falló.`);
-    counterAttack = {
-      side: "wild",
-      moveName: wildMove.name,
-      moveType: wildMove.type,
-      category: wildMove.category,
-      hit: false,
-      isStatus: false,
-      damage: 0,
-      effectiveness: 1,
-      hpAfter: playerHp,
-    };
-  } else {
-    log.push(`${wildName} usó ${wildMove.name}.`);
-    counterAttack = {
-      side: "wild",
-      moveName: wildMove.name,
-      moveType: wildMove.type,
-      category: wildMove.category,
-      hit: true,
-      isStatus: true,
-      damage: 0,
-      effectiveness: 1,
-      hpAfter: playerHp,
-    };
-  }
-
+  const playerHp = counter.playerHp;
   const fainted = playerHp <= 0;
   const mustSwitch = fainted && (await hasHealthyBackup(userId, newInstance.id));
   const lostBattle = fainted && !mustSwitch;
-  if (fainted) log.push(`${newName} se debilitó.`);
-  const finalLog = log.slice(-MAX_LOG_LINES);
+  const finalLog = [...battle.log, `switch:${newName}`].slice(-MAX_LOG_LINES);
 
   await prisma.$transaction([
     prisma.pokemonInstance.update({ where: { id: newInstance.id }, data: { currentHp: playerHp } }),
@@ -159,6 +122,9 @@ export async function switchPokemon(
         pokemonInstanceId: newInstance.id,
         log: finalLog,
         participantIds,
+        ...clearPlayerStatus,
+        ...counter.statePatch,
+        // el statePatch puede pisar playerStatus con el del counter (sobre el que entró)
         ...(lostBattle ? { status: "LOST" } : {}),
       },
     }),
@@ -188,13 +154,14 @@ export async function switchPokemon(
     newPlayer: {
       instanceId: newInstance.id,
       name: newName,
+      speciesName: newInstance.species.name,
       level: newInstance.level,
       spriteUrl: newInstance.species.spriteUrl,
       currentHp: playerHp,
       maxHp: calculateMaxHp(newInstance.species.baseHp, newInstance.level),
       moves: newMoves,
     },
-    counterAttack,
+    counterAttack: counter.counterAttack,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
   };
 }

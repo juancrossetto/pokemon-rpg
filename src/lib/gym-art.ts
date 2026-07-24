@@ -1,11 +1,14 @@
-// Arte oficial (Bulbagarden Archives) hosteado localmente en public/gyms/.
-// Las medallas se nombran por tipo de gimnasio (coincide con Gym.type); los
-// retratos de líder no tienen una clave limpia derivable del nombre ("Lt.
-// Surge" no es un slug trivial), así que van por mapa explícito.
+// Medallas: arte local en public/gyms/badges/ (Showdown no tiene gym badges).
+//
+// Líderes — dos resoluciones:
+// - sprites Showdown (pixel) en public/gyms/leaders/ → listas / UI compacta
+// - retratos oficiales (Bulbagarden) en public/gyms/portraits/ → detalle de gym
+//
+// Slugs no son derivables del display name ("Lt. Surge" → "ltsurge").
 const LEADER_SLUGS: Record<string, string> = {
   Brock: "brock",
   Misty: "misty",
-  "Lt. Surge": "lt-surge",
+  "Lt. Surge": "ltsurge",
   Erika: "erika",
   Koga: "koga",
   Sabrina: "sabrina",
@@ -17,7 +20,14 @@ export function gymBadgeImageUrl(type: string): string {
   return `/gyms/badges/${type}.png`;
 }
 
+/** Sprite pixel Showdown — cards, listas, UI chica. */
 export function gymLeaderImageUrl(leaderName: string): string | null {
   const slug = LEADER_SLUGS[leaderName];
   return slug ? `/gyms/leaders/${slug}.png` : null;
+}
+
+/** Retrato grande — detalle de gimnasio / pantallas hero. */
+export function gymLeaderPortraitUrl(leaderName: string): string | null {
+  const slug = LEADER_SLUGS[leaderName];
+  return slug ? `/gyms/portraits/${slug}.png` : null;
 }

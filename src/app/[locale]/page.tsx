@@ -5,13 +5,20 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { typeColor } from "@/lib/type-colors";
 import { calculateMaxHp } from "@/lib/stats";
+import { redirectIfInBattle } from "@/lib/battle-lock";
+import { getLocale } from "next-intl/server";
 
 const TEAM_SIZE = 6;
 
 export default async function Home() {
-  const [t, session] = await Promise.all([getTranslations("home"), auth()]);
+  const [t, session, locale] = await Promise.all([
+    getTranslations("home"),
+    auth(),
+    getLocale(),
+  ]);
 
   if (session?.user) {
+    await redirectIfInBattle(session.user.id, locale);
     return <Dashboard username={session.user.name ?? ""} userId={session.user.id} />;
   }
 

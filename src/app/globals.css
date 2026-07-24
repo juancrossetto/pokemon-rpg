@@ -124,6 +124,22 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
+  .team-card {
+    background:
+      linear-gradient(165deg, rgba(42, 42, 42, 0.92) 0%, rgba(20, 20, 20, 0.96) 55%, rgba(14, 14, 14, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 18px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .team-card:hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 24px 48px rgba(0, 0, 0, 0.42),
+      0 0 0 1px color-mix(in srgb, var(--type-accent, #ee1515) 25%, transparent);
+  }
+
   .glow-active {
     box-shadow: 0 0 15px var(--color-pokeball-red);
   }
@@ -221,26 +237,38 @@ body {
 
 /* ---------- Animaciones de batalla ---------- */
 
-/* --shake-amt/--flash-peak se setean inline por golpe, en base a cuánto
-   daño representó (% del HP máximo del que lo recibe) — un golpe débil
-   sacude poco, uno que casi noquea sacude fuerte, en vez de que todos los
-   golpes físicos/especiales se vean idénticos sin importar su impacto real. */
+.battle-arena-field {
+  background:
+    radial-gradient(ellipse 80% 50% at 70% 28%, rgba(56, 120, 72, 0.35), transparent 60%),
+    radial-gradient(ellipse 70% 45% at 25% 78%, rgba(40, 80, 50, 0.4), transparent 55%),
+    linear-gradient(180deg, #1a2a22 0%, #243830 42%, #1c2820 100%);
+}
+.battle-arena-field::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 38% 12% at 72% 48%, rgba(0, 0, 0, 0.28), transparent 70%),
+    radial-gradient(ellipse 42% 14% at 28% 82%, rgba(0, 0, 0, 0.35), transparent 70%);
+  pointer-events: none;
+}
+
 @keyframes sprite-shake {
   0%,
   100% {
     transform: translateX(0);
   }
   20% {
-    transform: translateX(calc(var(--shake-amt, 10px) * -1));
+    transform: translateX(-10px);
   }
   40% {
-    transform: translateX(calc(var(--shake-amt, 10px) * 0.8));
+    transform: translateX(8px);
   }
   60% {
-    transform: translateX(calc(var(--shake-amt, 10px) * -0.6));
+    transform: translateX(-6px);
   }
   80% {
-    transform: translateX(calc(var(--shake-amt, 10px) * 0.4));
+    transform: translateX(4px);
   }
 }
 .sprite-shake {
@@ -253,11 +281,30 @@ body {
     filter: brightness(1) saturate(1);
   }
   50% {
-    filter: brightness(var(--flash-peak, 2.2)) saturate(0.3);
+    filter: brightness(2.2) saturate(0.3);
   }
 }
 .sprite-flash {
   animation: sprite-flash 0.3s ease-in-out;
+}
+
+@keyframes sprite-flash-heavy {
+  0%,
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+  25% {
+    filter: brightness(3) saturate(0.2) hue-rotate(-10deg);
+  }
+  50% {
+    filter: brightness(1.4) saturate(1.4);
+  }
+  75% {
+    filter: brightness(2.4) saturate(0.4);
+  }
+}
+.sprite-flash-heavy {
+  animation: sprite-flash-heavy 0.45s ease-in-out;
 }
 
 @keyframes lunge-right {
@@ -396,187 +443,182 @@ body {
   animation: panel-swap 0.18s ease-out;
 }
 
-/* Familias de animación por categoría de movimiento: golpe físico ya tenía
-   lunge+shake+flash; especial es un haz de color viajando entre ambos
-   sprites (sin que el atacante se mueva); estado es un brillo pulsante en
-   el color del tipo sobre quien lo usa. */
-@keyframes beam-travel-right {
+/* FX de movimientos: banner, proyectil, impacto y tint del arena */
+@keyframes move-banner-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.92);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -4px) scale(0.98);
+  }
+}
+.move-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  animation: move-banner-in 0.95s ease-out forwards;
+  white-space: nowrap;
+}
+
+@keyframes move-orb-right {
   0% {
     left: 18%;
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
+    transform: translate(-50%, -50%) scale(0.4);
   }
   15% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
-  85% {
-    opacity: 1;
-  }
   100% {
-    left: 80%;
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.4);
+    left: 82%;
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1.15);
   }
 }
-@keyframes beam-travel-left {
+@keyframes move-orb-left {
   0% {
-    left: 80%;
+    left: 82%;
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
+    transform: translate(-50%, -50%) scale(0.4);
   }
   15% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
-  85% {
-    opacity: 1;
-  }
   100% {
     left: 18%;
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.4);
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1.15);
   }
 }
-.beam-right {
-  animation: beam-travel-right 0.32s ease-in forwards;
+.move-orb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
 }
-.beam-left {
-  animation: beam-travel-left 0.32s ease-in forwards;
+.move-orb-right {
+  animation: move-orb-right 0.38s ease-in forwards;
+}
+.move-orb-left {
+  animation: move-orb-left 0.38s ease-in forwards;
 }
 
-@keyframes arena-flash-super {
-  0% {
-    background: rgba(255, 255, 255, 0.35);
-  }
-  100% {
-    background: rgba(255, 255, 255, 0);
-  }
-}
-.arena-flash-super {
-  animation: arena-flash-super 0.28s ease-out forwards;
-}
-@keyframes arena-flash-weak {
-  0% {
-    background: rgba(0, 0, 0, 0.3);
-  }
-  100% {
-    background: rgba(0, 0, 0, 0);
-  }
-}
-.arena-flash-weak {
-  animation: arena-flash-weak 0.28s ease-out forwards;
-}
-
-/* Captura: la ball viaja del jugador al rival (arco + giro), se queda
-   tambaleando en su lugar (mismo truco de "el rival se esconde adentro"
-   reusando sprite-recall sobre el sprite salvaje), y termina en un
-   destello dorado (atrapado) o se abre y libera al rival (falló). */
-@keyframes ball-throw-travel {
+@keyframes move-beam-right {
   0% {
     left: 22%;
-    top: 55%;
+    width: 0;
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.6) rotate(0deg);
-  }
-  12% {
-    opacity: 1;
-  }
-  50% {
-    left: 50%;
-    top: 28%;
-    transform: translate(-50%, -50%) scale(1) rotate(360deg);
-  }
-  100% {
-    left: 78%;
-    top: 55%;
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1) rotate(720deg);
-  }
-}
-.ball-throw-travel {
-  animation: ball-throw-travel 0.5s ease-out forwards;
-}
-
-@keyframes ball-wobble {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  15% {
-    transform: translate(-50%, -50%) rotate(-22deg);
   }
   30% {
-    transform: translate(-50%, -50%) rotate(18deg);
-  }
-  45% {
-    transform: translate(-50%, -50%) rotate(-14deg);
-  }
-  60% {
-    transform: translate(-50%, -50%) rotate(10deg);
-  }
-  75% {
-    transform: translate(-50%, -50%) rotate(-6deg);
-  }
-}
-.ball-wobble {
-  left: 78%;
-  top: 55%;
-  animation: ball-wobble 1.1s ease-in-out;
-}
-
-@keyframes ball-catch-flash {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-    filter: drop-shadow(0 0 0 rgba(255, 214, 74, 0));
-  }
-  40% {
-    transform: translate(-50%, -50%) scale(1.35);
-    filter: drop-shadow(0 0 16px rgba(255, 214, 74, 0.9));
+    opacity: 0.9;
   }
   100% {
+    left: 22%;
+    width: 56%;
+    opacity: 0;
+  }
+}
+@keyframes move-beam-left {
+  0% {
+    right: 22%;
+    width: 0;
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    right: 22%;
+    width: 56%;
+    opacity: 0;
+  }
+}
+.move-beam {
+  height: 4px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+.move-beam-right {
+  animation: move-beam-right 0.38s ease-out forwards;
+}
+.move-beam-left {
+  animation: move-beam-left 0.38s ease-out forwards;
+}
+
+@keyframes move-impact {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+.move-impact {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  animation: move-impact 0.45s ease-out forwards;
+}
+
+@keyframes arena-type-flash {
+  0% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+  35% {
+    box-shadow: inset 0 0 48px 8px color-mix(in srgb, var(--arena-flash-color) 45%, transparent);
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+}
+.arena-type-flash {
+  animation: arena-type-flash 0.45s ease-out;
+}
+
+@keyframes eff-popup {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+  20% {
+    opacity: 1;
     transform: translate(-50%, -50%) scale(1.1);
-    opacity: 0;
-    filter: drop-shadow(0 0 4px rgba(255, 214, 74, 0.4));
   }
-}
-.ball-catch-flash {
-  left: 78%;
-  top: 55%;
-  animation: ball-catch-flash 0.55s ease-out forwards;
-}
-
-@keyframes ball-break {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
+  70% {
     opacity: 1;
-  }
-  40% {
-    transform: translate(-50%, -50%) scale(1.3);
-    opacity: 1;
+    transform: translate(-50%, -58%) scale(1);
   }
   100% {
-    transform: translate(-50%, -50%) scale(0.6);
     opacity: 0;
+    transform: translate(-50%, -70%) scale(0.95);
   }
 }
-.ball-break {
-  left: 78%;
-  top: 55%;
-  animation: ball-break 0.45s ease-in forwards;
-}
-
-@keyframes sprite-status-glow {
-  0%,
-  100% {
-    filter: brightness(1) drop-shadow(0 0 0 transparent);
-  }
-  50% {
-    filter: brightness(1.25) drop-shadow(0 0 14px var(--status-glow-color, rgba(255, 255, 255, 0.7)));
-  }
-}
-.sprite-status-glow {
-  animation: sprite-status-glow 0.55s ease-in-out;
+.eff-popup {
+  color: #fff;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.8), 0 2px 0 rgba(0, 0, 0, 0.5);
+  animation: eff-popup 0.7s ease-out forwards;
 }
 
 ::-webkit-scrollbar {

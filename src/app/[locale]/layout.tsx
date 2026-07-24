@@ -6,6 +6,9 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/site-header";
+import { CombatLockGate } from "@/components/combat-lock-gate";
+import { auth } from "@/auth";
+import { getCombatLock, enforceCombatLockInLayout } from "@/lib/battle-lock";
 import "../globals.css";
 
 const inter = Inter({
@@ -44,6 +47,12 @@ export default async function LocaleLayout({
     notFound();
   }
 
+  const session = await auth();
+  if (session?.user) {
+    await enforceCombatLockInLayout(session.user.id, locale);
+  }
+  const combatLock = session?.user ? await getCombatLock(session.user.id) : null;
+
   return (
     <html
       lang={locale}
@@ -62,7 +71,8 @@ export default async function LocaleLayout({
         <div className="fixed bottom-0 right-1/4 w-[500px] h-[500px] bg-electric-yellow/[0.02] rounded-full blur-[150px] pointer-events-none" />
         <NextIntlClientProvider>
           <Providers>
-            <SiteHeader />
+            <CombatLockGate lock={combatLock} />
+            <SiteHeader combatLock={combatLock} />
             <div className="relative z-10 flex flex-1 flex-col pb-14 md:pb-0 md:pt-16">
               {children}
             </div>

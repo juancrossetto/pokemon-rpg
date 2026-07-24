@@ -137,6 +137,7 @@ model PokemonMove {
   pokemonInstanceId String
   moveId            Int
   slot              Int // 1-4
+  currentPp         Int @default(0) // se setea al aprender; 0 se trata como "lleno" hasta la 1ª batalla
 
   pokemon PokemonInstance @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
   move    Move            @relation(fields: [moveId], references: [id])
@@ -258,6 +259,13 @@ model Badge {
   gym  Gym  @relation(fields: [gymId], references: [id], onDelete: Cascade)
 
   @@unique([userId, gymId])
+}
+
+enum StatusCondition {
+  BURN
+  PARALYSIS
+  POISON
+  SLEEP
 }
 
 // ---------- Economía: objetos y mercado ----------
@@ -417,6 +425,7 @@ model BattleSession {
   wildCurrentHp     Int
   wildMaxHp         Int
   wildMoveIds       Int[]
+  wildMovePp        Int[]               @default([]) // PP restante paralelo a wildMoveIds
   status            BattleSessionStatus @default(ACTIVE)
   log               String[]            @default([])
   participantIds    String[]            @default([]) // todos los Pokémon del jugador que pelearon en esta sesión (para repartir XP al terminar)
@@ -426,6 +435,18 @@ model BattleSession {
   gymRunId          String? // corrida de gimnasio a la que pertenece esta batalla (null = encuentro salvaje)
   gymTrainerId      String? // entrenador subordinado actual — null = está peleando contra el líder
   gymPokemonSlot    Int? // slot del equipo actual (del entrenador o del líder) que se está peleando
+  // Estado de combate en sesión (se limpia al cambiar de Pokémon / fin de batalla).
+  playerStatus     StatusCondition?
+  wildStatus       StatusCondition?
+  playerSleepTurns Int                @default(0)
+  wildSleepTurns   Int                @default(0)
+  playerAtkStage   Int                @default(0)
+  playerDefStage   Int                @default(0)
+  playerSpeStage   Int                @default(0)
+  wildAtkStage     Int                @default(0)
+  wildDefStage     Int                @default(0)
+  wildSpeStage     Int                @default(0)
+  fleeAttempts     Int                @default(0) // fallos de huida; sube la chance (Gen III)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 

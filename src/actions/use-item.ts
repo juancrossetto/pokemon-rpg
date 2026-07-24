@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { resolveMoveUse, type TurnEvent } from "@/lib/battle";
-import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
+import type { TurnEvent } from "@/lib/battle";
 import { calculateMaxHp } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
+import { runWildCounterAttack } from "@/lib/wild-counter";
 
 const MAX_LOG_LINES = 20;
 
@@ -48,69 +48,16 @@ export async function applyBattleItem(
   const healedTo = Math.min(maxHp, instance.currentHp + healAmount);
   const healedBy = healedTo - instance.currentHp;
 
-  // Usar un objeto gasta el turno completo: el salvaje ataca después.
-  const wildMoves = await prisma.move.findMany({ where: { id: { in: battle.wildMoveIds } } });
-  const wildMove = wildMoves[Math.floor(Math.random() * wildMoves.length)];
-  const wildStats = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
-  const playerStats = playerCombatantStats(instance.species, instance.level, instance);
+  const counter = await runWildCounterAttack({
+    ...battle,
+    pokemonInstance: { ...instance, currentHp: healedTo },
+  });
 
-  const result = resolveMoveUse(wildStats, playerStats, wildMove);
-  const wildName = battle.wildSpecies.name;
-  const playerName = instance.nickname ?? instance.species.name;
-  let playerHp = healedTo;
-  const log = [...battle.log, `Usaste ${item.name}. ${playerName} recuperó ${healedBy} HP.`];
-  let counterAttack: TurnEvent | null = null;
-
-  if (result.hit && wildMove.category !== "STATUS") {
-    playerHp = Math.max(0, playerHp - result.damage);
-    log.push(`${wildName} usó ${wildMove.name} e hizo ${result.damage} de daño.`);
-    if (result.effectiveness > 1) log.push("¡Es súper efectivo!");
-    else if (result.effectiveness > 0 && result.effectiveness < 1) log.push("No es muy efectivo...");
-    else if (result.effectiveness === 0) log.push("No tuvo efecto...");
-    counterAttack = {
-      side: "wild",
-      moveName: wildMove.name,
-      moveType: wildMove.type,
-      category: wildMove.category,
-      hit: true,
-      isStatus: false,
-      damage: result.damage,
-      effectiveness: result.effectiveness,
-      hpAfter: playerHp,
-    };
-  } else if (!result.hit) {
-    log.push(`${wildName} usó ${wildMove.name} pero falló.`);
-    counterAttack = {
-      side: "wild",
-      moveName: wildMove.name,
-      moveType: wildMove.type,
-      category: wildMove.category,
-      hit: false,
-      isStatus: false,
-      damage: 0,
-      effectiveness: 1,
-      hpAfter: playerHp,
-    };
-  } else {
-    log.push(`${wildName} usó ${wildMove.name}.`);
-    counterAttack = {
-      side: "wild",
-      moveName: wildMove.name,
-      moveType: wildMove.type,
-      category: wildMove.category,
-      hit: true,
-      isStatus: true,
-      damage: 0,
-      effectiveness: 1,
-      hpAfter: playerHp,
-    };
-  }
-
+  const playerHp = counter.playerHp;
   const fainted = playerHp <= 0;
   const mustSwitch = fainted && (await hasHealthyBackup(userId, instance.id));
   const lostBattle = fainted && !mustSwitch;
-  if (fainted) log.push(`${playerName} se debilitó.`);
-  const finalLog = log.slice(-MAX_LOG_LINES);
+  const finalLog = [...battle.log, `item:${item.name}`].slice(-MAX_LOG_LINES);
 
   await prisma.$transaction([
     prisma.inventoryItem.update({
@@ -120,7 +67,9 @@ export async function applyBattleItem(
     prisma.pokemonInstance.update({ where: { id: instance.id }, data: { currentHp: playerHp } }),
     prisma.battleSession.update({
       where: { id: battle.id },
-      data: lostBattle ? { status: "LOST", log: finalLog } : { log: finalLog },
+      data: lostBattle
+        ? { status: "LOST", log: finalLog, ...counter.statePatch }
+        : { log: finalLog, ...counter.statePatch },
     }),
     ...(lostBattle
       ? [
@@ -148,7 +97,7 @@ export async function applyBattleItem(
     healedTo: playerHp,
     healedBy,
     itemName: item.name,
-    counterAttack,
+    counterAttack: counter.counterAttack,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
   };
 }

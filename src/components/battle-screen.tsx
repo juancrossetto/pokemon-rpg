@@ -52,5 +52,5 @@ export function BattleScreen({
     );
   }
 
-  return <BattleArena {...battle} />;
+  return <BattleArena key={battle.battleId} {...battle} />;
 }

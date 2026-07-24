@@ -12,6 +12,8 @@ import {
   listingFeeFor,
   proceedsFor,
 } from "@/lib/market-rules";
+import { applyMarketFeeDiscount } from "@/lib/badge-perks";
+import { blockIfInCombat } from "@/lib/battle-lock";
 import type { Prisma } from "@/generated/prisma/client";
 
 // Reglas del dossier (fase 5): auction house con moneda 100% interna,
@@ -53,7 +55,8 @@ async function chargeListingFee(
   userId: string,
   price: number,
 ): Promise<void> {
-  const fee = listingFeeFor(price);
+  const badgeCount = await tx.badge.count({ where: { userId } });
+  const fee = applyMarketFeeDiscount(listingFeeFor(price), badgeCount);
   const paid = await tx.user.updateMany({
     where: { id: userId, coins: { gte: fee } },
     data: { coins: { decrement: fee } },
@@ -68,6 +71,8 @@ export async function listPokemon(locale: string, formData: FormData) {
     return;
   }
   const userId = session.user.id;
+
+  if (await blockIfInCombat(userId, locale)) return;
 
   if (!allowAction(`market:publish:${userId}`, PUBLISH_LIMIT, RATE_LIMIT_WINDOW_MS)) {
     backToMarket(locale, "sell", { error: "rate_limited" });
@@ -140,6 +145,8 @@ export async function listItem(locale: string, formData: FormData) {
   }
   const userId = session.user.id;
 
+  if (await blockIfInCombat(userId, locale)) return;
+
   if (!allowAction(`market:publish:${userId}`, PUBLISH_LIMIT, RATE_LIMIT_WINDOW_MS)) {
     backToMarket(locale, "sell", { error: "rate_limited" });
     return;
@@ -187,6 +194,8 @@ export async function buyListing(locale: string, formData: FormData) {
     return;
   }
   const userId = session.user.id;
+
+  if (await blockIfInCombat(userId, locale)) return;
 
   if (!allowAction(`market:buy:${userId}`, BUY_LIMIT, RATE_LIMIT_WINDOW_MS)) {
     backToMarket(locale, "browse", { error: "rate_limited" });
@@ -269,6 +278,8 @@ export async function cancelListing(locale: string, formData: FormData) {
     return;
   }
   const userId = session.user.id;
+
+  if (await blockIfInCombat(userId, locale)) return;
 
   if (!allowAction(`market:cancel:${userId}`, CANCEL_LIMIT, RATE_LIMIT_WINDOW_MS)) {
     backToMarket(locale, "mine", { error: "rate_limited" });

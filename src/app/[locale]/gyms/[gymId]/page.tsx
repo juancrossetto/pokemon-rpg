@@ -5,9 +5,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { typeColor } from "@/lib/type-colors";
 import { typeIcon } from "@/lib/type-icons";
-import { gymBadgeImageUrl, gymLeaderImageUrl } from "@/lib/gym-art";
+import { gymBadgeImageUrl, gymLeaderPortraitUrl } from "@/lib/gym-art";
 import { nowMs } from "@/lib/time";
 import { StartGymRunButton } from "@/components/start-gym-run-button";
+import { redirectIfInBattle } from "@/lib/battle-lock";
 
 export default async function GymLeaderPage({
   params,
@@ -26,6 +27,7 @@ export default async function GymLeaderPage({
     return null;
   }
   const userId = session.user.id;
+  await redirectIfInBattle(userId, locale);
 
   const gym = await prisma.gym.findUnique({
     where: { id: gymId },
@@ -53,7 +55,7 @@ export default async function GymLeaderPage({
   const hoursLeft = onCooldown ? Math.ceil((cooldownMs - elapsedMs) / (60 * 60 * 1000)) : 0;
 
   const color = typeColor(gym.type);
-  const leaderImage = gymLeaderImageUrl(gym.leaderName);
+  const leaderPortrait = gymLeaderPortraitUrl(gym.leaderName);
   const levels = gym.team.map((p) => p.level);
   const minLevel = Math.min(...levels);
   const maxLevel = Math.max(...levels);
@@ -71,17 +73,24 @@ export default async function GymLeaderPage({
         <p className="text-label-sm uppercase text-on-surface-variant mb-1">{t("leaderAnalysis")}</p>
         <h1 className="text-headline-lg md:text-display-lg text-white mb-6">{gym.name}</h1>
 
-        <div className="glass-panel rounded-xl border border-white/10 p-6 mb-4 flex items-center gap-4">
-          {leaderImage ? (
+        <div className="glass-panel rounded-xl border border-white/10 p-6 mb-4 flex items-center gap-5">
+          {leaderPortrait ? (
             <div
-              className="w-20 h-24 rounded-lg overflow-hidden shrink-0 border-2"
-              style={{ borderColor: color, boxShadow: `0 0 16px ${color}44` }}
+              className="w-28 h-36 sm:w-32 sm:h-40 rounded-xl overflow-hidden shrink-0 border-2 bg-surface-container-high"
+              style={{ borderColor: color, boxShadow: `0 0 20px ${color}44` }}
             >
-              <Image src={leaderImage} alt={gym.leaderName} width={80} height={96} className="w-full h-full object-cover object-top" />
+              <Image
+                src={leaderPortrait}
+                alt={gym.leaderName}
+                width={160}
+                height={200}
+                className="w-full h-full object-cover object-top"
+                priority
+              />
             </div>
           ) : (
             <div
-              className="w-20 h-20 rounded-full flex items-center justify-center shrink-0 border-2"
+              className="w-28 h-28 rounded-full flex items-center justify-center shrink-0 border-2"
               style={{ backgroundColor: `${color}22`, borderColor: color }}
             >
               <span className="material-symbols-outlined text-[40px]" style={{ color }}>
@@ -130,10 +139,27 @@ export default async function GymLeaderPage({
           </div>
 
           {badge ? (
-            <span className="flex items-center gap-1 text-label-md text-tertiary">
-              <span className="material-symbols-outlined text-[18px]">check_circle</span>
-              {t("badgeEarned")}
-            </span>
+            <div className="flex flex-col items-end gap-2">
+              <span className="flex items-center gap-1 text-label-md text-tertiary">
+                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                {t("badgeEarned")}
+              </span>
+              {!locked && !activeRun && (
+                <>
+                  <p className="text-label-sm text-on-surface-variant text-right max-w-[220px]">{t("rematchHint")}</p>
+                  <StartGymRunButton gymId={gymId} locale={locale} label={t("rematch")} errors={errors} />
+                </>
+              )}
+              {activeRun && (
+                <Link
+                  href={`/gyms/${gymId}/run`}
+                  className="flex items-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">play_arrow</span>
+                  {t("continueRun", { cleared: activeRun.clearedTrainerSlots, total: gym.trainers.length })}
+                </Link>
+              )}
+            </div>
           ) : locked ? (
             <span className="flex items-center gap-1 text-label-md text-on-surface-variant">
               <span className="material-symbols-outlined text-[18px]">lock</span>
