@@ -81,6 +81,8 @@ export function xpForVictory(wildLevel: number): number {
 export interface TurnEvent {
   side: "player" | "wild";
   moveName: string;
+  moveType: string;
+  category: "PHYSICAL" | "SPECIAL" | "STATUS";
   hit: boolean;
   isStatus: boolean;
   damage: number;

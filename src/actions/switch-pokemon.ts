@@ -109,6 +109,8 @@ export async function switchPokemon(
     counterAttack = {
       side: "wild",
       moveName: wildMove.name,
+      moveType: wildMove.type,
+      category: wildMove.category,
       hit: true,
       isStatus: false,
       damage: result.damage,
@@ -120,6 +122,8 @@ export async function switchPokemon(
     counterAttack = {
       side: "wild",
       moveName: wildMove.name,
+      moveType: wildMove.type,
+      category: wildMove.category,
       hit: false,
       isStatus: false,
       damage: 0,
@@ -131,6 +135,8 @@ export async function switchPokemon(
     counterAttack = {
       side: "wild",
       moveName: wildMove.name,
+      moveType: wildMove.type,
+      category: wildMove.category,
       hit: true,
       isStatus: true,
       damage: 0,

@@ -43,6 +43,16 @@ export default async function BattlePage({
     const instance = battle.pokemonInstance;
     const playerMaxHp = calculateMaxHp(instance.species.baseHp, instance.level);
 
+    // Tamaño del equipo del oponente ACTUAL (entrenador o líder), para
+    // mostrar cuántos Pokémon le quedan como "pips" arriba de su HP — solo
+    // aplica a gimnasios, un encuentro salvaje siempre es 1 contra 1.
+    const opponentTeamSize = battle.gymId
+      ? battle.gymTrainerId
+        ? (await prisma.gymTrainer.findUnique({ where: { id: battle.gymTrainerId }, select: { team: { select: { id: true } } } }))
+            ?.team.length ?? null
+        : (await prisma.gymPokemon.count({ where: { gymId: battle.gymId } }))
+      : null;
+
     const [pokeballs, potions, roster] = await Promise.all([
       prisma.inventoryItem.findMany({
         where: { userId, quantity: { gt: 0 }, item: { type: "POKEBALL" } },
@@ -111,6 +121,8 @@ export default async function BattlePage({
       gymName: battle.gym?.name ?? null,
       gymLeaderName: battle.gym?.leaderName ?? null,
       gymBadgeName: battle.gym?.badgeName ?? null,
+      opponentTeamSize,
+      opponentDefeatedCount: (battle.gymPokemonSlot ?? 1) - 1,
     };
   }
 

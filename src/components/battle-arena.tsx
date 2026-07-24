@@ -21,7 +21,10 @@ const LUNGE_MS = 320;
 const IMPACT_MS = 480;
 const STATUS_MS = 550;
 const MISS_MS = 450;
-const THROW_MS = 700;
+const BALL_TRAVEL_MS = 500;
+const BALL_WOBBLE_MS = 1100;
+const BALL_CATCH_MS = 550;
+const BALL_BREAK_MS = 450;
 const FAINT_MS = 650;
 const RECALL_MS = 450;
 const ITEM_USE_MS = 550;
@@ -82,6 +85,8 @@ export interface BattleArenaProps {
   gymName: string | null;
   gymLeaderName: string | null;
   gymBadgeName: string | null;
+  opponentTeamSize: number | null;
+  opponentDefeatedCount: number;
 }
 
 export function BattleArena({
@@ -99,11 +104,14 @@ export function BattleArena({
   gymName,
   gymLeaderName,
   gymBadgeName,
+  opponentTeamSize,
+  opponentDefeatedCount,
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tTeam = useTranslations("team");
   const isGymBattle = gymId !== null;
   const leaderImage = gymLeaderName ? gymLeaderImageUrl(gymLeaderName) : null;
+  const [defeatedCount, setDefeatedCount] = useState(opponentDefeatedCount);
 
   const [activePlayer, setActivePlayer] = useState({
     instanceId: player.instanceId,
@@ -111,6 +119,11 @@ export function BattleArena({
     level: player.level,
     spriteUrl: player.spriteUrl,
   });
+  // playEvent() lee nombres vía nameFor() dentro de funciones async que ya
+  // arrancaron con un closure viejo de activePlayer (setActivePlayer no lo
+  // actualiza hasta el próximo render) — un ref sincrónico evita que el
+  // contraataque tras un switch muestre el nombre del Pokémon que se fue.
+  const activePlayerNameRef = useRef(player.name);
   const [playerHp, setPlayerHp] = useState(player.currentHp);
   const [playerMaxHp, setPlayerMaxHp] = useState(player.maxHp);
   const [activeWild, setActiveWild] = useState({ name: wild.name, level: wild.level, spriteUrl: wild.spriteUrl, types: wild.types });
@@ -119,6 +132,13 @@ export function BattleArena({
   const [log, setLog] = useState<LogEntry[]>(() => initialLog.map((text) => ({ text, side: "system" as const })));
   const [attackingSide, setAttackingSide] = useState<"player" | "wild" | null>(null);
   const [shakingSide, setShakingSide] = useState<"player" | "wild" | null>(null);
+  // Cuánto sacude/brilla el golpe — proporcional al % de HP máximo que
+  // representó el daño, para que un golpe débil se sienta distinto de uno
+  // que casi noquea en vez de que todos los golpes se vean iguales.
+  const [impactIntensity, setImpactIntensity] = useState(1);
+  const [beam, setBeam] = useState<{ side: "player" | "wild"; color: string; key: number; intensity: number } | null>(null);
+  const [statusGlow, setStatusGlow] = useState<{ side: "player" | "wild"; color: string; key: number } | null>(null);
+  const [effectFlash, setEffectFlash] = useState<{ tone: "super" | "weak"; key: number } | null>(null);
   const [faintingSide, setFaintingSide] = useState<"player" | "wild" | null>(null);
   const [playerEntering, setPlayerEntering] = useState(true);
   const [playerHidden, setPlayerHidden] = useState(true);
@@ -142,6 +162,7 @@ export function BattleArena({
   const [activeMoves, setActiveMoves] = useState(moves);
   const logEndRef = useRef<HTMLDivElement>(null);
   const [capturedInfo, setCapturedInfo] = useState<CapturedPokemonInfo | null>(null);
+  const [captureBall, setCaptureBall] = useState<"throw" | "wobble" | "success" | "fail" | null>(null);
   const [nicknameInput, setNicknameInput] = useState("");
   const [savingNickname, setSavingNickname] = useState(false);
 
@@ -177,7 +198,19 @@ export function BattleArena({
   }, [log]);
 
   function nameFor(side: "player" | "wild") {
-    return side === "player" ? activePlayer.name : activeWild.name;
+    return side === "player" ? activePlayerNameRef.current : activeWild.name;
+  }
+
+  function spriteStyle(side: "player" | "wild"): React.CSSProperties | undefined {
+    const isShaking = shakingSide === side;
+    const isGlowing = statusGlow?.side === side;
+    if (!isShaking && !isGlowing) return undefined;
+    return {
+      ...(isShaking
+        ? { "--shake-amt": `${10 * impactIntensity}px`, "--flash-peak": 1 + 1.2 * impactIntensity }
+        : {}),
+      ...(isGlowing ? { "--status-glow-color": statusGlow!.color } : {}),
+    } as React.CSSProperties;
   }
 
   function effectivenessInfo(moveType: string): { label: string; className: string } {
@@ -189,10 +222,31 @@ export function BattleArena({
   }
 
   function playEvent(event: TurnEvent): Promise<void> {
+    const isRanged = event.category === "SPECIAL";
+    const color = typeColor(event.moveType);
+    const defenderSide = event.side === "player" ? "wild" : "player";
+    const defenderMaxHp = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
+    // Golpe débil = sacude/brilla poco, golpe que se lleva casi todo el HP
+    // = sacude fuerte — en vez de que un golpe de 2 y uno de 40 se vean
+    // exactamente igual solo por compartir categoría.
+    const isDamagingHit = event.hit && !event.isStatus;
+    const impactRatio = isDamagingHit && defenderMaxHp > 0 ? event.damage / defenderMaxHp : 0;
+    const intensity = isDamagingHit ? Math.min(1.7, Math.max(0.55, 0.55 + impactRatio * 2.3)) : 1;
+
     return new Promise((resolve) => {
-      setAttackingSide(event.side);
+      // Golpe físico: el atacante se lanza hacia adelante (ya existía). Golpe
+      // especial: el atacante se queda quieto y un haz de color viaja hasta
+      // el rival — misma duración (LUNGE_MS) para que el impacto siga
+      // llegando en el mismo momento.
+      if (isRanged) {
+        setBeam({ side: event.side, color, key: Date.now(), intensity });
+      } else {
+        setAttackingSide(event.side);
+      }
+
       setTimeout(() => {
         setAttackingSide(null);
+        setBeam(null);
 
         if (!event.hit) {
           appendLog(`¡${nameFor(event.side)} usó ${event.moveName} pero falló!`, event.side);
@@ -201,30 +255,40 @@ export function BattleArena({
         }
 
         if (event.isStatus) {
+          setStatusGlow({ side: event.side, color, key: Date.now() });
           appendLog(`¡${nameFor(event.side)} usó ${event.moveName}!`, event.side);
-          setTimeout(resolve, STATUS_MS);
+          setTimeout(() => {
+            setStatusGlow(null);
+            resolve();
+          }, STATUS_MS);
           return;
         }
 
-        const defenderSide = event.side === "player" ? "wild" : "player";
         setShakingSide(defenderSide);
+        setImpactIntensity(intensity);
         setDamagePopup({ side: defenderSide, text: `-${event.damage}`, key: Date.now() });
         if (defenderSide === "wild") setWildHp(event.hpAfter);
         else setPlayerHp(event.hpAfter);
 
         appendLog(`¡${nameFor(event.side)} usó ${event.moveName}!`, event.side);
-        if (event.effectiveness > 1) appendLog("¡Es muy efectivo!", event.side);
-        else if (event.effectiveness > 0 && event.effectiveness < 1) appendLog("No es muy efectivo...", event.side);
-        else if (event.effectiveness === 0) appendLog("No tuvo efecto...", event.side);
+        if (event.effectiveness > 1) {
+          appendLog("¡Es muy efectivo!", event.side);
+          setEffectFlash({ tone: "super", key: Date.now() });
+        } else if (event.effectiveness > 0 && event.effectiveness < 1) {
+          appendLog("No es muy efectivo...", event.side);
+          setEffectFlash({ tone: "weak", key: Date.now() });
+        } else if (event.effectiveness === 0) {
+          appendLog("No tuvo efecto...", event.side);
+        }
         appendLog(`¡${nameFor(defenderSide)} recibió ${event.damage} de daño!`, defenderSide);
 
-        const defenderMaxHp = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
         if (event.hpAfter > 0 && event.hpAfter / defenderMaxHp <= 0.1) {
           appendLog(`¡${nameFor(defenderSide)} está a punto de debilitarse!`, defenderSide);
         }
 
         setTimeout(() => {
           setShakingSide(null);
+          setEffectFlash(null);
           resolve();
         }, IMPACT_MS);
       }, LUNGE_MS);
@@ -257,6 +321,7 @@ export function BattleArena({
     setFaintingSide("wild");
     await delay(FAINT_MS);
     setFaintingSide(null);
+    setDefeatedCount((prev) => prev + 1);
     setActiveWild({ name: next.name, level: next.level, spriteUrl: next.spriteUrl, types: next.types });
     setWildHp(next.maxHp);
     setWildMaxHp(next.maxHp);
@@ -354,22 +419,32 @@ export function BattleArena({
       prev.map((b) => (b.itemId === itemId ? { ...b, quantity: b.quantity - 1 } : b)).filter((b) => b.quantity > 0),
     );
 
-    await delay(THROW_MS);
+    setCaptureBall("throw");
+    await delay(BALL_TRAVEL_MS);
+    setCaptureBall("wobble");
+    await delay(BALL_WOBBLE_MS);
 
     const result = await attemptCapture(battleId, itemId, locale);
     if (!result) {
+      setCaptureBall(null);
       setIsAnimating(false);
       return;
     }
 
     if (result.caught) {
+      setCaptureBall("success");
+      await delay(BALL_CATCH_MS);
       appendLog(`¡Atrapaste a ${activeWild.name}!`, "player");
       setCapturedInfo(result.capturedPokemon);
       setNicknameInput("");
+      setCaptureBall(null);
       setIsAnimating(false);
       return;
     }
 
+    setCaptureBall("fail");
+    await delay(BALL_BREAK_MS);
+    setCaptureBall(null);
     appendLog(`¡${activeWild.name} se liberó!`, "wild");
     if (result.counterAttack) {
       await playEvent(result.counterAttack);
@@ -463,6 +538,7 @@ export function BattleArena({
       "player",
     );
 
+    activePlayerNameRef.current = result.newPlayer.name;
     setActivePlayer({
       instanceId: result.newPlayer.instanceId,
       name: result.newPlayer.name,
@@ -664,6 +740,11 @@ export function BattleArena({
 
   const hasBalls = !isGymBattle && ballStacks.length > 0;
   const hasPotions = potionStacks.length > 0;
+  // Tinte del fondo de la arena: en gimnasios sigue el tipo del líder (tema
+  // consistente durante toda la corrida), en encuentros salvajes sigue al
+  // rival actual — así cada pelea se siente un poco distinta sin necesitar
+  // fondos ilustrados por zona.
+  const arenaGlowColor = gymType ? typeColor(gymType) : typeColor(activeWild.types[0] ?? "normal");
   const hasHealthyBackup = teamRoster.some((m) => m.currentHp > 0);
 
   const playerSpriteClass = [
@@ -674,9 +755,12 @@ export function BattleArena({
     ballAnim === "recall" ? "sprite-recall" : "",
     playerEntering ? "sprite-enter" : "",
     playerHealing ? "sprite-heal" : "",
+    statusGlow?.side === "player" ? "sprite-status-glow" : "",
   ]
     .filter(Boolean)
     .join(" ");
+
+  const wildAbsorbedByBall = captureBall === "wobble" || captureBall === "success";
 
   const wildSpriteClass = [
     "w-24 h-24 md:w-32 md:h-32 object-contain scale-x-[-1]",
@@ -684,6 +768,9 @@ export function BattleArena({
     shakingSide === "wild" ? "sprite-shake sprite-flash" : "",
     faintingSide === "wild" ? "sprite-faint" : "",
     wildEntering ? "sprite-enter" : "",
+    statusGlow?.side === "wild" ? "sprite-status-glow" : "",
+    wildAbsorbedByBall ? "sprite-recall" : "",
+    captureBall === "fail" ? "sprite-enter" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -692,11 +779,81 @@ export function BattleArena({
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
       <div className="mx-auto max-w-4xl">
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <HpCard name={activePlayer.name} levelLabel={t("level", { level: activePlayer.level })} currentHp={playerHp} maxHp={playerMaxHp} labelHp={t("hp")} />
-          <HpCard name={activeWild.name} levelLabel={t("level", { level: activeWild.level })} currentHp={wildHp} maxHp={wildMaxHp} labelHp={t("hp")} align="right" />
+          <HpCard
+            name={activePlayer.name}
+            levelLabel={t("level", { level: activePlayer.level })}
+            currentHp={playerHp}
+            maxHp={playerMaxHp}
+            labelHp={t("hp")}
+            roster={[
+              { instanceId: activePlayer.instanceId, spriteUrl: activePlayer.spriteUrl, currentHp: playerHp },
+              ...teamRoster.map((m) => ({ instanceId: m.instanceId, spriteUrl: m.spriteUrl, currentHp: m.currentHp })),
+            ]}
+            activeInstanceId={activePlayer.instanceId}
+          />
+          <HpCard
+            name={activeWild.name}
+            levelLabel={t("level", { level: activeWild.level })}
+            currentHp={wildHp}
+            maxHp={wildMaxHp}
+            labelHp={t("hp")}
+            align="right"
+            pips={opponentTeamSize ? { total: opponentTeamSize, defeated: defeatedCount } : undefined}
+          />
         </div>
 
         <div className="glass-panel rounded-xl border border-white/10 p-6 md:p-10 flex items-center justify-between gap-4 mb-4 relative overflow-hidden min-h-[180px]">
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+            <defs>
+              <pattern id="battle-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+              </pattern>
+              <radialGradient id="battle-glow" cx="50%" cy="45%" r="65%">
+                <stop offset="0%" stopColor={arenaGlowColor} stopOpacity="0.28" />
+                <stop offset="100%" stopColor={arenaGlowColor} stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#battle-grid)" />
+            <rect width="100%" height="100%" fill="url(#battle-glow)" />
+          </svg>
+          {beam && (
+            <div
+              key={beam.key}
+              className={`absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none ${
+                beam.side === "player" ? "beam-right" : "beam-left"
+              }`}
+              style={{
+                backgroundColor: beam.color,
+                width: `${16 * beam.intensity}px`,
+                height: `${16 * beam.intensity}px`,
+                boxShadow: `0 0 ${12 * beam.intensity}px ${4 * beam.intensity}px ${beam.color}`,
+              }}
+            />
+          )}
+          {effectFlash && (
+            <div
+              key={effectFlash.key}
+              className={`absolute inset-0 pointer-events-none ${
+                effectFlash.tone === "super" ? "arena-flash-super" : "arena-flash-weak"
+              }`}
+            />
+          )}
+          {captureBall && (
+            <div
+              key={captureBall}
+              className={`absolute w-10 h-10 pointer-events-none z-10 ${
+                captureBall === "throw"
+                  ? "ball-throw-travel"
+                  : captureBall === "wobble"
+                    ? "ball-wobble"
+                    : captureBall === "success"
+                      ? "ball-catch-flash"
+                      : "ball-break"
+              }`}
+            >
+              <PokeballIcon className="w-full h-full drop-shadow-[0_0_8px_rgba(238,21,21,0.6)]" />
+            </div>
+          )}
           <div className="relative">
             {damagePopup?.side === "player" && (
               <span
@@ -707,7 +864,14 @@ export function BattleArena({
               </span>
             )}
             {!playerHidden && activePlayer.spriteUrl && (
-              <Image src={activePlayer.spriteUrl} alt={activePlayer.name} width={128} height={128} className={playerSpriteClass} />
+              <Image
+                src={activePlayer.spriteUrl}
+                alt={activePlayer.name}
+                width={128}
+                height={128}
+                className={playerSpriteClass}
+                style={spriteStyle("player")}
+              />
             )}
             {ballAnim && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -732,7 +896,14 @@ export function BattleArena({
               </span>
             )}
             {activeWild.spriteUrl && (
-              <Image src={activeWild.spriteUrl} alt={activeWild.name} width={128} height={128} className={wildSpriteClass} />
+              <Image
+                src={activeWild.spriteUrl}
+                alt={activeWild.name}
+                width={128}
+                height={128}
+                className={wildSpriteClass}
+                style={spriteStyle("wild")}
+              />
             )}
           </div>
         </div>
@@ -943,6 +1114,9 @@ function HpCard({
   maxHp,
   labelHp,
   align = "left",
+  roster,
+  activeInstanceId,
+  pips,
 }: {
   name: string;
   levelLabel: string;
@@ -950,6 +1124,9 @@ function HpCard({
   maxHp: number;
   labelHp: string;
   align?: "left" | "right";
+  roster?: { instanceId: string; spriteUrl: string; currentHp: number }[];
+  activeInstanceId?: string;
+  pips?: { total: number; defeated: number };
 }) {
   const hpPct = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
   const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
@@ -969,6 +1146,38 @@ function HpCard({
           {currentHp}/{maxHp}
         </span>
       </div>
+      {roster && roster.length > 1 && (
+        <div className={`flex gap-1 mt-2 ${align === "right" ? "justify-end" : ""}`}>
+          {roster.map((m) => {
+            const fainted = m.currentHp <= 0;
+            const active = m.instanceId === activeInstanceId;
+            return (
+              <div
+                key={m.instanceId}
+                className={`w-6 h-6 rounded-full overflow-hidden shrink-0 border ${
+                  active ? "border-pokeball-red" : "border-white/15"
+                } ${fainted ? "opacity-30 grayscale" : ""}`}
+              >
+                {m.spriteUrl && (
+                  <Image src={m.spriteUrl} alt="" width={24} height={24} className="w-full h-full object-contain" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {pips && pips.total > 1 && (
+        <div className={`flex gap-1 mt-2 ${align === "right" ? "justify-end" : ""}`}>
+          {Array.from({ length: pips.total }, (_, i) => (
+            <span
+              key={i}
+              className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                i < pips.defeated ? "bg-surface-container-highest border border-white/15" : "bg-pokeball-red"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

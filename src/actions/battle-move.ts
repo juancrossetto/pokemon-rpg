@@ -141,6 +141,8 @@ export async function submitBattleMove(
       events.push({
         side: turn.side,
         moveName: turn.move.name,
+        moveType: turn.move.type,
+        category: turn.move.category,
         hit: false,
         isStatus: false,
         damage: 0,
@@ -155,6 +157,8 @@ export async function submitBattleMove(
       events.push({
         side: turn.side,
         moveName: turn.move.name,
+        moveType: turn.move.type,
+        category: turn.move.category,
         hit: true,
         isStatus: true,
         damage: 0,
@@ -178,6 +182,8 @@ export async function submitBattleMove(
     events.push({
       side: turn.side,
       moveName: turn.move.name,
+      moveType: turn.move.type,
+      category: turn.move.category,
       hit: true,
       isStatus: false,
       damage: result.damage,
