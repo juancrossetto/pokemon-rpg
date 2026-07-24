@@ -11,6 +11,9 @@ const registerSchema = z.object({
   password: z.string().min(8),
   country: z.string().trim().length(2),
   locale: z.enum(["es", "en", "pt"]),
+  gender: z.enum(["male", "female", "unspecified"]).nullish(),
+  age: z.number().int().min(5).max(120).nullish(),
+  avatarId: z.string().trim().min(1).nullish(),
 });
 
 export type RegisterResult =
@@ -25,7 +28,7 @@ export async function registerUser(
     return { success: false, error: "invalid_input" };
   }
 
-  const { email, username, password, country, locale } = parsed.data;
+  const { email, username, password, country, locale, gender, age, avatarId } = parsed.data;
   const passwordHash = await bcrypt.hash(password, 12);
 
   try {
@@ -36,6 +39,9 @@ export async function registerUser(
         passwordHash,
         country: country.toUpperCase(),
         locale,
+        gender: gender ?? null,
+        age: age ?? null,
+        avatarId: avatarId ?? null,
       },
     });
     return { success: true };

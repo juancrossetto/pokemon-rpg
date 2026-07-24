@@ -735,3 +735,66 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-pokeball-red);
 }
+
+/* Panel de "escaneo biométrico" del registro — decorativo, diseño propio
+   (no es la imagen del mockup, que era arte genérico tipo stock). */
+@keyframes scan-sweep {
+  0%,
+  100% {
+    top: 4%;
+  }
+  50% {
+    top: 92%;
+  }
+}
+.scan-line {
+  animation: scan-sweep 2.6s ease-in-out infinite;
+}
+
+@keyframes scan-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.scan-pulse {
+  animation: scan-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+.blinking-cursor {
+  animation: blink 1s step-end infinite;
+}
+
+/* Esquinas achaflanadas del mockup Rotom-OS (superior-izq / inferior-der). */
+.tech-border {
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.vent-texture {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.05) 2px,
+    rgba(255, 255, 255, 0.05) 4px
+  );
+}
+
+.profile-progress-fill {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--color-tertiary),
+    var(--color-tertiary) 6px,
+    color-mix(in srgb, var(--color-tertiary) 70%, transparent) 6px,
+    color-mix(in srgb, var(--color-tertiary) 70%, transparent) 12px
+  );
+  transition: width 0.3s ease;
+}

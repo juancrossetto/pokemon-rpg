@@ -15,7 +15,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   const user = session?.user
     ? await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { coins: true },
+        select: { coins: true, avatarId: true },
       })
     : null;
   const lock = combatLock;
@@ -105,6 +105,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
           {session?.user ? (
             <UserMenu
               name={session.user.name ?? "?"}
+              avatarId={user?.avatarId ?? null}
               logoutLabel={t("logout")}
               trainerLabel={t("trainer")}
             />

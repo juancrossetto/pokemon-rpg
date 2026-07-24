@@ -57,7 +57,17 @@
       "submitting": "Entrando...",
       "error": "Email ou senha incorretos",
       "noAccount": "Não tem uma conta?",
-      "registerLink": "Criar uma"
+      "registerLink": "Criar uma",
+      "eyebrow": "SISTEMA POKÉDEX",
+      "bootStatus": "Iniciando núcleo...",
+      "panelTitle": "Autorização de treinador",
+      "guestAccess": "Ver Pokédex",
+      "systemStatus": "Status: Operacional",
+      "brandPrefix": "SISTEMA",
+      "brandAccent": "POKÉDEX",
+      "metaRequired": "REQ.SIS",
+      "metaEncrypted": "CRIPTOGRAFADO",
+      "networkLine": "v2.0.4 // REDE POKÉDEX"
     },
     "register": {
       "title": "Criar conta",
@@ -76,7 +86,27 @@
         "username_taken": "Esse nome de treinador já está em uso"
       },
       "hasAccount": "Já tem uma conta?",
-      "loginLink": "Entrar"
+      "loginLink": "Entrar",
+      "eyebrow": "SISTEMA POKÉDEX",
+      "panelTitle": "Registro de treinador",
+      "subtitle": "Insira seus dados para gerar seu perfil.",
+      "gender": "Gênero",
+      "genderMale": "Masculino",
+      "genderFemale": "Feminino",
+      "genderUnspecified": "Prefiro não dizer",
+      "age": "Idade",
+      "agePlaceholder": "Opcional",
+      "avatar": "Selecionar avatar",
+      "leftEyebrow": "ROTOM_OS // NÓ_DE_PESQUISA_01",
+      "scanStatus": "IDENTIDADE VERIFICADA",
+      "biometricTitle": "Aguardando entrada biométrica",
+      "biometricSubtitle": "Alinhe o sujeito dentro da área de escaneamento",
+      "labSysVer": "LAB_SYS_VER: 9.9.0",
+      "secLvl": "NÍVEL: PROFESSOR",
+      "profileConfig": "Configuração de perfil",
+      "abort": "Abortar sequência",
+      "dataExtraction": "Extração de dados",
+      "avatarMeta": "REQ_1_IMG"
     }
   },
   "starter": {

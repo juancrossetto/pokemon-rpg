@@ -20,6 +20,9 @@ model User {
   passwordHash    String
   country         String // ISO-3166 alpha-2, define el segmento del ranking
   locale          String   @default("es")
+  gender          String? // "male" | "female" | "unspecified", opcional — puro perfil, sin efecto en mecánicas
+  age             Int? // opcional
+  avatarId        String? // referencia a AVATAR_OPTIONS en src/lib/avatars.ts, no una imagen — null = iniciales (comportamiento actual)
   coins           Int      @default(0)
   energy          Int      @default(20)
   energyMax       Int      @default(20)

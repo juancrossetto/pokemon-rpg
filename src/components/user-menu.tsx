@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
+import { avatarById } from "@/lib/avatars";
+import { AvatarImage } from "@/components/avatar-image";
 
 const AVATAR_COLORS = [
   "bg-pokeball-red/80",
@@ -25,15 +27,18 @@ function initials(name: string): string {
 
 export function UserMenu({
   name,
+  avatarId,
   logoutLabel,
   trainerLabel,
 }: {
   name: string;
+  avatarId: string | null;
   logoutLabel: string;
   trainerLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const avatar = avatarById(avatarId);
 
   useEffect(() => {
     if (!open) return;
@@ -59,9 +64,15 @@ export function UserMenu({
         aria-expanded={open}
         aria-label={name}
         onClick={() => setOpen((v) => !v)}
-        className={`h-8 w-8 rounded-full flex items-center justify-center text-label-sm font-bold text-white border border-white/15 shadow-sm hover:brightness-110 transition ${avatarTone(name)}`}
+        className={`h-8 w-8 rounded-full overflow-hidden flex items-center justify-center text-label-sm font-bold border border-white/15 shadow-sm hover:brightness-110 transition ${
+          avatar ? "bg-surface-container-high" : `text-white ${avatarTone(name)}`
+        }`}
       >
-        {initials(name)}
+        {avatar ? (
+          <AvatarImage src={avatar.src} alt={name} className="h-full w-full object-cover" />
+        ) : (
+          initials(name)
+        )}
       </button>
 
       {open && (
