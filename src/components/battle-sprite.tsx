@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import {
   battleAnimatedSpriteUrl,
@@ -19,6 +19,7 @@ export function BattleSprite({
   width,
   height,
   className,
+  style,
 }: {
   speciesName: string;
   facing: SpriteFacing;
@@ -27,6 +28,7 @@ export function BattleSprite({
   width: number;
   height: number;
   className?: string;
+  style?: CSSProperties;
 }) {
   const animated = battleAnimatedSpriteUrl(speciesName, facing);
   const [src, setSrc] = useState(animated);
@@ -42,6 +44,7 @@ export function BattleSprite({
       width={width}
       height={height}
       className={className}
+      style={style}
       unoptimized
       onError={() => {
         if (src !== fallbackUrl) setSrc(fallbackUrl);

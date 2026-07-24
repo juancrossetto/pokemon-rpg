@@ -25,7 +25,10 @@ const LUNGE_MS = 380;
 const IMPACT_MS = 560;
 const STATUS_MS = 620;
 const MISS_MS = 500;
-const THROW_MS = 700;
+const BALL_TRAVEL_MS = 500;
+const BALL_WOBBLE_MS = 1100;
+const BALL_CATCH_MS = 550;
+const BALL_BREAK_MS = 450;
 const FAINT_MS = 650;
 const RECALL_MS = 450;
 const ITEM_USE_MS = 550;
@@ -151,6 +154,11 @@ export function BattleArena({
     level: player.level,
     spriteUrl: player.spriteUrl,
   });
+  // playEvent() lee nombres vía nameFor() dentro de funciones async que ya
+  // arrancaron con un closure viejo de activePlayer (setActivePlayer no lo
+  // actualiza hasta el próximo render) — un ref sincrónico evita que el
+  // contraataque tras un switch muestre el nombre del Pokémon que se fue.
+  const activePlayerNameRef = useRef(player.name);
   const [playerHp, setPlayerHp] = useState(player.currentHp);
   const [playerMaxHp, setPlayerMaxHp] = useState(player.maxHp);
   const [activeWild, setActiveWild] = useState({
@@ -205,6 +213,10 @@ export function BattleArena({
   const [capturedInfo, setCapturedInfo] = useState<CapturedPokemonInfo | null>(null);
   const [nicknameInput, setNicknameInput] = useState("");
   const [savingNickname, setSavingNickname] = useState(false);
+  const [captureBall, setCaptureBall] = useState<"throw" | "wobble" | "success" | "fail" | null>(null);
+  // Sacudida/flash del golpe escalados según % de HP máximo que representó
+  // el daño — un golpe débil ya no se ve idéntico a uno que casi noquea.
+  const [impactIntensity, setImpactIntensity] = useState(1);
   const [confirmLeaveGym, setConfirmLeaveGym] = useState(false);
 
   const teamRoster = party.filter((m) => m.instanceId !== activePlayer.instanceId);
@@ -241,7 +253,11 @@ export function BattleArena({
   }, [log]);
 
   function nameFor(side: "player" | "wild") {
-    return side === "player" ? activePlayer.name : activeWild.name;
+    return side === "player" ? activePlayerNameRef.current : activeWild.name;
+  }
+
+  function shakeStyle(side: "player" | "wild"): CSSProperties | undefined {
+    return shakingSide === side ? ({ "--shake-amt": `${10 * impactIntensity}px` } as CSSProperties) : undefined;
   }
 
   function effectivenessInfo(moveType: string): { label: string; className: string } {
@@ -343,7 +359,10 @@ export function BattleArena({
         }
 
         const defenderSide = event.side === "player" ? "wild" : "player";
+        const defenderMaxHpNow = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
+        const impactRatio = defenderMaxHpNow > 0 ? event.damage / defenderMaxHpNow : 0;
         setShakingSide(defenderSide);
+        setImpactIntensity(Math.min(1.7, Math.max(0.55, 0.55 + impactRatio * 2.3)));
         setArenaFlash(color);
         setDamagePopup({ side: defenderSide, text: `-${event.damage}`, key: fxKey });
         if (defenderSide === "wild") setWildHp(event.hpAfter);
@@ -563,22 +582,32 @@ export function BattleArena({
       prev.map((b) => (b.itemId === itemId ? { ...b, quantity: b.quantity - 1 } : b)).filter((b) => b.quantity > 0),
     );
 
-    await delay(THROW_MS);
+    setCaptureBall("throw");
+    await delay(BALL_TRAVEL_MS);
+    setCaptureBall("wobble");
+    await delay(BALL_WOBBLE_MS);
 
     const result = await attemptCapture(battleId, itemId, locale);
     if (!result) {
+      setCaptureBall(null);
       setIsAnimating(false);
       return;
     }
 
     if (result.caught) {
+      setCaptureBall("success");
+      await delay(BALL_CATCH_MS);
       appendLog(`¡Atrapaste a ${activeWild.name}!`, "player");
       setCapturedInfo(result.capturedPokemon);
       setNicknameInput("");
+      setCaptureBall(null);
       setIsAnimating(false);
       return;
     }
 
+    setCaptureBall("fail");
+    await delay(BALL_BREAK_MS);
+    setCaptureBall(null);
     appendLog(`¡${activeWild.name} se liberó!`, "wild");
     if (result.counterAttack) {
       await playEvent(result.counterAttack);
@@ -678,6 +707,7 @@ export function BattleArena({
       "player",
     );
 
+    activePlayerNameRef.current = result.newPlayer.name;
     setActivePlayer({
       instanceId: result.newPlayer.instanceId,
       name: result.newPlayer.name,
@@ -939,12 +969,16 @@ export function BattleArena({
     .filter(Boolean)
     .join(" ");
 
+  const wildAbsorbedByBall = captureBall === "wobble" || captureBall === "success";
+
   const wildSpriteClass = [
     "w-28 h-28 md:w-40 md:h-40 object-contain drop-shadow-lg",
     attackingSide === "wild" ? "sprite-lunge-left" : "",
     shakingSide === "wild" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "wild" ? "sprite-faint" : "",
     wildEntering ? "sprite-enter" : "",
+    wildAbsorbedByBall ? "sprite-recall" : "",
+    captureBall === "fail" ? "sprite-enter" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -1064,6 +1098,23 @@ export function BattleArena({
               />
             )}
 
+            {captureBall && (
+              <div
+                key={captureBall}
+                className={`absolute w-10 h-10 pointer-events-none z-20 ${
+                  captureBall === "throw"
+                    ? "ball-throw-travel"
+                    : captureBall === "wobble"
+                      ? "ball-wobble"
+                      : captureBall === "success"
+                        ? "ball-catch-flash"
+                        : "ball-break"
+                }`}
+              >
+                <PokeballIcon className="w-full h-full drop-shadow-[0_0_8px_rgba(238,21,21,0.6)]" />
+              </div>
+            )}
+
             {effPopup && (
               <span
                 key={`eff-${effPopup.key}`}
@@ -1101,6 +1152,7 @@ export function BattleArena({
                   width={160}
                   height={160}
                   className={wildSpriteClass}
+                  style={shakeStyle("wild")}
                 />
               )}
             </div>
@@ -1133,6 +1185,7 @@ export function BattleArena({
                   width={160}
                   height={160}
                   className={playerSpriteClass}
+                  style={shakeStyle("player")}
                 />
               )}
               {ballAnim && (

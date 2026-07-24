@@ -129,7 +129,7 @@ export async function submitBattleMove(
     .map((id) => wildMoves.find((x) => x.id === id))
     .filter((m): m is NonNullable<typeof m> => !!m);
 
-  let wildMovePp =
+  const wildMovePp =
     (battle.wildMovePp?.length ?? 0) === battle.wildMoveIds.length && battle.wildMovePp
       ? [...battle.wildMovePp]
       : wildMoveSnapshots.map((m) => m.pp ?? 20);

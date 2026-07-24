@@ -52,8 +52,8 @@ export function resolveSingleAction(
   wild: SideBattleState,
 ): ActionOutcome {
   const events: TurnEvent[] = [];
-  let p: SideBattleState = { ...player, stages: { ...player.stages } };
-  let w: SideBattleState = { ...wild, stages: { ...wild.stages } };
+  const p: SideBattleState = { ...player, stages: { ...player.stages } };
+  const w: SideBattleState = { ...wild, stages: { ...wild.stages } };
 
   const isPlayer = attackerSide === "player";
   const self = isPlayer ? p : w;
