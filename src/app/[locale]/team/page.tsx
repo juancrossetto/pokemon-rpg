@@ -8,6 +8,7 @@ import { typeColor } from "@/lib/type-colors";
 import { calculateMaxHp, calculateStat, xpForLevel, xpToNextLevel } from "@/lib/stats";
 import { healTeam } from "@/actions/heal-team";
 import { redirectIfInBattle } from "@/lib/battle-lock";
+import { AllocatePointsPanel } from "@/components/allocate-points-panel";
 
 const TEAM_SIZE = 6;
 
@@ -40,9 +41,11 @@ export default async function TeamPage({
   const bySlot = new Map(pokemon.map((p) => [p.teamSlot, p]));
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => bySlot.get(i + 1) ?? null);
   const needsHealing = pokemon.some(
-    (p) => p.currentHp < calculateMaxHp(p.species.baseHp, p.level),
+    (p) =>
+      p.currentHp < calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution),
   );
   const healthyCount = pokemon.filter((p) => p.currentHp > 0).length;
+  const totalUnspent = pokemon.reduce((sum, p) => sum + p.unspentPoints, 0);
 
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8">
@@ -56,6 +59,11 @@ export default async function TeamPage({
             <h1 className="text-headline-lg text-white tracking-tight">{t("title")}</h1>
             <p className="mt-0.5 text-label-md text-on-surface-variant">
               {t("rosterSummary", { ready: healthyCount, total: pokemon.length })}
+              {totalUnspent > 0 && (
+                <span className="ml-2 text-tertiary">
+                  · {t("unspentPoints", { count: totalUnspent })}
+                </span>
+              )}
             </p>
           </div>
 
@@ -85,6 +93,7 @@ export default async function TeamPage({
             instance ? (
               <PokemonCard
                 key={instance.id}
+                instanceId={instance.id}
                 slot={i + 1}
                 isLead={i === 0}
                 nickname={instance.nickname}
@@ -93,16 +102,43 @@ export default async function TeamPage({
                 types={instance.species.types}
                 spriteUrl={instance.species.spriteUrl}
                 currentHp={instance.currentHp}
-                maxHp={calculateMaxHp(instance.species.baseHp, instance.level)}
+                maxHp={calculateMaxHp(
+                  instance.species.baseHp,
+                  instance.level,
+                  instance.ptConstitution,
+                )}
                 xp={instance.xp}
                 xpForCurrentLevel={xpForLevel(instance.level)}
                 xpToNext={xpToNextLevel(instance.xp, instance.level)}
                 atk={calculateStat(instance.species.baseAttack, instance.ptStrength, instance.level)}
                 def={calculateStat(instance.species.baseDefense, instance.ptDexterity, instance.level)}
-                spAtk={calculateStat(instance.species.baseSpAtk, instance.ptIntelligence, instance.level)}
-                spDef={calculateStat(instance.species.baseSpDef, instance.ptIntelligence, instance.level)}
+                spAtk={calculateStat(
+                  instance.species.baseSpAtk,
+                  instance.ptIntelligence,
+                  instance.level,
+                )}
+                spDef={calculateStat(
+                  instance.species.baseSpDef,
+                  instance.ptIntelligence,
+                  instance.level,
+                )}
                 speed={calculateStat(instance.species.baseSpeed, instance.ptSpeed, instance.level)}
                 unspentPoints={instance.unspentPoints}
+                points={{
+                  ptStrength: instance.ptStrength,
+                  ptDexterity: instance.ptDexterity,
+                  ptIntelligence: instance.ptIntelligence,
+                  ptSpeed: instance.ptSpeed,
+                  ptConstitution: instance.ptConstitution,
+                }}
+                bases={{
+                  baseHp: instance.species.baseHp,
+                  baseAttack: instance.species.baseAttack,
+                  baseDefense: instance.species.baseDefense,
+                  baseSpAtk: instance.species.baseSpAtk,
+                  baseSpDef: instance.species.baseSpDef,
+                  baseSpeed: instance.species.baseSpeed,
+                }}
                 moves={instance.moves.map((m) => ({
                   name: m.move.name,
                   type: m.move.type,
@@ -117,14 +153,18 @@ export default async function TeamPage({
                   spDef: t("stats.spDef"),
                   speed: t("stats.speed"),
                   level: (lvl: number) => t("level", { level: lvl }),
-                  unspentPoints: (n: number) => t("unspentPoints", { count: n }),
                   lead: t("lead"),
                   slot: (n: number) => t("slotLabel", { slot: n }),
                   fainted: t("fainted"),
                 }}
               />
             ) : (
-              <EmptySlot key={`empty-${i}`} slot={i + 1} label={t("emptySlot")} hint={t("slotAvailable", { slot: i + 1 })} />
+              <EmptySlot
+                key={`empty-${i}`}
+                slot={i + 1}
+                label={t("emptySlot")}
+                hint={t("slotAvailable", { slot: i + 1 })}
+              />
             ),
           )}
         </div>
@@ -134,6 +174,7 @@ export default async function TeamPage({
 }
 
 function PokemonCard({
+  instanceId,
   slot,
   isLead,
   nickname,
@@ -152,9 +193,12 @@ function PokemonCard({
   spDef,
   speed,
   unspentPoints,
+  points,
+  bases,
   moves,
   labels,
 }: {
+  instanceId: string;
   slot: number;
   isLead: boolean;
   nickname: string | null;
@@ -173,6 +217,21 @@ function PokemonCard({
   spDef: number;
   speed: number;
   unspentPoints: number;
+  points: {
+    ptStrength: number;
+    ptDexterity: number;
+    ptIntelligence: number;
+    ptSpeed: number;
+    ptConstitution: number;
+  };
+  bases: {
+    baseHp: number;
+    baseAttack: number;
+    baseDefense: number;
+    baseSpAtk: number;
+    baseSpDef: number;
+    baseSpeed: number;
+  };
   moves: { name: string; type: string }[];
   labels: {
     hp: string;
@@ -184,7 +243,6 @@ function PokemonCard({
     spDef: string;
     speed: string;
     level: (lvl: number) => string;
-    unspentPoints: (n: number) => string;
     lead: string;
     slot: (n: number) => string;
     fainted: string;
@@ -347,12 +405,13 @@ function PokemonCard({
           })}
         </div>
 
-        {unspentPoints > 0 && (
-          <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-tertiary/25 bg-tertiary/10 px-2 py-1.5">
-            <span className="material-symbols-outlined text-[14px] text-tertiary">bolt</span>
-            <span className="text-[10px] text-tertiary">{labels.unspentPoints(unspentPoints)}</span>
-          </div>
-        )}
+        <AllocatePointsPanel
+          instanceId={instanceId}
+          level={level}
+          unspentPoints={unspentPoints}
+          points={points}
+          bases={bases}
+        />
       </div>
     </article>
   );
@@ -361,7 +420,9 @@ function PokemonCard({
 function StatChip({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-0.5 py-1 text-center">
-      <p className="text-[8px] font-bold uppercase tracking-wide text-on-surface-variant leading-none">{label}</p>
+      <p className="text-[8px] font-bold uppercase tracking-wide text-on-surface-variant leading-none">
+        {label}
+      </p>
       <p className="mt-0.5 font-mono text-[11px] font-semibold text-white leading-none">{value}</p>
     </div>
   );
@@ -381,7 +442,11 @@ function EmptySlot({ slot, label, hint }: { slot: number; label: string; hint: s
 }
 
 function hpBarClass(pct: number): string {
-  if (pct > 50) return "bg-gradient-to-r from-emerald-500 to-lime-400 shadow-[0_0_12px_rgba(74,222,128,0.45)]";
-  if (pct > 20) return "bg-gradient-to-r from-amber-500 to-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.4)]";
+  if (pct > 50) {
+    return "bg-gradient-to-r from-emerald-500 to-lime-400 shadow-[0_0_12px_rgba(74,222,128,0.45)]";
+  }
+  if (pct > 20) {
+    return "bg-gradient-to-r from-amber-500 to-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.4)]";
+  }
   return "bg-gradient-to-r from-red-600 to-rose-400 shadow-[0_0_12px_rgba(248,113,113,0.45)]";
 }

@@ -65,7 +65,11 @@ export default async function BattlePage({
 
   if (battle) {
     const instance = battle.pokemonInstance;
-    const playerMaxHp = calculateMaxHp(instance.species.baseHp, instance.level);
+    const playerMaxHp = calculateMaxHp(
+      instance.species.baseHp,
+      instance.level,
+      instance.ptConstitution,
+    );
     const currentSlot = battle.gymPokemonSlot ?? 1;
 
     const [pokeballs, potions, partyRows, opponentTeam] = await Promise.all([
@@ -145,7 +149,7 @@ export default async function BattlePage({
         level: r.level,
         spriteUrl: r.species.spriteUrl,
         currentHp: r.id === instance.id ? instance.currentHp : r.currentHp,
-        maxHp: calculateMaxHp(r.species.baseHp, r.level),
+        maxHp: calculateMaxHp(r.species.baseHp, r.level, r.ptConstitution),
       })),
       player: {
         instanceId: instance.id,

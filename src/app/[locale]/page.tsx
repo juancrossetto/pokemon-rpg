@@ -120,7 +120,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                   types={instance.species.types}
                   spriteUrl={instance.species.spriteUrl}
                   currentHp={instance.currentHp}
-                  maxHp={calculateMaxHp(instance.species.baseHp, instance.level)}
+                  maxHp={calculateMaxHp(instance.species.baseHp, instance.level, instance.ptConstitution)}
                 />
               ) : (
                 <Link

@@ -44,7 +44,7 @@ export async function applyBattleItem(
   if (item.type !== "POTION" || healAmount === null) return null;
 
   const instance = battle.pokemonInstance;
-  const maxHp = calculateMaxHp(instance.species.baseHp, instance.level);
+  const maxHp = calculateMaxHp(instance.species.baseHp, instance.level, instance.ptConstitution);
   const healedTo = Math.min(maxHp, instance.currentHp + healAmount);
   const healedBy = healedTo - instance.currentHp;
 

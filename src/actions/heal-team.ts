@@ -24,17 +24,39 @@ export async function healTeam(locale: string) {
 
   const team = await prisma.pokemonInstance.findMany({
     where: { ownerId: session.user.id, teamSlot: { not: null } },
-    include: { species: true },
+    include: {
+      species: true,
+      moves: { include: { move: { select: { pp: true } } } },
+    },
   });
 
-  await Promise.all(
-    team.map((instance) =>
+  // Como un Centro Pokémon: restaura HP y PP de todos los movimientos.
+  await prisma.$transaction(
+    team.flatMap((instance) => [
       prisma.pokemonInstance.update({
         where: { id: instance.id },
-        data: { currentHp: calculateMaxHp(instance.species.baseHp, instance.level) },
+        data: {
+          currentHp: calculateMaxHp(
+            instance.species.baseHp,
+            instance.level,
+            instance.ptConstitution,
+          ),
+        },
       }),
-    ),
+      ...instance.moves.map((m) =>
+        prisma.pokemonMove.update({
+          where: {
+            pokemonInstanceId_slot: {
+              pokemonInstanceId: instance.id,
+              slot: m.slot,
+            },
+          },
+          data: { currentPp: m.move.pp },
+        }),
+      ),
+    ]),
   );
 
   revalidatePath(`/${locale}/team`);
+  revalidatePath(`/${locale}/battle`);
 }

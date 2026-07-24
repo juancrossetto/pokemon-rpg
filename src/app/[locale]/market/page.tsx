@@ -525,6 +525,7 @@ function PokemonListingDetail({
     ptDexterity: number;
     ptIntelligence: number;
     ptSpeed: number;
+    ptConstitution: number;
     unspentPoints: number;
     moves: { move: { name: string; type: string } }[];
     species: {
@@ -555,7 +556,7 @@ function PokemonListingDetail({
 }) {
   const { species } = pokemon;
   const stats = [
-    { label: labels.hp, value: calculateMaxHp(species.baseHp, pokemon.level) },
+    { label: labels.hp, value: calculateMaxHp(species.baseHp, pokemon.level, pokemon.ptConstitution) },
     { label: labels.atk, value: calculateStat(species.baseAttack, pokemon.ptStrength, pokemon.level) },
     { label: labels.def, value: calculateStat(species.baseDefense, pokemon.ptDexterity, pokemon.level) },
     { label: labels.spAtk, value: calculateStat(species.baseSpAtk, pokemon.ptIntelligence, pokemon.level) },
@@ -563,7 +564,11 @@ function PokemonListingDetail({
     { label: labels.speed, value: calculateStat(species.baseSpeed, pokemon.ptSpeed, pokemon.level) },
   ];
   const invested =
-    pokemon.ptStrength + pokemon.ptDexterity + pokemon.ptIntelligence + pokemon.ptSpeed;
+    pokemon.ptStrength +
+    pokemon.ptDexterity +
+    pokemon.ptIntelligence +
+    pokemon.ptSpeed +
+    pokemon.ptConstitution;
 
   return (
     <div className="flex flex-col gap-2">

@@ -23,6 +23,15 @@ export default async function StarterPage({
     return null;
   }
 
+  const account = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true },
+  });
+  if (!account) {
+    redirect({ href: "/login", locale });
+    return null;
+  }
+
   const existingTeam = await prisma.pokemonInstance.findFirst({
     where: { ownerId: session.user.id },
   });

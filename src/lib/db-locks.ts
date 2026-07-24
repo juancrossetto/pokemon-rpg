@@ -29,3 +29,12 @@ export async function lockUsers(
     SELECT id FROM "User" WHERE id IN (${userId}, ${otherUserId}) ORDER BY id FOR UPDATE
   `;
 }
+
+/**
+ * Lock de fila sobre un clan. Serializa las operaciones que dependen del conteo
+ * de miembros (unirse cuando está por llenarse, expulsar) para que dos requests
+ * simultáneos no superen el cupo máximo.
+ */
+export async function lockClan(tx: Prisma.TransactionClient, clanId: string): Promise<void> {
+  await tx.$queryRaw`SELECT id FROM "Clan" WHERE id = ${clanId} FOR UPDATE`;
+}

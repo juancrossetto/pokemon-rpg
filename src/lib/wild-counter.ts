@@ -32,6 +32,7 @@ type BattleWithFighters = {
     ptDexterity: number;
     ptIntelligence: number;
     ptSpeed: number;
+    ptConstitution: number;
     species: {
       name: string;
       types: string[];
@@ -62,7 +63,11 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
   statePatch: Record<string, unknown>;
 }> {
   const instance = battle.pokemonInstance;
-  const playerMaxHp = calculateMaxHp(instance.species.baseHp, instance.level);
+  const playerMaxHp = calculateMaxHp(
+    instance.species.baseHp,
+    instance.level,
+    instance.ptConstitution,
+  );
   const playerBase = playerCombatantStats(instance.species, instance.level, instance);
   const wildBase = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
 

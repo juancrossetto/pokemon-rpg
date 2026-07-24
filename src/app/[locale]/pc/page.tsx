@@ -152,12 +152,13 @@ async function PokemonRow({
     nickname: string | null;
     level: number;
     currentHp: number;
+    ptConstitution: number;
     species: { name: string; spriteUrl: string; types: string[]; baseHp: number };
   };
   children: React.ReactNode;
 }) {
   const t = await getTranslations("pc");
-  const maxHp = calculateMaxHp(instance.species.baseHp, instance.level);
+  const maxHp = calculateMaxHp(instance.species.baseHp, instance.level, instance.ptConstitution);
   const hpPct = Math.max(0, Math.min(100, (instance.currentHp / maxHp) * 100));
   const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
 
