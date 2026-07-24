@@ -121,9 +121,11 @@ model PokemonInstance {
   owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   species        Species         @relation(fields: [speciesId], references: [id])
   moves          PokemonMove[]
-  listing        MarketListing?
+  listings       MarketListing[]
   battleSessions BattleSession[]
 
+  @@unique([ownerId, teamSlot]) // dos Pokémon no pueden compartir slot. Postgres
+  // trata cada NULL como distinto, así que el PC (teamSlot null) no se ve afectado.
   @@index([ownerId])
   @@index([speciesId])
 }
@@ -220,26 +222,43 @@ enum ListingStatus {
   ACTIVE
   SOLD
   CANCELLED
+  EXPIRED
 }
 
 model MarketListing {
   id                String        @id @default(cuid())
   sellerId          String
   kind              ListingKind
-  pokemonInstanceId String?       @unique // solo si kind = POKEMON
+  // Solo si kind = POKEMON. No es @unique: un Pokémon puede tener varias
+  // publicaciones históricas (SOLD/CANCELLED/EXPIRED). La regla "una sola
+  // ACTIVE por Pokémon" la garantiza el lock de fila del vendedor que toman
+  // las transacciones del mercado — ver src/lib/db-locks.ts.
+  pokemonInstanceId String?
   itemId            String? // solo si kind = ITEM
   quantity          Int? // solo si kind = ITEM
   price             Int
   status            ListingStatus @default(ACTIVE)
   createdAt         DateTime      @default(now())
+  // Se setea al crear (ahora + TTL). Null solo en filas anteriores a la
+  // feature — esas no expiran. La expiración es lazy: se barre al cargar
+  // el mercado, no hay cron.
+  expiresAt         DateTime?
   buyerId           String?
   soldAt            DateTime?
+  // Null = el vendedor todavía no vio el desenlace (vendido / expirado). Se
+  // usa para el contador de novedades de "Mis publicaciones": sin esto, una
+  // publicación que vence se devuelve al PC en silencio.
+  sellerSeenAt      DateTime?
 
   seller  User             @relation("Seller", fields: [sellerId], references: [id])
   buyer   User?            @relation("Buyer", fields: [buyerId], references: [id])
   pokemon PokemonInstance? @relation(fields: [pokemonInstanceId], references: [id])
 
   @@index([status, kind])
+  @@index([pokemonInstanceId])
+  @@index([sellerId, status])
+  @@index([buyerId, status])
+  @@index([status, expiresAt]) // barrido de vencidas
 }
 
 // ---------- Clanes ----------

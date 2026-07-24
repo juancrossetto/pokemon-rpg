@@ -63,7 +63,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider>
           <Providers>
             <SiteHeader />
-            <div className="relative z-10 flex flex-1 flex-col pb-16 md:pb-0 md:pt-16">
+            <div className="relative z-10 flex flex-1 flex-col pb-14 md:pb-0 md:pt-16">
               {children}
             </div>
           </Providers>

@@ -10,6 +10,8 @@ import { getMovesetForLevel } from "@/lib/moveset";
 const STARTER_LEVEL = 5;
 const STARTER_POKEBALL_COUNT = 5;
 const STARTER_POTION_COUNT = 3;
+const STARTER_BERRY_COUNT = 2;
+const STARTER_COINS = 500;
 
 export async function chooseStarter(speciesId: number, locale: string) {
   const session = await auth();
@@ -35,12 +37,17 @@ export async function chooseStarter(speciesId: number, locale: string) {
   const currentHp = calculateMaxHp(species.baseHp, STARTER_LEVEL);
   const moveIds = await getMovesetForLevel(speciesId, STARTER_LEVEL);
 
-  const [pokeBall, potion] = await Promise.all([
+  const [pokeBall, potion, oranBerry] = await Promise.all([
     prisma.item.findUnique({ where: { name: "Poke Ball" } }),
     prisma.item.findUnique({ where: { name: "Potion" } }),
+    prisma.item.findUnique({ where: { name: "Oran Berry" } }),
   ]);
 
   await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: { coins: { increment: STARTER_COINS } },
+    }),
     prisma.pokemonInstance.create({
       data: {
         ownerId: userId,
@@ -69,6 +76,15 @@ export async function chooseStarter(speciesId: number, locale: string) {
             where: { userId_itemId: { userId, itemId: potion.id } },
             create: { userId, itemId: potion.id, quantity: STARTER_POTION_COUNT },
             update: { quantity: { increment: STARTER_POTION_COUNT } },
+          }),
+        ]
+      : []),
+    ...(oranBerry
+      ? [
+          prisma.inventoryItem.upsert({
+            where: { userId_itemId: { userId, itemId: oranBerry.id } },
+            create: { userId, itemId: oranBerry.id, quantity: STARTER_BERRY_COUNT },
+            update: { quantity: { increment: STARTER_BERRY_COUNT } },
           }),
         ]
       : []),

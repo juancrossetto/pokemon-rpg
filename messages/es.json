@@ -11,10 +11,15 @@
     "home": "Inicio",
     "pokedex": "Pokédex",
     "team": "Mi equipo",
+    "teamShort": "Equipo",
     "battle": "Batalla",
+    "market": "Mercado",
+    "pc": "PC",
     "login": "Iniciar sesión",
     "register": "Crear cuenta",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "language": "Idioma",
+    "trainer": "Entrenador"
   },
   "home": {
     "eyebrow": "Temporada 1",
@@ -57,7 +62,8 @@
       "username": "Nombre de entrenador",
       "password": "Contraseña",
       "passwordHint": "Mínimo 8 caracteres",
-      "country": "País (código, ej. AR)",
+      "country": "País",
+      "countryPlaceholder": "Elegí tu país",
       "submit": "Crear cuenta",
       "submitting": "Creando...",
       "success": "Cuenta creada. Iniciando sesión...",
@@ -84,6 +90,7 @@
     "slotAvailable": "Espacio {slot} disponible",
     "unspentPoints": "{count} puntos sin asignar",
     "autoHeal": "Auto-curar",
+    "openPc": "PC de almacenamiento",
     "expToNext": "{xp} para el próximo nivel",
     "heldItem": "OBJETO EQUIPADO",
     "noItem": "Ninguno",
@@ -126,6 +133,157 @@
       "noLead": "Necesitás un Pokémon en tu equipo para batallar.",
       "faintedLead": "Tu Pokémon está debilitado — curalo en Mi equipo primero.",
       "noEnergy": "No te queda energía. Esperá a que se regenere."
+    }
+  },
+  "market": {
+    "title": "Mercado",
+    "subtitle": "Comprá y vendé Pokémon y objetos con otros entrenadores.",
+    "coins": "monedas",
+    "tabs": {
+      "browse": "Explorar",
+      "sell": "Vender",
+      "mine": "Mis publicaciones",
+      "bought": "Compradas"
+    },
+    "tabsShort": {
+      "browse": "Explorar",
+      "sell": "Vender",
+      "mine": "Mías",
+      "bought": "Compras"
+    },
+    "level": "Nv. {level}",
+    "quantity": "×{count}",
+    "seller": "Vende: {name}",
+    "shiny": "Shiny",
+    "investedPoints": "{count} pts invertidos",
+    "unspentPoints": "{count} pts sin gastar",
+    "expiresIn": "Expira en {days, plural, =1 {1 día} other {# días}}",
+    "expiryNote": "Las publicaciones expiran a los {days} días y lo publicado vuelve a tu poder.",
+    "stats": {
+      "hp": "HP",
+      "atk": "ATQ",
+      "def": "DEF",
+      "spAtk": "AT.ESP",
+      "spDef": "DEF.ESP",
+      "speed": "VEL"
+    },
+    "filters": {
+      "searchPlaceholder": "Buscar por nombre...",
+      "kind": {
+        "all": "Todo",
+        "pokemon": "Pokémon",
+        "item": "Objetos"
+      },
+      "minPrice": "Mín.",
+      "maxPrice": "Máx.",
+      "apply": "Filtrar",
+      "clear": "Limpiar",
+      "noResults": "No hay publicaciones que coincidan con los filtros.",
+      "sortLabel": "Ordenar por",
+      "sort": {
+        "recent": "Más recientes",
+        "price_asc": "Precio: menor a mayor",
+        "price_desc": "Precio: mayor a menor",
+        "level_desc": "Nivel: mayor a menor"
+      }
+    },
+    "pagination": {
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "pageOf": "Página {page} de {total}"
+    },
+    "buy": "Comprar",
+    "noFunds": "Sin monedas",
+    "needFunds": "Te faltan {missing}",
+    "cancel": "Cancelar",
+    "publish": "Publicar",
+    "pricePlaceholder": "Precio",
+    "priceTotalPlaceholder": "Precio total",
+    "sellPokemon": "Vender un Pokémon",
+    "sellItems": "Vender objetos",
+    "inTeam": "En el equipo",
+    "lastTeamMember": "Último del equipo",
+    "owned": "Tenés ×{count}",
+    "sellRules": "Comisión {commission}% al vender · tarifa de publicación {fee}% · expira en {days} días.",
+    "lastSaleShort": "ref. {price}",
+    "feePreview": "Tarifa ahora: {fee} · cobrás si se vende: {proceeds}",
+    "confirmPublish": "¿Publicar por {price} monedas? Tarifa {fee} (no reembolsable).",
+    "goToPc": "Ir al PC",
+    "quantityLabel": "Cantidad",
+    "commissionNote": "Al vender se cobra una comisión del {percent}% sobre el precio.",
+    "soldTo": "Vendido a {name} — cobraste {coins} monedas",
+    "status": {
+      "ACTIVE": "Publicado",
+      "SOLD": "Vendido",
+      "CANCELLED": "Cancelado",
+      "EXPIRED": "Expirado"
+    },
+    "emptyBrowse": "No hay publicaciones activas. ¡Sé el primero en vender algo!",
+    "emptyPokemon": "No tenés Pokémon disponibles para vender.",
+    "emptyItems": "No tenés objetos en tu inventario.",
+    "emptyMine": "Todavía no publicaste nada.",
+    "notices": {
+      "listed": "Publicación creada.",
+      "bought": "¡Compra realizada! Ya es tuyo.",
+      "cancelled": "Publicación cancelada.",
+      "bought_pokemon": "¡Compra realizada! Lo encontrás en tu PC."
+    },
+    "errors": {
+      "invalid_price": "Revisá el precio y la cantidad ingresados.",
+      "not_found": "No se encontró ese Pokémon.",
+      "already_listed": "Ese Pokémon ya está publicado.",
+      "in_battle": "No podés vender un Pokémon en medio de una batalla.",
+      "last_team_member": "No podés vender tu último Pokémon activo.",
+      "not_enough_items": "No tenés suficientes unidades de ese objeto.",
+      "not_available": "Esa publicación ya no está disponible.",
+      "own_listing": "No podés comprar tu propia publicación.",
+      "insufficient_coins": "No te alcanzan las monedas.",
+      "insufficient_fee": "No te alcanzan las monedas para pagar la tarifa de publicación.",
+      "rate_limited": "Demasiadas operaciones seguidas. Esperá un momento."
+    },
+    "moves": "Movimientos",
+    "unitPrice": "{price} c/u",
+    "expiresInHours": "Expira en {hours, plural, =1 {1 hora} other {# horas}}",
+    "expiresSoon": "Expira en menos de una hora",
+    "returnedToPc": "volvió a tu PC",
+    "lastSale": "Última venta: {price} monedas",
+    "lastSaleUnit": "Última venta: {price} monedas c/u",
+    "noSalesYet": "Sin ventas previas de referencia",
+    "inBattle": "En batalla",
+    "buying": "Comprando…",
+    "publishing": "Publicando…",
+    "cancelling": "Cancelando…",
+    "confirmBuy": "¿Comprar {name} por {price} monedas?",
+    "unseenTitle": "{count, plural, =1 {1 novedad sin ver} other {# novedades sin ver}}",
+    "boughtFrom": "Comprado a {name}",
+    "emptyBought": "Todavía no compraste nada en el mercado.",
+    "feeNote": "Publicar cuesta una tarifa del {percent}% del precio (mínimo {min} moneda), no reembolsable."
+  },
+  "pc": {
+    "title": "PC de almacenamiento",
+    "subtitle": "Guardá y retirá Pokémon entre tu equipo activo y el PC.",
+    "level": "Nv. {level}",
+    "teamSection": "Equipo activo ({count}/{max})",
+    "storageSection": "En el PC ({count})",
+    "deposit": "Depositar",
+    "withdraw": "Al equipo",
+    "teamFull": "Equipo lleno",
+    "lastTeamMember": "Último del equipo",
+    "listed": "En venta",
+    "emptyStorage": "No tenés Pokémon guardados en el PC.",
+    "notices": {
+      "deposited": "Pokémon depositado en el PC.",
+      "withdrawn": "Pokémon agregado al equipo."
+    },
+    "errors": {
+      "not_found": "No se encontró ese Pokémon.",
+      "already_in_team": "Ese Pokémon ya está en el equipo.",
+      "not_in_team": "Ese Pokémon no está en el equipo.",
+      "listed": "Ese Pokémon está publicado en el mercado — cancelá la publicación primero.",
+      "team_full": "Tu equipo está lleno. Depositá un Pokémon primero.",
+      "in_battle": "No podés depositar un Pokémon en medio de una batalla.",
+      "last_team_member": "No podés depositar tu último Pokémon activo.",
+      "rate_limited": "Demasiadas operaciones seguidas. Esperá un momento."
     }
   }
 }

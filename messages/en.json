@@ -11,10 +11,15 @@
     "home": "Home",
     "pokedex": "Pokédex",
     "team": "My team",
+    "teamShort": "Team",
     "battle": "Battle",
+    "market": "Market",
+    "pc": "PC",
     "login": "Log in",
     "register": "Create account",
-    "logout": "Log out"
+    "logout": "Log out",
+    "language": "Language",
+    "trainer": "Trainer"
   },
   "home": {
     "eyebrow": "Season 1",
@@ -57,7 +62,8 @@
       "username": "Trainer name",
       "password": "Password",
       "passwordHint": "At least 8 characters",
-      "country": "Country (code, e.g. US)",
+      "country": "Country",
+      "countryPlaceholder": "Choose your country",
       "submit": "Create account",
       "submitting": "Creating...",
       "success": "Account created. Logging in...",
@@ -84,6 +90,7 @@
     "slotAvailable": "Slot {slot} available",
     "unspentPoints": "{count} unspent points",
     "autoHeal": "Auto-Heal",
+    "openPc": "Storage PC",
     "expToNext": "{xp} to next level",
     "heldItem": "HELD ITEM",
     "noItem": "None",
@@ -126,6 +133,157 @@
       "noLead": "You need a Pokémon in your team to battle.",
       "faintedLead": "Your Pokémon has fainted — heal it in My team first.",
       "noEnergy": "You're out of energy. Wait for it to regenerate."
+    }
+  },
+  "market": {
+    "title": "Market",
+    "subtitle": "Buy and sell Pokémon and items with other trainers.",
+    "coins": "coins",
+    "tabs": {
+      "browse": "Browse",
+      "sell": "Sell",
+      "mine": "My listings",
+      "bought": "Purchases"
+    },
+    "tabsShort": {
+      "browse": "Browse",
+      "sell": "Sell",
+      "mine": "Mine",
+      "bought": "Bought"
+    },
+    "level": "Lv. {level}",
+    "quantity": "×{count}",
+    "seller": "Seller: {name}",
+    "shiny": "Shiny",
+    "investedPoints": "{count} pts invested",
+    "unspentPoints": "{count} unspent pts",
+    "expiresIn": "Expires in {days, plural, =1 {1 day} other {# days}}",
+    "expiryNote": "Listings expire after {days} days and whatever was listed returns to you.",
+    "stats": {
+      "hp": "HP",
+      "atk": "ATK",
+      "def": "DEF",
+      "spAtk": "SP.ATK",
+      "spDef": "SP.DEF",
+      "speed": "SPD"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by name...",
+      "kind": {
+        "all": "All",
+        "pokemon": "Pokémon",
+        "item": "Items"
+      },
+      "minPrice": "Min",
+      "maxPrice": "Max",
+      "apply": "Filter",
+      "clear": "Clear",
+      "noResults": "No listings match your filters.",
+      "sortLabel": "Sort by",
+      "sort": {
+        "recent": "Most recent",
+        "price_asc": "Price: low to high",
+        "price_desc": "Price: high to low",
+        "level_desc": "Level: high to low"
+      }
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {total}"
+    },
+    "buy": "Buy",
+    "noFunds": "No coins",
+    "needFunds": "Need {missing} more",
+    "cancel": "Cancel",
+    "publish": "List",
+    "pricePlaceholder": "Price",
+    "priceTotalPlaceholder": "Total price",
+    "sellPokemon": "Sell a Pokémon",
+    "sellItems": "Sell items",
+    "inTeam": "In team",
+    "lastTeamMember": "Last in team",
+    "owned": "You own ×{count}",
+    "sellRules": "{commission}% sell commission · {fee}% listing fee · expires in {days} days.",
+    "lastSaleShort": "ref. {price}",
+    "feePreview": "Fee now: {fee} · you receive if sold: {proceeds}",
+    "confirmPublish": "List for {price} coins? Fee {fee} (non-refundable).",
+    "goToPc": "Go to PC",
+    "quantityLabel": "Quantity",
+    "commissionNote": "Selling charges a {percent}% commission on the price.",
+    "soldTo": "Sold to {name} — you earned {coins} coins",
+    "status": {
+      "ACTIVE": "Listed",
+      "SOLD": "Sold",
+      "CANCELLED": "Cancelled",
+      "EXPIRED": "Expired"
+    },
+    "emptyBrowse": "No active listings. Be the first to sell something!",
+    "emptyPokemon": "You have no Pokémon available to sell.",
+    "emptyItems": "You have no items in your inventory.",
+    "emptyMine": "You haven't listed anything yet.",
+    "notices": {
+      "listed": "Listing created.",
+      "bought": "Purchase complete! It's yours now.",
+      "cancelled": "Listing cancelled.",
+      "bought_pokemon": "Purchase complete! You'll find it in your PC."
+    },
+    "errors": {
+      "invalid_price": "Check the price and quantity you entered.",
+      "not_found": "That Pokémon was not found.",
+      "already_listed": "That Pokémon is already listed.",
+      "in_battle": "You can't sell a Pokémon in the middle of a battle.",
+      "last_team_member": "You can't sell your last active Pokémon.",
+      "not_enough_items": "You don't have enough units of that item.",
+      "not_available": "That listing is no longer available.",
+      "own_listing": "You can't buy your own listing.",
+      "insufficient_coins": "You don't have enough coins.",
+      "insufficient_fee": "You don't have enough coins for the listing fee.",
+      "rate_limited": "Too many actions in a row. Give it a moment."
+    },
+    "moves": "Moves",
+    "unitPrice": "{price} each",
+    "expiresInHours": "Expires in {hours, plural, =1 {1 hour} other {# hours}}",
+    "expiresSoon": "Expires in under an hour",
+    "returnedToPc": "returned to your PC",
+    "lastSale": "Last sale: {price} coins",
+    "lastSaleUnit": "Last sale: {price} coins each",
+    "noSalesYet": "No previous sales to compare",
+    "inBattle": "In battle",
+    "buying": "Buying…",
+    "publishing": "Listing…",
+    "cancelling": "Cancelling…",
+    "confirmBuy": "Buy {name} for {price} coins?",
+    "unseenTitle": "{count, plural, =1 {1 unseen update} other {# unseen updates}}",
+    "boughtFrom": "Bought from {name}",
+    "emptyBought": "You haven't bought anything on the market yet.",
+    "feeNote": "Listing costs a {percent}% fee on the price (minimum {min} coin), non-refundable."
+  },
+  "pc": {
+    "title": "Storage PC",
+    "subtitle": "Move Pokémon between your active team and the PC.",
+    "level": "Lv. {level}",
+    "teamSection": "Active team ({count}/{max})",
+    "storageSection": "In the PC ({count})",
+    "deposit": "Deposit",
+    "withdraw": "To team",
+    "teamFull": "Team full",
+    "lastTeamMember": "Last in team",
+    "listed": "For sale",
+    "emptyStorage": "You have no Pokémon stored in the PC.",
+    "notices": {
+      "deposited": "Pokémon deposited in the PC.",
+      "withdrawn": "Pokémon added to your team."
+    },
+    "errors": {
+      "not_found": "That Pokémon was not found.",
+      "already_in_team": "That Pokémon is already in your team.",
+      "not_in_team": "That Pokémon is not in your team.",
+      "listed": "That Pokémon is listed on the market — cancel the listing first.",
+      "team_full": "Your team is full. Deposit a Pokémon first.",
+      "in_battle": "You can't deposit a Pokémon in the middle of a battle.",
+      "last_team_member": "You can't deposit your last active Pokémon.",
+      "rate_limited": "Too many actions in a row. Give it a moment."
     }
   }
 }

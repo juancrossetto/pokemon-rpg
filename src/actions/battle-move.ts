@@ -17,6 +17,12 @@ import { hasHealthyBackup } from "@/lib/team";
 const MAX_LOG_LINES = 20;
 const UNSPENT_POINTS_PER_LEVEL = 3;
 
+// Ingreso de moneda de la economía (dossier: la energía limita el caudal que
+// entra; el mercado y sus comisiones lo drenan).
+function coinsForVictory(wildLevel: number): number {
+  return 10 + wildLevel * 2;
+}
+
 export interface UseMoveResult {
   events: TurnEvent[];
   playerMaxHp: number;
@@ -145,6 +151,9 @@ export async function submitBattleMove(
   if (wonBattle) {
     log.push(`¡${battle.wildSpecies.name} salvaje debilitado!`);
 
+    const coinsGained = coinsForVictory(battle.wildLevel);
+    log.push(`Ganaste ${coinsGained} monedas.`);
+
     xpGained = xpForVictory(battle.wildLevel);
     const newXp = instance.xp + xpGained;
     let newLevel = instance.level;
@@ -169,6 +178,10 @@ export async function submitBattleMove(
       prisma.pokemonInstance.update({
         where: { id: instance.id },
         data: { currentHp: playerHp, xp: newXp, level: newLevel, unspentPoints: newUnspentPoints },
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: { coins: { increment: coinsGained } },
       }),
       prisma.battleSession.update({
         where: { id: battle.id },
