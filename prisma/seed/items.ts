@@ -19,6 +19,24 @@ const POTIONS = [
   { name: "Full Restore", buyPrice: 3000, healAmount: 9999 },
 ] as const;
 
+// Bayas comerciables (dossier: consumibles del mercado). Por ahora son
+// catálogo + efecto descriptivo; el uso en batalla se suma después.
+const BERRIES = [
+  { name: "Oran Berry", buyPrice: 150, effectText: "Restaura 10 HP." },
+  { name: "Sitrus Berry", buyPrice: 400, effectText: "Restaura 30 HP." },
+  { name: "Leppa Berry", buyPrice: 250, effectText: "Restaura 10 PP de un movimiento." },
+] as const;
+
+// Piedras de evolución comerciables. El flujo de evolución se suma después;
+// sin estos ítems el mercado no cubría el catálogo del dossier.
+const EVOLUTION_STONES = [
+  { name: "Fire Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies de tipo Fuego." },
+  { name: "Water Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies de tipo Agua." },
+  { name: "Thunder Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies de tipo Eléctrico." },
+  { name: "Leaf Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies de tipo Planta." },
+  { name: "Moon Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies (p. ej. Clefairy)." },
+] as const;
+
 export async function seedItems() {
   console.log("→ Objetos (Poké Balls)...");
   for (const ball of POKEBALLS) {
@@ -45,6 +63,34 @@ export async function seedItems() {
         healAmount: potion.healAmount,
       },
       update: { buyPrice: potion.buyPrice, healAmount: potion.healAmount },
+    });
+  }
+
+  console.log("→ Objetos (Bayas)...");
+  for (const berry of BERRIES) {
+    await prisma.item.upsert({
+      where: { name: berry.name },
+      create: {
+        name: berry.name,
+        type: "BERRY",
+        buyPrice: berry.buyPrice,
+        effectText: berry.effectText,
+      },
+      update: { buyPrice: berry.buyPrice, effectText: berry.effectText },
+    });
+  }
+
+  console.log("→ Objetos (Piedras de evolución)...");
+  for (const stone of EVOLUTION_STONES) {
+    await prisma.item.upsert({
+      where: { name: stone.name },
+      create: {
+        name: stone.name,
+        type: "EVOLUTION_STONE",
+        buyPrice: stone.buyPrice,
+        effectText: stone.effectText,
+      },
+      update: { buyPrice: stone.buyPrice, effectText: stone.effectText },
     });
   }
 }

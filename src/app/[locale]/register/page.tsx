@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { registerUser } from "@/actions/register";
 import { TextField } from "@/components/text-field";
+import { CountrySelect } from "@/components/country-select";
 
 export default function RegisterPage() {
   const t = useTranslations("auth.register");
@@ -73,13 +74,13 @@ export default function RegisterPage() {
           hint={t("passwordHint")}
         />
 
-        <TextField
+        <CountrySelect
           label={t("country")}
           required
-          minLength={2}
-          maxLength={2}
           value={country}
-          onChange={(e) => setCountry(e.target.value.toUpperCase())}
+          onChange={setCountry}
+          locale={locale}
+          placeholder={t("countryPlaceholder")}
         />
 
         {error && <p className="text-label-sm text-error">{t(`errors.${error}`)}</p>}

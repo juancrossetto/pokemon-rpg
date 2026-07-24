@@ -25,6 +25,12 @@ export interface XpSummaryEntry {
   leveledUpTo: number | null;
 }
 
+// Ingreso de moneda de la economía (dossier: la energía limita el caudal que
+// entra; el mercado y sus comisiones lo drenan).
+function coinsForVictory(wildLevel: number): number {
+  return 10 + wildLevel * 2;
+}
+
 export interface UseMoveResult {
   events: TurnEvent[];
   playerMaxHp: number;
@@ -352,10 +358,18 @@ export async function submitBattleMove(
       };
     }
 
-    const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
     badgeEarned = battle.gymId !== null;
+    // Las monedas por victoria (dossier: energía limita el caudal, mercado lo
+    // drena) solo aplican a encuentros salvajes — los gimnasios ya tienen su
+    // propia recompensa fija (gym.coinReward) más abajo.
+    const coinsGained = battle.gymId ? null : coinsForVictory(battle.wildLevel);
+    if (coinsGained !== null) log.push(`Ganaste ${coinsGained} monedas.`);
+    const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
     await prisma.$transaction([
       ...instanceUpdates,
+      ...(coinsGained !== null
+        ? [prisma.user.update({ where: { id: userId }, data: { coins: { increment: coinsGained } } })]
+        : []),
       prisma.battleSession.update({
         where: { id: battle.id },
         data: { status: "WON", wildCurrentHp: 0, pendingXp: 0, log: finalLog },

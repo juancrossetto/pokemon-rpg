@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { typeColor } from "@/lib/type-colors";
@@ -50,16 +50,25 @@ export default async function TeamPage({
               <span className="text-tertiary">{t("statusOptimal")}</span>
             </p>
           </div>
-          <form action={healTeam.bind(null, locale)}>
-            <button
-              type="submit"
-              disabled={!needsHealing}
-              className="bg-glass-surface border border-white/10 px-4 py-1.5 rounded hover:bg-white/10 transition-all text-on-surface text-label-md flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          <div className="flex items-center gap-2">
+            <Link
+              href="/pc"
+              className="bg-glass-surface border border-white/10 px-4 py-1.5 rounded hover:bg-white/10 transition-all text-on-surface text-label-md flex items-center gap-2"
             >
-              <span className="material-symbols-outlined text-[18px]">autorenew</span>
-              {t("autoHeal")}
-            </button>
-          </form>
+              <span className="material-symbols-outlined text-[18px]">storage</span>
+              {t("openPc")}
+            </Link>
+            <form action={healTeam.bind(null, locale)}>
+              <button
+                type="submit"
+                disabled={!needsHealing}
+                className="bg-glass-surface border border-white/10 px-4 py-1.5 rounded hover:bg-white/10 transition-all text-on-surface text-label-md flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span className="material-symbols-outlined text-[18px]">autorenew</span>
+                {t("autoHeal")}
+              </button>
+            </form>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
