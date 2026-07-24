@@ -144,7 +144,7 @@ export function MobileChrome({
             <p className="mb-3 text-label-sm uppercase tracking-wider text-on-surface-variant">
               {moreLabel}
             </p>
-            <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="grid grid-cols-3 gap-2 pb-1">
               {moreLinks.map((item) => (
                 <Link
                   key={item.href}
@@ -158,16 +158,6 @@ export function MobileChrome({
                   <span className="text-[11px] text-center leading-tight">{item.label}</span>
                 </Link>
               ))}
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="shrink-0 text-label-sm uppercase tracking-wider text-on-surface-variant">
-                {languageLabel}
-              </span>
-              <LocaleSwitcher
-                currentLocale={locale}
-                label={languageLabel}
-                variant="inline"
-              />
             </div>
           </div>
         </div>

@@ -44,11 +44,26 @@ export default async function GymRunPage({
       <div className="mx-auto max-w-2xl">
         <h1 className="text-headline-lg md:text-display-lg text-white mb-1">{t("corridorTitle")}</h1>
         <p className="text-label-md text-on-surface-variant mb-1">{t("corridorTarget", { name: gym.leaderName })}</p>
-        <p className="text-label-sm text-on-surface-variant mb-4">{t("corridorProgress", { pct: progressPct })}</p>
 
-        <div className="glass-panel border border-error/40 rounded-xl p-4 mb-6 flex items-start gap-3">
-          <span className="material-symbols-outlined text-error text-[22px] shrink-0">shield</span>
-          <p className="text-label-md text-error">{t("corridorWarning")}</p>
+        {/* Barra de progreso: el porcentaje en texto no daba sensación de
+            avance, que es justo lo que motiva a seguir el pasillo. */}
+        <p className="text-label-sm text-on-surface-variant mb-1.5">
+          {t("corridorProgress", { pct: progressPct })}
+        </p>
+        <div className="h-1.5 bg-surface-container-highest rounded-full overflow-hidden mb-4">
+          <div
+            className="h-full bg-pokeball-red rounded-full transition-all"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+
+        <div className="glass-panel border border-error/40 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 flex items-start gap-2.5">
+          <span className="material-symbols-outlined text-error text-[20px]! sm:text-[22px]! shrink-0">
+            shield
+          </span>
+          <p className="text-label-sm sm:text-[14px] sm:tracking-[0.05em] text-error">
+            {t("corridorWarning")}
+          </p>
         </div>
 
         <div className="flex flex-col gap-3 mb-6">
@@ -59,17 +74,19 @@ export default async function GymRunPage({
             return (
               <div
                 key={trainer.id}
-                className={`glass-panel rounded-xl p-4 border ${
+                className={`glass-panel rounded-xl p-3 sm:p-4 border ${
                   current ? "border-pokeball-red/60" : cleared ? "border-tertiary/40" : "border-white/10 opacity-60"
                 }`}
               >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-label-sm text-on-surface-variant">{t("subordinate", { n: trainer.slot })}</p>
-                    <h2 className="text-lg sm:text-headline-md text-on-surface truncate">{trainer.name}</h2>
+                    {/* Tamaño en valor arbitrario: `sm:text-headline-md` no
+                        genera nada (ver nota en gym-card.tsx). */}
+                    <h2 className="text-lg sm:text-[24px] sm:leading-8 text-on-surface truncate">{trainer.name}</h2>
                   </div>
                   <span
-                    className={`inline-flex self-start sm:self-auto items-center gap-1 rounded-full border px-2.5 py-1 text-label-sm shrink-0 ${
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] leading-none font-medium whitespace-nowrap shrink-0 ${
                       cleared
                         ? "border-tertiary/40 text-tertiary bg-tertiary/10"
                         : current
@@ -77,7 +94,7 @@ export default async function GymRunPage({
                           : "border-white/10 text-on-surface-variant bg-white/5"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[16px]">
+                    <span className="material-symbols-outlined text-[16px]! leading-none">
                       {cleared ? "check_circle" : current ? "swords" : "lock"}
                     </span>
                     {cleared ? t("statusCleared") : current ? t("statusPending") : t("statusLocked")}
@@ -90,7 +107,7 @@ export default async function GymRunPage({
                       type="submit"
                       className="w-full flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-4 py-2.5 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[18px]">swords</span>
+                      <span className="material-symbols-outlined text-[18px]!">swords</span>
                       {t("initiateCombat")}
                     </button>
                   </form>
@@ -100,23 +117,23 @@ export default async function GymRunPage({
           })}
 
           <div
-            className={`glass-panel rounded-xl p-4 border ${
+            className={`glass-panel rounded-xl p-3 sm:p-4 border ${
               leaderUnlocked ? "border-tertiary/60" : "border-white/10 opacity-60"
             }`}
           >
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-label-sm text-on-surface-variant">{t("leaderAnalysis")}</p>
-                <h2 className="text-lg sm:text-headline-md text-on-surface truncate">{gym.leaderName}</h2>
+                <h2 className="text-lg sm:text-[24px] sm:leading-8 text-on-surface truncate">{gym.leaderName}</h2>
               </div>
               <span
-                className={`inline-flex self-start sm:self-auto items-center gap-1 rounded-full border px-2.5 py-1 text-label-sm shrink-0 ${
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] leading-none font-medium whitespace-nowrap shrink-0 ${
                   leaderUnlocked
                     ? "border-tertiary/40 text-tertiary bg-tertiary/10"
                     : "border-white/10 text-on-surface-variant bg-white/5"
                 }`}
               >
-                <span className="material-symbols-outlined text-[16px]">{leaderUnlocked ? "military_tech" : "lock"}</span>
+                <span className="material-symbols-outlined text-[16px]! leading-none">{leaderUnlocked ? "military_tech" : "lock"}</span>
                 {leaderUnlocked ? t("statusPending") : t("statusLocked")}
               </span>
             </div>
@@ -127,7 +144,7 @@ export default async function GymRunPage({
                   type="submit"
                   className="w-full flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-4 py-2.5 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">swords</span>
+                  <span className="material-symbols-outlined text-[18px]!">swords</span>
                   {t("initiateCombat")}
                 </button>
               </form>

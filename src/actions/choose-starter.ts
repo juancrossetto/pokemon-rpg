@@ -21,6 +21,16 @@ export async function chooseStarter(speciesId: number, locale: string) {
   }
   const userId = session.user.id;
 
+  // Sesión JWT vieja (p. ej. post-migración de DB): el id ya no existe.
+  const account = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+  if (!account) {
+    redirect({ href: "/login", locale });
+    return;
+  }
+
   if (!STARTER_SPECIES_IDS.includes(speciesId as (typeof STARTER_SPECIES_IDS)[number])) {
     throw new Error("Especie inicial inválida");
   }
