@@ -99,7 +99,7 @@ export function LocaleSwitcher({
         aria-expanded={open}
         aria-label={label}
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors"
+        className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors"
       >
         <FlagIcon
           code={LOCALE_FLAG[active]}

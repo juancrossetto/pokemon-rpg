@@ -14,6 +14,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -26,6 +27,7 @@ export default function LoginPage() {
     const result = await signIn("credentials", {
       email,
       password,
+      remember: remember ? "true" : "false",
       redirect: false,
     });
 
@@ -61,9 +63,8 @@ export default function LoginPage() {
         <div className="flex flex-1 flex-col items-center justify-center py-4 md:py-6">
           <form onSubmit={handleSubmit} className="w-full max-w-[380px] md:max-w-[420px]">
             <div className="glass-panel relative rounded-xl border border-white/10 px-5 py-4 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-              {/* Header compacto en una sola fila */}
               <div className="mb-3.5 flex items-center gap-2.5">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-surface-container-high">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/15 bg-surface-container-high">
                   <PokeballIcon className="h-3.5 w-3.5" />
                 </div>
                 <div className="min-w-0">
@@ -121,6 +122,16 @@ export default function LoginPage() {
                   </div>
                 </label>
 
+                <label className="flex cursor-pointer items-center gap-2 px-0.5 py-0.5 text-label-sm text-on-surface-variant">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="h-3.5 w-3.5 rounded-sm border-white/25 bg-black/50 text-pokeball-red focus:ring-pokeball-red/40"
+                  />
+                  {t("rememberMe")}
+                </label>
+
                 {error && (
                   <p className="rounded-lg border border-error/30 bg-error/10 px-3 py-1.5 text-center text-label-sm text-error">
                     {t("error")}
@@ -130,7 +141,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-pokeball-red px-4 py-2.5 text-label-md text-white transition hover:bg-pokeball-red/80 active:scale-[0.99] disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-md bg-pokeball-red px-4 py-2.5 text-label-md text-white transition hover:bg-pokeball-red/80 active:scale-[0.99] disabled:opacity-50"
                 >
                   <PokeballIcon className="h-3.5 w-3.5" />
                   {submitting ? t("submitting") : t("submit")}

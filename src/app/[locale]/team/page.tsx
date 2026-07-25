@@ -86,7 +86,7 @@ export default async function TeamPage({
             />
             <Link
               href="/pc"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.03] px-4 py-2 text-label-sm text-on-surface transition hover:border-white/25 hover:bg-white/[0.06]"
+              className="inline-flex items-center gap-1.5 rounded-md border border-white/12 bg-white/[0.03] px-4 py-2 text-label-sm text-on-surface transition hover:border-white/25 hover:bg-white/[0.06]"
             >
               <span className="material-symbols-outlined text-[16px]">storage</span>
               {t("manage")}

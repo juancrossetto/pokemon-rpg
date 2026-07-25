@@ -83,7 +83,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
             <div className="ml-4 flex items-center gap-1">
               <Link
                 href={lockedHref}
-                className="inline-flex items-center gap-1.5 rounded-full bg-pokeball-red/15 border border-pokeball-red/50 px-3 py-1 text-label-sm text-pokeball-red font-bold"
+                className="inline-flex items-center gap-1.5 rounded-md bg-pokeball-red/15 border border-pokeball-red/50 px-3 py-1 text-label-sm text-pokeball-red font-bold"
               >
                 <span className="material-symbols-outlined text-[16px]">
                   {lock?.kind === "gym" ? "military_tech" : "swords"}
@@ -130,7 +130,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               </Link>
               <Link
                 href="/register"
-                className="text-label-md rounded-lg bg-pokeball-red px-3 py-1 text-white hover:bg-pokeball-red/80 transition-colors"
+                className="text-label-md rounded-md bg-pokeball-red px-3 py-1.5 text-white hover:bg-pokeball-red/80 transition-colors"
               >
                 {t("register")}
               </Link>

@@ -12,6 +12,8 @@ type CountrySelectProps = {
   locale: string;
   required?: boolean;
   placeholder: string;
+  /** Oculta el label visible y usa el estilo compacto del login. */
+  compact?: boolean;
 };
 
 export function CountrySelect({
@@ -22,6 +24,7 @@ export function CountrySelect({
   locale,
   required,
   placeholder,
+  compact = false,
 }: CountrySelectProps) {
   // Intl.DisplayNames puede resolver un set/orden distinto entre el ICU de
   // Node (server render) y el del browser (hidratación) — no es solo el
@@ -38,14 +41,26 @@ export function CountrySelect({
     setOptions(getCountryOptions(locale));
   }, [locale]);
 
+  const selectClass = compact
+    ? "w-full appearance-none border border-white/15 bg-black/50 py-2.5 pl-10 pr-10 text-label-md font-mono text-on-surface outline-none transition focus:border-pokeball-red/70 focus:ring-1 focus:ring-pokeball-red/40"
+    : "w-full appearance-none bg-black/60 border border-[#555] pl-11 pr-10 py-3 text-on-surface font-mono text-label-md focus:outline-none focus:border-electric-yellow focus:ring-1 focus:ring-electric-yellow/50 transition-all";
+
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-label-sm text-electric-yellow uppercase tracking-wide mb-1">
-        {labelIcon && <span className="material-symbols-outlined text-[14px]">{labelIcon}</span>}
+      <label
+        className={
+          compact
+            ? "sr-only"
+            : "mb-1 flex items-center gap-1.5 text-label-sm uppercase tracking-wide text-electric-yellow"
+        }
+      >
+        {!compact && labelIcon && (
+          <span className="material-symbols-outlined text-[14px]">{labelIcon}</span>
+        )}
         {label}
       </label>
-      <div className="relative tech-border flex items-center">
-        <span className="absolute left-3 pointer-events-none flex items-center">
+      <div className="relative flex items-center tech-border">
+        <span className="pointer-events-none absolute left-3 flex items-center">
           {value ? (
             <FlagIcon code={value} className="h-4 w-auto rounded-sm shadow-sm" />
           ) : (
@@ -58,7 +73,7 @@ export function CountrySelect({
           required={required}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none bg-black/60 border border-[#555] pl-11 pr-10 py-3 text-on-surface font-mono text-label-md focus:outline-none focus:border-electric-yellow focus:ring-1 focus:ring-electric-yellow/50 transition-all"
+          className={selectClass}
         >
           <option value="" disabled>
             {placeholder}
@@ -69,7 +84,7 @@ export function CountrySelect({
             </option>
           ))}
         </select>
-        <span className="material-symbols-outlined absolute right-3 text-on-surface-variant/70 text-[18px] pointer-events-none">
+        <span className="material-symbols-outlined pointer-events-none absolute right-3 text-[18px] text-on-surface-variant/70">
           arrow_drop_down
         </span>
       </div>
