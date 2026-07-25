@@ -167,6 +167,32 @@
       "spAtk": "AT.ESP",
       "spDef": "DEF.ESP",
       "speed": "VEL"
+    },
+    "drawer": {
+      "close": "Cerrar",
+      "viewDetails": "Ver detalle",
+      "statsTitle": "Estadísticas",
+      "movesTitle": "Movimientos",
+      "pp": "PP",
+      "power": "Poder",
+      "noPower": "—",
+      "emptySlotMove": "Vacío",
+      "tmSectionTitle": "Enseñar con MT/MO",
+      "tmSectionHint": "MTs compatibles que tenés en la mochila.",
+      "tmNone": "No tenés ninguna MT/MO compatible con este Pokémon todavía.",
+      "teach": "Enseñar",
+      "pickSlot": "¿Qué movimiento reemplaza?",
+      "cancel": "Cancelar",
+      "teaching": "Enseñando…",
+      "alreadyKnown": "Ya lo sabe",
+      "teachErrors": {
+        "unauthorized": "Tenés que iniciar sesión",
+        "not_found": "Pokémon no encontrado",
+        "no_tm": "Ya no tenés esa MT/MO",
+        "incompatible": "Ese Pokémon no puede aprender ese movimiento",
+        "already_known": "Ya sabe ese movimiento",
+        "in_combat": "No podés cambiar movimientos en combate"
+      }
     }
   },
   "battle": {
@@ -253,7 +279,8 @@
       "noLead": "Necesitás un Pokémon en tu equipo para batallar.",
       "faintedLead": "Tu Pokémon está debilitado — curalo en Mi equipo primero.",
       "noEnergy": "No te queda energía. Esperá a que se regenere."
-    }
+    },
+    "tmEarned": "¡Conseguiste una {code}!"
   },
   "gyms": {
     "title": "Gimnasios",

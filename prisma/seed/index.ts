@@ -4,6 +4,7 @@ import { fetchPokeApi, runWithConcurrency } from "./pokeapi-client";
 import { buildTypeChart, writeTypeChart } from "./type-chart";
 import { seedItems } from "./items";
 import { seedGyms } from "./gyms";
+import { seedMachines, MACHINES } from "./machines";
 
 // Gen 1 por defecto (151) — subí SEED_GEN_LIMIT para sumar más generaciones
 // una vez que el core del juego esté validado.
@@ -76,7 +77,8 @@ async function seedTypeChart() {
 
 async function seedSpeciesAndMoves() {
   const speciesIds = Array.from({ length: SPECIES_LIMIT }, (_, i) => i + 1);
-  const learnedMoveNames = new Set<string>();
+  const learnedMoveNames = new Set<string>(MACHINES.map((m) => m.moveName));
+  const machineMoveNames = new Set(MACHINES.map((m) => m.moveName));
 
   console.log(`→ Especies 1-${SPECIES_LIMIT}...`);
   await runWithConcurrency(speciesIds, CONCURRENCY, async (id) => {
@@ -95,6 +97,20 @@ async function seedSpeciesAndMoves() {
         return detail ? { name: m.move.name, level: detail.level_learned_at } : null;
       })
       .filter((m): m is { name: string; level: number } => m !== null);
+
+    // Compatibilidad real con MT/MO: solo movimientos que además tienen un
+    // Item real (ver machines.ts) — evita filas de SpeciesMove sin ítem que
+    // las respalde.
+    const machineMoves = pokemon.moves
+      .filter((m) =>
+        m.version_group_details.some(
+          (d) =>
+            d.version_group.name === MOVE_LEARN_VERSION_GROUP &&
+            d.move_learn_method.name === "machine",
+        ),
+      )
+      .map((m) => m.move.name)
+      .filter((name) => machineMoveNames.has(name));
 
     for (const move of levelUpMoves) learnedMoveNames.add(move.name);
 
@@ -136,6 +152,7 @@ async function seedSpeciesAndMoves() {
     // Se guarda para un segundo paso: necesitamos que todos los Move existan
     // antes de crear las filas de SpeciesMove.
     speciesMoveCache.set(pokemon.id, levelUpMoves);
+    speciesMachineCache.set(pokemon.id, machineMoves);
   });
 
   console.log("→ Cadenas de evolución...");
@@ -172,27 +189,42 @@ async function seedSpeciesAndMoves() {
     moveIdByName.set(move.name, move.id);
   });
 
-  console.log("→ Relación especie ↔ movimiento...");
+  console.log("→ Relación especie ↔ movimiento (nivel)...");
   for (const [speciesId, moves] of speciesMoveCache) {
     for (const { name, level } of moves) {
       const moveId = moveIdByName.get(name);
       if (!moveId) continue;
       await prisma.speciesMove.upsert({
-        where: { speciesId_moveId: { speciesId, moveId } },
-        create: { speciesId, moveId, learnLevel: level },
+        where: { speciesId_moveId_method: { speciesId, moveId, method: "LEVEL_UP" } },
+        create: { speciesId, moveId, method: "LEVEL_UP", learnLevel: level },
         update: { learnLevel: level },
+      });
+    }
+  }
+
+  console.log("→ Relación especie ↔ movimiento (MT/MO)...");
+  for (const [speciesId, moveNames] of speciesMachineCache) {
+    for (const name of moveNames) {
+      const moveId = moveIdByName.get(name);
+      if (!moveId) continue;
+      await prisma.speciesMove.upsert({
+        where: { speciesId_moveId_method: { speciesId, moveId, method: "MACHINE" } },
+        create: { speciesId, moveId, method: "MACHINE", learnLevel: null },
+        update: {},
       });
     }
   }
 }
 
 const speciesMoveCache = new Map<number, { name: string; level: number }[]>();
+const speciesMachineCache = new Map<number, string[]>();
 const moveIdByName = new Map<string, number>();
 const evolutionBySpeciesId = new Map<number, number>();
 
 async function main() {
   await seedTypeChart();
   await seedSpeciesAndMoves();
+  await seedMachines();
   await seedItems();
   await seedGyms();
   console.log("✓ Seed completo");

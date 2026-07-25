@@ -167,6 +167,32 @@
       "spAtk": "AT.ESP",
       "spDef": "DEF.ESP",
       "speed": "VEL"
+    },
+    "drawer": {
+      "close": "Fechar",
+      "viewDetails": "Ver detalhe",
+      "statsTitle": "Estatísticas",
+      "movesTitle": "Movimentos",
+      "pp": "PP",
+      "power": "Poder",
+      "noPower": "—",
+      "emptySlotMove": "Vazio",
+      "tmSectionTitle": "Ensinar com MT/MO",
+      "tmSectionHint": "MTs compatíveis que você tem na mochila.",
+      "tmNone": "Você ainda não tem nenhuma MT/MO compatível com esse Pokémon.",
+      "teach": "Ensinar",
+      "pickSlot": "Qual movimento substituir?",
+      "cancel": "Cancelar",
+      "teaching": "Ensinando…",
+      "alreadyKnown": "Já sabe",
+      "teachErrors": {
+        "unauthorized": "Você precisa entrar na conta",
+        "not_found": "Pokémon não encontrado",
+        "no_tm": "Você não tem mais essa MT/MO",
+        "incompatible": "Esse Pokémon não pode aprender esse movimento",
+        "already_known": "Ele já sabe esse movimento",
+        "in_combat": "Você não pode trocar movimentos em combate"
+      }
     }
   },
   "battle": {
@@ -253,7 +279,8 @@
       "noLead": "Você precisa de um Pokémon no seu time para batalhar.",
       "faintedLead": "Seu Pokémon está desmaiado — cure-o em Meu time primeiro.",
       "noEnergy": "Sua energia acabou. Espere ela regenerar."
-    }
+    },
+    "tmEarned": "Você ganhou uma {code}!"
   },
   "gyms": {
     "title": "Ginásios",

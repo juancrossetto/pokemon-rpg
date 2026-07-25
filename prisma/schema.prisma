@@ -95,17 +95,27 @@ model Move {
 
   learnableBy SpeciesMove[]
   knownBy     PokemonMove[]
+  teachableAs Item[] // MTs/MOs que enseñan este movimiento (type=MACHINE)
 }
 
+enum LearnMethod {
+  LEVEL_UP
+  MACHINE
+}
+
+// Compatibilidad real especie↔movimiento — un mismo par puede existir dos
+// veces con method distinto (aprende por nivel Y por MT), como en los
+// juegos reales. learnLevel solo tiene sentido para LEVEL_UP.
 model SpeciesMove {
   speciesId  Int
   moveId     Int
-  learnLevel Int
+  method     LearnMethod @default(LEVEL_UP)
+  learnLevel Int?
 
   species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
   move    Move    @relation(fields: [moveId], references: [id], onDelete: Cascade)
 
-  @@id([speciesId, moveId])
+  @@id([speciesId, moveId, method])
 }
 
 // ---------- Pokémon de un jugador ----------
@@ -285,6 +295,7 @@ enum ItemType {
   EVOLUTION_STONE
   POKEBALL
   POTION
+  MACHINE
 }
 
 model Item {
@@ -297,6 +308,8 @@ model Item {
   // altísimo (255) para que la fórmula de captura dé siempre "atrapado".
   healAmount      Int? // solo para type=POTION (null = no aplica). Full Restore usa un valor
   // altísimo (9999) para que la curación quede siempre acotada al HP máximo.
+  moveId          Int? // solo para type=MACHINE (null = no aplica) — el movimiento que enseña
+  move            Move?    @relation(fields: [moveId], references: [id])
 
   inventoryOf InventoryItem[]
 }

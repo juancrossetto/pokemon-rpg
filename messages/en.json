@@ -167,6 +167,32 @@
       "spAtk": "SP.ATK",
       "spDef": "SP.DEF",
       "speed": "SPEED"
+    },
+    "drawer": {
+      "close": "Close",
+      "viewDetails": "View details",
+      "statsTitle": "Stats",
+      "movesTitle": "Moves",
+      "pp": "PP",
+      "power": "Power",
+      "noPower": "—",
+      "emptySlotMove": "Empty",
+      "tmSectionTitle": "Teach with TM/HM",
+      "tmSectionHint": "Compatible TMs you have in your bag.",
+      "tmNone": "You don't have any TM/HM compatible with this Pokémon yet.",
+      "teach": "Teach",
+      "pickSlot": "Which move should it replace?",
+      "cancel": "Cancel",
+      "teaching": "Teaching…",
+      "alreadyKnown": "Already known",
+      "teachErrors": {
+        "unauthorized": "You need to log in",
+        "not_found": "Pokémon not found",
+        "no_tm": "You no longer have that TM/HM",
+        "incompatible": "That Pokémon can't learn that move",
+        "already_known": "It already knows that move",
+        "in_combat": "You can't change moves in combat"
+      }
     }
   },
   "battle": {
@@ -253,7 +279,8 @@
       "noLead": "You need a Pokémon in your team to battle.",
       "faintedLead": "Your Pokémon has fainted — heal it in My team first.",
       "noEnergy": "You're out of energy. Wait for it to regenerate."
-    }
+    },
+    "tmEarned": "You got a {code}!"
   },
   "gyms": {
     "title": "Gyms",

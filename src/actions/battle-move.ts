@@ -15,6 +15,7 @@ import {
 } from "@/lib/battle";
 import { pickWildMove } from "@/lib/battle-ai";
 import { disobeyChance, gymRematchCoinMultiplier } from "@/lib/badge-perks";
+import { GYM_TM_REWARD_BY_TYPE } from "@/lib/gym-tm-rewards";
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import { resolveSingleAction, type SideBattleState } from "@/lib/resolve-action";
 import { applyStagesToStats, type StatusCondition } from "@/lib/status";
@@ -43,6 +44,7 @@ export interface UseMoveResult {
   xpGained: number | null;
   xpSummary: XpSummaryEntry[] | null;
   badgeEarned: boolean;
+  tmRewardName: string | null;
   rematch: boolean;
   playerMovesPp: { moveId: number; pp: number }[];
   playerStatus: StatusCondition | null;
@@ -286,6 +288,7 @@ export async function submitBattleMove(
   let leveledUpTo: number | null = null;
   let xpGained: number | null = null;
   let badgeEarned = false;
+  let tmRewardName: string | null = null;
   let nextOpponent: UseMoveResult["nextOpponent"] = null;
   const battleKind = battle.gymId ? ("PVE_GYM" as const) : ("PVE_WILD" as const);
   const gym = battle.gymId ? await prisma.gym.findUnique({ where: { id: battle.gymId } }) : null;
@@ -371,6 +374,7 @@ export async function submitBattleMove(
         xpGained: koXp,
         xpSummary: null,
         badgeEarned: false,
+        tmRewardName: null,
         rematch: alreadyHasThisBadge,
         playerMovesPp,
         playerStatus: playerState.status,
@@ -454,6 +458,7 @@ export async function submitBattleMove(
         xpGained: share,
         xpSummary,
         badgeEarned: false,
+        tmRewardName: null,
         rematch: alreadyHasThisBadge,
         playerMovesPp,
         playerStatus: playerState.status,
@@ -467,6 +472,13 @@ export async function submitBattleMove(
     const gymCoins = battle.gymId
       ? Math.floor((gym?.coinReward ?? 0) * gymRematchCoinMultiplier(alreadyHasThisBadge))
       : 0;
+    // El líder regala una MT de su tipo la primera vez que se lo vence —
+    // no en revanchas, mismo criterio que la medalla.
+    const gymTmMoveName = badgeEarned && gym ? GYM_TM_REWARD_BY_TYPE[gym.type] : undefined;
+    const gymTmItem = gymTmMoveName
+      ? await prisma.item.findFirst({ where: { type: "MACHINE", move: { name: gymTmMoveName } } })
+      : null;
+    tmRewardName = gymTmItem?.name ?? null;
     const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
     await prisma.$transaction([
       ...instanceUpdates,
@@ -491,6 +503,15 @@ export async function submitBattleMove(
             prisma.user.update({
               where: { id: userId },
               data: { coins: { increment: gymCoins } },
+            }),
+          ]
+        : []),
+      ...(gymTmItem
+        ? [
+            prisma.inventoryItem.upsert({
+              where: { userId_itemId: { userId, itemId: gymTmItem.id } },
+              create: { userId, itemId: gymTmItem.id, quantity: 1 },
+              update: { quantity: { increment: 1 } },
             }),
           ]
         : []),
@@ -550,6 +571,7 @@ export async function submitBattleMove(
     xpGained,
     xpSummary,
     badgeEarned,
+    tmRewardName,
     rematch: alreadyHasThisBadge,
     playerMovesPp,
     playerStatus: playerState.status,
