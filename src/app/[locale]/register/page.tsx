@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -11,6 +10,8 @@ import { CountrySelect } from "@/components/country-select";
 import { BiometricScanPanel } from "@/components/biometric-scan-panel";
 import { AvatarImage } from "@/components/avatar-image";
 import { PokeballIcon } from "@/components/pokeball-icon";
+import { BrandLogo } from "@/components/brand-logo";
+import { AuthBackdrop } from "@/components/auth-backdrop";
 import { AVATAR_OPTIONS } from "@/lib/avatars";
 
 type Gender = "male" | "female" | "unspecified";
@@ -74,32 +75,16 @@ export default function RegisterPage() {
 
   return (
     <div className="relative isolate flex min-h-[calc(100dvh-3rem)] flex-1 flex-col md:min-h-[calc(100dvh-4rem)]">
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#071018]">
-        <Image
-          src="/auth/login-mobile.png"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-[center_28%] md:hidden"
-        />
-        <Image
-          src="/auth/login-desktop.png"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="hidden object-cover object-[center_40%] md:block"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/40 to-black/75 md:from-black/45 md:via-black/30 md:to-black/65" />
-      </div>
+      <AuthBackdrop />
 
       <div className="relative z-10 flex flex-1 flex-col items-center px-4 py-6 sm:px-6 md:py-10">
         <div className="mb-5 hidden text-center md:mb-6 md:block">
-          <p className="text-display-lg font-black tracking-tighter text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]">
-            <span className="text-electric-yellow">{tNav("brand").split(" ")[0]}</span>{" "}
-            <span className="text-white">{tNav("brand").split(" ").slice(1).join(" ")}</span>
-          </p>
+          <BrandLogo
+            alt={tNav("brand")}
+            priority
+            sizes="240px"
+            className="mx-auto h-auto w-[240px] drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]"
+          />
           <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200/90 drop-shadow">
             {tLogin("tagline")}
           </p>

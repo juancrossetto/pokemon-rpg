@@ -6,6 +6,7 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
 import { MobileChrome } from "@/components/mobile-chrome";
 import { NavLinks, type DesktopNavLink } from "@/components/nav-links";
+import { BrandLogo } from "@/components/brand-logo";
 import type { CombatLock } from "@/lib/battle-lock";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
@@ -33,8 +34,9 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         { href: "/market", label: t("market"), icon: "storefront" },
       ]
     : [
-        { href: "/", label: t("home"), icon: "home" },
-        { href: "/pokedex", label: t("pokedex"), icon: "auto_stories" },
+        { href: "/ranking", label: t("ranking"), icon: "trophy" },
+        { href: "/login", label: t("login"), icon: "login" },
+        { href: "/register", label: t("register"), icon: "person_add" },
       ];
 
   // Desktop: Home primero; Equipo vive en el menú del avatar.
@@ -46,10 +48,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         { href: "/gyms", label: t("gyms") },
         { href: "/pokedex", label: t("pokedex") },
       ]
-    : [
-        { href: "/", label: t("home") },
-        { href: "/pokedex", label: t("pokedex") },
-      ];
+    : [{ href: "/ranking", label: t("ranking") }];
 
   const desktopMoreLinks: DesktopNavLink[] = session?.user
     ? [
@@ -68,21 +67,17 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         { href: "/clans", label: t("clans"), icon: "groups" },
         { href: "/pc", label: t("pc"), icon: "storage" },
       ]
-    : [
-        { href: "/login", label: t("login"), icon: "login" },
-        { href: "/register", label: t("register"), icon: "person_add" },
-      ];
+    : [];
+
+  const brandHref = lockedHref ?? (session?.user ? "/" : "/login");
 
   return (
     <>
       {/* TopAppBar (desktop) */}
       <nav className="fixed top-0 w-full z-50 hidden h-16 md:flex justify-between items-center gap-4 px-6 bg-background/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
         <div className="flex items-center min-w-0">
-          <Link
-            href={lockedHref ?? "/"}
-            className="text-headline-lg font-black text-pokeball-red tracking-tighter shrink-0"
-          >
-            {t("brand")}
+          <Link href={brandHref} className="shrink-0">
+            <BrandLogo alt={t("brand")} priority sizes="80px" className="h-9 w-auto" />
           </Link>
           {lockedHref && lockedLabel ? (
             <div className="ml-4 flex items-center gap-1">
@@ -97,11 +92,13 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               </Link>
             </div>
           ) : (
-            <NavLinks
-              links={desktopLinks}
-              moreLinks={desktopMoreLinks}
-              moreLabel={t("more")}
-            />
+            desktopLinks.length > 0 && (
+              <NavLinks
+                links={desktopLinks}
+                moreLinks={desktopMoreLinks}
+                moreLabel={t("more")}
+              />
+            )
           )}
         </div>
 
@@ -144,6 +141,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
 
       <MobileChrome
         brand={t("brand")}
+        brandHref={brandHref}
         locale={locale}
         languageLabel={t("language")}
         coins={user?.coins ?? null}

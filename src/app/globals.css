@@ -898,9 +898,39 @@ body {
   animation: map-zoom-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* --- Auth atmosphere (login/register stars) --- */
+.auth-spark {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgba(230, 220, 255, 0.95);
+  box-shadow:
+    0 0 6px 1px rgba(196, 168, 255, 0.45),
+    0 0 12px 3px rgba(140, 100, 255, 0.18);
+  animation-name: auth-spark-twinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes auth-spark-twinkle {
+  0%,
+  100% {
+    transform: scale(0.85);
+    opacity: 0.18;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.95;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .map-backdrop-in,
-  .map-zoom-in {
+  .map-zoom-in,
+  .auth-spark {
     animation: none;
+  }
+
+  .auth-spark {
+    opacity: 0.45;
   }
 }

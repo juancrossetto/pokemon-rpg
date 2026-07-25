@@ -4,9 +4,16 @@ import { PokeballIcon } from "@/components/pokeball-icon";
 type LoaderVariant = "svg" | "gif";
 
 /**
- * Loader de ruta. `gif` usa el asset transparente (fondo removido);
+ * Loader de ruta. `gif` usa el WebP animado con canal alfa real;
  * `svg` conserva la Pokéball animada en CSS (no se elimina).
  * Original con fondo: `/loaders/pokeball-loader.gif`.
+ *
+ * NO volver al .gif "transparente": sólo su primer frame quedó recortado.
+ * Verificado con ImageDecoder frame por frame — de los 34 frames, 33 salen
+ * 0% transparentes y ~95% negro puro, que es la caja negra que se veía. La
+ * transparencia del GIF es un único índice de paleta por frame y el recorte
+ * no lo aplicó más allá del frame 0. El WebP da los 34 frames con alfa y
+ * además pesa 221 KB contra 794 KB.
  */
 export function PokeballLoader({
   label,
@@ -20,7 +27,7 @@ export function PokeballLoader({
       {variant === "gif" ? (
         <div className="relative flex items-center justify-center">
           <Image
-            src="/loaders/pokeball-loader-transparent.gif?v=3"
+            src="/loaders/pokeball-loader-transparent.webp"
             alt=""
             width={360}
             height={270}

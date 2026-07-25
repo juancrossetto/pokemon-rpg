@@ -1,11 +1,10 @@
-import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
+import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { spriteFor } from "@/lib/shiny";
-import { calculateMaxHp, calculateStat, xpForLevel, xpToNextLevel } from "@/lib/stats";
+import { calculateMaxHp, xpForLevel, xpToNextLevel } from "@/lib/stats";
 import { redirectIfInBattle } from "@/lib/battle-lock";
-import { getLocale } from "next-intl/server";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { buildExpeditionView } from "@/lib/campaign";
 import { loadMapLocations } from "@/lib/campaign/map-data";
@@ -28,44 +27,15 @@ const CLIMATE_ICON: Record<CampaignLocationKind, string> = {
 };
 
 export default async function Home() {
-  const [t, session, locale] = await Promise.all([
-    getTranslations("home"),
-    auth(),
-    getLocale(),
-  ]);
+  const [session, locale] = await Promise.all([auth(), getLocale()]);
 
-  if (session?.user) {
-    await redirectIfInBattle(session.user.id, locale);
-    return <Dashboard username={session.user.name ?? ""} userId={session.user.id} />;
+  if (!session?.user) {
+    redirect({ href: "/login", locale });
+    return null;
   }
 
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-margin-mobile md:px-margin-desktop py-8 text-center">
-      <p className="text-label-md text-pokeball-red uppercase tracking-widest flex items-center gap-1">
-        <span className="w-2 h-2 rounded-full bg-pokeball-red animate-pulse" />
-        {t("eyebrow")}
-      </p>
-      <h1 className="max-w-2xl text-headline-lg md:text-display-lg text-white tracking-tight">
-        {t("title")}
-      </h1>
-      <p className="max-w-md text-body-lg text-on-surface-variant">{t("subtitle")}</p>
-
-      <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-        <Link
-          href="/pokedex"
-          className="rounded-lg bg-pokeball-red px-6 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
-        >
-          {t("pokedexLink")}
-        </Link>
-        <Link
-          href="/register"
-          className="glass-panel rounded-lg px-6 py-2 text-label-md text-on-surface hover:bg-white/5 transition-colors"
-        >
-          {t("register")}
-        </Link>
-      </div>
-    </div>
-  );
+  await redirectIfInBattle(session.user.id, locale);
+  return <Dashboard username={session.user.name ?? ""} userId={session.user.id} />;
 }
 
 async function Dashboard({ username, userId }: { username: string; userId: string }) {
@@ -83,10 +53,9 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
 
   const pokemon = await prisma.pokemonInstance.findMany({
     where: { ownerId: userId, teamSlot: { not: null } },
-    include: {
-      species: true,
-      moves: { include: { move: true }, orderBy: { slot: "asc" } },
-    },
+    // Sin `moves`: la card del dashboard ya no los muestra (viven en /team),
+    // así que traerlos era un join de más por cada Pokémon del equipo.
+    include: { species: true },
     orderBy: { teamSlot: "asc" },
   });
 
@@ -148,15 +117,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
 
   return (
     <div className="relative flex-1 overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
       <div className="relative px-margin-mobile md:px-margin-desktop py-6">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -230,7 +190,10 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
+            {/* 6 en una fila desde md: antes el salto a 6 columnas recién
+                ocurría en xl (1280px), así que en pantallas de ~1100px el
+                equipo se partía en dos filas y rompía la estructura. */}
+            <div className="grid grid-cols-3 gap-2 md:grid-cols-6">
               {slots.map((instance, i) => {
                 if (!instance) {
                   return <HomeEmptySquadSlot key={`empty-${i}`} label={t("emptySlot")} />;
@@ -253,55 +216,17 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                 return (
                   <HomeSquadCard
                     key={instance.id}
-                    slot={i + 1}
                     isLead={i === 0}
                     nickname={instance.nickname}
                     speciesName={instance.species.name}
-                    level={instance.level}
                     types={instance.species.types}
                     spriteUrl={spriteFor(instance.species.spriteUrl, instance.isShiny)}
                     currentHp={instance.currentHp}
                     maxHp={maxHp}
                     xpPct={xpPct}
                     xpToNextLabel={tt("expToNext", { xp: xpToNext })}
-                    atk={calculateStat(
-                      instance.species.baseAttack,
-                      instance.ptStrength,
-                      instance.level,
-                    )}
-                    def={calculateStat(
-                      instance.species.baseDefense,
-                      instance.ptDexterity,
-                      instance.level,
-                    )}
-                    spAtk={calculateStat(
-                      instance.species.baseSpAtk,
-                      instance.ptIntelligence,
-                      instance.level,
-                    )}
-                    spDef={calculateStat(
-                      instance.species.baseSpDef,
-                      instance.ptIntelligence,
-                      instance.level,
-                    )}
-                    speed={calculateStat(
-                      instance.species.baseSpeed,
-                      instance.ptSpeed,
-                      instance.level,
-                    )}
-                    moves={instance.moves.map((m) => ({
-                      name: m.move.name,
-                      type: m.move.type,
-                    }))}
                     labels={{
                       hp: tt("stats.hp"),
-                      exp: tt("stats.exp"),
-                      expToNext: tt("expToNext", { xp: xpToNext }),
-                      atk: tt("stats.atk"),
-                      def: tt("stats.def"),
-                      spAtk: tt("stats.spAtk"),
-                      spDef: tt("stats.spDef"),
-                      speed: tt("stats.speed"),
                       level: tt("level", { level: instance.level }),
                       lead: tt("lead"),
                       slot: tt("slotLabel", { slot: i + 1 }),
