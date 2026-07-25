@@ -19,6 +19,9 @@ export function MobileChrome({
   brandHref = "/login",
   locale,
   languageLabel,
+  energy,
+  energyMax,
+  energyLabel,
   coins,
   userName,
   avatarId,
@@ -41,6 +44,9 @@ export function MobileChrome({
   brandHref?: string;
   locale: string;
   languageLabel: string;
+  energy: number | null;
+  energyMax: number | null;
+  energyLabel: string;
   coins: number | null;
   userName: string | null;
   avatarId?: string | null;
@@ -59,6 +65,10 @@ export function MobileChrome({
   registerLabel: string;
   notifications: { items: NotificationDTO[]; unreadCount: number } | null;
 }) {
+  const energyPct =
+    energy !== null && energyMax !== null && energyMax > 0
+      ? Math.max(0, Math.min(100, (energy / energyMax) * 100))
+      : 0;
   const [moreOpen, setMoreOpen] = useState(false);
   const showMore = moreLinks.length > 0;
 
@@ -84,6 +94,25 @@ export function MobileChrome({
         </Link>
 
         <div className="flex items-center gap-2 shrink-0">
+          {energy !== null && energyMax !== null && (
+            <span
+              className="flex flex-col gap-0.5 rounded-full border border-sky-400/30 bg-sky-400/10 px-2 py-0.5 text-sky-300"
+              title={energyLabel}
+              aria-label={`${energyLabel}: ${energy}/${energyMax}`}
+            >
+              <span className="flex items-center gap-0.5 text-[11px] font-mono leading-none">
+                <span className="material-symbols-outlined text-[14px]!">bolt</span>
+                {energy}
+                <span className="text-sky-300/55">/{energyMax}</span>
+              </span>
+              <span className="h-0.5 w-full overflow-hidden rounded-full bg-sky-400/20">
+                <span
+                  className="block h-full rounded-full bg-sky-400/80"
+                  style={{ width: `${energyPct}%` }}
+                />
+              </span>
+            </span>
+          )}
           {coins !== null && (
             <span className="flex items-center gap-1 rounded-full border border-electric-yellow/30 bg-electric-yellow/10 px-2 py-0.5 text-[11px] font-mono text-electric-yellow">
               <span className="material-symbols-outlined text-[14px]!">paid</span>
