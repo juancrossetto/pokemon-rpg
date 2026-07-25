@@ -232,6 +232,32 @@
       "spDef": "DEF.ESP",
       "speed": "VEL"
     },
+    "drawer": {
+      "close": "Cerrar",
+      "viewDetails": "Ver detalle",
+      "statsTitle": "Estadísticas",
+      "movesTitle": "Movimientos",
+      "pp": "PP",
+      "power": "Poder",
+      "noPower": "—",
+      "emptySlotMove": "Vacío",
+      "tmSectionTitle": "Enseñar con MT/MO",
+      "tmSectionHint": "MTs compatibles que tenés en la mochila.",
+      "tmNone": "No tenés ninguna MT/MO compatible con este Pokémon todavía.",
+      "teach": "Enseñar",
+      "pickSlot": "¿Qué movimiento reemplaza?",
+      "cancel": "Cancelar",
+      "teaching": "Enseñando…",
+      "alreadyKnown": "Ya lo sabe",
+      "teachErrors": {
+        "unauthorized": "Tenés que iniciar sesión",
+        "not_found": "Pokémon no encontrado",
+        "no_tm": "Ya no tenés esa MT/MO",
+        "incompatible": "Ese Pokémon no puede aprender ese movimiento",
+        "already_known": "Ya sabe ese movimiento",
+        "in_combat": "No podés cambiar movimientos en combate"
+      }
+    },
     "healFree": "Curación gratis disponible",
     "healCooldown": "Gratis en {minutes} min",
     "healRush": "Curar ya",
@@ -356,6 +382,7 @@
       "noEnergy": "No te queda energía. Esperá a que se regenere.",
       "noStage": "No hay stage de farming válido. Elegí uno en el mapa del viaje."
     },
+    "tmEarned": "¡Conseguiste una {code}!",
     "resultEyebrow": "Batalla finalizada",
     "victoryTag": "Victoria",
     "koTag": "K.O.",

@@ -184,6 +184,7 @@ export function BattleArena({
   const [playerHidden, setPlayerHidden] = useState(true);
   const [wildEntering, setWildEntering] = useState(true);
   const [badgeEarned, setBadgeEarned] = useState(false);
+  const [tmRewardName, setTmRewardName] = useState<string | null>(null);
   const [ballAnim, setBallAnim] = useState<"recall" | "throw" | null>("throw");
   const [playerHealing, setPlayerHealing] = useState(false);
   const [damagePopup, setDamagePopup] = useState<{ side: "player" | "wild"; text: string; key: number } | null>(null);
@@ -540,6 +541,10 @@ export function BattleArena({
       playBattleSfx("badge");
       setBadgeEarned(true);
     }
+    if (result.tmRewardName) {
+      appendLog(t("tmEarned", { code: result.tmRewardName }));
+      setTmRewardName(result.tmRewardName);
+    }
 
     if (result.outcome === "won") {
       await playFaintAndFinish("wild", "won");
@@ -890,6 +895,12 @@ export function BattleArena({
               <Image src={gymBadgeImageUrl(gymType)} alt={gymBadgeName ?? t("badgeEarned")} width={64} height={64} />
             </div>
             {gymBadgeName && <p className="text-headline-md text-tertiary">{gymBadgeName}</p>}
+            {tmRewardName && (
+              <p className="flex items-center gap-1.5 text-label-sm text-on-surface-variant">
+                <span className="material-symbols-outlined text-[16px] text-secondary">memory</span>
+                {t("tmEarned", { code: tmRewardName })}
+              </p>
+            )}
           </div>
         )}
         {outcome === "lost" ? (
