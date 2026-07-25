@@ -24,6 +24,9 @@ export function xpToNextLevel(currentXp: number, level: number): number {
 /** Puntos que gana un Pokémon al subir de nivel (dossier: asignación manual). */
 export const UNSPENT_POINTS_PER_LEVEL = 3;
 
+/** Nivel máximo de un Pokémon (como en los juegos clásicos). */
+export const MAX_POKEMON_LEVEL = 100;
+
 /** Tope por atributo — afinable en balance (fase 7). */
 export const MAX_POINTS_PER_STAT = 99;
 

@@ -4,9 +4,11 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { spriteFor } from "@/lib/shiny";
 import { calculateMaxHp, calculateStat, xpForLevel, xpToNextLevel } from "@/lib/stats";
+import { effectivePp } from "@/lib/battle";
 import { HealButton } from "@/components/heal-button";
 import { healCooldownMsLeft, healRushCost } from "@/lib/healing";
 import { redirectIfInBattle } from "@/lib/battle-lock";
+import { loadEvolutionChainsForTeam } from "@/lib/evolution-chain";
 import { TeamRoster, type TeamMember } from "@/components/team-roster";
 
 const TEAM_SIZE = 6;
@@ -51,10 +53,13 @@ export default async function TeamPage({
   // query para todas, filtrado a los movimientos que el jugador realmente
   // tiene, para no traer compatibilidad irrelevante.
   const speciesIds = [...new Set(pokemon.map((p) => p.speciesId))];
-  const compatibility = await prisma.speciesMove.findMany({
-    where: { method: "MACHINE", speciesId: { in: speciesIds }, moveId: { in: ownedMoveIds } },
-    select: { speciesId: true, moveId: true },
-  });
+  const [compatibility, evolutionChains] = await Promise.all([
+    prisma.speciesMove.findMany({
+      where: { method: "MACHINE", speciesId: { in: speciesIds }, moveId: { in: ownedMoveIds } },
+      select: { speciesId: true, moveId: true },
+    }),
+    loadEvolutionChainsForTeam(userId, speciesIds),
+  ]);
   const compatibleMoveIdsBySpecies = new Map<number, Set<number>>();
   for (const row of compatibility) {
     const set = compatibleMoveIdsBySpecies.get(row.speciesId) ?? new Set<number>();
@@ -89,6 +94,7 @@ export default async function TeamPage({
       instanceId: instance.id,
       slot: i + 1,
       isLead: i === 0,
+      speciesId: instance.speciesId,
       nickname: instance.nickname,
       speciesName: instance.species.name,
       level: instance.level,
@@ -99,6 +105,7 @@ export default async function TeamPage({
       xp: instance.xp,
       xpForCurrentLevel: xpForLevel(instance.level),
       xpToNext: xpToNextLevel(instance.xp, instance.level),
+      evolutionChain: evolutionChains.get(instance.speciesId) ?? [],
       atk: calculateStat(instance.species.baseAttack, instance.ptStrength, instance.level),
       def: calculateStat(instance.species.baseDefense, instance.ptDexterity, instance.level),
       spAtk: calculateStat(instance.species.baseSpAtk, instance.ptIntelligence, instance.level),
@@ -123,6 +130,7 @@ export default async function TeamPage({
       moves: Array.from({ length: 4 }, (_, slotIdx) => {
         const m = movesBySlot.get(slotIdx + 1);
         if (!m) return null;
+        const maxPp = m.move.pp ?? 20;
         return {
           slot: slotIdx + 1,
           moveId: m.moveId,
@@ -130,8 +138,8 @@ export default async function TeamPage({
           type: m.move.type,
           category: m.move.category,
           power: m.move.power,
-          currentPp: m.currentPp,
-          maxPp: m.move.pp,
+          currentPp: effectivePp(m.currentPp, maxPp),
+          maxPp,
         };
       }),
       compatibleTms: ownedMachines
@@ -211,6 +219,12 @@ export default async function TeamPage({
             close: t("drawer.close"),
             statsTitle: t("drawer.statsTitle"),
             movesTitle: t("drawer.movesTitle"),
+            evolutionsTitle: t("drawer.evolutionsTitle"),
+            unknownSpecies: t("drawer.unknownSpecies"),
+            evolveAtLevel: t("drawer.evolveAtLevel", { level: "{level}" }),
+            tabAbout: t("drawer.tabAbout"),
+            tabStats: t("drawer.tabStats"),
+            tabEvolutions: t("drawer.tabEvolutions"),
             pp: t("drawer.pp"),
             power: t("drawer.power"),
             noPower: t("drawer.noPower"),

@@ -865,7 +865,9 @@ export function BattleArena({
         player={{
           name: activePlayer.name,
           speciesName: activePlayer.speciesName,
-          level: activePlayer.level,
+          level:
+            xpSummary?.find((e) => e.instanceId === activePlayer.instanceId)?.leveledUpTo ??
+            activePlayer.level,
           spriteUrl: activePlayer.spriteUrl,
         }}
         foe={{

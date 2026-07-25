@@ -25,14 +25,23 @@ import {
   completeFarmingStageOnWildWin,
   syncCampaignAfterGymBadge,
 } from "@/lib/campaign/sync";
+import type { EvolveOffer, LevelUpMoveInfo } from "@/lib/level-up";
+import { resolveLevelUpEffects } from "@/lib/level-up";
 
 const MAX_LOG_LINES = 20;
 
 export interface XpSummaryEntry {
   instanceId: string;
   name: string;
+  fromSpriteUrl: string;
   xpGained: number;
   leveledUpTo: number | null;
+  previousLevel: number;
+  autoTaught: LevelUpMoveInfo[];
+  pendingMoves: LevelUpMoveInfo[];
+  evolveOffer: EvolveOffer | null;
+  /** Movimientos actuales (para elegir cuál olvidar). */
+  knownMoves: { slot: number; name: string }[];
 }
 
 function coinsForVictory(wildLevel: number): number {
@@ -405,6 +414,17 @@ export async function submitBattleMove(
 
     xpSummary = [];
     const instanceUpdates = [];
+    const levelMetas: {
+      instanceId: string;
+      speciesId: number;
+      name: string;
+      fromSpriteUrl: string;
+      fromLevel: number;
+      toLevel: number;
+      leveledUpTo: number | null;
+      share: number;
+    }[] = [];
+
     for (const p of survivors) {
       const isActive = p.id === instance.id;
       const result = applyXpGain(
@@ -416,11 +436,15 @@ export async function submitBattleMove(
         p.ptConstitution,
         share,
       );
-      xpSummary.push({
+      levelMetas.push({
         instanceId: p.id,
+        speciesId: p.speciesId,
         name: p.nickname ?? p.species.name,
-        xpGained: share,
+        fromSpriteUrl: p.species.spriteUrl,
+        fromLevel: p.level,
+        toLevel: result.newLevel,
         leveledUpTo: result.leveledUpTo,
+        share,
       });
       instanceUpdates.push(
         prisma.pokemonInstance.update({
@@ -439,6 +463,48 @@ export async function submitBattleMove(
       }
     }
 
+    async function buildXpSummary(): Promise<XpSummaryEntry[]> {
+      const entries: XpSummaryEntry[] = [];
+      for (const meta of levelMetas) {
+        let autoTaught: LevelUpMoveInfo[] = [];
+        let pendingMoves: LevelUpMoveInfo[] = [];
+        let evolveOffer: EvolveOffer | null = null;
+        if (meta.leveledUpTo != null) {
+          try {
+            const effects = await resolveLevelUpEffects(
+              meta.instanceId,
+              meta.speciesId,
+              meta.fromLevel,
+              meta.toLevel,
+            );
+            autoTaught = effects.autoTaught;
+            pendingMoves = effects.pendingMoves;
+            evolveOffer = effects.evolveOffer;
+          } catch (err) {
+            console.error("[battle-move] resolveLevelUpEffects", err);
+          }
+        }
+        const known = await prisma.pokemonMove.findMany({
+          where: { pokemonInstanceId: meta.instanceId },
+          include: { move: { select: { name: true } } },
+          orderBy: { slot: "asc" },
+        });
+        entries.push({
+          instanceId: meta.instanceId,
+          name: meta.name,
+          fromSpriteUrl: meta.fromSpriteUrl,
+          xpGained: meta.share,
+          leveledUpTo: meta.leveledUpTo,
+          previousLevel: meta.fromLevel,
+          autoTaught,
+          pendingMoves,
+          evolveOffer,
+          knownMoves: known.map((m) => ({ slot: m.slot, name: m.move.name })),
+        });
+      }
+      return entries;
+    }
+
     if (battle.gymTrainerId && battle.gymRunId) {
       const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
       await prisma.$transaction([
@@ -455,6 +521,7 @@ export async function submitBattleMove(
           data: { clearedTrainerSlots: { increment: 1 } },
         }),
       ]);
+      xpSummary = await buildXpSummary();
       revalidatePath(`/${locale}/team`);
       revalidateCombatUi(locale);
       return {
@@ -529,6 +596,8 @@ export async function submitBattleMove(
         ? [prisma.gymRun.update({ where: { id: battle.gymRunId }, data: { status: "WON" } })]
         : []),
     ]);
+
+    xpSummary = await buildXpSummary();
 
     if (!battle.gymId) {
       await completeFarmingStageOnWildWin(userId);

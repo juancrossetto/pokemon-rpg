@@ -119,6 +119,9 @@ model Species {
   spriteUrl     String
   generation    Int
   captureRate   Int       @default(45) // 0-255, de PokeAPI — más alto = más fácil de atrapar
+  // Nivel mínimo para evolucionar por level-up a evolvesTo[0]. Null = no evoluciona por nivel
+  // (piedra, intercambio, etc.) o es la forma final.
+  evolveLevel   Int?
   evolvesFromId Int?
   evolvesFrom   Species?  @relation("Evolution", fields: [evolvesFromId], references: [id])
   evolvesTo     Species[] @relation("Evolution")

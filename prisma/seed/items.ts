@@ -19,12 +19,21 @@ const POTIONS = [
   { name: "Full Restore", buyPrice: 3000, healAmount: 9999 },
 ] as const;
 
+// Potas de PP (healAmount null: no entran en curación de HP).
+const PP_POTIONS = [
+  { name: "Ether", buyPrice: 1200, effectText: "Restaura 10 PP de un movimiento." },
+  { name: "Max Ether", buyPrice: 2000, effectText: "Restaura todos los PP de un movimiento." },
+  { name: "Elixir", buyPrice: 3000, effectText: "Restaura 10 PP de todos los movimientos." },
+  { name: "Max Elixir", buyPrice: 4500, effectText: "Restaura todos los PP de todos los movimientos." },
+] as const;
+
 // Bayas comerciables (dossier: consumibles del mercado). Por ahora son
 // catálogo + efecto descriptivo; el uso en batalla se suma después.
 const BERRIES = [
   { name: "Oran Berry", buyPrice: 150, effectText: "Restaura 10 HP." },
   { name: "Sitrus Berry", buyPrice: 400, effectText: "Restaura 30 HP." },
   { name: "Leppa Berry", buyPrice: 250, effectText: "Restaura 10 PP de un movimiento." },
+  { name: "Rare Candy", buyPrice: 4800, effectText: "Sube 1 nivel al Pokémon." },
 ] as const;
 
 // Piedras de evolución comerciables. El flujo de evolución se suma después;
@@ -63,6 +72,25 @@ export async function seedItems() {
         healAmount: potion.healAmount,
       },
       update: { buyPrice: potion.buyPrice, healAmount: potion.healAmount },
+    });
+  }
+
+  console.log("→ Objetos (Potas de PP)...");
+  for (const potion of PP_POTIONS) {
+    await prisma.item.upsert({
+      where: { name: potion.name },
+      create: {
+        name: potion.name,
+        type: "POTION",
+        buyPrice: potion.buyPrice,
+        effectText: potion.effectText,
+        healAmount: null,
+      },
+      update: {
+        buyPrice: potion.buyPrice,
+        effectText: potion.effectText,
+        healAmount: null,
+      },
     });
   }
 

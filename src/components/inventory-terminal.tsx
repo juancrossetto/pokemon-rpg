@@ -33,6 +33,7 @@ export type InventoryLabels = {
   teaches: string;
   sell: string;
   teach: string;
+  useOnTeam: string;
   close: string;
 };
 
@@ -50,11 +51,13 @@ export function InventoryTerminal({
   labels,
   sellHref,
   teamHref,
+  homeHref,
 }: {
   entries: InventoryEntry[];
   labels: InventoryLabels;
   sellHref: string;
   teamHref: string;
+  homeHref: string;
 }) {
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [query, setQuery] = useState("");
@@ -166,6 +169,7 @@ export function InventoryTerminal({
               labels={labels}
               sellHref={sellHref}
               teamHref={teamHref}
+              homeHref={homeHref}
               onClose={() => setSelectedId(null)}
             />
           ) : (
@@ -289,16 +293,19 @@ function DetailPanel({
   labels,
   sellHref,
   teamHref,
+  homeHref,
   onClose,
 }: {
   entry: InventoryEntry;
   labels: InventoryLabels;
   sellHref: string;
   teamHref: string;
+  homeHref: string;
   onClose: () => void;
 }) {
   const rarity = itemRarity(entry);
   const style = RARITY_STYLES[rarity];
+  const isRareCandy = entry.name === "Rare Candy";
 
   return (
     <aside
@@ -351,10 +358,6 @@ function DetailPanel({
         </div>
       )}
 
-      {/* Sólo acciones que hoy existen de verdad: vender lleva al mercado y
-          las MT/MO se enseñan desde /team (teachMove necesita elegir Pokémon
-          y slot). No se muestran "Usar" ni "Descartar" porque no hay acción
-          de servidor que las respalde fuera de combate. */}
       <div className="mt-1 flex flex-col gap-1.5 border-t border-white/10 pt-3">
         <a
           href={sellHref}
@@ -370,6 +373,15 @@ function DetailPanel({
           >
             <span className="material-symbols-outlined text-[16px]!">school</span>
             {labels.teach}
+          </a>
+        )}
+        {isRareCandy && (
+          <a
+            href={homeHref}
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-white/12 px-3 py-2 text-label-sm text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface"
+          >
+            <span className="material-symbols-outlined text-[16px]!">nutrition</span>
+            {labels.useOnTeam}
           </a>
         )}
       </div>

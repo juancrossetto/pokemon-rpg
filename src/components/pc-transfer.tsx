@@ -5,6 +5,11 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { typeColor } from "@/lib/type-colors";
 import { setTeamLayout } from "@/actions/pc";
+import {
+  SquadCardContextMenu,
+  type SquadContextLabels,
+} from "@/components/squad-card-context-menu";
+import type { SquadBagCounts } from "@/lib/squad-bag";
 
 export type PcMon = {
   id: string;
@@ -15,6 +20,8 @@ export type PcMon = {
   types: string[];
   currentHp: number;
   maxHp: number;
+  isFavorite: boolean;
+  isTradeLocked: boolean;
   /** Publicado en el mercado: está en escrow, no se puede mover. */
   listed: boolean;
 };
@@ -39,20 +46,32 @@ export function PcTransfer({
   teamSize,
   initialTeam,
   initialBox,
+  menuLabels,
+  initialBagCounts,
 }: {
   locale: string;
   teamSize: number;
   initialTeam: PcMon[];
   initialBox: PcMon[];
+  menuLabels: SquadContextLabels;
+  initialBagCounts: SquadBagCounts;
 }) {
   const t = useTranslations("pc");
   const [team, setTeam] = useState(initialTeam);
   const [box, setBox] = useState(initialBox);
+  const [bagCounts, setBagCounts] = useState(initialBagCounts);
   const [drag, setDrag] = useState<DragState>(null);
   const [overSlot, setOverSlot] = useState<number | null>(null);
   const [overBox, setOverBox] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  function patchMon(id: string, patch: Partial<PcMon>) {
+    const apply = (list: PcMon[]) =>
+      list.map((m) => (m.id === id ? { ...m, ...patch } : m));
+    setTeam((prev) => apply(prev));
+    setBox((prev) => apply(prev));
+  }
 
   function commit(nextTeam: PcMon[], nextBox: PcMon[]) {
     const previous = { team, box };
@@ -159,6 +178,17 @@ export function PcTransfer({
                   onDragStart={() => setDrag({ id: mon.id, from: "team" })}
                   onDragEnd={() => setDrag(null)}
                   levelLabel={t("level", { level: mon.level })}
+                  menuLabels={menuLabels}
+                  bagCounts={bagCounts}
+                  onBagChange={setBagCounts}
+                  onHealed={(next) => patchMon(mon.id, next)}
+                  onLeveledUp={(next) =>
+                    patchMon(mon.id, {
+                      level: next.level,
+                      currentHp: next.currentHp,
+                      maxHp: next.maxHp,
+                    })
+                  }
                 />
               ) : (
                 <div className="flex min-h-[92px] items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.02] text-label-sm text-on-surface-variant/50">
@@ -209,6 +239,17 @@ export function PcTransfer({
                 onDragEnd={() => setDrag(null)}
                 levelLabel={t("level", { level: mon.level })}
                 listedLabel={t("listed")}
+                menuLabels={menuLabels}
+                bagCounts={bagCounts}
+                onBagChange={setBagCounts}
+                onHealed={(next) => patchMon(mon.id, next)}
+                onLeveledUp={(next) =>
+                  patchMon(mon.id, {
+                    level: next.level,
+                    currentHp: next.currentHp,
+                    maxHp: next.maxHp,
+                  })
+                }
               />
             ))}
           </div>
@@ -227,6 +268,11 @@ function MonCard({
   onDragEnd,
   levelLabel,
   listedLabel,
+  menuLabels,
+  bagCounts,
+  onBagChange,
+  onHealed,
+  onLeveledUp,
 }: {
   mon: PcMon;
   slot?: number;
@@ -236,66 +282,88 @@ function MonCard({
   onDragEnd: () => void;
   levelLabel: string;
   listedLabel?: string;
+  menuLabels: SquadContextLabels;
+  bagCounts: SquadBagCounts;
+  onBagChange: (next: SquadBagCounts) => void;
+  onHealed: (next: { currentHp: number; maxHp: number }) => void;
+  onLeveledUp: (next: { level: number; currentHp: number; maxHp: number }) => void;
 }) {
   const hpPct = Math.max(0, Math.min(100, (mon.currentHp / mon.maxHp) * 100));
   const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
 
   return (
-    <article
-      draggable={!mon.listed}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      className={`flex items-center gap-3 rounded-xl border border-white/10 bg-glass-surface p-3 backdrop-blur-xl transition-opacity ${
-        mon.listed ? "cursor-not-allowed opacity-60" : "cursor-grab active:cursor-grabbing"
-      } ${dragging ? "opacity-40" : ""}`}
+    <SquadCardContextMenu
+      instanceId={mon.id}
+      pokemonName={mon.name || mon.speciesName}
+      currentHp={mon.currentHp}
+      maxHp={mon.maxHp}
+      level={mon.level}
+      isFavorite={mon.isFavorite}
+      isTradeLocked={mon.isTradeLocked}
+      canHeal={mon.currentHp < mon.maxHp}
+      canLevelUp={mon.level < 100}
+      labels={menuLabels}
+      bagCounts={bagCounts}
+      onBagChange={onBagChange}
+      onHealed={onHealed}
+      onLeveledUp={onLeveledUp}
     >
-      <span className="material-symbols-outlined shrink-0 text-[18px]! text-on-surface-variant/40">
-        drag_indicator
-      </span>
+      <article
+        draggable={!mon.listed}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        className={`flex items-center gap-3 rounded-xl border border-white/10 bg-glass-surface p-3 pr-8 backdrop-blur-xl transition-opacity ${
+          mon.listed ? "cursor-not-allowed opacity-60" : "cursor-grab active:cursor-grabbing"
+        } ${dragging ? "opacity-40" : ""}`}
+      >
+        <span className="material-symbols-outlined shrink-0 text-[18px]! text-on-surface-variant/40">
+          drag_indicator
+        </span>
 
-      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface-variant bg-surface-container-high">
-        <Image
-          src={mon.spriteUrl}
-          alt={mon.speciesName}
-          width={48}
-          height={48}
-          className="h-full w-full object-cover"
-        />
-        {zone === "team" && slot && (
-          <span className="absolute bottom-0 right-0 rounded-tl bg-black/70 px-1 font-mono text-[9px] leading-tight text-white">
-            {slot}
-          </span>
-        )}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="truncate text-label-md capitalize text-on-surface">{mon.name}</span>
-          <span className="shrink-0 text-label-sm text-on-surface-variant">{levelLabel}</span>
-          {mon.listed && listedLabel && (
-            <span className="shrink-0 rounded border border-electric-yellow/30 bg-electric-yellow/10 px-1.5 py-0.5 text-[10px] text-electric-yellow">
-              {listedLabel}
+        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface-variant bg-surface-container-high">
+          <Image
+            src={mon.spriteUrl}
+            alt={mon.speciesName}
+            width={48}
+            height={48}
+            className="h-full w-full object-cover"
+          />
+          {zone === "team" && slot && (
+            <span className="absolute bottom-0 right-0 rounded-tl bg-black/70 px-1 font-mono text-[9px] leading-tight text-white">
+              {slot}
             </span>
           )}
         </div>
-        <div className="mt-1 flex items-center gap-1">
-          {mon.types.map((type) => {
-            const color = typeColor(type);
-            return (
-              <span
-                key={type}
-                className="rounded border px-1.5 py-0.5 text-[10px] uppercase"
-                style={{ backgroundColor: `${color}33`, color, borderColor: `${color}55` }}
-              >
-                {type}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-label-md capitalize text-on-surface">{mon.name}</span>
+            <span className="shrink-0 text-label-sm text-on-surface-variant">{levelLabel}</span>
+            {mon.listed && listedLabel && (
+              <span className="shrink-0 rounded border border-electric-yellow/30 bg-electric-yellow/10 px-1.5 py-0.5 text-[10px] text-electric-yellow">
+                {listedLabel}
               </span>
-            );
-          })}
+            )}
+          </div>
+          <div className="mt-1 flex items-center gap-1">
+            {mon.types.map((type) => {
+              const color = typeColor(type);
+              return (
+                <span
+                  key={type}
+                  className="rounded border px-1.5 py-0.5 text-[10px] uppercase"
+                  style={{ backgroundColor: `${color}33`, color, borderColor: `${color}55` }}
+                >
+                  {type}
+                </span>
+              );
+            })}
+          </div>
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-container-highest">
+            <div className={`h-full health-bar-fill ${hpClass}`} style={{ width: `${hpPct}%` }} />
+          </div>
         </div>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-container-highest">
-          <div className={`h-full health-bar-fill ${hpClass}`} style={{ width: `${hpPct}%` }} />
-        </div>
-      </div>
-    </article>
+      </article>
+    </SquadCardContextMenu>
   );
 }

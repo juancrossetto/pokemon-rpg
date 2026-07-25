@@ -7,7 +7,7 @@ const MAX_MOVES = 4;
 // atrapado o un inicial nuevo.
 export async function getMovesetForLevel(speciesId: number, level: number): Promise<number[]> {
   const learnable = await prisma.speciesMove.findMany({
-    where: { speciesId, learnLevel: { lte: level } },
+    where: { speciesId, method: "LEVEL_UP", learnLevel: { lte: level } },
     orderBy: { learnLevel: "desc" },
     take: MAX_MOVES,
   });

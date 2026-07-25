@@ -6,6 +6,12 @@ import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { blockIfInCombat } from "@/lib/battle-lock";
 
+/** Bayas de curación del seed (no tienen healAmount en Item). */
+const BERRY_HEAL: Record<string, number> = {
+  "Oran Berry": 10,
+  "Sitrus Berry": 30,
+};
+
 export type HealWithPotionResult =
   | { ok: true; healedBy: number; itemName: string; currentHp: number; maxHp: number }
   | {
@@ -14,7 +20,7 @@ export type HealWithPotionResult =
     };
 
 /**
- * Cura un Pokémon del equipo con la poción más barata disponible (fuera de combate).
+ * Cura un Pokémon (equipo o PC) con la poción más barata, o Oran/Sitrus si no hay.
  */
 export async function healPokemonWithPotion(
   instanceId: string,
@@ -41,7 +47,7 @@ export async function healPokemonWithPotion(
   );
   if (instance.currentHp >= maxHp) return { ok: false, error: "full_hp" };
 
-  // La más débil primero: no gastar Full Restore si alcanza una Potion.
+  // Pociones primero (la más débil); si no hay, bayas Oran/Sitrus.
   const potions = await prisma.inventoryItem.findMany({
     where: {
       userId,
@@ -51,18 +57,48 @@ export async function healPokemonWithPotion(
     include: { item: { select: { id: true, name: true, healAmount: true } } },
     orderBy: { item: { healAmount: "asc" } },
   });
-  const stack = potions[0];
-  if (!stack || stack.item.healAmount == null) {
-    return { ok: false, error: "no_potions" };
+
+  let itemId: string;
+  let itemName: string;
+  let healAmount: number;
+  let quantity: number;
+
+  const potion = potions[0];
+  if (potion?.item.healAmount != null) {
+    itemId = potion.itemId;
+    itemName = potion.item.name;
+    healAmount = potion.item.healAmount;
+    quantity = potion.quantity;
+  } else {
+    const berries = await prisma.inventoryItem.findMany({
+      where: {
+        userId,
+        quantity: { gt: 0 },
+        item: { name: { in: Object.keys(BERRY_HEAL) } },
+      },
+      include: { item: { select: { id: true, name: true } } },
+    });
+    const ranked = berries
+      .map((b) => ({
+        ...b,
+        heal: BERRY_HEAL[b.item.name] ?? 0,
+      }))
+      .filter((b) => b.heal > 0)
+      .sort((a, b) => a.heal - b.heal);
+    const berry = ranked[0];
+    if (!berry) return { ok: false, error: "no_potions" };
+    itemId = berry.itemId;
+    itemName = berry.item.name;
+    healAmount = berry.heal;
+    quantity = berry.quantity;
   }
 
-  const healAmount = stack.item.healAmount;
   const healedTo = Math.min(maxHp, instance.currentHp + healAmount);
   const healedBy = healedTo - instance.currentHp;
 
   await prisma.$transaction([
     prisma.inventoryItem.update({
-      where: { userId_itemId: { userId, itemId: stack.itemId } },
+      where: { userId_itemId: { userId, itemId } },
       data: { quantity: { decrement: 1 } },
     }),
     prisma.pokemonInstance.update({
@@ -71,22 +107,19 @@ export async function healPokemonWithPotion(
     }),
   ]);
 
-  // Si llegó a 0, limpiar la fila vacía.
-  if (stack.quantity <= 1) {
+  if (quantity <= 1) {
     await prisma.inventoryItem.deleteMany({
-      where: { userId, itemId: stack.itemId, quantity: { lte: 0 } },
+      where: { userId, itemId, quantity: { lte: 0 } },
     });
   }
 
   revalidatePath(`/${locale}`);
-  revalidatePath(`/${locale}/team`);
-  revalidatePath(`/${locale}/inventory`);
-  revalidatePath(`/${locale}/battle`);
+  // El cliente actualiza HP/mochila en optimista; no hace falta invalidar todo.
 
   return {
     ok: true,
     healedBy,
-    itemName: stack.item.name,
+    itemName,
     currentHp: healedTo,
     maxHp,
   };

@@ -7,11 +7,15 @@ import {
   HomeEmptySquadSlot,
   HomeSquadCard,
   type HomeSquadCardLabels,
+  type HomeSquadMove,
 } from "@/components/home-squad-card";
 import type { SquadContextLabels } from "@/components/squad-card-context-menu";
+import type { SquadBagCounts } from "@/lib/squad-bag";
+import type { EvolutionStage } from "@/lib/evolution-chain";
 
 export type HomeSquadMember = {
   id: string;
+  level: number;
   isFavorite: boolean;
   isTradeLocked: boolean;
   nickname: string | null;
@@ -23,6 +27,13 @@ export type HomeSquadMember = {
   xpPct: number;
   xpToNextLabel: string;
   levelLabel: string;
+  atk: number;
+  def: number;
+  spAtk: number;
+  spDef: number;
+  speed: number;
+  evolutionChain: EvolutionStage[];
+  moves: (HomeSquadMove | null)[];
   labels: Omit<HomeSquadCardLabels, "lead" | "slot" | "level">;
   menuLabels: SquadContextLabels;
 };
@@ -39,6 +50,7 @@ export function HomeSquadGrid({
   emptySlotLabel,
   leadLabel,
   slotLabels,
+  initialBagCounts,
 }: {
   locale: string;
   initialMembers: HomeSquadMember[];
@@ -46,9 +58,11 @@ export function HomeSquadGrid({
   leadLabel: string;
   /** Labels ya resueltos en el server (no se pueden pasar funciones a client). */
   slotLabels: string[];
+  initialBagCounts: SquadBagCounts;
 }) {
   const t = useTranslations("pc");
   const [members, setMembers] = useState(initialMembers);
+  const [bagCounts, setBagCounts] = useState(initialBagCounts);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overSlot, setOverSlot] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +85,10 @@ export function HomeSquadGrid({
       return merged;
     });
   }, [initialMembers]);
+
+  useEffect(() => {
+    setBagCounts(initialBagCounts);
+  }, [initialBagCounts]);
 
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => members[i] ?? null);
 
@@ -102,6 +120,48 @@ export function HomeSquadGrid({
   function applyHeal(instanceId: string, currentHp: number, maxHp: number) {
     setMembers((prev) =>
       prev.map((m) => (m.id === instanceId ? { ...m, currentHp, maxHp } : m)),
+    );
+  }
+
+  function applyLevelUp(
+    instanceId: string,
+    next: { level: number; currentHp: number; maxHp: number; levelLabel: string },
+  ) {
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.id === instanceId
+          ? {
+              ...m,
+              level: next.level,
+              currentHp: next.currentHp,
+              maxHp: next.maxHp,
+              levelLabel: next.levelLabel,
+              xpPct: 0,
+            }
+          : m,
+      ),
+    );
+  }
+
+  function applyPpRestore(
+    instanceId: string,
+    next: { moveName: string; restoredBy: number; allMoves: boolean },
+  ) {
+    setMembers((prev) =>
+      prev.map((m) => {
+        if (m.id !== instanceId) return m;
+        return {
+          ...m,
+          moves: m.moves.map((slot) => {
+            if (!slot) return slot;
+            if (!next.allMoves && slot.name !== next.moveName) return slot;
+            return {
+              ...slot,
+              currentPp: Math.min(slot.maxPp, slot.currentPp + next.restoredBy),
+            };
+          }),
+        };
+      }),
     );
   }
 
@@ -174,8 +234,15 @@ export function HomeSquadGrid({
                     spriteUrl={instance.spriteUrl}
                     currentHp={instance.currentHp}
                     maxHp={instance.maxHp}
+                    level={instance.level}
                     xpPct={instance.xpPct}
-                    xpToNextLabel={instance.xpToNextLabel}
+                    atk={instance.atk}
+                    def={instance.def}
+                    spAtk={instance.spAtk}
+                    spDef={instance.spDef}
+                    speed={instance.speed}
+                    evolutionChain={instance.evolutionChain}
+                    moves={instance.moves}
                     labels={{
                       ...instance.labels,
                       level: instance.levelLabel,
@@ -183,9 +250,15 @@ export function HomeSquadGrid({
                       slot: slotLabels[i] ?? String(i + 1),
                     }}
                     menuLabels={instance.menuLabels}
+                    bagCounts={bagCounts}
+                    onBagChange={setBagCounts}
                     onHealed={({ currentHp, maxHp }) =>
                       applyHeal(instance.id, currentHp, maxHp)
                     }
+                    onLeveledUp={({ level, currentHp, maxHp, levelLabel }) =>
+                      applyLevelUp(instance.id, { level, currentHp, maxHp, levelLabel })
+                    }
+                    onPpRestored={(next) => applyPpRestore(instance.id, next)}
                     onCardClick={(e) => {
                       if (didDragRef.current) {
                         e.preventDefault();

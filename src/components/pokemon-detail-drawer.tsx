@@ -6,6 +6,8 @@ import { useLocale } from "next-intl";
 import { typeColor } from "@/lib/type-colors";
 import { teachMove } from "@/actions/teach-move";
 import type { TeamMember, TeamRosterLabels } from "@/components/team-roster";
+import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
+import { EvolutionChainList } from "@/components/evolution-chain-list";
 
 export function PokemonDetailDrawer({
   member,
@@ -113,10 +115,10 @@ export function PokemonDetailDrawer({
                 return (
                   <span
                     key={type}
-                    className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
+                    className="rounded-full border border-white/15 bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/90"
                     style={{
-                      background: `linear-gradient(135deg, ${color}, ${color}cc)`,
-                      boxShadow: `0 2px 8px ${color}33`,
+                      boxShadow: `inset 0 0 0 1px ${color}55`,
+                      color,
                     }}
                   >
                     {type}
@@ -132,34 +134,64 @@ export function PokemonDetailDrawer({
           </div>
 
           <section className="mb-5">
-            <h3 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+            <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
               {labels.statsTitle}
             </h3>
-            <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
-              <div className="mb-1 flex items-end justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                  {labels.hp}
-                </span>
-                <span className="font-mono text-xs font-semibold text-white">
-                  {member.currentHp}
-                  <span className="text-on-surface-variant">/{member.maxHp}</span>
-                </span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-lime-400"
-                  style={{ width: `${Math.max(0, Math.min(100, (member.currentHp / member.maxHp) * 100))}%` }}
-                />
-              </div>
-            </div>
-            <div className="mt-2 grid grid-cols-3 gap-1.5">
-              <DrawerStat label={labels.atk} value={member.atk} />
-              <DrawerStat label={labels.def} value={member.def} />
-              <DrawerStat label={labels.spAtk} value={member.spAtk} />
-              <DrawerStat label={labels.spDef} value={member.spDef} />
-              <DrawerStat label={labels.speed} value={member.speed} />
+            <div className="space-y-2.5">
+              <DrawerStatRow
+                label={labels.hp}
+                value={`${member.currentHp}/${member.maxHp}`}
+                pct={Math.max(0, Math.min(100, (member.currentHp / member.maxHp) * 100))}
+                variant={hpBarVariant(
+                  Math.max(0, Math.min(100, (member.currentHp / member.maxHp) * 100)),
+                )}
+                segments={16}
+              />
+              <DrawerStatRow
+                label={labels.atk}
+                value={member.atk}
+                pct={(member.atk / Math.max(member.atk, member.def, member.spAtk, member.spDef, member.speed, 180)) * 100}
+                variant="stat"
+              />
+              <DrawerStatRow
+                label={labels.def}
+                value={member.def}
+                pct={(member.def / Math.max(member.atk, member.def, member.spAtk, member.spDef, member.speed, 180)) * 100}
+                variant="stat"
+              />
+              <DrawerStatRow
+                label={labels.spAtk}
+                value={member.spAtk}
+                pct={(member.spAtk / Math.max(member.atk, member.def, member.spAtk, member.spDef, member.speed, 180)) * 100}
+                variant="stat"
+              />
+              <DrawerStatRow
+                label={labels.spDef}
+                value={member.spDef}
+                pct={(member.spDef / Math.max(member.atk, member.def, member.spAtk, member.spDef, member.speed, 180)) * 100}
+                variant="stat"
+              />
+              <DrawerStatRow
+                label={labels.speed}
+                value={member.speed}
+                pct={(member.speed / Math.max(member.atk, member.def, member.spAtk, member.spDef, member.speed, 180)) * 100}
+                variant="stat"
+              />
             </div>
           </section>
+
+          {member.evolutionChain.length > 1 && (
+            <section className="mb-5">
+              <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                {labels.evolutionsTitle}
+              </h3>
+              <EvolutionChainList
+                stages={member.evolutionChain}
+                unknownLabel={labels.unknownSpecies}
+                evolveAtLevelLabel={labels.evolveAtLevel}
+              />
+            </section>
+          )}
 
           <section className="mb-5">
             <h3 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
@@ -282,13 +314,28 @@ export function PokemonDetailDrawer({
   );
 }
 
-function DrawerStat({ label, value }: { label: string; value: number }) {
+function DrawerStatRow({
+  label,
+  value,
+  pct,
+  variant,
+  segments = 14,
+}: {
+  label: string;
+  value: string | number;
+  pct: number;
+  variant: "xp" | "hp" | "stat" | "danger";
+  segments?: number;
+}) {
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-1 py-1.5 text-center">
-      <p className="text-[9px] font-bold uppercase tracking-wide text-on-surface-variant leading-none">
+    <div className="grid grid-cols-[3.2rem_2.8rem_1fr] items-center gap-2">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
         {label}
-      </p>
-      <p className="mt-0.5 font-mono text-xs font-semibold text-white leading-none">{value}</p>
+      </span>
+      <span className="text-right font-mono text-xs font-semibold tabular-nums text-white">
+        {value}
+      </span>
+      <SegmentedStatBar pct={pct} segments={segments} variant={variant} heightClass="h-3" />
     </div>
   );
 }

@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { BattleSprite } from "@/components/battle-sprite";
+import { LevelUpOffersPanel } from "@/components/level-up-offers";
+import { playBattleSfx } from "@/lib/battle-sfx";
 import type { XpSummaryEntry } from "@/actions/battle-move";
 
 export type ResultMode = "won" | "lost" | "caught" | "fled" | "trainer_cleared";
@@ -81,6 +84,80 @@ function FighterCard({
   );
 }
 
+function LevelUpFanfare({
+  entries,
+  player,
+}: {
+  entries: XpSummaryEntry[];
+  player: ResultFighter;
+}) {
+  const t = useTranslations("battle");
+  const leveled = entries.filter((e) => e.leveledUpTo != null);
+
+  useEffect(() => {
+    if (leveled.length === 0) return;
+    playBattleSfx("levelUp");
+  }, [leveled.length]);
+
+  if (leveled.length === 0) return null;
+
+  return (
+    <section
+      className="level-up-fanfare level-up-glow relative mt-3 overflow-hidden rounded-2xl border border-tertiary/35 bg-tertiary/10 px-4 py-4"
+      aria-live="polite"
+    >
+      <span className="level-up-burst pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-tertiary/25 blur-2xl" />
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <span
+          key={i}
+          className="level-up-spark pointer-events-none absolute h-1.5 w-1.5 rounded-full bg-tertiary"
+          style={{
+            left: `${12 + i * 14}%`,
+            bottom: `${18 + (i % 3) * 10}%`,
+            animationDelay: `${0.12 * i}s`,
+          }}
+        />
+      ))}
+
+      <div className="relative flex items-center gap-3">
+        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center">
+          <span className="absolute inset-0 rounded-full bg-tertiary/20 blur-md" />
+          <BattleSprite
+            speciesName={player.speciesName}
+            facing="front"
+            fallbackUrl={player.spriteUrl}
+            alt={player.name}
+            width={56}
+            height={56}
+            className="relative h-14 w-14 object-contain drop-shadow-md"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-tertiary/80">
+            {t("levelUpFanfare")}
+          </p>
+          <ul className="mt-1 space-y-0.5">
+            {leveled.map((entry) => (
+              <li
+                key={entry.instanceId}
+                className="truncate text-label-md font-semibold capitalize text-white"
+              >
+                {entry.name}{" "}
+                <span className="font-mono text-tertiary">
+                  → {t("level", { level: entry.leveledUpTo! })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <span className="material-symbols-outlined shrink-0 text-[28px]! text-tertiary">
+          arrow_upward
+        </span>
+      </div>
+    </section>
+  );
+}
+
 export function BattleResult({
   mode,
   resultText,
@@ -98,7 +175,7 @@ export function BattleResult({
   foe: ResultFighter;
   xpSummary: XpSummaryEntry[] | null;
   coinsGained: number;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const t = useTranslations("battle");
   const playerWon = mode === "won" || mode === "trainer_cleared" || mode === "caught";
@@ -170,6 +247,31 @@ export function BattleResult({
             />
           </div>
         </section>
+
+        {xpSummary ? <LevelUpFanfare entries={xpSummary} player={player} /> : null}
+
+        {xpSummary ? (
+          <div className="mt-3">
+            <LevelUpOffersPanel
+              key={xpSummary
+                .map(
+                  (e) =>
+                    `${e.instanceId}:${e.leveledUpTo}:${e.evolveOffer?.toSpeciesId ?? 0}`,
+                )
+                .join("|")}
+              entries={xpSummary.map((e) => ({
+                instanceId: e.instanceId,
+                name: e.name,
+                leveledUpTo: e.leveledUpTo,
+                fromSpriteUrl: e.fromSpriteUrl,
+                autoTaught: e.autoTaught ?? [],
+                pendingMoves: e.pendingMoves ?? [],
+                evolveOffer: e.evolveOffer ?? null,
+                knownMoves: e.knownMoves ?? [],
+              }))}
+            />
+          </div>
+        ) : null}
 
         {(coinsGained > 0 || (xpSummary && xpSummary.length > 0)) && (
           <section className="glass-panel mt-3 rounded-2xl border border-white/10 p-4">

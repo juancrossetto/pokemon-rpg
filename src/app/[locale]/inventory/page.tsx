@@ -65,6 +65,7 @@ export default async function InventoryPage({
     teaches: t("teaches"),
     sell: t("sell"),
     teach: t("teach"),
+    useOnTeam: t("useOnTeam"),
     close: t("close"),
     rarity: {
       common: t("rarity.common"),
@@ -128,6 +129,7 @@ export default async function InventoryPage({
             labels={labels}
             sellHref={`/${locale}/market?tab=sell`}
             teamHref={`/${locale}/team`}
+            homeHref={`/${locale}`}
           />
         )}
       </div>

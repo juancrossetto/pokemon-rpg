@@ -10,6 +10,7 @@ import { BreedingPanel } from "@/components/breeding-panel";
 import { BREEDING_MIN_LEVEL, msUntilHatch } from "@/lib/breeding";
 import { spriteFor } from "@/lib/shiny";
 import { redirectIfInBattle } from "@/lib/battle-lock";
+import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 
 export default async function PcPage({
   params,
@@ -19,7 +20,11 @@ export default async function PcPage({
   searchParams: Promise<{ error?: string; notice?: string }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
-  const [t, session] = await Promise.all([getTranslations("pc"), auth()]);
+  const [t, th, session] = await Promise.all([
+    getTranslations("pc"),
+    getTranslations("home"),
+    auth(),
+  ]);
 
   if (!session?.user) {
     redirect({ href: "/login", locale });
@@ -33,24 +38,27 @@ export default async function PcPage({
   const error = pickCode(query.error, PC_ERRORS);
   const notice = pickCode(query.notice, PC_NOTICES);
 
-  const pokemon = await prisma.pokemonInstance.findMany({
-    where: {
-      ownerId: session.user.id,
-      // Escrow de mochila del mercado: no aparecen hasta reclamar la compra.
-      listings: {
-        none: {
-          status: "SOLD",
-          buyerId: session.user.id,
-          buyerClaimedAt: null,
+  const [pokemon, bagCounts] = await Promise.all([
+    prisma.pokemonInstance.findMany({
+      where: {
+        ownerId: session.user.id,
+        // Escrow de mochila del mercado: no aparecen hasta reclamar la compra.
+        listings: {
+          none: {
+            status: "SOLD",
+            buyerId: session.user.id,
+            buyerClaimedAt: null,
+          },
         },
       },
-    },
-    include: {
-      species: true,
-      listings: { where: { status: "ACTIVE" }, select: { id: true } },
-    },
-    orderBy: [{ teamSlot: { sort: "asc", nulls: "last" } }, { caughtAt: "asc" }],
-  });
+      include: {
+        species: true,
+        listings: { where: { status: "ACTIVE" }, select: { id: true } },
+      },
+      orderBy: [{ teamSlot: { sort: "asc", nulls: "last" } }, { caughtAt: "asc" }],
+    }),
+    loadSquadBagCounts(session.user.id),
+  ]);
 
   if (pokemon.length === 0) {
     redirect({ href: "/starter", locale });
@@ -110,6 +118,18 @@ export default async function PcPage({
           teamSize={TEAM_SIZE}
           initialTeam={team.map(toPcMon)}
           initialBox={stored.map(toPcMon)}
+          initialBagCounts={bagCounts}
+          menuLabels={{
+            favoriteOn: th("squadMenu.favoriteOn"),
+            favoriteOff: th("squadMenu.favoriteOff"),
+            lockOn: th("squadMenu.lockOn"),
+            lockOff: th("squadMenu.lockOff"),
+            viewTeam: th("squadMenu.viewTeam"),
+            hint: th("squadMenu.hint"),
+            heal: th("squadMenu.heal"),
+            restorePp: th("squadMenu.restorePp"),
+            rareCandy: th("squadMenu.rareCandy"),
+          }}
         />
 
         <BreedingPanel locale={locale} candidates={breedCandidates} eggs={eggs} />
@@ -126,6 +146,8 @@ type PokemonRowSource = {
   ptConstitution: number;
   teamSlot: number | null;
   isShiny: boolean;
+  isFavorite: boolean;
+  isTradeLocked: boolean;
   species: { name: string; spriteUrl: string; types: string[]; baseHp: number };
   listings: { id: string }[];
 };
@@ -140,6 +162,8 @@ function toPcMon(instance: PokemonRowSource): PcMon {
     types: instance.species.types,
     currentHp: instance.currentHp,
     maxHp: calculateMaxHp(instance.species.baseHp, instance.level, instance.ptConstitution),
+    isFavorite: instance.isFavorite,
+    isTradeLocked: instance.isTradeLocked,
     listed: instance.listings.length > 0,
   };
 }

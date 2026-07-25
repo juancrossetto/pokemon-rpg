@@ -3,7 +3,8 @@ import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { spriteFor } from "@/lib/shiny";
-import { calculateMaxHp, xpForLevel, xpToNextLevel } from "@/lib/stats";
+import { calculateMaxHp, calculateStat, xpForLevel, xpToNextLevel } from "@/lib/stats";
+import { effectivePp } from "@/lib/battle";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { buildExpeditionView } from "@/lib/campaign";
@@ -13,6 +14,8 @@ import { CampaignDevPanel } from "@/components/campaign-dev-panel";
 import { ActiveMission } from "@/components/active-mission";
 import { SystemStatus } from "@/components/system-status";
 import { HomeSquadGrid, type HomeSquadMember } from "@/components/home-squad-grid";
+import { loadSquadBagCounts } from "@/lib/load-squad-bag";
+import { loadEvolutionChainsForTeam } from "@/lib/evolution-chain";
 import type { CampaignLocationKind } from "@/lib/campaign";
 
 const TEAM_SIZE = 6;
@@ -53,11 +56,16 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
 
   const pokemon = await prisma.pokemonInstance.findMany({
     where: { ownerId: userId, teamSlot: { not: null } },
-    // Sin `moves`: la card del dashboard ya no los muestra (viven en /team),
-    // así que traerlos era un join de más por cada Pokémon del equipo.
-    include: { species: true },
+    include: {
+      species: true,
+      moves: {
+        include: { move: { select: { name: true, type: true, pp: true } } },
+        orderBy: { slot: "asc" },
+      },
+    },
     orderBy: { teamSlot: "asc" },
   });
+  const bagCounts = await loadSquadBagCounts(userId);
 
   if (pokemon.length === 0) {
     return (
@@ -78,6 +86,9 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       </div>
     );
   }
+
+  const speciesIds = [...new Set(pokemon.map((p) => p.speciesId))];
+  const evolutionChains = await loadEvolutionChainsForTeam(userId, speciesIds);
 
   const bySlot = new Map(pokemon.map((p) => [p.teamSlot, p]));
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => bySlot.get(i + 1) ?? null);
@@ -140,7 +151,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           </div>
 
           {expedition && milestone && (
-            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            <div className="mt-6 grid gap-4 lg:grid-cols-3 lg:items-stretch">
               <div className="lg:col-span-2">
                 <CurrentExpedition
                   locationNameKey={expedition.location.nameKey}
@@ -198,6 +209,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
               locale={locale}
               emptySlotLabel={t("emptySlot")}
               leadLabel={tt("lead")}
+              initialBagCounts={bagCounts}
               slotLabels={Array.from({ length: TEAM_SIZE }, (_, i) =>
                 tt("slotLabel", { slot: i + 1 }),
               )}
@@ -218,8 +230,23 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                       ? Math.max(0, Math.min(100, (xpIntoLevel / levelSpan) * 100))
                       : 0;
 
+                  const movesBySlot = new Map(instance.moves.map((m) => [m.slot, m]));
+                  const moves = Array.from({ length: 4 }, (_, slotIdx) => {
+                    const m = movesBySlot.get(slotIdx + 1);
+                    if (!m) return null;
+                    const maxPp = m.move.pp ?? 20;
+                    return {
+                      slot: slotIdx + 1,
+                      name: m.move.name,
+                      type: m.move.type,
+                      currentPp: effectivePp(m.currentPp, maxPp),
+                      maxPp,
+                    };
+                  });
+
                   return {
                     id: instance.id,
+                    level: instance.level,
                     isFavorite: instance.isFavorite,
                     isTradeLocked: instance.isTradeLocked,
                     nickname: instance.nickname,
@@ -231,11 +258,39 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                     xpPct,
                     xpToNextLabel: tt("expToNext", { xp: xpToNext }),
                     levelLabel: tt("level", { level: instance.level }),
+                    atk: calculateStat(instance.species.baseAttack, instance.ptStrength, instance.level),
+                    def: calculateStat(instance.species.baseDefense, instance.ptDexterity, instance.level),
+                    spAtk: calculateStat(
+                      instance.species.baseSpAtk,
+                      instance.ptIntelligence,
+                      instance.level,
+                    ),
+                    spDef: calculateStat(
+                      instance.species.baseSpDef,
+                      instance.ptIntelligence,
+                      instance.level,
+                    ),
+                    speed: calculateStat(instance.species.baseSpeed, instance.ptSpeed, instance.level),
+                    evolutionChain: evolutionChains.get(instance.speciesId) ?? [],
+                    moves,
                     labels: {
                       hp: tt("stats.hp"),
+                      exp: tt("stats.exp"),
+                      atk: tt("stats.atk"),
+                      def: tt("stats.def"),
+                      spAtk: tt("stats.spAtk"),
+                      spDef: tt("stats.spDef"),
+                      speed: tt("stats.speed"),
                       fainted: tt("fainted"),
                       favorite: t("squadMenu.favoriteBadge"),
                       tradeLocked: t("squadMenu.lockedBadge"),
+                      pp: tt("drawer.pp"),
+                      emptyMove: tt("drawer.emptySlotMove"),
+                      tabAbout: tt("drawer.tabAbout"),
+                      tabStats: tt("drawer.tabStats"),
+                      tabEvolutions: tt("drawer.tabEvolutions"),
+                      unknownSpecies: tt("drawer.unknownSpecies"),
+                      evolveAtLevel: tt("drawer.evolveAtLevel", { level: "{level}" }),
                     },
                     menuLabels: {
                       favoriteOn: t("squadMenu.favoriteOn"),
@@ -245,6 +300,8 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                       viewTeam: t("squadMenu.viewTeam"),
                       hint: t("squadMenu.hint"),
                       heal: t("squadMenu.heal"),
+                      restorePp: t("squadMenu.restorePp"),
+                      rareCandy: t("squadMenu.rareCandy"),
                     },
                   };
                 })}
