@@ -96,8 +96,10 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
 
   await markSpeciesSeen(userId, wildSpeciesId);
 
+  // No revalidar /pokedex acá: redirige a batalla y el combat-lock saca al jugador
+  // de otras rutas; la Dex se actualiza al volver. Revalidarla dispara RSC de Dex
+  // en medio de la transición y con Turbopack stale suele romper el client.
   revalidatePath(`/${locale}/battle`);
-  revalidatePath(`/${locale}/pokedex`);
   revalidateCombatUi(locale);
   redirect({ href: "/battle", locale });
 }

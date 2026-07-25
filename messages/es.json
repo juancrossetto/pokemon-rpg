@@ -29,7 +29,8 @@
     "clans": "Clanes",
     "pvp": "PvP",
     "more": "Más",
-    "campaign": "Viaje"
+    "campaign": "Viaje",
+    "energy": "Energía"
   },
   "notifications": {
     "eyebrow": "Alertas en vivo",
@@ -105,7 +106,11 @@
       "lockOff": "Desbloquear venta",
       "viewTeam": "Ver en Mi equipo",
       "favoriteBadge": "Favorito",
-      "lockedBadge": "Venta bloqueada"
+      "lockedBadge": "Venta bloqueada",
+      "heal": "Usar poción",
+      "noPotions": "No tenés pociones en el inventario.",
+      "fullHp": "Este Pokémon ya tiene el HP al máximo.",
+      "healed": "Usaste {item}: +{hp} HP."
     }
   },
   "pokedex": {

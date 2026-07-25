@@ -2,6 +2,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getCurrentEnergy } from "@/lib/energy";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
 import { MobileChrome } from "@/components/mobile-chrome";
@@ -20,9 +21,23 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   const user = session?.user
     ? await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { coins: true, avatarId: true },
+        select: {
+          coins: true,
+          avatarId: true,
+          energy: true,
+          energyMax: true,
+          energyUpdatedAt: true,
+        },
       })
     : null;
+  const energy = user
+    ? getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt)
+    : null;
+  const energyMax = user?.energyMax ?? null;
+  const energyPct =
+    energy !== null && energyMax !== null && energyMax > 0
+      ? Math.max(0, Math.min(100, (energy / energyMax) * 100))
+      : 0;
   const notifications = session?.user
     ? await listNotifications(session.user.id)
     : null;
@@ -112,6 +127,26 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
+          {user && energy !== null && energyMax !== null && (
+            <span
+              className="flex flex-col gap-0.5 rounded-full border border-sky-400/30 bg-sky-400/10 px-2.5 py-1 text-sky-300"
+              title={t("energy")}
+              aria-label={`${t("energy")}: ${energy}/${energyMax}`}
+            >
+              <span className="flex items-center gap-1 text-label-sm font-mono leading-none">
+                <span className="material-symbols-outlined text-[16px]!">bolt</span>
+                {energy}
+                <span className="text-sky-300/55">/{energyMax}</span>
+              </span>
+              <span className="h-0.5 w-full overflow-hidden rounded-full bg-sky-400/20">
+                <span
+                  className="block h-full rounded-full bg-sky-400/80"
+                  style={{ width: `${energyPct}%` }}
+                />
+              </span>
+            </span>
+          )}
+
           {user && (
             <span className="flex items-center gap-1 rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-1 text-label-sm text-electric-yellow font-mono">
               <span className="material-symbols-outlined text-[16px]!">paid</span>
@@ -162,6 +197,9 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         brandHref={brandHref}
         locale={locale}
         languageLabel={t("language")}
+        energy={energy}
+        energyMax={energyMax}
+        energyLabel={t("energy")}
         coins={user?.coins ?? null}
         userName={session?.user ? (session.user.name ?? "?") : null}
         avatarId={user?.avatarId ?? null}

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import type { CSSProperties, MouseEvent } from "react";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import {
@@ -20,6 +20,7 @@ export type HomeSquadCardLabels = {
 /**
  * Card del equipo en el dashboard: vista de un vistazo, no ficha técnica.
  * Click izquierdo → /team. Click derecho / ⋮ → favorito, bloqueo de venta, etc.
+ * El padre puede cancelar la navegación tras un drag (onCardClick).
  */
 export function HomeSquadCard({
   instanceId,
@@ -36,6 +37,8 @@ export function HomeSquadCard({
   xpToNextLabel,
   labels,
   menuLabels,
+  onHealed,
+  onCardClick,
 }: {
   instanceId: string;
   isLead: boolean;
@@ -51,6 +54,8 @@ export function HomeSquadCard({
   xpToNextLabel: string;
   labels: HomeSquadCardLabels;
   menuLabels: SquadContextLabels;
+  onHealed?: (next: { currentHp: number; maxHp: number }) => void;
+  onCardClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const displayName = nickname ?? speciesName;
   const primaryType = types[0] ?? "normal";
@@ -63,11 +68,15 @@ export function HomeSquadCard({
       instanceId={instanceId}
       isFavorite={isFavorite}
       isTradeLocked={isTradeLocked}
+      canHeal={currentHp < maxHp}
       labels={menuLabels}
+      onHealed={onHealed}
     >
       <Link
         href="/team"
         title={`${displayName} · ${labels.level}`}
+        draggable={false}
+        onClick={onCardClick}
         className={`team-card group relative flex flex-col overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-1 ${
           isLead || isFavorite
             ? "border-pokeball-red/45 shadow-[0_12px_32px_rgba(238,21,21,0.14)]"
@@ -85,11 +94,10 @@ export function HomeSquadCard({
           <div className="flex items-center justify-between gap-1 pr-6">
             <div className="flex items-center gap-1">
               {isLead ? (
-                <span
-                  className="flex items-center gap-0.5 rounded-full bg-pokeball-red px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white"
-                  title={labels.lead}
-                >
-                  <span className="material-symbols-outlined text-[11px]! leading-none">military_tech</span>
+                <span className="flex items-center text-violet-400" title={labels.lead}>
+                  <span className="material-symbols-outlined text-[15px]! leading-none">
+                    military_tech
+                  </span>
                 </span>
               ) : (
                 <span className="text-[9px] font-semibold uppercase tracking-wider text-on-surface-variant/70">
@@ -97,19 +105,16 @@ export function HomeSquadCard({
                 </span>
               )}
               {isFavorite && (
-                <span
-                  className="flex items-center rounded-full bg-electric-yellow/20 px-1 py-0.5 text-electric-yellow"
-                  title={labels.favorite}
-                >
-                  <span className="material-symbols-outlined text-[12px]! leading-none">star</span>
+                <span className="flex items-center text-electric-yellow" title={labels.favorite}>
+                  <span className="material-symbols-outlined text-[15px]! leading-none">star</span>
                 </span>
               )}
               {isTradeLocked && (
                 <span
-                  className="flex items-center rounded-full bg-white/10 px-1 py-0.5 text-on-surface-variant"
+                  className="flex items-center text-on-surface-variant"
                   title={labels.tradeLocked}
                 >
-                  <span className="material-symbols-outlined text-[12px]! leading-none">lock</span>
+                  <span className="material-symbols-outlined text-[15px]! leading-none">lock</span>
                 </span>
               )}
             </div>

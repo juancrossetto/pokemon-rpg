@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import {
   togglePokemonFavorite,
   togglePokemonTradeLock,
 } from "@/actions/pokemon-flags";
+import { healPokemonWithPotion } from "@/actions/heal-pokemon-potion";
 
 export type SquadContextLabels = {
   favoriteOn: string;
@@ -16,32 +17,42 @@ export type SquadContextLabels = {
   lockOff: string;
   viewTeam: string;
   hint: string;
+  heal: string;
 };
 
 type MenuState = { x: number; y: number } | null;
+type Feedback = { kind: "ok" | "error"; text: string } | null;
 
 /**
  * Click derecho (o botón ⋮) sobre una card del equipo: favorito, bloqueo de
- * venta e ir a Mi equipo. El click izquierdo en el hijo sigue navegando.
+ * venta, curar con poción e ir a Mi equipo. El click izquierdo en el hijo
+ * sigue navegando.
  */
 export function SquadCardContextMenu({
   instanceId,
   isFavorite,
   isTradeLocked,
+  canHeal,
   labels,
+  onHealed,
   children,
 }: {
   instanceId: string;
   isFavorite: boolean;
   isTradeLocked: boolean;
+  /** HP actual < max: si no, el ítem avisa "ya está sano". */
+  canHeal: boolean;
   labels: SquadContextLabels;
+  onHealed?: (next: { currentHp: number; maxHp: number }) => void;
   children: ReactNode;
 }) {
   const locale = useLocale();
+  const tMenu = useTranslations("home.squadMenu");
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menu, setMenu] = useState<MenuState>(null);
+  const [feedback, setFeedback] = useState<Feedback>(null);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -65,17 +76,43 @@ export function SquadCardContextMenu({
   function openAt(clientX: number, clientY: number) {
     const pad = 8;
     const mw = 220;
-    const mh = 160;
+    const mh = 220;
     const x = Math.min(clientX, window.innerWidth - mw - pad);
     const y = Math.min(clientY, window.innerHeight - mh - pad);
+    setFeedback(null);
     setMenu({ x: Math.max(pad, x), y: Math.max(pad, y) });
   }
 
   function run(action: () => Promise<unknown>) {
+    setFeedback(null);
     startTransition(async () => {
       await action();
       setMenu(null);
       router.refresh();
+    });
+  }
+
+  function heal() {
+    setFeedback(null);
+    if (!canHeal) {
+      setFeedback({ kind: "error", text: tMenu("fullHp") });
+      return;
+    }
+    startTransition(async () => {
+      const result = await healPokemonWithPotion(instanceId, locale);
+      if (!result.ok) {
+        const text =
+          result.error === "full_hp" ? tMenu("fullHp") : tMenu("noPotions");
+        setFeedback({ kind: "error", text });
+        return;
+      }
+      onHealed?.({ currentHp: result.currentHp, maxHp: result.maxHp });
+      setFeedback({
+        kind: "ok",
+        text: tMenu("healed", { item: result.itemName, hp: result.healedBy }),
+      });
+      router.refresh();
+      window.setTimeout(() => setMenu(null), 900);
     });
   }
 
@@ -113,6 +150,12 @@ export function SquadCardContextMenu({
           style={{ left: menu.x, top: menu.y }}
         >
           <MenuItem
+            icon="healing"
+            label={labels.heal}
+            disabled={pending}
+            onSelect={heal}
+          />
+          <MenuItem
             icon={isFavorite ? "star" : "star_outline"}
             label={isFavorite ? labels.favoriteOff : labels.favoriteOn}
             disabled={pending}
@@ -136,6 +179,19 @@ export function SquadCardContextMenu({
             </span>
             {labels.viewTeam}
           </Link>
+          {feedback ? (
+            <p
+              className={[
+                "mx-2 mb-1 mt-1 rounded-md px-2 py-1.5 text-[11px] leading-snug",
+                feedback.kind === "error"
+                  ? "bg-error/15 text-error"
+                  : "bg-emerald-500/15 text-emerald-300",
+              ].join(" ")}
+              role="status"
+            >
+              {feedback.text}
+            </p>
+          ) : null}
         </div>
       )}
     </div>
