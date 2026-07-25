@@ -51,7 +51,13 @@ export async function attemptCapture(
     prisma.battleSession.findFirst({
       where: { id: sessionId, userId, status: "ACTIVE" },
       include: {
-        pokemonInstance: { include: { species: true, moves: { include: { move: true } } } },
+        pokemonInstance: {
+          include: {
+            species: { include: { evolvesTo: { select: { id: true } } } },
+            moves: { include: { move: true } },
+            heldItem: true,
+          },
+        },
         wildSpecies: true,
       },
     }),

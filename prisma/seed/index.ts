@@ -3,6 +3,7 @@ import { prisma } from "../../src/lib/prisma";
 import { fetchPokeApi, runWithConcurrency } from "./pokeapi-client";
 import { buildTypeChart, writeTypeChart } from "./type-chart";
 import { seedItems } from "./items";
+import { seedHeldItems } from "./held-items";
 import { seedGyms } from "./gyms";
 import { seedMachines, MACHINES } from "./machines";
 
@@ -229,6 +230,7 @@ async function main() {
   await seedSpeciesAndMoves();
   await seedMachines();
   await seedItems();
+  await seedHeldItems();
   await seedGyms();
   console.log("✓ Seed completo");
 }

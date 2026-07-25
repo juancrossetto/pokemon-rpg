@@ -44,7 +44,11 @@ export async function switchPokemon(
 
   const newInstance = await prisma.pokemonInstance.findFirst({
     where: { id: newInstanceId, ownerId: userId, teamSlot: { not: null } },
-    include: { species: true, moves: { include: { move: true }, orderBy: { slot: "asc" } } },
+    include: {
+      species: { include: { evolvesTo: { select: { id: true } } } },
+      moves: { include: { move: true }, orderBy: { slot: "asc" } },
+      heldItem: true,
+    },
   });
   if (!newInstance || newInstance.id === battle.pokemonInstanceId || newInstance.currentHp <= 0) {
     return null;
@@ -68,6 +72,10 @@ export async function switchPokemon(
     playerAtkStage: 0,
     playerDefStage: 0,
     playerSpeStage: 0,
+    // El objeto equipado del que entra puede ser otro (o ninguno) — el lock
+    // de Choice y el consumo de Focus Sash/Sitrus/Lum son por Pokémon.
+    playerChoiceLockMoveId: null as number | null,
+    playerItemConsumed: false,
   };
 
   if (forced) {

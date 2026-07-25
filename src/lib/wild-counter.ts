@@ -4,6 +4,7 @@ import { pickWildMove } from "@/lib/battle-ai";
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import { calculateMaxHp } from "@/lib/stats";
 import { resolveWildCounter, type SideBattleState } from "@/lib/resolve-action";
+import { heldItemSnapshotFromItem } from "@/lib/held-items";
 import type { StatusCondition } from "@/lib/status";
 
 type BattleWithFighters = {
@@ -23,6 +24,8 @@ type BattleWithFighters = {
   wildAtkStage: number;
   wildDefStage: number;
   wildSpeStage: number;
+  playerChoiceLockMoveId?: number | null;
+  playerItemConsumed?: boolean;
   pokemonInstance: {
     id: string;
     currentHp: number;
@@ -33,6 +36,14 @@ type BattleWithFighters = {
     ptIntelligence: number;
     ptSpeed: number;
     ptConstitution: number;
+    heldItem?: {
+      id: string;
+      name: string;
+      heldEffect: string | null;
+      heldValue: number | null;
+      heldStat: string | null;
+      heldBoostType: string | null;
+    } | null;
     species: {
       name: string;
       types: string[];
@@ -42,6 +53,7 @@ type BattleWithFighters = {
       baseSpAtk: number;
       baseSpDef: number;
       baseSpeed: number;
+      evolvesTo?: { id: number }[];
     };
   };
   wildSpecies: {
@@ -70,6 +82,8 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
   );
   const playerBase = playerCombatantStats(instance.species, instance.level, instance);
   const wildBase = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
+  const playerHeldItem = heldItemSnapshotFromItem(instance.heldItem);
+  const playerIsFullyEvolved = (instance.species.evolvesTo?.length ?? 0) === 0;
 
   let playerState: SideBattleState = {
     hp: instance.currentHp,
@@ -83,6 +97,8 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
     },
     name: instance.nickname ?? instance.species.name,
     baseStats: playerBase,
+    heldItem: playerHeldItem,
+    isFullyEvolved: playerIsFullyEvolved,
   };
   let wildState: SideBattleState = {
     hp: battle.wildCurrentHp,
@@ -120,7 +136,7 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
   const wi = snapshots.findIndex((m) => m.id === wildMove.id);
   if (wi >= 0 && wildMovePp[wi] > 0) wildMovePp[wi] -= 1;
 
-  const outcome = resolveWildCounter(wildMove, playerState, wildState);
+  const outcome = resolveWildCounter(wildMove, playerState, wildState, battle.playerItemConsumed ?? false);
   playerState = outcome.player;
   wildState = outcome.wild;
 
@@ -144,6 +160,7 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
       wildAtkStage: wildState.stages.atk,
       wildDefStage: wildState.stages.def,
       wildSpeStage: wildState.stages.spe,
+      playerItemConsumed: outcome.itemConsumed,
     },
   };
 }

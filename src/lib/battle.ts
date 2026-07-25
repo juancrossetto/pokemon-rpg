@@ -39,10 +39,12 @@ export function playerActsFirst(
   wildMove: MoveSnapshot,
   playerSpeed: number,
   wildSpeed: number,
+  quickClawTriggered = false,
 ): boolean {
   if (playerMove.priority !== wildMove.priority) {
     return playerMove.priority > wildMove.priority;
   }
+  if (quickClawTriggered) return true;
   return playerSpeed >= wildSpeed;
 }
 
@@ -56,6 +58,8 @@ export interface MoveResult {
 export interface ResolveOptions {
   /** Quemadura reduce daño físico a la mitad. */
   attackerBurned?: boolean;
+  /** Multiplicador de poder por objeto equipado (Life Orb, potenciadores de tipo). */
+  powerMultiplier?: number;
 }
 
 /**
@@ -88,10 +92,11 @@ export function resolveMoveUse(
   const critical = Math.random() < 1 / 16;
   const critMult = critical ? 1.5 : 1;
   const randomFactor = 0.85 + Math.random() * 0.15;
+  const itemMult = options.powerMultiplier ?? 1;
 
   const damage = Math.max(
     0,
-    Math.floor(base * stab * effectiveness * critMult * randomFactor),
+    Math.floor(base * stab * effectiveness * critMult * randomFactor * itemMult),
   );
   return { hit, damage, effectiveness, critical };
 }
@@ -100,7 +105,7 @@ export function xpForVictory(wildLevel: number): number {
   return wildLevel * 12;
 }
 
-export type SkipReason = "asleep" | "paralyzed" | "disobey";
+export type SkipReason = "asleep" | "paralyzed" | "disobey" | "flinch";
 
 export interface TurnEvent {
   side: "player" | "wild";
@@ -120,6 +125,13 @@ export interface TurnEvent {
   recoilDamage?: number;
   /** PP restante del movimiento del jugador tras usarlo (si aplica). */
   playerPpAfter?: number;
+  /** Objeto equipado del jugador que se activó en esta acción (Leftovers, Focus Sash, etc.). */
+  itemName?: string;
+  itemEffect?: "focus_sash" | "sitrus_berry" | "lum_berry" | "leftovers";
+  itemAmount?: number;
+  itemCuredStatus?: StatusCondition;
+  /** HP real del jugador después de resolver el objeto — el cliente lo aplica directo, sin recalcular. */
+  itemHpAfter?: number;
 }
 
 export function effectivePp(currentPp: number | null | undefined, maxPp: number | null | undefined): number {

@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useLocale } from "next-intl";
 import { typeColor } from "@/lib/type-colors";
 import { teachMove } from "@/actions/teach-move";
+import { equipHeldItem, unequipHeldItem } from "@/actions/equip-held-item";
 import type { TeamMember, TeamRosterLabels } from "@/components/team-roster";
 import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
 import { EvolutionChainList } from "@/components/evolution-chain-list";
@@ -22,6 +23,9 @@ export function PokemonDetailDrawer({
   const [teachingItemId, setTeachingItemId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [equipOpen, setEquipOpen] = useState(false);
+  const [equipPending, startEquipTransition] = useTransition();
+  const [equipError, setEquipError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!member) return;
@@ -53,8 +57,32 @@ export function PokemonDetailDrawer({
     });
   }
 
+  function equip(itemId: string) {
+    if (equipPending) return;
+    setEquipError(null);
+    startEquipTransition(async () => {
+      const result = await equipHeldItem(member!.instanceId, itemId, locale);
+      if (!result.ok) {
+        setEquipError(labels.equipErrors[result.error] ?? result.error);
+        return;
+      }
+      setEquipOpen(false);
+    });
+  }
+
+  function unequip() {
+    if (equipPending) return;
+    setEquipError(null);
+    startEquipTransition(async () => {
+      const result = await unequipHeldItem(member!.instanceId, locale);
+      if (!result.ok) {
+        setEquipError(labels.equipErrors[result.error] ?? result.error);
+      }
+    });
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-stretch sm:justify-end">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:justify-end sm:p-6">
       <button
         type="button"
         aria-label={labels.close}
@@ -62,7 +90,7 @@ export function PokemonDetailDrawer({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
 
-      <div className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl border-t border-white/10 bg-surface-container shadow-2xl sm:h-full sm:max-h-none sm:w-[420px] sm:rounded-none sm:rounded-l-3xl sm:border-l sm:border-t-0">
+      <div className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl border-t border-white/10 bg-surface-container shadow-2xl sm:max-h-[calc(100vh-3rem)] sm:w-[420px] sm:rounded-3xl sm:border">
         <div
           className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full opacity-25 blur-3xl"
           style={{ background: accent }}
@@ -228,6 +256,90 @@ export function PokemonDetailDrawer({
                 ),
               )}
             </div>
+          </section>
+
+          <section className="mb-5">
+            <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+              {labels.heldItemTitle}
+            </h3>
+            <p className="mb-2 text-[10px] text-on-surface-variant/70">{labels.heldItemHint}</p>
+
+            {member.heldItem ? (
+              <div className="rounded-lg border border-tertiary/25 bg-tertiary/10 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px]! text-tertiary">
+                    auto_awesome
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-on-surface">
+                      {member.heldItem.name}
+                    </p>
+                    {member.heldItem.effectText && (
+                      <p className="truncate text-[9px] text-on-surface-variant">
+                        {member.heldItem.effectText}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={equipPending}
+                    onClick={unequip}
+                    className="shrink-0 rounded-full border border-white/10 px-3 py-1 text-[10px] font-semibold text-on-surface-variant transition hover:border-white/25 disabled:opacity-40"
+                  >
+                    {equipPending ? labels.equipping : labels.unequip}
+                  </button>
+                </div>
+              </div>
+            ) : equipOpen ? (
+              <div className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2">
+                {member.ownedHeldItems.length === 0 ? (
+                  <p className="py-2 text-center text-[11px] text-on-surface-variant/60">
+                    {labels.noHeldItems}
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {member.ownedHeldItems.map((item) => (
+                      <button
+                        key={item.itemId}
+                        type="button"
+                        disabled={equipPending}
+                        onClick={() => equip(item.itemId)}
+                        className="flex items-center gap-2 rounded-md border border-white/10 bg-black/20 px-2 py-1.5 text-left transition hover:border-tertiary/50 disabled:opacity-40"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[11px] font-medium text-on-surface">{item.name}</p>
+                          {item.effectText && (
+                            <p className="truncate text-[9px] text-on-surface-variant">
+                              {item.effectText}
+                            </p>
+                          )}
+                        </div>
+                        <span className="shrink-0 font-mono text-[10px] text-on-surface-variant">
+                          x{item.quantity}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setEquipOpen(false)}
+                  className="mt-2 w-full rounded-md border border-white/10 py-1 text-[10px] font-semibold text-on-surface-variant transition hover:border-white/25"
+                >
+                  {labels.cancel}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEquipOpen(true)}
+                className="w-full rounded-lg border border-dashed border-white/10 px-3 py-3 text-center text-[11px] text-on-surface-variant/60 transition hover:border-white/25 hover:text-on-surface-variant"
+              >
+                {labels.heldItemEmpty}
+              </button>
+            )}
+
+            {equipError && <p className="mt-2 text-[11px] text-error">{equipError}</p>}
           </section>
 
           <section>

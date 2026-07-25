@@ -15,6 +15,7 @@
     "battle": "Battle",
     "gyms": "Gyms",
     "market": "Market",
+    "shop": "Shop",
     "pc": "PC",
     "inventory": "Bag",
     "login": "Log in",
@@ -377,6 +378,16 @@
         "incompatible": "That Pokémon can't learn that move",
         "already_known": "It already knows that move",
         "in_combat": "You can't change moves in combat"
+      },
+      "heldItemTitle": "Held item",
+      "heldItemHint": "Gives a real effect during battle.",
+      "heldItemEmpty": "No item held. Tap to pick one.",
+      "noHeldItems": "You don't have any held items in your bag — buy some at the Shop.",
+      "equip": "Equip",
+      "unequip": "Remove",
+      "equipping": "Applying…",
+      "equipErrors": {
+        "no_item": "You no longer have that item"
       }
     },
     "healFree": "Free healing available",
@@ -475,6 +486,11 @@
       "asleep": "{name} is fast asleep!",
       "paralyzed": "{name} is paralyzed! It can't move!",
       "disobey": "{name} won't obey!",
+      "flinch": "{name} flinched and couldn't move!",
+      "itemLeftovers": "{name} restored {damage} HP with {item}!",
+      "itemFocusSash": "{name} hung on with 1 HP using {item}!",
+      "itemSitrusBerry": "{name} restored {damage} HP with {item}!",
+      "itemLumBerry": "{item} cured {name}'s {status}!",
       "statusApplied": "{name} was {status}!",
       "statChange": "{name}'s {stat} {dir}!",
       "statAtk": "Attack",
@@ -781,7 +797,8 @@
       "POKEBALL": "Poké Balls",
       "BERRY": "Berries",
       "EVOLUTION_STONE": "Evolution stones",
-      "MACHINE": "TM / HM"
+      "MACHINE": "TM / HM",
+      "HELD": "Held items"
     },
     "all": "All",
     "searchPlaceholder": "Search item...",
@@ -804,6 +821,19 @@
       "epic": "Epic",
       "legendary": "Legendary"
     }
+  },
+  "shop": {
+    "eyebrow": "Center store",
+    "title": "Shop",
+    "types": {
+      "POTION": "Healing",
+      "POKEBALL": "Poké Balls",
+      "HELD": "Held items"
+    },
+    "buy": "Buy",
+    "buying": "Buying…",
+    "noCoins": "Not enough coins.",
+    "coinsLabel": "Coins"
   },
   "pc": {
     "title": "Storage PC",

@@ -204,6 +204,11 @@ model PokemonInstance {
   ptIntelligence Int @default(0) // desbloquea movimientos + xp
   ptConstitution Int @default(0) // HP
 
+  // Objeto equipado (Leftovers, Choice Band, etc.) — efecto real en batalla,
+  // no decorativo. Ver Item.heldEffect/heldValue.
+  heldItemId String?
+  heldItem   Item?   @relation(fields: [heldItemId], references: [id])
+
   owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   species        Species         @relation(fields: [speciesId], references: [id])
   moves          PokemonMove[]
@@ -401,11 +406,27 @@ enum ItemType {
   POKEBALL
   POTION
   MACHINE
+  HELD
+}
+
+// Efecto mecánico real de un objeto equipable en batalla — mismo criterio
+// que SpeciesMove.method: el dato vive en el ítem, no se hardcodea por nombre.
+enum HeldEffect {
+  LEFTOVERS // cura heldValue% del HP máx al final del propio turno
+  CHOICE_LOCK // heldValue× a heldStat, bloquea el movimiento tras el primer uso
+  LIFE_ORB // +heldValue% de poder, retroceso 10% HP máx en golpes que dañan
+  FOCUS_SASH // sobrevive con 1 HP un golpe que lo KOtearía desde HP máximo (un solo uso)
+  EVIOLITE // +heldValue% def/def.esp si la especie no evolucionó del todo
+  FLINCH_CHANCE // heldValue de probabilidad de que el rival no pueda moverse ese turno
+  QUICK_CLAW // heldValue de probabilidad de actuar primero (misma prioridad)
+  SITRUS_BERRY // cura heldValue% del HP máx una vez, al cruzar 50% HP (un solo uso)
+  LUM_BERRY // cura cualquier estado alterado apenas se aplica (un solo uso)
+  TYPE_BOOST // +heldValue% de poder en movimientos de tipo heldBoostType
 }
 
 model Item {
-  id              String   @id @default(cuid())
-  name            String   @unique
+  id              String      @id @default(cuid())
+  name            String      @unique
   type            ItemType
   effectText      String?
   buyPrice        Int
@@ -414,9 +435,14 @@ model Item {
   healAmount      Int? // solo para type=POTION (null = no aplica). Full Restore usa un valor
   // altísimo (9999) para que la curación quede siempre acotada al HP máximo.
   moveId          Int? // solo para type=MACHINE (null = no aplica) — el movimiento que enseña
-  move            Move?    @relation(fields: [moveId], references: [id])
+  move            Move?       @relation(fields: [moveId], references: [id])
+  heldEffect      HeldEffect? // objeto equipable con efecto real en batalla (no aplica a todos los tipos)
+  heldValue       Float? // magnitud genérica: multiplicador, % de HP o probabilidad según heldEffect
+  heldStat        String? // "atk" | "spAtk" | "speed" — solo CHOICE_LOCK
+  heldBoostType   String? // tipo de movimiento potenciado — solo TYPE_BOOST
 
   inventoryOf InventoryItem[]
+  holders     PokemonInstance[]
 }
 
 model InventoryItem {
@@ -595,6 +621,10 @@ model BattleSession {
   wildDefStage      Int                 @default(0)
   wildSpeStage      Int                 @default(0)
   fleeAttempts      Int                 @default(0) // fallos de huida; sube la chance (Gen III)
+  // Objeto equipado del jugador (fijo para toda la batalla, no se puede
+  // cambiar en combate — ver blockIfInCombat en equip-held-item).
+  playerChoiceLockMoveId Int? // si porta un objeto CHOICE_LOCK, el movimiento al que quedó atado
+  playerItemConsumed     Boolean @default(false) // FOCUS_SASH/SITRUS/LUM ya se gastaron esta batalla
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 

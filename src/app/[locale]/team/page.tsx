@@ -31,7 +31,11 @@ export default async function TeamPage({
 
   const pokemon = await prisma.pokemonInstance.findMany({
     where: { ownerId: userId, teamSlot: { not: null } },
-    include: { species: true, moves: { include: { move: true }, orderBy: { slot: "asc" } } },
+    include: {
+      species: true,
+      moves: { include: { move: true }, orderBy: { slot: "asc" } },
+      heldItem: true,
+    },
     orderBy: { teamSlot: "asc" },
   });
 
@@ -45,6 +49,19 @@ export default async function TeamPage({
     where: { userId, quantity: { gt: 0 }, item: { type: "MACHINE" } },
     include: { item: { include: { move: true } } },
   });
+
+  // Objetos equipables que el jugador tiene en la mochila — los mismos para
+  // los 6 slots, se filtran client-side por el que ya tiene puesto cada uno.
+  const ownedHeldItemsRows = await prisma.inventoryItem.findMany({
+    where: { userId, quantity: { gt: 0 }, item: { type: "HELD" } },
+    include: { item: true },
+  });
+  const ownedHeldItems = ownedHeldItemsRows.map((inv) => ({
+    itemId: inv.itemId,
+    name: inv.item.name,
+    effectText: inv.item.effectText,
+    quantity: inv.quantity,
+  }));
   const ownedMoveIds = ownedMachines
     .map((inv) => inv.item.moveId)
     .filter((id): id is number => id !== null);
@@ -158,6 +175,10 @@ export default async function TeamPage({
       levelLabel: t("level", { level: instance.level }),
       slotLabel: t("slotLabel", { slot: i + 1 }),
       expToNextLabel: t("expToNext", { xp: xpToNextLevel(instance.xp, instance.level) }),
+      heldItem: instance.heldItem
+        ? { itemId: instance.heldItem.id, name: instance.heldItem.name, effectText: instance.heldItem.effectText }
+        : null,
+      ownedHeldItems,
     };
   });
 
@@ -243,6 +264,19 @@ export default async function TeamPage({
               no_tm: t("drawer.teachErrors.no_tm"),
               incompatible: t("drawer.teachErrors.incompatible"),
               already_known: t("drawer.teachErrors.already_known"),
+              in_combat: t("drawer.teachErrors.in_combat"),
+            },
+            heldItemTitle: t("drawer.heldItemTitle"),
+            heldItemHint: t("drawer.heldItemHint"),
+            heldItemEmpty: t("drawer.heldItemEmpty"),
+            noHeldItems: t("drawer.noHeldItems"),
+            equip: t("drawer.equip"),
+            unequip: t("drawer.unequip"),
+            equipping: t("drawer.equipping"),
+            equipErrors: {
+              unauthorized: t("drawer.teachErrors.unauthorized"),
+              not_found: t("drawer.teachErrors.not_found"),
+              no_item: t("drawer.equipErrors.no_item"),
               in_combat: t("drawer.teachErrors.in_combat"),
             },
           }}

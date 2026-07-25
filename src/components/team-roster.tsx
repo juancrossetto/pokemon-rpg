@@ -73,6 +73,8 @@ export interface TeamMember {
   levelLabel: string;
   slotLabel: string;
   expToNextLabel: string;
+  heldItem: { itemId: string; name: string; effectText: string | null } | null;
+  ownedHeldItems: { itemId: string; name: string; effectText: string | null; quantity: number }[];
 }
 
 export interface TeamRosterLabels {
@@ -110,6 +112,14 @@ export interface TeamRosterLabels {
   tabAbout: string;
   tabStats: string;
   tabEvolutions: string;
+  heldItemTitle: string;
+  heldItemHint: string;
+  heldItemEmpty: string;
+  noHeldItems: string;
+  equip: string;
+  unequip: string;
+  equipping: string;
+  equipErrors: Record<string, string>;
 }
 
 export function TeamRoster({
