@@ -52,7 +52,7 @@ export function PokemonDetailDrawer({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-stretch sm:justify-end">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:justify-end sm:p-6">
       <button
         type="button"
         aria-label={labels.close}
@@ -60,7 +60,7 @@ export function PokemonDetailDrawer({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
 
-      <div className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl border-t border-white/10 bg-surface-container shadow-2xl sm:h-full sm:max-h-none sm:w-[420px] sm:rounded-none sm:rounded-l-3xl sm:border-l sm:border-t-0">
+      <div className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl border-t border-white/10 bg-surface-container shadow-2xl sm:max-h-[calc(100vh-3rem)] sm:w-[420px] sm:rounded-3xl sm:border">
         <div
           className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full opacity-25 blur-3xl"
           style={{ background: accent }}
