@@ -12,7 +12,7 @@ import { CurrentExpedition } from "@/components/current-expedition";
 import { CampaignDevPanel } from "@/components/campaign-dev-panel";
 import { ActiveMission } from "@/components/active-mission";
 import { SystemStatus } from "@/components/system-status";
-import { HomeEmptySquadSlot, HomeSquadCard } from "@/components/home-squad-card";
+import { HomeSquadGrid, type HomeSquadMember } from "@/components/home-squad-grid";
 import type { CampaignLocationKind } from "@/lib/campaign";
 
 const TEAM_SIZE = 6;
@@ -193,62 +193,62 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
             {/* 6 en una fila desde md: antes el salto a 6 columnas recién
                 ocurría en xl (1280px), así que en pantallas de ~1100px el
                 equipo se partía en dos filas y rompía la estructura. */}
-            <div className="grid grid-cols-3 gap-2 md:grid-cols-6">
-              {slots.map((instance, i) => {
-                if (!instance) {
-                  return <HomeEmptySquadSlot key={`empty-${i}`} label={t("emptySlot")} />;
-                }
+            <HomeSquadGrid
+              key={pokemon.map((p) => `${p.id}:${p.teamSlot}`).join("|")}
+              locale={locale}
+              emptySlotLabel={t("emptySlot")}
+              leadLabel={tt("lead")}
+              slotLabels={Array.from({ length: TEAM_SIZE }, (_, i) =>
+                tt("slotLabel", { slot: i + 1 }),
+              )}
+              initialMembers={slots
+                .filter((instance): instance is NonNullable<typeof instance> => instance !== null)
+                .map((instance): HomeSquadMember => {
+                  const maxHp = calculateMaxHp(
+                    instance.species.baseHp,
+                    instance.level,
+                    instance.ptConstitution,
+                  );
+                  const xpForCurrent = xpForLevel(instance.level);
+                  const xpToNext = xpToNextLevel(instance.xp, instance.level);
+                  const xpIntoLevel = instance.xp - xpForCurrent;
+                  const levelSpan = xpIntoLevel + xpToNext;
+                  const xpPct =
+                    levelSpan > 0
+                      ? Math.max(0, Math.min(100, (xpIntoLevel / levelSpan) * 100))
+                      : 0;
 
-                const maxHp = calculateMaxHp(
-                  instance.species.baseHp,
-                  instance.level,
-                  instance.ptConstitution,
-                );
-                const xpForCurrent = xpForLevel(instance.level);
-                const xpToNext = xpToNextLevel(instance.xp, instance.level);
-                const xpIntoLevel = instance.xp - xpForCurrent;
-                const levelSpan = xpIntoLevel + xpToNext;
-                const xpPct =
-                  levelSpan > 0
-                    ? Math.max(0, Math.min(100, (xpIntoLevel / levelSpan) * 100))
-                    : 0;
-
-                return (
-                  <HomeSquadCard
-                    key={instance.id}
-                    instanceId={instance.id}
-                    isLead={i === 0}
-                    isFavorite={instance.isFavorite}
-                    isTradeLocked={instance.isTradeLocked}
-                    nickname={instance.nickname}
-                    speciesName={instance.species.name}
-                    types={instance.species.types}
-                    spriteUrl={spriteFor(instance.species.spriteUrl, instance.isShiny)}
-                    currentHp={instance.currentHp}
-                    maxHp={maxHp}
-                    xpPct={xpPct}
-                    xpToNextLabel={tt("expToNext", { xp: xpToNext })}
-                    labels={{
+                  return {
+                    id: instance.id,
+                    isFavorite: instance.isFavorite,
+                    isTradeLocked: instance.isTradeLocked,
+                    nickname: instance.nickname,
+                    speciesName: instance.species.name,
+                    types: instance.species.types,
+                    spriteUrl: spriteFor(instance.species.spriteUrl, instance.isShiny),
+                    currentHp: instance.currentHp,
+                    maxHp,
+                    xpPct,
+                    xpToNextLabel: tt("expToNext", { xp: xpToNext }),
+                    levelLabel: tt("level", { level: instance.level }),
+                    labels: {
                       hp: tt("stats.hp"),
-                      level: tt("level", { level: instance.level }),
-                      lead: tt("lead"),
-                      slot: tt("slotLabel", { slot: i + 1 }),
                       fainted: tt("fainted"),
                       favorite: t("squadMenu.favoriteBadge"),
                       tradeLocked: t("squadMenu.lockedBadge"),
-                    }}
-                    menuLabels={{
+                    },
+                    menuLabels: {
                       favoriteOn: t("squadMenu.favoriteOn"),
                       favoriteOff: t("squadMenu.favoriteOff"),
                       lockOn: t("squadMenu.lockOn"),
                       lockOff: t("squadMenu.lockOff"),
                       viewTeam: t("squadMenu.viewTeam"),
                       hint: t("squadMenu.hint"),
-                    }}
-                  />
-                );
-              })}
-            </div>
+                      heal: t("squadMenu.heal"),
+                    },
+                  };
+                })}
+            />
           </section>
 
           {isDev && <CampaignDevPanel locale={locale} />}

@@ -105,7 +105,11 @@
       "lockOff": "Unlock trading",
       "viewTeam": "Open My Team",
       "favoriteBadge": "Favorite",
-      "lockedBadge": "Trade locked"
+      "lockedBadge": "Trade locked",
+      "heal": "Use potion",
+      "noPotions": "You have no potions in your bag.",
+      "fullHp": "This Pokémon is already at full HP.",
+      "healed": "Used {item}: +{hp} HP."
     }
   },
   "pokedex": {

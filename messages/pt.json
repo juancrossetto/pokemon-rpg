@@ -105,7 +105,11 @@
       "lockOff": "Desbloquear venda",
       "viewTeam": "Ver no Meu time",
       "favoriteBadge": "Favorito",
-      "lockedBadge": "Venda bloqueada"
+      "lockedBadge": "Venda bloqueada",
+      "heal": "Usar poção",
+      "noPotions": "Você não tem poções no inventário.",
+      "fullHp": "Este Pokémon já está com HP cheio.",
+      "healed": "Usou {item}: +{hp} HP."
     }
   },
   "pokedex": {
