@@ -34,7 +34,7 @@ export function TextField({
     <div>
       <div className="flex items-baseline justify-between mb-1 gap-2">
         <label className="flex items-center gap-1.5 text-label-sm text-electric-yellow uppercase tracking-wide">
-          {labelIcon && <span className="material-symbols-outlined text-[14px]">{labelIcon}</span>}
+          {labelIcon && <span className="material-symbols-outlined text-[14px]!">{labelIcon}</span>}
           {label}
         </label>
         {meta && (
@@ -46,7 +46,7 @@ export function TextField({
 
       <div className="relative tech-border">
         {icon && (
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/70 pointer-events-none">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/70 pointer-events-none">
             {icon}
           </span>
         )}

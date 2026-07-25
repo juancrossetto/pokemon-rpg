@@ -51,6 +51,7 @@ export function MarketSellControls({
   if (unitPrice !== null) previewParts.push(t("unitPrice", { price: unitPrice }));
   if (fee !== null && proceeds !== null) {
     previewParts.push(t("feePreview", { fee, proceeds }));
+    if (fee >= proceeds) previewParts.push(t("feeNetZero"));
   }
 
   return (
@@ -91,7 +92,11 @@ export function MarketSellControls({
           className={`${PRIMARY_BUTTON_CLASS} shrink-0`}
           getConfirmMessage={() =>
             price !== null
-              ? t("confirmPublish", { price, fee: listingFeeFor(price) })
+              ? t("confirmPublish", {
+                  price,
+                  fee: listingFeeFor(price),
+                  proceeds: proceedsFor(price),
+                })
               : undefined
           }
         />

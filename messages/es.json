@@ -16,6 +16,7 @@
     "gyms": "Gimnasios",
     "market": "Mercado",
     "pc": "PC",
+    "inventory": "Inventario",
     "login": "Iniciar sesión",
     "register": "Crear cuenta",
     "logout": "Cerrar sesión",
@@ -28,6 +29,44 @@
     "pvp": "PvP",
     "more": "Más",
     "campaign": "Viaje"
+  },
+  "notifications": {
+    "eyebrow": "Alertas en vivo",
+    "title": "Notificaciones",
+    "empty": "No hay avisos todavía.",
+    "markAllRead": "Marcar leídas",
+    "justNow": "Ahora",
+    "minutesAgo": "Hace {n} min",
+    "hoursAgo": "Hace {n} h",
+    "daysAgo": "Hace {n} d",
+    "unknown": "Aviso del sistema",
+    "kind": {
+      "sale": "Mercado · Venta",
+      "expired": "Mercado · Expiró",
+      "gym": "Gimnasio",
+      "pvp": "PvP"
+    },
+    "marketSoldTitle": "¡Venta concretada!",
+    "marketSoldDetail": "{buyer} compró {item}",
+    "marketExpiredTitle": "Publicación expirada",
+    "marketExpiredDetail": "{item} volvió a tu poder",
+    "gymWonTitle": "¡Medalla conseguida!",
+    "gymWonDetail": "Derrotaste a {leader} en {gym}",
+    "gymWonRematchTitle": "¡Revancha ganada!",
+    "gymWonRematchDetail": "Ganaste contra {leader} ({gym})",
+    "gymLostTitle": "Desafío fallido",
+    "gymLostDetail": "Perdiste contra {leader} en {gym}",
+    "pvpWonTitle": "Victoria PvP",
+    "pvpWonDetail": "Ganaste el duelo contra {opponent}",
+    "pvpLostTitle": "Derrota PvP",
+    "pvpLostDetail": "{opponent} te derrotó",
+    "marketSold": "{buyer} compró {item}. Se te acreditaron +{coins} monedas.",
+    "marketExpired": "Tu publicación de {item} expiró y volvió a tu poder.",
+    "gymWon": "Derrotaste a {leader} en {gym}. ¡Medalla obtenida!",
+    "gymWonRematch": "Ganaste la revancha contra {leader} ({gym}).",
+    "gymLost": "Perdiste el desafío contra {leader} en {gym}.",
+    "pvpWon": "Ganaste el duelo PvP contra {opponent}.",
+    "pvpLost": "{opponent} te derrotó en PvP."
   },
   "home": {
     "eyebrow": "Temporada 1",
@@ -42,7 +81,7 @@
     "activeSquad": "Equipo activo",
     "manage": "Administrar",
     "emptySlot": "Espacio vacío",
-    "liveSync": "Sync en vivo",
+    "liveSync": "Sincronización en vivo",
     "time": "Hora",
     "climate": "Clima",
     "climates": {
@@ -56,19 +95,121 @@
     "stagesCleared": "Stages de la zona",
     "missionStage": "Avanzá por {location} para completar el próximo tramo de tu expedición y desbloquear la siguiente zona.",
     "missionGym": "Ganá la medalla de {location} para poder seguir avanzando en el viaje.",
-    "missionComplete": "Completaste Kanto. Seguí farmeando para subir de nivel a tu equipo."
+    "missionComplete": "Completaste Kanto. Seguí farmeando para subir de nivel a tu equipo.",
+    "squadMenu": {
+      "hint": "Opciones del Pokémon",
+      "favoriteOn": "Marcar como favorito",
+      "favoriteOff": "Quitar favorito",
+      "lockOn": "Bloquear venta",
+      "lockOff": "Desbloquear venta",
+      "viewTeam": "Ver en Mi equipo",
+      "favoriteBadge": "Favorito",
+      "lockedBadge": "Venta bloqueada"
+    }
   },
   "pokedex": {
     "eyebrow": "Base de datos",
     "title": "Pokédex",
-    "subtitle": "{count, plural, one {# especie cargada desde PokeAPI} other {# especies cargadas desde PokeAPI}}",
+    "researchDatabase": "Base de investigación",
+    "signInHint": "Iniciá sesión para registrar avistamientos y capturas.",
+    "comingSoon": "Próximamente",
+    "noResults": "Sin coincidencias en este archivo.",
+    "searchPlaceholder": "Nombre, número, tipo…",
+    "unknown": "???",
+    "statusCaught": "Capturado",
+    "statusSeen": "Visto",
+    "research": "Investigación",
+    "regions": {
+      "kanto": "Kanto",
+      "johto": "Johto",
+      "hoenn": "Hoenn",
+      "sinnoh": "Sinnoh",
+      "unova": "Unova",
+      "kalos": "Kalos",
+      "alola": "Alola",
+      "galar": "Galar",
+      "paldea": "Paldea"
+    },
+    "progress": {
+      "seen": "Vistos",
+      "captured": "Capturados",
+      "completion": "Completado",
+      "shiny": "Shiny",
+      "legendary": "Legendarios"
+    },
+    "filters": {
+      "all": "Todos",
+      "seen": "Vistos",
+      "caught": "Capturados",
+      "missing": "Faltantes",
+      "favorites": "Favoritos",
+      "shiny": "Shiny",
+      "legendary": "Legendarios",
+      "mythical": "Míticos",
+      "starter": "Iniciales",
+      "pseudo": "Pseudo"
+    },
+    "sort": {
+      "label": "Orden",
+      "number": "Número",
+      "name": "Nombre",
+      "rarity": "Rareza"
+    },
+    "view": {
+      "grid": "Grilla",
+      "list": "Lista"
+    },
+    "typeFilter": "Tipo",
+    "allTypes": "Todos",
+    "pokemonTypes": {
+      "normal": "Normal",
+      "fire": "Fuego",
+      "water": "Agua",
+      "electric": "Eléctrico",
+      "grass": "Planta",
+      "ice": "Hielo",
+      "fighting": "Lucha",
+      "poison": "Veneno",
+      "ground": "Tierra",
+      "flying": "Volador",
+      "psychic": "Psíquico",
+      "bug": "Bicho",
+      "rock": "Roca",
+      "ghost": "Fantasma",
+      "dragon": "Dragón",
+      "dark": "Siniestro",
+      "steel": "Acero",
+      "fairy": "Hada"
+    },
+    "rarity": {
+      "common": "Común",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Legendario",
+      "mythical": "Mítico",
+      "ultraBeast": "Ultraente",
+      "paradox": "Paradox"
+    },
     "stats": {
       "hp": "HP",
       "atk": "Atq",
-      "spd": "Vel"
+      "def": "Def",
+      "spa": "At.Esp",
+      "spd": "Def.Esp",
+      "spe": "Vel",
+      "capture": "Captura",
+      "evolves": "Evoluciona"
     },
-    "clearSearch": "Limpiar búsqueda",
-    "noResults": "Sin resultados para «{query}»."
+    "icons": {
+      "favorite": "Favorito",
+      "shiny": "Shiny",
+      "legendary": "Legendario",
+      "mythical": "Mítico",
+      "starter": "Inicial",
+      "pseudo": "Pseudo-legendario"
+    },
+    "subtitle": "{count, plural, one {# especie cargada desde PokeAPI} other {# especies cargadas desde PokeAPI}}",
+    "clearSearch": "Limpiar búsqueda"
   },
   "auth": {
     "login": {
@@ -90,7 +231,6 @@
       "eyebrow": "SISTEMA POKÉDEX",
       "bootStatus": "Iniciando núcleo...",
       "panelTitle": "Autorización de entrenador",
-      "guestAccess": "Ver Pokédex",
       "systemStatus": "Estado: Operativo",
       "brandPrefix": "SISTEMA",
       "brandAccent": "POKÉDEX",
@@ -234,7 +374,7 @@
     "subtitle": "Explorá para encontrar un Pokémon salvaje y ganar experiencia.",
     "explore": "Explorar",
     "lobby": {
-      "liveSync": "Live sync",
+      "liveSync": "Sincronización en vivo",
       "energy": "Energía",
       "energyHint": "Explorar cuesta {cost} · se regenera con el tiempo",
       "currentLocation": "Ubicación actual",
@@ -401,7 +541,7 @@
     "closedHint": "El gimnasio está cerrado a esta hora.",
     "closedChip": "Cerrado",
     "hours": "Horario {opens}:00 – {closes}:00",
-    "missionEyebrow": "Mission Control // Kanto",
+    "missionEyebrow": "Control de misión // Kanto",
     "progressLabel": "Progreso",
     "operationLabel": "Operación {n}/8",
     "specialist": "Especialista {type}",
@@ -422,18 +562,64 @@
   "market": {
     "title": "Mercado",
     "subtitle": "Comprá y vendé Pokémon y objetos con otros entrenadores.",
+    "hub": {
+      "eyebrow": "Terminal de trueque // Kanto",
+      "title": "Mercado global",
+      "subtitle": "Comprá y vendé Pokémon, objetos, bayas y piedras de evolución.",
+      "live": "EN VIVO",
+      "listingsOnline": "{count} publicaciones",
+      "categories": "Categorías",
+      "cat": {
+        "all": "Todo",
+        "healing": "Curación",
+        "pokeballs": "Poké Balls",
+        "berries": "Bayas",
+        "evolution": "Evolución",
+        "pokemon": "Pokémon"
+      },
+      "price": "Precio",
+      "stock": "Unidades",
+      "seller": "Vendedor",
+      "buyNow": "Comprar",
+      "reset": "Restablecer",
+      "search": "Buscar",
+      "training": "Poder",
+      "rarity": {
+        "common": "Común",
+        "rare": "Raro",
+        "epic": "Épico",
+        "legendary": "Legendario"
+      },
+      "itemType": {
+        "POTION": "Objeto de curación",
+        "POKEBALL": "Poké Ball",
+        "BERRY": "Baya",
+        "EVOLUTION_STONE": "Piedra de evolución"
+      },
+      "statListings": "Publicaciones",
+      "statTraders": "Comerciantes en línea",
+      "statSoldToday": "Vendidos hoy",
+      "statAvgPrice": "Precio promedio",
+      "trending": "En tendencia",
+      "trendingEmpty": "Sin movimiento aún.",
+      "recent": "Actividad reciente",
+      "recentEmpty": "Sin actividad reciente.",
+      "activityBought": "compró {item}",
+      "activitySold": "vendió {item}",
+      "activityListed": "publicó {item}"
+    },
     "coins": "monedas",
     "tabs": {
       "browse": "Explorar",
       "sell": "Vender",
       "mine": "Mis publicaciones",
-      "bought": "Compradas"
+      "bought": "Mochila"
     },
     "tabsShort": {
       "browse": "Explorar",
       "sell": "Vender",
       "mine": "Mías",
-      "bought": "Compras"
+      "bought": "Mochila"
     },
     "level": "Nv. {level}",
     "quantity": "×{count}",
@@ -487,15 +673,28 @@
     "sellItems": "Vender objetos",
     "inTeam": "En el equipo",
     "lastTeamMember": "Último del equipo",
+    "tradeLocked": "Venta bloqueada",
     "owned": "Tenés ×{count}",
     "sellRules": "Comisión {commission}% al vender · tarifa de publicación {fee}% · expira en {days} días.",
     "lastSaleShort": "ref. {price}",
-    "feePreview": "Tarifa ahora: {fee} · cobrás si se vende: {proceeds}",
-    "confirmPublish": "¿Publicar por {price} monedas? Tarifa {fee} (no reembolsable).",
+    "feePreview": "Tarifa ahora: −{fee} · al vender se acreditan +{proceeds}",
+    "feeNetZero": "Con este precio la tarifa se come la ganancia (neto ≈ 0).",
+    "confirmPublish": "¿Publicar por {price} monedas? Se descuentan {fee} ahora (no reembolsable). Si se vende, se te acreditan {proceeds}.",
     "goToPc": "Ir al PC",
+    "goToBag": "Ir a la mochila",
+    "pendingClaimsTitle": "{count, plural, =1 {1 compra por retirar} other {# compras por retirar}}",
+    "bagPendingTitle": "Por retirar",
+    "bagPendingHint": "El dinero ya se movió al comprar/vender. Acá solo retirás el bien: Pokémon → PC, objetos → inventario.",
+    "bagPendingEmpty": "No tenés compras pendientes de retirar.",
+    "bagHistoryTitle": "Ya recibidas",
+    "bagReceive": "Recibir",
+    "bagReceiving": "Recibiendo…",
+    "bagReceived": "Recibido",
+    "bagReceiveToPc": "al recibir → PC",
+    "bagReceiveToInventory": "al recibir → inventario",
     "quantityLabel": "Cantidad",
     "commissionNote": "Al vender se cobra una comisión del {percent}% sobre el precio.",
-    "soldTo": "Vendido a {name} — cobraste {coins} monedas",
+    "soldTo": "Vendido a {name} — se acreditaron +{coins} (la tarifa de publicación ya se había cobrado)",
     "status": {
       "ACTIVE": "Publicado",
       "SOLD": "Vendido",
@@ -508,9 +707,10 @@
     "emptyMine": "Todavía no publicaste nada.",
     "notices": {
       "listed": "Publicación creada.",
-      "bought": "¡Compra realizada! Ya es tuyo.",
+      "bought": "¡Compra realizada! Retirá el objeto desde la mochila.",
       "cancelled": "Publicación cancelada.",
-      "bought_pokemon": "¡Compra realizada! Lo encontrás en tu PC."
+      "bought_pokemon": "¡Compra realizada! Retirá el Pokémon desde la mochila.",
+      "claimed": "¡Recibido! Ya está en tu PC o inventario."
     },
     "errors": {
       "invalid_price": "Revisá el precio y la cantidad ingresados.",
@@ -518,6 +718,7 @@
       "already_listed": "Ese Pokémon ya está publicado.",
       "in_battle": "No podés vender un Pokémon en medio de una batalla.",
       "last_team_member": "No podés vender tu último Pokémon activo.",
+      "trade_locked": "Ese Pokémon está bloqueado para venta. Desbloquealo desde Inicio.",
       "not_enough_items": "No tenés suficientes unidades de ese objeto.",
       "not_available": "Esa publicación ya no está disponible.",
       "own_listing": "No podés comprar tu propia publicación.",
@@ -540,8 +741,47 @@
     "confirmBuy": "¿Comprar {name} por {price} monedas?",
     "unseenTitle": "{count, plural, =1 {1 novedad sin ver} other {# novedades sin ver}}",
     "boughtFrom": "Comprado a {name}",
-    "emptyBought": "Todavía no compraste nada en el mercado.",
+    "emptyBought": "Tu mochila del mercado está vacía.",
     "feeNote": "Publicar cuesta una tarifa del {percent}% del precio (mínimo {min} moneda), no reembolsable."
+  },
+  "inventory": {
+    "eyebrow": "Tu botín",
+    "title": "Inventario",
+    "subtitle": "{kinds} tipos · {units} unidades",
+    "subtitleEmpty": "Todavía no tenés objetos guardados.",
+    "empty": "Tu inventario está vacío.",
+    "emptyHint": "Comprá en el mercado o recibí compras pendientes desde la mochila del trading terminal.",
+    "goMarket": "Ir al mercado",
+    "marketBag": "Entregas del mercado",
+    "sellLink": "Vender objetos",
+    "sectionCount": "{count, plural, =1 {1 objeto} other {# objetos}}",
+    "types": {
+      "POTION": "Curación",
+      "POKEBALL": "Poké Balls",
+      "BERRY": "Bayas",
+      "EVOLUTION_STONE": "Piedras de evolución",
+      "MACHINE": "MT / MO"
+    },
+    "all": "Todo",
+    "searchPlaceholder": "Buscar objeto...",
+    "noResults": "Ningún objeto coincide.",
+    "itemsCount": "Objetos",
+    "unitsCount": "Unidades",
+    "capacity": "Capacidad",
+    "selectHint": "Elegí un objeto para ver su ficha.",
+    "quantity": "Cantidad",
+    "value": "Valor",
+    "effect": "Efecto",
+    "teaches": "Enseña",
+    "sell": "Vender",
+    "teach": "Enseñar en el equipo",
+    "close": "Cerrar",
+    "rarity": {
+      "common": "Común",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Legendario"
+    }
   },
   "pc": {
     "title": "PC de almacenamiento",
@@ -564,6 +804,7 @@
       "already_in_team": "Ese Pokémon ya está en el equipo.",
       "not_in_team": "Ese Pokémon no está en el equipo.",
       "listed": "Ese Pokémon está publicado en el mercado — cancelá la publicación primero.",
+      "pending_claim": "Ese Pokémon está en la mochila del mercado — recibilo antes de usarlo.",
       "team_full": "Tu equipo está lleno. Depositá un Pokémon primero.",
       "in_battle": "No podés depositar un Pokémon en medio de una batalla.",
       "last_team_member": "No podés depositar tu último Pokémon activo.",
@@ -574,20 +815,85 @@
     "emptySlot": "Slot {slot} libre"
   },
   "ranking": {
+    "eyebrow": "Centro competitivo",
     "title": "Ranking",
-    "subtitle": "Los mejores entrenadores y Pokémon — global, por país y por especie.",
+    "subtitle": "Competí contra entrenadores de todo el mundo.",
     "you": "Vos",
-    "views": {
-      "trainers": "Entrenadores",
-      "species": "Especies",
-      "ladder": "Ladder PvP"
+    "hero": {
+      "activePlayers": "Jugadores",
+      "pvpToday": "PvP hoy"
+    },
+    "boards": {
+      "trainers": {
+        "title": "Entrenadores",
+        "blurb": "Poder de equipo y medallas"
+      },
+      "pvp": {
+        "title": "PvP",
+        "blurb": "Rating Elo y récord"
+      },
+      "collectors": {
+        "title": "Coleccionistas",
+        "blurb": "Especies únicas y shinies"
+      },
+      "pokedex": {
+        "title": "Pokédex",
+        "blurb": "Mejores ejemplares por especie"
+      }
     },
     "filters": {
-      "global": "Global",
+      "title": "Filtros",
+      "global": "Mundial",
       "myCountry": "Mi país",
       "country": "País",
       "species": "Especie",
-      "apply": "Ver"
+      "apply": "Ver",
+      "friendsSoon": "Amigos llega pronto — por ahora Mundial y País."
+    },
+    "cols": {
+      "power": "Poder",
+      "badges": "Medallas",
+      "rating": "Rating",
+      "record": "V-D",
+      "winrate": "% victorias",
+      "owned": "Especies",
+      "shinies": "Shinies",
+      "completion": "Completado",
+      "level": "Nivel",
+      "shiny": "Shiny"
+    },
+    "yourCard": {
+      "title": "Tu posición"
+    },
+    "yourPowerBadges": "Poder {power} · {badges} medallas",
+    "yourPvp": "Rating {rating} · {winrate}% de victorias",
+    "yourCollectors": "{owned} especies · {completion}% completado",
+    "yourPokedex": "Poder {power} · Nv. {level}",
+    "podium": {
+      "title": "Top 3"
+    },
+    "list": {
+      "title": "Clasificación"
+    },
+    "season": {
+      "title": "Pulso de temporada",
+      "players": "Jugadores en el filtro",
+      "topElo": "Elo más alto",
+      "leader": "Líder",
+      "powerDist": "Distribución de poder",
+      "buckets": {
+        "low": "Bajo",
+        "mid": "Medio",
+        "high": "Alto",
+        "elite": "Élite"
+      },
+      "coming": "Próximo: más shinies, más ricos, speedrun de gimnasios y amigos.",
+      "board": "Tabla activa"
+    },
+    "pvpEmpty": {
+      "title": "La temporada PvP aún no arrancó acá",
+      "body": "Sé el primero en subir al ladder. Cada duelo suma rating Elo.",
+      "cta": "Ir a PvP"
     },
     "badgeCount": "{count, plural, =1 {1 medalla} other {# medallas}}",
     "power": "Poder {value}",
@@ -595,6 +901,8 @@
     "yourRank": "Tu posición: #{rank} de {total}",
     "speciesCaption": "{count, plural, =1 {1 {name} registrado} other {# {name} registrados}}",
     "emptyTrainers": "Todavía no hay entrenadores en este ranking.",
+    "emptyCollectors": "Nadie tiene colección todavía en este segmento.",
+    "emptyPokedex": "Todavía no hay especies para comparar.",
     "emptySpecies": "Nadie tiene un {name} todavía en este segmento.",
     "pagination": {
       "prev": "Anterior",
@@ -603,7 +911,12 @@
     },
     "emptyLadder": "Todavía nadie jugó partidos PvP en este segmento.",
     "yourLadderRank": "Tu posición en el ladder: #{rank} · {rating} pts",
-    "record": "{wins}V - {losses}D"
+    "record": "{wins}V - {losses}D",
+    "views": {
+      "trainers": "Entrenadores",
+      "species": "Pokédex",
+      "ladder": "PvP"
+    }
   },
   "clans": {
     "title": "Clanes",
@@ -716,7 +1029,7 @@
     "dev": {
       "title": "Dev · campaña",
       "hint": "Solo en development. No afecta PvP.",
-      "reset": "Reset progreso",
+      "reset": "Reiniciar progreso",
       "unlockForest": "Desbloquear Bosque Verde",
       "unlockAll": "Desbloquear todo Kanto"
     },
@@ -853,7 +1166,7 @@
     "currentRegion": "Región actual",
     "openMap": "Ver mapa completo",
     "closeMap": "Cerrar mapa",
-    "pickZoneHint": "Elegí una zona desbloqueada del mapa para ubicarte. Lo que elijas define qué Pokémon salvajes aparecen al explorar.",
+    "pickZoneHint": "Tocá una zona desbloqueada para ubicarte y elegir qué salvajes aparecen.",
     "pickStage": "Stage de farmeo",
     "moveHere": "Ubicarme acá",
     "youAreHere": "Estás acá",

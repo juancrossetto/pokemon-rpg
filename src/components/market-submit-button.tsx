@@ -39,7 +39,7 @@ export function MarketSubmitButton({
       className={`${className} inline-flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed`}
     >
       {pending && (
-        <span className="material-symbols-outlined text-[16px] animate-spin">
+        <span className="material-symbols-outlined text-[16px]! animate-spin">
           progress_activity
         </span>
       )}

@@ -11,6 +11,7 @@ import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { getKantoStage, resolveSpawn } from "@/lib/campaign";
 import { rollShiny } from "@/lib/shiny";
+import { markSpeciesSeen } from "@/lib/pokedex-seen";
 
 const FALLBACK_ENERGY_COST = 1;
 
@@ -93,7 +94,10 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
     }),
   ]);
 
+  await markSpeciesSeen(userId, wildSpeciesId);
+
   revalidatePath(`/${locale}/battle`);
+  revalidatePath(`/${locale}/pokedex`);
   revalidateCombatUi(locale);
   redirect({ href: "/battle", locale });
 }

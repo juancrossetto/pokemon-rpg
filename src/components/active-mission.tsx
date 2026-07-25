@@ -30,7 +30,7 @@ export function ActiveMission({
   return (
     <section className="glass-panel flex min-h-[230px] flex-col rounded-xl border border-white/10 p-4 shadow-lg md:min-h-[260px]">
       <div className="flex items-center gap-2 border-b border-white/10 pb-2">
-        <span className="material-symbols-outlined text-[20px] text-pokeball-red">assignment</span>
+        <span className="material-symbols-outlined text-[20px]! text-pokeball-red">assignment</span>
         <h2 className="text-headline-md text-white">{heading}</h2>
       </div>
 
@@ -77,7 +77,7 @@ export function ActiveMission({
           className="flex items-center justify-center gap-1 rounded-lg border border-white/15 bg-white/[0.04] px-4 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
         >
           {ctaLabel}
-          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span className="material-symbols-outlined text-[16px]!">chevron_right</span>
         </Link>
       </div>
     </section>

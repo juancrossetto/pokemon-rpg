@@ -14,7 +14,7 @@ import { useRouter } from "@/i18n/navigation";
  * sin sumar infraestructura. `router.refresh()` re-renderiza en el servidor y
  * hace diff en el cliente: no pierde estado ni scroll.
  */
-export function LiveRefresh({ intervalMs = 15000 }: { intervalMs?: number }) {
+export function LiveRefresh({ intervalMs = 45000 }: { intervalMs?: number }) {
   const router = useRouter();
 
   useEffect(() => {

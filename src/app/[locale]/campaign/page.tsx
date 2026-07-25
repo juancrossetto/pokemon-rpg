@@ -52,7 +52,7 @@ export default async function CampaignPage({
             href="/"
             className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-label-md text-on-surface hover:bg-white/10"
           >
-            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            <span className="material-symbols-outlined text-[18px]!">arrow_back</span>
             {t("backHome")}
           </Link>
         </header>
@@ -104,7 +104,7 @@ function JourneyStat({
 }) {
   return (
     <div className="flex items-center gap-2.5 rounded-lg bg-black/20 px-3 py-2">
-      <span className={`material-symbols-outlined text-[22px] ${tone}`}>{icon}</span>
+      <span className={`material-symbols-outlined text-[22px]! ${tone}`}>{icon}</span>
       <div className="min-w-0">
         <p className="font-mono text-body-md font-semibold text-white">{value}</p>
         <p className="truncate text-[10px] uppercase tracking-wider text-on-surface-variant">

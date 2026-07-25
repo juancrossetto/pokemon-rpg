@@ -43,6 +43,8 @@ function parsePrice(raw: FormDataEntryValue | null): number | null {
 }
 
 function backToMarket(locale: string, tab: string, result: { error?: string; notice?: string }) {
+  // 'layout' refresca el SiteHeader (saldo de monedas), no solo la página.
+  revalidatePath(`/${locale}`, "layout");
   revalidatePath(`/${locale}/market`);
   revalidatePath(`/${locale}/pc`);
   revalidatePath(`/${locale}/team`);
@@ -95,13 +97,27 @@ export async function listPokemon(locale: string, formData: FormData) {
       const instance = await tx.pokemonInstance.findFirst({
         where: { id: pokemonId, ownerId: userId },
         include: {
-          listings: { where: { status: "ACTIVE" }, select: { id: true } },
+          listings: {
+            where: {
+              OR: [
+                { status: "ACTIVE" },
+                { status: "SOLD", buyerId: userId, buyerClaimedAt: null },
+              ],
+            },
+            select: { id: true, status: true },
+          },
           battleSessions: { where: { status: "ACTIVE" }, select: { id: true } },
         },
       });
       if (!instance) throw new MarketError("not_found");
-      if (instance.listings.length > 0) throw new MarketError("already_listed");
+      if (instance.listings.some((l) => l.status === "ACTIVE")) {
+        throw new MarketError("already_listed");
+      }
+      if (instance.listings.some((l) => l.status === "SOLD")) {
+        throw new MarketError("not_available");
+      }
       if (instance.battleSessions.length > 0) throw new MarketError("in_battle");
+      if (instance.isTradeLocked) throw new MarketError("trade_locked");
 
       // No podés quedarte sin equipo: siempre tiene que quedar al menos
       // un Pokémon en un slot activo.
@@ -249,13 +265,82 @@ export async function buyListing(locale: string, formData: FormData) {
       });
 
       if (listing.kind === "POKEMON" && listing.pokemonInstanceId) {
-        // Entra al PC del comprador, no al equipo: nada se mete solo en un
-        // slot activo, y de paso no hay que elegir slot bajo concurrencia.
+        // Pasa a escrow del comprador (ownerId) pero sigue oculto del PC hasta
+        // que lo retire de la mochila (`claimPurchase` / buyerClaimedAt).
         await tx.pokemonInstance.update({
           where: { id: listing.pokemonInstanceId },
           data: { ownerId: userId, teamSlot: null },
         });
         boughtPokemon = true;
+      }
+      // Ítems: NO van al inventario acá. Quedan en la mochila hasta reclamar.
+    });
+  } catch (e) {
+    if (e instanceof MarketError) error = e.code;
+    else throw e;
+  }
+
+  if (!error) {
+    const { notifyMarketSold } = await import("@/lib/notifications");
+    await notifyMarketSold(listingId);
+  }
+
+  backToMarket(
+    locale,
+    "bought",
+    error ? { error } : { notice: boughtPokemon ? "bought_pokemon" : "bought" },
+  );
+}
+
+const CLAIM_LIMIT = 30;
+
+/** Retira una compra de la mochila: Pokémon → PC visible; ítem → inventario. */
+export async function claimPurchase(locale: string, formData: FormData) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect({ href: "/login", locale });
+    return;
+  }
+  const userId = session.user.id;
+
+  if (await blockIfInCombat(userId, locale)) return;
+
+  if (!allowAction(`market:claim:${userId}`, CLAIM_LIMIT, RATE_LIMIT_WINDOW_MS)) {
+    backToMarket(locale, "bought", { error: "rate_limited" });
+    return;
+  }
+
+  const listingId = String(formData.get("listingId") ?? "");
+
+  let error: string | undefined;
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockUsers(tx, userId);
+
+      const claimed = await tx.marketListing.updateMany({
+        where: {
+          id: listingId,
+          buyerId: userId,
+          status: "SOLD",
+          buyerClaimedAt: null,
+        },
+        data: { buyerClaimedAt: new Date() },
+      });
+      if (claimed.count === 0) throw new MarketError("not_available");
+
+      const listing = await tx.marketListing.findUniqueOrThrow({ where: { id: listingId } });
+
+      if (listing.kind === "POKEMON" && listing.pokemonInstanceId) {
+        // Siempre reafirma dueño + PC: si un rollback/test dejó el owner mal,
+        // reclamar no puede marcar "recibido" sin entregar el Pokémon.
+        const poke = await tx.pokemonInstance.findUnique({
+          where: { id: listing.pokemonInstanceId },
+        });
+        if (!poke) throw new MarketError("not_found");
+        await tx.pokemonInstance.update({
+          where: { id: poke.id },
+          data: { ownerId: userId, teamSlot: null },
+        });
       } else if (listing.kind === "ITEM" && listing.itemId && listing.quantity) {
         await tx.inventoryItem.upsert({
           where: { userId_itemId: { userId, itemId: listing.itemId } },
@@ -269,11 +354,7 @@ export async function buyListing(locale: string, formData: FormData) {
     else throw e;
   }
 
-  backToMarket(
-    locale,
-    "browse",
-    error ? { error } : { notice: boughtPokemon ? "bought_pokemon" : "bought" },
-  );
+  backToMarket(locale, "bought", error ? { error } : { notice: "claimed" });
 }
 
 export async function cancelListing(locale: string, formData: FormData) {

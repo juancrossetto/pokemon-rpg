@@ -10,7 +10,7 @@ export function BiometricScanPanel() {
   return (
     <div className="flex flex-col h-full p-6 lg:p-8">
       <div className="flex items-center gap-2 pb-3 border-b border-white/10 text-on-surface-variant">
-        <span className="material-symbols-outlined text-[18px] shrink-0">memory</span>
+        <span className="material-symbols-outlined text-[18px]! shrink-0">memory</span>
         <span className="text-label-sm text-[10px] font-mono uppercase tracking-widest min-w-0 truncate">
           {t("leftEyebrow")}
         </span>
@@ -19,7 +19,7 @@ export function BiometricScanPanel() {
       <div className="flex-1 flex flex-col items-center justify-center gap-6 py-8">
         <div className="relative w-44 h-44 rounded-lg border-2 border-secondary/60 bg-surface-container-lowest/80 overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="material-symbols-outlined text-[96px] text-secondary/50 scan-pulse">face</span>
+            <span className="material-symbols-outlined text-[96px]! text-secondary/50 scan-pulse">face</span>
           </div>
           <div className="absolute left-0 right-0 h-[2px] bg-pokeball-red shadow-[0_0_10px_2px_rgba(238,21,21,0.8)] scan-line" />
           <span className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-secondary" />

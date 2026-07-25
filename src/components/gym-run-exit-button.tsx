@@ -27,14 +27,14 @@ export function GymRunExitButton({
         onClick={() => setOpen(true)}
         className="w-full flex items-center justify-center gap-2 rounded-lg bg-error/20 border border-error/40 px-4 py-2.5 text-label-md text-error hover:bg-error/30 transition-colors"
       >
-        <span className="material-symbols-outlined text-[18px]">warning</span>
+        <span className="material-symbols-outlined text-[18px]!">warning</span>
         {labels.emergencyExit}
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-margin-mobile">
           <div className="glass-panel border border-error/50 rounded-xl p-6 max-w-sm w-full text-center">
-            <span className="material-symbols-outlined text-[40px] text-error">warning</span>
+            <span className="material-symbols-outlined text-[40px]! text-error">warning</span>
             <h3 className="text-headline-md text-error mt-2">{labels.warningTitle}</h3>
             <p className="text-label-md text-on-surface-variant mt-2">{labels.warningBody}</p>
             <div className="flex flex-col gap-2 mt-6">

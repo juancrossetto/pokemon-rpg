@@ -45,7 +45,7 @@ export function HealButton({
         disabled
         className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-md bg-surface-container-high px-4 py-2 text-label-sm font-semibold text-on-surface-variant"
       >
-        <span className="material-symbols-outlined text-[16px]">healing</span>
+        <span className="material-symbols-outlined text-[16px]!">healing</span>
         {t("autoHeal")}
       </button>
     );
@@ -61,10 +61,10 @@ export function HealButton({
           title={t("healRushHint", { minutes: minutesLeft(cooldownMsLeft) })}
           className="inline-flex items-center gap-1.5 rounded-md bg-electric-yellow/15 border border-electric-yellow/40 px-4 py-2 text-label-sm font-semibold text-electric-yellow transition hover:bg-electric-yellow/25 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <span className="material-symbols-outlined text-[16px]">bolt</span>
+          <span className="material-symbols-outlined text-[16px]!">bolt</span>
           {t("healRush")}
           <span className="inline-flex items-center gap-0.5 font-mono">
-            <span className="material-symbols-outlined text-[14px]">paid</span>
+            <span className="material-symbols-outlined text-[14px]!">paid</span>
             {rushCost}
           </span>
         </button>
@@ -75,7 +75,7 @@ export function HealButton({
           onClick={() => run(false)}
           className="inline-flex items-center gap-1.5 rounded-md bg-pokeball-red px-4 py-2 text-label-sm font-semibold text-white shadow-[0_6px_18px_rgba(238,21,21,0.25)] transition hover:bg-pokeball-red/90 active:scale-[0.98] disabled:opacity-60"
         >
-          <span className="material-symbols-outlined text-[16px]">healing</span>
+          <span className="material-symbols-outlined text-[16px]!">healing</span>
           {t("autoHeal")}
         </button>
       )}

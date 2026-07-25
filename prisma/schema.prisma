@@ -52,6 +52,37 @@ model User {
   campaignProgress CampaignProgress?
   eggs         Egg[]
   clanMessages ClanMessage[]
+  notifications Notification[]
+  pokedexEntries PokedexEntry[]
+}
+
+// ---------- Notificaciones in-app ----------
+// Historial de avisos (mercado, gimnasios, PvP). El payload es JSON tipado
+// por `type` — la UI traduce con next-intl, no se guardan strings localizados.
+
+enum NotificationType {
+  MARKET_SOLD
+  MARKET_EXPIRED
+  GYM_WON
+  GYM_LOST
+  PVP_WON
+  PVP_LOST
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  /// Datos para interpolar el mensaje (buyerName, itemName, coins, gymName…).
+  payload   Json             @default("{}")
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }
 
 // ---------- Progresión de campaña (Region → Location → Stage) ----------
@@ -98,6 +129,7 @@ model Species {
   gymPokemon        GymPokemon[]
   gymTrainerPokemon GymTrainerPokemon[]
   eggs              Egg[]
+  pokedexEntries    PokedexEntry[]
 }
 
 enum MoveCategory {
@@ -154,6 +186,10 @@ model PokemonInstance {
   currentHp Int
   isShiny   Boolean  @default(false)
   teamSlot  Int? // 1-6 = en equipo activo, null = en almacenamiento (PC)
+  /// Destacado del entrenador (emblema de ranking); independiente del slot.
+  isFavorite Boolean @default(false)
+  /// Si true, no se puede publicar en el mercado.
+  isTradeLocked Boolean @default(false)
   caughtAt  DateTime @default(now())
 
   // Puntos manuales por Pokémon — el diferenciador de diseño del proyecto.
@@ -180,6 +216,21 @@ model PokemonInstance {
   // trata cada NULL como distinto, así que el PC (teamSlot null) no se ve afectado.
   @@index([ownerId])
   @@index([speciesId])
+  @@index([ownerId, isFavorite])
+}
+
+/// Entrada de Pokédex: el entrenador vio la especie (encuentro, batalla, etc.).
+/// Capturado se deriva de PokemonInstance — no se duplica acá.
+model PokedexEntry {
+  userId    String
+  speciesId Int
+  seenAt    DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+
+  @@id([userId, speciesId])
+  @@index([userId, seenAt])
 }
 
 // Cría: dos padres del jugador producen un huevo que hereda parte de los puntos
@@ -438,6 +489,10 @@ model MarketListing {
   // usa para el contador de novedades de "Mis publicaciones": sin esto, una
   // publicación que vence se devuelve al PC en silencio.
   sellerSeenAt      DateTime?
+  // Null = el comprador todavía no retiró el bien de la mochila del mercado.
+  // Hasta reclamar: ítems no entran al inventario; Pokémon quedan en escrow
+  // del comprador (ocultos del PC).
+  buyerClaimedAt    DateTime?
 
   seller  User             @relation("Seller", fields: [sellerId], references: [id])
   buyer   User?            @relation("Buyer", fields: [buyerId], references: [id])
@@ -447,6 +502,7 @@ model MarketListing {
   @@index([pokemonInstanceId])
   @@index([sellerId, status])
   @@index([buyerId, status])
+  @@index([buyerId, status, buyerClaimedAt])
   @@index([status, expiresAt]) // barrido de vencidas
 }
 

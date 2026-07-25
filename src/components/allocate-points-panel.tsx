@@ -124,7 +124,7 @@ export function AllocatePointsPanel({
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left transition hover:bg-tertiary/10"
       >
-        <span className="material-symbols-outlined text-[14px] text-tertiary">bolt</span>
+        <span className="material-symbols-outlined text-[14px]! text-tertiary">bolt</span>
         <span className="flex-1 text-[10px] font-medium text-tertiary">
           {t("unspentPoints", { count: unspentPoints })}
         </span>
@@ -176,7 +176,7 @@ export function AllocatePointsPanel({
                     onClick={() => bump(key, -1)}
                     className="flex h-6 w-6 items-center justify-center rounded-md border border-white/10 text-on-surface transition hover:border-white/25 disabled:opacity-30"
                   >
-                    <span className="material-symbols-outlined text-[14px]">remove</span>
+                    <span className="material-symbols-outlined text-[14px]!">remove</span>
                   </button>
                   <span className="w-4 text-center font-mono text-[11px] font-semibold text-white">
                     {adding}
@@ -188,7 +188,7 @@ export function AllocatePointsPanel({
                     onClick={() => bump(key, 1)}
                     className="flex h-6 w-6 items-center justify-center rounded-md border border-white/10 text-on-surface transition hover:border-white/25 disabled:opacity-30"
                   >
-                    <span className="material-symbols-outlined text-[14px]">add</span>
+                    <span className="material-symbols-outlined text-[14px]!">add</span>
                   </button>
                 </div>
               );

@@ -110,11 +110,11 @@ export async function findMatch(locale: string) {
   // Rival: entre los que tienen equipo, los de rating más cercano al mío.
   const me = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { pvpRating: true },
+    select: { pvpRating: true, username: true },
   });
   const candidates = await prisma.user.findMany({
     where: { id: { not: userId }, pokemon: { some: { teamSlot: { not: null } } } },
-    select: { id: true, pvpRating: true },
+    select: { id: true, pvpRating: true, username: true },
   });
   if (candidates.length === 0) {
     backToPvp(locale, "no_opponents");
@@ -208,6 +208,15 @@ export async function findMatch(locale: string) {
     backToPvp(locale, error ?? "no_opponents");
     return;
   }
+
+  const { notifyPvpResult } = await import("@/lib/notifications");
+  await notifyPvpResult({
+    winnerId: challengerWon ? userId : opponent.id,
+    loserId: challengerWon ? opponent.id : userId,
+    winnerName: challengerWon ? me.username : opponent.username,
+    loserName: challengerWon ? opponent.username : me.username,
+    matchId,
+  });
 
   revalidatePath(`/${locale}/pvp`);
   revalidatePath(`/${locale}/ranking`);

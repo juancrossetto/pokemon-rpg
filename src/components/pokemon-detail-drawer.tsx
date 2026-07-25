@@ -74,7 +74,7 @@ export function PokemonDetailDrawer({
           onClick={onClose}
           className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/30 text-on-surface-variant transition hover:border-white/25 hover:text-white"
         >
-          <span className="material-symbols-outlined text-[18px]">close</span>
+          <span className="material-symbols-outlined text-[18px]!">close</span>
         </button>
 
         <div className="relative flex-1 overflow-y-auto px-5 pb-6 pt-4">
@@ -95,8 +95,8 @@ export function PokemonDetailDrawer({
                   }`}
                 />
               ) : (
-                <span className="material-symbols-outlined relative z-[1] text-[56px] text-on-surface-variant/40">
-                  catching_pokemon
+                <span className="material-symbols-outlined relative z-[1] text-[56px]! text-on-surface-variant/40">
+                  sports_baseball
                 </span>
               )}
             </div>

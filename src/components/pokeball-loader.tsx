@@ -51,7 +51,7 @@ export function PokeballLoader({
 
       {variant === "svg" && label ? (
         <p className="flex items-center gap-2 text-label-md uppercase tracking-[0.2em] text-pokeball-red">
-          <span className="material-symbols-outlined animate-spin text-[20px]">autorenew</span>
+          <span className="material-symbols-outlined animate-spin text-[20px]!">autorenew</span>
           {label}
         </p>
       ) : null}

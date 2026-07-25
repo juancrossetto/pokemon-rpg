@@ -32,12 +32,16 @@ export function UserMenu({
   logoutLabel,
   trainerLabel,
   teamLabel,
+  inventoryLabel,
+  pcLabel,
 }: {
   name: string;
   avatarId: string | null;
   logoutLabel: string;
   trainerLabel: string;
   teamLabel: string;
+  inventoryLabel: string;
+  pcLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -72,7 +76,11 @@ export function UserMenu({
         }`}
       >
         {avatar ? (
-          <AvatarImage src={avatar.src} alt={name} className="h-full w-full object-cover" />
+          <AvatarImage
+            src={avatar.src}
+            alt={name}
+            className="h-full w-full object-contain p-0.5 [image-rendering:pixelated]"
+          />
         ) : (
           initials(name)
         )}
@@ -81,11 +89,11 @@ export function UserMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full mt-1.5 min-w-44 rounded-lg border border-white/10 bg-background/98 backdrop-blur-xl shadow-2xl py-1 z-50"
+          className="absolute right-0 top-full z-50 mt-1.5 min-w-48 rounded-lg border border-white/10 bg-background/98 py-1 shadow-2xl backdrop-blur-xl"
         >
-          <div className="px-3 py-2 border-b border-white/10">
+          <div className="border-b border-white/10 px-3 py-2">
             <p className="text-label-sm text-on-surface-variant">{trainerLabel}</p>
-            <p className="text-label-md text-on-surface truncate">{name}</p>
+            <p className="truncate text-label-md text-on-surface">{name}</p>
           </div>
           <Link
             href="/team"
@@ -93,14 +101,36 @@ export function UserMenu({
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2 px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-on-surface"
           >
-            <span className="material-symbols-outlined text-[18px] text-pokeball-red">group</span>
+            <span className="material-symbols-outlined text-[18px]! text-pokeball-red">group</span>
             {teamLabel}
           </Link>
+          <Link
+            href="/inventory"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-on-surface"
+          >
+            <span className="material-symbols-outlined text-[18px]! text-pokeball-red">
+              inventory_2
+            </span>
+            {inventoryLabel}
+          </Link>
+          {pcLabel && (
+            <Link
+              href="/pc"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-2 px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-on-surface"
+            >
+              <span className="material-symbols-outlined text-[18px]! text-pokeball-red">storage</span>
+              {pcLabel}
+            </Link>
+          )}
           <button
             type="button"
             role="menuitem"
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="w-full text-left px-3 py-2 text-label-md text-on-surface-variant hover:text-pokeball-red hover:bg-white/5 transition-colors"
+            className="w-full px-3 py-2 text-left text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-pokeball-red"
           >
             {logoutLabel}
           </button>

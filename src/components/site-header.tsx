@@ -7,6 +7,8 @@ import { UserMenu } from "@/components/user-menu";
 import { MobileChrome } from "@/components/mobile-chrome";
 import { NavLinks, type DesktopNavLink } from "@/components/nav-links";
 import { BrandLogo } from "@/components/brand-logo";
+import { NotificationsBell } from "@/components/notifications-bell";
+import { listNotifications } from "@/lib/notifications";
 import type { CombatLock } from "@/lib/battle-lock";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
@@ -20,6 +22,9 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         where: { id: session.user.id },
         select: { coins: true, avatarId: true },
       })
+    : null;
+  const notifications = session?.user
+    ? await listNotifications(session.user.id)
     : null;
   const lock = combatLock;
   const lockedHref =
@@ -56,6 +61,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         { href: "/ranking", label: t("ranking"), icon: "trophy" },
         { href: "/clans", label: t("clans"), icon: "groups" },
         { href: "/pc", label: t("pc"), icon: "storage" },
+        { href: "/inventory", label: t("inventory"), icon: "inventory_2" },
       ]
     : [];
 
@@ -66,6 +72,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         { href: "/ranking", label: t("ranking"), icon: "trophy" },
         { href: "/clans", label: t("clans"), icon: "groups" },
         { href: "/pc", label: t("pc"), icon: "storage" },
+        { href: "/inventory", label: t("inventory"), icon: "inventory_2" },
       ]
     : [];
 
@@ -85,7 +92,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
                 href={lockedHref}
                 className="inline-flex items-center gap-1.5 rounded-md bg-pokeball-red/15 border border-pokeball-red/50 px-3 py-1 text-label-sm text-pokeball-red font-bold"
               >
-                <span className="material-symbols-outlined text-[16px]">
+                <span className="material-symbols-outlined text-[16px]!">
                   {lock?.kind === "gym" ? "military_tech" : "swords"}
                 </span>
                 {lockedLabel}
@@ -105,12 +112,19 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         <div className="flex items-center gap-3 shrink-0">
           {user && (
             <span className="flex items-center gap-1 rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-1 text-label-sm text-electric-yellow font-mono">
-              <span className="material-symbols-outlined text-[16px]">paid</span>
+              <span className="material-symbols-outlined text-[16px]!">paid</span>
               {user.coins}
             </span>
           )}
 
           <LocaleSwitcher currentLocale={locale} label={t("language")} />
+
+          {session?.user && notifications && (
+            <NotificationsBell
+              initialItems={notifications.items}
+              initialUnread={notifications.unreadCount}
+            />
+          )}
 
           {session?.user ? (
             <UserMenu
@@ -119,6 +133,8 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               logoutLabel={t("logout")}
               trainerLabel={t("trainer")}
               teamLabel={t("teamShort")}
+              inventoryLabel={t("inventory")}
+              pcLabel={t("pc")}
             />
           ) : (
             <div className="flex items-center gap-2">
@@ -150,6 +166,8 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         logoutLabel={t("logout")}
         trainerLabel={t("trainer")}
         teamLabel={t("teamShort")}
+        inventoryLabel={t("inventory")}
+        pcLabel={t("pc")}
         lockedHref={lockedHref}
         lockedLabel={lockedLabel}
         lockedIcon={lock?.kind === "gym" ? "military_tech" : "swords"}
@@ -158,6 +176,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         moreLabel={t("more")}
         loginLabel={t("login")}
         registerLabel={t("register")}
+        notifications={notifications}
       />
     </>
   );

@@ -64,7 +64,7 @@ export function BreedingPanel({
   return (
     <section className="glass-panel mt-8 rounded-xl border border-white/10 p-4">
       <h2 className="mb-1 flex items-center gap-2 text-headline-md text-on-surface">
-        <span className="material-symbols-outlined text-[20px] text-tertiary">egg</span>
+        <span className="material-symbols-outlined text-[20px]! text-tertiary">egg</span>
         {t("title")}
       </h2>
       <p className="mb-3 text-label-sm text-on-surface-variant">
@@ -79,7 +79,7 @@ export function BreedingPanel({
                 key={egg.id}
                 className="flex items-center gap-2.5 rounded-lg border border-tertiary/30 bg-tertiary/[0.06] px-3 py-2"
               >
-                <span className="material-symbols-outlined text-[22px] text-tertiary">egg</span>
+                <span className="material-symbols-outlined text-[22px]! text-tertiary">egg</span>
                 <div className="min-w-0">
                   <p className="text-label-md capitalize text-on-surface">
                     {egg.speciesName}
@@ -143,10 +143,10 @@ export function BreedingPanel({
             onClick={breed}
             className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-pokeball-red px-4 py-2 text-label-sm font-semibold text-white transition hover:bg-pokeball-red/85 disabled:opacity-40"
           >
-            <span className="material-symbols-outlined text-[16px]">egg_alt</span>
+            <span className="material-symbols-outlined text-[16px]!">egg_alt</span>
             {t("breed")}
             <span className="inline-flex items-center gap-0.5 font-mono">
-              <span className="material-symbols-outlined text-[14px]">paid</span>
+              <span className="material-symbols-outlined text-[14px]!">paid</span>
               {BREEDING_COST}
             </span>
           </button>

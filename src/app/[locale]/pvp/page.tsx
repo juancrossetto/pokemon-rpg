@@ -110,14 +110,14 @@ export default async function PvpPage({
                 />
               </form>
               <span className="text-label-sm text-on-surface-variant flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px] text-electric-yellow">bolt</span>
+                <span className="material-symbols-outlined text-[14px]! text-electric-yellow">bolt</span>
                 {t("energyCost", { energy })}
               </span>
               <Link
                 href="/ranking?view=ladder"
                 className="text-label-sm text-on-surface-variant hover:text-on-surface flex items-center gap-1"
               >
-                <span className="material-symbols-outlined text-[14px]">trophy</span>
+                <span className="material-symbols-outlined text-[14px]!">trophy</span>
                 {t("viewLadder")}
               </Link>
             </div>
@@ -127,7 +127,7 @@ export default async function PvpPage({
         <h2 className="text-headline-md text-on-surface mb-3">{t("historyTitle")}</h2>
         {matches.length === 0 ? (
           <div className="bg-glass-surface border border-white/5 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-on-surface-variant">
-            <span className="material-symbols-outlined text-[40px] mb-2 opacity-50">swords</span>
+            <span className="material-symbols-outlined text-[40px]! mb-2 opacity-50">swords</span>
             <span className="text-label-md text-center">{t("emptyHistory")}</span>
           </div>
         ) : (

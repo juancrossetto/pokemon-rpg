@@ -95,7 +95,7 @@ export function CurrentExpedition({
               {t(regionNameKey)}
             </h2>
             <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-label-md text-white/90">
-              <span className="material-symbols-outlined text-[16px] text-pokeball-red">
+              <span className="material-symbols-outlined text-[16px]! text-pokeball-red">
                 explore
               </span>
               <span>
@@ -116,7 +116,7 @@ export function CurrentExpedition({
             aria-label={milestone.kind === "gym" ? t("challengeGym") : t("continueExpedition")}
             className="pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-pokeball-red/80 bg-black/55 text-pokeball-red shadow-[0_0_18px_rgba(238,21,21,0.35)] transition-transform hover:scale-105"
           >
-            <span className="material-symbols-outlined text-[20px]">
+            <span className="material-symbols-outlined text-[20px]!">
               {milestone.kind === "gym" ? "military_tech" : "my_location"}
             </span>
           </Link>

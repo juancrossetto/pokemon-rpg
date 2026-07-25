@@ -17,13 +17,20 @@ export const MARKET_ERRORS = [
   "rate_limited",
 ] as const;
 
-export const MARKET_NOTICES = ["listed", "bought", "bought_pokemon", "cancelled"] as const;
+export const MARKET_NOTICES = [
+  "listed",
+  "bought",
+  "bought_pokemon",
+  "cancelled",
+  "claimed",
+] as const;
 
 export const PC_ERRORS = [
   "not_found",
   "already_in_team",
   "not_in_team",
   "listed",
+  "pending_claim",
   "team_full",
   "in_battle",
   "last_team_member",

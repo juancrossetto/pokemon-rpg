@@ -7,6 +7,7 @@ import { calculateMaxHp, xpForLevel } from "@/lib/stats";
 import { STARTER_SPECIES_IDS, rivalStarterFor } from "@/lib/starters";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
+import { markSpeciesSeen } from "@/lib/pokedex-seen";
 
 const STARTER_LEVEL = 5;
 const STARTER_POKEBALL_COUNT = 5;
@@ -108,6 +109,8 @@ export async function chooseStarter(speciesId: number, locale: string) {
       : []),
   ]);
 
+  await markSpeciesSeen(userId, speciesId);
+
   // Combate tutorial (dossier: "3 iniciales + combate tutorial contra un
   // rival"). Reusa el motor de batalla tal cual: es una sesión normal, con el
   // inicial que te gana por tipo y un nivel por debajo para que sea ganable.
@@ -141,6 +144,8 @@ export async function chooseStarter(speciesId: number, locale: string) {
           log: [`appear:${rival.name}`, "tutorial"],
         },
       });
+
+      await markSpeciesSeen(userId, rivalSpeciesId);
 
       redirect({ href: "/battle", locale });
       return;

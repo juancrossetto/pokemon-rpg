@@ -146,7 +146,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                   locationNameKey={expedition.location.nameKey}
                   locationKindKey={`kinds.${expedition.location.kind}`}
                   stageNameKey={expedition.stage.nameKey}
-                  mapSrc={expedition.mapSrc}
+                  mapSrc={expedition.regionMapSrc}
                   milestone={milestone}
                   regionNameKey={`regions.${expedition.regionId}`}
                   wildTypes={wildTypes}
@@ -186,7 +186,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                 className="flex items-center gap-1 text-label-sm text-on-surface-variant transition-colors hover:text-white"
               >
                 {t("manage")}
-                <span className="material-symbols-outlined text-sm">chevron_right</span>
+                <span className="material-symbols-outlined text-sm!">chevron_right</span>
               </Link>
             </div>
 
@@ -216,7 +216,10 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                 return (
                   <HomeSquadCard
                     key={instance.id}
+                    instanceId={instance.id}
                     isLead={i === 0}
+                    isFavorite={instance.isFavorite}
+                    isTradeLocked={instance.isTradeLocked}
                     nickname={instance.nickname}
                     speciesName={instance.species.name}
                     types={instance.species.types}
@@ -231,6 +234,16 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                       lead: tt("lead"),
                       slot: tt("slotLabel", { slot: i + 1 }),
                       fainted: tt("fainted"),
+                      favorite: t("squadMenu.favoriteBadge"),
+                      tradeLocked: t("squadMenu.lockedBadge"),
+                    }}
+                    menuLabels={{
+                      favoriteOn: t("squadMenu.favoriteOn"),
+                      favoriteOff: t("squadMenu.favoriteOff"),
+                      lockOn: t("squadMenu.lockOn"),
+                      lockOff: t("squadMenu.lockOff"),
+                      viewTeam: t("squadMenu.viewTeam"),
+                      hint: t("squadMenu.hint"),
                     }}
                   />
                 );
