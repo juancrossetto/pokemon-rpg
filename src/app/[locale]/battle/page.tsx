@@ -288,6 +288,7 @@ export default async function BattlePage({
       opponentParty,
       playerStatus: battle.playerStatus,
       wildStatus: battle.wildStatus,
+      playerChoiceLockMoveId: battle.playerChoiceLockMoveId,
       gymId: battle.gymId,
       gymRunId: battle.gymRunId,
       gymType: battle.gym?.type ?? null,

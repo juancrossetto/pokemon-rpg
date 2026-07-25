@@ -57,6 +57,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
 
   const desktopMoreLinks: DesktopNavLink[] = session?.user
     ? [
+        { href: "/shop", label: t("shop"), icon: "storefront" },
         { href: "/pvp", label: t("pvp"), icon: "sports_mma" },
         { href: "/ranking", label: t("ranking"), icon: "trophy" },
         { href: "/clans", label: t("clans"), icon: "groups" },
@@ -68,6 +69,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   const moreLinks = session?.user
     ? [
         { href: "/pokedex", label: t("pokedex"), icon: "auto_stories" },
+        { href: "/shop", label: t("shop"), icon: "storefront" },
         { href: "/pvp", label: t("pvp"), icon: "sports_mma" },
         { href: "/ranking", label: t("ranking"), icon: "trophy" },
         { href: "/clans", label: t("clans"), icon: "groups" },

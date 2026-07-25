@@ -15,6 +15,12 @@ import {
   type StatStages,
   type StatusCondition,
 } from "@/lib/status";
+import {
+  applyHeldItemToStats,
+  heldItemPowerMultiplier,
+  resolvePlayerHeldItemTrigger,
+  type HeldItemSnapshot,
+} from "@/lib/held-items";
 
 export interface SideBattleState {
   hp: number;
@@ -24,17 +30,23 @@ export interface SideBattleState {
   stages: StatStages;
   name: string;
   baseStats: CombatantStats;
+  /** Solo el jugador puede tener objeto equipado por ahora. */
+  heldItem?: HeldItemSnapshot | null;
+  isFullyEvolved?: boolean;
 }
 
 export interface ActionOutcome {
   events: TurnEvent[];
   player: SideBattleState;
   wild: SideBattleState;
+  /** true si Focus Sash/Sitrus Berry/Lum Berry se acaban de gastar en esta acción. */
+  itemConsumed: boolean;
 }
 
 function withStages(side: SideBattleState): CombatantStats {
   const mod = applyStagesToStats(side.baseStats, side.stages, side.status);
-  return { ...side.baseStats, ...mod };
+  const staged = { ...side.baseStats, ...mod };
+  return applyHeldItemToStats(staged, side.heldItem, side.isFullyEvolved ?? true);
 }
 
 export function emptyStages(): StatStages {
@@ -50,6 +62,7 @@ export function resolveSingleAction(
   move: MoveSnapshot,
   player: SideBattleState,
   wild: SideBattleState,
+  playerItemConsumed = false,
 ): ActionOutcome {
   const events: TurnEvent[] = [];
   const p: SideBattleState = { ...player, stages: { ...player.stages } };
@@ -77,7 +90,12 @@ export function resolveSingleAction(
       hpAfter: foe.hp,
       skipped: act.reason,
     });
-    return { events, player: isPlayer ? self : p, wild: isPlayer ? w : self };
+    return {
+      events,
+      player: isPlayer ? self : p,
+      wild: isPlayer ? w : self,
+      itemConsumed: playerItemConsumed,
+    };
   }
 
   // Despertó justo al intentar actuar (sleepTurns llegó a 0 en un turno previo)
@@ -86,10 +104,14 @@ export function resolveSingleAction(
     self.sleepTurns = 0;
   }
 
+  const playerHpBefore = p.hp;
+  const playerStatusBefore = p.status;
+
   const atkStats = withStages(self);
   const defStats = withStages(foe);
   const result = resolveMoveUse(atkStats, defStats, move, {
     attackerBurned: self.status === "BURN",
+    powerMultiplier: heldItemPowerMultiplier(self.heldItem, move.type),
   });
 
   if (!result.hit) {
@@ -139,7 +161,12 @@ export function resolveSingleAction(
     foe.hp = Math.max(0, foe.hp - result.damage);
     let recoilDamage = 0;
     if (move.id === STRUGGLE_MOVE.id || move.name === "struggle") {
-      recoilDamage = Math.max(1, Math.floor(self.maxHp / 4));
+      recoilDamage += Math.max(1, Math.floor(self.maxHp / 4));
+    }
+    if (self.heldItem?.effect === "LIFE_ORB" && result.damage > 0) {
+      recoilDamage += Math.max(1, Math.floor(self.maxHp * 0.1));
+    }
+    if (recoilDamage > 0) {
       self.hp = Math.max(0, self.hp - recoilDamage);
     }
     events.push({
@@ -166,10 +193,34 @@ export function resolveSingleAction(
     }
   }
 
+  const itemResult = resolvePlayerHeldItemTrigger({
+    heldItem: p.heldItem,
+    hpBefore: playerHpBefore,
+    hp: p.hp,
+    maxHp: p.maxHp,
+    statusBefore: playerStatusBefore,
+    status: p.status,
+    alreadyConsumed: playerItemConsumed,
+    isActingThisCall: isPlayer,
+  });
+  p.hp = itemResult.hp;
+  p.status = itemResult.status;
+  if (itemResult.trigger) {
+    const last = events[events.length - 1];
+    if (last) {
+      last.itemName = itemResult.trigger.itemName;
+      last.itemEffect = itemResult.trigger.kind;
+      last.itemAmount = itemResult.trigger.amount;
+      last.itemCuredStatus = itemResult.trigger.curedStatus;
+      last.itemHpAfter = p.hp;
+    }
+  }
+
   return {
     events,
     player: isPlayer ? self : foe,
     wild: isPlayer ? foe : self,
+    itemConsumed: itemResult.consumed,
   };
 }
 
@@ -178,6 +229,7 @@ export function resolveWildCounter(
   wildMove: MoveSnapshot,
   player: SideBattleState,
   wild: SideBattleState,
+  playerItemConsumed = false,
 ): ActionOutcome {
-  return resolveSingleAction("wild", wildMove, player, wild);
+  return resolveSingleAction("wild", wildMove, player, wild, playerItemConsumed);
 }

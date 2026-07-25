@@ -10,6 +10,7 @@ export const INVENTORY_CATEGORIES = [
   "BERRY",
   "EVOLUTION_STONE",
   "MACHINE",
+  "HELD",
 ] as const satisfies readonly ItemType[];
 
 export type InventoryCategory = (typeof INVENTORY_CATEGORIES)[number];
@@ -27,6 +28,7 @@ export const CATEGORY_ICON: Record<InventoryCategory, string> = {
   BERRY: "nutrition",
   EVOLUTION_STONE: "diamond",
   MACHINE: "smart_display",
+  HELD: "auto_awesome",
 };
 
 /**

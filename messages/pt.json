@@ -15,6 +15,7 @@
     "battle": "Batalha",
     "gyms": "Ginásios",
     "market": "Mercado",
+    "shop": "Loja",
     "pc": "PC",
     "inventory": "Inventário",
     "login": "Entrar",
@@ -357,6 +358,16 @@
         "incompatible": "Esse Pokémon não pode aprender esse movimento",
         "already_known": "Ele já sabe esse movimento",
         "in_combat": "Você não pode trocar movimentos em combate"
+      },
+      "heldItemTitle": "Item equipado",
+      "heldItemHint": "Dá um efeito real durante a batalha.",
+      "heldItemEmpty": "Nenhum item equipado. Toque para escolher um.",
+      "noHeldItems": "Você não tem itens equipáveis na mochila — compre na Loja.",
+      "equip": "Equipar",
+      "unequip": "Remover",
+      "equipping": "Aplicando…",
+      "equipErrors": {
+        "no_item": "Você não tem mais esse item"
       }
     },
     "healFree": "Cura grátis disponível",
@@ -454,6 +465,11 @@
       "asleep": "{name} está dormindo!",
       "paralyzed": "{name} está paralisado! Não pode se mover!",
       "disobey": "{name} não obedece!",
+      "flinch": "{name} hesitou de medo e não conseguiu se mover!",
+      "itemLeftovers": "{name} restaurou {damage} HP com {item}!",
+      "itemFocusSash": "{name} aguentou com 1 HP graças a {item}!",
+      "itemSitrusBerry": "{name} restaurou {damage} HP com {item}!",
+      "itemLumBerry": "{item} curou o estado {status} de {name}!",
       "statusApplied": "{name} foi {status}!",
       "statChange": "{stat} de {name} {dir}!",
       "statAtk": "Ataque",
@@ -760,7 +776,8 @@
       "POKEBALL": "Poké Balls",
       "BERRY": "Frutas",
       "EVOLUTION_STONE": "Pedras de evolução",
-      "MACHINE": "MT / MO"
+      "MACHINE": "MT / MO",
+      "HELD": "Itens equipáveis"
     },
     "all": "Tudo",
     "searchPlaceholder": "Buscar objeto...",
@@ -782,6 +799,19 @@
       "epic": "Épico",
       "legendary": "Lendário"
     }
+  },
+  "shop": {
+    "eyebrow": "Loja do centro",
+    "title": "Loja",
+    "types": {
+      "POTION": "Cura",
+      "POKEBALL": "Poké Balls",
+      "HELD": "Itens equipáveis"
+    },
+    "buy": "Comprar",
+    "buying": "Comprando…",
+    "noCoins": "Moedas insuficientes.",
+    "coinsLabel": "Moedas"
   },
   "pc": {
     "title": "PC de armazenamento",

@@ -30,7 +30,12 @@ export async function applyBattleItem(
   const [battle, inventoryItem] = await Promise.all([
     prisma.battleSession.findFirst({
       where: { id: sessionId, userId, status: "ACTIVE" },
-      include: { pokemonInstance: { include: { species: true } }, wildSpecies: true },
+      include: {
+        pokemonInstance: {
+          include: { species: { include: { evolvesTo: { select: { id: true } } } }, heldItem: true },
+        },
+        wildSpecies: true,
+      },
     }),
     prisma.inventoryItem.findUnique({
       where: { userId_itemId: { userId, itemId } },

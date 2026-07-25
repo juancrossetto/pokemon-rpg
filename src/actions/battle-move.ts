@@ -18,6 +18,7 @@ import { disobeyChance, gymRematchCoinMultiplier } from "@/lib/badge-perks";
 import { GYM_TM_REWARD_BY_TYPE } from "@/lib/gym-tm-rewards";
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import { resolveSingleAction, type SideBattleState } from "@/lib/resolve-action";
+import { applyHeldItemToStats, heldItemSnapshotFromItem } from "@/lib/held-items";
 import { applyStagesToStats, type StatusCondition } from "@/lib/status";
 import { hasHealthyBackup } from "@/lib/team";
 import { getMovesetForLevel } from "@/lib/moveset";
@@ -55,6 +56,8 @@ export interface UseMoveResult {
   playerMovesPp: { moveId: number; pp: number }[];
   playerStatus: StatusCondition | null;
   wildStatus: StatusCondition | null;
+  /** Si porta un objeto Choice, el movimiento al que quedó atado (o null). */
+  playerChoiceLockMoveId: number | null;
   nextOpponent: {
     name: string;
     speciesName: string;
@@ -99,7 +102,12 @@ function applyXpGain(
 }
 
 function sideSpeed(side: SideBattleState): number {
-  return applyStagesToStats(side.baseStats, side.stages, side.status).speed;
+  const staged = applyStagesToStats(side.baseStats, side.stages, side.status);
+  return applyHeldItemToStats(
+    { ...side.baseStats, ...staged },
+    side.heldItem,
+    side.isFullyEvolved ?? true,
+  ).speed;
 }
 
 export async function submitBattleMove(
@@ -114,13 +122,23 @@ export async function submitBattleMove(
   const battle = await prisma.battleSession.findFirst({
     where: { id: sessionId, userId, status: "ACTIVE" },
     include: {
-      pokemonInstance: { include: { species: true, moves: { include: { move: true } } } },
+      pokemonInstance: {
+        include: {
+          species: { include: { evolvesTo: { select: { id: true } } } },
+          moves: { include: { move: true } },
+          heldItem: true,
+        },
+      },
       wildSpecies: true,
     },
   });
   if (!battle) return null;
 
-  const chosenMove = battle.pokemonInstance.moves.find((m) => m.moveId === moveId);
+  // Choice Band/Specs/Scarf: si ya quedó atado a un movimiento esta batalla,
+  // se ignora lo pedido y se fuerza ese movimiento (mismo criterio que los
+  // juegos reales — el menú debería ya venir deshabilitado del lado del cliente).
+  const effectiveMoveId = battle.playerChoiceLockMoveId ?? moveId;
+  const chosenMove = battle.pokemonInstance.moves.find((m) => m.moveId === effectiveMoveId);
   if (!chosenMove) return null;
 
   const [badgeCount, alreadyHasThisBadge] = await Promise.all([
@@ -150,6 +168,8 @@ export async function submitBattleMove(
   );
   const playerBase = playerCombatantStats(instance.species, instance.level, instance);
   const wildBase = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
+  const playerHeldItem = heldItemSnapshotFromItem(instance.heldItem);
+  const playerIsFullyEvolved = instance.species.evolvesTo.length === 0;
 
   let playerState: SideBattleState = {
     hp: instance.currentHp,
@@ -163,6 +183,8 @@ export async function submitBattleMove(
     },
     name: instance.nickname ?? instance.species.name,
     baseStats: playerBase,
+    heldItem: playerHeldItem,
+    isFullyEvolved: playerIsFullyEvolved,
   };
   let wildState: SideBattleState = {
     hp: battle.wildCurrentHp,
@@ -209,6 +231,9 @@ export async function submitBattleMove(
   const wi = wildMoveSnapshots.findIndex((m) => m.id === wildMove.id);
   if (wi >= 0 && wildMovePp[wi] > 0) wildMovePp[wi] -= 1;
 
+  let playerItemConsumed = battle.playerItemConsumed;
+  let flinchWild = false;
+
   if (disobeyed) {
     events.push({
       side: "player",
@@ -223,27 +248,53 @@ export async function submitBattleMove(
     });
     log.push(`disobey:${playerState.name}`);
     if (playerState.hp > 0 && wildState.hp > 0) {
-      const counter = resolveSingleAction("wild", wildMove, playerState, wildState);
+      const counter = resolveSingleAction("wild", wildMove, playerState, wildState, playerItemConsumed);
       events.push(...counter.events);
       playerState = counter.player;
       wildState = counter.wild;
+      playerItemConsumed = counter.itemConsumed;
     }
   } else {
+    const quickClawTriggered =
+      playerHeldItem?.effect === "QUICK_CLAW" && Math.random() < (playerHeldItem.value ?? 0.2);
     const playerFirst = playerActsFirst(
       playerMoveSnapshot,
       wildMove,
       sideSpeed(playerState),
       sideSpeed(wildState),
+      quickClawTriggered,
     );
     const order = playerFirst ? (["player", "wild"] as const) : (["wild", "player"] as const);
 
     for (const side of order) {
       if (playerState.hp <= 0 || wildState.hp <= 0) break;
+      if (side === "wild" && flinchWild) {
+        events.push({
+          side: "wild",
+          moveName: wildMove.name,
+          moveType: wildMove.type,
+          hit: false,
+          isStatus: false,
+          damage: 0,
+          effectiveness: 1,
+          hpAfter: playerState.hp,
+          skipped: "flinch",
+        });
+        continue;
+      }
       const move = side === "player" ? playerMoveSnapshot : wildMove;
-      const outcome = resolveSingleAction(side, move, playerState, wildState);
+      const outcome = resolveSingleAction(side, move, playerState, wildState, playerItemConsumed);
       events.push(...outcome.events);
       playerState = outcome.player;
       wildState = outcome.wild;
+      playerItemConsumed = outcome.itemConsumed;
+
+      if (side === "player" && playerHeldItem?.effect === "FLINCH_CHANCE") {
+        const playerHitLanded = outcome.events.some((e) => e.hit && !e.isStatus);
+        if (playerHitLanded && Math.random() < (playerHeldItem.value ?? 0.1)) {
+          flinchWild = true;
+        }
+      }
     }
 
     if (playerMoveSnapshot.id !== STRUGGLE_MOVE.id) {
@@ -265,6 +316,14 @@ export async function submitBattleMove(
     }
   }
 
+  // Choice Band/Specs/Scarf: queda atado al primer movimiento que usa con
+  // el objeto puesto, hasta que cambie de Pokémon o termine la batalla.
+  const newChoiceLockMoveId =
+    battle.playerChoiceLockMoveId ??
+    (!disobeyed && playerHeldItem?.effect === "CHOICE_LOCK" && playerMoveSnapshot.id !== STRUGGLE_MOVE.id
+      ? effectiveMoveId
+      : null);
+
   const spentMaxPp = chosenMove.move.pp ?? 20;
   const spentCurrent =
     typeof chosenMove.currentPp === "number" && chosenMove.currentPp > 0
@@ -281,7 +340,7 @@ export async function submitBattleMove(
   const playerMovesPp = instance.moves.map((m) => ({
     moveId: m.moveId,
     pp:
-      spentPlayerPp != null && m.moveId === moveId
+      spentPlayerPp != null && m.moveId === effectiveMoveId
         ? spentPlayerPp
         : effectivePp(m.currentPp, m.move.pp),
   }));
@@ -314,6 +373,8 @@ export async function submitBattleMove(
     wildAtkStage: wildState.stages.atk,
     wildDefStage: wildState.stages.def,
     wildSpeStage: wildState.stages.spe,
+    playerChoiceLockMoveId: newChoiceLockMoveId,
+    playerItemConsumed,
   };
 
   if (wonBattle) {
@@ -385,6 +446,7 @@ export async function submitBattleMove(
         tmRewardName: null,
         rematch: alreadyHasThisBadge,
         playerMovesPp,
+        playerChoiceLockMoveId: newChoiceLockMoveId,
         playerStatus: playerState.status,
         wildStatus: null,
         nextOpponent,
@@ -470,6 +532,7 @@ export async function submitBattleMove(
         tmRewardName: null,
         rematch: alreadyHasThisBadge,
         playerMovesPp,
+        playerChoiceLockMoveId: newChoiceLockMoveId,
         playerStatus: playerState.status,
         wildStatus: wildState.status,
         nextOpponent: null,
@@ -603,6 +666,7 @@ export async function submitBattleMove(
     tmRewardName,
     rematch: alreadyHasThisBadge,
     playerMovesPp,
+    playerChoiceLockMoveId: newChoiceLockMoveId,
     playerStatus: playerState.status,
     wildStatus: wildState.status,
     nextOpponent,

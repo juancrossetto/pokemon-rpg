@@ -103,6 +103,8 @@ export interface BattleArenaProps {
   opponentParty: OpponentPartyMember[];
   playerStatus: string | null;
   wildStatus: string | null;
+  /** Si porta un objeto Choice, el movimiento al que ya quedó atado (o null). */
+  playerChoiceLockMoveId: number | null;
   gymId: string | null;
   gymRunId: string | null;
   gymType: string | null;
@@ -126,6 +128,7 @@ export function BattleArena({
   opponentParty: initialOpponentParty,
   playerStatus: initialPlayerStatus,
   wildStatus: initialWildStatus,
+  playerChoiceLockMoveId: initialChoiceLockMoveId,
   gymId,
   gymRunId,
   gymType,
@@ -213,6 +216,7 @@ export function BattleArena({
   const [opponentParty, setOpponentParty] = useState(initialOpponentParty);
   const [mustSwitch, setMustSwitch] = useState(false);
   const [activeMoves, setActiveMoves] = useState(moves);
+  const [choiceLockMoveId, setChoiceLockMoveId] = useState(initialChoiceLockMoveId);
   const logEndRef = useRef<HTMLDivElement>(null);
   const [capturedInfo, setCapturedInfo] = useState<CapturedPokemonInfo | null>(null);
   const [nicknameInput, setNicknameInput] = useState("");
@@ -261,6 +265,44 @@ export function BattleArena({
     return side === "player" ? activePlayerNameRef.current : activeWild.name;
   }
 
+  /** Objeto equipado del jugador que se activó esta acción (Leftovers, Focus Sash, etc.) — siempre del lado jugador. */
+  function appendItemTriggerLog(event: TurnEvent) {
+    if (!event.itemEffect || !event.itemName) return;
+    const activeId = activePlayer.instanceId;
+    const playerName = nameFor("player");
+
+    if (event.itemEffect === "leftovers" && event.itemAmount != null) {
+      appendLog(
+        tLog("itemLeftovers", { name: playerName, item: event.itemName, damage: event.itemAmount }),
+        "player",
+      );
+    } else if (event.itemEffect === "focus_sash") {
+      appendLog(tLog("itemFocusSash", { name: playerName, item: event.itemName }), "player");
+    } else if (event.itemEffect === "sitrus_berry" && event.itemAmount != null) {
+      appendLog(
+        tLog("itemSitrusBerry", { name: playerName, item: event.itemName, damage: event.itemAmount }),
+        "player",
+      );
+    } else if (event.itemEffect === "lum_berry" && event.itemCuredStatus) {
+      appendLog(
+        tLog("itemLumBerry", {
+          name: playerName,
+          item: event.itemName,
+          status: t(statusLabelKey(event.itemCuredStatus)),
+        }),
+        "player",
+      );
+      setPlayerStatus(null);
+    }
+
+    if (event.itemHpAfter != null) {
+      setPlayerHp(event.itemHpAfter);
+      setParty((prev) =>
+        prev.map((m) => (m.instanceId === activeId ? { ...m, currentHp: event.itemHpAfter! } : m)),
+      );
+    }
+  }
+
   function shakeStyle(side: "player" | "wild"): CSSProperties | undefined {
     return shakingSide === side ? ({ "--shake-amt": `${10 * impactIntensity}px` } as CSSProperties) : undefined;
   }
@@ -280,7 +322,12 @@ export function BattleArena({
       const fxKey = Date.now();
       const mode = event.skipped ? "miss" : !event.hit ? "miss" : event.isStatus ? "status" : "hit";
 
-      if (event.skipped === "asleep" || event.skipped === "paralyzed" || event.skipped === "disobey") {
+      if (
+        event.skipped === "asleep" ||
+        event.skipped === "paralyzed" ||
+        event.skipped === "disobey" ||
+        event.skipped === "flinch"
+      ) {
         playBattleSfx("status");
       } else if (!event.hit) {
         playBattleSfx("miss");
@@ -306,6 +353,7 @@ export function BattleArena({
       if (event.skipped) {
         if (event.skipped === "asleep") appendLog(tLog("asleep", { name: nameFor(event.side) }), event.side);
         else if (event.skipped === "paralyzed") appendLog(tLog("paralyzed", { name: nameFor(event.side) }), event.side);
+        else if (event.skipped === "flinch") appendLog(tLog("flinch", { name: nameFor(event.side) }), event.side);
         else appendLog(tLog("disobey", { name: nameFor(event.side) }), event.side);
         setTimeout(() => {
           setMoveFx(null);
@@ -354,6 +402,7 @@ export function BattleArena({
               foe,
             );
           }
+          appendItemTriggerLog(event);
           setArenaFlash(color);
           setTimeout(() => setArenaFlash(null), 320);
           setTimeout(() => {
@@ -408,6 +457,8 @@ export function BattleArena({
           if (event.side === "player") setPlayerHp(event.residualHpAfter);
           else setWildHp(event.residualHpAfter);
         }
+
+        appendItemTriggerLog(event);
 
         const defenderMaxHp = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
         if (event.hpAfter > 0 && event.hpAfter / defenderMaxHp <= 0.1) {
@@ -520,6 +571,7 @@ export function BattleArena({
     setPlayerMaxHp(result.playerMaxHp);
     setPlayerStatus(result.playerStatus);
     setWildStatus(result.wildStatus);
+    setChoiceLockMoveId(result.playerChoiceLockMoveId);
     setActiveMoves((prev) =>
       prev.map((m) => {
         const upd = result.playerMovesPp.find((p) => p.moveId === m.moveId);
@@ -731,6 +783,8 @@ export function BattleArena({
     setPlayerHp(member.currentHp);
     setPlayerMaxHp(result.newPlayer.maxHp);
     setActiveMoves(result.newPlayer.moves);
+    // El servidor resetea el lock de Choice/consumo de objeto al cambiar de Pokémon.
+    setChoiceLockMoveId(null);
     setParty((prev) =>
       prev.map((m) => {
         if (m.instanceId === outgoing.instanceId) {
@@ -1348,11 +1402,12 @@ export function BattleArena({
               {activeMoves.map((m) => {
                 const eff = effectivenessInfo(m.type);
                 const color = typeColor(m.type);
+                const lockedOut = choiceLockMoveId != null && choiceLockMoveId !== m.moveId;
                 return (
                   <button
                     key={m.moveId}
                     type="button"
-                    disabled={isAnimating || m.pp <= 0}
+                    disabled={isAnimating || m.pp <= 0 || lockedOut}
                     onClick={() => handleMove(m.moveId)}
                     className="w-full glass-panel border border-white/10 rounded-lg p-3 text-left hover:border-pokeball-red/50 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   >
@@ -1363,7 +1418,10 @@ export function BattleArena({
                       >
                         {m.type}
                       </span>
-                      <span className="text-label-sm text-on-surface-variant">
+                      <span className="flex items-center gap-1 text-label-sm text-on-surface-variant">
+                        {lockedOut && (
+                          <span className="material-symbols-outlined text-[14px]!">lock</span>
+                        )}
                         PP {m.pp}/{m.maxPp ?? m.pp}
                       </span>
                     </div>
