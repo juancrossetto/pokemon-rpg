@@ -898,6 +898,58 @@ body {
   animation: map-zoom-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* --- Gym Mission Control --- */
+@keyframes gym-mission-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes gym-mission-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.gym-mission-slide-right {
+  animation: gym-mission-slide-right 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gym-mission-slide-left {
+  animation: gym-mission-slide-left 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gym-mission-panel {
+  animation: gym-mission-slide-right 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gym-challenge-btn {
+  box-shadow: 0 10px 28px rgba(238, 21, 21, 0.28);
+}
+
+.gym-challenge-btn:hover {
+  background-color: rgb(238 21 21 / 0.88);
+  box-shadow:
+    0 0 0 1px rgba(238, 21, 21, 0.55),
+    0 0 28px rgba(238, 21, 21, 0.45),
+    0 12px 32px rgba(238, 21, 21, 0.35);
+  transform: translateY(-1px) scale(1.01);
+}
+
+.gym-mission-card:active {
+  transform: scale(0.99);
+}
+
 /* --- Auth atmosphere (login/register stars) --- */
 .auth-spark {
   position: absolute;
@@ -926,11 +978,22 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .map-backdrop-in,
   .map-zoom-in,
-  .auth-spark {
+  .auth-spark,
+  .gym-mission-slide-right,
+  .gym-mission-slide-left,
+  .gym-mission-panel {
     animation: none;
   }
 
   .auth-spark {
     opacity: 0.45;
+  }
+
+  .gym-challenge-btn:hover {
+    transform: none;
+  }
+
+  .gym-mission-card:hover {
+    transform: none;
   }
 }

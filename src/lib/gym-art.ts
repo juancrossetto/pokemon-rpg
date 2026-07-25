@@ -31,3 +31,8 @@ export function gymLeaderPortraitUrl(leaderName: string): string | null {
   const slug = LEADER_SLUGS[leaderName];
   return slug ? `/gyms/portraits/${slug}.png` : null;
 }
+
+/** Dificultad visual 1–5 a partir del orden del gimnasio (1..8). */
+export function gymDifficultyStars(order: number): number {
+  return Math.min(5, Math.max(1, Math.ceil((order * 5) / 8)));
+}
