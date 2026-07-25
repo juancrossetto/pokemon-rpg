@@ -12,7 +12,7 @@ import type { GymStatus } from "@/lib/gym-status";
 // duplicado —uno `sm:hidden` y otro `hidden sm:flex`— que había que mantener
 // en paralelo y hacía la card innecesariamente alta en mobile.
 export async function GymCard({ status }: { status: GymStatus }) {
-  const { gym, badgeEarned, locked, onCooldown, hoursLeft } = status;
+  const { gym, badgeEarned, locked, onCooldown, hoursLeft, closed } = status;
   const t = await getTranslations("gyms");
 
   const color = typeColor(gym.type);
@@ -31,7 +31,15 @@ export async function GymCard({ status }: { status: GymStatus }) {
       <span className="material-symbols-outlined text-[13px]! leading-none">check_circle</span>
       {t("badgeEarned")}
     </span>
-  ) : locked ? null : onCooldown ? (
+  ) : locked ? null : closed ? (
+    <span
+      className={`${chipBase} bg-white/5 border-white/20 text-on-surface-variant`}
+      title={t("hours", { opens: gym.opensHour, closes: gym.closesHour })}
+    >
+      <span className="material-symbols-outlined text-[13px]! leading-none">schedule</span>
+      {t("closedChip")}
+    </span>
+  ) : onCooldown ? (
     // Sin ícono: "Disponible en {h}h" ya dice que es tiempo, y es el chip más
     // largo — el reloj lo empujaba a una segunda línea en mobile.
     <span className={`${chipBase} bg-error/10 border-error/30 text-error`}>

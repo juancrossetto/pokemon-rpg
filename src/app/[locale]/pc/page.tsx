@@ -6,6 +6,9 @@ import { calculateMaxHp } from "@/lib/stats";
 import { PC_ERRORS, PC_NOTICES, pickCode } from "@/lib/feedback-codes";
 import { TEAM_SIZE } from "@/lib/market-rules";
 import { PcTransfer, type PcMon } from "@/components/pc-transfer";
+import { BreedingPanel } from "@/components/breeding-panel";
+import { BREEDING_MIN_LEVEL, msUntilHatch } from "@/lib/breeding";
+import { spriteFor } from "@/lib/shiny";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 
 export default async function PcPage({
@@ -47,6 +50,31 @@ export default async function PcPage({
   const team = pokemon.filter((p) => p.teamSlot !== null);
   const stored = pokemon.filter((p) => p.teamSlot === null);
 
+  // Sólo los de la PC, sin publicar y con nivel suficiente pueden criar.
+  const breedCandidates = stored
+    .filter((p) => p.listings.length === 0 && p.level >= BREEDING_MIN_LEVEL)
+    .map((p) => ({
+      id: p.id,
+      name: p.nickname ?? p.species.name,
+      level: p.level,
+      spriteUrl: spriteFor(p.species.spriteUrl, p.isShiny),
+    }));
+
+  const eggs = (
+    await prisma.egg.findMany({
+      where: { ownerId: session.user.id, hatchedAt: null },
+      include: { species: { select: { name: true, spriteUrl: true } } },
+      orderBy: { readyAt: "asc" },
+    })
+  ).map((e) => ({
+    id: e.id,
+    speciesName: e.species.name,
+    spriteUrl: e.species.spriteUrl,
+    isShiny: e.isShiny,
+    ready: msUntilHatch(e.readyAt) === 0,
+    minutesLeft: Math.ceil(msUntilHatch(e.readyAt) / 60000),
+  }));
+
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
       <div className="mx-auto max-w-6xl">
@@ -73,6 +101,8 @@ export default async function PcPage({
           initialTeam={team.map(toPcMon)}
           initialBox={stored.map(toPcMon)}
         />
+
+        <BreedingPanel locale={locale} candidates={breedCandidates} eggs={eggs} />
       </div>
     </div>
   );
@@ -85,6 +115,7 @@ type PokemonRowSource = {
   currentHp: number;
   ptConstitution: number;
   teamSlot: number | null;
+  isShiny: boolean;
   species: { name: string; spriteUrl: string; types: string[]; baseHp: number };
   listings: { id: string }[];
 };
@@ -95,7 +126,7 @@ function toPcMon(instance: PokemonRowSource): PcMon {
     name: instance.nickname ?? instance.species.name,
     speciesName: instance.species.name,
     level: instance.level,
-    spriteUrl: instance.species.spriteUrl,
+    spriteUrl: spriteFor(instance.species.spriteUrl, instance.isShiny),
     types: instance.species.types,
     currentHp: instance.currentHp,
     maxHp: calculateMaxHp(instance.species.baseHp, instance.level, instance.ptConstitution),

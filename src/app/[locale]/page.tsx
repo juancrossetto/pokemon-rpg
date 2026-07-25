@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { spriteFor } from "@/lib/shiny";
 import { calculateMaxHp, calculateStat, xpForLevel, xpToNextLevel } from "@/lib/stats";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { getLocale } from "next-intl/server";
@@ -258,7 +259,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                     speciesName={instance.species.name}
                     level={instance.level}
                     types={instance.species.types}
-                    spriteUrl={instance.species.spriteUrl}
+                    spriteUrl={spriteFor(instance.species.spriteUrl, instance.isShiny)}
                     currentHp={instance.currentHp}
                     maxHp={maxHp}
                     xpPct={xpPct}

@@ -1,12 +1,19 @@
 "use server";
 
 import { redirect } from "@/i18n/navigation";
+import { isGymOpenAt } from "@/lib/gym-status";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export type StartGymRunResult =
   | { success: true }
-  | { success: false; error: "no_lead" | "fainted_lead" | "locked" | "on_cooldown"; hoursLeft?: number };
+  | {
+      success: false;
+      error: "no_lead" | "fainted_lead" | "locked" | "on_cooldown" | "closed";
+      hoursLeft?: number;
+      opensHour?: number;
+      closesHour?: number;
+    };
 
 // Crea (o retoma) la corrida de un gimnasio y te manda al pasillo de
 // entrenadores — todavía no arranca ninguna batalla, eso lo hace
@@ -34,6 +41,17 @@ export async function startGymRun(gymId: string, locale: string): Promise<StartG
   if (gym.order > 1) {
     const previousBadge = await prisma.badge.findFirst({ where: { userId, gym: { order: gym.order - 1 } } });
     if (!previousBadge) return { success: false, error: "locked" };
+  }
+
+  // Horario de atención (dossier: "gimnasios con horarios"). El guard vive acá
+  // y no sólo en la UI: si no, alcanzaba con postear el form fuera de hora.
+  if (!isGymOpenAt(gym.opensHour, gym.closesHour, new Date().getHours())) {
+    return {
+      success: false,
+      error: "closed",
+      opensHour: gym.opensHour,
+      closesHour: gym.closesHour,
+    };
   }
 
   const existingRun = await prisma.gymRun.findFirst({ where: { userId, gymId, status: "ACTIVE" } });

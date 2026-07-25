@@ -27,6 +27,7 @@ model User {
   energy          Int      @default(20)
   energyMax       Int      @default(20)
   energyUpdatedAt DateTime @default(now()) // para calcular regeneración sin cron
+  lastHealAt      DateTime? // Centro Pokémon: la curación gratis tiene cooldown; pagar lo saltea
   createdAt       DateTime @default(now())
 
   // Ladder PvP (dossier fase 4). Rating Elo + récord; segmento del ranking PvP.
@@ -49,6 +50,8 @@ model User {
   pvpAsChallenger PvpMatch[]        @relation("PvpChallenger")
   pvpAsOpponent   PvpMatch[]        @relation("PvpOpponent")
   campaignProgress CampaignProgress?
+  eggs         Egg[]
+  clanMessages ClanMessage[]
 }
 
 // ---------- Progresión de campaña (Region → Location → Stage) ----------
@@ -94,6 +97,7 @@ model Species {
   battleSessions    BattleSession[]
   gymPokemon        GymPokemon[]
   gymTrainerPokemon GymTrainerPokemon[]
+  eggs              Egg[]
 }
 
 enum MoveCategory {
@@ -163,6 +167,31 @@ model PokemonInstance {
   @@index([speciesId])
 }
 
+// Cría: dos padres del jugador producen un huevo que hereda parte de los puntos
+// invertidos. Es un sumidero de economía y le da uso a los que no pelean.
+model Egg {
+  id           String   @id @default(cuid())
+  ownerId      String
+  speciesId    Int
+  parentAId    String
+  parentBId    String
+  /** Puntos heredados que arranca la cría — mismos 5 atributos que la instancia. */
+  ptStrength     Int @default(0)
+  ptSpeed        Int @default(0)
+  ptDexterity    Int @default(0)
+  ptIntelligence Int @default(0)
+  ptConstitution Int @default(0)
+  isShiny      Boolean  @default(false)
+  readyAt      DateTime // eclosiona con el tiempo, como la energía: sin cron
+  hatchedAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  species Species @relation(fields: [speciesId], references: [id])
+
+  @@index([ownerId, hatchedAt])
+}
+
 model PokemonMove {
   pokemonInstanceId String
   moveId            Int
@@ -185,6 +214,8 @@ model Gym {
   badgeName     String @default("") // nombre real de la medalla (ej. "Boulder Badge")
   type          String // tipo principal del líder — define el ícono/color de la medalla
   cooldownHours Int    @default(24) // solo aplica tras perder una batalla (no al abandonar la corrida)
+  opensHour     Int    @default(0) // horario de atención en hora local del jugador (0-23).
+  closesHour    Int    @default(24) // 0/24 = abierto siempre. Si closes <= opens, cruza la medianoche.
   coinReward    Int    @default(100)
 
   team           GymPokemon[]
@@ -395,8 +426,9 @@ model Clan {
   leaderId  String   @unique
   createdAt DateTime @default(now())
 
-  leader  User         @relation("ClanLeader", fields: [leaderId], references: [id])
-  members ClanMember[]
+  leader   User          @relation("ClanLeader", fields: [leaderId], references: [id])
+  members  ClanMember[]
+  messages ClanMessage[]
 }
 
 model ClanMember {
@@ -409,6 +441,19 @@ model ClanMember {
   clan Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
 
   @@index([clanId])
+}
+
+model ClanMessage {
+  id        String   @id @default(cuid())
+  clanId    String
+  userId    String
+  body      String
+  createdAt DateTime @default(now())
+
+  clan Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clanId, createdAt])
 }
 
 // ---------- Batallas (historial — el ranking se calcula a partir de esto) ----------
@@ -456,6 +501,7 @@ model BattleSession {
   wildMaxHp         Int
   wildMoveIds       Int[]
   wildMovePp        Int[]               @default([]) // PP restante paralelo a wildMoveIds
+  wildIsShiny       Boolean             @default(false) // se tira al generar el encuentro para que se vea variante en combate
   status            BattleSessionStatus @default(ACTIVE)
   log               String[]            @default([])
   participantIds    String[]            @default([]) // todos los Pokémon del jugador que pelearon en esta sesión (para repartir XP al terminar)

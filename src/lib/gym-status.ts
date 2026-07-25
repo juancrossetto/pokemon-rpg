@@ -7,6 +7,21 @@ export interface GymStatus {
   locked: boolean;
   onCooldown: boolean;
   hoursLeft: number;
+  /** Fuera del horario de atención del gimnasio (dossier: "gimnasios con horarios"). */
+  closed: boolean;
+  opensHour: number;
+  closesHour: number;
+}
+
+/**
+ * ¿El gimnasio está abierto a esta hora? `opens === closes` (o 0/24) = 24hs.
+ * Si `closes <= opens` el horario cruza la medianoche (ej. 20 a 4).
+ */
+export function isGymOpenAt(opensHour: number, closesHour: number, hour: number): boolean {
+  if (opensHour === closesHour) return true;
+  if (closesHour === 24 && opensHour === 0) return true;
+  if (opensHour < closesHour) return hour >= opensHour && hour < closesHour;
+  return hour >= opensHour || hour < closesHour;
 }
 
 function fetchGyms() {
@@ -45,7 +60,18 @@ export async function computeGymStatuses(userId: string): Promise<GymStatus[]> {
     const elapsedMs = lastAttempt ? now - lastAttempt.attemptedAt.getTime() : Infinity;
     const onCooldown = !badgeEarned && !!lastAttempt && !lastAttempt.won && elapsedMs < cooldownMs;
     const hoursLeft = onCooldown ? Math.ceil((cooldownMs - elapsedMs) / (60 * 60 * 1000)) : 0;
+    const closed =
+      !badgeEarned && !isGymOpenAt(gym.opensHour, gym.closesHour, new Date(now).getHours());
 
-    return { gym, badgeEarned, locked, onCooldown, hoursLeft };
+    return {
+      gym,
+      badgeEarned,
+      locked,
+      onCooldown,
+      hoursLeft,
+      closed,
+      opensHour: gym.opensHour,
+      closesHour: gym.closesHour,
+    };
   });
 }

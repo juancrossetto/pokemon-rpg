@@ -15,6 +15,7 @@ import {
   stageEncounterRate,
 } from "@/lib/campaign";
 import { loadMapLocations } from "@/lib/campaign/map-data";
+import { spriteFor } from "@/lib/shiny";
 
 const ENCOUNTER_ENERGY_COST = 1;
 
@@ -270,7 +271,8 @@ export default async function BattlePage({
         name: battle.wildSpecies.name,
         speciesName: battle.wildSpecies.name,
         level: battle.wildLevel,
-        spriteUrl: battle.wildSpecies.spriteUrl,
+        spriteUrl: spriteFor(battle.wildSpecies.spriteUrl, battle.wildIsShiny),
+        isShiny: battle.wildIsShiny,
         currentHp: battle.wildCurrentHp,
         maxHp: battle.wildMaxHp,
         types: battle.wildSpecies.types,

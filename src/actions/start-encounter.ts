@@ -10,6 +10,7 @@ import { getCurrentEnergy } from "@/lib/energy";
 import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { getKantoStage, resolveSpawn } from "@/lib/campaign";
+import { rollShiny } from "@/lib/shiny";
 
 const FALLBACK_ENERGY_COST = 1;
 
@@ -67,6 +68,8 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
   const wildMoveIds = await getMovesetForLevel(wildSpeciesId, wildLevel);
   const wildMoves = await prisma.move.findMany({ where: { id: { in: wildMoveIds } } });
   const wildMovePp = wildMoveIds.map((id) => wildMoves.find((m) => m.id === id)?.pp ?? 20);
+  // 1/4096, igual que el juego oficial (ver dossier).
+  const wildIsShiny = rollShiny();
 
   await prisma.$transaction([
     prisma.user.update({
@@ -83,6 +86,7 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
         wildMaxHp,
         wildMoveIds,
         wildMovePp,
+        wildIsShiny,
         log: [`appear:${wildSpecies.name}`, `stage:${stage.id}`],
         participantIds: [lead.id],
       },

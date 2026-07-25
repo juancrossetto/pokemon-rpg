@@ -80,6 +80,12 @@
       "error": "Wrong email or password",
       "noAccount": "Don't have an account?",
       "registerLink": "Create one",
+      "registerLinkHere": "Create one here",
+      "welcomeTitle": "Welcome, Trainer!",
+      "welcomeSubtitle": "Sign in to continue your adventure",
+      "tagline": "Idle RPG",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "eyebrow": "POKÉDEX SYSTEM",
       "bootStatus": "Booting kernel...",
       "panelTitle": "Trainer authorization",
@@ -185,6 +191,15 @@
       "spAtk": "SP.ATK",
       "spDef": "SP.DEF",
       "speed": "SPEED"
+    },
+    "healFree": "Free healing available",
+    "healCooldown": "Free in {minutes} min",
+    "healRush": "Heal now",
+    "healRushHint": "Skips the {minutes} min wait",
+    "healErrors": {
+      "cooldown": "Still regenerating.",
+      "no_coins": "Not enough coins.",
+      "unauthorized": "Session expired."
     }
   },
   "battle": {
@@ -354,7 +369,10 @@
     "rematchHint": "You already own this badge. Coin reward is halved.",
     "badgePerksTitle": "With your badges",
     "obedienceCap": "Your team obeys up to Lv. {level}",
-    "marketDiscount": "−{pct}% market listing fees"
+    "marketDiscount": "−{pct}% market listing fees",
+    "closedHint": "The gym is closed at this hour.",
+    "closedChip": "Closed",
+    "hours": "Open {opens}:00 – {closes}:00"
   },
   "market": {
     "title": "Market",
@@ -583,6 +601,17 @@
       "LEADER": "Leader",
       "OFFICER": "Officer",
       "MEMBER": "Member"
+    },
+    "chatTitle": "Clan chat",
+    "chatEmpty": "No messages yet. Write the first one.",
+    "chatPlaceholder": "Write a message...",
+    "chatSend": "Send",
+    "chatYou": "You",
+    "chatErrors": {
+      "unauthorized": "You are not a member of this clan.",
+      "empty": "The message is empty.",
+      "too_long": "300 characters max.",
+      "rate_limited": "You are typing too fast."
     }
   },
   "pvp": {
@@ -793,5 +822,25 @@
     "zoneWildsHint": "What can show up when you explore this zone.",
     "zonesUnlocked": "Zones open",
     "badges": "Badges"
+  },
+  "breeding": {
+    "title": "Breeding",
+    "hint": "Two PC Pokémon at level {level}+ produce an egg that inherits part of their points. Costs {cost} coins.",
+    "needTwo": "You need at least two Pokémon in the PC at level {level} or higher.",
+    "breed": "Breed",
+    "hatch": "Hatch",
+    "ready": "Ready to hatch",
+    "hatchingIn": "Ready in {minutes} min",
+    "errors": {
+      "unauthorized": "Session expired.",
+      "same_parent": "Pick two different Pokémon.",
+      "not_found": "Not found.",
+      "in_team": "Parents must be in the PC.",
+      "listed": "It is listed on the market.",
+      "too_young": "They need more levels.",
+      "no_coins": "Not enough coins.",
+      "not_ready": "The egg is not ready yet.",
+      "team_full": "Team is full."
+    }
   }
 }

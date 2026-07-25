@@ -65,6 +65,7 @@ export default async function GymLeaderPage({
     fainted_lead: tBattle("faintedLead"),
     locked: t("lockedHint"),
     on_cooldown: t("cooldownHint", { hours: hoursLeft }),
+    closed: t("closedHint"),
   };
 
   return (

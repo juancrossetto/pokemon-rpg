@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { LiveRefresh } from "@/components/live-refresh";
 import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -55,6 +56,7 @@ export default async function RankingPage({
 
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
+      <LiveRefresh />
       <div className="mx-auto max-w-4xl">
         <div className="mb-4">
           <h1 className="text-headline-lg md:text-display-lg text-white">{t("title")}</h1>

@@ -38,8 +38,14 @@ export function showdownSpeciesSlug(speciesName: string): string {
  * - front: rival / salvaje (ani)
  * - back: Pokémon del jugador (ani-back)
  */
-export function battleAnimatedSpriteUrl(speciesName: string, facing: SpriteFacing): string {
+export function battleAnimatedSpriteUrl(
+  speciesName: string,
+  facing: SpriteFacing,
+  isShiny = false,
+): string {
   const slug = showdownSpeciesSlug(speciesName);
-  const folder = facing === "back" ? "ani-back" : "ani";
+  // Showdown separa las variocolor en ani-shiny / ani-back-shiny.
+  const base = facing === "back" ? "ani-back" : "ani";
+  const folder = isShiny ? `${base}-shiny` : base;
   return `${showdownSpritesBase()}/${folder}/${slug}.gif`;
 }

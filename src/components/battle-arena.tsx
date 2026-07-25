@@ -93,7 +93,7 @@ export interface BattleArenaProps {
   trainerName: string;
   opponentName: string | null;
   player: Combatant & { instanceId: string; currentHp: number; maxHp: number };
-  wild: Combatant & { currentHp: number; maxHp: number; types: string[] };
+  wild: Combatant & { currentHp: number; maxHp: number; types: string[]; isShiny?: boolean };
   moves: { moveId: number; name: string; type: string; pp: number; maxPp: number }[];
   initialLog: string[];
   pokeballs: PokeballStack[];
@@ -168,6 +168,7 @@ export function BattleArena({
     level: wild.level,
     spriteUrl: wild.spriteUrl,
     types: wild.types,
+    isShiny: wild.isShiny ?? false,
   });
   const [wildHp, setWildHp] = useState(wild.currentHp);
   const [wildMaxHp, setWildMaxHp] = useState(wild.maxHp);
@@ -485,6 +486,7 @@ export function BattleArena({
     await delay(FAINT_MS);
     setFaintingSide(null);
     setActiveWild({
+      isShiny: false,
       name: next.name,
       speciesName: next.speciesName,
       level: next.level,
@@ -1163,6 +1165,7 @@ export function BattleArena({
                 <BattleSprite
                   speciesName={activeWild.speciesName}
                   facing="front"
+                  isShiny={activeWild.isShiny}
                   fallbackUrl={activeWild.spriteUrl}
                   alt={activeWild.name}
                   width={160}

@@ -80,6 +80,12 @@
       "error": "Email o contraseña incorrectos",
       "noAccount": "¿No tenés cuenta?",
       "registerLink": "Creá una",
+      "registerLinkHere": "Creá una aquí",
+      "welcomeTitle": "¡Bienvenido, Entrenador!",
+      "welcomeSubtitle": "Iniciá sesión para continuar tu aventura",
+      "tagline": "Idle RPG",
+      "showPassword": "Mostrar contraseña",
+      "hidePassword": "Ocultar contraseña",
       "eyebrow": "SISTEMA POKÉDEX",
       "bootStatus": "Iniciando núcleo...",
       "panelTitle": "Autorización de entrenador",
@@ -185,6 +191,15 @@
       "spAtk": "AT.ESP",
       "spDef": "DEF.ESP",
       "speed": "VEL"
+    },
+    "healFree": "Curación gratis disponible",
+    "healCooldown": "Gratis en {minutes} min",
+    "healRush": "Curar ya",
+    "healRushHint": "Saltea los {minutes} min de espera",
+    "healErrors": {
+      "cooldown": "Todavía está en regeneración.",
+      "no_coins": "No te alcanzan las monedas.",
+      "unauthorized": "Sesión expirada."
     }
   },
   "battle": {
@@ -354,7 +369,10 @@
     "rematchHint": "Ya tenés la medalla. Ganás la mitad de monedas.",
     "badgePerksTitle": "Con tus medallas",
     "obedienceCap": "Tu equipo obedece hasta Nv. {level}",
-    "marketDiscount": "−{pct}% en tarifas del mercado"
+    "marketDiscount": "−{pct}% en tarifas del mercado",
+    "closedHint": "El gimnasio está cerrado a esta hora.",
+    "closedChip": "Cerrado",
+    "hours": "Horario {opens}:00 – {closes}:00"
   },
   "market": {
     "title": "Mercado",
@@ -583,6 +601,17 @@
       "LEADER": "Líder",
       "OFFICER": "Oficial",
       "MEMBER": "Miembro"
+    },
+    "chatTitle": "Chat del clan",
+    "chatEmpty": "Todavía no hay mensajes. Escribí el primero.",
+    "chatPlaceholder": "Escribí un mensaje...",
+    "chatSend": "Enviar",
+    "chatYou": "Vos",
+    "chatErrors": {
+      "unauthorized": "No sos miembro de este clan.",
+      "empty": "El mensaje está vacío.",
+      "too_long": "Máximo 300 caracteres.",
+      "rate_limited": "Estás escribiendo muy rápido."
     }
   },
   "pvp": {
@@ -793,5 +822,25 @@
     "zoneWildsHint": "Lo que puede aparecer al explorar acá.",
     "zonesUnlocked": "Zonas abiertas",
     "badges": "Medallas"
+  },
+  "breeding": {
+    "title": "Cría",
+    "hint": "Dos Pokémon de la PC de nivel {level}+ producen un huevo que hereda parte de sus puntos. Cuesta {cost} monedas.",
+    "needTwo": "Necesitás al menos dos Pokémon en la PC de nivel {level} o más.",
+    "breed": "Criar",
+    "hatch": "Eclosionar",
+    "ready": "Listo para eclosionar",
+    "hatchingIn": "Listo en {minutes} min",
+    "errors": {
+      "unauthorized": "Sesión expirada.",
+      "same_parent": "Elegí dos Pokémon distintos.",
+      "not_found": "No encontrado.",
+      "in_team": "Los padres tienen que estar en la PC.",
+      "listed": "Está publicado en el mercado.",
+      "too_young": "Les falta nivel.",
+      "no_coins": "No te alcanzan las monedas.",
+      "not_ready": "El huevo todavía no está listo.",
+      "team_full": "Equipo lleno."
+    }
   }
 }
