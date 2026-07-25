@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
+import type { ItemType } from "@/generated/prisma/client";
 import { typeColor } from "@/lib/type-colors";
 import { calculateMaxHp, calculateStat } from "@/lib/stats";
 import { itemSpriteUrl } from "@/lib/item-sprites";
@@ -130,7 +131,12 @@ type ItemCardProps = {
   coins: number;
   item: {
     name: string;
-    type: "BERRY" | "EVOLUTION_STONE" | "POKEBALL" | "POTION";
+    // El enum de Prisma y no una unión escrita a mano: al sumarse MACHINE
+    // (MTs/MOs) la lista hardcodeada quedó desactualizada y rompió el build.
+    // Importándolo, cualquier tipo nuevo de ítem entra solo. El sprite sale
+    // del nombre y `itemRarity` ya cae en "common" por defecto, así que un
+    // tipo nuevo se muestra bien sin tocar nada más.
+    type: ItemType;
     buyPrice: number;
     effectText: string | null;
   };

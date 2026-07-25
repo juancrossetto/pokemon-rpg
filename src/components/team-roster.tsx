@@ -215,8 +215,8 @@ function PokemonCard({
               }`}
             />
           ) : (
-            <span className="material-symbols-outlined relative z-[1] text-[40px] text-on-surface-variant/40">
-              catching_pokemon
+            <span className="material-symbols-outlined relative z-[1] text-[40px]! text-on-surface-variant/40">
+              sports_baseball
             </span>
           )}
         </div>
@@ -309,7 +309,7 @@ function PokemonCard({
         </div>
 
         <span className="mt-1.5 flex items-center justify-center gap-1 text-[9px] font-semibold uppercase tracking-wide text-on-surface-variant/70 transition group-hover:text-on-surface-variant">
-          <span className="material-symbols-outlined text-[12px]">visibility</span>
+          <span className="material-symbols-outlined text-[12px]!">visibility</span>
           {labels.viewDetails}
         </span>
       </button>
@@ -342,7 +342,7 @@ function EmptySlot({ label, hint }: { label: string; hint: string }) {
   return (
     <article className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/12 bg-white/[0.015] px-4 py-6 text-center transition hover:border-white/20 hover:bg-white/[0.03]">
       <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.02]">
-        <span className="material-symbols-outlined text-[20px] text-on-surface-variant/50">add</span>
+        <span className="material-symbols-outlined text-[20px]! text-on-surface-variant/50">add</span>
       </div>
       <p className="text-label-sm text-on-surface-variant">{label}</p>
       <p className="mt-0.5 text-[10px] text-on-surface-variant/60">{hint}</p>

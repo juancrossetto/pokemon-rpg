@@ -897,7 +897,7 @@ export function BattleArena({
             {gymBadgeName && <p className="text-headline-md text-tertiary">{gymBadgeName}</p>}
             {tmRewardName && (
               <p className="flex items-center gap-1.5 text-label-sm text-on-surface-variant">
-                <span className="material-symbols-outlined text-[16px] text-secondary">memory</span>
+                <span className="material-symbols-outlined text-[16px]! text-secondary">memory</span>
                 {t("tmEarned", { code: tmRewardName })}
               </p>
             )}
@@ -919,7 +919,7 @@ export function BattleArena({
                   href={`/gyms/${gymId}/run`}
                   className="w-full flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white font-bold hover:bg-pokeball-red/80 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  <span className="material-symbols-outlined text-[18px]!">arrow_forward</span>
                   {t("continueChallenge")}
                 </Link>
                 <button

@@ -230,12 +230,12 @@ export async function MarketBrowseTab({
                   href={browseHref(filters, filters.page - 1)}
                   className="flex items-center gap-1 rounded-md border border-white/10 px-3 py-1.5 text-label-md text-on-surface transition-colors hover:border-pokeball-red/40"
                 >
-                  <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+                  <span className="material-symbols-outlined text-[16px]!">chevron_left</span>
                   {t("pagination.prev")}
                 </Link>
               ) : (
                 <span className="flex items-center gap-1 rounded-md border border-white/5 px-3 py-1.5 text-label-md text-on-surface-variant/40">
-                  <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+                  <span className="material-symbols-outlined text-[16px]!">chevron_left</span>
                   {t("pagination.prev")}
                 </span>
               )}
@@ -248,12 +248,12 @@ export async function MarketBrowseTab({
                   className="flex items-center gap-1 rounded-md border border-white/10 px-3 py-1.5 text-label-md text-on-surface transition-colors hover:border-pokeball-red/40"
                 >
                   {t("pagination.next")}
-                  <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                  <span className="material-symbols-outlined text-[16px]!">chevron_right</span>
                 </Link>
               ) : (
                 <span className="flex items-center gap-1 rounded-md border border-white/5 px-3 py-1.5 text-label-md text-on-surface-variant/40">
                   {t("pagination.next")}
-                  <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                  <span className="material-symbols-outlined text-[16px]!">chevron_right</span>
                 </span>
               )}
             </nav>

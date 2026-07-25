@@ -156,53 +156,73 @@ body {
     background: linear-gradient(90deg, #f87171, #ef4444);
   }
 
-  .text-display-lg {
-    font-size: 48px;
-    line-height: 56px;
-    letter-spacing: -0.02em;
-    font-weight: 700;
-  }
-  .text-headline-lg {
-    font-size: 32px;
-    line-height: 40px;
-    font-weight: 600;
-  }
-  .text-headline-md {
-    font-size: 24px;
-    line-height: 32px;
-    font-weight: 600;
-  }
-  .text-body-lg {
-    font-size: 18px;
-    line-height: 28px;
-    font-weight: 400;
-  }
-  .text-body-md {
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: 400;
-  }
-  .text-label-md {
-    font-family: var(--font-mono);
-    font-size: 14px;
-    line-height: 20px;
-    letter-spacing: 0.05em;
-    font-weight: 500;
-  }
-  .text-label-sm {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    line-height: 16px;
-    letter-spacing: 0.08em;
-    font-weight: 500;
-  }
+}
 
-  @media (min-width: 768px) {
-    .text-headline-lg {
-      font-size: 32px;
-      line-height: 40px;
-    }
-  }
+/* Escala tipográfica.
+ *
+ * Van como `@utility` y no como clases sueltas dentro de `@layer utilities`:
+ * Tailwind v4 sólo genera variantes responsive para lo declarado con
+ * `@utility`. Mientras fueron CSS plano, `md:text-display-lg` y compañía no
+ * producían ninguna regla y se descartaban en silencio — el h1 del home pedía
+ * 48px en desktop y renderizaba 32px.
+ *
+ * Antes había además un bloque `@media (min-width: 768px)` que reasignaba a
+ * .text-headline-lg exactamente los mismos 32px/40px: no hacía nada. */
+
+@utility text-display-lg {
+  font-size: 48px;
+  line-height: 56px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+/* display-sm y label-lg se usaban en /pvp y /ranking sin estar definidas, así
+   que heredaban el tamaño del padre. Quedan como los escalones que faltaban. */
+@utility text-display-sm {
+  font-size: 36px;
+  line-height: 44px;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+@utility text-headline-lg {
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 600;
+}
+@utility text-headline-md {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+@utility text-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+}
+@utility text-body-md {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+@utility text-label-lg {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+@utility text-label-md {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+@utility text-label-sm {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
 }
 
 @keyframes pokeball-spin {
@@ -1027,5 +1047,29 @@ body {
 
   .gym-mission-card:hover {
     transform: none;
+  }
+}
+
+/* ---------- Pokédex research terminal ---------- */
+
+@keyframes dex-caught-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+.dex-caught-pulse {
+  animation: dex-caught-pulse 1.2s ease-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dex-caught-pulse {
+    animation: none;
   }
 }

@@ -296,13 +296,16 @@ async function SellTab({ locale, userId }: { locale: string; userId: string }) {
             {pokemon.map((instance) => {
               const isLastTeamMember = instance.teamSlot !== null && teamCount <= 1;
               const isInBattle = instance.battleSessions.length > 0;
+              const isTradeLocked = instance.isTradeLocked;
               // El motivo se muestra acá en vez de dejar que el submit falle con
               // un error genérico después de haber cargado el precio.
               const blockedReason = isInBattle
                 ? t("inBattle")
-                : isLastTeamMember
-                  ? t("lastTeamMember")
-                  : null;
+                : isTradeLocked
+                  ? t("tradeLocked")
+                  : isLastTeamMember
+                    ? t("lastTeamMember")
+                    : null;
               const reference = speciesPrices.get(instance.speciesId);
 
               return (
@@ -508,7 +511,7 @@ async function MineTab({ locale, userId }: { locale: string; userId: string }) {
               </span>
             </div>
             <span className="flex items-center gap-1 text-label-md text-electric-yellow font-mono shrink-0">
-              <span className="material-symbols-outlined text-[14px]">paid</span>
+              <span className="material-symbols-outlined text-[14px]!">paid</span>
               {listing.price}
             </span>
             {listing.status === "ACTIVE" && (
@@ -591,7 +594,7 @@ async function BoughtTab({ locale, userId }: { locale: string; userId: string })
                     </span>
                   </div>
                   <span className="flex shrink-0 items-center gap-1 font-mono text-label-md text-electric-yellow">
-                    <span className="material-symbols-outlined text-[14px]">paid</span>
+                    <span className="material-symbols-outlined text-[14px]!">paid</span>
                     {listing.price}
                   </span>
                   <form action={claimPurchase.bind(null, locale)}>
@@ -638,7 +641,7 @@ async function BoughtTab({ locale, userId }: { locale: string; userId: string })
                     </span>
                   </div>
                   <span className="flex shrink-0 items-center gap-1 font-mono text-label-md text-electric-yellow">
-                    <span className="material-symbols-outlined text-[14px]">paid</span>
+                    <span className="material-symbols-outlined text-[14px]!">paid</span>
                     {listing.price}
                   </span>
                 </div>
@@ -684,7 +687,7 @@ function ListingAvatar({
           unoptimized
         />
       ) : (
-        <span className="material-symbols-outlined text-on-surface-variant text-[20px]">help</span>
+        <span className="material-symbols-outlined text-on-surface-variant text-[20px]!">help</span>
       )}
     </div>
   );
@@ -693,7 +696,7 @@ function ListingAvatar({
 function EmptyState({ icon, label }: { icon: string; label: string }) {
   return (
     <div className="bg-glass-surface border border-white/5 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-on-surface-variant">
-      <span className="material-symbols-outlined text-[40px] mb-2 opacity-50">{icon}</span>
+      <span className="material-symbols-outlined text-[40px]! mb-2 opacity-50">{icon}</span>
       <span className="text-label-md">{label}</span>
     </div>
   );

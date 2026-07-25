@@ -11,6 +11,7 @@ import { hasHealthyBackup } from "@/lib/team";
 import { captureStatusBonus } from "@/lib/status";
 import { runWildCounterAttack } from "@/lib/wild-counter";
 import { revalidateCombatUi } from "@/lib/battle-lock";
+import { markSpeciesSeen } from "@/lib/pokedex-seen";
 
 const MAX_LOG_LINES = 20;
 const TEAM_SIZE = 6;
@@ -117,7 +118,10 @@ export async function attemptCapture(
       }),
     ]);
 
+    await markSpeciesSeen(userId, battle.wildSpeciesId);
+
     revalidatePath(`/${locale}/team`);
+    revalidatePath(`/${locale}/pokedex`);
     revalidateCombatUi(locale);
 
     const movesById = new Map(moves.map((m) => [m.id, m]));

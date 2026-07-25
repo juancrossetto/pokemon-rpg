@@ -75,7 +75,7 @@ export function NavLinks({
           >
             {moreLabel}
             <span
-              className={`material-symbols-outlined text-[16px] transition-transform ${
+              className={`material-symbols-outlined text-[16px]! transition-transform ${
                 open ? "rotate-180" : ""
               }`}
             >
@@ -105,7 +105,7 @@ export function NavLinks({
                         : "text-on-surface-variant hover:bg-white/5 hover:text-on-surface"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[18px] text-pokeball-red">
+                    <span className="material-symbols-outlined text-[18px]! text-pokeball-red">
                       {link.icon ?? "chevron_right"}
                     </span>
                     {link.label}

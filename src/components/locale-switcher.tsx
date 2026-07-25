@@ -107,7 +107,7 @@ export function LocaleSwitcher({
           className="h-3.5 w-auto rounded-[2px]"
         />
         <span className="text-label-sm uppercase">{LOCALE_SHORT[active]}</span>
-        <span className="material-symbols-outlined text-[14px] opacity-70">expand_more</span>
+        <span className="material-symbols-outlined text-[14px]! opacity-70">expand_more</span>
       </button>
 
       {open && (

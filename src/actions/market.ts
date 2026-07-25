@@ -117,6 +117,7 @@ export async function listPokemon(locale: string, formData: FormData) {
         throw new MarketError("not_available");
       }
       if (instance.battleSessions.length > 0) throw new MarketError("in_battle");
+      if (instance.isTradeLocked) throw new MarketError("trade_locked");
 
       // No podés quedarte sin equipo: siempre tiene que quedar al menos
       // un Pokémon en un slot activo.

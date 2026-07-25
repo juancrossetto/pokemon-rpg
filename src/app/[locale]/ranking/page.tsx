@@ -24,11 +24,14 @@ import {
 } from "@/lib/ranking";
 
 const MAIN_POKEMON_INCLUDE = {
-  where: { teamSlot: { not: null } },
-  orderBy: { teamSlot: "asc" as const },
+  where: {
+    OR: [{ isFavorite: true }, { teamSlot: { not: null } }],
+  },
+  orderBy: [{ isFavorite: "desc" as const }, { teamSlot: "asc" as const }],
   take: 1,
   select: {
     isShiny: true,
+    isFavorite: true,
     species: { select: { name: true, spriteUrl: true } },
   },
 };
@@ -53,10 +56,13 @@ function toEmblemPokemon(
 function pickMainFromTeam(
   team: Array<{
     teamSlot: number | null;
+    isFavorite?: boolean;
     isShiny: boolean;
     species: { name: string; spriteUrl: string };
   }>,
 ): RankingEmblemPokemon {
+  const favorite = team.find((p) => p.isFavorite);
+  if (favorite) return toEmblemPokemon(favorite);
   const lead = team
     .filter((p) => p.teamSlot != null)
     .sort((a, b) => (a.teamSlot ?? 99) - (b.teamSlot ?? 99))[0];
@@ -279,9 +285,12 @@ async function TrainersBoard({
       createdAt: true,
       _count: { select: { badges: true } },
       pokemon: {
-        where: { teamSlot: { not: null } },
+        where: {
+          OR: [{ teamSlot: { not: null } }, { isFavorite: true }],
+        },
         select: {
           teamSlot: true,
+          isFavorite: true,
           level: true,
           isShiny: true,
           ptStrength: true,
@@ -296,16 +305,19 @@ async function TrainersBoard({
   });
 
   const ranked = users
-    .map((u) => ({
-      id: u.id,
-      username: u.username,
-      country: u.country,
-      avatarId: u.avatarId,
-      createdAt: u.createdAt,
-      badges: u._count.badges,
-      power: teamPower(u.pokemon),
-      mainPokemon: pickMainFromTeam(u.pokemon),
-    }))
+    .map((u) => {
+      const team = u.pokemon.filter((p) => p.teamSlot != null);
+      return {
+        id: u.id,
+        username: u.username,
+        country: u.country,
+        avatarId: u.avatarId,
+        createdAt: u.createdAt,
+        badges: u._count.badges,
+        power: teamPower(team),
+        mainPokemon: pickMainFromTeam(u.pokemon),
+      };
+    })
     .sort(compareTrainers);
 
   return (

@@ -129,7 +129,7 @@ export default async function ClansPage({
             href={`/clans/${membership.clanId}`}
             className="mb-6 flex items-center gap-3 rounded-xl border border-pokeball-red/40 bg-pokeball-red/10 px-4 py-3 hover:bg-pokeball-red/15 transition-colors"
           >
-            <span className="material-symbols-outlined text-pokeball-red text-[28px]">groups</span>
+            <span className="material-symbols-outlined text-pokeball-red text-[28px]!">groups</span>
             <div className="min-w-0 flex-1">
               <div className="text-label-md text-on-surface">
                 <span className="font-mono text-pokeball-red">[{membership.clan.tag}]</span>{" "}
@@ -146,13 +146,13 @@ export default async function ClansPage({
         )}
 
         <h2 className="text-headline-md text-on-surface mb-3 flex items-center gap-2">
-          <span className="material-symbols-outlined text-electric-yellow text-[20px]">leaderboard</span>
+          <span className="material-symbols-outlined text-electric-yellow text-[20px]!">leaderboard</span>
           {t("directoryTitle")}
         </h2>
 
         {ranked.length === 0 ? (
           <div className="bg-glass-surface border border-white/5 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-on-surface-variant">
-            <span className="material-symbols-outlined text-[40px] mb-2 opacity-50">groups</span>
+            <span className="material-symbols-outlined text-[40px]! mb-2 opacity-50">groups</span>
             <span className="text-label-md text-center">{t("emptyDirectory")}</span>
           </div>
         ) : (
@@ -183,15 +183,15 @@ export default async function ClansPage({
                       </div>
                       <div className="flex items-center gap-3 mt-0.5 text-label-sm text-on-surface-variant">
                         <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[13px]">group</span>
+                          <span className="material-symbols-outlined text-[13px]!">group</span>
                           {t("memberCount", { count: c.memberCount, max: CLAN_MAX_MEMBERS })}
                         </span>
                         <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[13px] text-tertiary">military_tech</span>
+                          <span className="material-symbols-outlined text-[13px]! text-tertiary">military_tech</span>
                           {c.badges}
                         </span>
                         <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[13px] text-electric-yellow">bolt</span>
+                          <span className="material-symbols-outlined text-[13px]! text-electric-yellow">bolt</span>
                           {c.power}
                         </span>
                       </div>
@@ -218,7 +218,7 @@ async function CreateClanForm({ locale, coins }: { locale: string; coins: number
       className="mb-6 rounded-xl border border-white/10 bg-glass-surface p-4"
     >
       <h2 className="text-headline-md text-on-surface mb-1 flex items-center gap-2">
-        <span className="material-symbols-outlined text-pokeball-red text-[20px]">add_circle</span>
+        <span className="material-symbols-outlined text-pokeball-red text-[20px]!">add_circle</span>
         {t("createTitle")}
       </h2>
       <p className="text-label-sm text-on-surface-variant mb-3">

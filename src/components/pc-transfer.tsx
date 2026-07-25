@@ -122,13 +122,13 @@ export function PcTransfer({
       )}
 
       <p className="mb-3 flex items-center gap-1.5 text-label-sm text-on-surface-variant">
-        <span className="material-symbols-outlined text-[16px]">drag_indicator</span>
+        <span className="material-symbols-outlined text-[16px]!">drag_indicator</span>
         {t("dragHint")}
       </p>
 
       <section className="mb-8">
         <h2 className="mb-3 flex items-center gap-2 text-headline-md text-on-surface">
-          <span className="material-symbols-outlined text-[20px] text-pokeball-red">group</span>
+          <span className="material-symbols-outlined text-[20px]! text-pokeball-red">group</span>
           {t("teamSection", { count: team.length, max: teamSize })}
         </h2>
 
@@ -186,7 +186,7 @@ export function PcTransfer({
         }`}
       >
         <h2 className="mb-3 flex items-center gap-2 text-headline-md text-on-surface">
-          <span className="material-symbols-outlined text-[20px] text-electric-yellow">
+          <span className="material-symbols-outlined text-[20px]! text-electric-yellow">
             storage
           </span>
           {t("storageSection", { count: box.length })}
@@ -194,7 +194,7 @@ export function PcTransfer({
 
         {box.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/5 bg-glass-surface p-8 text-on-surface-variant">
-            <span className="material-symbols-outlined mb-2 text-[40px] opacity-50">storage</span>
+            <span className="material-symbols-outlined mb-2 text-[40px]! opacity-50">storage</span>
             <span className="text-label-md">{t("emptyStorage")}</span>
           </div>
         ) : (
@@ -249,7 +249,7 @@ function MonCard({
         mon.listed ? "cursor-not-allowed opacity-60" : "cursor-grab active:cursor-grabbing"
       } ${dragging ? "opacity-40" : ""}`}
     >
-      <span className="material-symbols-outlined shrink-0 text-[18px] text-on-surface-variant/40">
+      <span className="material-symbols-outlined shrink-0 text-[18px]! text-on-surface-variant/40">
         drag_indicator
       </span>
 

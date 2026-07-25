@@ -95,19 +95,121 @@
     "stagesCleared": "Stages de la zona",
     "missionStage": "Avanzá por {location} para completar el próximo tramo de tu expedición y desbloquear la siguiente zona.",
     "missionGym": "Ganá la medalla de {location} para poder seguir avanzando en el viaje.",
-    "missionComplete": "Completaste Kanto. Seguí farmeando para subir de nivel a tu equipo."
+    "missionComplete": "Completaste Kanto. Seguí farmeando para subir de nivel a tu equipo.",
+    "squadMenu": {
+      "hint": "Opciones del Pokémon",
+      "favoriteOn": "Marcar como favorito",
+      "favoriteOff": "Quitar favorito",
+      "lockOn": "Bloquear venta",
+      "lockOff": "Desbloquear venta",
+      "viewTeam": "Ver en Mi equipo",
+      "favoriteBadge": "Favorito",
+      "lockedBadge": "Venta bloqueada"
+    }
   },
   "pokedex": {
     "eyebrow": "Base de datos",
     "title": "Pokédex",
-    "subtitle": "{count, plural, one {# especie cargada desde PokeAPI} other {# especies cargadas desde PokeAPI}}",
+    "researchDatabase": "Base de investigación",
+    "signInHint": "Iniciá sesión para registrar avistamientos y capturas.",
+    "comingSoon": "Próximamente",
+    "noResults": "Sin coincidencias en este archivo.",
+    "searchPlaceholder": "Nombre, número, tipo…",
+    "unknown": "???",
+    "statusCaught": "Capturado",
+    "statusSeen": "Visto",
+    "research": "Investigación",
+    "regions": {
+      "kanto": "Kanto",
+      "johto": "Johto",
+      "hoenn": "Hoenn",
+      "sinnoh": "Sinnoh",
+      "unova": "Unova",
+      "kalos": "Kalos",
+      "alola": "Alola",
+      "galar": "Galar",
+      "paldea": "Paldea"
+    },
+    "progress": {
+      "seen": "Vistos",
+      "captured": "Capturados",
+      "completion": "Completado",
+      "shiny": "Shiny",
+      "legendary": "Legendarios"
+    },
+    "filters": {
+      "all": "Todos",
+      "seen": "Vistos",
+      "caught": "Capturados",
+      "missing": "Faltantes",
+      "favorites": "Favoritos",
+      "shiny": "Shiny",
+      "legendary": "Legendarios",
+      "mythical": "Míticos",
+      "starter": "Iniciales",
+      "pseudo": "Pseudo"
+    },
+    "sort": {
+      "label": "Orden",
+      "number": "Número",
+      "name": "Nombre",
+      "rarity": "Rareza"
+    },
+    "view": {
+      "grid": "Grilla",
+      "list": "Lista"
+    },
+    "typeFilter": "Tipo",
+    "allTypes": "Todos",
+    "pokemonTypes": {
+      "normal": "Normal",
+      "fire": "Fuego",
+      "water": "Agua",
+      "electric": "Eléctrico",
+      "grass": "Planta",
+      "ice": "Hielo",
+      "fighting": "Lucha",
+      "poison": "Veneno",
+      "ground": "Tierra",
+      "flying": "Volador",
+      "psychic": "Psíquico",
+      "bug": "Bicho",
+      "rock": "Roca",
+      "ghost": "Fantasma",
+      "dragon": "Dragón",
+      "dark": "Siniestro",
+      "steel": "Acero",
+      "fairy": "Hada"
+    },
+    "rarity": {
+      "common": "Común",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Legendario",
+      "mythical": "Mítico",
+      "ultraBeast": "Ultraente",
+      "paradox": "Paradox"
+    },
     "stats": {
       "hp": "HP",
       "atk": "Atq",
-      "spd": "Vel"
+      "def": "Def",
+      "spa": "At.Esp",
+      "spd": "Def.Esp",
+      "spe": "Vel",
+      "capture": "Captura",
+      "evolves": "Evoluciona"
     },
-    "clearSearch": "Limpiar búsqueda",
-    "noResults": "Sin resultados para «{query}»."
+    "icons": {
+      "favorite": "Favorito",
+      "shiny": "Shiny",
+      "legendary": "Legendario",
+      "mythical": "Mítico",
+      "starter": "Inicial",
+      "pseudo": "Pseudo-legendario"
+    },
+    "subtitle": "{count, plural, one {# especie cargada desde PokeAPI} other {# especies cargadas desde PokeAPI}}",
+    "clearSearch": "Limpiar búsqueda"
   },
   "auth": {
     "login": {
@@ -129,7 +231,6 @@
       "eyebrow": "SISTEMA POKÉDEX",
       "bootStatus": "Iniciando núcleo...",
       "panelTitle": "Autorización de entrenador",
-      "guestAccess": "Ver Pokédex",
       "systemStatus": "Estado: Operativo",
       "brandPrefix": "SISTEMA",
       "brandAccent": "POKÉDEX",
@@ -572,6 +673,7 @@
     "sellItems": "Vender objetos",
     "inTeam": "En el equipo",
     "lastTeamMember": "Último del equipo",
+    "tradeLocked": "Venta bloqueada",
     "owned": "Tenés ×{count}",
     "sellRules": "Comisión {commission}% al vender · tarifa de publicación {fee}% · expira en {days} días.",
     "lastSaleShort": "ref. {price}",
@@ -616,6 +718,7 @@
       "already_listed": "Ese Pokémon ya está publicado.",
       "in_battle": "No podés vender un Pokémon en medio de una batalla.",
       "last_team_member": "No podés vender tu último Pokémon activo.",
+      "trade_locked": "Ese Pokémon está bloqueado para venta. Desbloquealo desde Inicio.",
       "not_enough_items": "No tenés suficientes unidades de ese objeto.",
       "not_available": "Esa publicación ya no está disponible.",
       "own_listing": "No podés comprar tu propia publicación.",
@@ -656,7 +759,28 @@
       "POTION": "Curación",
       "POKEBALL": "Poké Balls",
       "BERRY": "Bayas",
-      "EVOLUTION_STONE": "Piedras de evolución"
+      "EVOLUTION_STONE": "Piedras de evolución",
+      "MACHINE": "MT / MO"
+    },
+    "all": "Todo",
+    "searchPlaceholder": "Buscar objeto...",
+    "noResults": "Ningún objeto coincide.",
+    "itemsCount": "Objetos",
+    "unitsCount": "Unidades",
+    "capacity": "Capacidad",
+    "selectHint": "Elegí un objeto para ver su ficha.",
+    "quantity": "Cantidad",
+    "value": "Valor",
+    "effect": "Efecto",
+    "teaches": "Enseña",
+    "sell": "Vender",
+    "teach": "Enseñar en el equipo",
+    "close": "Cerrar",
+    "rarity": {
+      "common": "Común",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Legendario"
     }
   },
   "pc": {
@@ -1042,7 +1166,7 @@
     "currentRegion": "Región actual",
     "openMap": "Ver mapa completo",
     "closeMap": "Cerrar mapa",
-    "pickZoneHint": "Elegí una zona desbloqueada del mapa para ubicarte. Lo que elijas define qué Pokémon salvajes aparecen al explorar.",
+    "pickZoneHint": "Tocá una zona desbloqueada para ubicarte y elegir qué salvajes aparecen.",
     "pickStage": "Stage de farmeo",
     "moveHere": "Ubicarme acá",
     "youAreHere": "Estás acá",

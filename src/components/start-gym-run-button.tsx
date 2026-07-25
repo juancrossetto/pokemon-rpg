@@ -26,7 +26,7 @@ export function StartGymRunButton({
         disabled={pending}
         className="flex items-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white hover:bg-pokeball-red/80 transition-colors disabled:opacity-50"
       >
-        <span className="material-symbols-outlined text-[18px]">swords</span>
+        <span className="material-symbols-outlined text-[18px]!">swords</span>
         {label}
       </button>
       {state && !state.success && (

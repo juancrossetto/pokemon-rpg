@@ -12,7 +12,7 @@ export function AuthRadar({
   return (
     <div className="flex flex-col items-center gap-4 pt-2 pb-2">
       <h1 className="flex items-center gap-3 text-headline-lg md:text-display-lg font-black tracking-tight text-center">
-        <span className="material-symbols-outlined text-electric-yellow text-[28px] md:text-[36px]">
+        <span className="material-symbols-outlined text-electric-yellow text-[28px]! md:text-[36px]">
           workspaces
         </span>
         <span className="text-on-surface">{brandPrefix}</span>
@@ -22,7 +22,7 @@ export function AuthRadar({
       </h1>
 
       <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-surface-container-low px-3 py-1 text-label-sm text-on-surface-variant font-mono">
-        <span className="material-symbols-outlined text-[16px] animate-spin text-electric-yellow">
+        <span className="material-symbols-outlined text-[16px]! animate-spin text-electric-yellow">
           settings
         </span>
         {status}

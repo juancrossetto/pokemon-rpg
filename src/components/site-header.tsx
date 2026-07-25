@@ -92,7 +92,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
                 href={lockedHref}
                 className="inline-flex items-center gap-1.5 rounded-md bg-pokeball-red/15 border border-pokeball-red/50 px-3 py-1 text-label-sm text-pokeball-red font-bold"
               >
-                <span className="material-symbols-outlined text-[16px]">
+                <span className="material-symbols-outlined text-[16px]!">
                   {lock?.kind === "gym" ? "military_tech" : "swords"}
                 </span>
                 {lockedLabel}
@@ -112,7 +112,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         <div className="flex items-center gap-3 shrink-0">
           {user && (
             <span className="flex items-center gap-1 rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-1 text-label-sm text-electric-yellow font-mono">
-              <span className="material-symbols-outlined text-[16px]">paid</span>
+              <span className="material-symbols-outlined text-[16px]!">paid</span>
               {user.coins}
             </span>
           )}

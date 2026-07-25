@@ -95,19 +95,121 @@
     "stagesCleared": "Stages da área",
     "missionStage": "Avance por {location} para concluir o próximo trecho da sua expedição e desbloquear a próxima área.",
     "missionGym": "Conquiste a insígnia de {location} para continuar avançando na jornada.",
-    "missionComplete": "Você concluiu Kanto. Continue farmando para subir o nível do seu time."
+    "missionComplete": "Você concluiu Kanto. Continue farmando para subir o nível do seu time.",
+    "squadMenu": {
+      "hint": "Opções do Pokémon",
+      "favoriteOn": "Marcar como favorito",
+      "favoriteOff": "Remover favorito",
+      "lockOn": "Bloquear venda",
+      "lockOff": "Desbloquear venda",
+      "viewTeam": "Ver no Meu time",
+      "favoriteBadge": "Favorito",
+      "lockedBadge": "Venda bloqueada"
+    }
   },
   "pokedex": {
     "eyebrow": "Banco de dados",
     "title": "Pokédex",
-    "subtitle": "{count, plural, one {# espécie carregada da PokeAPI} other {# espécies carregadas da PokeAPI}}",
+    "researchDatabase": "Base de pesquisa",
+    "signInHint": "Entre para registrar avistamentos e capturas.",
+    "comingSoon": "Em breve",
+    "noResults": "Sem coincidências neste arquivo.",
+    "searchPlaceholder": "Nome, número, tipo…",
+    "unknown": "???",
+    "statusCaught": "Capturado",
+    "statusSeen": "Visto",
+    "research": "Pesquisa",
+    "regions": {
+      "kanto": "Kanto",
+      "johto": "Johto",
+      "hoenn": "Hoenn",
+      "sinnoh": "Sinnoh",
+      "unova": "Unova",
+      "kalos": "Kalos",
+      "alola": "Alola",
+      "galar": "Galar",
+      "paldea": "Paldea"
+    },
+    "progress": {
+      "seen": "Vistos",
+      "captured": "Capturados",
+      "completion": "Conclusão",
+      "shiny": "Shiny",
+      "legendary": "Lendários"
+    },
+    "filters": {
+      "all": "Todos",
+      "seen": "Vistos",
+      "caught": "Capturados",
+      "missing": "Faltantes",
+      "favorites": "Favoritos",
+      "shiny": "Shiny",
+      "legendary": "Lendários",
+      "mythical": "Míticos",
+      "starter": "Iniciais",
+      "pseudo": "Pseudo"
+    },
+    "sort": {
+      "label": "Ordem",
+      "number": "Número",
+      "name": "Nome",
+      "rarity": "Raridade"
+    },
+    "view": {
+      "grid": "Grade",
+      "list": "Lista"
+    },
+    "typeFilter": "Tipo",
+    "allTypes": "Todos",
+    "pokemonTypes": {
+      "normal": "Normal",
+      "fire": "Fogo",
+      "water": "Água",
+      "electric": "Elétrico",
+      "grass": "Planta",
+      "ice": "Gelo",
+      "fighting": "Lutador",
+      "poison": "Venenoso",
+      "ground": "Terrestre",
+      "flying": "Voador",
+      "psychic": "Psíquico",
+      "bug": "Inseto",
+      "rock": "Pedra",
+      "ghost": "Fantasma",
+      "dragon": "Dragão",
+      "dark": "Sombrio",
+      "steel": "Aço",
+      "fairy": "Fada"
+    },
+    "rarity": {
+      "common": "Comum",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Lendário",
+      "mythical": "Mítico",
+      "ultraBeast": "Ultraente",
+      "paradox": "Paradox"
+    },
     "stats": {
       "hp": "HP",
       "atk": "Atq",
-      "spd": "Vel"
+      "def": "Def",
+      "spa": "At.Esp",
+      "spd": "Def.Esp",
+      "spe": "Vel",
+      "capture": "Captura",
+      "evolves": "Evolui"
     },
-    "clearSearch": "Limpar busca",
-    "noResults": "Sem resultados para “{query}”."
+    "icons": {
+      "favorite": "Favorito",
+      "shiny": "Shiny",
+      "legendary": "Lendário",
+      "mythical": "Mítico",
+      "starter": "Inicial",
+      "pseudo": "Pseudo-lendário"
+    },
+    "subtitle": "{count, plural, one {# espécie carregada da PokeAPI} other {# espécies carregadas da PokeAPI}}",
+    "clearSearch": "Limpar busca"
   },
   "auth": {
     "login": {
@@ -129,7 +231,6 @@
       "eyebrow": "SISTEMA POKÉDEX",
       "bootStatus": "Iniciando núcleo...",
       "panelTitle": "Autorização de treinador",
-      "guestAccess": "Ver Pokédex",
       "systemStatus": "Status: Operacional",
       "brandPrefix": "SISTEMA",
       "brandAccent": "POKÉDEX",
@@ -572,6 +673,7 @@
     "sellItems": "Vender itens",
     "inTeam": "No time",
     "lastTeamMember": "Último do time",
+    "tradeLocked": "Venda bloqueada",
     "owned": "Você tem ×{count}",
     "sellRules": "Comissão {commission}% na venda · taxa de anúncio {fee}% · expira em {days} dias.",
     "lastSaleShort": "ref. {price}",
@@ -616,6 +718,7 @@
       "already_listed": "Esse Pokémon já está anunciado.",
       "in_battle": "Você não pode vender um Pokémon no meio de uma batalha.",
       "last_team_member": "Você não pode vender seu último Pokémon ativo.",
+      "trade_locked": "Esse Pokémon está bloqueado para venda. Desbloqueie na Início.",
       "not_enough_items": "Você não tem unidades suficientes desse item.",
       "not_available": "Esse anúncio não está mais disponível.",
       "own_listing": "Você não pode comprar seu próprio anúncio.",
@@ -656,7 +759,28 @@
       "POTION": "Cura",
       "POKEBALL": "Poké Balls",
       "BERRY": "Frutas",
-      "EVOLUTION_STONE": "Pedras de evolução"
+      "EVOLUTION_STONE": "Pedras de evolução",
+      "MACHINE": "MT / MO"
+    },
+    "all": "Tudo",
+    "searchPlaceholder": "Buscar objeto...",
+    "noResults": "Nenhum objeto corresponde.",
+    "itemsCount": "Objetos",
+    "unitsCount": "Unidades",
+    "capacity": "Capacidade",
+    "selectHint": "Escolha um objeto para ver a ficha.",
+    "quantity": "Quantidade",
+    "value": "Valor",
+    "effect": "Efeito",
+    "teaches": "Ensina",
+    "sell": "Vender",
+    "teach": "Ensinar na equipe",
+    "close": "Fechar",
+    "rarity": {
+      "common": "Comum",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Lendário"
     }
   },
   "pc": {
@@ -1042,7 +1166,7 @@
     "currentRegion": "Região atual",
     "openMap": "Ver mapa completo",
     "closeMap": "Fechar mapa",
-    "pickZoneHint": "Escolha uma zona desbloqueada no mapa. Sua escolha define quais Pokémon selvagens aparecem ao explorar.",
+    "pickZoneHint": "Toque uma zona desbloqueada para se localizar e definir os selvagens.",
     "pickStage": "Stage de farm",
     "moveHere": "Vir para cá",
     "youAreHere": "Você está aqui",

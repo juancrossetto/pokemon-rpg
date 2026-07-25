@@ -43,7 +43,7 @@ export function SystemStatus({
           {climateLabel}
         </p>
         <p className="flex items-center justify-end gap-1 text-[13px] font-medium text-white">
-          <span className="material-symbols-outlined text-[14px] text-sky-300">{climateIcon}</span>
+          <span className="material-symbols-outlined text-[14px]! text-sky-300">{climateIcon}</span>
           {climateValue}
         </p>
       </div>

@@ -107,7 +107,7 @@ export default function RegisterPage() {
                 <label className="block">
                   <span className="sr-only">{t("username")}</span>
                   <div className="relative tech-border">
-                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/65">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65">
                       badge
                     </span>
                     <input
@@ -126,7 +126,7 @@ export default function RegisterPage() {
                 <label className="block">
                   <span className="sr-only">{t("email")}</span>
                   <div className="relative tech-border">
-                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/65">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65">
                       mail
                     </span>
                     <input
@@ -144,7 +144,7 @@ export default function RegisterPage() {
                 <label className="block">
                   <span className="sr-only">{t("password")}</span>
                   <div className="relative tech-border">
-                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/65">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65">
                       lock
                     </span>
                     <input
@@ -165,7 +165,7 @@ export default function RegisterPage() {
                       }
                       className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/65 transition hover:text-on-surface"
                     >
-                      <span className="material-symbols-outlined text-[18px]">
+                      <span className="material-symbols-outlined text-[18px]!">
                         {showPassword ? "visibility_off" : "visibility"}
                       </span>
                     </button>
@@ -205,7 +205,7 @@ export default function RegisterPage() {
                             : "border-white/15 bg-black/45 text-on-surface-variant hover:border-white/30"
                         }`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">{opt.icon}</span>
+                        <span className="material-symbols-outlined text-[18px]!">{opt.icon}</span>
                       </button>
                     ))}
                   </div>

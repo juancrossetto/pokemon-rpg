@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import Image from "next/image";
 import {
   battleAnimatedSpriteUrl,
@@ -34,10 +34,16 @@ export function BattleSprite({
 }) {
   const animated = battleAnimatedSpriteUrl(speciesName, facing, isShiny);
   const [src, setSrc] = useState(animated);
+  const [lastAnimated, setLastAnimated] = useState(animated);
 
-  useEffect(() => {
-    setSrc(battleAnimatedSpriteUrl(speciesName, facing, isShiny));
-  }, [speciesName, facing, isShiny]);
+  // Ajuste durante el render en lugar de useEffect: el estado sólo existe para
+  // poder caer al fallback en onError, pero tiene que volver al GIF cuando
+  // cambia el Pokémon. Hacerlo en un efecto pintaba un frame con el sprite
+  // anterior y encadenaba un render de más.
+  if (lastAnimated !== animated) {
+    setLastAnimated(animated);
+    setSrc(animated);
+  }
 
   return (
     <Image

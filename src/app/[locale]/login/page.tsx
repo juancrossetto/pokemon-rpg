@@ -79,7 +79,7 @@ export default function LoginPage() {
                 <label className="block">
                   <span className="sr-only">{t("email")}</span>
                   <div className="relative tech-border">
-                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/65">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65">
                       mail
                     </span>
                     <input
@@ -97,7 +97,7 @@ export default function LoginPage() {
                 <label className="block">
                   <span className="sr-only">{t("password")}</span>
                   <div className="relative tech-border">
-                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/65">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65">
                       lock
                     </span>
                     <input
@@ -115,7 +115,7 @@ export default function LoginPage() {
                       aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                       className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/65 transition hover:text-on-surface"
                     >
-                      <span className="material-symbols-outlined text-[18px]">
+                      <span className="material-symbols-outlined text-[18px]!">
                         {showPassword ? "visibility_off" : "visibility"}
                       </span>
                     </button>
@@ -148,7 +148,7 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-label-sm text-on-surface-variant">
+              <div className="mt-3 text-label-sm text-on-surface-variant">
                 <p>
                   {t("noAccount")}{" "}
                   <Link
@@ -158,13 +158,6 @@ export default function LoginPage() {
                     {t("registerLinkHere")}
                   </Link>
                 </p>
-                <Link
-                  href="/pokedex"
-                  className="inline-flex items-center gap-1 text-on-surface-variant/70 transition hover:text-on-surface"
-                >
-                  <span className="material-symbols-outlined text-[14px]">auto_stories</span>
-                  {t("guestAccess")}
-                </Link>
               </div>
             </div>
           </form>

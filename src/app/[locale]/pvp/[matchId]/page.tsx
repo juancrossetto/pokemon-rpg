@@ -55,7 +55,7 @@ export default async function PvpMatchPage({
           href="/pvp"
           className="inline-flex items-center gap-1 text-label-sm text-on-surface-variant hover:text-on-surface mb-3"
         >
-          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span className="material-symbols-outlined text-[16px]!">arrow_back</span>
           {t("backToPvp")}
         </Link>
 
@@ -115,7 +115,7 @@ export default async function PvpMatchPage({
                   key={i}
                   className="flex items-center gap-2 rounded-lg border border-white/10 bg-glass-surface px-3 py-2 text-label-md"
                 >
-                  <span className="material-symbols-outlined text-[16px] text-pokeball-red shrink-0">
+                  <span className="material-symbols-outlined text-[16px]! text-pokeball-red shrink-0">
                     swords
                   </span>
                   <span

@@ -26,6 +26,10 @@ export function shinySpriteUrl(spriteUrl: string): string {
   if (spriteUrl.includes("/official-artwork/")) {
     return spriteUrl.replace("/official-artwork/", "/official-artwork/shiny/");
   }
+  if (spriteUrl.includes("/home/shiny/")) return spriteUrl;
+  if (spriteUrl.includes("/home/")) {
+    return spriteUrl.replace("/home/", "/home/shiny/");
+  }
   // Sprites "pixel" clásicos: .../pokemon/25.png → .../pokemon/shiny/25.png
   return spriteUrl.replace(/\/pokemon\/(\d+\.png)$/, "/pokemon/shiny/$1");
 }

@@ -73,7 +73,7 @@ function FighterCard({
         <span
           className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-label-sm font-bold uppercase tracking-wider ${TONE_CLASS[tag.tone]}`}
         >
-          <span className="material-symbols-outlined text-[14px]">{tag.icon}</span>
+          <span className="material-symbols-outlined text-[14px]!">{tag.icon}</span>
           {tag.label}
         </span>
       )}
@@ -114,7 +114,7 @@ export function BattleResult({
     mode === "lost"
       ? { label: t("victoryTag"), icon: "trophy", tone: "win" }
       : mode === "caught"
-        ? { label: t("caughtTag"), icon: "catching_pokemon", tone: "caught" }
+        ? { label: t("caughtTag"), icon: "sports_baseball", tone: "caught" }
         : mode === "fled"
           ? null
           : { label: t("koTag"), icon: "close", tone: "ko" };
@@ -179,7 +179,7 @@ export function BattleResult({
               </p>
               {coinsGained > 0 && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-0.5 font-mono text-label-sm text-electric-yellow">
-                  <span className="material-symbols-outlined text-[16px]">paid</span>+{coinsGained}
+                  <span className="material-symbols-outlined text-[16px]!">paid</span>+{coinsGained}
                 </span>
               )}
             </div>
@@ -199,7 +199,7 @@ export function BattleResult({
                     </span>
                     {entry.leveledUpTo && (
                       <span className="level-up-chip inline-flex items-center gap-1 rounded-full border border-tertiary/40 bg-tertiary/10 px-2 py-0.5 text-label-sm text-tertiary">
-                        <span className="material-symbols-outlined text-[14px]">arrow_upward</span>
+                        <span className="material-symbols-outlined text-[14px]!">arrow_upward</span>
                         {t("leveledUp", { level: entry.leveledUpTo })}
                       </span>
                     )}

@@ -101,7 +101,7 @@ export function UserMenu({
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2 px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-on-surface"
           >
-            <span className="material-symbols-outlined text-[18px] text-pokeball-red">group</span>
+            <span className="material-symbols-outlined text-[18px]! text-pokeball-red">group</span>
             {teamLabel}
           </Link>
           <Link
@@ -110,7 +110,7 @@ export function UserMenu({
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2 px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-on-surface"
           >
-            <span className="material-symbols-outlined text-[18px] text-pokeball-red">
+            <span className="material-symbols-outlined text-[18px]! text-pokeball-red">
               inventory_2
             </span>
             {inventoryLabel}
@@ -122,7 +122,7 @@ export function UserMenu({
               onClick={() => setOpen(false)}
               className="flex w-full items-center gap-2 px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-on-surface"
             >
-              <span className="material-symbols-outlined text-[18px] text-pokeball-red">storage</span>
+              <span className="material-symbols-outlined text-[18px]! text-pokeball-red">storage</span>
               {pcLabel}
             </Link>
           )}

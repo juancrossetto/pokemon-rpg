@@ -95,19 +95,121 @@
     "stagesCleared": "Area stages",
     "missionStage": "Push through {location} to clear the next leg of your expedition and unlock the following area.",
     "missionGym": "Earn the {location} badge to keep moving forward on your journey.",
-    "missionComplete": "You cleared Kanto. Keep farming to level up your team."
+    "missionComplete": "You cleared Kanto. Keep farming to level up your team.",
+    "squadMenu": {
+      "hint": "Pokémon options",
+      "favoriteOn": "Set as favorite",
+      "favoriteOff": "Remove favorite",
+      "lockOn": "Lock from trading",
+      "lockOff": "Unlock trading",
+      "viewTeam": "Open My Team",
+      "favoriteBadge": "Favorite",
+      "lockedBadge": "Trade locked"
+    }
   },
   "pokedex": {
     "eyebrow": "Database",
     "title": "Pokédex",
-    "subtitle": "{count, plural, one {# species loaded from PokeAPI} other {# species loaded from PokeAPI}}",
+    "researchDatabase": "Research archive",
+    "signInHint": "Sign in to track sightings and captures.",
+    "comingSoon": "Coming soon",
+    "noResults": "No matches in this archive.",
+    "searchPlaceholder": "Name, number, type…",
+    "unknown": "???",
+    "statusCaught": "Caught",
+    "statusSeen": "Seen",
+    "research": "Research",
+    "regions": {
+      "kanto": "Kanto",
+      "johto": "Johto",
+      "hoenn": "Hoenn",
+      "sinnoh": "Sinnoh",
+      "unova": "Unova",
+      "kalos": "Kalos",
+      "alola": "Alola",
+      "galar": "Galar",
+      "paldea": "Paldea"
+    },
+    "progress": {
+      "seen": "Seen",
+      "captured": "Captured",
+      "completion": "Completion",
+      "shiny": "Shiny",
+      "legendary": "Legendary"
+    },
+    "filters": {
+      "all": "All",
+      "seen": "Seen",
+      "caught": "Captured",
+      "missing": "Missing",
+      "favorites": "Favorites",
+      "shiny": "Shiny",
+      "legendary": "Legendary",
+      "mythical": "Mythical",
+      "starter": "Starter",
+      "pseudo": "Pseudo"
+    },
+    "sort": {
+      "label": "Sort",
+      "number": "Number",
+      "name": "Name",
+      "rarity": "Rarity"
+    },
+    "view": {
+      "grid": "Grid",
+      "list": "List"
+    },
+    "typeFilter": "Type",
+    "allTypes": "All",
+    "pokemonTypes": {
+      "normal": "Normal",
+      "fire": "Fire",
+      "water": "Water",
+      "electric": "Electric",
+      "grass": "Grass",
+      "ice": "Ice",
+      "fighting": "Fighting",
+      "poison": "Poison",
+      "ground": "Ground",
+      "flying": "Flying",
+      "psychic": "Psychic",
+      "bug": "Bug",
+      "rock": "Rock",
+      "ghost": "Ghost",
+      "dragon": "Dragon",
+      "dark": "Dark",
+      "steel": "Steel",
+      "fairy": "Fairy"
+    },
+    "rarity": {
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary",
+      "mythical": "Mythical",
+      "ultraBeast": "Ultra Beast",
+      "paradox": "Paradox"
+    },
     "stats": {
       "hp": "HP",
       "atk": "Atk",
-      "spd": "Spd"
+      "def": "Def",
+      "spa": "SpA",
+      "spd": "SpD",
+      "spe": "Spe",
+      "capture": "Capture",
+      "evolves": "Evolves"
     },
-    "clearSearch": "Clear search",
-    "noResults": "No results for “{query}”."
+    "icons": {
+      "favorite": "Favorite",
+      "shiny": "Shiny",
+      "legendary": "Legendary",
+      "mythical": "Mythical",
+      "starter": "Starter",
+      "pseudo": "Pseudo-legendary"
+    },
+    "subtitle": "{count, plural, one {# species loaded from PokeAPI} other {# species loaded from PokeAPI}}",
+    "clearSearch": "Clear search"
   },
   "auth": {
     "login": {
@@ -129,7 +231,6 @@
       "eyebrow": "POKÉDEX SYSTEM",
       "bootStatus": "Booting kernel...",
       "panelTitle": "Trainer authorization",
-      "guestAccess": "View Pokédex",
       "systemStatus": "Status: Operational",
       "brandPrefix": "POKÉDEX",
       "brandAccent": "SYSTEM",
@@ -572,6 +673,7 @@
     "sellItems": "Sell items",
     "inTeam": "In team",
     "lastTeamMember": "Last in team",
+    "tradeLocked": "Trade locked",
     "owned": "You own ×{count}",
     "sellRules": "{commission}% sell commission · {fee}% listing fee · expires in {days} days.",
     "lastSaleShort": "ref. {price}",
@@ -616,6 +718,7 @@
       "already_listed": "That Pokémon is already listed.",
       "in_battle": "You can't sell a Pokémon in the middle of a battle.",
       "last_team_member": "You can't sell your last active Pokémon.",
+      "trade_locked": "That Pokémon is locked from trading. Unlock it from Home.",
       "not_enough_items": "You don't have enough units of that item.",
       "not_available": "That listing is no longer available.",
       "own_listing": "You can't buy your own listing.",
@@ -656,7 +759,28 @@
       "POTION": "Healing",
       "POKEBALL": "Poké Balls",
       "BERRY": "Berries",
-      "EVOLUTION_STONE": "Evolution stones"
+      "EVOLUTION_STONE": "Evolution stones",
+      "MACHINE": "TM / HM"
+    },
+    "all": "All",
+    "searchPlaceholder": "Search item...",
+    "noResults": "No items match.",
+    "itemsCount": "Items",
+    "unitsCount": "Units",
+    "capacity": "Capacity",
+    "selectHint": "Pick an item to see its details.",
+    "quantity": "Quantity",
+    "value": "Value",
+    "effect": "Effect",
+    "teaches": "Teaches",
+    "sell": "Sell",
+    "teach": "Teach from team",
+    "close": "Close",
+    "rarity": {
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary"
     }
   },
   "pc": {
@@ -1042,7 +1166,7 @@
     "currentRegion": "Current region",
     "openMap": "View full map",
     "closeMap": "Close map",
-    "pickZoneHint": "Pick an unlocked zone on the map. Your choice decides which wild Pokémon show up when you explore.",
+    "pickZoneHint": "Tap an unlocked zone to set your location and wild encounters.",
     "pickStage": "Farming stage",
     "moveHere": "Move here",
     "youAreHere": "You are here",

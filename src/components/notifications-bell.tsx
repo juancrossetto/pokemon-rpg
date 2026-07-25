@@ -131,10 +131,16 @@ export function NotificationsBell({
 
   const hasUnreadSale = items.some((i) => i.type === "MARKET_SOLD" && !i.readAt);
 
-  useEffect(() => {
+  // Ajuste durante el render en vez de useEffect: el servidor vuelve a mandar
+  // la lista en cada revalidación y el estado local sólo existe para el marcado
+  // optimista al abrir el panel. Con el efecto, cada refresh renderizaba una
+  // vez con los datos viejos antes de corregirse.
+  const [lastServerItems, setLastServerItems] = useState(initialItems);
+  if (lastServerItems !== initialItems) {
+    setLastServerItems(initialItems);
     setItems(initialItems);
     setUnread(initialUnread);
-  }, [initialItems, initialUnread]);
+  }
 
   useEffect(() => {
     if (!open) return;

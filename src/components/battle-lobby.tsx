@@ -71,7 +71,7 @@ export function BattleLobby({
           <div className="glass-panel min-w-[180px] rounded-xl border border-white/10 px-3 py-2.5">
             <div className="mb-1 flex items-center justify-between gap-2">
               <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                <span className="material-symbols-outlined text-[14px] text-electric-yellow">
+                <span className="material-symbols-outlined text-[14px]! text-electric-yellow">
                   bolt
                 </span>
                 {t("lobby.energy")}
@@ -125,7 +125,7 @@ export function BattleLobby({
                 ) : null}
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
                 <span className="pointer-events-none absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
-                  <span className="material-symbols-outlined text-[14px]">zoom_out_map</span>
+                  <span className="material-symbols-outlined text-[14px]!">zoom_out_map</span>
                   {tc("openMap")}
                 </span>
                 {mapSrc && (
@@ -173,7 +173,7 @@ export function BattleLobby({
                     href="/team"
                     className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-pokeball-red px-6 py-3 text-label-md font-semibold text-white hover:bg-pokeball-red/90"
                   >
-                    <span className="material-symbols-outlined text-[18px]">healing</span>
+                    <span className="material-symbols-outlined text-[18px]!">healing</span>
                     {t("goHeal")}
                   </Link>
                 </div>
@@ -208,9 +208,9 @@ export function BattleLobby({
                   href="/team"
                   className="mt-2 flex items-center gap-1.5 rounded-lg border border-tertiary/25 bg-tertiary/10 px-2.5 py-2 text-[11px] text-tertiary transition hover:border-tertiary/40"
                 >
-                  <span className="material-symbols-outlined text-[14px]">bolt</span>
+                  <span className="material-symbols-outlined text-[14px]!">bolt</span>
                   {t("lobby.unspentPoints", { count: lobby.unspentTotal })}
-                  <span className="material-symbols-outlined ml-auto text-[14px]">
+                  <span className="material-symbols-outlined ml-auto text-[14px]!">
                     chevron_right
                   </span>
                 </Link>
@@ -292,7 +292,7 @@ export function BattleLobby({
         <section className="glass-panel rounded-xl border border-white/10 p-4 shadow-lg">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-pokeball-red text-[20px]">
+              <span className="material-symbols-outlined text-pokeball-red text-[20px]!">
                 pets
               </span>
               <h2 className="text-headline-md text-white">{t("lobby.zoneEncounters")}</h2>
@@ -415,10 +415,10 @@ function ShortcutLink({
       href={href}
       className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-2 text-label-sm text-on-surface transition hover:border-white/20 hover:bg-white/[0.06]"
     >
-      <span className="material-symbols-outlined text-[18px] text-pokeball-red">{icon}</span>
+      <span className="material-symbols-outlined text-[18px]! text-pokeball-red">{icon}</span>
       <span className="flex-1">{label}</span>
       {hint && <span className="font-mono text-[11px] text-on-surface-variant">{hint}</span>}
-      <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
+      <span className="material-symbols-outlined text-[16px]! text-on-surface-variant">
         chevron_right
       </span>
     </Link>

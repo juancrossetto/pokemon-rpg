@@ -4,7 +4,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 
 // Subí este número cuando cambie el schema y el HMR deje un client viejo
 // en globalThis (p. ej. campos nuevos como currentPp / wildMovePp).
-const PRISMA_CLIENT_EPOCH = 11;
+const PRISMA_CLIENT_EPOCH = 14;
 
 // Patrón singleton: en dev, Next.js recarga módulos en caliente y crearía
 // una PrismaClient nueva (con su propio pool) en cada reload.

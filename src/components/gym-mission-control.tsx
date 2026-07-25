@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
@@ -177,14 +177,11 @@ export function GymMissionControl({ items, badgeCount }: Props) {
   const [selectedId, setSelectedId] = useState(firstUnlocked?.id ?? items[0]?.id ?? "");
   const [slideDir, setSlideDir] = useState<"left" | "right">("right");
 
+  // `selected` ya cae en items[0] cuando el id guardado no existe, así que el
+  // efecto que "corregía" selectedId no cambiaba nada de lo que se renderiza:
+  // sólo disparaba un render extra. El resto del componente usa `selected`.
   const selected = items.find((g) => g.id === selectedId) ?? items[0];
   const color = selected ? typeColor(selected.type) : "#68A090";
-
-  useEffect(() => {
-    if (!items.some((g) => g.id === selectedId) && items[0]) {
-      setSelectedId(items[0].id);
-    }
-  }, [items, selectedId]);
 
   function selectGym(next: GymMissionItem) {
     if (!selected || next.id === selected.id) return;

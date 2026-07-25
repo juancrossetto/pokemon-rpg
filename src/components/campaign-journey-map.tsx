@@ -70,7 +70,7 @@ export function CampaignJourneyMap({
                     : `${style.ring} ${style.text}`
               }`}
             >
-              <span className="material-symbols-outlined text-[20px]">
+              <span className="material-symbols-outlined text-[20px]!">
                 {unlocked ? style.icon : "lock"}
               </span>
               {done && unlocked && (
@@ -98,7 +98,7 @@ export function CampaignJourneyMap({
                     </span>
                     {isFarming && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-pokeball-red/40 bg-pokeball-red/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-pokeball-red">
-                        <span className="material-symbols-outlined text-[12px]">my_location</span>
+                        <span className="material-symbols-outlined text-[12px]!">my_location</span>
                         {t("farming")}
                       </span>
                     )}
@@ -106,12 +106,12 @@ export function CampaignJourneyMap({
 
                   <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-label-sm text-on-surface-variant">
                     <span className="inline-flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">flag</span>
+                      <span className="material-symbols-outlined text-[14px]!">flag</span>
                       {t("stageProgress", { done: completedStages, total: totalStages })}
                     </span>
                     <span className="text-on-surface-variant/40">•</span>
                     <span className="inline-flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">pets</span>
+                      <span className="material-symbols-outlined text-[14px]!">pets</span>
                       {t("wildLevels", {
                         min: Math.min(...location.stages.map((s) => s.levelMin)),
                         max: Math.max(...location.stages.map((s) => s.levelMax)),
@@ -131,7 +131,7 @@ export function CampaignJourneyMap({
                     }
                     className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10 disabled:opacity-40"
                   >
-                    <span className="material-symbols-outlined text-[16px]">
+                    <span className="material-symbols-outlined text-[16px]!">
                       {isSelected ? "check" : "my_location"}
                     </span>
                     {isSelected ? t("selected") : t("select")}
@@ -155,7 +155,7 @@ export function CampaignJourneyMap({
                       key={sector.id}
                       className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-black/25 px-2 py-1 text-[10px] uppercase tracking-wide text-on-surface-variant"
                     >
-                      <span className="material-symbols-outlined text-[12px]">layers</span>
+                      <span className="material-symbols-outlined text-[12px]!">layers</span>
                       {t(sector.nameKey)}
                     </span>
                   ))}
@@ -190,7 +190,7 @@ export function CampaignJourneyMap({
                                   : "border-white/5 bg-black/10 text-on-surface-variant/50"
                           }`}
                         >
-                          <span className="material-symbols-outlined text-[16px] shrink-0">
+                          <span className="material-symbols-outlined text-[16px]! shrink-0">
                             {gym
                               ? "military_tech"
                               : !unlockedStage

@@ -55,7 +55,7 @@ export function CountrySelect({
         }
       >
         {!compact && labelIcon && (
-          <span className="material-symbols-outlined text-[14px]">{labelIcon}</span>
+          <span className="material-symbols-outlined text-[14px]!">{labelIcon}</span>
         )}
         {label}
       </label>
@@ -64,7 +64,7 @@ export function CountrySelect({
           {value ? (
             <FlagIcon code={value} className="h-4 w-auto rounded-sm shadow-sm" />
           ) : (
-            <span className="material-symbols-outlined text-[18px] text-on-surface-variant/70">
+            <span className="material-symbols-outlined text-[18px]! text-on-surface-variant/70">
               travel_explore
             </span>
           )}
@@ -84,7 +84,7 @@ export function CountrySelect({
             </option>
           ))}
         </select>
-        <span className="material-symbols-outlined pointer-events-none absolute right-3 text-[18px] text-on-surface-variant/70">
+        <span className="material-symbols-outlined pointer-events-none absolute right-3 text-[18px]! text-on-surface-variant/70">
           arrow_drop_down
         </span>
       </div>

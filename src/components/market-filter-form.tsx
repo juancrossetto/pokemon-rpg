@@ -67,7 +67,7 @@ export function MarketFilterForm({
         <span className="mb-1 block text-[10px] font-mono uppercase tracking-wider text-on-surface-variant/70">
           {labels.searchLabel}
         </span>
-        <span className="material-symbols-outlined pointer-events-none absolute bottom-2 left-2.5 text-[18px] text-on-surface-variant/65">
+        <span className="material-symbols-outlined pointer-events-none absolute bottom-2 left-2.5 text-[18px]! text-on-surface-variant/65">
           search
         </span>
         <input

@@ -126,7 +126,7 @@ export default async function ClanDetailPage({
           href="/clans"
           className="inline-flex items-center gap-1 text-label-sm text-on-surface-variant hover:text-on-surface mb-3"
         >
-          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span className="material-symbols-outlined text-[16px]!">arrow_back</span>
           {t("backToDirectory")}
         </Link>
 
@@ -150,15 +150,15 @@ export default async function ClanDetailPage({
               </h1>
               <div className="flex items-center gap-3 mt-1 text-label-sm text-on-surface-variant">
                 <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">group</span>
+                  <span className="material-symbols-outlined text-[14px]!">group</span>
                   {t("memberCount", { count: members.length, max: CLAN_MAX_MEMBERS })}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px] text-tertiary">military_tech</span>
+                  <span className="material-symbols-outlined text-[14px]! text-tertiary">military_tech</span>
                   {t("badgeTotal", { count: totalBadges })}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px] text-electric-yellow">bolt</span>
+                  <span className="material-symbols-outlined text-[14px]! text-electric-yellow">bolt</span>
                   {t("power", { value: totalPower })}
                 </span>
               </div>
@@ -226,11 +226,11 @@ export default async function ClanDetailPage({
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 text-label-sm text-on-surface-variant">
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px] text-tertiary">military_tech</span>
+                      <span className="material-symbols-outlined text-[13px]! text-tertiary">military_tech</span>
                       {m.badges}
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px] text-electric-yellow">bolt</span>
+                      <span className="material-symbols-outlined text-[13px]! text-electric-yellow">bolt</span>
                       {m.power}
                     </span>
                   </div>
@@ -334,7 +334,7 @@ function RoleChip({ role, label }: { role: ClanRole; label: string }) {
       className={`w-16 shrink-0 inline-flex items-center justify-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] uppercase ${style}`}
       title={label}
     >
-      <span className="material-symbols-outlined text-[12px]">{icon}</span>
+      <span className="material-symbols-outlined text-[12px]!">{icon}</span>
       {label}
     </span>
   );
