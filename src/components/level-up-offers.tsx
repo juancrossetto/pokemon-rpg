@@ -58,6 +58,12 @@ export function LevelUpOffersPanel({
         revealed?.instanceId === e.instanceId),
   );
 
+  function notifySettled() {
+    // onSettled actualiza el padre: no puede correr dentro de un setState updater
+    // (React lo trata como setState durante render de este panel).
+    queueMicrotask(() => onSettled?.());
+  }
+
   if (visible.length === 0) return null;
 
   function dismissEntry(instanceId: string) {
@@ -73,7 +79,7 @@ export function LevelUpOffersPanel({
           e.leveledUpTo != null &&
           (e.autoTaught.length > 0 || e.pendingMoves.length > 0 || e.evolveOffer),
       );
-      if (!still) onSettled?.();
+      if (!still) notifySettled();
       return next;
     });
   }
@@ -91,7 +97,7 @@ export function LevelUpOffersPanel({
           e.leveledUpTo != null &&
           (e.autoTaught.length > 0 || e.pendingMoves.length > 0 || e.evolveOffer),
       );
-      if (!still) onSettled?.();
+      if (!still) notifySettled();
       return next;
     });
   }
@@ -114,7 +120,7 @@ export function LevelUpOffersPanel({
         !entry.evolveOffer &&
         entry.autoTaught.length === 0
       ) {
-        onSettled?.();
+        notifySettled();
       }
       return next;
     });

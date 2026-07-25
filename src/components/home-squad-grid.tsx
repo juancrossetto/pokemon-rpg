@@ -193,7 +193,7 @@ export function HomeSquadGrid({
                 setOverSlot(null);
               }}
               className={[
-                "rounded-2xl transition-all",
+                "h-full rounded-2xl transition-all",
                 isOver ? "ring-2 ring-pokeball-red/55 ring-offset-2 ring-offset-background" : "",
                 isDragging ? "opacity-45" : "",
               ].join(" ")}

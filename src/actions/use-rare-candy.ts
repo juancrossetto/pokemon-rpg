@@ -142,6 +142,8 @@ export async function useRareCandy(
     orderBy: { slot: "asc" },
   });
 
+  revalidatePath(`/${locale}/team`);
+  revalidatePath(`/${locale}/pc`);
   revalidatePath(`/${locale}`);
 
   return {

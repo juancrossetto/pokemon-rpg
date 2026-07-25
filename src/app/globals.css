@@ -1201,6 +1201,46 @@ body {
   animation: map-zoom-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* --- Team detail drawer (desktop) --- */
+@keyframes team-drawer-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes team-drawer-panel-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes team-drawer-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.team-drawer-backdrop {
+  animation: team-drawer-backdrop-in 0.2s ease-out both;
+}
+
+.team-drawer-panel {
+  animation: team-drawer-panel-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.team-drawer-sheet {
+  animation: team-drawer-sheet-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* --- Gym Mission Control --- */
 @keyframes gym-mission-slide-right {
   from {
@@ -1316,6 +1356,9 @@ body {
   .auth-spark,
   .gym-mission-slide-right,
   .gym-mission-slide-left,
+  .team-drawer-backdrop,
+  .team-drawer-panel,
+  .team-drawer-sheet,
   .gym-mission-panel {
     animation: none;
   }

@@ -6,7 +6,9 @@ import { typeColor } from "@/lib/type-colors";
 import { AllocatePointsPanel } from "@/components/allocate-points-panel";
 import { PokemonDetailDrawer } from "@/components/pokemon-detail-drawer";
 import { SquadCardSheet } from "@/components/squad-card-sheet";
+import type { SquadCareLabels } from "@/components/squad-care-actions";
 import type { EvolutionStage } from "@/lib/evolution-chain";
+import type { SquadBagCounts } from "@/lib/squad-bag";
 
 export interface TeamMoveDetail {
   slot: number;
@@ -75,6 +77,8 @@ export interface TeamMember {
   expToNextLabel: string;
   heldItem: { itemId: string; name: string; effectText: string | null } | null;
   ownedHeldItems: { itemId: string; name: string; effectText: string | null; quantity: number }[];
+  isFavorite: boolean;
+  isTradeLocked: boolean;
 }
 
 export interface TeamRosterLabels {
@@ -90,6 +94,7 @@ export interface TeamRosterLabels {
   emptySlot: string;
   slotAvailableLabels: string[];
   viewDetails: string;
+  selectHint: string;
   close: string;
   statsTitle: string;
   movesTitle: string;
@@ -120,27 +125,88 @@ export interface TeamRosterLabels {
   unequip: string;
   equipping: string;
   equipErrors: Record<string, string>;
+  tabItems: string;
+  careTitle: string;
+  careHint: string;
+  pointsTitle: string;
+  pointsHint: string;
+  /** "Nv. {level}" — para repintar el nivel tras un carameloraro. */
+  levelTemplate: string;
+  care: SquadCareLabels;
+}
+
+type MemberPatch = Partial<
+  Pick<
+    TeamMember,
+    | "level"
+    | "levelLabel"
+    | "currentHp"
+    | "maxHp"
+    | "isFavorite"
+    | "isTradeLocked"
+    | "unspentPoints"
+    | "xp"
+    | "xpForCurrentLevel"
+    | "xpToNext"
+  >
+>;
+
+function membersFingerprint(members: (TeamMember | null)[]) {
+  return members
+    .map((m) =>
+      m
+        ? `${m.instanceId}:${m.level}:${m.currentHp}:${m.maxHp}:${m.isFavorite ? 1 : 0}:${m.isTradeLocked ? 1 : 0}:${m.unspentPoints}`
+        : "-",
+    )
+    .join("|");
 }
 
 export function TeamRoster({
   members,
   labels,
+  bagCounts,
 }: {
   members: (TeamMember | null)[];
   labels: TeamRosterLabels;
+  bagCounts: SquadBagCounts;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = members.find((m) => m?.instanceId === selectedId) ?? null;
+  const [overrides, setOverrides] = useState<Record<string, MemberPatch>>({});
+  const serverFp = membersFingerprint(members);
+  const [syncedFp, setSyncedFp] = useState(serverFp);
+
+  // Cuando el server ya trajó los datos frescos (post-refresh), tiramos los
+  // overrides optimistas. Ajuste durante render: evita flash al nivel viejo.
+  if (serverFp !== syncedFp) {
+    setSyncedFp(serverFp);
+    setOverrides({});
+  }
+
+  const displayMembers = members.map((m) => {
+    if (!m) return null;
+    const patch = overrides[m.instanceId];
+    return patch ? { ...m, ...patch } : m;
+  });
+
+  const selected = displayMembers.find((m) => m?.instanceId === selectedId) ?? null;
+
+  function patchMember(instanceId: string, patch: MemberPatch) {
+    setOverrides((prev) => ({
+      ...prev,
+      [instanceId]: { ...prev[instanceId], ...patch },
+    }));
+  }
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        {members.map((member, i) =>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {displayMembers.map((member, i) =>
           member ? (
             <PokemonCard
               key={member.instanceId}
               member={member}
               labels={labels}
+              selected={member.instanceId === selectedId}
               onOpen={() => setSelectedId(member.instanceId)}
             />
           ) : (
@@ -157,6 +223,11 @@ export function TeamRoster({
         key={selected?.instanceId ?? "closed"}
         member={selected}
         labels={labels}
+        bagCounts={bagCounts}
+        onMemberPatch={(patch) => {
+          if (!selected) return;
+          patchMember(selected.instanceId, patch);
+        }}
         onClose={() => setSelectedId(null)}
       />
     </>
@@ -166,10 +237,12 @@ export function TeamRoster({
 function PokemonCard({
   member,
   labels,
+  selected,
   onOpen,
 }: {
   member: TeamMember;
   labels: TeamRosterLabels;
+  selected: boolean;
   onOpen: () => void;
 }) {
   const displayName = member.nickname ?? member.speciesName;
@@ -183,9 +256,11 @@ function PokemonCard({
   return (
     <article
       className={`team-card group relative overflow-hidden rounded-[1.5rem] border transition duration-300 hover:-translate-y-1 ${
-        member.isLead
-          ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
-          : "border-white/[0.07] hover:border-white/20"
+        selected
+          ? "border-tertiary/45 shadow-[0_14px_32px_rgba(242,192,0,0.14)]"
+          : member.isLead
+            ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
+            : "border-white/[0.07] hover:border-white/20"
       } ${fainted ? "opacity-75" : ""}`}
       style={{ "--type-accent": accent } as CSSProperties}
     >
@@ -328,7 +403,7 @@ function PokemonCard({
 
 function EmptySlot({ label, hint }: { label: string; hint: string }) {
   return (
-    <article className="flex min-h-[320px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/12 bg-white/[0.015] px-4 py-6 text-center transition hover:border-white/20 hover:bg-white/[0.03]">
+    <article className="flex min-h-[220px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/12 bg-white/[0.015] px-4 py-6 text-center transition hover:border-white/20 hover:bg-white/[0.03] md:min-h-[320px]">
       <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.02]">
         <span className="material-symbols-outlined text-[20px]! text-on-surface-variant/50">add</span>
       </div>

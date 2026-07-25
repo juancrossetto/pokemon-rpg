@@ -12,11 +12,12 @@ async function ownedPokemon(instanceId: string, userId: string) {
 }
 
 function revalidateSquad(locale: string) {
-  revalidatePath(`/${locale}`, "layout");
+  // Evitar `layout`: fuerza a re-renderizar home (muy pesado) en cada flag.
   revalidatePath(`/${locale}/team`);
   revalidatePath(`/${locale}/pc`);
   revalidatePath(`/${locale}/market`);
   revalidatePath(`/${locale}/ranking`);
+  revalidatePath(`/${locale}`);
 }
 
 /** Un solo favorito por entrenador: al marcar uno, se limpia el anterior. */

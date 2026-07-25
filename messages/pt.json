@@ -119,7 +119,8 @@
       "maxLevel": "Este Pokémon já está no nível máximo.",
       "healed": "Usou {item}: +{hp} HP.",
       "ppRestored": "Usou {item}: {move} +{pp} PP.",
-      "leveled": "Usou {item}: Nv. {level}!"
+      "leveled": "Usou {item}: Nv. {level}!",
+      "resolvingLevelUp": "Resolvendo o level-up…"
     }
   },
   "pokedex": {
@@ -351,6 +352,7 @@
     "drawer": {
       "close": "Fechar",
       "viewDetails": "Ver detalhe",
+      "selectHint": "Escolha um Pokémon para ver a ficha.",
       "statsTitle": "Estatísticas",
       "movesTitle": "Movimentos",
       "evolutionsTitle": "Evoluções",
@@ -379,6 +381,11 @@
         "already_known": "Ele já sabe esse movimento",
         "in_combat": "Você não pode trocar movimentos em combate"
       },
+      "tabItems": "Itens",
+      "careTitle": "Cuidados",
+      "careHint": "Use consumíveis da mochila sem sair da ficha.",
+      "pointsTitle": "Pontos",
+      "pointsHint": "Distribua os pontos livres ganhos ao subir de nível.",
       "heldItemTitle": "Item equipado",
       "heldItemHint": "Dá um efeito real durante a batalha.",
       "heldItemEmpty": "Nenhum item equipado. Toque para escolher um.",

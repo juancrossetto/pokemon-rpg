@@ -119,7 +119,8 @@
       "maxLevel": "This Pokémon is already at max level.",
       "healed": "Used {item}: +{hp} HP.",
       "ppRestored": "Used {item}: {move} +{pp} PP.",
-      "leveled": "Used {item}: Lv. {level}!"
+      "leveled": "Used {item}: Lv. {level}!",
+      "resolvingLevelUp": "Resolving level-up…"
     }
   },
   "pokedex": {
@@ -351,6 +352,7 @@
     "drawer": {
       "close": "Close",
       "viewDetails": "View details",
+      "selectHint": "Pick a Pokémon to see its details.",
       "statsTitle": "Stats",
       "movesTitle": "Moves",
       "evolutionsTitle": "Evolutions",
@@ -379,6 +381,11 @@
         "already_known": "It already knows that move",
         "in_combat": "You can't change moves in combat"
       },
+      "tabItems": "Items",
+      "careTitle": "Care",
+      "careHint": "Use bag consumables without leaving this sheet.",
+      "pointsTitle": "Points",
+      "pointsHint": "Spend free points earned from leveling up.",
       "heldItemTitle": "Held item",
       "heldItemHint": "Gives a real effect during battle.",
       "heldItemEmpty": "No item held. Tap to pick one.",

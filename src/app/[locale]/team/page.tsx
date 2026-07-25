@@ -9,6 +9,7 @@ import { HealButton } from "@/components/heal-button";
 import { healCooldownMsLeft, healRushCost } from "@/lib/healing";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { loadEvolutionChainsForTeam } from "@/lib/evolution-chain";
+import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { TeamRoster, type TeamMember } from "@/components/team-roster";
 
 const TEAM_SIZE = 6;
@@ -19,7 +20,11 @@ export default async function TeamPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const [t, session] = await Promise.all([getTranslations("team"), auth()]);
+  const [t, tMenu, session] = await Promise.all([
+    getTranslations("team"),
+    getTranslations("home.squadMenu"),
+    auth(),
+  ]);
 
   if (!session?.user) {
     redirect({ href: "/login", locale });
@@ -70,6 +75,7 @@ export default async function TeamPage({
   // query para todas, filtrado a los movimientos que el jugador realmente
   // tiene, para no traer compatibilidad irrelevante.
   const speciesIds = [...new Set(pokemon.map((p) => p.speciesId))];
+  const bagCounts = await loadSquadBagCounts(userId);
   const [compatibility, evolutionChains] = await Promise.all([
     prisma.speciesMove.findMany({
       where: { method: "MACHINE", speciesId: { in: speciesIds }, moveId: { in: ownedMoveIds } },
@@ -179,6 +185,8 @@ export default async function TeamPage({
         ? { itemId: instance.heldItem.id, name: instance.heldItem.name, effectText: instance.heldItem.effectText }
         : null,
       ownedHeldItems,
+      isFavorite: instance.isFavorite,
+      isTradeLocked: instance.isTradeLocked,
     };
   });
 
@@ -222,6 +230,7 @@ export default async function TeamPage({
 
         <TeamRoster
           members={members}
+          bagCounts={bagCounts}
           labels={{
             hp: t("stats.hp"),
             exp: t("stats.exp"),
@@ -237,6 +246,7 @@ export default async function TeamPage({
               t("slotAvailable", { slot: i + 1 }),
             ),
             viewDetails: t("drawer.viewDetails"),
+            selectHint: t("drawer.selectHint"),
             close: t("drawer.close"),
             statsTitle: t("drawer.statsTitle"),
             movesTitle: t("drawer.movesTitle"),
@@ -278,6 +288,21 @@ export default async function TeamPage({
               not_found: t("drawer.teachErrors.not_found"),
               no_item: t("drawer.equipErrors.no_item"),
               in_combat: t("drawer.teachErrors.in_combat"),
+            },
+            tabItems: t("drawer.tabItems"),
+            careTitle: t("drawer.careTitle"),
+            careHint: t("drawer.careHint"),
+            pointsTitle: t("drawer.pointsTitle"),
+            pointsHint: t("drawer.pointsHint"),
+            levelTemplate: t("level", { level: "{level}" }),
+            care: {
+              heal: tMenu("heal"),
+              restorePp: tMenu("restorePp"),
+              rareCandy: tMenu("rareCandy"),
+              favoriteOn: tMenu("favoriteOn"),
+              favoriteOff: tMenu("favoriteOff"),
+              lockOn: tMenu("lockOn"),
+              lockOff: tMenu("lockOff"),
             },
           }}
         />

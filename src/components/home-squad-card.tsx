@@ -162,7 +162,7 @@ export function HomeSquadCard({
       }
     >
       <div
-        className={`team-card group relative flex flex-col overflow-hidden rounded-[1.5rem] border transition duration-300 hover:-translate-y-1 ${
+        className={`team-card group relative flex h-full flex-col overflow-hidden rounded-[1.5rem] border transition duration-300 hover:-translate-y-1 ${
           isLead || isFavorite
             ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
             : "border-white/[0.07] hover:border-white/20"
@@ -242,7 +242,7 @@ export function HomeSquadCard({
           </div>
         </Link>
 
-        <div className="relative z-[1] flex flex-col bg-gradient-to-b from-transparent to-black/25 px-2.5 pb-2.5 pt-1">
+        <div className="relative z-[1] flex flex-1 flex-col bg-gradient-to-b from-transparent to-black/25 px-2.5 pb-2.5 pt-1">
           <h2 className="truncate text-center text-[13px] font-bold capitalize tracking-tight text-white">
             {displayName}
           </h2>
@@ -266,7 +266,7 @@ export function HomeSquadCard({
             )}
           </div>
 
-          <div className="mt-2">
+          <div className="mt-2 flex-1">
             <SquadCardSheet
               compact
               labels={sheetLabels}
@@ -292,7 +292,7 @@ export function HomeEmptySquadSlot({ label }: { label: string }) {
   return (
     <Link
       href="/team"
-      className="group flex min-h-[300px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/12 bg-white/[0.015] px-2 py-4 text-center transition hover:border-white/25 hover:bg-white/[0.03]"
+      className="group flex h-full min-h-[300px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/12 bg-white/[0.015] px-2 py-4 text-center transition hover:border-white/25 hover:bg-white/[0.03]"
     >
       <div className="mb-1.5 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.02] transition group-hover:border-white/30">
         <span className="material-symbols-outlined text-[20px]! text-on-surface-variant/50">add</span>
