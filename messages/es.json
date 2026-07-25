@@ -395,7 +395,9 @@
       "equipping": "Aplicando…",
       "equipErrors": {
         "no_item": "Ya no tenés ese objeto"
-      }
+      },
+      "showDetails": "Ver detalles",
+      "hideDetails": "Ocultar"
     },
     "healFree": "Curación gratis disponible",
     "healCooldown": "Gratis en {minutes} min",
@@ -1246,6 +1248,7 @@
     },
     "currentRegion": "Región actual",
     "openMap": "Ver mapa completo",
+    "tapMapHint": "Tocá el mapa para ampliar",
     "closeMap": "Cerrar mapa",
     "pickZoneHint": "Tocá una zona desbloqueada para ubicarte y elegir qué salvajes aparecen.",
     "pickStage": "Stage de farmeo",

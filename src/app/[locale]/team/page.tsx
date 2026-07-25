@@ -253,6 +253,8 @@ export default async function TeamPage({
             evolutionsTitle: t("drawer.evolutionsTitle"),
             unknownSpecies: t("drawer.unknownSpecies"),
             evolveAtLevel: t("drawer.evolveAtLevel", { level: "{level}" }),
+            showDetails: t("drawer.showDetails"),
+            hideDetails: t("drawer.hideDetails"),
             tabAbout: t("drawer.tabAbout"),
             tabStats: t("drawer.tabStats"),
             tabEvolutions: t("drawer.tabEvolutions"),

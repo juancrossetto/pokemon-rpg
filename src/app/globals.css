@@ -1338,6 +1338,38 @@ body {
   animation-iteration-count: infinite;
 }
 
+/* Misma idea que .auth-spark pero teñido por el tipo del Pokémon: reutiliza el
+   keyframe de abajo y toma el color de --spark-color, que la card ya calcula
+   desde --type-accent. Así un Charizard destella naranja y un Blastoise azul. */
+/* Entrada del menú contextual del equipo: aparece desde el punto tocado, lo que
+   ayuda a leerlo como submenú del elemento y no como un panel suelto. */
+.squad-menu-in {
+  animation: squad-menu-in 120ms ease-out;
+  transform-origin: top left;
+}
+
+@keyframes squad-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.poke-spark {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--spark-color, rgba(255, 255, 255, 0.9));
+  box-shadow: 0 0 5px 1px var(--spark-glow, rgba(255, 255, 255, 0.3));
+  animation-name: auth-spark-twinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
 @keyframes auth-spark-twinkle {
   0%,
   100% {
@@ -1354,6 +1386,8 @@ body {
   .map-backdrop-in,
   .map-zoom-in,
   .auth-spark,
+  .poke-spark,
+  .squad-menu-in,
   .gym-mission-slide-right,
   .gym-mission-slide-left,
   .team-drawer-backdrop,

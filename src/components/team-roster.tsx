@@ -114,6 +114,8 @@ export interface TeamRosterLabels {
   evolutionsTitle: string;
   unknownSpecies: string;
   evolveAtLevel: string;
+  showDetails: string;
+  hideDetails: string;
   tabAbout: string;
   tabStats: string;
   tabEvolutions: string;
@@ -358,6 +360,8 @@ function PokemonCard({
         <div className="mt-3">
           <SquadCardSheet
             labels={{
+              showDetails: labels.showDetails,
+              hideDetails: labels.hideDetails,
               tabAbout: labels.tabAbout,
               tabStats: labels.tabStats,
               tabEvolutions: labels.tabEvolutions,

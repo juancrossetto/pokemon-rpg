@@ -31,19 +31,31 @@ export function SystemStatus({
   }, []);
 
   return (
+    // Card "informativa": es el dato de menor jerarquía de la Home, así que en
+    // mobile va a una sola línea sin etiquetas ni segundos. Desde sm recupera
+    // el formato de dos líneas que ya tenía en desktop.
     <div className="flex items-stretch divide-x divide-white/10 rounded-lg border border-white/10 bg-surface-container-low/60">
-      <div className="px-4 py-1.5 text-right">
-        <p className="text-[10px] uppercase tracking-wider text-on-surface-variant/70">
+      <div className="px-2 py-1 text-right sm:px-4 sm:py-1.5">
+        <p className="hidden text-[10px] uppercase tracking-wider text-on-surface-variant/70 sm:block">
           {timeLabel}
         </p>
-        <p className="font-mono text-[13px] tabular-nums text-white">{time ?? "--:--:--"}</p>
+        <p className="flex items-center gap-1 font-mono text-[12px] tabular-nums text-white sm:text-[13px]">
+          <span className="material-symbols-outlined text-[13px]! text-on-surface-variant sm:hidden">
+            schedule
+          </span>
+          {/* Sin segundos en mobile: sólo suman ruido y ancho. */}
+          <span className="sm:hidden">{time ? time.slice(0, 5) : "--:--"}</span>
+          <span className="hidden sm:inline">{time ?? "--:--:--"}</span>
+        </p>
       </div>
-      <div className="px-4 py-1.5 text-right">
-        <p className="text-[10px] uppercase tracking-wider text-on-surface-variant/70">
+      <div className="px-2 py-1 text-right sm:px-4 sm:py-1.5">
+        <p className="hidden text-[10px] uppercase tracking-wider text-on-surface-variant/70 sm:block">
           {climateLabel}
         </p>
-        <p className="flex items-center justify-end gap-1 text-[13px] font-medium text-white">
-          <span className="material-symbols-outlined text-[14px]! text-sky-300">{climateIcon}</span>
+        <p className="flex items-center justify-end gap-1 text-[12px] font-medium text-white sm:text-[13px]">
+          <span className="material-symbols-outlined text-[13px]! text-sky-300 sm:text-[14px]!">
+            {climateIcon}
+          </span>
           {climateValue}
         </p>
       </div>

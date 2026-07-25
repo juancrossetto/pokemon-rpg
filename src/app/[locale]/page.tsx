@@ -13,12 +13,32 @@ import { CurrentExpedition } from "@/components/current-expedition";
 import { CampaignDevPanel } from "@/components/campaign-dev-panel";
 import { ActiveMission } from "@/components/active-mission";
 import { SystemStatus } from "@/components/system-status";
+import { CollapsibleOnMobile } from "@/components/collapsible-on-mobile";
 import { HomeSquadGrid, type HomeSquadMember } from "@/components/home-squad-grid";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { loadEvolutionChainsForTeam } from "@/lib/evolution-chain";
 import type { CampaignLocationKind } from "@/lib/campaign";
 
 const TEAM_SIZE = 6;
+
+/** Encabezado de "Equipo activo". Aparece en las dos ramas del layout. */
+function SquadHeader({ t }: { t: (key: string) => string }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <span className="material-symbols-outlined text-pokeball-red">group</span>
+        <h2 className="text-headline-md text-white">{t("activeSquad")}</h2>
+      </div>
+      <Link
+        href="/team"
+        className="flex items-center gap-1 text-label-sm text-on-surface-variant transition-colors hover:text-white"
+      >
+        {t("manage")}
+        <span className="material-symbols-outlined text-sm!">chevron_right</span>
+      </Link>
+    </div>
+  );
+}
 
 /** Clima ambiental derivado del tipo de ubicación — determinista, sin datos falsos. */
 const CLIMATE_ICON: Record<CampaignLocationKind, string> = {
@@ -126,6 +146,115 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   const missionHref =
     milestone?.kind === "gym" ? "/gyms" : milestone?.kind === "complete" ? "/campaign" : "/battle";
 
+  // El grid se declara una vez y se usa en las dos ramas del layout
+  // (con expedición y sin ella) para no duplicar 100 líneas de props.
+  const squadGrid = (
+        <HomeSquadGrid
+          key={pokemon.map((p) => `${p.id}:${p.teamSlot}`).join("|")}
+          locale={locale}
+          emptySlotLabel={t("emptySlot")}
+          leadLabel={tt("lead")}
+          initialBagCounts={bagCounts}
+          slotLabels={Array.from({ length: TEAM_SIZE }, (_, i) =>
+            tt("slotLabel", { slot: i + 1 }),
+          )}
+          initialMembers={slots
+            .filter((instance): instance is NonNullable<typeof instance> => instance !== null)
+            .map((instance): HomeSquadMember => {
+              const maxHp = calculateMaxHp(
+                instance.species.baseHp,
+                instance.level,
+                instance.ptConstitution,
+              );
+              const xpForCurrent = xpForLevel(instance.level);
+              const xpToNext = xpToNextLevel(instance.xp, instance.level);
+              const xpIntoLevel = instance.xp - xpForCurrent;
+              const levelSpan = xpIntoLevel + xpToNext;
+              const xpPct =
+                levelSpan > 0
+                  ? Math.max(0, Math.min(100, (xpIntoLevel / levelSpan) * 100))
+                  : 0;
+
+              const movesBySlot = new Map(instance.moves.map((m) => [m.slot, m]));
+              const moves = Array.from({ length: 4 }, (_, slotIdx) => {
+                const m = movesBySlot.get(slotIdx + 1);
+                if (!m) return null;
+                const maxPp = m.move.pp ?? 20;
+                return {
+                  slot: slotIdx + 1,
+                  name: m.move.name,
+                  type: m.move.type,
+                  currentPp: effectivePp(m.currentPp, maxPp),
+                  maxPp,
+                };
+              });
+
+              return {
+                id: instance.id,
+                level: instance.level,
+                isFavorite: instance.isFavorite,
+                isTradeLocked: instance.isTradeLocked,
+                nickname: instance.nickname,
+                speciesName: instance.species.name,
+                types: instance.species.types,
+                spriteUrl: spriteFor(instance.species.spriteUrl, instance.isShiny),
+                currentHp: instance.currentHp,
+                maxHp,
+                xpPct,
+                xpToNextLabel: tt("expToNext", { xp: xpToNext }),
+                levelLabel: tt("level", { level: instance.level }),
+                atk: calculateStat(instance.species.baseAttack, instance.ptStrength, instance.level),
+                def: calculateStat(instance.species.baseDefense, instance.ptDexterity, instance.level),
+                spAtk: calculateStat(
+                  instance.species.baseSpAtk,
+                  instance.ptIntelligence,
+                  instance.level,
+                ),
+                spDef: calculateStat(
+                  instance.species.baseSpDef,
+                  instance.ptIntelligence,
+                  instance.level,
+                ),
+                speed: calculateStat(instance.species.baseSpeed, instance.ptSpeed, instance.level),
+                evolutionChain: evolutionChains.get(instance.speciesId) ?? [],
+                moves,
+                labels: {
+                  hp: tt("stats.hp"),
+                  exp: tt("stats.exp"),
+                  atk: tt("stats.atk"),
+                  def: tt("stats.def"),
+                  spAtk: tt("stats.spAtk"),
+                  spDef: tt("stats.spDef"),
+                  speed: tt("stats.speed"),
+                  fainted: tt("fainted"),
+                  favorite: t("squadMenu.favoriteBadge"),
+                  tradeLocked: t("squadMenu.lockedBadge"),
+                  pp: tt("drawer.pp"),
+                  emptyMove: tt("drawer.emptySlotMove"),
+                  showDetails: tt("drawer.showDetails"),
+                  hideDetails: tt("drawer.hideDetails"),
+                  tabAbout: tt("drawer.tabAbout"),
+                  tabStats: tt("drawer.tabStats"),
+                  tabEvolutions: tt("drawer.tabEvolutions"),
+                  unknownSpecies: tt("drawer.unknownSpecies"),
+                  evolveAtLevel: tt("drawer.evolveAtLevel", { level: "{level}" }),
+                },
+                menuLabels: {
+                  favoriteOn: t("squadMenu.favoriteOn"),
+                  favoriteOff: t("squadMenu.favoriteOff"),
+                  lockOn: t("squadMenu.lockOn"),
+                  lockOff: t("squadMenu.lockOff"),
+                  viewTeam: t("squadMenu.viewTeam"),
+                  hint: t("squadMenu.hint"),
+                  heal: t("squadMenu.heal"),
+                  restorePp: t("squadMenu.restorePp"),
+                  rareCandy: t("squadMenu.rareCandy"),
+                },
+              };
+            })}
+        />
+  );
+
   return (
     <div className="relative flex-1 overflow-hidden">
       <div className="relative px-margin-mobile md:px-margin-desktop py-6">
@@ -150,9 +279,14 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
             )}
           </div>
 
+          {/* Orden distinto por tamaño de pantalla. En mobile el jugador entraba
+              y lo primero que veía era un mapa grande y un bloque largo de
+              texto; ahora arranca por su equipo, que es lo que engancha, y el
+              mapa y la misión quedan abajo. En lg vuelve al layout de dos
+              columnas con el equipo debajo, que ahí sí tiene espacio. */}
           {expedition && milestone && (
-            <div className="mt-6 grid gap-4 lg:grid-cols-3 lg:items-stretch">
-              <div className="lg:col-span-2">
+            <div className="mt-5 flex flex-col gap-4 lg:mt-6 lg:grid lg:grid-cols-3 lg:items-stretch">
+              <div className="order-1 lg:col-span-2">
                 <CurrentExpedition
                   locationNameKey={expedition.location.nameKey}
                   locationKindKey={`kinds.${expedition.location.kind}`}
@@ -169,144 +303,44 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                   farmingStageId={progress.farmingStageId}
                 />
               </div>
-              <ActiveMission
-                heading={t("activeMission")}
-                title={missionTitle}
-                description={missionDescription}
-                progressLabel={tc("journeyProgress")}
-                progressPercent={expedition.journeyPercent}
-                stagesLabel={t("stagesCleared")}
-                stagesDone={locationStagesDone}
-                stagesTotal={locationStages.length}
-                ctaHref={missionHref}
-                ctaLabel={
-                  milestone.kind === "gym" ? tc("challengeGym") : tc("continueExpedition")
-                }
-              />
+              <div className="order-3 lg:order-2">
+                <CollapsibleOnMobile
+                  title={t("activeMission")}
+                  icon="assignment"
+                  summary={missionTitle}
+                >
+                  <ActiveMission
+                    heading={t("activeMission")}
+                    title={missionTitle}
+                    description={missionDescription}
+                    progressLabel={tc("journeyProgress")}
+                    progressPercent={expedition.journeyPercent}
+                    stagesLabel={t("stagesCleared")}
+                    stagesDone={locationStagesDone}
+                    stagesTotal={locationStages.length}
+                    ctaHref={missionHref}
+                    ctaLabel={
+                      milestone.kind === "gym" ? tc("challengeGym") : tc("continueExpedition")
+                    }
+                  />
+                </CollapsibleOnMobile>
+              </div>
+
+              <section className="order-2 lg:order-3 lg:col-span-3 lg:mt-2">
+                <SquadHeader t={t} />
+                {squadGrid}
+              </section>
             </div>
           )}
 
-          <section className="mt-4">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-pokeball-red">group</span>
-                <h2 className="text-headline-md text-white">{t("activeSquad")}</h2>
-              </div>
-              <Link
-                href="/team"
-                className="flex items-center gap-1 text-label-sm text-on-surface-variant transition-colors hover:text-white"
-              >
-                {t("manage")}
-                <span className="material-symbols-outlined text-sm!">chevron_right</span>
-              </Link>
-            </div>
+          {/* Sin expedición no hay grid que ordenar: el equipo va solo. */}
+          {!(expedition && milestone) && (
+            <section className="mt-4">
+              <SquadHeader t={t} />
+              {squadGrid}
+            </section>
+          )}
 
-            {/* 6 en una fila desde md: antes el salto a 6 columnas recién
-                ocurría en xl (1280px), así que en pantallas de ~1100px el
-                equipo se partía en dos filas y rompía la estructura. */}
-            <HomeSquadGrid
-              key={pokemon.map((p) => `${p.id}:${p.teamSlot}`).join("|")}
-              locale={locale}
-              emptySlotLabel={t("emptySlot")}
-              leadLabel={tt("lead")}
-              initialBagCounts={bagCounts}
-              slotLabels={Array.from({ length: TEAM_SIZE }, (_, i) =>
-                tt("slotLabel", { slot: i + 1 }),
-              )}
-              initialMembers={slots
-                .filter((instance): instance is NonNullable<typeof instance> => instance !== null)
-                .map((instance): HomeSquadMember => {
-                  const maxHp = calculateMaxHp(
-                    instance.species.baseHp,
-                    instance.level,
-                    instance.ptConstitution,
-                  );
-                  const xpForCurrent = xpForLevel(instance.level);
-                  const xpToNext = xpToNextLevel(instance.xp, instance.level);
-                  const xpIntoLevel = instance.xp - xpForCurrent;
-                  const levelSpan = xpIntoLevel + xpToNext;
-                  const xpPct =
-                    levelSpan > 0
-                      ? Math.max(0, Math.min(100, (xpIntoLevel / levelSpan) * 100))
-                      : 0;
-
-                  const movesBySlot = new Map(instance.moves.map((m) => [m.slot, m]));
-                  const moves = Array.from({ length: 4 }, (_, slotIdx) => {
-                    const m = movesBySlot.get(slotIdx + 1);
-                    if (!m) return null;
-                    const maxPp = m.move.pp ?? 20;
-                    return {
-                      slot: slotIdx + 1,
-                      name: m.move.name,
-                      type: m.move.type,
-                      currentPp: effectivePp(m.currentPp, maxPp),
-                      maxPp,
-                    };
-                  });
-
-                  return {
-                    id: instance.id,
-                    level: instance.level,
-                    isFavorite: instance.isFavorite,
-                    isTradeLocked: instance.isTradeLocked,
-                    nickname: instance.nickname,
-                    speciesName: instance.species.name,
-                    types: instance.species.types,
-                    spriteUrl: spriteFor(instance.species.spriteUrl, instance.isShiny),
-                    currentHp: instance.currentHp,
-                    maxHp,
-                    xpPct,
-                    xpToNextLabel: tt("expToNext", { xp: xpToNext }),
-                    levelLabel: tt("level", { level: instance.level }),
-                    atk: calculateStat(instance.species.baseAttack, instance.ptStrength, instance.level),
-                    def: calculateStat(instance.species.baseDefense, instance.ptDexterity, instance.level),
-                    spAtk: calculateStat(
-                      instance.species.baseSpAtk,
-                      instance.ptIntelligence,
-                      instance.level,
-                    ),
-                    spDef: calculateStat(
-                      instance.species.baseSpDef,
-                      instance.ptIntelligence,
-                      instance.level,
-                    ),
-                    speed: calculateStat(instance.species.baseSpeed, instance.ptSpeed, instance.level),
-                    evolutionChain: evolutionChains.get(instance.speciesId) ?? [],
-                    moves,
-                    labels: {
-                      hp: tt("stats.hp"),
-                      exp: tt("stats.exp"),
-                      atk: tt("stats.atk"),
-                      def: tt("stats.def"),
-                      spAtk: tt("stats.spAtk"),
-                      spDef: tt("stats.spDef"),
-                      speed: tt("stats.speed"),
-                      fainted: tt("fainted"),
-                      favorite: t("squadMenu.favoriteBadge"),
-                      tradeLocked: t("squadMenu.lockedBadge"),
-                      pp: tt("drawer.pp"),
-                      emptyMove: tt("drawer.emptySlotMove"),
-                      tabAbout: tt("drawer.tabAbout"),
-                      tabStats: tt("drawer.tabStats"),
-                      tabEvolutions: tt("drawer.tabEvolutions"),
-                      unknownSpecies: tt("drawer.unknownSpecies"),
-                      evolveAtLevel: tt("drawer.evolveAtLevel", { level: "{level}" }),
-                    },
-                    menuLabels: {
-                      favoriteOn: t("squadMenu.favoriteOn"),
-                      favoriteOff: t("squadMenu.favoriteOff"),
-                      lockOn: t("squadMenu.lockOn"),
-                      lockOff: t("squadMenu.lockOff"),
-                      viewTeam: t("squadMenu.viewTeam"),
-                      hint: t("squadMenu.hint"),
-                      heal: t("squadMenu.heal"),
-                      restorePp: t("squadMenu.restorePp"),
-                      rareCandy: t("squadMenu.rareCandy"),
-                    },
-                  };
-                })}
-            />
-          </section>
 
           {isDev && <CampaignDevPanel locale={locale} />}
         </div>

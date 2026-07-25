@@ -395,7 +395,9 @@
       "equipping": "Aplicando…",
       "equipErrors": {
         "no_item": "Você não tem mais esse item"
-      }
+      },
+      "showDetails": "Ver detalhes",
+      "hideDetails": "Ocultar"
     },
     "healFree": "Cura grátis disponível",
     "healCooldown": "Grátis em {minutes} min",
@@ -1246,6 +1248,7 @@
     },
     "currentRegion": "Região atual",
     "openMap": "Ver mapa completo",
+    "tapMapHint": "Toque o mapa para ampliar",
     "closeMap": "Fechar mapa",
     "pickZoneHint": "Toque uma zona desbloqueada para se localizar e definir os selvagens.",
     "pickStage": "Stage de farm",

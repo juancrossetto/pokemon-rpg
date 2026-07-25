@@ -173,7 +173,10 @@ export function HomeSquadGrid({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-3 gap-2 md:grid-cols-6">
+      {/* Una card por fila en mobile: estas cards traen HP, EXP, pestañas y
+          movimientos, y a 3 columnas en 375px quedaban ilegibles y encimadas.
+          Recién desde sm entran dos, y las 6 en una fila desde xl. */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {slots.map((instance, i) => {
           const isOver = overSlot === i && dragId !== null;
           const isDragging = instance !== null && dragId === instance.id;

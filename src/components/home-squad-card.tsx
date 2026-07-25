@@ -11,6 +11,7 @@ import {
 } from "@/components/squad-card-context-menu";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import { SquadCardSheet, type SquadCardSheetLabels } from "@/components/squad-card-sheet";
+import { PokeSparks } from "@/components/poke-sparks";
 import type { EvolutionStage } from "@/lib/evolution-chain";
 
 export type HomeSquadMove = {
@@ -37,6 +38,8 @@ export type HomeSquadCardLabels = {
   tradeLocked: string;
   pp: string;
   emptyMove: string;
+  showDetails: string;
+  hideDetails: string;
   tabAbout: string;
   tabStats: string;
   tabEvolutions: string;
@@ -120,6 +123,8 @@ export function HomeSquadCard({
   const fainted = currentHp <= 0;
 
   const sheetLabels: SquadCardSheetLabels = {
+    showDetails: labels.showDetails,
+    hideDetails: labels.hideDetails,
     tabAbout: labels.tabAbout,
     tabStats: labels.tabStats,
     tabEvolutions: labels.tabEvolutions,
@@ -192,6 +197,8 @@ export function HomeSquadCard({
             aria-hidden
           />
 
+          <PokeSparks seed={instanceId} accent={accent} />
+
           <div className="absolute left-2.5 top-2.5 z-[2] flex items-center gap-1">
             {isLead ? (
               <span className="flex items-center text-violet-300" title={labels.lead}>
@@ -215,7 +222,7 @@ export function HomeSquadCard({
               </span>
             )}
           </div>
-          <span className="absolute right-2.5 top-2.5 z-[2] rounded-full border border-white/15 bg-black/45 px-2 py-0.5 font-mono text-[10px] font-semibold text-white backdrop-blur-sm">
+          <span className="absolute right-10 top-2.5 z-[2] rounded-full border border-white/15 bg-black/45 px-2 py-0.5 font-mono text-[10px] font-semibold text-white backdrop-blur-sm">
             {labels.level}
           </span>
 
@@ -269,6 +276,7 @@ export function HomeSquadCard({
           <div className="mt-2 flex-1">
             <SquadCardSheet
               compact
+              collapsibleOnMobile
               labels={sheetLabels}
               moves={moves}
               currentHp={currentHp}
@@ -292,12 +300,17 @@ export function HomeEmptySquadSlot({ label }: { label: string }) {
   return (
     <Link
       href="/team"
-      className="group flex h-full min-h-[300px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/12 bg-white/[0.015] px-2 py-4 text-center transition hover:border-white/25 hover:bg-white/[0.03]"
+      // En mobile es una fila de 96px, no un bloque de 300: un hueco vacío no
+      // merece el mismo alto que un Pokémon con stats. Desde sm vuelve a la
+      // caja alta para que la grilla quede pareja en desktop.
+      className="group flex min-h-[96px] flex-row items-center justify-center gap-2.5 rounded-2xl border border-dashed border-white/12 bg-white/[0.015] px-3 py-3 text-center transition hover:border-white/25 hover:bg-white/[0.03] sm:min-h-[300px] sm:flex-col sm:gap-0 sm:rounded-[1.5rem] sm:px-2 sm:py-4"
     >
-      <div className="mb-1.5 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.02] transition group-hover:border-white/30">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.02] transition group-hover:border-white/30 sm:mb-1.5 sm:h-10 sm:w-10">
         <span className="material-symbols-outlined text-[20px]! text-on-surface-variant/50">add</span>
       </div>
-      <p className="text-[10px] uppercase tracking-wider text-on-surface-variant/70">{label}</p>
+      <p className="text-[11px] uppercase tracking-wider text-on-surface-variant/70 sm:text-[10px]">
+        {label}
+      </p>
     </Link>
   );
 }

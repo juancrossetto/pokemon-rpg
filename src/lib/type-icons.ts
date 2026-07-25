@@ -1,3 +1,5 @@
+import { showdownSpritesBase } from "@/lib/showdown-sprites";
+
 // Material Symbols usado para representar cada tipo — medallas de gimnasio,
 // badges de tipo con ícono. Ver src/lib/type-colors.ts para el color a juego.
 export const TYPE_ICONS: Record<string, string> = {
@@ -23,4 +25,11 @@ export const TYPE_ICONS: Record<string, string> = {
 
 export function typeIcon(type: string): string {
   return TYPE_ICONS[type] ?? "help";
+}
+
+/** Badge de tipo pixel de Showdown (`sprites/types/Water.png`). */
+export function showdownTypeBadgeUrl(type: string): string {
+  const name = type.trim().toLowerCase();
+  const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
+  return `${showdownSpritesBase()}/types/${capitalized}.png`;
 }

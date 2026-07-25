@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -32,8 +32,24 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
-  return { title: t("title"), description: t("description") };
+  return {
+    title: t("title"),
+    description: t("description"),
+    // iOS ignora el manifest para esto: sin `appleWebApp.capable` el acceso
+    // directo abre Safari con su barra en vez de pantalla completa.
+    appleWebApp: {
+      capable: true,
+      title: "PokeRPG",
+      statusBarStyle: "black-translucent",
+    },
+  };
 }
+
+// Tiñe la barra de estado del sistema al abrir la app instalada. Va aparte de
+// `metadata` porque Next lo exige como export propio desde v14.
+export const viewport: Viewport = {
+  themeColor: "#131313",
+};
 
 export default async function LocaleLayout({
   children,

@@ -395,7 +395,9 @@
       "equipping": "Applying…",
       "equipErrors": {
         "no_item": "You no longer have that item"
-      }
+      },
+      "showDetails": "See details",
+      "hideDetails": "Hide"
     },
     "healFree": "Free healing available",
     "healCooldown": "Free in {minutes} min",
@@ -1246,6 +1248,7 @@
     },
     "currentRegion": "Current region",
     "openMap": "View full map",
+    "tapMapHint": "Tap the map to expand",
     "closeMap": "Close map",
     "pickZoneHint": "Tap an unlocked zone to set your location and wild encounters.",
     "pickStage": "Farming stage",

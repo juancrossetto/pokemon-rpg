@@ -17,6 +17,8 @@ export type SquadCardMoveSlot = {
 } | null;
 
 export type SquadCardSheetLabels = {
+  showDetails: string;
+  hideDetails: string;
   tabAbout: string;
   tabStats: string;
   tabEvolutions: string;
@@ -46,6 +48,7 @@ export function SquadCardSheet({
   speed,
   evolutionChain,
   compact = false,
+  collapsibleOnMobile = false,
   footer,
 }: {
   labels: SquadCardSheetLabels;
@@ -60,9 +63,12 @@ export function SquadCardSheet({
   speed: number;
   evolutionChain: EvolutionStage[];
   compact?: boolean;
+  /** En mobile oculta pestañas/stats/movimientos tras "Ver detalles". */
+  collapsibleOnMobile?: boolean;
   footer?: ReactNode;
 }) {
   const [tab, setTab] = useState<SquadCardTab>("about");
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const hpPct = Math.max(0, Math.min(100, maxHp > 0 ? (currentHp / maxHp) * 100 : 0));
   const hpPctLabel = `${Math.round(hpPct)}%`;
   const xpPctLabel = `${Math.round(xpPct)}%`;
@@ -103,6 +109,30 @@ export function SquadCardSheet({
         />
       </div>
 
+      {/* En mobile sólo quedan visibles sprite/nombre/HP/EXP; pestañas, stats
+          y movimientos entran acá detrás de "Ver detalles". Cada card pasaba de
+          ~300px a poco más de la mitad. Desde sm se muestra todo como antes. */}
+      {collapsibleOnMobile && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDetailsOpen((v) => !v);
+          }}
+          aria-expanded={detailsOpen}
+          className="mt-1 flex w-full items-center justify-center gap-1 rounded-md border border-white/10 bg-white/[0.04] py-1 text-[10px] font-semibold uppercase tracking-wide text-on-surface-variant transition active:scale-[0.98] sm:hidden"
+        >
+          {detailsOpen ? labels.hideDetails : labels.showDetails}
+          <span
+            className={`material-symbols-outlined text-[14px]! transition-transform ${detailsOpen ? "rotate-180" : ""}`}
+          >
+            expand_more
+          </span>
+        </button>
+      )}
+
+      <div className={collapsibleOnMobile && !detailsOpen ? "hidden sm:block" : ""}>
       <div
         className={`flex border-b border-white/10 ${compact ? "gap-0" : "gap-0.5"}`}
         role="tablist"
@@ -216,6 +246,7 @@ export function SquadCardSheet({
             compact={compact}
           />
         )}
+      </div>
       </div>
 
       {footer}
