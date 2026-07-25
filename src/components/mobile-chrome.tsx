@@ -20,6 +20,7 @@ export function MobileChrome({
   avatarId,
   logoutLabel,
   trainerLabel,
+  teamLabel,
   lockedHref,
   lockedLabel,
   lockedIcon,
@@ -37,6 +38,7 @@ export function MobileChrome({
   avatarId?: string | null;
   logoutLabel: string;
   trainerLabel: string;
+  teamLabel: string;
   lockedHref: string | null;
   lockedLabel: string | null;
   lockedIcon: "swords" | "military_tech";
@@ -86,6 +88,7 @@ export function MobileChrome({
               avatarId={avatarId ?? null}
               logoutLabel={logoutLabel}
               trainerLabel={trainerLabel}
+              teamLabel={teamLabel}
             />
           ) : (
             <div className="flex items-center gap-1.5">

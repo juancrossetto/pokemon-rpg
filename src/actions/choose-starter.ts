@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateMaxHp, xpForLevel } from "@/lib/stats";
 import { STARTER_SPECIES_IDS } from "@/lib/starters";
 import { getMovesetForLevel } from "@/lib/moveset";
+import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 
 const STARTER_LEVEL = 5;
 const STARTER_POKEBALL_COUNT = 5;
@@ -53,6 +54,8 @@ export async function chooseStarter(speciesId: number, locale: string) {
     prisma.item.findUnique({ where: { name: "Potion" } }),
     prisma.item.findUnique({ where: { name: "Oran Berry" } }),
   ]);
+
+  await ensureCampaignProgress(userId);
 
   await prisma.$transaction([
     prisma.user.update({

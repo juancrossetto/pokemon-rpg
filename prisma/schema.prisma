@@ -48,6 +48,26 @@ model User {
   battleSessions  BattleSession[]
   pvpAsChallenger PvpMatch[]        @relation("PvpChallenger")
   pvpAsOpponent   PvpMatch[]        @relation("PvpOpponent")
+  campaignProgress CampaignProgress?
+}
+
+// ---------- Progresión de campaña (Region → Location → Stage) ----------
+// Contenido estático en src/lib/campaign/; acá solo el progreso del jugador.
+// PvP no lee ni escribe este modelo.
+
+model CampaignProgress {
+  userId                    String   @id
+  currentRegionId           String   @default("kanto")
+  highestUnlockedLocationId String
+  selectedLocationId        String
+  farmingLocationId         String
+  farmingStageId            String
+  highestCompletedStageId   String?
+  completedStageIds         String[] @default([])
+  lastMilestoneId           String?
+  updatedAt                 DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ---------- Datos de Pokémon (seed desde PokeAPI, ver scripts/seed) ----------

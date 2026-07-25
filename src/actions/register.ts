@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { CAMPAIGN_DEFAULTS } from "@/lib/campaign";
 
 const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
@@ -42,6 +43,9 @@ export async function registerUser(
         gender: gender ?? null,
         age: age ?? null,
         avatarId: avatarId ?? null,
+        campaignProgress: {
+          create: { ...CAMPAIGN_DEFAULTS },
+        },
       },
     });
     return { success: true };

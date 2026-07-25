@@ -26,7 +26,8 @@
     "ranking": "Ranking",
     "clans": "Clanes",
     "pvp": "PvP",
-    "more": "Más"
+    "more": "Más",
+    "campaign": "Viaje"
   },
   "home": {
     "eyebrow": "Temporada 1",
@@ -40,17 +41,34 @@
     "chooseStarterLink": "Elegir inicial",
     "activeSquad": "Equipo activo",
     "manage": "Administrar",
-    "emptySlot": "Espacio vacío"
+    "emptySlot": "Espacio vacío",
+    "liveSync": "Sync en vivo",
+    "time": "Hora",
+    "climate": "Clima",
+    "climates": {
+      "town": "Despejado",
+      "route": "Brisa suave",
+      "forest": "Bosque húmedo",
+      "dungeon": "Cueva oscura",
+      "gym": "Interior"
+    },
+    "activeMission": "Misión activa",
+    "stagesCleared": "Stages de la zona",
+    "missionStage": "Avanzá por {location} para completar el próximo tramo de tu expedición y desbloquear la siguiente zona.",
+    "missionGym": "Ganá la medalla de {location} para poder seguir avanzando en el viaje.",
+    "missionComplete": "Completaste Kanto. Seguí farmeando para subir de nivel a tu equipo."
   },
   "pokedex": {
     "eyebrow": "Base de datos",
     "title": "Pokédex",
-    "subtitle": "{count} especies cargadas desde PokeAPI",
+    "subtitle": "{count, plural, one {# especie cargada desde PokeAPI} other {# especies cargadas desde PokeAPI}}",
     "stats": {
       "hp": "HP",
       "atk": "Atq",
       "spd": "Vel"
-    }
+    },
+    "clearSearch": "Limpiar búsqueda",
+    "noResults": "Sin resultados para «{query}»."
   },
   "auth": {
     "login": {
@@ -173,6 +191,34 @@
     "title": "Batalla",
     "subtitle": "Explorá para encontrar un Pokémon salvaje y ganar experiencia.",
     "explore": "Explorar",
+    "lobby": {
+      "liveSync": "Live sync",
+      "energy": "Energía",
+      "energyHint": "Explorar cuesta {cost} · se regenera con el tiempo",
+      "currentLocation": "Ubicación actual",
+      "zoneName": "Ruta 1",
+      "zoneTerrain": "Pradera densa · afueras de Pueblo Paleta",
+      "predictedTypes": "Tipos probables",
+      "unspentPoints": "{count} puntos sin asignar",
+      "shortcuts": "Accesos",
+      "gotoGyms": "Gimnasios",
+      "gotoPvp": "PvP",
+      "gotoTeam": "Mi equipo",
+      "activeSquad": "Escuadrón activo",
+      "manage": "Gestionar",
+      "recent": "Últimos encuentros",
+      "status": {
+        "WON": "Victoria",
+        "LOST": "Derrota",
+        "FLED": "Huida",
+        "CAUGHT": "Captura"
+      },
+      "zoneEncounters": "Pokémon en la zona",
+      "caught": "Ya capturado",
+      "caughtCount": "{caught}/{total} capturados",
+      "noEncounters": "No hay datos de encuentros para esta zona.",
+      "teamReady": "{ready}/{total}"
+    },
     "run": "Huir",
     "hp": "HP",
     "level": "Nv. {level}",
@@ -252,8 +298,17 @@
     "errors": {
       "noLead": "Necesitás un Pokémon en tu equipo para batallar.",
       "faintedLead": "Tu Pokémon está debilitado — curalo en Mi equipo primero.",
-      "noEnergy": "No te queda energía. Esperá a que se regenere."
-    }
+      "noEnergy": "No te queda energía. Esperá a que se regenere.",
+      "noStage": "No hay stage de farming válido. Elegí uno en el mapa del viaje."
+    },
+    "resultEyebrow": "Batalla finalizada",
+    "victoryTag": "Victoria",
+    "koTag": "K.O.",
+    "caughtTag": "Atrapado",
+    "fledTag": "Huida",
+    "rewardsTitle": "Recompensas",
+    "backHome": "Volver al inicio",
+    "resultLostTitle": "Perdiste la batalla"
   },
   "gyms": {
     "title": "Gimnasios",
@@ -449,8 +504,11 @@
       "team_full": "Tu equipo está lleno. Depositá un Pokémon primero.",
       "in_battle": "No podés depositar un Pokémon en medio de una batalla.",
       "last_team_member": "No podés depositar tu último Pokémon activo.",
-      "rate_limited": "Demasiadas operaciones seguidas. Esperá un momento."
-    }
+      "rate_limited": "Demasiadas operaciones seguidas. Esperá un momento.",
+      "unauthorized": "Sesión expirada. Iniciá sesión de nuevo."
+    },
+    "dragHint": "Arrastrá para reordenar el equipo o soltá en la PC para guardar.",
+    "emptySlot": "Slot {slot} libre"
   },
   "ranking": {
     "title": "Ranking",
@@ -560,5 +618,180 @@
       "no_energy": "No te alcanza la energía para buscar un combate.",
       "rate_limited": "Demasiados combates seguidos. Esperá un momento."
     }
+  },
+  "campaign": {
+    "eyebrow": "Viaje de Kanto",
+    "title": "Mapa del viaje",
+    "subtitle": "Elegí ubicación y stage de expedición. Explorar usa el stage de farming activo.",
+    "backHome": "Volver al inicio",
+    "currentExpedition": "Expedición actual",
+    "farmingStage": "Stage",
+    "journeyProgress": "Progreso del viaje",
+    "nextMilestone": "Próximo hito",
+    "selectLocation": "Elegir ubicación",
+    "continueExpedition": "Continuar expedición",
+    "challengeGym": "Desafiar gimnasio",
+    "farming": "Farming",
+    "select": "Seleccionar",
+    "selected": "Seleccionada",
+    "stageProgress": "{done}/{total} stages",
+    "gymMilestone": "Gimnasio",
+    "errors": {
+      "noStage": "No hay stage de farming válido. Elegí uno en el mapa del viaje."
+    },
+    "dev": {
+      "title": "Dev · campaña",
+      "hint": "Solo en development. No afecta PvP.",
+      "reset": "Reset progreso",
+      "unlockForest": "Desbloquear Bosque Verde",
+      "unlockAll": "Desbloquear todo Kanto"
+    },
+    "regions": {
+      "kanto": "Kanto",
+      "johto": "Johto",
+      "hoenn": "Hoenn",
+      "sinnoh": "Sinnoh"
+    },
+    "milestones": {
+      "region_complete": "Kanto completado"
+    },
+    "locations": {
+      "pallet_town": "Pueblo Paleta",
+      "route_1": "Ruta 1",
+      "viridian_city": "Ciudad Verde",
+      "route_2": "Ruta 2",
+      "viridian_forest": "Bosque Verde",
+      "pewter_city": "Ciudad Plateada",
+      "pewter_gym": "Gimnasio de Plateada",
+      "route_3": "Ruta 3",
+      "mt_moon": "Mt. Moon",
+      "cerulean_city": "Ciudad Celeste",
+      "cerulean_gym": "Gimnasio de Celeste",
+      "route_5": "Ruta 5",
+      "vermilion_city": "Ciudad Carmín",
+      "vermilion_gym": "Gimnasio de Carmín",
+      "route_11": "Ruta 11",
+      "rock_tunnel": "Túnel Roca",
+      "lavender_town": "Pueblo Lavanda",
+      "route_8": "Ruta 8",
+      "celadon_city": "Ciudad Azulona",
+      "celadon_gym": "Gimnasio de Azulona",
+      "route_16": "Ruta 16",
+      "fuchsia_city": "Ciudad Fucsia",
+      "fuchsia_gym": "Gimnasio de Fucsia",
+      "route_15": "Ruta 15",
+      "saffron_city": "Ciudad Azafrán",
+      "saffron_gym": "Gimnasio de Azafrán",
+      "route_19": "Ruta 19 (mar)",
+      "cinnabar_island": "Isla Canela",
+      "cinnabar_gym": "Gimnasio de Canela",
+      "route_21": "Ruta 21 (mar)",
+      "viridian_gym": "Gimnasio de Ciudad Verde"
+    },
+    "sectors": {
+      "vf_entrance": "Entrada",
+      "vf_mid": "Centro",
+      "vf_deep": "Profundidades"
+    },
+    "stages": {
+      "pallet_1": "Afueras de Paleta",
+      "r1_1": "Ruta 1 · tramo 1",
+      "r1_2": "Ruta 1 · tramo 2",
+      "r1_3": "Ruta 1 · tramo 3",
+      "viridian_1": "Parque de Ciudad Verde",
+      "r2_1": "Ruta 2 · tramo 1",
+      "r2_2": "Ruta 2 · tramo 2",
+      "r2_3": "Ruta 2 · tramo 3",
+      "vf_e_1": "Bosque · entrada 1",
+      "vf_e_2": "Bosque · entrada 2",
+      "vf_e_3": "Bosque · entrada 3",
+      "vf_e_4": "Bosque · entrada 4",
+      "vf_e_5": "Bosque · entrada 5",
+      "vf_m_1": "Bosque · centro 1",
+      "vf_m_2": "Bosque · centro 2",
+      "vf_m_3": "Bosque · centro 3",
+      "vf_m_4": "Bosque · centro 4",
+      "vf_m_5": "Bosque · centro 5",
+      "vf_d_1": "Bosque · fondo 1",
+      "vf_d_2": "Bosque · fondo 2",
+      "vf_d_3": "Bosque · fondo 3",
+      "vf_d_4": "Bosque · fondo 4",
+      "vf_d_5": "Bosque · fondo 5",
+      "pewter_1": "Calles de Plateada",
+      "pewter_gym_milestone": "Medalla Roca",
+      "r3_1": "Ruta 3 · tramo 1",
+      "r3_2": "Ruta 3 · tramo 2",
+      "r3_3": "Ruta 3 · tramo 3",
+      "mm_1": "Mt. Moon · nivel 1",
+      "mm_2": "Mt. Moon · nivel 2",
+      "mm_3": "Mt. Moon · nivel 3",
+      "mm_4": "Mt. Moon · nivel 4",
+      "cerulean_1": "Orillas de Celeste",
+      "r5_1": "Ruta 5 · tramo 1",
+      "r5_2": "Ruta 5 · tramo 2",
+      "r5_3": "Ruta 5 · tramo 3",
+      "r11_1": "Ruta 11 · tramo 1",
+      "r11_2": "Ruta 11 · tramo 2",
+      "r11_3": "Ruta 11 · tramo 3",
+      "rt_1": "Túnel Roca · tramo 1",
+      "rt_2": "Túnel Roca · tramo 2",
+      "rt_3": "Túnel Roca · tramo 3",
+      "rt_4": "Túnel Roca · tramo 4",
+      "r8_1": "Ruta 8 · tramo 1",
+      "r8_2": "Ruta 8 · tramo 2",
+      "r8_3": "Ruta 8 · tramo 3",
+      "r16_1": "Ruta 16 · tramo 1",
+      "r16_2": "Ruta 16 · tramo 2",
+      "r16_3": "Ruta 16 · tramo 3",
+      "r15_1": "Ruta 15 · tramo 1",
+      "r15_2": "Ruta 15 · tramo 2",
+      "r15_3": "Ruta 15 · tramo 3",
+      "r19_1": "Ruta 19 (mar) · tramo 1",
+      "r19_2": "Ruta 19 (mar) · tramo 2",
+      "r19_3": "Ruta 19 (mar) · tramo 3",
+      "r21_1": "Ruta 21 (mar) · tramo 1",
+      "r21_2": "Ruta 21 (mar) · tramo 2",
+      "r21_3": "Ruta 21 (mar) · tramo 3",
+      "vermilion_city_1": "Afueras de Ciudad Carmín",
+      "lavender_town_1": "Afueras de Pueblo Lavanda",
+      "celadon_city_1": "Afueras de Ciudad Azulona",
+      "fuchsia_city_1": "Afueras de Ciudad Fucsia",
+      "saffron_city_1": "Afueras de Ciudad Azafrán",
+      "cinnabar_island_1": "Afueras de Isla Canela",
+      "cerulean_gym_milestone": "Desafío: Gimnasio de Celeste",
+      "vermilion_gym_milestone": "Desafío: Gimnasio de Carmín",
+      "celadon_gym_milestone": "Desafío: Gimnasio de Azulona",
+      "fuchsia_gym_milestone": "Desafío: Gimnasio de Fucsia",
+      "saffron_gym_milestone": "Desafío: Gimnasio de Azafrán",
+      "cinnabar_gym_milestone": "Desafío: Gimnasio de Canela",
+      "viridian_gym_milestone": "Desafío: Gimnasio de Ciudad Verde"
+    },
+    "currentLocation": "Ubicación actual",
+    "predictedTypes": "Tipos salvajes previstos en la zona",
+    "wildLevels": "Salvajes Lv. {min}-{max}",
+    "kinds": {
+      "town": "Ciudad",
+      "route": "Ruta",
+      "forest": "Bosque denso",
+      "dungeon": "Cueva",
+      "gym": "Gimnasio"
+    },
+    "currentRegion": "Región actual",
+    "openMap": "Ver mapa completo",
+    "closeMap": "Cerrar mapa",
+    "pickZoneHint": "Elegí una zona desbloqueada del mapa para ubicarte. Lo que elijas define qué Pokémon salvajes aparecen al explorar.",
+    "pickStage": "Stage de farmeo",
+    "moveHere": "Ubicarme acá",
+    "youAreHere": "Estás acá",
+    "viewList": "Ver lista",
+    "encounterRate": {
+      "low": "Encuentros: bajos",
+      "medium": "Encuentros: medios",
+      "high": "Encuentros: altos"
+    },
+    "zoneWilds": "Salvajes de la zona",
+    "zoneWildsHint": "Lo que puede aparecer al explorar acá.",
+    "zonesUnlocked": "Zonas abiertas",
+    "badges": "Medallas"
   }
 }

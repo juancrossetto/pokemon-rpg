@@ -8,14 +8,14 @@ import { calculateMaxHp } from "@/lib/stats";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { getCurrentEnergy } from "@/lib/energy";
 import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
+import { ensureCampaignProgress } from "@/lib/campaign/ensure";
+import { getKantoStage, resolveSpawn } from "@/lib/campaign";
 
-const ENCOUNTER_ENERGY_COST = 1;
-const LEVEL_RANGE = 2;
-const MAX_SEEDED_SPECIES_ID = 151;
+const FALLBACK_ENERGY_COST = 1;
 
 export type StartEncounterResult =
   | { success: true }
-  | { success: false; error: "no_lead" | "fainted_lead" | "no_energy" };
+  | { success: false; error: "no_lead" | "fainted_lead" | "no_energy" | "no_stage" };
 
 export async function startEncounter(locale: string): Promise<StartEncounterResult | void> {
   const session = await auth();
@@ -41,6 +41,12 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
     return;
   }
 
+  const progress = await ensureCampaignProgress(userId);
+  const stage = getKantoStage(progress.farmingStageId);
+  if (!stage) return { success: false, error: "no_stage" };
+
+  const energyCost = stage.energyCost ?? FALLBACK_ENERGY_COST;
+
   const [user, lead] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: userId } }),
     prisma.pokemonInstance.findFirst({
@@ -53,13 +59,9 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
   if (lead.currentHp <= 0) return { success: false, error: "fainted_lead" };
 
   const currentEnergy = getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt);
-  if (currentEnergy < ENCOUNTER_ENERGY_COST) return { success: false, error: "no_energy" };
+  if (currentEnergy < energyCost) return { success: false, error: "no_energy" };
 
-  const wildLevel = Math.max(
-    2,
-    lead.level + Math.floor(Math.random() * (LEVEL_RANGE * 2 + 1)) - LEVEL_RANGE,
-  );
-  const wildSpeciesId = 1 + Math.floor(Math.random() * MAX_SEEDED_SPECIES_ID);
+  const { speciesId: wildSpeciesId, level: wildLevel } = resolveSpawn(stage);
   const wildSpecies = await prisma.species.findUniqueOrThrow({ where: { id: wildSpeciesId } });
   const wildMaxHp = calculateMaxHp(wildSpecies.baseHp, wildLevel);
   const wildMoveIds = await getMovesetForLevel(wildSpeciesId, wildLevel);
@@ -69,7 +71,7 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
   await prisma.$transaction([
     prisma.user.update({
       where: { id: userId },
-      data: { energy: currentEnergy - ENCOUNTER_ENERGY_COST, energyUpdatedAt: new Date() },
+      data: { energy: currentEnergy - energyCost, energyUpdatedAt: new Date() },
     }),
     prisma.battleSession.create({
       data: {
@@ -81,7 +83,7 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
         wildMaxHp,
         wildMoveIds,
         wildMovePp,
-        log: [`appear:${wildSpecies.name}`],
+        log: [`appear:${wildSpecies.name}`, `stage:${stage.id}`],
         participantIds: [lead.id],
       },
     }),

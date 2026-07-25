@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { typeColor } from "@/lib/type-colors";
@@ -7,16 +8,22 @@ import { redirectIfInBattle } from "@/lib/battle-lock";
 
 export default async function PokedexPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const { locale } = await params;
+  const [{ locale }, { q }] = await Promise.all([params, searchParams]);
   const [t, session] = await Promise.all([getTranslations("pokedex"), auth()]);
   if (session?.user) {
     await redirectIfInBattle(session.user.id, locale);
   }
 
-  const species = await prisma.species.findMany({ orderBy: { id: "asc" } });
+  const query = q?.trim() ?? "";
+  const species = await prisma.species.findMany({
+    where: query ? { name: { contains: query, mode: "insensitive" } } : undefined,
+    orderBy: { id: "asc" },
+  });
 
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
@@ -29,6 +36,27 @@ export default async function PokedexPage({
         <p className="text-body-md text-on-surface-variant mt-1">
           {t("subtitle", { count: species.length })}
         </p>
+
+        {query && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-label-sm text-on-surface">
+              <span className="material-symbols-outlined text-[14px] text-pokeball-red">search</span>
+              {query}
+            </span>
+            <Link
+              href="/pokedex"
+              className="text-label-sm text-on-surface-variant underline-offset-4 hover:text-white hover:underline"
+            >
+              {t("clearSearch")}
+            </Link>
+          </div>
+        )}
+
+        {query && species.length === 0 && (
+          <p className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-body-md text-on-surface-variant">
+            {t("noResults", { query })}
+          </p>
+        )}
 
         <ul className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {species.map((s) => (

@@ -26,7 +26,8 @@
     "ranking": "Ranking",
     "clans": "Clãs",
     "pvp": "PvP",
-    "more": "Mais"
+    "more": "Mais",
+    "campaign": "Jornada"
   },
   "home": {
     "eyebrow": "Temporada 1",
@@ -40,17 +41,34 @@
     "chooseStarterLink": "Escolher inicial",
     "activeSquad": "Time ativo",
     "manage": "Gerenciar",
-    "emptySlot": "Espaço vazio"
+    "emptySlot": "Espaço vazio",
+    "liveSync": "Sync ao vivo",
+    "time": "Hora",
+    "climate": "Clima",
+    "climates": {
+      "town": "Céu limpo",
+      "route": "Brisa leve",
+      "forest": "Floresta úmida",
+      "dungeon": "Caverna escura",
+      "gym": "Interior"
+    },
+    "activeMission": "Missão ativa",
+    "stagesCleared": "Stages da área",
+    "missionStage": "Avance por {location} para concluir o próximo trecho da sua expedição e desbloquear a próxima área.",
+    "missionGym": "Conquiste a insígnia de {location} para continuar avançando na jornada.",
+    "missionComplete": "Você concluiu Kanto. Continue farmando para subir o nível do seu time."
   },
   "pokedex": {
     "eyebrow": "Banco de dados",
     "title": "Pokédex",
-    "subtitle": "{count} espécies carregadas da PokeAPI",
+    "subtitle": "{count, plural, one {# espécie carregada da PokeAPI} other {# espécies carregadas da PokeAPI}}",
     "stats": {
       "hp": "HP",
       "atk": "Atq",
       "spd": "Vel"
-    }
+    },
+    "clearSearch": "Limpar busca",
+    "noResults": "Sem resultados para “{query}”."
   },
   "auth": {
     "login": {
@@ -173,6 +191,34 @@
     "title": "Batalha",
     "subtitle": "Explore para encontrar um Pokémon selvagem e ganhar experiência.",
     "explore": "Explorar",
+    "lobby": {
+      "liveSync": "Live sync",
+      "energy": "Energia",
+      "energyHint": "Explorar custa {cost} · regenera com o tempo",
+      "currentLocation": "Localização atual",
+      "zoneName": "Rota 1",
+      "zoneTerrain": "Pradaria densa · arredores de Pallet",
+      "predictedTypes": "Tipos prováveis",
+      "unspentPoints": "{count} pontos não usados",
+      "shortcuts": "Atalhos",
+      "gotoGyms": "Ginásios",
+      "gotoPvp": "PvP",
+      "gotoTeam": "Meu time",
+      "activeSquad": "Esquadrão ativo",
+      "manage": "Gerenciar",
+      "recent": "Últimos encontros",
+      "status": {
+        "WON": "Vitória",
+        "LOST": "Derrota",
+        "FLED": "Fuga",
+        "CAUGHT": "Captura"
+      },
+      "zoneEncounters": "Pokémon na zona",
+      "caught": "Já capturado",
+      "caughtCount": "{caught}/{total} capturados",
+      "noEncounters": "Sem dados de encontros para esta zona.",
+      "teamReady": "{ready}/{total}"
+    },
     "run": "Fugir",
     "hp": "HP",
     "level": "Nv. {level}",
@@ -252,8 +298,17 @@
     "errors": {
       "noLead": "Você precisa de um Pokémon no seu time para batalhar.",
       "faintedLead": "Seu Pokémon está desmaiado — cure-o em Meu time primeiro.",
-      "noEnergy": "Sua energia acabou. Espere ela regenerar."
-    }
+      "noEnergy": "Sua energia acabou. Espere ela regenerar.",
+      "noStage": "Não há stage de farming válido. Escolha um no mapa da jornada."
+    },
+    "resultEyebrow": "Batalha encerrada",
+    "victoryTag": "Vitória",
+    "koTag": "K.O.",
+    "caughtTag": "Capturado",
+    "fledTag": "Fuga",
+    "rewardsTitle": "Recompensas",
+    "backHome": "Voltar ao início",
+    "resultLostTitle": "Você perdeu a batalha"
   },
   "gyms": {
     "title": "Ginásios",
@@ -449,8 +504,11 @@
       "team_full": "Seu time está cheio. Deposite um Pokémon primeiro.",
       "in_battle": "Você não pode depositar um Pokémon no meio de uma batalha.",
       "last_team_member": "Você não pode depositar seu último Pokémon ativo.",
-      "rate_limited": "Muitas operações seguidas. Espere um momento."
-    }
+      "rate_limited": "Muitas operações seguidas. Espere um momento.",
+      "unauthorized": "Sessão expirada. Entre novamente."
+    },
+    "dragHint": "Arraste para reordenar o time, ou solte no PC para guardar.",
+    "emptySlot": "Slot {slot} livre"
   },
   "ranking": {
     "title": "Ranking",
@@ -560,5 +618,180 @@
       "no_energy": "Você não tem energia suficiente para buscar um combate.",
       "rate_limited": "Muitos combates seguidos. Espere um momento."
     }
+  },
+  "campaign": {
+    "eyebrow": "Jornada de Kanto",
+    "title": "Mapa da jornada",
+    "subtitle": "Escolha localização e stage da expedição. Explorar usa o stage de farming ativo.",
+    "backHome": "Voltar ao início",
+    "currentExpedition": "Expedição atual",
+    "farmingStage": "Stage",
+    "journeyProgress": "Progresso da jornada",
+    "nextMilestone": "Próximo marco",
+    "selectLocation": "Escolher localização",
+    "continueExpedition": "Continuar expedição",
+    "challengeGym": "Desafiar ginásio",
+    "farming": "Farming",
+    "select": "Selecionar",
+    "selected": "Selecionada",
+    "stageProgress": "{done}/{total} stages",
+    "gymMilestone": "Ginásio",
+    "errors": {
+      "noStage": "Não há stage de farming válido. Escolha um no mapa da jornada."
+    },
+    "dev": {
+      "title": "Dev · campanha",
+      "hint": "Apenas em development. Não afeta PvP.",
+      "reset": "Resetar progresso",
+      "unlockForest": "Desbloquear Floresta de Viridian",
+      "unlockAll": "Desbloquear todo Kanto"
+    },
+    "regions": {
+      "kanto": "Kanto",
+      "johto": "Johto",
+      "hoenn": "Hoenn",
+      "sinnoh": "Sinnoh"
+    },
+    "milestones": {
+      "region_complete": "Kanto completo"
+    },
+    "locations": {
+      "pallet_town": "Pallet Town",
+      "route_1": "Rota 1",
+      "viridian_city": "Viridian City",
+      "route_2": "Rota 2",
+      "viridian_forest": "Floresta de Viridian",
+      "pewter_city": "Pewter City",
+      "pewter_gym": "Ginásio de Pewter",
+      "route_3": "Rota 3",
+      "mt_moon": "Mt. Moon",
+      "cerulean_city": "Cerulean City",
+      "cerulean_gym": "Ginásio de Cerulean",
+      "route_5": "Rota 5",
+      "vermilion_city": "Cidade Vermilion",
+      "vermilion_gym": "Ginásio de Vermilion",
+      "route_11": "Rota 11",
+      "rock_tunnel": "Túnel Rocha",
+      "lavender_town": "Vila Lavender",
+      "route_8": "Rota 8",
+      "celadon_city": "Cidade Celadon",
+      "celadon_gym": "Ginásio de Celadon",
+      "route_16": "Rota 16",
+      "fuchsia_city": "Cidade Fuchsia",
+      "fuchsia_gym": "Ginásio de Fuchsia",
+      "route_15": "Rota 15",
+      "saffron_city": "Cidade Saffron",
+      "saffron_gym": "Ginásio de Saffron",
+      "route_19": "Rota 19 (mar)",
+      "cinnabar_island": "Ilha Cinnabar",
+      "cinnabar_gym": "Ginásio de Cinnabar",
+      "route_21": "Rota 21 (mar)",
+      "viridian_gym": "Ginásio de Viridian"
+    },
+    "sectors": {
+      "vf_entrance": "Entrada",
+      "vf_mid": "Centro",
+      "vf_deep": "Profundezas"
+    },
+    "stages": {
+      "pallet_1": "Arredores de Pallet",
+      "r1_1": "Rota 1 · trecho 1",
+      "r1_2": "Rota 1 · trecho 2",
+      "r1_3": "Rota 1 · trecho 3",
+      "viridian_1": "Parque de Viridian",
+      "r2_1": "Rota 2 · trecho 1",
+      "r2_2": "Rota 2 · trecho 2",
+      "r2_3": "Rota 2 · trecho 3",
+      "vf_e_1": "Floresta · entrada 1",
+      "vf_e_2": "Floresta · entrada 2",
+      "vf_e_3": "Floresta · entrada 3",
+      "vf_e_4": "Floresta · entrada 4",
+      "vf_e_5": "Floresta · entrada 5",
+      "vf_m_1": "Floresta · centro 1",
+      "vf_m_2": "Floresta · centro 2",
+      "vf_m_3": "Floresta · centro 3",
+      "vf_m_4": "Floresta · centro 4",
+      "vf_m_5": "Floresta · centro 5",
+      "vf_d_1": "Floresta · fundo 1",
+      "vf_d_2": "Floresta · fundo 2",
+      "vf_d_3": "Floresta · fundo 3",
+      "vf_d_4": "Floresta · fundo 4",
+      "vf_d_5": "Floresta · fundo 5",
+      "pewter_1": "Ruas de Pewter",
+      "pewter_gym_milestone": "Insígnia da Rocha",
+      "r3_1": "Rota 3 · trecho 1",
+      "r3_2": "Rota 3 · trecho 2",
+      "r3_3": "Rota 3 · trecho 3",
+      "mm_1": "Mt. Moon · nível 1",
+      "mm_2": "Mt. Moon · nível 2",
+      "mm_3": "Mt. Moon · nível 3",
+      "mm_4": "Mt. Moon · nível 4",
+      "cerulean_1": "Margens de Cerulean",
+      "r5_1": "Rota 5 · trecho 1",
+      "r5_2": "Rota 5 · trecho 2",
+      "r5_3": "Rota 5 · trecho 3",
+      "r11_1": "Rota 11 · trecho 1",
+      "r11_2": "Rota 11 · trecho 2",
+      "r11_3": "Rota 11 · trecho 3",
+      "rt_1": "Túnel Rocha · trecho 1",
+      "rt_2": "Túnel Rocha · trecho 2",
+      "rt_3": "Túnel Rocha · trecho 3",
+      "rt_4": "Túnel Rocha · trecho 4",
+      "r8_1": "Rota 8 · trecho 1",
+      "r8_2": "Rota 8 · trecho 2",
+      "r8_3": "Rota 8 · trecho 3",
+      "r16_1": "Rota 16 · trecho 1",
+      "r16_2": "Rota 16 · trecho 2",
+      "r16_3": "Rota 16 · trecho 3",
+      "r15_1": "Rota 15 · trecho 1",
+      "r15_2": "Rota 15 · trecho 2",
+      "r15_3": "Rota 15 · trecho 3",
+      "r19_1": "Rota 19 (mar) · trecho 1",
+      "r19_2": "Rota 19 (mar) · trecho 2",
+      "r19_3": "Rota 19 (mar) · trecho 3",
+      "r21_1": "Rota 21 (mar) · trecho 1",
+      "r21_2": "Rota 21 (mar) · trecho 2",
+      "r21_3": "Rota 21 (mar) · trecho 3",
+      "vermilion_city_1": "Arredores de Cidade Vermilion",
+      "lavender_town_1": "Arredores de Vila Lavender",
+      "celadon_city_1": "Arredores de Cidade Celadon",
+      "fuchsia_city_1": "Arredores de Cidade Fuchsia",
+      "saffron_city_1": "Arredores de Cidade Saffron",
+      "cinnabar_island_1": "Arredores de Ilha Cinnabar",
+      "cerulean_gym_milestone": "Desafio: Ginásio de Cerulean",
+      "vermilion_gym_milestone": "Desafio: Ginásio de Vermilion",
+      "celadon_gym_milestone": "Desafio: Ginásio de Celadon",
+      "fuchsia_gym_milestone": "Desafio: Ginásio de Fuchsia",
+      "saffron_gym_milestone": "Desafio: Ginásio de Saffron",
+      "cinnabar_gym_milestone": "Desafio: Ginásio de Cinnabar",
+      "viridian_gym_milestone": "Desafio: Ginásio de Viridian"
+    },
+    "currentLocation": "Localização atual",
+    "predictedTypes": "Tipos selvagens previstos na área",
+    "wildLevels": "Selvagens Lv. {min}-{max}",
+    "kinds": {
+      "town": "Cidade",
+      "route": "Rota",
+      "forest": "Floresta densa",
+      "dungeon": "Caverna",
+      "gym": "Ginásio"
+    },
+    "currentRegion": "Região atual",
+    "openMap": "Ver mapa completo",
+    "closeMap": "Fechar mapa",
+    "pickZoneHint": "Escolha uma zona desbloqueada no mapa. Sua escolha define quais Pokémon selvagens aparecem ao explorar.",
+    "pickStage": "Stage de farm",
+    "moveHere": "Vir para cá",
+    "youAreHere": "Você está aqui",
+    "viewList": "Ver lista",
+    "encounterRate": {
+      "low": "Encontros: baixos",
+      "medium": "Encontros: médios",
+      "high": "Encontros: altos"
+    },
+    "zoneWilds": "Selvagens da zona",
+    "zoneWildsHint": "O que pode aparecer ao explorar aqui.",
+    "zonesUnlocked": "Zonas abertas",
+    "badges": "Insígnias"
   }
 }

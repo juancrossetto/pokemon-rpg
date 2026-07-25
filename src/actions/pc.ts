@@ -8,6 +8,7 @@ import { lockUsers } from "@/lib/db-locks";
 import { allowAction } from "@/lib/rate-limit";
 import { TEAM_SIZE } from "@/lib/market-rules";
 import { blockIfInCombat } from "@/lib/battle-lock";
+import { compactTeamSlots } from "@/lib/team";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const MOVE_LIMIT = 30;
@@ -130,6 +131,10 @@ export async function depositPokemon(locale: string, formData: FormData) {
         where: { id: instance.id },
         data: { teamSlot: null },
       });
+
+      // Sin esto el equipo queda con huecos (1, 3, 4) y, si el hueco cae en el
+      // slot 1, explorar deja de funcionar: no hay líder.
+      await compactTeamSlots(tx, userId);
     });
   } catch (e) {
     if (e instanceof PcError) error = e.code;
@@ -137,4 +142,78 @@ export async function depositPokemon(locale: string, formData: FormData) {
   }
 
   backToPc(locale, error ? { error } : { notice: "deposited" });
+}
+
+/**
+ * Aplica el equipo completo tal como quedó en pantalla: `orderedIds` son los
+ * miembros en orden (slot 1..N) y cualquier Pokémon que estuviera en el equipo
+ * y no aparezca acá vuelve a la PC.
+ *
+ * Una sola acción cubre los tres gestos del drag & drop —reordenar, mandar a la
+ * PC y traer de la PC— porque los tres son "así queda el equipo ahora".
+ */
+export async function setTeamLayout(
+  locale: string,
+  orderedIds: string[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "unauthorized" };
+  const userId = session.user.id;
+
+  if (await blockIfInCombat(userId, locale)) return { ok: false, error: "in_battle" };
+
+  if (!allowAction(`pc:move:${userId}`, MOVE_LIMIT, RATE_LIMIT_WINDOW_MS)) {
+    return { ok: false, error: "rate_limited" };
+  }
+
+  const ids = [...new Set(orderedIds.filter(Boolean))];
+  if (ids.length === 0) return { ok: false, error: "last_team_member" };
+  if (ids.length > TEAM_SIZE) return { ok: false, error: "team_full" };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockUsers(tx, userId);
+
+      const instances = await tx.pokemonInstance.findMany({
+        where: { id: { in: ids }, ownerId: userId },
+        include: {
+          listings: { where: { status: "ACTIVE" }, select: { id: true } },
+          battleSessions: { where: { status: "ACTIVE" }, select: { id: true } },
+        },
+      });
+      if (instances.length !== ids.length) throw new PcError("not_found");
+      if (instances.some((i) => i.listings.length > 0)) throw new PcError("listed");
+
+      // Los que salen del equipo no pueden estar en una batalla activa.
+      const leaving = await tx.pokemonInstance.findMany({
+        where: { ownerId: userId, teamSlot: { not: null }, id: { notIn: ids } },
+        include: { battleSessions: { where: { status: "ACTIVE" }, select: { id: true } } },
+      });
+      if (leaving.some((i) => i.battleSessions.length > 0)) throw new PcError("in_battle");
+
+      // Dos fases: el `@@unique([ownerId, teamSlot])` haría chocar cualquier
+      // permutación si asignáramos los slots directamente. Con NULL no hay
+      // choque posible porque Postgres trata cada NULL como distinto.
+      await tx.pokemonInstance.updateMany({
+        where: { ownerId: userId, teamSlot: { not: null } },
+        data: { teamSlot: null },
+      });
+
+      for (const [index, id] of ids.entries()) {
+        await tx.pokemonInstance.update({
+          where: { id },
+          data: { teamSlot: index + 1 },
+        });
+      }
+    });
+  } catch (e) {
+    if (e instanceof PcError) return { ok: false, error: e.code };
+    throw e;
+  }
+
+  revalidatePath(`/${locale}/pc`);
+  revalidatePath(`/${locale}/team`);
+  revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/battle`);
+  return { ok: true };
 }
