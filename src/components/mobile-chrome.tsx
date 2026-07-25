@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
+import { BrandLogo } from "@/components/brand-logo";
 
 type NavLink = {
   href: string;
@@ -13,6 +14,7 @@ type NavLink = {
 
 export function MobileChrome({
   brand,
+  brandHref = "/login",
   locale,
   languageLabel,
   coins,
@@ -20,6 +22,7 @@ export function MobileChrome({
   avatarId,
   logoutLabel,
   trainerLabel,
+  teamLabel,
   lockedHref,
   lockedLabel,
   lockedIcon,
@@ -30,6 +33,7 @@ export function MobileChrome({
   registerLabel,
 }: {
   brand: string;
+  brandHref?: string;
   locale: string;
   languageLabel: string;
   coins: number | null;
@@ -37,6 +41,7 @@ export function MobileChrome({
   avatarId?: string | null;
   logoutLabel: string;
   trainerLabel: string;
+  teamLabel: string;
   lockedHref: string | null;
   lockedLabel: string | null;
   lockedIcon: "swords" | "military_tech";
@@ -47,6 +52,7 @@ export function MobileChrome({
   registerLabel: string;
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
+  const showMore = moreLinks.length > 0;
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -65,11 +71,8 @@ export function MobileChrome({
     <>
       {/* Top bar mobile: brand + coins + language + account */}
       <header className="fixed top-0 inset-x-0 z-50 flex md:hidden items-center justify-between gap-2 px-3 h-12 bg-background/95 backdrop-blur-xl border-b border-white/10 pt-[env(safe-area-inset-top)]">
-        <Link
-          href={lockedHref ?? "/"}
-          className="text-lg font-black text-pokeball-red tracking-tighter shrink-0"
-        >
-          {brand}
+        <Link href={lockedHref ?? brandHref} className="shrink-0">
+          <BrandLogo alt={brand} priority sizes="64px" className="h-7 w-auto" />
         </Link>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -86,6 +89,7 @@ export function MobileChrome({
               avatarId={avatarId ?? null}
               logoutLabel={logoutLabel}
               trainerLabel={trainerLabel}
+              teamLabel={teamLabel}
             />
           ) : (
             <div className="flex items-center gap-1.5">
@@ -125,20 +129,22 @@ export function MobileChrome({
                 <span className="text-[10px] leading-none truncate max-w-full">{item.label}</span>
               </Link>
             ))}
-            <button
-              type="button"
-              onClick={() => setMoreOpen(true)}
-              className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-1 text-on-surface-variant hover:text-pokeball-red transition-colors"
-            >
-              <span className="material-symbols-outlined text-[22px]">menu</span>
-              <span className="text-[10px] leading-none">{moreLabel}</span>
-            </button>
+            {showMore && (
+              <button
+                type="button"
+                onClick={() => setMoreOpen(true)}
+                className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-1 text-on-surface-variant hover:text-pokeball-red transition-colors"
+              >
+                <span className="material-symbols-outlined text-[22px]">menu</span>
+                <span className="text-[10px] leading-none">{moreLabel}</span>
+              </button>
+            )}
           </>
         )}
       </nav>
 
       {/* More sheet */}
-      {moreOpen && (
+      {moreOpen && showMore && (
         <div className="fixed inset-0 z-[60] md:hidden">
           <button
             type="button"

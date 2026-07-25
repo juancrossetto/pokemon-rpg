@@ -12,7 +12,7 @@ import type { GymStatus } from "@/lib/gym-status";
 // duplicado —uno `sm:hidden` y otro `hidden sm:flex`— que había que mantener
 // en paralelo y hacía la card innecesariamente alta en mobile.
 export async function GymCard({ status }: { status: GymStatus }) {
-  const { gym, badgeEarned, locked, onCooldown, hoursLeft } = status;
+  const { gym, badgeEarned, locked, onCooldown, hoursLeft, closed } = status;
   const t = await getTranslations("gyms");
 
   const color = typeColor(gym.type);
@@ -31,7 +31,15 @@ export async function GymCard({ status }: { status: GymStatus }) {
       <span className="material-symbols-outlined text-[13px]! leading-none">check_circle</span>
       {t("badgeEarned")}
     </span>
-  ) : locked ? null : onCooldown ? (
+  ) : locked ? null : closed ? (
+    <span
+      className={`${chipBase} bg-white/5 border-white/20 text-on-surface-variant`}
+      title={t("hours", { opens: gym.opensHour, closes: gym.closesHour })}
+    >
+      <span className="material-symbols-outlined text-[13px]! leading-none">schedule</span>
+      {t("closedChip")}
+    </span>
+  ) : onCooldown ? (
     // Sin ícono: "Disponible en {h}h" ya dice que es tiempo, y es el chip más
     // largo — el reloj lo empujaba a una segunda línea en mobile.
     <span className={`${chipBase} bg-error/10 border-error/30 text-error`}>
@@ -59,10 +67,10 @@ export async function GymCard({ status }: { status: GymStatus }) {
         style={{ background: `linear-gradient(105deg, ${color}33 0%, transparent 48%)` }}
       />
 
-      <div className="relative flex gap-2.5 sm:gap-3 p-2.5 sm:p-3">
+      <div className="relative flex gap-2.5 sm:gap-3 p-2.5">
         {/* Retrato del líder */}
         <div
-          className="relative w-[60px] h-[76px] sm:w-24 sm:h-28 rounded-lg overflow-hidden shrink-0 border"
+          className="relative w-[56px] h-[68px] sm:w-20 sm:h-[88px] rounded-lg overflow-hidden shrink-0 border"
           style={{ borderColor: `${color}88`, boxShadow: `0 0 16px ${color}22` }}
         >
           {portrait ? (
@@ -70,7 +78,7 @@ export async function GymCard({ status }: { status: GymStatus }) {
               src={portrait}
               alt={gym.leaderName}
               fill
-              sizes="(min-width: 640px) 96px, 60px"
+              sizes="(min-width: 640px) 80px, 56px"
               className="object-cover object-top"
             />
           ) : (
@@ -99,7 +107,7 @@ export async function GymCard({ status }: { status: GymStatus }) {
         </div>
 
         {/* Contenido */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
+        <div className="flex-1 min-w-0 flex flex-col justify-between gap-1.5">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               {/* Sans y no la escala mono `label`: el nombre es lo primero que
@@ -108,7 +116,7 @@ export async function GymCard({ status }: { status: GymStatus }) {
                   escala custom vive como CSS plano en @layer utilities, así que
                   Tailwind no genera sus variantes responsive (sm:/md: no hacen
                   nada). 24px replica el tamaño que la card tenía en desktop. */}
-              <h2 className="text-[15px] leading-tight sm:text-[24px] sm:leading-8 font-semibold text-white truncate">
+              <h2 className="text-[15px] leading-tight sm:text-[20px] sm:leading-7 font-semibold text-white truncate">
                 {gym.name}
               </h2>
               <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
@@ -125,7 +133,7 @@ export async function GymCard({ status }: { status: GymStatus }) {
             </div>
 
             <div
-              className={`shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-lg border flex items-center justify-center ${
+              className={`shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-lg border flex items-center justify-center ${
                 badgeEarned
                   ? "border-tertiary/50 bg-tertiary/10"
                   : "border-white/10 bg-surface-container-high/80"
@@ -137,7 +145,7 @@ export async function GymCard({ status }: { status: GymStatus }) {
                 alt={gym.badgeName}
                 width={28}
                 height={28}
-                className={`w-5.5 h-5.5 sm:w-7 sm:h-7 object-contain ${
+                className={`w-5.5 h-5.5 sm:w-6 sm:h-6 object-contain ${
                   badgeEarned ? "drop-shadow-[0_0_6px_rgba(242,192,0,0.55)]" : "opacity-80"
                 }`}
               />
@@ -149,7 +157,7 @@ export async function GymCard({ status }: { status: GymStatus }) {
               {gym.team.map((member) => (
                 <div
                   key={member.id}
-                  className="w-[22px] h-[22px] sm:w-7 sm:h-7 rounded-full bg-surface-container-highest border border-white/15 overflow-hidden"
+                  className="w-[22px] h-[22px] sm:w-6 sm:h-6 rounded-full bg-surface-container-highest border border-white/15 overflow-hidden"
                   title={`${member.species.name} · ${t("levelLabel", { level: member.level })}`}
                 >
                   {member.species.spriteUrl && (

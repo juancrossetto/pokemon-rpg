@@ -14,6 +14,7 @@ import {
 } from "@/lib/market-rules";
 import { applyMarketFeeDiscount } from "@/lib/badge-perks";
 import { blockIfInCombat } from "@/lib/battle-lock";
+import { compactTeamSlots } from "@/lib/team";
 import type { Prisma } from "@/generated/prisma/client";
 
 // Reglas del dossier (fase 5): auction house con moneda 100% interna,
@@ -119,6 +120,10 @@ export async function listPokemon(locale: string, formData: FormData) {
         where: { id: instance.id },
         data: { teamSlot: null },
       });
+
+      // El Pokémon publicado sale del equipo: renumeramos para no dejar hueco.
+      await compactTeamSlots(tx, userId);
+
       await tx.marketListing.create({
         data: {
           sellerId: userId,

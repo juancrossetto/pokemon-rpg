@@ -4,14 +4,16 @@ import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateMaxHp, xpForLevel } from "@/lib/stats";
-import { STARTER_SPECIES_IDS } from "@/lib/starters";
+import { STARTER_SPECIES_IDS, rivalStarterFor } from "@/lib/starters";
 import { getMovesetForLevel } from "@/lib/moveset";
+import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 
 const STARTER_LEVEL = 5;
 const STARTER_POKEBALL_COUNT = 5;
 const STARTER_POTION_COUNT = 3;
 const STARTER_BERRY_COUNT = 2;
 const STARTER_COINS = 500;
+const TUTORIAL_RIVAL_LEVEL = 4;
 
 export async function chooseStarter(speciesId: number, locale: string) {
   const session = await auth();
@@ -53,6 +55,8 @@ export async function chooseStarter(speciesId: number, locale: string) {
     prisma.item.findUnique({ where: { name: "Potion" } }),
     prisma.item.findUnique({ where: { name: "Oran Berry" } }),
   ]);
+
+  await ensureCampaignProgress(userId);
 
   await prisma.$transaction([
     prisma.user.update({
@@ -103,6 +107,45 @@ export async function chooseStarter(speciesId: number, locale: string) {
         ]
       : []),
   ]);
+
+  // Combate tutorial (dossier: "3 iniciales + combate tutorial contra un
+  // rival"). Reusa el motor de batalla tal cual: es una sesión normal, con el
+  // inicial que te gana por tipo y un nivel por debajo para que sea ganable.
+  const starterInstance = await prisma.pokemonInstance.findFirst({
+    where: { ownerId: userId, teamSlot: 1 },
+    select: { id: true },
+  });
+
+  if (starterInstance) {
+    const rivalSpeciesId = rivalStarterFor(speciesId);
+    const rival = await prisma.species.findUnique({ where: { id: rivalSpeciesId } });
+    if (rival) {
+      const rivalLevel = TUTORIAL_RIVAL_LEVEL;
+      const rivalMaxHp = calculateMaxHp(rival.baseHp, rivalLevel);
+      const rivalMoveIds = await getMovesetForLevel(rivalSpeciesId, rivalLevel);
+      const rivalMoves = await prisma.move.findMany({ where: { id: { in: rivalMoveIds } } });
+
+      await prisma.battleSession.create({
+        data: {
+          userId,
+          pokemonInstanceId: starterInstance.id,
+          wildSpeciesId: rivalSpeciesId,
+          wildLevel: rivalLevel,
+          wildCurrentHp: rivalMaxHp,
+          wildMaxHp: rivalMaxHp,
+          wildMoveIds: rivalMoveIds,
+          wildMovePp: rivalMoveIds.map(
+            (id) => rivalMoves.find((m) => m.id === id)?.pp ?? 20,
+          ),
+          participantIds: [starterInstance.id],
+          log: [`appear:${rival.name}`, "tutorial"],
+        },
+      });
+
+      redirect({ href: "/battle", locale });
+      return;
+    }
+  }
 
   redirect({ href: "/team", locale });
 }

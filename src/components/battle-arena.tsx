@@ -12,6 +12,7 @@ import { applyBattleItem } from "@/actions/use-item";
 import { setPokemonNickname } from "@/actions/rename-pokemon";
 import { abandonGymRun } from "@/actions/abandon-gym-run";
 import { StartEncounterButton } from "@/components/start-encounter-button";
+import { BattleResult } from "@/components/battle-result";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BattleSprite } from "@/components/battle-sprite";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
@@ -92,7 +93,7 @@ export interface BattleArenaProps {
   trainerName: string;
   opponentName: string | null;
   player: Combatant & { instanceId: string; currentHp: number; maxHp: number };
-  wild: Combatant & { currentHp: number; maxHp: number; types: string[] };
+  wild: Combatant & { currentHp: number; maxHp: number; types: string[]; isShiny?: boolean };
   moves: { moveId: number; name: string; type: string; pp: number; maxPp: number }[];
   initialLog: string[];
   pokeballs: PokeballStack[];
@@ -167,6 +168,7 @@ export function BattleArena({
     level: wild.level,
     spriteUrl: wild.spriteUrl,
     types: wild.types,
+    isShiny: wild.isShiny ?? false,
   });
   const [wildHp, setWildHp] = useState(wild.currentHp);
   const [wildMaxHp, setWildMaxHp] = useState(wild.maxHp);
@@ -199,6 +201,7 @@ export function BattleArena({
   const [isAnimating, setIsAnimating] = useState(false);
   const [outcome, setOutcome] = useState<Outcome>("ongoing");
   const [xpSummary, setXpSummary] = useState<XpSummaryEntry[] | null>(null);
+  const [coinsGained, setCoinsGained] = useState(0);
   const [view, setView] = useState<View>("menu");
   // Una vez que el jugador elige Luchar por primera vez, los turnos
   // siguientes abren directo en el menú de poderes (en vez de volver
@@ -226,6 +229,7 @@ export function BattleArena({
     no_lead: t("errors.noLead"),
     fainted_lead: t("errors.faintedLead"),
     no_energy: t("errors.noEnergy"),
+    no_stage: t("errors.noStage"),
   };
 
   // Al iniciar la batalla: el rival aparece primero, y un instante después
@@ -483,6 +487,7 @@ export function BattleArena({
     await delay(FAINT_MS);
     setFaintingSide(null);
     setActiveWild({
+      isShiny: false,
       name: next.name,
       speciesName: next.speciesName,
       level: next.level,
@@ -526,6 +531,9 @@ export function BattleArena({
     }
     if (result.xpSummary) {
       setXpSummary(result.xpSummary);
+    }
+    if (result.coinsGained > 0) {
+      setCoinsGained(result.coinsGained);
     }
 
     if (result.badgeEarned) {
@@ -841,37 +849,34 @@ export function BattleArena({
       outcome === "won"
         ? t("resultWon")
         : outcome === "lost"
-          ? t("resultLost")
+          ? t("resultLostTitle")
           : outcome === "caught"
             ? t("resultCaught")
             : outcome === "trainer_cleared"
               ? t("resultTrainerCleared")
               : t("resultFled");
-    const resultColor =
-      outcome === "won" || outcome === "caught" || outcome === "trainer_cleared"
-        ? "text-tertiary"
-        : outcome === "lost"
-          ? "text-error"
-          : "text-on-surface-variant";
-
+    // El texto largo de derrota explica el próximo paso — va como bajada.
+    const resultSubText = outcome === "lost" ? t("resultLost") : null;
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-margin-mobile py-8 text-center">
-        <p className={`text-body-lg ${resultColor}`}>{resultText}</p>
-        {xpSummary && xpSummary.length > 0 && (
-          <div className="glass-panel rounded-xl border border-white/10 p-4 w-full max-w-sm text-left">
-            <p className="text-label-sm uppercase text-on-surface-variant mb-2">{t("xpSummaryTitle")}</p>
-            <div className="flex flex-col gap-1">
-              {xpSummary.map((entry) => (
-                <div key={entry.instanceId} className="flex justify-between items-center text-label-md">
-                  <span className="text-on-surface capitalize">{entry.name}</span>
-                  <span className="text-tertiary">
-                    +{entry.xpGained} XP{entry.leveledUpTo ? ` · ${t("leveledUp", { level: entry.leveledUpTo })}` : ""}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      <BattleResult
+        mode={outcome}
+        resultText={resultText}
+        subText={resultSubText}
+        player={{
+          name: activePlayer.name,
+          speciesName: activePlayer.speciesName,
+          level: activePlayer.level,
+          spriteUrl: activePlayer.spriteUrl,
+        }}
+        foe={{
+          name: activeWild.name,
+          speciesName: activeWild.speciesName,
+          level: activeWild.level,
+          spriteUrl: activeWild.spriteUrl,
+        }}
+        xpSummary={xpSummary}
+        coinsGained={coinsGained}
+      >
         {badgeEarned && gymType && (
           <div className="glass-panel rounded-xl border border-tertiary/40 p-6 w-full max-w-sm flex flex-col items-center gap-3">
             <p className="text-label-sm uppercase text-tertiary">{t("badgeEarned")}</p>
@@ -901,7 +906,7 @@ export function BattleArena({
         {outcome === "lost" ? (
           <Link
             href="/team"
-            className="rounded-lg bg-pokeball-red px-6 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
+            className="w-full max-w-sm rounded-lg bg-pokeball-red px-6 py-3 text-center text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors"
           >
             {t("goHeal")}
           </Link>
@@ -952,14 +957,27 @@ export function BattleArena({
         ) : isGymBattle ? (
           <Link
             href="/gyms"
-            className="rounded-lg bg-pokeball-red px-6 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
+            className="w-full max-w-sm rounded-lg bg-pokeball-red px-6 py-3 text-center text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors"
           >
             {t("backToGyms")}
           </Link>
         ) : (
-          <StartEncounterButton locale={locale} label={t("explore")} errors={startErrors} />
+          <div className="w-full max-w-sm">
+            <StartEncounterButton
+              locale={locale}
+              label={t("explore")}
+              errors={startErrors}
+              className="w-full rounded-lg bg-pokeball-red px-6 py-3 text-label-md font-bold text-white transition-colors hover:bg-pokeball-red/80 disabled:opacity-50"
+            />
+            <Link
+              href="/"
+              className="mt-2 block text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
+            >
+              {t("backHome")}
+            </Link>
+          </div>
         )}
-      </div>
+      </BattleResult>
     );
   }
 
@@ -1158,6 +1176,7 @@ export function BattleArena({
                 <BattleSprite
                   speciesName={activeWild.speciesName}
                   facing="front"
+                  isShiny={activeWild.isShiny}
                   fallbackUrl={activeWild.spriteUrl}
                   alt={activeWild.name}
                   width={160}

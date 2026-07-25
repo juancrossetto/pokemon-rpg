@@ -798,3 +798,202 @@ body {
   );
   transition: width 0.3s ease;
 }
+
+/* --- Pantalla de resultado de batalla --- */
+@keyframes result-in {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.result-in {
+  animation: result-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes result-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.result-float {
+  animation: result-float 3s ease-in-out infinite;
+}
+
+@keyframes victory-ring {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+}
+.victory-ring {
+  animation: victory-ring 2.4s ease-out infinite;
+}
+
+@keyframes level-up-chip {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.level-up-chip {
+  animation: level-up-chip 0.5s ease-out 0.35s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-in,
+  .result-float,
+  .victory-ring,
+  .level-up-chip {
+    animation: none;
+  }
+}
+
+/* --- Mapa de región a pantalla completa --- */
+@keyframes map-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.map-backdrop-in {
+  animation: map-backdrop-in 0.2s ease-out both;
+}
+
+@keyframes map-zoom-in {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.map-zoom-in {
+  animation: map-zoom-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* --- Gym Mission Control --- */
+@keyframes gym-mission-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes gym-mission-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.gym-mission-slide-right {
+  animation: gym-mission-slide-right 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gym-mission-slide-left {
+  animation: gym-mission-slide-left 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gym-mission-panel {
+  animation: gym-mission-slide-right 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gym-challenge-btn {
+  box-shadow: 0 10px 28px rgba(238, 21, 21, 0.28);
+}
+
+.gym-challenge-btn:hover {
+  background-color: rgb(238 21 21 / 0.88);
+  box-shadow:
+    0 0 0 1px rgba(238, 21, 21, 0.55),
+    0 0 28px rgba(238, 21, 21, 0.45),
+    0 12px 32px rgba(238, 21, 21, 0.35);
+  transform: translateY(-1px) scale(1.01);
+}
+
+.gym-mission-card:active {
+  transform: scale(0.99);
+}
+
+/* --- Auth atmosphere (login/register stars) --- */
+.auth-spark {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgba(230, 220, 255, 0.95);
+  box-shadow:
+    0 0 6px 1px rgba(196, 168, 255, 0.45),
+    0 0 12px 3px rgba(140, 100, 255, 0.18);
+  animation-name: auth-spark-twinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes auth-spark-twinkle {
+  0%,
+  100% {
+    transform: scale(0.85);
+    opacity: 0.18;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.95;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-backdrop-in,
+  .map-zoom-in,
+  .auth-spark,
+  .gym-mission-slide-right,
+  .gym-mission-slide-left,
+  .gym-mission-panel {
+    animation: none;
+  }
+
+  .auth-spark {
+    opacity: 0.45;
+  }
+
+  .gym-challenge-btn:hover {
+    transform: none;
+  }
+
+  .gym-mission-card:hover {
+    transform: none;
+  }
+}

@@ -26,7 +26,8 @@
     "ranking": "Ranking",
     "clans": "Clans",
     "pvp": "PvP",
-    "more": "More"
+    "more": "More",
+    "campaign": "Journey"
   },
   "home": {
     "eyebrow": "Season 1",
@@ -40,17 +41,34 @@
     "chooseStarterLink": "Choose starter",
     "activeSquad": "Active Squad",
     "manage": "Manage",
-    "emptySlot": "Empty slot"
+    "emptySlot": "Empty slot",
+    "liveSync": "Live sync",
+    "time": "Time",
+    "climate": "Weather",
+    "climates": {
+      "town": "Clear",
+      "route": "Light breeze",
+      "forest": "Humid forest",
+      "dungeon": "Dark cave",
+      "gym": "Indoors"
+    },
+    "activeMission": "Active mission",
+    "stagesCleared": "Area stages",
+    "missionStage": "Push through {location} to clear the next leg of your expedition and unlock the following area.",
+    "missionGym": "Earn the {location} badge to keep moving forward on your journey.",
+    "missionComplete": "You cleared Kanto. Keep farming to level up your team."
   },
   "pokedex": {
     "eyebrow": "Database",
     "title": "Pokédex",
-    "subtitle": "{count} species loaded from PokeAPI",
+    "subtitle": "{count, plural, one {# species loaded from PokeAPI} other {# species loaded from PokeAPI}}",
     "stats": {
       "hp": "HP",
       "atk": "Atk",
       "spd": "Spd"
-    }
+    },
+    "clearSearch": "Clear search",
+    "noResults": "No results for “{query}”."
   },
   "auth": {
     "login": {
@@ -62,6 +80,13 @@
       "error": "Wrong email or password",
       "noAccount": "Don't have an account?",
       "registerLink": "Create one",
+      "registerLinkHere": "Create one here",
+      "welcomeTitle": "Welcome, Trainer!",
+      "welcomeSubtitle": "Sign in to continue your adventure",
+      "tagline": "Idle RPG",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "rememberMe": "Remember me",
       "eyebrow": "POKÉDEX SYSTEM",
       "bootStatus": "Booting kernel...",
       "panelTitle": "Trainer authorization",
@@ -193,12 +218,49 @@
         "already_known": "It already knows that move",
         "in_combat": "You can't change moves in combat"
       }
+    },
+    "healFree": "Free healing available",
+    "healCooldown": "Free in {minutes} min",
+    "healRush": "Heal now",
+    "healRushHint": "Skips the {minutes} min wait",
+    "healErrors": {
+      "cooldown": "Still regenerating.",
+      "no_coins": "Not enough coins.",
+      "unauthorized": "Session expired."
     }
   },
   "battle": {
     "title": "Battle",
     "subtitle": "Explore to find a wild Pokémon and earn experience.",
     "explore": "Explore",
+    "lobby": {
+      "liveSync": "Live sync",
+      "energy": "Energy",
+      "energyHint": "Exploring costs {cost} · regenerates over time",
+      "currentLocation": "Current location",
+      "zoneName": "Route 1",
+      "zoneTerrain": "Dense grassland · outskirts of Pallet Town",
+      "predictedTypes": "Likely types",
+      "unspentPoints": "{count} unspent points",
+      "shortcuts": "Shortcuts",
+      "gotoGyms": "Gyms",
+      "gotoPvp": "PvP",
+      "gotoTeam": "My team",
+      "activeSquad": "Active squad",
+      "manage": "Manage",
+      "recent": "Recent encounters",
+      "status": {
+        "WON": "Won",
+        "LOST": "Lost",
+        "FLED": "Fled",
+        "CAUGHT": "Caught"
+      },
+      "zoneEncounters": "Pokémon in this zone",
+      "caught": "Already caught",
+      "caughtCount": "{caught}/{total} caught",
+      "noEncounters": "No encounter data for this zone.",
+      "teamReady": "{ready}/{total}"
+    },
     "run": "Run",
     "hp": "HP",
     "level": "Lv. {level}",
@@ -278,9 +340,18 @@
     "errors": {
       "noLead": "You need a Pokémon in your team to battle.",
       "faintedLead": "Your Pokémon has fainted — heal it in My team first.",
-      "noEnergy": "You're out of energy. Wait for it to regenerate."
+      "noEnergy": "You're out of energy. Wait for it to regenerate.",
+      "noStage": "No valid farming stage. Pick one on the journey map."
     },
-    "tmEarned": "You got a {code}!"
+    "tmEarned": "You got a {code}!",
+    "resultEyebrow": "Battle over",
+    "victoryTag": "Victory",
+    "koTag": "K.O.",
+    "caughtTag": "Caught",
+    "fledTag": "Fled",
+    "rewardsTitle": "Rewards",
+    "backHome": "Back home",
+    "resultLostTitle": "You lost the battle"
   },
   "gyms": {
     "title": "Gyms",
@@ -326,7 +397,27 @@
     "rematchHint": "You already own this badge. Coin reward is halved.",
     "badgePerksTitle": "With your badges",
     "obedienceCap": "Your team obeys up to Lv. {level}",
-    "marketDiscount": "−{pct}% market listing fees"
+    "marketDiscount": "−{pct}% market listing fees",
+    "closedHint": "The gym is closed at this hour.",
+    "closedChip": "Closed",
+    "hours": "Open {opens}:00 – {closes}:00",
+    "missionEyebrow": "Mission Control // Kanto",
+    "progressLabel": "Progress",
+    "operationLabel": "Operation {n}/8",
+    "specialist": "{type} Specialist",
+    "recommendedLevel": "Recommended Lv. {level}",
+    "difficulty": "Difficulty",
+    "rewards": "Rewards",
+    "enemyTeam": "Enemy Team",
+    "weaknesses": "Weaknesses",
+    "challengeGym": "Challenge Gym",
+    "operations": "Operations",
+    "operationsHint": "Select a gym to analyze it",
+    "statusReadyAvailable": "Available",
+    "statusReadyCooldown": "Cooldown {hours}h",
+    "statusReadyLocked": "Locked",
+    "statusReadyCleared": "Cleared",
+    "statusReadyClosed": "Closed"
   },
   "market": {
     "title": "Market",
@@ -476,8 +567,11 @@
       "team_full": "Your team is full. Deposit a Pokémon first.",
       "in_battle": "You can't deposit a Pokémon in the middle of a battle.",
       "last_team_member": "You can't deposit your last active Pokémon.",
-      "rate_limited": "Too many actions in a row. Give it a moment."
-    }
+      "rate_limited": "Too many actions in a row. Give it a moment.",
+      "unauthorized": "Session expired. Sign in again."
+    },
+    "dragHint": "Drag to reorder your team, or drop into the PC to store.",
+    "emptySlot": "Slot {slot} free"
   },
   "ranking": {
     "title": "Ranking",
@@ -552,6 +646,17 @@
       "LEADER": "Leader",
       "OFFICER": "Officer",
       "MEMBER": "Member"
+    },
+    "chatTitle": "Clan chat",
+    "chatEmpty": "No messages yet. Write the first one.",
+    "chatPlaceholder": "Write a message...",
+    "chatSend": "Send",
+    "chatYou": "You",
+    "chatErrors": {
+      "unauthorized": "You are not a member of this clan.",
+      "empty": "The message is empty.",
+      "too_long": "300 characters max.",
+      "rate_limited": "You are typing too fast."
     }
   },
   "pvp": {
@@ -586,6 +691,201 @@
       "no_opponents": "No opponents available right now. Try again later.",
       "no_energy": "You do not have enough energy to find a match.",
       "rate_limited": "Too many matches in a row. Give it a moment."
+    }
+  },
+  "campaign": {
+    "eyebrow": "Kanto Journey",
+    "title": "Journey map",
+    "subtitle": "Pick a location and expedition stage. Explore uses your active farming stage.",
+    "backHome": "Back home",
+    "currentExpedition": "Current expedition",
+    "farmingStage": "Stage",
+    "journeyProgress": "Journey progress",
+    "nextMilestone": "Next milestone",
+    "selectLocation": "Select location",
+    "continueExpedition": "Continue expedition",
+    "challengeGym": "Challenge gym",
+    "farming": "Farming",
+    "select": "Select",
+    "selected": "Selected",
+    "stageProgress": "{done}/{total} stages",
+    "gymMilestone": "Gym",
+    "errors": {
+      "noStage": "No valid farming stage. Pick one on the journey map."
+    },
+    "dev": {
+      "title": "Dev · campaign",
+      "hint": "Development only. Does not affect PvP.",
+      "reset": "Reset progress",
+      "unlockForest": "Unlock Viridian Forest",
+      "unlockAll": "Unlock all of Kanto"
+    },
+    "regions": {
+      "kanto": "Kanto",
+      "johto": "Johto",
+      "hoenn": "Hoenn",
+      "sinnoh": "Sinnoh"
+    },
+    "milestones": {
+      "region_complete": "Kanto complete"
+    },
+    "locations": {
+      "pallet_town": "Pallet Town",
+      "route_1": "Route 1",
+      "viridian_city": "Viridian City",
+      "route_2": "Route 2",
+      "viridian_forest": "Viridian Forest",
+      "pewter_city": "Pewter City",
+      "pewter_gym": "Pewter Gym",
+      "route_3": "Route 3",
+      "mt_moon": "Mt. Moon",
+      "cerulean_city": "Cerulean City",
+      "cerulean_gym": "Cerulean Gym",
+      "route_5": "Route 5",
+      "vermilion_city": "Vermilion City",
+      "vermilion_gym": "Vermilion Gym",
+      "route_11": "Route 11",
+      "rock_tunnel": "Rock Tunnel",
+      "lavender_town": "Lavender Town",
+      "route_8": "Route 8",
+      "celadon_city": "Celadon City",
+      "celadon_gym": "Celadon Gym",
+      "route_16": "Route 16",
+      "fuchsia_city": "Fuchsia City",
+      "fuchsia_gym": "Fuchsia Gym",
+      "route_15": "Route 15",
+      "saffron_city": "Saffron City",
+      "saffron_gym": "Saffron Gym",
+      "route_19": "Route 19 (sea)",
+      "cinnabar_island": "Cinnabar Island",
+      "cinnabar_gym": "Cinnabar Gym",
+      "route_21": "Route 21 (sea)",
+      "viridian_gym": "Viridian Gym"
+    },
+    "sectors": {
+      "vf_entrance": "Entrance",
+      "vf_mid": "Mid forest",
+      "vf_deep": "Deep forest"
+    },
+    "stages": {
+      "pallet_1": "Pallet outskirts",
+      "r1_1": "Route 1 · stretch 1",
+      "r1_2": "Route 1 · stretch 2",
+      "r1_3": "Route 1 · stretch 3",
+      "viridian_1": "Viridian park",
+      "r2_1": "Route 2 · stretch 1",
+      "r2_2": "Route 2 · stretch 2",
+      "r2_3": "Route 2 · stretch 3",
+      "vf_e_1": "Forest · entrance 1",
+      "vf_e_2": "Forest · entrance 2",
+      "vf_e_3": "Forest · entrance 3",
+      "vf_e_4": "Forest · entrance 4",
+      "vf_e_5": "Forest · entrance 5",
+      "vf_m_1": "Forest · mid 1",
+      "vf_m_2": "Forest · mid 2",
+      "vf_m_3": "Forest · mid 3",
+      "vf_m_4": "Forest · mid 4",
+      "vf_m_5": "Forest · mid 5",
+      "vf_d_1": "Forest · deep 1",
+      "vf_d_2": "Forest · deep 2",
+      "vf_d_3": "Forest · deep 3",
+      "vf_d_4": "Forest · deep 4",
+      "vf_d_5": "Forest · deep 5",
+      "pewter_1": "Pewter streets",
+      "pewter_gym_milestone": "Boulder Badge",
+      "r3_1": "Route 3 · stretch 1",
+      "r3_2": "Route 3 · stretch 2",
+      "r3_3": "Route 3 · stretch 3",
+      "mm_1": "Mt. Moon · floor 1",
+      "mm_2": "Mt. Moon · floor 2",
+      "mm_3": "Mt. Moon · floor 3",
+      "mm_4": "Mt. Moon · floor 4",
+      "cerulean_1": "Cerulean shores",
+      "r5_1": "Route 5 · leg 1",
+      "r5_2": "Route 5 · leg 2",
+      "r5_3": "Route 5 · leg 3",
+      "r11_1": "Route 11 · leg 1",
+      "r11_2": "Route 11 · leg 2",
+      "r11_3": "Route 11 · leg 3",
+      "rt_1": "Rock Tunnel · leg 1",
+      "rt_2": "Rock Tunnel · leg 2",
+      "rt_3": "Rock Tunnel · leg 3",
+      "rt_4": "Rock Tunnel · leg 4",
+      "r8_1": "Route 8 · leg 1",
+      "r8_2": "Route 8 · leg 2",
+      "r8_3": "Route 8 · leg 3",
+      "r16_1": "Route 16 · leg 1",
+      "r16_2": "Route 16 · leg 2",
+      "r16_3": "Route 16 · leg 3",
+      "r15_1": "Route 15 · leg 1",
+      "r15_2": "Route 15 · leg 2",
+      "r15_3": "Route 15 · leg 3",
+      "r19_1": "Route 19 (sea) · leg 1",
+      "r19_2": "Route 19 (sea) · leg 2",
+      "r19_3": "Route 19 (sea) · leg 3",
+      "r21_1": "Route 21 (sea) · leg 1",
+      "r21_2": "Route 21 (sea) · leg 2",
+      "r21_3": "Route 21 (sea) · leg 3",
+      "vermilion_city_1": "Outskirts of Vermilion City",
+      "lavender_town_1": "Outskirts of Lavender Town",
+      "celadon_city_1": "Outskirts of Celadon City",
+      "fuchsia_city_1": "Outskirts of Fuchsia City",
+      "saffron_city_1": "Outskirts of Saffron City",
+      "cinnabar_island_1": "Outskirts of Cinnabar Island",
+      "cerulean_gym_milestone": "Challenge: Cerulean Gym",
+      "vermilion_gym_milestone": "Challenge: Vermilion Gym",
+      "celadon_gym_milestone": "Challenge: Celadon Gym",
+      "fuchsia_gym_milestone": "Challenge: Fuchsia Gym",
+      "saffron_gym_milestone": "Challenge: Saffron Gym",
+      "cinnabar_gym_milestone": "Challenge: Cinnabar Gym",
+      "viridian_gym_milestone": "Challenge: Viridian Gym"
+    },
+    "currentLocation": "Current location",
+    "predictedTypes": "Predicted wild types in area",
+    "wildLevels": "Wild Lv. {min}-{max}",
+    "kinds": {
+      "town": "City",
+      "route": "Route",
+      "forest": "Dense forest",
+      "dungeon": "Cave",
+      "gym": "Gym"
+    },
+    "currentRegion": "Current region",
+    "openMap": "View full map",
+    "closeMap": "Close map",
+    "pickZoneHint": "Pick an unlocked zone on the map. Your choice decides which wild Pokémon show up when you explore.",
+    "pickStage": "Farming stage",
+    "moveHere": "Move here",
+    "youAreHere": "You are here",
+    "viewList": "View list",
+    "encounterRate": {
+      "low": "Encounters: low",
+      "medium": "Encounters: medium",
+      "high": "Encounters: high"
+    },
+    "zoneWilds": "Wild Pokémon here",
+    "zoneWildsHint": "What can show up when you explore this zone.",
+    "zonesUnlocked": "Zones open",
+    "badges": "Badges"
+  },
+  "breeding": {
+    "title": "Breeding",
+    "hint": "Two PC Pokémon at level {level}+ produce an egg that inherits part of their points. Costs {cost} coins.",
+    "needTwo": "You need at least two Pokémon in the PC at level {level} or higher.",
+    "breed": "Breed",
+    "hatch": "Hatch",
+    "ready": "Ready to hatch",
+    "hatchingIn": "Ready in {minutes} min",
+    "errors": {
+      "unauthorized": "Session expired.",
+      "same_parent": "Pick two different Pokémon.",
+      "not_found": "Not found.",
+      "in_team": "Parents must be in the PC.",
+      "listed": "It is listed on the market.",
+      "too_young": "They need more levels.",
+      "no_coins": "Not enough coins.",
+      "not_ready": "The egg is not ready yet.",
+      "team_full": "Team is full."
     }
   }
 }

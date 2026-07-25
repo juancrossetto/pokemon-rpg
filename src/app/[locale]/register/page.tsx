@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { registerUser } from "@/actions/register";
-import { TextField } from "@/components/text-field";
 import { CountrySelect } from "@/components/country-select";
-import { BiometricScanPanel } from "@/components/biometric-scan-panel";
 import { AvatarImage } from "@/components/avatar-image";
+import { PokeballIcon } from "@/components/pokeball-icon";
+import { BrandLogo } from "@/components/brand-logo";
+import { AuthBackdrop } from "@/components/auth-backdrop";
 import { AVATAR_OPTIONS } from "@/lib/avatars";
 
 type Gender = "male" | "female" | "unspecified";
@@ -21,25 +22,20 @@ const GENDER_OPTIONS: { value: Gender; icon: string }[] = [
 
 export default function RegisterPage() {
   const t = useTranslations("auth.register");
+  const tNav = useTranslations("nav");
+  const tLogin = useTranslations("auth.login");
   const locale = useLocale() as "es" | "en" | "pt";
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [country, setCountry] = useState("");
   const [gender, setGender] = useState<Gender | null>(null);
-  const [age, setAge] = useState("");
   const [avatarId, setAvatarId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
-
-  // Progreso real (no un "paso 1 de 2" fabricado): % de campos completados.
-  const progress = useMemo(() => {
-    const fields = [username, email, password, country, gender, age, avatarId];
-    const filled = fields.filter((f) => f !== null && f !== "").length;
-    return Math.round((filled / fields.length) * 100);
-  }, [username, email, password, country, gender, age, avatarId]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -53,7 +49,7 @@ export default function RegisterPage() {
       country,
       locale,
       gender,
-      age: age.trim() ? Number(age) : null,
+      age: null,
       avatarId,
     });
 
@@ -64,181 +60,217 @@ export default function RegisterPage() {
     }
 
     setStatus("success");
-    await signIn("credentials", { email, password, redirect: false });
+    await signIn("credentials", {
+      email,
+      password,
+      remember: "true",
+      redirect: false,
+    });
     router.push("/");
     router.refresh();
   }
 
+  const fieldClass =
+    "w-full border border-white/15 bg-black/50 py-2.5 pl-10 pr-3 text-label-md font-mono text-on-surface outline-none transition placeholder:text-on-surface-variant/45 focus:border-pokeball-red/70 focus:ring-1 focus:ring-pokeball-red/40";
+
   return (
-    <div className="flex flex-1 items-center justify-center px-margin-mobile py-8">
-      <div className="w-full max-w-4xl grid lg:grid-cols-[300px_1fr] border border-[#444] tech-border overflow-hidden bg-surface-container-lowest">
-        <div className="min-w-0 border-b lg:border-b-0 lg:border-r border-[#333]">
-          <BiometricScanPanel />
+    <div className="relative isolate flex min-h-[calc(100dvh-3rem)] flex-1 flex-col md:min-h-[calc(100dvh-4rem)]">
+      <AuthBackdrop />
+
+      <div className="relative z-10 flex flex-1 flex-col px-4 sm:px-6">
+        <div className="hidden shrink-0 pt-3 text-center md:block md:pt-4">
+          <BrandLogo
+            alt={tNav("brand")}
+            priority
+            sizes="180px"
+            className="mx-auto h-auto w-[180px] drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]"
+          />
+          <p className="mt-1 text-label-sm uppercase tracking-[0.28em] text-secondary">
+            {tLogin("tagline")}
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="min-w-0 p-6 lg:p-8 space-y-5 bg-surface-container/40">
-          <div className="border border-[#444] bg-black/40 tech-border px-4 py-2.5">
-            <div className="flex flex-wrap items-center justify-between text-label-sm text-[10px] font-mono uppercase tracking-wide mb-1.5 gap-x-3 gap-y-0.5">
-              <span className="text-on-surface-variant/70 min-w-0 truncate">
-                {t("dataExtraction")}: {progress}%
-              </span>
-              <span className="text-electric-yellow min-w-0 truncate">{t("profileConfig")}</span>
-            </div>
-            <div className="h-2 bg-black/60 border border-[#333] overflow-hidden">
-              <div className="h-full profile-progress-fill" style={{ width: `${progress}%` }} />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-start justify-between gap-3">
-              <h1 className="text-headline-md md:text-headline-lg text-on-surface font-black tracking-tight min-w-0 break-words">
-                REG_ENTRENADOR
-              </h1>
-              <span className="material-symbols-outlined text-pokeball-red text-[24px] md:text-[28px] shrink-0">
-                database
-              </span>
-            </div>
-            <p className="text-label-sm text-electric-yellow mt-1">{t("subtitle")}</p>
-            <div className="h-px bg-pokeball-red mt-3" />
-          </div>
-
-          <TextField
-            label={t("username")}
-            labelIcon="badge"
-            icon="badge"
-            required
-            minLength={3}
-            maxLength={20}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-
-          <div className="grid sm:grid-cols-2 gap-5">
-            <div>
-              <label className="flex items-center gap-1.5 text-label-sm text-electric-yellow uppercase tracking-wide mb-1">
-                <span className="material-symbols-outlined text-[14px]">wc</span>
-                {t("gender")}
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {GENDER_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    aria-pressed={gender === opt.value}
-                    onClick={() => setGender(gender === opt.value ? null : opt.value)}
-                    title={t(`gender${opt.value[0].toUpperCase()}${opt.value.slice(1)}` as "genderMale")}
-                    className={`flex items-center justify-center border p-3 tech-border transition-all ${
-                      gender === opt.value
-                        ? "border-pokeball-red bg-pokeball-red/20 text-pokeball-red"
-                        : "border-[#555] bg-black/60 text-on-surface-variant hover:border-electric-yellow/50"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">{opt.icon}</span>
-                  </button>
-                ))}
+        <div className="flex flex-1 flex-col items-center justify-center py-4 md:py-6">
+          <form onSubmit={handleSubmit} className="w-full max-w-[380px] md:max-w-[420px]">
+            <div className="glass-panel relative rounded-xl border border-white/10 px-5 py-4 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+              <div className="mb-3.5 flex items-center gap-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/15 bg-surface-container-high">
+                  <PokeballIcon className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="truncate text-label-md text-on-surface">{t("title")}</h1>
+                  <p className="truncate text-label-sm text-on-surface-variant/80">{t("subtitle")}</p>
+                </div>
               </div>
-            </div>
 
-            <TextField
-              label={t("age")}
-              labelIcon="cake"
-              icon="123"
-              type="number"
-              min={5}
-              max={120}
-              placeholder={t("agePlaceholder")}
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-            />
-          </div>
+              <div className="space-y-2">
+                <label className="block">
+                  <span className="sr-only">{t("username")}</span>
+                  <div className="relative tech-border">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/65">
+                      badge
+                    </span>
+                    <input
+                      required
+                      minLength={3}
+                      maxLength={20}
+                      autoComplete="username"
+                      placeholder={t("username")}
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className={fieldClass}
+                    />
+                  </div>
+                </label>
 
-          <CountrySelect
-            label={t("country")}
-            labelIcon="public"
-            required
-            value={country}
-            onChange={setCountry}
-            locale={locale}
-            placeholder={t("countryPlaceholder")}
-          />
+                <label className="block">
+                  <span className="sr-only">{t("email")}</span>
+                  <div className="relative tech-border">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/65">
+                      mail
+                    </span>
+                    <input
+                      type="email"
+                      required
+                      autoComplete="email"
+                      placeholder={t("email")}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={fieldClass}
+                    />
+                  </div>
+                </label>
 
-          <div className="bg-surface-container border border-[#444] tech-border p-4">
-            <div className="flex justify-between items-center mb-3 border-b border-[#333] pb-2">
-              <span className="text-label-sm text-electric-yellow uppercase tracking-wide">
-                {t("avatar")}
-              </span>
-              <span className="text-label-sm text-[10px] text-on-surface-variant/60 font-mono">
-                {t("avatarMeta")}
-              </span>
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {AVATAR_OPTIONS.map((opt) => (
+                <label className="block">
+                  <span className="sr-only">{t("password")}</span>
+                  <div className="relative tech-border">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/65">
+                      lock
+                    </span>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      minLength={8}
+                      autoComplete="new-password"
+                      placeholder={t("password")}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className={`${fieldClass} pr-10`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={
+                        showPassword ? tLogin("hidePassword") : tLogin("showPassword")
+                      }
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/65 transition hover:text-on-surface"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        {showPassword ? "visibility_off" : "visibility"}
+                      </span>
+                    </button>
+                  </div>
+                  <p className="mt-1 px-0.5 text-[11px] text-on-surface-variant/70">
+                    {t("passwordHint")}
+                  </p>
+                </label>
+
+                <CountrySelect
+                  compact
+                  label={t("country")}
+                  required
+                  value={country}
+                  onChange={setCountry}
+                  locale={locale}
+                  placeholder={t("countryPlaceholder")}
+                />
+
+                <div>
+                  <p className="mb-1.5 px-0.5 text-[11px] uppercase tracking-wide text-on-surface-variant/70">
+                    {t("gender")}
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {GENDER_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        aria-pressed={gender === opt.value}
+                        onClick={() => setGender(gender === opt.value ? null : opt.value)}
+                        title={t(
+                          `gender${opt.value[0].toUpperCase()}${opt.value.slice(1)}` as "genderMale",
+                        )}
+                        className={`flex items-center justify-center rounded-md border py-2 transition ${
+                          gender === opt.value
+                            ? "border-pokeball-red bg-pokeball-red/20 text-pokeball-red"
+                            : "border-white/15 bg-black/45 text-on-surface-variant hover:border-white/30"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[18px]">{opt.icon}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1.5 px-0.5 text-[11px] uppercase tracking-wide text-on-surface-variant/70">
+                    {t("avatar")}
+                  </p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {AVATAR_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        aria-pressed={avatarId === opt.id}
+                        onClick={() => setAvatarId(avatarId === opt.id ? null : opt.id)}
+                        className={`aspect-square overflow-hidden rounded-md border-2 bg-black/40 transition ${
+                          avatarId === opt.id
+                            ? "border-pokeball-red"
+                            : "border-white/15 hover:border-white/30"
+                        }`}
+                      >
+                        <AvatarImage
+                          src={opt.src}
+                          alt={opt.id}
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {error && (
+                  <p className="rounded-md border border-error/30 bg-error/10 px-3 py-1.5 text-center text-label-sm text-error">
+                    {t(`errors.${error}`)}
+                  </p>
+                )}
+                {status === "success" && (
+                  <p className="rounded-md border border-tertiary/30 bg-tertiary/10 px-3 py-1.5 text-center text-label-sm text-tertiary">
+                    {t("success")}
+                  </p>
+                )}
+
                 <button
-                  key={opt.id}
-                  type="button"
-                  aria-pressed={avatarId === opt.id}
-                  onClick={() => setAvatarId(avatarId === opt.id ? null : opt.id)}
-                  className={`aspect-square border-2 bg-black/40 overflow-hidden transition-colors ${
-                    avatarId === opt.id
-                      ? "border-pokeball-red"
-                      : "border-[#555] hover:border-electric-yellow/50"
-                  }`}
+                  type="submit"
+                  disabled={status !== "idle"}
+                  className="flex w-full items-center justify-center gap-2 rounded-md bg-pokeball-red px-4 py-2.5 text-label-md text-white transition hover:bg-pokeball-red/80 active:scale-[0.99] disabled:opacity-50"
                 >
-                  <AvatarImage src={opt.src} alt={opt.id} className="w-full h-full object-cover" />
+                  <PokeballIcon className="h-3.5 w-3.5" />
+                  {status === "submitting" ? t("submitting") : t("submit")}
                 </button>
-              ))}
+              </div>
+
+              <p className="mt-3 text-center text-label-sm text-on-surface-variant">
+                {t("hasAccount")}{" "}
+                <Link
+                  href="/login"
+                  className="text-secondary underline-offset-2 hover:text-on-surface hover:underline"
+                >
+                  {t("loginLink")}
+                </Link>
+              </p>
             </div>
-          </div>
-
-          <TextField
-            label={t("email")}
-            labelIcon="alternate_email"
-            icon="mail"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <TextField
-            label={t("password")}
-            labelIcon="vpn_key"
-            icon="password"
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            hint={t("passwordHint")}
-          />
-
-          {error && <p className="text-label-sm text-error">{t(`errors.${error}`)}</p>}
-          {status === "success" && <p className="text-label-sm text-tertiary">{t("success")}</p>}
-
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Link
-              href="/login"
-              className="flex-1 flex items-center justify-center border border-[#555] bg-black/40 px-4 py-3 text-label-md text-on-surface-variant font-bold uppercase tracking-wide tech-border hover:border-white/40 hover:text-on-surface transition-colors"
-            >
-              {t("abort")}
-            </Link>
-            <button
-              type="submit"
-              disabled={status !== "idle"}
-              className="flex-[2] flex items-center justify-center gap-2 bg-pokeball-red px-4 py-3 text-label-md text-white font-bold uppercase tracking-wide tech-border hover:bg-pokeball-red/80 transition-colors disabled:opacity-50"
-            >
-              {status === "submitting" ? t("submitting") : t("submit")}
-              <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-            </button>
-          </div>
-
-          <p className="text-center text-label-sm text-on-surface-variant">
-            {t("hasAccount")}{" "}
-            <Link href="/login" className="text-on-surface font-bold">
-              {t("loginLink")}
-            </Link>
-          </p>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

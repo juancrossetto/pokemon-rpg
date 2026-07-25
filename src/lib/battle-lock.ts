@@ -1,4 +1,5 @@
-﻿import { redirect } from "@/i18n/navigation";
+﻿import { cache } from "react";
+import { redirect } from "@/i18n/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
@@ -28,13 +29,20 @@ export type CombatLock =
   | { kind: "gym"; gymId: string }
   | null;
 
-/** Prioriza batalla ACTIVE; si no, corrida de gym ACTIVE. */
-export async function getCombatLock(userId: string): Promise<CombatLock> {
+/**
+ * Prioriza batalla ACTIVE; si no, corrida de gym ACTIVE.
+ *
+ * Envuelto en `cache()` de React: el layout lo pide dos veces (guard + prop
+ * para el header) y cada página una más vía `redirectIfInBattle`. Sin esto son
+ * 6 queries por request donde alcanzan 2 — el lock no puede cambiar en medio
+ * del mismo render. La memoización dura solo lo que dura el request.
+ */
+export const getCombatLock = cache(async (userId: string): Promise<CombatLock> => {
   if (await hasActiveBattle(userId)) return { kind: "battle" };
   const run = await getActiveGymRun(userId);
   if (run) return { kind: "gym", gymId: run.gymId };
   return null;
-}
+});
 
 function stripLocale(pathname: string): string {
   const parts = pathname.split("/").filter(Boolean);

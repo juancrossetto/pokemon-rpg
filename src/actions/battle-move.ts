@@ -21,6 +21,10 @@ import { resolveSingleAction, type SideBattleState } from "@/lib/resolve-action"
 import { applyStagesToStats, type StatusCondition } from "@/lib/status";
 import { hasHealthyBackup } from "@/lib/team";
 import { getMovesetForLevel } from "@/lib/moveset";
+import {
+  completeFarmingStageOnWildWin,
+  syncCampaignAfterGymBadge,
+} from "@/lib/campaign/sync";
 
 const MAX_LOG_LINES = 20;
 
@@ -43,6 +47,8 @@ export interface UseMoveResult {
   leveledUpTo: number | null;
   xpGained: number | null;
   xpSummary: XpSummaryEntry[] | null;
+  /** Monedas acreditadas por la victoria (0 si no se ganó nada). */
+  coinsGained: number;
   badgeEarned: boolean;
   tmRewardName: string | null;
   rematch: boolean;
@@ -289,6 +295,7 @@ export async function submitBattleMove(
   let xpGained: number | null = null;
   let badgeEarned = false;
   let tmRewardName: string | null = null;
+  let coinsAwarded = 0;
   let nextOpponent: UseMoveResult["nextOpponent"] = null;
   const battleKind = battle.gymId ? ("PVE_GYM" as const) : ("PVE_WILD" as const);
   const gym = battle.gymId ? await prisma.gym.findUnique({ where: { id: battle.gymId } }) : null;
@@ -373,6 +380,7 @@ export async function submitBattleMove(
         leveledUpTo: null,
         xpGained: koXp,
         xpSummary: null,
+        coinsGained: coinsAwarded,
         badgeEarned: false,
         tmRewardName: null,
         rematch: alreadyHasThisBadge,
@@ -457,6 +465,7 @@ export async function submitBattleMove(
         leveledUpTo,
         xpGained: share,
         xpSummary,
+        coinsGained: coinsAwarded,
         badgeEarned: false,
         tmRewardName: null,
         rematch: alreadyHasThisBadge,
@@ -479,6 +488,7 @@ export async function submitBattleMove(
       ? await prisma.item.findFirst({ where: { type: "MACHINE", move: { name: gymTmMoveName } } })
       : null;
     tmRewardName = gymTmItem?.name ?? null;
+    coinsAwarded = (coinsGained ?? 0) + gymCoins;
     const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
     await prisma.$transaction([
       ...instanceUpdates,
@@ -519,6 +529,12 @@ export async function submitBattleMove(
         ? [prisma.gymRun.update({ where: { id: battle.gymRunId }, data: { status: "WON" } })]
         : []),
     ]);
+
+    if (!battle.gymId) {
+      await completeFarmingStageOnWildWin(userId);
+    } else if (badgeEarned && gym) {
+      await syncCampaignAfterGymBadge(userId, gym.order);
+    }
   } else if (lostBattle) {
     const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
     await prisma.$transaction([
@@ -560,6 +576,8 @@ export async function submitBattleMove(
   revalidatePath(`/${locale}/team`);
   if (wonBattle || lostBattle) {
     revalidateCombatUi(locale);
+    revalidatePath(`/${locale}`);
+    revalidatePath(`/${locale}/campaign`);
   }
 
   return {
@@ -570,6 +588,7 @@ export async function submitBattleMove(
     leveledUpTo,
     xpGained,
     xpSummary,
+    coinsGained: coinsAwarded,
     badgeEarned,
     tmRewardName,
     rematch: alreadyHasThisBadge,

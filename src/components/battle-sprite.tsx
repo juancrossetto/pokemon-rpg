@@ -14,6 +14,7 @@ import {
 export function BattleSprite({
   speciesName,
   facing,
+  isShiny = false,
   fallbackUrl,
   alt,
   width,
@@ -23,6 +24,7 @@ export function BattleSprite({
 }: {
   speciesName: string;
   facing: SpriteFacing;
+  isShiny?: boolean;
   fallbackUrl: string;
   alt: string;
   width: number;
@@ -30,12 +32,12 @@ export function BattleSprite({
   className?: string;
   style?: CSSProperties;
 }) {
-  const animated = battleAnimatedSpriteUrl(speciesName, facing);
+  const animated = battleAnimatedSpriteUrl(speciesName, facing, isShiny);
   const [src, setSrc] = useState(animated);
 
   useEffect(() => {
-    setSrc(battleAnimatedSpriteUrl(speciesName, facing));
-  }, [speciesName, facing]);
+    setSrc(battleAnimatedSpriteUrl(speciesName, facing, isShiny));
+  }, [speciesName, facing, isShiny]);
 
   return (
     <Image

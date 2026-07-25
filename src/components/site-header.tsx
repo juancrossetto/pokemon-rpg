@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
 import { MobileChrome } from "@/components/mobile-chrome";
+import { NavLinks, type DesktopNavLink } from "@/components/nav-links";
+import { BrandLogo } from "@/components/brand-logo";
 import type { CombatLock } from "@/lib/battle-lock";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
@@ -26,120 +28,83 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
 
   const primary = session?.user
     ? [
-        { href: "/", label: t("home"), icon: "dashboard" },
-        { href: "/team", label: t("teamShort"), icon: "group" },
+        { href: "/", label: t("home"), icon: "home" },
         { href: "/battle", label: t("battle"), icon: "swords" },
         { href: "/gyms", label: t("gyms"), icon: "military_tech" },
+        { href: "/market", label: t("market"), icon: "storefront" },
       ]
     : [
-        { href: "/", label: t("home"), icon: "dashboard" },
-        { href: "/pokedex", label: t("pokedex"), icon: "auto_stories" },
+        { href: "/ranking", label: t("ranking"), icon: "trophy" },
+        { href: "/login", label: t("login"), icon: "login" },
+        { href: "/register", label: t("register"), icon: "person_add" },
       ];
 
-  const moreLinks = session?.user
+  // Desktop: Home primero; Equipo vive en el menú del avatar.
+  const desktopLinks: DesktopNavLink[] = session?.user
     ? [
-        { href: "/pokedex", label: t("pokedex"), icon: "auto_stories" },
-        { href: "/market", label: t("market"), icon: "storefront" },
+        { href: "/", label: t("home") },
+        { href: "/market", label: t("market") },
+        { href: "/battle", label: t("battle") },
+        { href: "/gyms", label: t("gyms") },
+        { href: "/pokedex", label: t("pokedex") },
+      ]
+    : [{ href: "/ranking", label: t("ranking") }];
+
+  const desktopMoreLinks: DesktopNavLink[] = session?.user
+    ? [
         { href: "/pvp", label: t("pvp"), icon: "sports_mma" },
         { href: "/ranking", label: t("ranking"), icon: "trophy" },
         { href: "/clans", label: t("clans"), icon: "groups" },
         { href: "/pc", label: t("pc"), icon: "storage" },
       ]
-    : [
-        { href: "/login", label: t("login"), icon: "login" },
-        { href: "/register", label: t("register"), icon: "person_add" },
-      ];
+    : [];
+
+  const moreLinks = session?.user
+    ? [
+        { href: "/pokedex", label: t("pokedex"), icon: "auto_stories" },
+        { href: "/pvp", label: t("pvp"), icon: "sports_mma" },
+        { href: "/ranking", label: t("ranking"), icon: "trophy" },
+        { href: "/clans", label: t("clans"), icon: "groups" },
+        { href: "/pc", label: t("pc"), icon: "storage" },
+      ]
+    : [];
+
+  const brandHref = lockedHref ?? (session?.user ? "/" : "/login");
 
   return (
     <>
       {/* TopAppBar (desktop) */}
-      <nav className="fixed top-0 w-full z-50 hidden md:flex justify-between items-center px-6 py-2 bg-background/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
-        <div className="flex items-center gap-4 min-w-0">
-          <Link
-            href={lockedHref ?? "/"}
-            className="text-headline-lg font-black text-pokeball-red tracking-tighter shrink-0"
-          >
-            {t("brand")}
+      <nav className="fixed top-0 w-full z-50 hidden h-16 md:flex justify-between items-center gap-4 px-6 bg-background/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
+        <div className="flex items-center min-w-0">
+          <Link href={brandHref} className="shrink-0">
+            <BrandLogo alt={t("brand")} priority sizes="80px" className="h-9 w-auto" />
           </Link>
-          <div className="flex gap-1 ml-4 items-center flex-wrap">
-            {lockedHref && lockedLabel ? (
+          {lockedHref && lockedLabel ? (
+            <div className="ml-4 flex items-center gap-1">
               <Link
                 href={lockedHref}
-                className="inline-flex items-center gap-1.5 rounded-full bg-pokeball-red/15 border border-pokeball-red/50 px-3 py-1 text-label-sm text-pokeball-red font-bold"
+                className="inline-flex items-center gap-1.5 rounded-md bg-pokeball-red/15 border border-pokeball-red/50 px-3 py-1 text-label-sm text-pokeball-red font-bold"
               >
                 <span className="material-symbols-outlined text-[16px]">
                   {lock?.kind === "gym" ? "military_tech" : "swords"}
                 </span>
                 {lockedLabel}
               </Link>
-            ) : (
-              <>
-                <Link
-                  href="/pokedex"
-                  className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
-                >
-                  {t("pokedex")}
-                </Link>
-                {session?.user && (
-                  <>
-                    <Link
-                      href="/team"
-                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
-                    >
-                      {t("team")}
-                    </Link>
-                    <Link
-                      href="/battle"
-                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
-                    >
-                      {t("battle")}
-                    </Link>
-                    <Link
-                      href="/pvp"
-                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
-                    >
-                      {t("pvp")}
-                    </Link>
-                    <Link
-                      href="/gyms"
-                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
-                    >
-                      {t("gyms")}
-                    </Link>
-                    <Link
-                      href="/ranking"
-                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
-                    >
-                      {t("ranking")}
-                    </Link>
-                    <Link
-                      href="/clans"
-                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
-                    >
-                      {t("clans")}
-                    </Link>
-                    <Link
-                      href="/market"
-                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
-                    >
-                      {t("market")}
-                    </Link>
-                    <Link
-                      href="/pc"
-                      className="text-on-surface-variant hover:text-on-surface transition-colors text-label-md px-2 py-1"
-                    >
-                      {t("pc")}
-                    </Link>
-                  </>
-                )}
-              </>
-            )}
-          </div>
+            </div>
+          ) : (
+            desktopLinks.length > 0 && (
+              <NavLinks
+                links={desktopLinks}
+                moreLinks={desktopMoreLinks}
+                moreLabel={t("more")}
+              />
+            )
+          )}
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           {user && (
-            <span className="flex items-center gap-1 text-label-md text-electric-yellow font-mono">
+            <span className="flex items-center gap-1 rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-1 text-label-sm text-electric-yellow font-mono">
               <span className="material-symbols-outlined text-[16px]">paid</span>
               {user.coins}
             </span>
@@ -153,6 +118,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               avatarId={user?.avatarId ?? null}
               logoutLabel={t("logout")}
               trainerLabel={t("trainer")}
+              teamLabel={t("teamShort")}
             />
           ) : (
             <div className="flex items-center gap-2">
@@ -164,7 +130,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               </Link>
               <Link
                 href="/register"
-                className="text-label-md rounded-lg bg-pokeball-red px-3 py-1 text-white hover:bg-pokeball-red/80 transition-colors"
+                className="text-label-md rounded-md bg-pokeball-red px-3 py-1.5 text-white hover:bg-pokeball-red/80 transition-colors"
               >
                 {t("register")}
               </Link>
@@ -175,6 +141,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
 
       <MobileChrome
         brand={t("brand")}
+        brandHref={brandHref}
         locale={locale}
         languageLabel={t("language")}
         coins={user?.coins ?? null}
@@ -182,6 +149,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         avatarId={user?.avatarId ?? null}
         logoutLabel={t("logout")}
         trainerLabel={t("trainer")}
+        teamLabel={t("teamShort")}
         lockedHref={lockedHref}
         lockedLabel={lockedLabel}
         lockedIcon={lock?.kind === "gym" ? "military_tech" : "swords"}

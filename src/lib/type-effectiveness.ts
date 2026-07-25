@@ -16,3 +16,11 @@ export function getTypeEffectiveness(
     1,
   );
 }
+
+/** Tipos que hacen daño super efectivo contra un tipo defensor. */
+export function getWeaknesses(defendingType: string): string[] {
+  const key = defendingType.toLowerCase();
+  return Object.keys(chart)
+    .filter((attacking) => (chart[attacking]?.[key] ?? 1) > 1)
+    .sort();
+}

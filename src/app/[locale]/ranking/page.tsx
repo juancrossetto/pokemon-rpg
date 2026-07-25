@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { Link, redirect } from "@/i18n/navigation";
+import { LiveRefresh } from "@/components/live-refresh";
+import { Link } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { FlagIcon } from "@/components/flag-icon";
@@ -34,12 +35,7 @@ export default async function RankingPage({
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   const [t, session] = await Promise.all([getTranslations("ranking"), auth()]);
-
-  if (!session?.user) {
-    redirect({ href: "/login", locale });
-    return null;
-  }
-  const userId = session.user.id;
+  const userId = session?.user?.id ?? null;
 
   const view: View = pickView(query.view);
   const countryOptions = getCountryOptions(locale);
@@ -48,13 +44,16 @@ export default async function RankingPage({
   const country = query.country && validCountries.has(query.country) ? query.country : "";
   const page = Math.max(1, Number(query.page) > 0 ? Math.floor(Number(query.page)) : 1);
 
-  const me = await prisma.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: { country: true },
-  });
+  const me = userId
+    ? await prisma.user.findUnique({
+        where: { id: userId },
+        select: { country: true },
+      })
+    : null;
 
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
+      <LiveRefresh />
       <div className="mx-auto max-w-4xl">
         <div className="mb-4">
           <h1 className="text-headline-lg md:text-display-lg text-white">{t("title")}</h1>
@@ -85,7 +84,7 @@ export default async function RankingPage({
         <CountryFilter
           view={view}
           country={country}
-          myCountry={me.country}
+          myCountry={me?.country ?? null}
           options={countryOptions}
           allLabel={t("filters.global")}
           myCountryLabel={t("filters.myCountry")}
@@ -126,7 +125,7 @@ function CountryFilter({
 }: {
   view: View;
   country: string;
-  myCountry: string;
+  myCountry: string | null;
   options: { code: string; name: string }[];
   allLabel: string;
   myCountryLabel: string;
@@ -146,13 +145,15 @@ function CountryFilter({
         <span className="material-symbols-outlined text-[16px]">public</span>
         {allLabel}
       </Link>
-      <Link
-        href={`/ranking?view=${view}&country=${myCountry}`}
-        className={chipClass(country === myCountry)}
-      >
-        <FlagIcon code={myCountry} className="h-3.5 w-auto rounded-[2px]" />
-        {myCountryLabel}
-      </Link>
+      {myCountry && (
+        <Link
+          href={`/ranking?view=${view}&country=${myCountry}`}
+          className={chipClass(country === myCountry)}
+        >
+          <FlagIcon code={myCountry} className="h-3.5 w-auto rounded-[2px]" />
+          {myCountryLabel}
+        </Link>
+      )}
 
       {/* Selector para cualquier otro país (GET nativo, sin JS) */}
       <form method="get" className="flex items-center gap-2 ml-auto">
@@ -191,7 +192,7 @@ async function TrainersBoard({
   country,
   page,
 }: {
-  userId: string;
+  userId: string | null;
   country: string;
   page: number;
 }) {
@@ -243,7 +244,7 @@ async function TrainersBoard({
   const start = (clampedPage - 1) * RANKING_PAGE_SIZE;
   const rows = ranked.slice(start, start + RANKING_PAGE_SIZE);
 
-  const myIndex = ranked.findIndex((u) => u.id === userId);
+  const myIndex = userId ? ranked.findIndex((u) => u.id === userId) : -1;
   const myRank = myIndex >= 0 ? myIndex + 1 : null;
   const myOnThisPage = myRank !== null && myRank > start && myRank <= start + RANKING_PAGE_SIZE;
 
@@ -262,7 +263,7 @@ async function TrainersBoard({
       <ol className="flex flex-col gap-1.5">
         {rows.map((u, i) => {
           const rank = start + i + 1;
-          const isMe = u.id === userId;
+          const isMe = !!userId && u.id === userId;
           return (
             <li
               key={u.id}
@@ -322,7 +323,7 @@ async function LadderBoard({
   country,
   page,
 }: {
-  userId: string;
+  userId: string | null;
   country: string;
   page: number;
 }) {
@@ -342,10 +343,12 @@ async function LadderBoard({
 
   const [total, me] = await Promise.all([
     prisma.user.count({ where }),
-    prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { pvpRating: true, pvpWins: true, pvpLosses: true },
-    }),
+    userId
+      ? prisma.user.findUnique({
+          where: { id: userId },
+          select: { pvpRating: true, pvpWins: true, pvpLosses: true },
+        })
+      : Promise.resolve(null),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / RANKING_PAGE_SIZE));
@@ -358,12 +361,13 @@ async function LadderBoard({
     select: { id: true, username: true, country: true, pvpRating: true, pvpWins: true, pvpLosses: true },
   });
 
-  const iPlayed = me.pvpWins + me.pvpLosses > 0;
+  const iPlayed = !!me && me.pvpWins + me.pvpLosses > 0;
   // Rango aproximado: cantidad de jugadores con rating estrictamente mayor + 1
   // (los empates comparten cota, suficiente para el MVP).
-  const myRank = iPlayed
-    ? (await prisma.user.count({ where: { ...where, pvpRating: { gt: me.pvpRating } } })) + 1
-    : null;
+  const myRank =
+    iPlayed && me
+      ? (await prisma.user.count({ where: { ...where, pvpRating: { gt: me.pvpRating } } })) + 1
+      : null;
   const firstRankOnPage = (clampedPage - 1) * RANKING_PAGE_SIZE + 1;
   const lastRankOnPage = firstRankOnPage + rows.length - 1;
   const myOnThisPage = myRank !== null && myRank >= firstRankOnPage && myRank <= lastRankOnPage;
@@ -374,7 +378,7 @@ async function LadderBoard({
 
   return (
     <div className="flex flex-col gap-3">
-      {myRank !== null && !myOnThisPage && (
+      {myRank !== null && me && !myOnThisPage && (
         <div className="rounded-lg border border-pokeball-red/40 bg-pokeball-red/10 px-4 py-2 text-label-md text-pokeball-red">
           {t("yourLadderRank", { rank: myRank, rating: me.pvpRating })}
         </div>
@@ -383,7 +387,7 @@ async function LadderBoard({
       <ol className="flex flex-col gap-1.5">
         {rows.map((u, i) => {
           const rank = firstRankOnPage + i;
-          const isMe = u.id === userId;
+          const isMe = !!userId && u.id === userId;
           return (
             <li
               key={u.id}
@@ -435,7 +439,7 @@ async function SpeciesBoard({
   page,
   speciesQuery,
 }: {
-  userId: string;
+  userId: string | null;
   country: string;
   page: number;
   speciesQuery: string | undefined;
@@ -543,7 +547,7 @@ async function SpeciesBoard({
           <ol className="flex flex-col gap-1.5">
             {rows.map((p, i) => {
               const rank = start + i + 1;
-              const isMine = p.ownerId === userId;
+              const isMine = !!userId && p.ownerId === userId;
               return (
                 <li
                   key={p.id}

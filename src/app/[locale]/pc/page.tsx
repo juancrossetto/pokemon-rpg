@@ -1,13 +1,14 @@
-import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { typeColor } from "@/lib/type-colors";
 import { calculateMaxHp } from "@/lib/stats";
 import { PC_ERRORS, PC_NOTICES, pickCode } from "@/lib/feedback-codes";
 import { TEAM_SIZE } from "@/lib/market-rules";
-import { depositPokemon, withdrawPokemon } from "@/actions/pc";
+import { PcTransfer, type PcMon } from "@/components/pc-transfer";
+import { BreedingPanel } from "@/components/breeding-panel";
+import { BREEDING_MIN_LEVEL, msUntilHatch } from "@/lib/breeding";
+import { spriteFor } from "@/lib/shiny";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 
 export default async function PcPage({
@@ -48,7 +49,31 @@ export default async function PcPage({
 
   const team = pokemon.filter((p) => p.teamSlot !== null);
   const stored = pokemon.filter((p) => p.teamSlot === null);
-  const teamFull = team.length >= TEAM_SIZE;
+
+  // Sólo los de la PC, sin publicar y con nivel suficiente pueden criar.
+  const breedCandidates = stored
+    .filter((p) => p.listings.length === 0 && p.level >= BREEDING_MIN_LEVEL)
+    .map((p) => ({
+      id: p.id,
+      name: p.nickname ?? p.species.name,
+      level: p.level,
+      spriteUrl: spriteFor(p.species.spriteUrl, p.isShiny),
+    }));
+
+  const eggs = (
+    await prisma.egg.findMany({
+      where: { ownerId: session.user.id, hatchedAt: null },
+      include: { species: { select: { name: true, spriteUrl: true } } },
+      orderBy: { readyAt: "asc" },
+    })
+  ).map((e) => ({
+    id: e.id,
+    speciesName: e.species.name,
+    spriteUrl: e.species.spriteUrl,
+    isShiny: e.isShiny,
+    ready: msUntilHatch(e.readyAt) === 0,
+    minutesLeft: Math.ceil(msUntilHatch(e.readyAt) / 60000),
+  }));
 
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
@@ -69,138 +94,42 @@ export default async function PcPage({
           </div>
         )}
 
-        <section className="mb-8">
-          <h2 className="text-headline-md text-on-surface mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-pokeball-red text-[20px]">group</span>
-            {t("teamSection", { count: team.length, max: TEAM_SIZE })}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {team.map((instance) => (
-              <PokemonRow key={instance.id} instance={instance}>
-                {team.length > 1 ? (
-                  <form action={depositPokemon.bind(null, locale)}>
-                    <input type="hidden" name="pokemonId" value={instance.id} />
-                    <button
-                      type="submit"
-                      className="text-label-md px-3 py-1.5 rounded-lg border border-white/10 text-on-surface-variant hover:text-pokeball-red hover:border-pokeball-red/40 transition-colors shrink-0"
-                    >
-                      {t("deposit")}
-                    </button>
-                  </form>
-                ) : (
-                  <span className="text-label-sm text-on-surface-variant italic shrink-0">
-                    {t("lastTeamMember")}
-                  </span>
-                )}
-              </PokemonRow>
-            ))}
-          </div>
-        </section>
+        <PcTransfer
+          key={pokemon.map((p) => `${p.id}:${p.teamSlot ?? "box"}`).join("|")}
+          locale={locale}
+          teamSize={TEAM_SIZE}
+          initialTeam={team.map(toPcMon)}
+          initialBox={stored.map(toPcMon)}
+        />
 
-        <section>
-          <h2 className="text-headline-md text-on-surface mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-electric-yellow text-[20px]">storage</span>
-            {t("storageSection", { count: stored.length })}
-          </h2>
-          {stored.length === 0 ? (
-            <div className="bg-glass-surface border border-white/5 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-on-surface-variant">
-              <span className="material-symbols-outlined text-[40px] mb-2 opacity-50">storage</span>
-              <span className="text-label-md">{t("emptyStorage")}</span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {stored.map((instance) => {
-                const isListed = instance.listings.length > 0;
-                return (
-                  <PokemonRow key={instance.id} instance={instance}>
-                    {isListed ? (
-                      <span className="text-label-sm px-2 py-1 rounded bg-electric-yellow/10 border border-electric-yellow/30 text-electric-yellow shrink-0">
-                        {t("listed")}
-                      </span>
-                    ) : teamFull ? (
-                      <span className="text-label-sm text-on-surface-variant italic shrink-0">
-                        {t("teamFull")}
-                      </span>
-                    ) : (
-                      <form action={withdrawPokemon.bind(null, locale)}>
-                        <input type="hidden" name="pokemonId" value={instance.id} />
-                        <button
-                          type="submit"
-                          className="text-label-md px-3 py-1.5 rounded-lg bg-pokeball-red text-white hover:bg-pokeball-red/80 transition-colors shrink-0"
-                        >
-                          {t("withdraw")}
-                        </button>
-                      </form>
-                    )}
-                  </PokemonRow>
-                );
-              })}
-            </div>
-          )}
-        </section>
+        <BreedingPanel locale={locale} candidates={breedCandidates} eggs={eggs} />
       </div>
     </div>
   );
 }
 
-async function PokemonRow({
-  instance,
-  children,
-}: {
-  instance: {
-    id: string;
-    nickname: string | null;
-    level: number;
-    currentHp: number;
-    ptConstitution: number;
-    species: { name: string; spriteUrl: string; types: string[]; baseHp: number };
-  };
-  children: React.ReactNode;
-}) {
-  const t = await getTranslations("pc");
-  const maxHp = calculateMaxHp(instance.species.baseHp, instance.level, instance.ptConstitution);
-  const hpPct = Math.max(0, Math.min(100, (instance.currentHp / maxHp) * 100));
-  const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
+type PokemonRowSource = {
+  id: string;
+  nickname: string | null;
+  level: number;
+  currentHp: number;
+  ptConstitution: number;
+  teamSlot: number | null;
+  isShiny: boolean;
+  species: { name: string; spriteUrl: string; types: string[]; baseHp: number };
+  listings: { id: string }[];
+};
 
-  return (
-    <article className="bg-glass-surface backdrop-blur-xl border border-white/10 rounded-xl p-3 flex items-center gap-3">
-      <div className="w-12 h-12 rounded-full bg-surface-container-high border-2 border-surface-variant flex items-center justify-center overflow-hidden shrink-0">
-        <Image
-          src={instance.species.spriteUrl}
-          alt={instance.species.name}
-          width={48}
-          height={48}
-          className="w-full h-full object-cover"
-        />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-label-md text-on-surface capitalize truncate">
-            {instance.nickname ?? instance.species.name}
-          </span>
-          <span className="text-label-sm text-on-surface-variant shrink-0">
-            {t("level", { level: instance.level })}
-          </span>
-        </div>
-        <div className="flex items-center gap-1 mt-1">
-          {instance.species.types.map((type) => {
-            const color = typeColor(type);
-            return (
-              <span
-                key={type}
-                className="px-1.5 py-0.5 rounded text-[10px] uppercase border"
-                style={{ backgroundColor: `${color}33`, color, borderColor: `${color}55` }}
-              >
-                {type}
-              </span>
-            );
-          })}
-        </div>
-        <div className="mt-1.5 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-          <div className={`h-full health-bar-fill ${hpClass}`} style={{ width: `${hpPct}%` }} />
-        </div>
-      </div>
-      {children}
-    </article>
-  );
+function toPcMon(instance: PokemonRowSource): PcMon {
+  return {
+    id: instance.id,
+    name: instance.nickname ?? instance.species.name,
+    speciesName: instance.species.name,
+    level: instance.level,
+    spriteUrl: spriteFor(instance.species.spriteUrl, instance.isShiny),
+    types: instance.species.types,
+    currentHp: instance.currentHp,
+    maxHp: calculateMaxHp(instance.species.baseHp, instance.level, instance.ptConstitution),
+    listed: instance.listings.length > 0,
+  };
 }

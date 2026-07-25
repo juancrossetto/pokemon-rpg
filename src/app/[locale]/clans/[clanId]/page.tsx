@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { FlagIcon } from "@/components/flag-icon";
 import { SubmitButton } from "@/components/submit-button";
 import { CLAN_ERRORS, CLAN_NOTICES, pickCode } from "@/lib/feedback-codes";
+import { ClanChat } from "@/components/clan-chat";
+import { listClanMessages } from "@/actions/clan-chat";
 import { CLAN_MAX_MEMBERS } from "@/lib/clan-rules";
 import { teamPower } from "@/lib/ranking";
 import type { ClanRole } from "@/generated/prisma/enums";
@@ -277,6 +279,18 @@ export default async function ClanDetailPage({
           <p className="text-label-sm text-on-surface-variant mt-3">{t("leaderLeaveHint")}</p>
         )}
       </div>
+
+      {/* Chat interno: sólo para miembros del clan. */}
+      {myRole !== null && (
+        <div className="mt-4">
+          <ClanChat
+            locale={locale}
+            clanId={clanId}
+            currentUserId={userId}
+            initialMessages={await listClanMessages(clanId)}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 
 // Subí este número cuando cambie el schema y el HMR deje un client viejo
 // en globalThis (p. ej. campos nuevos como currentPp / wildMovePp).
-const PRISMA_CLIENT_EPOCH = 5;
+const PRISMA_CLIENT_EPOCH = 9;
 
 // Patrón singleton: en dev, Next.js recarga módulos en caliente y crearía
 // una PrismaClient nueva (con su propio pool) en cada reload.
@@ -63,6 +63,21 @@ function isSupabasePooler(connectionString: string): boolean {
   }
 }
 
+/**
+ * Session mode (:5432) da una conexión de servidor por cliente y se agota a
+ * ~15 → ahí sí hay que quedarse en 1. Transaction mode (:6543) multiplexa:
+ * varios clientes comparten conexiones de servidor, así que limitarse a 1 solo
+ * serializa nuestras propias queries sin ganar nada.
+ */
+function isSupabaseSessionMode(connectionString: string): boolean {
+  try {
+    const { port } = new URL(connectionString);
+    return isSupabasePooler(connectionString) && port !== "6543";
+  } catch {
+    return false;
+  }
+}
+
 function isTransientConnectionError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const err = error as {
@@ -89,16 +104,22 @@ function createPool(): Pool {
   }
 
   const localDev = isLocalPrismaDev(connectionString);
-  const supabase = isSupabasePooler(connectionString);
-  // Session mode (:5432) limita clientes a pool_size (~15). En Next dev el HMR
-  // y varios pools suman rápido → EMAXCONNSESSION. Transaction mode (:6543)
-  // + max bajo es lo correcto para app.
-  const max = localDev || supabase ? 1 : process.env.NODE_ENV === "production" ? 5 : 2;
+  const sessionMode = isSupabaseSessionMode(connectionString);
+  const isProd = process.env.NODE_ENV === "production";
+
+  // Con max: 1, las ~10 queries de un render se ejecutan en fila: contra un
+  // pooler remoto (~166ms de ida y vuelta) eso es ~1,6s por página. Además una
+  // sola conexión colgada bloquea toda la app. Solo session mode necesita 1.
+  const max = localDev || sessionMode ? 1 : isProd ? 10 : 5;
+
+  // Un idle timeout corto obliga a rehacer TCP+TLS+auth (~900ms contra
+  // Supabase) en cuanto pasan unos segundos entre requests.
+  const idleTimeoutMillis = localDev || sessionMode ? 5_000 : 30_000;
 
   const pool = new Pool({
     connectionString: cleanConnectionString(connectionString),
     max,
-    idleTimeoutMillis: localDev || supabase ? 5_000 : 20_000,
+    idleTimeoutMillis,
     connectionTimeoutMillis: 10_000,
     allowExitOnIdle: true,
   });

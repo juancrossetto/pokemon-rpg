@@ -2,8 +2,10 @@ import { getTranslations } from "next-intl/server";
 import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { spriteFor } from "@/lib/shiny";
 import { calculateMaxHp, calculateStat, xpForLevel, xpToNextLevel } from "@/lib/stats";
-import { healTeam } from "@/actions/heal-team";
+import { HealButton } from "@/components/heal-button";
+import { healCooldownMsLeft, healRushCost } from "@/lib/healing";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { TeamRoster, type TeamMember } from "@/components/team-roster";
 
@@ -66,6 +68,13 @@ export default async function TeamPage({
     (p) => p.currentHp < calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution),
   );
   const healthyCount = pokemon.filter((p) => p.currentHp > 0).length;
+  const hurtCount = pokemon.filter(
+    (p) => p.currentHp < calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution),
+  ).length;
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: session.user.id },
+    select: { coins: true, lastHealAt: true },
+  });
   const totalUnspent = pokemon.reduce((sum, p) => sum + p.unspentPoints, 0);
 
   const members: (TeamMember | null)[] = slots.map((instance, i) => {
@@ -84,7 +93,7 @@ export default async function TeamPage({
       speciesName: instance.species.name,
       level: instance.level,
       types: instance.species.types,
-      spriteUrl: instance.species.spriteUrl,
+      spriteUrl: spriteFor(instance.species.spriteUrl, instance.isShiny),
       currentHp: instance.currentHp,
       maxHp,
       xp: instance.xp,
@@ -165,19 +174,16 @@ export default async function TeamPage({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <form action={healTeam.bind(null, locale)}>
-              <button
-                type="submit"
-                disabled={!needsHealing}
-                className="inline-flex items-center gap-1.5 rounded-full bg-pokeball-red px-4 py-2 text-label-sm font-semibold text-white shadow-[0_6px_18px_rgba(238,21,21,0.25)] transition hover:bg-pokeball-red/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-surface-container-high disabled:text-on-surface-variant disabled:shadow-none"
-              >
-                <span className="material-symbols-outlined text-[16px]">healing</span>
-                {t("autoHeal")}
-              </button>
-            </form>
+            <HealButton
+              locale={locale}
+              needsHealing={needsHealing}
+              cooldownMsLeft={healCooldownMsLeft(user.lastHealAt)}
+              rushCost={healRushCost(hurtCount)}
+              coins={user.coins}
+            />
             <Link
               href="/pc"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.03] px-4 py-2 text-label-sm text-on-surface transition hover:border-white/25 hover:bg-white/[0.06]"
+              className="inline-flex items-center gap-1.5 rounded-md border border-white/12 bg-white/[0.03] px-4 py-2 text-label-sm text-on-surface transition hover:border-white/25 hover:bg-white/[0.06]"
             >
               <span className="material-symbols-outlined text-[16px]">storage</span>
               {t("manage")}

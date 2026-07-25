@@ -1,5 +1,9 @@
-// Posiciones de las 8 ciudades de gimnasio sobre public/gyms/maps/kanto-lgpe.png
-// (mapa LGPE / Wikidex, 736×649). Coordenadas en % del contenedor.
+// Posiciones de las 8 ciudades de gimnasio sobre el mapa de región de Kanto.
+// Las coordenadas viven en `campaign/region-map.ts` — una sola tabla para el
+// mapa de gimnasios y el selector de zona del inicio.
+import { KANTO_GYM_POINTS, REGION_MAP_ASPECT } from "@/lib/campaign/region-map";
+import { regionMapSrc } from "@/lib/campaign/regions";
+
 export interface GymMapPoint {
   order: number;
   city: string;
@@ -7,15 +11,23 @@ export interface GymMapPoint {
   y: number;
 }
 
-export const GYM_MAP_POINTS: GymMapPoint[] = [
-  { order: 1, city: "Pewter City", x: 18, y: 21 },
-  { order: 2, city: "Cerulean City", x: 62, y: 15 },
-  { order: 3, city: "Vermilion City", x: 62, y: 59 },
-  { order: 4, city: "Celadon City", x: 46, y: 34 },
-  { order: 5, city: "Fuchsia City", x: 52, y: 83 },
-  { order: 6, city: "Saffron City", x: 62, y: 34 },
-  { order: 7, city: "Cinnabar Island", x: 18, y: 96 },
-  { order: 8, city: "Viridian City", x: 18, y: 52 },
-];
+const GYM_CITIES: Record<number, string> = {
+  1: "Pewter City",
+  2: "Cerulean City",
+  3: "Vermilion City",
+  4: "Celadon City",
+  5: "Fuchsia City",
+  6: "Saffron City",
+  7: "Cinnabar Island",
+  8: "Viridian City",
+};
 
-export const KANTO_MAP_IMAGE = "/gyms/maps/kanto-lgpe.png";
+export const GYM_MAP_POINTS: GymMapPoint[] = Object.entries(GYM_CITIES).map(
+  ([order, city]) => {
+    const point = KANTO_GYM_POINTS[Number(order)];
+    return { order: Number(order), city, x: point.x, y: point.y };
+  },
+);
+
+export const KANTO_MAP_IMAGE = regionMapSrc("kanto");
+export const KANTO_MAP_ASPECT = REGION_MAP_ASPECT;

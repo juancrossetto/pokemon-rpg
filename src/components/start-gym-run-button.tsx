@@ -12,7 +12,7 @@ export function StartGymRunButton({
   gymId: string;
   locale: string;
   label: string;
-  errors: Record<"no_lead" | "fainted_lead" | "locked" | "on_cooldown", string>;
+  errors: Record<"no_lead" | "fainted_lead" | "locked" | "on_cooldown" | "closed", string>;
 }) {
   const [state, formAction, pending] = useActionState<StartGymRunResult | null>(
     async () => (await startGymRun(gymId, locale)) ?? null,
@@ -33,6 +33,9 @@ export function StartGymRunButton({
         <p className="text-label-sm text-error">
           {errors[state.error]}
           {state.error === "on_cooldown" && state.hoursLeft ? ` (${state.hoursLeft}h)` : ""}
+          {state.error === "closed" && state.opensHour !== undefined
+            ? ` (${String(state.opensHour).padStart(2, "0")}:00 – ${String(state.closesHour).padStart(2, "0")}:00)`
+            : ""}
         </p>
       )}
     </form>

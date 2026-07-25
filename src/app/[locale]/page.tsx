@@ -1,61 +1,60 @@
-import Image from "next/image";
-import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
+import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { typeColor } from "@/lib/type-colors";
-import { calculateMaxHp } from "@/lib/stats";
+import { spriteFor } from "@/lib/shiny";
+import { calculateMaxHp, xpForLevel, xpToNextLevel } from "@/lib/stats";
 import { redirectIfInBattle } from "@/lib/battle-lock";
-import { getLocale } from "next-intl/server";
+import { ensureCampaignProgress } from "@/lib/campaign/ensure";
+import { buildExpeditionView } from "@/lib/campaign";
+import { loadMapLocations } from "@/lib/campaign/map-data";
+import { CurrentExpedition } from "@/components/current-expedition";
+import { CampaignDevPanel } from "@/components/campaign-dev-panel";
+import { ActiveMission } from "@/components/active-mission";
+import { SystemStatus } from "@/components/system-status";
+import { HomeEmptySquadSlot, HomeSquadCard } from "@/components/home-squad-card";
+import type { CampaignLocationKind } from "@/lib/campaign";
 
 const TEAM_SIZE = 6;
 
-export default async function Home() {
-  const [t, session, locale] = await Promise.all([
-    getTranslations("home"),
-    auth(),
-    getLocale(),
-  ]);
+/** Clima ambiental derivado del tipo de ubicación — determinista, sin datos falsos. */
+const CLIMATE_ICON: Record<CampaignLocationKind, string> = {
+  town: "sunny",
+  route: "partly_cloudy_day",
+  forest: "rainy",
+  dungeon: "dark_mode",
+  gym: "bolt",
+};
 
-  if (session?.user) {
-    await redirectIfInBattle(session.user.id, locale);
-    return <Dashboard username={session.user.name ?? ""} userId={session.user.id} />;
+export default async function Home() {
+  const [session, locale] = await Promise.all([auth(), getLocale()]);
+
+  if (!session?.user) {
+    redirect({ href: "/login", locale });
+    return null;
   }
 
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-margin-mobile md:px-margin-desktop py-8 text-center">
-      <p className="text-label-md text-pokeball-red uppercase tracking-widest flex items-center gap-1">
-        <span className="w-2 h-2 rounded-full bg-pokeball-red animate-pulse" />
-        {t("eyebrow")}
-      </p>
-      <h1 className="max-w-2xl text-headline-lg md:text-display-lg text-white tracking-tight">
-        {t("title")}
-      </h1>
-      <p className="max-w-md text-body-lg text-on-surface-variant">{t("subtitle")}</p>
-
-      <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-        <Link
-          href="/pokedex"
-          className="rounded-lg bg-pokeball-red px-6 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
-        >
-          {t("pokedexLink")}
-        </Link>
-        <Link
-          href="/register"
-          className="glass-panel rounded-lg px-6 py-2 text-label-md text-on-surface hover:bg-white/5 transition-colors"
-        >
-          {t("register")}
-        </Link>
-      </div>
-    </div>
-  );
+  await redirectIfInBattle(session.user.id, locale);
+  return <Dashboard username={session.user.name ?? ""} userId={session.user.id} />;
 }
 
 async function Dashboard({ username, userId }: { username: string; userId: string }) {
-  const t = await getTranslations("home");
+  const [t, tc, tt, locale, progress, badges] = await Promise.all([
+    getTranslations("home"),
+    getTranslations("campaign"),
+    getTranslations("team"),
+    getLocale(),
+    ensureCampaignProgress(userId),
+    prisma.badge.findMany({
+      where: { userId },
+      include: { gym: { select: { order: true } } },
+    }),
+  ]);
 
   const pokemon = await prisma.pokemonInstance.findMany({
     where: { ownerId: userId, teamSlot: { not: null } },
+    // Sin `moves`: la card del dashboard ya no los muestra (viven en /team),
+    // así que traerlos era un join de más por cada Pokémon del equipo.
     include: { species: true },
     orderBy: { teamSlot: "asc" },
   });
@@ -72,7 +71,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         <p className="max-w-md text-body-lg text-on-surface-variant">{t("noTeamSubtitle")}</p>
         <Link
           href="/starter"
-          className="mt-2 rounded-lg bg-pokeball-red px-6 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
+          className="mt-2 rounded-md bg-pokeball-red px-6 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
         >
           {t("chooseStarterLink")}
         </Link>
@@ -82,130 +81,166 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
 
   const bySlot = new Map(pokemon.map((p) => [p.teamSlot, p]));
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => bySlot.get(i + 1) ?? null);
+  const expedition = buildExpeditionView(
+    progress,
+    badges.map((b) => b.gym.order),
+  );
+  const mapLocations = await loadMapLocations(userId, progress);
+  const isDev = process.env.NODE_ENV === "development";
+
+  const spawnSpecies = expedition
+    ? await prisma.species.findMany({
+        where: { id: { in: expedition.stage.spawnSpeciesIds } },
+        select: { types: true },
+      })
+    : [];
+  const wildTypes = Array.from(new Set(spawnSpecies.flatMap((s) => s.types))).slice(0, 4);
+
+  const locationStages = expedition
+    ? expedition.location.stages.filter((s) => !s.isGymMilestone)
+    : [];
+  const locationStagesDone = locationStages.filter((s) =>
+    progress.completedStageIds.includes(s.id),
+  ).length;
+
+  const milestone = expedition?.milestone;
+  const missionTitle = milestone ? tc(milestone.nameKey) : "";
+  const missionDescription = milestone
+    ? milestone.kind === "gym"
+      ? t("missionGym", { location: tc(milestone.nameKey) })
+      : milestone.kind === "complete"
+        ? t("missionComplete")
+        : t("missionStage", { location: tc(milestone.nameKey) })
+    : "";
+  const missionHref =
+    milestone?.kind === "gym" ? "/gyms" : milestone?.kind === "complete" ? "/campaign" : "/battle";
 
   return (
-    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
-      <div className="mx-auto max-w-6xl">
-        <p className="text-label-md text-pokeball-red uppercase tracking-widest flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-pokeball-red animate-pulse" />
-          {t("eyebrow")}
-        </p>
-        <h1 className="mt-1 text-headline-lg md:text-display-lg text-white">
-          {t("greeting", { username })}
-        </h1>
-
-        <section className="glass-panel rounded-xl mt-6 p-4 border border-white/10 shadow-lg">
-          <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-pokeball-red">group</span>
-              <h2 className="text-headline-md text-white">{t("activeSquad")}</h2>
+    <div className="relative flex-1 overflow-hidden">
+      <div className="relative px-margin-mobile md:px-margin-desktop py-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-label-md text-pokeball-red uppercase tracking-widest flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-pokeball-red animate-pulse" />
+                {t("liveSync")}
+              </p>
+              <h1 className="mt-1 text-headline-lg md:text-display-lg text-white tracking-tight">
+                {t("greeting", { username })}
+              </h1>
             </div>
-            <Link
-              href="/team"
-              className="text-label-sm text-on-surface-variant hover:text-white transition-colors flex items-center gap-1"
-            >
-              {t("manage")}
-              <span className="material-symbols-outlined text-sm">chevron_right</span>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-            {slots.map((instance, i) =>
-              instance ? (
-                <SquadPreviewCard
-                  key={instance.id}
-                  nickname={instance.nickname}
-                  speciesName={instance.species.name}
-                  level={instance.level}
-                  types={instance.species.types}
-                  spriteUrl={instance.species.spriteUrl}
-                  currentHp={instance.currentHp}
-                  maxHp={calculateMaxHp(instance.species.baseHp, instance.level, instance.ptConstitution)}
-                />
-              ) : (
-                <Link
-                  key={`empty-${i}`}
-                  href="/team"
-                  className="bg-surface-container-low/30 border border-white/10 border-dashed rounded-lg p-2 flex flex-col items-center justify-center min-h-[140px] hover:bg-white/10 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-on-surface-variant/40 text-3xl mb-2">
-                    add
-                  </span>
-                  <span className="text-label-sm text-on-surface-variant/40">
-                    {t("emptySlot")}
-                  </span>
-                </Link>
-              ),
+            {expedition && (
+              <SystemStatus
+                timeLabel={t("time")}
+                climateLabel={t("climate")}
+                climateValue={t(`climates.${expedition.location.kind}`)}
+                climateIcon={CLIMATE_ICON[expedition.location.kind]}
+              />
             )}
           </div>
-        </section>
+
+          {expedition && milestone && (
+            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <CurrentExpedition
+                  locationNameKey={expedition.location.nameKey}
+                  locationKindKey={`kinds.${expedition.location.kind}`}
+                  stageNameKey={expedition.stage.nameKey}
+                  mapSrc={expedition.mapSrc}
+                  milestone={milestone}
+                  regionNameKey={`regions.${expedition.regionId}`}
+                  wildTypes={wildTypes}
+                  levelMin={expedition.stage.levelMin}
+                  levelMax={expedition.stage.levelMax}
+                  locale={locale}
+                  locations={mapLocations}
+                  farmingLocationId={progress.farmingLocationId}
+                  farmingStageId={progress.farmingStageId}
+                />
+              </div>
+              <ActiveMission
+                heading={t("activeMission")}
+                title={missionTitle}
+                description={missionDescription}
+                progressLabel={tc("journeyProgress")}
+                progressPercent={expedition.journeyPercent}
+                stagesLabel={t("stagesCleared")}
+                stagesDone={locationStagesDone}
+                stagesTotal={locationStages.length}
+                ctaHref={missionHref}
+                ctaLabel={
+                  milestone.kind === "gym" ? tc("challengeGym") : tc("continueExpedition")
+                }
+              />
+            </div>
+          )}
+
+          <section className="mt-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-pokeball-red">group</span>
+                <h2 className="text-headline-md text-white">{t("activeSquad")}</h2>
+              </div>
+              <Link
+                href="/team"
+                className="flex items-center gap-1 text-label-sm text-on-surface-variant transition-colors hover:text-white"
+              >
+                {t("manage")}
+                <span className="material-symbols-outlined text-sm">chevron_right</span>
+              </Link>
+            </div>
+
+            {/* 6 en una fila desde md: antes el salto a 6 columnas recién
+                ocurría en xl (1280px), así que en pantallas de ~1100px el
+                equipo se partía en dos filas y rompía la estructura. */}
+            <div className="grid grid-cols-3 gap-2 md:grid-cols-6">
+              {slots.map((instance, i) => {
+                if (!instance) {
+                  return <HomeEmptySquadSlot key={`empty-${i}`} label={t("emptySlot")} />;
+                }
+
+                const maxHp = calculateMaxHp(
+                  instance.species.baseHp,
+                  instance.level,
+                  instance.ptConstitution,
+                );
+                const xpForCurrent = xpForLevel(instance.level);
+                const xpToNext = xpToNextLevel(instance.xp, instance.level);
+                const xpIntoLevel = instance.xp - xpForCurrent;
+                const levelSpan = xpIntoLevel + xpToNext;
+                const xpPct =
+                  levelSpan > 0
+                    ? Math.max(0, Math.min(100, (xpIntoLevel / levelSpan) * 100))
+                    : 0;
+
+                return (
+                  <HomeSquadCard
+                    key={instance.id}
+                    isLead={i === 0}
+                    nickname={instance.nickname}
+                    speciesName={instance.species.name}
+                    types={instance.species.types}
+                    spriteUrl={spriteFor(instance.species.spriteUrl, instance.isShiny)}
+                    currentHp={instance.currentHp}
+                    maxHp={maxHp}
+                    xpPct={xpPct}
+                    xpToNextLabel={tt("expToNext", { xp: xpToNext })}
+                    labels={{
+                      hp: tt("stats.hp"),
+                      level: tt("level", { level: instance.level }),
+                      lead: tt("lead"),
+                      slot: tt("slotLabel", { slot: i + 1 }),
+                      fainted: tt("fainted"),
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </section>
+
+          {isDev && <CampaignDevPanel locale={locale} />}
+        </div>
       </div>
     </div>
-  );
-}
-
-function SquadPreviewCard({
-  nickname,
-  speciesName,
-  level,
-  types,
-  spriteUrl,
-  currentHp,
-  maxHp,
-}: {
-  nickname: string | null;
-  speciesName: string;
-  level: number;
-  types: string[];
-  spriteUrl: string;
-  currentHp: number;
-  maxHp: number;
-}) {
-  const hpPct = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
-  const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
-
-  return (
-    <Link
-      href="/team"
-      className="bg-surface-container-high/40 border border-white/10 rounded-lg p-2 relative hover:bg-white/10 transition-all group shadow-sm"
-    >
-      <div className="absolute top-2 right-2 flex gap-1">
-        {types.map((type) => (
-          <span
-            key={type}
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: typeColor(type) }}
-          />
-        ))}
-      </div>
-      <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-black/60 border border-white/20 flex items-center justify-center overflow-hidden">
-        {spriteUrl && (
-          <Image
-            src={spriteUrl}
-            alt={speciesName}
-            width={64}
-            height={64}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-          />
-        )}
-      </div>
-      <div className="text-center">
-        <p className="text-label-md text-on-surface font-bold capitalize">
-          {nickname ?? speciesName}
-        </p>
-        <p className="text-label-sm text-on-surface-variant">Lv. {level}</p>
-      </div>
-      <div className="mt-2">
-        <div className="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
-          <div className={`h-full health-bar-fill ${hpClass}`} style={{ width: `${hpPct}%` }} />
-        </div>
-        <div className="flex justify-between text-label-sm mt-1 text-on-surface-variant text-[10px]">
-          <span>HP</span>
-          <span className="text-on-surface">
-            {currentHp}/{maxHp}
-          </span>
-        </div>
-      </div>
-    </Link>
   );
 }

@@ -96,6 +96,8 @@ export async function attemptCapture(
         xp: xpForLevel(battle.wildLevel),
         currentHp: battle.wildCurrentHp,
         teamSlot: openSlot,
+        // El variocolor se decidió al generar el encuentro; acá solo viaja.
+        isShiny: battle.wildIsShiny,
         moves: {
           create: moveIds.map((moveId, i) => {
             const m = moves.find((x) => x.id === moveId);

@@ -4,7 +4,7 @@ import { redirect, Link } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { typeColor } from "@/lib/type-colors";
 import { computeGymStatuses } from "@/lib/gym-status";
-import { GYM_MAP_POINTS, KANTO_MAP_IMAGE } from "@/lib/gym-map";
+import { GYM_MAP_POINTS, KANTO_MAP_IMAGE, KANTO_MAP_ASPECT } from "@/lib/gym-map";
 import { gymBadgeImageUrl } from "@/lib/gym-art";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 
@@ -48,17 +48,20 @@ export default async function GymMapPage({
         </div>
 
         <div className="glass-panel rounded-xl border border-white/10 p-2 sm:p-3">
-          <div className="relative w-full aspect-[736/649] rounded-lg overflow-hidden bg-[#1a2a3a]">
+          <div
+            className="relative w-full rounded-lg overflow-hidden bg-[#0b1424]"
+            style={{ aspectRatio: KANTO_MAP_ASPECT }}
+          >
             <Image
               src={KANTO_MAP_IMAGE}
               alt={t("mapTitle")}
               fill
               priority
               sizes="(max-width: 768px) 100vw, 768px"
-              className="object-cover opacity-90"
+              className="object-contain"
             />
-            {/* Vignette para que los pines de medalla lean mejor sobre el mapa claro */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
+            {/* Vignette para que los pines de medalla lean sobre el mapa */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/35" />
 
             {statuses.map(({ gym, badgeEarned, locked }) => {
               const point = pointByOrder.get(gym.order);

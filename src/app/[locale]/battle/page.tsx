@@ -2,9 +2,22 @@ import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
+import { getCurrentEnergy } from "@/lib/energy";
 import { getActiveGymRun } from "@/lib/battle-lock";
 import { BattleScreen } from "@/components/battle-screen";
 import type { BattleArenaProps, OpponentPartyMember } from "@/components/battle-arena";
+import type { BattleLobbyData } from "@/lib/battle-lobby";
+import { ensureCampaignProgress } from "@/lib/campaign/ensure";
+import {
+  getKantoStage,
+  getKantoLocation,
+  regionMapSrc,
+  stageEncounterRate,
+} from "@/lib/campaign";
+import { loadMapLocations } from "@/lib/campaign/map-data";
+import { spriteFor } from "@/lib/shiny";
+
+const ENCOUNTER_ENERGY_COST = 1;
 
 export default async function BattlePage({
   params,
@@ -47,6 +60,7 @@ export default async function BattlePage({
 
   let initialBattle: BattleArenaProps | null = null;
   let hasHealthyTeam = true;
+  let lobby: BattleLobbyData | null = null;
 
   if (!battle) {
     // En un desafío de gym no se puede escapar al encuentro salvaje para curar.
@@ -56,11 +70,105 @@ export default async function BattlePage({
       return null;
     }
 
-    const healthy = await prisma.pokemonInstance.findFirst({
-      where: { ownerId: userId, teamSlot: { not: null }, currentHp: { gt: 0 } },
-      select: { id: true },
-    });
-    hasHealthyTeam = healthy !== null;
+    const [user, partyRows, inventory, recentRows, progress] = await Promise.all([
+      prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { energy: true, energyMax: true, energyUpdatedAt: true },
+      }),
+      prisma.pokemonInstance.findMany({
+        where: { ownerId: userId, teamSlot: { not: null } },
+        include: { species: true },
+        orderBy: { teamSlot: "asc" },
+      }),
+      prisma.inventoryItem.findMany({
+        where: {
+          userId,
+          quantity: { gt: 0 },
+          item: { type: { in: ["POKEBALL", "POTION"] } },
+        },
+        include: { item: { select: { type: true } } },
+      }),
+      prisma.battleSession.findMany({
+        where: {
+          userId,
+          gymId: null,
+          status: { in: ["WON", "LOST", "FLED", "CAUGHT"] },
+        },
+        include: { wildSpecies: { select: { name: true, spriteUrl: true } } },
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+      }),
+      ensureCampaignProgress(userId),
+    ]);
+
+    hasHealthyTeam = partyRows.some((p) => p.currentHp > 0);
+    const energy = getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt);
+    const balls = inventory
+      .filter((i) => i.item.type === "POKEBALL")
+      .reduce((sum, i) => sum + i.quantity, 0);
+    const potions = inventory
+      .filter((i) => i.item.type === "POTION")
+      .reduce((sum, i) => sum + i.quantity, 0);
+
+    const stage = getKantoStage(progress.farmingStageId);
+    const location = getKantoLocation(progress.farmingLocationId);
+    const energyCost = stage?.energyCost ?? ENCOUNTER_ENERGY_COST;
+
+    // Las zonas del mapa ya traen sus especies y cuáles capturaste, así que la
+    // lista de encuentros sale de ahí en vez de repetir las queries.
+    const mapLocations = await loadMapLocations(userId, progress);
+    const currentZone = mapLocations.find((l) => l.id === progress.farmingLocationId);
+    const encounters = currentZone?.encounters ?? [];
+    const encounterLevelMin = currentZone?.levelMin ?? stage?.levelMin ?? 1;
+    const encounterLevelMax = currentZone?.levelMax ?? stage?.levelMax ?? 1;
+    const encounterRate = stage ? stageEncounterRate(stage, location) : "medium";
+    const predictedTypes = [...new Set(encounters.flatMap((e) => e.types))].slice(0, 4);
+
+    lobby = {
+      energy,
+      energyMax: user.energyMax,
+      energyCost,
+      balls,
+      potions,
+      unspentTotal: partyRows.reduce((sum, p) => sum + p.unspentPoints, 0),
+      team: partyRows.map((p) => ({
+        id: p.id,
+        name: p.nickname ?? p.species.name,
+        speciesName: p.species.name,
+        level: p.level,
+        spriteUrl: p.species.spriteUrl,
+        currentHp: p.currentHp,
+        maxHp: calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution),
+        types: p.species.types,
+        unspentPoints: p.unspentPoints,
+      })),
+      recent: recentRows.map((r) => ({
+        id: r.id,
+        status: r.status as "WON" | "LOST" | "FLED" | "CAUGHT",
+        speciesName: r.wildSpecies.name,
+        spriteUrl: r.wildSpecies.spriteUrl,
+        level: r.wildLevel,
+      })),
+      expedition:
+        location && stage
+          ? {
+              locationNameKey: location.nameKey,
+              stageNameKey: stage.nameKey,
+              mapSrc: regionMapSrc(progress.currentRegionId),
+              regionNameKey: `regions.${progress.currentRegionId}`,
+              predictedTypes,
+            }
+          : null,
+      mapLocations,
+      farmingLocationId: progress.farmingLocationId,
+      farmingStageId: progress.farmingStageId,
+      encounters,
+      encounterLevelMin,
+      encounterLevelMax,
+      encounterRate,
+      teamReady: partyRows.filter((p) => p.currentHp > 0).length,
+      teamTotal: partyRows.length,
+    };
   }
 
   if (battle) {
@@ -122,9 +230,8 @@ export default async function BattlePage({
             },
           ];
 
-    const opponentName = battle.gymTrainer?.name
-      ?? battle.gym?.leaderName
-      ?? null;
+    const opponentName =
+      battle.gymTrainer?.name ?? battle.gym?.leaderName ?? null;
 
     initialBattle = {
       battleId: battle.id,
@@ -164,7 +271,8 @@ export default async function BattlePage({
         name: battle.wildSpecies.name,
         speciesName: battle.wildSpecies.name,
         level: battle.wildLevel,
-        spriteUrl: battle.wildSpecies.spriteUrl,
+        spriteUrl: spriteFor(battle.wildSpecies.spriteUrl, battle.wildIsShiny),
+        isShiny: battle.wildIsShiny,
         currentHp: battle.wildCurrentHp,
         maxHp: battle.wildMaxHp,
         types: battle.wildSpecies.types,
@@ -189,5 +297,12 @@ export default async function BattlePage({
     };
   }
 
-  return <BattleScreen initialBattle={initialBattle} locale={locale} hasHealthyTeam={hasHealthyTeam} />;
+  return (
+    <BattleScreen
+      initialBattle={initialBattle}
+      locale={locale}
+      hasHealthyTeam={hasHealthyTeam}
+      lobby={lobby}
+    />
+  );
 }
