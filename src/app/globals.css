@@ -1356,3 +1356,308 @@ body {
     animation: none;
   }
 }
+
+/* ---------- Gym challenge corridor ---------- */
+
+.gym-corridor-vignette {
+  background: radial-gradient(ellipse 70% 60% at 50% 45%, transparent 35%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.gym-corridor-fog {
+  animation: gym-corridor-fog-drift 9s ease-in-out infinite alternate;
+}
+
+@keyframes gym-corridor-fog-drift {
+  from {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateY(12px);
+    opacity: 1;
+  }
+}
+
+.gym-corridor-particles {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1px 1px at 28% 68%, rgba(255, 255, 255, 0.25), transparent),
+    radial-gradient(1.5px 1.5px at 55% 18%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 72% 48%, rgba(255, 255, 255, 0.22), transparent),
+    radial-gradient(2px 2px at 88% 76%, rgba(255, 255, 255, 0.28), transparent),
+    radial-gradient(1px 1px at 40% 86%, rgba(255, 255, 255, 0.2), transparent);
+  animation: gym-corridor-particle-float 14s linear infinite;
+  opacity: 0.55;
+}
+
+.gym-corridor-particles--water {
+  background-image:
+    radial-gradient(2px 3px at 15% 20%, rgba(96, 180, 255, 0.55), transparent),
+    radial-gradient(1.5px 2px at 35% 55%, rgba(120, 200, 255, 0.4), transparent),
+    radial-gradient(2px 3px at 60% 30%, rgba(80, 170, 255, 0.5), transparent),
+    radial-gradient(1px 2px at 78% 70%, rgba(140, 210, 255, 0.35), transparent),
+    radial-gradient(2px 3px at 90% 40%, rgba(96, 180, 255, 0.45), transparent);
+}
+
+.gym-corridor-particles--fire {
+  background-image:
+    radial-gradient(2px 2px at 18% 70%, rgba(255, 140, 60, 0.55), transparent),
+    radial-gradient(1.5px 1.5px at 42% 40%, rgba(255, 90, 40, 0.45), transparent),
+    radial-gradient(2px 2px at 65% 75%, rgba(255, 170, 70, 0.5), transparent),
+    radial-gradient(1px 1px at 80% 35%, rgba(255, 120, 50, 0.4), transparent);
+}
+
+.gym-corridor-particles--rock {
+  background-image:
+    radial-gradient(2px 2px at 20% 60%, rgba(180, 160, 120, 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 50% 30%, rgba(160, 140, 100, 0.35), transparent),
+    radial-gradient(2px 2px at 75% 70%, rgba(190, 170, 130, 0.35), transparent);
+}
+
+.gym-corridor-particles--electric {
+  background-image:
+    radial-gradient(1.5px 1.5px at 25% 25%, rgba(255, 230, 80, 0.6), transparent),
+    radial-gradient(1px 1px at 55% 55%, rgba(255, 240, 120, 0.45), transparent),
+    radial-gradient(2px 2px at 80% 35%, rgba(255, 220, 60, 0.5), transparent);
+}
+
+.gym-corridor-particles--grass {
+  background-image:
+    radial-gradient(2px 2px at 22% 40%, rgba(100, 200, 120, 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 48% 70%, rgba(80, 180, 100, 0.4), transparent),
+    radial-gradient(2px 2px at 78% 28%, rgba(120, 210, 130, 0.4), transparent);
+}
+
+.gym-corridor-particles--poison {
+  background-image:
+    radial-gradient(2px 2px at 30% 35%, rgba(180, 90, 220, 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 60% 65%, rgba(150, 70, 200, 0.4), transparent),
+    radial-gradient(2px 2px at 85% 45%, rgba(200, 110, 230, 0.35), transparent);
+}
+
+.gym-corridor-particles--psychic {
+  background-image:
+    radial-gradient(2px 2px at 28% 30%, rgba(255, 120, 180, 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 58% 60%, rgba(240, 100, 200, 0.4), transparent);
+}
+
+.gym-corridor-particles--ground {
+  background-image:
+    radial-gradient(2px 2px at 25% 55%, rgba(210, 170, 90, 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 70% 40%, rgba(190, 150, 80, 0.35), transparent);
+}
+
+@keyframes gym-corridor-particle-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-40px);
+  }
+}
+
+.gym-corridor-progress-fill {
+  transition: width 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gym-corridor-path-fill {
+  transition: height 1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gym-corridor-path-sheen {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 45%,
+    transparent 70%
+  );
+  background-size: 100% 220%;
+  animation: gym-corridor-path-flow 2.4s ease-in-out infinite;
+  mix-blend-mode: soft-light;
+}
+
+@keyframes gym-corridor-path-flow {
+  0% {
+    background-position: 0 -40%;
+  }
+  100% {
+    background-position: 0 140%;
+  }
+}
+
+.gym-corridor-progress-sheen {
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 65%
+  );
+  background-size: 200% 100%;
+  animation: gym-corridor-sheen 2.8s ease-in-out infinite;
+}
+
+@keyframes gym-corridor-sheen {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -40% 0;
+  }
+}
+
+.gym-corridor-node-pulse {
+  animation: gym-corridor-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes gym-corridor-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.gym-corridor-node-cleared {
+  animation: gym-corridor-cleared-pop 0.55s ease-out;
+}
+
+@keyframes gym-corridor-cleared-pop {
+  0% {
+    transform: scale(0.85);
+    filter: brightness(1.4);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+.gym-corridor-card-active {
+  animation: gym-corridor-card-glow 2.8s ease-in-out infinite;
+}
+
+@keyframes gym-corridor-card-glow {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.06);
+  }
+}
+
+.gym-corridor-card-cleared {
+  filter: saturate(0.7);
+}
+
+.gym-corridor-combat-btn {
+  transition:
+    transform 0.18s ease,
+    filter 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.gym-corridor-combat-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.gym-corridor-combat-btn:active {
+  transform: translateY(1px) scale(0.99);
+  filter: brightness(0.95);
+}
+
+.gym-corridor-combat-sheen {
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.28) 48%,
+    transparent 66%
+  );
+}
+
+.gym-corridor-idle-sway {
+  animation: gym-corridor-sway 2.2s ease-in-out infinite;
+}
+
+@keyframes gym-corridor-sway {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+.gym-corridor-silhouette {
+  filter: brightness(0) opacity(0.55);
+}
+
+.gym-corridor-leader-reveal {
+  animation: gym-corridor-leader-in 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gym-corridor-leader-card {
+  animation: gym-corridor-leader-in 0.75s ease-out;
+}
+
+@keyframes gym-corridor-leader-in {
+  from {
+    opacity: 0.4;
+    transform: scale(0.96);
+    filter: brightness(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+.gym-corridor-room-flash {
+  animation: gym-corridor-room-lit 1.4s ease-out;
+}
+
+@keyframes gym-corridor-room-lit {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+  40% {
+    box-shadow: 0 0 28px rgba(255, 255, 255, 0.12);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gym-corridor-fog,
+  .gym-corridor-particles,
+  .gym-corridor-progress-sheen,
+  .gym-corridor-path-sheen,
+  .gym-corridor-node-pulse,
+  .gym-corridor-node-cleared,
+  .gym-corridor-card-active,
+  .gym-corridor-idle-sway,
+  .gym-corridor-leader-reveal,
+  .gym-corridor-leader-card,
+  .gym-corridor-room-flash {
+    animation: none;
+  }
+
+  .gym-corridor-progress-fill,
+  .gym-corridor-path-fill {
+    transition: none;
+  }
+
+  .gym-corridor-combat-btn:hover {
+    transform: none;
+  }
+}
+

@@ -25,7 +25,7 @@ export function GymRunExitButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full flex items-center justify-center gap-2 rounded-lg bg-error/20 border border-error/40 px-4 py-2.5 text-label-md text-error hover:bg-error/30 transition-colors"
+        className="w-full flex items-center justify-center gap-2 rounded-xl bg-error/15 border border-error/35 px-4 py-3 text-label-md text-error/90 hover:bg-error/25 hover:border-error/50 hover:text-error transition-all"
       >
         <span className="material-symbols-outlined text-[18px]!">warning</span>
         {labels.emergencyExit}

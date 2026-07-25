@@ -13,11 +13,12 @@ import { setPokemonNickname } from "@/actions/rename-pokemon";
 import { abandonGymRun } from "@/actions/abandon-gym-run";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { BattleResult } from "@/components/battle-result";
+import { GymBadgePopup } from "@/components/gym-badge-popup";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BattleSprite } from "@/components/battle-sprite";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
 import { typeColor } from "@/lib/type-colors";
-import { gymBadgeImageUrl, gymLeaderPortraitUrl } from "@/lib/gym-art";
+import { gymLeaderPortraitUrl } from "@/lib/gym-art";
 import { playBattleSfx, unlockBattleAudio } from "@/lib/battle-sfx";
 import { statusLabelKey, type StatusCondition } from "@/lib/status";
 import type { TurnEvent } from "@/lib/battle";
@@ -187,6 +188,7 @@ export function BattleArena({
   const [playerHidden, setPlayerHidden] = useState(true);
   const [wildEntering, setWildEntering] = useState(true);
   const [badgeEarned, setBadgeEarned] = useState(false);
+  const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [tmRewardName, setTmRewardName] = useState<string | null>(null);
   const [ballAnim, setBallAnim] = useState<"recall" | "throw" | null>("throw");
   const [playerHealing, setPlayerHealing] = useState(false);
@@ -592,6 +594,7 @@ export function BattleArena({
       appendLog(t("badgeEarned"));
       playBattleSfx("badge");
       setBadgeEarned(true);
+      setShowBadgePopup(true);
     }
     if (result.tmRewardName) {
       appendLog(t("tmEarned", { code: result.tmRewardName }));
@@ -933,31 +936,20 @@ export function BattleArena({
         xpSummary={xpSummary}
         coinsGained={coinsGained}
       >
-        {badgeEarned && gymType && (
-          <div className="glass-panel rounded-xl border border-tertiary/40 p-6 w-full max-w-sm flex flex-col items-center gap-3">
-            <p className="text-label-sm uppercase text-tertiary">{t("badgeEarned")}</p>
-            {leaderPortrait && (gymName || gymLeaderName) && (
-              <div className="flex items-center gap-3 w-full">
-                <div className="w-16 h-20 rounded-lg overflow-hidden border-2 border-tertiary/50 shrink-0 bg-surface-container-high">
-                  <Image src={leaderPortrait} alt={gymLeaderName ?? ""} width={64} height={80} className="w-full h-full object-cover object-top" />
-                </div>
-                <div className="text-left">
-                  {gymName && <p className="text-label-md text-on-surface font-bold">{gymName}</p>}
-                  {gymLeaderName && <p className="text-label-sm text-on-surface-variant">{gymLeaderName}</p>}
-                </div>
-              </div>
-            )}
-            <div className="w-24 h-24 rounded-full flex items-center justify-center animate-[pokeball-pulse_2s_ease-in-out_infinite] bg-tertiary/10 border-2 border-tertiary/50 shadow-[0_0_24px_rgba(234,179,8,0.35)]">
-              <Image src={gymBadgeImageUrl(gymType)} alt={gymBadgeName ?? t("badgeEarned")} width={64} height={64} />
-            </div>
-            {gymBadgeName && <p className="text-headline-md text-tertiary">{gymBadgeName}</p>}
-            {tmRewardName && (
-              <p className="flex items-center gap-1.5 text-label-sm text-on-surface-variant">
-                <span className="material-symbols-outlined text-[16px]! text-secondary">memory</span>
-                {t("tmEarned", { code: tmRewardName })}
-              </p>
-            )}
-          </div>
+        {showBadgePopup && badgeEarned && gymType && (
+          <GymBadgePopup
+            gymType={gymType}
+            gymName={gymName}
+            leaderName={gymLeaderName}
+            badgeName={gymBadgeName}
+            portraitUrl={leaderPortrait}
+            labels={{
+              badgeEarned: t("badgeEarned"),
+              tmEarned: tmRewardName ? t("tmEarned", { code: tmRewardName }) : null,
+              continue: t("badgeContinue"),
+            }}
+            onContinue={() => setShowBadgePopup(false)}
+          />
         )}
         {outcome === "lost" ? (
           <Link
