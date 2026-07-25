@@ -52,6 +52,36 @@ model User {
   campaignProgress CampaignProgress?
   eggs         Egg[]
   clanMessages ClanMessage[]
+  notifications Notification[]
+}
+
+// ---------- Notificaciones in-app ----------
+// Historial de avisos (mercado, gimnasios, PvP). El payload es JSON tipado
+// por `type` — la UI traduce con next-intl, no se guardan strings localizados.
+
+enum NotificationType {
+  MARKET_SOLD
+  MARKET_EXPIRED
+  GYM_WON
+  GYM_LOST
+  PVP_WON
+  PVP_LOST
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  /// Datos para interpolar el mensaje (buyerName, itemName, coins, gymName…).
+  payload   Json             @default("{}")
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }
 
 // ---------- Progresión de campaña (Region → Location → Stage) ----------
@@ -399,6 +429,10 @@ model MarketListing {
   // usa para el contador de novedades de "Mis publicaciones": sin esto, una
   // publicación que vence se devuelve al PC en silencio.
   sellerSeenAt      DateTime?
+  // Null = el comprador todavía no retiró el bien de la mochila del mercado.
+  // Hasta reclamar: ítems no entran al inventario; Pokémon quedan en escrow
+  // del comprador (ocultos del PC).
+  buyerClaimedAt    DateTime?
 
   seller  User             @relation("Seller", fields: [sellerId], references: [id])
   buyer   User?            @relation("Buyer", fields: [buyerId], references: [id])
@@ -408,6 +442,7 @@ model MarketListing {
   @@index([pokemonInstanceId])
   @@index([sellerId, status])
   @@index([buyerId, status])
+  @@index([buyerId, status, buyerClaimedAt])
   @@index([status, expiresAt]) // barrido de vencidas
 }
 

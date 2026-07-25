@@ -950,6 +950,38 @@ body {
   transform: scale(0.99);
 }
 
+/* --- Market Trading Hub --- */
+.market-listing-card {
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease;
+}
+
+.market-listing-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(238, 21, 21, 0.65);
+  box-shadow:
+    0 0 0 1px rgba(238, 21, 21, 0.35),
+    0 12px 32px rgba(238, 21, 21, 0.22),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.market-buy-btn:hover:not(:disabled) {
+  background-color: rgb(238 21 21 / 0.88);
+  box-shadow:
+    0 0 0 1px rgba(238, 21, 21, 0.5),
+    0 0 24px rgba(238, 21, 21, 0.4);
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-listing-card:hover,
+  .market-buy-btn:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
 /* --- Auth atmosphere (login/register stars) --- */
 .auth-spark {
   position: absolute;

@@ -34,7 +34,17 @@ export default async function PcPage({
   const notice = pickCode(query.notice, PC_NOTICES);
 
   const pokemon = await prisma.pokemonInstance.findMany({
-    where: { ownerId: session.user.id },
+    where: {
+      ownerId: session.user.id,
+      // Escrow de mochila del mercado: no aparecen hasta reclamar la compra.
+      listings: {
+        none: {
+          status: "SOLD",
+          buyerId: session.user.id,
+          buyerClaimedAt: null,
+        },
+      },
+    },
     include: {
       species: true,
       listings: { where: { status: "ACTIVE" }, select: { id: true } },

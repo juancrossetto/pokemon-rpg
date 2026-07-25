@@ -5,6 +5,8 @@ import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
 import { BrandLogo } from "@/components/brand-logo";
+import { NotificationsBell } from "@/components/notifications-bell";
+import type { NotificationDTO } from "@/lib/notifications";
 
 type NavLink = {
   href: string;
@@ -23,6 +25,8 @@ export function MobileChrome({
   logoutLabel,
   trainerLabel,
   teamLabel,
+  inventoryLabel,
+  pcLabel,
   lockedHref,
   lockedLabel,
   lockedIcon,
@@ -31,6 +35,7 @@ export function MobileChrome({
   moreLabel,
   loginLabel,
   registerLabel,
+  notifications,
 }: {
   brand: string;
   brandHref?: string;
@@ -42,6 +47,8 @@ export function MobileChrome({
   logoutLabel: string;
   trainerLabel: string;
   teamLabel: string;
+  inventoryLabel: string;
+  pcLabel: string;
   lockedHref: string | null;
   lockedLabel: string | null;
   lockedIcon: "swords" | "military_tech";
@@ -50,6 +57,7 @@ export function MobileChrome({
   moreLabel: string;
   loginLabel: string;
   registerLabel: string;
+  notifications: { items: NotificationDTO[]; unreadCount: number } | null;
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const showMore = moreLinks.length > 0;
@@ -83,6 +91,12 @@ export function MobileChrome({
             </span>
           )}
           <LocaleSwitcher currentLocale={locale} label={languageLabel} />
+          {notifications && (
+            <NotificationsBell
+              initialItems={notifications.items}
+              initialUnread={notifications.unreadCount}
+            />
+          )}
           {userName ? (
             <UserMenu
               name={userName}
@@ -90,6 +104,8 @@ export function MobileChrome({
               logoutLabel={logoutLabel}
               trainerLabel={trainerLabel}
               teamLabel={teamLabel}
+              inventoryLabel={inventoryLabel}
+              pcLabel={pcLabel}
             />
           ) : (
             <div className="flex items-center gap-1.5">

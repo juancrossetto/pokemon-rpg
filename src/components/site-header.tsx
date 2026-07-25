@@ -7,6 +7,8 @@ import { UserMenu } from "@/components/user-menu";
 import { MobileChrome } from "@/components/mobile-chrome";
 import { NavLinks, type DesktopNavLink } from "@/components/nav-links";
 import { BrandLogo } from "@/components/brand-logo";
+import { NotificationsBell } from "@/components/notifications-bell";
+import { listNotifications } from "@/lib/notifications";
 import type { CombatLock } from "@/lib/battle-lock";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
@@ -20,6 +22,9 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         where: { id: session.user.id },
         select: { coins: true, avatarId: true },
       })
+    : null;
+  const notifications = session?.user
+    ? await listNotifications(session.user.id)
     : null;
   const lock = combatLock;
   const lockedHref =
@@ -56,6 +61,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         { href: "/ranking", label: t("ranking"), icon: "trophy" },
         { href: "/clans", label: t("clans"), icon: "groups" },
         { href: "/pc", label: t("pc"), icon: "storage" },
+        { href: "/inventory", label: t("inventory"), icon: "inventory_2" },
       ]
     : [];
 
@@ -66,6 +72,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         { href: "/ranking", label: t("ranking"), icon: "trophy" },
         { href: "/clans", label: t("clans"), icon: "groups" },
         { href: "/pc", label: t("pc"), icon: "storage" },
+        { href: "/inventory", label: t("inventory"), icon: "inventory_2" },
       ]
     : [];
 
@@ -112,6 +119,13 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
 
           <LocaleSwitcher currentLocale={locale} label={t("language")} />
 
+          {session?.user && notifications && (
+            <NotificationsBell
+              initialItems={notifications.items}
+              initialUnread={notifications.unreadCount}
+            />
+          )}
+
           {session?.user ? (
             <UserMenu
               name={session.user.name ?? "?"}
@@ -119,6 +133,8 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               logoutLabel={t("logout")}
               trainerLabel={t("trainer")}
               teamLabel={t("teamShort")}
+              inventoryLabel={t("inventory")}
+              pcLabel={t("pc")}
             />
           ) : (
             <div className="flex items-center gap-2">
@@ -150,6 +166,8 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         logoutLabel={t("logout")}
         trainerLabel={t("trainer")}
         teamLabel={t("teamShort")}
+        inventoryLabel={t("inventory")}
+        pcLabel={t("pc")}
         lockedHref={lockedHref}
         lockedLabel={lockedLabel}
         lockedIcon={lock?.kind === "gym" ? "military_tech" : "swords"}
@@ -158,6 +176,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         moreLabel={t("more")}
         loginLabel={t("login")}
         registerLabel={t("register")}
+        notifications={notifications}
       />
     </>
   );

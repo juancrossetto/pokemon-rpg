@@ -3,8 +3,7 @@
 import { useState } from "react";
 
 /**
- * Retrato de entrenador con degradado honesto: si el archivo todavía no
- * existe en public/avatars/, muestra un ícono neutro en vez de romperse.
+ * Retrato de entrenador. Si el CDN falla, muestra un ícono neutro.
  */
 export function AvatarImage({
   src,

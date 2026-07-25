@@ -148,6 +148,11 @@ export async function switchPokemon(
       : []),
   ]);
 
+  if (lostBattle && battle.gymId) {
+    const { notifyGymResult } = await import("@/lib/notifications");
+    await notifyGymResult(userId, battle.gymId, false);
+  }
+
   revalidatePath(`/${locale}/team`);
 
   return {

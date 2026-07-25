@@ -514,6 +514,11 @@ export async function submitBattleMove(
     } else if (badgeEarned && gym) {
       await syncCampaignAfterGymBadge(userId, gym.order);
     }
+
+    if (battle.gymId) {
+      const { notifyGymResult } = await import("@/lib/notifications");
+      await notifyGymResult(userId, battle.gymId, true, { rematch: alreadyHasThisBadge });
+    }
   } else if (lostBattle) {
     const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
     await prisma.$transaction([
@@ -532,6 +537,11 @@ export async function submitBattleMove(
         ? [prisma.gymRun.update({ where: { id: battle.gymRunId }, data: { status: "ABANDONED" } })]
         : []),
     ]);
+
+    if (battle.gymId) {
+      const { notifyGymResult } = await import("@/lib/notifications");
+      await notifyGymResult(userId, battle.gymId, false);
+    }
   } else if (mustSwitch) {
     const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
     await prisma.$transaction([

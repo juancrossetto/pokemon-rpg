@@ -4,7 +4,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 
 // Subí este número cuando cambie el schema y el HMR deje un client viejo
 // en globalThis (p. ej. campos nuevos como currentPp / wildMovePp).
-const PRISMA_CLIENT_EPOCH = 9;
+const PRISMA_CLIENT_EPOCH = 11;
 
 // Patrón singleton: en dev, Next.js recarga módulos en caliente y crearía
 // una PrismaClient nueva (con su propio pool) en cada reload.
@@ -93,7 +93,9 @@ function isTransientConnectionError(error: unknown): boolean {
     msg.includes("connection terminated") ||
     msg.includes("connection refused") ||
     msg.includes("emaxconnsession") ||
-    msg.includes("max clients reached")
+    msg.includes("max clients reached") ||
+    msg.includes("timeout exceeded when trying to connect") ||
+    msg.includes("connection timeout")
   );
 }
 
@@ -110,17 +112,19 @@ function createPool(): Pool {
   // Con max: 1, las ~10 queries de un render se ejecutan en fila: contra un
   // pooler remoto (~166ms de ida y vuelta) eso es ~1,6s por página. Además una
   // sola conexión colgada bloquea toda la app. Solo session mode necesita 1.
+  // Transaction mode (:6543) puede multiplexar — usá eso en DATABASE_URL.
   const max = localDev || sessionMode ? 1 : isProd ? 10 : 5;
 
-  // Un idle timeout corto obliga a rehacer TCP+TLS+auth (~900ms contra
-  // Supabase) en cuanto pasan unos segundos entre requests.
-  const idleTimeoutMillis = localDev || sessionMode ? 5_000 : 30_000;
+  // Idle corto en session mode evita acumular slots en Supavisor. En transaction
+  // mode conviene mantener la conexión caliente (TLS+auth a US ~0.5–1s).
+  const idleTimeoutMillis = localDev || sessionMode ? 5_000 : 60_000;
 
   const pool = new Pool({
     connectionString: cleanConnectionString(connectionString),
     max,
     idleTimeoutMillis,
-    connectionTimeoutMillis: 10_000,
+    // Con max:1 y tráfico concurrente, 10s de espera solo alarga la cola.
+    connectionTimeoutMillis: sessionMode ? 5_000 : 8_000,
     allowExitOnIdle: true,
   });
 

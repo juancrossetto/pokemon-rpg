@@ -215,26 +215,28 @@ export default function RegisterPage() {
                   <p className="mb-1.5 px-0.5 text-[11px] uppercase tracking-wide text-on-surface-variant/70">
                     {t("avatar")}
                   </p>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {AVATAR_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        aria-pressed={avatarId === opt.id}
-                        onClick={() => setAvatarId(avatarId === opt.id ? null : opt.id)}
-                        className={`aspect-square overflow-hidden rounded-md border-2 bg-black/40 transition ${
-                          avatarId === opt.id
-                            ? "border-pokeball-red"
-                            : "border-white/15 hover:border-white/30"
-                        }`}
-                      >
-                        <AvatarImage
-                          src={opt.src}
-                          alt={opt.id}
-                          className="h-full w-full object-cover"
-                        />
-                      </button>
-                    ))}
+                  <div className="max-h-44 overflow-y-auto overscroll-contain rounded-md border border-white/10 bg-black/20 p-1.5">
+                    <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-6">
+                      {AVATAR_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          aria-pressed={avatarId === opt.id}
+                          onClick={() => setAvatarId(avatarId === opt.id ? null : opt.id)}
+                          className={`aspect-square overflow-hidden rounded-md border-2 bg-black/40 transition ${
+                            avatarId === opt.id
+                              ? "border-pokeball-red"
+                              : "border-white/15 hover:border-white/30"
+                          }`}
+                        >
+                          <AvatarImage
+                            src={opt.src}
+                            alt={opt.id}
+                            className="h-full w-full object-contain p-0.5 [image-rendering:pixelated]"
+                          />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

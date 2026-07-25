@@ -54,13 +54,26 @@ export async function withdrawPokemon(locale: string, formData: FormData) {
 
       const instance = await tx.pokemonInstance.findFirst({
         where: { id: pokemonId, ownerId: userId },
-        include: { listings: { where: { status: "ACTIVE" }, select: { id: true } } },
+        include: {
+          listings: {
+            where: {
+              OR: [
+                { status: "ACTIVE" },
+                { status: "SOLD", buyerId: userId, buyerClaimedAt: null },
+              ],
+            },
+            select: { id: true, status: true, buyerClaimedAt: true },
+          },
+        },
       });
       if (!instance) throw new PcError("not_found");
       if (instance.teamSlot !== null) throw new PcError("already_in_team");
-      // Un Pokémon publicado está en escrow: no se puede usar hasta que la
-      // venta se concrete o se cancele.
-      if (instance.listings.length > 0) throw new PcError("listed");
+      // Publicado o pendiente de mochila: no se puede meter al equipo.
+      const pendingClaim = instance.listings.some(
+        (l) => l.status === "SOLD" && l.buyerClaimedAt === null,
+      );
+      if (pendingClaim) throw new PcError("pending_claim");
+      if (instance.listings.some((l) => l.status === "ACTIVE")) throw new PcError("listed");
 
       const team = await tx.pokemonInstance.findMany({
         where: { ownerId: userId, teamSlot: { not: null } },
@@ -177,12 +190,29 @@ export async function setTeamLayout(
       const instances = await tx.pokemonInstance.findMany({
         where: { id: { in: ids }, ownerId: userId },
         include: {
-          listings: { where: { status: "ACTIVE" }, select: { id: true } },
+          listings: {
+            where: {
+              OR: [
+                { status: "ACTIVE" },
+                { status: "SOLD", buyerId: userId, buyerClaimedAt: null },
+              ],
+            },
+            select: { id: true, status: true, buyerClaimedAt: true },
+          },
           battleSessions: { where: { status: "ACTIVE" }, select: { id: true } },
         },
       });
       if (instances.length !== ids.length) throw new PcError("not_found");
-      if (instances.some((i) => i.listings.length > 0)) throw new PcError("listed");
+      if (
+        instances.some((i) =>
+          i.listings.some((l) => l.status === "SOLD" && l.buyerClaimedAt === null),
+        )
+      ) {
+        throw new PcError("pending_claim");
+      }
+      if (instances.some((i) => i.listings.some((l) => l.status === "ACTIVE"))) {
+        throw new PcError("listed");
+      }
 
       // Los que salen del equipo no pueden estar en una batalla activa.
       const leaving = await tx.pokemonInstance.findMany({

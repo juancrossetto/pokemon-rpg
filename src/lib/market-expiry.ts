@@ -36,6 +36,7 @@ async function sweep(): Promise<void> {
   });
 
   for (const { id, sellerId } of due) {
+    let didExpire = false;
     await prisma.$transaction(async (tx) => {
       await lockUsers(tx, sellerId);
 
@@ -46,6 +47,7 @@ async function sweep(): Promise<void> {
         data: { status: "EXPIRED" },
       });
       if (claimed.count === 0) return;
+      didExpire = true;
 
       const listing = await tx.marketListing.findUniqueOrThrow({ where: { id } });
 
@@ -58,8 +60,12 @@ async function sweep(): Promise<void> {
       }
       // Los Pokémon quedan con teamSlot null: vuelven al PC del vendedor, que
       // puede retirarlos al equipo desde la pantalla de almacenamiento. El
-      // vendedor se entera por el contador de novedades de "Mis publicaciones"
-      // (sellerSeenAt queda en null hasta que abra la pestaña).
+      // vendedor se entera por notificación + el contador de "Mis publicaciones".
     });
+
+    if (didExpire) {
+      const { notifyMarketExpired } = await import("@/lib/notifications");
+      await notifyMarketExpired(id);
+    }
   }
 }

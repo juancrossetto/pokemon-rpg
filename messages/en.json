@@ -16,6 +16,7 @@
     "gyms": "Gyms",
     "market": "Market",
     "pc": "PC",
+    "inventory": "Bag",
     "login": "Log in",
     "register": "Create account",
     "logout": "Log out",
@@ -23,11 +24,49 @@
     "trainer": "Trainer",
     "inBattle": "In battle",
     "inGym": "In the gym",
-    "ranking": "Ranking",
+    "ranking": "Leaderboards",
     "clans": "Clans",
     "pvp": "PvP",
     "more": "More",
     "campaign": "Journey"
+  },
+  "notifications": {
+    "eyebrow": "Live alerts",
+    "title": "Notifications",
+    "empty": "No alerts yet.",
+    "markAllRead": "Mark all read",
+    "justNow": "Just now",
+    "minutesAgo": "{n}m ago",
+    "hoursAgo": "{n}h ago",
+    "daysAgo": "{n}d ago",
+    "unknown": "System alert",
+    "kind": {
+      "sale": "Market · Sale",
+      "expired": "Market · Expired",
+      "gym": "Gym",
+      "pvp": "PvP"
+    },
+    "marketSoldTitle": "Sale completed!",
+    "marketSoldDetail": "{buyer} bought {item}",
+    "marketExpiredTitle": "Listing expired",
+    "marketExpiredDetail": "{item} was returned to you",
+    "gymWonTitle": "Badge earned!",
+    "gymWonDetail": "You defeated {leader} at {gym}",
+    "gymWonRematchTitle": "Rematch won!",
+    "gymWonRematchDetail": "You beat {leader} ({gym})",
+    "gymLostTitle": "Challenge failed",
+    "gymLostDetail": "You lost to {leader} at {gym}",
+    "pvpWonTitle": "PvP victory",
+    "pvpWonDetail": "You won the duel against {opponent}",
+    "pvpLostTitle": "PvP defeat",
+    "pvpLostDetail": "{opponent} defeated you",
+    "marketSold": "{buyer} bought {item}. +{coins} coins were credited to you.",
+    "marketExpired": "Your listing for {item} expired and was returned.",
+    "gymWon": "You defeated {leader} at {gym}. Badge earned!",
+    "gymWonRematch": "You won the rematch against {leader} ({gym}).",
+    "gymLost": "You lost the challenge against {leader} at {gym}.",
+    "pvpWon": "You won the PvP duel against {opponent}.",
+    "pvpLost": "{opponent} defeated you in PvP."
   },
   "home": {
     "eyebrow": "Season 1",
@@ -395,18 +434,64 @@
   "market": {
     "title": "Market",
     "subtitle": "Buy and sell Pokémon and items with other trainers.",
+    "hub": {
+      "eyebrow": "Trading Terminal // Kanto",
+      "title": "Global Market",
+      "subtitle": "Buy and sell Pokémon, items, berries, and evolution stones.",
+      "live": "LIVE",
+      "listingsOnline": "{count} listings",
+      "categories": "Categories",
+      "cat": {
+        "all": "All",
+        "healing": "Healing",
+        "pokeballs": "Poké Balls",
+        "berries": "Berries",
+        "evolution": "Evolution",
+        "pokemon": "Pokémon"
+      },
+      "price": "Price",
+      "stock": "Stock",
+      "seller": "Seller",
+      "buyNow": "Buy Now",
+      "reset": "Reset",
+      "search": "Search",
+      "training": "Power",
+      "rarity": {
+        "common": "Common",
+        "rare": "Rare",
+        "epic": "Epic",
+        "legendary": "Legendary"
+      },
+      "itemType": {
+        "POTION": "Healing Item",
+        "POKEBALL": "Poké Ball",
+        "BERRY": "Berry",
+        "EVOLUTION_STONE": "Evolution Stone"
+      },
+      "statListings": "Listings",
+      "statTraders": "Online Traders",
+      "statSoldToday": "Sold Today",
+      "statAvgPrice": "Average Price",
+      "trending": "Trending",
+      "trendingEmpty": "No movement yet.",
+      "recent": "Recent Activity",
+      "recentEmpty": "No recent activity.",
+      "activityBought": "bought {item}",
+      "activitySold": "sold {item}",
+      "activityListed": "listed {item}"
+    },
     "coins": "coins",
     "tabs": {
       "browse": "Browse",
       "sell": "Sell",
       "mine": "My listings",
-      "bought": "Purchases"
+      "bought": "Bag"
     },
     "tabsShort": {
       "browse": "Browse",
       "sell": "Sell",
       "mine": "Mine",
-      "bought": "Bought"
+      "bought": "Bag"
     },
     "level": "Lv. {level}",
     "quantity": "×{count}",
@@ -463,12 +548,24 @@
     "owned": "You own ×{count}",
     "sellRules": "{commission}% sell commission · {fee}% listing fee · expires in {days} days.",
     "lastSaleShort": "ref. {price}",
-    "feePreview": "Fee now: {fee} · you receive if sold: {proceeds}",
-    "confirmPublish": "List for {price} coins? Fee {fee} (non-refundable).",
+    "feePreview": "Fee now: −{fee} · on sale you get +{proceeds}",
+    "feeNetZero": "At this price the fee cancels the profit (net ≈ 0).",
+    "confirmPublish": "List for {price} coins? {fee} is charged now (non-refundable). If it sells, you receive +{proceeds}.",
     "goToPc": "Go to PC",
+    "goToBag": "Go to bag",
+    "pendingClaimsTitle": "{count, plural, =1 {1 purchase to collect} other {# purchases to collect}}",
+    "bagPendingTitle": "Ready to collect",
+    "bagPendingHint": "Coins already moved at buy/sell time. Here you only collect the goods: Pokémon → PC, items → inventory.",
+    "bagPendingEmpty": "No purchases waiting to be collected.",
+    "bagHistoryTitle": "Already collected",
+    "bagReceive": "Collect",
+    "bagReceiving": "Collecting…",
+    "bagReceived": "Collected",
+    "bagReceiveToPc": "on collect → PC",
+    "bagReceiveToInventory": "on collect → inventory",
     "quantityLabel": "Quantity",
     "commissionNote": "Selling charges a {percent}% commission on the price.",
-    "soldTo": "Sold to {name} — you earned {coins} coins",
+    "soldTo": "Sold to {name} — +{coins} credited (listing fee was already charged)",
     "status": {
       "ACTIVE": "Listed",
       "SOLD": "Sold",
@@ -481,9 +578,10 @@
     "emptyMine": "You haven't listed anything yet.",
     "notices": {
       "listed": "Listing created.",
-      "bought": "Purchase complete! It's yours now.",
+      "bought": "Purchase complete! Collect the item from your bag.",
       "cancelled": "Listing cancelled.",
-      "bought_pokemon": "Purchase complete! You'll find it in your PC."
+      "bought_pokemon": "Purchase complete! Collect the Pokémon from your bag.",
+      "claimed": "Collected! It's now in your PC or inventory."
     },
     "errors": {
       "invalid_price": "Check the price and quantity you entered.",
@@ -513,8 +611,26 @@
     "confirmBuy": "Buy {name} for {price} coins?",
     "unseenTitle": "{count, plural, =1 {1 unseen update} other {# unseen updates}}",
     "boughtFrom": "Bought from {name}",
-    "emptyBought": "You haven't bought anything on the market yet.",
+    "emptyBought": "Your market bag is empty.",
     "feeNote": "Listing costs a {percent}% fee on the price (minimum {min} coin), non-refundable."
+  },
+  "inventory": {
+    "eyebrow": "Your stash",
+    "title": "Bag",
+    "subtitle": "{kinds} kinds · {units} units",
+    "subtitleEmpty": "You don't have any items stored yet.",
+    "empty": "Your bag is empty.",
+    "emptyHint": "Buy on the market or collect pending deliveries from the trading terminal bag.",
+    "goMarket": "Go to market",
+    "marketBag": "Market deliveries",
+    "sellLink": "Sell items",
+    "sectionCount": "{count, plural, =1 {1 item} other {# items}}",
+    "types": {
+      "POTION": "Healing",
+      "POKEBALL": "Poké Balls",
+      "BERRY": "Berries",
+      "EVOLUTION_STONE": "Evolution stones"
+    }
   },
   "pc": {
     "title": "Storage PC",
@@ -537,6 +653,7 @@
       "already_in_team": "That Pokémon is already in your team.",
       "not_in_team": "That Pokémon is not in your team.",
       "listed": "That Pokémon is listed on the market — cancel the listing first.",
+      "pending_claim": "That Pokémon is in your market bag — collect it before using it.",
       "team_full": "Your team is full. Deposit a Pokémon first.",
       "in_battle": "You can't deposit a Pokémon in the middle of a battle.",
       "last_team_member": "You can't deposit your last active Pokémon.",
@@ -547,20 +664,85 @@
     "emptySlot": "Slot {slot} free"
   },
   "ranking": {
-    "title": "Ranking",
-    "subtitle": "The top trainers and Pokémon — global, by country and by species.",
+    "eyebrow": "Competitive Hub",
+    "title": "Leaderboards",
+    "subtitle": "Compete with trainers from around the world.",
     "you": "You",
-    "views": {
-      "trainers": "Trainers",
-      "species": "Species",
-      "ladder": "PvP ladder"
+    "hero": {
+      "activePlayers": "Players",
+      "pvpToday": "PvP today"
+    },
+    "boards": {
+      "trainers": {
+        "title": "Trainers",
+        "blurb": "Team power and badges"
+      },
+      "pvp": {
+        "title": "PvP",
+        "blurb": "Elo rating and record"
+      },
+      "collectors": {
+        "title": "Collectors",
+        "blurb": "Unique species and shinies"
+      },
+      "pokedex": {
+        "title": "Pokédex",
+        "blurb": "Strongest specimens by species"
+      }
     },
     "filters": {
+      "title": "Filters",
       "global": "Global",
       "myCountry": "My country",
       "country": "Country",
       "species": "Species",
-      "apply": "View"
+      "apply": "View",
+      "friendsSoon": "Friends coming soon — Global and Country for now."
+    },
+    "cols": {
+      "power": "Power",
+      "badges": "Badges",
+      "rating": "Rating",
+      "record": "W-L",
+      "winrate": "Winrate",
+      "owned": "Owned",
+      "shinies": "Shinies",
+      "completion": "Completion",
+      "level": "Level",
+      "shiny": "Shiny"
+    },
+    "yourCard": {
+      "title": "Your ranking"
+    },
+    "yourPowerBadges": "Power {power} · {badges} badges",
+    "yourPvp": "Rating {rating} · {winrate}% winrate",
+    "yourCollectors": "{owned} species · {completion}% completion",
+    "yourPokedex": "Power {power} · Lv. {level}",
+    "podium": {
+      "title": "Top 3"
+    },
+    "list": {
+      "title": "Leaderboard"
+    },
+    "season": {
+      "title": "Season pulse",
+      "players": "Players in scope",
+      "topElo": "Highest Elo",
+      "leader": "Sample leader",
+      "powerDist": "Power distribution",
+      "buckets": {
+        "low": "Low",
+        "mid": "Mid",
+        "high": "High",
+        "elite": "Elite"
+      },
+      "coming": "Next up: Most Shinies, Richest, Gym Speedrun, and Friends.",
+      "board": "Active board"
+    },
+    "pvpEmpty": {
+      "title": "PvP season hasn’t started here yet",
+      "body": "Be the first on the ladder. Every duel updates your Elo rating.",
+      "cta": "Go to PvP"
     },
     "badgeCount": "{count, plural, =1 {1 badge} other {# badges}}",
     "power": "Power {value}",
@@ -568,6 +750,8 @@
     "yourRank": "Your rank: #{rank} of {total}",
     "speciesCaption": "{count, plural, =1 {1 {name} registered} other {# {name} registered}}",
     "emptyTrainers": "No trainers on this leaderboard yet.",
+    "emptyCollectors": "Nobody has a collection in this segment yet.",
+    "emptyPokedex": "No species to compare yet.",
     "emptySpecies": "Nobody owns a {name} in this segment yet.",
     "pagination": {
       "prev": "Previous",
@@ -576,7 +760,12 @@
     },
     "emptyLadder": "Nobody has played PvP matches in this segment yet.",
     "yourLadderRank": "Your ladder rank: #{rank} · {rating} pts",
-    "record": "{wins}W - {losses}L"
+    "record": "{wins}W - {losses}L",
+    "views": {
+      "trainers": "Trainers",
+      "species": "Pokédex",
+      "ladder": "PvP"
+    }
   },
   "clans": {
     "title": "Clans",
