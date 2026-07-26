@@ -286,7 +286,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
               columnas con el equipo debajo, que ahí sí tiene espacio. */}
           {expedition && milestone && (
             <div className="mt-5 flex flex-col gap-4 lg:mt-6 lg:grid lg:grid-cols-3 lg:items-stretch">
-              <div className="order-1 lg:col-span-2">
+              <div className="order-1 lg:col-span-2 lg:min-h-0">
                 <CurrentExpedition
                   locationNameKey={expedition.location.nameKey}
                   locationKindKey={`kinds.${expedition.location.kind}`}
@@ -303,7 +303,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                   farmingStageId={progress.farmingStageId}
                 />
               </div>
-              <div className="order-3 lg:order-2">
+              <div className="order-3 min-h-0 lg:order-2">
                 <CollapsibleOnMobile
                   title={t("activeMission")}
                   icon="assignment"

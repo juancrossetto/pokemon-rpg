@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { showdownTypeBadgeUrl } from "@/lib/type-icons";
+import { showdownTypeSymbolUrl } from "@/lib/type-icons";
+import { typeColor } from "@/lib/type-colors";
 import type { CampaignMilestone } from "@/lib/campaign";
 import { RegionMapDialog, type MapLocation } from "@/components/region-map-dialog";
 
@@ -45,12 +46,13 @@ export function CurrentExpedition({
   farmingStageId,
 }: CurrentExpeditionProps) {
   const t = useTranslations("campaign");
+  const tTypes = useTranslations("pokedex.pokemonTypes");
   const ctaHref = milestoneHref(milestone);
   const ctaLabel =
     milestone.kind === "gym" ? t("challengeGym") : t("continueExpedition");
 
   return (
-    <section className="glass-panel relative flex min-h-[168px] flex-col overflow-hidden rounded-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.45)] sm:min-h-[220px] md:min-h-[260px]">
+    <section className="glass-panel relative flex h-full min-h-[168px] flex-col overflow-hidden rounded-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.45)] lg:min-h-[220px]">
       <div className="pointer-events-none absolute inset-0">
         <Image
           src={mapSrc}
@@ -116,18 +118,38 @@ export function CurrentExpedition({
 
           {wildTypes.length > 0 && (
             <ul className="flex flex-wrap items-center gap-1.5" aria-label={t("predictedTypes")}>
-              {wildTypes.map((type) => (
-                <li key={type} title={type} className="relative h-[18px] w-[56px] sm:h-5 sm:w-16">
-                  <Image
-                    src={showdownTypeBadgeUrl(type)}
-                    alt={type}
-                    fill
-                    unoptimized
-                    className="object-contain object-left drop-shadow-[0_1px_4px_rgba(0,0,0,0.65)]"
-                    sizes="64px"
-                  />
-                </li>
-              ))}
+              {wildTypes.map((type) => {
+                const color = typeColor(type);
+                const label = tTypes(type.toLowerCase() as "normal");
+                return (
+                  <li key={type} className="group/type relative">
+                    <span
+                      className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8"
+                      style={{
+                        background: `radial-gradient(circle at 35% 30%, ${color}ee, ${color}99 55%, ${color}66)`,
+                        borderColor: `${color}aa`,
+                        boxShadow: `0 0 10px ${color}44, inset 0 1px 0 rgba(255,255,255,0.25)`,
+                      }}
+                      aria-label={label}
+                    >
+                      <Image
+                        src={showdownTypeSymbolUrl(type)}
+                        alt=""
+                        width={16}
+                        height={16}
+                        unoptimized
+                        className="h-3.5 w-3.5 object-contain brightness-110 drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)] sm:h-4 sm:w-4"
+                      />
+                    </span>
+                    <span
+                      role="tooltip"
+                      className="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/15 bg-black/90 px-2 py-1 text-[11px] capitalize text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/type:opacity-100"
+                    >
+                      {label}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

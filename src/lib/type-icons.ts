@@ -27,9 +27,16 @@ export function typeIcon(type: string): string {
   return TYPE_ICONS[type] ?? "help";
 }
 
-/** Badge de tipo pixel de Showdown (`sprites/types/Water.png`). */
+/** Badge de tipo con texto de Showdown (`sprites/types/Water.png`). */
 export function showdownTypeBadgeUrl(type: string): string {
   const name = type.trim().toLowerCase();
   const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
   return `${showdownSpritesBase()}/types/${capitalized}.png`;
+}
+
+/** Solo el símbolo del tipo, sin texto (`sprites/typeicons/Water.png`). */
+export function showdownTypeSymbolUrl(type: string): string {
+  const name = type.trim().toLowerCase();
+  const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
+  return `${showdownSpritesBase()}/typeicons/${capitalized}.png`;
 }

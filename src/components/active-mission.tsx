@@ -28,24 +28,30 @@ export function ActiveMission({
   const segmentCount = Math.max(1, Math.min(stagesTotal || 1, 12));
 
   return (
-    <section className="glass-panel flex min-h-[260px] flex-col rounded-xl border border-white/10 p-4 shadow-lg sm:p-5 md:min-h-[280px]">
-      <div className="flex items-center gap-2 border-b border-white/10 pb-2.5">
-        <span className="material-symbols-outlined text-[20px]! text-pokeball-red">assignment</span>
-        <h2 className="text-headline-md text-white">{heading}</h2>
+    <section className="glass-panel flex h-full min-h-[168px] flex-col rounded-2xl border border-white/10 p-3.5 shadow-lg sm:p-4 lg:min-h-[220px]">
+      <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+        <span className="material-symbols-outlined text-[18px]! text-pokeball-red">assignment</span>
+        <h2 className="text-[13px] font-bold uppercase tracking-[0.14em] text-on-surface-variant lg:text-label-sm">
+          {heading}
+        </h2>
       </div>
 
-      <h3 className="mt-3 text-body-md font-semibold leading-snug text-white">{title}</h3>
-      <p className="mt-1.5 line-clamp-3 text-label-md leading-relaxed text-on-surface-variant">
+      <h3 className="mt-2.5 text-[15px] font-semibold leading-snug text-white lg:text-body-md">
+        {title}
+      </h3>
+      <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-on-surface-variant lg:text-label-md">
         {description}
       </p>
 
-      <div className="mt-auto space-y-2.5 pt-4">
+      <div className="mt-auto space-y-2 pt-3">
         <div>
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <span className="text-label-sm text-on-surface-variant">{progressLabel}</span>
-            <span className="font-mono text-label-sm text-electric-yellow">{progressPercent}%</span>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-on-surface-variant lg:text-label-sm">{progressLabel}</span>
+            <span className="font-mono text-[11px] text-electric-yellow lg:text-label-sm">
+              {progressPercent}%
+            </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full rounded-full bg-gradient-to-r from-electric-yellow/70 to-electric-yellow"
               style={{ width: `${Math.max(0, Math.min(100, progressPercent))}%` }}
@@ -54,9 +60,9 @@ export function ActiveMission({
         </div>
 
         <div>
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <span className="text-label-sm text-on-surface-variant">{stagesLabel}</span>
-            <span className="font-mono text-label-sm text-on-surface">
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-on-surface-variant lg:text-label-sm">{stagesLabel}</span>
+            <span className="font-mono text-[11px] text-on-surface lg:text-label-sm">
               {stagesDone} / {stagesTotal}
             </span>
           </div>
@@ -64,7 +70,7 @@ export function ActiveMission({
             {Array.from({ length: segmentCount }, (_, i) => (
               <div
                 key={i}
-                className={`h-2 flex-1 rounded-sm ${
+                className={`h-1.5 flex-1 rounded-sm ${
                   i < stagesDone ? "bg-pokeball-red shadow-[0_0_8px_rgba(238,21,21,0.45)]" : "bg-white/10"
                 }`}
               />
@@ -74,7 +80,7 @@ export function ActiveMission({
 
         <Link
           href={ctaHref}
-          className="flex w-full items-center justify-center gap-1 rounded-lg border border-white/15 bg-white/[0.04] px-4 py-2 text-label-sm text-on-surface transition-colors hover:bg-white/10"
+          className="flex w-full items-center justify-center gap-1 rounded-xl border border-white/15 bg-white/[0.04] px-3 py-2 text-[12px] text-on-surface transition-colors hover:bg-white/10 lg:text-label-sm"
         >
           {ctaLabel}
           <span className="material-symbols-outlined text-[16px]!">chevron_right</span>

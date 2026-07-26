@@ -28,7 +28,7 @@ export function CollapsibleOnMobile({
   const [open, setOpen] = useState(false);
 
   return (
-    <div>
+    <div className="h-full">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -57,7 +57,7 @@ export function CollapsibleOnMobile({
         </span>
       </button>
 
-      <div className={`${open ? "mt-2 block" : "hidden"} lg:mt-0 lg:block`}>{children}</div>
+      <div className={`${open ? "mt-2 block" : "hidden"} h-full lg:mt-0 lg:block`}>{children}</div>
     </div>
   );
 }
