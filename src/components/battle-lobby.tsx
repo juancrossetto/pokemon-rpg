@@ -8,6 +8,7 @@ import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { itemSpriteUrl } from "@/lib/item-sprites";
+import { BattleLobbyMobile } from "@/components/battle-lobby-mobile";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 
 /** Color del chip según la densidad de encuentros de la zona. */
@@ -29,10 +30,6 @@ export function BattleLobby({
   const t = useTranslations("battle");
   const tc = useTranslations("campaign");
   const canExplore = hasHealthyTeam && lobby.energy >= lobby.energyCost;
-  const energyPct = Math.max(
-    0,
-    Math.min(100, (lobby.energy / Math.max(1, lobby.energyMax)) * 100),
-  );
 
   const startErrors = {
     no_lead: t("errors.noLead"),
@@ -52,45 +49,28 @@ export function BattleLobby({
   const regionNameKey = lobby.expedition?.regionNameKey ?? "regions.kanto";
 
   return (
-    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8">
-      <div className="mx-auto flex max-w-5xl flex-col gap-4">
-        <header className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="mb-1 flex items-center gap-2 text-label-sm uppercase tracking-[0.2em] text-pokeball-red">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-pokeball-red" />
-              {t("lobby.liveSync")}
-            </p>
-            <h1 className="text-headline-lg tracking-tight text-white md:text-display-lg">
-              {t("title")}
-            </h1>
-            <p className="mt-1 max-w-lg text-label-md text-on-surface-variant">
-              {t("subtitle")}
-            </p>
-          </div>
+    <>
+      {/* Mobile y desktop son dos árboles distintos a propósito: la hero card
+          fusiona bloques que en desktop viven separados, y eso cambia el
+          anidamiento, no sólo el orden. Así el layout de escritorio queda
+          exactamente como estaba. */}
+      <div className="lg:hidden">
+        <BattleLobbyMobile locale={locale} hasHealthyTeam={hasHealthyTeam} lobby={lobby} />
+      </div>
 
-          <div className="glass-panel min-w-[180px] rounded-xl border border-white/10 px-3 py-2.5">
-            <div className="mb-1 flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                <span className="material-symbols-outlined text-[14px]! text-electric-yellow">
-                  bolt
-                </span>
-                {t("lobby.energy")}
-              </span>
-              <span className="font-mono text-[12px] font-semibold text-white">
-                {lobby.energy}
-                <span className="text-on-surface-variant">/{lobby.energyMax}</span>
-              </span>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-electric-yellow/80 to-electric-yellow"
-                style={{ width: `${energyPct}%` }}
-              />
-            </div>
-            <p className="mt-1.5 text-[10px] text-on-surface-variant">
-              {t("lobby.energyHint", { cost: lobby.energyCost })}
-            </p>
-          </div>
+    <div className="hidden flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8 lg:block">
+      <div className="mx-auto flex max-w-5xl flex-col gap-4">
+        <header>
+          <p className="mb-1 flex items-center gap-2 text-label-sm uppercase tracking-[0.2em] text-pokeball-red">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-pokeball-red" />
+            {t("lobby.liveSync")}
+          </p>
+          <h1 className="text-headline-lg tracking-tight text-white md:text-display-lg">
+            {t("title")}
+          </h1>
+          <p className="mt-1 max-w-lg text-label-md text-on-surface-variant">
+            {t("subtitle")}
+          </p>
         </header>
 
         <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
@@ -178,6 +158,10 @@ export function BattleLobby({
                   </Link>
                 </div>
               )}
+              {/* La barra de energía vive en el header global; acá sólo el coste. */}
+              <p className="mt-2 text-center text-[10px] text-on-surface-variant">
+                {t("lobby.energyHint", { cost: lobby.energyCost })}
+              </p>
             </div>
           </section>
 
@@ -375,6 +359,7 @@ export function BattleLobby({
 
       </div>
     </div>
+    </>
   );
 }
 

@@ -1359,6 +1359,48 @@ body {
   }
 }
 
+/* Botón principal de acción (Explorar). Respiración muy lenta y de baja
+   amplitud: llama la atención sin competir con el combate ni distraer. El
+   `:active` da el feedback táctil que en mobile reemplaza al hover. */
+.cta-pulse {
+  animation: cta-pulse 3.6s ease-in-out infinite;
+}
+.cta-pulse:active {
+  transform: scale(0.985);
+}
+.cta-pulse:disabled {
+  animation: none;
+}
+
+@keyframes cta-pulse {
+  0%,
+  100% {
+    box-shadow: 0 8px 24px rgba(238, 21, 21, 0.28);
+  }
+  50% {
+    box-shadow:
+      0 8px 28px rgba(238, 21, 21, 0.42),
+      0 0 0 3px rgba(238, 21, 21, 0.1);
+  }
+}
+
+/* Aparición escalonada de los bloques del lobby en mobile. Muy corta y con
+   poco desplazamiento: da sensación de app al entrar sin retrasar la lectura. */
+.lobby-rise {
+  animation: lobby-rise 260ms ease-out both;
+}
+
+@keyframes lobby-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .poke-spark {
   position: absolute;
   border-radius: 9999px;
@@ -1387,6 +1429,8 @@ body {
   .map-zoom-in,
   .auth-spark,
   .poke-spark,
+  .cta-pulse,
+  .lobby-rise,
   .squad-menu-in,
   .gym-mission-slide-right,
   .gym-mission-slide-left,

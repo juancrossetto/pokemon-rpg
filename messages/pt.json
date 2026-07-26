@@ -30,7 +30,8 @@
     "pvp": "PvP",
     "more": "Mais",
     "campaign": "Jornada",
-    "energy": "Energia"
+    "energy": "Energia",
+    "energyFull": "Energia cheia"
   },
   "notifications": {
     "eyebrow": "Alertas ao vivo",

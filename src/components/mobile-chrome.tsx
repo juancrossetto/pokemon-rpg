@@ -5,6 +5,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
 import { BrandLogo } from "@/components/brand-logo";
+import { EnergyMeter } from "@/components/energy-meter";
 import { NotificationsBell } from "@/components/notifications-bell";
 import type { NotificationDTO } from "@/lib/notifications";
 
@@ -22,6 +23,8 @@ export function MobileChrome({
   energy,
   energyMax,
   energyLabel,
+  energyFullLabel,
+  energyUpdatedAt,
   coins,
   userName,
   avatarId,
@@ -47,6 +50,8 @@ export function MobileChrome({
   energy: number | null;
   energyMax: number | null;
   energyLabel: string;
+  energyFullLabel: string;
+  energyUpdatedAt: string | null;
   coins: number | null;
   userName: string | null;
   avatarId?: string | null;
@@ -113,24 +118,15 @@ export function MobileChrome({
               tipo (recursos), así que agruparlos también baja el ruido. */}
           {(energy !== null || coins !== null) && (
             <div className="flex items-center divide-x divide-white/10 rounded-full border border-white/10 bg-white/[0.04]">
-              {energy !== null && energyMax !== null && (
-                <span
-                  className="flex items-center gap-1 px-2 py-1 text-[11px] font-mono leading-none text-sky-300"
-                  title={`${energyLabel}: ${energy}/${energyMax}`}
-                  aria-label={`${energyLabel}: ${energy}/${energyMax}`}
-                >
-                  <span className="material-symbols-outlined text-[13px]!">bolt</span>
-                  {energy}
-                  <span
-                    aria-hidden
-                    className="h-1 w-5 overflow-hidden rounded-full bg-sky-400/20"
-                  >
-                    <span
-                      className="block h-full rounded-full bg-sky-400/80 transition-all duration-500"
-                      style={{ width: `${energyPct}%` }}
-                    />
-                  </span>
-                </span>
+              {energy !== null && energyMax !== null && energyUpdatedAt && (
+                <EnergyMeter
+                  energy={energy}
+                  energyMax={energyMax}
+                  energyUpdatedAt={energyUpdatedAt}
+                  pct={energyPct}
+                  label={energyLabel}
+                  fullLabel={energyFullLabel}
+                />
               )}
               {coins !== null && (
                 <span className="flex items-center gap-1 px-2 py-1 text-[11px] font-mono leading-none text-electric-yellow">

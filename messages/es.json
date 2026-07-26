@@ -30,7 +30,8 @@
     "pvp": "PvP",
     "more": "Más",
     "campaign": "Viaje",
-    "energy": "Energía"
+    "energy": "Energía",
+    "energyFull": "Energía al máximo"
   },
   "notifications": {
     "eyebrow": "Alertas en vivo",

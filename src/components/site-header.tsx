@@ -6,6 +6,7 @@ import { getCurrentEnergy } from "@/lib/energy";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
 import { MobileChrome } from "@/components/mobile-chrome";
+import { EnergyMeter } from "@/components/energy-meter";
 import { NavLinks, type DesktopNavLink } from "@/components/nav-links";
 import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -128,22 +129,15 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
 
         <div className="flex items-center gap-3 shrink-0">
           {user && energy !== null && energyMax !== null && (
-            <span
-              className="flex flex-col gap-0.5 rounded-full border border-sky-400/30 bg-sky-400/10 px-2.5 py-1 text-sky-300"
-              title={t("energy")}
-              aria-label={`${t("energy")}: ${energy}/${energyMax}`}
-            >
-              <span className="flex items-center gap-1 text-label-sm font-mono leading-none">
-                <span className="material-symbols-outlined text-[16px]!">bolt</span>
-                {energy}
-                <span className="text-sky-300/55">/{energyMax}</span>
-              </span>
-              <span className="h-0.5 w-full overflow-hidden rounded-full bg-sky-400/20">
-                <span
-                  className="block h-full rounded-full bg-sky-400/80"
-                  style={{ width: `${energyPct}%` }}
-                />
-              </span>
+            <span className="rounded-full border border-sky-400/30 bg-sky-400/10">
+              <EnergyMeter
+                energy={energy}
+                energyMax={energyMax}
+                energyUpdatedAt={user.energyUpdatedAt.toISOString()}
+                pct={energyPct}
+                label={t("energy")}
+                fullLabel={t("energyFull")}
+              />
             </span>
           )}
 
@@ -200,6 +194,8 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         energy={energy}
         energyMax={energyMax}
         energyLabel={t("energy")}
+        energyFullLabel={t("energyFull")}
+        energyUpdatedAt={user?.energyUpdatedAt.toISOString() ?? null}
         coins={user?.coins ?? null}
         userName={session?.user ? (session.user.name ?? "?") : null}
         avatarId={user?.avatarId ?? null}

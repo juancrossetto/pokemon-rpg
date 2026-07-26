@@ -30,7 +30,8 @@
     "pvp": "PvP",
     "more": "More",
     "campaign": "Journey",
-    "energy": "Energy"
+    "energy": "Energy",
+    "energyFull": "Energy full"
   },
   "notifications": {
     "eyebrow": "Live alerts",
