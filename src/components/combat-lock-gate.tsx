@@ -20,16 +20,22 @@ function isAllowedPath(pathname: string, lock: NonNullable<CombatLock>): boolean
 export function CombatLockGate({ lock }: { lock: CombatLock }) {
   const pathname = usePathname();
   const router = useRouter();
+  const lockKind = lock?.kind ?? null;
+  const gymId = lock?.kind === "gym" ? lock.gymId : null;
 
   useEffect(() => {
-    if (!lock) return;
-    if (isAllowedPath(pathname, lock)) return;
-    if (lock.kind === "battle") {
-      router.replace("/battle");
+    if (!lockKind) return;
+    const activeLock =
+      lockKind === "gym" && gymId ? ({ kind: "gym", gymId } as const) : ({ kind: "battle" } as const);
+    if (isAllowedPath(pathname, activeLock)) return;
+
+    if (lockKind === "battle") {
+      if (pathname !== "/battle") router.replace("/battle");
       return;
     }
-    router.replace(`/gyms/${lock.gymId}/run`);
-  }, [lock, pathname, router]);
+    const runPath = `/gyms/${gymId}/run`;
+    if (pathname !== runPath) router.replace(runPath);
+  }, [lockKind, gymId, pathname, router]);
 
   return null;
 }

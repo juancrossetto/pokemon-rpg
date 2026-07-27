@@ -210,7 +210,7 @@ export default async function TeamPage({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-start gap-2">
             <HealButton
               locale={locale}
               needsHealing={needsHealing}

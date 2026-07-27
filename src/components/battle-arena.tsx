@@ -18,6 +18,7 @@ import { PokeballIcon } from "@/components/pokeball-icon";
 import { BattleSprite } from "@/components/battle-sprite";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
 import { typeColor } from "@/lib/type-colors";
+import { formatMoveName } from "@/lib/format-move-name";
 import { gymLeaderPortraitUrl } from "@/lib/gym-art";
 import { itemSpriteUrl } from "@/lib/item-sprites";
 import { playBattleSfx, unlockBattleAudio, type SfxKind } from "@/lib/battle-sfx";
@@ -89,6 +90,7 @@ interface RosterMember {
   spriteUrl: string;
   currentHp: number;
   maxHp: number;
+  types: string[];
 }
 
 export interface OpponentPartyMember {
@@ -369,7 +371,19 @@ export function BattleArena({
   }
 
   function effectivenessInfo(moveType: string): { label: string; className: string } {
-    const multiplier = getTypeEffectiveness(moveType, activeWild.types);
+    return matchupInfo(getTypeEffectiveness(moveType, activeWild.types));
+  }
+
+  /** Mejor STAB del candidato vs el rival actual (para el menú de cambio). */
+  function switchMatchupInfo(attackerTypes: string[]): { label: string; className: string } {
+    if (attackerTypes.length === 0) return matchupInfo(1);
+    const best = Math.max(
+      ...attackerTypes.map((type) => getTypeEffectiveness(type, activeWild.types)),
+    );
+    return matchupInfo(best);
+  }
+
+  function matchupInfo(multiplier: number): { label: string; className: string } {
     if (multiplier === 0) return { label: t("noEffect"), className: "text-on-surface-variant" };
     if (multiplier > 1) return { label: t("superEffective"), className: "text-tertiary" };
     if (multiplier < 1) return { label: t("notVeryEffective"), className: "text-error" };
@@ -429,7 +443,7 @@ export function BattleArena({
         setAttackingSide(null);
 
         if (!event.hit) {
-          appendLog(tLog("miss", { name: nameFor(event.side), move: event.moveName }), event.side);
+          appendLog(tLog("miss", { name: nameFor(event.side), move: formatMoveName(event.moveName) }), event.side);
           setTimeout(() => {
             setMoveFx(null);
             resolve();
@@ -438,7 +452,7 @@ export function BattleArena({
         }
 
         if (event.isStatus) {
-          appendLog(tLog("used", { name: nameFor(event.side), move: event.moveName }), event.side);
+          appendLog(tLog("used", { name: nameFor(event.side), move: formatMoveName(event.moveName) }), event.side);
           if (event.statusApplied) {
             const foe = event.side === "player" ? "wild" : "player";
             const label = t(statusLabelKey(event.statusApplied as StatusCondition));
@@ -505,7 +519,7 @@ export function BattleArena({
           setEffPopup({ text: tLog("critical"), key: fxKey });
         }
 
-        appendLog(tLog("used", { name: nameFor(event.side), move: event.moveName }), event.side);
+        appendLog(tLog("used", { name: nameFor(event.side), move: formatMoveName(event.moveName) }), event.side);
         if (event.critical) appendLog(tLog("critical"), event.side);
         if (event.effectiveness > 1) appendLog(tLog("superEffective"), event.side);
         else if (event.effectiveness > 0 && event.effectiveness < 1) appendLog(tLog("notVeryEffective"), event.side);
@@ -824,16 +838,20 @@ export function BattleArena({
       setBallAnim("recall");
       await delay(RECALL_MS);
     }
+    // Ocultar el sprite saliente: si no, al pasar de recall → throw
+    // pierde la clase sprite-recall y el Pokémon viejo reaparece un frame.
+    setPlayerHidden(true);
     setBallAnim("throw");
+    await delay(SEND_OUT_BALL_MS * 0.45);
 
     const result = await switchPokemon(battleId, member.instanceId, locale, forced);
     if (!result) {
       setIsAnimating(false);
       setBallAnim(null);
+      setPlayerHidden(false);
       return;
     }
 
-    setBallAnim(null);
     setFaintingSide(null);
     appendLog(
       forced
@@ -866,8 +884,12 @@ export function BattleArena({
         return m;
       }),
     );
+
+    setBallAnim(null);
     setPlayerEntering(true);
-    setTimeout(() => setPlayerEntering(false), 400);
+    setPlayerHidden(false);
+    await delay(400);
+    setPlayerEntering(false);
     if (forced) setMustSwitch(false);
 
     if (result.counterAttack) {
@@ -1229,7 +1251,7 @@ export function BattleArena({
                 }}
               >
                 <span className="uppercase text-[10px] tracking-wider opacity-90">{moveFx.moveType}</span>
-                <span className="font-black text-sm md:text-base">{moveFx.moveName}</span>
+                <span className="font-black text-sm md:text-base">{formatMoveName(moveFx.moveName)}</span>
               </div>
             )}
 
@@ -1442,15 +1464,15 @@ export function BattleArena({
         </div>
 
         <div
-          className={`grid min-w-0 gap-1 md:gap-2 min-h-0 shrink-0 md:h-[13rem] md:max-h-[13rem] ${
+          className={`grid min-w-0 gap-1 md:gap-2 min-h-0 shrink-0 items-stretch md:h-[13rem] md:max-h-[13rem] ${
             commandExpanded
-              ? "max-md:flex-1 max-md:min-h-0 max-md:h-auto max-md:max-h-none items-stretch"
-              : "max-md:shrink-0 max-md:items-start"
+              ? "max-md:h-[11rem] max-md:max-h-[11rem]"
+              : "max-md:h-[7.5rem] max-md:max-h-[7.5rem]"
           } ${commandExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2"}`}
         >
           {/* Log — en submenús mobile cede espacio a los comandos */}
           <div
-            className={`glass-panel rounded-xl border border-white/10 px-2 py-1.5 md:px-4 md:py-3 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 bg-black/35 min-h-0 min-w-0 max-md:max-h-[7.5rem] md:max-h-full ${
+            className={`glass-panel rounded-xl border border-white/10 px-2 py-1.5 md:px-4 md:py-3 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 bg-black/35 h-full min-h-0 min-w-0 ${
               commandExpanded ? "hidden md:flex" : ""
             }`}
           >
@@ -1480,7 +1502,7 @@ export function BattleArena({
           {/* Comandos */}
           <div key={view} className="panel-swap min-h-0 min-w-0 flex-1 overflow-hidden flex flex-col">
             {view === "menu" && (
-              <div className="grid grid-cols-2 gap-1 md:gap-2 md:h-full max-md:auto-rows-[3.5rem]">
+              <div className="grid grid-cols-2 gap-1 md:gap-2 h-full min-h-0 max-md:auto-rows-fr">
                 <button
                   type="button"
                   disabled={isAnimating}
@@ -1547,13 +1569,13 @@ export function BattleArena({
                 <p className="text-[10px] uppercase text-on-surface-variant tracking-wider px-0.5 shrink-0 md:hidden">
                   {t("selectCommand")}
                 </p>
-                <div className="grid grid-cols-2 grid-rows-2 gap-1 md:gap-1.5 flex-1 min-h-0 min-w-0 overflow-x-hidden max-md:overflow-y-auto md:overflow-hidden">
+                <div className="grid grid-cols-2 grid-rows-2 gap-1 md:gap-1.5 flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto md:overflow-hidden content-stretch">
                   {activeMoves.every((m) => m.pp <= 0) && (
                     <button
                       type="button"
                       disabled={isAnimating}
                       onClick={() => handleMove(activeMoves[0]?.moveId ?? 0)}
-                      className="sm:col-span-2 battle-move-card border-error/40"
+                      className="col-span-2 battle-move-card border-error/40"
                     >
                       <p className="text-base font-bold text-error">Struggle</p>
                       <p className="text-label-sm text-on-surface-variant mt-1">PP 0 — recoil</p>
@@ -1569,11 +1591,11 @@ export function BattleArena({
                         type="button"
                         disabled={isAnimating || m.pp <= 0 || lockedOut}
                         onClick={() => handleMove(m.moveId)}
-                        className="battle-move-card battle-move-card-compact battle-move-card-dense text-left h-full min-h-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="battle-move-card battle-move-card-compact battle-move-card-dense text-left disabled:opacity-40 disabled:cursor-not-allowed"
                         style={{ borderColor: `${color}55` }}
                       >
-                        <div className="flex justify-between items-start gap-1 min-w-0">
-                          <span className="text-xs md:text-sm font-bold text-white leading-tight break-words [overflow-wrap:anywhere]">{m.name}</span>
+                        <div className="flex justify-between items-start gap-1 min-w-0 shrink-0">
+                          <span className="text-xs md:text-sm font-bold text-white leading-tight truncate">{formatMoveName(m.name)}</span>
                           <span
                             className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] md:text-[10px] uppercase font-bold tracking-wide border"
                             style={{ backgroundColor: `${color}33`, color, borderColor: `${color}66` }}
@@ -1581,7 +1603,7 @@ export function BattleArena({
                             {m.type}
                           </span>
                         </div>
-                        <div className="mt-1 md:mt-1 flex justify-between items-end gap-1">
+                        <div className="mt-auto pt-1 flex justify-between items-end gap-1 shrink-0">
                           <div>
                             <p className="text-[9px] uppercase tracking-wider text-white/45">{t("powerLabel")}</p>
                             <p className="text-[11px] md:text-xs text-white font-bold tabular-nums">
@@ -1598,7 +1620,9 @@ export function BattleArena({
                             </p>
                           </div>
                         </div>
-                        <p className={`text-[10px] mt-0.5 leading-tight truncate ${eff.className}`}>{eff.label}</p>
+                        <p className={`text-[9px] md:text-[10px] mt-0.5 leading-tight truncate shrink-0 ${eff.className}`}>
+                          {eff.label}
+                        </p>
                       </button>
                     );
                   })}
@@ -1709,6 +1733,7 @@ export function BattleArena({
                   {teamRoster.map((m) => {
                     const fainted = m.currentHp <= 0;
                     const hpPct = Math.max(0, Math.min(100, (m.currentHp / m.maxHp) * 100));
+                    const matchup = switchMatchupInfo(m.types);
                     return (
                       <button
                         key={m.instanceId}
@@ -1741,9 +1766,16 @@ export function BattleArena({
                               style={{ width: `${hpPct}%` }}
                             />
                           </div>
-                          <span className="text-label-sm text-on-surface-variant">
-                            {fainted ? t("fainted") : `${m.currentHp}/${m.maxHp}`}
-                          </span>
+                          <div className="mt-0.5 flex items-center justify-between gap-2">
+                            <span className="text-label-sm text-on-surface-variant">
+                              {fainted ? t("fainted") : `${m.currentHp}/${m.maxHp}`}
+                            </span>
+                            {!fainted && (
+                              <span className={`text-[10px] font-bold leading-tight truncate ${matchup.className}`}>
+                                {matchup.label}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </button>
                     );

@@ -34,9 +34,17 @@ export async function startGymRun(gymId: string, locale: string): Promise<StartG
 
   const gym = await prisma.gym.findUniqueOrThrow({ where: { id: gymId } });
 
-  const lead = await prisma.pokemonInstance.findFirst({ where: { ownerId: userId, teamSlot: 1 } });
-  if (!lead) return { success: false, error: "no_lead" };
-  if (lead.currentHp <= 0) return { success: false, error: "fainted_lead" };
+  const lead = await prisma.pokemonInstance.findFirst({
+    where: { ownerId: userId, teamSlot: { not: null }, currentHp: { gt: 0 } },
+    orderBy: { teamSlot: "asc" },
+  });
+  if (!lead) {
+    const anyInTeam = await prisma.pokemonInstance.findFirst({
+      where: { ownerId: userId, teamSlot: { not: null } },
+      select: { id: true },
+    });
+    return { success: false, error: anyInTeam ? "fainted_lead" : "no_lead" };
+  }
 
   if (gym.order > 1) {
     const previousBadge = await prisma.badge.findFirst({ where: { userId, gym: { order: gym.order - 1 } } });

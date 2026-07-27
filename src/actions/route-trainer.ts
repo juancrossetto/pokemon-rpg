@@ -59,11 +59,17 @@ export async function startTrainerBattle(
   if (beaten) return { success: false, error: "already_beaten" };
 
   const lead = await prisma.pokemonInstance.findFirst({
-    where: { ownerId: userId, teamSlot: 1 },
-    select: { id: true, currentHp: true },
+    where: { ownerId: userId, teamSlot: { not: null }, currentHp: { gt: 0 } },
+    select: { id: true },
+    orderBy: { teamSlot: "asc" },
   });
-  if (!lead) return { success: false, error: "no_lead" };
-  if (lead.currentHp <= 0) return { success: false, error: "fainted_lead" };
+  if (!lead) {
+    const anyInTeam = await prisma.pokemonInstance.findFirst({
+      where: { ownerId: userId, teamSlot: { not: null } },
+      select: { id: true },
+    });
+    return { success: false, error: anyInTeam ? "fainted_lead" : "no_lead" };
+  }
 
   const species = await prisma.species.findUniqueOrThrow({ where: { id: trainer.speciesId } });
   const maxHp = calculateMaxHp(species.baseHp, trainer.level);

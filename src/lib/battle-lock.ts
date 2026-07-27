@@ -44,7 +44,7 @@ export const getCombatLock = cache(async (userId: string): Promise<CombatLock> =
   return null;
 });
 
-function stripLocale(pathname: string): string {
+export function stripLocale(pathname: string): string {
   const parts = pathname.split("/").filter(Boolean);
   if (parts.length === 0) return "/";
   if ((routing.locales as readonly string[]).includes(parts[0])) {
