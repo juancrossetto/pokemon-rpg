@@ -1,14 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/site-header";
 import { CombatLockGate } from "@/components/combat-lock-gate";
 import { auth } from "@/auth";
-import { getCombatLock, enforceCombatLockInLayout } from "@/lib/battle-lock";
+import { prisma } from "@/lib/prisma";
+import { getCombatLock, enforceCombatLockInLayout, stripLocale } from "@/lib/battle-lock";
 import "../globals.css";
 
 const inter = Inter({
@@ -64,8 +66,32 @@ export default async function LocaleLayout({
   }
 
   const session = await auth();
-  if (session?.user) {
-    await enforceCombatLockInLayout(session.user.id, locale);
+  if (session?.user?.id) {
+    const headerStore = await headers();
+    const raw = headerStore.get("x-pathname") ?? "";
+    let pathname = raw;
+    try {
+      if (raw.includes("://")) pathname = new URL(raw).pathname;
+    } catch {
+      /* keep raw */
+    }
+    const path = stripLocale(pathname);
+    const onAuthPage = path === "/login" || path === "/register";
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true },
+    });
+    // Sesión JWT de otra base (p. ej. cloud) tras cambiar DATABASE_URL local.
+    if (!user && !onAuthPage) {
+      const loginPath = `/${locale}/login`;
+      redirect(
+        `/api/auth/clear-stale-session?callbackUrl=${encodeURIComponent(loginPath)}`,
+      );
+    }
+    if (user) {
+      await enforceCombatLockInLayout(session.user.id, locale);
+    }
   }
   const combatLock = session?.user ? await getCombatLock(session.user.id) : null;
 

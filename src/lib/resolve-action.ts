@@ -10,8 +10,10 @@ import {
   canActThisTurn,
   residualDamage,
   rollSleepTurns,
+  secondaryStatusByMove,
   statChangeByMove,
   statusInflictedByMove,
+  tryApplyStatus,
   type StatStages,
   type StatusCondition,
 } from "@/lib/status";
@@ -99,8 +101,8 @@ export function resolveSingleAction(
     };
   }
 
-  // Despertó justo al intentar actuar (sleepTurns llegó a 0 en un turno previo)
-  if (self.status === "SLEEP") {
+  // Despertó / se descongeló al intentar actuar.
+  if (self.status === "SLEEP" || self.status === "FREEZE") {
     self.status = null;
     self.sleepTurns = 0;
   }
@@ -134,10 +136,11 @@ export function resolveSingleAction(
     const statMv = statChangeByMove(move.name);
 
     if (inflict) {
-      if (foe.status == null) {
-        foe.status = inflict;
-        statusApplied = inflict;
-        if (inflict === "SLEEP") foe.sleepTurns = rollSleepTurns();
+      const applied = tryApplyStatus(foe.status, inflict, foe.baseStats.types);
+      if (applied) {
+        foe.status = applied;
+        statusApplied = applied;
+        if (applied === "SLEEP") foe.sleepTurns = rollSleepTurns();
       }
     } else if (statMv) {
       const next = Math.max(-6, Math.min(6, foe.stages[statMv.stat] + statMv.stages));
@@ -172,6 +175,23 @@ export function resolveSingleAction(
     if (recoilDamage > 0) {
       self.hp = Math.max(0, self.hp - recoilDamage);
     }
+
+    // Fuego descongela al rival si lo golpea (Gen II+).
+    if (foe.status === "FREEZE" && move.type.toLowerCase() === "fire") {
+      foe.status = null;
+    }
+
+    let statusApplied: StatusCondition | null = null;
+    const secondary = secondaryStatusByMove(move.name);
+    if (secondary && foe.hp > 0 && Math.random() < secondary.chance) {
+      const applied = tryApplyStatus(foe.status, secondary.status, foe.baseStats.types);
+      if (applied) {
+        foe.status = applied;
+        statusApplied = applied;
+        if (applied === "SLEEP") foe.sleepTurns = rollSleepTurns();
+      }
+    }
+
     events.push({
       side: attackerSide,
       moveName: move.name,
@@ -184,6 +204,7 @@ export function resolveSingleAction(
       hpAfter: foe.hp,
       critical: result.critical,
       recoilDamage: recoilDamage || undefined,
+      statusApplied,
     });
   }
 

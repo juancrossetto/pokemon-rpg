@@ -80,11 +80,11 @@ export function HealButton({
         </button>
       )}
 
-      <span className="text-[10px] text-on-surface-variant">
-        {onCooldown
-          ? t("healCooldown", { minutes: minutesLeft(cooldownMsLeft) })
-          : t("healFree")}
-      </span>
+      {onCooldown ? (
+        <span className="text-[10px] text-on-surface-variant">
+          {t("healCooldown", { minutes: minutesLeft(cooldownMsLeft) })}
+        </span>
+      ) : null}
 
       {error && <span className="text-[10px] text-error">{t(`healErrors.${error}`)}</span>}
     </div>

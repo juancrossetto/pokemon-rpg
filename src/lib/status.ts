@@ -1,6 +1,6 @@
 /** Condiciones de estado no volátiles + cambios de stats en batalla. */
 
-export type StatusCondition = "BURN" | "PARALYSIS" | "POISON" | "SLEEP";
+export type StatusCondition = "BURN" | "PARALYSIS" | "POISON" | "SLEEP" | "FREEZE";
 export type BattleStat = "atk" | "def" | "spe";
 
 export interface StatStages {
@@ -36,7 +36,7 @@ export function applyStagesToStats(
   };
 }
 
-/** Slug de nombre PokeAPI → efecto de estado o cambio de stat. */
+/** Slug de nombre PokeAPI → efecto de estado o cambio de stat (movimientos STATUS). */
 const INFLICT: Record<string, StatusCondition> = {
   "poison-powder": "POISON",
   poisonpowder: "POISON",
@@ -57,7 +57,20 @@ const INFLICT: Record<string, StatusCondition> = {
   spore: "SLEEP",
   "lovely-kiss": "SLEEP",
   lovelykiss: "SLEEP",
-  "yawn": "SLEEP",
+  yawn: "SLEEP",
+};
+
+/** Efecto secundario de movimientos de daño (chance Gen III+ típica). */
+const SECONDARY_STATUS: Record<string, { status: StatusCondition; chance: number }> = {
+  "ice-beam": { status: "FREEZE", chance: 0.1 },
+  icebeam: { status: "FREEZE", chance: 0.1 },
+  blizzard: { status: "FREEZE", chance: 0.1 },
+  "ice-punch": { status: "FREEZE", chance: 0.1 },
+  icepunch: { status: "FREEZE", chance: 0.1 },
+  "powder-snow": { status: "FREEZE", chance: 0.1 },
+  powdersnow: { status: "FREEZE", chance: 0.1 },
+  "freeze-dry": { status: "FREEZE", chance: 0.1 },
+  freezedry: { status: "FREEZE", chance: 0.1 },
 };
 
 const STAT_MOVES: Record<string, { stat: BattleStat; stages: number }> = {
@@ -81,20 +94,47 @@ export function statusInflictedByMove(moveName: string): StatusCondition | null 
   return INFLICT[normalizeMoveKey(moveName)] ?? null;
 }
 
+export function secondaryStatusByMove(
+  moveName: string,
+): { status: StatusCondition; chance: number } | null {
+  const entry = SECONDARY_STATUS[normalizeMoveKey(moveName)];
+  if (!entry || entry.chance <= 0) return null;
+  return entry;
+}
+
 export function statChangeByMove(moveName: string): { stat: BattleStat; stages: number } | null {
   return STAT_MOVES[normalizeMoveKey(moveName)] ?? null;
 }
 
-/** ¿Puede actuar este turno? (sueño / full para). */
+/** Tipos inmunes a cierto estado (p. ej. Hielo no se congela). */
+export function isImmuneToStatus(status: StatusCondition, defenderTypes: string[]): boolean {
+  const types = defenderTypes.map((t) => t.toLowerCase());
+  if (status === "FREEZE" && types.includes("ice")) return true;
+  if (status === "BURN" && types.includes("fire")) return true;
+  if (status === "POISON" && (types.includes("poison") || types.includes("steel"))) return true;
+  if (status === "PARALYSIS" && types.includes("electric")) return true; // Gen VI+
+  return false;
+}
+
+/**
+ * ¿Puede actuar este turno? (sueño / para / congelado).
+ * Congelado: 20% de descongelarse al intentar actuar (Gen III+).
+ */
 export function canActThisTurn(
   status: StatusCondition | null,
   sleepTurnsLeft: number,
-): { canAct: boolean; reason: "asleep" | "paralyzed" | null; newSleepTurns: number } {
+): { canAct: boolean; reason: "asleep" | "paralyzed" | "frozen" | null; newSleepTurns: number } {
   if (status === "SLEEP") {
     if (sleepTurnsLeft <= 0) {
       return { canAct: true, reason: null, newSleepTurns: 0 };
     }
     return { canAct: false, reason: "asleep", newSleepTurns: sleepTurnsLeft - 1 };
+  }
+  if (status === "FREEZE") {
+    if (Math.random() < 0.2) {
+      return { canAct: true, reason: null, newSleepTurns: sleepTurnsLeft };
+    }
+    return { canAct: false, reason: "frozen", newSleepTurns: sleepTurnsLeft };
   }
   if (status === "PARALYSIS" && Math.random() < 0.25) {
     return { canAct: false, reason: "paralyzed", newSleepTurns: sleepTurnsLeft };
@@ -107,10 +147,7 @@ export function rollSleepTurns(): number {
 }
 
 /** Daño residual de fin de turno (1/16 burn, 1/8 poison). */
-export function residualDamage(
-  status: StatusCondition | null,
-  maxHp: number,
-): number {
+export function residualDamage(status: StatusCondition | null, maxHp: number): number {
   if (status === "BURN") return Math.max(1, Math.floor(maxHp / 16));
   if (status === "POISON") return Math.max(1, Math.floor(maxHp / 8));
   return 0;
@@ -118,7 +155,7 @@ export function residualDamage(
 
 /** Bonus de captura Gen III por estado. */
 export function captureStatusBonus(status: StatusCondition | null): number {
-  if (status === "SLEEP") return 2;
+  if (status === "SLEEP" || status === "FREEZE") return 2;
   if (status === "PARALYSIS" || status === "POISON" || status === "BURN") return 1.5;
   return 1;
 }
@@ -133,5 +170,44 @@ export function statusLabelKey(status: StatusCondition): string {
       return "statusPoison";
     case "SLEEP":
       return "statusSleep";
+    case "FREEZE":
+      return "statusFreeze";
   }
+}
+
+/** Clave i18n de la abreviatura tipo juegos (ENV / PSN / CON / …). */
+export function statusAbbrKey(status: StatusCondition): string {
+  switch (status) {
+    case "BURN":
+      return "statusAbbrBurn";
+    case "PARALYSIS":
+      return "statusAbbrParalysis";
+    case "POISON":
+      return "statusAbbrPoison";
+    case "SLEEP":
+      return "statusAbbrSleep";
+    case "FREEZE":
+      return "statusAbbrFreeze";
+  }
+}
+
+export function isStatusCondition(value: string | null | undefined): value is StatusCondition {
+  return (
+    value === "BURN" ||
+    value === "PARALYSIS" ||
+    value === "POISON" ||
+    value === "SLEEP" ||
+    value === "FREEZE"
+  );
+}
+
+/** Intenta aplicar un estado; respeta inmunidades y “ya tiene estado”. */
+export function tryApplyStatus(
+  current: StatusCondition | null,
+  next: StatusCondition,
+  defenderTypes: string[],
+): StatusCondition | null {
+  if (current != null) return null;
+  if (isImmuneToStatus(next, defenderTypes)) return null;
+  return next;
 }

@@ -42,7 +42,7 @@ function FighterCard({
 
   return (
     <div className="flex min-w-0 flex-col items-center gap-2">
-      <div className="relative flex h-28 w-28 items-center justify-center md:h-36 md:w-36">
+      <div className="relative flex h-24 w-24 items-center justify-center md:h-32 md:w-32">
         {highlight && (
           <>
             <span className="absolute inset-0 rounded-full bg-tertiary/15 blur-2xl" />
@@ -103,7 +103,7 @@ function LevelUpFanfare({
 
   return (
     <section
-      className="level-up-fanfare level-up-glow relative mt-3 overflow-hidden rounded-2xl border border-tertiary/35 bg-tertiary/10 px-4 py-4"
+      className="level-up-fanfare level-up-glow relative mt-2 overflow-hidden rounded-2xl border border-tertiary/35 bg-tertiary/10 px-3 py-3 md:mt-3 md:px-4 md:py-4"
       aria-live="polite"
     >
       <span className="level-up-burst pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-tertiary/25 blur-2xl" />
@@ -203,22 +203,22 @@ export function BattleResult({
       : "text-on-surface";
 
   return (
-    <div className="flex flex-1 items-center justify-center px-margin-mobile py-8">
-      <div className="result-in w-full max-w-2xl">
+    <div className="flex flex-1 min-h-0 flex-col overflow-y-auto px-margin-mobile py-3 md:py-4 max-md:h-[calc(100dvh-6.5rem)] md:h-[calc(100dvh-4rem)]">
+      <div className="result-in mx-auto my-auto w-full max-w-2xl">
         <p className="flex items-center justify-center gap-2 text-label-sm uppercase tracking-[0.2em] text-on-surface-variant">
           <span
             className={`h-1.5 w-1.5 rounded-full ${playerWon ? "bg-tertiary" : "bg-error"}`}
           />
           {t("resultEyebrow")}
         </p>
-        <h1 className={`mt-2 text-center text-headline-lg ${headlineColor}`}>{resultText}</h1>
+        <h1 className={`mt-1.5 text-center text-headline-md md:text-headline-lg ${headlineColor}`}>{resultText}</h1>
         {subText && (
           <p className="mx-auto mt-1 max-w-md text-center text-body-md text-on-surface-variant">
             {subText}
           </p>
         )}
 
-        <section className="glass-panel relative mt-5 overflow-hidden rounded-2xl border border-white/10 p-4 shadow-lg md:p-6">
+        <section className="glass-panel relative mt-3 overflow-hidden rounded-2xl border border-white/10 p-3 shadow-lg md:mt-4 md:p-5">
           <div
             className={`pointer-events-none absolute inset-x-0 top-0 h-24 blur-2xl ${
               playerWon ? "bg-tertiary/10" : "bg-error/10"
@@ -232,11 +232,11 @@ export function BattleResult({
               defeated={mode === "lost"}
               highlight={playerWon}
             />
-            <div className="flex flex-col items-center gap-1 pt-10">
+            <div className="flex flex-col items-center gap-1 pt-8 md:pt-10">
               <span className="text-label-sm font-bold tracking-[0.2em] text-on-surface-variant/60">
                 VS
               </span>
-              <span className="h-10 w-px bg-gradient-to-b from-white/15 to-transparent" />
+              <span className="h-8 w-px bg-gradient-to-b from-white/15 to-transparent md:h-10" />
             </div>
             <FighterCard
               fighter={foe}
@@ -251,7 +251,7 @@ export function BattleResult({
         {xpSummary ? <LevelUpFanfare entries={xpSummary} player={player} /> : null}
 
         {xpSummary ? (
-          <div className="mt-3">
+          <div className="mt-2 md:mt-3">
             <LevelUpOffersPanel
               key={xpSummary
                 .map(
@@ -274,7 +274,7 @@ export function BattleResult({
         ) : null}
 
         {(coinsGained > 0 || (xpSummary && xpSummary.length > 0)) && (
-          <section className="glass-panel mt-3 rounded-2xl border border-white/10 p-4">
+          <section className="glass-panel mt-2 rounded-2xl border border-white/10 p-3 md:mt-3 md:p-4">
             <div className="mb-2 flex items-center justify-between gap-2 border-b border-white/10 pb-2">
               <p className="text-label-sm uppercase tracking-wider text-on-surface-variant">
                 {t("rewardsTitle")}
@@ -312,7 +312,7 @@ export function BattleResult({
           </section>
         )}
 
-        <div className="mt-4 flex flex-col items-center gap-3">{children}</div>
+        <div className="mt-3 flex flex-col items-center gap-2 md:mt-4 md:gap-3">{children}</div>
       </div>
     </div>
   );

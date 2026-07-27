@@ -53,14 +53,22 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
 
   const [user, lead] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: userId } }),
+    // Primer Pokémon del equipo con HP > 0 (por slot). Si el lead está KO
+    // pero hay backups sanos, igual se puede explorar.
     prisma.pokemonInstance.findFirst({
-      where: { ownerId: userId, teamSlot: 1 },
+      where: { ownerId: userId, teamSlot: { not: null }, currentHp: { gt: 0 } },
       include: { species: true },
+      orderBy: { teamSlot: "asc" },
     }),
   ]);
 
-  if (!lead) return { success: false, error: "no_lead" };
-  if (lead.currentHp <= 0) return { success: false, error: "fainted_lead" };
+  if (!lead) {
+    const anyInTeam = await prisma.pokemonInstance.findFirst({
+      where: { ownerId: userId, teamSlot: { not: null } },
+      select: { id: true },
+    });
+    return { success: false, error: anyInTeam ? "fainted_lead" : "no_lead" };
+  }
 
   const currentEnergy = getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt);
   if (currentEnergy < energyCost) return { success: false, error: "no_energy" };

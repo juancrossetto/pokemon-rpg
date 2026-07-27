@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { TurnEvent } from "@/lib/battle";
-import { effectivePp } from "@/lib/battle";
+import { effectivePp, mergeBattleParticipantIds } from "@/lib/battle";
 import { calculateMaxHp } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
@@ -63,9 +63,14 @@ export async function switchPokemon(
     pp: effectivePp(m.currentPp, m.move.pp),
     maxPp: m.move.pp,
   }));
-  const participantIds = battle.participantIds.includes(newInstance.id)
-    ? battle.participantIds
-    : [...battle.participantIds, newInstance.id];
+  // Siempre incluir al que sale y al que entra: el lead puede faltar en
+  // participantIds si la sesión nació con el default [] o un create viejo.
+  const participantIds = mergeBattleParticipantIds(
+    battle.participantIds,
+    battle.pokemonInstanceId,
+    newInstance.id,
+  );
+  const outgoingHp = battle.pokemonInstance.currentHp;
 
   const clearPlayerStatus = {
     playerStatus: null as null,
@@ -80,6 +85,7 @@ export async function switchPokemon(
   };
 
   if (forced) {
+    // El KO del saliente ya se persistió en battle-move (currentHp: 0).
     await prisma.battleSession.update({
       where: { id: battle.id },
       data: {
@@ -124,6 +130,11 @@ export async function switchPokemon(
   const finalLog = [...battle.log, `switch:${newName}`].slice(-MAX_LOG_LINES);
 
   await prisma.$transaction([
+    // Persistir HP del que sale (por si el último turno no flusheó) y del que entra.
+    prisma.pokemonInstance.update({
+      where: { id: battle.pokemonInstanceId },
+      data: { currentHp: Math.max(0, outgoingHp) },
+    }),
     prisma.pokemonInstance.update({ where: { id: newInstance.id }, data: { currentHp: playerHp } }),
     prisma.battleSession.update({
       where: { id: battle.id },

@@ -281,6 +281,7 @@ export default async function BattlePage({
         spriteUrl: r.species.spriteUrl,
         currentHp: r.id === instance.id ? instance.currentHp : r.currentHp,
         maxHp: calculateMaxHp(r.species.baseHp, r.level, r.ptConstitution),
+        types: r.species.types,
       })),
       player: {
         instanceId: instance.id,
