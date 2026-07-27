@@ -188,6 +188,13 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: "groups",
     children: [
       {
+        id: "friends",
+        labelKey: "friends",
+        descriptionKey: "desc.friends",
+        href: "/friends",
+        icon: "handshake",
+      },
+      {
         id: "clans",
         labelKey: "clans",
         descriptionKey: "desc.clans",

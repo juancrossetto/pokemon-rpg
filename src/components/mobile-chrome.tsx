@@ -7,7 +7,12 @@ import { UserMenu } from "@/components/user-menu";
 import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { ResourceBar, type ResourceBarLabels } from "@/components/resource-bar";
-import { groupMatches, itemMatches, visibleChildren } from "@/lib/navigation";
+import {
+  groupMatches,
+  itemMatches,
+  MOBILE_BAR_GROUPS,
+  visibleChildren,
+} from "@/lib/navigation";
 import type { NavGroup } from "@/lib/navigation";
 import type { NavLabels } from "@/components/nav-links";
 import type { NotificationDTO } from "@/lib/notifications";
@@ -24,6 +29,10 @@ type NavLink = {
   groupId?: string;
 };
 
+type IndicatorBox = { left: number; width: number } | null;
+
+const BAR_GROUP_IDS = new Set<string>(MOBILE_BAR_GROUPS);
+
 export function MobileChrome({
   brand,
   brandHref = "/login",
@@ -39,6 +48,7 @@ export function MobileChrome({
   avatarId,
   logoutLabel,
   trainerLabel,
+  profileLabel,
   lockedHref,
   lockedLabel,
   lockedIcon,
@@ -65,6 +75,7 @@ export function MobileChrome({
   avatarId?: string | null;
   logoutLabel: string;
   trainerLabel: string;
+  profileLabel: string;
   lockedHref: string | null;
   lockedLabel: string | null;
   lockedIcon: "swords" | "military_tech";
@@ -79,8 +90,10 @@ export function MobileChrome({
   notifications: { items: NotificationDTO[]; unreadCount: number } | null;
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
+  const [indicator, setIndicator] = useState<IndicatorBox>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const bottomNavRef = useRef<HTMLElement>(null);
   const showMore = groups.length > 0;
   // `usePathname` de next-intl ya viene sin el prefijo de idioma, así que se
   // compara directo contra los href de los links.
@@ -92,9 +105,51 @@ export function MobileChrome({
     return pathname === clean || pathname.startsWith(`${clean}/`);
   }
 
-  // El botón "Más" también se marca cuando la pantalla actual vive dentro del
-  // sheet (ranking, clanes, PC…), si no parecería que no estás en ningún lado.
-  const moreActive = groups.some((g) => groupMatches(pathname, g));
+  function isPrimaryActive(item: NavLink): boolean {
+    if (item.groupId) {
+      const group = groups.find((g) => g.id === item.groupId);
+      return group ? groupMatches(pathname, group) : false;
+    }
+    return isActive(item.href);
+  }
+
+  const anyPrimaryActive = primary.some(isPrimaryActive);
+  // "Más" solo si la ruta no cae en un tab de la barra (ranking, clanes…),
+  // o si el drawer está abierto.
+  const moreRouteActive = groups.some(
+    (g) => !BAR_GROUP_IDS.has(g.id) && groupMatches(pathname, g),
+  );
+  const moreActive = moreOpen || (!anyPrimaryActive && moreRouteActive);
+
+  /*
+    Misma barra deslizante que el navbar desktop: un único subrayado medido
+    sobre `[data-active]`. En mobile cada tab dibujaba el suyo y al cambiar
+    de sección el indicador aparecía/desaparecía sin el gesto elástico.
+  */
+  useEffect(() => {
+    const root = bottomNavRef.current;
+    if (!root) return;
+
+    function measure() {
+      const node = root?.querySelector<HTMLElement>("[data-active]");
+      if (!node || !root) {
+        setIndicator(null);
+        return;
+      }
+      const rootBox = root.getBoundingClientRect();
+      const box = node.getBoundingClientRect();
+      const inset = 12;
+      setIndicator({
+        left: box.left - rootBox.left + inset,
+        width: Math.max(0, box.width - inset * 2),
+      });
+    }
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [pathname, moreOpen, primary.length, showMore]);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -170,6 +225,7 @@ export function MobileChrome({
               avatarId={avatarId ?? null}
               logoutLabel={logoutLabel}
               trainerLabel={trainerLabel}
+              profileLabel={profileLabel}
             />
           ) : (
             <div className="flex items-center gap-1.5">
@@ -188,7 +244,10 @@ export function MobileChrome({
       </header>
 
       {/* Bottom bar: 4–5 primary destinations */}
-      <nav className="fixed bottom-0 inset-x-0 z-50 flex xl:hidden items-stretch h-14 bg-background/98 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
+      <nav
+        ref={bottomNavRef}
+        className="fixed bottom-0 inset-x-0 z-50 flex xl:hidden items-stretch h-14 bg-background/98 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]"
+      >
         {lockedHref && lockedLabel ? (
           <Link
             href={lockedHref}
@@ -199,11 +258,19 @@ export function MobileChrome({
           </Link>
         ) : (
           <>
+            {indicator && (
+              <span
+                aria-hidden
+                className="nav-indicator absolute top-0 h-0.5 rounded-full bg-pokeball-red shadow-[0_0_8px_rgba(238,21,21,0.75)]"
+                style={{ left: indicator.left, width: indicator.width }}
+              />
+            )}
             {primary.map((item) => {
               const group = item.groupId
                 ? groups.find((g) => g.id === item.groupId)
                 : undefined;
-              const active = group ? groupMatches(pathname, group) : isActive(item.href);
+              const active = isPrimaryActive(item);
+              const showActive = active && !moreOpen;
               // Pendientes del grupo: se ven sin abrir el drawer.
               const badge = group
                 ? visibleChildren(group).reduce(
@@ -216,29 +283,24 @@ export function MobileChrome({
                 <Link
                   key={item.href}
                   href={item.href}
-                  aria-current={active ? "page" : undefined}
+                  data-active={showActive || undefined}
+                  aria-current={showActive ? "page" : undefined}
                   className={`relative flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
-                    active ? "text-pokeball-red" : "text-on-surface-variant hover:text-pokeball-red"
+                    showActive
+                      ? "text-pokeball-red"
+                      : "text-on-surface-variant hover:text-pokeball-red"
                   }`}
                 >
-                  {/* Barra superior: marca la sección actual. Antes no había
-                      ningún indicador y no se sabía en qué pantalla estabas. */}
-                  {active && (
-                    <span
-                      aria-hidden
-                      className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-pokeball-red shadow-[0_0_8px_rgba(238,21,21,0.7)]"
-                    />
-                  )}
                   <span
                     className={`material-symbols-outlined text-[22px]! transition-transform ${
-                      active ? "scale-110" : ""
+                      showActive ? "scale-110" : ""
                     }`}
                   >
                     {item.icon}
                   </span>
                   <span
                     className={`text-[10px] leading-none truncate max-w-full ${
-                      active ? "font-bold" : ""
+                      showActive ? "font-bold" : ""
                     }`}
                   >
                     {item.label}
@@ -259,16 +321,13 @@ export function MobileChrome({
                 onClick={() => setMoreOpen(true)}
                 aria-expanded={moreOpen}
                 aria-haspopup="dialog"
+                data-active={moreActive || undefined}
                 className={`relative flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
-                  moreOpen ? "text-pokeball-red" : "text-on-surface-variant hover:text-pokeball-red"
+                  moreActive
+                    ? "text-pokeball-red"
+                    : "text-on-surface-variant hover:text-pokeball-red"
                 }`}
               >
-                {moreActive && (
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-pokeball-red shadow-[0_0_8px_rgba(238,21,21,0.7)]"
-                  />
-                )}
                 <span className="material-symbols-outlined text-[22px]!">
                   {moreOpen ? "close" : "menu"}
                 </span>

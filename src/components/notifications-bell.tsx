@@ -12,7 +12,7 @@ import type { NotificationDTO } from "@/lib/notifications";
 
 const TYPE_META: Record<
   NotificationDTO["type"],
-  { icon: string; accent: string; glow: string; labelKey: "sale" | "expired" | "gym" | "pvp" | "reward" }
+  { icon: string; accent: string; glow: string; labelKey: "sale" | "expired" | "gym" | "pvp" | "reward" | "friends" }
 > = {
   MARKET_SOLD: {
     icon: "payments",
@@ -56,6 +56,18 @@ const TYPE_META: Record<
     glow: "",
     labelKey: "pvp",
   },
+  FRIEND_REQUEST: {
+    icon: "person_add",
+    accent: "from-sky-400/25 via-pokeball-red/10 to-transparent",
+    glow: "shadow-[0_0_20px_rgba(56,189,248,0.15)]",
+    labelKey: "friends",
+  },
+  FRIEND_ACCEPTED: {
+    icon: "handshake",
+    accent: "from-emerald-400/25 to-transparent",
+    glow: "shadow-[0_0_20px_rgba(52,211,153,0.15)]",
+    labelKey: "friends",
+  },
 };
 
 function relativeTime(iso: string, t: ReturnType<typeof useTranslations<"notifications">>) {
@@ -89,6 +101,10 @@ function headlineFor(
       return t("pvpWonTitle");
     case "PVP_LOST":
       return t("pvpLostTitle");
+    case "FRIEND_REQUEST":
+      return t("friendRequestTitle");
+    case "FRIEND_ACCEPTED":
+      return t("friendAcceptedTitle");
     default:
       return t("unknown");
   }
@@ -122,6 +138,10 @@ function detailFor(
       return t("pvpWonDetail", { opponent: p.opponentName ?? "?" });
     case "PVP_LOST":
       return t("pvpLostDetail", { opponent: p.opponentName ?? "?" });
+    case "FRIEND_REQUEST":
+      return t("friendRequestDetail", { trainer: p.trainerName ?? "?" });
+    case "FRIEND_ACCEPTED":
+      return t("friendAcceptedDetail", { trainer: p.trainerName ?? "?" });
     default:
       return "";
   }

@@ -26,6 +26,7 @@
     "inBattle": "En combate",
     "inGym": "En el gimnasio",
     "ranking": "Ranking",
+    "friends": "Amigos",
     "clans": "Clanes",
     "pvp": "PvP",
     "more": "Más",
@@ -60,6 +61,7 @@
       "inventory": "Objetos, bayas y piedras que tenés.",
       "market": "Comprá y vendé con otros jugadores.",
       "shop": "Comprá objetos al sistema.",
+      "friends": "Buscá entrenadores, inspeccioná cartas y ampliá tu círculo.",
       "clans": "Uníte a un clan y competí en equipo.",
       "events": "Regalos diarios y desafíos semanales."
     },
@@ -69,7 +71,8 @@
     "account": "Cuenta",
     "navigation": "Navegación",
     "close": "Cerrar",
-    "events": "Eventos"
+    "events": "Eventos",
+    "profile": "Mi perfil"
   },
   "notifications": {
     "eyebrow": "Alertas en vivo",
@@ -86,7 +89,8 @@
       "expired": "Mercado · Expiró",
       "gym": "Gimnasio",
       "pvp": "PvP",
-      "reward": "Recompensa"
+      "reward": "Recompensa",
+      "friends": "Amigos"
     },
     "marketSoldTitle": "¡Venta concretada!",
     "marketSoldDetail": "{buyer} compró {item}",
@@ -104,6 +108,10 @@
     "pvpWonDetail": "Ganaste el duelo contra {opponent}",
     "pvpLostTitle": "Derrota PvP",
     "pvpLostDetail": "{opponent} te derrotó",
+    "friendRequestTitle": "Solicitud de amistad",
+    "friendRequestDetail": "{trainer} quiere ser tu amigo",
+    "friendAcceptedTitle": "Amigo agregado",
+    "friendAcceptedDetail": "{trainer} aceptó tu solicitud",
     "marketSold": "{buyer} compró {item}. Se te acreditaron +{coins} monedas.",
     "marketExpired": "Tu publicación de {item} expiró y volvió a tu poder.",
     "gymWon": "Derrotaste a {leader} en {gym}. ¡Medalla obtenida!",
@@ -448,6 +456,7 @@
       "showDetails": "Ver detalles",
       "hideDetails": "Ocultar",
       "evolveByTrade": "Intercambio",
+      "evolveTradeItemHint": "Sustituye al intercambio",
       "evolveStones": {
         "Fire Stone": "Piedra Fuego",
         "Water Stone": "Piedra Agua",
@@ -458,6 +467,8 @@
       }
     },
     "healFree": "Curación gratis disponible",
+    "healNoviceFree": "Gratis hasta nv. {level}",
+    "healNoviceFreeHint": "Gratis y sin espera mientras tu equipo no pase el nv. {level}.",
     "healCooldown": "Gratis en {minutes} min",
     "healRush": "Curar ya",
     "healRushHint": "Saltea los {minutes} min de espera",
@@ -939,6 +950,11 @@
     "value": "Valor",
     "effect": "Efecto",
     "teaches": "Enseña",
+    "compatible": "Compatible con",
+    "noLevelRequired": "Las MT no piden nivel: sólo depende de la especie.",
+    "alreadyKnows": "Ya lo sabe",
+    "cannotLearn": "No compatible",
+    "noCompatible": "Ningún Pokémon de tu equipo puede aprender esta MT.",
     "sell": "Vender",
     "teach": "Enseñar en el equipo",
     "useOnTeam": "Usar en el equipo (inicio)",
@@ -1598,5 +1614,296 @@
     "giftClaimedTitle": "Sumado a tu cuenta",
     "giftContinue": "Continuar",
     "giftReopen": "Tenés tu regalo diario sin reclamar"
+  },
+  "profile": {
+    "title": "Entrenador",
+    "power": "poder",
+    "badgesShort": "medallas",
+    "memberSince": "Desde",
+    "toNextRank": "{count} medallas para {rank}",
+    "maxRank": "Rango máximo alcanzado",
+    "favorite": "Favorito",
+    "noFavorite": "Sin favorito",
+    "noFavoriteHint": "Marcá un Pokémon como favorito desde tu equipo y va a presidir tu perfil.",
+    "level": "Nivel",
+    "levelShort": "Nv.",
+    "cp": "PC",
+    "hp": "PS",
+    "shiny": "Shiny",
+    "lead": "Líder",
+    "emptySlot": "Vacío",
+    "metrics": "Métricas",
+    "squad": "Equipo activo",
+    "vault": "Bóveda",
+    "activity": "Actividad",
+    "recentCatches": "Capturas recientes",
+    "noCatches": "Todavía no atrapaste nada.",
+    "noActivity": "Sin actividad todavía.",
+    "noBadges": "Todavía no ganaste medallas.",
+    "locked": "Bloqueado",
+    "earnedOn": "Conseguida el",
+    "rank": {
+      "bronze": "Bronce",
+      "silver": "Plata",
+      "gold": "Oro",
+      "diamond": "Diamante",
+      "master": "Maestro",
+      "champion": "Campeón"
+    },
+    "titles": {
+      "rookie": "Novato",
+      "trainer": "Entrenador",
+      "collector": "Coleccionista",
+      "gymLeaderBane": "Azote de gimnasios",
+      "researcher": "Investigador",
+      "duelist": "Duelista",
+      "legendTamer": "Domador de leyendas",
+      "shinyHunter": "Cazador de shinies",
+      "mythKeeper": "Guardián de mitos",
+      "champion": "Campeón"
+    },
+    "rarity": {
+      "common": "Común",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Legendario",
+      "mythical": "Mítico",
+      "ultraBeast": "Ultraente",
+      "paradox": "Paradoja"
+    },
+    "tabs": {
+      "badges": "Medallas",
+      "achievements": "Logros",
+      "collections": "Colecciones"
+    },
+    "collections": {
+      "legendary": "Legendarios",
+      "mythical": "Míticos",
+      "shiny": "Shinies",
+      "starter": "Iniciales",
+      "pseudo": "Pseudolegendarios"
+    },
+    "stats": {
+      "caught": "Capturados",
+      "shinies": "Shinies",
+      "dex": "Pokédex",
+      "badges": "Medallas",
+      "pvp": "PvP",
+      "rating": "Rating {rating}",
+      "trainers": "Entrenadores",
+      "power": "Poder de equipo"
+    },
+    "timeline": {
+      "catch": "Capturó",
+      "badge": "Medalla",
+      "trainer": "Venció",
+      "shiny": "¡Shiny!"
+    },
+    "time": {
+      "now": "recién",
+      "minutes": "hace {n} min",
+      "hours": "hace {n} h",
+      "days": "hace {n} d"
+    },
+    "achievements": {
+      "firstSteps": {
+        "name": "Primeros pasos",
+        "hint": "Atrapá 10 Pokémon"
+      },
+      "collector": {
+        "name": "Coleccionista",
+        "hint": "Atrapá 100 Pokémon"
+      },
+      "hoarder": {
+        "name": "Acaparador",
+        "hint": "Atrapá 1000 Pokémon"
+      },
+      "firstShiny": {
+        "name": "Primer shiny",
+        "hint": "Encontrá tu primer shiny"
+      },
+      "shinyHunter": {
+        "name": "Cazador de shinies",
+        "hint": "Encontrá 10 shinies"
+      },
+      "researcher": {
+        "name": "Investigador",
+        "hint": "Registrá 50 especies"
+      },
+      "taxonomist": {
+        "name": "Taxonomista",
+        "hint": "Registrá 151 especies"
+      },
+      "gymGoer": {
+        "name": "Primera medalla",
+        "hint": "Ganá tu primera medalla"
+      },
+      "champion": {
+        "name": "Campeón",
+        "hint": "Ganá todas las medallas"
+      },
+      "duelist": {
+        "name": "Duelista",
+        "hint": "Ganá 10 combates PvP"
+      },
+      "gladiator": {
+        "name": "Gladiador",
+        "hint": "Ganá 100 combates PvP"
+      },
+      "roadWarrior": {
+        "name": "Trotamundos",
+        "hint": "Vencé a 25 entrenadores"
+      },
+      "mythSeeker": {
+        "name": "Buscador de leyendas",
+        "hint": "Conseguí un legendario"
+      },
+      "mythKeeper": {
+        "name": "Guardián de mitos",
+        "hint": "Conseguí un mítico"
+      },
+      "veteran": {
+        "name": "Veterano",
+        "hint": "Llevá un Pokémon a nivel 60"
+      }
+    }
+  },
+  "friends": {
+    "eyebrow": "Amigos",
+    "title": "Círculo social",
+    "subtitle": "Buscá entrenadores, inspeccioná Trainer Cards y mantené cerca a tus aliados.",
+    "stats": {
+      "friends": "Amigos",
+      "online": "En línea",
+      "requests": "Solicitudes"
+    },
+    "search": {
+      "placeholder": "Buscar por nombre o ID de entrenador…",
+      "hint": "Encontrá entrenadores en todo el mundo. Tocá un resultado para abrir su Trainer Card.",
+      "searching": "Buscando…",
+      "noResults": "Ningún entrenador coincide con esa búsqueda."
+    },
+    "addFriend": "Agregar",
+    "requestSent": "Solicitud enviada",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "cancelRequest": "Cancelar",
+    "filters": {
+      "all": "Todos",
+      "online": "En línea",
+      "favorites": "Favoritos",
+      "recent": "Recientes",
+      "requests": "Solicitudes",
+      "blocked": "Bloqueados"
+    },
+    "presence": {
+      "online": "En línea",
+      "away": "Ausente",
+      "fighting": "Combatiendo",
+      "gym": "En gimnasio",
+      "exploring": "Explorando",
+      "offline": "Desconectado"
+    },
+    "level": "Nv.",
+    "badges": "Medallas",
+    "empty": {
+      "friends": "Tu círculo está vacío",
+      "friendsHint": "Buscá un entrenador arriba y enviá una solicitud.",
+      "filter": "Nada en este filtro todavía.",
+      "requests": "No hay solicitudes pendientes.",
+      "blocked": "No hay entrenadores bloqueados."
+    },
+    "lastSeen": "Visto",
+    "time": {
+      "justNow": "Ahora",
+      "minutesAgo": "hace {n} min",
+      "hoursAgo": "hace {n} h",
+      "daysAgo": "hace {n} d",
+      "never": "Nunca"
+    },
+    "actions": {
+      "profile": "Ver carta",
+      "favorite": "Favorito",
+      "unfavorite": "Quitar favorito",
+      "invite": "Invitar PvP",
+      "message": "Mensaje",
+      "trade": "Intercambiar",
+      "gift": "Enviar regalo",
+      "compare": "Comparar",
+      "remove": "Eliminar",
+      "block": "Bloquear",
+      "unblock": "Desbloquear"
+    },
+    "comingSoon": "Próximamente",
+    "card": {
+      "trainerCard": "Trainer Card",
+      "metrics": "Métricas",
+      "pokedex": "Pokédex",
+      "gyms": "Gimnasios",
+      "pvp": "PvP",
+      "power": "Poder",
+      "hours": "Horas",
+      "hoursSoon": "Pronto",
+      "squad": "Equipo activo",
+      "activity": "Actividad reciente",
+      "noActivity": "Sin actividad reciente.",
+      "noFavorite": "Todavía no tiene Pokémon favorito.",
+      "noSquad": "Sin equipo activo.",
+      "memberSince": "Miembro desde",
+      "close": "Cerrar",
+      "favorite": "Favorito",
+      "cp": "CP",
+      "rarity": {
+        "common": "Común",
+        "rare": "Raro",
+        "epic": "Épico",
+        "legendary": "Legendario",
+        "mythical": "Mítico",
+        "ultraBeast": "Ultraente",
+        "paradox": "Paradox"
+      },
+      "titles": {
+        "rookie": "Novato",
+        "trainer": "Entrenador",
+        "collector": "Coleccionista",
+        "gymLeaderBane": "Azote de gimnasios",
+        "researcher": "Investigador",
+        "duelist": "Duelista",
+        "legendTamer": "Domador de leyendas",
+        "shinyHunter": "Cazador shiny",
+        "mythKeeper": "Guardián mítico",
+        "champion": "Campeón"
+      },
+      "ranks": {
+        "bronze": "Bronce",
+        "silver": "Plata",
+        "gold": "Oro",
+        "diamond": "Diamante",
+        "master": "Maestro",
+        "champion": "Campeón"
+      },
+      "activityCatch": "Capturó",
+      "activityBadge": "Ganó",
+      "activityTrainer": "Derrotó"
+    },
+    "errors": {
+      "unauthorized": "Tenés que iniciar sesión.",
+      "not_found": "Entrenador no encontrado.",
+      "invalid": "Esa acción no es válida.",
+      "rate_limited": "Demasiado rápido — probá de nuevo en un momento.",
+      "blocked": "No podés interactuar con este entrenador.",
+      "already_friends": "Ya son amigos.",
+      "already_sent": "Solicitud ya enviada.",
+      "friends_full": "La lista de amigos está llena.",
+      "requests_full": "Demasiadas solicitudes pendientes."
+    },
+    "confirmRemove": "¿Eliminar a este entrenador de tus amigos?",
+    "confirmBlock": "¿Bloquear a este entrenador? También se eliminará la amistad.",
+    "toast": {
+      "sentTitle": "¡Solicitud enviada!",
+      "sentDetail": "La verán en sus notificaciones.",
+      "acceptedTitle": "¡Ya son amigos!",
+      "acceptedDetail": "Tu círculo acaba de crecer."
+    }
   }
 }

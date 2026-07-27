@@ -57,6 +57,8 @@ function reopen(): void {
   for (const listener of listeners) listener();
 }
 
+const OAK_GIFT_ART = "/events/gift_oak.png";
+
 /**
  * Modal del regalo diario, centrado y modal de verdad.
  *
@@ -65,23 +67,18 @@ function reopen(): void {
  * marca visto y no vuelve a aparecer hasta la próxima sesión, pero el regalo
  * sigue accesible desde Eventos y desde el badge del navbar.
  *
- * La ilustración es el Pokémon líder del jugador y no un arte genérico: es un
- * sprite que ya está cargado, hace que el panel se sienta parte de su partida
- * y no agrega un asset nuevo que mantener.
+ * La ilustración es el Profesor Oak con el regalo (`public/events/gift_oak.png`).
  */
 export function DailyGiftModal({
   days,
   currentDay,
   total,
-  leadSpriteUrl,
   labels,
   locale,
 }: {
   days: DailyDayState[];
   currentDay: number;
   total: number;
-  /** Sprite del Pokémon líder. `null` si el jugador todavía no tiene equipo. */
-  leadSpriteUrl: string | null;
   labels: GiftModalLabels;
   locale: string;
 }) {
@@ -210,10 +207,8 @@ export function DailyGiftModal({
 
         {/*
           ── Cabecera ─────────────────────────────────────────────────
-          Mismo tratamiento que el hero del mercado y el de capítulo: el mapa
-          de la región de fondo, muy apagado, con un degradado encima que
-          garantiza el contraste del texto. Da profundidad sin sumar un asset
-          nuevo ni tapar el calendario, que es lo que el jugador vino a ver.
+          Oak es la ilustración hero (derecha), no un thumbnail al lado
+          del título. El texto queda a la izquierda con espacio libre.
         */}
         <div className="relative shrink-0 overflow-hidden">
           <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -224,8 +219,7 @@ export function DailyGiftModal({
               sizes="512px"
               className="object-cover object-center opacity-[0.13]"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0b0d13] via-[#0b0d13]/85 to-[#0b0d13]/60" />
-            {/* Cuadrícula técnica: el mismo recurso del resto de la app. */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0b0d13] via-[#0b0d13]/92 to-[#0b0d13]/50" />
             <div
               className="absolute inset-0 opacity-[0.07]"
               style={{
@@ -236,53 +230,40 @@ export function DailyGiftModal({
             />
           </div>
 
-          <div className="relative flex items-center gap-3 px-4 pb-4 pt-4">
-            {leadSpriteUrl && (
-              <span className="gift-lead relative grid h-[72px] w-[72px] shrink-0 place-items-center sm:h-20 sm:w-20">
-                {/* Pedestal: un disco tenue que apoya al sprite en vez de
-                    dejarlo flotando sobre el fondo. */}
-                <span
-                  aria-hidden
-                  className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_45%,rgba(242,192,0,0.22),rgba(242,192,0,0)_68%)]"
-                />
-                <span
-                  aria-hidden
-                  className="absolute bottom-1 h-1.5 w-11 rounded-[100%] bg-black/50 blur-[3px]"
-                />
-                <Image
-                  src={leadSpriteUrl}
-                  alt=""
-                  width={80}
-                  height={80}
-                  className="relative h-16 w-16 object-contain drop-shadow-[0_6px_12px_rgba(0,0,0,0.55)] sm:h-[72px] sm:w-[72px]"
-                />
-              </span>
-            )}
+          <button
+            type="button"
+            onClick={close}
+            aria-label={labels.close}
+            className="absolute right-3 top-3 z-30 grid h-9 w-9 place-items-center rounded-md border border-white/10 bg-black/55 text-on-surface-variant backdrop-blur-sm transition hover:border-white/25 hover:text-on-surface"
+          >
+            <span aria-hidden className="material-symbols-outlined text-[20px]!">
+              close
+            </span>
+          </button>
 
-            <div className="min-w-0 flex-1">
+          <div className="relative flex min-h-[152px] items-stretch sm:min-h-[168px]">
+            <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center py-4 pl-4 pr-3">
               <p className="mb-0.5 flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-[0.22em] text-tertiary/90">
                 <span aria-hidden className="h-1 w-1 rounded-full bg-tertiary" />
                 {labels.eyebrow}
               </p>
               <h2
                 id="daily-gift-title"
-                className="text-[clamp(1.25rem,5vw,1.75rem)] font-semibold leading-tight tracking-tight text-white"
+                className="text-[clamp(1.35rem,5.5vw,1.85rem)] font-semibold leading-tight tracking-tight text-white"
               >
                 {labels.title}
               </h2>
-              <p className="mt-1 max-w-sm text-[11px] leading-snug text-on-surface-variant sm:text-label-sm">
+              <p className="mt-1.5 text-[11px] leading-snug text-on-surface-variant sm:text-label-sm">
                 {labels.subtitle}
               </p>
 
-              {/* La barra dice a qué altura del ciclo va el jugador; el número
-                  solo no daba idea de cuánto falta. */}
-              <div className="mt-2 flex items-center gap-2">
+              <div className="mt-3 flex items-center gap-2">
                 <span
                   role="progressbar"
                   aria-valuenow={currentDay}
                   aria-valuemin={1}
                   aria-valuemax={total}
-                  className="h-1 w-full max-w-[160px] overflow-hidden rounded-full bg-white/10"
+                  className="h-1 w-full max-w-[140px] overflow-hidden rounded-full bg-white/10"
                 >
                   <span
                     className="block h-full rounded-full bg-gradient-to-r from-tertiary/70 to-tertiary transition-[width] duration-500"
@@ -297,16 +278,21 @@ export function DailyGiftModal({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={close}
-              aria-label={labels.close}
-              className="grid h-9 w-9 shrink-0 place-items-center self-start rounded-md border border-white/10 bg-black/30 text-on-surface-variant backdrop-blur-sm transition hover:border-white/25 hover:text-on-surface"
+            <div
+              aria-hidden
+              className="gift-lead relative z-[5] flex w-[124px] shrink-0 items-end justify-center self-stretch pt-9 sm:w-[148px]"
             >
-              <span aria-hidden className="material-symbols-outlined text-[20px]!">
-                close
-              </span>
-            </button>
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 top-8 bg-[radial-gradient(ellipse_at_50%_60%,rgba(242,192,0,0.18),transparent_72%)]" />
+              <Image
+                src={OAK_GIFT_ART}
+                alt=""
+                width={280}
+                height={300}
+                priority
+                unoptimized
+                className="relative h-[128px] w-auto max-w-full object-contain object-bottom drop-shadow-[0_8px_18px_rgba(0,0,0,0.5)] sm:h-[144px]"
+              />
+            </div>
           </div>
         </div>
 

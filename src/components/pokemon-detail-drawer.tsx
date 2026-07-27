@@ -1,7 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+  type CSSProperties,
+} from "react";
 import { createPortal } from "react-dom";
 import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
@@ -13,6 +21,8 @@ import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar"
 import { EvolutionChainList } from "@/components/evolution-chain-list";
 import { SquadCareActions } from "@/components/squad-care-actions";
 import { AllocatePointsPanel } from "@/components/allocate-points-panel";
+import { SquadItemFx, fxMetaFromColor } from "@/components/use-squad-actions";
+import { playBattleSfx } from "@/lib/battle-sfx";
 import { EMPTY_SQUAD_BAG, type SquadBagCounts } from "@/lib/squad-bag";
 import { UNSPENT_POINTS_PER_LEVEL } from "@/lib/stats";
 
@@ -41,12 +51,15 @@ export function PokemonDetailDrawer({
   member,
   labels,
   bagCounts = EMPTY_SQUAD_BAG,
+  initialTeachItemId = null,
   onMemberPatch,
   onClose,
 }: {
   member: TeamMember | null;
   labels: TeamRosterLabels;
   bagCounts?: SquadBagCounts;
+  /** MT a desplegar de entrada — enlace profundo desde el inventario. */
+  initialTeachItemId?: string | null;
   onMemberPatch?: (
     patch: Partial<
       Pick<
@@ -66,8 +79,19 @@ export function PokemonDetailDrawer({
   const locale = useLocale();
   const router = useRouter();
   const isDesktop = useIsDesktop();
-  const [tab, setTab] = useState<DetailTab>("overview");
-  const [teachingItemId, setTeachingItemId] = useState<string | null>(null);
+  // Llegando desde el inventario el drawer abre directo en la pestaña de
+  // movimientos con esa MT desplegada: es donde vive la lista de máquinas, y
+  // dejarlo en "overview" obligaría al jugador a buscarla de nuevo justo
+  // después de haber elegido a quién enseñársela.
+  const [tab, setTab] = useState<DetailTab>(initialTeachItemId ? "moves" : "overview");
+  const [teachingItemId, setTeachingItemId] = useState<string | null>(initialTeachItemId);
+  // Animación de MT/MO aprendida. `key` fuerza el remontaje para que enseñar
+  // dos seguidas vuelva a reproducirla en vez de quedarse en el frame final.
+  const [teachFx, setTeachFx] = useState<{
+    label: string;
+    color: string;
+    key: number;
+  } | null>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [equipOpen, setEquipOpen] = useState(false);
@@ -107,6 +131,14 @@ export function PokemonDetailDrawer({
     };
   }, [member, handleClose]);
 
+  // 2.1s: lo que dura la más larga de las animaciones `squad-fx-*` (la etiqueta
+  // flotante, 2s). Mismo criterio que el menú contextual del equipo.
+  useEffect(() => {
+    if (!teachFx) return;
+    const t = window.setTimeout(() => setTeachFx(null), 2100);
+    return () => window.clearTimeout(t);
+  }, [teachFx]);
+
   if (!member) return null;
 
   const displayName = member.nickname ?? member.speciesName;
@@ -142,6 +174,14 @@ export function PokemonDetailDrawer({
         setError(labels.teachErrors[result.error] ?? result.error);
         return;
       }
+      // El movimiento aparecía en el slot sin más: no había ninguna señal de
+      // que la MT se hubiera consumido ni de qué acababa de aprender.
+      playBattleSfx("restorePp");
+      setTeachFx({
+        label: teachingItem.moveName,
+        color: typeColor(teachingItem.moveType),
+        key: Date.now(),
+      });
       setTeachingItemId(null);
     });
   }
@@ -202,7 +242,30 @@ export function PokemonDetailDrawer({
 
         <header className="relative shrink-0 border-b border-white/[0.06] px-4 pb-3 pt-3 pr-12">
           <div className="flex items-center gap-3 text-left">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
+            <div
+              className={`relative flex h-16 w-16 shrink-0 items-center justify-center ${
+                teachFx ? "squad-fx-pulse" : ""
+              }`}
+              style={
+                teachFx
+                  ? ({ "--squad-fx-glow": `${teachFx.color}88` } as CSSProperties)
+                  : undefined
+              }
+            >
+              {/*
+                Sobre el sprite y no sobre la lista de MT: el jugador tiene que
+                ver que el cambio le pasó AL Pokémon. La cabecera está siempre
+                visible, así que el efecto se ve aunque el toque haya ocurrido
+                con la lista de movimientos scrolleada abajo.
+              */}
+              {teachFx && (
+                <SquadItemFx
+                  key={teachFx.key}
+                  kind="machine"
+                  label={teachFx.label}
+                  meta={fxMetaFromColor(teachFx.color)}
+                />
+              )}
               <div
                 className="absolute bottom-0 h-6 w-12 rounded-[100%] opacity-45 blur-md"
                 style={{ background: accent }}
@@ -346,6 +409,7 @@ export function PokemonDetailDrawer({
                     unknownLabel={labels.unknownSpecies}
                     evolveAtLevelLabel={labels.evolveAtLevel}
                     tradeLabel={labels.evolveByTrade}
+                    tradeItemHintLabel={labels.evolveTradeItemHint}
                     itemLabels={labels.evolveStones}
                     instanceId={member.instanceId}
                     currentLevel={member.level}

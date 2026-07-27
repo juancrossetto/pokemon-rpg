@@ -7,10 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { getCombatLock } from "@/lib/battle-lock";
 import { lockUsers } from "@/lib/db-locks";
-import { healCooldownMsLeft, healRushCost } from "@/lib/healing";
+import { healCooldownMsLeft, healRushCost, isPokemonCenterFree } from "@/lib/healing";
 
 /**
  * Cura el equipo. `rush = true` paga monedas para saltear el cooldown.
+ * Hasta `HEAL_FREE_UNTIL_LEVEL` el centro es gratis (sin espera ni costo).
  * Devuelve un código de error en vez de tirar: la UI lo muestra en el botón.
  */
 export async function healTeam(
@@ -58,21 +59,26 @@ export async function healTeam(
           calculateMaxHp(i.species.baseHp, i.level, i.ptConstitution),
       ).length;
 
-      const msLeft = healCooldownMsLeft(user.lastHealAt);
-      if (msLeft > 0) {
-        if (!rush) {
-          failure = "cooldown";
-          return;
+      const teamMaxLevel = team.reduce((max, i) => Math.max(max, i.level), 0);
+      const noviceFree = isPokemonCenterFree(teamMaxLevel);
+
+      if (!noviceFree) {
+        const msLeft = healCooldownMsLeft(user.lastHealAt);
+        if (msLeft > 0) {
+          if (!rush) {
+            failure = "cooldown";
+            return;
+          }
+          const cost = healRushCost(hurt);
+          if (user.coins < cost) {
+            failure = "no_coins";
+            return;
+          }
+          await tx.user.update({
+            where: { id: session.user.id },
+            data: { coins: { decrement: cost } },
+          });
         }
-        const cost = healRushCost(hurt);
-        if (user.coins < cost) {
-          failure = "no_coins";
-          return;
-        }
-        await tx.user.update({
-          where: { id: session.user.id },
-          data: { coins: { decrement: cost } },
-        });
       }
 
       // Como un Centro Pokémon: restaura HP y PP. En paralelo para no
@@ -109,10 +115,14 @@ export async function healTeam(
       );
 
       // El cooldown arranca recién ahora: pagar no lo saltea para la próxima.
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: { lastHealAt: new Date() },
-      });
+      // En modo novato no lo registramos: al pasar el umbral no “heredan” una
+      // espera de las curas gratis.
+      if (!noviceFree) {
+        await tx.user.update({
+          where: { id: session.user.id },
+          data: { lastHealAt: new Date() },
+        });
+      }
     },
     { timeout: 15_000 },
   );

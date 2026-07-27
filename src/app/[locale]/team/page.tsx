@@ -16,10 +16,13 @@ const TEAM_SIZE = 6;
 
 export default async function TeamPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ teach?: string; member?: string }>;
 }) {
   const { locale } = await params;
+  const { teach: teachParam, member: memberParam } = await searchParams;
   const [t, tMenu, session] = await Promise.all([
     getTranslations("team"),
     getTranslations("home.squadMenu"),
@@ -193,13 +196,31 @@ export default async function TeamPage({
     };
   });
 
+  /*
+    Enlace profundo desde el inventario: `?teach=<itemId>&member=<instanceId>`.
+    Ambos se validan contra lo que el jugador realmente tiene —el miembro tiene
+    que estar en el equipo y la MT tiene que figurar entre las compatibles de
+    ese miembro— porque llegan por querystring y cualquiera puede escribir lo
+    que quiera. Si no validan, se abre la pantalla normal en vez de romperse.
+  */
+  const linkedMember = memberParam
+    ? (members.find((m) => m?.instanceId === memberParam) ?? null)
+    : null;
+  const deepLinkMember = linkedMember?.instanceId ?? null;
+  const deepLinkTeach =
+    linkedMember && teachParam
+      ? (linkedMember.compatibleTms.find(
+          (tm) => tm.itemId === teachParam && !tm.alreadyKnown,
+        )?.itemId ?? null)
+      : null;
+
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8">
       <div className="mx-auto max-w-6xl">
         <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-0.5 flex items-center gap-2 text-label-sm uppercase tracking-[0.2em] text-pokeball-red">
-              <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
+            <p className="mb-0.5 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               {t("activeSquad")}
             </p>
             <h1 className="text-headline-lg text-white tracking-tight">{t("title")}</h1>
@@ -220,6 +241,7 @@ export default async function TeamPage({
               cooldownMsLeft={healCooldownMsLeft(user.lastHealAt)}
               rushCost={healRushCost(hurtCount)}
               coins={user.coins}
+              teamMaxLevel={pokemon.reduce((max, p) => Math.max(max, p.level), 0)}
             />
             <Link
               href="/pc"
@@ -234,6 +256,8 @@ export default async function TeamPage({
         <TeamRoster
           members={members}
           bagCounts={bagCounts}
+          initialSelectedId={deepLinkMember}
+          initialTeachItemId={deepLinkTeach}
           labels={{
             hp: t("stats.hp"),
             exp: t("stats.exp"),
@@ -257,6 +281,7 @@ export default async function TeamPage({
             unknownSpecies: t("drawer.unknownSpecies"),
             evolveAtLevel: t("drawer.evolveAtLevel", { level: "{level}" }),
             evolveByTrade: t("drawer.evolveByTrade"),
+            evolveTradeItemHint: t("drawer.evolveTradeItemHint"),
             evolveStones: t.raw("drawer.evolveStones") as Record<string, string>,
             evolveReadyShort: t("drawer.evolveReadyShort"),
             evolveNeedItem: t("drawer.evolveNeedItem"),
@@ -317,6 +342,17 @@ export default async function TeamPage({
               favoriteOff: tMenu("favoriteOff"),
               lockOn: tMenu("lockOn"),
               lockOff: tMenu("lockOff"),
+            },
+            menu: {
+              hint: tMenu("hint"),
+              favoriteOn: tMenu("favoriteOn"),
+              favoriteOff: tMenu("favoriteOff"),
+              lockOn: tMenu("lockOn"),
+              lockOff: tMenu("lockOff"),
+              viewTeam: tMenu("viewTeam"),
+              heal: tMenu("heal"),
+              restorePp: tMenu("restorePp"),
+              rareCandy: tMenu("rareCandy"),
             },
           }}
         />

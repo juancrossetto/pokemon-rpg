@@ -22,7 +22,7 @@ import {
 } from "@/components/level-up-offers";
 
 export type SquadFeedback = { kind: "ok" | "error"; text: string } | null;
-export type SquadItemFxKind = "heal" | "pp" | "candy";
+export type SquadItemFxKind = "heal" | "pp" | "candy" | "machine";
 export type SquadItemFxState = { kind: SquadItemFxKind; label: string; key: number };
 
 export const SQUAD_FX_META: Record<
@@ -30,10 +30,10 @@ export const SQUAD_FX_META: Record<
   { glow: string; ring: string; burst: string; labelClass: string }
 > = {
   heal: {
-    glow: "rgba(52, 211, 153, 0.5)",
-    ring: "rgba(52, 211, 153, 0.55)",
-    burst: "rgba(110, 231, 183, 0.35)",
-    labelClass: "text-emerald-300",
+    glow: "rgba(238, 21, 21, 0.55)",
+    ring: "rgba(238, 21, 21, 0.7)",
+    burst: "rgba(248, 113, 113, 0.4)",
+    labelClass: "text-pokeball-red",
   },
   pp: {
     glow: "rgba(96, 165, 250, 0.5)",
@@ -47,7 +47,29 @@ export const SQUAD_FX_META: Record<
     burst: "rgba(252, 211, 77, 0.4)",
     labelClass: "text-tertiary",
   },
+  /*
+    Sólo el fallback: al enseñar una MT el color sale del tipo del movimiento,
+    así que el drawer arma su propio `meta` y se lo pasa a `SquadItemFx`. Un
+    Lanzallamas y un Rayo tienen que verse distinto —es la única pista de qué
+    se acaba de aprender— y un color fijo desperdiciaría eso.
+  */
+  machine: {
+    glow: "rgba(167, 139, 250, 0.5)",
+    ring: "rgba(167, 139, 250, 0.55)",
+    burst: "rgba(196, 181, 253, 0.35)",
+    labelClass: "text-violet-300",
+  },
 };
+
+/** Paleta de FX derivada del color de un tipo, para la animación de MT/MO. */
+export function fxMetaFromColor(color: string): (typeof SQUAD_FX_META)[SquadItemFxKind] {
+  return {
+    glow: `${color}88`,
+    ring: `${color}cc`,
+    burst: `${color}59`,
+    labelClass: "text-white",
+  };
+}
 
 export type SquadActionsOptions = {
   instanceId: string;
@@ -424,6 +446,16 @@ export function SquadItemFx({
         className="squad-fx-ring absolute left-1/2 top-[42%] h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
         style={{ borderColor: meta.ring }}
       />
+      {kind === "heal" ? (
+        <span className="squad-fx-heal-cross absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2">
+          <span
+            className="material-symbols-outlined text-[36px]! drop-shadow-[0_0_14px_rgba(238,21,21,0.9)]"
+            style={{ color: meta.ring }}
+          >
+            cardiology
+          </span>
+        </span>
+      ) : null}
       {sparks.map((s, i) => (
         <span
           key={`${kind}-${i}`}

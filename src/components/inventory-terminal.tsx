@@ -15,6 +15,7 @@ import {
   totalUnits,
   type CategoryFilter,
   type InventoryEntry,
+  type TmLearner,
 } from "@/lib/inventory";
 
 export type InventoryLabels = {
@@ -31,6 +32,11 @@ export type InventoryLabels = {
   effect: string;
   rarity: Record<string, string>;
   teaches: string;
+  compatible: string;
+  noLevelRequired: string;
+  alreadyKnows: string;
+  cannotLearn: string;
+  noCompatible: string;
   sell: string;
   teach: string;
   useOnTeam: string;
@@ -306,6 +312,9 @@ function DetailPanel({
   const rarity = itemRarity(entry);
   const style = RARITY_STYLES[rarity];
   const isRareCandy = entry.name === "Rare Candy";
+  // Primer destino útil del CTA: compatible y que todavía no lo sepa.
+  const firstTeachable =
+    entry.learners.find((l) => l.canLearn && !l.alreadyKnown) ?? null;
 
   return (
     <aside
@@ -358,6 +367,36 @@ function DetailPanel({
         </div>
       )}
 
+      {/*
+        Una MT sin esta lista sólo decía qué movimiento enseña, no si servía para
+        algo: había que ir a /team y abrir los seis Pokémon uno por uno para
+        descubrir a quién se la podías dar. Cada compatible es además el atajo
+        directo a enseñársela, así que la decisión y la acción pasan a estar en
+        el mismo lugar.
+      */}
+      {entry.type === "MACHINE" && entry.learners.length > 0 && (
+        <div>
+          <p className="mb-1.5 text-[10px] uppercase tracking-[0.18em] text-on-surface-variant">
+            {labels.compatible}
+          </p>
+          <ul className="flex flex-col gap-1">
+            {entry.learners.map((learner) => (
+              <LearnerRow
+                key={learner.instanceId}
+                learner={learner}
+                labels={labels}
+                href={`${teamHref}?teach=${encodeURIComponent(entry.itemId)}&member=${encodeURIComponent(learner.instanceId)}`}
+              />
+            ))}
+          </ul>
+          <p className="mt-1.5 text-[10px] leading-snug text-on-surface-variant/60">
+            {entry.learners.some((l) => l.canLearn)
+              ? labels.noLevelRequired
+              : labels.noCompatible}
+          </p>
+        </div>
+      )}
+
       <div className="mt-1 flex flex-col gap-1.5 border-t border-white/10 pt-3">
         <a
           href={sellHref}
@@ -366,15 +405,33 @@ function DetailPanel({
           <span className="material-symbols-outlined text-[16px]!">sell</span>
           {labels.sell}
         </a>
-        {entry.type === "MACHINE" && (
-          <a
-            href={teamHref}
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-white/12 px-3 py-2 text-label-sm text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface"
-          >
-            <span className="material-symbols-outlined text-[16px]!">school</span>
-            {labels.teach}
-          </a>
-        )}
+        {/*
+          Antes apuntaba a `/team` pelado: el botón cumplía con navegar y ahí
+          moría, sin decirle a la pantalla de destino qué MT traía el jugador.
+          Ahora viaja el ítem y, si hay alguno compatible, también a quién
+          enseñársela — /team abre ese Pokémon con la MT ya desplegada. Se
+          deshabilita cuando no hay nadie compatible en vez de llevar a una
+          pantalla donde no se puede hacer nada.
+        */}
+        {entry.type === "MACHINE" &&
+          (firstTeachable ? (
+            <a
+              href={`${teamHref}?teach=${encodeURIComponent(entry.itemId)}&member=${encodeURIComponent(firstTeachable.instanceId)}`}
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-white/12 px-3 py-2 text-label-sm text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface"
+            >
+              <span className="material-symbols-outlined text-[16px]!">school</span>
+              {labels.teach}
+            </a>
+          ) : (
+            <span
+              aria-disabled
+              title={labels.noCompatible}
+              className="flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-white/8 px-3 py-2 text-label-sm text-on-surface-variant/40"
+            >
+              <span className="material-symbols-outlined text-[16px]!">school</span>
+              {labels.teach}
+            </span>
+          ))}
         {isRareCandy && (
           <a
             href={homeHref}
@@ -386,6 +443,73 @@ function DetailPanel({
         )}
       </div>
     </aside>
+  );
+}
+
+/**
+ * Un Pokémon del equipo frente a esta MT. Tres estados excluyentes: puede
+ * aprenderla (es un link accionable), ya la sabe, o la especie no es compatible.
+ * Los dos últimos se muestran apagados en vez de esconderse: saber que Machop
+ * NO puede aprender Rayo es tan útil como saber que Pikachu sí, y esconderlo
+ * deja al jugador preguntándose si falta alguien.
+ */
+function LearnerRow({
+  learner,
+  labels,
+  href,
+}: {
+  learner: TmLearner;
+  labels: InventoryLabels;
+  href: string;
+}) {
+  const actionable = learner.canLearn && !learner.alreadyKnown;
+  const state = !learner.canLearn
+    ? labels.cannotLearn
+    : learner.alreadyKnown
+      ? labels.alreadyKnows
+      : null;
+
+  const body = (
+    <>
+      <Image
+        src={learner.spriteUrl}
+        alt=""
+        width={28}
+        height={28}
+        unoptimized
+        className={`h-7 w-7 shrink-0 object-contain [image-rendering:pixelated] ${
+          learner.canLearn ? "" : "opacity-40 grayscale"
+        }`}
+      />
+      <span className="min-w-0 flex-1 truncate capitalize">{learner.name}</span>
+      {state ? (
+        <span className="shrink-0 text-[10px] text-on-surface-variant/50">{state}</span>
+      ) : (
+        <span className="material-symbols-outlined shrink-0 text-[16px]! text-tertiary">
+          arrow_forward
+        </span>
+      )}
+    </>
+  );
+
+  const base =
+    "flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[12px] transition";
+
+  return (
+    <li>
+      {actionable ? (
+        <a
+          href={href}
+          className={`${base} border-tertiary/25 bg-tertiary/[0.06] text-on-surface hover:border-tertiary/50 hover:bg-tertiary/10`}
+        >
+          {body}
+        </a>
+      ) : (
+        <div className={`${base} border-white/[0.06] bg-white/[0.02] text-on-surface-variant/70`}>
+          {body}
+        </div>
+      )}
+    </li>
   );
 }
 

@@ -39,6 +39,25 @@ export const CATEGORY_ICON: Record<InventoryCategory, string> = {
  */
 export const BACKPACK_CAPACITY = 300;
 
+/**
+ * Un Pokémon del equipo frente a una MT concreta.
+ *
+ * Las MT no piden nivel: el seed las graba con `learnLevel: null` y la
+ * compatibilidad sale sólo de que exista la fila `SpeciesMove` con
+ * `method: MACHINE`. Por eso acá no hay ningún campo de nivel — no existe el
+ * dato, y mostrar uno inventado sería peor que no mostrar nada.
+ */
+export type TmLearner = {
+  instanceId: string;
+  name: string;
+  spriteUrl: string;
+  level: number;
+  /** La especie figura en la tabla de MT para ese movimiento. */
+  canLearn: boolean;
+  /** Ya tiene el movimiento en alguno de sus cuatro slots. */
+  alreadyKnown: boolean;
+};
+
 export type InventoryEntry = {
   itemId: string;
   name: string;
@@ -48,6 +67,8 @@ export type InventoryEntry = {
   buyPrice: number;
   /** Sólo MACHINE: el movimiento que enseña. */
   moveName: string | null;
+  /** Sólo MACHINE: el equipo actual, con su estado frente a esta MT. */
+  learners: TmLearner[];
 };
 
 export function totalUnits(entries: InventoryEntry[]): number {

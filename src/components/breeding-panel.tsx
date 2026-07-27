@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { breedPair, hatchEgg } from "@/actions/breeding";
 import { BREEDING_COST, BREEDING_MIN_LEVEL } from "@/lib/breeding";
+import { announceCoinDelta } from "@/lib/coin-fx";
 
 export type BreedCandidate = {
   id: string;
@@ -49,8 +50,10 @@ export function BreedingPanel({
     if (picked.length !== 2) return;
     startTransition(async () => {
       const result = await breedPair(locale, picked[0], picked[1]);
-      if (result.ok) setPicked([]);
-      else setError(result.error);
+      if (result.ok) {
+        announceCoinDelta(-BREEDING_COST);
+        setPicked([]);
+      } else setError(result.error);
     });
   }
 

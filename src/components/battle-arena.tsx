@@ -11,6 +11,7 @@ import { switchPokemon } from "@/actions/switch-pokemon";
 import { applyBattleItem } from "@/actions/use-item";
 import { setPokemonNickname } from "@/actions/rename-pokemon";
 import { abandonGymRun } from "@/actions/abandon-gym-run";
+import { announceCoinDelta } from "@/lib/coin-fx";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { BattleResult } from "@/components/battle-result";
 import { GymBadgePopup } from "@/components/gym-badge-popup";
@@ -678,6 +679,7 @@ export function BattleArena({
     }
     if (result.coinsGained > 0) {
       setCoinsGained(result.coinsGained);
+      announceCoinDelta(result.coinsGained);
     }
 
     if (result.badgeEarned) {

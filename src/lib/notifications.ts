@@ -11,6 +11,8 @@ export type NotificationPayload = {
   leaderName?: string;
   rematch?: boolean;
   opponentName?: string;
+  /** Username del otro entrenador (amistad). */
+  trainerName?: string;
 };
 
 export type NotificationDTO = {
@@ -24,6 +26,10 @@ export type NotificationDTO = {
 
 const HISTORY_LIMIT = 30;
 
+function newNotificationId(): string {
+  return `cm${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+}
+
 export async function createNotification(input: {
   userId: string;
   type: NotificationType;
@@ -33,6 +39,27 @@ export async function createNotification(input: {
   tx?: Prisma.TransactionClient;
 }) {
   const db = input.tx ?? prisma;
+
+  // FRIEND_* puede fallar con un Prisma Client cacheado por Turbopack aunque el
+  // enum ya exista en Postgres ("Invalid value for argument type"). El insert
+  // crudo usa el enum de la DB y no pasa por el validador DMMF viejo.
+  if (input.type === "FRIEND_REQUEST" || input.type === "FRIEND_ACCEPTED") {
+    const id = newNotificationId();
+    const payload = JSON.stringify(input.payload ?? {});
+    await db.$executeRaw`
+      INSERT INTO "Notification" ("id", "userId", "type", "payload", "href", "createdAt")
+      VALUES (
+        ${id},
+        ${input.userId},
+        CAST(${input.type} AS "NotificationType"),
+        CAST(${payload} AS jsonb),
+        ${input.href ?? null},
+        NOW()
+      )
+    `;
+    return { id };
+  }
+
   return db.notification.create({
     data: {
       userId: input.userId,
@@ -211,4 +238,34 @@ export async function notifyPvpResult(input: {
       href: `/pvp/${input.matchId}`,
     }),
   ]);
+}
+
+/** Solicitud de amistad recibida → campana del destinatario. */
+export async function notifyFriendRequest(input: {
+  toUserId: string;
+  fromUserName: string;
+  tx?: Prisma.TransactionClient;
+}) {
+  await createNotification({
+    userId: input.toUserId,
+    type: "FRIEND_REQUEST",
+    payload: { trainerName: input.fromUserName },
+    href: "/friends?filter=requests",
+    tx: input.tx,
+  });
+}
+
+/** Amistad aceptada → campana de quien envió la solicitud. */
+export async function notifyFriendAccepted(input: {
+  toUserId: string;
+  friendName: string;
+  tx?: Prisma.TransactionClient;
+}) {
+  await createNotification({
+    userId: input.toUserId,
+    type: "FRIEND_ACCEPTED",
+    payload: { trainerName: input.friendName },
+    href: "/friends",
+    tx: input.tx,
+  });
 }

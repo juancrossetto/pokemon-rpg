@@ -30,6 +30,8 @@ model User {
   energyMax       Int       @default(20)
   energyUpdatedAt DateTime  @default(now()) // para calcular regeneración sin cron
   lastHealAt      DateTime? // Centro Pokémon: la curación gratis tiene cooldown; pagar lo saltea
+  /// Presencia social: se actualiza al cargar Friends / heartbeat. Null = nunca visto online.
+  lastSeenAt      DateTime?
   createdAt       DateTime  @default(now())
 
   // Ladder PvP (dossier fase 4). Rating Elo + récord; segmento del ranking PvP.
@@ -64,6 +66,12 @@ model User {
   weeklyRewardClaims WeeklyRewardClaim[]
   eventMissionClaims EventMissionClaim[]
   rewardLedger       RewardLedger[]
+  friendshipsAsA     Friendship[]         @relation("FriendshipA")
+  friendshipsAsB     Friendship[]         @relation("FriendshipB")
+  friendRequestsFrom FriendRequest[]      @relation("FriendRequestFrom")
+  friendRequestsTo   FriendRequest[]      @relation("FriendRequestTo")
+  blocksInitiated    UserBlock[]          @relation("Blocker")
+  blocksReceived     UserBlock[]          @relation("Blocked")
 }
 
 // ---------- Notificaciones in-app ----------
@@ -78,6 +86,8 @@ enum NotificationType {
   GYM_TM_REWARD
   PVP_WON
   PVP_LOST
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
 }
 
 model Notification {
@@ -539,6 +549,64 @@ model MarketListing {
   @@index([buyerId, status])
   @@index([buyerId, status, buyerClaimedAt])
   @@index([status, expiresAt]) // barrido de vencidas
+}
+
+// ---------- Amigos (grafo social) ----------
+// Friendship canónica: userAId < userBId lexicográfico para evitar duplicados.
+// Favoritos y presencia son por-usuario / derivados — no hay "estado Discord".
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+model FriendRequest {
+  id          String              @id @default(cuid())
+  fromUserId  String
+  toUserId    String
+  status      FriendRequestStatus @default(PENDING)
+  createdAt   DateTime            @default(now())
+  respondedAt DateTime?
+
+  fromUser User @relation("FriendRequestFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("FriendRequestTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId, status])
+  @@index([fromUserId, status])
+}
+
+model Friendship {
+  id           String   @id @default(cuid())
+  userAId      String
+  userBId      String
+  createdAt    DateTime @default(now())
+  /// Favorito marcado por A (el dueño de userAId).
+  favoriteForA Boolean  @default(false)
+  /// Favorito marcado por B.
+  favoriteForB Boolean  @default(false)
+
+  userA User @relation("FriendshipA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("FriendshipB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
 }
 
 // ---------- Clanes ----------

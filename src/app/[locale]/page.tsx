@@ -93,11 +93,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   // reclamar, así la pantalla de inicio no gana una franja vacía.
   const eventsSummary = await loadEventsSummary(userId);
   const tEvents = await getTranslations("events");
-  // El sprite del líder es la ilustración del modal: ya está cargado y hace
-  // que el panel se sienta parte de la partida del jugador.
-  const leadSpriteUrl = pokemon[0]
-    ? spriteFor(pokemon[0].species.spriteUrl, pokemon[0].isShiny)
-    : null;
   const giftLabels = {
     eyebrow: tEvents("eyebrow"),
     title: tEvents("giftTitle"),
@@ -277,6 +272,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                   unknownSpecies: tt("drawer.unknownSpecies"),
                   evolveAtLevel: tt("drawer.evolveAtLevel", { level: "{level}" }),
                   evolveByTrade: tt("drawer.evolveByTrade"),
+                  evolveTradeItemHint: tt("drawer.evolveTradeItemHint"),
                   evolveStones: tt.raw("drawer.evolveStones") as Record<string, string>,
                   evolveReadyShort: tt("drawer.evolveReadyShort"),
                   evolveNeedItem: tt("drawer.evolveNeedItem"),
@@ -318,7 +314,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
               days={eventsSummary.daily.days}
               currentDay={eventsSummary.daily.currentDay}
               total={eventsSummary.daily.length}
-              leadSpriteUrl={leadSpriteUrl}
               labels={giftLabels}
               locale={locale}
             />

@@ -47,6 +47,7 @@ export function SquadCardContextMenu({
   onHealed,
   onLeveledUp,
   onPpRestored,
+  onFlagsChange,
   children,
 }: {
   instanceId: string;
@@ -70,6 +71,7 @@ export function SquadCardContextMenu({
     restoredBy: number;
     allMoves: boolean;
   }) => void;
+  onFlagsChange?: (next: { isFavorite?: boolean; isTradeLocked?: boolean }) => void;
   children: ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -92,6 +94,7 @@ export function SquadCardContextMenu({
     onHealed,
     onLeveledUp,
     onPpRestored,
+    onFlagsChange,
   });
   const { counts, busy, feedback, toast, fx, fxMeta } = actions;
 
