@@ -308,6 +308,13 @@ body {
   text-transform: uppercase;
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
 }
+@media (max-width: 767px) {
+  .battle-cmd-btn {
+    height: 3.5rem;
+    min-height: 3.5rem;
+    max-height: 3.5rem;
+  }
+}
 @media (min-width: 768px) {
   .battle-cmd-btn {
     gap: 0.35rem;
@@ -340,6 +347,7 @@ body {
 
 .battle-move-card {
   width: 100%;
+  min-width: 0;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(26, 26, 26, 0.88);
@@ -352,6 +360,17 @@ body {
 }
 .battle-move-card:active:not(:disabled) {
   transform: scale(0.99);
+}
+@media (max-width: 767px) {
+  .battle-move-card-compact {
+    padding: 0.45rem 0.5rem;
+  }
+}
+@media (min-width: 768px) {
+  .battle-move-card-dense {
+    padding: 0.5rem 0.6rem;
+    border-radius: 0.625rem;
+  }
 }
 
 .battle-bag-card {
@@ -370,6 +389,12 @@ body {
 }
 .battle-bag-card:active:not(:disabled) {
   transform: scale(0.99);
+}
+@media (max-width: 767px) {
+  .battle-bag-card {
+    padding: 0.5rem 0.65rem;
+    gap: 0.5rem;
+  }
 }
 
 @keyframes hp-plate-critical {

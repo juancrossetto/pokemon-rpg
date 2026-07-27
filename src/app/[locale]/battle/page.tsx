@@ -18,6 +18,8 @@ import {
 import { loadMapLocations } from "@/lib/campaign/map-data";
 import { spriteFor } from "@/lib/shiny";
 import { getRouteTrainer } from "@/lib/campaign/trainers";
+import { avatarById, showdownTrainerSpriteUrl } from "@/lib/avatars";
+import { gymLeaderPortraitUrl, gymTypeTrainerSpriteSlug } from "@/lib/gym-art";
 
 const ENCOUNTER_ENERGY_COST = 1;
 
@@ -182,7 +184,7 @@ export default async function BattlePage({
     );
     const currentSlot = battle.gymPokemonSlot ?? 1;
 
-    const [pokeballs, potions, partyRows, opponentTeam] = await Promise.all([
+    const [pokeballs, potions, partyRows, opponentTeam, userRow] = await Promise.all([
       prisma.inventoryItem.findMany({
         where: { userId, quantity: { gt: 0 }, item: { type: "POKEBALL" } },
         include: { item: true },
@@ -211,6 +213,10 @@ export default async function BattlePage({
               orderBy: { slot: "asc" },
             })
           : Promise.resolve([]),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatarId: true },
+      }),
     ]);
 
     const opponentParty: OpponentPartyMember[] =
@@ -239,10 +245,22 @@ export default async function BattlePage({
       ? tCampaign(routeTrainer.nameKey)
       : (battle.gymTrainer?.name ?? battle.gym?.leaderName ?? null);
 
+    const trainerPortraitUrl = avatarById(userRow?.avatarId)?.src ?? null;
+    let opponentPortraitUrl: string | null = null;
+    if (routeTrainer) {
+      opponentPortraitUrl = showdownTrainerSpriteUrl(routeTrainer.spriteSlug);
+    } else if (battle.gymTrainerId && battle.gym?.type) {
+      opponentPortraitUrl = showdownTrainerSpriteUrl(gymTypeTrainerSpriteSlug(battle.gym.type));
+    } else if (battle.gym?.leaderName) {
+      opponentPortraitUrl = gymLeaderPortraitUrl(battle.gym.leaderName);
+    }
+
     initialBattle = {
       battleId: battle.id,
       locale,
       trainerName: session.user.name ?? "Trainer",
+      trainerPortraitUrl,
+      opponentPortraitUrl,
       opponentName,
       pokeballs: pokeballs.map((p) => ({
         itemId: p.itemId,

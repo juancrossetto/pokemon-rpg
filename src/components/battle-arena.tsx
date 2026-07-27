@@ -111,6 +111,8 @@ export interface BattleArenaProps {
   battleId: string;
   locale: string;
   trainerName: string;
+  trainerPortraitUrl: string | null;
+  opponentPortraitUrl: string | null;
   opponentName: string | null;
   player: Combatant & { instanceId: string; currentHp: number; maxHp: number };
   wild: Combatant & { currentHp: number; maxHp: number; types: string[]; isShiny?: boolean };
@@ -137,6 +139,8 @@ export function BattleArena({
   battleId,
   locale,
   trainerName,
+  trainerPortraitUrl,
+  opponentPortraitUrl,
   opponentName,
   player,
   wild,
@@ -1106,7 +1110,7 @@ export function BattleArena({
   const playerSpriteClass = [
     // Más grande en primer plano: los ani-back de Showdown se ven más chicos
     // que los ani front del rival con el mismo box.
-    "w-24 h-24 md:w-[13.5rem] md:h-[13.5rem] object-contain drop-shadow-lg origin-bottom",
+    "w-[5.25rem] h-[5.25rem] md:w-[13.5rem] md:h-[13.5rem] object-contain drop-shadow-lg origin-bottom",
     attackingSide === "player" ? (physicalLunge ? "sprite-lunge-right-hard" : "sprite-lunge-right") : "",
     shakingSide === "player" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "player" ? "sprite-faint" : "",
@@ -1119,7 +1123,7 @@ export function BattleArena({
     .join(" ");
 
   const wildSpriteClass = [
-    "w-24 h-24 md:w-40 md:h-40 object-contain drop-shadow-lg origin-bottom",
+    "w-[5.25rem] h-[5.25rem] md:w-40 md:h-40 object-contain drop-shadow-lg origin-bottom",
     attackingSide === "wild" ? (physicalLunge ? "sprite-lunge-left-hard" : "sprite-lunge-left") : "",
     shakingSide === "wild" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "wild" ? "sprite-faint" : "",
@@ -1133,10 +1137,13 @@ export function BattleArena({
 
   const emptyPlayerSlots = Math.max(0, 6 - party.length);
   const emptyOpponentSlots = Math.max(0, 6 - opponentParty.length);
+  const commandExpanded = view !== "menu";
 
   return (
-    <div className="flex flex-1 flex-col min-h-0 overflow-hidden md:overflow-visible px-2 py-1 sm:px-margin-mobile md:px-margin-desktop md:py-6 max-md:h-[calc(100dvh-6.5rem)] max-md:max-h-[calc(100dvh-6.5rem)]">
-      <div className="mx-auto w-full max-w-6xl flex flex-col gap-1 md:gap-3 flex-1 min-h-0 md:flex-none md:h-auto">
+    <div className="flex flex-1 flex-col min-h-0 overflow-hidden px-2 py-1 sm:px-margin-mobile md:px-margin-desktop md:py-4 max-md:h-[calc(100dvh-6.5rem)] max-md:max-h-[calc(100dvh-6.5rem)] md:h-[calc(100dvh-4rem)] md:max-h-[calc(100dvh-4rem)]">
+      <div className="mx-auto w-full max-w-6xl flex flex-col gap-1 md:gap-2 flex-1 min-h-0 overflow-hidden md:h-full">
+        {/* Top — mayor parte del alto en mobile */}
+        <div className="flex min-h-0 flex-col gap-1 md:gap-2 max-md:flex-1 max-md:min-h-[52%] md:flex-1 md:min-h-0">
         {/* Mobile: opponent balls — solo íconos, sin título largo */}
         <div className="lg:hidden shrink-0">
           <div
@@ -1160,10 +1167,10 @@ export function BattleArena({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[148px_minmax(0,1fr)_148px] gap-1 md:gap-3 items-stretch flex-1 min-h-0 md:flex-none">
+        <div className="grid grid-cols-1 lg:grid-cols-[148px_minmax(0,1fr)_148px] gap-1 md:gap-2 items-stretch flex-1 min-h-0 min-w-0">
           {/* Player sidebar (desktop) */}
           <div className="hidden lg:block">
-            <PartySidebar name={trainerName} portraitUrl={null} align="left">
+            <PartySidebar name={trainerName} portraitUrl={trainerPortraitUrl} align="left">
               {party.map((m) => (
                 <PartyIcon
                   key={m.instanceId}
@@ -1182,7 +1189,7 @@ export function BattleArena({
 
           {/* Arena */}
           <div
-            className={`battle-arena-field relative overflow-hidden rounded-xl border border-white/10 flex-1 min-h-0 lg:min-h-[320px] ${
+            className={`battle-arena-field relative overflow-hidden rounded-xl border border-white/10 flex-1 min-h-0 md:min-h-[272px] ${
               arenaFlash ? "arena-type-flash" : ""
             }`}
             style={
@@ -1292,7 +1299,7 @@ export function BattleArena({
             )}
 
             {/* Opponent sprite — upper right */}
-            <div className="absolute right-[8%] top-[18%] md:right-[12%] md:top-[14%] z-[1]">
+            <div className="absolute right-[6%] top-[14%] md:right-[12%] md:top-[14%] z-[1]">
               <span className="sprite-ground-shadow absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
               {damagePopup?.side === "wild" && (
                 <span
@@ -1337,7 +1344,7 @@ export function BattleArena({
             </div>
 
             {/* Player sprite — lower left */}
-            <div className="absolute left-[4%] bottom-[10%] md:left-[8%] md:bottom-[8%] z-[1]">
+            <div className="absolute left-[3%] bottom-[6%] md:left-[8%] md:bottom-[8%] z-[1]">
               <span className="sprite-ground-shadow sprite-ground-shadow-player absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
               {damagePopup?.side === "player" && (
                 <span
@@ -1392,11 +1399,7 @@ export function BattleArena({
 
           {/* Opponent sidebar (desktop) */}
           <div className="hidden lg:block">
-            <PartySidebar
-              name={foeLabel}
-              portraitUrl={isGymBattle ? leaderPortrait : null}
-              align="right"
-            >
+            <PartySidebar name={foeLabel} portraitUrl={opponentPortraitUrl} align="right">
               {opponentParty.map((m) => (
                 <PartyIcon
                   key={`o-${m.slot}`}
@@ -1436,14 +1439,25 @@ export function BattleArena({
             ))}
           </div>
         </div>
+        </div>
 
-        <div className="grid grid-cols-2 gap-1 md:gap-2 items-stretch shrink-0 h-[8.25rem] md:h-auto md:min-h-[11rem]">
-          {/* Log */}
-          <div className="glass-panel rounded-xl border border-white/10 px-2 py-1.5 md:px-4 md:py-3 overflow-y-auto flex flex-col gap-0.5 bg-black/35 min-h-0">
+        <div
+          className={`grid min-w-0 gap-1 md:gap-2 min-h-0 shrink-0 md:h-[13rem] md:max-h-[13rem] ${
+            commandExpanded
+              ? "max-md:flex-1 max-md:min-h-0 max-md:h-auto max-md:max-h-none items-stretch"
+              : "max-md:shrink-0 max-md:items-start"
+          } ${commandExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2"}`}
+        >
+          {/* Log — en submenús mobile cede espacio a los comandos */}
+          <div
+            className={`glass-panel rounded-xl border border-white/10 px-2 py-1.5 md:px-4 md:py-3 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 bg-black/35 min-h-0 min-w-0 max-md:max-h-[7.5rem] md:max-h-full ${
+              commandExpanded ? "hidden md:flex" : ""
+            }`}
+          >
             {log.map((entry, i) => (
               <p
                 key={i}
-                className={`text-[10px] md:text-label-md leading-snug md:leading-relaxed ${
+                className={`text-[10px] md:text-label-md leading-snug md:leading-relaxed break-words [overflow-wrap:anywhere] ${
                   entry.side === "player"
                     ? "text-left text-on-surface"
                     : entry.side === "wild"
@@ -1456,7 +1470,7 @@ export function BattleArena({
               </p>
             ))}
             {view === "menu" && !isAnimating && outcome === "ongoing" && (
-              <p className="mt-auto pt-1 border-t border-dashed border-white/15 text-[10px] md:text-label-md font-bold text-on-surface leading-snug">
+              <p className="mt-auto pt-1 border-t border-dashed border-white/15 text-[10px] md:text-label-md font-bold text-on-surface leading-snug break-words [overflow-wrap:anywhere]">
                 {t("whatWillDo", { name: activePlayer.name.toUpperCase() })}
               </p>
             )}
@@ -1464,9 +1478,9 @@ export function BattleArena({
           </div>
 
           {/* Comandos */}
-          <div key={view} className="panel-swap min-h-0 h-full overflow-y-auto">
+          <div key={view} className="panel-swap min-h-0 min-w-0 flex-1 overflow-hidden flex flex-col">
             {view === "menu" && (
-              <div className="grid grid-cols-2 gap-1 md:gap-2 h-full">
+              <div className="grid grid-cols-2 gap-1 md:gap-2 md:h-full max-md:auto-rows-[3.5rem]">
                 <button
                   type="button"
                   disabled={isAnimating}
@@ -1512,11 +1526,11 @@ export function BattleArena({
             )}
 
             {view === "moves" && (
-              <div className="flex flex-col gap-2 h-full">
-                <div className="flex items-center justify-between gap-2 px-0.5">
-                  <div>
-                    <p className="text-sm font-bold text-primary capitalize">{activePlayer.name}</p>
-                    <p className="text-label-sm uppercase text-on-surface-variant tracking-wider">
+              <div className="flex flex-col gap-1 h-full min-h-0">
+                <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
+                  <div className="min-w-0 flex items-baseline gap-2">
+                    <p className="text-xs md:text-sm font-bold text-primary capitalize truncate">{activePlayer.name}</p>
+                    <p className="hidden md:block text-[10px] uppercase text-on-surface-variant tracking-wider shrink-0">
                       {t("selectCommand")}
                     </p>
                   </div>
@@ -1524,13 +1538,16 @@ export function BattleArena({
                     type="button"
                     disabled={isAnimating}
                     onClick={() => setView("menu")}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40"
+                    className="flex h-7 w-7 md:h-7 md:w-7 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40 shrink-0"
                     aria-label={t("back")}
                   >
-                    <span className="material-symbols-outlined text-[18px]!">arrow_back</span>
+                    <span className="material-symbols-outlined text-[16px]!">arrow_back</span>
                   </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+                <p className="text-[10px] uppercase text-on-surface-variant tracking-wider px-0.5 shrink-0 md:hidden">
+                  {t("selectCommand")}
+                </p>
+                <div className="grid grid-cols-2 grid-rows-2 gap-1 md:gap-1.5 flex-1 min-h-0 min-w-0 overflow-x-hidden max-md:overflow-y-auto md:overflow-hidden">
                   {activeMoves.every((m) => m.pp <= 0) && (
                     <button
                       type="button"
@@ -1552,28 +1569,28 @@ export function BattleArena({
                         type="button"
                         disabled={isAnimating || m.pp <= 0 || lockedOut}
                         onClick={() => handleMove(m.moveId)}
-                        className="battle-move-card text-left disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="battle-move-card battle-move-card-compact battle-move-card-dense text-left h-full min-h-0 disabled:opacity-40 disabled:cursor-not-allowed"
                         style={{ borderColor: `${color}55` }}
                       >
-                        <div className="flex justify-between items-start gap-2">
-                          <span className="text-base font-bold text-white leading-tight">{m.name}</span>
+                        <div className="flex justify-between items-start gap-1 min-w-0">
+                          <span className="text-xs md:text-sm font-bold text-white leading-tight break-words [overflow-wrap:anywhere]">{m.name}</span>
                           <span
-                            className="shrink-0 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border"
+                            className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] md:text-[10px] uppercase font-bold tracking-wide border"
                             style={{ backgroundColor: `${color}33`, color, borderColor: `${color}66` }}
                           >
                             {m.type}
                           </span>
                         </div>
-                        <div className="mt-3 flex justify-between items-end gap-2">
+                        <div className="mt-1 md:mt-1 flex justify-between items-end gap-1">
                           <div>
-                            <p className="text-[10px] uppercase tracking-wider text-white/45">{t("powerLabel")}</p>
-                            <p className="text-label-md text-white font-bold tabular-nums">
+                            <p className="text-[9px] uppercase tracking-wider text-white/45">{t("powerLabel")}</p>
+                            <p className="text-[11px] md:text-xs text-white font-bold tabular-nums">
                               {m.power ?? "—"}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-[10px] uppercase tracking-wider text-white/45">{t("ppLabel")}</p>
-                            <p className="text-label-md text-white/90 font-bold tabular-nums flex items-center justify-end gap-1">
+                            <p className="text-[9px] uppercase tracking-wider text-white/45">{t("ppLabel")}</p>
+                            <p className="text-[11px] md:text-xs text-white/90 font-bold tabular-nums flex items-center justify-end gap-1">
                               {lockedOut && (
                                 <span className="material-symbols-outlined text-[14px]! text-amber-300">lock</span>
                               )}
@@ -1581,7 +1598,7 @@ export function BattleArena({
                             </p>
                           </div>
                         </div>
-                        <p className={`text-label-sm mt-2 ${eff.className}`}>{eff.label}</p>
+                        <p className={`text-[10px] mt-0.5 leading-tight truncate ${eff.className}`}>{eff.label}</p>
                       </button>
                     );
                   })}
@@ -1590,11 +1607,11 @@ export function BattleArena({
             )}
 
             {view === "bag" && (
-              <div className="flex flex-col gap-2 h-full">
-                <div className="flex items-center justify-between gap-2 px-0.5">
+              <div className="flex flex-col gap-1 md:gap-2 h-full min-h-0">
+                <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
                   <div>
-                    <p className="text-sm font-bold text-primary">{t("bagTitle")}</p>
-                    <p className="text-label-sm uppercase text-on-surface-variant tracking-wider">
+                    <p className="text-xs md:text-sm font-bold text-primary">{t("bagTitle")}</p>
+                    <p className="text-[10px] md:text-label-sm uppercase text-on-surface-variant tracking-wider">
                       {t("selectCommand")}
                     </p>
                   </div>
@@ -1602,13 +1619,13 @@ export function BattleArena({
                     type="button"
                     disabled={isAnimating}
                     onClick={() => setView("menu")}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40"
+                    className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40 shrink-0"
                     aria-label={t("back")}
                   >
-                    <span className="material-symbols-outlined text-[18px]!">arrow_back</span>
+                    <span className="material-symbols-outlined text-[16px]! md:text-[18px]!">arrow_back</span>
                   </button>
                 </div>
-                <div className="flex flex-col gap-2 flex-1 overflow-y-auto max-h-56">
+                <div className="flex flex-col gap-1.5 md:gap-2 flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
                   {!hasBalls && !hasPotions && (
                     <p className="text-label-md text-on-surface-variant text-center py-6">{t("bagEmpty")}</p>
                   )}
@@ -1670,25 +1687,25 @@ export function BattleArena({
             )}
 
             {view === "team" && (
-              <div className="flex flex-col gap-2 h-full">
-                <div className="flex items-center justify-between gap-2 px-0.5">
-                  <p className="text-sm font-bold text-primary">{t("pokemonMenu")}</p>
+              <div className="flex flex-col gap-1 md:gap-2 h-full min-h-0">
+                <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
+                  <p className="text-xs md:text-sm font-bold text-primary">{t("pokemonMenu")}</p>
                   {!mustSwitch && (
                     <button
                       type="button"
                       disabled={isAnimating}
                       onClick={() => setView("menu")}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40"
+                      className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40 shrink-0"
                       aria-label={t("back")}
                     >
-                      <span className="material-symbols-outlined text-[18px]!">arrow_back</span>
+                      <span className="material-symbols-outlined text-[16px]! md:text-[18px]!">arrow_back</span>
                     </button>
                   )}
                 </div>
                 {mustSwitch && (
-                  <p className="text-label-md text-error text-center mb-1">{t("mustSwitchPrompt")}</p>
+                  <p className="text-label-sm text-error text-center shrink-0">{t("mustSwitchPrompt")}</p>
                 )}
-                <div className="flex flex-col gap-2 overflow-y-auto max-h-56">
+                <div className="flex flex-col gap-1.5 md:gap-2 flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
                   {teamRoster.map((m) => {
                     const fainted = m.currentHp <= 0;
                     const hpPct = Math.max(0, Math.min(100, (m.currentHp / m.maxHp) * 100));
@@ -1736,6 +1753,7 @@ export function BattleArena({
             )}
           </div>
         </div>
+        <div className="max-md:h-[100px] max-md:shrink-0 md:hidden" aria-hidden="true" />
       </div>
     </div>
   );
@@ -1754,12 +1772,21 @@ function PartySidebar({
   compact?: boolean;
   children: ReactNode;
 }) {
+  const portraitIsRemote = portraitUrl?.startsWith("http") ?? false;
+
   if (compact) {
     return (
       <div className="glass-panel rounded-lg border border-white/10 px-3 py-2 flex items-center gap-3">
         {portraitUrl && (
           <div className="w-10 h-12 rounded overflow-hidden border border-white/15 shrink-0 bg-surface-container-high">
-            <Image src={portraitUrl} alt={name} width={40} height={48} className="w-full h-full object-cover object-top" />
+            <Image
+              src={portraitUrl}
+              alt={name}
+              width={40}
+              height={48}
+              unoptimized={portraitIsRemote}
+              className="w-full h-full object-cover object-top"
+            />
           </div>
         )}
         <div className="min-w-0 flex-1">
@@ -1778,7 +1805,7 @@ function PartySidebar({
   }
 
   return (
-    <div className="glass-panel rounded-xl border border-white/10 p-2.5 h-full flex flex-col gap-2">
+    <div className="glass-panel rounded-xl border border-white/10 p-2.5 h-full flex flex-col gap-2 min-w-0">
       <p
         title={name}
         className={`text-label-sm text-on-surface font-bold leading-tight px-0.5 line-clamp-2 ${
@@ -1788,8 +1815,15 @@ function PartySidebar({
         {name}
       </p>
       {portraitUrl && (
-        <div className="mx-auto w-16 h-20 rounded-lg overflow-hidden border border-white/15 bg-surface-container-high">
-          <Image src={portraitUrl} alt={name} width={64} height={80} className="w-full h-full object-cover object-top" />
+        <div className="mx-auto w-20 h-24 shrink-0 rounded-lg overflow-hidden border border-white/15 bg-surface-container-high">
+          <Image
+            src={portraitUrl}
+            alt={name}
+            width={80}
+            height={96}
+            unoptimized={portraitIsRemote}
+            className="w-full h-full object-cover object-top"
+          />
         </div>
       )}
       <div className="grid grid-cols-2 gap-1.5 mt-auto">{children}</div>

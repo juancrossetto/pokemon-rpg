@@ -89,7 +89,7 @@ export default async function LocaleLayout({
           <Providers>
             <CombatLockGate lock={combatLock} />
             <SiteHeader combatLock={combatLock} />
-            <div className="relative z-10 flex flex-1 flex-col pb-14 pt-12 md:pb-0 md:pt-16">
+            <div className="relative z-10 flex flex-1 flex-col min-h-0 pb-14 pt-12 md:pb-0 md:pt-16">
               {children}
             </div>
           </Providers>

@@ -32,6 +32,22 @@ export function gymLeaderPortraitUrl(leaderName: string): string | null {
   return slug ? `/gyms/portraits/${slug}.png` : null;
 }
 
+/** Sprite genérico de entrenador del gimnasio (pre-líder). */
+const GYM_TRAINER_SPRITE: Record<string, string> = {
+  rock: "hiker",
+  water: "swimmer",
+  electric: "gentleman",
+  grass: "picnicker",
+  poison: "ninja",
+  psychic: "psychic",
+  fire: "blackbelt",
+  ground: "worker",
+};
+
+export function gymTypeTrainerSpriteSlug(gymType: string): string {
+  return GYM_TRAINER_SPRITE[gymType] ?? "pokemontrainer";
+}
+
 /** Dificultad visual 1–5 a partir del orden del gimnasio (1..8). */
 export function gymDifficultyStars(order: number): number {
   return Math.min(5, Math.max(1, Math.ceil((order * 5) / 8)));
