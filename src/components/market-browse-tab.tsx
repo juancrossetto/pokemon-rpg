@@ -2,10 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
 import { MarketFilterForm } from "@/components/market-filter-form";
-import {
-  MarketHubSidebar,
-  MarketQuickChips,
-} from "@/components/market-hub-chrome";
+import { MarketCategoryRail } from "@/components/market-category-rail";
 import { MarketHubPanel, MarketStatsBar } from "@/components/market-hub-panel";
 import { MarketItemCard, MarketPokemonCard } from "@/components/market-listing-cards";
 import {
@@ -138,14 +135,20 @@ export async function MarketBrowseTab({
     filters.sort !== "recent";
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex min-w-0 flex-col gap-4 sm:gap-5">
       <MarketStatsBar stats={hubStats} />
 
-      <div className="grid gap-5 lg:grid-cols-[200px_minmax(0,1fr)_240px] xl:grid-cols-[220px_minmax(0,1fr)_260px]">
-        <MarketHubSidebar filters={filters} />
+      {/*
+        `minmax(0,1fr)` en la columna central y `min-w-0` en cada nivel: sin eso
+        una card ancha (nombre largo, precio grande) estira la columna. La
+        sidebar se declara `hidden lg:block` dentro del propio componente, así
+        que en mobile la grilla es de una sola columna real.
+      */}
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-5 xl:grid-cols-[220px_minmax(0,1fr)_260px]">
+        <MarketCategoryRail filters={filters} variant="sidebar" />
 
-        <div className="flex min-w-0 flex-col gap-4">
-          <MarketQuickChips filters={filters} />
+        <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+          <MarketCategoryRail filters={filters} variant="rail" />
 
           <MarketFilterForm
             q={filters.q}
@@ -167,6 +170,9 @@ export async function MarketBrowseTab({
               maxPrice: t("filters.maxPrice"),
               price: t("hub.price"),
               reset: t("hub.reset"),
+              openFilters: t("filters.open"),
+              filtersTitle: t("filters.title"),
+              close: t("filters.close"),
               sort: {
                 recent: t("filters.sort.recent"),
                 price_asc: t("filters.sort.price_asc"),
@@ -176,13 +182,33 @@ export async function MarketBrowseTab({
             }}
           />
 
+          {/* Cantidad de resultados y página: en mobile es lo único que dice
+              cuántos productos hay, porque la paginación queda al final. */}
+          {listings.length > 0 && (
+            <p className="flex items-baseline justify-between gap-2 text-[11px] text-on-surface-variant">
+              <span>{t("resultsCount", { count: total })}</span>
+              {totalPages > 1 && (
+                <span className="font-mono">
+                  {t("pagination.pageOf", { page: filters.page, total: totalPages })}
+                </span>
+              )}
+            </p>
+          )}
+
           {listings.length === 0 ? (
             <EmptyState
               icon="storefront"
               label={hasFilters ? t("filters.noResults") : t("emptyBrowse")}
             />
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            /*
+              `auto-fill` + `minmax` en vez de un número fijo de columnas: la
+              grilla decide según el ancho real disponible, así que pasa de 1 a
+              5 columnas sola y nunca deja cards gigantes. El mínimo sube de
+              160px a 200px a partir de `sm` para que en 320–360px entre una
+              sola columna legible en lugar de dos apretadas.
+            */
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,200px),1fr))] gap-2.5 min-[420px]:grid-cols-[repeat(auto-fill,minmax(min(100%,168px),1fr))] sm:gap-3.5 lg:grid-cols-[repeat(auto-fill,minmax(min(100%,215px),1fr))]">
               {listings.map((listing) => {
                 const isOwn = listing.sellerId === userId;
                 const canAfford = coins >= listing.price;
@@ -224,17 +250,17 @@ export async function MarketBrowseTab({
           )}
 
           {totalPages > 1 && (
-            <nav className="mt-2 flex items-center justify-center gap-3">
+            <nav className="mt-1 flex items-center justify-center gap-2 sm:gap-3">
               {filters.page > 1 ? (
                 <Link
                   href={browseHref(filters, filters.page - 1)}
-                  className="flex items-center gap-1 rounded-md border border-white/10 px-3 py-1.5 text-label-md text-on-surface transition-colors hover:border-pokeball-red/40"
+                  className="flex h-11 items-center gap-1 rounded-md border border-white/10 px-3 text-label-md text-on-surface transition-colors hover:border-pokeball-red/40 sm:h-9"
                 >
                   <span className="material-symbols-outlined text-[16px]!">chevron_left</span>
                   {t("pagination.prev")}
                 </Link>
               ) : (
-                <span className="flex items-center gap-1 rounded-md border border-white/5 px-3 py-1.5 text-label-md text-on-surface-variant/40">
+                <span className="flex h-11 items-center gap-1 rounded-md border border-white/5 px-3 text-label-md text-on-surface-variant/40 sm:h-9">
                   <span className="material-symbols-outlined text-[16px]!">chevron_left</span>
                   {t("pagination.prev")}
                 </span>
@@ -245,13 +271,13 @@ export async function MarketBrowseTab({
               {filters.page < totalPages ? (
                 <Link
                   href={browseHref(filters, filters.page + 1)}
-                  className="flex items-center gap-1 rounded-md border border-white/10 px-3 py-1.5 text-label-md text-on-surface transition-colors hover:border-pokeball-red/40"
+                  className="flex h-11 items-center gap-1 rounded-md border border-white/10 px-3 text-label-md text-on-surface transition-colors hover:border-pokeball-red/40 sm:h-9"
                 >
                   {t("pagination.next")}
                   <span className="material-symbols-outlined text-[16px]!">chevron_right</span>
                 </Link>
               ) : (
-                <span className="flex items-center gap-1 rounded-md border border-white/5 px-3 py-1.5 text-label-md text-on-surface-variant/40">
+                <span className="flex h-11 items-center gap-1 rounded-md border border-white/5 px-3 text-label-md text-on-surface-variant/40 sm:h-9">
                   {t("pagination.next")}
                   <span className="material-symbols-outlined text-[16px]!">chevron_right</span>
                 </span>
@@ -260,13 +286,19 @@ export async function MarketBrowseTab({
           )}
         </div>
 
-        <div className="hidden lg:block">
-          <MarketHubPanel trending={trending} activity={activity} />
+        {/* La columna lateral derecha entra recién en `xl`: a 1024 el ancho que
+            quedaba para la grilla daba solo 2 columnas de cards angostas. */}
+        <div className="hidden xl:block">
+          <div className="sticky top-20">
+            <MarketHubPanel trending={trending} activity={activity} />
+          </div>
         </div>
       </div>
 
-      <div className="lg:hidden">
-        <MarketHubPanel trending={trending} activity={activity} />
+      {/* Hasta `xl`: debajo de los resultados y plegados, para que no compitan
+          con los productos ni le quiten ancho a la grilla. */}
+      <div className="xl:hidden">
+        <MarketHubPanel trending={trending} activity={activity} collapsible />
       </div>
     </div>
   );

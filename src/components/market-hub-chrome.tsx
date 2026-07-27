@@ -1,97 +1,13 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
-import {
-  MARKET_CATEGORIES,
-  MARKET_CATEGORY_META,
-  MARKET_QUICK_FILTERS,
-  type MarketCategory,
-} from "@/lib/market-hub";
 
-type BrowseFilters = {
-  q: string;
-  cat: MarketCategory;
-  min: number | null;
-  max: number | null;
-  sort: string;
-  page: number;
-};
-
-function hrefForCat(cat: MarketCategory, filters: BrowseFilters): string {
-  const params = new URLSearchParams({ tab: "browse" });
-  if (cat !== "all") params.set("cat", cat);
-  if (filters.q) params.set("q", filters.q);
-  if (filters.min !== null) params.set("min", String(filters.min));
-  if (filters.max !== null) params.set("max", String(filters.max));
-  if (filters.sort !== "recent") params.set("sort", filters.sort);
-  return `/market?${params.toString()}`;
-}
-
-export async function MarketHubSidebar({
-  filters,
-}: {
-  filters: BrowseFilters;
-}) {
-  const t = await getTranslations("market");
-
-  return (
-    <aside className="rounded-xl border border-white/10 bg-black/35 p-3 backdrop-blur-md lg:p-4">
-      <p className="mb-3 px-1 text-[10px] font-mono uppercase tracking-[0.2em] text-on-surface-variant">
-        {t("hub.categories")}
-      </p>
-      <nav className="flex gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
-        {MARKET_CATEGORIES.map((cat) => {
-          const active = filters.cat === cat;
-          const meta = MARKET_CATEGORY_META[cat];
-          return (
-            <Link
-              key={cat}
-              href={hrefForCat(cat, filters)}
-              className={`flex shrink-0 items-center gap-2.5 rounded-md border px-2.5 py-2 text-label-sm transition lg:w-full ${
-                active
-                  ? "border-pokeball-red/55 bg-pokeball-red/15 text-white"
-                  : "border-transparent text-on-surface-variant hover:border-white/10 hover:bg-white/[0.04] hover:text-on-surface"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]!">{meta.icon}</span>
-              <span className="whitespace-nowrap">{t(`hub.cat.${cat}`)}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
-  );
-}
-
-export async function MarketQuickChips({
-  filters,
-}: {
-  filters: BrowseFilters;
-}) {
-  const t = await getTranslations("market");
-
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {MARKET_QUICK_FILTERS.map((cat) => {
-        const active = filters.cat === cat;
-        return (
-          <Link
-            key={cat}
-            href={hrefForCat(cat, filters)}
-            className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide transition ${
-              active
-                ? "border-pokeball-red/50 bg-pokeball-red/15 text-pokeball-red"
-                : "border-white/10 text-on-surface-variant hover:border-white/25 hover:text-on-surface"
-            }`}
-          >
-            {t(`hub.cat.${cat}`)}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
-
+/**
+ * Encabezado del mercado.
+ *
+ * Las categorías vivían acá en dos componentes que renderizaban la misma lista
+ * (`MarketHubSidebar` y `MarketQuickChips`). Ahora son uno solo con dos
+ * presentaciones en `market-category-rail.tsx`.
+ */
 export async function MarketHubHero({
   listings,
 }: {
@@ -127,19 +43,37 @@ export async function MarketHubHero({
         />
       </div>
 
-      <div className="relative z-10 flex flex-col gap-3 px-5 py-6 sm:flex-row sm:items-end sm:justify-between sm:px-7 sm:py-7">
-        <div>
-          <p className="mb-1 text-[11px] font-mono uppercase tracking-[0.24em] text-secondary/85">
-            {t("hub.eyebrow")}
-          </p>
-          <h1 className="text-[28px] font-semibold tracking-tight text-white sm:text-[36px]">
+      {/*
+        En mobile el hero medía ~430px: se comía la primera pantalla entera y
+        no se veía un solo producto sin scrollear. Ahora el padding y el título
+        son fluidos, el "en vivo" es un badge en línea con la etiqueta de
+        región, y el subtítulo se reserva para pantallas donde sobra lugar.
+      */}
+      <div className="relative z-10 flex flex-col gap-2 p-4 sm:flex-row sm:items-end sm:justify-between sm:gap-3 sm:px-7 sm:py-7">
+        <div className="min-w-0">
+          <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-secondary/85 sm:text-[11px] sm:tracking-[0.24em]">
+              {t("hub.eyebrow")}
+            </p>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 sm:hidden">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              <span className="font-mono text-[10px] text-emerald-200">
+                {t("hub.listingsOnline", { count: listings.toLocaleString() })}
+              </span>
+            </span>
+          </div>
+          <h1 className="text-[clamp(1.5rem,6vw,2.25rem)] font-semibold leading-tight tracking-tight text-white">
             {t("hub.title")}
           </h1>
-          <p className="mt-1.5 max-w-xl text-label-sm text-on-surface-variant sm:text-label-md">
+          <p className="mt-1 max-w-xl text-[12px] leading-snug text-on-surface-variant sm:mt-1.5 sm:text-label-md">
             {t("hub.subtitle")}
           </p>
         </div>
-        <div className="flex items-center gap-3 rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2">
+
+        <div className="hidden shrink-0 items-center gap-3 rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 sm:flex">
           <span className="relative flex h-2.5 w-2.5">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />

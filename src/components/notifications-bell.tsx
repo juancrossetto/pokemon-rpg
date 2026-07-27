@@ -12,7 +12,7 @@ import type { NotificationDTO } from "@/lib/notifications";
 
 const TYPE_META: Record<
   NotificationDTO["type"],
-  { icon: string; accent: string; glow: string; labelKey: "sale" | "expired" | "gym" | "pvp" }
+  { icon: string; accent: string; glow: string; labelKey: "sale" | "expired" | "gym" | "pvp" | "reward" }
 > = {
   MARKET_SOLD: {
     icon: "payments",
@@ -37,6 +37,12 @@ const TYPE_META: Record<
     accent: "from-error/20 to-transparent",
     glow: "",
     labelKey: "gym",
+  },
+  GYM_TM_REWARD: {
+    icon: "smart_display",
+    accent: "from-tertiary/25 via-electric-yellow/10 to-transparent",
+    glow: "shadow-[0_0_20px_rgba(242,192,0,0.2)]",
+    labelKey: "reward",
   },
   PVP_WON: {
     icon: "sports_mma",
@@ -77,6 +83,8 @@ function headlineFor(
       return p.rematch ? t("gymWonRematchTitle") : t("gymWonTitle");
     case "GYM_LOST":
       return t("gymLostTitle");
+    case "GYM_TM_REWARD":
+      return t("gymTmRewardTitle");
     case "PVP_WON":
       return t("pvpWonTitle");
     case "PVP_LOST":
@@ -105,6 +113,11 @@ function detailFor(
         : t("gymWonDetail", { gym: p.gymName ?? "—", leader: p.leaderName ?? "—" });
     case "GYM_LOST":
       return t("gymLostDetail", { gym: p.gymName ?? "—", leader: p.leaderName ?? "—" });
+    case "GYM_TM_REWARD":
+      return t("gymTmRewardDetail", {
+        item: p.itemName ?? "—",
+        leader: p.leaderName ?? "—",
+      });
     case "PVP_WON":
       return t("pvpWonDetail", { opponent: p.opponentName ?? "?" });
     case "PVP_LOST":

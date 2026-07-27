@@ -170,6 +170,26 @@ export async function notifyGymResult(
   });
 }
 
+/** Aviso al recibir una MT/MO del líder (solo la primera medalla). */
+export async function notifyGymTmReward(userId: string, gymId: string, itemName: string) {
+  const gym = await prisma.gym.findUnique({
+    where: { id: gymId },
+    select: { name: true, leaderName: true },
+  });
+  if (!gym) return;
+
+  await createNotification({
+    userId,
+    type: "GYM_TM_REWARD",
+    payload: {
+      itemName,
+      gymName: gym.name,
+      leaderName: gym.leaderName,
+    },
+    href: "/inventory",
+  });
+}
+
 export async function notifyPvpResult(input: {
   winnerId: string;
   loserId: string;

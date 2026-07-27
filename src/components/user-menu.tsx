@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
-import { Link } from "@/i18n/navigation";
 import { avatarById } from "@/lib/avatars";
 import { AvatarImage } from "@/components/avatar-image";
 
@@ -26,22 +25,21 @@ function initials(name: string): string {
   return name.slice(0, 2).toUpperCase() || "?";
 }
 
+/**
+ * Menú de cuenta. Solo cuenta: los módulos de juego (equipo, inventario, PC)
+ * se movieron al grupo Colección del navbar, donde el jugador los busca.
+ * Cuando existan rutas de perfil o configuración, entran acá.
+ */
 export function UserMenu({
   name,
   avatarId,
   logoutLabel,
   trainerLabel,
-  teamLabel,
-  inventoryLabel,
-  pcLabel,
 }: {
   name: string;
   avatarId: string | null;
   logoutLabel: string;
   trainerLabel: string;
-  teamLabel: string;
-  inventoryLabel: string;
-  pcLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -95,37 +93,11 @@ export function UserMenu({
             <p className="text-label-sm text-on-surface-variant">{trainerLabel}</p>
             <p className="truncate text-label-md text-on-surface">{name}</p>
           </div>
-          <Link
-            href="/team"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2 px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-on-surface"
-          >
-            <span className="material-symbols-outlined text-[18px]! text-pokeball-red">group</span>
-            {teamLabel}
-          </Link>
-          <Link
-            href="/inventory"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2 px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-on-surface"
-          >
-            <span className="material-symbols-outlined text-[18px]! text-pokeball-red">
-              inventory_2
-            </span>
-            {inventoryLabel}
-          </Link>
-          {pcLabel && (
-            <Link
-              href="/pc"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-on-surface"
-            >
-              <span className="material-symbols-outlined text-[18px]! text-pokeball-red">storage</span>
-              {pcLabel}
-            </Link>
-          )}
+          {/*
+            Equipo, Inventario y PC salieron de acá: ahora viven en Colección,
+            dentro del navbar. Estaban duplicados en los dos lugares y mezclaban
+            módulos de juego con opciones de cuenta.
+          */}
           <button
             type="button"
             role="menuitem"

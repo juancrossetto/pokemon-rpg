@@ -18,34 +18,79 @@ export async function MarketStatsBar({ stats }: { stats: MarketHubStats }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-black/35 p-3 backdrop-blur-md sm:grid-cols-4 sm:gap-0 sm:divide-x sm:divide-white/10 sm:p-0">
+    // 2×2 en mobile con celdas divididas por línea en vez de padding suelto:
+    // antes cada celda respiraba tanto que la barra medía ~340px de alto.
+    <div className="grid grid-cols-2 divide-x divide-y divide-white/10 overflow-hidden rounded-xl border border-white/10 bg-black/35 backdrop-blur-md sm:grid-cols-4 sm:divide-y-0">
       {cells.map((cell) => (
-        <div key={cell.label} className="px-3 py-2.5 sm:px-4 sm:py-3">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-on-surface-variant/75">
+        <div key={cell.label} className="min-w-0 px-3 py-2 sm:px-4 sm:py-3">
+          <p className="truncate text-[9px] font-mono uppercase tracking-wider text-on-surface-variant/75 sm:text-[10px]">
             {cell.label}
           </p>
-          <p className="mt-0.5 font-mono text-lg text-white sm:text-xl">{cell.value}</p>
+          <p className="mt-0.5 truncate font-mono text-[15px] leading-tight text-white sm:text-xl">
+            {cell.value}
+          </p>
         </div>
       ))}
     </div>
   );
 }
 
+/**
+ * Sección secundaria. En desktop es un panel siempre visible de la columna
+ * lateral; en mobile se colapsa en un `<details>` (`collapsible`) para que
+ * quede debajo de los resultados sin competir con los productos.
+ */
+function Section({
+  title,
+  collapsible,
+  children,
+}: {
+  title: string;
+  collapsible: boolean;
+  children: React.ReactNode;
+}) {
+  const heading = (
+    <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-on-surface-variant">
+      {title}
+    </span>
+  );
+
+  if (!collapsible) {
+    return (
+      <section className="rounded-xl border border-white/10 bg-black/35 p-4 backdrop-blur-md">
+        <p className="mb-3">{heading}</p>
+        {children}
+      </section>
+    );
+  }
+
+  return (
+    <details className="group rounded-xl border border-white/10 bg-black/35 backdrop-blur-md">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 [&::-webkit-details-marker]:hidden">
+        {heading}
+        <span className="material-symbols-outlined text-[18px]! text-on-surface-variant transition-transform group-open:rotate-180">
+          expand_more
+        </span>
+      </summary>
+      <div className="px-4 pb-4">{children}</div>
+    </details>
+  );
+}
+
 export async function MarketHubPanel({
   trending,
   activity,
+  collapsible = false,
 }: {
   trending: MarketTrendingRow[];
   activity: MarketActivityRow[];
+  collapsible?: boolean;
 }) {
   const t = await getTranslations("market");
 
   return (
-    <aside className="flex flex-col gap-4">
-      <section className="rounded-xl border border-white/10 bg-black/35 p-4 backdrop-blur-md">
-        <p className="mb-3 text-[10px] font-mono uppercase tracking-[0.2em] text-on-surface-variant">
-          {t("hub.trending")}
-        </p>
+    <aside className="flex flex-col gap-3 lg:gap-4">
+      <Section title={t("hub.trending")} collapsible={collapsible}>
         {trending.length === 0 ? (
           <p className="text-label-sm text-on-surface-variant/70">{t("hub.trendingEmpty")}</p>
         ) : (
@@ -73,12 +118,9 @@ export async function MarketHubPanel({
             ))}
           </ul>
         )}
-      </section>
+      </Section>
 
-      <section className="rounded-xl border border-white/10 bg-black/35 p-4 backdrop-blur-md">
-        <p className="mb-3 text-[10px] font-mono uppercase tracking-[0.2em] text-on-surface-variant">
-          {t("hub.recent")}
-        </p>
+      <Section title={t("hub.recent")} collapsible={collapsible}>
         {activity.length === 0 ? (
           <p className="text-label-sm text-on-surface-variant/70">{t("hub.recentEmpty")}</p>
         ) : (
@@ -95,7 +137,7 @@ export async function MarketHubPanel({
             ))}
           </ul>
         )}
-      </section>
+      </Section>
     </aside>
   );
 }

@@ -5,8 +5,10 @@ import { COIN_DELTA_EVENT, type CoinDeltaDetail } from "@/lib/coin-fx";
 
 type CoinsBadgeProps = {
   coins: number;
-  /** `sm` = barra mobile; `md` = chip desktop. */
-  size?: "sm" | "md";
+  /** `sm` = barra mobile vieja; `md` = chip desktop; `bar` = valor dentro de ResourcePill. */
+  size?: "sm" | "md" | "bar";
+  /** Si false, solo anima el número (el ícono vive en la pastilla). */
+  showIcon?: boolean;
 };
 
 /** ms por moneda cuando el delta es chico — se siente el +1. */
@@ -19,20 +21,20 @@ const MIN_COUNT_MS = 1600;
  * Contador de monedas del header: suma/resta de a 1, lento, para que se vea.
  * Escucha `announceCoinDelta` y también el prop `coins` tras un refresh.
  */
-export function CoinsBadge({ coins, size = "md" }: CoinsBadgeProps) {
+export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgeProps) {
   const [display, setDisplay] = useState(coins);
   const [fx, setFx] = useState<"up" | "down" | null>(null);
   const [floater, setFloater] = useState<number | null>(null);
   const displayRef = useRef(coins);
   const targetRef = useRef(coins);
-  const intervalRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
   const mountedRef = useRef(false);
   const clearFxRef = useRef<number | null>(null);
 
   function stopTicking() {
-    if (intervalRef.current !== null) {
-      window.clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     }
   }
 
@@ -54,36 +56,48 @@ export function CoinsBadge({ coins, size = "md" }: CoinsBadgeProps) {
       MAX_COUNT_MS,
       Math.max(MIN_COUNT_MS, abs * PREFERRED_MS_PER_COIN),
     );
-    const delay = Math.max(16, duration / abs);
+    /*
+      Interpolación por tiempo, no por paso fijo.
 
-    intervalRef.current = window.setInterval(() => {
+      Antes esto era un `setInterval` que sumaba exactamente una moneda por
+      tick con un delay de `duration / abs`, acotado a 16ms. El problema: con
+      deltas grandes el delay se iba al mínimo y la cuenta necesitaba tantos
+      ticks como monedas, y cada tick es un render de React. Medido con un
+      delta de 1.000 —normal ahora que la tienda vende varias unidades de una—
+      el badge avanzaba ~5 monedas por segundo: tardaba minutos en mostrar el
+      saldo real mientras la página ya mostraba el correcto.
+
+      Con `requestAnimationFrame` y progreso por reloj, la animación dura lo
+      que dice `duration` sin importar cuánto cueste cada frame, y siempre
+      aterriza exacto en el target (que puede moverse a mitad de camino si
+      llega una revalidación del server).
+    */
+    const startedAt = performance.now();
+    const startFrom = from;
+
+    const frame = (now: number) => {
       const end = targetRef.current;
-      const current = displayRef.current;
-      if (current === end) {
-        stopTicking();
-        displayRef.current = end;
-        setDisplay(end);
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const next =
+        progress >= 1 ? end : Math.round(startFrom + (end - startFrom) * progress);
+
+      if (next !== displayRef.current) {
+        displayRef.current = next;
+        setDisplay(next);
+      }
+
+      if (progress >= 1) {
+        rafRef.current = null;
         clearFxRef.current = window.setTimeout(() => {
           setFx(null);
           setFloater(null);
         }, 700);
         return;
       }
+      rafRef.current = requestAnimationFrame(frame);
+    };
 
-      // Si el target se movió al otro lado del valor actual, invertimos el paso.
-      const nextStep = end > current ? 1 : -1;
-      const next = current + nextStep;
-      displayRef.current = next;
-      setDisplay(next);
-
-      if (next === end) {
-        stopTicking();
-        clearFxRef.current = window.setTimeout(() => {
-          setFx(null);
-          setFloater(null);
-        }, 700);
-      }
-    }, delay);
+    rafRef.current = requestAnimationFrame(frame);
   }
 
   useEffect(() => {
@@ -116,38 +130,46 @@ export function CoinsBadge({ coins, size = "md" }: CoinsBadgeProps) {
   }, []);
 
   const isSm = size === "sm";
+  const isBar = size === "bar";
 
   return (
     <span
-      id="header-coins"
-      className={`relative flex items-center gap-1 font-mono leading-none text-electric-yellow transition-[box-shadow,transform,color] duration-300 ${
-        isSm
-          ? "px-2 py-1 text-[11px]"
-          : "rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-1 text-label-sm"
+      id={isBar ? undefined : "header-coins"}
+      className={`relative inline-flex items-center gap-1 font-mono leading-none text-electric-yellow transition-[box-shadow,transform,color] duration-300 ${
+        isBar
+          ? "text-[11px] font-semibold text-white sm:text-[12px]"
+          : isSm
+            ? "px-2 py-1 text-[11px]"
+            : "rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-1 text-label-sm"
       } ${
         fx === "up"
-          ? "scale-[1.04] text-electric-yellow shadow-[0_0_16px_rgba(242,192,0,0.45)]"
+          ? isBar
+            ? "scale-[1.04]"
+            : "scale-[1.04] text-electric-yellow shadow-[0_0_16px_rgba(242,192,0,0.45)]"
           : fx === "down"
             ? "scale-[1.02] text-pokeball-red"
             : ""
       }`}
       aria-live="polite"
       aria-atomic="true"
+      aria-hidden={isBar || undefined}
     >
-      <span
-        className={`material-symbols-outlined ${isSm ? "text-[13px]!" : "text-[16px]!"} ${
-          fx === "up" ? "coin-spin-nudge" : ""
-        }`}
-      >
-        paid
-      </span>
-      <span className="tabular-nums">{display}</span>
+      {showIcon && (
+        <span
+          className={`material-symbols-outlined ${
+            isBar ? "text-[15px]!" : isSm ? "text-[13px]!" : "text-[16px]!"
+          } ${fx === "up" ? "coin-spin-nudge" : ""}`}
+        >
+          paid
+        </span>
+      )}
+      <span className="tabular-nums font-semibold">{display}</span>
       {floater !== null && floater !== 0 && (
         <span
           key={`${floater}-${fx}`}
           aria-hidden
           className={`pointer-events-none absolute left-1/2 -top-3.5 -translate-x-1/2 font-bold tabular-nums ${
-            isSm ? "text-[10px]" : "text-[11px]"
+            isSm || isBar ? "text-[10px]" : "text-[11px]"
           } ${floater > 0 ? "text-electric-yellow" : "text-pokeball-red"} ${
             fx ? "opacity-100" : "coin-delta-float"
           }`}

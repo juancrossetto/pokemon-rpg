@@ -1,0 +1,223 @@
+/**
+ * Arquitectura de navegación — fuente única para desktop y mobile.
+ *
+ * Antes la navegación estaba escrita cuatro veces a mano en `site-header.tsx`
+ * (`primary`, `desktopLinks`, `desktopMoreLinks`, `moreLinks`) y ya había
+ * derivado: `/pokedex` era link principal en desktop y vivía dentro de "Más" en
+ * mobile; `/team`, `/pc` e `/inventory` aparecían a la vez en el menú del avatar
+ * y en "Más". Acá se define una vez y cada superficie la representa a su manera.
+ *
+ * Los grupos agrupan por dominio, no por frecuencia de uso: es lo que permite
+ * que un módulo nuevo tenga un lugar obvio en vez de terminar en un cajón
+ * llamado "Más".
+ */
+
+export type NavItem = {
+  id: string;
+  /** Clave bajo `nav.` en los mensajes. */
+  labelKey: string;
+  /** Clave de la descripción corta del dropdown. Opcional. */
+  descriptionKey?: string;
+  href: string;
+  /** Material Symbols — la misma familia que usa el resto de la app. */
+  icon: string;
+  /**
+   * Rutas que marcan este destino como activo, además de `href`. Para cuando
+   * una sección vive en más de un prefijo.
+   */
+  matchRoutes?: string[];
+  /** Preparado para cuando exista sistema de flags; hoy nadie lo setea. */
+  hidden?: boolean;
+  /** Visible pero no navegable — "Próximamente" del roadmap. */
+  disabled?: boolean;
+};
+
+export type NavGroup = {
+  id: string;
+  labelKey: string;
+  icon: string;
+  children: NavItem[];
+  /** Prefijos extra que activan el grupo aunque no sean de ningún hijo. */
+  matchRoutes?: string[];
+};
+
+/**
+ * Grupos de la barra principal.
+ *
+ * Decisiones que vale la pena dejar escritas:
+ *
+ * - **Gimnasios va en Aventura, no en Combate.** Son hitos de progreso: dan
+ *   medallas y desbloquean contenido. Combate agrupa lo que se juega por
+ *   enfrentarse, no por avanzar.
+ * - **`/battle` se llama "Batalla salvaje".** La ruta no cambia; el label sí,
+ *   porque "Batalla" a secas no distinguía entre el PvE de exploración y el
+ *   PvP. La pantalla busca Pokémon salvajes en la zona de farmeo elegida en
+ *   el viaje, y el nombre ahora lo dice.
+ * - **Mercado y Tienda siguen separados.** Mercado es entre jugadores (con
+ *   comisión y publicaciones); Tienda es compra al sistema. Fusionarlos sería
+ *   fusionar dos economías distintas.
+ * - **Ranking vive solo en Combate.** El ranking de clanes es otra cosa y ya
+ *   vive dentro de `/clans`.
+ */
+export const NAV_GROUPS: NavGroup[] = [
+  {
+    id: "adventure",
+    labelKey: "groups.adventure",
+    icon: "explore",
+    children: [
+      {
+        id: "campaign",
+        labelKey: "campaign",
+        descriptionKey: "desc.campaign",
+        href: "/campaign",
+        icon: "map",
+      },
+      {
+        id: "gyms",
+        labelKey: "gyms",
+        descriptionKey: "desc.gyms",
+        href: "/gyms",
+        icon: "military_tech",
+      },
+    ],
+  },
+  {
+    id: "combat",
+    labelKey: "groups.combat",
+    icon: "swords",
+    children: [
+      {
+        id: "battle",
+        labelKey: "battleWild",
+        descriptionKey: "desc.battleWild",
+        href: "/battle",
+        icon: "sports_martial_arts",
+      },
+      {
+        id: "pvp",
+        labelKey: "pvp",
+        descriptionKey: "desc.pvp",
+        href: "/pvp",
+        icon: "sports_mma",
+      },
+      {
+        id: "ranking",
+        labelKey: "ranking",
+        descriptionKey: "desc.ranking",
+        href: "/ranking",
+        icon: "trophy",
+      },
+    ],
+  },
+  {
+    id: "collection",
+    labelKey: "groups.collection",
+    // `catching_pokemon` parece el ícono obvio, pero la ligadura no resuelve en
+    // la versión de Material Symbols que sirve Google Fonts acá: se renderizaba
+    // el texto crudo "CATCHING_POKEMON" a lo ancho de la bottom bar.
+    icon: "pets",
+    children: [
+      {
+        id: "team",
+        labelKey: "team",
+        descriptionKey: "desc.team",
+        href: "/team",
+        icon: "group",
+      },
+      {
+        id: "pokedex",
+        labelKey: "pokedex",
+        descriptionKey: "desc.pokedex",
+        href: "/pokedex",
+        icon: "auto_stories",
+      },
+      {
+        id: "pc",
+        labelKey: "pc",
+        descriptionKey: "desc.pc",
+        href: "/pc",
+        icon: "storage",
+      },
+      {
+        id: "inventory",
+        labelKey: "inventory",
+        descriptionKey: "desc.inventory",
+        href: "/inventory",
+        icon: "backpack",
+      },
+    ],
+  },
+  {
+    id: "trade",
+    labelKey: "groups.trade",
+    icon: "storefront",
+    children: [
+      {
+        id: "market",
+        labelKey: "market",
+        descriptionKey: "desc.market",
+        href: "/market",
+        icon: "storefront",
+      },
+      {
+        id: "shop",
+        labelKey: "shop",
+        descriptionKey: "desc.shop",
+        href: "/shop",
+        icon: "local_mall",
+      },
+    ],
+  },
+  {
+    id: "community",
+    labelKey: "groups.community",
+    icon: "groups",
+    children: [
+      {
+        id: "clans",
+        labelKey: "clans",
+        descriptionKey: "desc.clans",
+        href: "/clans",
+        icon: "groups",
+      },
+    ],
+  },
+];
+
+/** Inicio va suelto: es un destino, no una categoría. */
+export const NAV_HOME: NavItem = {
+  id: "home",
+  labelKey: "home",
+  href: "/",
+  icon: "home",
+};
+
+/**
+ * Destinos de la bottom bar de mobile: los cuatro de uso frecuente más el
+ * botón de menú, que abre el drawer con la navegación completa.
+ *
+ * Se eligen por id contra `NAV_GROUPS` en vez de repetir las rutas, así un
+ * cambio de href no deja la bottom bar apuntando a una ruta vieja.
+ */
+export const MOBILE_BAR_GROUPS = ["adventure", "combat", "collection"] as const;
+
+export function visibleChildren(group: NavGroup): NavItem[] {
+  return group.children.filter((child) => !child.hidden);
+}
+
+/** ¿La ruta actual cae dentro de este destino? */
+export function itemMatches(pathname: string, item: NavItem): boolean {
+  const candidates = [item.href, ...(item.matchRoutes ?? [])];
+  return candidates.some((route) =>
+    route === "/" ? pathname === "/" : pathname === route || pathname.startsWith(`${route}/`),
+  );
+}
+
+/**
+ * ¿La ruta actual cae dentro del grupo? Es lo que hace que estando en `/pvp`
+ * se marque "Combate", que era uno de los pedidos explícitos.
+ */
+export function groupMatches(pathname: string, group: NavGroup): boolean {
+  if (group.matchRoutes?.some((route) => pathname.startsWith(route))) return true;
+  return visibleChildren(group).some((child) => itemMatches(pathname, child));
+}

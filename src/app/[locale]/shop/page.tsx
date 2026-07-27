@@ -3,9 +3,14 @@ import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
-import { ShopTerminal, type ShopEntry, type ShopLabels } from "@/components/shop-terminal";
-
-const SHOP_TYPES = ["POTION", "POKEBALL", "HELD"] as const;
+import { ShopTerminal, type ShopLabels } from "@/components/shop-terminal";
+import {
+  SHOP_CATEGORIES,
+  itemKey,
+  resolveDescription,
+  toProduct,
+  type ShopProduct,
+} from "@/lib/shop";
 
 export default async function ShopPage({
   params,
@@ -23,52 +28,91 @@ export default async function ShopPage({
 
   await redirectIfInBattle(userId, locale);
 
-  const [items, user] = await Promise.all([
+  // El inventario se pide una sola vez para todo el catálogo: una consulta por
+  // card sería una por producto, y el catálogo va a crecer.
+  const [items, user, inventory] = await Promise.all([
     prisma.item.findMany({
-      where: { type: { in: [...SHOP_TYPES] }, buyPrice: { gt: 0 } },
+      where: { type: { in: [...SHOP_CATEGORIES] }, buyPrice: { gt: 0 } },
       orderBy: [{ type: "asc" }, { buyPrice: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        buyPrice: true,
+        effectText: true,
+        catchMultiplier: true,
+        healAmount: true,
+      },
     }),
     prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { coins: true } }),
+    prisma.inventoryItem.findMany({
+      where: { userId },
+      select: { itemId: true, quantity: true },
+    }),
   ]);
 
-  const entries: ShopEntry[] = items.map((item) => ({
-    id: item.id,
-    name: item.name,
-    type: item.type as ShopEntry["type"],
-    buyPrice: item.buyPrice,
-    effectText: item.effectText,
-  }));
+  const ownedByItem = new Map(inventory.map((row) => [row.itemId, row.quantity]));
+  // `t.has` evita el throw de next-intl cuando un ítem del seed todavía no
+  // tiene traducción: en ese caso `resolveDescription` cae al texto de la base.
+  const describe = {
+    catchRate: (multiplier: string) => t("catchRate", { multiplier }),
+    healAmount: (amount: number) => t("healAmount", { amount }),
+    healFull: () => t("healFull"),
+    byName: (name: string) => {
+      const key = `effects.${itemKey(name)}`;
+      return t.has(key) ? t(key) : null;
+    },
+  };
+
+  const products: ShopProduct[] = items.map((item) =>
+    toProduct(item, ownedByItem.get(item.id) ?? 0, resolveDescription(item, describe)),
+  );
 
   const labels: ShopLabels = {
-    types: {
-      POTION: t("types.POTION"),
+    categories: {
       POKEBALL: t("types.POKEBALL"),
+      POTION: t("types.POTION"),
       HELD: t("types.HELD"),
     },
+    all: t("all"),
     buy: t("buy"),
     buying: t("buying"),
-    noCoins: t("noCoins"),
-    coinsLabel: t("coinsLabel"),
+    insufficient: t("insufficient"),
+    owned: t("owned", { count: "{count}" }),
+    search: t("search"),
+    searchPlaceholder: t("searchPlaceholder"),
+    affordableOnly: t("affordableOnly"),
+    quantity: t("quantity"),
+    unitPrice: t("unitPrice"),
+    total: t("total"),
+    balanceAfter: t("balanceAfter"),
+    confirm: t("confirm"),
+    cancel: t("cancel"),
+    close: t("close"),
+    decrease: t("decrease"),
+    increase: t("increase"),
+    buyTitle: t("buyTitle", { name: "{name}" }),
+    purchased: t("purchased", { count: "{count}", name: "{name}" }),
+    missing: t("missing", { amount: "{amount}" }),
+    empty: t("empty"),
+    emptyAction: t("emptyAction"),
+    noResults: t("noResults"),
+    errorGeneric: t("errorGeneric"),
+    coinsUnit: t("coinsUnit"),
   };
 
   return (
-    <div className="flex-1 px-margin-mobile py-6 md:px-margin-desktop md:py-8">
+    <div className="flex-1 px-margin-mobile py-5 md:px-margin-desktop md:py-8">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="mb-0.5 flex items-center gap-2 text-label-sm uppercase tracking-[0.2em] text-pokeball-red">
-              <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
-              {t("eyebrow")}
-            </p>
-            <h1 className="text-headline-lg tracking-tight text-white">{t("title")}</h1>
-          </div>
-          <div className="flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.03] px-4 py-2">
-            <span className="material-symbols-outlined text-[16px]! text-tertiary">paid</span>
-            <span className="font-mono text-label-md font-semibold text-white">{user.coins}</span>
-          </div>
-        </header>
-
-        <ShopTerminal entries={entries} labels={labels} locale={locale} initialCoins={user.coins} />
+        <ShopTerminal
+          products={products}
+          labels={labels}
+          locale={locale}
+          initialCoins={user.coins}
+          eyebrow={t("eyebrow")}
+          title={t("title")}
+          subtitle={t("subtitle")}
+        />
       </div>
     </div>
   );
