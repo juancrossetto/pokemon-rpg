@@ -6,9 +6,9 @@ import { getCurrentEnergy } from "@/lib/energy";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
 import { MobileChrome } from "@/components/mobile-chrome";
-import { EnergyMeter } from "@/components/energy-meter";
-import { CoinsBadge } from "@/components/coins-badge";
-import { NavLinks, type DesktopNavLink } from "@/components/nav-links";
+import { ResourceBar, type ResourceBarLabels } from "@/components/resource-bar";
+import { NavLinks, type NavLabels } from "@/components/nav-links";
+import { MOBILE_BAR_GROUPS, NAV_GROUPS, visibleChildren } from "@/lib/navigation";
 import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { listNotifications } from "@/lib/notifications";
@@ -25,6 +25,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         where: { id: session.user.id },
         select: {
           coins: true,
+          gems: true,
           avatarId: true,
           energy: true,
           energyMax: true,
@@ -36,10 +37,28 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
     ? getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt)
     : null;
   const energyMax = user?.energyMax ?? null;
-  const energyPct =
-    energy !== null && energyMax !== null && energyMax > 0
-      ? Math.max(0, Math.min(100, (energy / energyMax) * 100))
-      : 0;
+  const resourceLabels: ResourceBarLabels = {
+    energy: t("energy"),
+    energyFull: t("energyFull"),
+    // Estas dos viajan como plantilla, no como texto final: `ResourceBar` es
+    // un componente de cliente y reemplaza `{minutes}` y `{time}` con el
+    // contador que calcula cada segundo. Pasarle el propio marcador como valor
+    // deja el literal intacto y evita el FORMATTING_ERROR de next-intl, que
+    // exige un valor para cada variable ICU.
+    energyRegen: t("energyRegen", { minutes: "{minutes}" }),
+    energyNext: t("energyNext", { time: "{time}" }),
+    coins: t("coins"),
+    coinsBalance: t("coinsBalance"),
+    coinsShop: t("shop"),
+    coinsMarket: t("market"),
+    gems: t("gems"),
+    gemsBalance: t("gemsBalance"),
+    gemsHint: t("gemsHint"),
+    gemsPc: t("pc"),
+    close: t("close"),
+    resources: t("resources"),
+    add: t("resourceAdd"),
+  };
   const notifications = session?.user
     ? await listNotifications(session.user.id)
     : null;
@@ -48,12 +67,54 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
     lock?.kind === "battle" ? "/battle" : lock?.kind === "gym" ? `/gyms/${lock.gymId}/run` : null;
   const lockedLabel = lock?.kind === "battle" ? t("inBattle") : lock?.kind === "gym" ? t("inGym") : null;
 
+  /**
+   * Etiquetas de la navegación, resueltas una sola vez en el servidor. Los
+   * componentes de navegación son de cliente y no pueden llamar a `t`, así que
+   * reciben el diccionario ya traducido en vez de repetir claves.
+   */
+  const navLabels: NavLabels = {
+    text: {
+      navigation: t("navigation"),
+      ...Object.fromEntries(
+        NAV_GROUPS.flatMap((group) => [
+          [group.labelKey, t(group.labelKey)],
+          ...visibleChildren(group).map((child) => [child.labelKey, t(child.labelKey)] as const),
+        ]),
+      ),
+    },
+    description: Object.fromEntries(
+      NAV_GROUPS.flatMap((group) =>
+        visibleChildren(group).flatMap((child) =>
+          child.descriptionKey ? [[child.id, t(child.descriptionKey)] as const] : [],
+        ),
+      ),
+    ),
+    home: t("home"),
+    soon: t("soon"),
+  };
+
+  /**
+   * Bottom bar de mobile: Inicio + tres grupos frecuentes + Menú. Cada grupo
+   * apunta a su primer destino, que es el de entrada natural de la sección
+   * (Aventura → Viaje, Combate → Batalla salvaje, Colección → Mi equipo).
+   */
   const primary = session?.user
     ? [
         { href: "/", label: t("home"), icon: "home" },
-        { href: "/battle", label: t("battle"), icon: "swords" },
-        { href: "/gyms", label: t("gyms"), icon: "military_tech" },
-        { href: "/market", label: t("market"), icon: "storefront" },
+        ...MOBILE_BAR_GROUPS.flatMap((id) => {
+          const group = NAV_GROUPS.find((g) => g.id === id);
+          const first = group ? visibleChildren(group)[0] : undefined;
+          return group && first
+            ? [
+                {
+                  href: first.href,
+                  label: t(group.labelKey),
+                  icon: group.icon,
+                  groupId: group.id,
+                },
+              ]
+            : [];
+        }),
       ]
     : [
         { href: "/ranking", label: t("ranking"), icon: "trophy" },
@@ -61,48 +122,22 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         { href: "/register", label: t("register"), icon: "person_add" },
       ];
 
-  // Desktop: Home primero; Equipo vive en el menú del avatar.
-  const desktopLinks: DesktopNavLink[] = session?.user
-    ? [
-        { href: "/", label: t("home") },
-        { href: "/market", label: t("market") },
-        { href: "/battle", label: t("battle") },
-        { href: "/gyms", label: t("gyms") },
-        { href: "/pokedex", label: t("pokedex") },
-      ]
-    : [{ href: "/ranking", label: t("ranking") }];
-
-  const desktopMoreLinks: DesktopNavLink[] = session?.user
-    ? [
-        { href: "/campaign", label: t("campaign"), icon: "map" },
-        { href: "/shop", label: t("shop"), icon: "storefront" },
-        { href: "/pvp", label: t("pvp"), icon: "sports_mma" },
-        { href: "/ranking", label: t("ranking"), icon: "trophy" },
-        { href: "/clans", label: t("clans"), icon: "groups" },
-        { href: "/pc", label: t("pc"), icon: "storage" },
-        { href: "/inventory", label: t("inventory"), icon: "inventory_2" },
-      ]
-    : [];
-
-  const moreLinks = session?.user
-    ? [
-        { href: "/campaign", label: t("campaign"), icon: "map" },
-        { href: "/pokedex", label: t("pokedex"), icon: "auto_stories" },
-        { href: "/shop", label: t("shop"), icon: "storefront" },
-        { href: "/pvp", label: t("pvp"), icon: "sports_mma" },
-        { href: "/ranking", label: t("ranking"), icon: "trophy" },
-        { href: "/clans", label: t("clans"), icon: "groups" },
-        { href: "/pc", label: t("pc"), icon: "storage" },
-        { href: "/inventory", label: t("inventory"), icon: "inventory_2" },
-      ]
-    : [];
-
   const brandHref = lockedHref ?? (session?.user ? "/" : "/login");
 
   return (
     <>
       {/* TopAppBar (desktop) */}
-      <nav className="fixed top-0 w-full z-50 hidden h-16 md:flex justify-between items-center gap-4 px-6 bg-background/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
+      {/*
+        El navbar completo entra recién en `lg`. Medido: el cluster izquierdo
+        (logo + 6 categorías) pide ~650px y el derecho (recursos + idioma +
+        campana + avatar) ~340px. Estaba activándose en `md` (768px), donde
+        "Combate" se montaba encima del medidor de energía y "Comunidad" sobre
+        el avatar. A 1024 entraba por 17px, que es lo mismo que no entrar: con
+        las etiquetas en inglés o portugués vuelve a romperse. Así que el
+        navbar completo va desde `xl`, y de 768 a 1279 manda el chrome táctil
+        —bottom bar + drawer— que consume la misma configuración de grupos.
+      */}
+      <nav className="fixed top-0 w-full z-50 hidden h-16 xl:flex justify-between items-center gap-4 px-6 bg-background/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
         <div className="flex items-center min-w-0">
           <Link href={brandHref} className="shrink-0">
             <BrandLogo alt={t("brand")} priority sizes="80px" className="h-9 w-auto" />
@@ -120,31 +155,24 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               </Link>
             </div>
           ) : (
-            desktopLinks.length > 0 && (
-              <NavLinks
-                links={desktopLinks}
-                moreLinks={desktopMoreLinks}
-                moreLabel={t("more")}
-              />
+            session?.user && (
+              <NavLinks groups={NAV_GROUPS} labels={navLabels} />
             )
           )}
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           {user && energy !== null && energyMax !== null && (
-            <span className="rounded-full border border-sky-400/30 bg-sky-400/10">
-              <EnergyMeter
-                energy={energy}
-                energyMax={energyMax}
-                energyUpdatedAt={user.energyUpdatedAt.toISOString()}
-                pct={energyPct}
-                label={t("energy")}
-                fullLabel={t("energyFull")}
-              />
-            </span>
+            <ResourceBar
+              energy={energy}
+              energyMax={energyMax}
+              energyUpdatedAt={user.energyUpdatedAt.toISOString()}
+              coins={user.coins}
+              gems={user.gems}
+              labels={resourceLabels}
+              variant="desktop"
+            />
           )}
-
-          {user && <CoinsBadge coins={user.coins} size="md" />}
 
           <LocaleSwitcher currentLocale={locale} label={t("language")} />
 
@@ -161,9 +189,6 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               avatarId={user?.avatarId ?? null}
               logoutLabel={t("logout")}
               trainerLabel={t("trainer")}
-              teamLabel={t("teamShort")}
-              inventoryLabel={t("inventory")}
-              pcLabel={t("pc")}
             />
           ) : (
             <div className="flex items-center gap-2">
@@ -191,23 +216,22 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         languageLabel={t("language")}
         energy={energy}
         energyMax={energyMax}
-        energyLabel={t("energy")}
-        energyFullLabel={t("energyFull")}
         energyUpdatedAt={user?.energyUpdatedAt.toISOString() ?? null}
         coins={user?.coins ?? null}
+        gems={user?.gems ?? null}
+        resourceLabels={resourceLabels}
         userName={session?.user ? (session.user.name ?? "?") : null}
         avatarId={user?.avatarId ?? null}
         logoutLabel={t("logout")}
         trainerLabel={t("trainer")}
-        teamLabel={t("teamShort")}
-        inventoryLabel={t("inventory")}
-        pcLabel={t("pc")}
         lockedHref={lockedHref}
         lockedLabel={lockedLabel}
         lockedIcon={lock?.kind === "gym" ? "military_tech" : "swords"}
         primary={primary}
-        moreLinks={moreLinks}
-        moreLabel={t("more")}
+        groups={session?.user ? NAV_GROUPS : []}
+        navLabels={navLabels}
+        moreLabel={t("menu")}
+        closeLabel={t("close")}
         loginLabel={t("login")}
         registerLabel={t("register")}
         notifications={notifications}

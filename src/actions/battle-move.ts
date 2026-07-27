@@ -702,8 +702,11 @@ export async function submitBattleMove(
     }
 
     if (battle.gymId) {
-      const { notifyGymResult } = await import("@/lib/notifications");
+      const { notifyGymResult, notifyGymTmReward } = await import("@/lib/notifications");
       await notifyGymResult(userId, battle.gymId, true, { rematch: alreadyHasThisBadge });
+      if (badgeEarned && tmRewardName) {
+        await notifyGymTmReward(userId, battle.gymId, tmRewardName);
+      }
     }
   } else if (lostBattle) {
     const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);

@@ -109,6 +109,40 @@
   --spacing-margin-desktop: 40px;
 }
 
+:root {
+  /* Alto real de la bottom nav de mobile (`h-14` en MobileChrome) sin contar
+     el safe-area, que se suma aparte donde se use. Estaba hardcodeado como
+     `pb-14` en el layout, que ignoraba el inset: en iPhone con home indicator
+     la nav mide 56px + inset y tapaba el final de la página. */
+  --bottom-nav-h: 3.5rem;
+}
+
+@layer utilities {
+  /* Scroll horizontal sin barra visible — rieles de chips y tabs. El patrón
+     estaba repetido inline en varias pantallas. */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Deja libre la franja de la bottom nav (mobile) más el safe-area. */
+  .pb-bottom-nav {
+    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 1rem);
+  }
+
+  /* 1280px: es donde aparece el navbar de escritorio y desaparece la bottom
+     bar. Antes cortaba en 768 y no coincidía con la nav. */
+  @media (min-width: 1280px) {
+    .pb-bottom-nav {
+      padding-bottom: 0;
+    }
+  }
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-on-background);
@@ -1729,35 +1763,242 @@ body {
   transform: scale(0.99);
 }
 
+/* --- Navegación principal --- */
+
+/*
+  Tipografía de los links del navbar.
+
+  El resto de la app usa `text-label-md`: monoespaciada, 14px y 0.05em de
+  tracking. Para etiquetas cortas (recursos, badges, metadatos) eso es parte de
+  la identidad retro y se mantiene. Para seis categorías en una fila era caro:
+  el cluster izquierdo pedía 740px y se montaba encima del medidor de energía.
+
+  Acá se usa la sans a la misma altura óptica, con tracking apenas positivo para
+  no perder el aire del diseño. Ahorra ~18% de ancho y se lee mejor en textos de
+  varias palabras.
+*/
+.nav-link-text {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+}
+
+/* Apertura del dropdown: 8px y 120ms. Lo justo para que se lea de dónde sale
+   sin que el menú se sienta lento al navegar rápido. */
+
+/* Apertura del dropdown: 8px y 120ms. Lo justo para que se lea de dónde sale
+   sin que el menú se sienta lento al navegar rápido. */
+.nav-dropdown-in {
+  animation: nav-dropdown-in 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top left;
+}
+
+@keyframes nav-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-dropdown-in {
+    animation: none;
+  }
+}
+
+/* --- Tienda oficial --- */
+
+/* Marco del sprite: mismo espacio reservado para todos los productos, tenga o
+   no asset. El pedestal teñido por categoría lo pone el componente inline. */
+.shop-sprite-frame {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .shop-sprite-frame {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+.shop-sprite-frame > img {
+  max-width: 76%;
+  max-height: 76%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shop-card {
+    transition:
+      border-color 0.18s ease,
+      background-color 0.18s ease;
+  }
+
+  .shop-card:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.shop-card:active {
+  transform: scale(0.997);
+}
+
+.shop-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 9999px;
+  animation: shop-spin 0.7s linear infinite;
+}
+
+@keyframes shop-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-card:active {
+    transform: none;
+  }
+
+  .shop-spinner {
+    animation-duration: 2s;
+  }
+}
+
 /* --- Market Trading Hub --- */
-.market-listing-card {
-  transition:
-    transform 0.22s ease,
-    box-shadow 0.22s ease,
-    border-color 0.22s ease;
+
+/* El hover de elevación solo aplica donde hay puntero real: en touch se
+   quedaba "pegado" después de tocar una card. */
+@media (hover: hover) and (pointer: fine) {
+  .market-listing-card {
+    transition:
+      transform 0.22s ease,
+      box-shadow 0.22s ease,
+      border-color 0.22s ease;
+  }
+
+  .market-listing-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(238, 21, 21, 0.65);
+    box-shadow:
+      0 0 0 1px rgba(238, 21, 21, 0.35),
+      0 12px 32px rgba(238, 21, 21, 0.22),
+      0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .market-buy-btn:hover:not(:disabled) {
+    background-color: rgb(238 21 21 / 0.88);
+    box-shadow:
+      0 0 0 1px rgba(238, 21, 21, 0.5),
+      0 0 24px rgba(238, 21, 21, 0.4);
+    transform: translateY(-1px);
+  }
 }
 
-.market-listing-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(238, 21, 21, 0.65);
-  box-shadow:
-    0 0 0 1px rgba(238, 21, 21, 0.35),
-    0 12px 32px rgba(238, 21, 21, 0.22),
-    0 8px 24px rgba(0, 0, 0, 0.35);
+/* Feedback táctil: en mobile el hover no existe, el press sí. */
+.market-listing-card:active {
+  transform: scale(0.995);
 }
 
-.market-buy-btn:hover:not(:disabled) {
-  background-color: rgb(238 21 21 / 0.88);
-  box-shadow:
-    0 0 0 1px rgba(238, 21, 21, 0.5),
-    0 0 24px rgba(238, 21, 21, 0.4);
-  transform: translateY(-1px);
+/* Marco del sprite: tamaño fijo por breakpoint, el pixel art nunca se estira
+   para llenar la card. `contain` + `pixelated` mantienen la identidad del
+   asset; el tamaño lo pone el wrapper, no la imagen. */
+.market-sprite-frame {
+  display: grid;
+  place-items: center;
+  flex: none;
+  /* 56px en mobile, 72px de `sm` en adelante — dentro del rango del brief y
+     dejando ancho suficiente para el nombre en cards de 2 columnas. */
+  width: 56px;
+  height: 56px;
+  /* `overflow: hidden` importa: si el sprite 404ea (los MT no existen en el
+     CDN de PokeAPI), el texto alternativo del navegador desbordaba el marco. */
+  overflow: hidden;
+  border-radius: 0.6rem;
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(255, 255, 255, 0.07),
+    rgba(255, 255, 255, 0) 70%
+  );
+  font-size: 9px;
+  line-height: 1.1;
+  color: rgb(255 255 255 / 0.35);
+}
+
+@media (min-width: 640px) {
+  .market-sprite-frame {
+    width: 72px;
+    height: 72px;
+  }
+}
+
+.market-sprite-frame > img {
+  max-width: 78%;
+  max-height: 78%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.market-sprite-pixel > img {
+  image-rendering: pixelated;
+}
+
+/* Bottom sheet de filtros (mobile). */
+.market-sheet-in {
+  animation: market-sheet-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.market-sheet-backdrop-in {
+  animation: market-fade-in 0.2s ease-out both;
+}
+
+@keyframes market-sheet-in {
+  from {
+    transform: translateY(14%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes market-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .market-listing-card:hover,
+  .market-listing-card:active,
   .market-buy-btn:hover:not(:disabled) {
     transform: none;
+  }
+
+  .market-sheet-in,
+  .market-sheet-backdrop-in {
+    animation: none;
   }
 }
 

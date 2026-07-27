@@ -115,7 +115,10 @@ export default async function LocaleLayout({
           <Providers>
             <CombatLockGate lock={combatLock} />
             <SiteHeader combatLock={combatLock} />
-            <div className="relative z-10 flex flex-1 flex-col min-h-0 pb-14 pt-12 md:pb-0 md:pt-16">
+            {/* `pb-bottom-nav` reemplaza al `pb-14` fijo: la bottom nav mide
+                56px + safe-area, y el padding viejo ignoraba el inset, así que
+                en iPhone el final de cada pantalla quedaba debajo de la nav. */}
+            <div className="pb-bottom-nav relative z-10 flex flex-1 flex-col min-h-0 pt-12 xl:pt-16">
               {children}
             </div>
           </Providers>

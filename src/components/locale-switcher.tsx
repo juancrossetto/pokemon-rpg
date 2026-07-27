@@ -106,8 +106,13 @@ export function LocaleSwitcher({
           title={LOCALE_SHORT[active]}
           className="h-3.5 w-auto rounded-[2px]"
         />
-        <span className="text-label-sm uppercase">{LOCALE_SHORT[active]}</span>
-        <span className="material-symbols-outlined text-[14px]! opacity-70">expand_more</span>
+        {/* Entre 1024 y 1279 el navbar completo va justo de ancho: acá el
+            selector queda en bandera sola, que ya identifica el idioma. El
+            `aria-label` sigue diciendo cuál es para lectores de pantalla. */}
+        <span className="hidden text-label-sm uppercase xl:inline">{LOCALE_SHORT[active]}</span>
+        <span className="material-symbols-outlined hidden text-[14px]! opacity-70 xl:inline">
+          expand_more
+        </span>
       </button>
 
       {open && (

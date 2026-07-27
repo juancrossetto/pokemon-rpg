@@ -31,7 +31,43 @@
     "more": "More",
     "campaign": "Journey",
     "energy": "Energy",
-    "energyFull": "Energy full"
+    "energyFull": "Energy full",
+    "energyRegen": "Regenerates 1 point every {minutes} min.",
+    "energyNext": "Next point in {time}.",
+    "coins": "Coins",
+    "coinsBalance": "Balance available for the shop and market.",
+    "gems": "Gems",
+    "gemsBalance": "Premium currency balance.",
+    "gemsHint": "Reserved for special PC uses. There is no way to earn them in-game yet.",
+    "resources": "Resources",
+    "resourceAdd": "More info",
+    "groups": {
+      "adventure": "Adventure",
+      "combat": "Combat",
+      "collection": "Collection",
+      "trade": "Trade",
+      "community": "Community"
+    },
+    "desc": {
+      "campaign": "Travel the map and unlock zones.",
+      "gyms": "Earn badges and unlock content.",
+      "battleWild": "Find wild Pokémon in your farming zone.",
+      "pvp": "Battle other trainers.",
+      "ranking": "Check your global standing.",
+      "team": "Arrange your six active Pokémon.",
+      "pokedex": "Track species seen and caught.",
+      "pc": "Store and withdraw Pokémon.",
+      "inventory": "Items, berries and stones you own.",
+      "market": "Buy and sell with other players.",
+      "shop": "Buy items from the system.",
+      "clans": "Join a clan and compete as a team."
+    },
+    "battleWild": "Wild battle",
+    "menu": "Menu",
+    "soon": "Coming soon",
+    "account": "Account",
+    "navigation": "Navigation",
+    "close": "Close"
   },
   "notifications": {
     "eyebrow": "Live alerts",
@@ -47,7 +83,8 @@
       "sale": "Market · Sale",
       "expired": "Market · Expired",
       "gym": "Gym",
-      "pvp": "PvP"
+      "pvp": "PvP",
+      "reward": "Reward"
     },
     "marketSoldTitle": "Sale completed!",
     "marketSoldDetail": "{buyer} bought {item}",
@@ -59,6 +96,8 @@
     "gymWonRematchDetail": "You beat {leader} ({gym})",
     "gymLostTitle": "Challenge failed",
     "gymLostDetail": "You lost to {leader} at {gym}",
+    "gymTmRewardTitle": "TM received!",
+    "gymTmRewardDetail": "{leader} gave you {item}. It's in your inventory now.",
     "pvpWonTitle": "PvP victory",
     "pvpWonDetail": "You won the duel against {opponent}",
     "pvpLostTitle": "PvP defeat",
@@ -695,7 +734,9 @@
         "POTION": "Healing Item",
         "POKEBALL": "Poké Ball",
         "BERRY": "Berry",
-        "EVOLUTION_STONE": "Evolution Stone"
+        "EVOLUTION_STONE": "Evolution Stone",
+        "MACHINE": "TM / HM",
+        "HELD": "Held item"
       },
       "statListings": "Listings",
       "statTraders": "Online Traders",
@@ -707,7 +748,8 @@
       "recentEmpty": "No recent activity.",
       "activityBought": "bought {item}",
       "activitySold": "sold {item}",
-      "activityListed": "listed {item}"
+      "activityListed": "listed {item}",
+      "yours": "Yours"
     },
     "coins": "coins",
     "tabs": {
@@ -756,7 +798,10 @@
         "price_asc": "Price: low to high",
         "price_desc": "Price: high to low",
         "level_desc": "Level: high to low"
-      }
+      },
+      "open": "Filters",
+      "title": "Filter listings",
+      "close": "Close"
     },
     "pagination": {
       "prev": "Previous",
@@ -844,7 +889,8 @@
     "unseenTitle": "{count, plural, =1 {1 unseen update} other {# unseen updates}}",
     "boughtFrom": "Bought from {name}",
     "emptyBought": "Your market bag is empty.",
-    "feeNote": "Listing costs a {percent}% fee on the price (minimum {min} coin), non-refundable."
+    "feeNote": "Listing costs a {percent}% fee on the price (minimum {min} coin), non-refundable.",
+    "resultsCount": "{count, plural, =0 {No listings} one {# listing} other {# listings}}"
   },
   "inventory": {
     "eyebrow": "Your stash",
@@ -898,7 +944,55 @@
     "buy": "Buy",
     "buying": "Buying…",
     "noCoins": "Not enough coins.",
-    "coinsLabel": "Coins"
+    "coinsLabel": "Coins",
+    "subtitle": "Stock up your bag for the next adventure.",
+    "balanceLabel": "Available balance",
+    "coinsUnit": "coins",
+    "all": "All",
+    "search": "Search item",
+    "searchPlaceholder": "Name or effect…",
+    "affordableOnly": "Only what I can afford",
+    "owned": "You have: {count}",
+    "insufficient": "Not enough coins",
+    "missing": "You need {amount} more coins.",
+    "quantity": "Quantity",
+    "unitPrice": "Unit price",
+    "total": "Total",
+    "balanceAfter": "Balance after",
+    "confirm": "Confirm purchase",
+    "cancel": "Cancel",
+    "buyTitle": "Buy {name}",
+    "purchased": "You bought {count} × {name}.",
+    "empty": "No products in this category.",
+    "emptyAction": "See all categories",
+    "noResults": "No item matches your search.",
+    "retry": "Retry",
+    "errorGeneric": "The purchase could not be completed. Try again.",
+    "catchRate": "×{multiplier} catch effectiveness.",
+    "healAmount": "Restores {amount} HP.",
+    "healFull": "Restores all HP.",
+    "decrease": "Remove one",
+    "increase": "Add one",
+    "close": "Close",
+    "effects": {
+      "ether": "Restores 10 PP of one move.",
+      "maxEther": "Restores all PP of one move.",
+      "elixir": "Restores 10 PP of every move.",
+      "maxElixir": "Restores all PP of every move.",
+      "magnet": "Boosts Electric-type move power by 20%.",
+      "charcoal": "Boosts Fire-type move power by 20%.",
+      "mysticWater": "Boosts Water-type move power by 20%.",
+      "miracleSeed": "Boosts Grass-type move power by 20%.",
+      "quickClaw": "20% chance to move first, regardless of Speed.",
+      "kingsRock": "10% chance the opponent cannot attack.",
+      "focusSash": "At full HP, survives a lethal hit with 1 HP.",
+      "eviolite": "Boosts Defense and Special Defense by 50% if the species can still evolve.",
+      "choiceSpecs": "Multiplies Special Attack by 1.5, but locks in the first move used.",
+      "choiceScarf": "Multiplies Speed by 1.5, but locks in the first move used.",
+      "choiceBand": "Multiplies Attack by 1.5, but locks in the first move used.",
+      "leftovers": "Restores 1/16 of max HP at the end of each turn.",
+      "lifeOrb": "Boosts damaging move power by 30%, with 1/10 max HP recoil."
+    }
   },
   "pc": {
     "title": "Storage PC",

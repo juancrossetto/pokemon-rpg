@@ -34,15 +34,113 @@ async function ExpiryText({ date }: { date: Date }) {
   return t("expiresIn", { days: expiry.value });
 }
 
+/**
+ * Rareza: estrellas + texto, nunca solo color. El borde tintado sigue estando,
+ * pero un daltónico tiene que poder distinguir épico de legendario igual.
+ */
 function RarityBadge({ rarity, label }: { rarity: MarketRarity; label: string }) {
   const style = RARITY_STYLES[rarity];
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${style.border} ${style.text}`}
+      className={`inline-flex max-w-full items-center gap-0.5 truncate rounded border bg-black/55 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide backdrop-blur-sm ${style.border} ${style.text}`}
     >
-      {"★".repeat(style.stars)}
+      <span aria-hidden>{"★".repeat(style.stars)}</span>
       {label}
     </span>
+  );
+}
+
+/**
+ * Marco del sprite: el tamaño lo fija `.market-sprite-frame` (56px mobile /
+ * 72px desde `sm`), no la imagen. Antes el sprite vivía en una caja
+ * `aspect-[5/4]` con `p-6` y crecía a 96px sobre un área que era la mitad del
+ * alto de la card.
+ */
+function SpriteFrame({
+  src,
+  alt,
+  pixelated,
+}: {
+  src: string;
+  alt: string;
+  pixelated?: boolean;
+}) {
+  return (
+    <div
+      className={`market-sprite-frame border border-white/[0.07] bg-black/25 ${
+        pixelated ? "market-sprite-pixel" : ""
+      }`}
+    >
+      <Image
+        src={src}
+        alt={alt}
+        width={96}
+        height={96}
+        sizes="96px"
+        className="drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
+        unoptimized={pixelated}
+      />
+    </div>
+  );
+}
+
+/** Precio dominante + unidades a la derecha, en una sola fila. */
+async function PriceRow({
+  price,
+  quantity,
+  showUnit,
+}: {
+  price: number;
+  quantity: number;
+  showUnit: boolean;
+}) {
+  const t = await getTranslations("market");
+  const unit = Math.round(price / Math.max(1, quantity));
+
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <p className="flex min-w-0 items-center gap-1 font-mono text-[19px] font-semibold leading-none text-electric-yellow">
+        <span className="material-symbols-outlined text-[16px]!">paid</span>
+        <span className="truncate">{price.toLocaleString()}</span>
+      </p>
+      <span className="shrink-0 font-mono text-[11px] text-on-surface-variant">
+        {showUnit ? t("unitPrice", { price: unit }) : `×${quantity}`}
+      </span>
+    </div>
+  );
+}
+
+async function MetaRow({
+  seller,
+  expiresAt,
+}: {
+  seller: string;
+  expiresAt: Date | null;
+}) {
+  const t = await getTranslations("market");
+  const closing = expiresAt ? expiryIn(expiresAt).kind === "soon" : false;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-[11px] text-on-surface-variant">
+      <span className="min-w-0 truncate" title={seller}>
+        <span className="material-symbols-outlined mr-0.5 align-[-3px] text-[13px]!">person</span>
+        {seller}
+      </span>
+      {expiresAt && (
+        <span
+          className={`inline-flex shrink-0 items-center gap-0.5 ${
+            closing ? "font-semibold text-error" : "opacity-80"
+          }`}
+        >
+          {/* Por vencer: además del color, un ícono — el color solo no alcanza. */}
+          <span className="material-symbols-outlined text-[13px]!">
+            {closing ? "warning" : "schedule"}
+          </span>
+          <ExpiryText date={expiresAt} />
+        </span>
+      )}
+      <span className="sr-only">{t("hub.seller")}</span>
+    </div>
   );
 }
 
@@ -64,7 +162,7 @@ function BuyOrCancel({
   coins: number;
 }) {
   return isOwn ? (
-    <form action={cancelListing.bind(null, locale)}>
+    <form action={cancelListing.bind(null, locale)} className="w-full">
       <input type="hidden" name="listingId" value={listingId} />
       <CancelButton />
     </form>
@@ -98,24 +196,77 @@ async function BuyButton({
       label={canAfford ? t("hub.buyNow") : t("needFunds", { missing })}
       pendingLabel={t("buying")}
       disabled={!canAfford}
-      className="market-buy-btn w-full rounded-md bg-pokeball-red px-4 py-2.5 text-label-sm font-bold uppercase tracking-[0.14em] text-white transition disabled:cursor-not-allowed disabled:opacity-45"
+      className="market-buy-btn h-10 w-full rounded-md bg-pokeball-red px-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-on-surface-variant disabled:opacity-100"
       confirmMessage={
-        price >= CONFIRM_PRICE_THRESHOLD
-          ? t("confirmBuy", { name: displayName, price })
-          : undefined
+        price >= CONFIRM_PRICE_THRESHOLD ? t("confirmBuy", { name: displayName, price }) : undefined
       }
     />
   );
 }
 
+/**
+ * Cancelar es secundaria y destructiva: contorno, no relleno rojo. El rojo
+ * lleno queda reservado para la acción primaria (comprar).
+ */
 async function CancelButton() {
   const t = await getTranslations("market");
   return (
     <MarketSubmitButton
       label={t("cancel")}
       pendingLabel={t("cancelling")}
-      className="w-full rounded-md border border-white/15 px-4 py-2.5 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant transition hover:border-white/30 hover:text-on-surface"
+      className="h-10 w-full rounded-md border border-white/15 px-3 text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant transition hover:border-white/30 hover:text-on-surface"
     />
+  );
+}
+
+/**
+ * Envoltorio común de card: mismo esqueleto para objetos y Pokémon.
+ * `min-w-0` en todos los niveles — es lo que evita que un nombre largo o un
+ * precio grande estiren la columna de la grilla.
+ */
+function CardShell({
+  rarity,
+  children,
+}: {
+  rarity: MarketRarity;
+  children: React.ReactNode;
+}) {
+  const style = RARITY_STYLES[rarity];
+  return (
+    <article
+      className={`market-listing-card group relative flex h-full min-w-0 flex-col gap-2.5 overflow-hidden rounded-xl border bg-black/40 p-3 backdrop-blur-md ${style.border}`}
+      style={{ boxShadow: `0 0 0 1px ${style.glow}` }}
+    >
+      {children}
+    </article>
+  );
+}
+
+/**
+ * Fila de badges. "Tuya" iba posicionado en absoluto sobre la esquina y en
+ * cards de 2 columnas se montaba encima del badge de rareza; en flujo normal
+ * los dos conviven y ninguno se recorta.
+ */
+function BadgeRow({
+  rarity,
+  rarityLabel,
+  isOwn,
+  ownLabel,
+}: {
+  rarity: MarketRarity;
+  rarityLabel: string;
+  isOwn: boolean;
+  ownLabel: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-1">
+      <RarityBadge rarity={rarity} label={rarityLabel} />
+      {isOwn && (
+        <span className="rounded border border-white/15 bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-on-surface-variant">
+          {ownLabel}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -145,88 +296,51 @@ type ItemCardProps = {
 export async function MarketItemCard(props: ItemCardProps) {
   const t = await getTranslations("market");
   const rarity = itemRarity(props.item);
-  const style = RARITY_STYLES[rarity];
-  const unit = Math.round(props.price / Math.max(1, props.quantity));
 
   return (
-    <article
-      className={`market-listing-card group relative flex h-full flex-col overflow-hidden rounded-xl border bg-black/40 backdrop-blur-md ${style.border}`}
-      style={{ boxShadow: `0 0 0 1px ${style.glow}` }}
-    >
-      <div className="relative flex aspect-[5/4] items-center justify-center bg-gradient-to-b from-white/[0.04] to-transparent p-6">
-        <Image
-          src={itemSpriteUrl(props.item.name)}
-          alt={props.item.name}
-          width={96}
-          height={96}
-          className="h-20 w-20 object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition duration-300 group-hover:scale-110 [image-rendering:pixelated] sm:h-24 sm:w-24"
-          unoptimized
-        />
-        <div className="absolute left-3 top-3">
-          <RarityBadge rarity={rarity} label={t(`hub.rarity.${rarity}`)} />
-        </div>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-3 p-4 pt-2">
-        <div>
-          <h2 className="truncate text-[17px] font-semibold text-white">{props.item.name}</h2>
-          <p className="mt-0.5 text-[11px] uppercase tracking-wide text-on-surface-variant">
+    <CardShell rarity={rarity}>
+      {/* Cabecera: sprite a la izquierda, identidad a la derecha. En horizontal
+          la card baja de ~420px de alto a ~190px sin perder información. */}
+      <div className="flex min-w-0 items-start gap-2.5">
+        <SpriteFrame src={itemSpriteUrl(props.item.name)} alt={props.item.name} pixelated />
+        <div className="min-w-0 flex-1">
+          <BadgeRow
+            rarity={rarity}
+            rarityLabel={t(`hub.rarity.${rarity}`)}
+            isOwn={props.isOwn}
+            ownLabel={t("hub.yours")}
+          />
+          <h2
+            className="mt-1 line-clamp-2 text-[13px] font-semibold leading-tight text-white sm:text-label-md"
+            title={props.item.name}
+          >
+            {props.item.name}
+          </h2>
+          <p className="text-[10px] uppercase tracking-wide text-on-surface-variant">
             {t(`hub.itemType.${props.item.type}`)}
           </p>
           {props.item.effectText && (
-            <p className="mt-1.5 line-clamp-2 text-label-sm text-on-surface-variant/80">
+            <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-on-surface-variant/75">
               {props.item.effectText}
             </p>
           )}
         </div>
-
-        <div className="mt-auto space-y-2 border-t border-white/8 pt-3">
-          <div className="flex items-end justify-between gap-2">
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-wider text-on-surface-variant/70">
-                {t("hub.price")}
-              </p>
-              <p className="flex items-center gap-1 font-mono text-[26px] font-semibold leading-none text-electric-yellow">
-                <span className="material-symbols-outlined text-[22px]!">paid</span>
-                {props.price.toLocaleString()}
-              </p>
-              {props.quantity > 1 && (
-                <p className="mt-0.5 text-[11px] text-on-surface-variant">
-                  {t("unitPrice", { price: unit })}
-                </p>
-              )}
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-on-surface-variant/70">
-                {t("hub.stock")}
-              </p>
-              <p className="font-mono text-lg text-on-surface">{props.quantity}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 text-[11px] text-on-surface-variant">
-            <span className="truncate">
-              {t("hub.seller")}: <span className="text-on-surface">{props.seller}</span>
-            </span>
-            {props.expiresAt && (
-              <span className="shrink-0 opacity-80">
-                <ExpiryText date={props.expiresAt} />
-              </span>
-            )}
-          </div>
-
-          <BuyOrCancel
-            locale={props.locale}
-            listingId={props.listingId}
-            isOwn={props.isOwn}
-            canAfford={props.canAfford}
-            price={props.price}
-            displayName={props.item.name}
-            coins={props.coins}
-          />
-        </div>
       </div>
-    </article>
+
+      <div className="mt-auto flex flex-col gap-2 border-t border-white/[0.08] pt-2.5">
+        <PriceRow price={props.price} quantity={props.quantity} showUnit={props.quantity > 1} />
+        <MetaRow seller={props.seller} expiresAt={props.expiresAt} />
+        <BuyOrCancel
+          locale={props.locale}
+          listingId={props.listingId}
+          isOwn={props.isOwn}
+          canAfford={props.canAfford}
+          price={props.price}
+          displayName={props.item.name}
+          coins={props.coins}
+        />
+      </div>
+    </CardShell>
   );
 }
 
@@ -274,133 +388,80 @@ export async function MarketPokemonCard(props: PokemonCardProps) {
     pokemon.ptIntelligence +
     pokemon.ptSpeed +
     pokemon.ptConstitution;
-  const rarity = pokemonRarity({
-    isShiny: pokemon.isShiny,
-    level: pokemon.level,
-    invested,
-  });
-  const style = RARITY_STYLES[rarity];
+  const rarity = pokemonRarity({ isShiny: pokemon.isShiny, level: pokemon.level, invested });
   const name = pokemon.nickname ?? species.name;
   const power = trainingPercent(invested, pokemon.level);
   const hp = calculateMaxHp(species.baseHp, pokemon.level, pokemon.ptConstitution);
   const atk = calculateStat(species.baseAttack, pokemon.ptStrength, pokemon.level);
 
   return (
-    <article
-      className={`market-listing-card group relative flex h-full flex-col overflow-hidden rounded-xl border bg-black/40 backdrop-blur-md ${style.border}`}
-      style={{ boxShadow: `0 0 0 1px ${style.glow}` }}
-    >
-      <div className="relative flex aspect-[5/4] items-center justify-center bg-gradient-to-b from-white/[0.04] to-transparent p-6">
-        <Image
-          src={spriteFor(species.spriteUrl, pokemon.isShiny)}
-          alt={species.name}
-          width={96}
-          height={96}
-          className="h-20 w-20 object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition duration-300 group-hover:scale-110 sm:h-24 sm:w-24"
-        />
-        <div className="absolute left-3 top-3">
-          <RarityBadge rarity={rarity} label={t(`hub.rarity.${rarity}`)} />
-        </div>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-3 p-4 pt-2">
-        <div>
-          <h2 className="truncate text-[17px] font-semibold capitalize text-white">
+    <CardShell rarity={rarity}>
+      <div className="flex min-w-0 items-start gap-2.5">
+        <SpriteFrame src={spriteFor(species.spriteUrl, pokemon.isShiny)} alt={species.name} />
+        <div className="min-w-0 flex-1">
+          <BadgeRow
+            rarity={rarity}
+            rarityLabel={t(`hub.rarity.${rarity}`)}
+            isOwn={props.isOwn}
+            ownLabel={t("hub.yours")}
+          />
+          <h2
+            className="mt-1 line-clamp-2 text-[13px] font-semibold capitalize leading-tight text-white sm:text-label-md"
+            title={name}
+          >
             {name}
-            {pokemon.isShiny && (
-              <span className="ml-2 text-label-sm text-electric-yellow">✦ {t("shiny")}</span>
-            )}
           </h2>
-          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] uppercase tracking-wide text-on-surface-variant">
+          <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1">
+            <span className="font-mono text-[10px] uppercase text-on-surface-variant">
               {t("level", { level: pokemon.level })}
             </span>
-            {species.types.map((type) => {
+            {pokemon.isShiny && (
+              <span className="text-[10px] font-bold text-electric-yellow">✦ {t("shiny")}</span>
+            )}
+            {/* Un solo tipo en la card compacta; el segundo vive en el detalle. */}
+            {species.types.slice(0, 2).map((type) => {
               const color = typeColor(type);
               return (
                 <span
                   key={type}
-                  className="rounded px-1.5 py-0.5 text-[10px] uppercase border"
-                  style={{ backgroundColor: `${color}33`, color, borderColor: `${color}55` }}
+                  className="rounded px-1 py-px text-[9px] uppercase"
+                  style={{ backgroundColor: `${color}26`, color }}
                 >
                   {type}
                 </span>
               );
             })}
           </div>
-          <div className="mt-2 grid grid-cols-3 gap-1.5 rounded-md border border-white/8 bg-white/[0.03] p-2 text-center">
-            <div>
-              <p className="text-[10px] uppercase text-on-surface-variant/70">{t("stats.hp")}</p>
-              <p className="font-mono text-label-md text-on-surface">{hp}</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase text-on-surface-variant/70">{t("stats.atk")}</p>
-              <p className="font-mono text-label-md text-on-surface">{atk}</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase text-on-surface-variant/70">{t("hub.training")}</p>
-              <p className="font-mono text-label-md text-tertiary">{power}%</p>
-            </div>
-          </div>
-          {pokemon.moves.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {pokemon.moves.slice(0, 4).map(({ move }) => {
-                const color = typeColor(move.type);
-                return (
-                  <span
-                    key={move.name}
-                    className="rounded border px-1.5 py-0.5 text-[10px] capitalize"
-                    style={{ backgroundColor: `${color}18`, color, borderColor: `${color}40` }}
-                  >
-                    {move.name.replace(/-/g, " ")}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-auto space-y-2 border-t border-white/8 pt-3">
-          <div className="flex items-end justify-between gap-2">
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-wider text-on-surface-variant/70">
-                {t("hub.price")}
-              </p>
-              <p className="flex items-center gap-1 font-mono text-[26px] font-semibold leading-none text-electric-yellow">
-                <span className="material-symbols-outlined text-[22px]!">paid</span>
-                {props.price.toLocaleString()}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-on-surface-variant/70">
-                {t("hub.stock")}
-              </p>
-              <p className="font-mono text-lg text-on-surface">1</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 text-[11px] text-on-surface-variant">
-            <span className="truncate">
-              {t("hub.seller")}: <span className="text-on-surface">{props.seller}</span>
-            </span>
-            {props.expiresAt && (
-              <span className="shrink-0 opacity-80">
-                <ExpiryText date={props.expiresAt} />
-              </span>
-            )}
-          </div>
-
-          <BuyOrCancel
-            locale={props.locale}
-            listingId={props.listingId}
-            isOwn={props.isOwn}
-            canAfford={props.canAfford}
-            price={props.price}
-            displayName={name}
-            coins={props.coins}
-          />
         </div>
       </div>
-    </article>
+
+      {/* Stats en una línea, no en la grilla de tres celdas con borde: es el
+          dato que se usa para valuar la compra, pero ocupaba 70px de alto. */}
+      <p className="flex min-w-0 items-center gap-x-2 gap-y-0.5 overflow-hidden text-[10px] font-mono uppercase text-on-surface-variant">
+        <span className="shrink-0">
+          {t("stats.hp")} <span className="text-on-surface">{hp}</span>
+        </span>
+        <span className="shrink-0">
+          {t("stats.atk")} <span className="text-on-surface">{atk}</span>
+        </span>
+        <span className="shrink-0">
+          {t("hub.training")} <span className="text-tertiary">{power}%</span>
+        </span>
+      </p>
+
+      <div className="mt-auto flex flex-col gap-2 border-t border-white/[0.08] pt-2.5">
+        <PriceRow price={props.price} quantity={1} showUnit={false} />
+        <MetaRow seller={props.seller} expiresAt={props.expiresAt} />
+        <BuyOrCancel
+          locale={props.locale}
+          listingId={props.listingId}
+          isOwn={props.isOwn}
+          canAfford={props.canAfford}
+          price={props.price}
+          displayName={name}
+          coins={props.coins}
+        />
+      </div>
+    </CardShell>
   );
 }

@@ -31,7 +31,43 @@
     "more": "Mais",
     "campaign": "Jornada",
     "energy": "Energia",
-    "energyFull": "Energia cheia"
+    "energyFull": "Energia cheia",
+    "energyRegen": "Regenera 1 ponto a cada {minutes} min.",
+    "energyNext": "Próximo ponto em {time}.",
+    "coins": "Moedas",
+    "coinsBalance": "Saldo disponível para a loja e o mercado.",
+    "gems": "Gemas",
+    "gemsBalance": "Saldo da moeda premium.",
+    "gemsHint": "Reservadas para usos especiais no PC. Ainda não há como ganhá-las no jogo.",
+    "resources": "Recursos",
+    "resourceAdd": "Mais info",
+    "groups": {
+      "adventure": "Aventura",
+      "combat": "Combate",
+      "collection": "Coleção",
+      "trade": "Comércio",
+      "community": "Comunidade"
+    },
+    "desc": {
+      "campaign": "Percorra o mapa e desbloqueie zonas.",
+      "gyms": "Ganhe insígnias e desbloqueie conteúdo.",
+      "battleWild": "Encontre Pokémon selvagens na sua zona.",
+      "pvp": "Enfrente outros treinadores.",
+      "ranking": "Veja sua posição global.",
+      "team": "Organize seus seis Pokémon ativos.",
+      "pokedex": "Acompanhe espécies vistas e capturadas.",
+      "pc": "Guarde e retire Pokémon do armazenamento.",
+      "inventory": "Itens, frutas e pedras que você tem.",
+      "market": "Compre e venda com outros jogadores.",
+      "shop": "Compre itens do sistema.",
+      "clans": "Entre num clã e compita em equipe."
+    },
+    "battleWild": "Batalha selvagem",
+    "menu": "Menu",
+    "soon": "Em breve",
+    "account": "Conta",
+    "navigation": "Navegação",
+    "close": "Fechar"
   },
   "notifications": {
     "eyebrow": "Alertas ao vivo",
@@ -47,7 +83,8 @@
       "sale": "Mercado · Venda",
       "expired": "Mercado · Expirou",
       "gym": "Ginásio",
-      "pvp": "PvP"
+      "pvp": "PvP",
+      "reward": "Recompensa"
     },
     "marketSoldTitle": "Venda concretada!",
     "marketSoldDetail": "{buyer} comprou {item}",
@@ -59,6 +96,8 @@
     "gymWonRematchDetail": "Você venceu {leader} ({gym})",
     "gymLostTitle": "Desafio falhou",
     "gymLostDetail": "Você perdeu para {leader} em {gym}",
+    "gymTmRewardTitle": "MT recebida!",
+    "gymTmRewardDetail": "{leader} te deu {item}. Já está no seu inventário.",
     "pvpWonTitle": "Vitória PvP",
     "pvpWonDetail": "Você venceu o duelo contra {opponent}",
     "pvpLostTitle": "Derrota PvP",
@@ -695,7 +734,9 @@
         "POTION": "Item de cura",
         "POKEBALL": "Poké Ball",
         "BERRY": "Berry",
-        "EVOLUTION_STONE": "Pedra de evolução"
+        "EVOLUTION_STONE": "Pedra de evolução",
+        "MACHINE": "MT / MO",
+        "HELD": "Item equipável"
       },
       "statListings": "Anúncios",
       "statTraders": "Comerciantes online",
@@ -707,7 +748,8 @@
       "recentEmpty": "Sem atividade recente.",
       "activityBought": "comprou {item}",
       "activitySold": "vendeu {item}",
-      "activityListed": "anunciou {item}"
+      "activityListed": "anunciou {item}",
+      "yours": "Sua"
     },
     "coins": "moedas",
     "tabs": {
@@ -756,7 +798,10 @@
         "price_asc": "Preço: menor para maior",
         "price_desc": "Preço: maior para menor",
         "level_desc": "Nível: maior para menor"
-      }
+      },
+      "open": "Filtros",
+      "title": "Filtrar anúncios",
+      "close": "Fechar"
     },
     "pagination": {
       "prev": "Anterior",
@@ -844,7 +889,8 @@
     "unseenTitle": "{count, plural, =1 {1 novidade não vista} other {# novidades não vistas}}",
     "boughtFrom": "Comprado de {name}",
     "emptyBought": "Sua mochila do mercado está vazia.",
-    "feeNote": "Publicar custa uma taxa de {percent}% do preço (mínimo {min} moeda), não reembolsável."
+    "feeNote": "Publicar custa uma taxa de {percent}% do preço (mínimo {min} moeda), não reembolsável.",
+    "resultsCount": "{count, plural, =0 {Sem anúncios} one {# anúncio} other {# anúncios}}"
   },
   "inventory": {
     "eyebrow": "Seu botim",
@@ -898,7 +944,55 @@
     "buy": "Comprar",
     "buying": "Comprando…",
     "noCoins": "Moedas insuficientes.",
-    "coinsLabel": "Moedas"
+    "coinsLabel": "Moedas",
+    "subtitle": "Abasteça sua mochila para a próxima aventura.",
+    "balanceLabel": "Saldo disponível",
+    "coinsUnit": "moedas",
+    "all": "Tudo",
+    "search": "Buscar item",
+    "searchPlaceholder": "Nome ou efeito…",
+    "affordableOnly": "Só o que posso pagar",
+    "owned": "Você tem: {count}",
+    "insufficient": "Saldo insuficiente",
+    "missing": "Faltam {amount} moedas.",
+    "quantity": "Quantidade",
+    "unitPrice": "Preço unitário",
+    "total": "Total",
+    "balanceAfter": "Saldo depois",
+    "confirm": "Confirmar compra",
+    "cancel": "Cancelar",
+    "buyTitle": "Comprar {name}",
+    "purchased": "Você comprou {count} × {name}.",
+    "empty": "Nenhum produto nesta categoria.",
+    "emptyAction": "Ver todas as categorias",
+    "noResults": "Nenhum item corresponde à busca.",
+    "retry": "Tentar de novo",
+    "errorGeneric": "Não foi possível concluir a compra. Tente de novo.",
+    "catchRate": "×{multiplier} de eficácia de captura.",
+    "healAmount": "Restaura {amount} HP.",
+    "healFull": "Restaura todo o HP.",
+    "decrease": "Remover um",
+    "increase": "Adicionar um",
+    "close": "Fechar",
+    "effects": {
+      "ether": "Restaura 10 PP de um movimento.",
+      "maxEther": "Restaura todos os PP de um movimento.",
+      "elixir": "Restaura 10 PP de todos os movimentos.",
+      "maxElixir": "Restaura todos os PP de todos os movimentos.",
+      "magnet": "Aumenta em 20% o poder dos movimentos do tipo Elétrico.",
+      "charcoal": "Aumenta em 20% o poder dos movimentos do tipo Fogo.",
+      "mysticWater": "Aumenta em 20% o poder dos movimentos do tipo Água.",
+      "miracleSeed": "Aumenta em 20% o poder dos movimentos do tipo Planta.",
+      "quickClaw": "20% de chance de agir primeiro, independente da Velocidade.",
+      "kingsRock": "10% de chance de o rival não conseguir atacar.",
+      "focusSash": "Com HP máximo, sobrevive a um golpe letal com 1 HP.",
+      "eviolite": "Aumenta em 50% a Defesa e a Defesa Especial se a espécie ainda evolui.",
+      "choiceSpecs": "Multiplica o Ataque Especial por 1,5, mas trava o primeiro movimento usado.",
+      "choiceScarf": "Multiplica a Velocidade por 1,5, mas trava o primeiro movimento usado.",
+      "choiceBand": "Multiplica o Ataque por 1,5, mas trava o primeiro movimento usado.",
+      "leftovers": "Restaura 1/16 do HP máximo ao fim de cada turno.",
+      "lifeOrb": "Aumenta em 30% o poder dos movimentos de dano, com recuo de 1/10 do HP máximo."
+    }
   },
   "pc": {
     "title": "PC de armazenamento",

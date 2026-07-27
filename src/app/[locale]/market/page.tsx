@@ -38,8 +38,10 @@ type Sort = (typeof SORTS)[number];
 // Cuántas ventas cerradas se miran para calcular el precio de referencia.
 const PRICE_HISTORY_SAMPLE = 200;
 
+// `h-10 w-full` en mobile: objetivo táctil y ancho completo dentro de la fila;
+// desde `sm` vuelve al botón compacto de escritorio.
 const GHOST_BUTTON_CLASS =
-  "text-label-md px-4 py-1.5 rounded-md border border-white/10 text-on-surface-variant hover:text-pokeball-red hover:border-pokeball-red/40 transition-colors";
+  "text-label-md h-10 w-full sm:h-auto sm:w-auto px-4 sm:py-1.5 rounded-md border border-white/10 text-on-surface-variant hover:text-pokeball-red hover:border-pokeball-red/40 transition-colors";
 
 type BrowseFilters = {
   q: string;
@@ -133,7 +135,10 @@ export default async function MarketPage({
 
   return (
     <div className="flex-1 px-margin-mobile py-6 md:px-margin-desktop md:py-8">
-      <div className="mx-auto max-w-7xl">
+      {/* `max-w-7xl` (1280px) dejaba 3 columnas incluso en 1920: el ancho extra
+          se iba en márgenes. Desde `2xl` el contenedor se ensancha y la grilla
+          `auto-fill` pasa sola a 4–5 columnas. */}
+      <div className="mx-auto max-w-7xl 2xl:max-w-[104rem]">
         <MarketHubHero listings={hubStats.listings} />
 
         {notice && (
@@ -162,12 +167,15 @@ export default async function MarketPage({
           </div>
         )}
 
-        <nav className="mb-5 flex overflow-x-auto border-b border-white/10 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* Riel de tabs: `no-scrollbar` reemplaza al trío de clases inline, y
+            `min-h-11` da el objetivo táctil de 44px en mobile. */}
+        <nav className="no-scrollbar mb-4 flex overflow-x-auto border-b border-white/10 sm:mb-5">
           {TABS.map((tabId) => (
             <Link
               key={tabId}
               href={marketTabHref(tabId, filters)}
-              className={`-mb-px flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-label-md transition-colors ${
+              aria-current={tab === tabId ? "page" : undefined}
+              className={`-mb-px flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 text-label-md transition-colors sm:min-h-0 sm:py-2 ${
                 tab === tabId
                   ? "border-pokeball-red text-pokeball-red"
                   : "border-transparent text-on-surface-variant hover:text-on-surface"
@@ -484,38 +492,46 @@ async function MineTab({ locale, userId }: { locale: string; userId: string }) {
         return (
           <div
             key={listing.id}
-            className={`bg-glass-surface backdrop-blur-xl border rounded-xl p-3 flex items-center gap-3 ${
+            className={`bg-glass-surface backdrop-blur-xl border rounded-xl p-3 ${
               isNews ? "border-electric-yellow/40" : "border-white/10"
             }`}
           >
-            <ListingAvatar listing={listing} item={item ?? null} />
-            <div className="min-w-0 flex-1">
-              <span className="text-label-md text-on-surface capitalize block truncate">
-                {name}
-                {listing.kind === "ITEM" && listing.quantity ? ` ×${listing.quantity}` : ""}
-              </span>
-              <span className="text-label-sm text-on-surface-variant">
-                {listing.status === "SOLD" && listing.buyer
-                  ? t("soldTo", {
-                      name: listing.buyer.username,
-                      coins: proceedsFor(listing.price),
-                    })
-                  : t(`status.${listing.status}`)}
-                {listing.status === "EXPIRED" && ` · ${t("returnedToPc")}`}
-                {listing.status === "ACTIVE" && listing.expiresAt && (
-                  <>
-                    {" · "}
-                    <ExpiryNote date={listing.expiresAt} />
-                  </>
-                )}
+            {/*
+              En mobile la fila apila: con avatar + texto + precio + botón en
+              una sola línea, el estado ("Expira en menos de una hora") quedaba
+              en una columna de ~90px y se partía en cuatro renglones.
+            */}
+            <div className="flex min-w-0 items-center gap-3">
+              <ListingAvatar listing={listing} item={item ?? null} />
+              <div className="min-w-0 flex-1">
+                <span className="text-label-md text-on-surface capitalize block truncate">
+                  {name}
+                  {listing.kind === "ITEM" && listing.quantity ? ` ×${listing.quantity}` : ""}
+                </span>
+                <span className="block text-label-sm text-on-surface-variant">
+                  {listing.status === "SOLD" && listing.buyer
+                    ? t("soldTo", {
+                        name: listing.buyer.username,
+                        coins: proceedsFor(listing.price),
+                      })
+                    : t(`status.${listing.status}`)}
+                  {listing.status === "EXPIRED" && ` · ${t("returnedToPc")}`}
+                  {listing.status === "ACTIVE" && listing.expiresAt && (
+                    <>
+                      {" · "}
+                      <ExpiryNote date={listing.expiresAt} />
+                    </>
+                  )}
+                </span>
+              </div>
+              <span className="flex shrink-0 items-center gap-1 font-mono text-label-md text-electric-yellow">
+                <span className="material-symbols-outlined text-[14px]!">paid</span>
+                {listing.price}
               </span>
             </div>
-            <span className="flex items-center gap-1 text-label-md text-electric-yellow font-mono shrink-0">
-              <span className="material-symbols-outlined text-[14px]!">paid</span>
-              {listing.price}
-            </span>
+
             {listing.status === "ACTIVE" && (
-              <form action={cancelListing.bind(null, locale)}>
+              <form action={cancelListing.bind(null, locale)} className="mt-2.5 sm:mt-2">
                 <input type="hidden" name="listingId" value={listing.id} />
                 <MarketSubmitButton
                   label={t("cancel")}
@@ -581,8 +597,9 @@ async function BoughtTab({ locale, userId }: { locale: string; userId: string })
               return (
                 <div
                   key={listing.id}
-                  className="flex flex-col gap-3 rounded-xl border border-pokeball-red/35 bg-glass-surface p-3 backdrop-blur-xl sm:flex-row sm:items-center"
+                  className="flex flex-col gap-2.5 rounded-xl border border-pokeball-red/35 bg-glass-surface p-3 backdrop-blur-xl sm:flex-row sm:items-center sm:gap-3"
                 >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                   <ListingAvatar listing={listing} item={item ?? null} />
                   <div className="min-w-0 flex-1">
                     <span className="block truncate text-label-md capitalize text-on-surface">
@@ -597,12 +614,13 @@ async function BoughtTab({ locale, userId }: { locale: string; userId: string })
                     <span className="material-symbols-outlined text-[14px]!">paid</span>
                     {listing.price}
                   </span>
-                  <form action={claimPurchase.bind(null, locale)}>
+                  </div>
+                  <form action={claimPurchase.bind(null, locale)} className="shrink-0">
                     <input type="hidden" name="listingId" value={listing.id} />
                     <MarketSubmitButton
                       label={t("bagReceive")}
                       pendingLabel={t("bagReceiving")}
-                      className="rounded-md bg-pokeball-red px-4 py-1.5 text-label-md font-semibold text-white transition hover:bg-pokeball-red/85"
+                      className="h-10 w-full rounded-md bg-pokeball-red px-4 text-label-md font-semibold text-white transition hover:bg-pokeball-red/85 sm:h-auto sm:w-auto sm:py-1.5"
                     />
                   </form>
                 </div>

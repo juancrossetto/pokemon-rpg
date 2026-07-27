@@ -24,6 +24,8 @@ model User {
   age             Int? // opcional
   avatarId        String? // referencia a AVATAR_OPTIONS en src/lib/avatars.ts, no una imagen — null = iniciales (comportamiento actual)
   coins           Int      @default(0)
+  /// Moneda premium (gemas) — reservada para usos de PC / economía especial.
+  gems            Int      @default(0)
   energy          Int      @default(20)
   energyMax       Int      @default(20)
   energyUpdatedAt DateTime @default(now()) // para calcular regeneración sin cron
@@ -69,6 +71,7 @@ enum NotificationType {
   MARKET_EXPIRED
   GYM_WON
   GYM_LOST
+  GYM_TM_REWARD
   PVP_WON
   PVP_LOST
 }
