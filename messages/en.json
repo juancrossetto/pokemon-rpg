@@ -631,6 +631,7 @@
     "tmEarned": "You got a {code}!",
     "resultEyebrow": "Battle over",
     "victoryTag": "Victory",
+    "defeatTag": "Defeat",
     "koTag": "K.O.",
     "caughtTag": "Caught",
     "fledTag": "Fled",

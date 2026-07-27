@@ -125,8 +125,10 @@ export async function blockIfInCombat(userId: string, locale: string): Promise<b
   return false;
 }
 
-/** Revalida layout (navbar) + batalla cuando empieza/termina un combate. */
+/** Revalida layout (navbar) cuando empieza/termina un combate.
+ *  No revalida `/battle`: al cerrar la sesión ACTIVE un refresh RSC
+ *  redirigía a `/gyms/.../run` a mitad de la animación de KO. */
 export function revalidateCombatUi(locale: string) {
   revalidatePath(`/${locale}`, "layout");
-  revalidatePath(`/${locale}/battle`);
+  revalidatePath(`/${locale}/gyms`);
 }

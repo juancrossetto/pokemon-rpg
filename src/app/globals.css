@@ -739,7 +739,7 @@ body {
   }
 }
 .sprite-faint {
-  animation: sprite-faint 0.6s ease-in forwards;
+  animation: sprite-faint 0.95s ease-in forwards;
 }
 
 @keyframes sprite-enter {
@@ -1359,16 +1359,134 @@ body {
 /* --- Pantalla de resultado de batalla --- */
 @keyframes result-in {
   from {
-    transform: translateY(12px);
+    transform: translateY(16px) scale(0.97);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 .result-in {
-  animation: result-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: result-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.battle-result-overlay {
+  animation: battle-result-overlay-in 0.35s ease-out both;
+}
+
+.battle-result-overlay.is-leaving {
+  animation: battle-result-overlay-out 0.4s ease-in both;
+  pointer-events: none;
+}
+
+.battle-result-overlay.is-leaving .result-in {
+  animation: result-out 0.4s ease-in both;
+}
+
+@keyframes battle-result-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes battle-result-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes result-out {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(10px) scale(0.97);
+    opacity: 0;
+  }
+}
+
+/* Título victoria / derrota — jerarquía fuerte vs. el resto del modal */
+@keyframes result-title-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.result-title {
+  animation: result-title-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+  font-size: clamp(1.75rem, 4.5vw, 2.35rem);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.result-title--win {
+  background: linear-gradient(180deg, #fff6c2 0%, #f2c000 42%, #c48900 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px rgba(242, 192, 0, 0.45)) drop-shadow(0 2px 0 rgba(120, 70, 0, 0.35));
+}
+
+.result-title--lose {
+  background: linear-gradient(180deg, #ff8a80 0%, #ee1515 48%, #a00c0c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 16px rgba(238, 21, 21, 0.4)) drop-shadow(0 2px 0 rgba(80, 0, 0, 0.35));
+}
+
+.result-title--neutral {
+  color: #e8eaed;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.12);
+}
+
+.result-outcome-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.result-outcome-pill--win {
+  border: 1px solid rgba(242, 192, 0, 0.45);
+  background: rgba(242, 192, 0, 0.14);
+  color: #f2c000;
+  box-shadow: 0 0 20px rgba(242, 192, 0, 0.15);
+}
+
+.result-outcome-pill--lose {
+  border: 1px solid rgba(238, 21, 21, 0.5);
+  background: rgba(238, 21, 21, 0.16);
+  color: #ff6b6b;
+  box-shadow: 0 0 20px rgba(238, 21, 21, 0.18);
+}
+
+.result-outcome-pill--neutral {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #9aa3b2;
 }
 
 @keyframes result-float {
@@ -1929,6 +2047,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .result-in,
   .result-float,
+  .result-title,
+  .battle-result-overlay,
+  .battle-result-overlay.is-leaving,
   .victory-ring,
   .level-up-chip,
   .level-up-fanfare,
