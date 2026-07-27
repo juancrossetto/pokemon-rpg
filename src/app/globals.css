@@ -1509,6 +1509,106 @@ body {
   animation: evolve-flash 1.45s ease-in-out both;
 }
 
+/* Escenario fullscreen de evolución (estilo juegos clásicos). */
+.evolve-stage-glow {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 45%, rgba(255, 255, 255, 0.14), transparent 70%),
+    radial-gradient(ellipse 90% 70% at 50% 100%, rgba(242, 192, 0, 0.12), transparent 55%);
+}
+
+.evolve-orbit {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 0 40px rgba(255, 255, 255, 0.06),
+    0 0 48px rgba(255, 255, 255, 0.08);
+}
+
+.evolve-orbit-spin {
+  animation: evolve-orbit-spin 2.8s linear infinite;
+}
+
+@keyframes evolve-orbit-spin {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.04);
+  }
+  to {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.evolve-silhouette {
+  filter: brightness(0) invert(1);
+  -webkit-filter: brightness(0) invert(1);
+}
+
+.evolve-morph-pulse {
+  animation: evolve-morph-pulse 0.35s ease-in-out;
+}
+
+@keyframes evolve-morph-pulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.evolve-color-pop {
+  animation: evolve-color-pop 0.7s ease-out both;
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.55));
+}
+
+@keyframes evolve-color-pop {
+  0% {
+    transform: scale(0.82);
+    filter: brightness(2.4) saturate(0.2) drop-shadow(0 0 24px rgba(255, 255, 255, 0.8));
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1) drop-shadow(0 10px 28px rgba(0, 0, 0, 0.55));
+  }
+}
+
+.evolve-whiteout {
+  background: #fff;
+}
+
+.evolve-whiteout-peak {
+  animation: evolve-whiteout-peak 0.45s ease-in both;
+}
+
+.evolve-whiteout-fade {
+  animation: evolve-whiteout-fade 0.85s ease-out both;
+}
+
+@keyframes evolve-whiteout-peak {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes evolve-whiteout-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.evolve-continue-in {
+  animation: evolve-card-in 0.45s ease-out both;
+}
+
 @keyframes evolve-card-in {
   0% {
     opacity: 0;
@@ -1735,6 +1835,12 @@ body {
   .evolve-arrow,
   .evolve-spark,
   .evolve-reveal-pop,
+  .evolve-orbit-spin,
+  .evolve-morph-pulse,
+  .evolve-color-pop,
+  .evolve-whiteout-peak,
+  .evolve-whiteout-fade,
+  .evolve-continue-in,
   .squad-fx-ring,
   .squad-fx-burst,
   .squad-fx-float-label,

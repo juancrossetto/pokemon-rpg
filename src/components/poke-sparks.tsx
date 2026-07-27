@@ -33,11 +33,12 @@ function buildSparks(seed: string) {
     const angle = ((i / SPARK_COUNT) * 360 + (base % 360)) * (Math.PI / 180);
     // Radio entre 30% y 47%: fuera del cuerpo del sprite, dentro de la card.
     const radius = 30 + ((n >>> 3) % 18);
-    const left = 50 + Math.cos(angle) * radius;
-    const top = 48 + Math.sin(angle) * radius * 0.78; // achatado: la card es más ancha que alta
+    // toFixed: sin esto SSR y cliente serializan distinto el float (hidratación).
+    const left = (50 + Math.cos(angle) * radius).toFixed(2);
+    const top = (48 + Math.sin(angle) * radius * 0.78).toFixed(2);
     const size = [2, 2.5, 3, 2, 3.5][i % 5];
-    const duration = 3 + ((n >>> 7) % 25) / 10;
-    const delay = -(((n >>> 11) % 40) / 10);
+    const duration = (3 + ((n >>> 7) % 25) / 10).toFixed(1);
+    const delay = (-(((n >>> 11) % 40) / 10)).toFixed(1);
     return { left, top, size, duration, delay };
   });
 }

@@ -174,7 +174,7 @@ export function EvolutionChainList({
           toName={reveal.toName}
           toSpriteUrl={reveal.toSpriteUrl}
           labels={{
-            title: tLevelUp("evolveReady"),
+            evolving: tLevelUp("evolvingCry", { name: reveal.fromName }),
             into: tLevelUp("evolvedInto", { name: reveal.toName }),
             continue: tLevelUp("dismiss"),
           }}

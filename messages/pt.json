@@ -1504,6 +1504,7 @@
     "cancel": "Cancelar",
     "evolveReady": "Evolução!",
     "evolveInto": "{from} está pronto para se tornar {to}",
+    "evolvingCry": "O quê? {name} está evoluindo!",
     "evolvedInto": "Evoluiu para {name}!",
     "evolve": "Evoluir",
     "evolveLater": "Depois",
