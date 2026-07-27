@@ -105,7 +105,24 @@ export function xpForVictory(wildLevel: number): number {
   return wildLevel * 12;
 }
 
-export type SkipReason = "asleep" | "paralyzed" | "disobey" | "flinch";
+/** Une IDs de participantes de batalla sin duplicados (orden de primera aparición). */
+export function mergeBattleParticipantIds(
+  ...idLists: (readonly (string | null | undefined)[] | string | null | undefined)[]
+): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const list of idLists) {
+    const ids = typeof list === "string" ? [list] : (list ?? []);
+    for (const id of ids) {
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  return out;
+}
+
+export type SkipReason = "asleep" | "paralyzed" | "frozen" | "disobey" | "flinch";
 
 export interface TurnEvent {
   side: "player" | "wild";

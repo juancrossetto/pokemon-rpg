@@ -9,6 +9,7 @@ import {
   effectivePp,
   playerActsFirst,
   STRUGGLE_MOVE,
+  mergeBattleParticipantIds,
   xpForVictory,
   type MoveSnapshot,
   type TurnEvent,
@@ -472,15 +473,19 @@ export async function submitBattleMove(
     }
 
     const totalXp = battle.pendingXp + koXp;
-    const participantIds = battle.participantIds.includes(instance.id)
-      ? battle.participantIds
-      : [...battle.participantIds, instance.id];
+    // Todos los que pelearon (salieron al campo) reparte XP — no filtrar por
+    // currentHp: un switch sin daño dejaba al saliente fuera si su HP en DB
+    // estaba desfasado o en 0 de una pelea anterior.
+    const participantIds = mergeBattleParticipantIds(
+      battle.participantIds,
+      battle.pokemonInstanceId,
+      instance.id,
+    );
     const participants = await prisma.pokemonInstance.findMany({
       where: { id: { in: participantIds } },
       include: { species: true },
     });
-    const survivors = participants.filter((p) => (p.id === instance.id ? playerHp > 0 : p.currentHp > 0));
-    const share = Math.max(1, Math.floor(totalXp / Math.max(1, survivors.length)));
+    const share = Math.max(1, Math.floor(totalXp / Math.max(1, participants.length)));
     xpGained = share;
 
     xpSummary = [];
@@ -496,17 +501,20 @@ export async function submitBattleMove(
       share: number;
     }[] = [];
 
-    for (const p of survivors) {
+    for (const p of participants) {
       const isActive = p.id === instance.id;
+      const hpBefore = isActive ? playerHp : Math.max(0, p.currentHp);
       const result = applyXpGain(
         p.xp,
         p.level,
-        isActive ? playerHp : p.currentHp,
+        hpBefore,
         p.unspentPoints,
         p.species.baseHp,
         p.ptConstitution,
         share,
       );
+      // Banca debilitada: gana XP pero no revive por el +HP de level-up.
+      const newCurrentHp = !isActive && p.currentHp <= 0 ? 0 : result.newCurrentHp;
       levelMetas.push({
         instanceId: p.id,
         speciesId: p.speciesId,
@@ -524,7 +532,7 @@ export async function submitBattleMove(
             xp: result.newXpTotal,
             level: result.newLevel,
             unspentPoints: result.newUnspentPoints,
-            currentHp: result.newCurrentHp,
+            currentHp: newCurrentHp,
           },
         }),
       );

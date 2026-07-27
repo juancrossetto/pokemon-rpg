@@ -414,6 +414,7 @@ enum StatusCondition {
   PARALYSIS
   POISON
   SLEEP
+  FREEZE
 }
 
 // ---------- Economía: objetos y mercado ----------

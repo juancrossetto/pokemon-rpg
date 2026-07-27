@@ -35,7 +35,7 @@ import {
   showdownBattleBgUrl,
   showdownFxUrl,
 } from "@/lib/showdown-fx";
-import { statusLabelKey, type StatusCondition } from "@/lib/status";
+import { statusAbbrKey, statusLabelKey, isStatusCondition, type StatusCondition } from "@/lib/status";
 import type { TurnEvent } from "@/lib/battle";
 
 function hitSfxForMove(moveType: string, category?: TurnEvent["category"]): SfxKind {
@@ -403,6 +403,7 @@ export function BattleArena({
       if (
         event.skipped === "asleep" ||
         event.skipped === "paralyzed" ||
+        event.skipped === "frozen" ||
         event.skipped === "disobey" ||
         event.skipped === "flinch"
       ) {
@@ -428,6 +429,7 @@ export function BattleArena({
       if (event.skipped) {
         if (event.skipped === "asleep") appendLog(tLog("asleep", { name: nameFor(event.side) }), event.side);
         else if (event.skipped === "paralyzed") appendLog(tLog("paralyzed", { name: nameFor(event.side) }), event.side);
+        else if (event.skipped === "frozen") appendLog(tLog("frozen", { name: nameFor(event.side) }), event.side);
         else if (event.skipped === "flinch") appendLog(tLog("flinch", { name: nameFor(event.side) }), event.side);
         else appendLog(tLog("disobey", { name: nameFor(event.side) }), event.side);
         setTimeout(() => {
@@ -525,6 +527,13 @@ export function BattleArena({
         else if (event.effectiveness > 0 && event.effectiveness < 1) appendLog(tLog("notVeryEffective"), event.side);
         else if (event.effectiveness === 0) appendLog(tLog("noEffect"), event.side);
         appendLog(tLog("damage", { name: nameFor(defenderSide), damage: event.damage }), defenderSide);
+
+        if (event.statusApplied) {
+          const label = t(statusLabelKey(event.statusApplied as StatusCondition));
+          appendLog(tLog("statusApplied", { name: nameFor(defenderSide), status: label }), defenderSide);
+          if (defenderSide === "wild") setWildStatus(event.statusApplied);
+          else setPlayerStatus(event.statusApplied);
+        }
 
         if (event.recoilDamage) {
           appendLog(tLog("recoil", { name: nameFor(event.side), damage: event.recoilDamage }), event.side);
@@ -1922,6 +1931,32 @@ function EmptyPartySlot({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function StatusBadge({ status }: { status: string }) {
+  const t = useTranslations("battle");
+  if (!isStatusCondition(status)) return null;
+
+  const tone =
+    status === "POISON"
+      ? "poison"
+      : status === "BURN"
+        ? "burn"
+        : status === "PARALYSIS"
+          ? "paralysis"
+          : status === "FREEZE"
+            ? "freeze"
+            : "sleep";
+
+  return (
+    <span
+      className={`battle-status-badge battle-status-badge--${tone}`}
+      title={t(statusLabelKey(status))}
+      aria-label={t(statusLabelKey(status))}
+    >
+      {t(statusAbbrKey(status))}
+    </span>
+  );
+}
+
 function HpPlate({
   name,
   levelLabel,
@@ -1949,12 +1984,12 @@ function HpPlate({
         critical ? "border-red-500/70 hp-plate-critical" : "border-white/15"
       } ${className}`}
     >
-      <div className={`flex items-baseline gap-1.5 md:gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
-        <span className="text-[11px] md:text-label-md text-white font-bold capitalize truncate">{name}</span>
+      <div className={`flex items-center gap-1.5 md:gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
+        <span className="text-[11px] md:text-label-md text-white font-bold capitalize truncate min-w-0">
+          {name}
+        </span>
         <span className="text-[10px] md:text-label-sm text-white/70 shrink-0">{levelLabel}</span>
-        {status && (
-          <span className="text-[9px] md:text-[10px] uppercase tracking-wide text-amber-300 shrink-0">{status}</span>
-        )}
+        {status ? <StatusBadge status={status} /> : null}
       </div>
       <div className="h-1.5 md:h-2 bg-white/15 rounded-full overflow-hidden mt-0.5 md:mt-1">
         <div

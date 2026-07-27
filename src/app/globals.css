@@ -476,6 +476,108 @@ body {
   }
 }
 
+/* Badges de estado no volátil (ENV / QUE / PAR / DOR) — estilo juegos clásicos. */
+.battle-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  border: 1px solid transparent;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+@media (min-width: 768px) {
+  .battle-status-badge {
+    min-width: 2rem;
+    padding: 0.15rem 0.4rem;
+    font-size: 10px;
+  }
+}
+.battle-status-badge--poison {
+  background: linear-gradient(180deg, #c084fc 0%, #7e22ce 100%);
+  border-color: rgba(216, 180, 254, 0.55);
+  animation: battle-status-poison 1.6s ease-in-out infinite;
+}
+.battle-status-badge--burn {
+  background: linear-gradient(180deg, #fb923c 0%, #c2410c 100%);
+  border-color: rgba(253, 186, 116, 0.55);
+  animation: battle-status-burn 1.1s ease-in-out infinite;
+}
+.battle-status-badge--paralysis {
+  background: linear-gradient(180deg, #facc15 0%, #ca8a04 100%);
+  border-color: rgba(253, 224, 71, 0.65);
+  color: #1a1400;
+  animation: battle-status-par 1.4s steps(2, end) infinite;
+}
+.battle-status-badge--sleep {
+  background: linear-gradient(180deg, #94a3b8 0%, #475569 100%);
+  border-color: rgba(203, 213, 225, 0.45);
+}
+.battle-status-badge--freeze {
+  background: linear-gradient(180deg, #7dd3fc 0%, #0284c7 100%);
+  border-color: rgba(186, 230, 253, 0.65);
+  color: #0c4a6e;
+  animation: battle-status-freeze 1.8s ease-in-out infinite;
+}
+
+@keyframes battle-status-poison {
+  0%,
+  100% {
+    filter: brightness(1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 0 0 rgba(168, 85, 247, 0);
+  }
+  50% {
+    filter: brightness(1.15);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 8px 1px rgba(168, 85, 247, 0.45);
+  }
+}
+@keyframes battle-status-burn {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+@keyframes battle-status-par {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+@keyframes battle-status-freeze {
+  0%,
+  100% {
+    filter: brightness(1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 0 0 rgba(56, 189, 248, 0);
+  }
+  50% {
+    filter: brightness(1.18);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 10px 1px rgba(56, 189, 248, 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-status-badge--poison,
+  .battle-status-badge--burn,
+  .battle-status-badge--paralysis,
+  .battle-status-badge--freeze {
+    animation: none;
+  }
+}
+
 .battle-arena-field {
   background:
     linear-gradient(180deg, rgba(10, 18, 14, 0.55) 0%, rgba(12, 22, 16, 0.72) 100%),
