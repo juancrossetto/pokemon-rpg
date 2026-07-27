@@ -398,7 +398,15 @@
         "no_item": "You no longer have that item"
       },
       "showDetails": "See details",
-      "hideDetails": "Hide"
+      "hideDetails": "Hide",
+      "evolveByTrade": "Trade",
+      "evolveStones": {
+        "Fire Stone": "Fire Stone",
+        "Water Stone": "Water Stone",
+        "Thunder Stone": "Thunder Stone",
+        "Leaf Stone": "Leaf Stone",
+        "Moon Stone": "Moon Stone"
+      }
     },
     "healFree": "Free healing available",
     "healCooldown": "Free in {minutes} min",
@@ -539,7 +547,8 @@
     "fledTag": "Fled",
     "rewardsTitle": "Rewards",
     "backHome": "Back home",
-    "resultLostTitle": "You lost the battle"
+    "resultLostTitle": "You lost the battle",
+    "alphaEncounter": "It is an Alpha Pokémon! Far stronger than usual."
   },
   "gyms": {
     "title": "Gyms",
@@ -793,7 +802,8 @@
       "own_listing": "You can't buy your own listing.",
       "insufficient_coins": "You don't have enough coins.",
       "insufficient_fee": "You don't have enough coins for the listing fee.",
-      "rate_limited": "Too many actions in a row. Give it a moment."
+      "rate_limited": "Too many actions in a row. Give it a moment.",
+      "breeding": "It is incubating an egg: cannot be sold."
     },
     "moves": "Moves",
     "unitPrice": "{price} each",
@@ -893,10 +903,12 @@
       "in_battle": "You can't deposit a Pokémon in the middle of a battle.",
       "last_team_member": "You can't deposit your last active Pokémon.",
       "rate_limited": "Too many actions in a row. Give it a moment.",
-      "unauthorized": "Session expired. Sign in again."
+      "unauthorized": "Session expired. Sign in again.",
+      "breeding": "It is incubating an egg in the nursery."
     },
     "dragHint": "Drag to reorder your team, or drop into the PC to store.",
-    "emptySlot": "Slot {slot} free"
+    "emptySlot": "Slot {slot} free",
+    "breedingLocked": "Breeding"
   },
   "ranking": {
     "eyebrow": "Competitive Hub",
@@ -1157,7 +1169,14 @@
       "cinnabar_island": "Cinnabar Island",
       "cinnabar_gym": "Cinnabar Gym",
       "route_21": "Route 21 (sea)",
-      "viridian_gym": "Viridian Gym"
+      "viridian_gym": "Viridian Gym",
+      "victory_road": "Victory Road",
+      "indigo_plateau": "Indigo Plateau",
+      "elite_lorelei": "Elite Four: Lorelei",
+      "elite_bruno": "Elite Four: Bruno",
+      "elite_agatha": "Elite Four: Agatha",
+      "elite_lance": "Elite Four: Lance",
+      "champion": "Champion"
     },
     "sectors": {
       "vf_entrance": "Entrance",
@@ -1235,7 +1254,17 @@
       "fuchsia_gym_milestone": "Challenge: Fuchsia Gym",
       "saffron_gym_milestone": "Challenge: Saffron Gym",
       "cinnabar_gym_milestone": "Challenge: Cinnabar Gym",
-      "viridian_gym_milestone": "Challenge: Viridian Gym"
+      "viridian_gym_milestone": "Challenge: Viridian Gym",
+      "vr_1": "Victory Road · leg 1",
+      "vr_2": "Victory Road · leg 2",
+      "vr_3": "Victory Road · leg 3",
+      "vr_4": "Victory Road · leg 4",
+      "indigo_plateau_1": "Outskirts of Indigo Plateau",
+      "elite_lorelei_milestone": "Challenge: Elite Four: Lorelei",
+      "elite_bruno_milestone": "Challenge: Elite Four: Bruno",
+      "elite_agatha_milestone": "Challenge: Elite Four: Agatha",
+      "elite_lance_milestone": "Challenge: Elite Four: Lance",
+      "champion_milestone": "Challenge: Champion"
     },
     "currentLocation": "Current location",
     "predictedTypes": "Predicted wild types in area",
@@ -1264,7 +1293,59 @@
     "zoneWilds": "Wild Pokémon here",
     "zoneWildsHint": "What can show up when you explore this zone.",
     "zonesUnlocked": "Zones open",
-    "badges": "Badges"
+    "badges": "Badges",
+    "chapter": "Chapter",
+    "chapterProgress": "Chapter progress",
+    "chapterDone": "Chapter complete",
+    "stagesShort": "stages",
+    "objectives": "Objectives",
+    "objStages": "Clear every stage",
+    "objPokedex": "Complete the zone Pokédex",
+    "objBadge": "Earn the badge",
+    "reqStages": "Clear the chapter stages",
+    "reqLevel": "Team at level {level}+",
+    "zoneLocked": "Zone locked. Progress through the chapter to unlock it.",
+    "journeySummary": "Your journey",
+    "pokedexShort": "Pokédex",
+    "shinies": "Shinies",
+    "mastery": "Mastery",
+    "masteryBonuses": "+{xp}% XP · +{capture}% catch · +{coins}% coins in this zone",
+    "seenShort": "seen",
+    "trainersTitle": "Trainers",
+    "trainerBeaten": "Beaten",
+    "trainerFight": "Fight",
+    "objTrainers": "Defeat every trainer",
+    "trainers": {
+      "youngster": "Youngster Timmy",
+      "bug_catcher": "Bug Catcher Rick",
+      "bug_catcher_2": "Bug Catcher Doug",
+      "camper": "Camper Liz",
+      "lass": "Lass Janet",
+      "hiker": "Hiker Marcos",
+      "rocket_grunt": "Rocket Grunt",
+      "picnicker": "Picnicker Ana",
+      "gambler": "Gambler Hugo",
+      "hiker_2": "Hiker Lenny",
+      "pokemaniac": "Pokémaniac Ed",
+      "super_nerd": "Super Nerd Ivan",
+      "biker": "Biker Kai",
+      "beauty": "Beauty Nina",
+      "swimmer": "Swimmer Beto",
+      "fisherman": "Fisherman Omar"
+    },
+    "obj_stages": "Clear every stage",
+    "obj_pokedex": "Complete the zone Pokédex",
+    "obj_trainers": "Defeat every trainer",
+    "claim": "Claim",
+    "claimed": "Claimed",
+    "rarity": {
+      "common": "Common",
+      "uncommon": "Uncommon",
+      "rare": "Rare",
+      "veryRare": "Very rare",
+      "elite": "Elite"
+    },
+    "topRarity": "Top rarity"
   },
   "levelUp": {
     "title": "{name} · Lv. {level}",
@@ -1311,7 +1392,8 @@
       "too_young": "They need more levels.",
       "no_coins": "Not enough coins.",
       "not_ready": "The egg is not ready yet.",
-      "team_full": "Team is full."
+      "team_full": "Team is full.",
+      "busy_parents": "Those parents are already incubating an egg."
     }
   }
 }

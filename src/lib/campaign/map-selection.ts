@@ -2,6 +2,7 @@ import { locationEncounterRate } from "./encounters";
 import { isStageUnlocked, listLocationsForUi, type CampaignProgressRow } from "./progress";
 import { locationPoint } from "./region-map";
 import type { EncounterRate } from "./types";
+import type { Rarity } from "./rarity";
 
 export type MapStage = {
   id: string;
@@ -17,6 +18,9 @@ export type MapEncounter = {
   spriteUrl: string;
   types: string[];
   caught: boolean;
+  /** Ya te lo cruzaste en esta zona: si es false va como silueta desconocida. */
+  seen: boolean;
+  rarity: Rarity;
 };
 
 export type MapLocation = {
@@ -38,6 +42,22 @@ export type MapLocation = {
   spawnSpeciesIds: number[];
   /** Se completa en `loadMapLocations` — vacío si se armó sin datos de DB. */
   encounters: MapEncounter[];
+  /** Mastery del jugador en la zona (0 si nunca farmeó ahí). */
+  masteryXp: number;
+  masteryLevel: number;
+  trainers: MapTrainer[];
+  /** Objetivos de zona ya cobrados (ver `objectives.ts`). */
+  claimedObjectives: string[];
+  /** Orden del gimnasio/hito si la zona es un gimnasio. */
+  gymOrder: number | null;
+};
+
+export type MapTrainer = {
+  id: string;
+  nameKey: string;
+  level: number;
+  coinReward: number;
+  defeated: boolean;
 };
 
 /**
@@ -69,6 +89,11 @@ export function buildMapLocations(progress: CampaignProgressRow): MapLocation[] 
           encounterRate: locationEncounterRate(location),
           spawnSpeciesIds: [...new Set(wildStages.flatMap((s) => s.spawnSpeciesIds))],
           encounters: [],
+          masteryXp: 0,
+          masteryLevel: 1,
+          trainers: [],
+          claimedObjectives: [],
+          gymOrder: location.requiresGymOrder ?? null,
           stages: location.stages.map((stage) => ({
             id: stage.id,
             nameKey: stage.nameKey,

@@ -13,6 +13,7 @@ interface GymJson {
   badgeName: string;
   type: string;
   coinReward: number;
+  isElite?: boolean;
   trainers: { name: string; pokemon: { name: string; level: number }[] }[];
   pokemon: { name: string; level: number }[];
 }
@@ -29,6 +30,7 @@ export async function seedGyms() {
         badgeName: gymData.badgeName,
         type: gymData.type,
         coinReward: gymData.coinReward,
+        isElite: gymData.isElite ?? false,
       },
       update: {
         name: gymData.gym,
@@ -36,6 +38,7 @@ export async function seedGyms() {
         badgeName: gymData.badgeName,
         type: gymData.type,
         coinReward: gymData.coinReward,
+        isElite: gymData.isElite ?? false,
       },
     });
 

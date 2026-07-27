@@ -11,6 +11,8 @@ import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { getKantoStage, resolveSpawn } from "@/lib/campaign";
 import { rollShiny } from "@/lib/shiny";
+import { recordSeenSpecies } from "@/lib/zone-progress";
+import { pickEventItemName, rollExplorationEvent } from "@/lib/campaign/events";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
 
 const FALLBACK_ENERGY_COST = 1;
@@ -63,7 +65,10 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
   const currentEnergy = getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt);
   if (currentEnergy < energyCost) return { success: false, error: "no_energy" };
 
-  const { speciesId: wildSpeciesId, level: wildLevel } = resolveSpawn(stage);
+  const { speciesId: wildSpeciesId, level: baseLevel } = resolveSpawn(stage);
+  // Evento de exploración: expectativa por tirada, sin contenido nuevo.
+  const event = rollExplorationEvent();
+  const wildLevel = event.kind === "alpha" ? baseLevel + event.levelBonus : baseLevel;
   const wildSpecies = await prisma.species.findUniqueOrThrow({ where: { id: wildSpeciesId } });
   const wildMaxHp = calculateMaxHp(wildSpecies.baseHp, wildLevel);
   const wildMoveIds = await getMovesetForLevel(wildSpeciesId, wildLevel);
@@ -71,12 +76,28 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
   const wildMovePp = wildMoveIds.map((id) => wildMoves.find((m) => m.id === id)?.pp ?? 20);
   // 1/4096, igual que el juego oficial (ver dossier).
   const wildIsShiny = rollShiny();
+  // Descubrimiento progresivo: la Pokédex de la zona revela lo que ya cruzaste.
+  await recordSeenSpecies(userId, progress.farmingLocationId, wildSpeciesId);
+
+  const foundItem =
+    event.kind === "item"
+      ? await prisma.item.findFirst({ where: { name: pickEventItemName() } })
+      : null;
 
   await prisma.$transaction([
     prisma.user.update({
       where: { id: userId },
       data: { energy: currentEnergy - energyCost, energyUpdatedAt: new Date() },
     }),
+    ...(foundItem
+      ? [
+          prisma.inventoryItem.upsert({
+            where: { userId_itemId: { userId, itemId: foundItem.id } },
+            create: { userId, itemId: foundItem.id, quantity: 1 },
+            update: { quantity: { increment: 1 } },
+          }),
+        ]
+      : []),
     prisma.battleSession.create({
       data: {
         userId,
@@ -88,7 +109,11 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
         wildMoveIds,
         wildMovePp,
         wildIsShiny,
-        log: [`appear:${wildSpecies.name}`, `stage:${stage.id}`],
+        log: [
+          ...(event.kind === "alpha" ? ["alpha"] : []),
+          `appear:${wildSpecies.name}`,
+          `stage:${stage.id}`,
+        ],
         participantIds: [lead.id],
       },
     }),

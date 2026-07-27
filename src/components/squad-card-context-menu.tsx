@@ -168,9 +168,9 @@ export function SquadCardContextMenu({
           const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
           openAt(rect.left, rect.bottom + 4);
         }}
-        className="absolute right-1.5 top-1.5 z-20 flex h-6 w-6 items-center justify-center rounded-md border border-white/10 bg-black/45 text-on-surface-variant opacity-0 backdrop-blur-sm transition hover:border-white/25 hover:text-white group-hover:opacity-100 focus:opacity-100"
+        className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-on-surface-variant/80 opacity-90 backdrop-blur-md transition duration-200 hover:scale-105 hover:border-white/25 hover:bg-white/[0.12] hover:text-white hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 active:scale-95"
       >
-        <span className="material-symbols-outlined text-[16px]!">more_vert</span>
+        <span className="material-symbols-outlined text-[17px]! leading-none">more_horiz</span>
       </button>
 
       {menu && (

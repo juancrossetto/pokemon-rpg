@@ -114,6 +114,8 @@ export interface TeamRosterLabels {
   evolutionsTitle: string;
   unknownSpecies: string;
   evolveAtLevel: string;
+  evolveByTrade: string;
+  evolveStones: Record<string, string>;
   showDetails: string;
   hideDetails: string;
   tabAbout: string;
@@ -375,6 +377,8 @@ function PokemonCard({
               emptyMove: labels.emptySlotMove,
               unknownSpecies: labels.unknownSpecies,
               evolveAtLevel: labels.evolveAtLevel,
+              evolveByTrade: labels.evolveByTrade,
+              evolveStones: labels.evolveStones,
             }}
             moves={member.moves}
             currentHp={member.currentHp}

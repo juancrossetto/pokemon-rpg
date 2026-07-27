@@ -2,17 +2,45 @@
 
 import Image from "next/image";
 import { typeColor } from "@/lib/type-colors";
-import type { EvolutionStage } from "@/lib/evolution-chain";
+import { itemSpriteUrl } from "@/lib/item-sprites";
+import type { EvolutionRequirement, EvolutionStage } from "@/lib/evolution-chain";
+
+type RequirementLabels = {
+  evolveAtLevelLabel: string;
+  /** Nombre traducido por ítem, indexado como está en la tabla `Item`. */
+  itemLabels: Record<string, string>;
+  tradeLabel: string;
+};
+
+/** Texto del requisito: nivel, piedra o intercambio. */
+function requirementLabel(
+  requirement: EvolutionRequirement | null,
+  { evolveAtLevelLabel, itemLabels, tradeLabel }: RequirementLabels,
+): string | null {
+  if (!requirement) return null;
+  if (requirement.kind === "level") {
+    return evolveAtLevelLabel.replace("{level}", String(requirement.level));
+  }
+  if (requirement.kind === "item") {
+    return itemLabels[requirement.itemName] ?? requirement.itemName;
+  }
+  if (requirement.kind === "trade") return tradeLabel;
+  return null;
+}
 
 export function EvolutionChainList({
   stages,
   unknownLabel,
   evolveAtLevelLabel,
+  itemLabels,
+  tradeLabel,
   compact = false,
 }: {
   stages: EvolutionStage[];
   unknownLabel: string;
   evolveAtLevelLabel: string;
+  itemLabels: Record<string, string>;
+  tradeLabel: string;
   compact?: boolean;
 }) {
   if (stages.length === 0) {
@@ -109,13 +137,26 @@ export function EvolutionChainList({
                 <div
                   className={`absolute top-0 h-full w-px bg-white/15 ${compact ? "left-5" : "left-[2.05rem]"}`}
                 />
-                <span className="relative z-[1] ml-3 inline-flex items-center gap-0.5 rounded-full border border-white/10 bg-[#141414] px-1.5 py-0.5 text-[8px] text-white/50">
+                <span className="relative z-[1] ml-3 inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#141414] px-1.5 py-0.5 text-[8px] text-white/50">
                   <span className="material-symbols-outlined text-[10px]! leading-none">
                     arrow_downward
                   </span>
-                  {next?.evolveFromLevel != null
-                    ? evolveAtLevelLabel.replace("{level}", String(next.evolveFromLevel))
-                    : null}
+                  {/* Piedra: se muestra el sprite del ítem, que es como el
+                      jugador lo va a reconocer en la mochila y en el mercado. */}
+                  {next?.requirement?.kind === "item" && (
+                    <Image
+                      src={itemSpriteUrl(next.requirement.itemName)}
+                      alt=""
+                      width={12}
+                      height={12}
+                      className="h-3 w-3 shrink-0 object-contain"
+                    />
+                  )}
+                  {requirementLabel(next?.requirement ?? null, {
+                    evolveAtLevelLabel,
+                    itemLabels,
+                    tradeLabel,
+                  })}
                 </span>
               </div>
             )}

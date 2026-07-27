@@ -24,6 +24,8 @@ export type PcMon = {
   isTradeLocked: boolean;
   /** Publicado en el mercado: está en escrow, no se puede mover. */
   listed: boolean;
+  /** Incubando un huevo en la guardería: queda inmovilizado hasta que eclosione. */
+  breeding: boolean;
 };
 
 type Zone = "team" | "box";
@@ -97,7 +99,7 @@ export function PcTransfer({
       drag.from === "team"
         ? team.find((m) => m.id === drag.id)
         : box.find((m) => m.id === drag.id);
-    if (!mon || mon.listed) return;
+    if (!mon || mon.listed || mon.breeding) return;
 
     if (drag.from === "team") {
       const rest = team.filter((m) => m.id !== mon.id);
@@ -239,6 +241,7 @@ export function PcTransfer({
                 onDragEnd={() => setDrag(null)}
                 levelLabel={t("level", { level: mon.level })}
                 listedLabel={t("listed")}
+                breedingLabel={t("breedingLocked")}
                 menuLabels={menuLabels}
                 bagCounts={bagCounts}
                 onBagChange={setBagCounts}
@@ -268,6 +271,7 @@ function MonCard({
   onDragEnd,
   levelLabel,
   listedLabel,
+  breedingLabel,
   menuLabels,
   bagCounts,
   onBagChange,
@@ -282,6 +286,7 @@ function MonCard({
   onDragEnd: () => void;
   levelLabel: string;
   listedLabel?: string;
+  breedingLabel?: string;
   menuLabels: SquadContextLabels;
   bagCounts: SquadBagCounts;
   onBagChange: (next: SquadBagCounts) => void;
@@ -309,11 +314,13 @@ function MonCard({
       onLeveledUp={onLeveledUp}
     >
       <article
-        draggable={!mon.listed}
+        draggable={!mon.listed && !mon.breeding}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         className={`flex items-center gap-3 rounded-xl border border-white/10 bg-glass-surface p-3 pr-8 backdrop-blur-xl transition-opacity ${
-          mon.listed ? "cursor-not-allowed opacity-60" : "cursor-grab active:cursor-grabbing"
+          mon.listed || mon.breeding
+          ? "cursor-not-allowed opacity-60"
+          : "cursor-grab active:cursor-grabbing"
         } ${dragging ? "opacity-40" : ""}`}
       >
         <span className="material-symbols-outlined shrink-0 text-[18px]! text-on-surface-variant/40">
@@ -339,7 +346,13 @@ function MonCard({
           <div className="flex items-center gap-1.5">
             <span className="truncate text-label-md capitalize text-on-surface">{mon.name}</span>
             <span className="shrink-0 text-label-sm text-on-surface-variant">{levelLabel}</span>
-            {mon.listed && listedLabel && (
+            {mon.breeding && (
+            <span className="shrink-0 inline-flex items-center gap-0.5 rounded border border-tertiary/30 bg-tertiary/10 px-1.5 py-0.5 text-[10px] text-tertiary">
+              <span className="material-symbols-outlined text-[11px]! leading-none">egg</span>
+              {breedingLabel}
+            </span>
+          )}
+          {mon.listed && listedLabel && (
               <span className="shrink-0 rounded border border-electric-yellow/30 bg-electric-yellow/10 px-1.5 py-0.5 text-[10px] text-electric-yellow">
                 {listedLabel}
               </span>

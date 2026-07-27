@@ -34,7 +34,14 @@ function fetchGyms() {
 // Estado de cada gimnasio para un usuario: medalla obtenida, bloqueado
 // (falta la medalla anterior), o en cooldown tras haber perdido. Compartido
 // entre la lista (/gyms) y el mapa (/gyms/map) para no duplicar la lógica.
-export async function computeGymStatuses(userId: string): Promise<GymStatus[]> {
+/**
+ * Estado de los gimnasios. Por defecto solo los 8 de medalla: el Alto Mando se
+ * pide aparte (`includeElite`) porque no da medalla y solo se abre con las 8.
+ */
+export async function computeGymStatuses(
+  userId: string,
+  includeElite = false,
+): Promise<GymStatus[]> {
   const [gyms, badges, attempts] = await Promise.all([
     fetchGyms(),
     prisma.badge.findMany({ where: { userId } }),
@@ -51,7 +58,9 @@ export async function computeGymStatuses(userId: string): Promise<GymStatus[]> {
 
   const now = nowMs();
 
-  return gyms.map((gym) => {
+  return gyms
+    .filter((gym) => includeElite || !gym.isElite)
+    .map((gym) => {
     const badgeEarned = badgedGymIds.has(gym.id);
     const previousGym = gym.order > 1 ? gymByOrder.get(gym.order - 1) : undefined;
     const locked = previousGym ? !badgedGymIds.has(previousGym.id) : false;

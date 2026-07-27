@@ -1,0 +1,114 @@
+import type { MapLocation } from "./map-selection";
+
+/**
+ * Objetivos de zona con recompensa.
+ *
+ * El dossier pedía que las recompensas se vieran importantes, no que fueran una
+ * lista de texto. Completar un objetivo ahora paga, y el pago se reclama: ver el
+ * botón encendido es el gancho que hace volver a una zona a medio terminar.
+ *
+ * Los tres objetivos salen de datos que ya calculábamos — no hay estado nuevo
+ * más que el registro de qué reclamaste.
+ */
+export type ZoneObjectiveId = "stages" | "pokedex" | "trainers";
+
+export const ZONE_OBJECTIVE_IDS: ZoneObjectiveId[] = ["stages", "pokedex", "trainers"];
+
+export type ObjectiveReward = {
+  coins: number;
+  /** Nombre exacto del ítem en la tabla `Item` (ver seed). */
+  itemName: string;
+  quantity: number;
+};
+
+export type ZoneObjectiveState = {
+  id: ZoneObjectiveId;
+  done: boolean;
+  current: number;
+  target: number;
+  reward: ObjectiveReward;
+  claimed: boolean;
+  /** Listo para reclamar: completo y sin cobrar. */
+  claimable: boolean;
+};
+
+/**
+ * Recompensa por objetivo, escalada al nivel de la zona.
+ *
+ * Los objetos siguen la lógica de los juegos: explorar del todo una ruta te
+ * deja balls, completar la Pokédex paga con Caramelo Raro (el premio clásico
+ * de los hitos de Pokédex), y limpiar a los entrenadores devuelve curación
+ * para poder seguir. Todo sale del catálogo que ya siembra `items.ts`.
+ */
+export function objectiveReward(
+  zone: MapLocation,
+  objective: ZoneObjectiveId,
+): ObjectiveReward {
+  const base = 40 + zone.levelMax * 12;
+  const multiplier = objective === "pokedex" ? 1.6 : objective === "trainers" ? 1.2 : 1;
+  const coins = Math.round(base * multiplier);
+  const tier = zone.levelMax >= 40 ? 2 : zone.levelMax >= 20 ? 1 : 0;
+
+  if (objective === "stages") {
+    return {
+      coins,
+      itemName: ["Poke Ball", "Great Ball", "Ultra Ball"][tier],
+      quantity: 5,
+    };
+  }
+  if (objective === "pokedex") {
+    // El premio de completar Pokédex: sube un nivel entero.
+    return { coins, itemName: "Rare Candy", quantity: tier >= 2 ? 2 : 1 };
+  }
+  return {
+    coins,
+    itemName: ["Potion", "Super Potion", "Full Restore"][tier],
+    quantity: tier === 2 ? 2 : 3,
+  };
+}
+
+/** Estado de un objetivo. `claims` son los ids ya reclamados de esta zona. */
+export function evaluateObjective(
+  zone: MapLocation,
+  objective: ZoneObjectiveId,
+  claims: Set<string>,
+): ZoneObjectiveState | null {
+  let current = 0;
+  let target = 0;
+
+  if (objective === "stages") {
+    current = zone.completedStages;
+    target = zone.totalStages;
+  } else if (objective === "pokedex") {
+    current = zone.encounters.filter((e) => e.caught).length;
+    target = zone.encounters.length;
+  } else {
+    current = zone.trainers.filter((t) => t.defeated).length;
+    target = zone.trainers.length;
+  }
+
+  // Sin objetivo posible (una ciudad sin entrenadores, por ejemplo) no se muestra.
+  if (target === 0) return null;
+
+  const done = current >= target;
+  const claimed = claims.has(objective);
+  return {
+    id: objective,
+    done,
+    current,
+    target,
+    reward: objectiveReward(zone, objective),
+    claimed,
+    claimable: done && !claimed,
+  };
+}
+
+export function evaluateObjectives(
+  zone: MapLocation,
+  claims: Set<string>,
+): ZoneObjectiveState[] {
+  return ZONE_OBJECTIVE_IDS.flatMap((id) => {
+    const state = evaluateObjective(zone, id, claims);
+    return state ? [state] : [];
+  });
+}

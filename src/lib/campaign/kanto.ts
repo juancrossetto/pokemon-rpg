@@ -33,47 +33,35 @@ function viridianForestStages(baseOrder: number): CampaignStage[] {
   const entranceSpecies = [10, 11, 13, 14, 16]; // Caterpie, Metapod, Weedle, Kakuna, Pidgey
   const midSpecies = [10, 13, 16, 17, 25]; // +Pidgeotto, Pikachu
   const deepSpecies = [12, 15, 16, 17, 25]; // Butterfree, Beedrill, …
+
+  // 2 stages por sector en vez de 5. Con 15 stages, el bosque era el 24% del
+  // juego entero y todo dentro del capítulo 1: el jugador tardaba más en llegar
+  // a su primera medalla que del gimnasio 2 al 8 juntos. Los sectores siguen
+  // dando la sensación de profundidad sin el muro de grindeo.
+  const sectors = [
+    { key: "e", sectorId: "vf-entrance", species: entranceSpecies, level: 3 },
+    { key: "m", sectorId: "vf-mid", species: midSpecies, level: 5 },
+    { key: "d", sectorId: "vf-deep", species: deepSpecies, level: 7 },
+  ];
+
   const stages: CampaignStage[] = [];
   let n = 0;
-  for (let i = 0; i < 5; i++) {
-    n += 1;
-    stages.push({
-      id: `vf-e-${i + 1}`,
-      locationId: "viridian-forest",
-      sectorId: "vf-entrance",
-      order: baseOrder + n - 1,
-      nameKey: `stages.vf_e_${i + 1}`,
-      spawnSpeciesIds: entranceSpecies,
-      levelMin: 3 + Math.floor(i / 2),
-      levelMax: 5 + Math.floor(i / 2),
-    });
-  }
-  for (let i = 0; i < 5; i++) {
-    n += 1;
-    stages.push({
-      id: `vf-m-${i + 1}`,
-      locationId: "viridian-forest",
-      sectorId: "vf-mid",
-      order: baseOrder + n - 1,
-      nameKey: `stages.vf_m_${i + 1}`,
-      spawnSpeciesIds: midSpecies,
-      levelMin: 5 + Math.floor(i / 2),
-      levelMax: 7 + Math.floor(i / 2),
-    });
-  }
-  for (let i = 0; i < 5; i++) {
-    n += 1;
-    stages.push({
-      id: `vf-d-${i + 1}`,
-      locationId: "viridian-forest",
-      sectorId: "vf-deep",
-      order: baseOrder + n - 1,
-      nameKey: `stages.vf_d_${i + 1}`,
-      spawnSpeciesIds: deepSpecies,
-      levelMin: 7 + Math.floor(i / 2),
-      levelMax: 9 + Math.floor(i / 2),
-      unlocksLocationId: i === 4 ? "pewter-city" : undefined,
-    });
+  for (const sector of sectors) {
+    for (let i = 0; i < 2; i++) {
+      const last = sector.key === "d" && i === 1;
+      stages.push({
+        id: `vf-${sector.key}-${i + 1}`,
+        locationId: "viridian-forest",
+        sectorId: sector.sectorId,
+        order: baseOrder + n,
+        nameKey: `stages.vf_${sector.key}_${i + 1}`,
+        spawnSpeciesIds: sector.species,
+        levelMin: sector.level + i,
+        levelMax: sector.level + 2 + i,
+        unlocksLocationId: last ? "pewter-city" : undefined,
+      });
+      n += 1;
+    }
   }
   return stages;
 }
@@ -443,6 +431,45 @@ const ROUTE_21: CampaignLocation = {
 const VIRIDIAN_GYM = gymLocation({
   id: "viridian-gym", order: 30, key: "viridian_gym", gymOrder: 8,
   stageOrder: 70, species: [111, 31], levelMin: 42, levelMax: 46,
+  unlocks: "victory-road",
+});
+
+// ---- Capítulo final: Calle Victoria, Alto Mando y Campeón ----
+
+const VICTORY_ROAD: CampaignLocation = {
+  id: "victory-road", regionId: "kanto", order: 31, nameKey: "locations.victory_road",
+  kind: "dungeon", mapKey: "victory-road",
+  stages: routeStages("victory-road", "vr", 4, 71, [42, 74, 75, 95, 105], 40, 46, "indigo-plateau"),
+};
+
+const INDIGO_PLATEAU = townLocation({
+  id: "indigo-plateau", order: 32, key: "indigo_plateau", stageOrder: 75,
+  species: [41, 42, 132], levelMin: 44, levelMax: 48, unlocks: "elite-lorelei",
+});
+
+const ELITE_LORELEI = gymLocation({
+  id: "elite-lorelei", order: 33, key: "elite_lorelei", gymOrder: 9,
+  stageOrder: 76, species: [131, 124], levelMin: 51, levelMax: 54, unlocks: "elite-bruno",
+});
+
+const ELITE_BRUNO = gymLocation({
+  id: "elite-bruno", order: 34, key: "elite_bruno", gymOrder: 10,
+  stageOrder: 77, species: [68, 106], levelMin: 51, levelMax: 56, unlocks: "elite-agatha",
+});
+
+const ELITE_AGATHA = gymLocation({
+  id: "elite-agatha", order: 35, key: "elite_agatha", gymOrder: 11,
+  stageOrder: 78, species: [94, 24], levelMin: 53, levelMax: 58, unlocks: "elite-lance",
+});
+
+const ELITE_LANCE = gymLocation({
+  id: "elite-lance", order: 36, key: "elite_lance", gymOrder: 12,
+  stageOrder: 79, species: [149, 142], levelMin: 54, levelMax: 60, unlocks: "champion",
+});
+
+const CHAMPION = gymLocation({
+  id: "champion", order: 37, key: "champion", gymOrder: 13,
+  stageOrder: 80, species: [9, 65], levelMin: 57, levelMax: 61,
 });
 
 export const KANTO_REGION: CampaignRegion = {
@@ -480,6 +507,13 @@ export const KANTO_REGION: CampaignRegion = {
     CINNABAR_GYM,
     ROUTE_21,
     VIRIDIAN_GYM,
+    VICTORY_ROAD,
+    INDIGO_PLATEAU,
+    ELITE_LORELEI,
+    ELITE_BRUNO,
+    ELITE_AGATHA,
+    ELITE_LANCE,
+    CHAMPION,
   ],
 };
 

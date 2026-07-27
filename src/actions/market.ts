@@ -128,6 +128,18 @@ export async function listPokemon(locale: string, formData: FormData) {
         if (others === 0) throw new MarketError("last_team_member");
       }
 
+      // Un padre incubando está comprometido: no se puede poner en venta.
+      const incubating = await tx.egg.findFirst({
+        where: {
+          ownerId: userId,
+          hatchedAt: null,
+          OR: [{ parentAId: instance.id }, { parentBId: instance.id }],
+        },
+        select: { id: true },
+      });
+      if (incubating) throw new MarketError("breeding");
+
+
       await chargeListingFee(tx, userId, price);
 
       // Escrow: sale del equipo mientras está publicado — no puede batallar

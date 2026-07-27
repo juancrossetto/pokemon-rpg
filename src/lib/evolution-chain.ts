@@ -1,6 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import type { DexStatus } from "@/lib/pokedex";
 
+/**
+ * Cómo se llega a esta forma desde la anterior. Se arma con los campos del
+ * hijo, no del padre: Eevee tiene tres evoluciones con una piedra distinta
+ * cada una y `evolveLevel`, que vive en el padre, no puede distinguirlas.
+ */
+export type EvolutionRequirement =
+  | { kind: "level"; level: number }
+  | { kind: "item"; itemName: string }
+  | { kind: "trade" }
+  | { kind: "other"; trigger: string };
+
 export type EvolutionStage = {
   speciesId: number;
   name: string;
@@ -8,6 +19,8 @@ export type EvolutionStage = {
   types: string[];
   /** Nivel en la forma previa para llegar a esta (null si es raíz o evo no-level). */
   evolveFromLevel: number | null;
+  /** Requisito para llegar a esta forma. Null en la raíz de la cadena. */
+  requirement: EvolutionRequirement | null;
   status: DexStatus;
   isCurrent: boolean;
 };
@@ -19,7 +32,41 @@ type SpeciesEvoRow = {
   types: string[];
   evolveLevel: number | null;
   evolvesFromId: number | null;
+  evolveTrigger: string | null;
+  evolveItem: string | null;
+  evolveMinLevel: number | null;
 };
+
+const EVO_SELECT = {
+  id: true,
+  name: true,
+  spriteUrl: true,
+  types: true,
+  evolveLevel: true,
+  evolvesFromId: true,
+  evolveTrigger: true,
+  evolveItem: true,
+  evolveMinLevel: true,
+} as const;
+
+function requirementOf(
+  row: SpeciesEvoRow,
+  parent: SpeciesEvoRow | undefined,
+): EvolutionRequirement | null {
+  if (!parent) return null;
+
+  if (row.evolveTrigger === "use-item" && row.evolveItem) {
+    return { kind: "item", itemName: row.evolveItem };
+  }
+  if (row.evolveTrigger === "trade") return { kind: "trade" };
+
+  // Para level-up manda el nivel del padre: es el que `level-up.ts` chequea de
+  // verdad al subir de nivel. `evolveMinLevel` queda de respaldo.
+  const level = parent.evolveLevel ?? row.evolveMinLevel;
+  if (level != null) return { kind: "level", level };
+
+  return row.evolveTrigger ? { kind: "other", trigger: row.evolveTrigger } : null;
+}
 
 function dexStatus(id: number, caughtIds: Set<number>, seenIds: Set<number>): DexStatus {
   if (caughtIds.has(id)) return "caught";
@@ -85,6 +132,7 @@ export function buildEvolutionChain(
       spriteUrl: row.spriteUrl,
       types: row.types,
       evolveFromLevel: parent?.evolveLevel ?? null,
+      requirement: requirementOf(row, parent),
       status,
       isCurrent: id === currentId,
     };
@@ -100,16 +148,7 @@ export async function loadEvolutionChainsForTeam(
   if (unique.length === 0) return new Map();
 
   const [species, owned, seenRows] = await Promise.all([
-    prisma.species.findMany({
-      select: {
-        id: true,
-        name: true,
-        spriteUrl: true,
-        types: true,
-        evolveLevel: true,
-        evolvesFromId: true,
-      },
-    }),
+    prisma.species.findMany({ select: EVO_SELECT }),
     prisma.pokemonInstance.findMany({
       where: { ownerId: userId },
       select: { speciesId: true },

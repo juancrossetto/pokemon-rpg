@@ -26,6 +26,7 @@ export type BreedError =
   | "too_young"
   | "no_coins"
   | "not_ready"
+  | "busy_parents"
   | "team_full";
 
 export async function breedPair(
@@ -53,6 +54,20 @@ export async function breedPair(
     if (parents.some((p) => p.teamSlot !== null)) return void (failure = "in_team");
     if (parents.some((p) => p.listings.length > 0)) return void (failure = "listed");
     if (parents.some((p) => p.level < BREEDING_MIN_LEVEL)) return void (failure = "too_young");
+
+    // Ya están incubando otro huevo: la misma pareja no produce en serie.
+    const busyEggs = await tx.egg.findMany({
+      where: {
+        ownerId: userId,
+        hatchedAt: null,
+        OR: [
+          { parentAId: { in: [parentAId, parentBId] } },
+          { parentBId: { in: [parentAId, parentBId] } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (busyEggs.length > 0) return void (failure = "busy_parents");
 
     const user = await tx.user.findUniqueOrThrow({
       where: { id: userId },

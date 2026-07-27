@@ -345,6 +345,8 @@ export function PokemonDetailDrawer({
                     stages={member.evolutionChain}
                     unknownLabel={labels.unknownSpecies}
                     evolveAtLevelLabel={labels.evolveAtLevel}
+                    tradeLabel={labels.evolveByTrade}
+                    itemLabels={labels.evolveStones}
                   />
                 </section>
               )}

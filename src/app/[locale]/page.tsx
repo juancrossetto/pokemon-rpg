@@ -238,6 +238,8 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                   tabEvolutions: tt("drawer.tabEvolutions"),
                   unknownSpecies: tt("drawer.unknownSpecies"),
                   evolveAtLevel: tt("drawer.evolveAtLevel", { level: "{level}" }),
+                  evolveByTrade: tt("drawer.evolveByTrade"),
+                  evolveStones: tt.raw("drawer.evolveStones") as Record<string, string>,
                 },
                 menuLabels: {
                   favoriteOn: t("squadMenu.favoriteOn"),

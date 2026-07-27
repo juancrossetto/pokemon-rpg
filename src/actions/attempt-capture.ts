@@ -9,6 +9,7 @@ import { getMovesetForLevel } from "@/lib/moveset";
 import { calculateMaxHp, calculateStat, xpForLevel } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { captureStatusBonus } from "@/lib/status";
+import { getZoneContext } from "@/lib/zone-progress";
 import { runWildCounterAttack } from "@/lib/wild-counter";
 import { revalidateCombatUi } from "@/lib/battle-lock";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
@@ -79,11 +80,15 @@ export async function attemptCapture(
     data: { quantity: { decrement: 1 } },
   });
 
+  // Mastery de la zona: sube la probabilidad de captura donde más farmeaste.
+  const zone = battle.gymId ? null : await getZoneContext(userId);
+  const masteryMultiplier = 1 + (zone?.bonuses.capture ?? 0) / 100;
+
   const roll = rollCapture(
     battle.wildCurrentHp,
     battle.wildMaxHp,
     battle.wildSpecies.captureRate,
-    ball.catchMultiplier ?? 1,
+    (ball.catchMultiplier ?? 1) * masteryMultiplier,
     captureStatusBonus(battle.wildStatus),
   );
 

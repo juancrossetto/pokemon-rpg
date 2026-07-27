@@ -22,6 +22,9 @@ import { applyHeldItemToStats, heldItemSnapshotFromItem } from "@/lib/held-items
 import { applyStagesToStats, type StatusCondition } from "@/lib/status";
 import { hasHealthyBackup } from "@/lib/team";
 import { getMovesetForLevel } from "@/lib/moveset";
+import { applyBonus } from "@/lib/mastery";
+import { getZoneContext, grantZoneMastery } from "@/lib/zone-progress";
+import { getRouteTrainer } from "@/lib/campaign/trainers";
 import {
   completeFarmingStageOnWildWin,
   syncCampaignAfterGymBadge,
@@ -388,7 +391,11 @@ export async function submitBattleMove(
 
   if (wonBattle) {
     log.push(`fainted:${battle.wildSpecies.name}`);
-    const koXp = xpForVictory(battle.wildLevel);
+    // Mastery: en gimnasios no aplica (no es farmeo de zona).
+    const zone = battle.gymId || battle.routeTrainerId ? null : await getZoneContext(userId);
+    const koXp = zone
+      ? applyBonus(xpForVictory(battle.wildLevel), zone.bonuses.xp)
+      : xpForVictory(battle.wildLevel);
     const nextSlot = (battle.gymPokemonSlot ?? 1) + 1;
     const nextOpponentMon = battle.gymTrainerId
       ? await prisma.gymTrainerPokemon.findUnique({
@@ -606,8 +613,14 @@ export async function submitBattleMove(
       };
     }
 
+    // Entrenador de ruta: no da stage ni mastery, da su recompensa una vez.
+    const routeTrainer = battle.routeTrainerId ? getRouteTrainer(battle.routeTrainerId) : null;
+
     badgeEarned = battle.gymId !== null && !alreadyHasThisBadge;
-    const coinsGained = battle.gymId ? null : coinsForVictory(battle.wildLevel);
+    const coinsGained =
+      battle.gymId || battle.routeTrainerId
+        ? null
+        : applyBonus(coinsForVictory(battle.wildLevel), zone?.bonuses.coins ?? 0);
     const gymCoins = battle.gymId
       ? Math.floor((gym?.coinReward ?? 0) * gymRematchCoinMultiplier(alreadyHasThisBadge))
       : 0;
@@ -618,12 +631,29 @@ export async function submitBattleMove(
       ? await prisma.item.findFirst({ where: { type: "MACHINE", move: { name: gymTmMoveName } } })
       : null;
     tmRewardName = gymTmItem?.name ?? null;
-    coinsAwarded = (coinsGained ?? 0) + gymCoins;
+    coinsAwarded = (coinsGained ?? 0) + gymCoins + (routeTrainer?.coinReward ?? 0);
     const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
     await prisma.$transaction([
       ...instanceUpdates,
       ...(coinsGained !== null
         ? [prisma.user.update({ where: { id: userId }, data: { coins: { increment: coinsGained } } })]
+        : []),
+      ...(routeTrainer
+        ? [
+            prisma.user.update({
+              where: { id: userId },
+              data: { coins: { increment: routeTrainer.coinReward } },
+            }),
+            prisma.trainerDefeat.upsert({
+              where: { userId_trainerId: { userId, trainerId: routeTrainer.id } },
+              create: {
+                userId,
+                trainerId: routeTrainer.id,
+                locationId: routeTrainer.locationId,
+              },
+              update: {},
+            }),
+          ]
         : []),
       prisma.battleSession.update({
         where: { id: battle.id },
@@ -662,8 +692,9 @@ export async function submitBattleMove(
 
     xpSummary = await buildXpSummary();
 
-    if (!battle.gymId) {
+    if (!battle.gymId && !battle.routeTrainerId) {
       await completeFarmingStageOnWildWin(userId);
+      if (zone) await grantZoneMastery(userId, zone.locationId);
     } else if (badgeEarned && gym) {
       await syncCampaignAfterGymBadge(userId, gym.order);
     }

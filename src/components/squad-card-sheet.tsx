@@ -32,6 +32,8 @@ export type SquadCardSheetLabels = {
   emptyMove: string;
   unknownSpecies: string;
   evolveAtLevel: string;
+  evolveByTrade: string;
+  evolveStones: Record<string, string>;
 };
 
 /** Solapas About / Stats / Evolutions para cards de equipo. */
@@ -243,6 +245,8 @@ export function SquadCardSheet({
             stages={evolutionChain}
             unknownLabel={labels.unknownSpecies}
             evolveAtLevelLabel={labels.evolveAtLevel}
+            tradeLabel={labels.evolveByTrade}
+            itemLabels={labels.evolveStones}
             compact={compact}
           />
         )}

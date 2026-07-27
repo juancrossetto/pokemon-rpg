@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { selectLocation, setFarmingStage } from "@/actions/campaign";
 import { REGION_MAP_ASPECT } from "@/lib/campaign/region-map";
+import { ZoneIcon, type ZoneIconKind } from "@/components/zone-icons";
 import type { MapLocation } from "@/lib/campaign/map-selection";
 
 export type { MapLocation, MapStage } from "@/lib/campaign/map-selection";
@@ -126,15 +127,26 @@ export function RegionMapDialog({
                   isFarming
                     ? "border-pokeball-red/80 bg-pokeball-red/25 text-white shadow-[0_0_14px_rgba(238,21,21,0.4)]"
                     : isActive
-                      ? "border-sky-300/80 bg-sky-400/25 text-white"
+                      ? "border-white bg-white/25 text-white"
                       : unlocked
                         ? "border-white/40 bg-black/45 text-white"
                         : "border-white/15 bg-black/35 text-white/40"
                 } h-8 w-8 justify-center p-0 sm:h-auto sm:w-auto sm:justify-start`}
               >
-                <span className="material-symbols-outlined shrink-0 text-[15px]!">
-                  {!unlocked ? "lock" : isFarming ? "my_location" : "place"}
-                </span>
+                {!unlocked ? (
+                  <span className="material-symbols-outlined shrink-0 text-[15px]!">lock</span>
+                ) : isFarming ? (
+                  <span className="material-symbols-outlined shrink-0 text-[15px]!">
+                    my_location
+                  </span>
+                ) : (
+                  // El mismo ícono que en la lista de zonas: un pin genérico no
+                  // dejaba distinguir una ruta de un gimnasio sobre el mapa.
+                  <ZoneIcon
+                    kind={location.kindKey.replace("kinds.", "") as ZoneIconKind}
+                    className="h-[15px] w-[15px] shrink-0"
+                  />
+                )}
                 <span className="hidden max-w-[120px] truncate text-[11px] font-semibold leading-none sm:inline">
                   {t(location.nameKey)}
                 </span>

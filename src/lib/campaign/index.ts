@@ -65,3 +65,5 @@ export {
   buildExpeditionView,
   listLocationsForUi,
 } from "./progress";
+
+export { type Chapter, buildChapters, activeChapterIndex } from "./chapters";

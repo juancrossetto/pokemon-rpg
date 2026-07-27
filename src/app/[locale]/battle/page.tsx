@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -16,6 +17,7 @@ import {
 } from "@/lib/campaign";
 import { loadMapLocations } from "@/lib/campaign/map-data";
 import { spriteFor } from "@/lib/shiny";
+import { getRouteTrainer } from "@/lib/campaign/trainers";
 
 const ENCOUNTER_ENERGY_COST = 1;
 
@@ -230,8 +232,12 @@ export default async function BattlePage({
             },
           ];
 
-    const opponentName =
-      battle.gymTrainer?.name ?? battle.gym?.leaderName ?? null;
+    // Un entrenador de ruta tiene nombre propio: no es un "Pokémon salvaje".
+    const routeTrainer = battle.routeTrainerId ? getRouteTrainer(battle.routeTrainerId) : null;
+    const tCampaign = await getTranslations("campaign");
+    const opponentName = routeTrainer
+      ? tCampaign(routeTrainer.nameKey)
+      : (battle.gymTrainer?.name ?? battle.gym?.leaderName ?? null);
 
     initialBattle = {
       battleId: battle.id,

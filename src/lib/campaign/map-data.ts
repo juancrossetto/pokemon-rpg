@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { masteryLevel } from "@/lib/mastery";
+import { trainersForLocation } from "./trainers";
+import { speciesRarity } from "./rarity";
 import { buildMapLocations, type MapLocation } from "./map-selection";
 import type { CampaignProgressRow } from "./progress";
 
@@ -17,7 +20,7 @@ export async function loadMapLocations(
   const speciesIds = [...new Set(base.flatMap((l) => l.spawnSpeciesIds))];
   if (speciesIds.length === 0) return base;
 
-  const [species, owned] = await Promise.all([
+  const [species, owned, seenRows, masteryRows, defeatRows, claimRows] = await Promise.all([
     prisma.species.findMany({
       where: { id: { in: speciesIds } },
       select: { id: true, name: true, spriteUrl: true, types: true },
@@ -27,25 +30,63 @@ export async function loadMapLocations(
       select: { speciesId: true },
       distinct: ["speciesId"],
     }),
+    prisma.seenSpecies.findMany({
+      where: { userId },
+      select: { locationId: true, speciesId: true },
+    }),
+    prisma.zoneMastery.findMany({
+      where: { userId },
+      select: { locationId: true, xp: true },
+    }),
+    prisma.trainerDefeat.findMany({ where: { userId }, select: { trainerId: true } }),
+    prisma.zoneObjectiveClaim.findMany({
+      where: { userId },
+      select: { locationId: true, objective: true },
+    }),
   ]);
 
   const byId = new Map(species.map((s) => [s.id, s]));
   const ownedIds = new Set(owned.map((o) => o.speciesId));
+  const seen = new Set(seenRows.map((r) => `${r.locationId}:${r.speciesId}`));
+  const masteryByZone = new Map(masteryRows.map((r) => [r.locationId, r.xp]));
+  const defeated = new Set(defeatRows.map((r) => r.trainerId));
+  const claimsByZone = new Map<string, string[]>();
+  for (const row of claimRows) {
+    claimsByZone.set(row.locationId, [...(claimsByZone.get(row.locationId) ?? []), row.objective]);
+  }
 
-  return base.map((location) => ({
-    ...location,
-    encounters: location.spawnSpeciesIds.flatMap((id) => {
-      const s = byId.get(id);
-      if (!s) return [];
-      return [
-        {
-          speciesId: s.id,
-          name: s.name,
-          spriteUrl: s.spriteUrl,
-          types: s.types,
-          caught: ownedIds.has(s.id),
-        },
-      ];
-    }),
-  }));
+  return base.map((location) => {
+    const xp = masteryByZone.get(location.id) ?? 0;
+    return {
+      ...location,
+      masteryXp: xp,
+      masteryLevel: masteryLevel(xp),
+      claimedObjectives: claimsByZone.get(location.id) ?? [],
+      trainers: trainersForLocation(location.id).map((tr) => ({
+        id: tr.id,
+        nameKey: tr.nameKey,
+        level: tr.level,
+        coinReward: tr.coinReward,
+        defeated: defeated.has(tr.id),
+      })),
+      encounters: location.spawnSpeciesIds.flatMap((id) => {
+        const s = byId.get(id);
+        if (!s) return [];
+        const caught = ownedIds.has(s.id);
+        return [
+          {
+            speciesId: s.id,
+            name: s.name,
+            spriteUrl: s.spriteUrl,
+            types: s.types,
+            caught,
+            // Tenerlo capturado implica haberlo visto, aunque sea de antes de
+            // que existiera el registro de descubrimientos.
+            seen: caught || seen.has(`${location.id}:${s.id}`),
+            rarity: speciesRarity(s.id),
+          },
+        ];
+      }),
+    };
+  });
 }

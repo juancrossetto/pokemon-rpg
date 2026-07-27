@@ -45,6 +45,8 @@ export type HomeSquadCardLabels = {
   tabEvolutions: string;
   unknownSpecies: string;
   evolveAtLevel: string;
+  evolveByTrade: string;
+  evolveStones: Record<string, string>;
 };
 
 /**
@@ -138,6 +140,8 @@ export function HomeSquadCard({
     emptyMove: labels.emptyMove,
     unknownSpecies: labels.unknownSpecies,
     evolveAtLevel: labels.evolveAtLevel,
+    evolveByTrade: labels.evolveByTrade,
+    evolveStones: labels.evolveStones,
   };
 
   return (
@@ -221,10 +225,10 @@ export function HomeSquadCard({
                 <span className="material-symbols-outlined text-[14px]! leading-none">lock</span>
               </span>
             )}
+            <span className="rounded-full border border-white/15 bg-black/45 px-1.5 py-0.5 font-mono text-[10px] font-semibold leading-none text-white backdrop-blur-sm">
+              {labels.level}
+            </span>
           </div>
-          <span className="absolute right-10 top-2.5 z-[2] rounded-full border border-white/15 bg-black/45 px-2 py-0.5 font-mono text-[10px] font-semibold text-white backdrop-blur-sm">
-            {labels.level}
-          </span>
 
           <div className="relative z-[1] flex h-[96px] w-full items-end justify-center">
             <div

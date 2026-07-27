@@ -11,6 +11,7 @@ import {
 } from "./kanto";
 import { campaignMapSrc } from "./maps";
 import { regionMapSrc } from "./regions";
+import { pickWeightedSpecies } from "./rarity";
 import type {
   CampaignLocation,
   CampaignMilestone,
@@ -152,8 +153,9 @@ export function nextMilestone(
 }
 
 export function resolveSpawn(stage: CampaignStage): { speciesId: number; level: number } {
-  const speciesId =
-    stage.spawnSpeciesIds[Math.floor(Math.random() * stage.spawnSpeciesIds.length)] ?? 16;
+  // Ponderado por rareza: antes todas las especies del stage salían igual, así
+  // que un Pikachu aparecía tanto como un Rattata y no había nada que "buscar".
+  const speciesId = pickWeightedSpecies(stage.spawnSpeciesIds) ?? 16;
   const span = Math.max(0, stage.levelMax - stage.levelMin);
   const level = stage.levelMin + Math.floor(Math.random() * (span + 1));
   return { speciesId, level: Math.max(2, level) };

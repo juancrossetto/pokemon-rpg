@@ -398,7 +398,15 @@
         "no_item": "Você não tem mais esse item"
       },
       "showDetails": "Ver detalhes",
-      "hideDetails": "Ocultar"
+      "hideDetails": "Ocultar",
+      "evolveByTrade": "Troca",
+      "evolveStones": {
+        "Fire Stone": "Pedra do Fogo",
+        "Water Stone": "Pedra da Água",
+        "Thunder Stone": "Pedra do Trovão",
+        "Leaf Stone": "Pedra da Folha",
+        "Moon Stone": "Pedra da Lua"
+      }
     },
     "healFree": "Cura grátis disponível",
     "healCooldown": "Grátis em {minutes} min",
@@ -539,7 +547,8 @@
     "fledTag": "Fuga",
     "rewardsTitle": "Recompensas",
     "backHome": "Voltar ao início",
-    "resultLostTitle": "Você perdeu a batalha"
+    "resultLostTitle": "Você perdeu a batalha",
+    "alphaEncounter": "É um Pokémon Alfa! Bem mais forte que o normal."
   },
   "gyms": {
     "title": "Ginásios",
@@ -793,7 +802,8 @@
       "own_listing": "Você não pode comprar seu próprio anúncio.",
       "insufficient_coins": "Suas moedas não são suficientes.",
       "insufficient_fee": "Você não tem moedas suficientes para a taxa de publicação.",
-      "rate_limited": "Muitas operações seguidas. Espere um momento."
+      "rate_limited": "Muitas operações seguidas. Espere um momento.",
+      "breeding": "Está chocando um ovo: não pode ser vendido."
     },
     "moves": "Movimentos",
     "unitPrice": "{price} cada",
@@ -893,10 +903,12 @@
       "in_battle": "Você não pode depositar um Pokémon no meio de uma batalha.",
       "last_team_member": "Você não pode depositar seu último Pokémon ativo.",
       "rate_limited": "Muitas operações seguidas. Espere um momento.",
-      "unauthorized": "Sessão expirada. Entre novamente."
+      "unauthorized": "Sessão expirada. Entre novamente.",
+      "breeding": "Está chocando um ovo na creche."
     },
     "dragHint": "Arraste para reordenar o time, ou solte no PC para guardar.",
-    "emptySlot": "Slot {slot} livre"
+    "emptySlot": "Slot {slot} livre",
+    "breedingLocked": "Chocando"
   },
   "ranking": {
     "eyebrow": "Centro competitivo",
@@ -1157,7 +1169,14 @@
       "cinnabar_island": "Ilha Cinnabar",
       "cinnabar_gym": "Ginásio de Cinnabar",
       "route_21": "Rota 21 (mar)",
-      "viridian_gym": "Ginásio de Viridian"
+      "viridian_gym": "Ginásio de Viridian",
+      "victory_road": "Estrada da Vitória",
+      "indigo_plateau": "Planalto Índigo",
+      "elite_lorelei": "Elite dos Quatro: Lorelei",
+      "elite_bruno": "Elite dos Quatro: Bruno",
+      "elite_agatha": "Elite dos Quatro: Agatha",
+      "elite_lance": "Elite dos Quatro: Lance",
+      "champion": "Campeão"
     },
     "sectors": {
       "vf_entrance": "Entrada",
@@ -1235,7 +1254,17 @@
       "fuchsia_gym_milestone": "Desafio: Ginásio de Fuchsia",
       "saffron_gym_milestone": "Desafio: Ginásio de Saffron",
       "cinnabar_gym_milestone": "Desafio: Ginásio de Cinnabar",
-      "viridian_gym_milestone": "Desafio: Ginásio de Viridian"
+      "viridian_gym_milestone": "Desafio: Ginásio de Viridian",
+      "vr_1": "Estrada da Vitória · trecho 1",
+      "vr_2": "Estrada da Vitória · trecho 2",
+      "vr_3": "Estrada da Vitória · trecho 3",
+      "vr_4": "Estrada da Vitória · trecho 4",
+      "indigo_plateau_1": "Arredores de Planalto Índigo",
+      "elite_lorelei_milestone": "Desafio: Elite dos Quatro: Lorelei",
+      "elite_bruno_milestone": "Desafio: Elite dos Quatro: Bruno",
+      "elite_agatha_milestone": "Desafio: Elite dos Quatro: Agatha",
+      "elite_lance_milestone": "Desafio: Elite dos Quatro: Lance",
+      "champion_milestone": "Desafio: Campeão"
     },
     "currentLocation": "Localização atual",
     "predictedTypes": "Tipos selvagens previstos na área",
@@ -1264,7 +1293,59 @@
     "zoneWilds": "Selvagens da zona",
     "zoneWildsHint": "O que pode aparecer ao explorar aqui.",
     "zonesUnlocked": "Zonas abertas",
-    "badges": "Insígnias"
+    "badges": "Insígnias",
+    "chapter": "Capítulo",
+    "chapterProgress": "Progresso do capítulo",
+    "chapterDone": "Capítulo completo",
+    "stagesShort": "stages",
+    "objectives": "Objetivos",
+    "objStages": "Concluir todos os stages",
+    "objPokedex": "Completar a Pokédex da zona",
+    "objBadge": "Conquistar a insígnia",
+    "reqStages": "Concluir os stages do capítulo",
+    "reqLevel": "Time de nível {level}+",
+    "zoneLocked": "Zona bloqueada. Avance no capítulo para desbloquear.",
+    "journeySummary": "Sua jornada",
+    "pokedexShort": "Pokédex",
+    "shinies": "Shinies",
+    "mastery": "Maestria",
+    "masteryBonuses": "+{xp}% XP · +{capture}% captura · +{coins}% moedas nesta zona",
+    "seenShort": "vistos",
+    "trainersTitle": "Treinadores",
+    "trainerBeaten": "Derrotado",
+    "trainerFight": "Lutar",
+    "objTrainers": "Derrotar todos os treinadores",
+    "trainers": {
+      "youngster": "Jovem Timmy",
+      "bug_catcher": "Caçador de Insetos Rick",
+      "bug_catcher_2": "Caçador de Insetos Doug",
+      "camper": "Campista Liz",
+      "lass": "Garota Janet",
+      "hiker": "Montanhista Marcos",
+      "rocket_grunt": "Recruta Rocket",
+      "picnicker": "Excursionista Ana",
+      "gambler": "Apostador Hugo",
+      "hiker_2": "Montanhista Lenny",
+      "pokemaniac": "Pokémaníaco Ed",
+      "super_nerd": "Super Nerd Ivan",
+      "biker": "Motoqueiro Kai",
+      "beauty": "Modelo Nina",
+      "swimmer": "Nadador Beto",
+      "fisherman": "Pescador Omar"
+    },
+    "obj_stages": "Concluir todos os stages",
+    "obj_pokedex": "Completar a Pokédex da zona",
+    "obj_trainers": "Derrotar todos os treinadores",
+    "claim": "Resgatar",
+    "claimed": "Resgatado",
+    "rarity": {
+      "common": "Comum",
+      "uncommon": "Pouco comum",
+      "rare": "Raro",
+      "veryRare": "Muito raro",
+      "elite": "Elite"
+    },
+    "topRarity": "Melhor raridade"
   },
   "levelUp": {
     "title": "{name} · Nv. {level}",
@@ -1311,7 +1392,8 @@
       "too_young": "Falta nível.",
       "no_coins": "Moedas insuficientes.",
       "not_ready": "O ovo ainda não está pronto.",
-      "team_full": "Time cheio."
+      "team_full": "Time cheio.",
+      "busy_parents": "Esses pais já estão chocando um ovo."
     }
   }
 }

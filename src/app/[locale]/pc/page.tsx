@@ -8,6 +8,7 @@ import { TEAM_SIZE } from "@/lib/market-rules";
 import { PcTransfer, type PcMon } from "@/components/pc-transfer";
 import { BreedingPanel } from "@/components/breeding-panel";
 import { BREEDING_MIN_LEVEL, msUntilHatch } from "@/lib/breeding";
+import { breedingParentIds } from "@/lib/breeding-lock";
 import { spriteFor } from "@/lib/shiny";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
@@ -69,8 +70,14 @@ export default async function PcPage({
   const stored = pokemon.filter((p) => p.teamSlot === null);
 
   // Sólo los de la PC, sin publicar y con nivel suficiente pueden criar.
+  const busyParents = await breedingParentIds(session.user.id);
   const breedCandidates = stored
-    .filter((p) => p.listings.length === 0 && p.level >= BREEDING_MIN_LEVEL)
+    .filter(
+      (p) =>
+        p.listings.length === 0 &&
+        p.level >= BREEDING_MIN_LEVEL &&
+        !busyParents.has(p.id),
+    )
     .map((p) => ({
       id: p.id,
       name: p.nickname ?? p.species.name,
@@ -116,8 +123,8 @@ export default async function PcPage({
           key={pokemon.map((p) => `${p.id}:${p.teamSlot ?? "box"}`).join("|")}
           locale={locale}
           teamSize={TEAM_SIZE}
-          initialTeam={team.map(toPcMon)}
-          initialBox={stored.map(toPcMon)}
+          initialTeam={team.map((p) => toPcMon(p, busyParents))}
+          initialBox={stored.map((p) => toPcMon(p, busyParents))}
           initialBagCounts={bagCounts}
           menuLabels={{
             favoriteOn: th("squadMenu.favoriteOn"),
@@ -152,7 +159,7 @@ type PokemonRowSource = {
   listings: { id: string }[];
 };
 
-function toPcMon(instance: PokemonRowSource): PcMon {
+function toPcMon(instance: PokemonRowSource, breedingIds: Set<string>): PcMon {
   return {
     id: instance.id,
     name: instance.nickname ?? instance.species.name,
@@ -165,5 +172,6 @@ function toPcMon(instance: PokemonRowSource): PcMon {
     isFavorite: instance.isFavorite,
     isTradeLocked: instance.isTradeLocked,
     listed: instance.listings.length > 0,
+    breeding: breedingIds.has(instance.id),
   };
 }

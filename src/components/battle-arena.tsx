@@ -146,6 +146,7 @@ export function BattleArena({
   const foeLabel = opponentName ?? t("wildFoe");
 
   function translateBootLog(raw: string): string {
+    if (raw === "alpha") return t("alphaEncounter");
     if (raw.startsWith("appear:")) return tLog("appear", { name: raw.slice(7) });
     if (raw.startsWith("challengeTrainer:")) return raw; // shown as-is key fallback
     if (raw.startsWith("sendOut:")) return tLog("used", { name: raw.slice(8), move: "—" }).replace("—", "");

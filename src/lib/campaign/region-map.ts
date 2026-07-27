@@ -54,6 +54,15 @@ export const KANTO_LOCATION_POINTS: Record<string, MapPoint> = {
   "cinnabar-gym": { x: 18.5, y: 91.4 },
   "route-21": { x: 19.3, y: 75.3 },
   "viridian-gym": { x: 20.8, y: 49.0 },
+
+  // Calle Victoria y Meseta Añil: el noroeste del mapa, el único tramo libre.
+  "victory-road": { x: 16.0, y: 34.0 },
+  "indigo-plateau": { x: 12.2, y: 16.8 },
+  "elite-lorelei": { x: 12.2, y: 16.8 },
+  "elite-bruno": { x: 12.2, y: 16.8 },
+  "elite-agatha": { x: 12.2, y: 16.8 },
+  "elite-lance": { x: 12.2, y: 16.8 },
+  champion: { x: 12.2, y: 16.8 },
 };
 
 /** Las 8 ciudades con gimnasio, por `gym.order`. */

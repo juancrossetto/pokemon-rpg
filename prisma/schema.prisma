@@ -54,6 +54,10 @@ model User {
   clanMessages ClanMessage[]
   notifications Notification[]
   pokedexEntries PokedexEntry[]
+  zoneMastery  ZoneMastery[]
+  seenSpecies  SeenSpecies[]
+  trainerDefeats TrainerDefeat[]
+  objectiveClaims ZoneObjectiveClaim[]
 }
 
 // ---------- Notificaciones in-app ----------
@@ -122,6 +126,13 @@ model Species {
   // Nivel mínimo para evolucionar por level-up a evolvesTo[0]. Null = no evoluciona por nivel
   // (piedra, intercambio, etc.) o es la forma final.
   evolveLevel   Int?
+  // Cómo se llega a ESTA especie desde su pre-evolución. Vive del lado del hijo
+  // porque el padre puede tener varias evoluciones con requisitos distintos
+  // (Eevee → Vaporeon/Jolteon/Flareon, una piedra cada una) y `evolveLevel`,
+  // que vive en el padre, no puede representarlas.
+  evolveTrigger String? // "level-up" | "use-item" | "trade" | "shed" ...
+  evolveItem    String? // nombre del ítem tal cual está en `Item.name`, ej. "Water Stone"
+  evolveMinLevel Int? // nivel mínimo del trigger, cuando aplica
   evolvesFromId Int?
   evolvesFrom   Species?  @relation("Evolution", fields: [evolvesFromId], references: [id])
   evolvesTo     Species[] @relation("Evolution")
@@ -133,6 +144,7 @@ model Species {
   gymTrainerPokemon GymTrainerPokemon[]
   eggs              Egg[]
   pokedexEntries    PokedexEntry[]
+  seenBy            SeenSpecies[]
 }
 
 enum MoveCategory {
@@ -169,6 +181,7 @@ model SpeciesMove {
   speciesId  Int
   moveId     Int
   method     LearnMethod @default(LEVEL_UP)
+  /** Null en MT/tutor/huevo: esos movimientos no se aprenden por nivel. */
   learnLevel Int?
 
   species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
@@ -286,6 +299,8 @@ model Gym {
   opensHour     Int    @default(0) // horario de atención en hora local del jugador (0-23).
   closesHour    Int    @default(24) // 0/24 = abierto siempre. Si closes <= opens, cruza la medianoche.
   coinReward    Int    @default(100)
+  /** Alto Mando / Campeón: no cuenta como medalla y solo se abre con las 8. */
+  isElite       Boolean @default(false)
 
   team           GymPokemon[]
   trainers       GymTrainer[]
@@ -554,6 +569,71 @@ model ClanMessage {
   @@index([clanId, createdAt])
 }
 
+/**
+ * Experiencia del jugador en una zona concreta.
+ *
+ * Es lo que hace que volver a una zona ya completada siga teniendo sentido:
+ * sube con cada victoria salvaje ahí y otorga bonus permanentes de XP, captura
+ * y monedas en esa zona.
+ */
+model ZoneMastery {
+  userId     String
+  locationId String
+  xp         Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, locationId])
+  @@index([userId])
+}
+
+/**
+ * Qué especies vio el jugador en cada zona.
+ *
+ * Habilita el descubrimiento progresivo: la Pokédex de la zona arranca en
+ * silueta desconocida y se va revelando al cruzarse cada especie, en vez de
+ * mostrar de entrada todo lo que puede aparecer.
+ */
+model SeenSpecies {
+  userId     String
+  locationId String
+  speciesId  Int
+  seenAt     DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  species Species @relation(fields: [speciesId], references: [id])
+
+  @@id([userId, locationId, speciesId])
+  @@index([userId, locationId])
+}
+
+/** A qué entrenadores de ruta ya venciste. Los entrenadores son estáticos. */
+model TrainerDefeat {
+  userId     String
+  trainerId  String
+  locationId String
+  defeatedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, trainerId])
+  @@index([userId, locationId])
+}
+
+/** Recompensas de objetivo de zona ya cobradas. */
+model ZoneObjectiveClaim {
+  userId     String
+  locationId String
+  objective  String // stages | pokedex | trainers — ver objectives.ts
+  claimedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, locationId, objective])
+  @@index([userId])
+}
+
 // ---------- Batallas (historial — el ranking se calcula a partir de esto) ----------
 
 enum BattleKind {
@@ -599,7 +679,8 @@ model BattleSession {
   wildMaxHp         Int
   wildMoveIds       Int[]
   wildMovePp        Int[]               @default([]) // PP restante paralelo a wildMoveIds
-  wildIsShiny       Boolean             @default(false) // se tira al generar el encuentro para que se vea variante en combate
+  wildIsShiny       Boolean             @default(false)
+  routeTrainerId    String? // entrenador de ruta (datos estáticos, ver trainers.ts) // se tira al generar el encuentro para que se vea variante en combate
   status            BattleSessionStatus @default(ACTIVE)
   log               String[]            @default([])
   participantIds    String[]            @default([]) // todos los Pokémon del jugador que pelearon en esta sesión (para repartir XP al terminar)

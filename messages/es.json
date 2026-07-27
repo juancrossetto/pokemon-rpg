@@ -398,7 +398,15 @@
         "no_item": "Ya no tenés ese objeto"
       },
       "showDetails": "Ver detalles",
-      "hideDetails": "Ocultar"
+      "hideDetails": "Ocultar",
+      "evolveByTrade": "Intercambio",
+      "evolveStones": {
+        "Fire Stone": "Piedra Fuego",
+        "Water Stone": "Piedra Agua",
+        "Thunder Stone": "Piedra Trueno",
+        "Leaf Stone": "Piedra Hoja",
+        "Moon Stone": "Piedra Lunar"
+      }
     },
     "healFree": "Curación gratis disponible",
     "healCooldown": "Gratis en {minutes} min",
@@ -539,7 +547,8 @@
     "fledTag": "Huida",
     "rewardsTitle": "Recompensas",
     "backHome": "Volver al inicio",
-    "resultLostTitle": "Perdiste la batalla"
+    "resultLostTitle": "Perdiste la batalla",
+    "alphaEncounter": "¡Es un Pokémon Alfa! Viene mucho más fuerte de lo normal."
   },
   "gyms": {
     "title": "Gimnasios",
@@ -793,7 +802,8 @@
       "own_listing": "No podés comprar tu propia publicación.",
       "insufficient_coins": "No te alcanzan las monedas.",
       "insufficient_fee": "No te alcanzan las monedas para pagar la tarifa de publicación.",
-      "rate_limited": "Demasiadas operaciones seguidas. Esperá un momento."
+      "rate_limited": "Demasiadas operaciones seguidas. Esperá un momento.",
+      "breeding": "Está incubando un huevo: no se puede vender."
     },
     "moves": "Movimientos",
     "unitPrice": "{price} c/u",
@@ -893,10 +903,12 @@
       "in_battle": "No podés depositar un Pokémon en medio de una batalla.",
       "last_team_member": "No podés depositar tu último Pokémon activo.",
       "rate_limited": "Demasiadas operaciones seguidas. Esperá un momento.",
-      "unauthorized": "Sesión expirada. Iniciá sesión de nuevo."
+      "unauthorized": "Sesión expirada. Iniciá sesión de nuevo.",
+      "breeding": "Está incubando un huevo en la guardería."
     },
     "dragHint": "Arrastrá para reordenar el equipo o soltá en la PC para guardar.",
-    "emptySlot": "Slot {slot} libre"
+    "emptySlot": "Slot {slot} libre",
+    "breedingLocked": "Incubando"
   },
   "ranking": {
     "eyebrow": "Centro competitivo",
@@ -1157,7 +1169,14 @@
       "cinnabar_island": "Isla Canela",
       "cinnabar_gym": "Gimnasio de Canela",
       "route_21": "Ruta 21 (mar)",
-      "viridian_gym": "Gimnasio de Ciudad Verde"
+      "viridian_gym": "Gimnasio de Ciudad Verde",
+      "victory_road": "Calle Victoria",
+      "indigo_plateau": "Meseta Añil",
+      "elite_lorelei": "Alto Mando: Lorelei",
+      "elite_bruno": "Alto Mando: Bruno",
+      "elite_agatha": "Alto Mando: Agatha",
+      "elite_lance": "Alto Mando: Lance",
+      "champion": "Campeón"
     },
     "sectors": {
       "vf_entrance": "Entrada",
@@ -1235,7 +1254,17 @@
       "fuchsia_gym_milestone": "Desafío: Gimnasio de Fucsia",
       "saffron_gym_milestone": "Desafío: Gimnasio de Azafrán",
       "cinnabar_gym_milestone": "Desafío: Gimnasio de Canela",
-      "viridian_gym_milestone": "Desafío: Gimnasio de Ciudad Verde"
+      "viridian_gym_milestone": "Desafío: Gimnasio de Ciudad Verde",
+      "vr_1": "Calle Victoria · tramo 1",
+      "vr_2": "Calle Victoria · tramo 2",
+      "vr_3": "Calle Victoria · tramo 3",
+      "vr_4": "Calle Victoria · tramo 4",
+      "indigo_plateau_1": "Afueras de Meseta Añil",
+      "elite_lorelei_milestone": "Desafío: Alto Mando: Lorelei",
+      "elite_bruno_milestone": "Desafío: Alto Mando: Bruno",
+      "elite_agatha_milestone": "Desafío: Alto Mando: Agatha",
+      "elite_lance_milestone": "Desafío: Alto Mando: Lance",
+      "champion_milestone": "Desafío: Campeón"
     },
     "currentLocation": "Ubicación actual",
     "predictedTypes": "Tipos salvajes previstos en la zona",
@@ -1264,7 +1293,59 @@
     "zoneWilds": "Salvajes de la zona",
     "zoneWildsHint": "Lo que puede aparecer al explorar acá.",
     "zonesUnlocked": "Zonas abiertas",
-    "badges": "Medallas"
+    "badges": "Medallas",
+    "chapter": "Capítulo",
+    "chapterProgress": "Progreso del capítulo",
+    "chapterDone": "Capítulo completado",
+    "stagesShort": "stages",
+    "objectives": "Objetivos",
+    "objStages": "Explorar todos los stages",
+    "objPokedex": "Completar la Pokédex de la zona",
+    "objBadge": "Ganar la medalla",
+    "reqStages": "Completar los stages del capítulo",
+    "reqLevel": "Equipo de nivel {level}+",
+    "zoneLocked": "Zona bloqueada. Avanzá por el capítulo para desbloquearla.",
+    "journeySummary": "Tu viaje",
+    "pokedexShort": "Pokédex",
+    "shinies": "Variocolor",
+    "mastery": "Maestría",
+    "masteryBonuses": "+{xp}% XP · +{capture}% captura · +{coins}% monedas en esta zona",
+    "seenShort": "vistos",
+    "trainersTitle": "Entrenadores",
+    "trainerBeaten": "Vencido",
+    "trainerFight": "Pelear",
+    "objTrainers": "Derrotar a los entrenadores",
+    "trainers": {
+      "youngster": "Joven Timmy",
+      "bug_catcher": "Cazabichos Rick",
+      "bug_catcher_2": "Cazabichos Doug",
+      "camper": "Campista Liz",
+      "lass": "Chica Janet",
+      "hiker": "Montañés Marcos",
+      "rocket_grunt": "Recluta Rocket",
+      "picnicker": "Excursionista Ana",
+      "gambler": "Apostador Hugo",
+      "hiker_2": "Montañés Lenny",
+      "pokemaniac": "Pokémaníaco Ed",
+      "super_nerd": "Supernerd Iván",
+      "biker": "Motorista Kai",
+      "beauty": "Modelo Nina",
+      "swimmer": "Nadador Beto",
+      "fisherman": "Pescador Omar"
+    },
+    "obj_stages": "Explorar todos los stages",
+    "obj_pokedex": "Completar la Pokédex de la zona",
+    "obj_trainers": "Derrotar a los entrenadores",
+    "claim": "Reclamar",
+    "claimed": "Cobrado",
+    "rarity": {
+      "common": "Común",
+      "uncommon": "Poco común",
+      "rare": "Raro",
+      "veryRare": "Muy raro",
+      "elite": "Élite"
+    },
+    "topRarity": "Mejor rareza"
   },
   "levelUp": {
     "title": "{name} · Nv. {level}",
@@ -1311,7 +1392,8 @@
       "too_young": "Les falta nivel.",
       "no_coins": "No te alcanzan las monedas.",
       "not_ready": "El huevo todavía no está listo.",
-      "team_full": "Equipo lleno."
+      "team_full": "Equipo lleno.",
+      "busy_parents": "Esos padres ya están incubando un huevo."
     }
   }
 }
