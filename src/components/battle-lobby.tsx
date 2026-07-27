@@ -6,7 +6,6 @@ import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
-import { PokeballIcon } from "@/components/pokeball-icon";
 import { itemSpriteUrl } from "@/lib/item-sprites";
 import { BattleLobbyMobile } from "@/components/battle-lobby-mobile";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
@@ -169,7 +168,16 @@ export function BattleLobby({
             <section className="glass-panel rounded-xl border border-white/10 p-3">
               <div className="flex items-stretch gap-2">
                 <LoadoutChip
-                  icon={<PokeballIcon className="h-7 w-7" />}
+                  icon={
+                    <Image
+                      src={itemSpriteUrl("Poke Ball")}
+                      alt=""
+                      width={28}
+                      height={28}
+                      className="h-7 w-7 object-contain"
+                      unoptimized
+                    />
+                  }
                   label={t("pokeballsLabel")}
                   value={lobby.balls}
                 />
@@ -181,6 +189,7 @@ export function BattleLobby({
                       width={28}
                       height={28}
                       className="h-7 w-7 object-contain"
+                      unoptimized
                     />
                   }
                   label={t("potionsLabel")}
@@ -368,7 +377,7 @@ function LoadoutChip({
   label,
   value,
 }: {
-  /** Sprite real del ítem (ver `item-sprites.ts` / `PokeballIcon`), no un ícono genérico. */
+  /** Sprite del ítem vía CDN (`item-sprites.ts`). */
   icon: React.ReactNode;
   label: string;
   value: number;

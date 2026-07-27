@@ -635,7 +635,8 @@
     "corridorLeaderChamber": "Câmara do líder",
     "corridorEntry": "Entrada",
     "corridorEnergyCost": "−{cost} energia ao iniciar",
-    "corridorNoEnergy": "Você não tem energia suficiente para este combate."
+    "corridorNoEnergy": "Você não tem energia suficiente para este combate.",
+    "corridorFaintedLead": "Todo o seu time está desmaiado. Cure em Início ou coloque um Pokémon com HP no time antes de lutar."
   },
   "market": {
     "title": "Mercado",
@@ -1112,6 +1113,8 @@
     "journeyProgress": "Progresso da jornada",
     "nextMilestone": "Próximo marco",
     "selectLocation": "Escolher localização",
+    "journeyGuide": "Guia da jornada",
+    "journeyGuideShort": "Guia",
     "continueExpedition": "Continuar expedição",
     "challengeGym": "Desafiar ginásio",
     "farming": "Farming",
@@ -1338,6 +1341,9 @@
     "obj_trainers": "Derrotar todos os treinadores",
     "claim": "Resgatar",
     "claimed": "Resgatado",
+    "rewardClaimed": "Recompensa resgatada",
+    "rewardCoins": "Moedas",
+    "rewardContinue": "Continuar",
     "rarity": {
       "common": "Comum",
       "uncommon": "Pouco comum",

@@ -31,6 +31,11 @@ import type { Chapter } from "@/lib/campaign/chapters";
 import type { MapLocation } from "@/lib/campaign/map-selection";
 import type { CampaignLocationKind } from "@/lib/campaign/types";
 import { masteryBonuses, masteryProgressPercent } from "@/lib/mastery";
+import {
+  ZoneRewardPopup,
+  type ZoneRewardClaim,
+} from "@/components/zone-reward-popup";
+import { announceCoinDelta } from "@/lib/coin-fx";
 
 /**
  * Paleta de la campaña — cuatro familias, cada una con un significado.
@@ -147,6 +152,7 @@ export function CampaignJourney({
   const [chapterIndex, setChapterIndex] = useState(initialChapter);
   const [zoneId, setZoneId] = useState<string | null>(farmingLocationId);
   const [pending, startTransition] = useTransition();
+  const [claimPopup, setClaimPopup] = useState<ZoneRewardClaim | null>(null);
 
   const chapter = chapters[chapterIndex] ?? chapters[0];
   const zone = chapter?.zones.find((z) => z.id === zoneId) ?? chapter?.zones[0] ?? null;
@@ -167,9 +173,17 @@ export function CampaignJourney({
     });
   }
 
-  function claim(locationId: string, objective: string) {
+  function claim(locationId: string, objective: ZoneObjectiveId) {
     startTransition(async () => {
-      await claimZoneObjective(locale, locationId, objective);
+      const result = await claimZoneObjective(locale, locationId, objective);
+      if (!result.ok) return;
+      announceCoinDelta(result.coins);
+      setClaimPopup({
+        objectiveLabel: t(`obj_${objective}`),
+        coins: result.coins,
+        itemName: result.itemName,
+        quantity: result.quantity,
+      });
     });
   }
 
@@ -181,6 +195,18 @@ export function CampaignJourney({
 
   return (
     <div className={pending ? "opacity-90 transition-opacity" : undefined}>
+      {claimPopup && (
+        <ZoneRewardPopup
+          reward={claimPopup}
+          labels={{
+            title: t("rewardClaimed"),
+            coins: t("rewardCoins"),
+            continue: t("rewardContinue"),
+          }}
+          onContinue={() => setClaimPopup(null)}
+        />
+      )}
+
       {/* ── Franja del viaje: los 8 capítulos de un vistazo ───────────── */}
       <JourneyStrip
         chapters={chapters}
@@ -579,7 +605,7 @@ function ZonePanel({
   onTravel: () => void;
   onFarmStage: (stageId: string) => void;
   onChallengeTrainer: (trainerId: string) => void;
-  onClaim: (objective: string) => void;
+  onClaim: (objective: ZoneObjectiveId) => void;
 }) {
   const t = useTranslations("campaign");
   const kind = kindOf(zone);
@@ -747,13 +773,23 @@ function ZonePanel({
                         : "border-white/10 bg-black/20"
                     }`}
                   >
-                    {tr.defeated ? (
-                      <span className="material-symbols-outlined shrink-0 text-[16px]! text-emerald-400">
-                        task_alt
-                      </span>
-                    ) : (
-                      <TrainerIcon className="h-4 w-4 shrink-0 text-on-surface-variant/60" />
-                    )}
+                    <span className="relative shrink-0">
+                      <Image
+                        src={tr.spriteUrl}
+                        alt=""
+                        width={28}
+                        height={28}
+                        className={`h-7 w-7 object-contain ${tr.defeated ? "opacity-55 grayscale" : ""}`}
+                        unoptimized
+                      />
+                      {tr.defeated && (
+                        <span className="absolute -right-0.5 -bottom-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                          <span className="material-symbols-outlined text-[10px]! leading-none">
+                            check
+                          </span>
+                        </span>
+                      )}
+                    </span>
                     <span className="min-w-0 flex-1 truncate text-label-sm text-on-surface">
                       {t(tr.nameKey)}
                     </span>

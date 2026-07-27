@@ -7,6 +7,7 @@ import { UserMenu } from "@/components/user-menu";
 import { BrandLogo } from "@/components/brand-logo";
 import { EnergyMeter } from "@/components/energy-meter";
 import { NotificationsBell } from "@/components/notifications-bell";
+import { CoinsBadge } from "@/components/coins-badge";
 import type { NotificationDTO } from "@/lib/notifications";
 
 type NavLink = {
@@ -128,12 +129,7 @@ export function MobileChrome({
                   fullLabel={energyFullLabel}
                 />
               )}
-              {coins !== null && (
-                <span className="flex items-center gap-1 px-2 py-1 text-[11px] font-mono leading-none text-electric-yellow">
-                  <span className="material-symbols-outlined text-[13px]!">paid</span>
-                  {coins}
-                </span>
-              )}
+              {coins !== null && <CoinsBadge coins={coins} size="sm" />}
             </div>
           )}
           {notifications && (

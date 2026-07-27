@@ -63,6 +63,7 @@ export type CorridorLabels = {
   subordinate: string;
   energyCostHint: string;
   noEnergy: string;
+  faintedLead: string;
   typeLabels: Record<string, string>;
   exit: {
     emergencyExit: string;
@@ -94,6 +95,7 @@ export type GymChallengeCorridorProps = {
   energyCost: number;
   canAffordBattle: boolean;
   energyError: boolean;
+  leadError: boolean;
   labels: CorridorLabels;
 };
 
@@ -336,6 +338,7 @@ export function GymChallengeCorridor({
   progressPct,
   canAffordBattle,
   energyError,
+  leadError,
   labels,
 }: GymChallengeCorridorProps) {
   const theme = useMemo(() => gymCorridorTheme(gymType), [gymType]);
@@ -433,6 +436,12 @@ export function GymChallengeCorridor({
             <p className="mb-4 text-label-sm text-error flex items-center gap-1.5 rounded-lg border border-error/30 bg-error/10 px-3 py-2">
               <span className="material-symbols-outlined text-[16px]!">bolt</span>
               {labels.noEnergy}
+            </p>
+          )}
+          {leadError && (
+            <p className="mb-4 text-label-sm text-error flex items-center gap-1.5 rounded-lg border border-error/30 bg-error/10 px-3 py-2">
+              <span className="material-symbols-outlined text-[16px]!">heart_broken</span>
+              {labels.faintedLead}
             </p>
           )}
 

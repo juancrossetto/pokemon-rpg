@@ -75,8 +75,9 @@ export function RegionMapDialog({
             href="/campaign"
             className="flex h-9 items-center gap-1 rounded-lg border border-white/12 bg-white/5 px-2.5 text-label-sm text-on-surface transition-colors hover:bg-white/10 sm:px-3"
           >
-            <span className="material-symbols-outlined text-[18px]!">view_list</span>
-            <span className="hidden sm:inline">{t("viewList")}</span>
+            <span className="material-symbols-outlined text-[18px]!">menu_book</span>
+            <span className="sm:hidden">{t("journeyGuideShort")}</span>
+            <span className="hidden sm:inline">{t("journeyGuide")}</span>
           </Link>
           <button
             type="button"

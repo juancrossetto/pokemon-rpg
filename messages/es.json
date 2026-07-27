@@ -635,7 +635,8 @@
     "corridorLeaderChamber": "Cámara del líder",
     "corridorEntry": "Entrada",
     "corridorEnergyCost": "−{cost} energía al iniciar",
-    "corridorNoEnergy": "No te alcanza la energía para este combate."
+    "corridorNoEnergy": "No te alcanza la energía para este combate.",
+    "corridorFaintedLead": "Todo tu equipo está debilitado. Curá en Inicio o reordená un Pokémon con HP antes de pelear."
   },
   "market": {
     "title": "Mercado",
@@ -1112,6 +1113,8 @@
     "journeyProgress": "Progreso del viaje",
     "nextMilestone": "Próximo hito",
     "selectLocation": "Elegir ubicación",
+    "journeyGuide": "Guía del viaje",
+    "journeyGuideShort": "Guía",
     "continueExpedition": "Continuar expedición",
     "challengeGym": "Desafiar gimnasio",
     "farming": "Farming",
@@ -1338,6 +1341,9 @@
     "obj_trainers": "Derrotar a los entrenadores",
     "claim": "Reclamar",
     "claimed": "Cobrado",
+    "rewardClaimed": "Recompensa obtenida",
+    "rewardCoins": "Monedas",
+    "rewardContinue": "Continuar",
     "rarity": {
       "common": "Común",
       "uncommon": "Poco común",

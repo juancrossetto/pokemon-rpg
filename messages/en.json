@@ -635,7 +635,8 @@
     "corridorLeaderChamber": "Leader's chamber",
     "corridorEntry": "Entrance",
     "corridorEnergyCost": "−{cost} energy on start",
-    "corridorNoEnergy": "You don't have enough energy for this battle."
+    "corridorNoEnergy": "You don't have enough energy for this battle.",
+    "corridorFaintedLead": "Your whole team has fainted. Heal on Home or put a healthy Pokémon in the party before fighting."
   },
   "market": {
     "title": "Market",
@@ -1112,6 +1113,8 @@
     "journeyProgress": "Journey progress",
     "nextMilestone": "Next milestone",
     "selectLocation": "Select location",
+    "journeyGuide": "Journey guide",
+    "journeyGuideShort": "Guide",
     "continueExpedition": "Continue expedition",
     "challengeGym": "Challenge gym",
     "farming": "Farming",
@@ -1338,6 +1341,9 @@
     "obj_trainers": "Defeat every trainer",
     "claim": "Claim",
     "claimed": "Claimed",
+    "rewardClaimed": "Reward claimed",
+    "rewardCoins": "Coins",
+    "rewardContinue": "Continue",
     "rarity": {
       "common": "Common",
       "uncommon": "Uncommon",

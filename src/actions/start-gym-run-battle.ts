@@ -30,17 +30,28 @@ export async function startGymRunBattle(gymRunId: string, locale: string) {
     where: { id: gymRunId, userId, status: "ACTIVE" },
     include: { gym: true },
   });
-  if (!run) return;
+  if (!run) {
+    redirect({ href: "/gyms", locale });
+    return;
+  }
 
   const [user, lead] = await Promise.all([
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { energy: true, energyMax: true, energyUpdatedAt: true },
     }),
-    prisma.pokemonInstance.findFirst({ where: { ownerId: userId, teamSlot: 1 } }),
+    // Primer vivo del equipo (no sólo el slot 1): si el líder cayó en la
+    // corrida, igual podés seguir con el resto. Antes era un `return` mudo.
+    prisma.pokemonInstance.findFirst({
+      where: { ownerId: userId, teamSlot: { not: null }, currentHp: { gt: 0 } },
+      orderBy: { teamSlot: "asc" },
+    }),
   ]);
 
-  if (!lead || lead.currentHp <= 0) return;
+  if (!lead) {
+    redirect({ href: `/gyms/${run.gymId}/run?err=fainted_lead`, locale });
+    return;
+  }
 
   const currentEnergy = getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt);
   if (currentEnergy < GYM_BATTLE_ENERGY_COST) {
@@ -50,7 +61,10 @@ export async function startGymRunBattle(gymRunId: string, locale: string) {
 
   const opponent = await currentGymRunOpponent(run.gymId, run.clearedTrainerSlots);
   const firstMon = opponent.team[0];
-  if (!firstMon) return;
+  if (!firstMon) {
+    redirect({ href: `/gyms/${run.gymId}/run?err=no_opponent`, locale });
+    return;
+  }
 
   const wildMaxHp = calculateMaxHp(
     (await prisma.species.findUniqueOrThrow({ where: { id: firstMon.speciesId } })).baseHp,

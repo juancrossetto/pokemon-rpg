@@ -1149,6 +1149,39 @@ body {
   border-radius: inherit;
 }
 
+/* Header: monedas suben/bajan */
+@keyframes coin-delta-float {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -18px);
+    opacity: 0;
+  }
+}
+.coin-delta-float {
+  animation: coin-delta-float 0.9s ease-out both;
+}
+
+@keyframes coin-spin-nudge {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  40% {
+    transform: rotate(-12deg) scale(1.12);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+.coin-spin-nudge {
+  animation: coin-spin-nudge 0.45s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .result-in,
   .result-float,
@@ -1169,7 +1202,9 @@ body {
   .squad-fx-burst,
   .squad-fx-float-label,
   .squad-fx-spark,
-  .squad-fx-pulse {
+  .squad-fx-pulse,
+  .coin-delta-float,
+  .coin-spin-nudge {
     animation: none;
   }
 }

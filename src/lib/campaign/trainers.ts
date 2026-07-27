@@ -14,10 +14,20 @@ export type RouteTrainer = {
   locationId: string;
   /** Clave i18n del nombre — se muestran traducidos como todo lo demás. */
   nameKey: string;
+  /** Slug del sprite en Showdown (`sprites/trainers/{slug}.png`). */
+  spriteSlug: string;
   speciesId: number;
   level: number;
   coinReward: number;
 };
+
+/**
+ * Contenido (`hiker_2`, `bug_catcher`) → slug CDN de Showdown (`hiker`, `bugcatcher`).
+ * Sufijos `_2`, `_3`… son variantes del mismo clase visual.
+ */
+export function routeTrainerShowdownSlug(contentSlug: string): string {
+  return contentSlug.replace(/_\d+$/, "").replace(/_/g, "");
+}
 
 function trainer(
   locationId: string,
@@ -30,6 +40,7 @@ function trainer(
     id: `${locationId}-${slug}`,
     locationId,
     nameKey: `trainers.${slug}`,
+    spriteSlug: routeTrainerShowdownSlug(slug),
     speciesId,
     level,
     coinReward,

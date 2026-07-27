@@ -180,6 +180,7 @@ export default async function GymRunPage({
       energyCost={GYM_BATTLE_ENERGY_COST}
       canAffordBattle={canAffordBattle}
       energyError={err === "no_energy"}
+      leadError={err === "fainted_lead"}
       labels={{
         title: t("corridorTitle"),
         target: t("corridorTarget", { name: gym.leaderName }),
@@ -217,6 +218,7 @@ export default async function GymRunPage({
         subordinate: t.raw("subordinate"),
         energyCostHint: t("corridorEnergyCost", { cost: GYM_BATTLE_ENERGY_COST }),
         noEnergy: t("corridorNoEnergy"),
+        faintedLead: t("corridorFaintedLead"),
         typeLabels,
         exit: {
           emergencyExit: t("emergencyExit"),

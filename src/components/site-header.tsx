@@ -7,6 +7,7 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
 import { MobileChrome } from "@/components/mobile-chrome";
 import { EnergyMeter } from "@/components/energy-meter";
+import { CoinsBadge } from "@/components/coins-badge";
 import { NavLinks, type DesktopNavLink } from "@/components/nav-links";
 import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -73,6 +74,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
 
   const desktopMoreLinks: DesktopNavLink[] = session?.user
     ? [
+        { href: "/campaign", label: t("campaign"), icon: "map" },
         { href: "/shop", label: t("shop"), icon: "storefront" },
         { href: "/pvp", label: t("pvp"), icon: "sports_mma" },
         { href: "/ranking", label: t("ranking"), icon: "trophy" },
@@ -84,6 +86,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
 
   const moreLinks = session?.user
     ? [
+        { href: "/campaign", label: t("campaign"), icon: "map" },
         { href: "/pokedex", label: t("pokedex"), icon: "auto_stories" },
         { href: "/shop", label: t("shop"), icon: "storefront" },
         { href: "/pvp", label: t("pvp"), icon: "sports_mma" },
@@ -141,12 +144,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
             </span>
           )}
 
-          {user && (
-            <span className="flex items-center gap-1 rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-1 text-label-sm text-electric-yellow font-mono">
-              <span className="material-symbols-outlined text-[16px]!">paid</span>
-              {user.coins}
-            </span>
-          )}
+          {user && <CoinsBadge coins={user.coins} size="md" />}
 
           <LocaleSwitcher currentLocale={locale} label={t("language")} />
 

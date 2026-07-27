@@ -55,6 +55,8 @@ export type MapLocation = {
 export type MapTrainer = {
   id: string;
   nameKey: string;
+  /** URL del sprite Showdown (`sprites/trainers/…`). */
+  spriteUrl: string;
   level: number;
   coinReward: number;
   defeated: boolean;

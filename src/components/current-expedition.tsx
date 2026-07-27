@@ -154,7 +154,7 @@ export function CurrentExpedition({
           )}
         </div>
 
-        {/* Acciones: en mobile 1 CTA primario + hint de mapa; desktop mantiene ambos */}
+        {/* Acciones: CTA primario + guía del viaje (siempre visible) */}
         <div className="flex items-center gap-2 pt-0.5">
           <Link
             href={ctaHref}
@@ -164,11 +164,13 @@ export function CurrentExpedition({
           </Link>
           <Link
             href="/campaign"
-            className="pointer-events-auto hidden items-center justify-center rounded-xl border border-white/15 bg-black/40 px-4 py-2 text-label-sm text-on-surface backdrop-blur-sm transition-colors hover:bg-white/10 sm:inline-flex"
+            className="pointer-events-auto inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-black/40 px-3 py-2.5 text-[13px] font-medium text-on-surface backdrop-blur-sm transition-colors hover:bg-white/10 sm:px-4 sm:py-2 sm:text-label-sm"
           >
-            {t("selectLocation")}
+            <span className="material-symbols-outlined text-[18px]!">menu_book</span>
+            <span className="sm:hidden">{t("journeyGuideShort")}</span>
+            <span className="hidden sm:inline">{t("journeyGuide")}</span>
           </Link>
-          <p className="pointer-events-none hidden text-[10px] uppercase tracking-[0.14em] text-white/35 sm:block sm:ml-1">
+          <p className="pointer-events-none hidden text-[10px] uppercase tracking-[0.14em] text-white/35 lg:block lg:ml-1">
             {t("tapMapHint")}
           </p>
         </div>
