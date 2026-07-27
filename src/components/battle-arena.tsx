@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { submitBattleMove, type XpSummaryEntry } from "@/actions/battle-move";
 import { fleeBattle } from "@/actions/flee-battle";
 import { attemptCapture, type CapturedPokemonInfo } from "@/actions/attempt-capture";
@@ -11,8 +11,8 @@ import { switchPokemon } from "@/actions/switch-pokemon";
 import { applyBattleItem } from "@/actions/use-item";
 import { setPokemonNickname } from "@/actions/rename-pokemon";
 import { abandonGymRun } from "@/actions/abandon-gym-run";
-import { StartEncounterButton } from "@/components/start-encounter-button";
-import { BattleResult } from "@/components/battle-result";
+import { SoftLeaveButton, BattleResult } from "@/components/battle-result";
+import { startEncounter } from "@/actions/start-encounter";
 import { GymBadgePopup } from "@/components/gym-badge-popup";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BattleSprite } from "@/components/battle-sprite";
@@ -51,7 +51,7 @@ const BALL_TRAVEL_MS = 500;
 const BALL_WOBBLE_MS = 1100;
 const BALL_CATCH_MS = 550;
 const BALL_BREAK_MS = 450;
-const FAINT_MS = 650;
+const FAINT_MS = 1100;
 const RECALL_MS = 450;
 const ITEM_USE_MS = 550;
 const SEND_OUT_BALL_MS = 700; // cuánto se ve solo la pokeball, antes de revelar al Pokémon inicial
@@ -282,13 +282,6 @@ export function BattleArena({
   const bgmKind = isGymBattle || opponentName ? "boss" : "wild";
 
   const teamRoster = party.filter((m) => m.instanceId !== activePlayer.instanceId);
-
-  const startErrors = {
-    no_lead: t("errors.noLead"),
-    fainted_lead: t("errors.faintedLead"),
-    no_energy: t("errors.noEnergy"),
-    no_stage: t("errors.noStage"),
-  };
 
   useEffect(() => {
     startBattleBgm(bgmKind);
@@ -583,10 +576,11 @@ export function BattleArena({
       );
     }
     await delay(FAINT_MS);
+    // Un beat corto para que el KO asiente antes del cartel.
+    await delay(450);
     setOutcome(finalOutcome);
-    if (finalOutcome === "won" || finalOutcome === "lost" || finalOutcome === "trainer_cleared") {
-      router.refresh();
-    }
+    // No refrescar acá: un refresh RSC (o revalidate de /battle) puede
+    // mandar a /run y cortar el resumen. SoftLeave hace el push/refresh.
   }
 
   async function playFaintThenForceSwitch() {
@@ -720,8 +714,6 @@ export function BattleArena({
 
       appendLog(tLog("fled"), "player");
       setOutcome("fled");
-      // Refresca el layout para desbloquear el navbar ("In battle").
-      router.refresh();
     } catch {
       appendLog(tLog("fleeFailed"), "system");
     } finally {
@@ -791,7 +783,6 @@ export function BattleArena({
     }
     setCapturedInfo(null);
     setOutcome("caught");
-    router.refresh();
   }
 
   async function handleUsePotion(itemId: string) {
@@ -1012,6 +1003,9 @@ export function BattleArena({
               : t("resultFled");
     // El texto largo de derrota explica el próximo paso — va como bajada.
     const resultSubText = outcome === "lost" ? t("resultLost") : null;
+    const ctaClass =
+      "w-full max-w-sm rounded-lg bg-pokeball-red px-6 py-3 text-center text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors";
+
     return (
       <BattleResult
         mode={outcome}
@@ -1050,24 +1044,21 @@ export function BattleArena({
           />
         )}
         {outcome === "lost" ? (
-          <Link
-            href="/team"
-            className="w-full max-w-sm rounded-lg bg-pokeball-red px-6 py-3 text-center text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors"
-          >
+          <SoftLeaveButton href="/team" className={ctaClass}>
             {t("goHeal")}
-          </Link>
+          </SoftLeaveButton>
         ) : outcome === "trainer_cleared" && gymId && gymRunId ? (
           <div className="w-full max-w-sm flex flex-col gap-3">
             <p className="text-label-md text-on-surface-variant">{t("advancePrompt")}</p>
             {!confirmLeaveGym ? (
               <>
-                <Link
+                <SoftLeaveButton
                   href={`/gyms/${gymId}/run`}
                   className="w-full flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white font-bold hover:bg-pokeball-red/80 transition-colors"
                 >
                   <span className="material-symbols-outlined text-[18px]!">arrow_forward</span>
                   {t("continueChallenge")}
-                </Link>
+                </SoftLeaveButton>
                 <button
                   type="button"
                   onClick={() => setConfirmLeaveGym(true)}
@@ -1088,39 +1079,37 @@ export function BattleArena({
                   >
                     {t("continueChallenge")}
                   </button>
-                  <form action={abandonGymRun.bind(null, gymRunId, locale)}>
-                    <button
-                      type="submit"
-                      className="w-full rounded-lg border border-error/40 px-4 py-2 text-label-md text-error hover:bg-error/10 transition-colors"
-                    >
-                      {t("confirmLeaveGym")}
-                    </button>
-                  </form>
+                  <SoftLeaveButton
+                    className="w-full rounded-lg border border-error/40 px-4 py-2 text-label-md text-error hover:bg-error/10 transition-colors"
+                    onAction={() => abandonGymRun(gymRunId, locale)}
+                  >
+                    {t("confirmLeaveGym")}
+                  </SoftLeaveButton>
                 </div>
               </div>
             )}
           </div>
         ) : isGymBattle ? (
-          <Link
-            href="/gyms"
-            className="w-full max-w-sm rounded-lg bg-pokeball-red px-6 py-3 text-center text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors"
-          >
+          <SoftLeaveButton href="/gyms" className={ctaClass}>
             {t("backToGyms")}
-          </Link>
+          </SoftLeaveButton>
         ) : (
           <div className="w-full max-w-sm">
-            <StartEncounterButton
-              locale={locale}
-              label={t("explore")}
-              errors={startErrors}
-              className="w-full rounded-lg bg-pokeball-red px-6 py-3 text-label-md font-bold text-white transition-colors hover:bg-pokeball-red/80 disabled:opacity-50"
-            />
-            <Link
+            <SoftLeaveButton
+              className={ctaClass}
+              onAction={async () => {
+                await startEncounter(locale);
+                router.refresh();
+              }}
+            >
+              {t("explore")}
+            </SoftLeaveButton>
+            <SoftLeaveButton
               href="/"
-              className="mt-2 block text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
+              className="mt-2 block w-full text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
             >
               {t("backHome")}
-            </Link>
+            </SoftLeaveButton>
           </div>
         )}
       </BattleResult>

@@ -1,10 +1,21 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { BattleSprite } from "@/components/battle-sprite";
 import { LevelUpOffersPanel } from "@/components/level-up-offers";
 import { playBattleSfx } from "@/lib/battle-sfx";
+import { startResultBgm, stopResultBgm } from "@/lib/battle-bgm";
 import type { XpSummaryEntry } from "@/actions/battle-move";
 
 export type ResultMode = "won" | "lost" | "caught" | "fled" | "trainer_cleared";
@@ -17,6 +28,43 @@ export type ResultFighter = {
 };
 
 type Tag = { label: string; icon: string; tone: "win" | "ko" | "caught" | "neutral" } | null;
+
+const EXIT_MS = 420;
+
+type LeaveTarget = string | (() => void | Promise<void>);
+
+const BattleResultLeaveContext = createContext<(target: LeaveTarget) => void>(() => {});
+
+/** Sale del resumen con fade y luego navega o ejecuta la acción. */
+export function useBattleResultLeave() {
+  return useContext(BattleResultLeaveContext);
+}
+
+export function SoftLeaveButton({
+  href,
+  className,
+  children,
+  onAction,
+}: {
+  href?: string;
+  className?: string;
+  children: ReactNode;
+  onAction?: () => void | Promise<void>;
+}) {
+  const leave = useBattleResultLeave();
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={() => {
+        if (onAction) leave(onAction);
+        else if (href) leave(href);
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 const TONE_CLASS: Record<"win" | "ko" | "caught" | "neutral", string> = {
   win: "border-tertiary/50 bg-tertiary/15 text-tertiary",
@@ -42,7 +90,7 @@ function FighterCard({
 
   return (
     <div className="flex min-w-0 flex-col items-center gap-2">
-      <div className="relative flex h-24 w-24 items-center justify-center md:h-32 md:w-32">
+      <div className="relative flex h-24 w-24 items-center justify-center md:h-28 md:w-28">
         {highlight && (
           <>
             <span className="absolute inset-0 rounded-full bg-tertiary/15 blur-2xl" />
@@ -54,8 +102,8 @@ function FighterCard({
           facing={facing}
           fallbackUrl={fighter.spriteUrl}
           alt={fighter.name}
-          width={144}
-          height={144}
+          width={128}
+          height={128}
           className={`relative h-full w-full object-contain drop-shadow-lg ${
             defeated ? "translate-y-1 opacity-45 grayscale" : "result-float"
           }`}
@@ -103,7 +151,7 @@ function LevelUpFanfare({
 
   return (
     <section
-      className="level-up-fanfare level-up-glow relative mt-2 overflow-hidden rounded-2xl border border-tertiary/35 bg-tertiary/10 px-3 py-3 md:mt-3 md:px-4 md:py-4"
+      className="level-up-fanfare level-up-glow relative mt-3 overflow-hidden rounded-2xl border border-tertiary/35 bg-tertiary/10 px-3 py-3 md:px-4 md:py-4"
       aria-live="polite"
     >
       <span className="level-up-burst pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-tertiary/25 blur-2xl" />
@@ -118,41 +166,29 @@ function LevelUpFanfare({
           }}
         />
       ))}
-
-      <div className="relative flex items-center gap-3">
-        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center">
-          <span className="absolute inset-0 rounded-full bg-tertiary/20 blur-md" />
-          <BattleSprite
-            speciesName={player.speciesName}
-            facing="front"
-            fallbackUrl={player.spriteUrl}
-            alt={player.name}
-            width={56}
-            height={56}
-            className="relative h-14 w-14 object-contain drop-shadow-md"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-tertiary/80">
-            {t("levelUpFanfare")}
-          </p>
-          <ul className="mt-1 space-y-0.5">
-            {leveled.map((entry) => (
-              <li
-                key={entry.instanceId}
-                className="truncate text-label-md font-semibold capitalize text-white"
-              >
-                {entry.name}{" "}
-                <span className="font-mono text-tertiary">
-                  → {t("level", { level: entry.leveledUpTo! })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <span className="material-symbols-outlined shrink-0 text-[28px]! text-tertiary">
-          arrow_upward
-        </span>
+      <p className="relative text-center text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
+        {t("levelUpFanfare")}
+      </p>
+      <div className="relative mt-2 flex flex-wrap items-center justify-center gap-3">
+        {leveled.map((entry) => (
+          <div key={entry.instanceId} className="flex items-center gap-2">
+            <BattleSprite
+              speciesName={entry.name === player.name ? player.speciesName : entry.name}
+              facing="front"
+              fallbackUrl={entry.fromSpriteUrl}
+              alt={entry.name}
+              width={40}
+              height={40}
+              className="h-10 w-10 object-contain"
+            />
+            <div className="text-left">
+              <p className="text-label-md font-bold capitalize text-on-surface">{entry.name}</p>
+              <p className="font-mono text-label-sm text-tertiary">
+                {t("level", { level: entry.previousLevel })} → {t("level", { level: entry.leveledUpTo! })}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -178,7 +214,45 @@ export function BattleResult({
   children: ReactNode;
 }) {
   const t = useTranslations("battle");
+  const router = useRouter();
   const playerWon = mode === "won" || mode === "trainer_cleared" || mode === "caught";
+  const [mounted, setMounted] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const leaveTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => {
+      if (leaveTimer.current !== null) window.clearTimeout(leaveTimer.current);
+      stopResultBgm();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (playerWon) {
+      playBattleSfx("badge");
+      startResultBgm("victory");
+    } else if (mode === "lost") {
+      playBattleSfx("faint");
+      startResultBgm("defeat");
+    } else {
+      playBattleSfx("miss");
+    }
+    return () => stopResultBgm();
+  }, [mode, playerWon]);
+
+  const leave = useCallback(
+    (target: LeaveTarget) => {
+      if (leaving) return;
+      setLeaving(true);
+      stopResultBgm();
+      leaveTimer.current = window.setTimeout(() => {
+        if (typeof target === "string") router.push(target);
+        else void target();
+      }, EXIT_MS);
+    },
+    [leaving, router],
+  );
 
   const playerTag: Tag =
     mode === "lost"
@@ -196,124 +270,178 @@ export function BattleResult({
           ? null
           : { label: t("koTag"), icon: "close", tone: "ko" };
 
-  const headlineColor = playerWon
-    ? "text-tertiary [text-shadow:0_0_28px_rgba(242,192,0,0.35)]"
+  const headlineTone = playerWon ? "win" : mode === "lost" ? "lose" : "neutral";
+  const outcomePillLabel = playerWon
+    ? t("victoryTag")
     : mode === "lost"
-      ? "text-error"
-      : "text-on-surface";
+      ? t("defeatTag")
+      : mode === "caught"
+        ? t("caughtTag")
+        : t("fledTag");
+  const outcomePillIcon = playerWon
+    ? "trophy"
+    : mode === "lost"
+      ? "sentiment_very_dissatisfied"
+      : mode === "caught"
+        ? "sports_baseball"
+        : "directions_run";
 
-  return (
-    <div className="flex flex-1 min-h-0 flex-col overflow-y-auto px-margin-mobile py-3 md:py-4 max-md:h-[calc(100dvh-6.5rem)] md:h-[calc(100dvh-4rem)]">
-      <div className="result-in mx-auto my-auto w-full max-w-2xl">
-        <p className="flex items-center justify-center gap-2 text-label-sm uppercase tracking-[0.2em] text-on-surface-variant">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${playerWon ? "bg-tertiary" : "bg-error"}`}
-          />
-          {t("resultEyebrow")}
-        </p>
-        <h1 className={`mt-1.5 text-center text-headline-md md:text-headline-lg ${headlineColor}`}>{resultText}</h1>
-        {subText && (
-          <p className="mx-auto mt-1 max-w-md text-center text-body-md text-on-surface-variant">
-            {subText}
-          </p>
-        )}
+  const accentGlow = playerWon
+    ? "bg-tertiary/25"
+    : mode === "lost"
+      ? "bg-pokeball-red/25"
+      : "bg-white/10";
 
-        <section className="glass-panel relative mt-3 overflow-hidden rounded-2xl border border-white/10 p-3 shadow-lg md:mt-4 md:p-5">
-          <div
-            className={`pointer-events-none absolute inset-x-0 top-0 h-24 blur-2xl ${
-              playerWon ? "bg-tertiary/10" : "bg-error/10"
-            }`}
-          />
-          <div className="relative grid grid-cols-[1fr_auto_1fr] items-start gap-2 md:gap-4">
-            <FighterCard
-              fighter={player}
-              facing="front"
-              tag={playerTag}
-              defeated={mode === "lost"}
-              highlight={playerWon}
-            />
-            <div className="flex flex-col items-center gap-1 pt-8 md:pt-10">
-              <span className="text-label-sm font-bold tracking-[0.2em] text-on-surface-variant/60">
-                VS
-              </span>
-              <span className="h-8 w-px bg-gradient-to-b from-white/15 to-transparent md:h-10" />
-            </div>
-            <FighterCard
-              fighter={foe}
-              facing="front"
-              tag={foeTag}
-              defeated={mode !== "lost" && mode !== "fled"}
-              highlight={mode === "lost"}
-            />
-          </div>
-        </section>
+  const cardTopGlow = playerWon
+    ? "bg-tertiary/25"
+    : mode === "lost"
+      ? "bg-pokeball-red/30"
+      : "bg-white/5";
 
-        {xpSummary ? <LevelUpFanfare entries={xpSummary} player={player} /> : null}
+  const cardBorder = playerWon
+    ? "border-tertiary/25"
+    : mode === "lost"
+      ? "border-pokeball-red/30"
+      : "border-white/12";
 
-        {xpSummary ? (
-          <div className="mt-2 md:mt-3">
-            <LevelUpOffersPanel
-              key={xpSummary
-                .map(
-                  (e) =>
-                    `${e.instanceId}:${e.leveledUpTo}:${e.evolveOffer?.toSpeciesId ?? 0}`,
-                )
-                .join("|")}
-              entries={xpSummary.map((e) => ({
-                instanceId: e.instanceId,
-                name: e.name,
-                leveledUpTo: e.leveledUpTo,
-                fromSpriteUrl: e.fromSpriteUrl,
-                autoTaught: e.autoTaught ?? [],
-                pendingMoves: e.pendingMoves ?? [],
-                evolveOffer: e.evolveOffer ?? null,
-                knownMoves: e.knownMoves ?? [],
-              }))}
-            />
-          </div>
-        ) : null}
+  if (!mounted) return null;
 
-        {(coinsGained > 0 || (xpSummary && xpSummary.length > 0)) && (
-          <section className="glass-panel mt-2 rounded-2xl border border-white/10 p-3 md:mt-3 md:p-4">
-            <div className="mb-2 flex items-center justify-between gap-2 border-b border-white/10 pb-2">
-              <p className="text-label-sm uppercase tracking-wider text-on-surface-variant">
-                {t("rewardsTitle")}
+  return createPortal(
+    <BattleResultLeaveContext.Provider value={leave}>
+    <div
+      className={`battle-result-overlay fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto overscroll-contain px-margin-mobile py-[max(5.5rem,env(safe-area-inset-top)+4.5rem)] pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] xl:py-20${
+        leaving ? " is-leaving" : ""
+      }`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="battle-result-title"
+    >
+      <div className="fixed inset-0 bg-black/78 backdrop-blur-sm" aria-hidden />
+      <div className={`pointer-events-none fixed inset-0 ${accentGlow} blur-3xl opacity-50`} aria-hidden />
+
+      <div
+        className={`result-in relative z-10 my-auto flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border bg-[#0c1018] shadow-[0_24px_80px_rgba(0,0,0,0.65)] ${cardBorder}`}
+      >
+        <div className={`pointer-events-none absolute inset-x-0 top-0 h-36 ${cardTopGlow} blur-2xl`} />
+
+        <div className="relative max-h-[min(78dvh,44rem)] overflow-y-auto overscroll-contain px-4 py-5 md:px-6 md:py-6">
+          <div className="flex flex-col items-center gap-2.5">
+            <span className={`result-outcome-pill result-outcome-pill--${headlineTone}`}>
+              <span className="material-symbols-outlined text-[14px]!">{outcomePillIcon}</span>
+              {outcomePillLabel}
+            </span>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">
+              {t("resultEyebrow")}
+            </p>
+            <h1
+              id="battle-result-title"
+              className={`result-title result-title--${headlineTone} text-center`}
+            >
+              {resultText}
+            </h1>
+            {subText && (
+              <p className="mx-auto max-w-md text-center text-[0.95rem] leading-snug text-white/55">
+                {subText}
               </p>
-              {coinsGained > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-0.5 font-mono text-label-sm text-electric-yellow">
-                  <span className="material-symbols-outlined text-[16px]!">paid</span>+{coinsGained}
-                </span>
-              )}
-            </div>
+            )}
+          </div>
 
-            <div className="flex flex-col gap-1.5">
-              {xpSummary?.map((entry) => (
-                <div
-                  key={entry.instanceId}
-                  className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
-                >
-                  <span className="min-w-0 flex-1 truncate text-label-md capitalize text-on-surface">
-                    {entry.name}
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    <span className="font-mono text-label-md text-tertiary">
-                      +{entry.xpGained} XP
-                    </span>
-                    {entry.leveledUpTo && (
-                      <span className="level-up-chip inline-flex items-center gap-1 rounded-full border border-tertiary/40 bg-tertiary/10 px-2 py-0.5 text-label-sm text-tertiary">
-                        <span className="material-symbols-outlined text-[14px]!">arrow_upward</span>
-                        {t("leveledUp", { level: entry.leveledUpTo })}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              ))}
+          <section className="relative mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/35 p-3 md:mt-6 md:p-4">
+            <div className="relative grid grid-cols-[1fr_auto_1fr] items-start gap-2 md:gap-3">
+              <FighterCard
+                fighter={player}
+                facing="front"
+                tag={playerTag}
+                defeated={mode === "lost"}
+                highlight={playerWon}
+              />
+              <div className="flex flex-col items-center gap-1 pt-8 md:pt-9">
+                <span className="text-label-sm font-bold tracking-[0.2em] text-on-surface-variant/60">
+                  VS
+                </span>
+                <span className="h-8 w-px bg-gradient-to-b from-white/15 to-transparent md:h-10" />
+              </div>
+              <FighterCard
+                fighter={foe}
+                facing="front"
+                tag={foeTag}
+                defeated={mode !== "lost" && mode !== "fled"}
+                highlight={mode === "lost"}
+              />
             </div>
           </section>
-        )}
 
-        <div className="mt-3 flex flex-col items-center gap-2 md:mt-4 md:gap-3">{children}</div>
+          {xpSummary ? <LevelUpFanfare entries={xpSummary} player={player} /> : null}
+
+          {xpSummary ? (
+            <div className="mt-3">
+              <LevelUpOffersPanel
+                key={xpSummary
+                  .map(
+                    (e) =>
+                      `${e.instanceId}:${e.leveledUpTo}:${e.evolveOffer?.toSpeciesId ?? 0}`,
+                  )
+                  .join("|")}
+                entries={xpSummary.map((e) => ({
+                  instanceId: e.instanceId,
+                  name: e.name,
+                  leveledUpTo: e.leveledUpTo,
+                  fromSpriteUrl: e.fromSpriteUrl,
+                  autoTaught: e.autoTaught ?? [],
+                  pendingMoves: e.pendingMoves ?? [],
+                  evolveOffer: e.evolveOffer ?? null,
+                  knownMoves: e.knownMoves ?? [],
+                }))}
+              />
+            </div>
+          ) : null}
+
+          {(coinsGained > 0 || (xpSummary && xpSummary.length > 0)) && (
+            <section className="mt-3 rounded-2xl border border-white/10 bg-black/30 p-3 md:p-4">
+              <div className="mb-2 flex items-center justify-between gap-2 border-b border-white/10 pb-2">
+                <p className="text-label-sm uppercase tracking-wider text-on-surface-variant">
+                  {t("rewardsTitle")}
+                </p>
+                {coinsGained > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-0.5 font-mono text-label-sm text-electric-yellow">
+                    <span className="material-symbols-outlined text-[16px]!">paid</span>+{coinsGained}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                {xpSummary?.map((entry) => (
+                  <div
+                    key={entry.instanceId}
+                    className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-label-md capitalize text-on-surface">
+                      {entry.name}
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="font-mono text-label-md text-tertiary">
+                        +{entry.xpGained} XP
+                      </span>
+                      {entry.leveledUpTo && (
+                        <span className="level-up-chip inline-flex items-center gap-1 rounded-full border border-tertiary/40 bg-tertiary/10 px-2 py-0.5 text-label-sm text-tertiary">
+                          <span className="material-symbols-outlined text-[14px]!">arrow_upward</span>
+                          {t("leveledUp", { level: entry.leveledUpTo })}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+
+        <div className="relative shrink-0 border-t border-white/10 bg-black/40 px-4 py-3 md:px-6 md:py-4">
+          <div className="flex flex-col items-center gap-2">{children}</div>
+        </div>
       </div>
     </div>
+    </BattleResultLeaveContext.Provider>,
+    document.body,
   );
 }

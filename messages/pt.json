@@ -620,6 +620,7 @@
     "tmEarned": "Você ganhou uma {code}!",
     "resultEyebrow": "Batalha encerrada",
     "victoryTag": "Vitória",
+    "defeatTag": "Derrota",
     "koTag": "K.O.",
     "caughtTag": "Capturado",
     "fledTag": "Fuga",

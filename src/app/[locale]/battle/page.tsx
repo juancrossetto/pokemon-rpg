@@ -68,10 +68,21 @@ export default async function BattlePage({
 
   if (!battle) {
     // En un desafío de gym no se puede escapar al encuentro salvaje para curar.
+    // Importante: NO redirigir acá automáticamente. Si el server action de
+    // batalla revalida el layout, un redirect a /run mata la animación de KO
+    // y el cartel de resultado. CombatLockGate + el CTA del resumen llevan
+    // al jugador de vuelta al pasillo cuando corresponde.
     const gymRun = await getActiveGymRun(userId);
     if (gymRun) {
-      redirect({ href: `/gyms/${gymRun.gymId}/run`, locale });
-      return null;
+      return (
+        <BattleScreen
+          initialBattle={null}
+          locale={locale}
+          hasHealthyTeam={true}
+          lobby={null}
+          gymContinueId={gymRun.gymId}
+        />
+      );
     }
 
     const [user, partyRows, inventory, recentRows, progress] = await Promise.all([
