@@ -204,6 +204,14 @@ export function MobileChrome({
                 ? groups.find((g) => g.id === item.groupId)
                 : undefined;
               const active = group ? groupMatches(pathname, group) : isActive(item.href);
+              // Pendientes del grupo: se ven sin abrir el drawer.
+              const badge = group
+                ? visibleChildren(group).reduce(
+                    (sum, child) =>
+                      sum + (child.badgeKey ? (navLabels.badges[child.badgeKey] ?? 0) : 0),
+                    0,
+                  )
+                : 0;
               return (
                 <Link
                   key={item.href}
@@ -235,6 +243,12 @@ export function MobileChrome({
                   >
                     {item.label}
                   </span>
+                  {badge > 0 && (
+                    <span
+                      aria-hidden
+                      className="absolute right-[22%] top-1.5 h-2 w-2 rounded-full bg-tertiary ring-2 ring-background"
+                    />
+                  )}
                 </Link>
               );
             })}
@@ -329,7 +343,14 @@ export function MobileChrome({
                               </span>
                               {/* Dos líneas antes que recortar: "Batalla salvaje"
                                 entraba como "Batalla salva…" en 390px. */}
-                            <span className="min-w-0 text-label-sm leading-tight">{label}</span>
+                            <span className="min-w-0 flex-1 text-label-sm leading-tight">
+                              {label}
+                            </span>
+                            {item.badgeKey && (navLabels.badges[item.badgeKey] ?? 0) > 0 && (
+                              <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-tertiary px-1 text-[10px] font-bold text-surface">
+                                {navLabels.badges[item.badgeKey]}
+                              </span>
+                            )}
                             </span>
                           );
                         }
@@ -354,7 +375,14 @@ export function MobileChrome({
                             </span>
                             {/* Dos líneas antes que recortar: "Batalla salvaje"
                                 entraba como "Batalla salva…" en 390px. */}
-                            <span className="min-w-0 text-label-sm leading-tight">{label}</span>
+                            <span className="min-w-0 flex-1 text-label-sm leading-tight">
+                              {label}
+                            </span>
+                            {item.badgeKey && (navLabels.badges[item.badgeKey] ?? 0) > 0 && (
+                              <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-tertiary px-1 text-[10px] font-bold text-surface">
+                                {navLabels.badges[item.badgeKey]}
+                              </span>
+                            )}
                           </Link>
                         );
                       })}

@@ -287,6 +287,7 @@ export async function evolvePokemonInstance(opts: {
   | {
       ok: true;
       fromName: string;
+      fromSpriteUrl: string;
       toName: string;
       toSpriteUrl: string;
       level: number;
@@ -302,6 +303,7 @@ export async function evolvePokemonInstance(opts: {
         select: {
           id: true,
           name: true,
+          spriteUrl: true,
           baseHp: true,
           evolveLevel: true,
           evolvesTo: {
@@ -320,30 +322,188 @@ export async function evolvePokemonInstance(opts: {
   const next = instance.species.evolvesTo[0];
   if (!next || next.id !== offer.toSpeciesId) return { ok: false, error: "not_ready" };
 
+  const evolved = await applySpeciesEvolution({
+    userId: opts.userId,
+    instance: {
+      id: instance.id,
+      level: instance.level,
+      currentHp: instance.currentHp,
+      ptConstitution: instance.ptConstitution,
+      fromName: instance.species.name,
+      fromBaseHp: instance.species.baseHp,
+    },
+    next: {
+      id: next.id,
+      name: next.name,
+      spriteUrl: next.spriteUrl,
+      baseHp: next.baseHp,
+    },
+  });
+  if (!evolved.ok) return evolved;
+  return { ...evolved, fromSpriteUrl: instance.species.spriteUrl };
+}
+
+/**
+ * Evoluciona con una piedra: consume 1 del ítem y cambia a la forma cuyo
+ * `evolveItem` coincide. No exige nivel (Kanto clásico); si `evolveMinLevel`
+ * está seteado, sí lo respeta.
+ */
+export async function evolvePokemonWithItem(opts: {
+  userId: string;
+  instanceId: string;
+  itemName: string;
+  toSpeciesId?: number;
+}): Promise<
+  | {
+      ok: true;
+      fromName: string;
+      fromSpriteUrl: string;
+      toName: string;
+      toSpriteUrl: string;
+      level: number;
+      currentHp: number;
+      maxHp: number;
+      itemName: string;
+    }
+  | { ok: false; error: "not_found" | "incompatible" | "not_ready" | "no_item" }
+> {
+  const instance = await prisma.pokemonInstance.findFirst({
+    where: { id: opts.instanceId, ownerId: opts.userId },
+    include: {
+      species: {
+        select: {
+          id: true,
+          name: true,
+          spriteUrl: true,
+          baseHp: true,
+          evolvesTo: {
+            where: {
+              evolveTrigger: "use-item",
+              evolveItem: opts.itemName,
+              ...(opts.toSpeciesId != null ? { id: opts.toSpeciesId } : {}),
+            },
+            select: {
+              id: true,
+              name: true,
+              spriteUrl: true,
+              baseHp: true,
+              evolveItem: true,
+              evolveMinLevel: true,
+            },
+            orderBy: { id: "asc" },
+            take: 1,
+          },
+        },
+      },
+    },
+  });
+  if (!instance) return { ok: false, error: "not_found" };
+
+  const next = instance.species.evolvesTo[0];
+  if (!next || next.evolveItem !== opts.itemName) {
+    return { ok: false, error: "incompatible" };
+  }
+  if (next.evolveMinLevel != null && instance.level < next.evolveMinLevel) {
+    return { ok: false, error: "not_ready" };
+  }
+
+  const stone = await prisma.inventoryItem.findFirst({
+    where: {
+      userId: opts.userId,
+      quantity: { gt: 0 },
+      item: { name: opts.itemName, type: "EVOLUTION_STONE" },
+    },
+    select: { itemId: true, quantity: true },
+  });
+  if (!stone) return { ok: false, error: "no_item" };
+
+  const fromSpriteUrl = instance.species.spriteUrl;
+  const evolved = await applySpeciesEvolution({
+    userId: opts.userId,
+    instance: {
+      id: instance.id,
+      level: instance.level,
+      currentHp: instance.currentHp,
+      ptConstitution: instance.ptConstitution,
+      fromName: instance.species.name,
+      fromBaseHp: instance.species.baseHp,
+    },
+    next: {
+      id: next.id,
+      name: next.name,
+      spriteUrl: next.spriteUrl,
+      baseHp: next.baseHp,
+    },
+  });
+  if (!evolved.ok) return { ok: false, error: "not_found" };
+
+  await prisma.inventoryItem.update({
+    where: { userId_itemId: { userId: opts.userId, itemId: stone.itemId } },
+    data: { quantity: { decrement: 1 } },
+  });
+  if (stone.quantity <= 1) {
+    await prisma.inventoryItem.deleteMany({
+      where: { userId: opts.userId, itemId: stone.itemId, quantity: { lte: 0 } },
+    });
+  }
+
+  return { ...evolved, itemName: opts.itemName, fromSpriteUrl };
+}
+
+async function applySpeciesEvolution(opts: {
+  userId: string;
+  instance: {
+    id: string;
+    level: number;
+    currentHp: number;
+    ptConstitution: number;
+    fromName: string;
+    fromBaseHp: number;
+  };
+  next: { id: number; name: string; spriteUrl: string; baseHp: number };
+}): Promise<
+  | {
+      ok: true;
+      fromName: string;
+      toName: string;
+      toSpriteUrl: string;
+      level: number;
+      currentHp: number;
+      maxHp: number;
+    }
+  | { ok: false; error: string }
+> {
   const prevMax = calculateMaxHp(
-    instance.species.baseHp,
-    instance.level,
-    instance.ptConstitution,
+    opts.instance.fromBaseHp,
+    opts.instance.level,
+    opts.instance.ptConstitution,
   );
-  const newMax = calculateMaxHp(next.baseHp, instance.level, instance.ptConstitution);
-  const newHp = Math.min(newMax, Math.max(1, instance.currentHp + (newMax - prevMax)));
+  const newMax = calculateMaxHp(
+    opts.next.baseHp,
+    opts.instance.level,
+    opts.instance.ptConstitution,
+  );
+  const newHp = Math.min(
+    newMax,
+    Math.max(1, opts.instance.currentHp + (newMax - prevMax)),
+  );
 
   await prisma.pokemonInstance.update({
-    where: { id: instance.id },
+    where: { id: opts.instance.id },
     data: {
-      speciesId: next.id,
+      speciesId: opts.next.id,
       currentHp: newHp,
     },
   });
 
-  await markSpeciesSeen(opts.userId, next.id);
+  await markSpeciesSeen(opts.userId, opts.next.id);
 
   return {
     ok: true,
-    fromName: instance.species.name,
-    toName: next.name,
-    toSpriteUrl: next.spriteUrl,
-    level: instance.level,
+    fromName: opts.instance.fromName,
+    toName: opts.next.name,
+    toSpriteUrl: opts.next.spriteUrl,
+    level: opts.instance.level,
     currentHp: newHp,
     maxHp: newMax,
   };

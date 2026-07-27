@@ -14,52 +14,56 @@ datasource db {
 // ---------- Cuenta y economía ----------
 
 model User {
-  id              String   @id @default(cuid())
-  email           String   @unique
-  username        String   @unique
+  id              String    @id @default(cuid())
+  email           String    @unique
+  username        String    @unique
   passwordHash    String
   country         String // ISO-3166 alpha-2, define el segmento del ranking
-  locale          String   @default("es")
+  locale          String    @default("es")
   gender          String? // "male" | "female" | "unspecified", opcional — puro perfil, sin efecto en mecánicas
   age             Int? // opcional
   avatarId        String? // referencia a AVATAR_OPTIONS en src/lib/avatars.ts, no una imagen — null = iniciales (comportamiento actual)
-  coins           Int      @default(0)
+  coins           Int       @default(0)
   /// Moneda premium (gemas) — reservada para usos de PC / economía especial.
-  gems            Int      @default(0)
-  energy          Int      @default(20)
-  energyMax       Int      @default(20)
-  energyUpdatedAt DateTime @default(now()) // para calcular regeneración sin cron
+  gems            Int       @default(0)
+  energy          Int       @default(20)
+  energyMax       Int       @default(20)
+  energyUpdatedAt DateTime  @default(now()) // para calcular regeneración sin cron
   lastHealAt      DateTime? // Centro Pokémon: la curación gratis tiene cooldown; pagar lo saltea
-  createdAt       DateTime @default(now())
+  createdAt       DateTime  @default(now())
 
   // Ladder PvP (dossier fase 4). Rating Elo + récord; segmento del ranking PvP.
   pvpRating Int @default(1000)
   pvpWins   Int @default(0)
   pvpLosses Int @default(0)
 
-  pokemon         PokemonInstance[]
-  inventory       InventoryItem[]
-  gymAttempts     GymAttempt[]
-  gymRuns         GymRun[]
-  badges          Badge[]
-  listingsSold    MarketListing[]   @relation("Seller")
-  listingsBought  MarketListing[]   @relation("Buyer")
-  clanMembership  ClanMember?
-  ledClan         Clan?             @relation("ClanLeader")
-  battlesAsUser   BattleLog[]       @relation("BattleUser")
-  battlesAsOpp    BattleLog[]       @relation("BattleOpponent")
-  battleSessions  BattleSession[]
-  pvpAsChallenger PvpMatch[]        @relation("PvpChallenger")
-  pvpAsOpponent   PvpMatch[]        @relation("PvpOpponent")
-  campaignProgress CampaignProgress?
-  eggs         Egg[]
-  clanMessages ClanMessage[]
-  notifications Notification[]
-  pokedexEntries PokedexEntry[]
-  zoneMastery  ZoneMastery[]
-  seenSpecies  SeenSpecies[]
-  trainerDefeats TrainerDefeat[]
-  objectiveClaims ZoneObjectiveClaim[]
+  pokemon            PokemonInstance[]
+  inventory          InventoryItem[]
+  gymAttempts        GymAttempt[]
+  gymRuns            GymRun[]
+  badges             Badge[]
+  listingsSold       MarketListing[]      @relation("Seller")
+  listingsBought     MarketListing[]      @relation("Buyer")
+  clanMembership     ClanMember?
+  ledClan            Clan?                @relation("ClanLeader")
+  battlesAsUser      BattleLog[]          @relation("BattleUser")
+  battlesAsOpp       BattleLog[]          @relation("BattleOpponent")
+  battleSessions     BattleSession[]
+  pvpAsChallenger    PvpMatch[]           @relation("PvpChallenger")
+  pvpAsOpponent      PvpMatch[]           @relation("PvpOpponent")
+  campaignProgress   CampaignProgress?
+  eggs               Egg[]
+  clanMessages       ClanMessage[]
+  notifications      Notification[]
+  pokedexEntries     PokedexEntry[]
+  zoneMastery        ZoneMastery[]
+  seenSpecies        SeenSpecies[]
+  trainerDefeats     TrainerDefeat[]
+  objectiveClaims    ZoneObjectiveClaim[]
+  dailyRewardClaims  DailyRewardClaim[]
+  weeklyRewardClaims WeeklyRewardClaim[]
+  eventMissionClaims EventMissionClaim[]
+  rewardLedger       RewardLedger[]
 }
 
 // ---------- Notificaciones in-app ----------
@@ -114,31 +118,31 @@ model CampaignProgress {
 // ---------- Datos de Pokémon (seed desde PokeAPI, ver scripts/seed) ----------
 
 model Species {
-  id            Int       @id // pokedex id, mismo que en PokeAPI
-  name          String    @unique
-  types         String[] // 1 o 2 tipos, ej. ["fire"] o ["grass", "poison"]
-  baseHp        Int
-  baseAttack    Int
-  baseDefense   Int
-  baseSpAtk     Int
-  baseSpDef     Int
-  baseSpeed     Int
-  spriteUrl     String
-  generation    Int
-  captureRate   Int       @default(45) // 0-255, de PokeAPI — más alto = más fácil de atrapar
+  id             Int       @id // pokedex id, mismo que en PokeAPI
+  name           String    @unique
+  types          String[] // 1 o 2 tipos, ej. ["fire"] o ["grass", "poison"]
+  baseHp         Int
+  baseAttack     Int
+  baseDefense    Int
+  baseSpAtk      Int
+  baseSpDef      Int
+  baseSpeed      Int
+  spriteUrl      String
+  generation     Int
+  captureRate    Int       @default(45) // 0-255, de PokeAPI — más alto = más fácil de atrapar
   // Nivel mínimo para evolucionar por level-up a evolvesTo[0]. Null = no evoluciona por nivel
   // (piedra, intercambio, etc.) o es la forma final.
-  evolveLevel   Int?
+  evolveLevel    Int?
   // Cómo se llega a ESTA especie desde su pre-evolución. Vive del lado del hijo
   // porque el padre puede tener varias evoluciones con requisitos distintos
   // (Eevee → Vaporeon/Jolteon/Flareon, una piedra cada una) y `evolveLevel`,
   // que vive en el padre, no puede representarlas.
-  evolveTrigger String? // "level-up" | "use-item" | "trade" | "shed" ...
-  evolveItem    String? // nombre del ítem tal cual está en `Item.name`, ej. "Water Stone"
+  evolveTrigger  String? // "level-up" | "use-item" | "trade" | "shed" ...
+  evolveItem     String? // nombre del ítem tal cual está en `Item.name`, ej. "Water Stone"
   evolveMinLevel Int? // nivel mínimo del trigger, cuando aplica
-  evolvesFromId Int?
-  evolvesFrom   Species?  @relation("Evolution", fields: [evolvesFromId], references: [id])
-  evolvesTo     Species[] @relation("Evolution")
+  evolvesFromId  Int?
+  evolvesFrom    Species?  @relation("Evolution", fields: [evolvesFromId], references: [id])
+  evolvesTo      Species[] @relation("Evolution")
 
   learnableMoves    SpeciesMove[]
   instances         PokemonInstance[]
@@ -184,7 +188,9 @@ model SpeciesMove {
   speciesId  Int
   moveId     Int
   method     LearnMethod @default(LEVEL_UP)
-  /** Null en MT/tutor/huevo: esos movimientos no se aprenden por nivel. */
+  /**
+   * Null en MT/tutor/huevo: esos movimientos no se aprenden por nivel.
+   */
   learnLevel Int?
 
   species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
@@ -196,20 +202,20 @@ model SpeciesMove {
 // ---------- Pokémon de un jugador ----------
 
 model PokemonInstance {
-  id        String   @id @default(cuid())
-  ownerId   String
-  speciesId Int
-  nickname  String?
-  level     Int      @default(5)
-  xp        Int      @default(0)
-  currentHp Int
-  isShiny   Boolean  @default(false)
-  teamSlot  Int? // 1-6 = en equipo activo, null = en almacenamiento (PC)
+  id            String   @id @default(cuid())
+  ownerId       String
+  speciesId     Int
+  nickname      String?
+  level         Int      @default(5)
+  xp            Int      @default(0)
+  currentHp     Int
+  isShiny       Boolean  @default(false)
+  teamSlot      Int? // 1-6 = en equipo activo, null = en almacenamiento (PC)
   /// Destacado del entrenador (emblema de ranking); independiente del slot.
-  isFavorite Boolean @default(false)
+  isFavorite    Boolean  @default(false)
   /// Si true, no se puede publicar en el mercado.
-  isTradeLocked Boolean @default(false)
-  caughtAt  DateTime @default(now())
+  isTradeLocked Boolean  @default(false)
+  caughtAt      DateTime @default(now())
 
   // Puntos manuales por Pokémon — el diferenciador de diseño del proyecto.
   // Ver dossier: reemplaza EV/IV por progresión que controla el jugador.
@@ -255,21 +261,23 @@ model PokedexEntry {
 // Cría: dos padres del jugador producen un huevo que hereda parte de los puntos
 // invertidos. Es un sumidero de economía y le da uso a los que no pelean.
 model Egg {
-  id           String   @id @default(cuid())
-  ownerId      String
-  speciesId    Int
-  parentAId    String
-  parentBId    String
-  /** Puntos heredados que arranca la cría — mismos 5 atributos que la instancia. */
-  ptStrength     Int @default(0)
-  ptSpeed        Int @default(0)
-  ptDexterity    Int @default(0)
-  ptIntelligence Int @default(0)
-  ptConstitution Int @default(0)
-  isShiny      Boolean  @default(false)
-  readyAt      DateTime // eclosiona con el tiempo, como la energía: sin cron
-  hatchedAt    DateTime?
-  createdAt    DateTime @default(now())
+  id             String    @id @default(cuid())
+  ownerId        String
+  speciesId      Int
+  parentAId      String
+  parentBId      String
+  /**
+   * Puntos heredados que arranca la cría — mismos 5 atributos que la instancia.
+   */
+  ptStrength     Int       @default(0)
+  ptSpeed        Int       @default(0)
+  ptDexterity    Int       @default(0)
+  ptIntelligence Int       @default(0)
+  ptConstitution Int       @default(0)
+  isShiny        Boolean   @default(false)
+  readyAt        DateTime // eclosiona con el tiempo, como la energía: sin cron
+  hatchedAt      DateTime?
+  createdAt      DateTime  @default(now())
 
   owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   species Species @relation(fields: [speciesId], references: [id])
@@ -292,17 +300,19 @@ model PokemonMove {
 // ---------- Gimnasios y medallas ----------
 
 model Gym {
-  id            String @id @default(cuid())
-  order         Int    @unique // orden secuencial fijo, 1..N — desbloquea al tener la medalla del anterior
+  id            String  @id @default(cuid())
+  order         Int     @unique // orden secuencial fijo, 1..N — desbloquea al tener la medalla del anterior
   name          String
   leaderName    String
-  badgeName     String @default("") // nombre real de la medalla (ej. "Boulder Badge")
+  badgeName     String  @default("") // nombre real de la medalla (ej. "Boulder Badge")
   type          String // tipo principal del líder — define el ícono/color de la medalla
-  cooldownHours Int    @default(24) // solo aplica tras perder una batalla (no al abandonar la corrida)
-  opensHour     Int    @default(0) // horario de atención en hora local del jugador (0-23).
-  closesHour    Int    @default(24) // 0/24 = abierto siempre. Si closes <= opens, cruza la medianoche.
-  coinReward    Int    @default(100)
-  /** Alto Mando / Campeón: no cuenta como medalla y solo se abre con las 8. */
+  cooldownHours Int     @default(24) // solo aplica tras perder una batalla (no al abandonar la corrida)
+  opensHour     Int     @default(0) // horario de atención en hora local del jugador (0-23).
+  closesHour    Int     @default(24) // 0/24 = abierto siempre. Si closes <= opens, cruza la medianoche.
+  coinReward    Int     @default(100)
+  /**
+   * Alto Mando / Campeón: no cuenta como medalla y solo se abre con las 8.
+   */
   isElite       Boolean @default(false)
 
   team           GymPokemon[]
@@ -448,6 +458,9 @@ model Item {
   type            ItemType
   effectText      String?
   buyPrice        Int
+  /// Precio en gemas (moneda premium). Null = no se vende por gemas.
+  /// Un ítem puede tener los dos precios; la tienda muestra el que aplique.
+  gemPrice        Int?
   catchMultiplier Float? // solo para type=POKEBALL (null = no aplica). Master Ball usa un valor
   // altísimo (255) para que la fórmula de captura dé siempre "atrapado".
   healAmount      Int? // solo para type=POTION (null = no aplica). Full Restore usa un valor
@@ -574,7 +587,6 @@ model ClanMessage {
 
 /**
  * Experiencia del jugador en una zona concreta.
- *
  * Es lo que hace que volver a una zona ya completada siga teniendo sentido:
  * sube con cada victoria salvaje ahí y otorga bonus permanentes de XP, captura
  * y monedas en esa zona.
@@ -593,7 +605,6 @@ model ZoneMastery {
 
 /**
  * Qué especies vio el jugador en cada zona.
- *
  * Habilita el descubrimiento progresivo: la Pokédex de la zona arranca en
  * silueta desconocida y se va revelando al cruzarse cada especie, en vez de
  * mostrar de entrada todo lo que puede aparecer.
@@ -611,7 +622,9 @@ model SeenSpecies {
   @@index([userId, locationId])
 }
 
-/** A qué entrenadores de ruta ya venciste. Los entrenadores son estáticos. */
+/**
+ * A qué entrenadores de ruta ya venciste. Los entrenadores son estáticos.
+ */
 model TrainerDefeat {
   userId     String
   trainerId  String
@@ -624,7 +637,9 @@ model TrainerDefeat {
   @@index([userId, locationId])
 }
 
-/** Recompensas de objetivo de zona ya cobradas. */
+/**
+ * Recompensas de objetivo de zona ya cobradas.
+ */
 model ZoneObjectiveClaim {
   userId     String
   locationId String
@@ -673,44 +688,44 @@ enum BattleSessionStatus {
 }
 
 model BattleSession {
-  id                String              @id @default(cuid())
-  userId            String
-  pokemonInstanceId String
-  wildSpeciesId     Int
-  wildLevel         Int
-  wildCurrentHp     Int
-  wildMaxHp         Int
-  wildMoveIds       Int[]
-  wildMovePp        Int[]               @default([]) // PP restante paralelo a wildMoveIds
-  wildIsShiny       Boolean             @default(false)
-  routeTrainerId    String? // entrenador de ruta (datos estáticos, ver trainers.ts) // se tira al generar el encuentro para que se vea variante en combate
-  status            BattleSessionStatus @default(ACTIVE)
-  log               String[]            @default([])
-  participantIds    String[]            @default([]) // todos los Pokémon del jugador que pelearon en esta sesión (para repartir XP al terminar)
-  pendingXp         Int                 @default(0) // XP acumulada de KOs previos en la misma sesión, pendiente de repartir al terminar
-  gymId             String? // null = encuentro salvaje. Si tiene valor, wildSpecies/wildLevel/etc.
+  id                     String              @id @default(cuid())
+  userId                 String
+  pokemonInstanceId      String
+  wildSpeciesId          Int
+  wildLevel              Int
+  wildCurrentHp          Int
+  wildMaxHp              Int
+  wildMoveIds            Int[]
+  wildMovePp             Int[]               @default([]) // PP restante paralelo a wildMoveIds
+  wildIsShiny            Boolean             @default(false)
+  routeTrainerId         String? // entrenador de ruta (datos estáticos, ver trainers.ts) // se tira al generar el encuentro para que se vea variante en combate
+  status                 BattleSessionStatus @default(ACTIVE)
+  log                    String[]            @default([])
+  participantIds         String[]            @default([]) // todos los Pokémon del jugador que pelearon en esta sesión (para repartir XP al terminar)
+  pendingXp              Int                 @default(0) // XP acumulada de KOs previos en la misma sesión, pendiente de repartir al terminar
+  gymId                  String? // null = encuentro salvaje. Si tiene valor, wildSpecies/wildLevel/etc.
   // reflejan al oponente ACTUAL (entrenador subordinado o líder), no uno efímero random.
-  gymRunId          String? // corrida de gimnasio a la que pertenece esta batalla (null = encuentro salvaje)
-  gymTrainerId      String? // entrenador subordinado actual — null = está peleando contra el líder
-  gymPokemonSlot    Int? // slot del equipo actual (del entrenador o del líder) que se está peleando
+  gymRunId               String? // corrida de gimnasio a la que pertenece esta batalla (null = encuentro salvaje)
+  gymTrainerId           String? // entrenador subordinado actual — null = está peleando contra el líder
+  gymPokemonSlot         Int? // slot del equipo actual (del entrenador o del líder) que se está peleando
   // Estado de combate en sesión (se limpia al cambiar de Pokémon / fin de batalla).
-  playerStatus      StatusCondition?
-  wildStatus        StatusCondition?
-  playerSleepTurns  Int                 @default(0)
-  wildSleepTurns    Int                 @default(0)
-  playerAtkStage    Int                 @default(0)
-  playerDefStage    Int                 @default(0)
-  playerSpeStage    Int                 @default(0)
-  wildAtkStage      Int                 @default(0)
-  wildDefStage      Int                 @default(0)
-  wildSpeStage      Int                 @default(0)
-  fleeAttempts      Int                 @default(0) // fallos de huida; sube la chance (Gen III)
+  playerStatus           StatusCondition?
+  wildStatus             StatusCondition?
+  playerSleepTurns       Int                 @default(0)
+  wildSleepTurns         Int                 @default(0)
+  playerAtkStage         Int                 @default(0)
+  playerDefStage         Int                 @default(0)
+  playerSpeStage         Int                 @default(0)
+  wildAtkStage           Int                 @default(0)
+  wildDefStage           Int                 @default(0)
+  wildSpeStage           Int                 @default(0)
+  fleeAttempts           Int                 @default(0) // fallos de huida; sube la chance (Gen III)
   // Objeto equipado del jugador (fijo para toda la batalla, no se puede
   // cambiar en combate — ver blockIfInCombat en equip-held-item).
   playerChoiceLockMoveId Int? // si porta un objeto CHOICE_LOCK, el movimiento al que quedó atado
-  playerItemConsumed     Boolean @default(false) // FOCUS_SASH/SITRUS/LUM ya se gastaron esta batalla
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
+  playerItemConsumed     Boolean             @default(false) // FOCUS_SASH/SITRUS/LUM ya se gastaron esta batalla
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
 
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   pokemonInstance PokemonInstance @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
@@ -745,4 +760,70 @@ model PvpMatch {
 
   @@index([challengerId, createdAt])
   @@index([opponentId, createdAt])
+}
+
+// ---------- Eventos y recompensas recurrentes ----------
+// El catálogo (ciclo diario, desafíos semanales, eventos y sus misiones) vive
+// en `src/lib/events/` como configuración tipada, igual que la campaña: acá
+// solo se guarda el progreso del jugador. Así un evento nuevo no necesita
+// migración ni panel de administración.
+
+/// Un reclamo del regalo diario. Doble candado a propósito:
+/// la PK impide reclamar dos veces la misma posición del ciclo, y el único
+/// sobre `dayKey` impide reclamar dos veces el mismo día UTC —dos pestañas,
+/// doble click o un reintento de red terminan en el mismo error del índice.
+model DailyRewardClaim {
+  userId    String
+  cycleId   String
+  dayIndex  Int // posición dentro del ciclo (1..cycleLength)
+  dayKey    String // fecha UTC "YYYY-MM-DD" del reclamo
+  claimedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, cycleId, dayIndex])
+  @@unique([userId, dayKey])
+  @@index([userId, claimedAt])
+}
+
+/// Hito semanal cobrado. `weekKey` es la semana ISO en UTC ("2026-W31").
+model WeeklyRewardClaim {
+  userId    String
+  weekKey   String
+  milestone Int // porcentaje del objetivo: 25 | 50 | 75 | 100
+  claimedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, weekKey, milestone])
+  @@index([userId, claimedAt])
+}
+
+/// Recompensa de una misión de evento ya cobrada.
+model EventMissionClaim {
+  userId    String
+  eventCode String
+  missionId String
+  claimedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventCode, missionId])
+  @@index([userId, claimedAt])
+}
+
+/// Auditoría de entregas. Permite investigar un reclamo duplicado, una
+/// recompensa que no llegó o una diferencia de saldo sin reconstruirlo desde
+/// los logs. `payload` guarda las recompensas resueltas por el servidor.
+model RewardLedger {
+  id        String   @id @default(cuid())
+  userId    String
+  source    String // "daily" | "weekly" | "event_mission"
+  sourceRef String // "cycle-28:12" | "2026-W31:50" | "water-fest:catch-10"
+  payload   Json
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

@@ -60,14 +60,16 @@
       "inventory": "Items, berries and stones you own.",
       "market": "Buy and sell with other players.",
       "shop": "Buy items from the system.",
-      "clans": "Join a clan and compete as a team."
+      "clans": "Join a clan and compete as a team.",
+      "events": "Daily gifts and weekly challenges."
     },
     "battleWild": "Wild battle",
     "menu": "Menu",
     "soon": "Coming soon",
     "account": "Account",
     "navigation": "Navigation",
-    "close": "Close"
+    "close": "Close",
+    "events": "Events"
   },
   "notifications": {
     "eyebrow": "Live alerts",
@@ -401,6 +403,13 @@
       "tabEvolutions": "Evo",
       "unknownSpecies": "???",
       "evolveAtLevel": "Level {level}",
+      "evolveReadyShort": "Ready",
+      "evolveNeedItem": "Need",
+      "evolveNeedLevel": "Need lv. {level}",
+      "evolveNow": "Evolve",
+      "evolveUseStone": "Use {item}",
+      "evolving": "Evolving…",
+      "canEvolveBadge": "Evo",
       "pp": "PP",
       "power": "Power",
       "noPower": "—",
@@ -444,7 +453,8 @@
         "Water Stone": "Water Stone",
         "Thunder Stone": "Thunder Stone",
         "Leaf Stone": "Leaf Stone",
-        "Moon Stone": "Moon Stone"
+        "Moon Stone": "Moon Stone",
+        "Linking Cord": "Linking Cord"
       }
     },
     "healFree": "Free healing available",
@@ -991,8 +1001,13 @@
       "choiceScarf": "Multiplies Speed by 1.5, but locks in the first move used.",
       "choiceBand": "Multiplies Attack by 1.5, but locks in the first move used.",
       "leftovers": "Restores 1/16 of max HP at the end of each turn.",
-      "lifeOrb": "Boosts damaging move power by 30%, with 1/10 max HP recoil."
-    }
+      "lifeOrb": "Boosts damaging move power by 30%, with 1/10 max HP recoil.",
+      "linkingCord": "Evolves species that normally require trading."
+    },
+    "gemsUnit": "gems",
+    "gemPrice": "Gem price",
+    "insufficientGems": "Not enough gems",
+    "missingGems": "You need {amount} more gems."
   },
   "pc": {
     "title": "Storage PC",
@@ -1517,5 +1532,63 @@
       "team_full": "Team is full.",
       "busy_parents": "Those parents are already incubating an egg."
     }
+  },
+  "events": {
+    "eyebrow": "EVENT CENTER",
+    "title": "Events",
+    "subtitle": "Complete challenges, claim rewards and join limited-time events.",
+    "pending": "{count, plural, =0 {No rewards pending} one {# reward ready} other {# rewards ready}}",
+    "dailyTitle": "Daily gift",
+    "dailySubtitle": "One gift per day. Missing a day never resets your progress.",
+    "dailyDay": "Day {day}",
+    "dailyClaim": "Claim gift",
+    "dailyClaimed": "Already claimed today",
+    "dailyNext": "Back in {time}",
+    "dailyProgress": "Day {current} of {total}",
+    "weeklyTitle": "Weekly challenge",
+    "weeklySubtitle": "Four objectives, four rewards. Resets every Monday.",
+    "weeklyPercent": "{percent}% complete",
+    "weeklyReset": "New week in {time}",
+    "objectives": {
+      "logins": "Log in on 5 days",
+      "battles": "Win 25 battles",
+      "catches": "Catch 10 creatures",
+      "zones": "Complete 3 zone objectives"
+    },
+    "milestone": "{percent}% milestone",
+    "claim": "Claim",
+    "claimed": "Claimed",
+    "locked": "Locked",
+    "goTo": "Go",
+    "rewards": {
+      "coins": "coins",
+      "energy": "energy",
+      "item": "item",
+      "gems": "gems"
+    },
+    "revealTitle": "Reward claimed!",
+    "revealClose": "Continue",
+    "revealInventory": "Open inventory",
+    "errorClaimed": "That reward was already claimed.",
+    "errorNotAvailable": "You haven't reached that milestone yet.",
+    "errorGeneric": "Could not claim. Try again.",
+    "emptyEvents": "No active events right now. Check back soon.",
+    "eventsSoon": "Limited-time events are coming soon.",
+    "close": "Close",
+    "statusToday": "Available today",
+    "statusClaimed": "Claimed",
+    "statusUpcoming": "Upcoming",
+    "bannerTitle": "Your daily gift is ready",
+    "bannerClaim": "Claim",
+    "bannerClaiming": "…",
+    "bannerSeeAll": "See events",
+    "bannerDismiss": "Hide notice",
+    "bannerClaimed": "Gift claimed! Added to your account.",
+    "giftTitle": "Daily gift",
+    "giftSubtitle": "Come back every day and collect all 28 rewards of the cycle.",
+    "giftProgress": "Day {current}/{total}",
+    "giftClaimedTitle": "Added to your account",
+    "giftContinue": "Continue",
+    "giftReopen": "Your daily gift is still unclaimed"
   }
 }

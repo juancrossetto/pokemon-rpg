@@ -26,6 +26,12 @@ export type NavItem = {
    * una sección vive en más de un prefijo.
    */
   matchRoutes?: string[];
+  /**
+   * Contador de acciones pendientes. Lo resuelve quien arma las etiquetas —la
+   * config no consulta la base— y se muestra tanto en el dropdown como en el
+   * grupo padre.
+   */
+  badgeKey?: "eventsPending";
   /** Preparado para cuando exista sistema de flags; hoy nadie lo setea. */
   hidden?: boolean;
   /** Visible pero no navegable — "Próximamente" del roadmap. */
@@ -78,6 +84,14 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.gyms",
         href: "/gyms",
         icon: "military_tech",
+      },
+      {
+        id: "events",
+        labelKey: "events",
+        descriptionKey: "desc.events",
+        href: "/events",
+        icon: "redeem",
+        badgeKey: "eventsPending",
       },
     ],
   },

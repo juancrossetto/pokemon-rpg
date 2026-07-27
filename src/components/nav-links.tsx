@@ -13,20 +13,27 @@ export type NavLabels = {
   description: Record<string, string>;
   home: string;
   soon: string;
+  /** Contadores por `badgeKey`. 0 o ausente = sin badge. */
+  badges: Record<string, number>;
 };
 
-/**
- * Indicador de ruta activa: contraste + línea corta + glow tenue.
- * Sin fondo sólido — a lo ancho del link se leía como un botón presionado.
- */
-function ActiveUnderline() {
+/** Punto/contador de acciones pendientes. Nunca es el único indicador. */
+function PendingBadge({ count, className = "" }: { count: number; className?: string }) {
+  if (count <= 0) return null;
   return (
     <span
-      aria-hidden
-      className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-pokeball-red shadow-[0_0_8px_rgba(238,21,21,0.75)]"
-    />
+      className={`flex h-4 min-w-4 items-center justify-center rounded-full bg-tertiary px-1 text-[10px] font-bold text-surface ${className}`}
+    >
+      {count > 9 ? "9+" : count}
+    </span>
   );
 }
+
+/**
+ * Posición y ancho del subrayado activo, en píxeles relativos al contenedor.
+ * `null` hasta la primera medición (SSR y primer frame).
+ */
+type IndicatorBox = { left: number; width: number } | null;
 
 const TRIGGER_BASE =
   "nav-link-text relative flex h-16 items-center gap-0.5 px-2.5 whitespace-nowrap transition-colors xl:gap-1 xl:px-3";
@@ -40,7 +47,49 @@ export function NavLinks({
 }) {
   const pathname = usePathname();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [indicator, setIndicator] = useState<IndicatorBox>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  /*
+    Un único subrayado que se desliza entre opciones.
+
+    Antes cada link dibujaba el suyo: al cambiar de sección, uno desaparecía y
+    otro aparecía de golpe, sin relación entre los dos. Con una sola barra
+    posicionada en el contenedor, el cambio se lee como un movimiento y admite
+    la curva elástica que pidió el diseño.
+
+    Se mide el elemento marcado con `data-active` en vez de recalcular cuál es
+    —la lógica de "qué está activo" ya vive en `groupMatches`/`itemMatches` y
+    duplicarla acá sería una segunda fuente de verdad que se puede desincronizar.
+  */
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    function measure() {
+      const node = root?.querySelector<HTMLElement>("[data-active]");
+      if (!node || !root) {
+        setIndicator(null);
+        return;
+      }
+      const rootBox = root.getBoundingClientRect();
+      const box = node.getBoundingClientRect();
+      // Se recorta a los lados para que la barra no ocupe todo el link, que es
+      // como se veía antes con `inset-x-3`.
+      const inset = 10;
+      setIndicator({
+        left: box.left - rootBox.left + inset,
+        width: Math.max(0, box.width - inset * 2),
+      });
+    }
+
+    measure();
+    // El ancho de los links cambia con la fuente y con el idioma; sin esto el
+    // subrayado queda corrido tras cargar la tipografía o al cambiar de locale.
+    const observer = new ResizeObserver(measure);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [pathname]);
 
   useEffect(() => {
     if (openId === null) return;
@@ -61,16 +110,23 @@ export function NavLinks({
   const homeActive = pathname === "/";
 
   return (
-    <div ref={rootRef} className="ml-2 flex items-center xl:ml-4">
+    <div ref={rootRef} className="relative ml-2 flex items-center xl:ml-4">
+      {indicator && (
+        <span
+          aria-hidden
+          className="nav-indicator absolute bottom-0 h-0.5 rounded-full bg-pokeball-red shadow-[0_0_8px_rgba(238,21,21,0.75)]"
+          style={{ left: indicator.left, width: indicator.width }}
+        />
+      )}
       <Link
         href="/"
+        data-active={homeActive || undefined}
         aria-current={homeActive ? "page" : undefined}
         className={`${TRIGGER_BASE} ${
           homeActive ? "text-white" : "text-on-surface-variant hover:text-on-surface"
         }`}
       >
         {labels.home}
-        {homeActive && <ActiveUnderline />}
       </Link>
 
       {groups.map((group) => {
@@ -86,13 +142,13 @@ export function NavLinks({
             <Link
               key={group.id}
               href={only.href}
+              data-active={active || undefined}
               aria-current={active ? "page" : undefined}
               className={`${TRIGGER_BASE} ${
                 active ? "text-white" : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
               {labels.text[group.labelKey] ?? group.id}
-              {active && <ActiveUnderline />}
             </Link>
           );
         }
@@ -135,6 +191,12 @@ function NavGroupMenu({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const active = groupMatches(pathname, group);
+  // El grupo acumula los pendientes de sus hijos: el jugador ve que hay algo
+  // que hacer en Aventura sin tener que abrir el menú.
+  const groupBadge = items.reduce(
+    (sum, item) => sum + (item.badgeKey ? (labels.badges[item.badgeKey] ?? 0) : 0),
+    0,
+  );
 
   // Apertura por click, no por hover: en tablet táctil el hover dispara al
   // primer toque y el link se abre solo. El teclado usa el mismo camino.
@@ -163,6 +225,7 @@ function NavGroupMenu({
         type="button"
         onClick={onToggle}
         onKeyDown={onTriggerKeyDown}
+        data-active={active || undefined}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={panelId}
@@ -171,6 +234,7 @@ function NavGroupMenu({
         }`}
       >
         {labels.text[group.labelKey] ?? group.id}
+        <PendingBadge count={groupBadge} />
         <span
           aria-hidden
           className={`material-symbols-outlined hidden text-[16px]! transition-transform duration-150 xl:inline ${
@@ -179,7 +243,6 @@ function NavGroupMenu({
         >
           expand_more
         </span>
-        {active && <ActiveUnderline />}
       </button>
 
       {open && (
@@ -235,8 +298,11 @@ function NavGroupMenu({
                 >
                   {item.icon}
                 </span>
-                <span className="min-w-0">
-                  <span className="nav-link-text block leading-tight">{label}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="nav-link-text flex items-center gap-1.5 leading-tight">
+                    {label}
+                    <PendingBadge count={item.badgeKey ? (labels.badges[item.badgeKey] ?? 0) : 0} />
+                  </span>
                   {description && (
                     // Las descripciones se ocultan en pantallas medianas: en
                     // 1024 el dropdown competía con el contenido de la página.

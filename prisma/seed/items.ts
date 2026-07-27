@@ -46,6 +46,29 @@ const EVOLUTION_STONES = [
   { name: "Moon Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies (p. ej. Clefairy)." },
 ] as const;
 
+/**
+ * Cordón Unión: reemplaza al intercambio.
+ *
+ * En Kanto hay cuatro especies que en los juegos evolucionan solo por
+ * intercambio (Kadabra, Machoke, Graveler, Haunter). Sin sistema de trueque
+ * quedaban inalcanzables, así que se resuelve como lo hizo la propia saga en
+ * Escarlata/Púrpura: un objeto que dispara esa evolución.
+ *
+ * Es el único ítem que se paga con gemas: son cuatro de los Pokémon más
+ * fuertes de la región y la moneda premium necesitaba un destino real —hasta
+ * ahora el contador del header siempre marcaba cero.
+ *
+ * Lleva `type: EVOLUTION_STONE` a propósito, aunque no sea una piedra: es el
+ * tipo por el que filtra `loadOwnedEvolutionItems`, así que entra solo en la
+ * lista de objetos de evolución disponibles.
+ */
+const LINKING_CORD = {
+  name: "Linking Cord",
+  buyPrice: 0,
+  gemPrice: 8,
+  effectText: "Evoluciona a las especies que normalmente requieren intercambio.",
+} as const;
+
 export async function seedItems() {
   console.log("→ Objetos (Poké Balls)...");
   for (const ball of POKEBALLS) {
@@ -107,6 +130,23 @@ export async function seedItems() {
       update: { buyPrice: berry.buyPrice, effectText: berry.effectText },
     });
   }
+
+  console.log("→ Objeto (Cordón Unión)...");
+  await prisma.item.upsert({
+    where: { name: LINKING_CORD.name },
+    create: {
+      name: LINKING_CORD.name,
+      type: "EVOLUTION_STONE",
+      buyPrice: LINKING_CORD.buyPrice,
+      gemPrice: LINKING_CORD.gemPrice,
+      effectText: LINKING_CORD.effectText,
+    },
+    update: {
+      buyPrice: LINKING_CORD.buyPrice,
+      gemPrice: LINKING_CORD.gemPrice,
+      effectText: LINKING_CORD.effectText,
+    },
+  });
 
   console.log("→ Objetos (Piedras de evolución)...");
   for (const stone of EVOLUTION_STONES) {

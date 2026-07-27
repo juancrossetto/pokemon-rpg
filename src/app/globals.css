@@ -1758,6 +1758,169 @@ body {
   transform: scale(0.99);
 }
 
+/* --- Recompensas ------------------------------------------------------- */
+
+/*
+  Entrada de cada recompensa en el panel de confirmación.
+
+  El componente ya escalonaba el `animation-delay` por índice, pero la clase
+  nunca existió en CSS: la animación no corría y el panel se veía estático.
+*/
+.reward-pop {
+  animation: reward-pop 320ms cubic-bezier(0.34, 1.45, 0.5, 1) both;
+}
+
+@keyframes reward-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Entrada del modal de regalo: sube y crece apenas. Corta —280ms— para que no
+   se interponga entre el jugador y el botón de reclamar. */
+.gift-modal-in {
+  animation: gift-modal-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes gift-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* El Pokémon de la cabecera entra flotando una sola vez; no queda en bucle. */
+.gift-lead {
+  animation: gift-lead-in 520ms cubic-bezier(0.34, 1.4, 0.5, 1) both;
+}
+
+@keyframes gift-lead-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Casillero de hoy: latido muy contenido para que se distinga del resto sin
+   convertir la grilla en un cartel de neón. */
+.day-today {
+  animation: day-today-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes day-today-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(242, 192, 0, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(242, 192, 0, 0.14);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gift-modal-in,
+  .gift-lead,
+  .day-today {
+    animation: none;
+  }
+}
+
+/* Halo detrás del grupo de recompensas: da profundidad sin encender toda la
+   card. Se queda quieto —nada de brillos permanentes. */
+.reward-halo::before {
+  content: "";
+  position: absolute;
+  inset: -30% -10% auto;
+  height: 150px;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(242, 192, 0, 0.16),
+    rgba(242, 192, 0, 0) 70%
+  );
+  pointer-events: none;
+}
+
+/* CTA con recompensa lista: latido lento y contenido, solo para llamar el
+   primer vistazo. Dos segundos por ciclo, sin escalados grandes. */
+.daily-claim-cta {
+  animation: daily-claim-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes daily-claim-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(238, 21, 21, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(238, 21, 21, 0.16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reward-pop,
+  .daily-claim-cta {
+    animation: none;
+  }
+}
+
+/* --- Loader de ruta ---------------------------------------------------- */
+
+/*
+  El loader nace invisible y recién aparece a los 320ms.
+
+  El umbral no es arbitrario: por debajo de ~300ms una transición se percibe
+  como respuesta directa y mostrar un indicador la hace sentir MÁS lenta, no
+  menos. Arriba de eso el usuario necesita saber que algo está pasando.
+
+  Si la navegación termina antes, el fallback se desmonta con la opacidad
+  todavía en 0 y nunca se ve. `both` mantiene el estado inicial durante el
+  delay; sin eso el loader parpadearía a opacidad 1 antes de empezar.
+*/
+.route-loader {
+  animation: route-loader-in 200ms ease-out 320ms both;
+}
+
+@keyframes route-loader-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Se conserva el retraso —que es lo que da la fluidez— y se quita el
+     movimiento: aparece de golpe, pero recién cuando hace falta. */
+  .route-loader {
+    animation: route-loader-appear 1ms linear 320ms both;
+  }
+
+  @keyframes route-loader-appear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
 /* --- Navegación principal --- */
 
 /*
@@ -1782,6 +1945,30 @@ body {
 
 /* Apertura del dropdown: 8px y 120ms. Lo justo para que se lea de dónde sale
    sin que el menú se sienta lento al navegar rápido. */
+
+/*
+  Subrayado activo del navbar.
+
+  La elasticidad sale de la curva, no de un keyframe: `cubic-bezier` con el
+  tercer punto por encima de 1 hace que la barra se pase de largo y vuelva. El
+  ancho usa una curva más contenida que la posición — si los dos rebotaran, el
+  subrayado se deformaría de más y parecería un error en lugar de un gesto.
+
+  Se animan `left`/`width` y no `transform`: el ancho cambia entre opciones
+  ("Inicio" mide la mitad que "Colección") y un `scaleX` estiraría también el
+  redondeo de las puntas.
+*/
+.nav-indicator {
+  transition:
+    left 380ms cubic-bezier(0.34, 1.42, 0.5, 1),
+    width 300ms cubic-bezier(0.32, 1.12, 0.6, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-indicator {
+    transition: none;
+  }
+}
 
 /* Apertura del dropdown: 8px y 120ms. Lo justo para que se lea de dónde sale
    sin que el menú se sienta lento al navegar rápido. */

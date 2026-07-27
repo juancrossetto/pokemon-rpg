@@ -12,11 +12,13 @@ import { loadMapLocations } from "@/lib/campaign/map-data";
 import { CurrentExpedition } from "@/components/current-expedition";
 import { CampaignDevPanel } from "@/components/campaign-dev-panel";
 import { ActiveMission } from "@/components/active-mission";
+import { DailyGiftModal } from "@/components/events/daily-gift-modal";
+import { loadEventsSummary } from "@/lib/events/state";
 import { SystemStatus } from "@/components/system-status";
 import { CollapsibleOnMobile } from "@/components/collapsible-on-mobile";
 import { HomeSquadGrid, type HomeSquadMember } from "@/components/home-squad-grid";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
-import { loadEvolutionChainsForTeam } from "@/lib/evolution-chain";
+import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolution-chain";
 import type { CampaignLocationKind } from "@/lib/campaign";
 
 const TEAM_SIZE = 6;
@@ -87,6 +89,37 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   });
   const bagCounts = await loadSquadBagCounts(userId);
 
+  // Regalo diario pendiente: solo se arma el banner si de verdad hay algo que
+  // reclamar, así la pantalla de inicio no gana una franja vacía.
+  const eventsSummary = await loadEventsSummary(userId);
+  const tEvents = await getTranslations("events");
+  // El sprite del líder es la ilustración del modal: ya está cargado y hace
+  // que el panel se sienta parte de la partida del jugador.
+  const leadSpriteUrl = pokemon[0]
+    ? spriteFor(pokemon[0].species.spriteUrl, pokemon[0].isShiny)
+    : null;
+  const giftLabels = {
+    eyebrow: tEvents("eyebrow"),
+    title: tEvents("giftTitle"),
+    subtitle: tEvents("giftSubtitle"),
+    progress: tEvents("giftProgress", { current: "{current}", total: "{total}" }),
+    claim: tEvents("dailyClaim"),
+    claiming: tEvents("bannerClaiming"),
+    close: tEvents("close"),
+    claimedTitle: tEvents("giftClaimedTitle"),
+    continueLabel: tEvents("giftContinue"),
+    reopen: tEvents("giftReopen"),
+    dailyDay: tEvents("dailyDay", { day: "{day}" }),
+    statusToday: tEvents("statusToday"),
+    statusClaimed: tEvents("statusClaimed"),
+    statusUpcoming: tEvents("statusUpcoming"),
+    rewards: {
+      coins: tEvents("rewards.coins"),
+      energy: tEvents("rewards.energy"),
+      item: tEvents("rewards.item"),
+    },
+  };
+
   if (pokemon.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-margin-mobile py-8 text-center">
@@ -108,7 +141,11 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   }
 
   const speciesIds = [...new Set(pokemon.map((p) => p.speciesId))];
-  const evolutionChains = await loadEvolutionChainsForTeam(userId, speciesIds);
+  const [evolutionChains, ownedEvolutionItems] = await Promise.all([
+    loadEvolutionChainsForTeam(userId, speciesIds),
+    loadOwnedEvolutionItems(userId),
+  ]);
+  const ownedEvolutionItemNames = [...ownedEvolutionItems];
 
   const bySlot = new Map(pokemon.map((p) => [p.teamSlot, p]));
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => bySlot.get(i + 1) ?? null);
@@ -217,6 +254,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                 ),
                 speed: calculateStat(instance.species.baseSpeed, instance.ptSpeed, instance.level),
                 evolutionChain: evolutionChains.get(instance.speciesId) ?? [],
+                ownedEvolutionItems: ownedEvolutionItemNames,
                 moves,
                 labels: {
                   hp: tt("stats.hp"),
@@ -240,6 +278,13 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
                   evolveAtLevel: tt("drawer.evolveAtLevel", { level: "{level}" }),
                   evolveByTrade: tt("drawer.evolveByTrade"),
                   evolveStones: tt.raw("drawer.evolveStones") as Record<string, string>,
+                  evolveReadyShort: tt("drawer.evolveReadyShort"),
+                  evolveNeedItem: tt("drawer.evolveNeedItem"),
+                  evolveNeedLevel: tt("drawer.evolveNeedLevel", { level: "{level}" }),
+                  evolveNow: tt("drawer.evolveNow"),
+                  evolveUseStone: tt("drawer.evolveUseStone", { item: "{item}" }),
+                  evolving: tt("drawer.evolving"),
+                  canEvolveBadge: tt("drawer.canEvolveBadge"),
                 },
                 menuLabels: {
                   favoriteOn: t("squadMenu.favoriteOn"),
@@ -261,10 +306,30 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     <div className="relative flex-1 overflow-hidden">
       <div className="relative px-margin-mobile md:px-margin-desktop py-6">
         <div className="mx-auto max-w-6xl">
+          {/*
+            Va acá adentro y no en el contenedor con padding: el modal se
+            renderiza en un portal, pero cuando queda cerrado sin reclamar
+            deja un chip en flujo normal, y afuera del `max-w-6xl` ese chip
+            arrancaba pegado al borde de la pantalla, desalineado de todo lo
+            que tiene debajo.
+          */}
+          {eventsSummary.daily.canClaim && (
+            <DailyGiftModal
+              days={eventsSummary.daily.days}
+              currentDay={eventsSummary.daily.currentDay}
+              total={eventsSummary.daily.length}
+              leadSpriteUrl={leadSpriteUrl}
+              labels={giftLabels}
+              locale={locale}
+            />
+          )}
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-label-md text-pokeball-red uppercase tracking-widest flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-pokeball-red animate-pulse" />
+              {/* Verde y más chico: es un indicador de estado —"la partida está
+                  sincronizada"—, no una alerta. En rojo y a `label-md` competía
+                  con el saludo, que es el título real de la pantalla. */}
+              <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 {t("liveSync")}
               </p>
               <h1 className="mt-1 text-headline-lg md:text-display-lg text-white tracking-tight">

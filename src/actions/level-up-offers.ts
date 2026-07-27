@@ -42,6 +42,7 @@ export async function confirmEvolve(
   | {
       ok: true;
       fromName: string;
+      fromSpriteUrl: string;
       toName: string;
       toSpriteUrl: string;
       level: number;

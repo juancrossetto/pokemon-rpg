@@ -7,7 +7,8 @@ import { AllocatePointsPanel } from "@/components/allocate-points-panel";
 import { PokemonDetailDrawer } from "@/components/pokemon-detail-drawer";
 import { SquadCardSheet } from "@/components/squad-card-sheet";
 import type { SquadCareLabels } from "@/components/squad-care-actions";
-import type { EvolutionStage } from "@/lib/evolution-chain";
+import type { EvolutionStage } from "@/lib/evolution-readiness";
+import { anyEvolveReady } from "@/lib/evolution-readiness";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 
 export interface TeamMoveDetail {
@@ -49,6 +50,7 @@ export interface TeamMember {
   xpForCurrentLevel: number;
   xpToNext: number;
   evolutionChain: EvolutionStage[];
+  ownedEvolutionItems?: string[];
   atk: number;
   def: number;
   spAtk: number;
@@ -116,6 +118,13 @@ export interface TeamRosterLabels {
   evolveAtLevel: string;
   evolveByTrade: string;
   evolveStones: Record<string, string>;
+  evolveReadyShort: string;
+  evolveNeedItem: string;
+  evolveNeedLevel: string;
+  evolveNow: string;
+  evolveUseStone: string;
+  evolving: string;
+  canEvolveBadge: string;
   showDetails: string;
   hideDetails: string;
   tabAbout: string;
@@ -253,6 +262,11 @@ function PokemonCard({
   const primaryType = member.types[0] ?? "normal";
   const accent = typeColor(primaryType);
   const fainted = member.currentHp <= 0;
+  const canEvolve = anyEvolveReady(
+    member.evolutionChain,
+    member.level,
+    new Set(member.ownedEvolutionItems ?? []),
+  );
   const xpIntoLevel = member.xp - member.xpForCurrentLevel;
   const levelSpan = xpIntoLevel + member.xpToNext;
   const xpPct = levelSpan > 0 ? Math.max(0, Math.min(100, (xpIntoLevel / levelSpan) * 100)) : 0;
@@ -299,9 +313,19 @@ function PokemonCard({
             </span>
           )}
         </div>
-        <span className="absolute right-3 top-3 z-[2] rounded-full border border-white/15 bg-black/45 px-2 py-0.5 font-mono text-[10px] font-semibold text-white backdrop-blur-sm">
-          {member.levelLabel}
-        </span>
+        <div className="absolute right-3 top-3 z-[2] flex flex-col items-end gap-1">
+          <span className="rounded-full border border-white/15 bg-black/45 px-2 py-0.5 font-mono text-[10px] font-semibold text-white backdrop-blur-sm">
+            {member.levelLabel}
+          </span>
+          {canEvolve && (
+            <span className="inline-flex items-center gap-0.5 rounded-full border border-tertiary/40 bg-tertiary/20 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-tertiary backdrop-blur-sm">
+              <span className="material-symbols-outlined text-[11px]! leading-none">
+                auto_awesome
+              </span>
+              {labels.canEvolveBadge}
+            </span>
+          )}
+        </div>
 
         <div className="relative z-[1] flex h-[128px] w-full items-end justify-center">
           <div
@@ -379,6 +403,12 @@ function PokemonCard({
               evolveAtLevel: labels.evolveAtLevel,
               evolveByTrade: labels.evolveByTrade,
               evolveStones: labels.evolveStones,
+              evolveReadyShort: labels.evolveReadyShort,
+              evolveNeedItem: labels.evolveNeedItem,
+              evolveNeedLevel: labels.evolveNeedLevel,
+              evolveNow: labels.evolveNow,
+              evolveUseStone: labels.evolveUseStone,
+              evolving: labels.evolving,
             }}
             moves={member.moves}
             currentHp={member.currentHp}
@@ -390,6 +420,9 @@ function PokemonCard({
             spDef={member.spDef}
             speed={member.speed}
             evolutionChain={member.evolutionChain}
+            instanceId={member.instanceId}
+            currentLevel={member.level}
+            ownedEvolutionItems={member.ownedEvolutionItems}
           />
         </div>
 

@@ -347,6 +347,15 @@ export function PokemonDetailDrawer({
                     evolveAtLevelLabel={labels.evolveAtLevel}
                     tradeLabel={labels.evolveByTrade}
                     itemLabels={labels.evolveStones}
+                    instanceId={member.instanceId}
+                    currentLevel={member.level}
+                    ownedItems={member.ownedEvolutionItems}
+                    readyLabel={labels.evolveReadyShort}
+                    needItemLabel={labels.evolveNeedItem}
+                    needLevelLabel={labels.evolveNeedLevel}
+                    evolveActionLabel={labels.evolveNow}
+                    useStoneLabel={labels.evolveUseStone}
+                    evolvingLabel={labels.evolving}
                   />
                 </section>
               )}

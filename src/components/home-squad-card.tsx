@@ -12,7 +12,8 @@ import {
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import { SquadCardSheet, type SquadCardSheetLabels } from "@/components/squad-card-sheet";
 import { PokeSparks } from "@/components/poke-sparks";
-import type { EvolutionStage } from "@/lib/evolution-chain";
+import type { EvolutionStage } from "@/lib/evolution-readiness";
+import { anyEvolveReady } from "@/lib/evolution-readiness";
 
 export type HomeSquadMove = {
   slot: number;
@@ -47,6 +48,13 @@ export type HomeSquadCardLabels = {
   evolveAtLevel: string;
   evolveByTrade: string;
   evolveStones: Record<string, string>;
+  evolveReadyShort?: string;
+  evolveNeedItem?: string;
+  evolveNeedLevel?: string;
+  evolveNow?: string;
+  evolveUseStone?: string;
+  evolving?: string;
+  canEvolveBadge?: string;
 };
 
 /**
@@ -71,6 +79,7 @@ export function HomeSquadCard({
   spDef,
   speed,
   evolutionChain,
+  ownedEvolutionItems = [],
   moves,
   labels,
   menuLabels,
@@ -99,6 +108,7 @@ export function HomeSquadCard({
   spDef: number;
   speed: number;
   evolutionChain: EvolutionStage[];
+  ownedEvolutionItems?: string[];
   moves: (HomeSquadMove | null)[];
   labels: HomeSquadCardLabels;
   menuLabels: SquadContextLabels;
@@ -123,6 +133,11 @@ export function HomeSquadCard({
   const primaryType = types[0] ?? "normal";
   const accent = typeColor(primaryType);
   const fainted = currentHp <= 0;
+  const canEvolve = anyEvolveReady(
+    evolutionChain,
+    level,
+    new Set(ownedEvolutionItems),
+  );
 
   const sheetLabels: SquadCardSheetLabels = {
     showDetails: labels.showDetails,
@@ -142,6 +157,12 @@ export function HomeSquadCard({
     evolveAtLevel: labels.evolveAtLevel,
     evolveByTrade: labels.evolveByTrade,
     evolveStones: labels.evolveStones,
+    evolveReadyShort: labels.evolveReadyShort,
+    evolveNeedItem: labels.evolveNeedItem,
+    evolveNeedLevel: labels.evolveNeedLevel,
+    evolveNow: labels.evolveNow,
+    evolveUseStone: labels.evolveUseStone,
+    evolving: labels.evolving,
   };
 
   return (
@@ -228,6 +249,17 @@ export function HomeSquadCard({
             <span className="rounded-full border border-white/15 bg-black/45 px-1.5 py-0.5 font-mono text-[10px] font-semibold leading-none text-white backdrop-blur-sm">
               {labels.level}
             </span>
+            {canEvolve && (
+              <span
+                className="inline-flex items-center gap-0.5 rounded-full border border-tertiary/40 bg-tertiary/20 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-tertiary backdrop-blur-sm"
+                title={labels.canEvolveBadge}
+              >
+                <span className="material-symbols-outlined text-[11px]! leading-none">
+                  auto_awesome
+                </span>
+                {labels.canEvolveBadge ?? "Evo"}
+              </span>
+            )}
           </div>
 
           <div className="relative z-[1] flex h-[96px] w-full items-end justify-center">
@@ -292,6 +324,9 @@ export function HomeSquadCard({
               spDef={spDef}
               speed={speed}
               evolutionChain={evolutionChain}
+              instanceId={instanceId}
+              currentLevel={level}
+              ownedEvolutionItems={ownedEvolutionItems}
             />
           </div>
         </div>

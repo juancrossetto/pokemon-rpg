@@ -1,29 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import type { DexStatus } from "@/lib/pokedex";
+import type { EvolutionRequirement, EvolutionStage } from "@/lib/evolution-readiness";
 
-/**
- * Cómo se llega a esta forma desde la anterior. Se arma con los campos del
- * hijo, no del padre: Eevee tiene tres evoluciones con una piedra distinta
- * cada una y `evolveLevel`, que vive en el padre, no puede distinguirlas.
- */
-export type EvolutionRequirement =
-  | { kind: "level"; level: number }
-  | { kind: "item"; itemName: string }
-  | { kind: "trade" }
-  | { kind: "other"; trigger: string };
+/*
+  Los tipos y la lógica pura viven en `evolution-readiness.ts`.
 
-export type EvolutionStage = {
-  speciesId: number;
-  name: string;
-  spriteUrl: string;
-  types: string[];
-  /** Nivel en la forma previa para llegar a esta (null si es raíz o evo no-level). */
-  evolveFromLevel: number | null;
-  /** Requisito para llegar a esta forma. Null en la raíz de la cadena. */
-  requirement: EvolutionRequirement | null;
-  status: DexStatus;
-  isCurrent: boolean;
-};
+  Este módulo importa `prisma`, así que **no debe importarlo ningún componente
+  de cliente**: bastaba con que uno trajera un tipo desde acá para que `pg`
+  entrara al bundle del browser y el build fallara con "Can't resolve 'dns'".
+
+  Antes se reexportaban los helpers puros para no romper imports viejos, pero
+  eso era justamente la trampa: importarlos desde este archivo parecía
+  correcto y volvía a romper el build. Sin reexports, un cliente que apunte
+  acá falla en `tsc` con un error claro en vez de al compilar.
+*/
 
 type SpeciesEvoRow = {
   id: number;
@@ -49,14 +39,29 @@ const EVO_SELECT = {
   evolveMinLevel: true,
 } as const;
 
+/** Precio de los objetos de evolución, por nombre. */
+export type ItemPriceMap = Map<string, { buyPrice: number; gemPrice: number | null }>;
+
 function requirementOf(
   row: SpeciesEvoRow,
   parent: SpeciesEvoRow | undefined,
+  prices?: ItemPriceMap,
 ): EvolutionRequirement | null {
   if (!parent) return null;
 
   if (row.evolveTrigger === "use-item" && row.evolveItem) {
-    return { kind: "item", itemName: row.evolveItem };
+    // En Kanto clásico las piedras NO piden nivel; `evolveMinLevel` casi siempre
+    // es null. Si algún día viene de PokeAPI, lo mostramos / exigimos.
+    // El precio viaja dentro del requisito: así la pestaña EVO puede decir
+    // cuánto cuesta sin que cada componente de cliente tenga que consultarlo.
+    const price = prices?.get(row.evolveItem);
+    return {
+      kind: "item",
+      itemName: row.evolveItem,
+      minLevel: row.evolveMinLevel,
+      buyPrice: price?.buyPrice ?? null,
+      gemPrice: price?.gemPrice ?? null,
+    };
   }
   if (row.evolveTrigger === "trade") return { kind: "trade" };
 
@@ -86,6 +91,7 @@ export function buildEvolutionChain(
   childrenOf: Map<number, number[]>,
   caughtIds: Set<number>,
   seenIds: Set<number>,
+  prices?: ItemPriceMap,
 ): EvolutionStage[] {
   if (!byId.has(currentId)) return [];
 
@@ -116,6 +122,7 @@ export function buildEvolutionChain(
 
   const orderedIds = [...toRoot, ...afterCurrent];
   const currentIndex = orderedIds.indexOf(currentId);
+  const immediateNext = new Set(childrenOf.get(currentId) ?? []);
 
   return orderedIds.map((id, index) => {
     const row = byId.get(id)!;
@@ -132,11 +139,25 @@ export function buildEvolutionChain(
       spriteUrl: row.spriteUrl,
       types: row.types,
       evolveFromLevel: parent?.evolveLevel ?? null,
-      requirement: requirementOf(row, parent),
+      requirement: requirementOf(row, parent, prices),
       status,
       isCurrent: id === currentId,
+      isNextOption: immediateNext.has(id),
     };
   });
+}
+
+/** Piedras de evolución que el jugador tiene en la mochila (qty > 0). */
+export async function loadOwnedEvolutionItems(userId: string): Promise<Set<string>> {
+  const rows = await prisma.inventoryItem.findMany({
+    where: {
+      userId,
+      quantity: { gt: 0 },
+      item: { type: "EVOLUTION_STONE" },
+    },
+    select: { item: { select: { name: true } } },
+  });
+  return new Set(rows.map((r) => r.item.name));
 }
 
 /** Carga cadenas para las especies del equipo + estado Pokédex del usuario. */
@@ -147,7 +168,7 @@ export async function loadEvolutionChainsForTeam(
   const unique = [...new Set(teamSpeciesIds)];
   if (unique.length === 0) return new Map();
 
-  const [species, owned, seenRows] = await Promise.all([
+  const [species, owned, seenRows, evoItems] = await Promise.all([
     prisma.species.findMany({ select: EVO_SELECT }),
     prisma.pokemonInstance.findMany({
       where: { ownerId: userId },
@@ -158,7 +179,17 @@ export async function loadEvolutionChainsForTeam(
       where: { userId },
       select: { speciesId: true },
     }),
+    // Precios de los objetos de evolución, en una sola consulta para toda la
+    // pantalla: la pestaña EVO muestra cuánto cuesta cada uno.
+    prisma.item.findMany({
+      where: { type: "EVOLUTION_STONE" },
+      select: { name: true, buyPrice: true, gemPrice: true },
+    }),
   ]);
+
+  const prices: ItemPriceMap = new Map(
+    evoItems.map((i) => [i.name, { buyPrice: i.buyPrice, gemPrice: i.gemPrice }]),
+  );
 
   const caughtIds = new Set(owned.map((o) => o.speciesId));
   const seenIds = new Set(seenRows.map((s) => s.speciesId));
@@ -175,7 +206,7 @@ export async function loadEvolutionChainsForTeam(
 
   const result = new Map<number, EvolutionStage[]>();
   for (const id of unique) {
-    result.set(id, buildEvolutionChain(id, byId, childrenOf, caughtIds, seenIds));
+    result.set(id, buildEvolutionChain(id, byId, childrenOf, caughtIds, seenIds, prices));
   }
   return result;
 }

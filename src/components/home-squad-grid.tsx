@@ -11,7 +11,7 @@ import {
 } from "@/components/home-squad-card";
 import type { SquadContextLabels } from "@/components/squad-card-context-menu";
 import type { SquadBagCounts } from "@/lib/squad-bag";
-import type { EvolutionStage } from "@/lib/evolution-chain";
+import type { EvolutionStage } from "@/lib/evolution-readiness";
 
 export type HomeSquadMember = {
   id: string;
@@ -33,6 +33,7 @@ export type HomeSquadMember = {
   spDef: number;
   speed: number;
   evolutionChain: EvolutionStage[];
+  ownedEvolutionItems?: string[];
   moves: (HomeSquadMove | null)[];
   labels: Omit<HomeSquadCardLabels, "lead" | "slot" | "level">;
   menuLabels: SquadContextLabels;
@@ -245,6 +246,7 @@ export function HomeSquadGrid({
                     spDef={instance.spDef}
                     speed={instance.speed}
                     evolutionChain={instance.evolutionChain}
+                    ownedEvolutionItems={instance.ownedEvolutionItems}
                     moves={instance.moves}
                     labels={{
                       ...instance.labels,

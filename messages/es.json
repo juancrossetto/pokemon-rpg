@@ -60,14 +60,16 @@
       "inventory": "Objetos, bayas y piedras que tenés.",
       "market": "Comprá y vendé con otros jugadores.",
       "shop": "Comprá objetos al sistema.",
-      "clans": "Uníte a un clan y competí en equipo."
+      "clans": "Uníte a un clan y competí en equipo.",
+      "events": "Regalos diarios y desafíos semanales."
     },
     "battleWild": "Batalla salvaje",
     "menu": "Menú",
     "soon": "Próximamente",
     "account": "Cuenta",
     "navigation": "Navegación",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "events": "Eventos"
   },
   "notifications": {
     "eyebrow": "Alertas en vivo",
@@ -401,6 +403,13 @@
       "tabEvolutions": "Evo",
       "unknownSpecies": "???",
       "evolveAtLevel": "Nivel {level}",
+      "evolveReadyShort": "Listo",
+      "evolveNeedItem": "Te falta",
+      "evolveNeedLevel": "Falta nv. {level}",
+      "evolveNow": "Evolucionar",
+      "evolveUseStone": "Usar {item}",
+      "evolving": "Evolucionando…",
+      "canEvolveBadge": "Evo",
       "pp": "PP",
       "power": "Poder",
       "noPower": "—",
@@ -444,7 +453,8 @@
         "Water Stone": "Piedra Agua",
         "Thunder Stone": "Piedra Trueno",
         "Leaf Stone": "Piedra Hoja",
-        "Moon Stone": "Piedra Lunar"
+        "Moon Stone": "Piedra Lunar",
+        "Linking Cord": "Cordón Unión"
       }
     },
     "healFree": "Curación gratis disponible",
@@ -991,8 +1001,13 @@
       "choiceScarf": "Multiplica por 1,5 la Velocidad, pero solo permite usar el primer movimiento elegido.",
       "choiceBand": "Multiplica por 1,5 el Ataque, pero solo permite usar el primer movimiento elegido.",
       "leftovers": "Restaura 1/16 del HP máximo al final de cada turno.",
-      "lifeOrb": "Aumenta un 30 % la potencia de los movimientos de daño, con retroceso de 1/10 del HP máximo."
-    }
+      "lifeOrb": "Aumenta un 30 % la potencia de los movimientos de daño, con retroceso de 1/10 del HP máximo.",
+      "linkingCord": "Evoluciona a las especies que normalmente requieren intercambio."
+    },
+    "gemsUnit": "gemas",
+    "gemPrice": "Precio en gemas",
+    "insufficientGems": "Gemas insuficientes",
+    "missingGems": "Te faltan {amount} gemas."
   },
   "pc": {
     "title": "PC de almacenamiento",
@@ -1517,5 +1532,63 @@
       "team_full": "Equipo lleno.",
       "busy_parents": "Esos padres ya están incubando un huevo."
     }
+  },
+  "events": {
+    "eyebrow": "CENTRO DE EVENTOS",
+    "title": "Eventos",
+    "subtitle": "Completá desafíos, reclamá recompensas y participá en eventos por tiempo limitado.",
+    "pending": "{count, plural, =0 {Sin recompensas pendientes} one {# recompensa lista} other {# recompensas listas}}",
+    "dailyTitle": "Regalo diario",
+    "dailySubtitle": "Un regalo por día. Faltar no reinicia tu progreso.",
+    "dailyDay": "Día {day}",
+    "dailyClaim": "Reclamar regalo",
+    "dailyClaimed": "Ya reclamaste hoy",
+    "dailyNext": "Vuelve en {time}",
+    "dailyProgress": "Día {current} de {total}",
+    "weeklyTitle": "Desafío semanal",
+    "weeklySubtitle": "Cuatro objetivos, cuatro recompensas. Se reinicia cada lunes.",
+    "weeklyPercent": "{percent}% completado",
+    "weeklyReset": "Nueva semana en {time}",
+    "objectives": {
+      "logins": "Iniciá sesión 5 días",
+      "battles": "Ganá 25 combates",
+      "catches": "Atrapá 10 criaturas",
+      "zones": "Completá 3 objetivos de zona"
+    },
+    "milestone": "Hito {percent}%",
+    "claim": "Reclamar",
+    "claimed": "Reclamado",
+    "locked": "Bloqueado",
+    "goTo": "Ir",
+    "rewards": {
+      "coins": "monedas",
+      "energy": "energía",
+      "item": "objeto",
+      "gems": "gemas"
+    },
+    "revealTitle": "¡Recompensa obtenida!",
+    "revealClose": "Continuar",
+    "revealInventory": "Ver inventario",
+    "errorClaimed": "Esa recompensa ya fue reclamada.",
+    "errorNotAvailable": "Todavía no alcanzaste ese hito.",
+    "errorGeneric": "No se pudo reclamar. Probá de nuevo.",
+    "emptyEvents": "No hay eventos activos por ahora. Volvé pronto.",
+    "eventsSoon": "Los eventos por tiempo limitado llegan pronto.",
+    "close": "Cerrar",
+    "statusToday": "Disponible hoy",
+    "statusClaimed": "Reclamado",
+    "statusUpcoming": "Próximo",
+    "bannerTitle": "Tu regalo diario está listo",
+    "bannerClaim": "Reclamar",
+    "bannerClaiming": "…",
+    "bannerSeeAll": "Ver eventos",
+    "bannerDismiss": "Ocultar aviso",
+    "bannerClaimed": "¡Regalo reclamado! Sumado a tu cuenta.",
+    "giftTitle": "Regalo diario",
+    "giftSubtitle": "Volvé cada día y llevate las 28 recompensas del ciclo.",
+    "giftProgress": "Día {current}/{total}",
+    "giftClaimedTitle": "Sumado a tu cuenta",
+    "giftContinue": "Continuar",
+    "giftReopen": "Tenés tu regalo diario sin reclamar"
   }
 }

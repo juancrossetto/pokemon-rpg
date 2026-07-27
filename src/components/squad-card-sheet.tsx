@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { typeColor } from "@/lib/type-colors";
 import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
 import { EvolutionChainList } from "@/components/evolution-chain-list";
-import type { EvolutionStage } from "@/lib/evolution-chain";
+import type { EvolutionStage } from "@/lib/evolution-readiness";
 
 export type SquadCardTab = "about" | "stats" | "evolutions";
 
@@ -34,6 +34,12 @@ export type SquadCardSheetLabels = {
   evolveAtLevel: string;
   evolveByTrade: string;
   evolveStones: Record<string, string>;
+  evolveReadyShort?: string;
+  evolveNeedItem?: string;
+  evolveNeedLevel?: string;
+  evolveNow?: string;
+  evolveUseStone?: string;
+  evolving?: string;
 };
 
 /** Solapas About / Stats / Evolutions para cards de equipo. */
@@ -52,6 +58,9 @@ export function SquadCardSheet({
   compact = false,
   collapsibleOnMobile = false,
   footer,
+  instanceId,
+  currentLevel,
+  ownedEvolutionItems = [],
 }: {
   labels: SquadCardSheetLabels;
   moves: SquadCardMoveSlot[];
@@ -68,6 +77,9 @@ export function SquadCardSheet({
   /** En mobile oculta pestañas/stats/movimientos tras "Ver detalles". */
   collapsibleOnMobile?: boolean;
   footer?: ReactNode;
+  instanceId?: string;
+  currentLevel?: number;
+  ownedEvolutionItems?: string[];
 }) {
   const [tab, setTab] = useState<SquadCardTab>("about");
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -248,6 +260,15 @@ export function SquadCardSheet({
             tradeLabel={labels.evolveByTrade}
             itemLabels={labels.evolveStones}
             compact={compact}
+            instanceId={instanceId}
+            currentLevel={currentLevel}
+            ownedItems={ownedEvolutionItems}
+            readyLabel={labels.evolveReadyShort}
+            needItemLabel={labels.evolveNeedItem}
+            needLevelLabel={labels.evolveNeedLevel}
+            evolveActionLabel={labels.evolveNow}
+            useStoneLabel={labels.evolveUseStone}
+            evolvingLabel={labels.evolving}
           />
         )}
       </div>
