@@ -112,7 +112,6 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
         log: [
           ...(event.kind === "alpha" ? ["alpha"] : []),
           `appear:${wildSpecies.name}`,
-          `stage:${stage.id}`,
         ],
         participantIds: [lead.id],
       },

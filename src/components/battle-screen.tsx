@@ -40,5 +40,9 @@ export function BattleScreen({
     );
   }
 
-  return <BattleArena key={battle.battleId} {...battle} />;
+  return (
+    <div className="flex flex-1 flex-col min-h-0">
+      <BattleArena key={battle.battleId} {...battle} />
+    </div>
+  );
 }

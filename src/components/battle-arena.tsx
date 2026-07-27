@@ -19,9 +19,28 @@ import { BattleSprite } from "@/components/battle-sprite";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
 import { typeColor } from "@/lib/type-colors";
 import { gymLeaderPortraitUrl } from "@/lib/gym-art";
-import { playBattleSfx, unlockBattleAudio } from "@/lib/battle-sfx";
+import { itemSpriteUrl } from "@/lib/item-sprites";
+import { playBattleSfx, unlockBattleAudio, type SfxKind } from "@/lib/battle-sfx";
+import {
+  resumeBattleBgm,
+  startBattleBgm,
+  stopBattleBgm,
+} from "@/lib/battle-bgm";
+import { BattleAudioControls } from "@/components/battle-audio-controls";
+import {
+  impactFxUrl,
+  moveFxFamily,
+  resolveMoveProjectile,
+  showdownBattleBgUrl,
+  showdownFxUrl,
+} from "@/lib/showdown-fx";
 import { statusLabelKey, type StatusCondition } from "@/lib/status";
 import type { TurnEvent } from "@/lib/battle";
+
+function hitSfxForMove(moveType: string, category?: TurnEvent["category"]): SfxKind {
+  if (category === "PHYSICAL") return "contact";
+  return moveFxFamily(moveType);
+}
 
 const LUNGE_MS = 380;
 const IMPACT_MS = 560;
@@ -95,7 +114,7 @@ export interface BattleArenaProps {
   opponentName: string | null;
   player: Combatant & { instanceId: string; currentHp: number; maxHp: number };
   wild: Combatant & { currentHp: number; maxHp: number; types: string[]; isShiny?: boolean };
-  moves: { moveId: number; name: string; type: string; pp: number; maxPp: number }[];
+  moves: { moveId: number; name: string; type: string; power?: number | null; pp: number; maxPp: number }[];
   initialLog: string[];
   pokeballs: PokeballStack[];
   potions: PotionStack[];
@@ -145,11 +164,28 @@ export function BattleArena({
   const leaderPortrait = gymLeaderName ? gymLeaderPortraitUrl(gymLeaderName) : null;
   const foeLabel = opponentName ?? t("wildFoe");
 
-  function translateBootLog(raw: string): string {
+  function translateBootLog(raw: string): string | null {
+    // Metadata interna (stage de farming) — no mostrar al jugador.
+    if (raw.startsWith("stage:")) return null;
     if (raw === "alpha") return t("alphaEncounter");
     if (raw.startsWith("appear:")) return tLog("appear", { name: raw.slice(7) });
-    if (raw.startsWith("challengeTrainer:")) return raw; // shown as-is key fallback
-    if (raw.startsWith("sendOut:")) return tLog("used", { name: raw.slice(8), move: "—" }).replace("—", "");
+    if (raw.startsWith("switch:")) return tLog("switchIn", { name: raw.slice(7) });
+    if (raw.startsWith("switchForced:")) return tLog("switchForced", { name: raw.slice(14) });
+    if (raw.startsWith("challengeTrainer:")) {
+      return tLog("challengeTrainer", { name: raw.slice("challengeTrainer:".length) });
+    }
+    if (raw.startsWith("challengeLeader:")) {
+      const rest = raw.slice("challengeLeader:".length);
+      const [leader, gym] = rest.split(":");
+      return tLog("challengeLeader", { leader: leader ?? rest, gym: gym ?? "" });
+    }
+    if (raw.startsWith("sendOut:")) return tLog("sendOut", { name: raw.slice(8) });
+    if (raw === "tutorial") return tLog("tutorial");
+    if (raw === "fled") return tLog("fled");
+    if (raw === "brokeFree") return tLog("brokeFree");
+    if (raw.startsWith("ball:")) return tLog("threwBall", { name: raw.slice(5) });
+    if (raw.startsWith("caught:")) return tLog("caught", { name: raw.slice(7) });
+    if (raw.startsWith("item:")) return tLog("usedItem", { name: raw.slice(5) });
     return raw;
   }
 
@@ -179,9 +215,14 @@ export function BattleArena({
   const [wildMaxHp, setWildMaxHp] = useState(wild.maxHp);
   const [playerStatus, setPlayerStatus] = useState<string | null>(initialPlayerStatus);
   const [wildStatus, setWildStatus] = useState<string | null>(initialWildStatus);
-  const [log, setLog] = useState<LogEntry[]>(() =>
-    initialLog.map((text) => ({ text: translateBootLog(text), side: "system" as const })),
-  );
+  const [log, setLog] = useState<LogEntry[]>(() => {
+    const entries: LogEntry[] = [];
+    for (const text of initialLog) {
+      const translated = translateBootLog(text);
+      if (translated) entries.push({ text: translated, side: "system" });
+    }
+    return entries;
+  });
   const [attackingSide, setAttackingSide] = useState<"player" | "wild" | null>(null);
   const [shakingSide, setShakingSide] = useState<"player" | "wild" | null>(null);
   const [faintingSide, setFaintingSide] = useState<"player" | "wild" | null>(null);
@@ -201,6 +242,9 @@ export function BattleArena({
     moveType: string;
     mode: "hit" | "status" | "miss";
     effectiveness: number;
+    category?: TurnEvent["category"];
+    fxFile?: string;
+    fxStyle?: "projectile" | "contact" | "bolt";
   } | null>(null);
   const [arenaFlash, setArenaFlash] = useState<string | null>(null);
   const [effPopup, setEffPopup] = useState<{ text: string; key: number } | null>(null);
@@ -229,6 +273,7 @@ export function BattleArena({
   // el daño — un golpe débil ya no se ve idéntico a uno que casi noquea.
   const [impactIntensity, setImpactIntensity] = useState(1);
   const [confirmLeaveGym, setConfirmLeaveGym] = useState(false);
+  const bgmKind = isGymBattle || opponentName ? "boss" : "wild";
 
   const teamRoster = party.filter((m) => m.instanceId !== activePlayer.instanceId);
 
@@ -238,6 +283,15 @@ export function BattleArena({
     no_energy: t("errors.noEnergy"),
     no_stage: t("errors.noStage"),
   };
+
+  useEffect(() => {
+    startBattleBgm(bgmKind);
+    return () => stopBattleBgm();
+  }, [bgmKind]);
+
+  useEffect(() => {
+    if (outcome !== "ongoing") stopBattleBgm();
+  }, [outcome]);
 
   // Al iniciar la batalla: el rival aparece primero, y un instante después
   // se tira la ball del jugador — se ve SOLO la ball viajando durante
@@ -324,7 +378,10 @@ export function BattleArena({
       const color = typeColor(event.moveType);
       const fxKey = Date.now();
       const mode = event.skipped ? "miss" : !event.hit ? "miss" : event.isStatus ? "status" : "hit";
+      const projectile =
+        mode === "hit" ? resolveMoveProjectile(event.moveType, event.category) : null;
 
+      // Miss / skip / status suenan al inicio; el hit tipado espera al impacto.
       if (
         event.skipped === "asleep" ||
         event.skipped === "paralyzed" ||
@@ -334,13 +391,7 @@ export function BattleArena({
         playBattleSfx("status");
       } else if (!event.hit) {
         playBattleSfx("miss");
-      } else if (event.critical) {
-        playBattleSfx("crit");
-      } else if (event.effectiveness > 1) {
-        playBattleSfx("superEffective");
-      } else if (!event.isStatus) {
-        playBattleSfx("hit");
-      } else {
+      } else if (event.isStatus) {
         playBattleSfx("status");
       }
 
@@ -351,6 +402,9 @@ export function BattleArena({
         moveType: event.moveType,
         mode: mode === "miss" ? "miss" : mode === "status" ? "status" : "hit",
         effectiveness: event.effectiveness,
+        category: event.category,
+        fxFile: projectile?.file,
+        fxStyle: projectile?.style,
       });
 
       if (event.skipped) {
@@ -414,6 +468,13 @@ export function BattleArena({
           }, STATUS_MS);
           return;
         }
+
+        // SFX tipado + thud de daño al impacto (más audible).
+        const typed = hitSfxForMove(event.moveType, event.category);
+        playBattleSfx(typed);
+        if (typed !== "contact" && typed !== "hit") playBattleSfx("damage");
+        if (event.critical) playBattleSfx("crit");
+        else if (event.effectiveness > 1) playBattleSfx("superEffective");
 
         const defenderSide = event.side === "player" ? "wild" : "player";
         const defenderMaxHpNow = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
@@ -558,6 +619,7 @@ export function BattleArena({
   async function handleMove(moveId: number) {
     if (isAnimating || outcome !== "ongoing" || mustSwitch) return;
     unlockBattleAudio();
+    resumeBattleBgm();
     setIsAnimating(true);
     setView("menu");
 
@@ -1035,28 +1097,36 @@ export function BattleArena({
   const hasHealthyBackup = teamRoster.some((m) => m.currentHp > 0);
 
   const seFlash = moveFx?.mode === "hit" && (moveFx.effectiveness ?? 1) > 1;
+  const physicalLunge = moveFx?.mode === "hit" && moveFx.category === "PHYSICAL";
+  const wildAbsorbedByBall = captureBall === "wobble" || captureBall === "success";
+  const playerIdle =
+    !attackingSide && !shakingSide && !faintingSide && !playerEntering && !playerHealing && !ballAnim;
+  const wildIdle =
+    !attackingSide && !shakingSide && !faintingSide && !wildEntering && !wildAbsorbedByBall && !captureBall;
   const playerSpriteClass = [
-    "w-28 h-28 md:w-40 md:h-40 object-contain drop-shadow-lg",
-    attackingSide === "player" ? "sprite-lunge-right" : "",
+    // Más grande en primer plano: los ani-back de Showdown se ven más chicos
+    // que los ani front del rival con el mismo box.
+    "w-24 h-24 md:w-[13.5rem] md:h-[13.5rem] object-contain drop-shadow-lg origin-bottom",
+    attackingSide === "player" ? (physicalLunge ? "sprite-lunge-right-hard" : "sprite-lunge-right") : "",
     shakingSide === "player" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "player" ? "sprite-faint" : "",
     ballAnim === "recall" ? "sprite-recall" : "",
     playerEntering ? "sprite-enter" : "",
     playerHealing ? "sprite-heal" : "",
+    playerIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
-  const wildAbsorbedByBall = captureBall === "wobble" || captureBall === "success";
-
   const wildSpriteClass = [
-    "w-28 h-28 md:w-40 md:h-40 object-contain drop-shadow-lg",
-    attackingSide === "wild" ? "sprite-lunge-left" : "",
+    "w-24 h-24 md:w-40 md:h-40 object-contain drop-shadow-lg origin-bottom",
+    attackingSide === "wild" ? (physicalLunge ? "sprite-lunge-left-hard" : "sprite-lunge-left") : "",
     shakingSide === "wild" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "wild" ? "sprite-faint" : "",
     wildEntering ? "sprite-enter" : "",
     wildAbsorbedByBall ? "sprite-recall" : "",
     captureBall === "fail" ? "sprite-enter" : "",
+    wildIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -1065,15 +1135,14 @@ export function BattleArena({
   const emptyOpponentSlots = Math.max(0, 6 - opponentParty.length);
 
   return (
-    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-4 md:py-6">
-      <div className="mx-auto max-w-6xl flex flex-col gap-3">
-        {/* Mobile: opponent party strip */}
-        <div className="lg:hidden">
-          <PartySidebar
-            name={foeLabel}
-            portraitUrl={isGymBattle ? leaderPortrait : null}
-            align="right"
-            compact
+    <div className="flex flex-1 flex-col min-h-0 overflow-hidden md:overflow-visible px-2 py-1 sm:px-margin-mobile md:px-margin-desktop md:py-6 max-md:h-[calc(100dvh-6.5rem)] max-md:max-h-[calc(100dvh-6.5rem)]">
+      <div className="mx-auto w-full max-w-6xl flex flex-col gap-1 md:gap-3 flex-1 min-h-0 md:flex-none md:h-auto">
+        {/* Mobile: opponent balls — solo íconos, sin título largo */}
+        <div className="lg:hidden shrink-0">
+          <div
+            className="flex items-center justify-end gap-1 px-1"
+            title={foeLabel}
+            aria-label={foeLabel}
           >
             {opponentParty.map((m) => (
               <PartyIcon
@@ -1082,15 +1151,16 @@ export function BattleArena({
                 name={m.name}
                 fainted={m.fainted}
                 active={m.active}
+                compact
               />
             ))}
             {Array.from({ length: emptyOpponentSlots }).map((_, i) => (
-              <EmptyPartySlot key={`oe-${i}`} />
+              <EmptyPartySlot key={`oe-${i}`} compact />
             ))}
-          </PartySidebar>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[132px_minmax(0,1fr)_132px] gap-3 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-[148px_minmax(0,1fr)_148px] gap-1 md:gap-3 items-stretch flex-1 min-h-0 md:flex-none">
           {/* Player sidebar (desktop) */}
           <div className="hidden lg:block">
             <PartySidebar name={trainerName} portraitUrl={null} align="left">
@@ -1112,13 +1182,19 @@ export function BattleArena({
 
           {/* Arena */}
           <div
-            className={`battle-arena-field relative overflow-hidden rounded-xl border border-white/10 min-h-[260px] md:min-h-[320px] ${
+            className={`battle-arena-field relative overflow-hidden rounded-xl border border-white/10 flex-1 min-h-0 lg:min-h-[320px] ${
               arenaFlash ? "arena-type-flash" : ""
             }`}
-            style={arenaFlash ? ({ "--arena-flash-color": arenaFlash } as CSSProperties) : undefined}
+            style={
+              {
+                "--arena-bg-image": `url(${showdownBattleBgUrl(isGymBattle ? "mountain" : "meadow")})`,
+                ...(arenaFlash ? { "--arena-flash-color": arenaFlash } : {}),
+              } as CSSProperties
+            }
           >
+            <BattleAudioControls bgmKind={bgmKind} />
             <HpPlate
-              className="absolute top-3 right-3 z-20 w-[min(100%,220px)]"
+              className="absolute top-2 right-2 z-20 w-[min(100%,160px)] md:top-3 md:right-3 md:w-[min(100%,220px)]"
               name={activeWild.name}
               levelLabel={t("level", { level: activeWild.level })}
               currentHp={wildHp}
@@ -1127,7 +1203,7 @@ export function BattleArena({
               align="right"
             />
             <HpPlate
-              className="absolute bottom-3 left-3 z-20 w-[min(100%,220px)]"
+              className="absolute bottom-2 left-2 z-20 w-[min(100%,160px)] md:bottom-3 md:left-3 md:w-[min(100%,220px)]"
               name={activePlayer.name}
               levelLabel={t("level", { level: activePlayer.level })}
               currentHp={playerHp}
@@ -1150,29 +1226,42 @@ export function BattleArena({
               </div>
             )}
 
-            {moveFx?.mode === "hit" && (
-              <div
-                key={`beam-${moveFx.key}`}
-                className={`move-beam absolute top-[42%] z-10 pointer-events-none ${
-                  moveFx.side === "player" ? "move-beam-right" : "move-beam-left"
+            {moveFx?.mode === "hit" && moveFx.fxFile && moveFx.fxStyle === "projectile" && (
+              // eslint-disable-next-line @next/next/no-img-element -- FX particle from Showdown CDN
+              <img
+                key={`proj-${moveFx.key}`}
+                src={showdownFxUrl(moveFx.fxFile)}
+                alt=""
+                aria-hidden
+                className={`fx-projectile absolute top-[42%] z-10 pointer-events-none ${
+                  moveFx.side === "player" ? "fx-projectile-right" : "fx-projectile-left"
                 }`}
-                style={{
-                  background: `linear-gradient(90deg, transparent, ${typeColor(moveFx.moveType)}, transparent)`,
-                  boxShadow: `0 0 12px ${typeColor(moveFx.moveType)}`,
-                }}
               />
             )}
 
-            {moveFx?.mode === "hit" && (
-              <div
-                key={`orb-${moveFx.key}`}
-                className={`move-orb absolute top-[42%] z-10 pointer-events-none ${
-                  moveFx.side === "player" ? "move-orb-right" : "move-orb-left"
+            {moveFx?.mode === "hit" && moveFx.fxFile && moveFx.fxStyle === "bolt" && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={`bolt-${moveFx.key}`}
+                src={showdownFxUrl(moveFx.fxFile)}
+                alt=""
+                aria-hidden
+                className={`fx-bolt absolute z-10 pointer-events-none ${
+                  moveFx.side === "player" ? "fx-bolt-on-wild" : "fx-bolt-on-player"
                 }`}
-                style={{
-                  backgroundColor: typeColor(moveFx.moveType),
-                  boxShadow: `0 0 16px 4px ${typeColor(moveFx.moveType)}`,
-                }}
+              />
+            )}
+
+            {moveFx?.mode === "hit" && moveFx.fxFile && moveFx.fxStyle === "contact" && attackingSide && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={`contact-${moveFx.key}`}
+                src={showdownFxUrl(moveFx.fxFile)}
+                alt=""
+                aria-hidden
+                className={`fx-contact absolute z-10 pointer-events-none ${
+                  moveFx.side === "player" ? "fx-contact-right" : "fx-contact-left"
+                }`}
               />
             )}
 
@@ -1204,6 +1293,7 @@ export function BattleArena({
 
             {/* Opponent sprite — upper right */}
             <div className="absolute right-[8%] top-[18%] md:right-[12%] md:top-[14%] z-[1]">
+              <span className="sprite-ground-shadow absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
               {damagePopup?.side === "wild" && (
                 <span
                   key={damagePopup.key}
@@ -1213,13 +1303,23 @@ export function BattleArena({
                 </span>
               )}
               {moveFx?.mode === "hit" && shakingSide === "wild" && (
-                <span
-                  key={`burst-w-${moveFx.key}`}
-                  className="move-impact absolute inset-0 m-auto pointer-events-none"
-                  style={{
-                    background: `radial-gradient(circle, ${typeColor(moveFx.moveType)}cc 0%, transparent 70%)`,
-                  }}
-                />
+                <>
+                  <span
+                    key={`burst-w-${moveFx.key}`}
+                    className="move-impact absolute inset-0 m-auto pointer-events-none"
+                    style={{
+                      background: `radial-gradient(circle, ${typeColor(moveFx.moveType)}cc 0%, transparent 70%)`,
+                    }}
+                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    key={`impact-w-${moveFx.key}`}
+                    src={impactFxUrl()}
+                    alt=""
+                    aria-hidden
+                    className="fx-impact absolute inset-0 m-auto pointer-events-none"
+                  />
+                </>
               )}
               {activeWild.spriteUrl && (
                 <BattleSprite
@@ -1237,7 +1337,8 @@ export function BattleArena({
             </div>
 
             {/* Player sprite — lower left */}
-            <div className="absolute left-[6%] bottom-[14%] md:left-[10%] md:bottom-[12%] z-[1]">
+            <div className="absolute left-[4%] bottom-[10%] md:left-[8%] md:bottom-[8%] z-[1]">
+              <span className="sprite-ground-shadow sprite-ground-shadow-player absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
               {damagePopup?.side === "player" && (
                 <span
                   key={damagePopup.key}
@@ -1247,13 +1348,23 @@ export function BattleArena({
                 </span>
               )}
               {moveFx?.mode === "hit" && shakingSide === "player" && (
-                <span
-                  key={`burst-p-${moveFx.key}`}
-                  className="move-impact absolute inset-0 m-auto pointer-events-none"
-                  style={{
-                    background: `radial-gradient(circle, ${typeColor(moveFx.moveType)}cc 0%, transparent 70%)`,
-                  }}
-                />
+                <>
+                  <span
+                    key={`burst-p-${moveFx.key}`}
+                    className="move-impact absolute inset-0 m-auto pointer-events-none"
+                    style={{
+                      background: `radial-gradient(circle, ${typeColor(moveFx.moveType)}cc 0%, transparent 70%)`,
+                    }}
+                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    key={`impact-p-${moveFx.key}`}
+                    src={impactFxUrl()}
+                    alt=""
+                    aria-hidden
+                    className="fx-impact absolute inset-0 m-auto pointer-events-none"
+                  />
+                </>
               )}
               {!playerHidden && activePlayer.spriteUrl && (
                 <BattleSprite
@@ -1261,8 +1372,8 @@ export function BattleArena({
                   facing="back"
                   fallbackUrl={activePlayer.spriteUrl}
                   alt={activePlayer.name}
-                  width={160}
-                  height={160}
+                  width={216}
+                  height={216}
                   className={playerSpriteClass}
                   style={shakeStyle("player")}
                 />
@@ -1302,9 +1413,13 @@ export function BattleArena({
           </div>
         </div>
 
-        {/* Mobile: player party strip */}
-        <div className="lg:hidden">
-          <PartySidebar name={trainerName} portraitUrl={null} align="left" compact>
+        {/* Mobile: player balls */}
+        <div className="lg:hidden shrink-0">
+          <div
+            className="flex items-center justify-start gap-1 px-1"
+            title={trainerName}
+            aria-label={trainerName}
+          >
             {party.map((m) => (
               <PartyIcon
                 key={m.instanceId}
@@ -1313,225 +1428,313 @@ export function BattleArena({
                 fainted={m.currentHp <= 0}
                 active={m.instanceId === activePlayer.instanceId}
                 hpPct={(m.currentHp / m.maxHp) * 100}
+                compact
               />
             ))}
             {Array.from({ length: emptyPlayerSlots }).map((_, i) => (
-              <EmptyPartySlot key={`pe-${i}`} />
+              <EmptyPartySlot key={`pe-${i}`} compact />
             ))}
-          </PartySidebar>
+          </div>
         </div>
 
-        {/* Compact battle log */}
-        <div className="glass-panel rounded-lg border border-white/10 px-3 py-2 h-14 overflow-y-auto flex flex-col gap-0.5">
-          {log.map((entry, i) => (
-            <p
-              key={i}
-              className={`text-label-sm leading-snug ${
-                entry.side === "player"
-                  ? "text-left text-on-surface"
-                  : entry.side === "wild"
-                    ? "text-right text-on-surface"
-                    : "text-center text-on-surface-variant italic"
-              }`}
-            >
-              {entry.text}
-            </p>
-          ))}
-          <div ref={logEndRef} />
-        </div>
+        <div className="grid grid-cols-2 gap-1 md:gap-2 items-stretch shrink-0 h-[8.25rem] md:h-auto md:min-h-[11rem]">
+          {/* Log */}
+          <div className="glass-panel rounded-xl border border-white/10 px-2 py-1.5 md:px-4 md:py-3 overflow-y-auto flex flex-col gap-0.5 bg-black/35 min-h-0">
+            {log.map((entry, i) => (
+              <p
+                key={i}
+                className={`text-[10px] md:text-label-md leading-snug md:leading-relaxed ${
+                  entry.side === "player"
+                    ? "text-left text-on-surface"
+                    : entry.side === "wild"
+                      ? "text-right text-on-surface"
+                      : "text-left text-on-surface-variant"
+                }`}
+              >
+                <span className="text-pokeball-red/80 mr-1">&gt;</span>
+                {entry.text}
+              </p>
+            ))}
+            {view === "menu" && !isAnimating && outcome === "ongoing" && (
+              <p className="mt-auto pt-1 border-t border-dashed border-white/15 text-[10px] md:text-label-md font-bold text-on-surface leading-snug">
+                {t("whatWillDo", { name: activePlayer.name.toUpperCase() })}
+              </p>
+            )}
+            <div ref={logEndRef} />
+          </div>
 
-        <div key={view} className="panel-swap">
-          {view === "menu" && (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={isAnimating}
-                onClick={() => {
-                  setView("moves");
-                  setDefaultView("moves");
-                }}
-                className="w-full glass-panel border border-white/10 rounded-lg p-4 text-label-md text-on-surface font-bold hover:border-pokeball-red/50 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {t("fight")}
-              </button>
-              <button
-                type="button"
-                disabled={isAnimating || !hasHealthyBackup}
-                onClick={() => setView("team")}
-                className="w-full glass-panel border border-white/10 rounded-lg p-4 text-label-md text-on-surface font-bold hover:border-pokeball-red/50 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {t("pokemonMenu")}
-              </button>
-              <button
-                type="button"
-                disabled={isAnimating || (!hasBalls && !hasPotions)}
-                onClick={() => setView("bag")}
-                className="w-full glass-panel border border-white/10 rounded-lg p-4 text-label-md text-on-surface font-bold hover:border-pokeball-red/50 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {t("bag")}
-              </button>
-              <button
-                type="button"
-                disabled={isAnimating || isGymBattle}
-                onClick={handleFlee}
-                className="w-full glass-panel border border-white/10 rounded-lg p-4 text-label-md text-on-surface font-bold hover:border-pokeball-red/50 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {t("run")}
-              </button>
-            </div>
-          )}
-
-          {view === "moves" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {activeMoves.every((m) => m.pp <= 0) && (
+          {/* Comandos */}
+          <div key={view} className="panel-swap min-h-0 h-full overflow-y-auto">
+            {view === "menu" && (
+              <div className="grid grid-cols-2 gap-1 md:gap-2 h-full">
                 <button
                   type="button"
                   disabled={isAnimating}
-                  onClick={() => handleMove(activeMoves[0]?.moveId ?? 0)}
-                  className="w-full sm:col-span-2 glass-panel border border-error/40 rounded-lg p-3 text-left hover:border-error/70 active:scale-[0.98] transition-all disabled:opacity-40"
+                  onClick={() => {
+                    unlockBattleAudio();
+                    resumeBattleBgm();
+                    setView("moves");
+                    setDefaultView("moves");
+                  }}
+                  className="battle-cmd-btn battle-cmd-fight"
                 >
-                  <p className="text-label-md text-error font-bold">Struggle</p>
-                  <p className="text-label-sm text-on-surface-variant">PP 0 — recoil damage</p>
+                  <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">bolt</span>
+                  {t("fight")}
                 </button>
-              )}
-              {activeMoves.map((m) => {
-                const eff = effectivenessInfo(m.type);
-                const color = typeColor(m.type);
-                const lockedOut = choiceLockMoveId != null && choiceLockMoveId !== m.moveId;
-                return (
-                  <button
-                    key={m.moveId}
-                    type="button"
-                    disabled={isAnimating || m.pp <= 0 || lockedOut}
-                    onClick={() => handleMove(m.moveId)}
-                    className="w-full glass-panel border border-white/10 rounded-lg p-3 text-left hover:border-pokeball-red/50 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <div className="flex justify-between items-center">
-                      <span
-                        className="px-2 py-0.5 rounded text-label-sm uppercase border"
-                        style={{ backgroundColor: `${color}33`, color, borderColor: `${color}55` }}
-                      >
-                        {m.type}
-                      </span>
-                      <span className="flex items-center gap-1 text-label-sm text-on-surface-variant">
-                        {lockedOut && (
-                          <span className="material-symbols-outlined text-[14px]!">lock</span>
-                        )}
-                        PP {m.pp}/{m.maxPp ?? m.pp}
-                      </span>
-                    </div>
-                    <p className="text-label-md text-on-surface font-bold mt-1">{m.name}</p>
-                    <p className={`text-label-sm mt-1 ${eff.className}`}>{eff.label}</p>
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                disabled={isAnimating}
-                onClick={() => setView("menu")}
-                className="w-full sm:col-span-2 glass-panel border border-white/10 rounded-lg p-3 text-label-md text-on-surface-variant hover:text-white active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {t("back")}
-              </button>
-            </div>
-          )}
+                <button
+                  type="button"
+                  disabled={isAnimating || !hasHealthyBackup}
+                  onClick={() => setView("team")}
+                  className="battle-cmd-btn"
+                >
+                  <PokeballIcon className="w-5 h-5 md:w-6 md:h-6" />
+                  {t("pokemonMenu")}
+                </button>
+                <button
+                  type="button"
+                  disabled={isAnimating || (!hasBalls && !hasPotions)}
+                  onClick={() => setView("bag")}
+                  className="battle-cmd-btn"
+                >
+                  <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">backpack</span>
+                  {t("bag")}
+                </button>
+                <button
+                  type="button"
+                  disabled={isAnimating || isGymBattle}
+                  onClick={handleFlee}
+                  className="battle-cmd-btn"
+                >
+                  <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">directions_run</span>
+                  {t("run")}
+                </button>
+              </div>
+            )}
 
-          {view === "bag" && (
-            <div className="flex flex-col gap-3">
-              {hasBalls && (
-                <div className="flex flex-col gap-2">
-                  <span className="text-label-sm uppercase text-on-surface-variant">{t("pokeballsLabel")}</span>
-                  {ballStacks.map((b) => (
+            {view === "moves" && (
+              <div className="flex flex-col gap-2 h-full">
+                <div className="flex items-center justify-between gap-2 px-0.5">
+                  <div>
+                    <p className="text-sm font-bold text-primary capitalize">{activePlayer.name}</p>
+                    <p className="text-label-sm uppercase text-on-surface-variant tracking-wider">
+                      {t("selectCommand")}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isAnimating}
+                    onClick={() => setView("menu")}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40"
+                    aria-label={t("back")}
+                  >
+                    <span className="material-symbols-outlined text-[18px]!">arrow_back</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+                  {activeMoves.every((m) => m.pp <= 0) && (
                     <button
-                      key={b.itemId}
                       type="button"
                       disabled={isAnimating}
-                      onClick={() => handleThrowBall(b.itemId, b.name)}
-                      className="w-full glass-panel border border-white/10 rounded-lg p-3 flex justify-between items-center hover:border-pokeball-red/50 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      onClick={() => handleMove(activeMoves[0]?.moveId ?? 0)}
+                      className="sm:col-span-2 battle-move-card border-error/40"
                     >
-                      <span className="text-label-md text-on-surface font-bold">{b.name}</span>
-                      <span className="text-label-sm text-on-surface-variant">×{b.quantity}</span>
+                      <p className="text-base font-bold text-error">Struggle</p>
+                      <p className="text-label-sm text-on-surface-variant mt-1">PP 0 — recoil</p>
                     </button>
-                  ))}
+                  )}
+                  {activeMoves.map((m) => {
+                    const eff = effectivenessInfo(m.type);
+                    const color = typeColor(m.type);
+                    const lockedOut = choiceLockMoveId != null && choiceLockMoveId !== m.moveId;
+                    return (
+                      <button
+                        key={m.moveId}
+                        type="button"
+                        disabled={isAnimating || m.pp <= 0 || lockedOut}
+                        onClick={() => handleMove(m.moveId)}
+                        className="battle-move-card text-left disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{ borderColor: `${color}55` }}
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="text-base font-bold text-white leading-tight">{m.name}</span>
+                          <span
+                            className="shrink-0 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border"
+                            style={{ backgroundColor: `${color}33`, color, borderColor: `${color}66` }}
+                          >
+                            {m.type}
+                          </span>
+                        </div>
+                        <div className="mt-3 flex justify-between items-end gap-2">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-white/45">{t("powerLabel")}</p>
+                            <p className="text-label-md text-white font-bold tabular-nums">
+                              {m.power ?? "—"}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] uppercase tracking-wider text-white/45">{t("ppLabel")}</p>
+                            <p className="text-label-md text-white/90 font-bold tabular-nums flex items-center justify-end gap-1">
+                              {lockedOut && (
+                                <span className="material-symbols-outlined text-[14px]! text-amber-300">lock</span>
+                              )}
+                              {m.pp}/{m.maxPp ?? m.pp}
+                            </p>
+                          </div>
+                        </div>
+                        <p className={`text-label-sm mt-2 ${eff.className}`}>{eff.label}</p>
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
-              {hasPotions && (
-                <div className="flex flex-col gap-2">
-                  <span className="text-label-sm uppercase text-on-surface-variant">{t("potionsLabel")}</span>
-                  {potionStacks.map((p) => (
-                    <button
-                      key={p.itemId}
-                      type="button"
-                      disabled={isAnimating || playerHp >= playerMaxHp}
-                      onClick={() => handleUsePotion(p.itemId)}
-                      className="w-full glass-panel border border-white/10 rounded-lg p-3 flex justify-between items-center hover:border-tertiary/50 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <span className="text-label-md text-on-surface font-bold">{p.name}</span>
-                      <span className="text-label-sm text-on-surface-variant">×{p.quantity}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              <button
-                type="button"
-                disabled={isAnimating}
-                onClick={() => setView("menu")}
-                className="w-full glass-panel border border-white/10 rounded-lg p-3 text-label-md text-on-surface-variant hover:text-white active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {t("back")}
-              </button>
-            </div>
-          )}
+              </div>
+            )}
 
-          {view === "team" && (
-            <div className="flex flex-col gap-2">
-              {mustSwitch && (
-                <p className="text-label-md text-error text-center mb-1">{t("mustSwitchPrompt")}</p>
-              )}
-              {teamRoster.map((m) => {
-                const fainted = m.currentHp <= 0;
-                const hpPct = Math.max(0, Math.min(100, (m.currentHp / m.maxHp) * 100));
-                return (
+            {view === "bag" && (
+              <div className="flex flex-col gap-2 h-full">
+                <div className="flex items-center justify-between gap-2 px-0.5">
+                  <div>
+                    <p className="text-sm font-bold text-primary">{t("bagTitle")}</p>
+                    <p className="text-label-sm uppercase text-on-surface-variant tracking-wider">
+                      {t("selectCommand")}
+                    </p>
+                  </div>
                   <button
-                    key={m.instanceId}
                     type="button"
-                    disabled={isAnimating || fainted}
-                    onClick={() => handleSwitchTo(m)}
-                    className="w-full glass-panel border border-white/10 rounded-lg p-3 flex items-center gap-3 hover:border-pokeball-red/50 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={isAnimating}
+                    onClick={() => setView("menu")}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40"
+                    aria-label={t("back")}
                   >
-                    {m.spriteUrl && (
-                      <Image src={m.spriteUrl} alt={m.name} width={40} height={40} className="w-10 h-10 object-contain" />
-                    )}
-                    <div className="flex-1 text-left">
-                      <div className="flex justify-between items-baseline">
-                        <span className="text-label-md text-on-surface font-bold capitalize">{m.name}</span>
-                        <span className="text-label-sm text-on-surface-variant">{t("level", { level: m.level })}</span>
-                      </div>
-                      <div className="h-1.5 bg-surface-container-highest rounded-full overflow-hidden mt-1">
-                        <div
-                          className={`h-full health-bar-fill ${hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red"}`}
-                          style={{ width: `${hpPct}%` }}
-                        />
-                      </div>
-                      <span className="text-label-sm text-on-surface-variant">
-                        {fainted ? t("fainted") : `${m.currentHp}/${m.maxHp}`}
-                      </span>
-                    </div>
+                    <span className="material-symbols-outlined text-[18px]!">arrow_back</span>
                   </button>
-                );
-              })}
-              {!mustSwitch && (
-                <button
-                  type="button"
-                  disabled={isAnimating}
-                  onClick={() => setView("menu")}
-                  className="w-full glass-panel border border-white/10 rounded-lg p-3 text-label-md text-on-surface-variant hover:text-white active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {t("back")}
-                </button>
-              )}
-            </div>
-          )}
+                </div>
+                <div className="flex flex-col gap-2 flex-1 overflow-y-auto max-h-56">
+                  {!hasBalls && !hasPotions && (
+                    <p className="text-label-md text-on-surface-variant text-center py-6">{t("bagEmpty")}</p>
+                  )}
+                  {hasBalls && (
+                    <div className="flex flex-col gap-2">
+                      <span className="text-label-sm uppercase text-on-surface-variant">{t("pokeballsLabel")}</span>
+                      {ballStacks.map((b) => (
+                        <button
+                          key={b.itemId}
+                          type="button"
+                          disabled={isAnimating}
+                          onClick={() => handleThrowBall(b.itemId, b.name)}
+                          className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Image
+                            src={itemSpriteUrl(b.name)}
+                            alt=""
+                            width={32}
+                            height={32}
+                            unoptimized
+                            className="w-8 h-8 object-contain [image-rendering:pixelated] shrink-0"
+                          />
+                          <span className="flex-1 text-left text-label-md text-on-surface font-bold">{b.name}</span>
+                          <span className="text-label-sm text-on-surface-variant tabular-nums">×{b.quantity}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {hasPotions && (
+                    <div className="flex flex-col gap-2">
+                      <span className="text-label-sm uppercase text-on-surface-variant">{t("potionsLabel")}</span>
+                      {potionStacks.map((p) => (
+                        <button
+                          key={p.itemId}
+                          type="button"
+                          disabled={isAnimating || playerHp >= playerMaxHp}
+                          onClick={() => handleUsePotion(p.itemId)}
+                          className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Image
+                            src={itemSpriteUrl(p.name)}
+                            alt=""
+                            width={32}
+                            height={32}
+                            unoptimized
+                            className="w-8 h-8 object-contain [image-rendering:pixelated] shrink-0"
+                          />
+                          <div className="flex-1 text-left">
+                            <p className="text-label-md text-on-surface font-bold">{p.name}</p>
+                            <p className="text-label-sm text-on-surface-variant">+{p.healAmount} HP</p>
+                          </div>
+                          <span className="text-label-sm text-on-surface-variant tabular-nums">×{p.quantity}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {view === "team" && (
+              <div className="flex flex-col gap-2 h-full">
+                <div className="flex items-center justify-between gap-2 px-0.5">
+                  <p className="text-sm font-bold text-primary">{t("pokemonMenu")}</p>
+                  {!mustSwitch && (
+                    <button
+                      type="button"
+                      disabled={isAnimating}
+                      onClick={() => setView("menu")}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40"
+                      aria-label={t("back")}
+                    >
+                      <span className="material-symbols-outlined text-[18px]!">arrow_back</span>
+                    </button>
+                  )}
+                </div>
+                {mustSwitch && (
+                  <p className="text-label-md text-error text-center mb-1">{t("mustSwitchPrompt")}</p>
+                )}
+                <div className="flex flex-col gap-2 overflow-y-auto max-h-56">
+                  {teamRoster.map((m) => {
+                    const fainted = m.currentHp <= 0;
+                    const hpPct = Math.max(0, Math.min(100, (m.currentHp / m.maxHp) * 100));
+                    return (
+                      <button
+                        key={m.instanceId}
+                        type="button"
+                        disabled={isAnimating || fainted}
+                        onClick={() => handleSwitchTo(m)}
+                        className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {m.spriteUrl && (
+                          <Image
+                            src={m.spriteUrl}
+                            alt={m.name}
+                            width={40}
+                            height={40}
+                            className="w-10 h-10 object-contain"
+                          />
+                        )}
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex justify-between items-baseline gap-2">
+                            <span className="text-label-md text-on-surface font-bold capitalize truncate">
+                              {m.name}
+                            </span>
+                            <span className="text-label-sm text-on-surface-variant shrink-0">
+                              {t("level", { level: m.level })}
+                            </span>
+                          </div>
+                          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mt-1">
+                            <div
+                              className={`h-full health-bar-fill ${hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red"}`}
+                              style={{ width: `${hpPct}%` }}
+                            />
+                          </div>
+                          <span className="text-label-sm text-on-surface-variant">
+                            {fainted ? t("fainted") : `${m.currentHp}/${m.maxHp}`}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1560,7 +1763,12 @@ function PartySidebar({
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className={`text-label-sm text-on-surface font-bold truncate ${align === "right" ? "text-right" : ""}`}>
+          <p
+            title={name}
+            className={`text-label-sm text-on-surface font-bold leading-tight line-clamp-2 ${
+              align === "right" ? "text-right" : ""
+            }`}
+          >
             {name}
           </p>
           <div className={`mt-1 flex gap-1.5 ${align === "right" ? "justify-end" : ""}`}>{children}</div>
@@ -1571,7 +1779,12 @@ function PartySidebar({
 
   return (
     <div className="glass-panel rounded-xl border border-white/10 p-2.5 h-full flex flex-col gap-2">
-      <p className={`text-label-sm text-on-surface font-bold truncate px-0.5 ${align === "right" ? "text-right" : ""}`}>
+      <p
+        title={name}
+        className={`text-label-sm text-on-surface font-bold leading-tight px-0.5 line-clamp-2 ${
+          align === "right" ? "text-right" : ""
+        }`}
+      >
         {name}
       </p>
       {portraitUrl && (
@@ -1590,27 +1803,37 @@ function PartyIcon({
   fainted,
   active,
   hpPct,
+  compact = false,
 }: {
   spriteUrl: string;
   name: string;
   fainted: boolean;
   active: boolean;
   hpPct?: number;
+  compact?: boolean;
 }) {
   return (
     <div
       title={name}
-      className={`relative aspect-square rounded-md border bg-surface-container-high/80 flex items-center justify-center overflow-hidden ${
+      className={`relative rounded-md border bg-surface-container-high/80 flex items-center justify-center overflow-hidden ${
+        compact ? "h-7 w-7 shrink-0" : "aspect-square"
+      } ${
         active ? "border-pokeball-red/70 ring-1 ring-pokeball-red/40" : "border-white/10"
       } ${fainted ? "opacity-35 grayscale" : ""}`}
     >
       {spriteUrl ? (
-        <Image src={spriteUrl} alt={name} width={40} height={40} className="w-9 h-9 object-contain" />
+        <Image
+          src={spriteUrl}
+          alt={name}
+          width={compact ? 28 : 40}
+          height={compact ? 28 : 40}
+          className={compact ? "w-6 h-6 object-contain" : "w-9 h-9 object-contain"}
+        />
       ) : (
-        <PokeballIcon className="w-5 h-5 opacity-40" />
+        <PokeballIcon className={compact ? "w-3.5 h-3.5 opacity-40" : "w-5 h-5 opacity-40"} />
       )}
       {typeof hpPct === "number" && !fainted && (
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
+        <div className={`absolute bottom-0 left-0 right-0 bg-black/50 ${compact ? "h-0.5" : "h-1"}`}>
           <div
             className={`h-full ${hpPct > 50 ? "bg-emerald-400" : hpPct > 20 ? "bg-amber-400" : "bg-red-500"}`}
             style={{ width: `${Math.max(0, Math.min(100, hpPct))}%` }}
@@ -1621,10 +1844,14 @@ function PartyIcon({
   );
 }
 
-function EmptyPartySlot() {
+function EmptyPartySlot({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="aspect-square rounded-md border border-dashed border-white/10 bg-black/20 flex items-center justify-center">
-      <PokeballIcon className="w-4 h-4 opacity-25" />
+    <div
+      className={`rounded-md border border-dashed border-white/10 bg-black/20 flex items-center justify-center ${
+        compact ? "h-7 w-7 shrink-0" : "aspect-square"
+      }`}
+    >
+      <PokeballIcon className={compact ? "w-3 h-3 opacity-25" : "w-4 h-4 opacity-25"} />
     </div>
   );
 }
@@ -1648,22 +1875,32 @@ function HpPlate({
 }) {
   const hpPct = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
   const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
+  const critical = hpPct > 0 && hpPct <= 20;
 
   return (
     <div
-      className={`rounded-lg border border-white/15 bg-black/55 backdrop-blur-sm px-2.5 py-1.5 shadow-lg ${className}`}
+      className={`rounded-lg border bg-black/55 backdrop-blur-sm px-2 py-1 md:px-2.5 md:py-1.5 shadow-lg ${
+        critical ? "border-red-500/70 hp-plate-critical" : "border-white/15"
+      } ${className}`}
     >
-      <div className={`flex items-baseline gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
-        <span className="text-label-md text-white font-bold capitalize truncate">{name}</span>
-        <span className="text-label-sm text-white/70 shrink-0">{levelLabel}</span>
+      <div className={`flex items-baseline gap-1.5 md:gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
+        <span className="text-[11px] md:text-label-md text-white font-bold capitalize truncate">{name}</span>
+        <span className="text-[10px] md:text-label-sm text-white/70 shrink-0">{levelLabel}</span>
         {status && (
-          <span className="text-[10px] uppercase tracking-wide text-amber-300 shrink-0">{status}</span>
+          <span className="text-[9px] md:text-[10px] uppercase tracking-wide text-amber-300 shrink-0">{status}</span>
         )}
       </div>
-      <div className="h-2 bg-white/15 rounded-full overflow-hidden mt-1">
-        <div className={`h-full health-bar-fill ${hpClass}`} style={{ width: `${hpPct}%` }} />
+      <div className="h-1.5 md:h-2 bg-white/15 rounded-full overflow-hidden mt-0.5 md:mt-1">
+        <div
+          className={`h-full health-bar-fill ${hpClass}${critical ? " hp-bar-critical" : ""}`}
+          style={{ width: `${hpPct}%` }}
+        />
       </div>
-      <p className={`text-[10px] text-white/70 mt-0.5 ${align === "right" ? "text-right" : ""}`}>
+      <p
+        className={`text-[9px] md:text-[10px] mt-0.5 ${align === "right" ? "text-right" : ""} ${
+          critical ? "text-red-300 font-bold" : "text-white/70"
+        }`}
+      >
         {Math.round(hpPct)}% · {currentHp}/{maxHp}
       </p>
     </div>

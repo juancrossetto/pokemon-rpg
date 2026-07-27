@@ -111,6 +111,8 @@ export interface TurnEvent {
   side: "player" | "wild";
   moveName: string;
   moveType: string;
+  /** Categoría del movimiento — el cliente elige proyectil vs contacto. */
+  category?: "PHYSICAL" | "SPECIAL" | "STATUS";
   hit: boolean;
   isStatus: boolean;
   damage: number;

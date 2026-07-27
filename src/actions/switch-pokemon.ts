@@ -20,7 +20,7 @@ export interface SwitchPokemonResult {
     spriteUrl: string;
     currentHp: number;
     maxHp: number;
-    moves: { moveId: number; name: string; type: string; pp: number; maxPp: number }[];
+    moves: { moveId: number; name: string; type: string; power: number | null; pp: number; maxPp: number }[];
   };
   counterAttack: TurnEvent | null;
   outcome: "continues" | "lost" | "fainted";
@@ -59,6 +59,7 @@ export async function switchPokemon(
     moveId: m.moveId,
     name: m.move.name,
     type: m.move.type,
+    power: m.move.power,
     pp: effectivePp(m.currentPp, m.move.pp),
     maxPp: m.move.pp,
   }));

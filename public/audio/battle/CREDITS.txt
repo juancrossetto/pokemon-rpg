@@ -1,0 +1,24 @@
+Battle music credits
+====================
+
+wild-battle.m4a
+  Source: "The Last Encounter (90s RPG Version) Short Loop"
+  From: RPG Battle Theme - "The Last Encounter"
+  Author: Matthew Pablo
+  License: CC-BY-SA 3.0
+  https://opengameart.org/content/rpg-battle-theme-the-last-encounter-0
+  https://matthewpablo.com/
+
+boss-battle.m4a
+  Source: "The Last Encounter Short Loop" (Original Version)
+  From: RPG Battle Theme - "The Last Encounter"
+  Author: Matthew Pablo
+  License: CC-BY-SA 3.0
+  https://opengameart.org/content/rpg-battle-theme-the-last-encounter-0
+  https://matthewpablo.com/
+
+Attribution: Music by Matthew Pablo (www.matthewpablo.com)
+
+Note: "Let the Battles Begin!" (northivanastan, CC0) could not be bundled —
+OpenGameArt only provides a MuseScore project; the author flagged the preview
+render's soundfont for potential copyright issues, so it is not used here.

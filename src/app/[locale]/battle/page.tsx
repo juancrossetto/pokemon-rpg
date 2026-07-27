@@ -287,6 +287,7 @@ export default async function BattlePage({
         moveId: m.moveId,
         name: m.move.name,
         type: m.move.type,
+        power: m.move.power,
         pp: m.currentPp <= 0 ? m.move.pp : Math.min(m.currentPp, m.move.pp),
         maxPp: m.move.pp,
       })),
