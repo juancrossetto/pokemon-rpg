@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { ShopTerminal, type ShopLabels } from "@/components/shop-terminal";
 import { TradeTabs } from "@/components/trade-tabs";
+import { TradeHelp } from "@/components/trade-help";
 import {
   SHOP_CATEGORIES,
   itemKey,
@@ -19,7 +20,11 @@ export default async function ShopPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const [t, session] = await Promise.all([getTranslations("shop"), auth()]);
+  const [t, tUx, session] = await Promise.all([
+    getTranslations("shop"),
+    getTranslations("ux"),
+    auth(),
+  ]);
 
   if (!session?.user) {
     redirect({ href: "/login", locale });
@@ -106,6 +111,8 @@ export default async function ShopPage({
     <div className="flex-1 px-margin-mobile py-5 md:px-margin-desktop md:py-8">
       <div className="mx-auto max-w-6xl">
         <TradeTabs active="shop" />
+        <TradeHelp />
+        <p className="mb-4 text-label-md text-on-surface-variant">{tUx("role.shop")}</p>
         <ShopTerminal
           products={products}
           labels={labels}

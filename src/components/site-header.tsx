@@ -15,8 +15,9 @@ import { listNotifications } from "@/lib/notifications";
 import type { CombatLock } from "@/lib/battle-lock";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
-  const [t, session, locale] = await Promise.all([
+  const [t, tUx, session, locale] = await Promise.all([
     getTranslations("nav"),
+    getTranslations("ux"),
     auth(),
     getLocale(),
   ]);
@@ -47,6 +48,12 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
     // exige un valor para cada variable ICU.
     energyRegen: t("energyRegen", { minutes: "{minutes}" }),
     energyNext: t("energyNext", { time: "{time}" }),
+    energyEmptyTitle: tUx("energyEmptyTitle"),
+    energyEmptyBody: tUx("energyEmptyBody"),
+    energyEmptyWait: tUx("energyEmptyWait"),
+    energyEmptyShop: tUx("energyEmptyShop"),
+    energyEmptyRewards: tUx("energyEmptyRewards"),
+    energyEmptyTeam: tUx("energyEmptyTeam"),
     coins: t("coins"),
     coinsBalance: t("coinsBalance"),
     coinsShop: t("shop"),

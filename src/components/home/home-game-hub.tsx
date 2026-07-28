@@ -9,6 +9,9 @@ import { CampaignDevPanel } from "@/components/campaign-dev-panel";
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { DailyState, WeeklyState } from "@/lib/events/state";
 import type { SquadBagCounts } from "@/lib/squad-bag";
+import { JourneyOnboarding } from "@/components/journey-guidance";
+import { HubRoleHint } from "@/components/hub-role-hint";
+import { useTranslations } from "next-intl";
 
 export function HomeGameHub({
   locale,
@@ -45,10 +48,15 @@ export function HomeGameHub({
   quickTitle: string;
   isDev: boolean;
 }) {
+  const tUx = useTranslations("ux");
+
   return (
     <div className="relative flex-1 overflow-x-hidden">
+      <JourneyOnboarding />
       <div className="relative px-margin-mobile py-3 md:px-margin-desktop md:py-5">
         <div className="mx-auto flex max-w-3xl flex-col gap-4 xl:max-w-5xl">
+          <HubRoleHint>{tUx("role.home")}</HubRoleHint>
+
           {events.showDailyModal && (
             <DailyGiftModal
               days={events.daily.days}
@@ -60,15 +68,8 @@ export function HomeGameHub({
             />
           )}
 
+          {/* Primera jugada: expedición + equipo. Recompensas y atajos debajo. */}
           {expedition ? <CurrentExpedition {...expedition} /> : null}
-
-          <IdleRewardWidget
-            locale={locale}
-            daily={events.daily}
-            weekly={events.weekly}
-            pendingCount={events.pendingCount}
-            labels={idleLabels}
-          />
 
           <ActiveTeamStrip
             key={squad.layoutKey}
@@ -80,6 +81,14 @@ export function HomeGameHub({
             manageLabel={squad.manageLabel}
             title={squad.title}
             initialBagCounts={squad.bagCounts}
+          />
+
+          <IdleRewardWidget
+            locale={locale}
+            daily={events.daily}
+            weekly={events.weekly}
+            pendingCount={events.pendingCount}
+            labels={idleLabels}
           />
 
           <QuickGameActions title={quickTitle} actions={quickActions} />

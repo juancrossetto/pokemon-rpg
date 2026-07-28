@@ -17,6 +17,7 @@ import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar"
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import { anyEvolveReady } from "@/lib/evolution-readiness";
+import { CoachMark } from "@/components/journey-guidance";
 
 const TEAM_SIZE = 6;
 /** Ancho pensado para ~2 cards visibles + peek de la tercera en mobile. */
@@ -64,6 +65,7 @@ function TeamSlot({
   onDragEnd: () => void;
 }) {
   const tTeam = useTranslations("team");
+  const tUx = useTranslations("ux");
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -83,18 +85,20 @@ function TeamSlot({
 
   if (!member) {
     return (
-      <Link
-        href="/team?tab=pc"
-        className={`team-slot team-slot--empty group flex ${SLOT_HEIGHT} ${SLOT_WIDTH} shrink-0 flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-white/15 bg-white/[0.02] text-on-surface-variant transition hover:border-white/28 hover:bg-white/[0.04]`}
-        aria-label={emptyLabel}
-      >
-        <div className="mb-1.5 flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.03] transition group-hover:border-white/30">
-          <span className="material-symbols-outlined text-[22px]!">add</span>
-        </div>
-        <span className="px-2 text-center text-[10px] uppercase tracking-wider text-on-surface-variant/75">
-          {emptyLabel}
-        </span>
-      </Link>
+      <CoachMark storageKey="coach-team-slot" message={tUx("coachTeamSlot")}>
+        <Link
+          href="/team?tab=pc"
+          className={`team-slot team-slot--empty group flex ${SLOT_HEIGHT} ${SLOT_WIDTH} shrink-0 flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-white/15 bg-white/[0.02] text-on-surface-variant transition hover:border-white/28 hover:bg-white/[0.04]`}
+          aria-label={emptyLabel}
+        >
+          <div className="mb-1.5 flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.03] transition group-hover:border-white/30">
+            <span className="material-symbols-outlined text-[22px]!">add</span>
+          </div>
+          <span className="px-2 text-center text-[10px] uppercase tracking-wider text-on-surface-variant/75">
+            {emptyLabel}
+          </span>
+        </Link>
+      </CoachMark>
     );
   }
 

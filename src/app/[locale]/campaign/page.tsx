@@ -8,6 +8,7 @@ import {
   activeChapterIndex,
   buildChapters,
   journeyProgressPercent,
+  nextMilestone,
   regionMapSrc,
 } from "@/lib/campaign";
 import { loadMapLocations } from "@/lib/campaign/map-data";
@@ -17,6 +18,7 @@ import {
   type GymRequirement,
   type JourneySummary,
 } from "@/components/campaign-journey";
+import { HubRoleHint } from "@/components/hub-role-hint";
 
 export default async function CampaignPage({
   params,
@@ -33,8 +35,9 @@ export default async function CampaignPage({
 
   await redirectIfInBattle(userId, locale);
 
-  const [t, progress] = await Promise.all([
+  const [t, tUx, progress] = await Promise.all([
     getTranslations("campaign"),
+    getTranslations("ux"),
     ensureCampaignProgress(userId),
   ]);
 
@@ -99,6 +102,7 @@ export default async function CampaignPage({
   };
 
   const isDev = process.env.NODE_ENV === "development";
+  const milestone = nextMilestone(progress, earnedOrders);
 
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8">
@@ -111,6 +115,7 @@ export default async function CampaignPage({
             <h1 className="text-headline-lg tracking-tight text-white md:text-display-lg">
               {t("title")}
             </h1>
+            <HubRoleHint>{tUx("role.campaign")}</HubRoleHint>
           </div>
           <Link
             href="/"
@@ -130,6 +135,7 @@ export default async function CampaignPage({
           summary={summary}
           gymRequirements={requirementByLocationId}
           regionMapSrc={regionMapSrc(progress.currentRegionId)}
+          milestone={milestone}
         />
 
         {isDev && (

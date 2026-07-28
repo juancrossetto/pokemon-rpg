@@ -8,6 +8,9 @@ import { typeColor } from "@/lib/type-colors";
 import type { CampaignMilestone } from "@/lib/campaign";
 import { RegionMapDialog, type MapLocation } from "@/components/region-map-dialog";
 import { ExpeditionAmbient } from "@/components/home/expedition-ambient";
+import { NextMilestoneChip } from "@/components/next-milestone-chip";
+import { milestoneCtaKey, milestoneHref } from "@/lib/journey-ux";
+import { CoachMark } from "@/components/journey-guidance";
 
 export type CurrentExpeditionProps = {
   locationNameKey: string;
@@ -28,12 +31,6 @@ export type CurrentExpeditionProps = {
   stagesTotal: number;
 };
 
-function milestoneHref(milestone: CampaignMilestone): string {
-  if (milestone.kind === "gym") return "/gyms";
-  if (milestone.kind === "complete") return "/campaign";
-  return "/battle";
-}
-
 export function CurrentExpedition({
   locationNameKey,
   locationKindKey,
@@ -53,10 +50,10 @@ export function CurrentExpedition({
   stagesTotal,
 }: CurrentExpeditionProps) {
   const t = useTranslations("campaign");
+  const tUx = useTranslations("ux");
   const tTypes = useTranslations("pokedex.pokemonTypes");
   const ctaHref = milestoneHref(milestone);
-  const ctaLabel =
-    milestone.kind === "gym" ? t("challengeGym") : t("continueExpedition");
+  const ctaLabel = t(milestoneCtaKey(milestone));
   const stagePct =
     stagesTotal > 0 ? Math.max(0, Math.min(100, (stagesDone / stagesTotal) * 100)) : 0;
 
@@ -143,6 +140,8 @@ export function CurrentExpedition({
         </div>
 
         <div className="space-y-2.5">
+          <NextMilestoneChip milestone={milestone} className="pointer-events-auto w-full max-w-md" />
+
           {stagesTotal > 0 && (
             <div>
               <div className="mb-1 flex items-center justify-between gap-2 text-[11px] text-white/60">
@@ -167,12 +166,18 @@ export function CurrentExpedition({
           )}
 
           <div className="flex items-stretch gap-2">
-            <Link
-              href={ctaHref}
-              className="expedition-cta pointer-events-auto flex min-h-11 flex-1 items-center justify-center rounded-xl bg-pokeball-red px-4 text-[15px] font-bold text-white shadow-[0_10px_28px_rgba(238,21,21,0.4),inset_0_1px_0_rgba(255,255,255,0.22)] transition hover:bg-pokeball-red/90 hover:shadow-[0_12px_32px_rgba(238,21,21,0.5)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:min-h-12 sm:text-[16px]"
+            <CoachMark
+              storageKey={milestone.kind === "gym" ? "coach-gym" : "coach-explore"}
+              message={milestone.kind === "gym" ? tUx("coachGym") : tUx("coachExplore")}
+              className="pointer-events-auto min-w-0 flex-1"
             >
-              {ctaLabel}
-            </Link>
+              <Link
+                href={ctaHref}
+                className="expedition-cta flex min-h-11 w-full items-center justify-center rounded-xl bg-pokeball-red px-4 text-[15px] font-bold text-white shadow-[0_10px_28px_rgba(238,21,21,0.4),inset_0_1px_0_rgba(255,255,255,0.22)] transition hover:bg-pokeball-red/90 hover:shadow-[0_12px_32px_rgba(238,21,21,0.5)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:min-h-12 sm:text-[16px]"
+              >
+                {ctaLabel}
+              </Link>
+            </CoachMark>
             <Link
               href="/campaign"
               aria-label={t("journeyGuide")}

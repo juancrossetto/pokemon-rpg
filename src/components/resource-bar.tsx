@@ -10,6 +10,12 @@ export type ResourceBarLabels = {
   energyFull: string;
   energyRegen: string;
   energyNext: string;
+  energyEmptyTitle?: string;
+  energyEmptyBody?: string;
+  energyEmptyWait?: string;
+  energyEmptyShop?: string;
+  energyEmptyRewards?: string;
+  energyEmptyTeam?: string;
   coins: string;
   coinsBalance: string;
   coinsShop: string;
@@ -263,6 +269,43 @@ export function ResourceBar({
           ? labels.energyFull
           : labels.energyNext.replace("{time}", countdown ?? "--:--")}
       </p>
+      {energy <= 0 && (
+        <div className="space-y-2 rounded-lg border border-sky-400/25 bg-sky-500/10 p-2.5">
+          <p className="font-semibold text-sky-200">
+            {labels.energyEmptyTitle ?? labels.energy}
+          </p>
+          <p>{labels.energyEmptyBody ?? labels.energyRegen.replace("{minutes}", String(regenMinutes))}</p>
+          <div className="flex flex-col gap-1.5 pt-0.5">
+            <p className="text-[11px] text-sky-200/80">
+              {labels.energyEmptyWait ?? labels.energyNext.replace("{time}", countdown ?? "--:--")}
+            </p>
+            <Link
+              href="/shop"
+              onClick={() => setOpen(null)}
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 text-[12px] font-medium text-on-surface transition hover:bg-white/[0.08]"
+            >
+              <span className="material-symbols-outlined text-[16px]!">storefront</span>
+              {labels.energyEmptyShop ?? labels.coinsShop}
+            </Link>
+            <Link
+              href="/"
+              onClick={() => setOpen(null)}
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 text-[12px] font-medium text-on-surface transition hover:bg-white/[0.08]"
+            >
+              <span className="material-symbols-outlined text-[16px]!">redeem</span>
+              {labels.energyEmptyRewards ?? "Rewards"}
+            </Link>
+            <Link
+              href="/team"
+              onClick={() => setOpen(null)}
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 text-[12px] font-medium text-on-surface transition hover:bg-white/[0.08]"
+            >
+              <span className="material-symbols-outlined text-[16px]!">healing</span>
+              {labels.energyEmptyTeam ?? "Team"}
+            </Link>
+          </div>
+        </div>
+      )}
     </PopoverPanel>
   );
 

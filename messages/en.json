@@ -50,9 +50,9 @@
       "community": "Community"
     },
     "desc": {
-      "campaign": "Travel the map and unlock zones.",
-      "gyms": "Earn badges and unlock content.",
-      "battleWild": "Find wild Pokémon in your farming zone.",
+      "campaign": "Choose where to advance the story.",
+      "gyms": "Earn badges and unlock the path.",
+      "battleWild": "Explore wild Pokémon in your zone.",
       "pvp": "Battle other trainers.",
       "ranking": "Check your global standing.",
       "team": "Your squad, PC box, and daycare",
@@ -1614,25 +1614,25 @@
   },
   "campaign": {
     "eyebrow": "Kanto Journey",
-    "title": "Journey map",
-    "subtitle": "Pick a location and expedition stage. Explore uses your active farming stage.",
+    "title": "Journey",
+    "subtitle": "Pick your zone and stretch. Exploring uses the zone you're in.",
     "backHome": "Back home",
     "currentExpedition": "Current expedition",
-    "farmingStage": "Stage",
+    "farmingStage": "Stretch",
     "journeyProgress": "Journey progress",
     "nextMilestone": "Next milestone",
     "selectLocation": "Select location",
     "journeyGuide": "Journey guide",
     "journeyGuideShort": "Guide",
-    "continueExpedition": "Continue expedition",
+    "continueExpedition": "Head out to explore",
     "challengeGym": "Challenge gym",
-    "farming": "Farming",
+    "farming": "You are here",
     "select": "Select",
     "selected": "Selected",
-    "stageProgress": "{done}/{total} stages",
+    "stageProgress": "{done}/{total} stretches",
     "gymMilestone": "Gym",
     "errors": {
-      "noStage": "No valid farming stage. Pick one on the journey map."
+      "noStage": "No valid stretch. Pick one on the Journey map."
     },
     "dev": {
       "title": "Dev · campaign",
@@ -1860,7 +1860,12 @@
       "veryRare": "Very rare",
       "elite": "Elite"
     },
-    "topRarity": "Top rarity"
+    "topRarity": "Top rarity",
+    "viewJourney": "View Journey",
+    "stickyExplore": "Head out to explore",
+    "objectiveProgress": "{current}/{target}",
+    "movedHere": "You're now in {name}.",
+    "stageSet": "Active stretch: {name}."
   },
   "levelUp": {
     "title": "{name} · Lv. {level}",
@@ -2261,5 +2266,67 @@
       "acceptedTitle": "You are friends!",
       "acceptedDetail": "Your circle just grew."
     }
+  },
+  "ux": {
+    "helpTitle": "What can I do here?",
+    "coachGotIt": "Got it",
+    "unlockEyebrow": "Zone unlocked",
+    "unlockBody": "You can now go to {name}!",
+    "onboarding": {
+      "eyebrow": "Your first outing",
+      "title": "Three steps to start",
+      "step1Title": "Pick a zone on the Journey",
+      "step1Body": "Mark where you want to advance the story.",
+      "step2Title": "Head out to explore",
+      "step2Body": "Battle, catch, and gain XP in your zone.",
+      "step3Title": "Challenge the gym",
+      "step3Body": "When ready, earn the badge and keep going.",
+      "cta": "Let's go!"
+    },
+    "role": {
+      "home": "Your next move: advance the Journey or care for your team.",
+      "campaign": "Choose where to advance the story.",
+      "battle": "Battle and catch in your current zone.",
+      "gyms": "Progress milestones: badges that unlock the path.",
+      "team": "Care for, power up, and organize your squad.",
+      "shop": "Stock balls, potions, and supplies for the adventure.",
+      "market": "Buy and sell with other trainers.",
+      "inventory": "Everything in your bag.",
+      "pvp": "Optional competitive battles — not the story path."
+    },
+    "help": {
+      "campaign": [
+        "Pick an unlocked zone and mark that you're there.",
+        "Head out to explore wild battles in that zone.",
+        "Complete objectives and challenge trainers or the gym."
+      ],
+      "battle": [
+        "Exploring costs energy and finds a wild Pokémon.",
+        "You can change zones from the Journey map.",
+        "Out of energy: wait, claim rewards, or visit the shop."
+      ],
+      "market": [
+        "The Shop sells from the system for coins.",
+        "The Market is player-to-player (listings and fees).",
+        "Use the tabs to jump between both."
+      ]
+    },
+    "energyEmptyTitle": "Out of energy",
+    "energyEmptyBody": "It regenerates on its own. Meanwhile you can:",
+    "energyEmptyWait": "Wait for the next point",
+    "energyEmptyShop": "Go to the shop",
+    "energyEmptyRewards": "Claim rewards",
+    "energyEmptyTeam": "Care for your team",
+    "postBattleContinue": "Keep exploring",
+    "postBattleJourney": "Back to the Journey",
+    "postBattleEvolve": "Your team can evolve",
+    "postBattleHeal": "Heal your team in My team",
+    "coachExplore": "Tap here to explore your zone.",
+    "coachGym": "When you're ready, challenge the gym.",
+    "coachTeamSlot": "Withdraw a Pokémon from the PC to fill your team.",
+    "youAreHere": "You are here",
+    "stretch": "Stretch",
+    "stretchProgress": "{done}/{total} stretches",
+    "goExplore": "Head out to explore"
   }
 }

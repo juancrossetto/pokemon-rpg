@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useTransition, type ReactElement } from "react";
+import { useEffect, useState, useTransition, type ReactElement } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { selectLocation, setFarmingStage } from "@/actions/campaign";
@@ -36,6 +36,12 @@ import {
   type ZoneRewardClaim,
 } from "@/components/zone-reward-popup";
 import { announceCoinDelta } from "@/lib/coin-fx";
+import { showToast } from "@/lib/app-toast";
+import { NextMilestoneChip } from "@/components/next-milestone-chip";
+import { HubHelpPanel, CoachMark } from "@/components/journey-guidance";
+import { UnlockCelebration } from "@/components/unlock-celebration";
+import type { CampaignMilestone } from "@/lib/campaign/types";
+import { milestoneCtaKey, milestoneHref } from "@/lib/journey-ux";
 
 /**
  * Paleta de la campaña — cuatro familias, cada una con un significado.
@@ -138,6 +144,7 @@ export function CampaignJourney({
   summary,
   gymRequirements,
   regionMapSrc,
+  milestone,
 }: {
   locale: string;
   chapters: Chapter[];
@@ -147,15 +154,23 @@ export function CampaignJourney({
   summary: JourneySummary;
   gymRequirements: Record<string, GymRequirement>;
   regionMapSrc: string;
+  milestone: CampaignMilestone;
 }) {
   const t = useTranslations("campaign");
+  const tUx = useTranslations("ux");
   const [chapterIndex, setChapterIndex] = useState(initialChapter);
   const [zoneId, setZoneId] = useState<string | null>(farmingLocationId);
   const [pending, startTransition] = useTransition();
   const [claimPopup, setClaimPopup] = useState<ZoneRewardClaim | null>(null);
+  const [unlockToast, setUnlockToast] = useState<{ id: string; name: string } | null>(null);
 
   const chapter = chapters[chapterIndex] ?? chapters[0];
   const zone = chapter?.zones.find((z) => z.id === zoneId) ?? chapter?.zones[0] ?? null;
+  const farmingZone =
+    chapters.flatMap((c) => c.zones).find((z) => z.id === farmingLocationId) ?? null;
+  const ctaHref = milestoneHref(milestone);
+  const ctaKey = milestoneCtaKey(milestone);
+  const helpBullets = (tUx.raw("help.campaign") as string[]) ?? [];
 
   function pickZone(id: string) {
     setZoneId(id);
@@ -164,19 +179,29 @@ export function CampaignJourney({
   function travelTo(id: string) {
     startTransition(async () => {
       await selectLocation(id, locale);
+      const nameKey = chapters.flatMap((c) => c.zones).find((z) => z.id === id)?.nameKey;
+      if (nameKey) showToast(t("movedHere", { name: t(nameKey) }), "success");
     });
   }
 
   function farmStage(stageId: string) {
     startTransition(async () => {
       await setFarmingStage(stageId, locale);
+      const stageName = chapters
+        .flatMap((c) => c.zones)
+        .flatMap((z) => z.stages)
+        .find((s) => s.id === stageId)?.nameKey;
+      if (stageName) showToast(t("stageSet", { name: t(stageName) }), "info");
     });
   }
 
   function claim(locationId: string, objective: ZoneObjectiveId) {
     startTransition(async () => {
       const result = await claimZoneObjective(locale, locationId, objective);
-      if (!result.ok) return;
+      if (!result.ok) {
+        showToast(t("rewardClaimed"), "error");
+        return;
+      }
       announceCoinDelta(result.coins);
       setClaimPopup({
         objectiveLabel: t(`obj_${objective}`),
@@ -193,8 +218,24 @@ export function CampaignJourney({
     });
   }
 
+  useEffect(() => {
+    try {
+      const key = "pokerpg:zones-unlocked-count";
+      const prev = Number(window.sessionStorage.getItem(key) ?? "0");
+      if (summary.zonesUnlocked > prev && prev > 0 && farmingZone) {
+        setUnlockToast({ id: farmingZone.id, name: t(farmingZone.nameKey) });
+      }
+      window.sessionStorage.setItem(key, String(summary.zonesUnlocked));
+    } catch {
+      /* ignore */
+    }
+  }, [summary.zonesUnlocked, farmingZone, t]);
+
   return (
     <div className={pending ? "opacity-90 transition-opacity" : undefined}>
+      {unlockToast && (
+        <UnlockCelebration locationId={unlockToast.id} locationName={unlockToast.name} />
+      )}
       {claimPopup && (
         <ZoneRewardPopup
           reward={claimPopup}
@@ -207,7 +248,23 @@ export function CampaignJourney({
         />
       )}
 
-      {/* ── Franja del viaje: los 8 capítulos de un vistazo ───────────── */}
+      <HubHelpPanel storageKey="hub-help-campaign" bullets={helpBullets} />
+
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <NextMilestoneChip milestone={milestone} withCta className="w-full sm:w-auto" />
+        <CoachMark storageKey="coach-explore" message={tUx("coachExplore")}>
+          <Link
+            href={ctaHref}
+            className="hidden min-h-11 items-center justify-center gap-2 rounded-xl bg-pokeball-red px-5 text-label-md font-bold text-white shadow-[0_8px_24px_rgba(238,21,21,0.35)] transition hover:bg-pokeball-red/90 sm:inline-flex"
+          >
+            <span className="material-symbols-outlined text-[18px]!">
+              {milestone.kind === "gym" ? "military_tech" : "explore"}
+            </span>
+            {t(ctaKey)}
+          </Link>
+        </CoachMark>
+      </div>
+
       <JourneyStrip
         chapters={chapters}
         activeIndex={chapterIndex}
@@ -223,8 +280,7 @@ export function CampaignJourney({
         </div>
       )}
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_320px]">
-        {/* ── Columna 1: capítulos + resumen (desktop) ───────────────── */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)_minmax(280px,340px)]">
         <aside className="hidden flex-col gap-3 lg:flex">
           <nav className="glass-panel rounded-xl border border-white/10 p-2">
             {chapters.map((c, i) => {
@@ -262,33 +318,29 @@ export function CampaignJourney({
           <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
         </aside>
 
-        {/* ── Columna 2: capítulo activo ─────────────────────────────── */}
         <div className="min-w-0">
           {chapter && (
-            <>
-              <ol className="relative flex flex-col gap-2">
-                <span
-                  aria-hidden
-                  className="absolute left-[18px] top-6 bottom-6 w-px bg-gradient-to-b from-white/20 via-white/10 to-transparent"
+            <ol className="relative flex flex-col gap-2">
+              <span
+                aria-hidden
+                className="absolute left-[18px] top-6 bottom-6 w-px bg-gradient-to-b from-white/20 via-white/10 to-transparent"
+              />
+              {chapter.zones.map((z) => (
+                <ZoneRow
+                  key={z.id}
+                  zone={z}
+                  selected={zone?.id === z.id}
+                  isFarming={z.id === farmingLocationId}
+                  gymRequirement={gymRequirements[z.id]}
+                  chapter={chapter}
+                  teamMaxLevel={summary.teamMaxLevel}
+                  onPick={() => pickZone(z.id)}
                 />
-                {chapter.zones.map((z) => (
-                  <ZoneRow
-                    key={z.id}
-                    zone={z}
-                    selected={zone?.id === z.id}
-                    isFarming={z.id === farmingLocationId}
-                    gymRequirement={gymRequirements[z.id]}
-                    chapter={chapter}
-                    teamMaxLevel={summary.teamMaxLevel}
-                    onPick={() => pickZone(z.id)}
-                  />
-                ))}
-              </ol>
-            </>
+              ))}
+            </ol>
           )}
         </div>
 
-        {/* ── Columna 3: zona seleccionada ───────────────────────────── */}
         <div className="order-first lg:order-none lg:sticky lg:top-20 lg:self-start">
           {zone && (
             <ZonePanel
@@ -301,10 +353,26 @@ export function CampaignJourney({
               onFarmStage={farmStage}
               onChallengeTrainer={challengeTrainer}
               onClaim={(objective) => claim(zone.id, objective)}
+              exploreHref={ctaHref}
+              exploreLabel={t(ctaKey)}
+              showExploreCta={zone.id === farmingLocationId && milestone.kind !== "complete"}
             />
           )}
         </div>
       </div>
+
+      <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 px-3 sm:hidden">
+        <Link
+          href={ctaHref}
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-pokeball-red text-label-md font-bold text-white shadow-[0_12px_32px_rgba(238,21,21,0.45)]"
+        >
+          <span className="material-symbols-outlined text-[20px]!">
+            {milestone.kind === "gym" ? "military_tech" : "explore"}
+          </span>
+          {t(ctaKey)}
+        </Link>
+      </div>
+      <div className="h-16 sm:hidden" aria-hidden />
     </div>
   );
 }
@@ -509,6 +577,8 @@ function ZoneRow({
         className={`glass-panel min-w-0 flex-1 rounded-xl border p-3 text-left transition ${
           selected ? "border-white/25 bg-white/[0.04]" : "border-white/10 hover:bg-white/[0.03]"
         } ${!zone.unlocked ? "opacity-55" : ""} ${
+          isFarming ? "ring-1 ring-pokeball-red/40" : ""
+        } ${
           // El gimnasio cierra el capítulo: pesa el doble que una ruta.
           isGym ? "py-4" : ""
         }`}
@@ -523,8 +593,8 @@ function ZoneRow({
             {t(zone.kindKey)}
           </span>
           {isFarming && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-pokeball-red/40 bg-pokeball-red/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-pokeball-red">
-              <span className="material-symbols-outlined text-[11px]!">my_location</span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-pokeball-red/50 bg-pokeball-red/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-pokeball-red shadow-[0_0_12px_rgba(238,21,21,0.35)]">
+              <span className="material-symbols-outlined text-[12px]!">my_location</span>
               {t("farming")}
             </span>
           )}
@@ -596,6 +666,9 @@ function ZonePanel({
   onFarmStage,
   onChallengeTrainer,
   onClaim,
+  exploreHref,
+  exploreLabel,
+  showExploreCta,
 }: {
   zone: MapLocation;
   isFarming: boolean;
@@ -606,25 +679,42 @@ function ZonePanel({
   onFarmStage: (stageId: string) => void;
   onChallengeTrainer: (trainerId: string) => void;
   onClaim: (objective: ZoneObjectiveId) => void;
+  exploreHref?: string;
+  exploreLabel?: string;
+  showExploreCta?: boolean;
 }) {
   const t = useTranslations("campaign");
+  const tUx = useTranslations("ux");
   const kind = kindOf(zone);
   const style = KIND_STYLE[kind];
   const isGym = kind === "gym";
   const caught = zone.encounters.filter((e) => e.caught).length;
   const seenCount = zone.encounters.filter((e) => e.seen).length;
   const objectives = evaluateObjectives(zone, new Set(zone.claimedObjectives));
+  const trainersDone = zone.trainers.filter((tr) => tr.defeated).length;
 
   return (
-    <section className="glass-panel rounded-xl border border-white/10 p-4">
+    <section
+      className={`glass-panel rounded-xl border p-4 ${
+        isFarming ? "border-pokeball-red/50 shadow-[0_0_28px_rgba(238,21,21,0.18)]" : "border-white/10"
+      }`}
+    >
       <div className="flex items-start gap-2.5">
         <span
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 ${style.ring} ${style.text}`}
         >
           <ZoneIcon kind={style.icon} className="h-[21px] w-[21px]" />
         </span>
-        <div className="min-w-0">
-          <h3 className="text-headline-md text-white">{t(zone.nameKey)}</h3>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-headline-md text-white">{t(zone.nameKey)}</h3>
+            {isFarming && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-pokeball-red/50 bg-pokeball-red/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-pokeball-red">
+                <span className="material-symbols-outlined text-[12px]!">my_location</span>
+                {tUx("youAreHere")}
+              </span>
+            )}
+          </div>
           <p className="text-label-sm text-on-surface-variant">
             {t(zone.kindKey)}
             <span className="mx-1.5 text-on-surface-variant/40">•</span>
@@ -632,16 +722,27 @@ function ZonePanel({
             <span className="mx-1.5 text-on-surface-variant/40">•</span>
             {t(`encounterRate.${zone.encounterRate}`)}
           </p>
-          {zone.encounters.length > 0 && (
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-on-surface-variant/70">
-              {t("topRarity")}:{" "}
-              <span className={rarityText(topRarityOf(zone.encounters))}>
-                {t(`rarity.${topRarityOf(zone.encounters)}`)}
-              </span>
-            </p>
-          )}
         </div>
       </div>
+
+      {showExploreCta && exploreHref && exploreLabel && (
+        <Link
+          href={exploreHref}
+          className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-pokeball-red px-4 text-label-md font-bold text-white transition hover:bg-pokeball-red/90"
+        >
+          <span className="material-symbols-outlined text-[18px]!">explore</span>
+          {exploreLabel}
+        </Link>
+      )}
+
+      {zone.unlocked && zone.trainers.length > 0 && (
+        <p className="mt-3 rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-label-sm text-on-surface">
+          <span className="font-bold text-white">
+            {trainersDone}/{zone.trainers.length}
+          </span>{" "}
+          <span className="text-on-surface-variant">{t("obj_trainers")}</span>
+        </p>
+      )}
 
       {zone.unlocked && (
         <div className="mt-3 rounded-lg border border-tertiary/25 bg-tertiary/[0.06] px-3 py-2">

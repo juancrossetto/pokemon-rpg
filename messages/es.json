@@ -50,9 +50,9 @@
       "community": "Comunidad"
     },
     "desc": {
-      "campaign": "Recorré el mapa y desbloqueá zonas.",
-      "gyms": "Ganá medallas y desbloqueá contenido.",
-      "battleWild": "Buscá Pokémon salvajes en tu zona de farmeo.",
+      "campaign": "Elegí dónde avanzar la historia.",
+      "gyms": "Ganá medallas y desbloqueá el camino.",
+      "battleWild": "Salí a explorar salvajes en tu zona.",
       "pvp": "Enfrentate a otros entrenadores.",
       "ranking": "Consultá tu posición global.",
       "team": "Tu escuadrón, el PC y la guardería",
@@ -1614,25 +1614,25 @@
   },
   "campaign": {
     "eyebrow": "Viaje de Kanto",
-    "title": "Mapa del viaje",
-    "subtitle": "Elegí ubicación y stage de expedición. Explorar usa el stage de farming activo.",
+    "title": "Viaje",
+    "subtitle": "Elegí tu zona y tramo. Salir a explorar usa la zona donde estás.",
     "backHome": "Volver al inicio",
     "currentExpedition": "Expedición actual",
-    "farmingStage": "Stage",
+    "farmingStage": "Tramo",
     "journeyProgress": "Progreso del viaje",
     "nextMilestone": "Próximo hito",
     "selectLocation": "Elegir ubicación",
     "journeyGuide": "Guía del viaje",
     "journeyGuideShort": "Guía",
-    "continueExpedition": "Continuar expedición",
+    "continueExpedition": "Salir a explorar",
     "challengeGym": "Desafiar gimnasio",
-    "farming": "Farming",
+    "farming": "Estás acá",
     "select": "Seleccionar",
     "selected": "Seleccionada",
-    "stageProgress": "{done}/{total} stages",
+    "stageProgress": "{done}/{total} tramos",
     "gymMilestone": "Gimnasio",
     "errors": {
-      "noStage": "No hay stage de farming válido. Elegí uno en el mapa del viaje."
+      "noStage": "No hay un tramo válido. Elegí uno en el mapa del Viaje."
     },
     "dev": {
       "title": "Dev · campaña",
@@ -1860,7 +1860,12 @@
       "veryRare": "Muy raro",
       "elite": "Élite"
     },
-    "topRarity": "Mejor rareza"
+    "topRarity": "Mejor rareza",
+    "viewJourney": "Ver el Viaje",
+    "stickyExplore": "Salir a explorar",
+    "objectiveProgress": "{current}/{target}",
+    "movedHere": "Ahora estás en {name}.",
+    "stageSet": "Tramo activo: {name}."
   },
   "levelUp": {
     "title": "{name} · Nv. {level}",
@@ -2261,5 +2266,67 @@
       "acceptedTitle": "¡Ya son amigos!",
       "acceptedDetail": "Tu círculo acaba de crecer."
     }
+  },
+  "ux": {
+    "helpTitle": "¿Qué puedo hacer acá?",
+    "coachGotIt": "Entendido",
+    "unlockEyebrow": "Zona desbloqueada",
+    "unlockBody": "¡Ya podés ir a {name}!",
+    "onboarding": {
+      "eyebrow": "Tu primera salida",
+      "title": "Tres pasos para empezar",
+      "step1Title": "Elegí zona en el Viaje",
+      "step1Body": "Marcá dónde querés avanzar la historia.",
+      "step2Title": "Salí a explorar",
+      "step2Body": "Pelear, capturar y ganar experiencia en tu zona.",
+      "step3Title": "Desafiá el gimnasio",
+      "step3Body": "Cuando estés listo, ganá la medalla y seguí.",
+      "cta": "¡Vamos!"
+    },
+    "role": {
+      "home": "Tu próxima jugada: avanzar el Viaje o cuidar el equipo.",
+      "campaign": "Acá elegís dónde avanzar la historia.",
+      "battle": "Acá pelear y capturar en tu zona actual.",
+      "gyms": "Hitos de progreso: medallas que desbloquean el camino.",
+      "team": "Cuidá, potenciá y organizá tu escuadrón.",
+      "shop": "Abastecé balls, pociones y útiles para la aventura.",
+      "market": "Comprá y vendé con otros entrenadores.",
+      "inventory": "Todo lo que llevás en la mochila.",
+      "pvp": "Combate competitivo opcional — no es el camino de la historia."
+    },
+    "help": {
+      "campaign": [
+        "Elegí una zona desbloqueada y marcá que estás ahí.",
+        "Salí a explorar para pelear salvajes en esa zona.",
+        "Completá objetivos y desafiá entrenadores o el gimnasio."
+      ],
+      "battle": [
+        "Explorá gasta energía y busca un Pokémon salvaje.",
+        "Podés cambiar de zona desde el mapa del Viaje.",
+        "Sin energía: esperá, reclamá recompensas o visitá la tienda."
+      ],
+      "market": [
+        "La Tienda vende al sistema con monedas.",
+        "El Mercado es entre jugadores (publicaciones y comisión).",
+        "Usá las pestañas para saltar entre ambos."
+      ]
+    },
+    "energyEmptyTitle": "Sin energía",
+    "energyEmptyBody": "Se regenera sola. Mientras tanto podés:",
+    "energyEmptyWait": "Esperá el próximo punto",
+    "energyEmptyShop": "Ir a la tienda",
+    "energyEmptyRewards": "Reclamar recompensas",
+    "energyEmptyTeam": "Cuidar el equipo",
+    "postBattleContinue": "Seguir explorando",
+    "postBattleJourney": "Volver al Viaje",
+    "postBattleEvolve": "Tu equipo puede evolucionar",
+    "postBattleHeal": "Curá el equipo en Mi equipo",
+    "coachExplore": "Tocá acá para salir a explorar tu zona.",
+    "coachGym": "Cuando estés listo, desafiá el gimnasio.",
+    "coachTeamSlot": "Retirá un Pokémon del PC para llenar el equipo.",
+    "youAreHere": "Estás acá",
+    "stretch": "Tramo",
+    "stretchProgress": "{done}/{total} tramos",
+    "goExplore": "Salir a explorar"
   }
 }

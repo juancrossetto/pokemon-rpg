@@ -67,6 +67,7 @@ export function BattleOutcomeScreen({
   leaderPortrait: string | null;
 }) {
   const t = useTranslations("battle");
+  const tUx = useTranslations("ux");
   const router = useRouter();
   const [confirmLeaveGym, setConfirmLeaveGym] = useState(false);
 
@@ -156,9 +157,12 @@ export function BattleOutcomeScreen({
           {t("backToPvp")}
         </SoftLeaveButton>
       ) : outcome === "lost" ? (
-        <SoftLeaveButton href="/team" className={ctaClass}>
-          {t("goHeal")}
-        </SoftLeaveButton>
+        <div className="w-full max-w-sm flex flex-col gap-2">
+          <SoftLeaveButton href="/team" className={ctaClass}>
+            {t("goHeal")}
+          </SoftLeaveButton>
+          <p className="text-center text-label-sm text-on-surface-variant">{tUx("postBattleHeal")}</p>
+        </div>
       ) : outcome === "won" && isPvpBattle ? (
         <SoftLeaveButton
           href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}
@@ -213,7 +217,7 @@ export function BattleOutcomeScreen({
           {t("backToGyms")}
         </SoftLeaveButton>
       ) : (
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-sm flex flex-col gap-2">
           <SoftLeaveButton
             className={ctaClass}
             onAction={async () => {
@@ -221,11 +225,23 @@ export function BattleOutcomeScreen({
               router.refresh();
             }}
           >
-            {t("explore")}
+            {tUx("postBattleContinue")}
+          </SoftLeaveButton>
+          <SoftLeaveButton
+            href="/campaign"
+            className="w-full rounded-lg border border-white/20 px-6 py-2.5 text-center text-label-md text-on-surface transition-colors hover:bg-white/5"
+          >
+            {tUx("postBattleJourney")}
+          </SoftLeaveButton>
+          <SoftLeaveButton
+            href="/team"
+            className="w-full text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
+          >
+            {tUx("postBattleEvolve")}
           </SoftLeaveButton>
           <SoftLeaveButton
             href="/"
-            className="mt-2 block w-full text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
+            className="mt-1 block w-full text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
           >
             {t("backHome")}
           </SoftLeaveButton>
