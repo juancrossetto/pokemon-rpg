@@ -91,7 +91,7 @@ export function EvolvePopup({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center px-margin-mobile"
+      className="fixed inset-0 z-[130] flex items-center justify-center px-margin-mobile"
       role="dialog"
       aria-modal="true"
       aria-labelledby="evolve-popup-title"
