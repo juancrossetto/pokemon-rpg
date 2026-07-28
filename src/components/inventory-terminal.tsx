@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { itemSpriteUrl } from "@/lib/item-sprites";
+import { formatMoveName } from "@/lib/format-move-name";
+import { typeColor } from "@/lib/type-colors";
 // Desde @/lib/rarity y NO desde @/lib/market-hub: ese importa prisma, y en un
 // client component eso mete `pg` en el bundle del browser y rompe el build.
 import { RARITY_STYLES, itemRarity } from "@/lib/rarity";
@@ -32,6 +34,14 @@ export type InventoryLabels = {
   effect: string;
   rarity: Record<string, string>;
   teaches: string;
+  moveType: string;
+  moveCategory: string;
+  power: string;
+  noPower: string;
+  accuracy: string;
+  neverMiss: string;
+  pp: string;
+  categoriesMove: Record<"PHYSICAL" | "SPECIAL" | "STATUS", string>;
   compatible: string;
   noLevelRequired: string;
   alreadyKnows: string;
@@ -310,6 +320,11 @@ function DetailPanel({
   // Primer destino útil del CTA: compatible y que todavía no lo sepa.
   const firstTeachable =
     entry.learners.find((l) => l.canLearn && !l.alreadyKnown) ?? null;
+  const moveLabel = entry.moveName ? formatMoveName(entry.moveName) : null;
+  const effectText =
+    entry.effectText && entry.moveName && moveLabel
+      ? entry.effectText.replace(new RegExp(entry.moveName, "gi"), moveLabel)
+      : entry.effectText;
 
   return (
     <aside
@@ -350,15 +365,53 @@ function DetailPanel({
       <dl className="flex flex-col gap-2">
         <Row label={labels.quantity} value={`×${entry.quantity}`} />
         <Row label={labels.value} value={`${entry.buyPrice}`} mono />
-        {entry.moveName && <Row label={labels.teaches} value={entry.moveName} />}
+        {moveLabel && <Row label={labels.teaches} value={moveLabel} />}
+        {entry.moveType && (
+          <Row
+            label={labels.moveType}
+            value={
+              <span
+                className="rounded-full border border-white/15 bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                style={{ color: typeColor(entry.moveType) }}
+              >
+                {entry.moveType}
+              </span>
+            }
+          />
+        )}
+        {entry.moveCategory && (
+          <Row
+            label={labels.moveCategory}
+            value={labels.categoriesMove[entry.moveCategory]}
+          />
+        )}
+        {entry.type === "MACHINE" && (
+          <Row
+            label={labels.power}
+            value={entry.movePower != null ? String(entry.movePower) : labels.noPower}
+            mono
+          />
+        )}
+        {entry.type === "MACHINE" && (
+          <Row
+            label={labels.accuracy}
+            value={
+              entry.moveAccuracy != null ? `${entry.moveAccuracy}%` : labels.neverMiss
+            }
+            mono
+          />
+        )}
+        {entry.movePp != null && (
+          <Row label={labels.pp} value={String(entry.movePp)} mono />
+        )}
       </dl>
 
-      {entry.effectText && (
+      {effectText && (
         <div>
           <p className="mb-1 text-[10px] uppercase tracking-[0.18em] text-on-surface-variant">
             {labels.effect}
           </p>
-          <p className="text-[12px] leading-snug text-on-surface-variant">{entry.effectText}</p>
+          <p className="text-[12px] leading-snug text-on-surface-variant">{effectText}</p>
         </div>
       )}
 
@@ -508,11 +561,19 @@ function LearnerRow({
   );
 }
 
-function Row({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+function Row({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: ReactNode;
+  mono?: boolean;
+}) {
   return (
     <div className="flex items-baseline justify-between gap-2 border-b border-white/5 pb-1.5">
       <dt className="text-[10px] uppercase tracking-[0.18em] text-on-surface-variant">{label}</dt>
-      <dd className={`text-[13px] text-white ${mono ? "font-mono" : ""}`}>{value}</dd>
+      <dd className={`text-right text-[13px] text-white ${mono ? "font-mono" : ""}`}>{value}</dd>
     </div>
   );
 }

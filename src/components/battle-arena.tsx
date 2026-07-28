@@ -1097,7 +1097,7 @@ export function BattleArena({
   const playerSpriteClass = [
     // Más grande en primer plano: los ani-back de Showdown se ven más chicos
     // que los ani front del rival con el mismo box.
-    "w-[5.25rem] h-[5.25rem] md:w-[13.5rem] md:h-[13.5rem] object-contain drop-shadow-lg origin-bottom",
+    "w-[6.5rem] h-[6.5rem] md:w-[16rem] md:h-[16rem] object-contain drop-shadow-lg origin-bottom",
     attackingSide === "player" ? (physicalLunge ? "sprite-lunge-right-hard" : "sprite-lunge-right") : "",
     shakingSide === "player" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "player" ? "sprite-faint" : "",
@@ -1381,8 +1381,8 @@ export function BattleArena({
                   facing="back"
                   fallbackUrl={activePlayer.spriteUrl}
                   alt={activePlayer.name}
-                  width={216}
-                  height={216}
+                  width={256}
+                  height={256}
                   className={playerSpriteClass}
                   style={shakeStyle("player")}
                 />

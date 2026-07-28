@@ -67,6 +67,12 @@ export type InventoryEntry = {
   buyPrice: number;
   /** Sólo MACHINE: el movimiento que enseña. */
   moveName: string | null;
+  /** Sólo MACHINE: stats del movimiento. */
+  moveType: string | null;
+  moveCategory: "PHYSICAL" | "SPECIAL" | "STATUS" | null;
+  movePower: number | null;
+  moveAccuracy: number | null;
+  movePp: number | null;
   /** Sólo MACHINE: el equipo actual, con su estado frente a esta MT. */
   learners: TmLearner[];
 };

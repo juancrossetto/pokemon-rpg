@@ -8,7 +8,9 @@ import { typeIcon } from "@/lib/type-icons";
 import { gymBadgeImageUrl, gymLeaderPortraitUrl } from "@/lib/gym-art";
 import { nowMs } from "@/lib/time";
 import { StartGymRunButton } from "@/components/start-gym-run-button";
+import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
 import { redirectIfInBattle } from "@/lib/battle-lock";
+import { gymCooldownRemainingMs } from "@/lib/gym-cooldown";
 
 export default async function GymLeaderPage({
   params,
@@ -39,20 +41,27 @@ export default async function GymLeaderPage({
   if (!gym) redirect({ href: "/gyms", locale });
   if (!gym) return null;
 
-  const [badge, previousBadge, activeRun, lastAttempt] = await Promise.all([
+  const [badge, previousBadge, activeRun, lastAttempt, user] = await Promise.all([
     prisma.badge.findUnique({ where: { userId_gymId: { userId, gymId } } }),
     gym.order > 1
       ? prisma.badge.findFirst({ where: { userId, gym: { order: gym.order - 1 } } })
       : Promise.resolve(true),
     prisma.gymRun.findFirst({ where: { userId, gymId, status: "ACTIVE" } }),
     prisma.gymAttempt.findFirst({ where: { userId, gymId }, orderBy: { attemptedAt: "desc" } }),
+    prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { gems: true } }),
   ]);
 
   const locked = gym.order > 1 && !previousBadge;
-  const cooldownMs = gym.cooldownHours * 60 * 60 * 1000;
-  const elapsedMs = lastAttempt ? nowMs() - lastAttempt.attemptedAt.getTime() : Infinity;
-  const onCooldown = !badge && !!lastAttempt && !lastAttempt.won && elapsedMs < cooldownMs;
-  const hoursLeft = onCooldown ? Math.ceil((cooldownMs - elapsedMs) / (60 * 60 * 1000)) : 0;
+  const remainingMs =
+    !badge && lastAttempt && !lastAttempt.won
+      ? gymCooldownRemainingMs({
+          cooldownHours: gym.cooldownHours,
+          attemptedAt: lastAttempt.attemptedAt,
+          now: nowMs(),
+        })
+      : 0;
+  const onCooldown = remainingMs > 0;
+  const hoursLeft = onCooldown ? Math.ceil(remainingMs / (60 * 60 * 1000)) : 0;
 
   const color = typeColor(gym.type);
   const leaderPortrait = gymLeaderPortraitUrl(gym.leaderName);
@@ -183,6 +192,13 @@ export default async function GymLeaderPage({
               <span className="material-symbols-outlined text-[18px]!">play_arrow</span>
               {t("continueRun", { cleared: activeRun.clearedTrainerSlots, total: gym.trainers.length })}
             </Link>
+          ) : onCooldown ? (
+            <SkipGymCooldownButton
+              gymId={gymId}
+              hoursLeft={hoursLeft}
+              remainingMs={remainingMs}
+              gems={user.gems}
+            />
           ) : (
             <StartGymRunButton gymId={gymId} locale={locale} label={t("startChallenge")} errors={errors} />
           )}

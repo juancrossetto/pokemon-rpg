@@ -34,6 +34,7 @@ export type GymMissionItem = {
   locked: boolean;
   onCooldown: boolean;
   hoursLeft: number;
+  remainingMs: number;
   closed: boolean;
   opensHour: number;
   closesHour: number;
@@ -80,6 +81,7 @@ export function toGymMissionItems(statuses: GymStatus[]): GymMissionItem[] {
       locked: status.locked,
       onCooldown: status.onCooldown,
       hoursLeft: status.hoursLeft,
+      remainingMs: status.remainingMs,
       closed: status.closed,
       opensHour: status.opensHour,
       closesHour: status.closesHour,

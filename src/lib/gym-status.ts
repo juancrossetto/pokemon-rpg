@@ -7,6 +7,8 @@ export interface GymStatus {
   locked: boolean;
   onCooldown: boolean;
   hoursLeft: number;
+  /** Ms restantes de cooldown (0 si no aplica). */
+  remainingMs: number;
   /** Fuera del horario de atención del gimnasio (dossier: "gimnasios con horarios"). */
   closed: boolean;
   opensHour: number;
@@ -68,7 +70,8 @@ export async function computeGymStatuses(
     const cooldownMs = gym.cooldownHours * 60 * 60 * 1000;
     const elapsedMs = lastAttempt ? now - lastAttempt.attemptedAt.getTime() : Infinity;
     const onCooldown = !badgeEarned && !!lastAttempt && !lastAttempt.won && elapsedMs < cooldownMs;
-    const hoursLeft = onCooldown ? Math.ceil((cooldownMs - elapsedMs) / (60 * 60 * 1000)) : 0;
+    const remainingMs = onCooldown ? Math.max(0, cooldownMs - elapsedMs) : 0;
+    const hoursLeft = onCooldown ? Math.ceil(remainingMs / (60 * 60 * 1000)) : 0;
     const closed =
       !badgeEarned && !isGymOpenAt(gym.opensHour, gym.closesHour, new Date(now).getHours());
 
@@ -78,6 +81,7 @@ export async function computeGymStatuses(
       locked,
       onCooldown,
       hoursLeft,
+      remainingMs,
       closed,
       opensHour: gym.opensHour,
       closesHour: gym.closesHour,

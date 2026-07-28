@@ -1,5 +1,6 @@
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { computeGymStatuses } from "@/lib/gym-status";
 import { toGymMissionItems } from "@/lib/gym-mission";
 import { redirectIfInBattle } from "@/lib/battle-lock";
@@ -20,9 +21,15 @@ export default async function GymsPage({
 
   await redirectIfInBattle(session.user.id, locale);
 
-  const statuses = await computeGymStatuses(session.user.id);
+  const [statuses, user] = await Promise.all([
+    computeGymStatuses(session.user.id),
+    prisma.user.findUniqueOrThrow({
+      where: { id: session.user.id },
+      select: { gems: true },
+    }),
+  ]);
   const items = toGymMissionItems(statuses);
   const badgeCount = items.filter((s) => s.badgeEarned).length;
 
-  return <GymMissionControl items={items} badgeCount={badgeCount} />;
+  return <GymMissionControl items={items} badgeCount={badgeCount} gems={user.gems} />;
 }

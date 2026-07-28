@@ -27,7 +27,23 @@ export default async function InventoryPage({
     prisma.inventoryItem.findMany({
       where: { userId, quantity: { gt: 0 } },
       // `move` para poder mostrar qué enseña cada MT/MO en el panel de detalle.
-      include: { item: { include: { move: { select: { id: true, name: true } } } } },
+      include: {
+        item: {
+          include: {
+            move: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                category: true,
+                power: true,
+                accuracy: true,
+                pp: true,
+              },
+            },
+          },
+        },
+      },
       orderBy: [{ item: { type: "asc" } }, { item: { name: "asc" } }],
     }),
     prisma.marketListing.count({ where: unclaimedPurchasesWhere(userId) }),
@@ -111,6 +127,11 @@ export default async function InventoryPage({
       effectText: r.item.effectText,
       buyPrice: r.item.buyPrice,
       moveName: r.item.move?.name ?? null,
+      moveType: r.item.move?.type ?? null,
+      moveCategory: r.item.move?.category ?? null,
+      movePower: r.item.move?.power ?? null,
+      moveAccuracy: r.item.move?.accuracy ?? null,
+      movePp: r.item.move?.pp ?? null,
       learners: r.item.type === "MACHINE" ? learnersFor(r.item.move?.id) : [],
     }));
 
@@ -129,6 +150,18 @@ export default async function InventoryPage({
     value: t("value"),
     effect: t("effect"),
     teaches: t("teaches"),
+    moveType: t("moveType"),
+    moveCategory: t("moveCategory"),
+    power: t("power"),
+    noPower: t("noPower"),
+    accuracy: t("accuracy"),
+    neverMiss: t("neverMiss"),
+    pp: t("pp"),
+    categoriesMove: {
+      PHYSICAL: t("moveCategories.PHYSICAL"),
+      SPECIAL: t("moveCategories.SPECIAL"),
+      STATUS: t("moveCategories.STATUS"),
+    },
     compatible: t("compatible"),
     noLevelRequired: t("noLevelRequired"),
     alreadyKnows: t("alreadyKnows"),

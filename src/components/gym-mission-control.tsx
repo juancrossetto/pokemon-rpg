@@ -9,10 +9,12 @@ import { typeIcon } from "@/lib/type-icons";
 import type { GymMissionItem, GymMissionStatusKind } from "@/lib/gym-mission";
 import { KANTO_MAP_IMAGE, KANTO_MAP_ASPECT } from "@/lib/gym-map";
 import { marketFeeDiscount, obedienceLevelCap } from "@/lib/badge-perks";
+import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
 
 type Props = {
   items: GymMissionItem[];
   badgeCount: number;
+  gems: number;
 };
 
 const STATUS_STYLES: Record<
@@ -172,7 +174,7 @@ function MissionSparks() {
   );
 }
 
-export function GymMissionControl({ items, badgeCount }: Props) {
+export function GymMissionControl({ items, badgeCount, gems }: Props) {
   const t = useTranslations("gyms");
   const firstUnlocked = items.find((g) => !g.locked && !g.badgeEarned) ?? items[0];
   const [selectedId, setSelectedId] = useState(firstUnlocked?.id ?? items[0]?.id ?? "");
@@ -391,6 +393,14 @@ export function GymMissionControl({ items, badgeCount }: Props) {
                     <span className="material-symbols-outlined text-[18px]!">swords</span>
                     {selected.badgeEarned ? t("rematch") : t("challengeGym")}
                   </Link>
+                ) : selected.onCooldown ? (
+                  <SkipGymCooldownButton
+                    gymId={selected.id}
+                    hoursLeft={selected.hoursLeft}
+                    remainingMs={selected.remainingMs}
+                    gems={gems}
+                    compact
+                  />
                 ) : (
                   <button
                     type="button"
@@ -402,9 +412,7 @@ export function GymMissionControl({ items, badgeCount }: Props) {
                     </span>
                     {selected.locked
                       ? t("statusReadyLocked")
-                      : selected.onCooldown
-                        ? t("statusReadyCooldown", { hours: selected.hoursLeft })
-                        : t("statusReadyClosed")}
+                      : t("statusReadyClosed")}
                   </button>
                 )}
               </div>
