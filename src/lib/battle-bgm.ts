@@ -158,24 +158,6 @@ function playResultNote(
   resultNodes.push(osc, g);
 }
 
-function scheduleVictoryPhrase(audio: AudioContext, when: number, vol: number) {
-  // Fanfarria mayor alegre (C–E–G–C…), ~2.4s
-  const notes: Array<[number, number, number]> = [
-    [523.25, 0, 0.28],
-    [659.25, 0.22, 0.28],
-    [783.99, 0.44, 0.32],
-    [1046.5, 0.72, 0.45],
-    [783.99, 1.15, 0.22],
-    [880.0, 1.35, 0.22],
-    [987.77, 1.55, 0.22],
-    [1046.5, 1.8, 0.55],
-  ];
-  for (const [freq, offset, dur] of notes) {
-    playResultNote(audio, freq, when + offset, dur, vol * 0.55, "triangle");
-    playResultNote(audio, freq / 2, when + offset, dur, vol * 0.2, "sine");
-  }
-}
-
 function scheduleDefeatPhrase(audio: AudioContext, when: number, vol: number) {
   // Cadencia descendente triste (A–F–E–D…), ~2.8s
   const notes: Array<[number, number, number]> = [
@@ -214,17 +196,17 @@ export function startResultBgm(kind: ResultBgmKind) {
     return;
   }
 
+  // Derrota: fanfarria Web Audio (victoria ya salió arriba con victory.wav).
   const audioCtx = getResultCtx();
   if (!audioCtx) return;
   resultKind = kind;
   const vol = Math.max(0.05, getBattleBgmVolume());
-  const phraseMs = kind === "victory" ? 2800 : 3600;
+  const phraseMs = 3600;
 
   const playOnce = () => {
     if (resultKind !== kind) return;
     const when = audioCtx.currentTime + 0.02;
-    if (kind === "victory") scheduleVictoryPhrase(audioCtx, when, vol);
-    else scheduleDefeatPhrase(audioCtx, when, vol);
+    scheduleDefeatPhrase(audioCtx, when, vol);
     resultLoopTimer = window.setTimeout(playOnce, phraseMs);
   };
   playOnce();
