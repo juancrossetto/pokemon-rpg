@@ -9,8 +9,8 @@ import { Link } from "@/i18n/navigation";
 export async function TradeTabs({ active }: { active: "shop" | "market" }) {
   const t = await getTranslations("nav");
   const entries = [
-    { id: "shop" as const, href: "/shop", icon: "local_mall", label: t("shop") },
-    { id: "market" as const, href: "/market", icon: "storefront", label: t("market") },
+    { id: "shop" as const, href: "/market?tab=shop", icon: "local_mall", label: t("shop") },
+    { id: "market" as const, href: "/market?tab=browse", icon: "storefront", label: t("market") },
   ];
 
   return (

@@ -87,6 +87,7 @@ export async function buyItem(
   if (failure) return failure;
 
   revalidatePath(`/${locale}/shop`);
+  revalidatePath(`/${locale}/market`);
   revalidatePath(`/${locale}`, "layout");
   return { ok: true, coinsLeft, quantity, ownedAfter };
 }

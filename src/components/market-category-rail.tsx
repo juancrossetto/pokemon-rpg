@@ -60,8 +60,9 @@ export async function MarketCategoryRail({
         aria-current={active ? "page" : undefined}
         className={
           isRail
-            ? // min-h-11 ≈ 44px: objetivo táctil mínimo.
-              `flex min-h-11 shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 text-label-sm transition ${
+            ? // min-h-11 ≈ 44px: objetivo táctil mínimo. `rounded-md` como
+              // en Tienda: la píldora (`rounded-full`) desentonaba en el hub.
+              `flex min-h-11 shrink-0 snap-start items-center gap-1.5 rounded-md border px-3 text-label-sm transition ${
                 active
                   ? "border-pokeball-red/55 bg-pokeball-red/15 text-white"
                   : "border-white/10 bg-white/[0.03] text-on-surface-variant active:bg-white/[0.07]"
@@ -82,9 +83,12 @@ export async function MarketCategoryRail({
   if (isRail) {
     return (
       <nav aria-label={t("hub.categories")} className="lg:hidden">
-        {/* Los márgenes negativos sangran el riel hasta el borde de la pantalla
-            para que se lea como deslizable, sin agrandar el contenedor. */}
-        <div className="no-scrollbar -mx-margin-mobile flex snap-x snap-mandatory gap-2 overflow-x-auto px-margin-mobile pb-0.5">
+        {/*
+          Alineado al contenido (mismo criterio que Tienda): el sangrado con
+          `-mx-margin-mobile` dejaba el primer chip pegado al borde y se leía
+          como error de maquetado. El riel sigue desplazándose igual.
+        */}
+        <div className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto pb-0.5">
           {items}
         </div>
       </nav>

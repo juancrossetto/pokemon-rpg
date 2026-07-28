@@ -21,6 +21,8 @@ export type NavItem = {
   href: string;
   /** Material Symbols — la misma familia que usa el resto de la app. */
   icon: string;
+  /** Ícono custom (PNG) para drawer mobile / superficies que lo soporten. */
+  iconSrc?: string;
   /**
    * Rutas que marcan este destino como activo, además de `href`. Para cuando
    * una sección vive en más de un prefijo.
@@ -59,9 +61,9 @@ export type NavGroup = {
  *   porque "Batalla" a secas no distinguía entre el PvE de exploración y el
  *   PvP. La pantalla busca Pokémon salvajes en la zona de farmeo elegida en
  *   el viaje, y el nombre ahora lo dice.
- * - **Mercado y Tienda siguen separados.** Mercado es entre jugadores (con
- *   comisión y publicaciones); Tienda es compra al sistema. Fusionarlos sería
- *   fusionar dos economías distintas.
+ * - **Mercado y Tienda viven en un solo hub (`/market`).** Misma economía de
+ *   monedas, dos modos: tienda oficial (`?tab=shop`) y P2P (browse/sell/…).
+ *   Fusionar las UIs limpia el menú; los backends siguen separados.
  * - **Ranking vive solo en Combate.** El ranking de clanes es otra cosa y ya
  *   vive dentro de `/clans`.
  */
@@ -77,6 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.campaign",
         href: "/campaign",
         icon: "map",
+        iconSrc: "/nav/map-icon.png",
       },
       {
         id: "gyms",
@@ -84,6 +87,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.gyms",
         href: "/gyms",
         icon: "military_tech",
+        iconSrc: "/nav/gym-icon.png",
       },
       // Eventos salió de la nav primaria: el claim diario/semanal vive en el
       // home (widget + modal + quick action con badge) y /events queda como
@@ -101,6 +105,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.battleWild",
         href: "/battle",
         icon: "sports_martial_arts",
+        iconSrc: "/nav/battle-wild-icon.png",
       },
       {
         id: "pvp",
@@ -108,6 +113,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.pvp",
         href: "/pvp",
         icon: "sports_mma",
+        iconSrc: "/nav/pvp-icon.png",
       },
       {
         id: "ranking",
@@ -115,6 +121,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.ranking",
         href: "/ranking",
         icon: "trophy",
+        iconSrc: "/nav/ranking-icon.png",
       },
     ],
   },
@@ -132,6 +139,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.team",
         href: "/team",
         icon: "group",
+        iconSrc: "/nav/team-icon.png?v=3",
         // El PC vive como tab dentro de /team; la ruta vieja redirige.
         matchRoutes: ["/pc"],
       },
@@ -141,6 +149,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.pokedex",
         href: "/pokedex",
         icon: "auto_stories",
+        iconSrc: "/nav/collection-icon.png",
       },
       {
         id: "inventory",
@@ -148,6 +157,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.inventory",
         href: "/inventory",
         icon: "backpack",
+        iconSrc: "/nav/bag-icon.png?v=2",
       },
     ],
   },
@@ -162,13 +172,8 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.market",
         href: "/market",
         icon: "storefront",
-      },
-      {
-        id: "shop",
-        labelKey: "shop",
-        descriptionKey: "desc.shop",
-        href: "/shop",
-        icon: "local_mall",
+        iconSrc: "/nav/shop-icon.png",
+        matchRoutes: ["/shop"],
       },
     ],
   },
@@ -183,6 +188,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.friends",
         href: "/friends",
         icon: "handshake",
+        iconSrc: "/nav/friends-icon.png",
       },
       {
         id: "clans",
@@ -190,6 +196,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.clans",
         href: "/clans",
         icon: "groups",
+        iconSrc: "/nav/clan-icon.png",
       },
     ],
   },
@@ -201,6 +208,7 @@ export const NAV_HOME: NavItem = {
   labelKey: "home",
   href: "/",
   icon: "home",
+  iconSrc: "/nav/home-icon.png?v=2",
 };
 
 /**

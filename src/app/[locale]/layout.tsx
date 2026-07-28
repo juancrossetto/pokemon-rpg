@@ -7,6 +7,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { BootSplashController } from "@/components/boot-splash";
 import { BootSplashMarkup } from "@/components/boot-splash-markup";
+import { InlineScript } from "@/components/inline-script";
 import { bootSplashEarlyScript } from "@/lib/boot-splash";
 import { iconsReadyEarlyScript } from "@/lib/icons-ready";
 import { AppShell } from "@/components/app-shell";
@@ -81,10 +82,9 @@ export default async function LocaleLayout({
           rel="stylesheet"
         />
         <link rel="preload" href="/splash/boot.webp" as="image" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `${bootSplashEarlyScript()}(${iconsReadyEarlyScript()})();`,
-          }}
+        <InlineScript
+          id="boot-splash-early"
+          html={`${bootSplashEarlyScript()}(${iconsReadyEarlyScript()})();`}
         />
       </head>
       <body className="relative flex min-h-full flex-col overflow-x-hidden">

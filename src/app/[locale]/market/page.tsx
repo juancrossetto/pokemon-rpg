@@ -3,13 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { TradeTabs } from "@/components/trade-tabs";
 import { TradeHelp } from "@/components/trade-help";
 import { expireDueListings } from "@/lib/market-expiry";
 import { MarketSubmitButton } from "@/components/market-submit-button";
 import { MarketSellControls } from "@/components/market-sell-controls";
 import { MarketBrowseTab } from "@/components/market-browse-tab";
 import { MarketHubHero } from "@/components/market-hub-chrome";
+import { ShopTab } from "@/components/shop-tab";
 import {
   MARKET_CATEGORIES,
   fetchMarketHubStats,
@@ -31,7 +31,7 @@ import { itemSpriteUrl } from "@/lib/item-sprites";
 import { spriteFor } from "@/lib/shiny";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { unclaimedPurchasesWhere } from "@/lib/market-delivery";
-const TABS = ["browse", "sell", "mine", "bought"] as const;
+const TABS = ["shop", "browse", "sell", "mine", "bought"] as const;
 type Tab = (typeof TABS)[number];
 
 const SORTS = ["recent", "price_asc", "price_desc", "level_desc"] as const;
@@ -141,7 +141,6 @@ export default async function MarketPage({
           se iba en márgenes. Desde `2xl` el contenedor se ensancha y la grilla
           `auto-fill` pasa sola a 4–5 columnas. */}
       <div className="mx-auto max-w-7xl 2xl:max-w-[104rem]">
-        <TradeTabs active="market" />
         <TradeHelp />
         <MarketHubHero listings={hubStats.listings} />
 
@@ -207,6 +206,7 @@ export default async function MarketPage({
           ))}
         </nav>
 
+        {tab === "shop" && <ShopTab locale={locale} userId={userId} />}
         {tab === "browse" && (
           <MarketBrowseTab
             locale={locale}

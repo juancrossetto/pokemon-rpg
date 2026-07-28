@@ -14,7 +14,8 @@
     "teamShort": "Team",
     "battle": "Battle",
     "gyms": "Gyms",
-    "market": "Market",
+    "market": "Commerce",
+    "marketPlayers": "Market",
     "shop": "Shop",
     "pc": "PC",
     "inventory": "Bag",
@@ -59,7 +60,7 @@
       "pokedex": "Track species seen and caught.",
       "pc": "Store and withdraw Pokémon.",
       "inventory": "Items, berries and stones you own.",
-      "market": "Buy and sell with other players.",
+      "market": "Official shop and player market.",
       "shop": "Buy items from the system.",
       "friends": "Find trainers, inspect cards and grow your circle.",
       "clans": "Join a clan and compete as a team.",
@@ -78,6 +79,7 @@
     "eyebrow": "Live alerts",
     "title": "Notifications",
     "empty": "No alerts yet.",
+    "close": "Close",
     "markAllRead": "Mark all read",
     "justNow": "Just now",
     "minutesAgo": "{n}m ago",
@@ -815,12 +817,12 @@
     "corridorFaintedLead": "Your whole team has fainted. Heal on Home or put a healthy Pokémon in the party before fighting."
   },
   "market": {
-    "title": "Market",
-    "subtitle": "Buy and sell Pokémon and items with other trainers.",
+    "title": "Commerce",
+    "subtitle": "Official shop and player-to-player market.",
     "hub": {
       "eyebrow": "Trading Terminal // Kanto",
-      "title": "Global Market",
-      "subtitle": "Buy and sell Pokémon, items, berries, and evolution stones.",
+      "title": "Commerce Hub",
+      "subtitle": "Buy from the system or trade Pokémon and items with other trainers.",
       "live": "LIVE",
       "listingsOnline": "{count} listings",
       "categories": "Categories",
@@ -868,12 +870,14 @@
     },
     "coins": "coins",
     "tabs": {
+      "shop": "Official shop",
       "browse": "Browse",
       "sell": "Sell",
       "mine": "My listings",
       "bought": "Bag"
     },
     "tabsShort": {
+      "shop": "Shop",
       "browse": "Browse",
       "sell": "Sell",
       "mine": "Mine",

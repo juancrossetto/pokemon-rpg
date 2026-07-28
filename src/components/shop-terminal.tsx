@@ -65,6 +65,7 @@ export function ShopTerminal({
   eyebrow,
   title,
   subtitle,
+  hideHeader = false,
 }: {
   products: ShopProduct[];
   labels: ShopLabels;
@@ -73,6 +74,8 @@ export function ShopTerminal({
   eyebrow: string;
   title: string;
   subtitle: string;
+  /** Dentro del hub de Comercio el hero ya lo pinta la página. */
+  hideHeader?: boolean;
 }) {
   const [coins, setCoins] = useState(initialCoins);
   const [owned, setOwned] = useState<Record<string, number>>(() =>
@@ -123,7 +126,7 @@ export function ShopTerminal({
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <ShopHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
+      {!hideHeader && <ShopHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />}
 
       <ShopCategoryNav
         categories={SHOP_CATEGORIES}

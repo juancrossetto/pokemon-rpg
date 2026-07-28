@@ -322,7 +322,7 @@ export function ResourceBar({
       <p>{labels.coinsBalance}</p>
       <div className="flex flex-col gap-1.5 pt-1">
         <Link
-          href="/shop"
+          href="/market?tab=shop"
           onClick={() => setOpen(null)}
           className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 text-[12px] font-medium text-on-surface transition hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-yellow/50"
         >
@@ -330,7 +330,7 @@ export function ResourceBar({
           {labels.coinsShop}
         </Link>
         <Link
-          href="/market"
+          href="/market?tab=browse"
           onClick={() => setOpen(null)}
           className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 text-[12px] font-medium text-on-surface transition hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-yellow/50"
         >
@@ -474,14 +474,14 @@ export function ResourceBar({
                   </p>
                   <div className="mt-2 flex gap-1.5">
                     <Link
-                      href="/shop"
+                      href="/market?tab=shop"
                       onClick={() => setOpen(null)}
                       className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/12 px-2 text-[11px]"
                     >
                       {labels.coinsShop}
                     </Link>
                     <Link
-                      href="/market"
+                      href="/market?tab=browse"
                       onClick={() => setOpen(null)}
                       className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/12 px-2 text-[11px]"
                     >

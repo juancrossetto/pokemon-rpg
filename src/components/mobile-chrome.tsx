@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -21,6 +22,8 @@ type NavLink = {
   href: string;
   label: string;
   icon: string;
+  /** Ícono custom (PNG/SVG) en lugar del Material Symbol — p. ej. tab Combate. */
+  iconSrc?: string;
   /**
    * Grupo que representa este tab. Con esto el tab queda activo en cualquier
    * ruta de la sección y no solo en la de su `href`: estando en `/gyms` se
@@ -29,7 +32,7 @@ type NavLink = {
   groupId?: string;
 };
 
-type IndicatorBox = { left: number; width: number } | null;
+type IndicatorBox = { left: number; width: number; height: number; top: number } | null;
 
 const BAR_GROUP_IDS = new Set<string>(MOBILE_BAR_GROUPS);
 
@@ -122,9 +125,9 @@ export function MobileChrome({
   const moreActive = moreOpen || (!anyPrimaryActive && moreRouteActive);
 
   /*
-    Misma barra deslizante que el navbar desktop: un único subrayado medido
-    sobre `[data-active]`. En mobile cada tab dibujaba el suyo y al cambiar
-    de sección el indicador aparecía/desaparecía sin el gesto elástico.
+    Fondo rojo suave deslizante detrás del tab activo. Un único elemento
+    medido sobre `[data-active]` para que el cambio de sección tenga el
+    rebote elástico (no un fade por tab).
   */
   useEffect(() => {
     const root = bottomNavRef.current;
@@ -138,10 +141,13 @@ export function MobileChrome({
       }
       const rootBox = root.getBoundingClientRect();
       const box = node.getBoundingClientRect();
-      const inset = 12;
+      const insetX = 6;
+      const insetY = 4;
       setIndicator({
-        left: box.left - rootBox.left + inset,
-        width: Math.max(0, box.width - inset * 2),
+        left: box.left - rootBox.left + insetX,
+        top: box.top - rootBox.top + insetY,
+        width: Math.max(0, box.width - insetX * 2),
+        height: Math.max(0, box.height - insetY * 2),
       });
     }
 
@@ -254,7 +260,7 @@ export function MobileChrome({
       {/* Bottom bar: 4–5 primary destinations + safe-area */}
       <nav
         ref={bottomNavRef}
-        className="fixed bottom-0 inset-x-0 z-50 flex xl:hidden items-stretch min-h-14 bg-background/98 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.35)]"
+        className="fixed bottom-0 inset-x-0 z-50 flex xl:hidden items-stretch min-h-[3.75rem] overflow-visible bg-background/98 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.35)]"
       >
         {lockedHref && lockedLabel ? (
           <Link
@@ -269,8 +275,13 @@ export function MobileChrome({
             {indicator && (
               <span
                 aria-hidden
-                className="nav-indicator absolute top-0 h-0.5 rounded-full bg-pokeball-red shadow-[0_0_8px_rgba(238,21,21,0.75)]"
-                style={{ left: indicator.left, width: indicator.width }}
+                className="mobile-nav-active-bg pointer-events-none absolute rounded-lg"
+                style={{
+                  left: indicator.left,
+                  top: indicator.top,
+                  width: indicator.width,
+                  height: indicator.height,
+                }}
               />
             )}
             {primary.map((item) => {
@@ -293,26 +304,50 @@ export function MobileChrome({
                   href={item.href}
                   data-active={showActive || undefined}
                   aria-current={showActive ? "page" : undefined}
-                  className={`relative flex min-h-14 flex-1 min-w-0 flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                  aria-label={item.label}
+                  className={`mobile-nav-tab relative z-10 flex min-h-14 flex-1 min-w-0 flex-col items-center overflow-visible px-1 ${
                     showActive
-                      ? "bg-pokeball-red/[0.08] text-pokeball-red"
-                      : "text-on-surface-variant hover:text-pokeball-red"
+                      ? "justify-end gap-0 pb-1 text-pokeball-red"
+                      : "justify-end gap-0 pb-1 text-on-surface-variant hover:text-pokeball-red"
                   }`}
                 >
-                  <span
-                    className={`material-symbols-outlined text-[22px]! transition-transform ${
-                      showActive ? "scale-105" : ""
-                    }`}
-                  >
-                    {item.icon}
-                  </span>
-                  <span
-                    className={`max-w-full truncate text-[11px] leading-none ${
-                      showActive ? "font-bold" : "font-medium"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
+                  {item.iconSrc ? (
+                    <span
+                      className={`mobile-nav-tab-icon relative z-10 flex h-10 w-10 items-center justify-center ${
+                        showActive ? "translate-y-0 scale-105" : "-translate-y-1 scale-100"
+                      }`}
+                    >
+                      <Image
+                        src={item.iconSrc}
+                        alt=""
+                        width={48}
+                        height={48}
+                        unoptimized
+                        className={`h-10 w-10 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)] transition-[filter,transform] duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                          showActive ? "brightness-110" : "brightness-95"
+                        }`}
+                        aria-hidden
+                        priority
+                      />
+                    </span>
+                  ) : (
+                    <span
+                      className={`mobile-nav-tab-icon flex h-10 w-10 items-center justify-center ${
+                        showActive ? "translate-y-0 scale-105" : "-translate-y-1 scale-100"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[24px]!">
+                        {item.icon}
+                      </span>
+                    </span>
+                  )}
+                  {showActive ? (
+                    <span className="mobile-nav-tab-label max-w-full truncate text-[11px] leading-none font-bold">
+                      {item.label}
+                    </span>
+                  ) : (
+                    <span aria-hidden className="h-[11px]" />
+                  )}
                   {badge > 0 && (
                     <span
                       aria-hidden
@@ -329,17 +364,46 @@ export function MobileChrome({
                 onClick={() => setMoreOpen(true)}
                 aria-expanded={moreOpen}
                 aria-haspopup="dialog"
+                aria-label={moreLabel}
                 data-active={moreActive || undefined}
-                className={`relative flex min-h-14 flex-1 min-w-0 flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                className={`mobile-nav-tab relative z-10 flex min-h-14 flex-1 min-w-0 flex-col items-center px-1 ${
                   moreActive
-                    ? "bg-pokeball-red/[0.08] text-pokeball-red"
-                    : "text-on-surface-variant hover:text-pokeball-red"
+                    ? "justify-end gap-0 pb-1 text-pokeball-red"
+                    : "justify-end gap-0 pb-1 text-on-surface-variant hover:text-pokeball-red"
                 }`}
               >
-                <span className="material-symbols-outlined text-[22px]!">
-                  {moreOpen ? "close" : "menu"}
+                {moreOpen ? (
+                  <span
+                    className={`mobile-nav-tab-icon flex h-10 w-10 items-center justify-center ${
+                      moreActive ? "translate-y-0 scale-105" : "-translate-y-1 scale-100"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[24px]!">close</span>
+                  </span>
+                ) : (
+                  <span
+                    className={`mobile-nav-tab-icon flex h-10 w-10 items-center justify-center ${
+                      moreActive ? "translate-y-0 scale-105" : "-translate-y-1 scale-100"
+                    }`}
+                  >
+                    <Image
+                      src="/nav/menu-icon.png"
+                      alt=""
+                      width={48}
+                      height={48}
+                      unoptimized
+                      className="h-10 w-10 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)]"
+                      aria-hidden
+                    />
+                  </span>
+                )}
+                <span
+                  className={`text-[11px] leading-none ${
+                    moreActive ? "mobile-nav-tab-label font-bold" : "font-medium"
+                  }`}
+                >
+                  {moreLabel}
                 </span>
-                <span className="text-[11px] leading-none font-medium">{moreLabel}</span>
               </button>
             )}
           </>
@@ -390,14 +454,32 @@ export function MobileChrome({
                 if (items.length === 0) return null;
                 return (
                   <section key={group.id} className="mb-4 last:mb-2">
-                    <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70">
-                      <span className="material-symbols-outlined text-[14px]!">{group.icon}</span>
+                    <p className="mb-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70">
                       {navLabels.text[group.labelKey] ?? group.id}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {items.map((item) => {
                         const active = itemMatches(pathname, item);
                         const label = navLabels.text[item.labelKey] ?? item.id;
+                        const iconNode = item.iconSrc ? (
+                          <Image
+                            src={item.iconSrc}
+                            alt=""
+                            width={36}
+                            height={36}
+                            unoptimized
+                            className="h-9 w-9 shrink-0 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]"
+                            aria-hidden
+                          />
+                        ) : (
+                          <span
+                            className={`material-symbols-outlined text-[20px]! ${
+                              active ? "text-pokeball-red" : "text-on-surface-variant"
+                            }`}
+                          >
+                            {item.icon}
+                          </span>
+                        );
                         if (item.disabled) {
                           return (
                             <span
@@ -405,9 +487,7 @@ export function MobileChrome({
                               aria-disabled
                               className="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2 opacity-45"
                             >
-                              <span className="material-symbols-outlined text-[20px]!">
-                                {item.icon}
-                              </span>
+                              {iconNode}
                               {/* Dos líneas antes que recortar: "Batalla salvaje"
                                 entraba como "Batalla salva…" en 390px. */}
                             <span className="min-w-0 flex-1 text-label-sm leading-tight">
@@ -433,13 +513,7 @@ export function MobileChrome({
                                 : "border-white/10 bg-white/[0.03] text-on-surface active:bg-white/[0.07]"
                             }`}
                           >
-                            <span
-                              className={`material-symbols-outlined text-[20px]! ${
-                                active ? "text-pokeball-red" : "text-on-surface-variant"
-                              }`}
-                            >
-                              {item.icon}
-                            </span>
+                            {iconNode}
                             {/* Dos líneas antes que recortar: "Batalla salvaje"
                                 entraba como "Batalla salva…" en 390px. */}
                             <span className="min-w-0 flex-1 text-label-sm leading-tight">
