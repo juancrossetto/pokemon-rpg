@@ -1,21 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import Image from "next/image";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
 import { submitBattleMove, type XpSummaryEntry } from "@/actions/battle-move";
 import { fleeBattle } from "@/actions/flee-battle";
 import { attemptCapture, type CapturedPokemonInfo } from "@/actions/attempt-capture";
 import { switchPokemon } from "@/actions/switch-pokemon";
 import { applyBattleItem } from "@/actions/use-item";
 import { setPokemonNickname } from "@/actions/rename-pokemon";
-import { abandonGymRun } from "@/actions/abandon-gym-run";
 import { forfeitPvpBattle } from "@/actions/forfeit-pvp-battle";
 import { announceCoinDelta } from "@/lib/coin-fx";
-import { SoftLeaveButton, BattleResult } from "@/components/battle-result";
-import { startEncounter } from "@/actions/start-encounter";
-import { GymBadgePopup } from "@/components/gym-badge-popup";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BattleSprite } from "@/components/battle-sprite";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
@@ -39,6 +33,20 @@ import { BattleAudioControls } from "@/components/battle-audio-controls";
 import { impactFxUrl, resolveMoveProjectile, showdownBattleBgUrl, showdownFxUrl } from "@/lib/showdown-fx";
 import { statusAbbrKey, statusLabelKey, isStatusCondition, type StatusCondition } from "@/lib/status";
 import type { TurnEvent } from "@/lib/battle";
+import type {
+  BattleArenaProps,
+  LogEntry,
+  LogSide,
+  Outcome,
+  RosterMember,
+  View,
+} from "@/components/battle/arena-types";
+import { EmptyPartySlot, HpPlate, PartyIcon, PartySidebar } from "@/components/battle/arena-panels";
+import { CaptureSummary } from "@/components/battle/capture-summary";
+import { BattleOutcomeScreen } from "@/components/battle/battle-outcome-screen";
+import { BagView, MovesView, TeamView } from "@/components/battle/command-views";
+
+export type { BattleArenaProps, OpponentPartyMember } from "@/components/battle/arena-types";
 
 function hitSfxForMove(moveType: string, category?: TurnEvent["category"]): SfxKind {
   return battleSfxForMove(moveType, category);
@@ -65,86 +73,6 @@ const SEND_OUT_BALL_MS = 700; // cuánto se ve solo la pokeball, antes de revela
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-interface Combatant {
-  name: string;
-  /** Nombre de especie (PokeAPI) — para el GIF animado de Showdown. */
-  speciesName: string;
-  level: number;
-  /** Official artwork — fallback si el GIF falla. */
-  spriteUrl: string;
-}
-
-interface PokeballStack {
-  itemId: string;
-  name: string;
-  quantity: number;
-}
-
-interface PotionStack {
-  itemId: string;
-  name: string;
-  quantity: number;
-  healAmount: number;
-}
-
-interface RosterMember {
-  instanceId: string;
-  name: string;
-  speciesName: string;
-  level: number;
-  spriteUrl: string;
-  currentHp: number;
-  maxHp: number;
-  types: string[];
-}
-
-export interface OpponentPartyMember {
-  slot: number;
-  name: string;
-  spriteUrl: string;
-  fainted: boolean;
-  active: boolean;
-}
-
-type View = "menu" | "moves" | "bag" | "team";
-type Outcome = "ongoing" | "won" | "lost" | "fled" | "caught" | "trainer_cleared";
-type LogSide = "player" | "wild" | "system";
-interface LogEntry {
-  text: string;
-  side: LogSide;
-}
-
-export interface BattleArenaProps {
-  battleId: string;
-  locale: string;
-  trainerName: string;
-  trainerPortraitUrl: string | null;
-  opponentPortraitUrl: string | null;
-  opponentName: string | null;
-  player: Combatant & { instanceId: string; currentHp: number; maxHp: number };
-  wild: Combatant & { currentHp: number; maxHp: number; types: string[]; isShiny?: boolean };
-  moves: { moveId: number; name: string; type: string; power?: number | null; pp: number; maxPp: number }[];
-  initialLog: string[];
-  pokeballs: PokeballStack[];
-  potions: PotionStack[];
-  /** Equipo completo del jugador (incluye el activo). */
-  party: RosterMember[];
-  opponentParty: OpponentPartyMember[];
-  playerStatus: string | null;
-  wildStatus: string | null;
-  /** Si porta un objeto Choice, el movimiento al que ya quedó atado (o null). */
-  playerChoiceLockMoveId: number | null;
-  gymId: string | null;
-  gymRunId: string | null;
-  gymType: string | null;
-  gymName: string | null;
-  gymLeaderName: string | null;
-  gymBadgeName: string | null;
-  /** Modo de batalla: wild | gym | pvp */
-  battleMode: "wild" | "gym" | "pvp";
-  pvpMatchId: string | null;
 }
 
 export function BattleArena({
@@ -175,8 +103,6 @@ export function BattleArena({
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tLog = useTranslations("battle.log");
-  const tTeam = useTranslations("team");
-  const router = useRouter();
   const isGymBattle = battleMode === "gym";
   const isPvpBattle = battleMode === "pvp";
   // Gym, PvP o entrenador de ruta: no captura / no huida “salvaje”.
@@ -360,7 +286,6 @@ export function BattleArena({
   // Sacudida/flash del golpe escalados según % de HP máximo que representó
   // el daño — un golpe débil ya no se ve idéntico a uno que casi noquea.
   const [impactIntensity, setImpactIntensity] = useState(1);
-  const [confirmLeaveGym, setConfirmLeaveGym] = useState(false);
   const bgmKind = isGymBattle || isPvpBattle || opponentName ? "boss" : "wild";
 
   const teamRoster = party.filter((m) => m.instanceId !== activePlayer.instanceId);
@@ -1119,252 +1044,41 @@ export function BattleArena({
 
   if (capturedInfo) {
     return (
-      <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
-        <div className="mx-auto max-w-md flex flex-col items-center gap-4 text-center">
-          <p className="text-label-sm uppercase text-tertiary">{t("caughtTitle")}</p>
-          {capturedInfo.sentToPc && (
-            <p className="text-label-md text-electric-yellow/90">{t("sentToPcHint")}</p>
-          )}
-
-          <div className="w-28 h-28 rounded-full flex items-center justify-center bg-tertiary/10 border-2 border-tertiary/50 shadow-[0_0_20px_rgba(52,211,153,0.3)]">
-            <Image src={capturedInfo.spriteUrl} alt={capturedInfo.name} width={96} height={96} className="w-24 h-24 object-contain" />
-          </div>
-
-          <div>
-            <p className="text-headline-md text-on-surface capitalize">{capturedInfo.name}</p>
-            <p className="text-label-sm text-on-surface-variant">{t("level", { level: capturedInfo.level })}</p>
-          </div>
-
-          <div className="flex gap-2">
-            {capturedInfo.types.map((ty) => {
-              const color = typeColor(ty);
-              return (
-                <span
-                  key={ty}
-                  className="px-3 py-1 rounded text-label-sm uppercase border"
-                  style={{ backgroundColor: `${color}33`, color, borderColor: `${color}55` }}
-                >
-                  {ty}
-                </span>
-              );
-            })}
-          </div>
-
-          <div className="glass-panel rounded-xl border border-white/10 p-4 w-full grid grid-cols-3 gap-3 text-left">
-            <StatCell label={tTeam("stats.hp")} value={capturedInfo.maxHp} />
-            <StatCell label={tTeam("stats.atk")} value={capturedInfo.stats.attack} />
-            <StatCell label={tTeam("stats.def")} value={capturedInfo.stats.defense} />
-            <StatCell label={tTeam("stats.spAtk")} value={capturedInfo.stats.spAtk} />
-            <StatCell label={tTeam("stats.spDef")} value={capturedInfo.stats.spDef} />
-            <StatCell label={tTeam("stats.speed")} value={capturedInfo.stats.speed} />
-          </div>
-
-          <div className="glass-panel rounded-xl border border-white/10 p-4 w-full text-left">
-            <p className="text-label-sm uppercase text-on-surface-variant mb-2">{tTeam("moves")}</p>
-            <div className="flex flex-col gap-1">
-              {capturedInfo.moves.map((m) => {
-                const color = typeColor(m.type);
-                return (
-                  <div key={m.moveId} className="flex justify-between items-center text-label-sm">
-                    <span className="text-on-surface">{m.name}</span>
-                    <span className="uppercase" style={{ color }}>
-                      {m.type}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="w-full text-left">
-            <label className="text-label-sm uppercase text-on-surface-variant mb-1 block">{t("nicknameLabel")}</label>
-            <input
-              type="text"
-              value={nicknameInput}
-              onChange={(e) => setNicknameInput(e.target.value)}
-              placeholder={capturedInfo.name}
-              maxLength={20}
-              className="w-full glass-panel border border-white/10 rounded-lg px-3 py-2 text-label-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-pokeball-red/50"
-            />
-          </div>
-
-          <button
-            type="button"
-            disabled={savingNickname}
-            onClick={confirmCapture}
-            className="w-full rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white font-bold hover:bg-pokeball-red/80 active:scale-[0.98] transition-all disabled:opacity-60"
-          >
-            {t("confirmCapture")}
-          </button>
-        </div>
-      </div>
+      <CaptureSummary
+        info={capturedInfo}
+        nickname={nicknameInput}
+        onNicknameChange={setNicknameInput}
+        saving={savingNickname}
+        onConfirm={confirmCapture}
+      />
     );
   }
 
   if (outcome !== "ongoing") {
-    const resultText =
-      outcome === "won"
-        ? t("resultWon")
-        : outcome === "lost"
-          ? t("resultLostTitle")
-          : outcome === "caught"
-            ? caughtSentToPc
-              ? t("resultCaughtPc")
-              : t("resultCaught")
-            : outcome === "trainer_cleared"
-              ? t("resultTrainerCleared")
-              : t("resultFled");
-    // El texto largo de derrota explica el próximo paso — va como bajada.
-    const resultSubText = outcome === "lost" ? t("resultLost") : null;
-    const ctaClass =
-      "w-full max-w-sm rounded-lg bg-pokeball-red px-6 py-3 text-center text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors";
-
     return (
-      <BattleResult
-        mode={outcome}
-        resultText={resultText}
-        subText={resultSubText}
-        player={{
-          name: activePlayer.name,
-          speciesName: activePlayer.speciesName,
-          level:
-            xpSummary?.find((e) => e.instanceId === activePlayer.instanceId)?.leveledUpTo ??
-            activePlayer.level,
-          spriteUrl: activePlayer.spriteUrl,
-        }}
-        foe={{
-          name: activeWild.name,
-          speciesName: activeWild.speciesName,
-          level: activeWild.level,
-          spriteUrl: activeWild.spriteUrl,
-        }}
+      <BattleOutcomeScreen
+        outcome={outcome}
+        caughtSentToPc={caughtSentToPc}
+        locale={locale}
+        player={activePlayer}
+        foe={activeWild}
         xpSummary={xpSummary}
         coinsGained={coinsGained}
-      >
-        {isPvpBattle && pvpResult && (
-          <div className="w-full max-w-sm rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center mb-1">
-            <p className="text-label-sm uppercase tracking-wide text-on-surface-variant">
-              {t("pvpRating")}
-            </p>
-            <p className="text-headline-md font-mono text-electric-yellow">
-              {pvpResult.ratingAfter}{" "}
-              <span
-                className={
-                  pvpResult.ratingAfter - pvpResult.ratingBefore >= 0
-                    ? "text-tertiary"
-                    : "text-error"
-                }
-              >
-                ({pvpResult.ratingAfter - pvpResult.ratingBefore >= 0 ? "+" : ""}
-                {pvpResult.ratingAfter - pvpResult.ratingBefore})
-              </span>
-            </p>
-            {pvpResult.coinsAwarded > 0 && (
-              <p className="text-label-md text-tertiary mt-1">
-                +{pvpResult.coinsAwarded} {t("coins")}
-              </p>
-            )}
-          </div>
-        )}
-        {showBadgePopup && badgeEarned && gymType && (
-          <GymBadgePopup
-            gymType={gymType}
-            gymName={gymName}
-            leaderName={gymLeaderName}
-            badgeName={gymBadgeName}
-            portraitUrl={leaderPortrait}
-            labels={{
-              badgeEarned: t("badgeEarned"),
-              tmEarned: tmRewardName ? t("tmEarned", { code: tmRewardName }) : null,
-              continue: t("badgeContinue"),
-            }}
-            onContinue={() => setShowBadgePopup(false)}
-          />
-        )}
-        {outcome === "lost" && isPvpBattle ? (
-          <SoftLeaveButton
-            href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}
-            className={ctaClass}
-          >
-            {t("backToPvp")}
-          </SoftLeaveButton>
-        ) : outcome === "lost" ? (
-          <SoftLeaveButton href="/team" className={ctaClass}>
-            {t("goHeal")}
-          </SoftLeaveButton>
-        ) : outcome === "won" && isPvpBattle ? (
-          <SoftLeaveButton
-            href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}
-            className={ctaClass}
-          >
-            {t("backToPvp")}
-          </SoftLeaveButton>
-        ) : outcome === "trainer_cleared" && gymId && gymRunId ? (
-          <div className="w-full max-w-sm flex flex-col gap-3">
-            <p className="text-label-md text-on-surface-variant">{t("advancePrompt")}</p>
-            {!confirmLeaveGym ? (
-              <>
-                <SoftLeaveButton
-                  href={`/gyms/${gymId}/run`}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white font-bold hover:bg-pokeball-red/80 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[18px]!">arrow_forward</span>
-                  {t("continueChallenge")}
-                </SoftLeaveButton>
-                <button
-                  type="button"
-                  onClick={() => setConfirmLeaveGym(true)}
-                  className="w-full rounded-lg border border-white/20 px-6 py-2.5 text-label-md text-on-surface-variant hover:text-error hover:border-error/40 transition-colors"
-                >
-                  {t("leaveGym")}
-                </button>
-              </>
-            ) : (
-              <div className="glass-panel rounded-xl border border-error/40 p-4 text-left flex flex-col gap-3">
-                <p className="text-label-md text-error font-bold">{t("leaveGymTitle")}</p>
-                <p className="text-label-sm text-on-surface-variant">{t("leaveGymBody")}</p>
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmLeaveGym(false)}
-                    className="w-full rounded-lg bg-pokeball-red px-4 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
-                  >
-                    {t("continueChallenge")}
-                  </button>
-                  <SoftLeaveButton
-                    className="w-full rounded-lg border border-error/40 px-4 py-2 text-label-md text-error hover:bg-error/10 transition-colors"
-                    onAction={() => abandonGymRun(gymRunId, locale)}
-                  >
-                    {t("confirmLeaveGym")}
-                  </SoftLeaveButton>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : isGymBattle ? (
-          <SoftLeaveButton href="/gyms" className={ctaClass}>
-            {t("backToGyms")}
-          </SoftLeaveButton>
-        ) : (
-          <div className="w-full max-w-sm">
-            <SoftLeaveButton
-              className={ctaClass}
-              onAction={async () => {
-                await startEncounter(locale);
-                router.refresh();
-              }}
-            >
-              {t("explore")}
-            </SoftLeaveButton>
-            <SoftLeaveButton
-              href="/"
-              className="mt-2 block w-full text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
-            >
-              {t("backHome")}
-            </SoftLeaveButton>
-          </div>
-        )}
-      </BattleResult>
+        isPvpBattle={isPvpBattle}
+        isGymBattle={isGymBattle}
+        pvpResult={pvpResult}
+        showBadgePopup={showBadgePopup}
+        onBadgeContinue={() => setShowBadgePopup(false)}
+        badgeEarned={badgeEarned}
+        tmRewardName={tmRewardName}
+        gymId={gymId}
+        gymRunId={gymRunId}
+        gymType={gymType}
+        gymName={gymName}
+        gymLeaderName={gymLeaderName}
+        gymBadgeName={gymBadgeName}
+        leaderPortrait={leaderPortrait}
+      />
     );
   }
 
@@ -1816,462 +1530,44 @@ export function BattleArena({
             )}
 
             {view === "moves" && (
-              <div className="flex flex-col gap-1 h-full min-h-0">
-                <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
-                  <div className="min-w-0 flex items-baseline gap-2">
-                    <p className="text-xs md:text-sm font-bold text-primary capitalize truncate">{activePlayer.name}</p>
-                    <p className="hidden md:block text-[10px] uppercase text-on-surface-variant tracking-wider shrink-0">
-                      {t("selectCommand")}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={isAnimating}
-                    onClick={() => setView("menu")}
-                    className="flex h-7 w-7 md:h-7 md:w-7 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40 shrink-0"
-                    aria-label={t("back")}
-                  >
-                    <span className="material-symbols-outlined text-[16px]!">arrow_back</span>
-                  </button>
-                </div>
-                <p className="text-[10px] uppercase text-on-surface-variant tracking-wider px-0.5 shrink-0 md:hidden">
-                  {t("selectCommand")}
-                </p>
-                <div className="grid grid-cols-2 grid-rows-2 gap-1 md:gap-1.5 flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto md:overflow-hidden content-stretch">
-                  {activeMoves.every((m) => m.pp <= 0) && (
-                    <button
-                      type="button"
-                      disabled={isAnimating}
-                      onClick={() => handleMove(activeMoves[0]?.moveId ?? 0)}
-                      className="col-span-2 battle-move-card border-error/40"
-                    >
-                      <p className="text-base font-bold text-error">Struggle</p>
-                      <p className="text-label-sm text-on-surface-variant mt-1">PP 0 — recoil</p>
-                    </button>
-                  )}
-                  {activeMoves.map((m) => {
-                    const eff = effectivenessInfo(m.type);
-                    const color = typeColor(m.type);
-                    const lockedOut = choiceLockMoveId != null && choiceLockMoveId !== m.moveId;
-                    return (
-                      <button
-                        key={m.moveId}
-                        type="button"
-                        disabled={isAnimating || m.pp <= 0 || lockedOut}
-                        onClick={() => handleMove(m.moveId)}
-                        className="battle-move-card battle-move-card-compact battle-move-card-dense text-left disabled:opacity-40 disabled:cursor-not-allowed"
-                        style={{ borderColor: `${color}55` }}
-                      >
-                        <div className="flex justify-between items-start gap-1 min-w-0 shrink-0">
-                          <span className="text-xs md:text-sm font-bold text-white leading-tight truncate">{formatMoveName(m.name)}</span>
-                          <span
-                            className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] md:text-[10px] uppercase font-bold tracking-wide border"
-                            style={{ backgroundColor: `${color}33`, color, borderColor: `${color}66` }}
-                          >
-                            {m.type}
-                          </span>
-                        </div>
-                        <div className="mt-auto pt-1 flex justify-between items-end gap-1 shrink-0">
-                          <div>
-                            <p className="text-[9px] uppercase tracking-wider text-white/45">{t("powerLabel")}</p>
-                            <p className="text-[11px] md:text-xs text-white font-bold tabular-nums">
-                              {m.power ?? "—"}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[9px] uppercase tracking-wider text-white/45">{t("ppLabel")}</p>
-                            <p className="text-[11px] md:text-xs text-white/90 font-bold tabular-nums flex items-center justify-end gap-1">
-                              {lockedOut && (
-                                <span className="material-symbols-outlined text-[14px]! text-amber-300">lock</span>
-                              )}
-                              {m.pp}/{m.maxPp ?? m.pp}
-                            </p>
-                          </div>
-                        </div>
-                        <p className={`text-[9px] md:text-[10px] mt-0.5 leading-tight truncate shrink-0 ${eff.className}`}>
-                          {eff.label}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <MovesView
+                activePlayerName={activePlayer.name}
+                moves={activeMoves}
+                choiceLockMoveId={choiceLockMoveId}
+                isAnimating={isAnimating}
+                effectivenessInfo={effectivenessInfo}
+                onSelect={handleMove}
+                onBack={() => setView("menu")}
+              />
             )}
 
             {view === "bag" && (
-              <div className="flex flex-col gap-1 md:gap-2 h-full min-h-0">
-                <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
-                  <div>
-                    <p className="text-xs md:text-sm font-bold text-primary">{t("bagTitle")}</p>
-                    <p className="text-[10px] md:text-label-sm uppercase text-on-surface-variant tracking-wider">
-                      {t("selectCommand")}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={isAnimating}
-                    onClick={() => setView("menu")}
-                    className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40 shrink-0"
-                    aria-label={t("back")}
-                  >
-                    <span className="material-symbols-outlined text-[16px]! md:text-[18px]!">arrow_back</span>
-                  </button>
-                </div>
-                <div className="flex flex-col gap-1.5 md:gap-2 flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-                  {!hasBalls && !hasPotions && (
-                    <p className="text-label-md text-on-surface-variant text-center py-6">{t("bagEmpty")}</p>
-                  )}
-                  {hasBalls && (
-                    <div className="flex flex-col gap-2">
-                      <span className="text-label-sm uppercase text-on-surface-variant">{t("pokeballsLabel")}</span>
-                      {ballStacks.map((b) => (
-                        <button
-                          key={b.itemId}
-                          type="button"
-                          disabled={isAnimating}
-                          onClick={() => handleThrowBall(b.itemId, b.name)}
-                          className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          <Image
-                            src={itemSpriteUrl(b.name)}
-                            alt=""
-                            width={32}
-                            height={32}
-                            unoptimized
-                            className="w-8 h-8 object-contain [image-rendering:pixelated] shrink-0"
-                          />
-                          <span className="flex-1 text-left text-label-md text-on-surface font-bold">{b.name}</span>
-                          <span className="text-label-sm text-on-surface-variant tabular-nums">×{b.quantity}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {hasPotions && (
-                    <div className="flex flex-col gap-2">
-                      <span className="text-label-sm uppercase text-on-surface-variant">{t("potionsLabel")}</span>
-                      {potionStacks.map((p) => (
-                        <button
-                          key={p.itemId}
-                          type="button"
-                          disabled={isAnimating || playerHp >= playerMaxHp}
-                          onClick={() => handleUsePotion(p.itemId)}
-                          className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          <Image
-                            src={itemSpriteUrl(p.name)}
-                            alt=""
-                            width={32}
-                            height={32}
-                            unoptimized
-                            className="w-8 h-8 object-contain [image-rendering:pixelated] shrink-0"
-                          />
-                          <div className="flex-1 text-left">
-                            <p className="text-label-md text-on-surface font-bold">{p.name}</p>
-                            <p className="text-label-sm text-on-surface-variant">+{p.healAmount} HP</p>
-                          </div>
-                          <span className="text-label-sm text-on-surface-variant tabular-nums">×{p.quantity}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <BagView
+                isAnimating={isAnimating}
+                showBalls={!isTrainerStyle}
+                ballStacks={ballStacks}
+                potionStacks={potionStacks}
+                potionsDisabled={playerHp >= playerMaxHp}
+                onThrowBall={handleThrowBall}
+                onUsePotion={handleUsePotion}
+                onBack={() => setView("menu")}
+              />
             )}
 
             {view === "team" && (
-              <div className="flex flex-col gap-1 md:gap-2 h-full min-h-0">
-                <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
-                  <p className="text-xs md:text-sm font-bold text-primary">{t("pokemonMenu")}</p>
-                  {!mustSwitch && (
-                    <button
-                      type="button"
-                      disabled={isAnimating}
-                      onClick={() => setView("menu")}
-                      className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-black/60 disabled:opacity-40 shrink-0"
-                      aria-label={t("back")}
-                    >
-                      <span className="material-symbols-outlined text-[16px]! md:text-[18px]!">arrow_back</span>
-                    </button>
-                  )}
-                </div>
-                {mustSwitch && (
-                  <p className="text-label-sm text-error text-center shrink-0">{t("mustSwitchPrompt")}</p>
-                )}
-                <div className="flex flex-col gap-1.5 md:gap-2 flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-                  {teamRoster.map((m) => {
-                    const fainted = m.currentHp <= 0;
-                    const hpPct = Math.max(0, Math.min(100, (m.currentHp / m.maxHp) * 100));
-                    const matchup = switchMatchupInfo(m.types);
-                    return (
-                      <button
-                        key={m.instanceId}
-                        type="button"
-                        disabled={isAnimating || fainted}
-                        onClick={() => handleSwitchTo(m)}
-                        className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {m.spriteUrl && (
-                          <Image
-                            src={m.spriteUrl}
-                            alt={m.name}
-                            width={40}
-                            height={40}
-                            className="w-10 h-10 object-contain"
-                          />
-                        )}
-                        <div className="flex-1 text-left min-w-0">
-                          <div className="flex justify-between items-baseline gap-2">
-                            <span className="text-label-md text-on-surface font-bold capitalize truncate">
-                              {m.name}
-                            </span>
-                            <span className="text-label-sm text-on-surface-variant shrink-0">
-                              {t("level", { level: m.level })}
-                            </span>
-                          </div>
-                          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mt-1">
-                            <div
-                              className={`h-full health-bar-fill ${hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red"}`}
-                              style={{ width: `${hpPct}%` }}
-                            />
-                          </div>
-                          <div className="mt-0.5 flex items-center justify-between gap-2">
-                            <span className="text-label-sm text-on-surface-variant">
-                              {fainted ? t("fainted") : `${m.currentHp}/${m.maxHp}`}
-                            </span>
-                            {!fainted && (
-                              <span className={`text-[10px] font-bold leading-tight truncate ${matchup.className}`}>
-                                {matchup.label}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <TeamView
+                isAnimating={isAnimating}
+                mustSwitch={mustSwitch}
+                roster={teamRoster}
+                matchupInfo={switchMatchupInfo}
+                onSwitch={handleSwitchTo}
+                onBack={() => setView("menu")}
+              />
             )}
           </div>
         </div>
         <div className="max-md:h-[100px] max-md:shrink-0 md:hidden" aria-hidden="true" />
       </div>
-    </div>
-  );
-}
-
-function PartySidebar({
-  name,
-  portraitUrl,
-  align,
-  compact,
-  children,
-}: {
-  name: string;
-  portraitUrl: string | null;
-  align: "left" | "right";
-  compact?: boolean;
-  children: ReactNode;
-}) {
-  const portraitIsRemote = portraitUrl?.startsWith("http") ?? false;
-
-  if (compact) {
-    return (
-      <div className="glass-panel rounded-lg border border-white/10 px-3 py-2 flex items-center gap-3">
-        {portraitUrl && (
-          <div className="w-10 h-12 rounded overflow-hidden border border-white/15 shrink-0 bg-surface-container-high">
-            <Image
-              src={portraitUrl}
-              alt={name}
-              width={40}
-              height={48}
-              unoptimized={portraitIsRemote}
-              className="w-full h-full object-cover object-top"
-            />
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <p
-            title={name}
-            className={`text-label-sm text-on-surface font-bold leading-tight line-clamp-2 ${
-              align === "right" ? "text-right" : ""
-            }`}
-          >
-            {name}
-          </p>
-          <div className={`mt-1 flex gap-1.5 ${align === "right" ? "justify-end" : ""}`}>{children}</div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="glass-panel rounded-xl border border-white/10 p-2.5 h-full flex flex-col gap-2 min-w-0">
-      <p
-        title={name}
-        className={`text-label-sm text-on-surface font-bold leading-tight px-0.5 line-clamp-2 ${
-          align === "right" ? "text-right" : ""
-        }`}
-      >
-        {name}
-      </p>
-      {portraitUrl && (
-        <div className="mx-auto w-20 h-24 shrink-0 rounded-lg overflow-hidden border border-white/15 bg-surface-container-high">
-          <Image
-            src={portraitUrl}
-            alt={name}
-            width={80}
-            height={96}
-            unoptimized={portraitIsRemote}
-            className="w-full h-full object-cover object-top"
-          />
-        </div>
-      )}
-      <div className="grid grid-cols-2 gap-1.5 mt-auto">{children}</div>
-    </div>
-  );
-}
-
-function PartyIcon({
-  spriteUrl,
-  name,
-  fainted,
-  active,
-  hpPct,
-  compact = false,
-}: {
-  spriteUrl: string;
-  name: string;
-  fainted: boolean;
-  active: boolean;
-  hpPct?: number;
-  compact?: boolean;
-}) {
-  return (
-    <div
-      title={name}
-      className={`relative rounded-md border bg-surface-container-high/80 flex items-center justify-center overflow-hidden ${
-        compact ? "h-7 w-7 shrink-0" : "aspect-square"
-      } ${
-        active ? "border-pokeball-red/70 ring-1 ring-pokeball-red/40" : "border-white/10"
-      } ${fainted ? "opacity-35 grayscale" : ""}`}
-    >
-      {spriteUrl ? (
-        <Image
-          src={spriteUrl}
-          alt={name}
-          width={compact ? 28 : 40}
-          height={compact ? 28 : 40}
-          className={compact ? "w-6 h-6 object-contain" : "w-9 h-9 object-contain"}
-        />
-      ) : (
-        <PokeballIcon className={compact ? "w-3.5 h-3.5 opacity-40" : "w-5 h-5 opacity-40"} />
-      )}
-      {typeof hpPct === "number" && !fainted && (
-        <div className={`absolute bottom-0 left-0 right-0 bg-black/50 ${compact ? "h-0.5" : "h-1"}`}>
-          <div
-            className={`h-full ${hpPct > 50 ? "bg-emerald-400" : hpPct > 20 ? "bg-amber-400" : "bg-red-500"}`}
-            style={{ width: `${Math.max(0, Math.min(100, hpPct))}%` }}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EmptyPartySlot({ compact = false }: { compact?: boolean }) {
-  return (
-    <div
-      className={`rounded-md border border-dashed border-white/10 bg-black/20 flex items-center justify-center ${
-        compact ? "h-7 w-7 shrink-0" : "aspect-square"
-      }`}
-    >
-      <PokeballIcon className={compact ? "w-3 h-3 opacity-25" : "w-4 h-4 opacity-25"} />
-    </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const t = useTranslations("battle");
-  if (!isStatusCondition(status)) return null;
-
-  const tone =
-    status === "POISON"
-      ? "poison"
-      : status === "BURN"
-        ? "burn"
-        : status === "PARALYSIS"
-          ? "paralysis"
-          : status === "FREEZE"
-            ? "freeze"
-            : "sleep";
-
-  return (
-    <span
-      className={`battle-status-badge battle-status-badge--${tone}`}
-      title={t(statusLabelKey(status))}
-      aria-label={t(statusLabelKey(status))}
-    >
-      {t(statusAbbrKey(status))}
-    </span>
-  );
-}
-
-function HpPlate({
-  name,
-  levelLabel,
-  currentHp,
-  maxHp,
-  status,
-  align = "left",
-  className = "",
-}: {
-  name: string;
-  levelLabel: string;
-  currentHp: number;
-  maxHp: number;
-  status?: string | null;
-  align?: "left" | "right";
-  className?: string;
-}) {
-  const hpPct = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
-  const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
-  const critical = hpPct > 0 && hpPct <= 20;
-
-  return (
-    <div
-      className={`rounded-lg border bg-black/55 backdrop-blur-sm px-2 py-1 md:px-2.5 md:py-1.5 shadow-lg ${
-        critical ? "border-red-500/70 hp-plate-critical" : "border-white/15"
-      } ${className}`}
-    >
-      <div className={`flex items-center gap-1.5 md:gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
-        <span className="text-[11px] md:text-label-md text-white font-bold capitalize truncate min-w-0">
-          {name}
-        </span>
-        <span className="text-[10px] md:text-label-sm text-white/70 shrink-0">{levelLabel}</span>
-        {status ? <StatusBadge status={status} /> : null}
-      </div>
-      <div className="h-1.5 md:h-2 bg-white/15 rounded-full overflow-hidden mt-0.5 md:mt-1">
-        <div
-          className={`h-full health-bar-fill ${hpClass}${critical ? " hp-bar-critical" : ""}`}
-          style={{ width: `${hpPct}%` }}
-        />
-      </div>
-      <p
-        className={`text-[9px] md:text-[10px] mt-0.5 ${align === "right" ? "text-right" : ""} ${
-          critical ? "text-red-300 font-bold" : "text-white/70"
-        }`}
-      >
-        {Math.round(hpPct)}% · {currentHp}/{maxHp}
-      </p>
-    </div>
-  );
-}
-
-function StatCell({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <p className="text-label-sm text-on-surface-variant">{label}</p>
-      <p className="text-label-md text-on-surface font-bold">{value}</p>
     </div>
   );
 }
