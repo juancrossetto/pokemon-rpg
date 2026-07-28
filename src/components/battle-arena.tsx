@@ -1009,7 +1009,9 @@ export function BattleArena({
     setPlayerHp(member.currentHp);
     setPlayerMaxHp(result.newPlayer.maxHp);
     setActiveMoves(result.newPlayer.moves);
-    // El servidor resetea el lock de Choice/consumo de objeto al cambiar de Pokémon.
+    // Status/stages/Choice son del Pokémon activo: al entrar limpio el badge
+    // (si el contraataque aplica estado, playEvent lo setea de nuevo).
+    setPlayerStatus(null);
     setChoiceLockMoveId(null);
     setParty((prev) =>
       prev.map((m) => {

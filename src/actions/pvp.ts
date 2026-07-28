@@ -172,6 +172,7 @@ export async function findMatch(locale: string) {
         challengerRatingBefore: season.resetApplied ? season.rating : fresh.pvpRating,
         opponentRatingBefore: opp.pvpRating,
         koLog: result.koLog,
+        turnLog: result.turnLog,
         turns: result.turns,
         restoreTeam: false,
       });
