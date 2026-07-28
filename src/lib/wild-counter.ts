@@ -26,6 +26,16 @@ type BattleWithFighters = {
   wildSpeStage: number;
   playerChoiceLockMoveId?: number | null;
   playerItemConsumed?: boolean;
+  wildItemConsumed?: boolean;
+  wildChoiceLockMoveId?: number | null;
+  wildHeldItem?: {
+    id: string;
+    name: string;
+    heldEffect: string | null;
+    heldValue: number | null;
+    heldStat: string | null;
+    heldBoostType: string | null;
+  } | null;
   pokemonInstance: {
     id: string;
     currentHp: number;
@@ -83,6 +93,7 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
   const playerBase = playerCombatantStats(instance.species, instance.level, instance);
   const wildBase = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
   const playerHeldItem = heldItemSnapshotFromItem(instance.heldItem);
+  const wildHeldItem = heldItemSnapshotFromItem(battle.wildHeldItem);
   const playerIsFullyEvolved = (instance.species.evolvesTo?.length ?? 0) === 0;
 
   let playerState: SideBattleState = {
@@ -112,6 +123,8 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
     },
     name: battle.wildSpecies.name,
     baseStats: wildBase,
+    heldItem: wildHeldItem,
+    isFullyEvolved: true,
   };
 
   const wildMoves = await prisma.move.findMany({ where: { id: { in: battle.wildMoveIds } } });
@@ -124,23 +137,50 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
       ? [...battle.wildMovePp]
       : snapshots.map((m) => m.pp ?? 20);
 
-  const pick = pickWildMove(
-    snapshots.length > 0 ? snapshots : [STRUGGLE_MOVE],
-    wildBase,
-    playerBase,
-    playerState.hp,
-    wildMovePp,
-  );
+  const lockedWild =
+    battle.wildChoiceLockMoveId != null
+      ? snapshots.find((m) => m.id === battle.wildChoiceLockMoveId)
+      : undefined;
+  const pick = lockedWild
+    ? lockedWild
+    : pickWildMove(
+        snapshots.length > 0 ? snapshots : [STRUGGLE_MOVE],
+        wildBase,
+        playerBase,
+        playerState.hp,
+        wildMovePp,
+      );
   const noPp = wildMovePp.length > 0 && wildMovePp.every((pp) => pp <= 0);
-  const wildMove = pick.id < 0 || noPp || snapshots.length === 0 ? STRUGGLE_MOVE : pick;
+  const lockedPpIdx = lockedWild ? snapshots.findIndex((m) => m.id === lockedWild.id) : -1;
+  const lockedOutOfPp = lockedPpIdx >= 0 && (wildMovePp[lockedPpIdx] ?? 0) <= 0;
+  const wildMove =
+    pick.id < 0 || noPp || snapshots.length === 0 || (lockedWild && lockedOutOfPp)
+      ? STRUGGLE_MOVE
+      : pick;
   const wi = snapshots.findIndex((m) => m.id === wildMove.id);
-  if (wi >= 0 && wildMovePp[wi] > 0) wildMovePp[wi] -= 1;
 
-  const outcome = resolveWildCounter(wildMove, playerState, wildState, battle.playerItemConsumed ?? false);
+  const outcome = resolveWildCounter(
+    wildMove,
+    playerState,
+    wildState,
+    battle.playerItemConsumed ?? false,
+  );
   playerState = outcome.player;
   wildState = outcome.wild;
 
+  const wildActed = outcome.events.some((e) => e.side === "wild" && !e.skipped);
+  if (wildActed && wi >= 0 && (wildMovePp[wi] ?? 0) > 0) {
+    wildMovePp[wi] -= 1;
+  }
+
   const counterAttack = outcome.events[0] ?? null;
+  const wildChoiceLockMoveId =
+    battle.wildChoiceLockMoveId ??
+    (wildActed &&
+    wildHeldItem?.effect === "CHOICE_LOCK" &&
+    wildMove.id !== STRUGGLE_MOVE.id
+      ? wildMove.id
+      : null);
 
   return {
     events: outcome.events,
@@ -161,6 +201,8 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
       wildDefStage: wildState.stages.def,
       wildSpeStage: wildState.stages.spe,
       playerItemConsumed: outcome.itemConsumed,
+      wildItemConsumed: battle.wildItemConsumed ?? false,
+      wildChoiceLockMoveId,
     },
   };
 }

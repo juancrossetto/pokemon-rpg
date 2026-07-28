@@ -13,6 +13,7 @@ import {
   xpForVictory,
   type MoveSnapshot,
   type TurnEvent,
+  type CombatantStats,
 } from "@/lib/battle";
 import { pickWildMove } from "@/lib/battle-ai";
 import { disobeyChance, gymRematchCoinMultiplier } from "@/lib/badge-perks";
@@ -32,6 +33,9 @@ import {
 } from "@/lib/campaign/sync";
 import type { EvolveOffer, LevelUpMoveInfo } from "@/lib/level-up";
 import { resolveLevelUpEffects } from "@/lib/level-up";
+import { lockUsers } from "@/lib/db-locks";
+import { notifySettledPvp, settlePvpMatch } from "@/lib/pvp/settle";
+import { parseTeamSnap, type PvpTeamMemberSnap } from "@/lib/pvp/team";
 
 const MAX_LOG_LINES = 20;
 
@@ -71,6 +75,13 @@ export interface UseMoveResult {
   wildStatus: StatusCondition | null;
   /** Si porta un objeto Choice, el movimiento al que quedó atado (o null). */
   playerChoiceLockMoveId: number | null;
+  /** Info de rating PvP al cerrar (solo ranked interactivo). */
+  pvpResult: {
+    matchId: string;
+    ratingBefore: number;
+    ratingAfter: number;
+    coinsAwarded: number;
+  } | null;
   nextOpponent: {
     name: string;
     speciesName: string;
@@ -143,6 +154,8 @@ export async function submitBattleMove(
         },
       },
       wildSpecies: true,
+      wildHeldItem: true,
+      pvpMatch: true,
     },
   });
   if (!battle) return null;
@@ -180,9 +193,27 @@ export async function submitBattleMove(
     instance.ptConstitution,
   );
   const playerBase = playerCombatantStats(instance.species, instance.level, instance);
-  const wildBase = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
+
+  const pvpOppTeam = battle.pvpMatchId ? parseTeamSnap(battle.pvpMatch?.opponentTeam) : [];
+  const pvpActive: PvpTeamMemberSnap | null =
+    pvpOppTeam.find((m) => m.slot === battle.opponentSlot) ?? pvpOppTeam[0] ?? null;
+
+  const wildBase: CombatantStats = pvpActive
+    ? {
+        level: pvpActive.stats.level,
+        atk: pvpActive.stats.atk,
+        def: pvpActive.stats.def,
+        spAtk: pvpActive.stats.spAtk,
+        spDef: pvpActive.stats.spDef,
+        speed: pvpActive.stats.speed,
+        types: pvpActive.stats.types,
+      }
+    : wildCombatantStats(battle.wildSpecies, battle.wildLevel);
+
   const playerHeldItem = heldItemSnapshotFromItem(instance.heldItem);
+  const wildHeldItem = heldItemSnapshotFromItem(battle.wildHeldItem ?? pvpActive?.heldItem);
   const playerIsFullyEvolved = instance.species.evolvesTo.length === 0;
+  const wildIsFullyEvolved = pvpActive?.isFullyEvolved ?? true;
 
   let playerState: SideBattleState = {
     hp: instance.currentHp,
@@ -209,8 +240,10 @@ export async function submitBattleMove(
       def: battle.wildDefStage ?? 0,
       spe: battle.wildSpeStage ?? 0,
     },
-    name: battle.wildSpecies.name,
+    name: pvpActive?.name ?? battle.wildSpecies.name,
     baseStats: wildBase,
+    heldItem: wildHeldItem,
+    isFullyEvolved: wildIsFullyEvolved,
   };
 
   const playerPpNow = effectivePp(chosenMove.currentPp, chosenMove.move.pp);
@@ -229,20 +262,34 @@ export async function submitBattleMove(
   const chance = disobeyChance(instance.level, badgeCount);
   const disobeyed = chance > 0 && Math.random() < chance;
 
-  const wildPickRaw = pickWildMove(
-    wildMoveSnapshots.length > 0 ? wildMoveSnapshots : [STRUGGLE_MOVE],
-    wildBase,
-    playerBase,
-    playerState.hp,
-    wildMovePp,
-  );
+  // Choice del rival: si ya está atado, fuerza ese movimiento (paridad PvP).
+  const lockedWild =
+    battle.wildChoiceLockMoveId != null
+      ? wildMoveSnapshots.find((m) => m.id === battle.wildChoiceLockMoveId)
+      : undefined;
+  const wildPickRaw = lockedWild
+    ? lockedWild
+    : pickWildMove(
+        wildMoveSnapshots.length > 0 ? wildMoveSnapshots : [STRUGGLE_MOVE],
+        wildBase,
+        playerBase,
+        playerState.hp,
+        wildMovePp,
+      );
   const wildNoPp = wildMovePp.length > 0 && wildMovePp.every((pp) => pp <= 0);
+  const lockedPpIdx = lockedWild
+    ? wildMoveSnapshots.findIndex((m) => m.id === lockedWild.id)
+    : -1;
+  const lockedOutOfPp = lockedPpIdx >= 0 && (wildMovePp[lockedPpIdx] ?? 0) <= 0;
   const wildMove =
-    wildPickRaw.id < 0 || wildNoPp || wildMoveSnapshots.length === 0
+    wildPickRaw.id < 0 ||
+    wildNoPp ||
+    wildMoveSnapshots.length === 0 ||
+    (lockedWild && lockedOutOfPp)
       ? STRUGGLE_MOVE
       : wildPickRaw;
   const wi = wildMoveSnapshots.findIndex((m) => m.id === wildMove.id);
-  if (wi >= 0 && wildMovePp[wi] > 0) wildMovePp[wi] -= 1;
+  // El PP del rival se descuenta solo si realmente actúa (no si está para/dormido).
 
   let playerItemConsumed = battle.playerItemConsumed;
   let flinchWild = false;
@@ -311,31 +358,68 @@ export async function submitBattleMove(
         }
       }
     }
+  }
 
-    if (playerMoveSnapshot.id !== STRUGGLE_MOVE.id) {
-      const maxPp = chosenMove.move.pp ?? 20;
-      const current =
-        typeof chosenMove.currentPp === "number" && chosenMove.currentPp > 0
-          ? chosenMove.currentPp
-          : maxPp;
-      const nextPp = Math.max(0, current - 1);
-      for (const e of events) {
-        if (e.side === "player" && !e.skipped) e.playerPpAfter = nextPp;
-      }
-      await prisma.pokemonMove.update({
-        where: {
-          pokemonInstanceId_slot: { pokemonInstanceId: instance.id, slot: chosenMove.slot },
-        },
-        data: { currentPp: nextPp },
-      });
+  // Registrar en el log persistente lo mismo que ve el jugador en pantalla.
+  for (const e of events) {
+    const name = e.side === "player" ? playerState.name : wildState.name;
+    const foeName = e.side === "player" ? wildState.name : playerState.name;
+    if (e.statusNote === "woke") log.push(`woke:${name}`);
+    if (e.statusNote === "thawed") log.push(`thawed:${name}`);
+    if (e.skipped === "paralyzed") log.push(`paralyzed:${name}`);
+    else if (e.skipped === "asleep") log.push(`asleep:${name}`);
+    else if (e.skipped === "frozen") log.push(`frozen:${name}`);
+    else if (e.skipped === "flinch") log.push(`flinch:${name}`);
+    else if (e.skipped === "disobey") {
+      // ya se pusheó arriba
+    } else if (e.hit && e.isStatus) {
+      log.push(`used:${name}:${e.moveName}`);
+      if (e.statusApplied) log.push(`status:${foeName}:${e.statusApplied}`);
+    } else if (e.hit && !e.isStatus) {
+      log.push(`used:${name}:${e.moveName}`);
+      log.push(`damage:${foeName}:${e.damage}`);
+      if (e.statusApplied) log.push(`status:${foeName}:${e.statusApplied}`);
+    } else if (!e.hit && !e.skipped) {
+      log.push(`miss:${name}:${e.moveName}`);
     }
+    if (e.residualDamage) {
+      const kind = e.residualStatus === "BURN" ? "burn" : e.residualStatus === "POISON" ? "poison" : "status";
+      log.push(`residual:${name}:${e.residualDamage}:${kind}`);
+    }
+  }
+
+  const playerActed = events.some((e) => e.side === "player" && !e.skipped);
+  const wildActed = events.some((e) => e.side === "wild" && !e.skipped);
+  if (wildActed && wi >= 0 && (wildMovePp[wi] ?? 0) > 0) {
+    wildMovePp[wi] -= 1;
+  }
+
+  if (playerActed && playerMoveSnapshot.id !== STRUGGLE_MOVE.id) {
+    const maxPp = chosenMove.move.pp ?? 20;
+    const current =
+      typeof chosenMove.currentPp === "number" && chosenMove.currentPp > 0
+        ? chosenMove.currentPp
+        : maxPp;
+    const nextPp = Math.max(0, current - 1);
+    for (const e of events) {
+      if (e.side === "player" && !e.skipped) e.playerPpAfter = nextPp;
+    }
+    await prisma.pokemonMove.update({
+      where: {
+        pokemonInstanceId_slot: { pokemonInstanceId: instance.id, slot: chosenMove.slot },
+      },
+      data: { currentPp: nextPp },
+    });
   }
 
   // Choice Band/Specs/Scarf: queda atado al primer movimiento que usa con
   // el objeto puesto, hasta que cambie de Pokémon o termine la batalla.
   const newChoiceLockMoveId =
     battle.playerChoiceLockMoveId ??
-    (!disobeyed && playerHeldItem?.effect === "CHOICE_LOCK" && playerMoveSnapshot.id !== STRUGGLE_MOVE.id
+    (!disobeyed &&
+    playerActed &&
+    playerHeldItem?.effect === "CHOICE_LOCK" &&
+    playerMoveSnapshot.id !== STRUGGLE_MOVE.id
       ? effectiveMoveId
       : null);
 
@@ -345,7 +429,7 @@ export async function submitBattleMove(
       ? chosenMove.currentPp
       : spentMaxPp;
   const spentPlayerPp =
-    disobeyed || playerMoveSnapshot.id === STRUGGLE_MOVE.id
+    disobeyed || !playerActed || playerMoveSnapshot.id === STRUGGLE_MOVE.id
       ? null
       : Math.max(0, spentCurrent - 1);
 
@@ -371,9 +455,20 @@ export async function submitBattleMove(
   let tmRewardName: string | null = null;
   let coinsAwarded = 0;
   let nextOpponent: UseMoveResult["nextOpponent"] = null;
-  const battleKind = battle.gymId ? ("PVE_GYM" as const) : ("PVE_WILD" as const);
+  let pvpResult: UseMoveResult["pvpResult"] = null;
+  const battleKind = battle.pvpMatchId
+    ? ("PVP" as const)
+    : battle.gymId
+      ? ("PVE_GYM" as const)
+      : ("PVE_WILD" as const);
   const gym = battle.gymId ? await prisma.gym.findUnique({ where: { id: battle.gymId } }) : null;
   let xpSummary: XpSummaryEntry[] | null = null;
+
+  const wildChoiceLockMoveId =
+    battle.wildChoiceLockMoveId ??
+    (wildHeldItem?.effect === "CHOICE_LOCK" && wildMove.id !== STRUGGLE_MOVE.id
+      ? wildMove.id
+      : null);
 
   const battleStateData = {
     wildCurrentHp: Math.max(0, wildHp),
@@ -390,15 +485,185 @@ export async function submitBattleMove(
     wildSpeStage: wildState.stages.spe,
     playerChoiceLockMoveId: newChoiceLockMoveId,
     playerItemConsumed,
+    wildItemConsumed: battle.wildItemConsumed,
+    wildChoiceLockMoveId,
   };
 
   if (wonBattle) {
-    log.push(`fainted:${battle.wildSpecies.name}`);
-    // Mastery: en gimnasios no aplica (no es farmeo de zona).
-    const zone = battle.gymId || battle.routeTrainerId ? null : await getZoneContext(userId);
+    log.push(`fainted:${pvpActive?.name ?? battle.wildSpecies.name}`);
+    // Mastery: en gimnasios / PvP no aplica (no es farmeo de zona).
+    const zone =
+      battle.gymId || battle.routeTrainerId || battle.pvpMatchId
+        ? null
+        : await getZoneContext(userId);
     const koXp = zone
       ? applyBonus(xpForVictory(battle.wildLevel), zone.bonuses.xp)
       : xpForVictory(battle.wildLevel);
+
+    // --- PvP: siguiente mon del snapshot ---
+    if (battle.pvpMatchId && battle.pvpMatch) {
+      // Buscar el siguiente por orden de slot mayor al actual.
+      const remaining = pvpOppTeam
+        .filter((m) => m.slot > (battle.opponentSlot ?? 0))
+        .sort((a, b) => a.slot - b.slot);
+      const nextMon = remaining[0] ?? null;
+
+      if (nextMon) {
+        nextOpponent = {
+          name: nextMon.name,
+          speciesName: nextMon.speciesName,
+          level: nextMon.level,
+          spriteUrl: nextMon.spriteUrl,
+          maxHp: nextMon.maxHp,
+          types: nextMon.types,
+        };
+        const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
+        await prisma.$transaction([
+          prisma.pokemonInstance.update({
+            where: { id: instance.id },
+            data: { currentHp: playerHp },
+          }),
+          prisma.battleSession.update({
+            where: { id: battle.id },
+            data: {
+              ...battleStateData,
+              wildSpeciesId: nextMon.speciesId,
+              wildLevel: nextMon.level,
+              wildCurrentHp: nextMon.maxHp,
+              wildMaxHp: nextMon.maxHp,
+              wildMoveIds: nextMon.moves.map((m) => m.id),
+              wildMovePp: nextMon.moves.map((m) => m.maxPp),
+              wildHeldItemId: nextMon.heldItemId,
+              wildItemConsumed: false,
+              wildChoiceLockMoveId: null,
+              opponentSlot: nextMon.slot,
+              wildStatus: null,
+              wildSleepTurns: 0,
+              wildAtkStage: 0,
+              wildDefStage: 0,
+              wildSpeStage: 0,
+              log: finalLog,
+            },
+          }),
+          prisma.pvpMatch.update({
+            where: { id: battle.pvpMatchId },
+            data: {
+              turnLog: { push: finalLog.slice(-3) },
+              turns: { increment: 1 },
+              koLog: {
+                push: `a:${playerState.name}>b:${pvpActive?.name ?? battle.wildSpecies.name}`,
+              },
+            },
+          }),
+        ]);
+        revalidatePath(`/${locale}/team`);
+        return {
+          events,
+          playerMaxHp,
+          wildMaxHp: nextMon.maxHp,
+          outcome: "gym_continues",
+          leveledUpTo: null,
+          xpGained: null,
+          xpSummary: null,
+          coinsGained: 0,
+          badgeEarned: false,
+          tmRewardName: null,
+          rematch: false,
+          playerMovesPp,
+          playerChoiceLockMoveId: newChoiceLockMoveId,
+          playerStatus: playerState.status,
+          wildStatus: null,
+          pvpResult: null,
+          nextOpponent,
+        };
+      }
+
+      // Equipo rival vaciado — victoria PvP.
+      const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
+      const match = battle.pvpMatch;
+      await prisma.$transaction(async (tx) => {
+        await lockUsers(tx, userId, match.opponentId);
+        await tx.pokemonInstance.update({
+          where: { id: instance.id },
+          data: { currentHp: playerHp },
+        });
+        await tx.battleSession.update({
+          where: { id: battle.id },
+          data: { ...battleStateData, status: "WON", wildCurrentHp: 0, log: finalLog },
+        });
+        await tx.battleLog.create({
+          data: {
+            kind: "PVP",
+            userId,
+            opponentId: match.opponentId,
+            userWon: true,
+          },
+        });
+        const settled = await settlePvpMatch(tx, {
+          matchId: match.id,
+          challengerId: match.challengerId,
+          opponentId: match.opponentId,
+          challengerWon: true,
+          mode: match.mode,
+          seasonKey: match.seasonKey ?? "unknown",
+          challengerRatingBefore: match.challengerRatingBefore,
+          opponentRatingBefore: match.opponentRatingBefore,
+          challengerTeam: match.challengerTeam,
+          koLog: [
+            ...match.koLog,
+            `a:${playerState.name}>b:${pvpActive?.name ?? battle.wildSpecies.name}`,
+          ],
+          turnLog: finalLog,
+          turns: match.turns + 1,
+          restoreTeam: true,
+        });
+        pvpResult = {
+          matchId: match.id,
+          ratingBefore: match.challengerRatingBefore,
+          ratingAfter: settled.challengerAfter,
+          coinsAwarded: settled.coinsAwarded,
+        };
+        coinsAwarded = settled.coinsAwarded;
+      });
+
+      const oppUser = await prisma.user.findUnique({
+        where: { id: match.opponentId },
+        select: { username: true },
+      });
+      await notifySettledPvp({
+        matchId: match.id,
+        challengerId: match.challengerId,
+        opponentId: match.opponentId,
+        challengerName: session.user.name ?? "Trainer",
+        opponentName: oppUser?.username ?? "Rival",
+        challengerWon: true,
+      });
+
+      revalidatePath(`/${locale}/team`);
+      revalidatePath(`/${locale}/pvp`);
+      revalidatePath(`/${locale}/ranking`);
+      revalidateCombatUi(locale);
+      return {
+        events,
+        playerMaxHp,
+        wildMaxHp: battle.wildMaxHp,
+        outcome: "won",
+        leveledUpTo: null,
+        xpGained: null,
+        xpSummary: null,
+        coinsGained: coinsAwarded,
+        badgeEarned: false,
+        tmRewardName: null,
+        rematch: false,
+        playerMovesPp,
+        playerChoiceLockMoveId: newChoiceLockMoveId,
+        playerStatus: playerState.status,
+        wildStatus: wildState.status,
+        pvpResult,
+        nextOpponent: null,
+      };
+    }
+
     const nextSlot = (battle.gymPokemonSlot ?? 1) + 1;
     const nextOpponentMon = battle.gymTrainerId
       ? await prisma.gymTrainerPokemon.findUnique({
@@ -468,6 +733,7 @@ export async function submitBattleMove(
         playerChoiceLockMoveId: newChoiceLockMoveId,
         playerStatus: playerState.status,
         wildStatus: null,
+        pvpResult: null,
         nextOpponent,
       };
     }
@@ -619,6 +885,7 @@ export async function submitBattleMove(
         playerChoiceLockMoveId: newChoiceLockMoveId,
         playerStatus: playerState.status,
         wildStatus: wildState.status,
+        pvpResult: null,
         nextOpponent: null,
       };
     }
@@ -718,26 +985,94 @@ export async function submitBattleMove(
     }
   } else if (lostBattle) {
     const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
-    await prisma.$transaction([
-      prisma.pokemonInstance.update({ where: { id: instance.id }, data: { currentHp: 0 } }),
-      prisma.battleSession.update({
-        where: { id: battle.id },
-        data: { status: "LOST", log: finalLog, ...battleStateData },
-      }),
-      prisma.battleLog.create({
-        data: { kind: battleKind, userId, userWon: false, gymId: battle.gymId },
-      }),
-      ...(battle.gymId
-        ? [prisma.gymAttempt.create({ data: { userId, gymId: battle.gymId, won: false } })]
-        : []),
-      ...(battle.gymRunId
-        ? [prisma.gymRun.update({ where: { id: battle.gymRunId }, data: { status: "ABANDONED" } })]
-        : []),
-    ]);
 
-    if (battle.gymId) {
-      const { notifyGymResult } = await import("@/lib/notifications");
-      await notifyGymResult(userId, battle.gymId, false);
+    if (battle.pvpMatchId && battle.pvpMatch) {
+      const match = battle.pvpMatch;
+      await prisma.$transaction(async (tx) => {
+        await lockUsers(tx, userId, match.opponentId);
+        await tx.pokemonInstance.update({
+          where: { id: instance.id },
+          data: { currentHp: 0 },
+        });
+        await tx.battleSession.update({
+          where: { id: battle.id },
+          data: { status: "LOST", log: finalLog, ...battleStateData },
+        });
+        await tx.battleLog.create({
+          data: {
+            kind: "PVP",
+            userId,
+            opponentId: match.opponentId,
+            userWon: false,
+          },
+        });
+        const settled = await settlePvpMatch(tx, {
+          matchId: match.id,
+          challengerId: match.challengerId,
+          opponentId: match.opponentId,
+          challengerWon: false,
+          mode: match.mode,
+          seasonKey: match.seasonKey ?? "unknown",
+          challengerRatingBefore: match.challengerRatingBefore,
+          opponentRatingBefore: match.opponentRatingBefore,
+          challengerTeam: match.challengerTeam,
+          koLog: [
+            ...match.koLog,
+            `b:${pvpActive?.name ?? battle.wildSpecies.name}>a:${playerState.name}`,
+          ],
+          turnLog: finalLog,
+          turns: match.turns + 1,
+          restoreTeam: true,
+        });
+        pvpResult = {
+          matchId: match.id,
+          ratingBefore: match.challengerRatingBefore,
+          ratingAfter: settled.challengerAfter,
+          coinsAwarded: settled.coinsAwarded,
+        };
+        coinsAwarded = settled.coinsAwarded;
+      });
+
+      const oppUser = await prisma.user.findUnique({
+        where: { id: match.opponentId },
+        select: { username: true },
+      });
+      const meUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true },
+      });
+      await notifySettledPvp({
+        matchId: match.id,
+        challengerId: match.challengerId,
+        opponentId: match.opponentId,
+        challengerName: meUser?.username ?? "Trainer",
+        opponentName: oppUser?.username ?? "Rival",
+        challengerWon: false,
+      });
+      revalidatePath(`/${locale}/pvp`);
+      revalidatePath(`/${locale}/ranking`);
+    } else {
+      await prisma.$transaction([
+        prisma.pokemonInstance.update({ where: { id: instance.id }, data: { currentHp: 0 } }),
+        prisma.battleSession.update({
+          where: { id: battle.id },
+          data: { status: "LOST", log: finalLog, ...battleStateData },
+        }),
+        prisma.battleLog.create({
+          data: { kind: battleKind, userId, userWon: false, gymId: battle.gymId },
+        }),
+        ...(battle.gymId
+          ? [prisma.gymAttempt.create({ data: { userId, gymId: battle.gymId, won: false } })]
+          : []),
+        ...(battle.gymRunId
+          ? [prisma.gymRun.update({ where: { id: battle.gymRunId }, data: { status: "ABANDONED" } })]
+          : []),
+      ]);
+
+      if (battle.gymId) {
+        const { notifyGymResult } = await import("@/lib/notifications");
+        await notifyGymResult(userId, battle.gymId, false);
+      }
     }
   } else if (mustSwitch) {
     const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
@@ -782,6 +1117,7 @@ export async function submitBattleMove(
     playerChoiceLockMoveId: newChoiceLockMoveId,
     playerStatus: playerState.status,
     wildStatus: wildState.status,
+    pvpResult,
     nextOpponent,
   };
 }

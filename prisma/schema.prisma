@@ -51,6 +51,8 @@ model User {
   battleSessions     BattleSession[]
   pvpAsChallenger    PvpMatch[]           @relation("PvpChallenger")
   pvpAsOpponent      PvpMatch[]           @relation("PvpOpponent")
+  pvpSeasonStats     PvpSeasonStats[]
+  pvpBattleSessions  BattleSession[]      @relation("PvpOpponentUser")
   campaignProgress   CampaignProgress?
   eggs               Egg[]
   clanMessages       ClanMessage[]
@@ -211,6 +213,8 @@ model PokemonInstance {
   currentHp     Int
   isShiny       Boolean  @default(false)
   teamSlot      Int? // 1-6 = en equipo activo, null = en almacenamiento (PC)
+  /// Equipo PvP (1-6). Independiente del teamSlot de aventura; null = no está en preset.
+  pvpSlot       Int?
   /// Destacado del entrenador (emblema de ranking); independiente del slot.
   isFavorite    Boolean  @default(false)
   /// Si true, no se puede publicar en el mercado.
@@ -239,9 +243,11 @@ model PokemonInstance {
 
   @@unique([ownerId, teamSlot]) // dos Pokémon no pueden compartir slot. Postgres
   // trata cada NULL como distinto, así que el PC (teamSlot null) no se ve afectado.
+  @@unique([ownerId, pvpSlot])
   @@index([ownerId])
   @@index([speciesId])
   @@index([ownerId, isFavorite])
+  @@index([ownerId, pvpSlot])
 }
 
 /// Entrada de Pokédex: el entrenador vio la especie (encuentro, batalla, etc.).
@@ -473,8 +479,9 @@ model Item {
   heldStat        String? // "atk" | "spAtk" | "speed" — solo CHOICE_LOCK
   heldBoostType   String? // tipo de movimiento potenciado — solo TYPE_BOOST
 
-  inventoryOf InventoryItem[]
-  holders     PokemonInstance[]
+  inventoryOf        InventoryItem[]
+  holders            PokemonInstance[]
+  battleWildHeldBy   BattleSession[]   @relation("BattleWildHeldItem")
 }
 
 model InventoryItem {
@@ -725,6 +732,14 @@ model BattleSession {
   // cambiar en combate — ver blockIfInCombat en equip-held-item).
   playerChoiceLockMoveId Int? // si porta un objeto CHOICE_LOCK, el movimiento al que quedó atado
   playerItemConsumed     Boolean             @default(false) // FOCUS_SASH/SITRUS/LUM ya se gastaron esta batalla
+  // Paridad PvP: el rival también puede traer objeto equipado (foto de sesión).
+  wildHeldItemId         String?
+  wildItemConsumed       Boolean             @default(false)
+  wildChoiceLockMoveId   Int?
+  // PvP interactivo: sesión ligada a un PvpMatch ACTIVE.
+  pvpMatchId             String?
+  opponentUserId         String?
+  opponentSlot           Int? // slot 1-6 del snapshot del rival que está en campo
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
 
@@ -734,33 +749,78 @@ model BattleSession {
   gym             Gym?            @relation(fields: [gymId], references: [id])
   gymRun          GymRun?         @relation(fields: [gymRunId], references: [id])
   gymTrainer      GymTrainer?     @relation(fields: [gymTrainerId], references: [id])
+  pvpMatch        PvpMatch?       @relation(fields: [pvpMatchId], references: [id], onDelete: SetNull)
+  opponentUser    User?           @relation("PvpOpponentUser", fields: [opponentUserId], references: [id], onDelete: SetNull)
+  wildHeldItem    Item?           @relation("BattleWildHeldItem", fields: [wildHeldItemId], references: [id], onDelete: SetNull)
 
   @@index([userId, status])
+  @@index([pvpMatchId])
 }
 
 // ---------- PvP ----------
 
-// Partido PvP ya resuelto (simulación server-authoritative). Guarda el
-// resultado, la cadena de KOs para reconstruir la narrativa y los ratings
-// antes/después de ambos lados para poder mostrar el delta.
+enum PvpMatchMode {
+  RANKED
+  QUICK
+}
+
+enum PvpMatchStatus {
+  ACTIVE
+  COMPLETED
+  FORFEIT
+}
+
+// Partido PvP. RANKED se juega turno a turno (BattleSession); QUICK se
+// resuelve al instante con el simulador. Guarda snapshots de ambos equipos
+// para que el combate no dependa de la colección actual del rival.
 model PvpMatch {
-  id                     String   @id @default(cuid())
+  id                     String         @id @default(cuid())
   challengerId           String
   opponentId             String
-  winnerId               String // challengerId u opponentId
+  mode                   PvpMatchMode   @default(QUICK)
+  status                 PvpMatchStatus @default(COMPLETED)
+  seasonKey              String?
+  winnerId               String? // null mientras ACTIVE
   challengerRatingBefore Int
-  challengerRatingAfter  Int
+  challengerRatingAfter  Int?
   opponentRatingBefore   Int
-  opponentRatingAfter    Int
-  koLog                  String[] @default([]) // "ladoNombre>ladoNombre" por KO
-  turns                  Int      @default(0)
-  createdAt              DateTime @default(now())
+  opponentRatingAfter    Int?
+  /// Foto congelada del equipo del challenger (JSON tipado en código).
+  challengerTeam         Json           @default("[]")
+  /// Foto congelada del equipo del opponent.
+  opponentTeam           Json           @default("[]")
+  koLog                  String[]       @default([]) // "ladoNombre>ladoNombre" por KO
+  turnLog                String[]       @default([]) // narrativa turno a turno
+  turns                  Int            @default(0)
+  coinsAwarded           Int            @default(0)
+  createdAt              DateTime       @default(now())
+  completedAt            DateTime?
 
-  challenger User @relation("PvpChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
-  opponent   User @relation("PvpOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+  challenger     User            @relation("PvpChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent       User            @relation("PvpOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+  battleSessions BattleSession[]
 
   @@index([challengerId, createdAt])
   @@index([opponentId, createdAt])
+  @@index([status, createdAt])
+  @@index([seasonKey])
+}
+
+/// Snapshot de rating/récord al cerrar (o al migrar) una temporada PvP.
+model PvpSeasonStats {
+  id        String   @id @default(cuid())
+  userId    String
+  seasonKey String
+  rating    Int
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  tier      String // bronze | silver | gold | platinum | diamond | master
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seasonKey])
+  @@index([seasonKey, rating])
 }
 
 // ---------- Eventos y recompensas recurrentes ----------
@@ -819,7 +879,7 @@ model EventMissionClaim {
 model RewardLedger {
   id        String   @id @default(cuid())
   userId    String
-  source    String // "daily" | "weekly" | "event_mission"
+  source    String // "daily" | "weekly" | "event_mission" | "pvp"
   sourceRef String // "cycle-28:12" | "2026-W31:50" | "water-fest:catch-10"
   payload   Json
   createdAt DateTime @default(now())

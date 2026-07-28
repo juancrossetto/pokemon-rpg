@@ -62,6 +62,7 @@ const INFLICT: Record<string, StatusCondition> = {
 
 /** Efecto secundario de movimientos de daño (chance Gen III+ típica). */
 const SECONDARY_STATUS: Record<string, { status: StatusCondition; chance: number }> = {
+  // Freeze
   "ice-beam": { status: "FREEZE", chance: 0.1 },
   icebeam: { status: "FREEZE", chance: 0.1 },
   blizzard: { status: "FREEZE", chance: 0.1 },
@@ -71,6 +72,41 @@ const SECONDARY_STATUS: Record<string, { status: StatusCondition; chance: number
   powdersnow: { status: "FREEZE", chance: 0.1 },
   "freeze-dry": { status: "FREEZE", chance: 0.1 },
   freezedry: { status: "FREEZE", chance: 0.1 },
+  // Paralysis
+  thunderbolt: { status: "PARALYSIS", chance: 0.1 },
+  thunder: { status: "PARALYSIS", chance: 0.3 },
+  discharge: { status: "PARALYSIS", chance: 0.3 },
+  "body-slam": { status: "PARALYSIS", chance: 0.3 },
+  bodyslam: { status: "PARALYSIS", chance: 0.3 },
+  "thunder-punch": { status: "PARALYSIS", chance: 0.1 },
+  thunderpunch: { status: "PARALYSIS", chance: 0.1 },
+  "force-palm": { status: "PARALYSIS", chance: 0.3 },
+  forcepalm: { status: "PARALYSIS", chance: 0.3 },
+  nuzzle: { status: "PARALYSIS", chance: 1 },
+  lick: { status: "PARALYSIS", chance: 0.3 },
+  // Burn
+  ember: { status: "BURN", chance: 0.1 },
+  flamethrower: { status: "BURN", chance: 0.1 },
+  "fire-blast": { status: "BURN", chance: 0.1 },
+  fireblast: { status: "BURN", chance: 0.1 },
+  "fire-punch": { status: "BURN", chance: 0.1 },
+  firepunch: { status: "BURN", chance: 0.1 },
+  "heat-wave": { status: "BURN", chance: 0.1 },
+  heatwave: { status: "BURN", chance: 0.1 },
+  lavaplume: { status: "BURN", chance: 0.3 },
+  "lava-plume": { status: "BURN", chance: 0.3 },
+  williwisp: { status: "BURN", chance: 1 },
+  // Poison
+  sludge: { status: "POISON", chance: 0.3 },
+  "sludge-bomb": { status: "POISON", chance: 0.3 },
+  sludgebomb: { status: "POISON", chance: 0.3 },
+  "poison-sting": { status: "POISON", chance: 0.3 },
+  poisonsting: { status: "POISON", chance: 0.3 },
+  "poison-jab": { status: "POISON", chance: 0.3 },
+  poisonjab: { status: "POISON", chance: 0.3 },
+  "smog": { status: "POISON", chance: 0.4 },
+  "gunk-shot": { status: "POISON", chance: 0.3 },
+  gunkshot: { status: "POISON", chance: 0.3 },
 };
 
 const STAT_MOVES: Record<string, { stat: BattleStat; stages: number }> = {

@@ -271,20 +271,22 @@ export function BattleResult({
           : { label: t("koTag"), icon: "close", tone: "ko" };
 
   const headlineTone = playerWon ? "win" : mode === "lost" ? "lose" : "neutral";
-  const outcomePillLabel = playerWon
-    ? t("victoryTag")
-    : mode === "lost"
+  const outcomePillLabel =
+    mode === "lost"
       ? t("defeatTag")
       : mode === "caught"
         ? t("caughtTag")
-        : t("fledTag");
-  const outcomePillIcon = playerWon
-    ? "trophy"
-    : mode === "lost"
+        : mode === "fled"
+          ? t("fledTag")
+          : t("victoryTag");
+  const outcomePillIcon =
+    mode === "lost"
       ? "sentiment_very_dissatisfied"
       : mode === "caught"
         ? "sports_baseball"
-        : "directions_run";
+        : mode === "fled"
+          ? "directions_run"
+          : "trophy";
 
   const accentGlow = playerWon
     ? "bg-tertiary/25"
@@ -309,7 +311,7 @@ export function BattleResult({
   return createPortal(
     <BattleResultLeaveContext.Provider value={leave}>
     <div
-      className={`battle-result-overlay fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto overscroll-contain px-margin-mobile py-[max(5.5rem,env(safe-area-inset-top)+4.5rem)] pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] xl:py-20${
+      className={`battle-result-overlay fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto overscroll-contain px-margin-mobile py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]${
         leaving ? " is-leaving" : ""
       }`}
       role="dialog"
@@ -320,11 +322,11 @@ export function BattleResult({
       <div className={`pointer-events-none fixed inset-0 ${accentGlow} blur-3xl opacity-50`} aria-hidden />
 
       <div
-        className={`result-in relative z-10 my-auto flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border bg-[#0c1018] shadow-[0_24px_80px_rgba(0,0,0,0.65)] ${cardBorder}`}
+        className={`result-in relative z-10 my-auto flex max-h-[min(92dvh,48rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border bg-[#0c1018] shadow-[0_24px_80px_rgba(0,0,0,0.65)] ${cardBorder}`}
       >
         <div className={`pointer-events-none absolute inset-x-0 top-0 h-36 ${cardTopGlow} blur-2xl`} />
 
-        <div className="relative max-h-[min(78dvh,44rem)] overflow-y-auto overscroll-contain px-4 py-5 md:px-6 md:py-6">
+        <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 md:px-6 md:py-6">
           <div className="flex flex-col items-center gap-2.5">
             <span className={`result-outcome-pill result-outcome-pill--${headlineTone}`}>
               <span className="material-symbols-outlined text-[14px]!">{outcomePillIcon}</span>

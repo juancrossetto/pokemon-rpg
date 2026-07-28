@@ -11,6 +11,7 @@ import { switchPokemon } from "@/actions/switch-pokemon";
 import { applyBattleItem } from "@/actions/use-item";
 import { setPokemonNickname } from "@/actions/rename-pokemon";
 import { abandonGymRun } from "@/actions/abandon-gym-run";
+import { forfeitPvpBattle } from "@/actions/forfeit-pvp-battle";
 import { SoftLeaveButton, BattleResult } from "@/components/battle-result";
 import { startEncounter } from "@/actions/start-encounter";
 import { GymBadgePopup } from "@/components/gym-badge-popup";
@@ -47,6 +48,8 @@ const LUNGE_MS = 380;
 const IMPACT_MS = 560;
 const STATUS_MS = 620;
 const MISS_MS = 500;
+/** Beat aparte para burn/poison: que no se confunda con el daño del golpe. */
+const RESIDUAL_MS = 720;
 const BALL_TRAVEL_MS = 500;
 const BALL_WOBBLE_MS = 1100;
 const BALL_CATCH_MS = 550;
@@ -135,6 +138,9 @@ export interface BattleArenaProps {
   gymName: string | null;
   gymLeaderName: string | null;
   gymBadgeName: string | null;
+  /** Modo de batalla: wild | gym | pvp */
+  battleMode: "wild" | "gym" | "pvp";
+  pvpMatchId: string | null;
 }
 
 export function BattleArena({
@@ -161,12 +167,15 @@ export function BattleArena({
   gymName,
   gymLeaderName,
   gymBadgeName,
+  battleMode = gymId ? "gym" : "wild",
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tLog = useTranslations("battle.log");
   const tTeam = useTranslations("team");
   const router = useRouter();
-  const isGymBattle = gymId !== null;
+  const isGymBattle = battleMode === "gym";
+  const isPvpBattle = battleMode === "pvp";
+  const isTrainerStyle = isGymBattle || isPvpBattle;
   const leaderPortrait = gymLeaderName ? gymLeaderPortraitUrl(gymLeaderName) : null;
   const foeLabel = opponentName ?? t("wildFoe");
 
@@ -180,6 +189,9 @@ export function BattleArena({
     if (raw.startsWith("challengeTrainer:")) {
       return tLog("challengeTrainer", { name: raw.slice("challengeTrainer:".length) });
     }
+    if (raw.startsWith("challengePvp:")) {
+      return tLog("challengeTrainer", { name: raw.slice("challengePvp:".length) });
+    }
     if (raw.startsWith("challengeLeader:")) {
       const rest = raw.slice("challengeLeader:".length);
       const [leader, gym] = rest.split(":");
@@ -192,6 +204,56 @@ export function BattleArena({
     if (raw.startsWith("ball:")) return tLog("threwBall", { name: raw.slice(5) });
     if (raw.startsWith("caught:")) return tLog("caught", { name: raw.slice(7) });
     if (raw.startsWith("item:")) return tLog("usedItem", { name: raw.slice(5) });
+    if (raw.startsWith("paralyzed:")) return tLog("paralyzed", { name: raw.slice("paralyzed:".length) });
+    if (raw.startsWith("asleep:")) return tLog("asleep", { name: raw.slice("asleep:".length) });
+    if (raw.startsWith("frozen:")) return tLog("frozen", { name: raw.slice("frozen:".length) });
+    if (raw.startsWith("flinch:")) return tLog("flinch", { name: raw.slice("flinch:".length) });
+    if (raw.startsWith("disobey:")) return tLog("disobey", { name: raw.slice("disobey:".length) });
+    if (raw.startsWith("woke:")) return tLog("woke", { name: raw.slice("woke:".length) });
+    if (raw.startsWith("thawed:")) return tLog("thawed", { name: raw.slice("thawed:".length) });
+    if (raw.startsWith("residual:")) {
+      const rest = raw.slice("residual:".length);
+      const [name, dmg, kind] = rest.split(":");
+      if (kind === "burn") return tLog("residualBurn", { name: name ?? "", damage: Number(dmg) || 0 });
+      if (kind === "poison") return tLog("residualPoison", { name: name ?? "", damage: Number(dmg) || 0 });
+      return tLog("residual", { name: name ?? "", damage: Number(dmg) || 0 });
+    }
+    if (raw.startsWith("used:")) {
+      const rest = raw.slice("used:".length);
+      const i = rest.indexOf(":");
+      if (i < 0) return raw;
+      return tLog("used", {
+        name: rest.slice(0, i),
+        move: formatMoveName(rest.slice(i + 1)),
+      });
+    }
+    if (raw.startsWith("damage:")) {
+      const rest = raw.slice("damage:".length);
+      const i = rest.indexOf(":");
+      if (i < 0) return raw;
+      return tLog("damage", { name: rest.slice(0, i), damage: Number(rest.slice(i + 1)) || 0 });
+    }
+    if (raw.startsWith("miss:")) {
+      const rest = raw.slice("miss:".length);
+      const i = rest.indexOf(":");
+      if (i < 0) return raw;
+      return tLog("miss", {
+        name: rest.slice(0, i),
+        move: formatMoveName(rest.slice(i + 1)),
+      });
+    }
+    if (raw.startsWith("status:")) {
+      const rest = raw.slice("status:".length);
+      const i = rest.indexOf(":");
+      if (i < 0) return raw;
+      const statusRaw = rest.slice(i + 1);
+      if (!isStatusCondition(statusRaw)) return raw;
+      return tLog("statusApplied", {
+        name: rest.slice(0, i),
+        status: t(statusLabelKey(statusRaw)),
+      });
+    }
+    if (raw.startsWith("fainted:")) return tLog("fainted", { name: raw.slice("fainted:".length) });
     return raw;
   }
 
@@ -258,6 +320,12 @@ export function BattleArena({
   const [outcome, setOutcome] = useState<Outcome>("ongoing");
   const [xpSummary, setXpSummary] = useState<XpSummaryEntry[] | null>(null);
   const [coinsGained, setCoinsGained] = useState(0);
+  const [pvpResult, setPvpResult] = useState<{
+    matchId: string;
+    ratingBefore: number;
+    ratingAfter: number;
+    coinsAwarded: number;
+  } | null>(null);
   const [view, setView] = useState<View>("menu");
   // Una vez que el jugador elige Luchar por primera vez, los turnos
   // siguientes abren directo en el menú de poderes (en vez de volver
@@ -279,7 +347,7 @@ export function BattleArena({
   // el daño — un golpe débil ya no se ve idéntico a uno que casi noquea.
   const [impactIntensity, setImpactIntensity] = useState(1);
   const [confirmLeaveGym, setConfirmLeaveGym] = useState(false);
-  const bgmKind = isGymBattle || opponentName ? "boss" : "wild";
+  const bgmKind = isGymBattle || isPvpBattle || opponentName ? "boss" : "wild";
 
   const teamRoster = party.filter((m) => m.instanceId !== activePlayer.instanceId);
 
@@ -383,6 +451,59 @@ export function BattleArena({
     return { label: t("regularEffective"), className: "text-on-surface-variant" };
   }
 
+  /** Daño residual (burn/poison): beat visual propio, DESPUÉS del ataque. */
+  async function playResidualBeat(event: TurnEvent) {
+    if (!event.residualDamage || event.residualHpAfter == null) return;
+
+    const side = event.side;
+    const activeId = activePlayer.instanceId;
+    const status =
+      event.residualStatus ?? (side === "player" ? playerStatus : wildStatus);
+    const flash =
+      status === "BURN" ? "#E85D04" : status === "POISON" ? "#A040A0" : "#9CA3AF";
+    const abbr =
+      status && isStatusCondition(status) ? t(statusAbbrKey(status)) : null;
+
+    // Pausa corta para que el golpe “asiente” antes del residual.
+    await delay(280);
+    playBattleSfx("status");
+    const residualKey =
+      status === "BURN"
+        ? "residualBurn"
+        : status === "POISON"
+          ? "residualPoison"
+          : "residual";
+    appendLog(
+      tLog(residualKey, { name: nameFor(side), damage: event.residualDamage }),
+      side,
+    );
+    setMoveFx(null);
+    setEffPopup(null);
+    setArenaFlash(flash);
+    setShakingSide(side);
+    setImpactIntensity(0.75);
+    setDamagePopup({
+      side,
+      text: abbr ? `${abbr} -${event.residualDamage}` : `-${event.residualDamage}`,
+      key: Date.now(),
+    });
+    if (side === "player") {
+      setPlayerHp(event.residualHpAfter);
+      setParty((prev) =>
+        prev.map((m) =>
+          m.instanceId === activeId ? { ...m, currentHp: event.residualHpAfter! } : m,
+        ),
+      );
+    } else {
+      setWildHp(event.residualHpAfter);
+    }
+
+    await delay(RESIDUAL_MS);
+    setShakingSide(null);
+    setArenaFlash(null);
+    setDamagePopup(null);
+  }
+
   function playEvent(event: TurnEvent): Promise<void> {
     const activeId = activePlayer.instanceId;
     return new Promise((resolve) => {
@@ -420,15 +541,20 @@ export function BattleArena({
       });
 
       if (event.skipped) {
+        if (event.statusNote === "woke") appendLog(tLog("woke", { name: nameFor(event.side) }), event.side);
+        if (event.statusNote === "thawed") appendLog(tLog("thawed", { name: nameFor(event.side) }), event.side);
         if (event.skipped === "asleep") appendLog(tLog("asleep", { name: nameFor(event.side) }), event.side);
         else if (event.skipped === "paralyzed") appendLog(tLog("paralyzed", { name: nameFor(event.side) }), event.side);
         else if (event.skipped === "frozen") appendLog(tLog("frozen", { name: nameFor(event.side) }), event.side);
         else if (event.skipped === "flinch") appendLog(tLog("flinch", { name: nameFor(event.side) }), event.side);
         else appendLog(tLog("disobey", { name: nameFor(event.side) }), event.side);
-        setTimeout(() => {
+        void (async () => {
+          await delay(STATUS_MS);
           setMoveFx(null);
+          await playResidualBeat(event);
+          appendItemTriggerLog(event);
           resolve();
-        }, STATUS_MS);
+        })();
         return;
       }
 
@@ -437,12 +563,18 @@ export function BattleArena({
       setTimeout(() => {
         setAttackingSide(null);
 
+        if (event.statusNote === "woke") appendLog(tLog("woke", { name: nameFor(event.side) }), event.side);
+        if (event.statusNote === "thawed") appendLog(tLog("thawed", { name: nameFor(event.side) }), event.side);
+
         if (!event.hit) {
           appendLog(tLog("miss", { name: nameFor(event.side), move: formatMoveName(event.moveName) }), event.side);
-          setTimeout(() => {
+          void (async () => {
+            await delay(MISS_MS);
             setMoveFx(null);
+            await playResidualBeat(event);
+            appendItemTriggerLog(event);
             resolve();
-          }, MISS_MS);
+          })();
           return;
         }
 
@@ -472,13 +604,15 @@ export function BattleArena({
               foe,
             );
           }
-          appendItemTriggerLog(event);
           setArenaFlash(color);
           setTimeout(() => setArenaFlash(null), 320);
-          setTimeout(() => {
+          void (async () => {
+            await delay(STATUS_MS);
             setMoveFx(null);
+            await playResidualBeat(event);
+            appendItemTriggerLog(event);
             resolve();
-          }, STATUS_MS);
+          })();
           return;
         }
 
@@ -533,16 +667,6 @@ export function BattleArena({
           if (event.side === "player") setPlayerHp((hp) => Math.max(0, hp - (event.recoilDamage ?? 0)));
           else setWildHp((hp) => Math.max(0, hp - (event.recoilDamage ?? 0)));
         }
-        if (event.residualDamage && event.residualHpAfter != null) {
-          appendLog(
-            tLog("residual", { name: nameFor(event.side), damage: event.residualDamage }),
-            event.side,
-          );
-          if (event.side === "player") setPlayerHp(event.residualHpAfter);
-          else setWildHp(event.residualHpAfter);
-        }
-
-        appendItemTriggerLog(event);
 
         const defenderMaxHp = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
         if (event.hpAfter > 0 && event.hpAfter / defenderMaxHp <= 0.1) {
@@ -550,12 +674,16 @@ export function BattleArena({
         }
 
         setTimeout(() => setArenaFlash(null), 280);
-        setTimeout(() => {
+        void (async () => {
+          await delay(IMPACT_MS);
           setShakingSide(null);
           setMoveFx(null);
           setEffPopup(null);
+          setDamagePopup(null);
+          await playResidualBeat(event);
+          appendItemTriggerLog(event);
           resolve();
-        }, IMPACT_MS);
+        })();
       }, LUNGE_MS);
     });
   }
@@ -673,6 +801,9 @@ export function BattleArena({
     if (result.coinsGained > 0) {
       setCoinsGained(result.coinsGained);
     }
+    if (result.pvpResult) {
+      setPvpResult(result.pvpResult);
+    }
 
     if (result.badgeEarned) {
       appendLog(t("badgeEarned"));
@@ -704,11 +835,16 @@ export function BattleArena({
   }
 
   async function handleFlee() {
-    if (isAnimating || mustSwitch || isGymBattle || outcome !== "ongoing") return;
+    if (isAnimating || mustSwitch || outcome !== "ongoing") return;
+    if (isGymBattle) return;
     setIsAnimating(true);
     setView("menu");
 
     try {
+      if (isPvpBattle) {
+        await forfeitPvpBattle(locale);
+        return;
+      }
       const result = await fleeBattle(battleId, locale);
       if (!result?.fled) return;
 
@@ -722,7 +858,7 @@ export function BattleArena({
   }
 
   async function handleThrowBall(itemId: string, ballName: string) {
-    if (isAnimating || outcome !== "ongoing" || mustSwitch) return;
+    if (isAnimating || outcome !== "ongoing" || mustSwitch || isTrainerStyle) return;
     setIsAnimating(true);
     setView("menu");
     appendLog(`¡Lanzaste ${ballName}!`, "player");
@@ -1028,6 +1164,31 @@ export function BattleArena({
         xpSummary={xpSummary}
         coinsGained={coinsGained}
       >
+        {isPvpBattle && pvpResult && (
+          <div className="w-full max-w-sm rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center mb-1">
+            <p className="text-label-sm uppercase tracking-wide text-on-surface-variant">
+              {t("pvpRating")}
+            </p>
+            <p className="text-headline-md font-mono text-electric-yellow">
+              {pvpResult.ratingAfter}{" "}
+              <span
+                className={
+                  pvpResult.ratingAfter - pvpResult.ratingBefore >= 0
+                    ? "text-tertiary"
+                    : "text-error"
+                }
+              >
+                ({pvpResult.ratingAfter - pvpResult.ratingBefore >= 0 ? "+" : ""}
+                {pvpResult.ratingAfter - pvpResult.ratingBefore})
+              </span>
+            </p>
+            {pvpResult.coinsAwarded > 0 && (
+              <p className="text-label-md text-tertiary mt-1">
+                +{pvpResult.coinsAwarded} {t("coins")}
+              </p>
+            )}
+          </div>
+        )}
         {showBadgePopup && badgeEarned && gymType && (
           <GymBadgePopup
             gymType={gymType}
@@ -1043,9 +1204,23 @@ export function BattleArena({
             onContinue={() => setShowBadgePopup(false)}
           />
         )}
-        {outcome === "lost" ? (
+        {outcome === "lost" && isPvpBattle ? (
+          <SoftLeaveButton
+            href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}
+            className={ctaClass}
+          >
+            {t("backToPvp")}
+          </SoftLeaveButton>
+        ) : outcome === "lost" ? (
           <SoftLeaveButton href="/team" className={ctaClass}>
             {t("goHeal")}
+          </SoftLeaveButton>
+        ) : outcome === "won" && isPvpBattle ? (
+          <SoftLeaveButton
+            href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}
+            className={ctaClass}
+          >
+            {t("backToPvp")}
           </SoftLeaveButton>
         ) : outcome === "trainer_cleared" && gymId && gymRunId ? (
           <div className="w-full max-w-sm flex flex-col gap-3">
@@ -1116,7 +1291,7 @@ export function BattleArena({
     );
   }
 
-  const hasBalls = !isGymBattle && ballStacks.length > 0;
+  const hasBalls = !isTrainerStyle && ballStacks.length > 0;
   const hasPotions = potionStacks.length > 0;
   const hasHealthyBackup = teamRoster.some((m) => m.currentHp > 0);
 
@@ -1214,7 +1389,7 @@ export function BattleArena({
             }`}
             style={
               {
-                "--arena-bg-image": `url(${showdownBattleBgUrl(isGymBattle ? "mountain" : "meadow")})`,
+                "--arena-bg-image": `url(${showdownBattleBgUrl(isTrainerStyle ? "mountain" : "meadow")})`,
                 ...(arenaFlash ? { "--arena-flash-color": arenaFlash } : {}),
               } as CSSProperties
             }
@@ -1539,8 +1714,10 @@ export function BattleArena({
                   onClick={handleFlee}
                   className="battle-cmd-btn"
                 >
-                  <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">directions_run</span>
-                  {t("run")}
+                  <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">
+                    {isPvpBattle ? "flag" : "directions_run"}
+                  </span>
+                  {isPvpBattle ? t("forfeit") : t("run")}
                 </button>
               </div>
             )}

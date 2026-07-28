@@ -38,7 +38,11 @@ export async function switchPokemon(
 
   const battle = await prisma.battleSession.findFirst({
     where: { id: sessionId, userId, status: "ACTIVE" },
-    include: { pokemonInstance: { include: { species: true } }, wildSpecies: true },
+    include: {
+      pokemonInstance: { include: { species: true } },
+      wildSpecies: true,
+      wildHeldItem: true,
+    },
   });
   if (!battle) return null;
 

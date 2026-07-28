@@ -57,7 +57,8 @@ export function emptyStages(): StatStages {
 
 /**
  * Resuelve un único uso de movimiento (o skip por status).
- * El residual burn/poison se aplica al atacante al final de su acción.
+ * El residual burn/poison se aplica al atacante al final de su acción
+ * (también si no pudo moverse por para/sueño/congelación).
  */
 export function resolveSingleAction(
   attackerSide: "player" | "wild",
@@ -74,6 +75,12 @@ export function resolveSingleAction(
   const self = isPlayer ? p : w;
   const foe = isPlayer ? w : p;
 
+  // Sueño sin contador (dato viejo / inconsistente): re-tira turnos para no
+  // despertar al instante y parecer que el estado no hace nada.
+  if (self.status === "SLEEP" && self.sleepTurns <= 0) {
+    self.sleepTurns = rollSleepTurns();
+  }
+
   const act = canActThisTurn(self.status, self.sleepTurns);
   self.sleepTurns = act.newSleepTurns;
 
@@ -81,7 +88,7 @@ export function resolveSingleAction(
     if (act.reason === "asleep" && act.newSleepTurns <= 0) {
       self.status = null;
     }
-    events.push({
+    const skipEvent: TurnEvent = {
       side: attackerSide,
       moveName: move.name,
       moveType: move.type,
@@ -92,17 +99,47 @@ export function resolveSingleAction(
       effectiveness: 1,
       hpAfter: foe.hp,
       skipped: act.reason,
+    };
+    applyResidualToEvent(self, skipEvent);
+    events.push(skipEvent);
+
+    const itemResult = resolvePlayerHeldItemTrigger({
+      heldItem: p.heldItem,
+      hpBefore: p.hp,
+      hp: p.hp,
+      maxHp: p.maxHp,
+      statusBefore: p.status,
+      status: p.status,
+      alreadyConsumed: playerItemConsumed,
+      // Leftovers cura al final de la acción del jugador aunque esté paralizado.
+      isActingThisCall: isPlayer,
     });
+    p.hp = itemResult.hp;
+    p.status = itemResult.status;
+    if (itemResult.trigger) {
+      skipEvent.itemName = itemResult.trigger.itemName;
+      skipEvent.itemEffect = itemResult.trigger.kind;
+      skipEvent.itemAmount = itemResult.trigger.amount;
+      skipEvent.itemCuredStatus = itemResult.trigger.curedStatus;
+      skipEvent.itemHpAfter = p.hp;
+    }
+
     return {
       events,
       player: isPlayer ? self : p,
       wild: isPlayer ? w : self,
-      itemConsumed: playerItemConsumed,
+      itemConsumed: itemResult.consumed,
     };
   }
 
   // Despertó / se descongeló al intentar actuar.
-  if (self.status === "SLEEP" || self.status === "FREEZE") {
+  let statusNote: TurnEvent["statusNote"] = null;
+  if (self.status === "SLEEP") {
+    statusNote = "woke";
+    self.status = null;
+    self.sleepTurns = 0;
+  } else if (self.status === "FREEZE") {
+    statusNote = "thawed";
     self.status = null;
     self.sleepTurns = 0;
   }
@@ -128,6 +165,7 @@ export function resolveSingleAction(
       damage: 0,
       effectiveness: 1,
       hpAfter: foe.hp,
+      statusNote,
     });
   } else if (move.category === "STATUS") {
     let statusApplied: StatusCondition | null = null;
@@ -162,6 +200,7 @@ export function resolveSingleAction(
       hpAfter: foe.hp,
       statusApplied,
       statChange,
+      statusNote,
     });
   } else {
     foe.hp = Math.max(0, foe.hp - result.damage);
@@ -205,18 +244,12 @@ export function resolveSingleAction(
       critical: result.critical,
       recoilDamage: recoilDamage || undefined,
       statusApplied,
+      statusNote,
     });
   }
 
-  const resid = residualDamage(self.status, self.maxHp);
-  if (resid > 0 && self.hp > 0) {
-    self.hp = Math.max(0, self.hp - resid);
-    const last = events[events.length - 1];
-    if (last) {
-      last.residualDamage = resid;
-      last.residualHpAfter = self.hp;
-    }
-  }
+  const last = events[events.length - 1];
+  if (last) applyResidualToEvent(self, last);
 
   const itemResult = resolvePlayerHeldItemTrigger({
     heldItem: p.heldItem,
@@ -230,15 +263,12 @@ export function resolveSingleAction(
   });
   p.hp = itemResult.hp;
   p.status = itemResult.status;
-  if (itemResult.trigger) {
-    const last = events[events.length - 1];
-    if (last) {
-      last.itemName = itemResult.trigger.itemName;
-      last.itemEffect = itemResult.trigger.kind;
-      last.itemAmount = itemResult.trigger.amount;
-      last.itemCuredStatus = itemResult.trigger.curedStatus;
-      last.itemHpAfter = p.hp;
-    }
+  if (itemResult.trigger && last) {
+    last.itemName = itemResult.trigger.itemName;
+    last.itemEffect = itemResult.trigger.kind;
+    last.itemAmount = itemResult.trigger.amount;
+    last.itemCuredStatus = itemResult.trigger.curedStatus;
+    last.itemHpAfter = p.hp;
   }
 
   return {
@@ -247,6 +277,17 @@ export function resolveSingleAction(
     wild: isPlayer ? foe : self,
     itemConsumed: itemResult.consumed,
   };
+}
+
+function applyResidualToEvent(self: SideBattleState, event: TurnEvent) {
+  const resid = residualDamage(self.status, self.maxHp);
+  if (resid > 0 && self.hp > 0) {
+    const statusBefore = self.status;
+    self.hp = Math.max(0, self.hp - resid);
+    event.residualDamage = resid;
+    event.residualHpAfter = self.hp;
+    event.residualStatus = statusBefore;
+  }
 }
 
 /** Atajo: solo el golpe del salvaje (mochila / huir / cambio). */

@@ -20,6 +20,7 @@ import { spriteFor } from "@/lib/shiny";
 import { getRouteTrainer } from "@/lib/campaign/trainers";
 import { avatarById, showdownTrainerSpriteUrl } from "@/lib/avatars";
 import { gymLeaderPortraitUrl, gymTypeTrainerSpriteSlug } from "@/lib/gym-art";
+import { parseTeamSnap } from "@/lib/pvp/team";
 
 const ENCOUNTER_ENERGY_COST = 1;
 
@@ -59,6 +60,15 @@ export default async function BattlePage({
       wildSpecies: true,
       gym: { select: { type: true, name: true, leaderName: true, badgeName: true } },
       gymTrainer: { select: { name: true } },
+      pvpMatch: {
+        select: {
+          id: true,
+          opponentTeam: true,
+          opponentId: true,
+          opponent: { select: { username: true, avatarId: true } },
+        },
+      },
+      opponentUser: { select: { username: true, avatarId: true } },
     },
   });
 
@@ -193,7 +203,8 @@ export default async function BattlePage({
       instance.level,
       instance.ptConstitution,
     );
-    const currentSlot = battle.gymPokemonSlot ?? 1;
+    const currentSlot = battle.gymPokemonSlot ?? battle.opponentSlot ?? 1;
+    const pvpTeam = battle.pvpMatchId ? parseTeamSnap(battle.pvpMatch?.opponentTeam) : [];
 
     const [pokeballs, potions, partyRows, opponentTeam, userRow] = await Promise.all([
       prisma.inventoryItem.findMany({
@@ -211,19 +222,21 @@ export default async function BattlePage({
         include: { species: true },
         orderBy: { teamSlot: "asc" },
       }),
-      battle.gymTrainerId
-        ? prisma.gymTrainerPokemon.findMany({
-            where: { gymTrainerId: battle.gymTrainerId },
-            include: { species: true },
-            orderBy: { slot: "asc" },
-          })
-        : battle.gymId
-          ? prisma.gymPokemon.findMany({
-              where: { gymId: battle.gymId },
+      battle.pvpMatchId
+        ? Promise.resolve([])
+        : battle.gymTrainerId
+          ? prisma.gymTrainerPokemon.findMany({
+              where: { gymTrainerId: battle.gymTrainerId },
               include: { species: true },
               orderBy: { slot: "asc" },
             })
-          : Promise.resolve([]),
+          : battle.gymId
+            ? prisma.gymPokemon.findMany({
+                where: { gymId: battle.gymId },
+                include: { species: true },
+                orderBy: { slot: "asc" },
+              })
+            : Promise.resolve([]),
       prisma.user.findUnique({
         where: { id: userId },
         select: { avatarId: true },
@@ -231,40 +244,61 @@ export default async function BattlePage({
     ]);
 
     const opponentParty: OpponentPartyMember[] =
-      opponentTeam.length > 0
-        ? opponentTeam.map((m) => ({
+      pvpTeam.length > 0
+        ? pvpTeam.map((m) => ({
             slot: m.slot,
-            name: m.species.name,
-            spriteUrl: m.species.spriteUrl,
+            name: m.name,
+            spriteUrl: m.spriteUrl,
             fainted: m.slot < currentSlot,
             active: m.slot === currentSlot,
           }))
-        : [
-            {
-              slot: 1,
-              name: battle.wildSpecies.name,
-              spriteUrl: battle.wildSpecies.spriteUrl,
-              fainted: false,
-              active: true,
-            },
-          ];
+        : opponentTeam.length > 0
+          ? opponentTeam.map((m) => ({
+              slot: m.slot,
+              name: m.species.name,
+              spriteUrl: m.species.spriteUrl,
+              fainted: m.slot < currentSlot,
+              active: m.slot === currentSlot,
+            }))
+          : [
+              {
+                slot: 1,
+                name: battle.wildSpecies.name,
+                spriteUrl: battle.wildSpecies.spriteUrl,
+                fainted: false,
+                active: true,
+              },
+            ];
 
     // Un entrenador de ruta tiene nombre propio: no es un "Pokémon salvaje".
     const routeTrainer = battle.routeTrainerId ? getRouteTrainer(battle.routeTrainerId) : null;
     const tCampaign = await getTranslations("campaign");
-    const opponentName = routeTrainer
-      ? tCampaign(routeTrainer.nameKey)
-      : (battle.gymTrainer?.name ?? battle.gym?.leaderName ?? null);
+    const pvpOpponentName =
+      battle.opponentUser?.username ?? battle.pvpMatch?.opponent.username ?? null;
+    const opponentName = battle.pvpMatchId
+      ? pvpOpponentName
+      : routeTrainer
+        ? tCampaign(routeTrainer.nameKey)
+        : (battle.gymTrainer?.name ?? battle.gym?.leaderName ?? null);
 
     const trainerPortraitUrl = avatarById(userRow?.avatarId)?.src ?? null;
     let opponentPortraitUrl: string | null = null;
-    if (routeTrainer) {
+    if (battle.pvpMatchId) {
+      const avId = battle.opponentUser?.avatarId ?? battle.pvpMatch?.opponent.avatarId ?? null;
+      opponentPortraitUrl = avatarById(avId)?.src ?? null;
+    } else if (routeTrainer) {
       opponentPortraitUrl = showdownTrainerSpriteUrl(routeTrainer.spriteSlug);
     } else if (battle.gymTrainerId && battle.gym?.type) {
       opponentPortraitUrl = showdownTrainerSpriteUrl(gymTypeTrainerSpriteSlug(battle.gym.type));
     } else if (battle.gym?.leaderName) {
       opponentPortraitUrl = gymLeaderPortraitUrl(battle.gym.leaderName);
     }
+
+    const battleMode: BattleArenaProps["battleMode"] = battle.pvpMatchId
+      ? "pvp"
+      : battle.gymId
+        ? "gym"
+        : "wild";
 
     initialBattle = {
       battleId: battle.id,
@@ -304,8 +338,9 @@ export default async function BattlePage({
         maxHp: playerMaxHp,
       },
       wild: {
-        name: battle.wildSpecies.name,
-        speciesName: battle.wildSpecies.name,
+        name: pvpTeam.find((m) => m.slot === currentSlot)?.name ?? battle.wildSpecies.name,
+        speciesName:
+          pvpTeam.find((m) => m.slot === currentSlot)?.speciesName ?? battle.wildSpecies.name,
         level: battle.wildLevel,
         spriteUrl: spriteFor(battle.wildSpecies.spriteUrl, battle.wildIsShiny),
         isShiny: battle.wildIsShiny,
@@ -332,6 +367,8 @@ export default async function BattlePage({
       gymName: battle.gym?.name ?? null,
       gymLeaderName: battle.gym?.leaderName ?? null,
       gymBadgeName: battle.gym?.badgeName ?? null,
+      battleMode,
+      pvpMatchId: battle.pvpMatchId,
     };
   }
 

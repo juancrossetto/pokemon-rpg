@@ -35,6 +35,7 @@ export async function applyBattleItem(
           include: { species: { include: { evolvesTo: { select: { id: true } } } }, heldItem: true },
         },
         wildSpecies: true,
+        wildHeldItem: true,
       },
     }),
     prisma.inventoryItem.findUnique({

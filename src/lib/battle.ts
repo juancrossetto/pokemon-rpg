@@ -137,7 +137,11 @@ export interface TurnEvent {
   hpAfter: number;
   critical?: boolean;
   skipped?: SkipReason | null;
+  /** Despertó / se descongeló justo antes de actuar. */
+  statusNote?: "woke" | "thawed" | null;
   statusApplied?: StatusCondition | null;
+  /** Estado del atacante al aplicar residual (para el mensaje del log). */
+  residualStatus?: StatusCondition | null;
   statChange?: { stat: "atk" | "def" | "spe"; stages: number } | null;
   residualDamage?: number;
   residualHpAfter?: number;

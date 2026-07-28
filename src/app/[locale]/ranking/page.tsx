@@ -22,6 +22,7 @@ import {
   teamPower,
   winRate,
 } from "@/lib/ranking";
+import { tierForRating } from "@/lib/pvp/tiers";
 
 const MAIN_POKEMON_INCLUDE = {
   where: {
@@ -353,6 +354,7 @@ async function PvpBoard({
   page: number;
 }) {
   const t = await getTranslations("ranking");
+  const tPvp = await getTranslations("pvp");
   const where = {
     ...(country ? { country } : {}),
     OR: [{ pvpWins: { gt: 0 } }, { pvpLosses: { gt: 0 } }],
@@ -419,7 +421,11 @@ async function PvpBoard({
       board="pvp"
       renderMetrics={(u) => (
         <>
-            <Metric label={t("cols.rating")} value={String(u.rating as number)} accent />
+          <Metric label={t("cols.rating")} value={String(u.rating as number)} accent />
+          <Metric
+            label={t("cols.tier")}
+            value={tPvp(`tiers.${tierForRating(u.rating as number)}`)}
+          />
           <Metric label={t("cols.record")} value={`${u.wins as number}-${u.losses as number}`} />
           <Metric label={t("cols.winrate")} value={`${u.winrate as number}%`} />
         </>

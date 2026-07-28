@@ -73,6 +73,7 @@ export const PVP_ERRORS = [
   "no_opponents",
   "no_energy",
   "rate_limited",
+  "cooldown",
 ] as const;
 
 export type MarketError = (typeof MARKET_ERRORS)[number];
