@@ -19,6 +19,14 @@ import type { DexStatus } from "@/lib/pokedex";
  * hijo, no del padre: Eevee tiene tres evoluciones con una piedra distinta
  * cada una y `evolveLevel`, que vive en el padre, no puede distinguirlas.
  */
+/**
+ * Objeto que sustituye al intercambio entre jugadores (Machamp, Gengar, Golem,
+ * Alakazam). En la base esas evoluciones quedan como `use-item` con este ítem,
+ * así que el requisito llega indistinguible de una piedra: la UI necesita el
+ * nombre para poder aclarar que reemplaza al intercambio y no es una piedra más.
+ */
+export const TRADE_EVOLUTION_ITEM = "Linking Cord";
+
 export type EvolutionRequirement =
   | { kind: "level"; level: number }
   | {

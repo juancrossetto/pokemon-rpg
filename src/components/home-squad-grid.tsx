@@ -197,7 +197,7 @@ export function HomeSquadGrid({
                 setOverSlot(null);
               }}
               className={[
-                "h-full rounded-2xl transition-all",
+                "h-full min-h-[300px] rounded-2xl transition-all sm:min-h-[340px]",
                 isOver ? "ring-2 ring-pokeball-red/55 ring-offset-2 ring-offset-background" : "",
                 isDragging ? "opacity-45" : "",
               ].join(" ")}
@@ -273,7 +273,9 @@ export function HomeSquadGrid({
                   />
                 </div>
               ) : (
-                <HomeEmptySquadSlot label={emptySlotLabel} />
+                <div className="h-full">
+                  <HomeEmptySquadSlot label={emptySlotLabel} />
+                </div>
               )}
             </div>
           );

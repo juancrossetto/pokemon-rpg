@@ -23,15 +23,80 @@ export default async function InventoryPage({
   await redirectIfInBattle(session.user.id, locale);
   const userId = session.user.id;
 
-  const [rows, pendingClaims] = await Promise.all([
+  const [rows, pendingClaims, team] = await Promise.all([
     prisma.inventoryItem.findMany({
       where: { userId, quantity: { gt: 0 } },
       // `move` para poder mostrar qué enseña cada MT/MO en el panel de detalle.
-      include: { item: { include: { move: { select: { name: true } } } } },
+      include: { item: { include: { move: { select: { id: true, name: true } } } } },
       orderBy: [{ item: { type: "asc" } }, { item: { name: "asc" } }],
     }),
     prisma.marketListing.count({ where: unclaimedPurchasesWhere(userId) }),
+    // El equipo se trae siempre —son 6 filas— porque el panel de detalle de una
+    // MT necesita decir a quién se le puede enseñar. Sin esto la pantalla sabía
+    // qué movimiento enseña la máquina pero no si servía para algo.
+    prisma.pokemonInstance.findMany({
+      where: { ownerId: userId, teamSlot: { not: null } },
+      select: {
+        id: true,
+        nickname: true,
+        level: true,
+        speciesId: true,
+        species: { select: { name: true, spriteUrl: true } },
+        moves: { select: { moveId: true } },
+      },
+      orderBy: { teamSlot: "asc" },
+    }),
   ]);
+
+  /*
+    Compatibilidad especie↔MT en una sola consulta para toda la pantalla, no una
+    por ítem: se piden las filas MACHINE que crucen las especies del equipo con
+    los movimientos de las máquinas que el jugador tiene. Con 6 especies y las
+    MT de la mochila el resultado es chico.
+
+    `learnLevel` no se selecciona a propósito: el seed lo graba en null para todo
+    lo que sea MACHINE, así que no hay requisito de nivel que mostrar.
+  */
+  const machineMoveIds = rows
+    .filter((r) => r.item.type === "MACHINE")
+    .map((r) => r.item.move?.id)
+    .filter((id): id is number => id != null);
+  const teamSpeciesIds = [...new Set(team.map((p) => p.speciesId))];
+
+  const machineCompat =
+    machineMoveIds.length > 0 && teamSpeciesIds.length > 0
+      ? await prisma.speciesMove.findMany({
+          where: {
+            method: "MACHINE",
+            speciesId: { in: teamSpeciesIds },
+            moveId: { in: machineMoveIds },
+          },
+          select: { speciesId: true, moveId: true },
+        })
+      : [];
+
+  const compatBySpecies = new Map<number, Set<number>>();
+  for (const row of machineCompat) {
+    const set = compatBySpecies.get(row.speciesId) ?? new Set<number>();
+    set.add(row.moveId);
+    compatBySpecies.set(row.speciesId, set);
+  }
+
+  const knownBySpeciesInstance = new Map(
+    team.map((p) => [p.id, new Set(p.moves.map((m) => m.moveId))]),
+  );
+
+  function learnersFor(moveId: number | null | undefined) {
+    if (moveId == null) return [];
+    return team.map((p) => ({
+      instanceId: p.id,
+      name: p.nickname ?? p.species.name,
+      spriteUrl: p.species.spriteUrl,
+      level: p.level,
+      canLearn: compatBySpecies.get(p.speciesId)?.has(moveId) ?? false,
+      alreadyKnown: knownBySpeciesInstance.get(p.id)?.has(moveId) ?? false,
+    }));
+  }
 
   const allowed = new Set<string>(INVENTORY_CATEGORIES);
   const entries: InventoryEntry[] = rows
@@ -46,6 +111,7 @@ export default async function InventoryPage({
       effectText: r.item.effectText,
       buyPrice: r.item.buyPrice,
       moveName: r.item.move?.name ?? null,
+      learners: r.item.type === "MACHINE" ? learnersFor(r.item.move?.id) : [],
     }));
 
   const labels: InventoryLabels = {
@@ -63,6 +129,11 @@ export default async function InventoryPage({
     value: t("value"),
     effect: t("effect"),
     teaches: t("teaches"),
+    compatible: t("compatible"),
+    noLevelRequired: t("noLevelRequired"),
+    alreadyKnows: t("alreadyKnows"),
+    cannotLearn: t("cannotLearn"),
+    noCompatible: t("noCompatible"),
     sell: t("sell"),
     teach: t("teach"),
     useOnTeam: t("useOnTeam"),

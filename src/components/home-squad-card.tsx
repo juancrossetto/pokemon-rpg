@@ -47,6 +47,7 @@ export type HomeSquadCardLabels = {
   unknownSpecies: string;
   evolveAtLevel: string;
   evolveByTrade: string;
+  evolveTradeItemHint?: string;
   evolveStones: Record<string, string>;
   evolveReadyShort?: string;
   evolveNeedItem?: string;
@@ -156,6 +157,7 @@ export function HomeSquadCard({
     unknownSpecies: labels.unknownSpecies,
     evolveAtLevel: labels.evolveAtLevel,
     evolveByTrade: labels.evolveByTrade,
+    evolveTradeItemHint: labels.evolveTradeItemHint,
     evolveStones: labels.evolveStones,
     evolveReadyShort: labels.evolveReadyShort,
     evolveNeedItem: labels.evolveNeedItem,
@@ -339,17 +341,12 @@ export function HomeEmptySquadSlot({ label }: { label: string }) {
   return (
     <Link
       href="/team"
-      // En mobile es una fila de 96px, no un bloque de 300: un hueco vacío no
-      // merece el mismo alto que un Pokémon con stats. Desde sm vuelve a la
-      // caja alta para que la grilla quede pareja en desktop.
-      className="group flex min-h-[96px] flex-row items-center justify-center gap-2.5 rounded-2xl border border-dashed border-white/12 bg-white/[0.015] px-3 py-3 text-center transition hover:border-white/25 hover:bg-white/[0.03] sm:min-h-[300px] sm:flex-col sm:gap-0 sm:rounded-[1.5rem] sm:px-2 sm:py-4"
+      className="group flex h-full flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/12 bg-white/[0.015] px-2 py-4 text-center transition hover:border-white/25 hover:bg-white/[0.03]"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.02] transition group-hover:border-white/30 sm:mb-1.5 sm:h-10 sm:w-10">
+      <div className="mb-1.5 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.02] transition group-hover:border-white/30">
         <span className="material-symbols-outlined text-[20px]! text-on-surface-variant/50">add</span>
       </div>
-      <p className="text-[11px] uppercase tracking-wider text-on-surface-variant/70 sm:text-[10px]">
-        {label}
-      </p>
+      <p className="text-[10px] uppercase tracking-wider text-on-surface-variant/70">{label}</p>
     </Link>
   );
 }

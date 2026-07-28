@@ -7,6 +7,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { AuthBackdrop } from "@/components/auth-backdrop";
+import { markBootSplashPending } from "@/lib/boot-splash";
 
 export default function LoginPage() {
   const t = useTranslations("auth.login");
@@ -36,6 +37,7 @@ export default function LoginPage() {
       setError(true);
       return;
     }
+    markBootSplashPending();
     router.push("/");
     router.refresh();
   }

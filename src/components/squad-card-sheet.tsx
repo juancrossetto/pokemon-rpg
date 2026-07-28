@@ -33,6 +33,7 @@ export type SquadCardSheetLabels = {
   unknownSpecies: string;
   evolveAtLevel: string;
   evolveByTrade: string;
+  evolveTradeItemHint?: string;
   evolveStones: Record<string, string>;
   evolveReadyShort?: string;
   evolveNeedItem?: string;
@@ -180,9 +181,19 @@ export function SquadCardSheet({
       </div>
 
       <div
+        /*
+          El alto fijo mantiene alineadas las cards de la grilla aunque cada una
+          esté en una pestaña distinta, pero estaba en `overflow-hidden`: una
+          cadena de tres etapas mide 180px contra los 118 del panel, así que la
+          última evolución y su requisito quedaban recortados sin ningún indicio
+          —Machoke terminaba justo en el borde y la cadena parecía cortarse ahí.
+          Por eso el Cordón Unión de Machamp sólo se veía en el drawer de /team,
+          que no es compacto y crece libre. Las clases que ocultan la barra ya
+          estaban acá, esperando un scroll que nunca se habilitó.
+        */
         className={
           compact
-            ? "h-[118px] overflow-hidden pt-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            ? "h-[118px] overflow-y-auto overscroll-contain pt-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             : "min-h-[120px] pt-2.5"
         }
         role="tabpanel"
@@ -258,6 +269,7 @@ export function SquadCardSheet({
             unknownLabel={labels.unknownSpecies}
             evolveAtLevelLabel={labels.evolveAtLevel}
             tradeLabel={labels.evolveByTrade}
+            tradeItemHintLabel={labels.evolveTradeItemHint}
             itemLabels={labels.evolveStones}
             compact={compact}
             instanceId={instanceId}

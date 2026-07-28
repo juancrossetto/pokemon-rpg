@@ -12,7 +12,7 @@ import type { NotificationDTO } from "@/lib/notifications";
 
 const TYPE_META: Record<
   NotificationDTO["type"],
-  { icon: string; accent: string; glow: string; labelKey: "sale" | "expired" | "gym" | "pvp" | "reward" }
+  { icon: string; accent: string; glow: string; labelKey: "sale" | "expired" | "gym" | "pvp" | "reward" | "friends" | "clans" }
 > = {
   MARKET_SOLD: {
     icon: "payments",
@@ -56,6 +56,48 @@ const TYPE_META: Record<
     glow: "",
     labelKey: "pvp",
   },
+  FRIEND_REQUEST: {
+    icon: "person_add",
+    accent: "from-sky-400/25 via-pokeball-red/10 to-transparent",
+    glow: "shadow-[0_0_20px_rgba(56,189,248,0.15)]",
+    labelKey: "friends",
+  },
+  FRIEND_ACCEPTED: {
+    icon: "handshake",
+    accent: "from-emerald-400/25 to-transparent",
+    glow: "shadow-[0_0_20px_rgba(52,211,153,0.15)]",
+    labelKey: "friends",
+  },
+  CLAN_INVITE: {
+    icon: "mail",
+    accent: "from-pokeball-red/25 via-electric-yellow/10 to-transparent",
+    glow: "shadow-[0_0_20px_rgba(238,21,21,0.15)]",
+    labelKey: "clans",
+  },
+  CLAN_APPLICATION: {
+    icon: "person_add",
+    accent: "from-electric-yellow/20 to-transparent",
+    glow: "",
+    labelKey: "clans",
+  },
+  CLAN_ACCEPTED: {
+    icon: "groups",
+    accent: "from-emerald-400/25 to-transparent",
+    glow: "shadow-[0_0_20px_rgba(52,211,153,0.15)]",
+    labelKey: "clans",
+  },
+  CLAN_KICKED: {
+    icon: "person_off",
+    accent: "from-error/20 to-transparent",
+    glow: "",
+    labelKey: "clans",
+  },
+  CLAN_ROLE_CHANGED: {
+    icon: "military_tech",
+    accent: "from-tertiary/20 to-transparent",
+    glow: "",
+    labelKey: "clans",
+  },
 };
 
 function relativeTime(iso: string, t: ReturnType<typeof useTranslations<"notifications">>) {
@@ -89,6 +131,20 @@ function headlineFor(
       return t("pvpWonTitle");
     case "PVP_LOST":
       return t("pvpLostTitle");
+    case "FRIEND_REQUEST":
+      return t("friendRequestTitle");
+    case "FRIEND_ACCEPTED":
+      return t("friendAcceptedTitle");
+    case "CLAN_INVITE":
+      return t("clanInviteTitle");
+    case "CLAN_APPLICATION":
+      return t("clanApplicationTitle");
+    case "CLAN_ACCEPTED":
+      return t("clanAcceptedTitle");
+    case "CLAN_KICKED":
+      return t("clanKickedTitle");
+    case "CLAN_ROLE_CHANGED":
+      return t("clanRoleChangedTitle");
     default:
       return t("unknown");
   }
@@ -122,6 +178,37 @@ function detailFor(
       return t("pvpWonDetail", { opponent: p.opponentName ?? "?" });
     case "PVP_LOST":
       return t("pvpLostDetail", { opponent: p.opponentName ?? "?" });
+    case "FRIEND_REQUEST":
+      return t("friendRequestDetail", { trainer: p.trainerName ?? "?" });
+    case "FRIEND_ACCEPTED":
+      return t("friendAcceptedDetail", { trainer: p.trainerName ?? "?" });
+    case "CLAN_INVITE":
+      return t("clanInviteDetail", {
+        trainer: p.trainerName ?? "?",
+        clanName: p.clanName ?? "—",
+        clanTag: p.clanTag ?? "???",
+      });
+    case "CLAN_APPLICATION":
+      return t("clanApplicationDetail", {
+        trainer: p.trainerName ?? "?",
+        clanName: p.clanName ?? "—",
+        clanTag: p.clanTag ?? "???",
+      });
+    case "CLAN_ACCEPTED":
+      return t("clanAcceptedDetail", {
+        clanName: p.clanName ?? "—",
+        clanTag: p.clanTag ?? "???",
+      });
+    case "CLAN_KICKED":
+      return t("clanKickedDetail", {
+        clanName: p.clanName ?? "—",
+        clanTag: p.clanTag ?? "???",
+      });
+    case "CLAN_ROLE_CHANGED":
+      return t("clanRoleChangedDetail", {
+        clanName: p.clanName ?? "—",
+        clanTag: p.clanTag ?? "???",
+      });
     default:
       return "";
   }

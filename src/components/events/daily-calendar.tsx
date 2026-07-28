@@ -49,8 +49,10 @@ export function DailyCalendar({
         return (
           <li
             key={day.day}
-            className={`day-cell relative flex flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border p-1.5 text-center ${
-              compact ? "min-h-[62px]" : "min-h-[74px]"
+            className={`day-cell relative flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg border p-1.5 text-center ${
+              // Alto fijo (no min-h): el día final trae varios premios y con
+              // altura fluida estiraba la fila entera y rompía la grilla.
+              compact ? "h-[68px]" : "h-[78px]"
             } ${
               isToday
                 ? "day-today border-tertiary/70 bg-gradient-to-b from-tertiary/[0.18] to-tertiary/[0.04]"
@@ -86,7 +88,12 @@ export function DailyCalendar({
             </span>
 
             <span className={isClaimed ? "opacity-45 grayscale" : undefined}>
-              <RewardList rewards={day.rewards} size="sm" unitLabels={labels.rewards} />
+              <RewardList
+                rewards={day.rewards}
+                size="sm"
+                unitLabels={labels.rewards}
+                layout="calendar"
+              />
             </span>
 
             {isClaimed && (

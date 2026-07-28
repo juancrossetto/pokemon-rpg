@@ -26,6 +26,7 @@
     "inBattle": "In battle",
     "inGym": "In the gym",
     "ranking": "Leaderboards",
+    "friends": "Friends",
     "clans": "Clans",
     "pvp": "PvP",
     "more": "More",
@@ -60,6 +61,7 @@
       "inventory": "Items, berries and stones you own.",
       "market": "Buy and sell with other players.",
       "shop": "Buy items from the system.",
+      "friends": "Find trainers, inspect cards and grow your circle.",
       "clans": "Join a clan and compete as a team.",
       "events": "Daily gifts and weekly challenges."
     },
@@ -69,7 +71,8 @@
     "account": "Account",
     "navigation": "Navigation",
     "close": "Close",
-    "events": "Events"
+    "events": "Events",
+    "profile": "My profile"
   },
   "notifications": {
     "eyebrow": "Live alerts",
@@ -86,7 +89,9 @@
       "expired": "Market · Expired",
       "gym": "Gym",
       "pvp": "PvP",
-      "reward": "Reward"
+      "reward": "Reward",
+      "friends": "Friends",
+      "clans": "Clans"
     },
     "marketSoldTitle": "Sale completed!",
     "marketSoldDetail": "{buyer} bought {item}",
@@ -104,13 +109,27 @@
     "pvpWonDetail": "You won the duel against {opponent}",
     "pvpLostTitle": "PvP defeat",
     "pvpLostDetail": "{opponent} defeated you",
+    "friendRequestTitle": "Friend request",
+    "friendRequestDetail": "{trainer} wants to be your friend",
+    "friendAcceptedTitle": "Friend added",
+    "friendAcceptedDetail": "{trainer} accepted your friend request",
     "marketSold": "{buyer} bought {item}. +{coins} coins were credited to you.",
     "marketExpired": "Your listing for {item} expired and was returned.",
     "gymWon": "You defeated {leader} at {gym}. Badge earned!",
     "gymWonRematch": "You won the rematch against {leader} ({gym}).",
     "gymLost": "You lost the challenge against {leader} at {gym}.",
     "pvpWon": "You won the PvP duel against {opponent}.",
-    "pvpLost": "{opponent} defeated you in PvP."
+    "pvpLost": "{opponent} defeated you in PvP.",
+    "clanInviteTitle": "Clan invitation",
+    "clanInviteDetail": "{trainer} invited you to [{clanTag}] {clanName}",
+    "clanApplicationTitle": "New clan application",
+    "clanApplicationDetail": "{trainer} wants to join [{clanTag}] {clanName}",
+    "clanAcceptedTitle": "You joined the clan!",
+    "clanAcceptedDetail": "You are now part of [{clanTag}] {clanName}",
+    "clanKickedTitle": "You were kicked",
+    "clanKickedDetail": "You are no longer a member of [{clanTag}] {clanName}",
+    "clanRoleChangedTitle": "Your role changed",
+    "clanRoleChangedDetail": "Your role in [{clanTag}] {clanName} was updated"
   },
   "home": {
     "eyebrow": "Season 1",
@@ -448,6 +467,7 @@
       "showDetails": "See details",
       "hideDetails": "Hide",
       "evolveByTrade": "Trade",
+      "evolveTradeItemHint": "Replaces trading",
       "evolveStones": {
         "Fire Stone": "Fire Stone",
         "Water Stone": "Water Stone",
@@ -458,6 +478,8 @@
       }
     },
     "healFree": "Free healing available",
+    "healNoviceFree": "Free until Lv. {level}",
+    "healNoviceFreeHint": "Free with no wait while your team is at Lv. {level} or below.",
     "healCooldown": "Free in {minutes} min",
     "healRush": "Heal now",
     "healRushHint": "Skips the {minutes} min wait",
@@ -948,6 +970,11 @@
     "value": "Value",
     "effect": "Effect",
     "teaches": "Teaches",
+    "compatible": "Compatible with",
+    "noLevelRequired": "TMs have no level requirement: it only depends on the species.",
+    "alreadyKnows": "Already knows it",
+    "cannotLearn": "Not compatible",
+    "noCompatible": "No Pokémon on your team can learn this TM.",
     "sell": "Sell",
     "teach": "Teach from team",
     "useOnTeam": "Use on team (home)",
@@ -1170,6 +1197,7 @@
     "emptyDirectory": "No clans yet. Be the first to create one!",
     "createTitle": "Create a clan",
     "createCost": "Creating a clan costs {cost} coins.",
+    "createCostLead": "Creating a clan costs",
     "nameLabel": "Name",
     "namePlaceholder": "The Guardians",
     "tagLabel": "Tag",
@@ -1215,6 +1243,256 @@
       "empty": "The message is empty.",
       "too_long": "300 characters max.",
       "rate_limited": "You are typing too fast."
+    },
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Who we are and what we look for…",
+    "mottoLabel": "Motto",
+    "mottoPlaceholder": "United for glory",
+    "affinityLabel": "Affinity",
+    "focusLabel": "Focus",
+    "joinPolicyLabel": "Join policy",
+    "languageLabel": "Language",
+    "minLevelLabel": "Minimum level",
+    "minLevelHint": "Optional",
+    "minLevelShort": "Lv.",
+    "apply": "Apply",
+    "applying": "Sending…",
+    "applyMessagePlaceholder": "Short message (optional)",
+    "applicationPending": "Application pending",
+    "inviteOnly": "Invite only",
+    "announcement": "Announcement",
+    "hubPhaseHint": "Coming next: clan missions, donations, benefits and wars.",
+    "memberHome": {
+      "eyebrow": "Your clan",
+      "enterHub": "Open clan",
+      "yourRank": "Rank #{rank}",
+      "statRank": "Ranking",
+      "statMembers": "Members",
+      "statPower": "Power",
+      "statFocus": "Focus",
+      "listTitle": "Clan list",
+      "buffLabel": "Buff",
+      "buffHint": "Bonus: {leftLabel} +{leftValue}% · {rightLabel} +{rightValue}%"
+    },
+    "invitesTitle": "Invitations",
+    "inviteFrom": "From {name}",
+    "acceptInvite": "Accept",
+    "declineInvite": "Decline",
+    "pendingApplicationTitle": "Pending application",
+    "pendingApplicationHint": "Wait for the clan reply or cancel to explore others.",
+    "cancelApplication": "Cancel application",
+    "applicationsTitle": "Applications",
+    "applicationsEmpty": "No pending applications.",
+    "acceptApplication": "Accept",
+    "declineApplication": "Decline",
+    "inviteTitle": "Invite trainer",
+    "inviteUsernamePlaceholder": "Username",
+    "sendInvite": "Invite",
+    "settingsTitle": "Identity & rules",
+    "saveSettings": "Save changes",
+    "affinities": {
+      "NORMAL": "Normal",
+      "FIRE": "Fire",
+      "WATER": "Water",
+      "GRASS": "Grass",
+      "ELECTRIC": "Electric",
+      "ICE": "Ice",
+      "ROCK": "Rock",
+      "GROUND": "Ground",
+      "PSYCHIC": "Psychic",
+      "DARK": "Dark",
+      "STEEL": "Steel",
+      "DRAGON": "Dragon",
+      "FAIRY": "Fairy",
+      "FIGHTING": "Fighting",
+      "GHOST": "Ghost"
+    },
+    "focuses": {
+      "CASUAL": "Casual",
+      "COMPETITIVE": "Competitive",
+      "PVE": "PvE",
+      "PVP": "PvP",
+      "COLLECTION": "Collection",
+      "EVENTS": "Events",
+      "SOCIAL": "Social",
+      "MIXED": "Mixed"
+    },
+    "joinPolicies": {
+      "OPEN": "Open",
+      "REQUEST": "By request",
+      "INVITE": "Invite only"
+    },
+    "languages": {
+      "any": "Any",
+      "es": "Español",
+      "en": "English",
+      "pt": "Português"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "members": "Members",
+      "missions": "Missions",
+      "war": "War",
+      "chat": "Chat",
+      "more": "More"
+    },
+    "landing": {
+      "subtitle": "Join other trainers and grow your community.",
+      "searchClan": "Find a clan",
+      "createClan": "Create clan",
+      "recommendedTitle": "Recommended for you",
+      "whyJoinTitle": "Why join?",
+      "listTitle": "Explore all",
+      "close": "Close",
+      "benefitMissions": "Collective missions",
+      "benefitBenefits": "Progression benefits",
+      "benefitWars": "Clan wars",
+      "benefitCommunity": "Chat and community",
+      "membersText": "{count}/{max} members",
+      "powerText": "Power {power}"
+    },
+    "hub": {
+      "level": "Level {level}",
+      "rank": "Rank #{rank}",
+      "manage": "Manage",
+      "pendingActionsTitle": "Pending actions",
+      "pendingApplications": "You have {count} applications to review.",
+      "progressHint": "Weekly clan progress: {percent}%.",
+      "nextUnlock": "Next unlock at level {level}.",
+      "activityTitle": "Recent activity",
+      "activityMembers": "Active members: {count}.",
+      "activityPower": "Total clan power: {power}.",
+      "activityBadges": "Total badges: {count}.",
+      "missionsTitle": "Clan missions",
+      "demoMissionOneTitle": "Defeat 500 enemies",
+      "demoMissionOneDesc": "Weekly collective objective.",
+      "demoMissionOneProgress": "342 / 500 · Reward: 500 clan XP",
+      "demoMissionTwoTitle": "Spend 1,000 energy",
+      "demoMissionTwoDesc": "Global member contribution.",
+      "demoMissionTwoProgress": "688 / 1000 · Reward: Common chest",
+      "warTitle": "Clan war",
+      "warSubtitle": "Compete against other clans during the season.",
+      "warStateLocked": "State: locked until level {level}.",
+      "warReqMembers": "Requirement: {count} active members.",
+      "warReqLevel": "Requirement: level {level}.",
+      "warReqRegister": "Requirement: registration open.",
+      "dangerTitle": "Danger zone",
+      "dangerHint": "Disbanding removes the clan for every member."
+    },
+    "wizard": {
+      "next": "Next",
+      "back": "Back",
+      "steps": {
+        "identity": "Identity",
+        "emblem": "Emblem",
+        "style": "Style",
+        "rules": "Rules",
+        "confirm": "Confirm"
+      },
+      "preview": "Preview"
+    },
+    "emblem": {
+      "pick": "Pick an emblem",
+      "selected": "Selected emblem",
+      "shape": "Shape",
+      "symbol": "Symbol",
+      "colors": "Palette",
+      "shapes": {
+        "shield": "Shield",
+        "hexagon": "Hexagon",
+        "circle": "Circle",
+        "diamond": "Diamond",
+        "banner": "Banner",
+        "medallion": "Medallion"
+      },
+      "symbols": {
+        "bolt": "Bolt",
+        "flame": "Flame",
+        "wave": "Wave",
+        "leaf": "Leaf",
+        "mountain": "Mountain",
+        "wing": "Wing",
+        "claw": "Claw",
+        "star": "Star",
+        "crown": "Crown",
+        "moon": "Moon",
+        "sun": "Sun",
+        "ball": "Ball"
+      }
+    },
+    "discovery": {
+      "searchPlaceholder": "Search by name or tag…",
+      "filters": "Filters",
+      "clearFilters": "Clear filters",
+      "sortLabel": "Sort",
+      "sorts": {
+        "recommended": "Recommended",
+        "power": "Power",
+        "members": "Members",
+        "recent": "Recent"
+      },
+      "spaceAvailable": "Has space",
+      "all": "All",
+      "members": "Members",
+      "power": "Power",
+      "emptyFiltered": "No clans match these filters.",
+      "benefitsTitle": "Why join a clan?",
+      "benefit1": "Your own visual identity and elemental affinity.",
+      "benefit2": "Chat, announcements and roles to coordinate.",
+      "benefit3": "Collective ranking without making clans mandatory.",
+      "benefit4": "Foundation ready for missions, donations and wars.",
+      "createCta": "Create my clan",
+      "recommended": "Featured",
+      "viewClan": "View clan",
+      "levelLabel": "Level {level}",
+      "recommendedOpen": "Recommended: open join and has space.",
+      "recommendedNew": "Recommended: new clan with room.",
+      "recommendedDefault": "Recommended for you.",
+      "openFilters": "Filters",
+      "applyFilters": "Apply filters"
+    },
+    "errors": {
+      "not_found": "Clan not found.",
+      "invalid_name": "Invalid name.",
+      "invalid_tag": "Invalid tag.",
+      "invalid_fields": "Some form fields are invalid.",
+      "name_taken": "That name is already taken.",
+      "tag_taken": "That tag is already taken.",
+      "already_in_clan": "You are already in a clan.",
+      "not_in_clan": "You are not in a clan.",
+      "clan_full": "The clan is full.",
+      "insufficient_coins": "Not enough coins.",
+      "forbidden": "You do not have permission.",
+      "leader_must_transfer": "The leader must transfer leadership or disband.",
+      "target_not_member": "That player is not a member.",
+      "rate_limited": "Too many actions. Wait a moment.",
+      "invite_only": "This clan is invite only.",
+      "request_required": "You must apply to join.",
+      "already_applied": "You already have a pending application.",
+      "no_application": "No valid application found.",
+      "applications_full": "Application limit reached.",
+      "invites_full": "Too many pending invites.",
+      "cooldown": "You must wait before joining another clan.",
+      "level_too_low": "Your level is below the clan minimum.",
+      "pending_elsewhere": "Cancel your pending application before creating a clan."
+    },
+    "notices": {
+      "created": "Clan created!",
+      "joined": "You joined the clan.",
+      "left": "You left the clan.",
+      "disbanded": "Clan disbanded.",
+      "kicked": "Member kicked.",
+      "promoted": "Member promoted.",
+      "demoted": "Member demoted.",
+      "transferred": "Leadership transferred.",
+      "applied": "Application sent.",
+      "application_cancelled": "Application cancelled.",
+      "application_accepted": "Application accepted.",
+      "application_declined": "Application declined.",
+      "invite_sent": "Invite sent.",
+      "invite_accepted": "Invite accepted.",
+      "invite_declined": "Invite declined.",
+      "settings_saved": "Settings saved."
     }
   },
   "pvp": {
@@ -1649,5 +1927,296 @@
     "giftClaimedTitle": "Added to your account",
     "giftContinue": "Continue",
     "giftReopen": "Your daily gift is still unclaimed"
+  },
+  "profile": {
+    "title": "Trainer",
+    "power": "power",
+    "badgesShort": "badges",
+    "memberSince": "Since",
+    "toNextRank": "{count} badges to {rank}",
+    "maxRank": "Max rank reached",
+    "favorite": "Favourite",
+    "noFavorite": "No favourite",
+    "noFavoriteHint": "Mark a Pokémon as favourite from your team and it will headline your profile.",
+    "level": "Level",
+    "levelShort": "Lv.",
+    "cp": "CP",
+    "hp": "HP",
+    "shiny": "Shiny",
+    "lead": "Lead",
+    "emptySlot": "Empty",
+    "metrics": "Metrics",
+    "squad": "Active squad",
+    "vault": "Vault",
+    "activity": "Activity",
+    "recentCatches": "Recent catches",
+    "noCatches": "Nothing caught yet.",
+    "noActivity": "No activity yet.",
+    "noBadges": "No badges earned yet.",
+    "locked": "Locked",
+    "earnedOn": "Earned on",
+    "rank": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "diamond": "Diamond",
+      "master": "Master",
+      "champion": "Champion"
+    },
+    "titles": {
+      "rookie": "Rookie",
+      "trainer": "Trainer",
+      "collector": "Collector",
+      "gymLeaderBane": "Gym bane",
+      "researcher": "Researcher",
+      "duelist": "Duelist",
+      "legendTamer": "Legend tamer",
+      "shinyHunter": "Shiny hunter",
+      "mythKeeper": "Myth keeper",
+      "champion": "Champion"
+    },
+    "rarity": {
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary",
+      "mythical": "Mythical",
+      "ultraBeast": "Ultra Beast",
+      "paradox": "Paradox"
+    },
+    "tabs": {
+      "badges": "Badges",
+      "achievements": "Achievements",
+      "collections": "Collections"
+    },
+    "collections": {
+      "legendary": "Legendaries",
+      "mythical": "Mythicals",
+      "shiny": "Shinies",
+      "starter": "Starters",
+      "pseudo": "Pseudo-legendaries"
+    },
+    "stats": {
+      "caught": "Caught",
+      "shinies": "Shinies",
+      "dex": "Pokédex",
+      "badges": "Badges",
+      "pvp": "PvP",
+      "rating": "Rating {rating}",
+      "trainers": "Trainers",
+      "power": "Team power"
+    },
+    "timeline": {
+      "catch": "Caught",
+      "badge": "Badge",
+      "trainer": "Defeated",
+      "shiny": "Shiny!"
+    },
+    "time": {
+      "now": "just now",
+      "minutes": "{n} min ago",
+      "hours": "{n} h ago",
+      "days": "{n} d ago"
+    },
+    "achievements": {
+      "firstSteps": {
+        "name": "First steps",
+        "hint": "Catch 10 Pokémon"
+      },
+      "collector": {
+        "name": "Collector",
+        "hint": "Catch 100 Pokémon"
+      },
+      "hoarder": {
+        "name": "Hoarder",
+        "hint": "Catch 1000 Pokémon"
+      },
+      "firstShiny": {
+        "name": "First shiny",
+        "hint": "Find your first shiny"
+      },
+      "shinyHunter": {
+        "name": "Shiny hunter",
+        "hint": "Find 10 shinies"
+      },
+      "researcher": {
+        "name": "Researcher",
+        "hint": "Register 50 species"
+      },
+      "taxonomist": {
+        "name": "Taxonomist",
+        "hint": "Register 151 species"
+      },
+      "gymGoer": {
+        "name": "First badge",
+        "hint": "Earn your first badge"
+      },
+      "champion": {
+        "name": "Champion",
+        "hint": "Earn every badge"
+      },
+      "duelist": {
+        "name": "Duelist",
+        "hint": "Win 10 PvP battles"
+      },
+      "gladiator": {
+        "name": "Gladiator",
+        "hint": "Win 100 PvP battles"
+      },
+      "roadWarrior": {
+        "name": "Road warrior",
+        "hint": "Defeat 25 trainers"
+      },
+      "mythSeeker": {
+        "name": "Legend seeker",
+        "hint": "Obtain a legendary"
+      },
+      "mythKeeper": {
+        "name": "Myth keeper",
+        "hint": "Obtain a mythical"
+      },
+      "veteran": {
+        "name": "Veteran",
+        "hint": "Take a Pokémon to level 60"
+      }
+    }
+  },
+  "friends": {
+    "eyebrow": "Friends",
+    "title": "Social circle",
+    "subtitle": "Search trainers, inspect Trainer Cards and keep your allies close.",
+    "stats": {
+      "friends": "Friends",
+      "online": "Online",
+      "requests": "Requests"
+    },
+    "search": {
+      "placeholder": "Search by name or trainer ID…",
+      "hint": "Find trainers across the world. Tap a result to open their Trainer Card.",
+      "searching": "Searching…",
+      "noResults": "No trainers matched that search."
+    },
+    "addFriend": "Add friend",
+    "requestSent": "Request sent",
+    "accept": "Accept",
+    "decline": "Decline",
+    "cancelRequest": "Cancel",
+    "filters": {
+      "all": "All",
+      "online": "Online",
+      "favorites": "Favorites",
+      "recent": "Recent",
+      "requests": "Requests",
+      "blocked": "Blocked"
+    },
+    "presence": {
+      "online": "Online",
+      "away": "Away",
+      "fighting": "Battling",
+      "gym": "In gym",
+      "exploring": "Exploring",
+      "offline": "Offline"
+    },
+    "level": "Lv.",
+    "badges": "Badges",
+    "empty": {
+      "friends": "Your circle is empty",
+      "friendsHint": "Search for a trainer above and send a friend request.",
+      "filter": "Nothing in this filter yet.",
+      "requests": "No pending requests.",
+      "blocked": "No blocked trainers."
+    },
+    "lastSeen": "Last seen",
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{n}m ago",
+      "hoursAgo": "{n}h ago",
+      "daysAgo": "{n}d ago",
+      "never": "Never"
+    },
+    "actions": {
+      "profile": "View card",
+      "favorite": "Favorite",
+      "unfavorite": "Unfavorite",
+      "invite": "Invite PvP",
+      "message": "Message",
+      "trade": "Trade",
+      "gift": "Send gift",
+      "compare": "Compare",
+      "remove": "Remove",
+      "block": "Block",
+      "unblock": "Unblock"
+    },
+    "comingSoon": "Coming soon",
+    "card": {
+      "trainerCard": "Trainer Card",
+      "metrics": "Metrics",
+      "pokedex": "Pokédex",
+      "gyms": "Gyms",
+      "pvp": "PvP",
+      "power": "Power",
+      "hours": "Hours",
+      "hoursSoon": "Tracked soon",
+      "squad": "Active squad",
+      "activity": "Recent activity",
+      "noActivity": "No recent activity.",
+      "noFavorite": "No favourite Pokémon yet.",
+      "noSquad": "No active squad.",
+      "memberSince": "Member since",
+      "close": "Close",
+      "favorite": "Favourite",
+      "cp": "CP",
+      "rarity": {
+        "common": "Common",
+        "rare": "Rare",
+        "epic": "Epic",
+        "legendary": "Legendary",
+        "mythical": "Mythical",
+        "ultraBeast": "Ultra Beast",
+        "paradox": "Paradox"
+      },
+      "titles": {
+        "rookie": "Rookie",
+        "trainer": "Trainer",
+        "collector": "Collector",
+        "gymLeaderBane": "Gym bane",
+        "researcher": "Researcher",
+        "duelist": "Duelist",
+        "legendTamer": "Legend tamer",
+        "shinyHunter": "Shiny hunter",
+        "mythKeeper": "Myth keeper",
+        "champion": "Champion"
+      },
+      "ranks": {
+        "bronze": "Bronze",
+        "silver": "Silver",
+        "gold": "Gold",
+        "diamond": "Diamond",
+        "master": "Master",
+        "champion": "Champion"
+      },
+      "activityCatch": "Caught",
+      "activityBadge": "Won",
+      "activityTrainer": "Defeated"
+    },
+    "errors": {
+      "unauthorized": "You need to be logged in.",
+      "not_found": "Trainer not found.",
+      "invalid": "That action is not valid.",
+      "rate_limited": "Too fast — try again in a moment.",
+      "blocked": "You cannot interact with this trainer.",
+      "already_friends": "You are already friends.",
+      "already_sent": "Request already sent.",
+      "friends_full": "Friend list is full.",
+      "requests_full": "Too many pending requests."
+    },
+    "confirmRemove": "Remove this trainer from your friends?",
+    "confirmBlock": "Block this trainer? You will also remove the friendship.",
+    "toast": {
+      "sentTitle": "Request sent!",
+      "sentDetail": "They will see it in their notifications.",
+      "acceptedTitle": "You are friends!",
+      "acceptedDetail": "Your circle just grew."
+    }
   }
 }

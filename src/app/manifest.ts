@@ -28,10 +28,10 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    // Mismos valores que --color-background del tema: el splash de arranque
-    // empalma con la app en vez de dar un flash blanco.
-    background_color: "#131313",
-    theme_color: "#131313",
+    // Tonos del splash de arranque (`boot-splash` en globals.css): el flash
+    // nativo de la PWA empalma con la imagen de Mewtwo.
+    background_color: "#0a0806",
+    theme_color: "#0a0806",
     categories: ["games", "entertainment"],
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

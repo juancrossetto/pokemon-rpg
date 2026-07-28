@@ -60,8 +60,8 @@ export function BattleLobby({
     <div className="hidden flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8 lg:block">
       <div className="mx-auto flex max-w-5xl flex-col gap-4">
         <header>
-          <p className="mb-1 flex items-center gap-2 text-label-sm uppercase tracking-[0.2em] text-pokeball-red">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-pokeball-red" />
+          <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
             {t("lobby.liveSync")}
           </p>
           <h1 className="text-headline-lg tracking-tight text-white md:text-display-lg">

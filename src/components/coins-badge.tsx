@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { COIN_DELTA_EVENT, type CoinDeltaDetail } from "@/lib/coin-fx";
+import {
+  clearPendingCoinDelta,
+  COIN_DELTA_EVENT,
+  peekPendingCoinDelta,
+  type CoinDeltaDetail,
+} from "@/lib/coin-fx";
 
 type CoinsBadgeProps = {
   coins: number;
@@ -56,22 +61,6 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
       MAX_COUNT_MS,
       Math.max(MIN_COUNT_MS, abs * PREFERRED_MS_PER_COIN),
     );
-    /*
-      Interpolación por tiempo, no por paso fijo.
-
-      Antes esto era un `setInterval` que sumaba exactamente una moneda por
-      tick con un delay de `duration / abs`, acotado a 16ms. El problema: con
-      deltas grandes el delay se iba al mínimo y la cuenta necesitaba tantos
-      ticks como monedas, y cada tick es un render de React. Medido con un
-      delta de 1.000 —normal ahora que la tienda vende varias unidades de una—
-      el badge avanzaba ~5 monedas por segundo: tardaba minutos en mostrar el
-      saldo real mientras la página ya mostraba el correcto.
-
-      Con `requestAnimationFrame` y progreso por reloj, la animación dura lo
-      que dice `duration` sin importar cuánto cueste cada frame, y siempre
-      aterriza exacto en el target (que puede moverse a mitad de camino si
-      llega una revalidación del server).
-    */
     const startedAt = performance.now();
     const startFrom = from;
 
@@ -88,10 +77,11 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
 
       if (progress >= 1) {
         rafRef.current = null;
+        clearPendingCoinDelta();
         clearFxRef.current = window.setTimeout(() => {
           setFx(null);
           setFloater(null);
-        }, 700);
+        }, 900);
         return;
       }
       rafRef.current = requestAnimationFrame(frame);
@@ -103,6 +93,19 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
   useEffect(() => {
     if (!mountedRef.current) {
       mountedRef.current = true;
+      // Remount tras revalidate: el saldo del server ya es el final, pero
+      // quedó un delta pendiente — arrancamos desde el valor anterior.
+      const pending = peekPendingCoinDelta();
+      if (pending !== 0) {
+        const from = Math.max(0, coins - pending);
+        if (from !== coins) {
+          displayRef.current = from;
+          targetRef.current = coins;
+          setDisplay(from);
+          tweenTo(coins, pending);
+          return;
+        }
+      }
       displayRef.current = coins;
       targetRef.current = coins;
       setDisplay(coins);
@@ -168,11 +171,9 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
         <span
           key={`${floater}-${fx}`}
           aria-hidden
-          className={`pointer-events-none absolute left-1/2 -top-3.5 -translate-x-1/2 font-bold tabular-nums ${
+          className={`coin-delta-float pointer-events-none absolute left-1/2 -top-3.5 -translate-x-1/2 font-bold tabular-nums ${
             isSm || isBar ? "text-[10px]" : "text-[11px]"
-          } ${floater > 0 ? "text-electric-yellow" : "text-pokeball-red"} ${
-            fx ? "opacity-100" : "coin-delta-float"
-          }`}
+          } ${floater > 0 ? "text-electric-yellow" : "text-pokeball-red"}`}
         >
           {floater > 0 ? `+${floater}` : floater}
         </span>

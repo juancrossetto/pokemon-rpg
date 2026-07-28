@@ -195,6 +195,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               avatarId={user?.avatarId ?? null}
               logoutLabel={t("logout")}
               trainerLabel={t("trainer")}
+              profileLabel={t("profile")}
             />
           ) : (
             <div className="flex items-center gap-2">
@@ -230,6 +231,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         avatarId={user?.avatarId ?? null}
         logoutLabel={t("logout")}
         trainerLabel={t("trainer")}
+        profileLabel={t("profile")}
         lockedHref={lockedHref}
         lockedLabel={lockedLabel}
         lockedIcon={lock?.kind === "gym" ? "military_tech" : "swords"}

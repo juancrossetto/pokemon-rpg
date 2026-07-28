@@ -26,6 +26,7 @@
     "inBattle": "Em combate",
     "inGym": "No ginásio",
     "ranking": "Tabelas",
+    "friends": "Amigos",
     "clans": "Clãs",
     "pvp": "PvP",
     "more": "Mais",
@@ -60,6 +61,7 @@
       "inventory": "Itens, frutas e pedras que você tem.",
       "market": "Compre e venda com outros jogadores.",
       "shop": "Compre itens do sistema.",
+      "friends": "Encontre treinadores, inspecione cartas e amplie seu círculo.",
       "clans": "Entre num clã e compita em equipe.",
       "events": "Presentes diários e desafios semanais."
     },
@@ -69,7 +71,8 @@
     "account": "Conta",
     "navigation": "Navegação",
     "close": "Fechar",
-    "events": "Eventos"
+    "events": "Eventos",
+    "profile": "Meu perfil"
   },
   "notifications": {
     "eyebrow": "Alertas ao vivo",
@@ -86,7 +89,9 @@
       "expired": "Mercado · Expirou",
       "gym": "Ginásio",
       "pvp": "PvP",
-      "reward": "Recompensa"
+      "reward": "Recompensa",
+      "friends": "Amigos",
+      "clans": "Clãs"
     },
     "marketSoldTitle": "Venda concretada!",
     "marketSoldDetail": "{buyer} comprou {item}",
@@ -104,13 +109,27 @@
     "pvpWonDetail": "Você venceu o duelo contra {opponent}",
     "pvpLostTitle": "Derrota PvP",
     "pvpLostDetail": "{opponent} te derrotou",
+    "friendRequestTitle": "Pedido de amizade",
+    "friendRequestDetail": "{trainer} quer ser seu amigo",
+    "friendAcceptedTitle": "Amigo adicionado",
+    "friendAcceptedDetail": "{trainer} aceitou seu pedido",
     "marketSold": "{buyer} comprou {item}. Foram creditadas +{coins} moedas.",
     "marketExpired": "Seu anúncio de {item} expirou e voltou para você.",
     "gymWon": "Você derrotou {leader} em {gym}. Insígnia conquistada!",
     "gymWonRematch": "Você venceu a revanche contra {leader} ({gym}).",
     "gymLost": "Você perdeu o desafio contra {leader} em {gym}.",
     "pvpWon": "Você venceu o duelo PvP contra {opponent}.",
-    "pvpLost": "{opponent} te derrotou no PvP."
+    "pvpLost": "{opponent} te derrotou no PvP.",
+    "clanInviteTitle": "Convite para um clã",
+    "clanInviteDetail": "{trainer} convidou você para [{clanTag}] {clanName}",
+    "clanApplicationTitle": "Nova solicitação de clã",
+    "clanApplicationDetail": "{trainer} quer entrar em [{clanTag}] {clanName}",
+    "clanAcceptedTitle": "Você entrou no clã!",
+    "clanAcceptedDetail": "Agora você faz parte de [{clanTag}] {clanName}",
+    "clanKickedTitle": "Você foi expulso",
+    "clanKickedDetail": "Você não é mais membro de [{clanTag}] {clanName}",
+    "clanRoleChangedTitle": "Seu cargo mudou",
+    "clanRoleChangedDetail": "Seu cargo em [{clanTag}] {clanName} foi atualizado"
   },
   "home": {
     "eyebrow": "Temporada 1",
@@ -448,6 +467,7 @@
       "showDetails": "Ver detalhes",
       "hideDetails": "Ocultar",
       "evolveByTrade": "Troca",
+      "evolveTradeItemHint": "Substitui a troca",
       "evolveStones": {
         "Fire Stone": "Pedra do Fogo",
         "Water Stone": "Pedra da Água",
@@ -458,6 +478,8 @@
       }
     },
     "healFree": "Cura grátis disponível",
+    "healNoviceFree": "Grátis até o nv. {level}",
+    "healNoviceFreeHint": "Grátis e sem espera enquanto seu time não passar do nv. {level}.",
     "healCooldown": "Grátis em {minutes} min",
     "healRush": "Curar agora",
     "healRushHint": "Pula os {minutes} min de espera",
@@ -948,6 +970,11 @@
     "value": "Valor",
     "effect": "Efeito",
     "teaches": "Ensina",
+    "compatible": "Compatível com",
+    "noLevelRequired": "As MTs não exigem nível: depende só da espécie.",
+    "alreadyKnows": "Já sabe",
+    "cannotLearn": "Não compatível",
+    "noCompatible": "Nenhum Pokémon da sua equipe pode aprender esta MT.",
     "sell": "Vender",
     "teach": "Ensinar na equipe",
     "useOnTeam": "Usar no time (início)",
@@ -1170,6 +1197,7 @@
     "emptyDirectory": "Ainda não há clãs. Crie o primeiro!",
     "createTitle": "Criar um clã",
     "createCost": "Criar um clã custa {cost} moedas.",
+    "createCostLead": "Criar um clã custa",
     "nameLabel": "Nome",
     "namePlaceholder": "Os Guardiões",
     "tagLabel": "Tag",
@@ -1215,6 +1243,256 @@
       "empty": "A mensagem está vazia.",
       "too_long": "Máximo de 300 caracteres.",
       "rate_limited": "Você está escrevendo rápido demais."
+    },
+    "descriptionLabel": "Descrição",
+    "descriptionPlaceholder": "Quem somos e o que buscamos…",
+    "mottoLabel": "Lema",
+    "mottoPlaceholder": "Unidos pela glória",
+    "affinityLabel": "Afinidade",
+    "focusLabel": "Foco",
+    "joinPolicyLabel": "Entrada",
+    "languageLabel": "Idioma",
+    "minLevelLabel": "Nível mínimo",
+    "minLevelHint": "Opcional",
+    "minLevelShort": "Nv.",
+    "apply": "Solicitar",
+    "applying": "Enviando…",
+    "applyMessagePlaceholder": "Mensagem curta (opcional)",
+    "applicationPending": "Solicitação pendente",
+    "inviteOnly": "Somente por convite",
+    "announcement": "Anúncio",
+    "hubPhaseHint": "Próximas fases: missões de clã, doações, benefícios e guerras.",
+    "memberHome": {
+      "eyebrow": "Seu clã",
+      "enterHub": "Ir ao clã",
+      "yourRank": "Posição #{rank}",
+      "statRank": "Ranking",
+      "statMembers": "Membros",
+      "statPower": "Poder",
+      "statFocus": "Foco",
+      "listTitle": "Lista de clãs",
+      "buffLabel": "Buff",
+      "buffHint": "Bônus: {leftLabel} +{leftValue}% · {rightLabel} +{rightValue}%"
+    },
+    "invitesTitle": "Convites",
+    "inviteFrom": "De {name}",
+    "acceptInvite": "Aceitar",
+    "declineInvite": "Recusar",
+    "pendingApplicationTitle": "Solicitação em andamento",
+    "pendingApplicationHint": "Aguarde a resposta do clã ou cancele para explorar outros.",
+    "cancelApplication": "Cancelar solicitação",
+    "applicationsTitle": "Solicitações",
+    "applicationsEmpty": "Não há solicitações pendentes.",
+    "acceptApplication": "Aceitar",
+    "declineApplication": "Recusar",
+    "inviteTitle": "Convidar treinador",
+    "inviteUsernamePlaceholder": "Nome de usuário",
+    "sendInvite": "Convidar",
+    "settingsTitle": "Identidade e regras",
+    "saveSettings": "Salvar alterações",
+    "affinities": {
+      "NORMAL": "Normal",
+      "FIRE": "Fogo",
+      "WATER": "Água",
+      "GRASS": "Planta",
+      "ELECTRIC": "Elétrico",
+      "ICE": "Gelo",
+      "ROCK": "Pedra",
+      "GROUND": "Terra",
+      "PSYCHIC": "Psíquico",
+      "DARK": "Sombrio",
+      "STEEL": "Aço",
+      "DRAGON": "Dragão",
+      "FAIRY": "Fada",
+      "FIGHTING": "Lutador",
+      "GHOST": "Fantasma"
+    },
+    "focuses": {
+      "CASUAL": "Casual",
+      "COMPETITIVE": "Competitivo",
+      "PVE": "PvE",
+      "PVP": "PvP",
+      "COLLECTION": "Coleção",
+      "EVENTS": "Eventos",
+      "SOCIAL": "Social",
+      "MIXED": "Misto"
+    },
+    "joinPolicies": {
+      "OPEN": "Aberto",
+      "REQUEST": "Por solicitação",
+      "INVITE": "Somente convite"
+    },
+    "languages": {
+      "any": "Qualquer",
+      "es": "Español",
+      "en": "English",
+      "pt": "Português"
+    },
+    "tabs": {
+      "overview": "Resumo",
+      "members": "Membros",
+      "missions": "Missões",
+      "war": "Guerra",
+      "chat": "Chat",
+      "more": "Mais"
+    },
+    "landing": {
+      "subtitle": "Junte-se a outros treinadores e fortaleça sua comunidade.",
+      "searchClan": "Buscar clã",
+      "createClan": "Criar clã",
+      "recommendedTitle": "Recomendados para você",
+      "whyJoinTitle": "Por que entrar?",
+      "listTitle": "Explorar todos",
+      "close": "Fechar",
+      "benefitMissions": "Missões coletivas",
+      "benefitBenefits": "Benefícios de progressão",
+      "benefitWars": "Guerras de clãs",
+      "benefitCommunity": "Chat e comunidade",
+      "membersText": "{count}/{max} membros",
+      "powerText": "Poder {power}"
+    },
+    "hub": {
+      "level": "Nível {level}",
+      "rank": "Ranking #{rank}",
+      "manage": "Gerenciar",
+      "pendingActionsTitle": "Ações pendentes",
+      "pendingApplications": "Você tem {count} solicitações para revisar.",
+      "progressHint": "Progresso semanal do clã: {percent}%.",
+      "nextUnlock": "Próximo desbloqueio no nível {level}.",
+      "activityTitle": "Atividade recente",
+      "activityMembers": "Membros ativos: {count}.",
+      "activityPower": "Poder total do clã: {power}.",
+      "activityBadges": "Insígnias acumuladas: {count}.",
+      "missionsTitle": "Missões do clã",
+      "demoMissionOneTitle": "Derrotem 500 inimigos",
+      "demoMissionOneDesc": "Objetivo coletivo da semana.",
+      "demoMissionOneProgress": "342 / 500 · Recompensa: 500 XP de clã",
+      "demoMissionTwoTitle": "Gastem 1.000 de energia",
+      "demoMissionTwoDesc": "Contribuição global dos membros.",
+      "demoMissionTwoProgress": "688 / 1000 · Recompensa: Baú comum",
+      "warTitle": "Guerra de clãs",
+      "warSubtitle": "Compita contra outros clãs durante a temporada.",
+      "warStateLocked": "Estado: bloqueado até o nível {level}.",
+      "warReqMembers": "Requisito: {count} membros ativos.",
+      "warReqLevel": "Requisito: nível {level}.",
+      "warReqRegister": "Requisito: registro aberto.",
+      "dangerTitle": "Zona de perigo",
+      "dangerHint": "Dissolver remove o clã para todos os membros."
+    },
+    "wizard": {
+      "next": "Próximo",
+      "back": "Voltar",
+      "steps": {
+        "identity": "Identidade",
+        "emblem": "Insígnia",
+        "style": "Estilo",
+        "rules": "Regras",
+        "confirm": "Confirmar"
+      },
+      "preview": "Prévia"
+    },
+    "emblem": {
+      "pick": "Escolha uma insígnia",
+      "selected": "Insígnia selecionada",
+      "shape": "Forma",
+      "symbol": "Símbolo",
+      "colors": "Paleta",
+      "shapes": {
+        "shield": "Escudo",
+        "hexagon": "Hexágono",
+        "circle": "Círculo",
+        "diamond": "Diamante",
+        "banner": "Estandarte",
+        "medallion": "Medalhão"
+      },
+      "symbols": {
+        "bolt": "Raio",
+        "flame": "Chama",
+        "wave": "Onda",
+        "leaf": "Folha",
+        "mountain": "Montanha",
+        "wing": "Asa",
+        "claw": "Garra",
+        "star": "Estrela",
+        "crown": "Coroa",
+        "moon": "Lua",
+        "sun": "Sol",
+        "ball": "Ball"
+      }
+    },
+    "discovery": {
+      "searchPlaceholder": "Buscar por nome ou tag…",
+      "filters": "Filtros",
+      "clearFilters": "Limpar filtros",
+      "sortLabel": "Ordem",
+      "sorts": {
+        "recommended": "Recomendados",
+        "power": "Poder",
+        "members": "Membros",
+        "recent": "Recentes"
+      },
+      "spaceAvailable": "Com vaga",
+      "all": "Todos",
+      "members": "Membros",
+      "power": "Poder",
+      "emptyFiltered": "Nenhum clã corresponde aos filtros.",
+      "benefitsTitle": "Por que entrar num clã?",
+      "benefit1": "Identidade visual e afinidade elemental própria.",
+      "benefit2": "Chat, anúncios e cargos para coordenar.",
+      "benefit3": "Ranking coletivo sem tornar o clã obrigatório.",
+      "benefit4": "Base pronta para missões, doações e guerras.",
+      "createCta": "Criar meu clã",
+      "recommended": "Destaque",
+      "viewClan": "Ver clã",
+      "levelLabel": "Nível {level}",
+      "recommendedOpen": "Recomendado: entrada aberta e com vaga.",
+      "recommendedNew": "Recomendado: clã novo com espaço.",
+      "recommendedDefault": "Recomendado para você.",
+      "openFilters": "Filtros",
+      "applyFilters": "Aplicar filtros"
+    },
+    "errors": {
+      "not_found": "Clã não encontrado.",
+      "invalid_name": "Nome inválido.",
+      "invalid_tag": "Tag inválida.",
+      "invalid_fields": "Há dados inválidos no formulário.",
+      "name_taken": "Esse nome já está em uso.",
+      "tag_taken": "Essa tag já está em uso.",
+      "already_in_clan": "Você já pertence a um clã.",
+      "not_in_clan": "Você não está em um clã.",
+      "clan_full": "O clã está cheio.",
+      "insufficient_coins": "Moedas insuficientes.",
+      "forbidden": "Você não tem permissão.",
+      "leader_must_transfer": "O líder deve transferir o comando ou dissolver o clã.",
+      "target_not_member": "Esse jogador não é membro.",
+      "rate_limited": "Muitas ações. Aguarde um momento.",
+      "invite_only": "Este clã só aceita convites.",
+      "request_required": "Você deve solicitar a entrada.",
+      "already_applied": "Você já tem uma solicitação pendente.",
+      "no_application": "Não há solicitação válida.",
+      "applications_full": "Limite de solicitações atingido.",
+      "invites_full": "Muitos convites pendentes.",
+      "cooldown": "Você deve esperar antes de entrar em outro clã.",
+      "level_too_low": "Seu nível está abaixo do mínimo do clã.",
+      "pending_elsewhere": "Cancele sua solicitação pendente antes de criar um clã."
+    },
+    "notices": {
+      "created": "Clã criado!",
+      "joined": "Você entrou no clã.",
+      "left": "Você saiu do clã.",
+      "disbanded": "Clã dissolvido.",
+      "kicked": "Membro expulso.",
+      "promoted": "Membro promovido.",
+      "demoted": "Membro rebaixado.",
+      "transferred": "Liderança transferida.",
+      "applied": "Solicitação enviada.",
+      "application_cancelled": "Solicitação cancelada.",
+      "application_accepted": "Solicitação aceita.",
+      "application_declined": "Solicitação recusada.",
+      "invite_sent": "Convite enviado.",
+      "invite_accepted": "Convite aceito.",
+      "invite_declined": "Convite recusado.",
+      "settings_saved": "Configurações salvas."
     }
   },
   "pvp": {
@@ -1649,5 +1927,296 @@
     "giftClaimedTitle": "Adicionado à sua conta",
     "giftContinue": "Continuar",
     "giftReopen": "Seu presente diário ainda não foi resgatado"
+  },
+  "profile": {
+    "title": "Treinador",
+    "power": "poder",
+    "badgesShort": "insígnias",
+    "memberSince": "Desde",
+    "toNextRank": "{count} insígnias para {rank}",
+    "maxRank": "Rank máximo alcançado",
+    "favorite": "Favorito",
+    "noFavorite": "Sem favorito",
+    "noFavoriteHint": "Marque um Pokémon como favorito na sua equipe e ele vai liderar seu perfil.",
+    "level": "Nível",
+    "levelShort": "Nv.",
+    "cp": "PC",
+    "hp": "PS",
+    "shiny": "Shiny",
+    "lead": "Líder",
+    "emptySlot": "Vazio",
+    "metrics": "Métricas",
+    "squad": "Equipe ativa",
+    "vault": "Cofre",
+    "activity": "Atividade",
+    "recentCatches": "Capturas recentes",
+    "noCatches": "Nada capturado ainda.",
+    "noActivity": "Sem atividade ainda.",
+    "noBadges": "Nenhuma insígnia ainda.",
+    "locked": "Bloqueado",
+    "earnedOn": "Conquistada em",
+    "rank": {
+      "bronze": "Bronze",
+      "silver": "Prata",
+      "gold": "Ouro",
+      "diamond": "Diamante",
+      "master": "Mestre",
+      "champion": "Campeão"
+    },
+    "titles": {
+      "rookie": "Novato",
+      "trainer": "Treinador",
+      "collector": "Colecionador",
+      "gymLeaderBane": "Flagelo dos ginásios",
+      "researcher": "Pesquisador",
+      "duelist": "Duelista",
+      "legendTamer": "Domador de lendas",
+      "shinyHunter": "Caçador de shinies",
+      "mythKeeper": "Guardião de mitos",
+      "champion": "Campeão"
+    },
+    "rarity": {
+      "common": "Comum",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Lendário",
+      "mythical": "Mítico",
+      "ultraBeast": "Ultracriatura",
+      "paradox": "Paradoxo"
+    },
+    "tabs": {
+      "badges": "Insígnias",
+      "achievements": "Conquistas",
+      "collections": "Coleções"
+    },
+    "collections": {
+      "legendary": "Lendários",
+      "mythical": "Míticos",
+      "shiny": "Shinies",
+      "starter": "Iniciais",
+      "pseudo": "Pseudolendários"
+    },
+    "stats": {
+      "caught": "Capturados",
+      "shinies": "Shinies",
+      "dex": "Pokédex",
+      "badges": "Insígnias",
+      "pvp": "PvP",
+      "rating": "Rating {rating}",
+      "trainers": "Treinadores",
+      "power": "Poder da equipe"
+    },
+    "timeline": {
+      "catch": "Capturou",
+      "badge": "Insígnia",
+      "trainer": "Derrotou",
+      "shiny": "Shiny!"
+    },
+    "time": {
+      "now": "agora",
+      "minutes": "há {n} min",
+      "hours": "há {n} h",
+      "days": "há {n} d"
+    },
+    "achievements": {
+      "firstSteps": {
+        "name": "Primeiros passos",
+        "hint": "Capture 10 Pokémon"
+      },
+      "collector": {
+        "name": "Colecionador",
+        "hint": "Capture 100 Pokémon"
+      },
+      "hoarder": {
+        "name": "Acumulador",
+        "hint": "Capture 1000 Pokémon"
+      },
+      "firstShiny": {
+        "name": "Primeiro shiny",
+        "hint": "Encontre seu primeiro shiny"
+      },
+      "shinyHunter": {
+        "name": "Caçador de shinies",
+        "hint": "Encontre 10 shinies"
+      },
+      "researcher": {
+        "name": "Pesquisador",
+        "hint": "Registre 50 espécies"
+      },
+      "taxonomist": {
+        "name": "Taxonomista",
+        "hint": "Registre 151 espécies"
+      },
+      "gymGoer": {
+        "name": "Primeira insígnia",
+        "hint": "Ganhe sua primeira insígnia"
+      },
+      "champion": {
+        "name": "Campeão",
+        "hint": "Ganhe todas as insígnias"
+      },
+      "duelist": {
+        "name": "Duelista",
+        "hint": "Vença 10 batalhas PvP"
+      },
+      "gladiator": {
+        "name": "Gladiador",
+        "hint": "Vença 100 batalhas PvP"
+      },
+      "roadWarrior": {
+        "name": "Andarilho",
+        "hint": "Derrote 25 treinadores"
+      },
+      "mythSeeker": {
+        "name": "Buscador de lendas",
+        "hint": "Obtenha um lendário"
+      },
+      "mythKeeper": {
+        "name": "Guardião de mitos",
+        "hint": "Obtenha um mítico"
+      },
+      "veteran": {
+        "name": "Veterano",
+        "hint": "Leve um Pokémon ao nível 60"
+      }
+    }
+  },
+  "friends": {
+    "eyebrow": "Amigos",
+    "title": "Círculo social",
+    "subtitle": "Busque treinadores, inspecione Trainer Cards e mantenha seus aliados por perto.",
+    "stats": {
+      "friends": "Amigos",
+      "online": "Online",
+      "requests": "Pedidos"
+    },
+    "search": {
+      "placeholder": "Buscar por nome ou ID de treinador…",
+      "hint": "Encontre treinadores pelo mundo. Toque num resultado para abrir a Trainer Card.",
+      "searching": "Buscando…",
+      "noResults": "Nenhum treinador corresponde à busca."
+    },
+    "addFriend": "Adicionar",
+    "requestSent": "Pedido enviado",
+    "accept": "Aceitar",
+    "decline": "Recusar",
+    "cancelRequest": "Cancelar",
+    "filters": {
+      "all": "Todos",
+      "online": "Online",
+      "favorites": "Favoritos",
+      "recent": "Recentes",
+      "requests": "Pedidos",
+      "blocked": "Bloqueados"
+    },
+    "presence": {
+      "online": "Online",
+      "away": "Ausente",
+      "fighting": "Em combate",
+      "gym": "No ginásio",
+      "exploring": "Explorando",
+      "offline": "Offline"
+    },
+    "level": "Nv.",
+    "badges": "Insígnias",
+    "empty": {
+      "friends": "Seu círculo está vazio",
+      "friendsHint": "Busque um treinador acima e envie um pedido de amizade.",
+      "filter": "Nada neste filtro ainda.",
+      "requests": "Nenhum pedido pendente.",
+      "blocked": "Nenhum treinador bloqueado."
+    },
+    "lastSeen": "Visto",
+    "time": {
+      "justNow": "Agora",
+      "minutesAgo": "há {n} min",
+      "hoursAgo": "há {n} h",
+      "daysAgo": "há {n} d",
+      "never": "Nunca"
+    },
+    "actions": {
+      "profile": "Ver carta",
+      "favorite": "Favorito",
+      "unfavorite": "Remover favorito",
+      "invite": "Convidar PvP",
+      "message": "Mensagem",
+      "trade": "Trocar",
+      "gift": "Enviar presente",
+      "compare": "Comparar",
+      "remove": "Remover",
+      "block": "Bloquear",
+      "unblock": "Desbloquear"
+    },
+    "comingSoon": "Em breve",
+    "card": {
+      "trainerCard": "Trainer Card",
+      "metrics": "Métricas",
+      "pokedex": "Pokédex",
+      "gyms": "Ginásios",
+      "pvp": "PvP",
+      "power": "Poder",
+      "hours": "Horas",
+      "hoursSoon": "Em breve",
+      "squad": "Equipe ativa",
+      "activity": "Atividade recente",
+      "noActivity": "Sem atividade recente.",
+      "noFavorite": "Ainda sem Pokémon favorito.",
+      "noSquad": "Sem equipe ativa.",
+      "memberSince": "Membro desde",
+      "close": "Fechar",
+      "favorite": "Favorito",
+      "cp": "CP",
+      "rarity": {
+        "common": "Comum",
+        "rare": "Raro",
+        "epic": "Épico",
+        "legendary": "Lendário",
+        "mythical": "Mítico",
+        "ultraBeast": "Ultraente",
+        "paradox": "Paradox"
+      },
+      "titles": {
+        "rookie": "Novato",
+        "trainer": "Treinador",
+        "collector": "Colecionador",
+        "gymLeaderBane": "Flagelo de ginásios",
+        "researcher": "Pesquisador",
+        "duelist": "Duelista",
+        "legendTamer": "Domador de lendas",
+        "shinyHunter": "Caçador shiny",
+        "mythKeeper": "Guardião mítico",
+        "champion": "Campeão"
+      },
+      "ranks": {
+        "bronze": "Bronze",
+        "silver": "Prata",
+        "gold": "Ouro",
+        "diamond": "Diamante",
+        "master": "Mestre",
+        "champion": "Campeão"
+      },
+      "activityCatch": "Capturou",
+      "activityBadge": "Venceu",
+      "activityTrainer": "Derrotou"
+    },
+    "errors": {
+      "unauthorized": "Você precisa estar logado.",
+      "not_found": "Treinador não encontrado.",
+      "invalid": "Essa ação não é válida.",
+      "rate_limited": "Rápido demais — tente de novo em um momento.",
+      "blocked": "Você não pode interagir com este treinador.",
+      "already_friends": "Vocês já são amigos.",
+      "already_sent": "Pedido já enviado.",
+      "friends_full": "A lista de amigos está cheia.",
+      "requests_full": "Pedidos pendentes demais."
+    },
+    "confirmRemove": "Remover este treinador dos amigos?",
+    "confirmBlock": "Bloquear este treinador? A amizade também será removida.",
+    "toast": {
+      "sentTitle": "Pedido enviado!",
+      "sentDetail": "Eles verão nas notificações.",
+      "acceptedTitle": "Vocês são amigos!",
+      "acceptedDetail": "Seu círculo acabou de crescer."
+    }
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
+import { Link } from "@/i18n/navigation";
 import { avatarById } from "@/lib/avatars";
 import { AvatarImage } from "@/components/avatar-image";
 
@@ -35,11 +36,21 @@ export function UserMenu({
   avatarId,
   logoutLabel,
   trainerLabel,
+  profileLabel,
+  profileHref = "/profile",
 }: {
   name: string;
   avatarId: string | null;
   logoutLabel: string;
   trainerLabel: string;
+  /*
+    Obligatorio a propósito. Nació opcional y el menú se renderiza en dos
+    lugares —el navbar de escritorio y el header de MobileChrome—: al cablear
+    sólo el primero, el segundo no falló, simplemente dejó de dibujar la
+    entrada. Un prop requerido convierte ese olvido en un error de compilación.
+  */
+  profileLabel: string;
+  profileHref?: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -98,6 +109,15 @@ export function UserMenu({
             dentro del navbar. Estaban duplicados en los dos lugares y mezclaban
             módulos de juego con opciones de cuenta.
           */}
+          <Link
+            href={profileHref}
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-label-md text-on-surface-variant transition-colors hover:bg-white/5 hover:text-on-surface"
+          >
+            <span className="material-symbols-outlined text-[18px]!">badge</span>
+            {profileLabel}
+          </Link>
           <button
             type="button"
             role="menuitem"

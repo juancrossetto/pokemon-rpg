@@ -8,11 +8,15 @@ import { typeColor } from "@/lib/type-colors";
 import { itemSpriteUrl } from "@/lib/item-sprites";
 import {
   readinessForRequirement,
+  TRADE_EVOLUTION_ITEM,
   type EvolutionRequirement,
   type EvolutionStage,
 } from "@/lib/evolution-readiness";
 import { confirmEvolve } from "@/actions/level-up-offers";
-import { useEvolutionStone } from "@/actions/use-evolution-stone";
+// Aliasada a propósito: es una server action, no un hook, pero el nombre
+// empieza con `use` y `react-hooks/rules-of-hooks` la marca como llamada
+// inválida dentro del callback. Mismo criterio que `applyRareCandy`.
+import { useEvolutionStone as applyEvolutionStone } from "@/actions/use-evolution-stone";
 import { playBattleSfx } from "@/lib/battle-sfx";
 import { EvolvePopup } from "@/components/evolve-popup";
 
@@ -21,6 +25,7 @@ type RequirementLabels = {
   /** Nombre traducido por ítem, indexado como está en la tabla `Item`. */
   itemLabels: Record<string, string>;
   tradeLabel: string;
+  tradeItemHintLabel?: string;
   readyLabel?: string;
   needItemLabel?: string;
   needLevelLabel?: string;
@@ -29,7 +34,7 @@ type RequirementLabels = {
   evolvingLabel?: string;
 };
 
-/** Texto del requisito: nivel, piedra o intercambio. */
+/** Texto del requisito: nivel, piedra o intercambio. Sin precio: ese va aparte. */
 function requirementLabel(
   requirement: EvolutionRequirement | null,
   { evolveAtLevelLabel, itemLabels, tradeLabel }: RequirementLabels,
@@ -44,20 +49,51 @@ function requirementLabel(
     if (requirement.minLevel != null) {
       parts.push(evolveAtLevelLabel.replace("{level}", String(requirement.minLevel)));
     }
-    /*
-      El coste va en la etiqueta: sin él, "Cordón Unión" no le dice al jugador
-      si lo puede conseguir ni con qué moneda. Se muestra el precio en gemas
-      cuando existe —es el único ítem premium— y si no, el de monedas.
-    */
-    if (requirement.gemPrice != null && requirement.gemPrice > 0) {
-      parts.push(`${requirement.gemPrice} 💎`);
-    } else if (requirement.buyPrice != null && requirement.buyPrice > 0) {
-      parts.push(`${requirement.buyPrice.toLocaleString()} ⨀`);
-    }
     return parts.join(" · ");
   }
   if (requirement.kind === "trade") return tradeLabel;
   return null;
+}
+
+/*
+  El precio va en el chip: sin él, "Cordón Unión" no le dice al jugador si lo
+  puede conseguir ni con qué moneda. Se muestra el de gemas cuando existe —es el
+  único ítem premium— y si no, el de monedas.
+
+  Va como JSX y no dentro del texto porque antes eran los emojis 💎 y ⨀: el
+  diamante del emoji se pinta celeste en todas las fuentes del sistema, así que
+  la moneda premium aparecía de un color que no es el suyo en ningún otro lugar
+  del juego. Acá se usan los mismos íconos y colores que el contador del header
+  (`diamond` fucsia, `paid` amarillo), que es donde el jugador aprende a
+  reconocerlas.
+*/
+function RequirementPrice({ requirement }: { requirement: EvolutionRequirement }) {
+  if (requirement.kind !== "item") return null;
+
+  const gems = requirement.gemPrice ?? 0;
+  const coins = requirement.buyPrice ?? 0;
+  if (gems <= 0 && coins <= 0) return null;
+
+  const premium = gems > 0;
+  return (
+    <span
+      className={[
+        "inline-flex items-center gap-0.5 font-semibold tabular-nums",
+        premium ? "text-fuchsia-300" : "text-electric-yellow",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "material-symbols-outlined text-[10px]! leading-none",
+          premium ? "text-fuchsia-400" : "text-electric-yellow",
+        ].join(" ")}
+        aria-hidden
+      >
+        {premium ? "diamond" : "paid"}
+      </span>
+      {premium ? gems : coins.toLocaleString()}
+    </span>
+  );
 }
 
 type RevealState = {
@@ -73,6 +109,7 @@ export function EvolutionChainList({
   evolveAtLevelLabel,
   itemLabels,
   tradeLabel,
+  tradeItemHintLabel,
   compact = false,
   currentLevel,
   ownedItems = [],
@@ -90,6 +127,8 @@ export function EvolutionChainList({
   evolveAtLevelLabel: string;
   itemLabels: Record<string, string>;
   tradeLabel: string;
+  /** Aclaración para el objeto que sustituye al intercambio. */
+  tradeItemHintLabel?: string;
   compact?: boolean;
   /** Nivel del Pokémon actual — habilita estados “listo / falta”. */
   currentLevel?: number;
@@ -138,7 +177,7 @@ export function EvolutionChainList({
         const result =
           opts.kind === "level"
             ? await confirmEvolve(instanceId, locale)
-            : await useEvolutionStone(
+            : await applyEvolutionStone(
                 instanceId,
                 opts.itemName!,
                 locale,
@@ -273,6 +312,7 @@ export function EvolutionChainList({
                     evolveAtLevelLabel,
                     itemLabels,
                     tradeLabel,
+                    tradeItemHintLabel,
                     readyLabel,
                     needItemLabel,
                     needLevelLabel,
@@ -329,6 +369,10 @@ function ConnectorRow({
   const readiness =
     evaluateReadiness && currentLevel != null
       ? readinessForRequirement(req, currentLevel, ownedSet)
+      : null;
+  const tradeItemHint =
+    req?.kind === "item" && req.itemName === TRADE_EVOLUTION_ITEM
+      ? labels.tradeItemHintLabel
       : null;
 
   let statusChip: ReactNode = null;
@@ -387,9 +431,21 @@ function ConnectorRow({
             />
           )}
           {requirementLabel(req, labels)}
+          {req ? <RequirementPrice requirement={req} /> : null}
           {statusChip}
         </span>
       </div>
+      {/*
+        El Cordón Unión llega como un `use-item` cualquiera, así que en pantalla
+        era indistinguible de una piedra: un nombre inventado, sin decir qué
+        hace ni por qué cuesta gemas. Esta línea es la única pista de que
+        reemplaza al intercambio entre jugadores.
+      */}
+      {tradeItemHint ? (
+        <p className="ml-3 mt-0.5 text-[8px] leading-snug text-white/40">
+          {tradeItemHint}
+        </p>
+      ) : null}
       {action ? <div className="ml-3 mt-1">{action}</div> : null}
     </div>
   );

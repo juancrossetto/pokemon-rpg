@@ -9,15 +9,25 @@ import { CLAN_ERRORS, CLAN_NOTICES, pickCode } from "@/lib/feedback-codes";
 import { ClanChat } from "@/components/clan-chat";
 import { listClanMessages } from "@/actions/clan-chat";
 import { CLAN_MAX_MEMBERS } from "@/lib/clan-rules";
+import { getClanRank } from "@/lib/clan-directory";
 import { teamPower } from "@/lib/ranking";
 import type { ClanRole } from "@/generated/prisma/enums";
+import { ClanEmblemBadge } from "@/components/clans/clan-emblem-badge";
+import { ClanAffinityChip } from "@/components/clans/clan-affinity-chip";
+import { ClanHubTabs, type ClanHubTab } from "@/components/clans/clan-hub-tabs";
+import { ClanEmblemEditor } from "@/components/clans/clan-emblem-editor";
+import { isPresetEmblem, parseClanEmblem } from "@/lib/clan-emblem";
 import {
+  applyToClan,
   disbandClan,
+  inviteToClan,
   joinClan,
   kickMember,
   leaveClan,
+  respondApplication,
   setMemberRole,
   transferLeadership,
+  updateClanSettings,
 } from "@/actions/clan";
 
 const SPECIES_STATS_SELECT = {
@@ -29,20 +39,33 @@ const SPECIES_STATS_SELECT = {
   baseSpeed: true,
 } as const;
 
-// Orden de despliegue: líder, oficiales, miembros; dentro, por antigüedad.
 const ROLE_RANK: Record<ClanRole, number> = { LEADER: 0, OFFICER: 1, MEMBER: 2 };
 
 const GHOST_BTN =
-  "text-label-sm px-2.5 py-1 rounded-lg border border-white/10 text-on-surface-variant hover:text-on-surface hover:border-white/30 transition-colors";
+  "min-h-11 text-label-sm px-2.5 py-1 rounded-lg border border-white/10 text-on-surface-variant hover:text-on-surface hover:border-white/30 transition-colors";
 const DANGER_BTN =
-  "text-label-sm px-2.5 py-1 rounded-lg border border-error/30 text-error hover:bg-error/10 transition-colors";
+  "min-h-11 text-label-sm px-2.5 py-1 rounded-lg border border-error/30 text-error hover:bg-error/10 transition-colors";
+
+function parseTab(raw: string | undefined): ClanHubTab {
+  if (
+    raw === "members" ||
+    raw === "chat" ||
+    raw === "overview" ||
+    raw === "missions" ||
+    raw === "war" ||
+    raw === "more"
+  ) {
+    return raw;
+  }
+  return "overview";
+}
 
 export default async function ClanDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string; clanId: string }>;
-  searchParams: Promise<{ error?: string; notice?: string }>;
+  searchParams: Promise<{ error?: string; notice?: string; tab?: string }>;
 }) {
   const [{ locale, clanId }, query] = await Promise.all([params, searchParams]);
   const [t, session] = await Promise.all([getTranslations("clans"), auth()]);
@@ -55,8 +78,9 @@ export default async function ClanDetailPage({
 
   const error = pickCode(query.error, CLAN_ERRORS);
   const notice = pickCode(query.notice, CLAN_NOTICES);
+  const tab = parseTab(query.tab);
 
-  const [clan, myMembership] = await Promise.all([
+  const [clan, myMembership, myApplication, clanRank] = await Promise.all([
     prisma.clan.findUnique({
       where: { id: clanId },
       select: {
@@ -65,6 +89,15 @@ export default async function ClanDetailPage({
         tag: true,
         leaderId: true,
         createdAt: true,
+        description: true,
+        motto: true,
+        announcement: true,
+        joinPolicy: true,
+        focus: true,
+        affinity: true,
+        language: true,
+        minPlayerLevel: true,
+        emblem: true,
         members: {
           select: {
             userId: true,
@@ -91,9 +124,31 @@ export default async function ClanDetailPage({
             },
           },
         },
+        applications: {
+          where: { status: "PENDING" },
+          select: {
+            id: true,
+            message: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                username: true,
+                country: true,
+                _count: { select: { badges: true } },
+              },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
       },
     }),
     prisma.clanMember.findUnique({ where: { userId }, select: { clanId: true, role: true } }),
+    prisma.clanApplication.findUnique({
+      where: { clanId_userId: { clanId, userId } },
+      select: { status: true },
+    }),
+    getClanRank(clanId),
   ]);
 
   if (!clan) notFound();
@@ -108,23 +163,43 @@ export default async function ClanDetailPage({
       badges: m.user._count.badges,
       power: teamPower(m.user.pokemon),
     }))
-    .sort((a, b) => ROLE_RANK[a.role] - ROLE_RANK[b.role] || a.joinedAt.getTime() - b.joinedAt.getTime());
+    .sort(
+      (a, b) =>
+        ROLE_RANK[a.role] - ROLE_RANK[b.role] || a.joinedAt.getTime() - b.joinedAt.getTime(),
+    );
 
   const myRole: ClanRole | null = myMembership?.clanId === clanId ? myMembership.role : null;
   const isLeader = myRole === "LEADER";
   const isOfficer = myRole === "OFFICER";
+  const canManageApps = isLeader || isOfficer;
   const inAnyClan = myMembership !== null;
   const isFull = members.length >= CLAN_MAX_MEMBERS;
+  const pendingMine = myApplication?.status === "PENDING";
 
   const totalBadges = members.reduce((s, m) => s + m.badges, 0);
   const totalPower = members.reduce((s, m) => s + m.power, 0);
+  const emblem = parseClanEmblem(clan.emblem);
+  const headerPrimary = isPresetEmblem(emblem) ? "#ee1515" : emblem.primaryColor;
+  const headerSecondary = isPresetEmblem(emblem) ? "#0a0a0a" : emblem.secondaryColor;
+
+  const activeTab: ClanHubTab = myRole === null ? "overview" : tab;
+
+  const clanLevel = Math.max(1, Math.floor(totalBadges / 5) + 1);
+  const clanExp = totalPower;
+  const nextLevelExp = clanLevel * 2000;
+  const progressPct = Math.min(100, Math.round((clanExp / nextLevelExp) * 100));
+
+  const emblemLabels = {
+    pick: t("emblem.pick"),
+    selected: t("emblem.selected"),
+  };
 
   return (
-    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
+    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 pb-[calc(var(--bottom-nav-h,3.5rem)+env(safe-area-inset-bottom)+1rem)]">
       <div className="mx-auto max-w-3xl">
         <Link
           href="/clans"
-          className="inline-flex items-center gap-1 text-label-sm text-on-surface-variant hover:text-on-surface mb-3"
+          className="inline-flex min-h-11 items-center gap-1 text-label-sm text-on-surface-variant hover:text-on-surface mb-3"
         >
           <span className="material-symbols-outlined text-[16px]!">arrow_back</span>
           {t("backToDirectory")}
@@ -141,41 +216,99 @@ export default async function ClanDetailPage({
           </div>
         )}
 
-        {/* Encabezado del clan */}
-        <div className="rounded-xl border border-white/10 bg-glass-surface p-4 mb-4">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div className="min-w-0">
-              <h1 className="text-headline-lg text-white">
-                <span className="font-mono text-pokeball-red">[{clan.tag}]</span> {clan.name}
-              </h1>
-              <div className="flex items-center gap-3 mt-1 text-label-sm text-on-surface-variant">
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]!">group</span>
-                  {t("memberCount", { count: members.length, max: CLAN_MAX_MEMBERS })}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]! text-tertiary">military_tech</span>
+        <header
+          className="rounded-2xl border border-white/10 p-4 mb-4 overflow-hidden relative"
+          style={{
+            background: `linear-gradient(120deg, ${headerPrimary}26, transparent 50%), linear-gradient(180deg, ${headerSecondary}dd, rgba(0,0,0,0.35))`,
+          }}
+        >
+          <div className="relative z-10">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex items-start gap-4 min-w-0">
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-2">
+                  <ClanEmblemBadge emblem={clan.emblem} size={88} title={clan.name} />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-headline-lg text-white">
+                    <span className="font-mono text-pokeball-red">[{clan.tag}]</span> {clan.name}
+                  </h1>
+                  {clan.motto ? (
+                    <p className="text-label-md text-on-surface/80 italic mt-0.5">“{clan.motto}”</p>
+                  ) : null}
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-label-sm text-on-surface-variant">
+                    <ClanAffinityChip
+                      affinity={clan.affinity}
+                      label={t(`affinities.${clan.affinity}`)}
+                      size="sm"
+                    />
+                    <span>{t(`focuses.${clan.focus}`)}</span>
+                    <span>{t(`joinPolicies.${clan.joinPolicy}`)}</span>
+                    <span>{t("memberCount", { count: members.length, max: CLAN_MAX_MEMBERS })}</span>
+                  </div>
+                  <div className="mt-2 w-full max-w-md">
+                    <div className="mb-1 flex items-center justify-between text-[11px] text-on-surface-variant">
+                      <span>{t("hub.level", { level: clanLevel })}</span>
+                      <span>{clanExp.toLocaleString()} / {nextLevelExp.toLocaleString()} XP</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white/10">
+                      <div
+                        className="h-2 rounded-full bg-tertiary transition-[width] duration-300"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {clanRank > 0 ? (
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
+                    {t("hub.rank", { rank: clanRank })}
+                  </span>
+                ) : null}
+                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
                   {t("badgeTotal", { count: totalBadges })}
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]! text-electric-yellow">bolt</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
                   {t("power", { value: totalPower })}
                 </span>
-              </div>
-            </div>
-
-            {/* Acciones a nivel clan según el rol del que mira */}
-            <div className="flex items-center gap-2">
-              {!inAnyClan && (
+              {!inAnyClan && clan.joinPolicy === "OPEN" && (
                 <form action={joinClan.bind(null, locale)}>
                   <input type="hidden" name="clanId" value={clan.id} />
                   <SubmitButton
                     label={isFull ? t("full") : t("join")}
                     pendingLabel={t("joining")}
                     disabled={isFull}
-                    className="text-label-md px-4 py-1.5 rounded-lg bg-pokeball-red text-white hover:bg-pokeball-red/80 transition-colors"
+                    className="min-h-11 text-label-md px-4 rounded-lg bg-pokeball-red text-white"
                   />
                 </form>
+              )}
+              {!inAnyClan && clan.joinPolicy === "REQUEST" && !pendingMine && (
+                <form action={applyToClan.bind(null, locale)} className="flex gap-2 items-center">
+                  <input type="hidden" name="clanId" value={clan.id} />
+                  <input
+                    name="message"
+                    maxLength={140}
+                    placeholder={t("applyMessagePlaceholder")}
+                    className="min-h-11 rounded-lg border border-white/15 bg-black/30 px-3 text-label-sm text-on-surface max-w-48"
+                  />
+                  <SubmitButton
+                    label={isFull ? t("full") : t("apply")}
+                    pendingLabel={t("applying")}
+                    disabled={isFull}
+                    className="min-h-11 text-label-md px-4 rounded-lg bg-pokeball-red text-white"
+                  />
+                </form>
+              )}
+              {!inAnyClan && pendingMine && (
+                <span className="min-h-11 inline-flex items-center px-3 rounded-lg border border-electric-yellow/40 text-electric-yellow text-label-sm">
+                  {t("applicationPending")}
+                </span>
+              )}
+              {!inAnyClan && clan.joinPolicy === "INVITE" && (
+                <span className="min-h-11 inline-flex items-center px-3 rounded-lg border border-white/15 text-on-surface-variant text-label-sm">
+                  {t("inviteOnly")}
+                </span>
               )}
               {myRole && myRole !== "LEADER" && (
                 <form action={leaveClan.bind(null, locale)}>
@@ -187,7 +320,413 @@ export default async function ClanDetailPage({
                   />
                 </form>
               )}
-              {isLeader && (
+              {canManageApps && (
+                <Link href={`/clans/${clan.id}?tab=more`} className={GHOST_BTN}>
+                  {t("hub.manage")}
+                </Link>
+              )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {myRole !== null && (
+          <ClanHubTabs
+            clanId={clanId}
+            active={activeTab}
+            labels={{
+              overview: t("tabs.overview"),
+              members: t("tabs.members"),
+              missions: t("tabs.missions"),
+              war: t("tabs.war"),
+              chat: t("tabs.chat"),
+              more: t("tabs.more"),
+            }}
+          />
+        )}
+
+        {(myRole === null || activeTab === "overview") && (
+          <section className="mb-4 grid gap-3 md:grid-cols-[1.6fr_1fr]">
+            <div className="rounded-xl border border-white/10 bg-glass-surface p-4">
+              <h2 className="text-headline-md text-on-surface">{t("hub.pendingActionsTitle")}</h2>
+              <ul className="mt-2 flex flex-col gap-1.5 text-label-sm text-on-surface-variant">
+                {canManageApps && clan.applications.length > 0 ? (
+                  <li>• {t("hub.pendingApplications", { count: clan.applications.length })}</li>
+                ) : null}
+                <li>• {t("hub.progressHint", { percent: progressPct })}</li>
+                <li>• {t("hub.nextUnlock", { level: clanLevel + 1 })}</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-glass-surface p-4">
+              <h2 className="text-headline-md text-on-surface">{t("hub.activityTitle")}</h2>
+              <ul className="mt-2 flex flex-col gap-1.5 text-label-sm text-on-surface-variant">
+                <li>• {t("hub.activityMembers", { count: members.length })}</li>
+                <li>• {t("hub.activityPower", { power: totalPower })}</li>
+                <li>• {t("hub.activityBadges", { count: totalBadges })}</li>
+              </ul>
+            </div>
+
+            {clan.announcement && myRole && (
+              <div className="rounded-xl border border-tertiary/30 bg-tertiary/10 px-4 py-3 md:col-span-2">
+                <p className="text-label-sm text-tertiary uppercase mb-1">{t("announcement")}</p>
+                <p className="text-label-md text-on-surface whitespace-pre-wrap">{clan.announcement}</p>
+              </div>
+            )}
+            {clan.description && (
+              <div className="rounded-xl border border-white/10 bg-glass-surface px-4 py-3 md:col-span-2">
+                <p className="text-label-sm text-on-surface-variant mb-1">{t("descriptionLabel")}</p>
+                <p className="text-label-md text-on-surface whitespace-pre-wrap">{clan.description}</p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {(myRole === null || activeTab === "members") && (
+          <>
+            <h2 className="text-headline-md text-on-surface mb-2">{t("membersTitle")}</h2>
+            <ul className="flex flex-col gap-1.5 mb-4">
+              {members.map((m) => {
+                const isSelf = m.userId === userId;
+                const canKick =
+                  myRole !== null &&
+                  !isSelf &&
+                  (isLeader || (isOfficer && m.role === "MEMBER"));
+                const canManageRole = isLeader && m.role !== "LEADER" && !isSelf;
+
+                return (
+                  <li
+                    key={m.userId}
+                    className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
+                      isSelf
+                        ? "border-pokeball-red/40 bg-pokeball-red/5"
+                        : "border-white/10 bg-glass-surface"
+                    }`}
+                  >
+                    <RoleChip role={m.role} label={t(`roles.${m.role}`)} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <FlagIcon code={m.country} className="h-3.5 w-auto rounded-xs shrink-0" />
+                        <span className="text-label-md text-on-surface truncate">{m.username}</span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5 text-label-sm text-on-surface-variant">
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[13px]! text-tertiary">
+                            military_tech
+                          </span>
+                          {m.badges}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[13px]! text-electric-yellow">
+                            bolt
+                          </span>
+                          {m.power}
+                        </span>
+                      </div>
+                    </div>
+
+                    {(canManageRole || canKick) && activeTab === "members" && (
+                      <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                        {canManageRole && m.role === "MEMBER" && (
+                          <RoleForm
+                            locale={locale}
+                            clanId={clan.id}
+                            targetUserId={m.userId}
+                            role="OFFICER"
+                            label={t("promote")}
+                            pending={t("saving")}
+                          />
+                        )}
+                        {canManageRole && m.role === "OFFICER" && (
+                          <RoleForm
+                            locale={locale}
+                            clanId={clan.id}
+                            targetUserId={m.userId}
+                            role="MEMBER"
+                            label={t("demote")}
+                            pending={t("saving")}
+                          />
+                        )}
+                        {isLeader && m.role !== "LEADER" && !isSelf && (
+                          <form action={transferLeadership.bind(null, locale)}>
+                            <input type="hidden" name="clanId" value={clan.id} />
+                            <input type="hidden" name="targetUserId" value={m.userId} />
+                            <SubmitButton
+                              label={t("makeLeader")}
+                              pendingLabel={t("saving")}
+                              confirmMessage={t("confirmTransfer", { name: m.username })}
+                              className={GHOST_BTN}
+                            />
+                          </form>
+                        )}
+                        {canKick && (
+                          <form action={kickMember.bind(null, locale)}>
+                            <input type="hidden" name="clanId" value={clan.id} />
+                            <input type="hidden" name="targetUserId" value={m.userId} />
+                            <SubmitButton
+                              label={t("kick")}
+                              pendingLabel={t("saving")}
+                              confirmMessage={t("confirmKick", { name: m.username })}
+                              className={DANGER_BTN}
+                            />
+                          </form>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            {isLeader && (
+              <p className="text-label-sm text-on-surface-variant mb-4">{t("leaderLeaveHint")}</p>
+            )}
+          </>
+        )}
+
+        {myRole !== null && activeTab === "missions" && (
+          <section className="mb-4 rounded-xl border border-white/10 bg-glass-surface p-4">
+            <h2 className="text-headline-md text-on-surface">{t("hub.missionsTitle")}</h2>
+            <div className="mt-3 flex flex-col gap-2">
+              <article className="rounded-lg border border-white/10 bg-black/20 p-3">
+                <p className="text-label-md text-on-surface">{t("hub.demoMissionOneTitle")}</p>
+                <p className="text-label-sm text-on-surface-variant">{t("hub.demoMissionOneDesc")}</p>
+                <p className="mt-1 text-label-sm text-tertiary">{t("hub.demoMissionOneProgress")}</p>
+              </article>
+              <article className="rounded-lg border border-white/10 bg-black/20 p-3">
+                <p className="text-label-md text-on-surface">{t("hub.demoMissionTwoTitle")}</p>
+                <p className="text-label-sm text-on-surface-variant">{t("hub.demoMissionTwoDesc")}</p>
+                <p className="mt-1 text-label-sm text-tertiary">{t("hub.demoMissionTwoProgress")}</p>
+              </article>
+            </div>
+          </section>
+        )}
+
+        {(myRole === null || activeTab === "war") && (
+          <section className="mb-4 rounded-xl border border-white/10 bg-glass-surface p-4">
+            <h2 className="text-headline-md text-on-surface">{t("hub.warTitle")}</h2>
+            <p className="mt-1 text-label-md text-on-surface-variant">{t("hub.warSubtitle")}</p>
+            <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3">
+              <p className="text-label-sm text-on-surface">{t("hub.warStateLocked", { level: 5 })}</p>
+              <ul className="mt-1 text-label-sm text-on-surface-variant">
+                <li>• {t("hub.warReqMembers", { count: 10 })}</li>
+                <li>• {t("hub.warReqLevel", { level: 5 })}</li>
+                <li>• {t("hub.warReqRegister")}</li>
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {myRole !== null && activeTab === "chat" && (
+          <ClanChat
+            locale={locale}
+            clanId={clanId}
+            currentUserId={userId}
+            initialMessages={await listClanMessages(clanId)}
+          />
+        )}
+
+        {myRole !== null && activeTab === "more" && (
+          <div className="flex flex-col gap-6">
+            <section className="rounded-xl border border-white/10 bg-glass-surface p-4">
+              <h2 className="text-headline-md text-on-surface mb-2">{t("hub.activityTitle")}</h2>
+              <p className="text-label-sm text-on-surface-variant">{t("hubPhaseHint")}</p>
+            </section>
+
+            {canManageApps && (
+              <section className="rounded-xl border border-white/10 bg-glass-surface p-4">
+              <h2 className="text-headline-md text-on-surface mb-3">{t("applicationsTitle")}</h2>
+              {clan.applications.length === 0 ? (
+                <p className="text-label-sm text-on-surface-variant">{t("applicationsEmpty")}</p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {clan.applications.map((app) => (
+                    <li
+                      key={app.id}
+                      className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 px-3 py-2"
+                    >
+                      <FlagIcon
+                        code={app.user.country}
+                        className="h-3.5 w-auto rounded-xs shrink-0"
+                      />
+                      <span className="text-label-md text-on-surface flex-1 min-w-0 truncate">
+                        {app.user.username}
+                      </span>
+                      {app.message && (
+                        <span className="text-label-sm text-on-surface-variant w-full">
+                          {app.message}
+                        </span>
+                      )}
+                      <form action={respondApplication.bind(null, locale)}>
+                        <input type="hidden" name="clanId" value={clan.id} />
+                        <input type="hidden" name="applicationId" value={app.id} />
+                        <input type="hidden" name="decision" value="accept" />
+                        <SubmitButton
+                          label={t("acceptApplication")}
+                          pendingLabel={t("saving")}
+                          className="min-h-11 px-3 rounded-lg bg-pokeball-red text-white text-label-sm"
+                        />
+                      </form>
+                      <form action={respondApplication.bind(null, locale)}>
+                        <input type="hidden" name="clanId" value={clan.id} />
+                        <input type="hidden" name="applicationId" value={app.id} />
+                        <input type="hidden" name="decision" value="decline" />
+                        <SubmitButton
+                          label={t("declineApplication")}
+                          pendingLabel={t("saving")}
+                          className={GHOST_BTN}
+                        />
+                      </form>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              </section>
+            )}
+
+            {canManageApps && (
+              <section className="rounded-xl border border-white/10 bg-glass-surface p-4">
+              <h2 className="text-headline-md text-on-surface mb-3">{t("inviteTitle")}</h2>
+              <form action={inviteToClan.bind(null, locale)} className="flex flex-wrap gap-2">
+                <input type="hidden" name="clanId" value={clan.id} />
+                <input
+                  name="username"
+                  required
+                  placeholder={t("inviteUsernamePlaceholder")}
+                  className="min-h-11 flex-1 min-w-40 rounded-lg border border-white/10 bg-surface-container px-3 text-label-md text-on-surface"
+                />
+                <SubmitButton
+                  label={t("sendInvite")}
+                  pendingLabel={t("saving")}
+                  className="min-h-11 px-4 rounded-lg bg-pokeball-red text-white text-label-sm"
+                />
+              </form>
+              </section>
+            )}
+
+            {isLeader && (
+              <section className="rounded-xl border border-white/10 bg-glass-surface p-4">
+                <h2 className="text-headline-md text-on-surface mb-3">{t("settingsTitle")}</h2>
+                <form action={updateClanSettings.bind(null, locale)} className="flex flex-col gap-4">
+                  <input type="hidden" name="clanId" value={clan.id} />
+                  <label className="flex flex-col gap-1">
+                    <span className="text-label-sm text-on-surface-variant">{t("mottoLabel")}</span>
+                    <input
+                      name="motto"
+                      defaultValue={clan.motto ?? ""}
+                      maxLength={80}
+                      className="min-h-11 rounded-lg border border-white/10 bg-surface-container px-3 text-label-md"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-label-sm text-on-surface-variant">
+                      {t("descriptionLabel")}
+                    </span>
+                    <textarea
+                      name="description"
+                      defaultValue={clan.description ?? ""}
+                      maxLength={280}
+                      rows={3}
+                      className="rounded-lg border border-white/10 bg-surface-container px-3 py-2 text-label-md"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-label-sm text-on-surface-variant">{t("announcement")}</span>
+                    <textarea
+                      name="announcement"
+                      defaultValue={clan.announcement ?? ""}
+                      maxLength={280}
+                      rows={2}
+                      className="rounded-lg border border-white/10 bg-surface-container px-3 py-2 text-label-md"
+                    />
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <label className="flex flex-col gap-1">
+                      <span className="text-label-sm text-on-surface-variant">
+                        {t("joinPolicyLabel")}
+                      </span>
+                      <select
+                        name="joinPolicy"
+                        defaultValue={clan.joinPolicy}
+                        className="min-h-11 rounded-lg border border-white/10 bg-surface-container px-2 text-label-sm"
+                      >
+                        <option value="OPEN">{t("joinPolicies.OPEN")}</option>
+                        <option value="REQUEST">{t("joinPolicies.REQUEST")}</option>
+                        <option value="INVITE">{t("joinPolicies.INVITE")}</option>
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-label-sm text-on-surface-variant">{t("focusLabel")}</span>
+                      <select
+                        name="focus"
+                        defaultValue={clan.focus}
+                        className="min-h-11 rounded-lg border border-white/10 bg-surface-container px-2 text-label-sm"
+                      >
+                        {(
+                          [
+                            "CASUAL",
+                            "COMPETITIVE",
+                            "PVE",
+                            "PVP",
+                            "COLLECTION",
+                            "EVENTS",
+                            "SOCIAL",
+                            "MIXED",
+                          ] as const
+                        ).map((f) => (
+                          <option key={f} value={f}>
+                            {t(`focuses.${f}`)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-label-sm text-on-surface-variant">
+                        {t("affinityLabel")}
+                      </span>
+                      <select
+                        name="affinity"
+                        defaultValue={clan.affinity}
+                        className="min-h-11 rounded-lg border border-white/10 bg-surface-container px-2 text-label-sm"
+                      >
+                        {(
+                          [
+                            "NORMAL",
+                            "FIRE",
+                            "WATER",
+                            "GRASS",
+                            "ELECTRIC",
+                            "ICE",
+                            "ROCK",
+                            "GROUND",
+                            "PSYCHIC",
+                            "DARK",
+                            "STEEL",
+                            "DRAGON",
+                            "FAIRY",
+                            "FIGHTING",
+                            "GHOST",
+                          ] as const
+                        ).map((a) => (
+                          <option key={a} value={a}>
+                            {t(`affinities.${a}`)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <ClanEmblemEditor name="emblem" initial={emblem} labels={emblemLabels} />
+                  <SubmitButton
+                    label={t("saveSettings")}
+                    pendingLabel={t("saving")}
+                    className="min-h-11 self-start px-4 rounded-lg bg-pokeball-red text-white text-label-md"
+                  />
+                </form>
+              </section>
+            )}
+
+            {isLeader && (
+              <section className="rounded-xl border border-error/30 bg-error-container/20 p-4">
+                <h2 className="text-headline-md text-error mb-2">{t("hub.dangerTitle")}</h2>
+                <p className="text-label-sm text-on-surface-variant mb-3">{t("hub.dangerHint")}</p>
                 <form action={disbandClan.bind(null, locale)}>
                   <input type="hidden" name="clanId" value={clan.id} />
                   <SubmitButton
@@ -197,100 +736,11 @@ export default async function ClanDetailPage({
                     className={DANGER_BTN}
                   />
                 </form>
-              )}
-            </div>
+              </section>
+            )}
           </div>
-        </div>
-
-        {/* Miembros */}
-        <h2 className="text-headline-md text-on-surface mb-2">{t("membersTitle")}</h2>
-        <ul className="flex flex-col gap-1.5">
-          {members.map((m) => {
-            const isSelf = m.userId === userId;
-            const canKick =
-              !isSelf && (isLeader || (isOfficer && m.role === "MEMBER"));
-            const canManageRole = isLeader && m.role !== "LEADER" && !isSelf;
-
-            return (
-              <li
-                key={m.userId}
-                className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 backdrop-blur-xl ${
-                  isSelf ? "border-pokeball-red/40 bg-pokeball-red/5" : "border-white/10 bg-glass-surface"
-                }`}
-              >
-                <RoleChip role={m.role} label={t(`roles.${m.role}`)} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <FlagIcon code={m.country} className="h-3.5 w-auto rounded-[2px] shrink-0" />
-                    <span className="text-label-md text-on-surface truncate">{m.username}</span>
-                  </div>
-                  <div className="flex items-center gap-3 mt-0.5 text-label-sm text-on-surface-variant">
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px]! text-tertiary">military_tech</span>
-                      {m.badges}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px]! text-electric-yellow">bolt</span>
-                      {m.power}
-                    </span>
-                  </div>
-                </div>
-
-                {(canManageRole || canKick) && (
-                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                    {canManageRole && m.role === "MEMBER" && (
-                      <RoleForm locale={locale} clanId={clan.id} targetUserId={m.userId} role="OFFICER" label={t("promote")} pending={t("saving")} />
-                    )}
-                    {canManageRole && m.role === "OFFICER" && (
-                      <RoleForm locale={locale} clanId={clan.id} targetUserId={m.userId} role="MEMBER" label={t("demote")} pending={t("saving")} />
-                    )}
-                    {isLeader && m.role !== "LEADER" && !isSelf && (
-                      <form action={transferLeadership.bind(null, locale)}>
-                        <input type="hidden" name="clanId" value={clan.id} />
-                        <input type="hidden" name="targetUserId" value={m.userId} />
-                        <SubmitButton
-                          label={t("makeLeader")}
-                          pendingLabel={t("saving")}
-                          confirmMessage={t("confirmTransfer", { name: m.username })}
-                          className={GHOST_BTN}
-                        />
-                      </form>
-                    )}
-                    {canKick && (
-                      <form action={kickMember.bind(null, locale)}>
-                        <input type="hidden" name="clanId" value={clan.id} />
-                        <input type="hidden" name="targetUserId" value={m.userId} />
-                        <SubmitButton
-                          label={t("kick")}
-                          pendingLabel={t("saving")}
-                          confirmMessage={t("confirmKick", { name: m.username })}
-                          className={DANGER_BTN}
-                        />
-                      </form>
-                    )}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-
-        {isLeader && (
-          <p className="text-label-sm text-on-surface-variant mt-3">{t("leaderLeaveHint")}</p>
         )}
       </div>
-
-      {/* Chat interno: sólo para miembros del clan. */}
-      {myRole !== null && (
-        <div className="mt-4">
-          <ClanChat
-            locale={locale}
-            clanId={clanId}
-            currentUserId={userId}
-            initialMessages={await listClanMessages(clanId)}
-          />
-        </div>
-      )}
     </div>
   );
 }
