@@ -144,6 +144,20 @@
     "activeSquad": "Time ativo",
     "manage": "Gerenciar",
     "emptySlot": "Espaço vazio",
+    "quickActions": "Atalhos",
+    "quick": {
+      "events": "Eventos"
+    },
+    "rewards": {
+      "title": "Recompensas",
+      "claim": "Resgatar",
+      "claiming": "…",
+      "claimed": "Pronto",
+      "empty": "Sem recompensas pendentes",
+      "seeEvents": "Ver",
+      "pendingWeekly": "Marcos semanais prontos para resgatar",
+      "dailyReady": "Presente diário pronto"
+    },
     "liveSync": "Sync ao vivo",
     "time": "Hora",
     "climate": "Clima",

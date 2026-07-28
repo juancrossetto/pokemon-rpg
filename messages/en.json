@@ -144,6 +144,20 @@
     "activeSquad": "Active Squad",
     "manage": "Manage",
     "emptySlot": "Empty slot",
+    "quickActions": "Shortcuts",
+    "quick": {
+      "events": "Events"
+    },
+    "rewards": {
+      "title": "Rewards",
+      "claim": "Claim",
+      "claiming": "…",
+      "claimed": "Done",
+      "empty": "No pending rewards",
+      "seeEvents": "View",
+      "pendingWeekly": "Weekly milestones ready to claim",
+      "dailyReady": "Daily gift ready"
+    },
     "liveSync": "Live sync",
     "time": "Time",
     "climate": "Weather",

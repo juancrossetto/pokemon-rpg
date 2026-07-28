@@ -75,12 +75,15 @@ export function DailyGiftModal({
   total,
   labels,
   locale,
+  showChip = true,
 }: {
   days: DailyDayState[];
   currentDay: number;
   total: number;
   labels: GiftModalLabels;
   locale: string;
+  /** Si false, al cerrar sin reclamar no deja chip (Home usa IdleRewardWidget). */
+  showChip?: boolean;
 }) {
   const seen = useSyncExternalStore(subscribe, wasSeen, () => true);
   const [claimed, setClaimed] = useState<RewardDef[] | null>(null);
@@ -144,21 +147,12 @@ export function DailyGiftModal({
   }
 
   if (!open) {
+    if (!showChip) return null;
     /*
       Cerrado y sin reclamar: queda un acceso discreto para volver a abrirlo.
-
-      Antes el modal desaparecía sin dejar rastro hasta la próxima sesión, y la
-      única vía era el badge del navbar. Cerrar un panel no debería costar la
-      recompensa del día: el chip no interrumpe —no tapa nada, no roba foco—
-      pero deja claro que sigue pendiente.
+      En Home el IdleRewardWidget cubre este rol — pasar showChip={false}.
     */
     return (
-      /*
-        Ancho por contenido, no full width: es un aviso secundario y ocupando
-        la fila entera pesaba más que el saludo de la pantalla. En verde por el
-        mismo criterio que el resto de la app —verde = algo disponible/hecho—,
-        y así no compite con el rojo de las acciones primarias.
-      */
       <button
         type="button"
         onClick={reopen}

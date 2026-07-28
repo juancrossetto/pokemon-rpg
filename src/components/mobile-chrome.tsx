@@ -191,13 +191,17 @@ export function MobileChrome({
 
   return (
     <>
-      {/* Top bar mobile: brand + coins + language + account */}
-      <header className="fixed top-0 inset-x-0 z-50 flex xl:hidden items-center justify-between gap-2 px-3 h-12 bg-background/95 backdrop-blur-xl border-b border-white/10 pt-[env(safe-area-inset-top)]">
-        <Link href={lockedHref ?? brandHref} className="shrink-0">
+      {/* Top bar mobile: brand + resources + account — ~56–64px + safe-area */}
+      <header className="fixed top-0 inset-x-0 z-50 flex xl:hidden items-center justify-between gap-2 px-3 min-h-14 bg-background/95 backdrop-blur-xl border-b border-white/10 pt-[env(safe-area-inset-top)]">
+        <Link
+          href={lockedHref ?? brandHref}
+          className="flex h-11 w-11 shrink-0 items-center justify-center"
+          aria-label={brand}
+        >
           <BrandLogo alt={brand} priority sizes="64px" className="h-7 w-auto" />
         </Link>
 
-        <div className="flex min-w-0 items-center gap-1.5 shrink-0">
+        <div className="flex min-w-0 items-center gap-1 shrink-0">
           {energy !== null &&
             energyMax !== null &&
             energyUpdatedAt &&
@@ -214,19 +218,23 @@ export function MobileChrome({
               />
             )}
           {notifications && (
-            <NotificationsBell
-              initialItems={notifications.items}
-              initialUnread={notifications.unreadCount}
-            />
+            <div className="flex h-11 w-11 items-center justify-center">
+              <NotificationsBell
+                initialItems={notifications.items}
+                initialUnread={notifications.unreadCount}
+              />
+            </div>
           )}
           {userName ? (
-            <UserMenu
-              name={userName}
-              avatarId={avatarId ?? null}
-              logoutLabel={logoutLabel}
-              trainerLabel={trainerLabel}
-              profileLabel={profileLabel}
-            />
+            <div className="flex h-11 w-11 items-center justify-center">
+              <UserMenu
+                name={userName}
+                avatarId={avatarId ?? null}
+                logoutLabel={logoutLabel}
+                trainerLabel={trainerLabel}
+                profileLabel={profileLabel}
+              />
+            </div>
           ) : (
             <div className="flex items-center gap-1.5">
               <Link href="/login" className="text-[11px] text-on-surface-variant px-1.5 py-1">
@@ -243,10 +251,10 @@ export function MobileChrome({
         </div>
       </header>
 
-      {/* Bottom bar: 4–5 primary destinations */}
+      {/* Bottom bar: 4–5 primary destinations + safe-area */}
       <nav
         ref={bottomNavRef}
-        className="fixed bottom-0 inset-x-0 z-50 flex xl:hidden items-stretch h-14 bg-background/98 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]"
+        className="fixed bottom-0 inset-x-0 z-50 flex xl:hidden items-stretch min-h-14 bg-background/98 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.35)]"
       >
         {lockedHref && lockedLabel ? (
           <Link
@@ -285,22 +293,22 @@ export function MobileChrome({
                   href={item.href}
                   data-active={showActive || undefined}
                   aria-current={showActive ? "page" : undefined}
-                  className={`relative flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                  className={`relative flex min-h-14 flex-1 min-w-0 flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
                     showActive
-                      ? "text-pokeball-red"
+                      ? "bg-pokeball-red/[0.08] text-pokeball-red"
                       : "text-on-surface-variant hover:text-pokeball-red"
                   }`}
                 >
                   <span
                     className={`material-symbols-outlined text-[22px]! transition-transform ${
-                      showActive ? "scale-110" : ""
+                      showActive ? "scale-105" : ""
                     }`}
                   >
                     {item.icon}
                   </span>
                   <span
-                    className={`text-[10px] leading-none truncate max-w-full ${
-                      showActive ? "font-bold" : ""
+                    className={`max-w-full truncate text-[11px] leading-none ${
+                      showActive ? "font-bold" : "font-medium"
                     }`}
                   >
                     {item.label}
@@ -322,16 +330,16 @@ export function MobileChrome({
                 aria-expanded={moreOpen}
                 aria-haspopup="dialog"
                 data-active={moreActive || undefined}
-                className={`relative flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
+                className={`relative flex min-h-14 flex-1 min-w-0 flex-col items-center justify-center gap-0.5 px-1 transition-colors ${
                   moreActive
-                    ? "text-pokeball-red"
+                    ? "bg-pokeball-red/[0.08] text-pokeball-red"
                     : "text-on-surface-variant hover:text-pokeball-red"
                 }`}
               >
                 <span className="material-symbols-outlined text-[22px]!">
                   {moreOpen ? "close" : "menu"}
                 </span>
-                <span className="text-[10px] leading-none">{moreLabel}</span>
+                <span className="text-[11px] leading-none font-medium">{moreLabel}</span>
               </button>
             )}
           </>

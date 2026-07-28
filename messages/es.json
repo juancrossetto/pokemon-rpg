@@ -144,6 +144,20 @@
     "activeSquad": "Equipo activo",
     "manage": "Administrar",
     "emptySlot": "Espacio vacío",
+    "quickActions": "Accesos",
+    "quick": {
+      "events": "Eventos"
+    },
+    "rewards": {
+      "title": "Recompensas",
+      "claim": "Reclamar",
+      "claiming": "…",
+      "claimed": "Listo",
+      "empty": "Sin recompensas pendientes",
+      "seeEvents": "Ver",
+      "pendingWeekly": "Tenés hitos semanales por reclamar",
+      "dailyReady": "Regalo diario listo"
+    },
     "liveSync": "Sincronización en vivo",
     "time": "Hora",
     "climate": "Clima",
