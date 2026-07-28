@@ -39,7 +39,7 @@
     "coinsBalance": "Saldo disponible para tienda y mercado.",
     "gems": "Gemas",
     "gemsBalance": "Saldo de moneda premium.",
-    "gemsHint": "Reservadas para usos especiales en el PC. Todavía no hay forma de ganarlas en el juego.",
+    "gemsHint": "Se ganan en recompensas diarias, semanales y PvP. Pronto van a servir para usos especiales (p. ej. ampliar el PC).",
     "resources": "Recursos",
     "resourceAdd": "Más info",
     "groups": {
@@ -551,6 +551,13 @@
     "resultLost": "Tu Pokémon se debilitó. Curalo en Mi equipo antes de seguir.",
     "resultFled": "Huiste de la batalla.",
     "resultCaught": "¡Atrapaste al Pokémon! Ya está en tu equipo.",
+    "resultCaughtPc": "¡Atrapaste al Pokémon! Tu equipo estaba lleno: fue al PC.",
+    "sentToPcHint": "Sin espacio en el equipo — fue al PC.",
+    "healedBy": "{name} recuperó {hp} HP.",
+    "xpGained": "+{xp} XP",
+    "switchRecall": "¡Volvé, {out}! ¡Adelante, {into}!",
+    "switchForcedOut": "{out} no puede continuar. ¡Adelante, {into}!",
+    "trainerSendOut": "¡Manda a {name}!",
     "goHeal": "Ir a Mi equipo",
     "badgeEarned": "¡Conseguiste la medalla!",
     "badgeContinue": "Continuar",
@@ -653,6 +660,7 @@
       "fled": "¡Escapaste con éxito!",
       "fleeFailed": "¡No pudiste escapar!",
       "brokeFree": "¡Se liberó!",
+      "brokeFreeNamed": "¡{name} se liberó!",
       "lowHp": "¡{name} está a punto de debilitarse!"
     },
     "badgePerks": {

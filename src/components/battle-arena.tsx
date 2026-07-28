@@ -179,7 +179,8 @@ export function BattleArena({
   const router = useRouter();
   const isGymBattle = battleMode === "gym";
   const isPvpBattle = battleMode === "pvp";
-  const isTrainerStyle = isGymBattle || isPvpBattle;
+  // Gym, PvP o entrenador de ruta: no captura / no huida “salvaje”.
+  const isTrainerStyle = isGymBattle || isPvpBattle || Boolean(opponentName);
   const leaderPortrait = gymLeaderName ? gymLeaderPortraitUrl(gymLeaderName) : null;
   const foeLabel = opponentName ?? t("wildFoe");
 
@@ -330,7 +331,10 @@ export function BattleArena({
     ratingAfter: number;
     coinsAwarded: number;
   } | null>(null);
-  const [view, setView] = useState<View>("menu");
+  const needsForcedSwitch =
+    player.currentHp <= 0 &&
+    initialParty.some((m) => m.instanceId !== player.instanceId && m.currentHp > 0);
+  const [view, setView] = useState<View>(needsForcedSwitch ? "team" : "menu");
   // Una vez que el jugador elige Luchar por primera vez, los turnos
   // siguientes abren directo en el menú de poderes (en vez de volver
   // siempre al menú raíz) — "volver" desde ahí sigue llevando al menú raíz.
@@ -339,11 +343,12 @@ export function BattleArena({
   const [potionStacks, setPotionStacks] = useState(potions);
   const [party, setParty] = useState(initialParty);
   const [opponentParty, setOpponentParty] = useState(initialOpponentParty);
-  const [mustSwitch, setMustSwitch] = useState(false);
+  const [mustSwitch, setMustSwitch] = useState(needsForcedSwitch);
   const [activeMoves, setActiveMoves] = useState(moves);
   const [choiceLockMoveId, setChoiceLockMoveId] = useState(initialChoiceLockMoveId);
   const logEndRef = useRef<HTMLDivElement>(null);
   const [capturedInfo, setCapturedInfo] = useState<CapturedPokemonInfo | null>(null);
+  const [caughtSentToPc, setCaughtSentToPc] = useState(false);
   const [nicknameInput, setNicknameInput] = useState("");
   const [savingNickname, setSavingNickname] = useState(false);
   const [captureBall, setCaptureBall] = useState<
@@ -745,7 +750,7 @@ export function BattleArena({
     maxHp: number;
     types: string[];
   }) {
-    appendLog(`¡${activeWild.name} debilitado!`, "wild");
+    appendLog(tLog("fainted", { name: activeWild.name }), "wild");
     setFaintingSide("wild");
     setOpponentParty((prev) => {
       let promoted = false;
@@ -772,7 +777,7 @@ export function BattleArena({
     setWildMaxHp(next.maxHp);
     setWildEntering(true);
     setTimeout(() => setWildEntering(false), 400);
-    appendLog(`¡Manda a ${next.name}!`, "wild");
+    appendLog(t("trainerSendOut", { name: next.name }), "wild");
   }
 
   async function handleMove(moveId: number) {
@@ -803,7 +808,7 @@ export function BattleArena({
       }),
     );
     if (result.xpGained) {
-      appendLog(`+${result.xpGained} XP`);
+      appendLog(t("xpGained", { xp: result.xpGained }));
     }
     if (result.xpSummary) {
       setXpSummary(result.xpSummary);
@@ -857,12 +862,32 @@ export function BattleArena({
         return;
       }
       const result = await fleeBattle(battleId, locale);
-      if (!result?.fled) return;
+      if (!result) {
+        appendLog(tLog("fleeFailed"), "system");
+        setView(defaultView);
+        return;
+      }
 
-      appendLog(tLog("fled"), "player");
-      setOutcome("fled");
+      if (result.fled) {
+        appendLog(tLog("fled"), "player");
+        setOutcome("fled");
+        return;
+      }
+
+      appendLog(tLog("fleeFailed"), "system");
+      if (result.counterAttack) {
+        await playEvent(result.counterAttack);
+      }
+      if (result.outcome === "lost") {
+        await playFaintAndFinish("player", "lost");
+      } else if (result.outcome === "fainted") {
+        await playFaintThenForceSwitch();
+      } else {
+        setView(defaultView);
+      }
     } catch {
       appendLog(tLog("fleeFailed"), "system");
+      setView(defaultView);
     } finally {
       setIsAnimating(false);
     }
@@ -872,9 +897,10 @@ export function BattleArena({
     if (isAnimating || outcome !== "ongoing" || mustSwitch || isTrainerStyle) return;
     setIsAnimating(true);
     setView("menu");
-    appendLog(`¡Lanzaste ${ballName}!`, "player");
+    appendLog(tLog("threwBall", { name: ballName }), "player");
     playBattleSfx("ball");
 
+    const prevBalls = ballStacks;
     setBallStacks((prev) =>
       prev.map((b) => (b.itemId === itemId ? { ...b, quantity: b.quantity - 1 } : b)).filter((b) => b.quantity > 0),
     );
@@ -890,9 +916,11 @@ export function BattleArena({
 
     const result = await resultPromise;
     if (!result) {
+      setBallStacks(prevBalls);
       setCaptureBall(null);
       setCaptureBallName(null);
       setIsAnimating(false);
+      setView(defaultView);
       return;
     }
 
@@ -913,7 +941,11 @@ export function BattleArena({
       setCaptureBall("success");
       playBattleSfx("crit");
       await delay(BALL_CATCH_MS);
-      appendLog(`¡Atrapaste a ${activeWild.name}!`, "player");
+      appendLog(tLog("caught", { name: activeWild.name }), "player");
+      if (result.capturedPokemon?.sentToPc) {
+        appendLog(t("sentToPcHint"), "system");
+        setCaughtSentToPc(true);
+      }
       setCapturedInfo(result.capturedPokemon);
       setNicknameInput("");
       setCaptureBall(null);
@@ -927,7 +959,7 @@ export function BattleArena({
     await delay(BALL_BREAK_MS);
     setCaptureBall(null);
     setCaptureBallName(null);
-    appendLog(`¡${activeWild.name} se liberó!`, "wild");
+    appendLog(tLog("brokeFreeNamed", { name: activeWild.name }), "wild");
     if (result.counterAttack) {
       await playEvent(result.counterAttack);
     }
@@ -958,17 +990,22 @@ export function BattleArena({
     setIsAnimating(true);
     setView("menu");
 
+    const prevPotions = potionStacks;
+    const used = potionStacks.find((p) => p.itemId === itemId);
     setPotionStacks((prev) =>
       prev.map((p) => (p.itemId === itemId ? { ...p, quantity: p.quantity - 1 } : p)).filter((p) => p.quantity > 0),
     );
 
     setPlayerHealing(true);
+    playBattleSfx("heal");
     await delay(ITEM_USE_MS);
     setPlayerHealing(false);
 
     const result = await applyBattleItem(battleId, itemId, locale);
     if (!result) {
+      setPotionStacks(prevPotions);
       setIsAnimating(false);
+      setView(defaultView);
       return;
     }
 
@@ -978,7 +1015,8 @@ export function BattleArena({
         m.instanceId === activePlayer.instanceId ? { ...m, currentHp: result.healedTo } : m,
       ),
     );
-    appendLog(`Usaste ${result.itemName}. ${activePlayer.name} recuperó ${result.healedBy} HP.`, "player");
+    appendLog(tLog("usedItem", { name: result.itemName ?? used?.name ?? "?" }), "player");
+    appendLog(t("healedBy", { name: activePlayer.name, hp: result.healedBy }), "player");
 
     if (result.counterAttack) {
       await playEvent(result.counterAttack);
@@ -1023,8 +1061,8 @@ export function BattleArena({
     setFaintingSide(null);
     appendLog(
       forced
-        ? `${outgoing.name} no puede continuar. ¡Adelante, ${result.newPlayer.name}!`
-        : `¡Volvé, ${outgoing.name}! ¡Adelante, ${result.newPlayer.name}!`,
+        ? t("switchForcedOut", { out: outgoing.name, into: result.newPlayer.name })
+        : t("switchRecall", { out: outgoing.name, into: result.newPlayer.name }),
       "player",
     );
 
@@ -1084,6 +1122,9 @@ export function BattleArena({
       <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
         <div className="mx-auto max-w-md flex flex-col items-center gap-4 text-center">
           <p className="text-label-sm uppercase text-tertiary">{t("caughtTitle")}</p>
+          {capturedInfo.sentToPc && (
+            <p className="text-label-md text-electric-yellow/90">{t("sentToPcHint")}</p>
+          )}
 
           <div className="w-28 h-28 rounded-full flex items-center justify-center bg-tertiary/10 border-2 border-tertiary/50 shadow-[0_0_20px_rgba(52,211,153,0.3)]">
             <Image src={capturedInfo.spriteUrl} alt={capturedInfo.name} width={96} height={96} className="w-24 h-24 object-contain" />
@@ -1167,7 +1208,9 @@ export function BattleArena({
         : outcome === "lost"
           ? t("resultLostTitle")
           : outcome === "caught"
-            ? t("resultCaught")
+            ? caughtSentToPc
+              ? t("resultCaughtPc")
+              : t("resultCaught")
             : outcome === "trainer_cleared"
               ? t("resultTrainerCleared")
               : t("resultFled");
@@ -1760,7 +1803,7 @@ export function BattleArena({
                 </button>
                 <button
                   type="button"
-                  disabled={isAnimating || isGymBattle}
+                  disabled={isAnimating || isGymBattle || (Boolean(opponentName) && !isPvpBattle)}
                   onClick={handleFlee}
                   className="battle-cmd-btn"
                 >

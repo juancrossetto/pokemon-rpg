@@ -27,6 +27,8 @@ export interface CapturedPokemonInfo {
   maxHp: number;
   stats: { attack: number; defense: number; spAtk: number; spDef: number; speed: number };
   moves: { moveId: number; name: string; type: string; pp: number }[];
+  /** true si el equipo estaba lleno y fue al PC. */
+  sentToPc: boolean;
 }
 
 export interface AttemptCaptureResult {
@@ -166,6 +168,7 @@ export async function attemptCapture(
           const m = movesById.get(id)!;
           return { moveId: m.id, name: m.name, type: m.type, pp: m.pp };
         }),
+        sentToPc: openSlot === null,
       },
     };
   }

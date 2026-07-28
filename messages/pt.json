@@ -39,7 +39,7 @@
     "coinsBalance": "Saldo disponível para a loja e o mercado.",
     "gems": "Gemas",
     "gemsBalance": "Saldo da moeda premium.",
-    "gemsHint": "Reservadas para usos especiais no PC. Ainda não há como ganhá-las no jogo.",
+    "gemsHint": "Ganhas em recompensas diárias, semanais e PvP. Em breve vão servir para usos especiais (ex.: ampliar o PC).",
     "resources": "Recursos",
     "resourceAdd": "Mais info",
     "groups": {
@@ -551,6 +551,13 @@
     "resultLost": "Seu Pokémon desmaiou. Cure-o em Meu time antes de continuar.",
     "resultFled": "Você fugiu da batalha.",
     "resultCaught": "Você capturou o Pokémon! Ele já está no seu time.",
+    "resultCaughtPc": "Você capturou o Pokémon! O time estava cheio — foi para o PC.",
+    "sentToPcHint": "Sem espaço no time — enviado ao PC.",
+    "healedBy": "{name} recuperou {hp} de HP.",
+    "xpGained": "+{xp} XP",
+    "switchRecall": "{out}, volte! Vai, {into}!",
+    "switchForcedOut": "{out} não pode continuar. Vai, {into}!",
+    "trainerSendOut": "Enviou {name}!",
     "goHeal": "Ir para Meu time",
     "badgeEarned": "Você conseguiu a insígnia!",
     "badgeContinue": "Continuar",
@@ -653,6 +660,7 @@
       "fled": "Escapou com sucesso!",
       "fleeFailed": "Não conseguiu escapar!",
       "brokeFree": "Se libertou!",
+      "brokeFreeNamed": "{name} se libertou!",
       "lowHp": "{name} está prestes a desmaiar!"
     },
     "badgePerks": {

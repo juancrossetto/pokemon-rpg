@@ -39,7 +39,7 @@
     "coinsBalance": "Balance available for the shop and market.",
     "gems": "Gems",
     "gemsBalance": "Premium currency balance.",
-    "gemsHint": "Reserved for special PC uses. There is no way to earn them in-game yet.",
+    "gemsHint": "Earned from daily, weekly and PvP rewards. Soon they'll unlock special uses (e.g. expanding the PC).",
     "resources": "Resources",
     "resourceAdd": "More info",
     "groups": {
@@ -551,6 +551,13 @@
     "resultLost": "Your Pokémon fainted. Heal it in My team before continuing.",
     "resultFled": "You fled the battle.",
     "resultCaught": "You caught the Pokémon! It's now in your team.",
+    "resultCaughtPc": "You caught the Pokémon! Your team was full — it went to the PC.",
+    "sentToPcHint": "No team space — sent to the PC.",
+    "healedBy": "{name} recovered {hp} HP.",
+    "xpGained": "+{xp} XP",
+    "switchRecall": "{out}, come back! Go, {into}!",
+    "switchForcedOut": "{out} can't battle. Go, {into}!",
+    "trainerSendOut": "Sent out {name}!",
     "goHeal": "Go to My team",
     "badgeEarned": "You earned the badge!",
     "badgeContinue": "Continue",
@@ -653,6 +660,7 @@
       "fled": "Got away safely!",
       "fleeFailed": "Can't escape!",
       "brokeFree": "It broke free!",
+      "brokeFreeNamed": "{name} broke free!",
       "lowHp": "{name} is about to faint!"
     },
     "badgePerks": {

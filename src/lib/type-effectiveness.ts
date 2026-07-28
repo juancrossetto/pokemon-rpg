@@ -10,11 +10,11 @@ export function getTypeEffectiveness(
   attackingType: string,
   defendingTypes: string[],
 ): number {
-  return defendingTypes.reduce(
-    (multiplier, defendingType) =>
-      multiplier * (chart[attackingType]?.[defendingType] ?? 1),
-    1,
-  );
+  const atk = attackingType.toLowerCase();
+  return defendingTypes.reduce((multiplier, defendingType) => {
+    const def = defendingType.toLowerCase();
+    return multiplier * (chart[atk]?.[def] ?? 1);
+  }, 1);
 }
 
 /** Tipos que hacen daño super efectivo contra un tipo defensor. */
