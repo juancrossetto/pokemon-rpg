@@ -52,7 +52,10 @@ export function setBattleBgmMuted(muted: boolean) {
   }
   if (resultAudio) {
     resultAudio.muted = muted;
-    if (!muted && resultAudio.paused) void resultAudio.play().catch(() => {});
+    // Solo reanuda si el clip todavía no terminó (victoria es one-shot).
+    if (!muted && resultAudio.paused && !resultAudio.ended) {
+      void resultAudio.play().catch(() => {});
+    }
   }
   if (resultCtx && muted) stopResultBgm();
 }
@@ -174,21 +177,21 @@ function scheduleDefeatPhrase(audio: AudioContext, when: number, vol: number) {
   }
 }
 
-/** Para la BGM de pelea y reproduce el tema de victoria/derrota en loop suave. */
+/** Para la BGM de pelea y reproduce el tema de victoria/derrota una sola vez. */
 export function startResultBgm(kind: ResultBgmKind) {
   if (typeof window === "undefined") return;
   if (isBattleBgmMuted()) return;
   stopBattleBgm();
   stopResultBgm();
 
-  // Victoria: usar clip dedicado (pedido del usuario).
+  // Victoria: clip dedicado — una sola pasada, no loop de pantalla de resultado.
   if (kind === "victory") {
     resultKind = kind;
     if (!resultAudio) {
       resultAudio = new Audio();
       resultAudio.preload = "auto";
     }
-    resultAudio.loop = true;
+    resultAudio.loop = false;
     resultAudio.src = "/audio/battle/sfx/victory.wav";
     resultAudio.volume = getBattleBgmVolume();
     resultAudio.muted = isBattleBgmMuted();
@@ -196,20 +199,12 @@ export function startResultBgm(kind: ResultBgmKind) {
     return;
   }
 
-  // Derrota: fanfarria Web Audio (victoria ya salió arriba con victory.wav).
+  // Derrota: fanfarria Web Audio (una frase, sin repetir).
   const audioCtx = getResultCtx();
   if (!audioCtx) return;
   resultKind = kind;
   const vol = Math.max(0.05, getBattleBgmVolume());
-  const phraseMs = 3600;
-
-  const playOnce = () => {
-    if (resultKind !== kind) return;
-    const when = audioCtx.currentTime + 0.02;
-    scheduleDefeatPhrase(audioCtx, when, vol);
-    resultLoopTimer = window.setTimeout(playOnce, phraseMs);
-  };
-  playOnce();
+  scheduleDefeatPhrase(audioCtx, audioCtx.currentTime + 0.02, vol);
 }
 
 export function stopResultBgm() {
