@@ -33,7 +33,7 @@ function fetchGyms() {
 
 // Estado de cada gimnasio para un usuario: medalla obtenida, bloqueado
 // (falta la medalla anterior), o en cooldown tras haber perdido. Compartido
-// entre la lista (/gyms) y el mapa (/gyms/map) para no duplicar la lógica.
+// entre las vistas lista y mapa de /gyms para no duplicar la lógica.
 /**
  * Estado de los gimnasios. Por defecto solo los 8 de medalla: el Alto Mando se
  * pide aparte (`includeElite`) porque no da medalla y solo se abre con las 8.

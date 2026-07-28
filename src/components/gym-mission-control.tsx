@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { typeIcon } from "@/lib/type-icons";
 import type { GymMissionItem, GymMissionStatusKind } from "@/lib/gym-mission";
+import { KANTO_MAP_IMAGE, KANTO_MAP_ASPECT } from "@/lib/gym-map";
 import { marketFeeDiscount, obedienceLevelCap } from "@/lib/badge-perks";
 
 type Props = {
@@ -176,6 +177,9 @@ export function GymMissionControl({ items, badgeCount }: Props) {
   const firstUnlocked = items.find((g) => !g.locked && !g.badgeEarned) ?? items[0];
   const [selectedId, setSelectedId] = useState(firstUnlocked?.id ?? items[0]?.id ?? "");
   const [slideDir, setSlideDir] = useState<"left" | "right">("right");
+  // Vista de operaciones: cards o mapa de región. Antes el mapa era la ruta
+  // /gyms/map, una segunda pantalla con exactamente los mismos datos.
+  const [view, setView] = useState<"list" | "map">("list");
 
   // `selected` ya cae en items[0] cuando el id guardado no existe, así que el
   // efecto que "corregía" selectedId no cambiaba nada de lo que se renderiza:
@@ -209,13 +213,16 @@ export function GymMissionControl({ items, badgeCount }: Props) {
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-headline-lg text-white md:text-display-lg">{t("title")}</h1>
-              <Link
-                href="/gyms/map"
+              <button
+                type="button"
+                onClick={() => setView((v) => (v === "list" ? "map" : "list"))}
                 className="inline-flex items-center gap-1.5 rounded-md border border-white/12 px-3 py-1.5 text-label-sm text-on-surface transition hover:border-pokeball-red/50"
               >
-                <span className="material-symbols-outlined text-[16px]!">map</span>
-                {t("viewMap")}
-              </Link>
+                <span className="material-symbols-outlined text-[16px]!">
+                  {view === "list" ? "map" : "view_list"}
+                </span>
+                {view === "list" ? t("viewMap") : t("backToList")}
+              </button>
             </div>
             <p className="mt-1 max-w-xl text-label-sm text-on-surface-variant">{t("subtitle")}</p>
           </div>
@@ -486,17 +493,87 @@ export function GymMissionControl({ items, badgeCount }: Props) {
           </aside>
         </section>
 
-        {/* CAROUSEL */}
+        {/* OPERATIONS: carrusel de cards o mapa de región (mismos datos) */}
         <section>
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="text-[11px] font-mono uppercase tracking-[0.2em] text-on-surface-variant">
-              {t("operations")}
+              {view === "list" ? t("operations") : t("mapTitle")}
             </h3>
             <p className="text-label-sm text-on-surface-variant/70">
               {t("operationsHint")}
             </p>
           </div>
 
+          {view === "map" ? (
+            <div className="glass-panel rounded-xl border border-white/10 p-2 sm:p-3">
+              <div
+                className="relative w-full overflow-hidden rounded-lg bg-[#0b1424]"
+                style={{ aspectRatio: KANTO_MAP_ASPECT }}
+              >
+                <Image
+                  src={KANTO_MAP_IMAGE}
+                  alt={t("mapTitle")}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 768px"
+                  className="object-contain"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/35" />
+
+                {items.map((gym) => {
+                  const gymColor = typeColor(gym.type);
+                  const active = gym.id === selected.id;
+                  return (
+                    <button
+                      key={gym.id}
+                      type="button"
+                      onClick={() => selectGym(gym)}
+                      title={`${gym.name} — ${gym.leaderName}${gym.badgeName ? ` · ${gym.badgeName}` : ""}`}
+                      className="absolute -translate-x-1/2 -translate-y-1/2"
+                      style={{ left: `${gym.mapFocusX}%`, top: `${gym.mapFocusY}%` }}
+                    >
+                      <span
+                        className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 bg-background/90 backdrop-blur-sm transition-transform sm:h-10 sm:w-10 ${
+                          gym.locked ? "opacity-70" : "hover:scale-110"
+                        } ${active ? "ring-2 ring-pokeball-red/70" : ""}`}
+                        style={{
+                          borderColor: gymColor,
+                          boxShadow: gym.badgeEarned
+                            ? `0 0 14px ${gymColor}aa`
+                            : gym.locked
+                              ? undefined
+                              : `0 0 10px ${gymColor}55`,
+                        }}
+                      >
+                        <Image
+                          src={gym.badgeUrl}
+                          alt={gym.badgeName || gym.name}
+                          width={28}
+                          height={28}
+                          className={`h-5 w-5 object-contain sm:h-6 sm:w-6 ${
+                            gym.locked && !gym.badgeEarned ? "opacity-45 grayscale" : ""
+                          } ${gym.badgeEarned ? "drop-shadow-[0_0_6px_rgba(242,192,0,0.65)]" : ""}`}
+                        />
+                        {gym.locked && !gym.badgeEarned && (
+                          <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white/20 bg-background sm:h-4 sm:w-4">
+                            <span className="material-symbols-outlined text-[10px]! leading-none text-on-surface-variant sm:text-[11px]!">
+                              lock
+                            </span>
+                          </span>
+                        )}
+                        {gym.badgeEarned && (
+                          <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-tertiary text-surface sm:h-4 sm:w-4">
+                            <span className="material-symbols-outlined text-[10px]! leading-none sm:text-[11px]!">
+                              check
+                            </span>
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
           <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]">
             {items.map((gym) => {
               const gymColor = typeColor(gym.type);
@@ -579,6 +656,7 @@ export function GymMissionControl({ items, badgeCount }: Props) {
               );
             })}
           </div>
+          )}
         </section>
       </div>
     </div>
