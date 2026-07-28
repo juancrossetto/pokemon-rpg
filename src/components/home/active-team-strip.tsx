@@ -115,6 +115,7 @@ function TeamSlot({
   );
   const displayName = member.nickname ?? member.speciesName;
   const isLead = index === 0;
+  const skipClickRef = useRef(false);
 
   const sheetLabels: SquadCardSheetLabels = {
     showDetails: member.labels.showDetails,
@@ -143,28 +144,62 @@ function TeamSlot({
     evolving: member.labels.evolving,
   };
 
+  const menuProps = {
+    instanceId: member.id,
+    pokemonName: displayName,
+    currentHp: member.currentHp,
+    maxHp: member.maxHp,
+    level: member.level,
+    isFavorite: member.isFavorite,
+    isTradeLocked: member.isTradeLocked,
+    canHeal: member.currentHp < member.maxHp,
+    canLevelUp: member.level < 100,
+    labels: member.menuLabels,
+    bagCounts,
+    onBagChange,
+    onHealed: ({ currentHp, maxHp }: { currentHp: number; maxHp: number }) =>
+      onHealed(member.id, currentHp, maxHp),
+    onPpRestored: (next: { moveName: string; restoredBy: number; allMoves: boolean }) =>
+      onPpRestored(member.id, next),
+    onLeveledUp: (next: { level: number; currentHp: number; maxHp: number }) =>
+      onLeveledUp(member.id, {
+        ...next,
+        levelLabel: tTeam("level", { level: next.level }),
+      }),
+  };
+
   return (
     <>
-      <button
-        type="button"
-        draggable={!pending}
-        onDragStart={(e) => {
-          onDragStart(member.id);
-          e.dataTransfer.effectAllowed = "move";
-          e.dataTransfer.setData("text/plain", member.id);
-        }}
-        onDragEnd={onDragEnd}
-        onClick={() => setOpen(true)}
-        aria-label={`${displayName}, ${member.levelLabel}`}
-        className={`team-card team-slot group relative flex ${SLOT_HEIGHT} ${SLOT_WIDTH} shrink-0 flex-col overflow-hidden rounded-[1.25rem] border text-left transition duration-300 active:scale-[0.97] ${
-          isOver ? "ring-2 ring-pokeball-red/60 ring-offset-2 ring-offset-background" : ""
-        } ${isDragging ? "opacity-40" : "hover:scale-[1.01]"} ${
-          isLead || member.isFavorite
-            ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
-            : "border-white/[0.08] hover:border-white/20"
-        } ${fainted ? "opacity-80" : ""}`}
-        style={{ "--type-accent": accent } as CSSProperties}
-      >
+      <SquadCardContextMenu {...menuProps} showViewTeam triggerVariant="ghost">
+        <button
+          type="button"
+          draggable={!pending}
+          onDragStart={(e) => {
+            skipClickRef.current = true;
+            onDragStart(member.id);
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", member.id);
+          }}
+          onDragEnd={() => {
+            onDragEnd();
+            requestAnimationFrame(() => {
+              skipClickRef.current = false;
+            });
+          }}
+          onClick={() => {
+            if (skipClickRef.current) return;
+            setOpen(true);
+          }}
+          aria-label={`${displayName}, ${member.levelLabel}`}
+          className={`team-card team-slot group relative flex ${SLOT_HEIGHT} ${SLOT_WIDTH} shrink-0 flex-col overflow-hidden rounded-[1.25rem] border text-left transition duration-300 active:scale-[0.97] ${
+            isOver ? "ring-2 ring-pokeball-red/60 ring-offset-2 ring-offset-background" : ""
+          } ${isDragging ? "opacity-40" : "hover:scale-[1.01]"} ${
+            isLead || member.isFavorite
+              ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
+              : "border-white/[0.08] hover:border-white/20"
+          } ${fainted ? "opacity-80" : ""}`}
+          style={{ "--type-accent": accent } as CSSProperties}
+        >
         <div className="relative flex min-h-0 flex-[1.15] flex-col items-center justify-end px-2 pb-0 pt-6">
           <div
             className="pointer-events-none absolute inset-0"
@@ -299,10 +334,11 @@ function TeamSlot({
           </div>
         </div>
       </button>
+      </SquadCardContextMenu>
 
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4">
+          <div className="fixed inset-0 z-[80] flex items-end justify-center pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] sm:items-center sm:p-4 sm:pb-4 xl:pb-4">
             <button
               type="button"
               aria-label={tTeam("drawer.hideDetails")}
@@ -314,7 +350,7 @@ function TeamSlot({
               role="dialog"
               aria-modal="true"
               aria-label={displayName}
-              className="team-detail-sheet relative z-[1] flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-white/12 bg-[#0b0d13] shadow-[0_-12px_48px_rgba(0,0,0,0.55)] sm:rounded-2xl sm:shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
+              className="team-detail-sheet relative z-[1] flex max-h-[min(88dvh,calc(100dvh-var(--bottom-nav-h)-env(safe-area-inset-bottom)-1rem))] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-white/12 bg-[#0b0d13] shadow-[0_-12px_48px_rgba(0,0,0,0.55)] sm:rounded-2xl sm:shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
             >
               <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
                 <div className="min-w-0">
@@ -336,29 +372,8 @@ function TeamSlot({
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-                <SquadCardContextMenu
-                  instanceId={member.id}
-                  pokemonName={displayName}
-                  currentHp={member.currentHp}
-                  maxHp={member.maxHp}
-                  level={member.level}
-                  isFavorite={member.isFavorite}
-                  isTradeLocked={member.isTradeLocked}
-                  canHeal={member.currentHp < member.maxHp}
-                  canLevelUp={member.level < 100}
-                  labels={member.menuLabels}
-                  bagCounts={bagCounts}
-                  onBagChange={onBagChange}
-                  onHealed={({ currentHp, maxHp }) => onHealed(member.id, currentHp, maxHp)}
-                  onPpRestored={(next) => onPpRestored(member.id, next)}
-                  onLeveledUp={(next) =>
-                    onLeveledUp(member.id, {
-                      ...next,
-                      levelLabel: tTeam("level", { level: next.level }),
-                    })
-                  }
-                >
-                  <div className="team-detail-sheet__hero mb-3 flex flex-col items-center">
+                <SquadCardContextMenu {...menuProps} showViewTeam={false}>
+                  <div className="team-detail-sheet__hero mb-3 flex flex-col items-center pt-2">
                     {member.spriteUrl && (
                       <Image
                         src={member.spriteUrl}
@@ -484,7 +499,14 @@ export function ActiveTeamStrip({
     <section className={pending ? "opacity-90" : undefined}>
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-white">
-          <span className="material-symbols-outlined text-[18px]! text-pokeball-red">group</span>
+          <Image
+            src="/nav/joystick-icon.png"
+            alt=""
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0 object-contain"
+            aria-hidden
+          />
           {title}
         </h2>
         <Link

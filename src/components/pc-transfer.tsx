@@ -149,7 +149,14 @@ export function PcTransfer({
 
       <section className="mb-8">
         <h2 className="mb-3 flex items-center gap-2 text-headline-md text-on-surface">
-          <span className="material-symbols-outlined text-[20px]! text-pokeball-red">group</span>
+          <Image
+            src="/nav/joystick-icon.png"
+            alt=""
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0 object-contain"
+            aria-hidden
+          />
           {t("teamSection", { count: team.length, max: teamSize })}
         </h2>
 
@@ -218,9 +225,14 @@ export function PcTransfer({
         }`}
       >
         <h2 className="mb-3 flex items-center gap-2 text-headline-md text-on-surface">
-          <span className="material-symbols-outlined text-[20px]! text-electric-yellow">
-            storage
-          </span>
+          <Image
+            src="/nav/pc-icon.png"
+            alt=""
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0 object-contain"
+            aria-hidden
+          />
           {t("storageSection", { count: box.length })}
         </h2>
 

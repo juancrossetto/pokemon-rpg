@@ -169,6 +169,7 @@ export function CurrentExpedition({
             <CoachMark
               storageKey={milestone.kind === "gym" ? "coach-gym" : "coach-explore"}
               message={milestone.kind === "gym" ? tUx("coachGym") : tUx("coachExplore")}
+              align="top"
               className="pointer-events-auto min-w-0 flex-1"
             >
               <Link

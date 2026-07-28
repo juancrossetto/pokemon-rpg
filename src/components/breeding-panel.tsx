@@ -67,7 +67,14 @@ export function BreedingPanel({
   return (
     <section className="glass-panel mt-8 rounded-xl border border-white/10 p-4">
       <h2 className="mb-1 flex items-center gap-2 text-headline-md text-on-surface">
-        <span className="material-symbols-outlined text-[20px]! text-tertiary">egg</span>
+        <Image
+          src="/eggs.png"
+          alt=""
+          width={56}
+          height={42}
+          className="h-9 w-auto shrink-0 object-contain"
+          aria-hidden
+        />
         {t("title")}
       </h2>
       <p className="mb-3 text-label-sm text-on-surface-variant">

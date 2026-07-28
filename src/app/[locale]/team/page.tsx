@@ -12,6 +12,7 @@ import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolu
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { RENAME_COST } from "@/lib/nickname";
 import { TeamRoster, type TeamMember } from "@/components/team-roster";
+import { TeamHubTabs } from "@/components/team-hub-tabs";
 import { PcTab } from "./pc-tab";
 
 const TEAM_SIZE = 6;
@@ -53,30 +54,10 @@ export default async function TeamPage({
   await redirectIfInBattle(userId, locale);
 
   const tabBar = (
-    <div className="mb-5 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
-      {(
-        [
-          { id: "squad", href: "/team", icon: "group", label: t("tabSquad") },
-          { id: "pc", href: "/team?tab=pc", icon: "storage", label: t("tabBox") },
-        ] as const
-      ).map((entry) => (
-        <Link
-          key={entry.id}
-          href={entry.href}
-          aria-current={tab === entry.id ? "page" : undefined}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-label-sm font-semibold transition ${
-            tab === entry.id
-              ? "bg-pokeball-red text-white shadow-[0_4px_14px_rgba(238,21,21,0.3)]"
-              : "text-on-surface-variant hover:bg-white/[0.05] hover:text-on-surface"
-          }`}
-        >
-          <span aria-hidden className="material-symbols-outlined text-[18px]!">
-            {entry.icon}
-          </span>
-          {entry.label}
-        </Link>
-      ))}
-    </div>
+    <TeamHubTabs
+      active={tab}
+      labels={{ squad: t("tabSquad"), pc: t("tabBox") }}
+    />
   );
 
   if (tab === "pc") {

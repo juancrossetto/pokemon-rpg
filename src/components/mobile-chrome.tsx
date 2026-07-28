@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
@@ -17,6 +17,7 @@ import {
 import type { NavGroup } from "@/lib/navigation";
 import type { NavLabels } from "@/components/nav-links";
 import type { NotificationDTO } from "@/lib/notifications";
+import { consumeMobileNavDrawerOpen } from "@/lib/nav-drawer-persist";
 
 type NavLink = {
   href: string;
@@ -101,6 +102,12 @@ export function MobileChrome({
   // `usePathname` de next-intl ya viene sin el prefijo de idioma, así que se
   // compara directo contra los href de los links.
   const pathname = usePathname();
+
+  // Al cambiar de locale el layout se remonta y el drawer se cerraría; si el
+  // switcher marcó persistencia, lo reabrimos antes del paint.
+  useLayoutEffect(() => {
+    if (consumeMobileNavDrawerOpen()) setMoreOpen(true);
+  }, []);
 
   function isActive(href: string): boolean {
     const clean = href.split("?")[0];
@@ -540,7 +547,12 @@ export function MobileChrome({
                 <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70">
                   {languageLabel}
                 </p>
-                <LocaleSwitcher currentLocale={locale} label={languageLabel} variant="inline" />
+                <LocaleSwitcher
+                  currentLocale={locale}
+                  label={languageLabel}
+                  variant="inline"
+                  keepMobileDrawer
+                />
               </div>
             </div>
           </div>

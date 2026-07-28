@@ -89,38 +89,42 @@ export function JourneyOnboarding({
       role="dialog"
       aria-modal="true"
       aria-labelledby="journey-onboarding-title"
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 sm:items-center"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.75rem)] sm:items-center sm:p-4 xl:pb-4"
     >
-      <div className="w-full max-w-md rounded-2xl border border-white/15 bg-surface-container-high p-5 shadow-[0_24px_64px_rgba(0,0,0,0.55)]">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
-          {t("onboarding.eyebrow")}
-        </p>
-        <h2 id="journey-onboarding-title" className="mt-1 text-headline-md text-white">
-          {t("onboarding.title")}
-        </h2>
-        <ol className="mt-4 flex flex-col gap-3">
-          {steps.map((s, i) => (
-            <li key={s.title} className="flex gap-3 rounded-xl border border-white/10 bg-black/25 p-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pokeball-red/15 text-pokeball-red">
-                <span className="material-symbols-outlined text-[20px]!">{s.icon}</span>
-              </span>
-              <div className="min-w-0">
-                <p className="text-label-sm font-bold text-white">
-                  <span className="mr-1.5 font-mono text-on-surface-variant">{i + 1}.</span>
-                  {s.title}
-                </p>
-                <p className="mt-0.5 text-label-sm text-on-surface-variant">{s.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-        <button
-          type="button"
-          onClick={dismiss}
-          className="mt-5 w-full rounded-xl bg-pokeball-red px-4 py-3 text-label-md font-bold text-white transition hover:bg-pokeball-red/90"
-        >
-          {t("onboarding.cta")}
-        </button>
+      <div className="flex w-full max-w-md max-h-full flex-col overflow-hidden rounded-2xl border border-white/15 bg-surface-container-high shadow-[0_24px_64px_rgba(0,0,0,0.55)]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 pb-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
+            {t("onboarding.eyebrow")}
+          </p>
+          <h2 id="journey-onboarding-title" className="mt-1 text-headline-md text-white">
+            {t("onboarding.title")}
+          </h2>
+          <ol className="mt-4 flex flex-col gap-3">
+            {steps.map((s, i) => (
+              <li key={s.title} className="flex gap-3 rounded-xl border border-white/10 bg-black/25 p-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pokeball-red/15 text-pokeball-red">
+                  <span className="material-symbols-outlined text-[20px]!">{s.icon}</span>
+                </span>
+                <div className="min-w-0">
+                  <p className="text-label-sm font-bold text-white">
+                    <span className="mr-1.5 font-mono text-on-surface-variant">{i + 1}.</span>
+                    {s.title}
+                  </p>
+                  <p className="mt-0.5 text-label-sm text-on-surface-variant">{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="shrink-0 border-t border-white/10 p-4 pt-3">
+          <button
+            type="button"
+            onClick={dismiss}
+            className="w-full rounded-xl bg-pokeball-red px-4 py-3 text-label-md font-bold text-white transition hover:bg-pokeball-red/90"
+          >
+            {t("onboarding.cta")}
+          </button>
+        </div>
       </div>
     </div>
   );

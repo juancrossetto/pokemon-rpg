@@ -64,6 +64,7 @@ export function SquadCardContextMenu({
   canLevelUp = true,
   showFlags = true,
   showViewTeam = true,
+  triggerVariant = "default",
   labels,
   bagCounts = EMPTY_SQUAD_BAG,
   moves,
@@ -99,6 +100,8 @@ export function SquadCardContextMenu({
   canLevelUp?: boolean;
   showFlags?: boolean;
   showViewTeam?: boolean;
+  /** `ghost` = ícono discreto (home strip); `default` = botón más visible. */
+  triggerVariant?: "default" | "ghost";
   labels: SquadContextLabels;
   bagCounts?: SquadBagCounts;
   moves?: (TeamMoveDetail | null)[];
@@ -184,7 +187,7 @@ export function SquadCardContextMenu({
   return (
     <div
       ref={rootRef}
-      className={`group relative h-full ${fx ? "squad-fx-pulse" : ""}`}
+      className={`group relative h-full shrink-0 ${fx ? "squad-fx-pulse" : ""}`}
       style={
         fxMeta
           ? ({ "--squad-fx-glow": fxMeta.glow } as CSSProperties)
@@ -226,16 +229,26 @@ export function SquadCardContextMenu({
           const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
           openAt(rect.left, rect.bottom + 4);
         }}
-        className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-on-surface-variant/80 opacity-90 backdrop-blur-md transition duration-200 hover:scale-105 hover:border-white/25 hover:bg-white/[0.12] hover:text-white hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 active:scale-95"
+        className={
+          triggerVariant === "ghost"
+            ? "absolute right-0.5 top-0.5 z-20 flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition duration-150 hover:bg-white/8 hover:text-white/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/25 active:bg-white/12 active:text-white"
+            : "absolute right-1.5 top-1.5 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-[0_4px_12px_rgba(0,0,0,0.45)] backdrop-blur-md transition duration-200 hover:scale-105 hover:border-white/30 hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 active:scale-95"
+        }
       >
-        <span className="material-symbols-outlined text-[17px]! leading-none">more_horiz</span>
+        <span
+          className={`material-symbols-outlined leading-none ${
+            triggerVariant === "ghost" ? "text-[15px]!" : "text-[17px]!"
+          }`}
+        >
+          more_horiz
+        </span>
       </button>
 
       {menu && (
         <div
           ref={menuRef}
           role="menu"
-          className="fixed z-50 min-w-[220px] overflow-hidden rounded-lg border border-white/12 bg-[#12161f]/95 py-1 shadow-[0_12px_40px_rgba(0,0,0,0.55)] backdrop-blur-md"
+          className="fixed z-[90] min-w-[220px] overflow-hidden rounded-lg border border-white/12 bg-[#12161f]/95 py-1 shadow-[0_12px_40px_rgba(0,0,0,0.55)] backdrop-blur-md"
           style={{ left: menu.x, top: menu.y }}
         >
           <ConsumableMenuItem
