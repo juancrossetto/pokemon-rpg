@@ -188,6 +188,7 @@ export function useSquadActions({
     void togglePokemonFavorite(instanceId, locale).then((result) => {
       if (!result.ok) {
         onFlagsChange?.({ isFavorite: prev });
+        setToast({ kind: "error", text: tMenu("actionFailed") });
         return;
       }
       onFlagsChange?.({ isFavorite: result.isFavorite });
@@ -206,6 +207,7 @@ export function useSquadActions({
     void togglePokemonTradeLock(instanceId, locale).then((result) => {
       if (!result.ok) {
         onFlagsChange?.({ isTradeLocked: prev });
+        setToast({ kind: "error", text: tMenu("actionFailed") });
         return;
       }
       onFlagsChange?.({ isTradeLocked: result.isTradeLocked });

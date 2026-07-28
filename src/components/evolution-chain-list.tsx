@@ -18,6 +18,7 @@ import { confirmEvolve } from "@/actions/level-up-offers";
 // inválida dentro del callback. Mismo criterio que `applyRareCandy`.
 import { useEvolutionStone as applyEvolutionStone } from "@/actions/use-evolution-stone";
 import { playBattleSfx } from "@/lib/battle-sfx";
+import { showToast } from "@/lib/app-toast";
 import { EvolvePopup } from "@/components/evolve-popup";
 
 type RequirementLabels = {
@@ -183,7 +184,10 @@ export function EvolutionChainList({
                 locale,
                 opts.toSpeciesId,
               );
-        if (!result.ok) return;
+        if (!result.ok) {
+          showToast(tLevelUp("evolveFailed"), "error");
+          return;
+        }
         // Popup primero; el refresh al cerrar evita que se pierda el reveal.
         setReveal({
           fromName: result.fromName,

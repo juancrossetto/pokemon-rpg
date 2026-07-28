@@ -195,7 +195,8 @@
       "healed": "Usaste {item}: +{hp} HP.",
       "ppRestored": "Usaste {item}: {move} +{pp} PP.",
       "leveled": "Usaste {item}: ¡Nv. {level}!",
-      "resolvingLevelUp": "Resolviendo level-up…"
+      "resolvingLevelUp": "Resolviendo level-up…",
+      "actionFailed": "No se pudo guardar el cambio. Probá de nuevo."
     }
   },
   "pokedex": {
@@ -468,7 +469,7 @@
         "already_known": "Ya sabe ese movimiento",
         "in_combat": "No podés cambiar movimientos en combate"
       },
-      "tabItems": "Ítems",
+      "tabItems": "Cuidado",
       "careTitle": "Cuidados",
       "careHint": "Usá consumibles de la mochila sin salir de la ficha.",
       "pointsTitle": "Puntos",
@@ -506,7 +507,9 @@
       "cooldown": "Todavía está en regeneración.",
       "no_coins": "No te alcanzan las monedas.",
       "unauthorized": "Sesión expirada."
-    }
+    },
+    "allocateSuccess": "¡{count} puntos asignados!",
+    "emptySlotCta": "Retirar del PC"
   },
   "battle": {
     "title": "Batalla",
@@ -1016,7 +1019,8 @@
       "rare": "Raro",
       "epic": "Épico",
       "legendary": "Legendario"
-    }
+    },
+    "goShop": "Ir a la tienda"
   },
   "shop": {
     "eyebrow": "Tienda del Centro",
@@ -1883,7 +1887,8 @@
       "already_known": "Ya conoce ese movimiento.",
       "need_slot": "Elegí un movimiento para olvidar.",
       "not_ready": "Todavía no puede evolucionar."
-    }
+    },
+    "evolveFailed": "No se pudo evolucionar. Probá de nuevo."
   },
   "breeding": {
     "title": "Cría",

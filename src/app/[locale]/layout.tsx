@@ -9,6 +9,7 @@ import { BootSplashController } from "@/components/boot-splash";
 import { BootSplashMarkup } from "@/components/boot-splash-markup";
 import { bootSplashEarlyScript } from "@/lib/boot-splash";
 import { AppShell } from "@/components/app-shell";
+import { AppToastViewport } from "@/components/app-toast-viewport";
 import "../globals.css";
 
 const inter = Inter({
@@ -83,6 +84,7 @@ export default async function LocaleLayout({
         <Suspense fallback={null}>
           <AppShell locale={locale}>{children}</AppShell>
         </Suspense>
+        <AppToastViewport />
       </body>
     </html>
   );

@@ -84,7 +84,7 @@ function TeamSlot({
   if (!member) {
     return (
       <Link
-        href="/team"
+        href="/pc"
         className={`team-slot team-slot--empty group flex ${SLOT_HEIGHT} ${SLOT_WIDTH} shrink-0 flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-white/15 bg-white/[0.02] text-on-surface-variant transition hover:border-white/28 hover:bg-white/[0.04]`}
         aria-label={emptyLabel}
       >

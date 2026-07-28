@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { allocatePoints } from "@/actions/allocate-points";
+import { showToast } from "@/lib/app-toast";
 import {
   calculateMaxHp,
   calculateStat,
@@ -160,6 +161,9 @@ export function AllocatePointsPanel({
         setError(t(`allocateErrors.${result.error}`));
         return;
       }
+      // Asignar puntos es un beat de progresión: merece festejo, no un
+      // panel que se cierra mudo.
+      showToast(t("allocateSuccess", { count: spent }), "success");
       resetDraft();
       setOpen(false);
     });

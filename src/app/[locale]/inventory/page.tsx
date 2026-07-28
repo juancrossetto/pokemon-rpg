@@ -187,9 +187,17 @@ export default async function InventoryPage({
             </span>
             <p className="text-label-md text-on-surface-variant">{t("empty")}</p>
             <p className="max-w-sm text-label-sm text-on-surface-variant/70">{t("emptyHint")}</p>
+            {/* Bag vacía → tienda NPC (loop de balls/potions), no al mercado
+                de jugadores que confunde a los nuevos. */}
+            <Link
+              href="/shop"
+              className="mt-2 rounded-md bg-pokeball-red px-4 py-2 text-label-sm font-semibold text-white transition hover:bg-pokeball-red/85"
+            >
+              {t("goShop")}
+            </Link>
             <Link
               href="/market"
-              className="mt-2 rounded-md bg-pokeball-red px-4 py-2 text-label-sm font-semibold text-white transition hover:bg-pokeball-red/85"
+              className="text-label-sm text-on-surface-variant underline-offset-2 transition hover:text-on-surface hover:underline"
             >
               {t("goMarket")}
             </Link>
@@ -200,7 +208,6 @@ export default async function InventoryPage({
             labels={labels}
             sellHref={`/${locale}/market?tab=sell`}
             teamHref={`/${locale}/team`}
-            homeHref={`/${locale}`}
           />
         )}
       </div>

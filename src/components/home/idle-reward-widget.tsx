@@ -2,9 +2,11 @@
 
 import { useRouter } from "@/i18n/navigation";
 import { useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { claimDailyReward } from "@/actions/claim-reward";
 import { announceCoinDelta } from "@/lib/coin-fx";
+import { showToast } from "@/lib/app-toast";
 import type { DailyState, WeeklyState } from "@/lib/events/state";
 
 export type IdleRewardLabels = {
@@ -36,6 +38,7 @@ export function IdleRewardWidget({
   labels: IdleRewardLabels;
 }) {
   const router = useRouter();
+  const tEvents = useTranslations("events");
   const [pending, startTransition] = useTransition();
   const canClaimDaily = daily.canClaim;
   const weeklyClaimable = weekly.milestones.filter((m) => m.claimable).length;
@@ -45,7 +48,12 @@ export function IdleRewardWidget({
     if (!canClaimDaily || pending) return;
     startTransition(async () => {
       const result = await claimDailyReward(locale);
-      if (!result.ok) return;
+      if (!result.ok) {
+        // Carrera con otra pestaña o error de server: avisar y realinear.
+        showToast(tEvents("errorGeneric"), "error");
+        router.refresh();
+        return;
+      }
       if (result.coinsDelta !== 0) announceCoinDelta(result.coinsDelta);
       router.refresh();
     });
@@ -87,6 +95,11 @@ export function IdleRewardWidget({
               : weeklyClaimable > 0
                 ? labels.pendingWeekly
                 : labels.empty}
+            {/* La racha no desaparece al reclamar: es la motivación de volver mañana. */}
+            {" · "}
+            <span className={canClaimDaily ? "" : "text-tertiary/90"}>
+              {tEvents("dailyProgress", { current: daily.currentDay, total: daily.length })}
+            </span>
           </p>
         </div>
 

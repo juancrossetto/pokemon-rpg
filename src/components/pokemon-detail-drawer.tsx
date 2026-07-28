@@ -159,10 +159,12 @@ export function PokemonDetailDrawer({
   const statMax = Math.max(member.atk, member.def, member.spAtk, member.spDef, member.speed, 180);
   const hpPct = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
 
-  const tabs: { id: DetailTab; label: string }[] = [
+  const tabs: { id: DetailTab; label: string; attention?: boolean }[] = [
     { id: "overview", label: labels.tabStats },
     { id: "moves", label: labels.movesTitle },
-    { id: "item", label: labels.tabItems },
+    // Punto de atención: acá viven los puntos sin asignar, que se perdían
+    // detrás de un nombre de tab neutro.
+    { id: "item", label: labels.tabItems, attention: member.unspentPoints > 0 },
   ];
 
   function pickSlot(slot: number) {
@@ -343,6 +345,12 @@ export function PokemonDetailDrawer({
                 }`}
               >
                 {t.label}
+                {t.attention && (
+                  <span
+                    aria-hidden
+                    className="absolute right-1 top-1.5 h-1.5 w-1.5 rounded-full bg-tertiary shadow-[0_0_6px_rgba(242,192,0,0.8)]"
+                  />
+                )}
                 {active && (
                   <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-pokeball-red" />
                 )}

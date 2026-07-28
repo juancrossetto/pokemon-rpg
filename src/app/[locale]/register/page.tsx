@@ -68,7 +68,8 @@ export default function RegisterPage() {
       redirect: false,
     });
     markBootSplashPending();
-    router.push("/");
+    // Directo al momento emocional (elegir starter) en vez del home vacío.
+    router.push("/starter");
     router.refresh();
   }
 

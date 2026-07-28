@@ -195,7 +195,8 @@
       "healed": "Used {item}: +{hp} HP.",
       "ppRestored": "Used {item}: {move} +{pp} PP.",
       "leveled": "Used {item}: Lv. {level}!",
-      "resolvingLevelUp": "Resolving level-up…"
+      "resolvingLevelUp": "Resolving level-up…",
+      "actionFailed": "Couldn't save the change. Try again."
     }
   },
   "pokedex": {
@@ -468,7 +469,7 @@
         "already_known": "It already knows that move",
         "in_combat": "You can't change moves in combat"
       },
-      "tabItems": "Items",
+      "tabItems": "Care",
       "careTitle": "Care",
       "careHint": "Use bag consumables without leaving this sheet.",
       "pointsTitle": "Points",
@@ -506,7 +507,9 @@
       "cooldown": "Still regenerating.",
       "no_coins": "Not enough coins.",
       "unauthorized": "Session expired."
-    }
+    },
+    "allocateSuccess": "{count} points allocated!",
+    "emptySlotCta": "Withdraw from PC"
   },
   "battle": {
     "title": "Battle",
@@ -1016,7 +1019,8 @@
       "rare": "Rare",
       "epic": "Epic",
       "legendary": "Legendary"
-    }
+    },
+    "goShop": "Go to the shop"
   },
   "shop": {
     "eyebrow": "Center store",
@@ -1883,7 +1887,8 @@
       "already_known": "Already knows that move.",
       "need_slot": "Pick a move to forget.",
       "not_ready": "Not ready to evolve yet."
-    }
+    },
+    "evolveFailed": "Evolution failed. Try again."
   },
   "breeding": {
     "title": "Breeding",

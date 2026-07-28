@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { buyItem } from "@/actions/buy-item";
 import { itemSpriteUrl } from "@/lib/item-sprites";
 import { announceCoinDelta } from "@/lib/coin-fx";
+import { showToast } from "@/lib/app-toast";
 import {
   MAX_PURCHASE_QUANTITY,
   SHOP_CATEGORIES,
@@ -81,7 +82,6 @@ export function ShopTerminal({
   const [query, setQuery] = useState("");
   const [affordableOnly, setAffordableOnly] = useState(false);
   const [target, setTarget] = useState<ShopProduct | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const showSearch = products.length > SEARCH_THRESHOLD;
 
@@ -114,7 +114,9 @@ export function ShopTerminal({
     announceCoinDelta(coinsLeft - coins);
     setCoins(coinsLeft);
     setOwned((current) => ({ ...current, [product.id]: after }));
-    setNotice(fill(labels.purchased, { count: quantity, name: product.name }));
+    // Toast visible: antes la confirmación era sólo sr-only y comprar
+    // parecía no hacer nada.
+    showToast(fill(labels.purchased, { count: quantity, name: product.name }), "success");
   }
 
   const hasFilters = query.trim() !== "" || affordableOnly;
@@ -160,12 +162,6 @@ export function ShopTerminal({
           </label>
         </div>
       )}
-
-      {/* Confirmaciones de compra: región viva que el lector de pantalla
-          anuncia sin robar el foco. */}
-      <p aria-live="polite" className="sr-only">
-        {notice}
-      </p>
 
       {visible.length === 0 ? (
         <ShopEmptyState

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from
 import { createPortal } from "react-dom";
 import { claimDailyReward } from "@/actions/claim-reward";
 import { announceCoinDelta } from "@/lib/coin-fx";
+import { showToast } from "@/lib/app-toast";
 import { DailyCalendar, type CalendarLabels } from "@/components/events/daily-calendar";
 import { RewardList } from "@/components/events/reward-chip";
 import type { RewardDef } from "@/lib/events/rewards";
@@ -131,8 +132,9 @@ export function DailyGiftModal({
     startTransition(async () => {
       const result = await claimDailyReward(locale);
       if (!result.ok) {
-        // Otra pestaña se adelantó: se cierra sin cartel de error, no hay nada
-        // que el jugador deba corregir.
+        // Otra pestaña se adelantó: avisar en vez de cerrar en silencio, que
+        // parecía un botón roto.
+        showToast(labels.claimedTitle, "info");
         markSeen();
         return;
       }

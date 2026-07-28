@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useState, type CSSProperties } from "react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { AllocatePointsPanel } from "@/components/allocate-points-panel";
 import { PokemonDetailDrawer } from "@/components/pokemon-detail-drawer";
@@ -508,13 +510,22 @@ function PokemonCard({
 }
 
 function EmptySlot({ label, hint }: { label: string; hint: string }) {
+  const t = useTranslations("team");
+  // Link al PC: un slot vacío parecía tocable pero era un dead end.
   return (
-    <article className="flex min-h-[220px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/12 bg-white/[0.015] px-4 py-6 text-center transition hover:border-white/20 hover:bg-white/[0.03] md:min-h-[320px]">
+    <Link
+      href="/pc"
+      className="flex min-h-[220px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/12 bg-white/[0.015] px-4 py-6 text-center transition hover:border-white/25 hover:bg-white/[0.04] md:min-h-[320px]"
+    >
       <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.02]">
         <span className="material-symbols-outlined text-[20px]! text-on-surface-variant/50">add</span>
       </div>
       <p className="text-label-sm text-on-surface-variant">{label}</p>
       <p className="mt-0.5 text-[10px] text-on-surface-variant/60">{hint}</p>
-    </article>
+      <span className="mt-3 inline-flex items-center gap-1 rounded-md border border-white/12 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-on-surface-variant">
+        <span aria-hidden className="material-symbols-outlined text-[14px]!">storage</span>
+        {t("emptySlotCta")}
+      </span>
+    </Link>
   );
 }

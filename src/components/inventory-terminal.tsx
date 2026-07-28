@@ -57,13 +57,11 @@ export function InventoryTerminal({
   labels,
   sellHref,
   teamHref,
-  homeHref,
 }: {
   entries: InventoryEntry[];
   labels: InventoryLabels;
   sellHref: string;
   teamHref: string;
-  homeHref: string;
 }) {
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [query, setQuery] = useState("");
@@ -175,7 +173,6 @@ export function InventoryTerminal({
               labels={labels}
               sellHref={sellHref}
               teamHref={teamHref}
-              homeHref={homeHref}
               onClose={() => setSelectedId(null)}
             />
           ) : (
@@ -299,14 +296,12 @@ function DetailPanel({
   labels,
   sellHref,
   teamHref,
-  homeHref,
   onClose,
 }: {
   entry: InventoryEntry;
   labels: InventoryLabels;
   sellHref: string;
   teamHref: string;
-  homeHref: string;
   onClose: () => void;
 }) {
   const rarity = itemRarity(entry);
@@ -434,7 +429,7 @@ function DetailPanel({
           ))}
         {isRareCandy && (
           <a
-            href={homeHref}
+            href={teamHref}
             className="flex items-center justify-center gap-1.5 rounded-lg border border-white/12 px-3 py-2 text-label-sm text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface"
           >
             <span className="material-symbols-outlined text-[16px]!">nutrition</span>

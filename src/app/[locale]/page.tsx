@@ -302,24 +302,26 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           badge: eventsSummary.pendingCount,
           attention: eventsSummary.pendingCount > 0,
         },
+        // Loop temprano primero: batalla salvaje y tienda (restock) antes que
+        // PvP/campaña, que ya viven en la bottom bar y en el CTA de expedición.
+        {
+          id: "battle",
+          href: "/battle",
+          icon: "swords",
+          label: tNav("battle"),
+        },
+        {
+          id: "shop",
+          href: "/shop",
+          icon: "storefront",
+          label: tNav("shop"),
+        },
         {
           id: "gyms",
           href: "/gyms",
           icon: "military_tech",
           label: tNav("gyms"),
           attention: milestone?.kind === "gym",
-        },
-        {
-          id: "campaign",
-          href: "/campaign",
-          icon: "map",
-          label: tNav("campaign"),
-        },
-        {
-          id: "pvp",
-          href: "/pvp",
-          icon: "swords",
-          label: tNav("pvp"),
         },
       ]}
       isDev={isDev}
