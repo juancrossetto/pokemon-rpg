@@ -6,13 +6,14 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { AllocatePointsPanel } from "@/components/allocate-points-panel";
-import { PokemonDetailDrawer } from "@/components/pokemon-detail-drawer";
 import { SquadCardSheet } from "@/components/squad-card-sheet";
 import {
   SquadCardContextMenu,
   type SquadContextLabels,
 } from "@/components/squad-card-context-menu";
-import type { SquadCareLabels } from "@/components/squad-care-actions";
+import type { TeachTmLabels } from "@/components/teach-tm-panel";
+import type { HeldItemLabels } from "@/components/held-item-panel";
+import type { RenameLabels } from "@/components/rename-pokemon-panel";
 import type { EvolutionStage } from "@/lib/evolution-readiness";
 import { anyEvolveReady } from "@/lib/evolution-readiness";
 import type { SquadBagCounts } from "@/lib/squad-bag";
@@ -101,25 +102,7 @@ export interface TeamRosterLabels {
   fainted: string;
   emptySlot: string;
   slotAvailableLabels: string[];
-  viewDetails: string;
-  selectHint: string;
-  close: string;
-  statsTitle: string;
-  movesTitle: string;
-  pp: string;
-  power: string;
-  noPower: string;
   emptySlotMove: string;
-  tmSectionTitle: string;
-  tmSectionHint: string;
-  tmNone: string;
-  teach: string;
-  pickSlot: string;
-  cancel: string;
-  teaching: string;
-  alreadyKnown: string;
-  teachErrors: Record<string, string>;
-  evolutionsTitle: string;
   unknownSpecies: string;
   evolveAtLevel: string;
   evolveByTrade: string;
@@ -137,23 +120,12 @@ export interface TeamRosterLabels {
   tabAbout: string;
   tabStats: string;
   tabEvolutions: string;
-  heldItemTitle: string;
-  heldItemHint: string;
-  heldItemEmpty: string;
-  noHeldItems: string;
-  equip: string;
-  unequip: string;
-  equipping: string;
-  equipErrors: Record<string, string>;
-  tabItems: string;
-  careTitle: string;
-  careHint: string;
-  pointsTitle: string;
-  pointsHint: string;
   /** "Nv. {level}" — para repintar el nivel tras un carameloraro. */
   levelTemplate: string;
-  care: SquadCareLabels;
   menu: SquadContextLabels;
+  teach: TeachTmLabels;
+  held: HeldItemLabels;
+  rename: RenameLabels;
 }
 
 type MemberPatch = Partial<
@@ -169,6 +141,8 @@ type MemberPatch = Partial<
     | "xp"
     | "xpForCurrentLevel"
     | "xpToNext"
+    | "heldItem"
+    | "nickname"
   >
 >;
 
@@ -176,7 +150,7 @@ function membersFingerprint(members: (TeamMember | null)[]) {
   return members
     .map((m) =>
       m
-        ? `${m.instanceId}:${m.level}:${m.currentHp}:${m.maxHp}:${m.isFavorite ? 1 : 0}:${m.isTradeLocked ? 1 : 0}:${m.unspentPoints}`
+        ? `${m.instanceId}:${m.level}:${m.currentHp}:${m.maxHp}:${m.isFavorite ? 1 : 0}:${m.isTradeLocked ? 1 : 0}:${m.unspentPoints}:${m.heldItem?.itemId ?? "-"}:${m.nickname ?? ""}`
         : "-",
     )
     .join("|");
@@ -186,20 +160,19 @@ export function TeamRoster({
   members,
   labels,
   bagCounts,
+  coins,
   initialSelectedId = null,
   initialTeachItemId = null,
 }: {
   members: (TeamMember | null)[];
   labels: TeamRosterLabels;
   bagCounts: SquadBagCounts;
-  /** Miembro a abrir de entrada — enlace profundo desde el inventario. */
+  coins: number;
+  /** Miembro del deep-link inventario (`?member=`). */
   initialSelectedId?: string | null;
   /** MT a desplegar dentro de ese miembro. Ya validada en el servidor. */
   initialTeachItemId?: string | null;
 }) {
-  // Sólo siembra el estado inicial: a partir de ahí manda el click del jugador,
-  // así que cerrar el drawer no lo reabre mientras el `?teach=` siga en la URL.
-  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId);
   const [overrides, setOverrides] = useState<Record<string, MemberPatch>>({});
   const [bag, setBag] = useState(bagCounts);
   const serverFp = membersFingerprint(members);
@@ -207,8 +180,6 @@ export function TeamRoster({
   const bagFp = `${bagCounts.heal}:${bagCounts.leppa}:${bagCounts.rareCandy}:${bagCounts.healItemName}:${bagCounts.ppItemName}`;
   const [syncedBagFp, setSyncedBagFp] = useState(bagFp);
 
-  // Cuando el server ya trajó los datos frescos (post-refresh), tiramos los
-  // overrides optimistas. Ajuste durante render: evita flash al nivel viejo.
   if (serverFp !== syncedFp) {
     setSyncedFp(serverFp);
     setOverrides({});
@@ -224,8 +195,6 @@ export function TeamRoster({
     return patch ? { ...m, ...patch } : m;
   });
 
-  const selected = displayMembers.find((m) => m?.instanceId === selectedId) ?? null;
-
   function patchMember(instanceId: string, patch: MemberPatch) {
     setOverrides((prev) => ({
       ...prev,
@@ -234,47 +203,33 @@ export function TeamRoster({
   }
 
   return (
-    <>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {displayMembers.map((member, i) =>
-          member ? (
-            <PokemonCard
-              key={member.instanceId}
-              member={member}
-              labels={labels}
-              bagCounts={bag}
-              onBagChange={setBag}
-              selected={member.instanceId === selectedId}
-              onOpen={() => setSelectedId(member.instanceId)}
-              onMemberPatch={(patch) => patchMember(member.instanceId, patch)}
-            />
-          ) : (
-            <EmptySlot
-              key={`empty-${i}`}
-              label={labels.emptySlot}
-              hint={labels.slotAvailableLabels[i]}
-            />
-          ),
-        )}
-      </div>
-
-      <PokemonDetailDrawer
-        key={selected?.instanceId ?? "closed"}
-        member={selected}
-        labels={labels}
-        bagCounts={bagCounts}
-        // Sólo para el miembro que vino en el enlace: si el jugador navega a
-        // otro, el drawer se remonta por `key` y arranca limpio.
-        initialTeachItemId={
-          selected?.instanceId === initialSelectedId ? initialTeachItemId : null
-        }
-        onMemberPatch={(patch) => {
-          if (!selected) return;
-          patchMember(selected.instanceId, patch);
-        }}
-        onClose={() => setSelectedId(null)}
-      />
-    </>
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+      {displayMembers.map((member, i) =>
+        member ? (
+          <PokemonCard
+            key={member.instanceId}
+            member={member}
+            labels={labels}
+            bagCounts={bag}
+            coins={coins}
+            onBagChange={setBag}
+            autoOpenTeach={
+              member.instanceId === initialSelectedId && Boolean(initialTeachItemId)
+            }
+            initialTeachItemId={
+              member.instanceId === initialSelectedId ? initialTeachItemId : null
+            }
+            onMemberPatch={(patch) => patchMember(member.instanceId, patch)}
+          />
+        ) : (
+          <EmptySlot
+            key={`empty-${i}`}
+            label={labels.emptySlot}
+            hint={labels.slotAvailableLabels[i]}
+          />
+        ),
+      )}
+    </div>
   );
 }
 
@@ -282,17 +237,19 @@ function PokemonCard({
   member,
   labels,
   bagCounts,
+  coins,
   onBagChange,
-  selected,
-  onOpen,
+  autoOpenTeach,
+  initialTeachItemId,
   onMemberPatch,
 }: {
   member: TeamMember;
   labels: TeamRosterLabels;
   bagCounts: SquadBagCounts;
+  coins: number;
   onBagChange: (next: SquadBagCounts) => void;
-  selected: boolean;
-  onOpen: () => void;
+  autoOpenTeach: boolean;
+  initialTeachItemId: string | null;
   onMemberPatch: (patch: MemberPatch) => void;
 }) {
   const displayName = member.nickname ?? member.speciesName;
@@ -312,6 +269,9 @@ function PokemonCard({
     <SquadCardContextMenu
       instanceId={member.instanceId}
       pokemonName={displayName}
+      speciesName={member.speciesName}
+      nickname={member.nickname}
+      spriteUrl={member.spriteUrl}
       currentHp={member.currentHp}
       maxHp={member.maxHp}
       level={member.level}
@@ -322,6 +282,16 @@ function PokemonCard({
       showViewTeam={false}
       labels={labels.menu}
       bagCounts={bagCounts}
+      coins={coins}
+      moves={member.moves}
+      compatibleTms={member.compatibleTms}
+      heldItem={member.heldItem}
+      ownedHeldItems={member.ownedHeldItems}
+      teachLabels={labels.teach}
+      heldLabels={labels.held}
+      renameLabels={labels.rename}
+      autoOpenTeach={autoOpenTeach}
+      initialTeachItemId={initialTeachItemId}
       onBagChange={onBagChange}
       onHealed={(next) =>
         onMemberPatch({ currentHp: next.currentHp, maxHp: next.maxHp })
@@ -334,26 +304,19 @@ function PokemonCard({
           levelLabel: labels.levelTemplate.replace("{level}", String(next.level)),
         })
       }
-      onPpRestored={() => {
-        /* PP se refleja al revalidar / abrir el drawer */
-      }}
       onFlagsChange={(next) => onMemberPatch(next)}
+      onHeldChange={(next) => onMemberPatch({ heldItem: next })}
+      onNicknameChange={(next) => onMemberPatch({ nickname: next })}
     >
       <article
         className={`team-card group relative overflow-hidden rounded-[1.5rem] border transition duration-300 hover:-translate-y-1 ${
-          selected
-            ? "border-tertiary/45 shadow-[0_14px_32px_rgba(242,192,0,0.14)]"
-            : member.isLead
-              ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
-              : "border-white/[0.07] hover:border-white/20"
+          member.isLead
+            ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
+            : "border-white/[0.07] hover:border-white/20"
         } ${fainted ? "opacity-75" : ""}`}
         style={{ "--type-accent": accent } as CSSProperties}
       >
-        <button
-          type="button"
-          onClick={onOpen}
-          className="relative flex min-h-[156px] w-full flex-col items-center justify-end px-3 pb-0 pt-8 text-left"
-        >
+        <div className="relative flex min-h-[156px] w-full flex-col items-center justify-end px-3 pb-0 pt-8 text-left">
           <div
             className="pointer-events-none absolute inset-0"
             style={{
@@ -390,6 +353,17 @@ function PokemonCard({
                 {labels.canEvolveBadge}
               </span>
             )}
+            {member.heldItem && (
+              <span
+                title={member.heldItem.name}
+                className="inline-flex items-center gap-0.5 rounded-full border border-white/15 bg-black/45 px-1.5 py-0.5 text-[8px] font-semibold text-white/70 backdrop-blur-sm"
+              >
+                <span className="material-symbols-outlined text-[11px]! leading-none text-tertiary">
+                  auto_awesome
+                </span>
+                {member.heldItem.name}
+              </span>
+            )}
           </div>
 
           <div className="relative z-[1] flex h-[128px] w-full items-end justify-center">
@@ -414,7 +388,7 @@ function PokemonCard({
               </span>
             )}
           </div>
-        </button>
+        </div>
 
         <div className="relative z-[1] bg-gradient-to-b from-transparent to-black/25 px-3 pb-3 pt-1">
           <div className="text-center">
@@ -511,7 +485,6 @@ function PokemonCard({
 
 function EmptySlot({ label, hint }: { label: string; hint: string }) {
   const t = useTranslations("team");
-  // Link al PC: un slot vacío parecía tocable pero era un dead end.
   return (
     <Link
       href="/team?tab=pc"

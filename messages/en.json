@@ -185,6 +185,9 @@
       "heal": "Use potion / berry",
       "restorePp": "Restore PP",
       "rareCandy": "Use Rare Candy",
+      "teachTm": "Teach TM",
+      "heldItem": "Held item",
+      "rename": "Rename",
       "noPotions": "You have no healing potions or berries.",
       "noCandy": "You have no Rare Candies in your bag.",
       "noLeppa": "You have no Ether, Elixir, or Leppa Berries.",
@@ -509,6 +512,24 @@
       "unauthorized": "Session expired."
     },
     "allocateSuccess": "{count} points allocated!",
+    "rename": {
+      "title": "Name Rater",
+      "hint": "Changing the nickname costs {cost} coins. Clear it with “Remove” to use the species name again.",
+      "placeholder": "Nickname",
+      "save": "Save nickname",
+      "clear": "Remove nickname",
+      "saving": "Saving…",
+      "costLabel": "{cost} coins",
+      "speciesFallback": "Without a nickname it shows as {species}.",
+      "errors": {
+        "unauthorized": "You need to sign in.",
+        "not_found": "We couldn't find that Pokémon.",
+        "no_coins": "You don't have enough coins.",
+        "unchanged": "That's already its nickname.",
+        "in_combat": "You can't rename during a battle.",
+        "invalid": "That nickname isn't valid."
+      }
+    },
     "emptySlotCta": "Withdraw from PC",
     "tabSquad": "Squad",
     "tabBox": "PC & Daycare"

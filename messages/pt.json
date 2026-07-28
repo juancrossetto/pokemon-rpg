@@ -185,6 +185,9 @@
       "heal": "Usar poção / berry",
       "restorePp": "Restaurar PP",
       "rareCandy": "Usar doce raro",
+      "teachTm": "Ensinar MT",
+      "heldItem": "Item equipado",
+      "rename": "Mudar apelido",
       "noPotions": "Você não tem poções nem berries de cura.",
       "noCandy": "Você não tem doces raros no inventário.",
       "noLeppa": "Você não tem Ether, Elixir nem Leppa Berry.",
@@ -509,6 +512,24 @@
       "unauthorized": "Sessão expirada."
     },
     "allocateSuccess": "{count} pontos atribuídos!",
+    "rename": {
+      "title": "Name Rater",
+      "hint": "Mudar o apelido custa {cost} moedas. Deixe vazio e use «Remover» para voltar ao nome da espécie.",
+      "placeholder": "Apelido",
+      "save": "Salvar apelido",
+      "clear": "Remover apelido",
+      "saving": "Salvando…",
+      "costLabel": "{cost} moedas",
+      "speciesFallback": "Sem apelido aparece como {species}.",
+      "errors": {
+        "unauthorized": "Você precisa entrar na conta.",
+        "not_found": "Não encontramos esse Pokémon.",
+        "no_coins": "Moedas insuficientes.",
+        "unchanged": "Esse já é o apelido atual.",
+        "in_combat": "Você não pode renomear no meio de uma batalha.",
+        "invalid": "Esse apelido não é válido."
+      }
+    },
     "emptySlotCta": "Retirar do PC",
     "tabSquad": "Equipe",
     "tabBox": "PC e Creche"

@@ -185,6 +185,9 @@
       "heal": "Usar poción / baya",
       "restorePp": "Restaurar PP",
       "rareCandy": "Usar carameloraro",
+      "teachTm": "Enseñar MT",
+      "heldItem": "Objeto equipado",
+      "rename": "Cambiar mote",
       "noPotions": "No tenés pociones ni bayas de curación.",
       "noCandy": "No tenés carameloraros en el inventario.",
       "noLeppa": "No tenés Ether, Elixir ni bayas Leppa.",
@@ -509,6 +512,24 @@
       "unauthorized": "Sesión expirada."
     },
     "allocateSuccess": "¡{count} puntos asignados!",
+    "rename": {
+      "title": "Name Rater",
+      "hint": "Cambiar el mote cuesta {cost} monedas. Dejalo vacío y usá «Quitar» para volver al nombre de la especie.",
+      "placeholder": "Mote",
+      "save": "Guardar mote",
+      "clear": "Quitar mote",
+      "saving": "Guardando…",
+      "costLabel": "{cost} monedas",
+      "speciesFallback": "Sin mote se muestra como {species}.",
+      "errors": {
+        "unauthorized": "Tenés que iniciar sesión.",
+        "not_found": "No encontramos ese Pokémon.",
+        "no_coins": "No te alcanzan las monedas.",
+        "unchanged": "El mote es el mismo que ya tenía.",
+        "in_combat": "No podés renombrar en medio de un combate.",
+        "invalid": "Ese mote no es válido."
+      }
+    },
     "emptySlotCta": "Retirar del PC",
     "tabSquad": "Equipo",
     "tabBox": "PC y Guardería"

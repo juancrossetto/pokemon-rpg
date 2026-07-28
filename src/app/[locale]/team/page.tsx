@@ -10,6 +10,7 @@ import { healCooldownMsLeft, healRushCost } from "@/lib/healing";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolution-chain";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
+import { RENAME_COST } from "@/lib/nickname";
 import { TeamRoster, type TeamMember } from "@/components/team-roster";
 import { PcTab } from "./pc-tab";
 
@@ -309,6 +310,7 @@ export default async function TeamPage({
         <TeamRoster
           members={members}
           bagCounts={bagCounts}
+          coins={user.coins}
           initialSelectedId={deepLinkMember}
           initialTeachItemId={deepLinkTeach}
           labels={{
@@ -325,12 +327,6 @@ export default async function TeamPage({
             slotAvailableLabels: Array.from({ length: TEAM_SIZE }, (_, i) =>
               t("slotAvailable", { slot: i + 1 }),
             ),
-            viewDetails: t("drawer.viewDetails"),
-            selectHint: t("drawer.selectHint"),
-            close: t("drawer.close"),
-            statsTitle: t("drawer.statsTitle"),
-            movesTitle: t("drawer.movesTitle"),
-            evolutionsTitle: t("drawer.evolutionsTitle"),
             unknownSpecies: t("drawer.unknownSpecies"),
             evolveAtLevel: t("drawer.evolveAtLevel", { level: "{level}" }),
             evolveByTrade: t("drawer.evolveByTrade"),
@@ -348,54 +344,8 @@ export default async function TeamPage({
             tabAbout: t("drawer.tabAbout"),
             tabStats: t("drawer.tabStats"),
             tabEvolutions: t("drawer.tabEvolutions"),
-            pp: t("drawer.pp"),
-            power: t("drawer.power"),
-            noPower: t("drawer.noPower"),
             emptySlotMove: t("drawer.emptySlotMove"),
-            tmSectionTitle: t("drawer.tmSectionTitle"),
-            tmSectionHint: t("drawer.tmSectionHint"),
-            tmNone: t("drawer.tmNone"),
-            teach: t("drawer.teach"),
-            pickSlot: t("drawer.pickSlot"),
-            cancel: t("drawer.cancel"),
-            teaching: t("drawer.teaching"),
-            alreadyKnown: t("drawer.alreadyKnown"),
-            teachErrors: {
-              unauthorized: t("drawer.teachErrors.unauthorized"),
-              not_found: t("drawer.teachErrors.not_found"),
-              no_tm: t("drawer.teachErrors.no_tm"),
-              incompatible: t("drawer.teachErrors.incompatible"),
-              already_known: t("drawer.teachErrors.already_known"),
-              in_combat: t("drawer.teachErrors.in_combat"),
-            },
-            heldItemTitle: t("drawer.heldItemTitle"),
-            heldItemHint: t("drawer.heldItemHint"),
-            heldItemEmpty: t("drawer.heldItemEmpty"),
-            noHeldItems: t("drawer.noHeldItems"),
-            equip: t("drawer.equip"),
-            unequip: t("drawer.unequip"),
-            equipping: t("drawer.equipping"),
-            equipErrors: {
-              unauthorized: t("drawer.teachErrors.unauthorized"),
-              not_found: t("drawer.teachErrors.not_found"),
-              no_item: t("drawer.equipErrors.no_item"),
-              in_combat: t("drawer.teachErrors.in_combat"),
-            },
-            tabItems: t("drawer.tabItems"),
-            careTitle: t("drawer.careTitle"),
-            careHint: t("drawer.careHint"),
-            pointsTitle: t("drawer.pointsTitle"),
-            pointsHint: t("drawer.pointsHint"),
             levelTemplate: t("level", { level: "{level}" }),
-            care: {
-              heal: tMenu("heal"),
-              restorePp: tMenu("restorePp"),
-              rareCandy: tMenu("rareCandy"),
-              favoriteOn: tMenu("favoriteOn"),
-              favoriteOff: tMenu("favoriteOff"),
-              lockOn: tMenu("lockOn"),
-              lockOff: tMenu("lockOff"),
-            },
             menu: {
               hint: tMenu("hint"),
               favoriteOn: tMenu("favoriteOn"),
@@ -406,6 +356,66 @@ export default async function TeamPage({
               heal: tMenu("heal"),
               restorePp: tMenu("restorePp"),
               rareCandy: tMenu("rareCandy"),
+              teachTm: tMenu("teachTm"),
+              heldItem: tMenu("heldItem"),
+              rename: tMenu("rename"),
+            },
+            teach: {
+              title: t("drawer.tmSectionTitle"),
+              hint: t("drawer.tmSectionHint"),
+              none: t("drawer.tmNone"),
+              teach: t("drawer.teach"),
+              pickSlot: t("drawer.pickSlot"),
+              cancel: t("drawer.cancel"),
+              teaching: t("drawer.teaching"),
+              alreadyKnown: t("drawer.alreadyKnown"),
+              power: t("drawer.power"),
+              noPower: t("drawer.noPower"),
+              emptySlotMove: t("drawer.emptySlotMove"),
+              close: t("drawer.close"),
+              teachErrors: {
+                unauthorized: t("drawer.teachErrors.unauthorized"),
+                not_found: t("drawer.teachErrors.not_found"),
+                no_tm: t("drawer.teachErrors.no_tm"),
+                incompatible: t("drawer.teachErrors.incompatible"),
+                already_known: t("drawer.teachErrors.already_known"),
+                in_combat: t("drawer.teachErrors.in_combat"),
+              },
+            },
+            held: {
+              title: t("drawer.heldItemTitle"),
+              hint: t("drawer.heldItemHint"),
+              change: t("drawer.equip"),
+              noneOwned: t("drawer.noHeldItems"),
+              unequip: t("drawer.unequip"),
+              equipping: t("drawer.equipping"),
+              cancel: t("drawer.cancel"),
+              close: t("drawer.close"),
+              equipErrors: {
+                unauthorized: t("drawer.teachErrors.unauthorized"),
+                not_found: t("drawer.teachErrors.not_found"),
+                no_item: t("drawer.equipErrors.no_item"),
+                in_combat: t("drawer.teachErrors.in_combat"),
+              },
+            },
+            rename: {
+              title: t("rename.title"),
+              hint: t("rename.hint", { cost: RENAME_COST }),
+              placeholder: t("rename.placeholder"),
+              save: t("rename.save"),
+              clear: t("rename.clear"),
+              saving: t("rename.saving"),
+              close: t("drawer.close"),
+              costLabel: t("rename.costLabel", { cost: RENAME_COST }),
+              speciesFallback: t("rename.speciesFallback", { species: "{species}" }),
+              errors: {
+                unauthorized: t("rename.errors.unauthorized"),
+                not_found: t("rename.errors.not_found"),
+                no_coins: t("rename.errors.no_coins"),
+                unchanged: t("rename.errors.unchanged"),
+                in_combat: t("rename.errors.in_combat"),
+                invalid: t("rename.errors.invalid"),
+              },
             },
           }}
         />

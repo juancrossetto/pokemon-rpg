@@ -10,6 +10,21 @@ import {
   SquadLevelOffers,
   useSquadActions,
 } from "@/components/use-squad-actions";
+import {
+  TeachTmPanel,
+  type TeachTmLabels,
+} from "@/components/teach-tm-panel";
+import {
+  HeldItemPanel,
+  type HeldItemInfo,
+  type HeldItemLabels,
+  type OwnedHeldItem,
+} from "@/components/held-item-panel";
+import {
+  RenamePokemonPanel,
+  type RenameLabels,
+} from "@/components/rename-pokemon-panel";
+import type { TeamCompatibleTm, TeamMoveDetail } from "@/components/team-roster";
 
 export type SquadContextLabels = {
   favoriteOn: string;
@@ -21,17 +36,25 @@ export type SquadContextLabels = {
   heal: string;
   restorePp: string;
   rareCandy: string;
+  teachTm?: string;
+  heldItem?: string;
+  rename?: string;
 };
 
 type MenuState = { x: number; y: number } | null;
+type ManagePanel = "teach" | "held" | "rename" | null;
 
 /**
  * Click derecho (o botón ⋮) sobre una card del equipo / PC: curar, PP,
- * carameloraro, favorito, bloqueo. El click izquierdo en el hijo sigue libre.
+ * carameloraro, favorito, bloqueo; en Mi equipo también MT y held item.
+ * El click izquierdo en el hijo sigue libre.
  */
 export function SquadCardContextMenu({
   instanceId,
   pokemonName,
+  spriteUrl,
+  speciesName,
+  nickname,
   currentHp,
   maxHp,
   level,
@@ -43,15 +66,30 @@ export function SquadCardContextMenu({
   showViewTeam = true,
   labels,
   bagCounts = EMPTY_SQUAD_BAG,
+  moves,
+  compatibleTms,
+  heldItem,
+  ownedHeldItems,
+  teachLabels,
+  heldLabels,
+  renameLabels,
+  coins = 0,
+  initialTeachItemId = null,
+  autoOpenTeach = false,
   onBagChange,
   onHealed,
   onLeveledUp,
   onPpRestored,
   onFlagsChange,
+  onHeldChange,
+  onNicknameChange,
   children,
 }: {
   instanceId: string;
   pokemonName?: string;
+  spriteUrl?: string | null;
+  speciesName?: string;
+  nickname?: string | null;
   currentHp?: number;
   maxHp?: number;
   level?: number;
@@ -63,6 +101,17 @@ export function SquadCardContextMenu({
   showViewTeam?: boolean;
   labels: SquadContextLabels;
   bagCounts?: SquadBagCounts;
+  moves?: (TeamMoveDetail | null)[];
+  compatibleTms?: TeamCompatibleTm[];
+  heldItem?: HeldItemInfo | null;
+  ownedHeldItems?: OwnedHeldItem[];
+  teachLabels?: TeachTmLabels;
+  heldLabels?: HeldItemLabels;
+  renameLabels?: RenameLabels;
+  coins?: number;
+  initialTeachItemId?: string | null;
+  /** Deep-link inventario → abrir panel de MT al montar. */
+  autoOpenTeach?: boolean;
   onBagChange?: (next: SquadBagCounts) => void;
   onHealed?: (next: { currentHp: number; maxHp: number }) => void;
   onLeveledUp?: (next: { level: number; currentHp: number; maxHp: number }) => void;
@@ -72,11 +121,17 @@ export function SquadCardContextMenu({
     allMoves: boolean;
   }) => void;
   onFlagsChange?: (next: { isFavorite?: boolean; isTradeLocked?: boolean }) => void;
+  onHeldChange?: (next: HeldItemInfo | null) => void;
+  onNicknameChange?: (next: string | null) => void;
   children: ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menu, setMenu] = useState<MenuState>(null);
+  const [panel, setPanel] = useState<ManagePanel>(autoOpenTeach ? "teach" : null);
+  const canTeach = Boolean(moves && compatibleTms && teachLabels && labels.teachTm);
+  const canHold = Boolean(ownedHeldItems && heldLabels && labels.heldItem);
+  const canRename = Boolean(speciesName && renameLabels && labels.rename);
 
   const actions = useSquadActions({
     instanceId,
@@ -119,7 +174,7 @@ export function SquadCardContextMenu({
   function openAt(clientX: number, clientY: number) {
     const pad = 8;
     const mw = 240;
-    const mh = 320;
+    const mh = 360;
     const x = Math.min(clientX, window.innerWidth - mw - pad);
     const y = Math.min(clientY, window.innerHeight - mh - pad);
     actions.clearFeedback();
@@ -204,8 +259,47 @@ export function SquadCardContextMenu({
             disabled={busy}
             onSelect={actions.giveRareCandy}
           />
+          {canTeach || canHold || canRename ? (
+            <>
+              <div className="my-1 border-t border-white/8" />
+              {canRename ? (
+                <MenuItem
+                  icon="edit"
+                  label={labels.rename!}
+                  disabled={busy}
+                  onSelect={() => {
+                    setMenu(null);
+                    setPanel("rename");
+                  }}
+                />
+              ) : null}
+              {canTeach ? (
+                <MenuItem
+                  icon="school"
+                  label={labels.teachTm!}
+                  disabled={busy}
+                  onSelect={() => {
+                    setMenu(null);
+                    setPanel("teach");
+                  }}
+                />
+              ) : null}
+              {canHold ? (
+                <MenuItem
+                  icon="auto_awesome"
+                  label={labels.heldItem!}
+                  disabled={busy}
+                  onSelect={() => {
+                    setMenu(null);
+                    setPanel("held");
+                  }}
+                />
+              ) : null}
+            </>
+          ) : null}
           {showFlags ? (
             <>
+              <div className="my-1 border-t border-white/8" />
               <MenuItem
                 icon={isFavorite ? "star" : "star_outline"}
                 label={isFavorite ? labels.favoriteOff : labels.favoriteOn}
@@ -257,6 +351,40 @@ export function SquadCardContextMenu({
           onSettled={actions.dismissLevelOffers}
         />
       )}
+      {panel === "teach" && canTeach && moves && compatibleTms && teachLabels ? (
+        <TeachTmPanel
+          instanceId={instanceId}
+          pokemonName={pokemonName ?? ""}
+          spriteUrl={spriteUrl}
+          moves={moves}
+          compatibleTms={compatibleTms}
+          labels={teachLabels}
+          initialTeachItemId={initialTeachItemId}
+          onClose={() => setPanel(null)}
+        />
+      ) : null}
+      {panel === "held" && canHold && ownedHeldItems && heldLabels ? (
+        <HeldItemPanel
+          instanceId={instanceId}
+          pokemonName={pokemonName ?? ""}
+          heldItem={heldItem ?? null}
+          ownedHeldItems={ownedHeldItems}
+          labels={heldLabels}
+          onClose={() => setPanel(null)}
+          onHeldChange={onHeldChange}
+        />
+      ) : null}
+      {panel === "rename" && canRename && speciesName && renameLabels ? (
+        <RenamePokemonPanel
+          instanceId={instanceId}
+          speciesName={speciesName}
+          nickname={nickname ?? null}
+          coins={coins}
+          labels={renameLabels}
+          onClose={() => setPanel(null)}
+          onRenamed={onNicknameChange}
+        />
+      ) : null}
     </div>
   );
 }
