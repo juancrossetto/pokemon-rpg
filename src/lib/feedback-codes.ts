@@ -45,6 +45,7 @@ export const CLAN_ERRORS = [
   "not_found",
   "invalid_name",
   "invalid_tag",
+  "invalid_fields",
   "name_taken",
   "tag_taken",
   "already_in_clan",
@@ -55,6 +56,15 @@ export const CLAN_ERRORS = [
   "leader_must_transfer",
   "target_not_member",
   "rate_limited",
+  "invite_only",
+  "request_required",
+  "already_applied",
+  "no_application",
+  "applications_full",
+  "invites_full",
+  "cooldown",
+  "level_too_low",
+  "pending_elsewhere",
 ] as const;
 
 export const CLAN_NOTICES = [
@@ -66,6 +76,14 @@ export const CLAN_NOTICES = [
   "promoted",
   "demoted",
   "transferred",
+  "applied",
+  "application_cancelled",
+  "application_accepted",
+  "application_declined",
+  "invite_sent",
+  "invite_accepted",
+  "invite_declined",
+  "settings_saved",
 ] as const;
 
 export const PVP_ERRORS = [

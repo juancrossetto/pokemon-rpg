@@ -13,6 +13,9 @@ export type NotificationPayload = {
   opponentName?: string;
   /** Username del otro entrenador (amistad). */
   trainerName?: string;
+  /** Nombre del clan (notificaciones de clan). */
+  clanName?: string;
+  clanTag?: string;
 };
 
 export type NotificationDTO = {
@@ -40,10 +43,18 @@ export async function createNotification(input: {
 }) {
   const db = input.tx ?? prisma;
 
-  // FRIEND_* puede fallar con un Prisma Client cacheado por Turbopack aunque el
-  // enum ya exista en Postgres ("Invalid value for argument type"). El insert
-  // crudo usa el enum de la DB y no pasa por el validador DMMF viejo.
-  if (input.type === "FRIEND_REQUEST" || input.type === "FRIEND_ACCEPTED") {
+  // Enums nuevos (FRIEND_*, CLAN_*) pueden fallar con Prisma Client cacheado
+  // por Turbopack. El insert crudo usa el enum de Postgres.
+  const rawEnumTypes: NotificationType[] = [
+    "FRIEND_REQUEST",
+    "FRIEND_ACCEPTED",
+    "CLAN_INVITE",
+    "CLAN_APPLICATION",
+    "CLAN_ACCEPTED",
+    "CLAN_KICKED",
+    "CLAN_ROLE_CHANGED",
+  ];
+  if (rawEnumTypes.includes(input.type)) {
     const id = newNotificationId();
     const payload = JSON.stringify(input.payload ?? {});
     await db.$executeRaw`
@@ -266,6 +277,95 @@ export async function notifyFriendAccepted(input: {
     type: "FRIEND_ACCEPTED",
     payload: { trainerName: input.friendName },
     href: "/friends",
+    tx: input.tx,
+  });
+}
+
+export async function notifyClanInvite(input: {
+  toUserId: string;
+  clanName: string;
+  clanTag: string;
+  clanId: string;
+  fromUserName: string;
+  tx?: Prisma.TransactionClient;
+}) {
+  await createNotification({
+    userId: input.toUserId,
+    type: "CLAN_INVITE",
+    payload: {
+      clanName: input.clanName,
+      clanTag: input.clanTag,
+      trainerName: input.fromUserName,
+    },
+    href: `/clans/${input.clanId}`,
+    tx: input.tx,
+  });
+}
+
+export async function notifyClanApplication(input: {
+  toUserId: string;
+  clanId: string;
+  clanName: string;
+  clanTag: string;
+  trainerName: string;
+  tx?: Prisma.TransactionClient;
+}) {
+  await createNotification({
+    userId: input.toUserId,
+    type: "CLAN_APPLICATION",
+    payload: {
+      clanName: input.clanName,
+      clanTag: input.clanTag,
+      trainerName: input.trainerName,
+    },
+    href: `/clans/${input.clanId}?tab=admin`,
+    tx: input.tx,
+  });
+}
+
+export async function notifyClanAccepted(input: {
+  toUserId: string;
+  clanId: string;
+  clanName: string;
+  clanTag: string;
+  tx?: Prisma.TransactionClient;
+}) {
+  await createNotification({
+    userId: input.toUserId,
+    type: "CLAN_ACCEPTED",
+    payload: { clanName: input.clanName, clanTag: input.clanTag },
+    href: `/clans/${input.clanId}`,
+    tx: input.tx,
+  });
+}
+
+export async function notifyClanKicked(input: {
+  toUserId: string;
+  clanName: string;
+  clanTag: string;
+  tx?: Prisma.TransactionClient;
+}) {
+  await createNotification({
+    userId: input.toUserId,
+    type: "CLAN_KICKED",
+    payload: { clanName: input.clanName, clanTag: input.clanTag },
+    href: "/clans",
+    tx: input.tx,
+  });
+}
+
+export async function notifyClanRoleChanged(input: {
+  toUserId: string;
+  clanId: string;
+  clanName: string;
+  clanTag: string;
+  tx?: Prisma.TransactionClient;
+}) {
+  await createNotification({
+    userId: input.toUserId,
+    type: "CLAN_ROLE_CHANGED",
+    payload: { clanName: input.clanName, clanTag: input.clanTag },
+    href: `/clans/${input.clanId}`,
     tx: input.tx,
   });
 }

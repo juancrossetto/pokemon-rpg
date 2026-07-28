@@ -72,6 +72,11 @@ model User {
   friendRequestsTo   FriendRequest[]      @relation("FriendRequestTo")
   blocksInitiated    UserBlock[]          @relation("Blocker")
   blocksReceived     UserBlock[]          @relation("Blocked")
+  /// Cooldown tras abandonar un clan (anti hop).
+  lastClanLeftAt     DateTime?
+  clanApplications   ClanApplication[]
+  clanInvitesFrom    ClanInvite[]         @relation("ClanInviteFrom")
+  clanInvitesTo      ClanInvite[]         @relation("ClanInviteTo")
 }
 
 // ---------- Notificaciones in-app ----------
@@ -88,6 +93,11 @@ enum NotificationType {
   PVP_LOST
   FRIEND_REQUEST
   FRIEND_ACCEPTED
+  CLAN_INVITE
+  CLAN_APPLICATION
+  CLAN_ACCEPTED
+  CLAN_KICKED
+  CLAN_ROLE_CHANGED
 }
 
 model Notification {
@@ -617,16 +627,76 @@ enum ClanRole {
   MEMBER
 }
 
-model Clan {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  tag       String   @unique // 3-5 caracteres, se muestra junto al nombre
-  leaderId  String   @unique
-  createdAt DateTime @default(now())
+enum ClanJoinPolicy {
+  OPEN
+  REQUEST
+  INVITE
+}
 
-  leader   User          @relation("ClanLeader", fields: [leaderId], references: [id])
-  members  ClanMember[]
-  messages ClanMessage[]
+enum ClanFocus {
+  CASUAL
+  COMPETITIVE
+  PVE
+  PVP
+  COLLECTION
+  EVENTS
+  SOCIAL
+  MIXED
+}
+
+/// Afinidad cosmética / misiones temáticas — no bonus PvP.
+enum ClanAffinity {
+  NORMAL
+  FIRE
+  WATER
+  GRASS
+  ELECTRIC
+  ICE
+  ROCK
+  GROUND
+  PSYCHIC
+  DARK
+  STEEL
+  DRAGON
+  FAIRY
+  FIGHTING
+  GHOST
+}
+
+enum ClanApplicationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+model Clan {
+  id             String         @id @default(cuid())
+  name           String         @unique
+  /// Nombre en minúsculas sin acentos para unicidad laxa.
+  normalizedName String         @unique
+  tag            String         @unique // 2-5 caracteres, se muestra junto al nombre
+  normalizedTag  String         @unique
+  leaderId       String         @unique
+  description    String? // hasta ~280
+  motto          String?
+  announcement   String?
+  joinPolicy     ClanJoinPolicy @default(OPEN)
+  focus          ClanFocus      @default(MIXED)
+  affinity       ClanAffinity   @default(NORMAL)
+  /// Locale preferido del clan (es/en/pt…); null = sin filtro.
+  language       String?
+  minPlayerLevel Int?
+  /// Emblema configurado (shape/symbol/colors) — ver src/lib/clan-emblem.ts
+  emblem         Json
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  leader       User              @relation("ClanLeader", fields: [leaderId], references: [id])
+  members      ClanMember[]
+  messages     ClanMessage[]
+  applications ClanApplication[]
+  invites      ClanInvite[]
 }
 
 model ClanMember {
@@ -652,6 +722,40 @@ model ClanMessage {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clanId, createdAt])
+}
+
+model ClanApplication {
+  id          String                @id @default(cuid())
+  clanId      String
+  userId      String
+  message     String?
+  status      ClanApplicationStatus @default(PENDING)
+  createdAt   DateTime              @default(now())
+  respondedAt DateTime?
+
+  clan Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clanId, userId])
+  @@index([userId, status])
+  @@index([clanId, status])
+}
+
+model ClanInvite {
+  id          String                @id @default(cuid())
+  clanId      String
+  fromUserId  String
+  toUserId    String
+  status      ClanApplicationStatus @default(PENDING)
+  createdAt   DateTime              @default(now())
+  respondedAt DateTime?
+
+  clan     Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  fromUser User @relation("ClanInviteFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("ClanInviteTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([clanId, toUserId])
+  @@index([toUserId, status])
 }
 
 /**
