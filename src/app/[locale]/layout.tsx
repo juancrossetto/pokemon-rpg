@@ -70,7 +70,7 @@ export default async function LocaleLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
-        <link rel="preload" href="/splash/boot.png" as="image" />
+        <link rel="preload" href="/splash/boot.webp" as="image" />
         <script dangerouslySetInnerHTML={{ __html: bootSplashEarlyScript() }} />
       </head>
       <body className="relative flex min-h-full flex-col overflow-x-hidden">

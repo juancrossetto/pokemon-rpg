@@ -16,7 +16,7 @@ export function BootSplashMarkup() {
       aria-valuenow={0}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/splash/boot.png" alt="" className="boot-splash__art" fetchPriority="high" />
+      <img src="/splash/boot.webp" alt="" className="boot-splash__art" fetchPriority="high" />
       <div className="boot-splash__shade" aria-hidden />
       <div className="boot-splash__footer">
         <div className="boot-splash__meta">

@@ -6,7 +6,7 @@ import { ActiveTeamStrip } from "@/components/home/active-team-strip";
 import { QuickGameActions, type QuickAction } from "@/components/home/quick-game-actions";
 import { DailyGiftModal, type GiftModalLabels } from "@/components/events/daily-gift-modal";
 import { CampaignDevPanel } from "@/components/campaign-dev-panel";
-import type { HomeSquadMember } from "@/components/home-squad-grid";
+import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { DailyState, WeeklyState } from "@/lib/events/state";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 

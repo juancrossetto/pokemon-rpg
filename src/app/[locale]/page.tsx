@@ -11,7 +11,7 @@ import { buildExpeditionView } from "@/lib/campaign";
 import { loadMapLocations } from "@/lib/campaign/map-data";
 import { loadEventsSummary } from "@/lib/events/state";
 import { HomeGameHub } from "@/components/home/home-game-hub";
-import type { HomeSquadMember } from "@/components/home-squad-grid";
+import type { HomeSquadMember } from "@/components/home/squad-types";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolution-chain";
 

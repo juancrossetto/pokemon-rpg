@@ -14,7 +14,7 @@ import {
 import { SquadCardSheet, type SquadCardSheetLabels } from "@/components/squad-card-sheet";
 import { PokeSparks } from "@/components/poke-sparks";
 import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
-import type { HomeSquadMember } from "@/components/home-squad-grid";
+import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import { anyEvolveReady } from "@/lib/evolution-readiness";
 
