@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   getBattleBgmVolume,
@@ -11,7 +11,13 @@ import {
   startBattleBgm,
   type BattleBgmKind,
 } from "@/lib/battle-bgm";
-import { unlockBattleAudio } from "@/lib/battle-sfx";
+import {
+  getBattleSfxVolume,
+  isBattleSfxMuted,
+  setBattleSfxMuted,
+  setBattleSfxVolume,
+  unlockBattleAudio,
+} from "@/lib/battle-sfx";
 
 /**
  * Mute al click; slider de volumen al hover/focus (estilo reproductor).
@@ -19,16 +25,11 @@ import { unlockBattleAudio } from "@/lib/battle-sfx";
  */
 export function BattleAudioControls({ bgmKind }: { bgmKind: BattleBgmKind }) {
   const t = useTranslations("battle");
-  const [muted, setMuted] = useState(false);
-  const [volume, setVolume] = useState(0.22);
-  const [ready, setReady] = useState(false);
+  const [musicMuted, setMusicMuted] = useState(() => isBattleBgmMuted());
+  const [musicVolume, setMusicVolume] = useState(() => getBattleBgmVolume());
+  const [sfxMuted, setSfxMutedState] = useState(() => isBattleSfxMuted());
+  const [sfxVolume, setSfxVolumeState] = useState(() => getBattleSfxVolume());
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    setMuted(isBattleBgmMuted());
-    setVolume(getBattleBgmVolume());
-    setReady(true);
-  }, []);
 
   function ensurePlaying() {
     unlockBattleAudio();
@@ -38,24 +39,40 @@ export function BattleAudioControls({ bgmKind }: { bgmKind: BattleBgmKind }) {
 
   function onToggleMute() {
     ensurePlaying();
-    const next = !muted;
-    setMuted(next);
+    const next = !musicMuted;
+    setMusicMuted(next);
     setBattleBgmMuted(next);
   }
 
   function onVolumeChange(value: number) {
     ensurePlaying();
-    setVolume(value);
+    setMusicVolume(value);
     setBattleBgmVolume(value);
-    if (value > 0 && muted) {
-      setMuted(false);
+    if (value > 0 && musicMuted) {
+      setMusicMuted(false);
       setBattleBgmMuted(false);
     }
   }
 
-  if (!ready) return null;
+  function onToggleSfxMute() {
+    ensurePlaying();
+    const next = !sfxMuted;
+    setSfxMutedState(next);
+    setBattleSfxMuted(next);
+  }
 
-  const effectiveMuted = muted || volume === 0;
+  function onSfxVolumeChange(value: number) {
+    ensurePlaying();
+    setSfxVolumeState(value);
+    setBattleSfxVolume(value);
+    if (value > 0 && sfxMuted) {
+      setSfxMutedState(false);
+      setBattleSfxMuted(false);
+    }
+  }
+
+  const effectiveMusicMuted = musicMuted || musicVolume === 0;
+  const effectiveSfxMuted = sfxMuted || sfxVolume === 0;
 
   return (
     <div
@@ -71,35 +88,81 @@ export function BattleAudioControls({ bgmKind }: { bgmKind: BattleBgmKind }) {
         type="button"
         onClick={onToggleMute}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/90 backdrop-blur-sm hover:bg-black/70 hover:border-white/30 transition-colors"
-        title={effectiveMuted ? t("unmuteMusic") : t("muteMusic")}
-        aria-label={effectiveMuted ? t("unmuteMusic") : t("muteMusic")}
-        aria-pressed={effectiveMuted}
+        title={effectiveMusicMuted ? t("unmuteMusic") : t("muteMusic")}
+        aria-label={effectiveMusicMuted ? t("unmuteMusic") : t("muteMusic")}
+        aria-pressed={effectiveMusicMuted}
       >
         <span className="material-symbols-outlined text-[20px]!">
-          {effectiveMuted ? "volume_off" : volume < 0.35 ? "volume_down" : "volume_up"}
+          {effectiveMusicMuted ? "volume_off" : musicVolume < 0.35 ? "volume_down" : "volume_up"}
         </span>
       </button>
 
       <div
         className={`overflow-hidden transition-all duration-200 ease-out ${
-          open ? "ml-2 max-w-[9rem] opacity-100" : "max-w-0 opacity-0 pointer-events-none"
+          open ? "ml-2 max-w-[13rem] opacity-100" : "max-w-0 opacity-0 pointer-events-none"
         }`}
       >
-        <label className="flex h-9 items-center gap-2 rounded-full border border-white/15 bg-black/55 px-3 backdrop-blur-sm">
-          <span className="sr-only">{t("musicVolume")}</span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={1}
-            value={Math.round(volume * 100)}
-            onChange={(e) => onVolumeChange(Number(e.target.value) / 100)}
-            className="battle-bgm-slider w-24"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(volume * 100)}
-          />
-        </label>
+        <div className="flex flex-col gap-2 rounded-2xl border border-white/15 bg-black/55 p-2 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onToggleMute}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/90 hover:bg-black/65 hover:border-white/30 transition-colors"
+              title={effectiveMusicMuted ? t("unmuteMusic") : t("muteMusic")}
+              aria-label={effectiveMusicMuted ? t("unmuteMusic") : t("muteMusic")}
+              aria-pressed={effectiveMusicMuted}
+            >
+              <span className="material-symbols-outlined text-[17px]!">
+                {effectiveMusicMuted ? "volume_off" : "music_note"}
+              </span>
+            </button>
+            <label className="flex items-center">
+              <span className="sr-only">{t("musicVolume")}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={Math.round(musicVolume * 100)}
+                onChange={(e) => onVolumeChange(Number(e.target.value) / 100)}
+                className="battle-bgm-slider w-24"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(musicVolume * 100)}
+              />
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onToggleSfxMute}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/90 hover:bg-black/65 hover:border-white/30 transition-colors"
+              title={effectiveSfxMuted ? t("unmuteSfx") : t("muteSfx")}
+              aria-label={effectiveSfxMuted ? t("unmuteSfx") : t("muteSfx")}
+              aria-pressed={effectiveSfxMuted}
+            >
+              <span className="material-symbols-outlined text-[17px]!">
+                {effectiveSfxMuted ? "volume_off" : "graphic_eq"}
+              </span>
+            </button>
+            <label className="flex items-center">
+              <span className="sr-only">{t("sfxVolume")}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={Math.round(sfxVolume * 100)}
+                onChange={(e) => onSfxVolumeChange(Number(e.target.value) / 100)}
+                className="battle-bgm-slider w-24"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(sfxVolume * 100)}
+              />
+            </label>
+          </div>
+        </div>
       </div>
     </div>
   );

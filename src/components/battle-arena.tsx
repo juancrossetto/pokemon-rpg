@@ -23,26 +23,25 @@ import { typeColor } from "@/lib/type-colors";
 import { formatMoveName } from "@/lib/format-move-name";
 import { gymLeaderPortraitUrl } from "@/lib/gym-art";
 import { itemSpriteUrl } from "@/lib/item-sprites";
-import { playBattleSfx, unlockBattleAudio, type SfxKind } from "@/lib/battle-sfx";
+import {
+  battleSfxForMove,
+  playBattleSfx,
+  preloadBattleSfx,
+  unlockBattleAudio,
+  type SfxKind,
+} from "@/lib/battle-sfx";
 import {
   resumeBattleBgm,
   startBattleBgm,
   stopBattleBgm,
 } from "@/lib/battle-bgm";
 import { BattleAudioControls } from "@/components/battle-audio-controls";
-import {
-  impactFxUrl,
-  moveFxFamily,
-  resolveMoveProjectile,
-  showdownBattleBgUrl,
-  showdownFxUrl,
-} from "@/lib/showdown-fx";
+import { impactFxUrl, resolveMoveProjectile, showdownBattleBgUrl, showdownFxUrl } from "@/lib/showdown-fx";
 import { statusAbbrKey, statusLabelKey, isStatusCondition, type StatusCondition } from "@/lib/status";
 import type { TurnEvent } from "@/lib/battle";
 
 function hitSfxForMove(moveType: string, category?: TurnEvent["category"]): SfxKind {
-  if (category === "PHYSICAL") return "contact";
-  return moveFxFamily(moveType);
+  return battleSfxForMove(moveType, category);
 }
 
 const LUNGE_MS = 380;
@@ -354,6 +353,7 @@ export function BattleArena({
 
   useEffect(() => {
     startBattleBgm(bgmKind);
+    preloadBattleSfx();
     return () => stopBattleBgm();
   }, [bgmKind]);
 

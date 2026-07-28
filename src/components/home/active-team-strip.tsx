@@ -154,7 +154,7 @@ function TeamSlot({
         aria-label={`${displayName}, ${member.levelLabel}`}
         className={`team-card team-slot group relative flex ${SLOT_HEIGHT} ${SLOT_WIDTH} shrink-0 flex-col overflow-hidden rounded-[1.25rem] border text-left transition duration-300 active:scale-[0.97] ${
           isOver ? "ring-2 ring-pokeball-red/60 ring-offset-2 ring-offset-background" : ""
-        } ${isDragging ? "opacity-40" : "hover:-translate-y-1"} ${
+        } ${isDragging ? "opacity-40" : "hover:scale-[1.01]"} ${
           isLead || member.isFavorite
             ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
             : "border-white/[0.08] hover:border-white/20"

@@ -23,6 +23,7 @@ let resultNodes: AudioNode[] = [];
 let resultTimers: number[] = [];
 let resultLoopTimer: number | null = null;
 let resultKind: ResultBgmKind | null = null;
+let resultAudio: HTMLAudioElement | null = null;
 
 export function battleBgmUrl(kind: BattleBgmKind): string {
   return kind === "boss" ? "/audio/battle/boss-battle.m4a" : "/audio/battle/wild-battle.m4a";
@@ -49,6 +50,10 @@ export function setBattleBgmMuted(muted: boolean) {
     audio.muted = muted;
     if (!muted && audio.paused) void audio.play().catch(() => {});
   }
+  if (resultAudio) {
+    resultAudio.muted = muted;
+    if (!muted && resultAudio.paused) void resultAudio.play().catch(() => {});
+  }
   if (resultCtx && muted) stopResultBgm();
 }
 
@@ -62,6 +67,7 @@ export function setBattleBgmVolume(volume: number) {
       audio.muted = false;
     }
   }
+  if (resultAudio) resultAudio.volume = v;
 }
 
 export function startBattleBgm(kind: BattleBgmKind) {
@@ -192,6 +198,22 @@ export function startResultBgm(kind: ResultBgmKind) {
   if (isBattleBgmMuted()) return;
   stopBattleBgm();
   stopResultBgm();
+
+  // Victoria: usar clip dedicado (pedido del usuario).
+  if (kind === "victory") {
+    resultKind = kind;
+    if (!resultAudio) {
+      resultAudio = new Audio();
+      resultAudio.preload = "auto";
+    }
+    resultAudio.loop = true;
+    resultAudio.src = "/audio/battle/sfx/victory.wav";
+    resultAudio.volume = getBattleBgmVolume();
+    resultAudio.muted = isBattleBgmMuted();
+    void resultAudio.play().catch(() => {});
+    return;
+  }
+
   const audioCtx = getResultCtx();
   if (!audioCtx) return;
   resultKind = kind;
@@ -209,6 +231,10 @@ export function startResultBgm(kind: ResultBgmKind) {
 }
 
 export function stopResultBgm() {
+  if (resultAudio) {
+    resultAudio.pause();
+    resultAudio.currentTime = 0;
+  }
   clearResultSchedule();
   resultKind = null;
 }

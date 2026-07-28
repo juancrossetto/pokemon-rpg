@@ -739,17 +739,20 @@ export async function submitBattleMove(
     }
 
     const totalXp = battle.pendingXp + koXp;
-    // Todos los que pelearon (salieron al campo) reparte XP — no filtrar por
-    // currentHp: un switch sin daño dejaba al saliente fuera si su HP en DB
-    // estaba desfasado o en 0 de una pelea anterior.
+    // Solo cobra XP quien terminó vivo esta pelea. Si un Pokémon quedó en 0 HP,
+    // no cobra en esta victoria ni en las siguientes hasta que lo curen.
     const participantIds = mergeBattleParticipantIds(
       battle.participantIds,
       battle.pokemonInstanceId,
       instance.id,
     );
-    const participants = await prisma.pokemonInstance.findMany({
+    const allParticipants = await prisma.pokemonInstance.findMany({
       where: { id: { in: participantIds } },
       include: { species: true },
+    });
+    const participants = allParticipants.filter((p) => {
+      const hpNow = p.id === instance.id ? playerHp : p.currentHp;
+      return hpNow > 0;
     });
     const share = Math.max(1, Math.floor(totalXp / Math.max(1, participants.length)));
     xpGained = share;

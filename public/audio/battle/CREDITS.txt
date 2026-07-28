@@ -19,6 +19,48 @@ boss-battle.m4a
 
 Attribution: Music by Matthew Pablo (www.matthewpablo.com)
 
-Note: "Let the Battles Begin!" (northivanastan, CC0) could not be bundled —
-OpenGameArt only provides a MuseScore project; the author flagged the preview
-render's soundfont for potential copyright issues, so it is not used here.
+Victory / defeat BGM
+====================
+Web Audio fanfares synthesized in src/lib/battle-bgm.ts (no external samples).
+
+Battle SFX (sfx/*.wav)
+======================
+Short mono ~22 kHz clips, lazy-loaded only in battle. Trimmed/resampled for size.
+
+Elemental attacks (fire, ice, electric/thunder, water, wind, ground/rock, poison)
+  Source: 8 Magic Attacks (free samples)
+  Author: leohpaz
+  License: CC-BY 4.0
+  https://opengameart.org/content/8-magic-attacks
+
+Hits / contact / crit / steel
+  Source: 75 CC0 breaking / falling / hit SFX
+  Author: rubberduck
+  License: CC0
+  https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx
+
+Bug (slime)
+  Source: 40 CC0 water / splash / slime SFX
+  Author: rubberduck
+  License: CC0
+  https://opengameart.org/content/40-cc0-water-splash-slime-sfx
+
+Energy / psychic / ghost / dark / dragon / status / evolve / restorePp / superEffective
+  Source: 50 CC0 Sci-Fi SFX
+  Author: rubberduck
+  License: CC0
+  https://opengameart.org/content/50-cc0-sci-fi-sfx
+
+Fairy / grass / faint / ball / badge / levelUp / heal
+  Source: 100 CC0 SFX
+  Author: rubberduck
+  License: CC0
+  https://opengameart.org/content/100-cc0-sfx
+
+Miss (swish)
+  Source: Battle Sound Effects
+  OpenGameArt — mixed free licenses (includes CC0 / CC-BY options)
+  https://opengameart.org/content/battle-sound-effects
+
+Attribution note: CC-BY 4.0 clips require credit to leohpaz (included above).
+CC0 clips need no attribution; credited here for transparency.
