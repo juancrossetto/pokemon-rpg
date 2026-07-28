@@ -5,10 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { CLAN_ERRORS, CLAN_NOTICES, pickCode } from "@/lib/feedback-codes";
 import { CLAN_CREATION_COST } from "@/lib/clan-rules";
 import { compareTrainers, teamPower } from "@/lib/ranking";
-import { ClanCreateWizard } from "@/components/clans/clan-create-wizard";
-import { ClanDiscovery, type DiscoveryClan } from "@/components/clans/clan-discovery";
-import { ClanMemberHome } from "@/components/clans/clan-member-home";
+import { type DiscoveryClan } from "@/components/clans/clan-discovery";
+import { ClanLanding } from "@/components/clans/clan-landing";
 import { ClanEmblemBadge } from "@/components/clans/clan-emblem-badge";
+import { ClanCreateCoinFxGuard } from "@/components/clans/clan-create-coin-fx-guard";
 import { respondInvite, cancelApplication } from "@/actions/clan";
 import { SubmitButton } from "@/components/submit-button";
 import type { ClanAffinity, ClanFocus, ClanJoinPolicy } from "@/lib/clan-types";
@@ -46,18 +46,6 @@ export default async function ClansPage({
       where: { userId },
       select: {
         clanId: true,
-        role: true,
-        clan: {
-          select: {
-            name: true,
-            tag: true,
-            emblem: true,
-            motto: true,
-            affinity: true,
-            focus: true,
-            _count: { select: { members: true } },
-          },
-        },
       },
     }),
     prisma.clan.findMany({
@@ -156,9 +144,9 @@ export default async function ClansPage({
     rank: i + 1,
   }));
 
-  const myClanEntry = membership
-    ? discoveryClans.find((c) => c.id === membership.clanId)
-    : null;
+  if (membership?.clanId) {
+    redirect({ href: `/clans/${membership.clanId}`, locale });
+  }
 
   const wizardLabels = {
     steps: {
@@ -184,7 +172,8 @@ export default async function ClansPage({
     languageLabel: t("languageLabel"),
     minLevelLabel: t("minLevelLabel"),
     minLevelHint: t("minLevelHint"),
-    createCost: t("createCost", { cost: CLAN_CREATION_COST }),
+    createCostLead: t("createCostLead"),
+    createCostAmount: CLAN_CREATION_COST,
     createButton: t("createButton"),
     creating: t("creating"),
     noFunds: t("noFunds"),
@@ -213,26 +202,27 @@ export default async function ClansPage({
       pick: t("emblem.pick"),
       selected: t("emblem.selected"),
     },
+    preview: t("wizard.preview"),
   };
 
-  const memberHomeLabels = {
-    directoryTitle: t("directoryTitle"),
-    emptyDirectory: t("emptyDirectory"),
-    formatMemberCount: (count: number, max: number) => t("memberCount", { count, max }),
-    roles: {
-      LEADER: t("roles.LEADER"),
-      OFFICER: t("roles.OFFICER"),
-      MEMBER: t("roles.MEMBER"),
-    },
+  const cardLabels = {
     affinities: wizardLabels.affinities,
     focuses: wizardLabels.focuses,
-    eyebrow: t("memberHome.eyebrow"),
-    enterHub: t("memberHome.enterHub"),
-    yourRank: (rank: number) => t("memberHome.yourRank", { rank }),
-    statRank: t("memberHome.statRank"),
-    statMembers: t("memberHome.statMembers"),
-    statPower: t("memberHome.statPower"),
-    statFocus: t("memberHome.statFocus"),
+    membersTemplate: t("memberCount", { count: "{count}", max: "{max}" }),
+    powerTemplate: t("power", { value: "{value}" }),
+    levelTemplate: t("discovery.levelLabel", { level: "{level}" }),
+    viewClan: t("discovery.viewClan"),
+    joinOpen: t("join"),
+    requestJoin: t("apply"),
+    inviteOnly: t("inviteOnly"),
+    full: t("full"),
+    buffLabel: t("memberHome.buffLabel"),
+    buffHintTemplate: t("memberHome.buffHint", {
+      leftLabel: "{leftLabel}",
+      leftValue: "{leftValue}",
+      rightLabel: "{rightLabel}",
+      rightValue: "{rightValue}",
+    }),
   };
 
   const discoveryLabels = {
@@ -251,13 +241,6 @@ export default async function ClansPage({
     joinPolicy: t("joinPolicyLabel"),
     spaceAvailable: t("discovery.spaceAvailable"),
     all: t("discovery.all"),
-    members: t("discovery.members"),
-    power: t("discovery.power"),
-    joinOpen: t("join"),
-    requestJoin: t("apply"),
-    inviteOnly: t("inviteOnly"),
-    full: t("full"),
-    minLevel: t("minLevelShort"),
     empty: t("emptyDirectory"),
     emptyFiltered: t("discovery.emptyFiltered"),
     benefitsTitle: t("discovery.benefitsTitle"),
@@ -269,9 +252,12 @@ export default async function ClansPage({
     ],
     createCta: t("discovery.createCta"),
     recommended: t("discovery.recommended"),
-    affinities: wizardLabels.affinities,
-    focuses: wizardLabels.focuses,
-    joinPolicies: wizardLabels.joinPolicies,
+    recommendedOpen: t("discovery.recommendedOpen"),
+    recommendedNew: t("discovery.recommendedNew"),
+    recommendedDefault: t("discovery.recommendedDefault"),
+    openFilters: t("discovery.openFilters"),
+    applyFilters: t("discovery.applyFilters"),
+    card: cardLabels,
   };
 
   return (
@@ -292,26 +278,9 @@ export default async function ClansPage({
             {t(`errors.${error}`)}
           </div>
         )}
+        <ClanCreateCoinFxGuard error={error} />
 
-        {membership && myClanEntry ? (
-          <ClanMemberHome
-            clan={{
-              id: membership.clanId,
-              name: membership.clan.name,
-              tag: membership.clan.tag,
-              motto: membership.clan.motto,
-              emblem: membership.clan.emblem,
-              affinity: membership.clan.affinity as ClanAffinity,
-              focus: membership.clan.focus as ClanFocus,
-              role: membership.role,
-              memberCount: myClanEntry.memberCount,
-              power: myClanEntry.power,
-              rank: myClanEntry.rank,
-            }}
-            ranking={discoveryClans}
-            labels={memberHomeLabels}
-          />
-        ) : membership ? null : (
+        {!membership ? (
           <div className="mb-6 flex flex-col gap-4">
             {pendingInvites.length > 0 && (
               <section className="rounded-xl border border-tertiary/30 bg-tertiary/10 p-4">
@@ -380,14 +349,33 @@ export default async function ClansPage({
               </section>
             )}
 
-            <ClanDiscovery clans={discoveryClans} labels={discoveryLabels} />
-
-            <div id="create-clan" className="scroll-mt-24">
-              <h2 className="text-headline-md text-on-surface mb-3">{t("createTitle")}</h2>
-              <ClanCreateWizard locale={locale} coins={me.coins} labels={wizardLabels} />
-            </div>
+            <ClanLanding
+              locale={locale}
+              coins={me.coins}
+              clans={discoveryClans}
+              wizardLabels={wizardLabels}
+              discoveryLabels={discoveryLabels}
+              labels={{
+                title: t("title"),
+                subtitle: t("landing.subtitle"),
+                searchClan: t("landing.searchClan"),
+                createClan: t("landing.createClan"),
+                recommendedTitle: t("landing.recommendedTitle"),
+                whyJoinTitle: t("landing.whyJoinTitle"),
+                listTitle: t("landing.listTitle"),
+                close: t("landing.close"),
+                benefits: [
+                  t("landing.benefitMissions"),
+                  t("landing.benefitBenefits"),
+                  t("landing.benefitWars"),
+                  t("landing.benefitCommunity"),
+                ],
+                card: cardLabels,
+                empty: t("emptyDirectory"),
+              }}
+            />
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

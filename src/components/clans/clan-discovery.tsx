@@ -1,9 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Link } from "@/i18n/navigation";
-import { ClanEmblemBadge } from "@/components/clans/clan-emblem-badge";
-import { ClanAffinityChip } from "@/components/clans/clan-affinity-chip";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { ClanCard, type ClanCardLabels } from "@/components/clans/clan-card";
 import { CLAN_AFFINITIES, CLAN_FOCUSES, CLAN_JOIN_POLICIES, CLAN_MAX_MEMBERS } from "@/lib/clan-rules";
 import type { ClanAffinity, ClanFocus, ClanJoinPolicy } from "@/lib/clan-types";
 
@@ -36,54 +34,85 @@ type Labels = {
     members: string;
     recent: string;
   };
-  affinity: string;
-  focus: string;
-  joinPolicy: string;
   spaceAvailable: string;
   all: string;
-  members: string;
-  power: string;
-  joinOpen: string;
-  requestJoin: string;
-  inviteOnly: string;
-  full: string;
-  minLevel: string;
   empty: string;
   emptyFiltered: string;
   benefitsTitle: string;
   benefits: string[];
   createCta: string;
   recommended: string;
-  affinities: Record<ClanAffinity, string>;
-  focuses: Record<ClanFocus, string>;
-  joinPolicies: Record<ClanJoinPolicy, string>;
+  recommendedOpen: string;
+  recommendedNew: string;
+  recommendedDefault: string;
+  openFilters: string;
+  applyFilters: string;
+  affinity: string;
+  focus: string;
+  joinPolicy: string;
+  card: ClanCardLabels;
 };
 
 type SortKey = "recommended" | "power" | "members" | "recent";
+
+type FilterState = {
+  affinity: "" | ClanAffinity;
+  focus: "" | ClanFocus;
+  joinPolicy: "" | ClanJoinPolicy;
+  spaceOnly: boolean;
+};
+
+function filterCount(filters: FilterState): number {
+  return (
+    (filters.affinity ? 1 : 0) +
+    (filters.focus ? 1 : 0) +
+    (filters.joinPolicy ? 1 : 0)
+  );
+}
+
+function featuredReason(clan: DiscoveryClan, labels: Labels): string {
+  if (clan.joinPolicy === "OPEN" && clan.memberCount < CLAN_MAX_MEMBERS) {
+    return labels.recommendedOpen;
+  }
+  if (clan.memberCount <= 3) return labels.recommendedNew;
+  return labels.recommendedDefault;
+}
 
 export function ClanDiscovery({
   clans,
   labels,
   showCreateHref = true,
+  compact = false,
+  onCreateClick,
 }: {
   clans: DiscoveryClan[];
   labels: Labels;
   showCreateHref?: boolean;
+  compact?: boolean;
+  onCreateClick?: () => void;
 }) {
   const [q, setQ] = useState("");
-  const [affinity, setAffinity] = useState<"" | ClanAffinity>("");
-  const [focus, setFocus] = useState<"" | ClanFocus>("");
-  const [joinPolicy, setJoinPolicy] = useState<"" | ClanJoinPolicy>("");
-  const [spaceOnly, setSpaceOnly] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    affinity: "",
+    focus: "",
+    joinPolicy: "",
+    spaceOnly: false,
+  });
   const [sort, setSort] = useState<SortKey>("recommended");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    return () => setFiltersOpen(false);
+  }, []);
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     let list = clans.filter((c) => {
-      if (affinity && c.affinity !== affinity) return false;
-      if (focus && c.focus !== focus) return false;
-      if (joinPolicy && c.joinPolicy !== joinPolicy) return false;
-      if (spaceOnly && c.memberCount >= CLAN_MAX_MEMBERS) return false;
+      if (filters.affinity && c.affinity !== filters.affinity) return false;
+      if (filters.focus && c.focus !== filters.focus) return false;
+      if (filters.joinPolicy && c.joinPolicy !== filters.joinPolicy) return false;
+      if (filters.spaceOnly && c.memberCount >= CLAN_MAX_MEMBERS) return false;
       if (!query) return true;
       return (
         c.name.toLowerCase().includes(query) ||
@@ -95,8 +124,7 @@ export function ClanDiscovery({
     list = [...list].sort((a, b) => {
       if (sort === "power") return b.power - a.power || a.rank - b.rank;
       if (sort === "members") return b.memberCount - a.memberCount || a.rank - b.rank;
-      if (sort === "recent") return a.rank - b.rank; // rank already from power; keep stable
-      // recommended: open/request with space first, then by rank
+      if (sort === "recent") return a.rank - b.rank;
       const score = (c: DiscoveryClan) =>
         (c.memberCount < CLAN_MAX_MEMBERS ? 1000 : 0) +
         (c.joinPolicy === "OPEN" ? 200 : c.joinPolicy === "REQUEST" ? 100 : 0) -
@@ -105,32 +133,53 @@ export function ClanDiscovery({
     });
 
     return list;
-  }, [clans, q, affinity, focus, joinPolicy, spaceOnly, sort]);
+  }, [clans, q, filters, sort]);
 
-  const featured = filtered[0] ?? null;
+  const featured = compact ? null : filtered[0] ?? null;
+  const listing = featured ? filtered.filter((c) => c.id !== featured.id) : filtered;
+  const activeCount = filterCount(filters);
+
+  function clearFilters() {
+    setFilters({ affinity: "", focus: "", joinPolicy: "", spaceOnly: false });
+    setQ("");
+  }
+
+  const chipClass = (active: boolean) =>
+    `min-h-11 shrink-0 rounded-full border px-3 text-label-sm transition-colors ${
+      active
+        ? "border-pokeball-red/45 bg-pokeball-red/12 text-on-surface"
+        : "border-white/10 text-on-surface-variant hover:border-white/20"
+    }`;
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="rounded-xl border border-white/10 bg-glass-surface p-4">
-        <h2 className="text-headline-md text-on-surface mb-2">{labels.benefitsTitle}</h2>
-        <ul className="grid gap-1.5 sm:grid-cols-2">
-          {labels.benefits.map((b) => (
-            <li key={b} className="flex items-start gap-2 text-label-sm text-on-surface-variant">
-              <span className="material-symbols-outlined text-pokeball-red text-[16px]! mt-0.5">
-                check_circle
-              </span>
-              {b}
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div className="relative flex flex-col gap-5">
+      {!compact && (
+        <div className="rounded-xl border border-white/10 bg-glass-surface p-4">
+          <h2 className="text-headline-md text-on-surface mb-2">{labels.benefitsTitle}</h2>
+          <ul className="grid gap-1.5 sm:grid-cols-2">
+            {labels.benefits.map((b) => (
+              <li key={b} className="flex items-start gap-2 text-label-sm text-on-surface-variant">
+                <span className="material-symbols-outlined text-pokeball-red text-[16px]! mt-0.5">
+                  check_circle
+                </span>
+                {b}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {featured && (
-        <section className="rounded-2xl border border-pokeball-red/30 bg-gradient-to-br from-pokeball-red/15 via-glass-surface to-glass-surface p-4">
-          <p className="text-label-sm text-pokeball-red mb-2 uppercase tracking-wide">
+        <section>
+          <p className="mb-2 text-label-sm uppercase tracking-wide text-tertiary">
             {labels.recommended}
           </p>
-          <ClanCard clan={featured} labels={labels} highlight />
+          <ClanCard
+            clan={featured}
+            labels={labels.card}
+            highlight
+            featuredReason={featuredReason(featured, labels)}
+          />
         </section>
       )}
 
@@ -143,178 +192,262 @@ export function ClanDiscovery({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={labels.searchPlaceholder}
-          className="min-h-11 w-full bg-surface-container border border-white/10 rounded-xl px-4 text-label-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-pokeball-red/50"
+          className="min-h-11 w-full rounded-xl border border-white/10 bg-surface-container px-4 text-label-md text-on-surface placeholder:text-on-surface-variant/50 focus:border-pokeball-red/50 focus:outline-none"
         />
 
-        <div className="flex flex-wrap gap-1.5 items-center">
-          <span className="text-label-sm text-on-surface-variant mr-1">{labels.filters}</span>
-          <select
-            value={affinity}
-            onChange={(e) => setAffinity(e.target.value as "" | ClanAffinity)}
-            className="min-h-11 rounded-lg border border-white/10 bg-surface-container px-2 text-label-sm text-on-surface"
-            aria-label={labels.affinity}
-          >
-            <option value="">{labels.all}</option>
-            {CLAN_AFFINITIES.map((a) => (
-              <option key={a} value={a}>
-                {labels.affinities[a]}
-              </option>
-            ))}
-          </select>
-          <select
-            value={focus}
-            onChange={(e) => setFocus(e.target.value as "" | ClanFocus)}
-            className="min-h-11 rounded-lg border border-white/10 bg-surface-container px-2 text-label-sm text-on-surface"
-            aria-label={labels.focus}
-          >
-            <option value="">{labels.all}</option>
-            {CLAN_FOCUSES.map((f) => (
-              <option key={f} value={f}>
-                {labels.focuses[f]}
-              </option>
-            ))}
-          </select>
-          <select
-            value={joinPolicy}
-            onChange={(e) => setJoinPolicy(e.target.value as "" | ClanJoinPolicy)}
-            className="min-h-11 rounded-lg border border-white/10 bg-surface-container px-2 text-label-sm text-on-surface"
-            aria-label={labels.joinPolicy}
-          >
-            <option value="">{labels.all}</option>
-            {CLAN_JOIN_POLICIES.map((p) => (
-              <option key={p} value={p}>
-                {labels.joinPolicies[p]}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button type="button" className={chipClass(activeCount === 0 && !filters.spaceOnly && !q)} onClick={clearFilters}>
+            {labels.all}
+          </button>
           <button
             type="button"
-            onClick={() => setSpaceOnly((v) => !v)}
-            className={`min-h-11 px-3 rounded-lg border text-label-sm ${
-              spaceOnly
-                ? "border-tertiary/50 bg-tertiary/15 text-tertiary"
-                : "border-white/10 text-on-surface-variant"
-            }`}
+            className={chipClass(filters.spaceOnly)}
+            onClick={() => setFilters((f) => ({ ...f, spaceOnly: !f.spaceOnly }))}
           >
             {labels.spaceAvailable}
           </button>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="min-h-11 rounded-lg border border-white/10 bg-surface-container px-2 text-label-sm text-on-surface ml-auto"
-            aria-label={labels.sortLabel}
+
+          <button
+            type="button"
+            className={`${chipClass(false)} sm:hidden`}
+            onClick={() => setFiltersOpen(true)}
+            aria-expanded={filtersOpen}
           >
-            <option value="recommended">{labels.sorts.recommended}</option>
-            <option value="power">{labels.sorts.power}</option>
-            <option value="members">{labels.sorts.members}</option>
-          </select>
+            {labels.openFilters}
+            {activeCount > 0 ? ` (${activeCount})` : ""}
+          </button>
+
+          <button
+            type="button"
+            className={`${chipClass(desktopFiltersOpen)} hidden sm:inline-flex`}
+            onClick={() => setDesktopFiltersOpen((v) => !v)}
+            aria-expanded={desktopFiltersOpen}
+          >
+            {labels.filters}
+            {activeCount > 0 ? ` · ${activeCount}` : ""}
+          </button>
+
+          <label className="ml-auto flex min-h-11 items-center gap-1.5 rounded-full border border-white/10 px-3 text-label-sm text-on-surface-variant">
+            <span className="hidden md:inline">{labels.sortLabel}</span>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="bg-transparent text-label-sm text-on-surface focus:outline-none"
+              aria-label={labels.sortLabel}
+            >
+              <option value="recommended">{labels.sorts.recommended}</option>
+              <option value="power">{labels.sorts.power}</option>
+              <option value="members">{labels.sorts.members}</option>
+            </select>
+          </label>
         </div>
+
+        {desktopFiltersOpen && (
+          <FilterPanel
+            filters={filters}
+            onChange={setFilters}
+            labels={labels}
+            onApply={() => setDesktopFiltersOpen(false)}
+            onClear={clearFilters}
+            className="hidden rounded-xl border border-white/10 bg-black/25 p-3 sm:block"
+          />
+        )}
       </div>
 
-      {filtered.length === 0 ? (
+      {listing.length === 0 ? (
         <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-on-surface-variant">
           <p className="text-label-md">{clans.length === 0 ? labels.empty : labels.emptyFiltered}</p>
-          {(affinity || focus || joinPolicy || spaceOnly || q) && (
+          {(activeCount > 0 || filters.spaceOnly || q) && (
             <button
               type="button"
-              className="mt-3 min-h-11 px-4 rounded-lg border border-white/15 text-label-sm"
-              onClick={() => {
-                setQ("");
-                setAffinity("");
-                setFocus("");
-                setJoinPolicy("");
-                setSpaceOnly(false);
-              }}
+              className="mt-3 min-h-11 rounded-lg border border-white/15 px-4 text-label-sm"
+              onClick={clearFilters}
             >
               {labels.clearFilters}
             </button>
           )}
         </div>
       ) : (
-        <ul className="grid gap-2 md:grid-cols-2">
-          {filtered.map((c) => (
+        <ul className={`grid gap-2 ${compact ? "md:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-2"}`}>
+          {listing.map((c) => (
             <li key={c.id}>
-              <ClanCard clan={c} labels={labels} />
+              <ClanCard clan={c} labels={labels.card} />
             </li>
           ))}
         </ul>
       )}
 
-      {showCreateHref && (
-        <a
-          href="#create-clan"
+      {showCreateHref && onCreateClick && (
+        <button
+          type="button"
+          onClick={onCreateClick}
           className="min-h-11 inline-flex items-center justify-center gap-2 rounded-xl border border-pokeball-red/40 bg-pokeball-red/10 px-4 text-label-md text-on-surface hover:bg-pokeball-red/15"
         >
           <span className="material-symbols-outlined text-[20px]!">add_circle</span>
           {labels.createCta}
-        </a>
+        </button>
       )}
+
+      <ClanFilterSheet
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        filters={filters}
+        onChange={setFilters}
+        labels={labels}
+        onClear={clearFilters}
+      />
     </div>
   );
 }
 
-function ClanCard({
-  clan,
+function FilterPanel({
+  filters,
+  onChange,
   labels,
-  highlight,
+  onApply,
+  onClear,
+  className,
 }: {
-  clan: DiscoveryClan;
+  filters: FilterState;
+  onChange: (next: FilterState) => void;
   labels: Labels;
-  highlight?: boolean;
+  onApply?: () => void;
+  onClear: () => void;
+  className?: string;
 }) {
-  const full = clan.memberCount >= CLAN_MAX_MEMBERS;
-  const cta =
-    full
-      ? labels.full
-      : clan.joinPolicy === "OPEN"
-        ? labels.joinOpen
-        : clan.joinPolicy === "REQUEST"
-          ? labels.requestJoin
-          : labels.inviteOnly;
+  return (
+    <div className={className}>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <FilterSelect
+          label={labels.affinity}
+          value={filters.affinity}
+          onChange={(value) => onChange({ ...filters, affinity: value as "" | ClanAffinity })}
+          options={[{ value: "", label: labels.all }, ...CLAN_AFFINITIES.map((a) => ({ value: a, label: labels.card.affinities[a] }))]}
+        />
+        <FilterSelect
+          label={labels.focus}
+          value={filters.focus}
+          onChange={(value) => onChange({ ...filters, focus: value as "" | ClanFocus })}
+          options={[{ value: "", label: labels.all }, ...CLAN_FOCUSES.map((f) => ({ value: f, label: labels.card.focuses[f] }))]}
+        />
+        <FilterSelect
+          label={labels.joinPolicy}
+          value={filters.joinPolicy}
+          onChange={(value) => onChange({ ...filters, joinPolicy: value as "" | ClanJoinPolicy })}
+          options={[
+            { value: "", label: labels.all },
+            ...CLAN_JOIN_POLICIES.map((p) => ({
+              value: p,
+              label:
+                p === "OPEN"
+                  ? labels.card.joinOpen
+                  : p === "REQUEST"
+                    ? labels.card.requestJoin
+                    : labels.card.inviteOnly,
+            })),
+          ]}
+        />
+      </div>
+      <div className="mt-3 flex gap-2">
+        {filterCount(filters) > 0 && (
+          <button type="button" onClick={onClear} className="min-h-11 rounded-lg border border-white/10 px-3 text-label-sm text-on-surface-variant">
+            {labels.clearFilters}
+          </button>
+        )}
+        {onApply && (
+          <button type="button" onClick={onApply} className="min-h-11 rounded-lg bg-pokeball-red px-4 text-label-sm text-white">
+            {labels.applyFilters}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-label-sm text-on-surface-variant">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="min-h-11 rounded-lg border border-white/10 bg-surface-container px-2 text-label-sm text-on-surface"
+      >
+        {options.map((opt) => (
+          <option key={opt.value || "all"} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function ClanFilterSheet({
+  open,
+  onClose,
+  filters,
+  onChange,
+  labels,
+  onClear,
+}: {
+  open: boolean;
+  onClose: () => void;
+  filters: FilterState;
+  onChange: (next: FilterState) => void;
+  labels: Labels;
+  onClear: () => void;
+}) {
+  const titleId = useId();
+
+  if (!open) return null;
 
   return (
-    <Link
-      href={`/clans/${clan.id}`}
-      className={`flex gap-3 rounded-xl border p-3 transition-colors ${
-        highlight
-          ? "border-pokeball-red/40 bg-black/20"
-          : "border-white/10 bg-glass-surface hover:border-pokeball-red/35"
-      }`}
-    >
-      <ClanEmblemBadge emblem={clan.emblem} size={48} title={clan.name} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-label-sm text-pokeball-red">#{clan.rank}</span>
-          <span className="text-label-md text-on-surface truncate">
-            <span className="font-mono text-pokeball-red">[{clan.tag}]</span> {clan.name}
-          </span>
+    <div className="absolute inset-0 z-20 sm:hidden" role="presentation">
+      <button
+        type="button"
+        aria-label={labels.clearFilters}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-2xl border-t border-white/12 bg-[#0b0d13]/98 backdrop-blur-xl"
+      >
+        <div className="relative flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+          <span aria-hidden className="absolute inset-x-0 top-1.5 mx-auto h-1 w-10 rounded-full bg-white/20" />
+          <h2 id={titleId} className="text-label-md font-semibold text-on-surface">
+            {labels.filters}
+          </h2>
+          <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-md border border-white/10">
+            <span className="material-symbols-outlined text-[20px]!">close</span>
+          </button>
         </div>
-        {clan.motto ? (
-          <p className="text-label-sm text-on-surface-variant italic truncate">“{clan.motto}”</p>
-        ) : null}
-        <div className="mt-1 flex flex-wrap items-center gap-2 text-label-sm text-on-surface-variant">
-          <ClanAffinityChip
-            affinity={clan.affinity}
-            label={labels.affinities[clan.affinity]}
-            size="sm"
-          />
-          <span>{labels.focuses[clan.focus]}</span>
-          <span>
-            {labels.members}: {clan.memberCount}/{CLAN_MAX_MEMBERS}
-          </span>
-          <span>
-            {labels.power}: {clan.power}
-          </span>
-          {clan.minPlayerLevel != null && (
-            <span>
-              {labels.minLevel} {clan.minPlayerLevel}
-            </span>
-          )}
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <FilterPanel filters={filters} onChange={onChange} labels={labels} onClear={onClear} />
         </div>
-        <span className="mt-2 inline-flex min-h-9 items-center rounded-lg border border-white/15 px-2.5 text-label-sm text-on-surface">
-          {cta}
-        </span>
+        <div className="shrink-0 border-t border-white/10 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-11 w-full rounded-lg bg-pokeball-red text-label-sm font-semibold text-white"
+          >
+            {labels.applyFilters}
+          </button>
+        </div>
       </div>
-    </Link>
+    </div>
   );
 }

@@ -55,36 +55,38 @@ export function ClanEmblemEditor({
       </div>
 
       <div
-        className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 max-h-[22rem] overflow-y-auto pr-1"
+        className="max-h-[22rem] overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-2"
         role="listbox"
         aria-label={labels.pick}
       >
-        {CLAN_EMBLEM_PRESET_IDS.map((id) => {
-          const active = selectedId === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              role="option"
-              aria-selected={active}
-              onClick={() => select(id)}
-              className={`relative aspect-square min-h-11 rounded-xl border bg-transparent transition-colors ${
-                active
-                  ? "border-pokeball-red/70 ring-2 ring-pokeball-red/40"
-                  : "border-white/10 hover:border-white/30"
-              }`}
-            >
-              {/* img nativo: next/image comprime y aplasta los bordes geométricos */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={clanEmblemPresetSrc(id)}
-                alt={id}
-                className="absolute inset-0 m-auto h-[86%] w-[86%] object-contain"
-                draggable={false}
-              />
-            </button>
-          );
-        })}
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
+          {CLAN_EMBLEM_PRESET_IDS.map((id) => {
+            const active = selectedId === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => select(id)}
+                className={`flex aspect-square min-h-11 items-center justify-center rounded-xl border p-1.5 transition-colors ${
+                  active
+                    ? "border-pokeball-red bg-pokeball-red/15"
+                    : "border-white/10 bg-transparent hover:border-white/30 hover:bg-white/5"
+                }`}
+              >
+                {/* img nativo: next/image comprime y aplasta los bordes geométricos */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={clanEmblemPresetSrc(id)}
+                  alt={id}
+                  className="h-full w-full object-contain"
+                  draggable={false}
+                />
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

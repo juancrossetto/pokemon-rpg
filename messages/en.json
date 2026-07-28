@@ -1188,6 +1188,7 @@
     "emptyDirectory": "No clans yet. Be the first to create one!",
     "createTitle": "Create a clan",
     "createCost": "Creating a clan costs {cost} coins.",
+    "createCostLead": "Creating a clan costs",
     "nameLabel": "Name",
     "namePlaceholder": "The Guardians",
     "tagLabel": "Tag",
@@ -1259,7 +1260,10 @@
       "statRank": "Ranking",
       "statMembers": "Members",
       "statPower": "Power",
-      "statFocus": "Focus"
+      "statFocus": "Focus",
+      "listTitle": "Clan list",
+      "buffLabel": "Buff",
+      "buffHint": "Bonus: {leftLabel} +{leftValue}% · {rightLabel} +{rightValue}%"
     },
     "invitesTitle": "Invitations",
     "inviteFrom": "From {name}",
@@ -1318,8 +1322,53 @@
     "tabs": {
       "overview": "Overview",
       "members": "Members",
+      "missions": "Missions",
+      "war": "War",
       "chat": "Chat",
-      "admin": "Admin"
+      "more": "More"
+    },
+    "landing": {
+      "subtitle": "Join other trainers and grow your community.",
+      "searchClan": "Find a clan",
+      "createClan": "Create clan",
+      "recommendedTitle": "Recommended for you",
+      "whyJoinTitle": "Why join?",
+      "listTitle": "Explore all",
+      "close": "Close",
+      "benefitMissions": "Collective missions",
+      "benefitBenefits": "Progression benefits",
+      "benefitWars": "Clan wars",
+      "benefitCommunity": "Chat and community",
+      "membersText": "{count}/{max} members",
+      "powerText": "Power {power}"
+    },
+    "hub": {
+      "level": "Level {level}",
+      "rank": "Rank #{rank}",
+      "manage": "Manage",
+      "pendingActionsTitle": "Pending actions",
+      "pendingApplications": "You have {count} applications to review.",
+      "progressHint": "Weekly clan progress: {percent}%.",
+      "nextUnlock": "Next unlock at level {level}.",
+      "activityTitle": "Recent activity",
+      "activityMembers": "Active members: {count}.",
+      "activityPower": "Total clan power: {power}.",
+      "activityBadges": "Total badges: {count}.",
+      "missionsTitle": "Clan missions",
+      "demoMissionOneTitle": "Defeat 500 enemies",
+      "demoMissionOneDesc": "Weekly collective objective.",
+      "demoMissionOneProgress": "342 / 500 · Reward: 500 clan XP",
+      "demoMissionTwoTitle": "Spend 1,000 energy",
+      "demoMissionTwoDesc": "Global member contribution.",
+      "demoMissionTwoProgress": "688 / 1000 · Reward: Common chest",
+      "warTitle": "Clan war",
+      "warSubtitle": "Compete against other clans during the season.",
+      "warStateLocked": "State: locked until level {level}.",
+      "warReqMembers": "Requirement: {count} active members.",
+      "warReqLevel": "Requirement: level {level}.",
+      "warReqRegister": "Requirement: registration open.",
+      "dangerTitle": "Danger zone",
+      "dangerHint": "Disbanding removes the clan for every member."
     },
     "wizard": {
       "next": "Next",
@@ -1330,7 +1379,8 @@
         "style": "Style",
         "rules": "Rules",
         "confirm": "Confirm"
-      }
+      },
+      "preview": "Preview"
     },
     "emblem": {
       "pick": "Pick an emblem",
@@ -1383,7 +1433,14 @@
       "benefit3": "Collective ranking without making clans mandatory.",
       "benefit4": "Foundation ready for missions, donations and wars.",
       "createCta": "Create my clan",
-      "recommended": "Featured"
+      "recommended": "Featured",
+      "viewClan": "View clan",
+      "levelLabel": "Level {level}",
+      "recommendedOpen": "Recommended: open join and has space.",
+      "recommendedNew": "Recommended: new clan with room.",
+      "recommendedDefault": "Recommended for you.",
+      "openFilters": "Filters",
+      "applyFilters": "Apply filters"
     },
     "errors": {
       "not_found": "Clan not found.",

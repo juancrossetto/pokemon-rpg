@@ -11,6 +11,7 @@ import { PokeballIcon } from "@/components/pokeball-icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { AuthBackdrop } from "@/components/auth-backdrop";
 import { AVATAR_OPTIONS } from "@/lib/avatars";
+import { markBootSplashPending } from "@/lib/boot-splash";
 
 type Gender = "male" | "female" | "unspecified";
 
@@ -66,6 +67,7 @@ export default function RegisterPage() {
       remember: "true",
       redirect: false,
     });
+    markBootSplashPending();
     router.push("/");
     router.refresh();
   }

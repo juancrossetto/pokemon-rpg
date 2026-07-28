@@ -1188,6 +1188,7 @@
     "emptyDirectory": "Ainda não há clãs. Crie o primeiro!",
     "createTitle": "Criar um clã",
     "createCost": "Criar um clã custa {cost} moedas.",
+    "createCostLead": "Criar um clã custa",
     "nameLabel": "Nome",
     "namePlaceholder": "Os Guardiões",
     "tagLabel": "Tag",
@@ -1259,7 +1260,10 @@
       "statRank": "Ranking",
       "statMembers": "Membros",
       "statPower": "Poder",
-      "statFocus": "Foco"
+      "statFocus": "Foco",
+      "listTitle": "Lista de clãs",
+      "buffLabel": "Buff",
+      "buffHint": "Bônus: {leftLabel} +{leftValue}% · {rightLabel} +{rightValue}%"
     },
     "invitesTitle": "Convites",
     "inviteFrom": "De {name}",
@@ -1318,8 +1322,53 @@
     "tabs": {
       "overview": "Resumo",
       "members": "Membros",
+      "missions": "Missões",
+      "war": "Guerra",
       "chat": "Chat",
-      "admin": "Admin"
+      "more": "Mais"
+    },
+    "landing": {
+      "subtitle": "Junte-se a outros treinadores e fortaleça sua comunidade.",
+      "searchClan": "Buscar clã",
+      "createClan": "Criar clã",
+      "recommendedTitle": "Recomendados para você",
+      "whyJoinTitle": "Por que entrar?",
+      "listTitle": "Explorar todos",
+      "close": "Fechar",
+      "benefitMissions": "Missões coletivas",
+      "benefitBenefits": "Benefícios de progressão",
+      "benefitWars": "Guerras de clãs",
+      "benefitCommunity": "Chat e comunidade",
+      "membersText": "{count}/{max} membros",
+      "powerText": "Poder {power}"
+    },
+    "hub": {
+      "level": "Nível {level}",
+      "rank": "Ranking #{rank}",
+      "manage": "Gerenciar",
+      "pendingActionsTitle": "Ações pendentes",
+      "pendingApplications": "Você tem {count} solicitações para revisar.",
+      "progressHint": "Progresso semanal do clã: {percent}%.",
+      "nextUnlock": "Próximo desbloqueio no nível {level}.",
+      "activityTitle": "Atividade recente",
+      "activityMembers": "Membros ativos: {count}.",
+      "activityPower": "Poder total do clã: {power}.",
+      "activityBadges": "Insígnias acumuladas: {count}.",
+      "missionsTitle": "Missões do clã",
+      "demoMissionOneTitle": "Derrotem 500 inimigos",
+      "demoMissionOneDesc": "Objetivo coletivo da semana.",
+      "demoMissionOneProgress": "342 / 500 · Recompensa: 500 XP de clã",
+      "demoMissionTwoTitle": "Gastem 1.000 de energia",
+      "demoMissionTwoDesc": "Contribuição global dos membros.",
+      "demoMissionTwoProgress": "688 / 1000 · Recompensa: Baú comum",
+      "warTitle": "Guerra de clãs",
+      "warSubtitle": "Compita contra outros clãs durante a temporada.",
+      "warStateLocked": "Estado: bloqueado até o nível {level}.",
+      "warReqMembers": "Requisito: {count} membros ativos.",
+      "warReqLevel": "Requisito: nível {level}.",
+      "warReqRegister": "Requisito: registro aberto.",
+      "dangerTitle": "Zona de perigo",
+      "dangerHint": "Dissolver remove o clã para todos os membros."
     },
     "wizard": {
       "next": "Próximo",
@@ -1330,7 +1379,8 @@
         "style": "Estilo",
         "rules": "Regras",
         "confirm": "Confirmar"
-      }
+      },
+      "preview": "Prévia"
     },
     "emblem": {
       "pick": "Escolha uma insígnia",
@@ -1383,7 +1433,14 @@
       "benefit3": "Ranking coletivo sem tornar o clã obrigatório.",
       "benefit4": "Base pronta para missões, doações e guerras.",
       "createCta": "Criar meu clã",
-      "recommended": "Destaque"
+      "recommended": "Destaque",
+      "viewClan": "Ver clã",
+      "levelLabel": "Nível {level}",
+      "recommendedOpen": "Recomendado: entrada aberta e com vaga.",
+      "recommendedNew": "Recomendado: clã novo com espaço.",
+      "recommendedDefault": "Recomendado para você.",
+      "openFilters": "Filtros",
+      "applyFilters": "Aplicar filtros"
     },
     "errors": {
       "not_found": "Clã não encontrado.",

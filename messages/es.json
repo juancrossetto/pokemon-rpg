@@ -1188,6 +1188,7 @@
     "emptyDirectory": "Todavía no hay clanes. ¡Creá el primero!",
     "createTitle": "Crear un clan",
     "createCost": "Crear un clan cuesta {cost} monedas.",
+    "createCostLead": "Crear un clan cuesta",
     "nameLabel": "Nombre",
     "namePlaceholder": "Los Guardianes",
     "tagLabel": "Tag",
@@ -1259,7 +1260,10 @@
       "statRank": "Ranking",
       "statMembers": "Miembros",
       "statPower": "Poder",
-      "statFocus": "Enfoque"
+      "statFocus": "Enfoque",
+      "listTitle": "Listado de clanes",
+      "buffLabel": "Buff",
+      "buffHint": "Beneficio: {leftLabel} +{leftValue}% · {rightLabel} +{rightValue}%"
     },
     "invitesTitle": "Invitaciones",
     "inviteFrom": "De {name}",
@@ -1318,8 +1322,53 @@
     "tabs": {
       "overview": "Resumen",
       "members": "Miembros",
+      "missions": "Misiones",
+      "war": "Guerra",
       "chat": "Chat",
-      "admin": "Admin"
+      "more": "Más"
+    },
+    "landing": {
+      "subtitle": "Unite a otros entrenadores y hacé crecer tu comunidad.",
+      "searchClan": "Buscar clan",
+      "createClan": "Crear clan",
+      "recommendedTitle": "Recomendados para vos",
+      "whyJoinTitle": "¿Por qué unirte?",
+      "listTitle": "Explorar todos",
+      "close": "Cerrar",
+      "benefitMissions": "Misiones colectivas",
+      "benefitBenefits": "Beneficios de progresión",
+      "benefitWars": "Guerras de clanes",
+      "benefitCommunity": "Chat y comunidad",
+      "membersText": "{count}/{max} miembros",
+      "powerText": "Poder {power}"
+    },
+    "hub": {
+      "level": "Nivel {level}",
+      "rank": "Ranking #{rank}",
+      "manage": "Gestionar",
+      "pendingActionsTitle": "Acciones pendientes",
+      "pendingApplications": "Tenés {count} solicitudes por revisar.",
+      "progressHint": "Progreso semanal del clan: {percent}%.",
+      "nextUnlock": "Próximo desbloqueo en nivel {level}.",
+      "activityTitle": "Actividad reciente",
+      "activityMembers": "Miembros activos: {count}.",
+      "activityPower": "Poder total del clan: {power}.",
+      "activityBadges": "Medallas acumuladas: {count}.",
+      "missionsTitle": "Misiones del clan",
+      "demoMissionOneTitle": "Derroten 500 enemigos",
+      "demoMissionOneDesc": "Objetivo colectivo de la semana.",
+      "demoMissionOneProgress": "342 / 500 · Recompensa: 500 XP de clan",
+      "demoMissionTwoTitle": "Consumí 1.000 de energía",
+      "demoMissionTwoDesc": "Contribución global de miembros.",
+      "demoMissionTwoProgress": "688 / 1000 · Recompensa: Cofre común",
+      "warTitle": "Guerra de clanes",
+      "warSubtitle": "Competí contra otros clanes durante la temporada.",
+      "warStateLocked": "Estado: bloqueado hasta nivel {level}.",
+      "warReqMembers": "Requisito: {count} miembros activos.",
+      "warReqLevel": "Requisito: nivel {level}.",
+      "warReqRegister": "Requisito: registro abierto.",
+      "dangerTitle": "Zona de peligro",
+      "dangerHint": "Disolver elimina el clan para todos los miembros."
     },
     "wizard": {
       "next": "Siguiente",
@@ -1330,7 +1379,8 @@
         "style": "Estilo",
         "rules": "Reglas",
         "confirm": "Confirmar"
-      }
+      },
+      "preview": "Vista previa"
     },
     "emblem": {
       "pick": "Elegí una insignia",
@@ -1383,7 +1433,14 @@
       "benefit3": "Ranking colectivo sin volver obligatorio el clan.",
       "benefit4": "Base lista para misiones, donaciones y guerras.",
       "createCta": "Crear mi clan",
-      "recommended": "Destacado"
+      "recommended": "Destacado",
+      "viewClan": "Ver clan",
+      "levelLabel": "Nivel {level}",
+      "recommendedOpen": "Recomendado: ingreso abierto y con cupo.",
+      "recommendedNew": "Recomendado: clan nuevo con espacio.",
+      "recommendedDefault": "Recomendado para vos.",
+      "openFilters": "Filtros",
+      "applyFilters": "Aplicar filtros"
     },
     "errors": {
       "not_found": "Clan no encontrado.",

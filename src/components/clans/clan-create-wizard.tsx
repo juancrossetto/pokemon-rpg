@@ -20,6 +20,7 @@ import { ClanEmblemBadge } from "@/components/clans/clan-emblem-badge";
 import { SubmitButton } from "@/components/submit-button";
 import { createClan } from "@/actions/clan";
 import { ClanAffinityChip } from "@/components/clans/clan-affinity-chip";
+import { announceCoinDelta } from "@/lib/coin-fx";
 
 type Labels = {
   steps: { identity: string; emblem: string; style: string; rules: string; confirm: string };
@@ -39,7 +40,8 @@ type Labels = {
   languageLabel: string;
   minLevelLabel: string;
   minLevelHint: string;
-  createCost: string;
+  createCostLead: string;
+  createCostAmount: number;
   createButton: string;
   creating: string;
   noFunds: string;
@@ -51,6 +53,7 @@ type Labels = {
     pick: string;
     selected: string;
   };
+  preview: string;
 };
 
 const STEPS = ["identity", "emblem", "style", "rules", "confirm"] as const;
@@ -59,10 +62,14 @@ export function ClanCreateWizard({
   locale,
   coins,
   labels,
+  compact = false,
+  inModal = false,
 }: {
   locale: string;
   coins: number;
   labels: Labels;
+  compact?: boolean;
+  inModal?: boolean;
 }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
@@ -79,10 +86,27 @@ export function ClanCreateWizard({
   const canAfford = coins >= CLAN_CREATION_COST;
   const current = STEPS[step];
 
+  const stepLabel = labels.steps[current];
+
+  function CostLine() {
+    return (
+      <p className="flex flex-wrap items-center gap-1.5 text-label-md text-on-surface-variant">
+        <span>{labels.createCostLead}</span>
+        <span className="inline-flex items-center gap-0.5 font-mono font-semibold text-electric-yellow">
+          <span className="material-symbols-outlined text-[16px]!">paid</span>
+          {labels.createCostAmount}
+        </span>
+      </p>
+    );
+  }
+
   return (
     <form
-      action={createClan.bind(null, locale)}
-      className="rounded-2xl border border-white/10 bg-glass-surface overflow-hidden"
+      action={async (formData) => {
+        if (canAfford) announceCoinDelta(-CLAN_CREATION_COST);
+        await createClan(locale, formData);
+      }}
+      className={`overflow-hidden ${inModal ? "" : "rounded-2xl border border-white/10 bg-glass-surface"}`}
     >
       <input type="hidden" name="name" value={name} />
       <input type="hidden" name="tag" value={tag} />
@@ -95,25 +119,47 @@ export function ClanCreateWizard({
       <input type="hidden" name="minPlayerLevel" value={minLevel} />
       <input type="hidden" name="emblem" value={JSON.stringify(emblem)} />
 
-      <div className="border-b border-white/5 px-4 py-3 flex gap-1 overflow-x-auto">
-        {STEPS.map((s, i) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setStep(i)}
-            className={`min-h-11 shrink-0 px-3 rounded-lg text-label-sm transition-colors ${
-              i === step
-                ? "bg-pokeball-red/20 text-on-surface border border-pokeball-red/40"
-                : "text-on-surface-variant border border-transparent hover:border-white/10"
-            }`}
-            aria-current={i === step ? "step" : undefined}
-          >
-            {i + 1}. {labels.steps[s]}
-          </button>
-        ))}
-      </div>
+      {inModal ? (
+        <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
+              {step + 1} / {STEPS.length}
+            </p>
+            <p className="text-label-md text-on-surface">{stepLabel}</p>
+          </div>
+          <div className="flex gap-1">
+            {STEPS.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 w-6 rounded-full ${i <= step ? "bg-pokeball-red" : "bg-white/10"}`}
+                aria-hidden
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className={`border-b border-white/5 px-4 ${compact ? "py-2" : "py-3"} flex gap-1 overflow-x-auto`}>
+          {STEPS.map((s, i) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStep(i)}
+              className={`min-h-11 shrink-0 px-3 rounded-lg text-label-sm transition-colors ${
+                i === step
+                  ? "bg-pokeball-red/20 text-on-surface border border-pokeball-red/40"
+                  : "text-on-surface-variant border border-transparent hover:border-white/10"
+              }`}
+              aria-current={i === step ? "step" : undefined}
+            >
+              {compact ? `${i + 1}/5` : `${i + 1}. ${labels.steps[s]}`}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="p-4 md:p-5 flex flex-col gap-4">
+      <div className={`flex flex-col gap-4 ${inModal ? "" : "p-4 md:p-5"}`}>
+        <div className={inModal ? "grid gap-4 lg:grid-cols-[1fr_16rem]" : ""}>
+          <div className="flex flex-col gap-4">
         {current === "identity" && (
           <>
             <div className="grid gap-3 md:grid-cols-[1fr_8rem]">
@@ -287,38 +333,63 @@ export function ClanCreateWizard({
           </>
         )}
 
-        {current === "confirm" && (
+        {current === "confirm" && !inModal && (
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-container/40 p-3">
               <ClanEmblemBadge emblem={emblem} size={56} />
               <div className="min-w-0">
-                <div className="text-headline-md text-on-surface truncate">
-                  <span className="font-mono text-pokeball-red">[{tag || "???"}]</span>{" "}
-                  {name || "—"}
+                <div className="truncate text-headline-md text-on-surface">
+                  <span className="font-mono text-pokeball-red">[{tag || "???"}]</span> {name || "—"}
                 </div>
                 {motto ? (
-                  <p className="text-label-sm text-on-surface-variant italic truncate">
-                    “{motto}”
-                  </p>
+                  <p className="truncate text-label-sm italic text-on-surface-variant">“{motto}”</p>
                 ) : null}
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <ClanAffinityChip
-                    affinity={affinity}
-                    label={labels.affinities[affinity]}
-                    size="sm"
-                  />
+                  <ClanAffinityChip affinity={affinity} label={labels.affinities[affinity]} size="sm" />
                   <span className="text-label-sm text-on-surface-variant">
                     {labels.focuses[focus]} · {labels.joinPolicies[joinPolicy]}
                   </span>
                 </div>
               </div>
             </div>
-            <p className="text-label-md text-on-surface-variant">{labels.createCost}</p>
+            <CostLine />
           </div>
         )}
+
+        {current === "confirm" && inModal && (
+          <div className="flex flex-col gap-4">
+            <CostLine />
+          </div>
+        )}
+          </div>
+
+          {inModal && (
+            <aside className="rounded-xl border border-white/10 bg-black/20 p-3 lg:sticky lg:top-0 lg:self-start">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
+                {labels.preview}
+              </p>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <ClanEmblemBadge emblem={emblem} size={72} />
+                <div className="min-w-0">
+                  <p className="truncate text-label-md text-on-surface">
+                    <span className="font-mono text-on-surface-variant">[{tag || "???"}]</span>{" "}
+                    {name || "—"}
+                  </p>
+                  {motto ? (
+                    <p className="truncate text-label-sm italic text-on-surface-variant">“{motto}”</p>
+                  ) : null}
+                </div>
+                <ClanAffinityChip affinity={affinity} label={labels.affinities[affinity]} size="sm" />
+                <p className="text-label-sm text-on-surface-variant">
+                  {labels.focuses[focus]} · {labels.joinPolicies[joinPolicy]}
+                </p>
+              </div>
+            </aside>
+          )}
+        </div>
       </div>
 
-      <div className="border-t border-white/5 px-4 py-3 flex items-center justify-between gap-2">
+      <div className={`flex items-center justify-between gap-2 ${inModal ? "mt-4 border-t border-white/10 pt-3" : "border-t border-white/5 px-4 py-3"}`}>
         <button
           type="button"
           disabled={step === 0}
