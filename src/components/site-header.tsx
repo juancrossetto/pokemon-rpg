@@ -12,7 +12,6 @@ import { MOBILE_BAR_GROUPS, NAV_GROUPS, visibleChildren } from "@/lib/navigation
 import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { listNotifications } from "@/lib/notifications";
-import { countPendingRewards } from "@/lib/events/state";
 import type { CombatLock } from "@/lib/battle-lock";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
@@ -63,7 +62,6 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   const notifications = session?.user
     ? await listNotifications(session.user.id)
     : null;
-  const pendingRewards = session?.user ? await countPendingRewards(session.user.id) : 0;
   const lock = combatLock;
   const lockedHref =
     lock?.kind === "battle" ? "/battle" : lock?.kind === "gym" ? `/gyms/${lock.gymId}/run` : null;
@@ -93,10 +91,9 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
     ),
     home: t("home"),
     soon: t("soon"),
-    // Un único cálculo de pendientes alimenta desktop, mobile y el dropdown:
-    // el brief pedía centralizarlo para no tener badges duplicados que se
-    // contradigan entre superficies.
-    badges: { eventsPending: pendingRewards },
+    // Eventos ya no está en la nav: sus pendientes se muestran en el home
+    // (quick action + widget), así que no hay badges que calcular acá.
+    badges: {},
   };
 
   /**

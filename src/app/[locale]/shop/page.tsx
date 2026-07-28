@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { ShopTerminal, type ShopLabels } from "@/components/shop-terminal";
+import { TradeTabs } from "@/components/trade-tabs";
 import {
   SHOP_CATEGORIES,
   itemKey,
@@ -104,6 +105,7 @@ export default async function ShopPage({
   return (
     <div className="flex-1 px-margin-mobile py-5 md:px-margin-desktop md:py-8">
       <div className="mx-auto max-w-6xl">
+        <TradeTabs active="shop" />
         <ShopTerminal
           products={products}
           labels={labels}

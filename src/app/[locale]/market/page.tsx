@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { TradeTabs } from "@/components/trade-tabs";
 import { expireDueListings } from "@/lib/market-expiry";
 import { MarketSubmitButton } from "@/components/market-submit-button";
 import { MarketSellControls } from "@/components/market-sell-controls";
@@ -139,6 +140,7 @@ export default async function MarketPage({
           se iba en márgenes. Desde `2xl` el contenedor se ensancha y la grilla
           `auto-fill` pasa sola a 4–5 columnas. */}
       <div className="mx-auto max-w-7xl 2xl:max-w-[104rem]">
+        <TradeTabs active="market" />
         <MarketHubHero listings={hubStats.listings} />
 
         {notice && (

@@ -85,14 +85,9 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/gyms",
         icon: "military_tech",
       },
-      {
-        id: "events",
-        labelKey: "events",
-        descriptionKey: "desc.events",
-        href: "/events",
-        icon: "redeem",
-        badgeKey: "eventsPending",
-      },
+      // Eventos salió de la nav primaria: el claim diario/semanal vive en el
+      // home (widget + modal + quick action con badge) y /events queda como
+      // detalle "ver todos los desafíos" accesible desde ahí.
     ],
   },
   {
