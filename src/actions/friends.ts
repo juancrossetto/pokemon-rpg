@@ -76,14 +76,17 @@ export async function sendFriendRequest(
     return { ok: false, error: "rate_limited" };
   }
 
-  let notice: "sent" | "accepted" = "sent";
-  let notify:
+  type FriendNotify =
     | { kind: "request"; toUserId: string; fromUserName: string }
-    | { kind: "accepted"; toUserId: string; friendName: string }
-    | null = null;
+    | { kind: "accepted"; toUserId: string; friendName: string };
+
+  let notice: "sent" | "accepted" = "sent";
+  // El resultado sale de la TX (no mutar let desde el callback): si no, tsc
+  // estrecha `notify` a `never` y el build de Vercel falla.
+  let notify: FriendNotify | null = null;
 
   try {
-    await prisma.$transaction(async (tx) => {
+    const outcome = await prisma.$transaction(async (tx) => {
       await lockUsers(tx, userId, targetUserId);
 
       const [me, target] = await Promise.all([
@@ -137,13 +140,14 @@ export async function sendFriendRequest(
           data: { status: "ACCEPTED", respondedAt: new Date() },
         });
         await tx.friendship.create({ data: { userAId: a, userBId: b } });
-        notify = {
-          kind: "accepted",
-          toUserId: targetUserId,
-          friendName: me.username,
+        return {
+          notice: "accepted" as const,
+          notify: {
+            kind: "accepted" as const,
+            toUserId: targetUserId,
+            friendName: me.username,
+          },
         };
-        notice = "accepted";
-        return;
       }
 
       const pending = await tx.friendRequest.findFirst({
@@ -165,13 +169,17 @@ export async function sendFriendRequest(
       await tx.friendRequest.create({
         data: { fromUserId: userId, toUserId: targetUserId },
       });
-      notify = {
-        kind: "request",
-        toUserId: targetUserId,
-        fromUserName: me.username,
+      return {
+        notice: "sent" as const,
+        notify: {
+          kind: "request" as const,
+          toUserId: targetUserId,
+          fromUserName: me.username,
+        },
       };
-      notice = "sent";
     });
+    notice = outcome.notice;
+    notify = outcome.notify;
   } catch (e) {
     console.error("[friends] sendFriendRequest failed", e);
     const code = e instanceof Error ? e.message : "invalid";
