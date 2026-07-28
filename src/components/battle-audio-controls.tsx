@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+  DEFAULT_BATTLE_BGM_VOLUME,
   getBattleBgmVolume,
   isBattleBgmMuted,
   resumeBattleBgm,
@@ -12,6 +13,7 @@ import {
   type BattleBgmKind,
 } from "@/lib/battle-bgm";
 import {
+  DEFAULT_BATTLE_SFX_VOLUME,
   getBattleSfxVolume,
   isBattleSfxMuted,
   setBattleSfxMuted,
@@ -25,11 +27,19 @@ import {
  */
 export function BattleAudioControls({ bgmKind }: { bgmKind: BattleBgmKind }) {
   const t = useTranslations("battle");
-  const [musicMuted, setMusicMuted] = useState(() => isBattleBgmMuted());
-  const [musicVolume, setMusicVolume] = useState(() => getBattleBgmVolume());
-  const [sfxMuted, setSfxMutedState] = useState(() => isBattleSfxMuted());
-  const [sfxVolume, setSfxVolumeState] = useState(() => getBattleSfxVolume());
+  // Defaults estables (SSR = cliente) — localStorage se aplica post-mount.
+  const [musicMuted, setMusicMuted] = useState(false);
+  const [musicVolume, setMusicVolume] = useState(DEFAULT_BATTLE_BGM_VOLUME);
+  const [sfxMuted, setSfxMutedState] = useState(false);
+  const [sfxVolume, setSfxVolumeState] = useState(DEFAULT_BATTLE_SFX_VOLUME);
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setMusicMuted(isBattleBgmMuted());
+    setMusicVolume(getBattleBgmVolume());
+    setSfxMutedState(isBattleSfxMuted());
+    setSfxVolumeState(getBattleSfxVolume());
+  }, []);
 
   function ensurePlaying() {
     unlockBattleAudio();

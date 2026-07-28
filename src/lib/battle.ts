@@ -157,8 +157,19 @@ export interface TurnEvent {
   itemHpAfter?: number;
 }
 
+/**
+ * PP actual de un movimiento.
+ * - `null`/`undefined`: legacy sin valor → se trata como lleno (max).
+ * - `0`: agotado (vacío).
+ * - `> 0`: clamp al máximo.
+ *
+ * Nota: el default de Prisma era 0 = “sin inicializar / lleno”. Eso chocaba con
+ * gastar el último PP. Los creates siempre setean max; hay backfill SQL para
+ * filas legacy en 0.
+ */
 export function effectivePp(currentPp: number | null | undefined, maxPp: number | null | undefined): number {
   const max = maxPp ?? 20;
-  if (currentPp == null || currentPp <= 0) return max;
+  if (currentPp == null) return max;
+  if (currentPp <= 0) return 0;
   return Math.min(currentPp, max);
 }

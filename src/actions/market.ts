@@ -107,6 +107,7 @@ export async function listPokemon(locale: string, formData: FormData) {
             select: { id: true, status: true },
           },
           battleSessions: { where: { status: "ACTIVE" }, select: { id: true } },
+          moves: { select: { moveId: true } },
         },
       });
       if (!instance) throw new MarketError("not_found");
@@ -118,6 +119,7 @@ export async function listPokemon(locale: string, formData: FormData) {
       }
       if (instance.battleSessions.length > 0) throw new MarketError("in_battle");
       if (instance.isTradeLocked) throw new MarketError("trade_locked");
+      if (instance.moves.length === 0) throw new MarketError("no_moves");
 
       // No podés quedarte sin equipo: siempre tiene que quedar al menos
       // un Pokémon en un slot activo.

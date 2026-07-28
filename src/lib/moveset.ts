@@ -11,5 +11,14 @@ export async function getMovesetForLevel(speciesId: number, level: number): Prom
     orderBy: { learnLevel: "desc" },
     take: MAX_MOVES,
   });
-  return learnable.map((m) => m.moveId);
+  if (learnable.length > 0) return learnable.map((m) => m.moveId);
+
+  // Fallback: si no hay learnset por nivel (seed incompleto), cualquier
+  // movimiento LEVEL_UP de la especie — evita mones sin ataques.
+  const anyLevelUp = await prisma.speciesMove.findMany({
+    where: { speciesId, method: "LEVEL_UP" },
+    orderBy: [{ learnLevel: "asc" }, { moveId: "asc" }],
+    take: MAX_MOVES,
+  });
+  return anyLevelUp.map((m) => m.moveId);
 }

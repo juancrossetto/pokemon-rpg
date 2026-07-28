@@ -13,7 +13,7 @@ export type ResultBgmKind = "victory" | "defeat";
 
 const STORAGE_MUTE = "battle-bgm-muted";
 const STORAGE_VOLUME = "battle-bgm-volume";
-const DEFAULT_VOLUME = 0.22;
+export const DEFAULT_BATTLE_BGM_VOLUME = 0.22;
 
 let audio: HTMLAudioElement | null = null;
 let currentKind: BattleBgmKind | null = null;
@@ -35,11 +35,11 @@ export function isBattleBgmMuted(): boolean {
 }
 
 export function getBattleBgmVolume(): number {
-  if (typeof window === "undefined") return DEFAULT_VOLUME;
+  if (typeof window === "undefined") return DEFAULT_BATTLE_BGM_VOLUME;
   const raw = window.localStorage.getItem(STORAGE_VOLUME);
-  if (raw == null) return DEFAULT_VOLUME;
+  if (raw == null) return DEFAULT_BATTLE_BGM_VOLUME;
   const n = Number(raw);
-  if (!Number.isFinite(n)) return DEFAULT_VOLUME;
+  if (!Number.isFinite(n)) return DEFAULT_BATTLE_BGM_VOLUME;
   return Math.min(1, Math.max(0, n));
 }
 

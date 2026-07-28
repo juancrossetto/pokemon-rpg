@@ -324,30 +324,32 @@ export function NotificationsBell({
         <div
           role="dialog"
           aria-label={t("title")}
-          className="absolute right-0 top-full z-[80] mt-2 flex w-[min(94vw,400px)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#070a10]/96 shadow-[0_28px_80px_rgba(0,0,0,0.65)] backdrop-blur-2xl"
+          className="fixed inset-x-3 top-[calc(3.5rem+env(safe-area-inset-top)+0.35rem)] z-[80] flex max-h-[min(78dvh,560px)] w-auto flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#070a10]/96 shadow-[0_28px_80px_rgba(0,0,0,0.65)] backdrop-blur-2xl xl:absolute xl:inset-x-auto xl:right-0 xl:top-full xl:mt-2 xl:max-h-none xl:w-[min(94vw,400px)]"
         >
-          <div className="relative overflow-hidden border-b border-white/10 px-4 py-3">
+          <div className="relative shrink-0 border-b border-white/10 px-4 pb-3 pt-4">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-pokeball-red/15 via-transparent to-electric-yellow/10" />
-            <div className="relative flex items-center justify-between gap-2">
-              <div>
-                <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-electric-yellow/80">
-                  {t("eyebrow")}
-                </p>
-                <h2 className="text-[17px] font-semibold tracking-tight text-white">{t("title")}</h2>
+            <div className="relative space-y-1">
+              <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-electric-yellow/80">
+                {t("eyebrow")}
+              </p>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="min-w-0 text-[17px] font-semibold tracking-tight text-white">
+                  {t("title")}
+                </h2>
+                {unread > 0 && (
+                  <button
+                    type="button"
+                    onClick={markAllRead}
+                    className="shrink-0 rounded-md border border-white/12 bg-white/5 px-2.5 py-1.5 text-[11px] font-medium leading-none text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
+                  >
+                    {t("markAllRead")}
+                  </button>
+                )}
               </div>
-              {unread > 0 && (
-                <button
-                  type="button"
-                  onClick={markAllRead}
-                  className="rounded-md border border-white/12 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
-                >
-                  {t("markAllRead")}
-                </button>
-              )}
             </div>
           </div>
 
-          <ul className="max-h-[min(72vh,480px)] space-y-2 overflow-y-auto p-2.5">
+          <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2.5 xl:max-h-[min(72vh,480px)]">
             {items.length === 0 ? (
               <li className="rounded-xl border border-dashed border-white/10 px-4 py-12 text-center text-label-sm text-on-surface-variant">
                 {t("empty")}

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { attemptCapture as rollCapture } from "@/lib/capture";
 import type { TurnEvent } from "@/lib/battle";
 import { getMovesetForLevel } from "@/lib/moveset";
-import { calculateMaxHp, calculateStat, xpForLevel } from "@/lib/stats";
+import { calculateMaxHp, calculateStat, unspentPointsForLevel, xpForLevel } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { captureStatusBonus } from "@/lib/status";
 import { getZoneContext } from "@/lib/zone-progress";
@@ -110,6 +110,8 @@ export async function attemptCapture(
         teamSlot: openSlot,
         // El variocolor se decidió al generar el encuentro; acá solo viaja.
         isShiny: battle.wildIsShiny,
+        // Mismo pool que si hubiera subido 1→L: el jugador decide cómo gastarlo.
+        unspentPoints: unspentPointsForLevel(battle.wildLevel),
         moves: {
           create: moveIds.map((moveId, i) => {
             const m = moves.find((x) => x.id === moveId);

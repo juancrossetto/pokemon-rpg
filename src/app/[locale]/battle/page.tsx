@@ -3,6 +3,7 @@ import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
+import { effectivePp } from "@/lib/battle";
 import { getCurrentEnergy } from "@/lib/energy";
 import { getActiveGymRun } from "@/lib/battle-lock";
 import { BattleScreen } from "@/components/battle-screen";
@@ -353,7 +354,7 @@ export default async function BattlePage({
         name: m.move.name,
         type: m.move.type,
         power: m.move.power,
-        pp: m.currentPp <= 0 ? m.move.pp : Math.min(m.currentPp, m.move.pp),
+        pp: effectivePp(m.currentPp, m.move.pp),
         maxPp: m.move.pp,
       })),
       initialLog: battle.log,

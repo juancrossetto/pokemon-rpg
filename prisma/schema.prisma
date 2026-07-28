@@ -247,7 +247,7 @@ model PokemonInstance {
   ptStrength     Int @default(0) // ataque
   ptSpeed        Int @default(0) // orden de turnos
   ptDexterity    Int @default(0) // defensa
-  ptIntelligence Int @default(0) // desbloquea movimientos + xp
+  ptIntelligence Int @default(0) // Sp. Atk y Sp. Def
   ptConstitution Int @default(0) // HP
 
   // Objeto equipado (Leftovers, Choice Band, etc.) — efecto real en batalla,
@@ -315,7 +315,7 @@ model PokemonMove {
   pokemonInstanceId String
   moveId            Int
   slot              Int // 1-4
-  currentPp         Int    @default(0) // se setea al aprender; 0 se trata como "lleno" hasta la 1ª batalla
+  currentPp         Int    @default(0) // 0 = agotado. Al aprender se setea al max PP del move.
 
   pokemon PokemonInstance @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
   move    Move            @relation(fields: [moveId], references: [id])

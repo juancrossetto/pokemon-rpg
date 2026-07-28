@@ -396,10 +396,7 @@ export async function submitBattleMove(
 
   if (playerActed && playerMoveSnapshot.id !== STRUGGLE_MOVE.id) {
     const maxPp = chosenMove.move.pp ?? 20;
-    const current =
-      typeof chosenMove.currentPp === "number" && chosenMove.currentPp > 0
-        ? chosenMove.currentPp
-        : maxPp;
+    const current = effectivePp(chosenMove.currentPp, maxPp);
     const nextPp = Math.max(0, current - 1);
     for (const e of events) {
       if (e.side === "player" && !e.skipped) e.playerPpAfter = nextPp;
@@ -424,10 +421,7 @@ export async function submitBattleMove(
       : null);
 
   const spentMaxPp = chosenMove.move.pp ?? 20;
-  const spentCurrent =
-    typeof chosenMove.currentPp === "number" && chosenMove.currentPp > 0
-      ? chosenMove.currentPp
-      : spentMaxPp;
+  const spentCurrent = effectivePp(chosenMove.currentPp, spentMaxPp);
   const spentPlayerPp =
     disobeyed || !playerActed || playerMoveSnapshot.id === STRUGGLE_MOVE.id
       ? null

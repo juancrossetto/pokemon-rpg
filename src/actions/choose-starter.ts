@@ -3,7 +3,7 @@
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { calculateMaxHp, xpForLevel } from "@/lib/stats";
+import { calculateMaxHp, unspentPointsForLevel, xpForLevel } from "@/lib/stats";
 import { STARTER_SPECIES_IDS, rivalStarterFor } from "@/lib/starters";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
@@ -72,6 +72,7 @@ export async function chooseStarter(speciesId: number, locale: string) {
         xp: xpForLevel(STARTER_LEVEL),
         currentHp,
         teamSlot: 1,
+        unspentPoints: unspentPointsForLevel(STARTER_LEVEL),
         moves: {
           create: moveIds.map((moveId, i) => {
             const m = moves.find((x) => x.id === moveId);

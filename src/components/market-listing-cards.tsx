@@ -449,6 +449,26 @@ export async function MarketPokemonCard(props: PokemonCardProps) {
         </span>
       </p>
 
+      <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-on-surface-variant">
+        <span className="shrink-0">
+          {t("investedPoints", { count: invested })}
+        </span>
+        {pokemon.unspentPoints > 0 ? (
+          <span className="shrink-0 text-tertiary">
+            {t("unspentPoints", { count: pokemon.unspentPoints })}
+          </span>
+        ) : null}
+      </p>
+
+      {pokemon.moves.length > 0 ? (
+        <p className="mt-1 line-clamp-2 text-[10px] capitalize text-on-surface-variant">
+          <span className="font-mono uppercase tracking-wide">{t("moves")}: </span>
+          {pokemon.moves.map((m) => m.move.name.replace(/-/g, " ")).join(" · ")}
+        </p>
+      ) : (
+        <p className="mt-1 text-[10px] text-error/80">{t("noMovesListed")}</p>
+      )}
+
       <div className="mt-auto flex flex-col gap-2 border-t border-white/[0.08] pt-2.5">
         <PriceRow price={props.price} quantity={1} showUnit={false} />
         <MetaRow seller={props.seller} expiresAt={props.expiresAt} />

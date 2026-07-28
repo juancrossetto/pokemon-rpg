@@ -16,6 +16,8 @@ export const MARKET_ERRORS = [
   "insufficient_coins",
   "insufficient_fee",
   "rate_limited",
+  "trade_locked",
+  "no_moves",
 ] as const;
 
 export const MARKET_NOTICES = [

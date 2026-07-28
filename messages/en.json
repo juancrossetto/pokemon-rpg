@@ -396,6 +396,11 @@
     "allocateReset": "Reset",
     "allocateConfirm": "Confirm (+{count})",
     "allocateSaving": "Saving…",
+    "allocateMax": "Max",
+    "allocateAddFive": "+5",
+    "allocateAddTen": "+10",
+    "allocateAmount": "Amount to assign",
+    "allocateViewOnly": "Current attributes",
     "allocateErrors": {
       "unauthorized": "You need to sign in",
       "not_found": "Pokémon not found",
@@ -930,6 +935,7 @@
       "in_battle": "You can't sell a Pokémon in the middle of a battle.",
       "last_team_member": "You can't sell your last active Pokémon.",
       "trade_locked": "That Pokémon is locked from trading. Unlock it from Home.",
+      "no_moves": "You can't sell a Pokémon with no moves. Teach it at least one.",
       "not_enough_items": "You don't have enough units of that item.",
       "not_available": "That listing is no longer available.",
       "own_listing": "You can't buy your own listing.",
@@ -939,6 +945,7 @@
       "breeding": "It is incubating an egg: cannot be sold."
     },
     "moves": "Moves",
+    "noMovesListed": "No moves",
     "unitPrice": "{price} each",
     "expiresInHours": "Expires in {hours, plural, =1 {1 hour} other {# hours}}",
     "expiresSoon": "Expires in under an hour",

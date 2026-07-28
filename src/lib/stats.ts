@@ -24,6 +24,16 @@ export function xpToNextLevel(currentXp: number, level: number): number {
 /** Puntos que gana un Pokémon al subir de nivel (dossier: asignación manual). */
 export const UNSPENT_POINTS_PER_LEVEL = 3;
 
+/**
+ * Pool de puntos que “debería” haber acumulado un mon al llegar a `level`
+ * subiendo desde 1 (sin contar herencia de cría). Se usa al capturar / starter /
+ * eclosionar para no dejar high-level con 0 unspent.
+ */
+export function unspentPointsForLevel(level: number): number {
+  const safe = Math.max(1, Math.min(MAX_POKEMON_LEVEL, Math.floor(level)));
+  return (safe - 1) * UNSPENT_POINTS_PER_LEVEL;
+}
+
 /** Nivel máximo de un Pokémon (como en los juegos clásicos). */
 export const MAX_POKEMON_LEVEL = 100;
 

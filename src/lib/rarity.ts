@@ -66,6 +66,6 @@ export function pokemonRarity(input: {
 
 /** % de entrenamiento aproximado (no hay IVs en el esquema). */
 export function trainingPercent(invested: number, level: number): number {
-  const expected = Math.max(1, (level - 1) * 2);
+  const expected = Math.max(1, (level - 1) * 3);
   return Math.min(100, Math.round((invested / expected) * 100));
 }

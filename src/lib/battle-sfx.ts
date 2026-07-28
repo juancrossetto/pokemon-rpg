@@ -42,7 +42,7 @@ const SAMPLE_BASE = "/audio/battle/sfx";
 const SAMPLE_EXT = "wav";
 const STORAGE_MUTE = "battle-sfx-muted";
 const STORAGE_VOLUME = "battle-sfx-volume";
-const DEFAULT_SFX_VOLUME = 0.4;
+export const DEFAULT_BATTLE_SFX_VOLUME = 0.4;
 
 /** Clips que conviene tener listos al abrir la arena (tipos + impacto). */
 const BATTLE_PRELOAD: SfxKind[] = [
@@ -95,11 +95,11 @@ export function setBattleSfxMuted(muted: boolean) {
 }
 
 export function getBattleSfxVolume(): number {
-  if (typeof window === "undefined") return DEFAULT_SFX_VOLUME;
+  if (typeof window === "undefined") return DEFAULT_BATTLE_SFX_VOLUME;
   const raw = window.localStorage.getItem(STORAGE_VOLUME);
-  if (raw == null) return DEFAULT_SFX_VOLUME;
+  if (raw == null) return DEFAULT_BATTLE_SFX_VOLUME;
   const n = Number(raw);
-  if (!Number.isFinite(n)) return DEFAULT_SFX_VOLUME;
+  if (!Number.isFinite(n)) return DEFAULT_BATTLE_SFX_VOLUME;
   return Math.min(1, Math.max(0, n));
 }
 

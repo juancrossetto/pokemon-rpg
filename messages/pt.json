@@ -396,6 +396,11 @@
     "allocateReset": "Reiniciar",
     "allocateConfirm": "Confirmar (+{count})",
     "allocateSaving": "Salvando…",
+    "allocateMax": "Máx",
+    "allocateAddFive": "+5",
+    "allocateAddTen": "+10",
+    "allocateAmount": "Quantidade a atribuir",
+    "allocateViewOnly": "Atributos atuais",
     "allocateErrors": {
       "unauthorized": "Você precisa entrar",
       "not_found": "Pokémon não encontrado",
@@ -930,6 +935,7 @@
       "in_battle": "Você não pode vender um Pokémon no meio de uma batalha.",
       "last_team_member": "Você não pode vender seu último Pokémon ativo.",
       "trade_locked": "Esse Pokémon está bloqueado para venda. Desbloqueie na Início.",
+      "no_moves": "Não pode vender um Pokémon sem movimentos. Ensine pelo menos um.",
       "not_enough_items": "Você não tem unidades suficientes desse item.",
       "not_available": "Esse anúncio não está mais disponível.",
       "own_listing": "Você não pode comprar seu próprio anúncio.",
@@ -939,6 +945,7 @@
       "breeding": "Está chocando um ovo: não pode ser vendido."
     },
     "moves": "Movimentos",
+    "noMovesListed": "Sem movimentos",
     "unitPrice": "{price} cada",
     "expiresInHours": "Expira em {hours, plural, =1 {1 hora} other {# horas}}",
     "expiresSoon": "Expira em menos de uma hora",

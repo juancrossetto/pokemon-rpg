@@ -50,10 +50,14 @@ const STATUS_MS = 620;
 const MISS_MS = 500;
 /** Beat aparte para burn/poison: que no se confunda con el daño del golpe. */
 const RESIDUAL_MS = 720;
-const BALL_TRAVEL_MS = 500;
-const BALL_WOBBLE_MS = 1100;
-const BALL_CATCH_MS = 550;
-const BALL_BREAK_MS = 450;
+const BALL_TRAVEL_MS = 620;
+/** Un temblor individual (izquierda-derecha-asienta). */
+const BALL_SHAKE_MS = 720;
+/** Pausa entre temblores — genera tensión. */
+const BALL_SHAKE_GAP_MS = 320;
+const BALL_ABSORB_MS = 280;
+const BALL_CATCH_MS = 900;
+const BALL_BREAK_MS = 520;
 const FAINT_MS = 1100;
 const RECALL_MS = 450;
 const ITEM_USE_MS = 550;
@@ -342,7 +346,12 @@ export function BattleArena({
   const [capturedInfo, setCapturedInfo] = useState<CapturedPokemonInfo | null>(null);
   const [nicknameInput, setNicknameInput] = useState("");
   const [savingNickname, setSavingNickname] = useState(false);
-  const [captureBall, setCaptureBall] = useState<"throw" | "wobble" | "success" | "fail" | null>(null);
+  const [captureBall, setCaptureBall] = useState<
+    "throw" | "idle" | "wobble" | "success" | "fail" | null
+  >(null);
+  /** Nombre del ítem lanzado — para pintar Ultra/Great/Master en la animación. */
+  const [captureBallName, setCaptureBallName] = useState<string | null>(null);
+  const [captureShakeKey, setCaptureShakeKey] = useState(0);
   // Sacudida/flash del golpe escalados según % de HP máximo que representó
   // el daño — un golpe débil ya no se ve idéntico a uno que casi noquea.
   const [impactIntensity, setImpactIntensity] = useState(1);
@@ -870,32 +879,54 @@ export function BattleArena({
       prev.map((b) => (b.itemId === itemId ? { ...b, quantity: b.quantity - 1 } : b)).filter((b) => b.quantity > 0),
     );
 
+    // Tirada en paralelo al viaje de la ball — el resultado manda los temblores.
+    const resultPromise = attemptCapture(battleId, itemId, locale);
+
+    setCaptureBallName(ballName);
     setCaptureBall("throw");
     await delay(BALL_TRAVEL_MS);
-    setCaptureBall("wobble");
-    await delay(BALL_WOBBLE_MS);
+    setCaptureBall("idle");
+    await delay(BALL_ABSORB_MS);
 
-    const result = await attemptCapture(battleId, itemId, locale);
+    const result = await resultPromise;
     if (!result) {
       setCaptureBall(null);
+      setCaptureBallName(null);
       setIsAnimating(false);
       return;
     }
 
+    // Hasta 3 temblores visibles; el 4º check es el “click” de captura.
+    const visibleShakes = Math.min(result.shakes, 3);
+    for (let i = 0; i < visibleShakes; i++) {
+      setCaptureShakeKey((k) => k + 1);
+      setCaptureBall("wobble");
+      playBattleSfx("ball");
+      await delay(BALL_SHAKE_MS);
+      setCaptureBall("idle");
+      if (i < visibleShakes - 1 || result.caught) {
+        await delay(BALL_SHAKE_GAP_MS);
+      }
+    }
+
     if (result.caught) {
       setCaptureBall("success");
+      playBattleSfx("crit");
       await delay(BALL_CATCH_MS);
       appendLog(`¡Atrapaste a ${activeWild.name}!`, "player");
       setCapturedInfo(result.capturedPokemon);
       setNicknameInput("");
       setCaptureBall(null);
+      setCaptureBallName(null);
       setIsAnimating(false);
       return;
     }
 
     setCaptureBall("fail");
+    playBattleSfx("miss");
     await delay(BALL_BREAK_MS);
     setCaptureBall(null);
+    setCaptureBallName(null);
     appendLog(`¡${activeWild.name} se liberó!`, "wild");
     if (result.counterAttack) {
       await playEvent(result.counterAttack);
@@ -907,7 +938,6 @@ export function BattleArena({
     } else {
       setView(defaultView);
     }
-
     setIsAnimating(false);
   }
 
@@ -1301,7 +1331,8 @@ export function BattleArena({
 
   const seFlash = moveFx?.mode === "hit" && (moveFx.effectiveness ?? 1) > 1;
   const physicalLunge = moveFx?.mode === "hit" && moveFx.category === "PHYSICAL";
-  const wildAbsorbedByBall = captureBall === "wobble" || captureBall === "success";
+  const wildAbsorbedByBall =
+    captureBall === "idle" || captureBall === "wobble" || captureBall === "success";
   const playerIdle =
     !attackingSide && !shakingSide && !faintingSide && !playerEntering && !playerHealing && !ballAnim;
   const wildIdle =
@@ -1327,7 +1358,7 @@ export function BattleArena({
     shakingSide === "wild" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "wild" ? "sprite-faint" : "",
     wildEntering ? "sprite-enter" : "",
-    wildAbsorbedByBall ? "sprite-recall" : "",
+    wildAbsorbedByBall ? "sprite-absorb-ball" : "",
     captureBall === "fail" ? "sprite-enter" : "",
     wildIdle ? "sprite-idle-bob" : "",
   ]
@@ -1471,20 +1502,35 @@ export function BattleArena({
               />
             )}
 
-            {captureBall && (
+            {captureBall && captureBallName && (
               <div
-                key={captureBall}
-                className={`absolute w-10 h-10 pointer-events-none z-20 ${
+                key={`${captureBall}-${captureShakeKey}`}
+                className={`absolute pointer-events-none z-20 ${
                   captureBall === "throw"
-                    ? "ball-throw-travel"
-                    : captureBall === "wobble"
-                      ? "ball-wobble"
-                      : captureBall === "success"
-                        ? "ball-catch-flash"
-                        : "ball-break"
+                    ? "ball-throw-travel w-10 h-10"
+                    : captureBall === "idle"
+                      ? "ball-capture-idle w-9 h-9"
+                      : captureBall === "wobble"
+                        ? "ball-shake-once w-9 h-9"
+                        : captureBall === "success"
+                          ? "ball-catch-flash w-11 h-11"
+                          : "ball-break w-10 h-10"
                 }`}
               >
-                <PokeballIcon className="w-full h-full drop-shadow-[0_0_8px_rgba(238,21,21,0.6)]" />
+                {/* eslint-disable-next-line @next/next/no-img-element -- item sprite CDN */}
+                <img
+                  src={itemSpriteUrl(captureBallName)}
+                  alt=""
+                  aria-hidden
+                  className="w-full h-full object-contain [image-rendering:pixelated] drop-shadow-[0_4px_8px_rgba(0,0,0,0.45)]"
+                />
+                {captureBall === "success" && (
+                  <>
+                    <span className="ball-catch-ring" aria-hidden />
+                    <span className="ball-catch-ring ball-catch-ring-delay" aria-hidden />
+                  </>
+                )}
+                {captureBall === "fail" && <span className="ball-break-burst" aria-hidden />}
               </div>
             )}
 

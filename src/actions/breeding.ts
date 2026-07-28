@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { lockUsers } from "@/lib/db-locks";
 import { blockIfInCombat } from "@/lib/battle-lock";
-import { calculateMaxHp, xpForLevel } from "@/lib/stats";
+import { calculateMaxHp, unspentPointsForLevel, xpForLevel } from "@/lib/stats";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { rollShiny } from "@/lib/shiny";
 import { TEAM_SIZE } from "@/lib/market-rules";
@@ -143,6 +143,8 @@ export async function hatchEgg(
         ptDexterity: egg.ptDexterity,
         ptIntelligence: egg.ptIntelligence,
         ptConstitution: egg.ptConstitution,
+        // Herencia ya viene en pt*; el unspent es el pool de 1→HATCH_LEVEL.
+        unspentPoints: unspentPointsForLevel(HATCH_LEVEL),
         moves: {
           create: moveIds.map((moveId, i) => ({
             moveId,

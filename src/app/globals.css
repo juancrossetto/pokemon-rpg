@@ -789,102 +789,191 @@ body {
   animation: pokeball-appear 0.25s ease-out, pokeball-pulse 0.7s ease-in-out 0.25s infinite;
 }
 
-/* Captura: la ball viaja del jugador al rival (arco + giro), se queda
-   tambaleando en su lugar (el rival se "esconde" reusando sprite-recall),
-   y termina en un destello dorado (atrapado) o se abre y libera al rival
-   (falló). */
+/* Captura: throw en arco → aterriza en el piso del rival → N temblores →
+   click dorado (atrapado) o rotura (escapó).
+   En reposo usamos translate(-50%, -100%) para apoyar la base en el suelo. */
 @keyframes ball-throw-travel {
   0% {
-    left: 16%;
-    top: 75%;
+    left: 22%;
+    top: 82%;
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.6) rotate(0deg);
+    transform: translate(-50%, -50%) scale(0.55) rotate(0deg);
   }
-  12% {
+  10% {
     opacity: 1;
   }
-  50% {
-    left: 48%;
-    top: 14%;
-    transform: translate(-50%, -50%) scale(1) rotate(360deg);
+  55% {
+    left: 62%;
+    top: 22%;
+    transform: translate(-50%, -50%) scale(1.05) rotate(420deg);
   }
   100% {
-    left: 80%;
-    top: 32%;
+    left: 76%;
+    top: 52%;
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1) rotate(720deg);
+    transform: translate(-50%, -100%) scale(1) rotate(720deg);
   }
 }
 .ball-throw-travel {
-  animation: ball-throw-travel 0.5s ease-out forwards;
+  animation: ball-throw-travel 0.62s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-@keyframes ball-wobble {
-  0%,
+.ball-capture-idle {
+  left: 76%;
+  top: 52%;
+  transform: translate(-50%, -100%);
+  transform-origin: center bottom;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
+}
+
+@keyframes ball-shake-once {
+  0% {
+    transform: translate(-50%, -100%) rotate(0deg);
+  }
+  18% {
+    transform: translate(-50%, -100%) rotate(-26deg);
+  }
+  36% {
+    transform: translate(-50%, -100%) rotate(22deg);
+  }
+  54% {
+    transform: translate(-50%, -100%) rotate(-14deg);
+  }
+  72% {
+    transform: translate(-50%, -100%) rotate(8deg);
+  }
+  88% {
+    transform: translate(-50%, -100%) rotate(-3deg);
+  }
   100% {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  15% {
-    transform: translate(-50%, -50%) rotate(-22deg);
-  }
-  30% {
-    transform: translate(-50%, -50%) rotate(18deg);
-  }
-  45% {
-    transform: translate(-50%, -50%) rotate(-14deg);
-  }
-  60% {
-    transform: translate(-50%, -50%) rotate(10deg);
-  }
-  75% {
-    transform: translate(-50%, -50%) rotate(-6deg);
+    transform: translate(-50%, -100%) rotate(0deg);
   }
 }
-.ball-wobble {
-  left: 80%;
-  top: 32%;
-  animation: ball-wobble 1.1s ease-in-out;
+.ball-shake-once {
+  left: 76%;
+  top: 52%;
+  transform-origin: center bottom;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
+  animation: ball-shake-once 0.72s ease-in-out;
 }
 
 @keyframes ball-catch-flash {
   0% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -100%) scale(1);
     filter: drop-shadow(0 0 0 rgba(255, 214, 74, 0));
   }
-  40% {
-    transform: translate(-50%, -50%) scale(1.35);
-    filter: drop-shadow(0 0 16px rgba(255, 214, 74, 0.9));
+  35% {
+    transform: translate(-50%, -100%) scale(1.35);
+    filter: drop-shadow(0 0 18px rgba(255, 214, 74, 0.95));
+  }
+  70% {
+    transform: translate(-50%, -100%) scale(1.12);
+    filter: drop-shadow(0 0 10px rgba(255, 214, 74, 0.7));
   }
   100% {
-    transform: translate(-50%, -50%) scale(1.1);
-    opacity: 0;
-    filter: drop-shadow(0 0 4px rgba(255, 214, 74, 0.4));
+    transform: translate(-50%, -100%) scale(1.05);
+    opacity: 0.15;
+    filter: drop-shadow(0 0 4px rgba(255, 214, 74, 0.35));
   }
 }
 .ball-catch-flash {
-  left: 80%;
-  top: 32%;
-  animation: ball-catch-flash 0.55s ease-out forwards;
+  left: 76%;
+  top: 52%;
+  transform-origin: center bottom;
+  animation: ball-catch-flash 0.9s ease-out forwards;
+}
+
+.ball-catch-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 214, 74, 0.9);
+  border-radius: 9999px;
+  transform: translate(-50%, -50%) scale(0.4);
+  animation: ball-catch-ring 0.9s ease-out forwards;
+  pointer-events: none;
+}
+.ball-catch-ring-delay {
+  animation-delay: 0.12s;
+  border-color: rgba(255, 255, 255, 0.7);
+}
+@keyframes ball-catch-ring {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3.2);
+  }
 }
 
 @keyframes ball-break {
   0% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -100%) scale(1) rotate(0deg);
     opacity: 1;
   }
-  40% {
-    transform: translate(-50%, -50%) scale(1.3);
+  35% {
+    transform: translate(-50%, -100%) scale(1.3) rotate(-12deg);
     opacity: 1;
   }
   100% {
-    transform: translate(-50%, -50%) scale(0.6);
+    transform: translate(-50%, -100%) scale(0.35) rotate(18deg);
     opacity: 0;
   }
 }
 .ball-break {
-  left: 80%;
-  top: 32%;
-  animation: ball-break 0.45s ease-in forwards;
+  left: 76%;
+  top: 52%;
+  transform-origin: center bottom;
+  animation: ball-break 0.52s ease-in forwards;
+}
+
+.ball-break-burst {
+  position: absolute;
+  inset: -8px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(238, 21, 21, 0.25) 40%,
+    transparent 70%
+  );
+  animation: ball-break-burst 0.52s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes ball-break-burst {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+@keyframes sprite-absorb-ball {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  55% {
+    opacity: 0.85;
+    transform: scale(0.55);
+    filter: brightness(1.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.08);
+    filter: brightness(2.4);
+  }
+}
+.sprite-absorb-ball {
+  animation: sprite-absorb-ball 0.28s ease-in forwards;
 }
 
 @keyframes heal-glow {
