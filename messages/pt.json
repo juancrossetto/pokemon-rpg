@@ -55,7 +55,7 @@
       "battleWild": "Encontre Pokémon selvagens na sua zona.",
       "pvp": "Enfrente outros treinadores.",
       "ranking": "Veja sua posição global.",
-      "team": "Organize seus seis Pokémon ativos.",
+      "team": "Sua equipe, o PC e a creche",
       "pokedex": "Acompanhe espécies vistas e capturadas.",
       "pc": "Guarde e retire Pokémon do armazenamento.",
       "inventory": "Itens, frutas e pedras que você tem.",
@@ -509,7 +509,9 @@
       "unauthorized": "Sessão expirada."
     },
     "allocateSuccess": "{count} pontos atribuídos!",
-    "emptySlotCta": "Retirar do PC"
+    "emptySlotCta": "Retirar do PC",
+    "tabSquad": "Equipe",
+    "tabBox": "PC e Creche"
   },
   "battle": {
     "title": "Batalha",

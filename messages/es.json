@@ -55,7 +55,7 @@
       "battleWild": "Buscá Pokémon salvajes en tu zona de farmeo.",
       "pvp": "Enfrentate a otros entrenadores.",
       "ranking": "Consultá tu posición global.",
-      "team": "Ordená tus seis Pokémon activos.",
+      "team": "Tu escuadrón, el PC y la guardería",
       "pokedex": "Seguí tus especies vistas y capturadas.",
       "pc": "Guardá y retirá Pokémon del almacenamiento.",
       "inventory": "Objetos, bayas y piedras que tenés.",
@@ -509,7 +509,9 @@
       "unauthorized": "Sesión expirada."
     },
     "allocateSuccess": "¡{count} puntos asignados!",
-    "emptySlotCta": "Retirar del PC"
+    "emptySlotCta": "Retirar del PC",
+    "tabSquad": "Equipo",
+    "tabBox": "PC y Guardería"
   },
   "battle": {
     "title": "Batalla",

@@ -137,6 +137,8 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.team",
         href: "/team",
         icon: "group",
+        // El PC vive como tab dentro de /team; la ruta vieja redirige.
+        matchRoutes: ["/pc"],
       },
       {
         id: "pokedex",
@@ -144,13 +146,6 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.pokedex",
         href: "/pokedex",
         icon: "auto_stories",
-      },
-      {
-        id: "pc",
-        labelKey: "pc",
-        descriptionKey: "desc.pc",
-        href: "/pc",
-        icon: "storage",
       },
       {
         id: "inventory",

@@ -11,18 +11,32 @@ import { redirectIfInBattle } from "@/lib/battle-lock";
 import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolution-chain";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { TeamRoster, type TeamMember } from "@/components/team-roster";
+import { PcTab } from "./pc-tab";
 
 const TEAM_SIZE = 6;
 
+/**
+ * Hub único de Pokémon: Equipo | PC y Guardería. Antes /team y /pc eran dos
+ * pantallas hermanas que gestionaban la misma colección; /pc ahora redirige
+ * acá con `?tab=pc`.
+ */
 export default async function TeamPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ teach?: string; member?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    teach?: string;
+    member?: string;
+    error?: string;
+    notice?: string;
+  }>;
 }) {
   const { locale } = await params;
-  const { teach: teachParam, member: memberParam } = await searchParams;
+  const query = await searchParams;
+  const { teach: teachParam, member: memberParam } = query;
+  const tab: "squad" | "pc" = query.tab === "pc" ? "pc" : "squad";
   const [t, tMenu, session] = await Promise.all([
     getTranslations("team"),
     getTranslations("home.squadMenu"),
@@ -36,6 +50,44 @@ export default async function TeamPage({
   const userId = session.user.id;
 
   await redirectIfInBattle(userId, locale);
+
+  const tabBar = (
+    <div className="mb-5 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+      {(
+        [
+          { id: "squad", href: "/team", icon: "group", label: t("tabSquad") },
+          { id: "pc", href: "/team?tab=pc", icon: "storage", label: t("tabBox") },
+        ] as const
+      ).map((entry) => (
+        <Link
+          key={entry.id}
+          href={entry.href}
+          aria-current={tab === entry.id ? "page" : undefined}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-label-sm font-semibold transition ${
+            tab === entry.id
+              ? "bg-pokeball-red text-white shadow-[0_4px_14px_rgba(238,21,21,0.3)]"
+              : "text-on-surface-variant hover:bg-white/[0.05] hover:text-on-surface"
+          }`}
+        >
+          <span aria-hidden className="material-symbols-outlined text-[18px]!">
+            {entry.icon}
+          </span>
+          {entry.label}
+        </Link>
+      ))}
+    </div>
+  );
+
+  if (tab === "pc") {
+    return (
+      <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8">
+        <div className="mx-auto max-w-6xl">
+          {tabBar}
+          <PcTab locale={locale} userId={userId} query={query} />
+        </div>
+      </div>
+    );
+  }
 
   const pokemon = await prisma.pokemonInstance.findMany({
     where: { ownerId: userId, teamSlot: { not: null } },
@@ -217,6 +269,7 @@ export default async function TeamPage({
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8">
       <div className="mx-auto max-w-6xl">
+        {tabBar}
         <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="mb-0.5 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90">
@@ -244,7 +297,7 @@ export default async function TeamPage({
               teamMaxLevel={pokemon.reduce((max, p) => Math.max(max, p.level), 0)}
             />
             <Link
-              href="/pc"
+              href="/team?tab=pc"
               className="inline-flex items-center gap-1.5 rounded-md border border-white/12 bg-white/[0.03] px-4 py-2 text-label-sm text-on-surface transition hover:border-white/25 hover:bg-white/[0.06]"
             >
               <span className="material-symbols-outlined text-[16px]!">storage</span>

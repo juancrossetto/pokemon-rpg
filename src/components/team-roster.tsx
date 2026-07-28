@@ -514,7 +514,7 @@ function EmptySlot({ label, hint }: { label: string; hint: string }) {
   // Link al PC: un slot vacío parecía tocable pero era un dead end.
   return (
     <Link
-      href="/pc"
+      href="/team?tab=pc"
       className="flex min-h-[220px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/12 bg-white/[0.015] px-4 py-6 text-center transition hover:border-white/25 hover:bg-white/[0.04] md:min-h-[320px]"
     >
       <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.02]">

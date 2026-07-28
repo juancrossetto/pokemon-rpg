@@ -55,7 +55,7 @@
       "battleWild": "Find wild Pokémon in your farming zone.",
       "pvp": "Battle other trainers.",
       "ranking": "Check your global standing.",
-      "team": "Arrange your six active Pokémon.",
+      "team": "Your squad, PC box, and daycare",
       "pokedex": "Track species seen and caught.",
       "pc": "Store and withdraw Pokémon.",
       "inventory": "Items, berries and stones you own.",
@@ -509,7 +509,9 @@
       "unauthorized": "Session expired."
     },
     "allocateSuccess": "{count} points allocated!",
-    "emptySlotCta": "Withdraw from PC"
+    "emptySlotCta": "Withdraw from PC",
+    "tabSquad": "Squad",
+    "tabBox": "PC & Daycare"
   },
   "battle": {
     "title": "Battle",
