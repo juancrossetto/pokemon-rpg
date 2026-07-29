@@ -4307,20 +4307,118 @@ html.boot-splash-pending .boot-splash {
   animation: team-detail-backdrop-in 0.4s ease-out both;
 }
 
+/*
+  ── Giro de carta al abrir el detalle ─────────────────────────────────────
+
+  La ficha entra girando sobre su eje vertical, como una carta de colección
+  que se da vuelta para mostrar la cara. Tres detalles hacen que se lea como
+  volumen y no como un simple `rotateY`:
+
+  1. **`perspective` en el contenedor, no en la card.** Puesta en el elemento
+     que gira, la perspectiva se aplica a su propio plano y el giro sale chato.
+     En el padre, la card atraviesa el espacio hacia el espectador.
+  2. **Empieza más lejos** (`translateZ` negativo) y llega al plano cero: el
+     giro se acompaña de un acercamiento, que es lo que da el golpe de efecto.
+  3. **Un pasado de rosca corto** —el 78% queda en -8deg— para que frene con
+     peso en vez de clavarse.
+
+  `backface-visibility: hidden` evita el destello del reverso al cruzar los 90°.
+*/
+@keyframes team-detail-flip-in {
+  0% {
+    opacity: 0;
+    transform: perspective(1400px) translate3d(0, 12px, -220px) rotateY(-92deg)
+      scale(0.9);
+  }
+  55% {
+    opacity: 1;
+  }
+  78% {
+    transform: perspective(1400px) translate3d(0, 0, 0) rotateY(-8deg) scale(1.015);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1400px) translate3d(0, 0, 0) rotateY(0deg) scale(1);
+  }
+}
+
+/* Destello que barre la card mientras gira: es el brillo del laminado de una
+   carta al pasar bajo la luz. Corre una sola vez y desaparece. */
+@keyframes team-detail-sheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  35% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(130%) skewX(-18deg);
+  }
+}
+
+/* El giro también en mobile. Lo tenía limitado a 640px por miedo a que se
+   saliera de pantalla, y era un miedo infundado: `rotateY` con perspectiva
+   angosta la card, no la ensancha. Lo único que sí cambia es el pivote —abajo,
+   porque en mobile es una hoja anclada al borde inferior— y el recorrido en Z,
+   más corto para que no se meta detrás del plano de la pantalla en un
+   viewport chico. */
 .team-detail-sheet {
   transform-origin: center bottom;
-  animation: team-detail-sheet-up 0.62s cubic-bezier(0.22, 1.05, 0.36, 1) both;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  animation: team-detail-flip-in-sheet 1.15s cubic-bezier(0.2, 0.86, 0.28, 1) both;
+}
+
+@keyframes team-detail-flip-in-sheet {
+  0% {
+    opacity: 0;
+    transform: perspective(1100px) translate3d(0, 26px, -140px) rotateY(-74deg)
+      scale(0.94);
+  }
+  55% {
+    opacity: 1;
+  }
+  78% {
+    transform: perspective(1100px) translate3d(0, 0, 0) rotateY(-7deg) scale(1.012);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1100px) translate3d(0, 0, 0) rotateY(0deg) scale(1);
+  }
 }
 
 @media (min-width: 640px) {
   .team-detail-sheet {
+    /* De escritorio para arriba la card flota centrada, así que el pivote va
+       al centro y el giro puede ser completo. */
     transform-origin: center center;
-    animation: team-detail-sheet-pop 0.68s cubic-bezier(0.22, 1.1, 0.36, 1) both;
+    animation: team-detail-flip-in 1.15s cubic-bezier(0.2, 0.86, 0.28, 1) both;
   }
+
+}
+
+/* El barrido de luz acompaña al giro, así que va en los dos tamaños. */
+.team-detail-sheet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.16) 50%,
+    transparent 65%
+  );
+  animation: team-detail-sheen 1.35s ease-out 0.3s both;
 }
 
 .team-detail-sheet__sprite {
-  animation: team-detail-sprite-in 0.72s cubic-bezier(0.22, 1.15, 0.36, 1) 0.14s both;
+  /* El retardo alinea el rebote del sprite con el final del giro de la card:
+     antes caía mientras la card todavía estaba de perfil y no se veía. */
+  animation: team-detail-sprite-in 0.72s cubic-bezier(0.22, 1.15, 0.36, 1) 0.62s both;
 }
 
 .quick-action--attention {
@@ -4342,7 +4440,128 @@ html.boot-splash-pending .boot-splash {
 
   .team-detail-backdrop,
   .team-detail-sheet,
-  .team-detail-sheet__sprite {
+  .team-detail-sheet__sprite,
+  /* El destello del giro también se apaga: es puro adorno. */
+  .team-detail-sheet::after {
     animation: none !important;
+  }
+
+  /* Sin el barrido, el pseudo-elemento del destello quedaría como un velo
+     blanco fijo encima de la card. */
+  .team-detail-sheet::after {
+    display: none;
+  }
+}
+
+/* ── Ranking: card "tu posición" ─────────────────────────────────────────
+   Sólido oscuro con un degradé apenas perceptible. Nada de rojo: el rojo es la
+   marca y acá competía con la jerarquía que sí importa en un ranked.
+
+   El acento lo define el puesto, con los mismos metales que la insignia que ya
+   se ve en esta card: oro, plata y bronce en el podio. Fuera del podio no hay
+   metal que corresponda, así que va un acero frío y el efecto baja de
+   intensidad — reservar el chisporroteo fuerte para los tres primeros es lo
+   que lo vuelve una recompensa visual y no decoración. */
+.rank-hero {
+  /* Acero frío: el estado por defecto, para cualquier puesto fuera del podio. */
+  --electric: #8fb0c8;
+  --electric-light: #dbe9f4;
+  --electric-tint: rgba(143, 176, 200, 0.05);
+  --electric-halo-near: 0.3;
+  --electric-halo-far: 0.22;
+  --electric-ambient: 0.07;
+  background:
+    radial-gradient(85% 150% at 6% -25%, var(--electric-tint) 0%, transparent 58%),
+    linear-gradient(158deg, #12141a 0%, #0c0e12 54%, #08090c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.rank-hero[data-tier="gold"] {
+  --electric: #f2c000;
+  --electric-light: #ffe08d;
+  --electric-tint: rgba(242, 192, 0, 0.07);
+  --electric-halo-near: 0.55;
+  --electric-halo-far: 0.4;
+  --electric-ambient: 0.12;
+  background:
+    radial-gradient(85% 150% at 6% -25%, var(--electric-tint) 0%, transparent 58%),
+    linear-gradient(158deg, #17150f 0%, #0e0d0a 54%, #090806 100%);
+}
+
+/* La plata pura sale casi blanca y pisaba al oro en brillo, que es al revés de
+   lo que dice el podio. Metal más apagado y halo más corto. */
+.rank-hero[data-tier="silver"] {
+  --electric: #a9b6c4;
+  --electric-light: #dde5ee;
+  --electric-tint: rgba(169, 182, 196, 0.06);
+  --electric-halo-near: 0.38;
+  --electric-halo-far: 0.26;
+  --electric-ambient: 0.09;
+  background:
+    radial-gradient(85% 150% at 6% -25%, var(--electric-tint) 0%, transparent 58%),
+    linear-gradient(158deg, #16181c 0%, #0d0e11 54%, #08090b 100%);
+}
+
+.rank-hero[data-tier="bronze"] {
+  --electric: #c8813c;
+  --electric-light: #f2c493;
+  --electric-tint: rgba(200, 129, 60, 0.07);
+  --electric-halo-near: 0.5;
+  --electric-halo-far: 0.36;
+  --electric-ambient: 0.11;
+  background:
+    radial-gradient(85% 150% at 6% -25%, var(--electric-tint) 0%, transparent 58%),
+    linear-gradient(158deg, #171310 0%, #0e0b09 54%, #090706 100%);
+}
+
+/* ── Borde eléctrico ─────────────────────────────────────────────────────
+   Cuatro capas concéntricas: el trazo deformado por el filtro, dos halos
+   desenfocados que le dan cuerpo de luz, y un resplandor ambiente. Todas
+   heredan el radio del contenedor. */
+.electric-border > span:not(:first-of-type),
+.electric-border__stroke {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.electric-border__stroke {
+  border: 1.5px solid var(--electric);
+}
+
+.electric-border__halo {
+  border: 1.5px solid var(--electric);
+}
+
+.electric-border__halo--near {
+  opacity: var(--electric-halo-near, 0.55);
+  filter: blur(1.5px);
+}
+
+.electric-border__halo--far {
+  border-color: var(--electric-light);
+  opacity: var(--electric-halo-far, 0.4);
+  filter: blur(5px);
+}
+
+/* Difusa hacia adentro: es la luz que el borde tira sobre la card. */
+.electric-border__ambient {
+  background: linear-gradient(-30deg, var(--electric-light), transparent 45%, var(--electric));
+  opacity: var(--electric-ambient, 0.12);
+  filter: blur(26px);
+  transform: scale(1.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Sin el filtro el trazo queda quieto y limpio: el efecto es la animación
+     del ruido, así que apagarlo es apagar el movimiento. */
+  .electric-border__stroke {
+    filter: none !important;
+  }
+
+  .electric-border__halo--far {
+    opacity: 0.22;
   }
 }

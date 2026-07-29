@@ -6,6 +6,7 @@ import { calculateMaxHp } from "@/lib/stats";
 import { effectivePp } from "@/lib/battle";
 import { getCurrentEnergy } from "@/lib/energy";
 import { getActiveGymRun } from "@/lib/battle-lock";
+import { healCooldownMsLeft, healRushCost } from "@/lib/healing";
 import { BattleScreen } from "@/components/battle-screen";
 import type { BattleArenaProps, OpponentPartyMember } from "@/components/battle-arena";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
@@ -99,7 +100,15 @@ export default async function BattlePage({
     const [user, partyRows, inventory, recentRows, progress] = await Promise.all([
       prisma.user.findUniqueOrThrow({
         where: { id: userId },
-        select: { energy: true, energyMax: true, energyUpdatedAt: true },
+        // `coins` y `lastHealAt` alimentan el Centro Pokémon del lobby: curar
+        // sin tener que ir a /team y volver.
+        select: {
+          energy: true,
+          energyMax: true,
+          energyUpdatedAt: true,
+          coins: true,
+          lastHealAt: true,
+        },
       }),
       prisma.pokemonInstance.findMany({
         where: { ownerId: userId, teamSlot: { not: null } },
@@ -194,6 +203,18 @@ export default async function BattlePage({
       encounterRate,
       teamReady: partyRows.filter((p) => p.currentHp > 0).length,
       teamTotal: partyRows.length,
+      heal: (() => {
+        const hurt = partyRows.filter(
+          (p) => p.currentHp < calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution),
+        ).length;
+        return {
+          hurtCount: hurt,
+          cooldownMsLeft: healCooldownMsLeft(user.lastHealAt),
+          rushCost: healRushCost(hurt),
+          coins: user.coins,
+          teamMaxLevel: partyRows.reduce((max, p) => Math.max(max, p.level), 0),
+        };
+      })(),
     };
   }
 

@@ -10,6 +10,7 @@ import { getWeaknesses } from "@/lib/type-effectiveness";
 export type GymMissionStatusKind =
   | "cleared"
   | "locked"
+  | "stages"
   | "cooldown"
   | "closed"
   | "available";
@@ -32,6 +33,7 @@ export type GymMissionItem = {
   coinReward: number;
   badgeEarned: boolean;
   locked: boolean;
+  stagesIncomplete: boolean;
   onCooldown: boolean;
   hoursLeft: number;
   remainingMs: number;
@@ -56,6 +58,7 @@ export type GymMissionItem = {
 export function gymMissionStatus(status: GymStatus): GymMissionStatusKind {
   if (status.badgeEarned) return "cleared";
   if (status.locked) return "locked";
+  if (status.stagesIncomplete) return "stages";
   if (status.onCooldown) return "cooldown";
   if (status.closed) return "closed";
   return "available";
@@ -79,6 +82,7 @@ export function toGymMissionItems(statuses: GymStatus[]): GymMissionItem[] {
       coinReward: gym.coinReward,
       badgeEarned: status.badgeEarned,
       locked: status.locked,
+      stagesIncomplete: status.stagesIncomplete,
       onCooldown: status.onCooldown,
       hoursLeft: status.hoursLeft,
       remainingMs: status.remainingMs,

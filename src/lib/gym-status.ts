@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { nowMs } from "@/lib/time";
+import { ensureCampaignProgress } from "@/lib/campaign/ensure";
+import { areChapterStagesCompleteForGym } from "@/lib/campaign";
 
 export interface GymStatus {
   gym: Awaited<ReturnType<typeof fetchGyms>>[number];
   badgeEarned: boolean;
   locked: boolean;
+  /** Faltan stages del capítulo de campaña: no se puede desafiar (sí revancha). */
+  stagesIncomplete: boolean;
   onCooldown: boolean;
   hoursLeft: number;
   /** Ms restantes de cooldown (0 si no aplica). */
@@ -44,10 +48,11 @@ export async function computeGymStatuses(
   userId: string,
   includeElite = false,
 ): Promise<GymStatus[]> {
-  const [gyms, badges, attempts] = await Promise.all([
+  const [gyms, badges, attempts, progress] = await Promise.all([
     fetchGyms(),
     prisma.badge.findMany({ where: { userId } }),
     prisma.gymAttempt.findMany({ where: { userId }, orderBy: { attemptedAt: "desc" } }),
+    ensureCampaignProgress(userId),
   ]);
 
   const badgedGymIds = new Set(badges.map((b) => b.gymId));
@@ -66,6 +71,8 @@ export async function computeGymStatuses(
     const badgeEarned = badgedGymIds.has(gym.id);
     const previousGym = gym.order > 1 ? gymByOrder.get(gym.order - 1) : undefined;
     const locked = previousGym ? !badgedGymIds.has(previousGym.id) : false;
+    const stagesIncomplete =
+      !badgeEarned && !areChapterStagesCompleteForGym(gym.order, progress.completedStageIds);
     const lastAttempt = lastAttemptByGym.get(gym.id);
     const cooldownMs = gym.cooldownHours * 60 * 60 * 1000;
     const elapsedMs = lastAttempt ? now - lastAttempt.attemptedAt.getTime() : Infinity;
@@ -79,6 +86,7 @@ export async function computeGymStatuses(
       gym,
       badgeEarned,
       locked,
+      stagesIncomplete,
       onCooldown,
       hoursLeft,
       remainingMs,

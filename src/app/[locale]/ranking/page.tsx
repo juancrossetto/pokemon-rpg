@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { FlagIcon } from "@/components/flag-icon";
+import { ElectricBorder } from "@/components/electric-border";
 import { getCountryOptions } from "@/lib/countries";
 import { typeColor } from "@/lib/type-colors";
 import { LeaderboardCountrySelect } from "@/components/leaderboard-country-select";
@@ -73,11 +74,17 @@ function pickMainFromTeam(
 const BOARDS = ["trainers", "pvp", "collectors", "pokedex"] as const;
 type Board = (typeof BOARDS)[number];
 
-const BOARD_META: Record<Board, { icon: string }> = {
-  trainers: { icon: "trophy" },
-  pvp: { icon: "swords" },
-  collectors: { icon: "target" },
-  pokedex: { icon: "menu_book" },
+/*
+  Arte propio en vez de Material Symbols: son los mismos íconos que ya
+  identifican cada sección en la navegación, así el jugador reconoce la
+  categoría antes de leer el título. Van sin caja: tienen luz y sombra propias
+  y un recuadro con borde los aplanaba.
+*/
+const BOARD_META: Record<Board, { iconSrc: string }> = {
+  trainers: { iconSrc: "/nav/ranking-icon.png" },
+  pvp: { iconSrc: "/nav/pvp-icon.png" },
+  collectors: { iconSrc: "/nav/pc-icon.png" },
+  pokedex: { iconSrc: "/nav/collection-icon.png" },
 };
 
 const SPECIES_STATS_SELECT = {
@@ -116,78 +123,115 @@ export default async function RankingPage({
   return (
     <div className="flex-1 px-margin-mobile py-6 md:px-margin-desktop md:py-8">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-5">
+        <header className="mb-4 md:mb-5">
           <h1 className="text-headline-lg tracking-tight text-white md:text-display-sm">
             {t("title")}
           </h1>
-          <p className="mt-1 max-w-xl text-label-md text-on-surface-variant">{t("subtitle")}</p>
+          {/* El subtítulo ocupaba dos renglones en mobile para decir algo que
+              el título ya dice. Queda desde `sm`. */}
+          <p className="mt-1 hidden max-w-xl text-label-md text-on-surface-variant sm:block">
+            {t("subtitle")}
+          </p>
         </header>
 
-        <nav className="mb-5 grid grid-cols-2 gap-2 md:grid-cols-4">
+        {/*
+          En mobile la grilla de 2×2 se comía media pantalla antes de mostrar a
+          un solo jugador. Acá es una fila de pestañas que se desplaza —el
+          patrón habitual para categorías— y recupera unos 80px.
+        */}
+        <nav className="no-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1 md:mb-5 md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
           {BOARDS.map((id) => {
             const active = board === id;
             return (
               <Link
                 key={id}
                 href={boardHref(id, country)}
-                className={`group relative overflow-hidden rounded-xl border px-3 py-3 transition ${
+                className={`group relative flex shrink-0 items-center gap-2 overflow-hidden rounded-xl border px-3 py-2 transition md:shrink md:gap-2.5 md:py-2.5 ${
                   active
-                    ? "border-pokeball-red/50 bg-pokeball-red/10 shadow-[0_0_24px_rgba(239,68,68,0.12)]"
+                    ? "border-white/25 bg-white/[0.07]"
                     : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
                 }`}
               >
-                <span
-                  className={`mb-2 flex h-9 w-9 items-center justify-center rounded-lg border ${
-                    active
-                      ? "border-pokeball-red/40 bg-pokeball-red/15 text-pokeball-red"
-                      : "border-white/10 bg-black/30 text-on-surface-variant group-hover:text-on-surface"
+                {/* Filo superior: marca la pestaña activa sin teñir la card. */}
+                {active ? (
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"
+                  />
+                ) : null}
+                <Image
+                  src={BOARD_META[id].iconSrc}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className={`h-8 w-8 shrink-0 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)] transition duration-300 md:h-10 md:w-10 ${
+                    active ? "" : "opacity-70 group-hover:opacity-100"
                   }`}
-                >
-                  <span className="material-symbols-outlined text-[20px]!">{BOARD_META[id].icon}</span>
+                  aria-hidden
+                />
+                <span className="min-w-0">
+                  <span
+                    className={`block whitespace-nowrap text-label-md font-semibold md:truncate ${
+                      active ? "text-white" : "text-on-surface"
+                    }`}
+                  >
+                    {t(`boards.${id}.title`)}
+                  </span>
+                  {/*
+                    En 2 columnas angostas el subtítulo se partía en tres
+                    renglones y estiraba la card; desde `sm` hay ancho para que
+                    entre en uno o dos.
+                  */}
+                  <span className="mt-0.5 hidden text-[11px] leading-snug text-on-surface-variant md:block">
+                    {t(`boards.${id}.blurb`)}
+                  </span>
                 </span>
-                <p className={`text-label-md font-semibold ${active ? "text-white" : "text-on-surface"}`}>
-                  {t(`boards.${id}.title`)}
-                </p>
-                <p className="mt-0.5 text-[11px] leading-snug text-on-surface-variant">
-                  {t(`boards.${id}.blurb`)}
-                </p>
               </Link>
             );
           })}
         </nav>
 
-        <div className="grid gap-5 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="grid gap-3 lg:gap-5 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)]">
+          {/*
+            El panel de filtros ocupaba ~260px arriba de todo en mobile, antes
+            de que apareciera un solo jugador. Debajo de `lg` se aplana a una
+            barra de una línea: los dos accesos y el selector de país en fila,
+            sin rótulos ni la nota al pie. Es el mismo markup y las mismas
+            rutas; solo cambia la disposición.
+          */}
           <aside className="flex flex-col gap-4 lg:sticky lg:top-20 lg:self-start">
-            <section className="rounded-xl border border-white/10 bg-black/30 p-3.5 backdrop-blur-md">
-              <p className="mb-2.5 text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70">
+            <section className="rounded-xl border border-white/10 bg-black/30 p-2 backdrop-blur-md lg:p-3.5">
+              <p className="mb-2.5 hidden text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70 lg:block">
                 {t("filters.title")}
               </p>
-              <div className="flex flex-col gap-2">
-                <FilterChip
-                  href={boardHref(board, "")}
-                  active={country === ""}
-                  icon="public"
-                  label={t("filters.global")}
-                />
-                {me?.country && (
+              <div className="flex items-center gap-2 lg:flex-col lg:items-stretch">
+                <div className="flex shrink-0 gap-2 lg:w-full lg:flex-col">
                   <FilterChip
-                    href={boardHref(board, me.country)}
-                    active={country === me.country}
-                    flag={me.country}
-                    label={t("filters.myCountry")}
+                    href={boardHref(board, "")}
+                    active={country === ""}
+                    icon="public"
+                    label={t("filters.global")}
                   />
-                )}
+                  {me?.country && (
+                    <FilterChip
+                      href={boardHref(board, me.country)}
+                      active={country === me.country}
+                      flag={me.country}
+                      label={t("filters.myCountry")}
+                    />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 lg:mt-3 lg:w-full lg:flex-none lg:border-t lg:border-white/8 lg:pt-3">
+                  <LeaderboardCountrySelect
+                    view={board}
+                    country={country}
+                    options={countryOptions}
+                    allLabel={t("filters.global")}
+                    countryLabel={t("filters.country")}
+                  />
+                </div>
               </div>
-              <div className="mt-3 border-t border-white/8 pt-3">
-                <LeaderboardCountrySelect
-                  view={board}
-                  country={country}
-                  options={countryOptions}
-                  allLabel={t("filters.global")}
-                  countryLabel={t("filters.country")}
-                />
-              </div>
-              <p className="mt-3 text-[11px] leading-snug text-on-surface-variant/60">
+              <p className="mt-3 hidden text-[11px] leading-snug text-on-surface-variant/60 lg:block">
                 {t("filters.friendsSoon")}
               </p>
             </section>
@@ -249,7 +293,7 @@ function FilterChip({
       href={href}
       className={`flex items-center gap-2 rounded-md border px-2.5 py-2 text-label-sm transition ${
         active
-          ? "border-pokeball-red/45 bg-pokeball-red/12 text-pokeball-red"
+          ? "border-white/25 bg-white/[0.07] text-white"
           : "border-white/10 text-on-surface-variant hover:border-white/20 hover:text-on-surface"
       }`}
     >
@@ -394,14 +438,14 @@ async function PvpBoard({
   if (ranked.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/12 px-6 py-16 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-pokeball-red/30 bg-pokeball-red/10 text-pokeball-red">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.05] text-on-surface-variant">
           <span className="material-symbols-outlined text-[28px]!">swords</span>
         </span>
         <h2 className="text-lg font-semibold text-white">{t("pvpEmpty.title")}</h2>
         <p className="max-w-md text-label-sm text-on-surface-variant">{t("pvpEmpty.body")}</p>
         <Link
           href="/pvp"
-          className="mt-2 rounded-md bg-pokeball-red px-4 py-2 text-label-sm font-semibold text-white transition hover:bg-pokeball-red/85"
+          className="mt-2 rounded-md border border-white/20 bg-white/[0.07] px-4 py-2 text-label-sm font-semibold text-white transition hover:border-white/35 hover:bg-white/[0.12]"
         >
           {t("pvpEmpty.cta")}
         </Link>
@@ -667,7 +711,7 @@ async function PokedexBoard({
               href={boardHref("pokedex", country, 1, String(s.id))}
               className={`rounded-md border px-2 py-1 text-[11px] capitalize transition ${
                 s.id === selectedId
-                  ? "border-pokeball-red/40 bg-pokeball-red/10 text-pokeball-red"
+                  ? "border-white/25 bg-white/[0.07] text-white"
                   : "border-white/10 text-on-surface-variant hover:text-on-surface"
               }`}
             >
@@ -760,25 +804,42 @@ async function BoardShell({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* La card no lleva `overflow-hidden`: el borde eléctrico se deforma unos
+          píxeles hacia afuera y recortarlo lo aplana justo en los bordes, que
+          es donde se mira. */}
       {me && myRank !== null && (
-        <section className="relative overflow-hidden rounded-xl border border-pokeball-red/35 bg-gradient-to-r from-pokeball-red/15 via-black/40 to-electric-yellow/10 p-4">
-          <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-pokeball-red">
+        <section
+          className="rank-hero relative rounded-xl p-4"
+          data-tier={tierForRank(myRank)}
+        >
+          {/* Fuera del podio el borde se deforma la mitad: el chisporroteo
+              fuerte queda reservado a los tres primeros. */}
+          <ElectricBorder
+            id="rank-electric-displace"
+            scale={myRank <= 3 ? 14 : 7}
+          />
+          <p className="relative z-[1] text-[10px] font-mono uppercase tracking-[0.18em] text-white/45">
             {t("yourCard.title")}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-4">
+          <div className="relative z-[1] mt-2 flex flex-wrap items-center gap-4">
             <RankingEmblem
               pokemon={(me.mainPokemon as RankingEmblemPokemon) ?? null}
               size="md"
               tier={tierForRank(myRank)}
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-lg font-semibold text-white">
-                #{myRank}{" "}
-                <span className="text-on-surface-variant">· {me.username}</span>
+              <p className="flex items-center gap-1.5 text-lg font-semibold text-white">
+                <span className="truncate">
+                  #{myRank}{" "}
+                  <span className="text-on-surface-variant">· {me.username}</span>
+                </span>
+                <FlagIcon
+                  code={me.country}
+                  className="h-3 w-auto shrink-0 rounded-[1px] opacity-80"
+                />
               </p>
               <p className="text-label-sm text-on-surface-variant">{yourExtra(me)}</p>
             </div>
-            <FlagIcon code={me.country} className="h-3 w-auto rounded-[1px] opacity-80" />
           </div>
         </section>
       )}
@@ -801,7 +862,7 @@ async function BoardShell({
                       : rank === 2
                         ? "border-white/20 bg-black/40 sm:order-1"
                         : "border-amber-700/35 bg-black/40 sm:order-3"
-                  } ${isMe ? "ring-1 ring-pokeball-red/50" : ""}`}
+                  } ${isMe ? "ring-1 ring-white/35" : ""}`}
                 >
                   <div className="flex flex-col items-center text-center">
                     <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant/70">
@@ -817,7 +878,7 @@ async function BoardShell({
                       <FlagIcon code={u.country} className="h-2.5 w-auto rounded-[1px] opacity-70" />
                     </p>
                     {isMe && (
-                      <span className="mt-1 rounded bg-pokeball-red/20 px-1.5 py-0.5 text-[10px] uppercase text-pokeball-red">
+                      <span className="mt-1 rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-white/85">
                         {t("you")}
                       </span>
                     )}
@@ -844,7 +905,7 @@ async function BoardShell({
                   key={`${u.id}-${rank}`}
                   className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
                     isMe
-                      ? "border-pokeball-red/45 bg-pokeball-red/10"
+                      ? "border-white/25 bg-white/[0.06]"
                       : "border-white/8 bg-black/30"
                   }`}
                 >
@@ -862,7 +923,7 @@ async function BoardShell({
                       {u.username}
                       <FlagIcon code={u.country} className="h-2.5 w-auto rounded-[1px] opacity-60" />
                       {isMe && (
-                        <span className="rounded bg-pokeball-red/20 px-1 text-[9px] uppercase text-pokeball-red">
+                        <span className="rounded border border-white/20 bg-white/10 px-1 text-[9px] uppercase tracking-wider text-white/85">
                           {t("you")}
                         </span>
                       )}

@@ -27,6 +27,7 @@ import {
   type ZoneIconKind,
   type ZoneIconProps,
 } from "@/components/zone-icons";
+import { gymBadgeImageUrl } from "@/lib/gym-art";
 import type { Chapter } from "@/lib/campaign/chapters";
 import type { MapLocation } from "@/lib/campaign/map-selection";
 import type { CampaignLocationKind } from "@/lib/campaign/types";
@@ -42,6 +43,21 @@ import { HubHelpPanel, CoachMark } from "@/components/journey-guidance";
 import { UnlockCelebration } from "@/components/unlock-celebration";
 import type { CampaignMilestone } from "@/lib/campaign/types";
 import { milestoneCtaKey, milestoneHref } from "@/lib/journey-ux";
+
+/** Orden Kanto → tipo de medalla (arte local, no trainers). */
+const BADGE_TYPE_BY_ORDER: Record<number, string> = {
+  1: "rock",
+  2: "water",
+  3: "electric",
+  4: "grass",
+  5: "poison",
+  6: "psychic",
+  7: "fire",
+  8: "ground",
+};
+
+const PATH_PROGRESS_FILL =
+  "bg-gradient-to-r from-[#ffcb05] to-[#ff8a00]";
 
 /**
  * Paleta de la campaña — cuatro familias, cada una con un significado.
@@ -133,6 +149,8 @@ export type GymRequirement = {
   recommendedLevel: number;
   badgeName: string;
   gymId: string;
+  /** Sprite del líder. `null` si el gimnasio no tiene arte asociado. */
+  leaderSpriteUrl: string | null;
 };
 
 export function CampaignJourney({
@@ -321,14 +339,11 @@ export function CampaignJourney({
         <div className="min-w-0">
           {chapter && (
             <ol className="relative flex flex-col gap-2">
-              <span
-                aria-hidden
-                className="absolute left-[18px] top-6 bottom-6 w-px bg-gradient-to-b from-white/20 via-white/10 to-transparent"
-              />
-              {chapter.zones.map((z) => (
+              {chapter.zones.map((z, i) => (
                 <ZoneRow
                   key={z.id}
                   zone={z}
+                  isLast={i === chapter.zones.length - 1}
                   selected={zone?.id === z.id}
                   isFarming={z.id === farmingLocationId}
                   gymRequirement={gymRequirements[z.id]}
@@ -345,6 +360,7 @@ export function CampaignJourney({
           {zone && (
             <ZonePanel
               zone={zone}
+              chapter={chapter}
               isFarming={zone.id === farmingLocationId}
               farmingStageId={farmingStageId}
               pending={pending}
@@ -396,26 +412,23 @@ function JourneyStrip({
 }) {
   return (
     <section className="glass-panel rounded-xl border border-white/10 p-3">
-      <div className="mb-2 flex items-center justify-between gap-3">
+      <div className="mb-2.5 flex items-center justify-between gap-3">
         <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">
           {label}
         </span>
         <span className="font-mono text-label-sm text-on-surface">{percent}%</span>
       </div>
       {/*
-        Grilla, no scroll horizontal: los capítulos son números, entran los 9 en
-        375px. Con `overflow-x-auto` mobile mostraba la barra de scroll debajo —
-        se leía como una barra de progreso suelta — y cortaba el capítulo 5 al
-        medio.
+        Medallas del gimnasio (arte local), no trainers ni números sueltos.
+        Una fila entra en mobile; el activo se marca en verde como "estás acá".
       */}
       <div
         className="grid gap-1 sm:gap-1.5"
-        // Derivado de la cantidad de capítulos: otra región con otro número
-        // sigue entrando en una fila sin tocar esto.
         style={{ gridTemplateColumns: `repeat(${chapters.length}, minmax(0, 1fr))` }}
       >
         {chapters.map((c, i) => {
           const active = i === activeIndex;
+          const badgeType = c.gymOrder != null ? BADGE_TYPE_BY_ORDER[c.gymOrder] : null;
           return (
             <button
               key={c.number}
@@ -423,28 +436,61 @@ function JourneyStrip({
               onClick={() => onPick(i)}
               disabled={!c.unlocked}
               title={`${chapterLabel} ${c.number}`}
-              className={`flex min-w-0 flex-col items-center gap-1 rounded-lg border px-1 py-1.5 transition sm:px-2 ${
+              className={`flex min-w-0 flex-col items-center gap-1.5 rounded-xl border px-0.5 py-2 transition sm:px-1.5 ${
                 active
-                  ? "border-pokeball-red/50 bg-pokeball-red/10"
+                  ? "border-emerald-400/55 bg-emerald-400/10 shadow-[0_0_16px_rgba(52,211,153,0.2)]"
                   : c.unlocked
-                    ? "border-white/10 bg-black/20 hover:bg-white/5"
-                    : "border-white/5 bg-black/10 opacity-50"
+                    ? "border-white/10 bg-black/25 hover:bg-white/5"
+                    : "border-white/5 bg-black/10 opacity-45"
               }`}
             >
               <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-bold ${
+                className={`relative flex h-8 w-8 items-center justify-center rounded-full border sm:h-9 sm:w-9 ${
                   c.completed
-                    ? "border-tertiary/60 bg-tertiary/20 text-tertiary"
-                    : c.unlocked
-                      ? "border-white/25 bg-white/5 text-white"
-                      : "border-white/10 text-on-surface-variant/50"
+                    ? "border-tertiary/50 bg-tertiary/15"
+                    : active
+                      ? "border-emerald-400/40 bg-emerald-400/10"
+                      : c.unlocked
+                        ? "border-white/20 bg-white/[0.06]"
+                        : "border-white/10 bg-black/30"
                 }`}
               >
-                {c.completed ? "★" : c.number}
+                {!c.unlocked ? (
+                  <span className="material-symbols-outlined text-[16px]! text-on-surface-variant/55">
+                    lock
+                  </span>
+                ) : badgeType ? (
+                  <Image
+                    src={gymBadgeImageUrl(badgeType)}
+                    alt=""
+                    width={28}
+                    height={28}
+                    unoptimized
+                    className={`h-6 w-6 object-contain sm:h-7 sm:w-7 ${
+                      c.completed ? "" : "opacity-55 grayscale"
+                    }`}
+                    aria-hidden
+                  />
+                ) : (
+                  <span
+                    className={`material-symbols-outlined text-[18px]! ${
+                      c.completed ? "text-tertiary" : "text-on-surface-variant"
+                    }`}
+                  >
+                    {c.completed ? "military_tech" : "flag"}
+                  </span>
+                )}
+                {c.completed && (
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-400 text-surface">
+                    <span className="material-symbols-outlined text-[10px]! leading-none">
+                      check
+                    </span>
+                  </span>
+                )}
               </span>
               <span className="h-1 w-full overflow-hidden rounded-full bg-white/10">
                 <span
-                  className="block h-full rounded-full bg-pokeball-red transition-all duration-500"
+                  className={`block h-full rounded-full ${PATH_PROGRESS_FILL} transition-all duration-500`}
                   style={{ width: `${c.unlocked ? c.percent : 0}%` }}
                 />
               </span>
@@ -502,9 +548,7 @@ function ChapterHero({ chapter, mapSrc }: { chapter: Chapter; mapSrc: string }) 
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-white/10">
             <div
-              className={`h-full rounded-full transition-all duration-700 ${
-                chapter.completed ? "bg-tertiary" : "bg-pokeball-red"
-              }`}
+              className={`h-full rounded-full transition-all duration-700 ${PATH_PROGRESS_FILL}`}
               style={{ width: `${chapter.percent}%` }}
             />
           </div>
@@ -516,6 +560,7 @@ function ChapterHero({ chapter, mapSrc }: { chapter: Chapter; mapSrc: string }) 
 
 function ZoneRow({
   zone,
+  isLast,
   selected,
   isFarming,
   gymRequirement,
@@ -524,6 +569,7 @@ function ZoneRow({
   onPick,
 }: {
   zone: MapLocation;
+  isLast: boolean;
   selected: boolean;
   isFarming: boolean;
   gymRequirement?: GymRequirement;
@@ -538,6 +584,13 @@ function ZoneRow({
   const done = zone.totalStages > 0 && zone.completedStages >= zone.totalStages;
   const caught = zone.encounters.filter((e) => e.caught).length;
   const pct = zone.totalStages > 0 ? (zone.completedStages / zone.totalStages) * 100 : 0;
+  // El tramo que sale de esta zona se pinta al ritmo de sus stages (gimnasio =
+  // medalla del capítulo). Así el camino se enciende de a poco, no de golpe.
+  const pathPct = isGym
+    ? chapter.completed
+      ? 100
+      : 0
+    : pct;
 
   const requirementsLeft = isGym
     ? [
@@ -550,26 +603,53 @@ function ZoneRow({
 
   return (
     <li className="relative flex gap-3">
-      <span
-        className={`relative z-10 mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 ${
-          !zone.unlocked
-            ? "border-white/15 bg-surface-container text-on-surface-variant/50"
-            : isFarming
-              ? "border-pokeball-red bg-pokeball-red/15 text-pokeball-red"
-              : `${style.ring} ${style.text}`
-        }`}
-        style={
-          isFarming || (zone.unlocked && isGym)
-            ? { boxShadow: `0 0 16px ${isFarming ? "rgba(238,21,21,0.45)" : style.glow}` }
-            : undefined
-        }
-      >
-        {zone.unlocked ? (
-          <ZoneIcon kind={style.icon} className="h-[19px] w-[19px]" />
-        ) : (
-          <span className="material-symbols-outlined text-[18px]!">lock</span>
+      <div className="relative w-11 shrink-0 self-stretch">
+        <span
+          className={`relative z-10 mt-0.5 flex h-11 w-11 items-center justify-center rounded-full border-2 ${
+            !zone.unlocked
+              ? "border-white/15 bg-surface-container text-on-surface-variant/50"
+              : isFarming
+                ? "border-emerald-400 bg-emerald-400/15 text-emerald-400"
+                : `${style.ring} ${style.text}`
+          }`}
+          style={
+            isFarming || (zone.unlocked && isGym)
+              ? { boxShadow: `0 0 16px ${isFarming ? "rgba(52,211,153,0.45)" : style.glow}` }
+              : undefined
+          }
+        >
+          {zone.unlocked && isGym && gymRequirement?.leaderSpriteUrl ? (
+            /*
+              El nodo del gimnasio lleva el sprite de su líder, no la medalla
+              genérica: ocho nodos con el mismo ícono no dejaban distinguir un
+              gimnasio de otro al recorrer el capítulo. El sprite pixel de
+              Showdown pesa poco y ya está en `public/gyms/leaders/`.
+            */
+            <Image
+              src={gymRequirement.leaderSpriteUrl}
+              alt=""
+              width={40}
+              height={40}
+              className="h-9 w-9 object-contain [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+            />
+          ) : zone.unlocked ? (
+            <ZoneIcon kind={style.icon} className="h-8 w-8" />
+          ) : (
+            <span className="material-symbols-outlined text-[18px]!">lock</span>
+          )}
+        </span>
+        {!isLast && (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-[calc(0.125rem+2.75rem)] bottom-[-0.5rem] w-px -translate-x-1/2 overflow-hidden bg-white/15"
+          >
+            <span
+              className="absolute inset-x-0 top-0 w-full bg-gradient-to-b from-[#ffcb05] to-[#ff8a00] shadow-[0_0_6px_rgba(255,160,20,0.85)] transition-[height] duration-500 ease-out"
+              style={{ height: `${Math.min(100, Math.max(0, pathPct))}%` }}
+            />
+          </span>
         )}
-      </span>
+      </div>
 
       <button
         type="button"
@@ -577,7 +657,7 @@ function ZoneRow({
         className={`glass-panel min-w-0 flex-1 rounded-xl border p-3 text-left transition ${
           selected ? "border-white/25 bg-white/[0.04]" : "border-white/10 hover:bg-white/[0.03]"
         } ${!zone.unlocked ? "opacity-55" : ""} ${
-          isFarming ? "ring-1 ring-pokeball-red/40" : ""
+          isFarming ? "ring-1 ring-emerald-400/40" : ""
         } ${
           // El gimnasio cierra el capítulo: pesa el doble que una ruta.
           isGym ? "py-4" : ""
@@ -593,7 +673,7 @@ function ZoneRow({
             {t(zone.kindKey)}
           </span>
           {isFarming && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-pokeball-red/50 bg-pokeball-red/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-pokeball-red shadow-[0_0_12px_rgba(238,21,21,0.35)]">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.35)]">
               <span className="material-symbols-outlined text-[12px]!">my_location</span>
               {t("farming")}
             </span>
@@ -629,11 +709,7 @@ function ZoneRow({
         {zone.unlocked && zone.totalStages > 0 && (
           <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
             <div
-              // Terminada se apaga a verde tenue: informa sin gritar. La barra
-              // roja es la que tiene que llamar la atención, la que falta.
-              className={`h-full rounded-full transition-all duration-500 ${
-                done ? "bg-emerald-400/50" : "bg-pokeball-red"
-              }`}
+              className={`h-full rounded-full ${PATH_PROGRESS_FILL} transition-all duration-500`}
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -658,6 +734,7 @@ function ZoneRow({
 
 function ZonePanel({
   zone,
+  chapter,
   isFarming,
   farmingStageId,
   pending,
@@ -671,6 +748,7 @@ function ZonePanel({
   showExploreCta,
 }: {
   zone: MapLocation;
+  chapter: Chapter;
   isFarming: boolean;
   farmingStageId: string;
   pending: boolean;
@@ -696,20 +774,35 @@ function ZonePanel({
   return (
     <section
       className={`glass-panel rounded-xl border p-4 ${
-        isFarming ? "border-pokeball-red/50 shadow-[0_0_28px_rgba(238,21,21,0.18)]" : "border-white/10"
+        isFarming ? "border-emerald-400/50 shadow-[0_0_28px_rgba(52,211,153,0.18)]" : "border-white/10"
       }`}
     >
       <div className="flex items-start gap-2.5">
         <span
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 ${style.ring} ${style.text}`}
+          className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 ${style.ring} ${style.text}`}
+          style={
+            isGym && gymRequirement?.leaderSpriteUrl
+              ? { boxShadow: `0 0 16px ${style.glow}` }
+              : undefined
+          }
         >
-          <ZoneIcon kind={style.icon} className="h-[21px] w-[21px]" />
+          {isGym && gymRequirement?.leaderSpriteUrl ? (
+            <Image
+              src={gymRequirement.leaderSpriteUrl}
+              alt=""
+              width={44}
+              height={44}
+              className="h-10 w-10 object-contain [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+            />
+          ) : (
+            <ZoneIcon kind={style.icon} className="h-9 w-9" />
+          )}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-headline-md text-white">{t(zone.nameKey)}</h3>
             {isFarming && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-pokeball-red/50 bg-pokeball-red/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-pokeball-red">
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
                 <span className="material-symbols-outlined text-[12px]!">my_location</span>
                 {tUx("youAreHere")}
               </span>
@@ -920,13 +1013,29 @@ function ZonePanel({
           {/* Acciones */}
           <div className="mt-4 flex flex-col gap-2">
             {isGym ? (
-              <Link
-                href={gymRequirement ? `/gyms/${gymRequirement.gymId}` : "/gyms"}
-                className="flex items-center justify-center gap-1.5 rounded-lg bg-tertiary px-4 py-2.5 text-label-md font-semibold text-surface transition hover:bg-tertiary/85"
-              >
-                <span className="material-symbols-outlined text-[18px]!">military_tech</span>
-                {t("challengeGym")}
-              </Link>
+              chapter.stagesDone < chapter.stagesTotal ? (
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    disabled
+                    className="flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-amber-300/35 bg-amber-300/10 px-4 py-2.5 text-label-md font-semibold text-amber-200"
+                  >
+                    <span className="material-symbols-outlined text-[18px]!">lock</span>
+                    {t("challengeGym")}
+                  </button>
+                  <p className="text-center text-[11px] text-on-surface-variant">
+                    {t("reqStages")} ({chapter.stagesDone}/{chapter.stagesTotal})
+                  </p>
+                </div>
+              ) : (
+                <Link
+                  href={gymRequirement ? `/gyms/${gymRequirement.gymId}` : "/gyms"}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-tertiary px-4 py-2.5 text-label-md font-semibold text-surface transition hover:bg-tertiary/85"
+                >
+                  <span className="material-symbols-outlined text-[18px]!">military_tech</span>
+                  {t("challengeGym")}
+                </Link>
+              )
             ) : (
               <>
                 <button

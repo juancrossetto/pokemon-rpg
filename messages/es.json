@@ -146,10 +146,6 @@
     "activeSquad": "Equipo activo",
     "manage": "Administrar",
     "emptySlot": "Espacio vacío",
-    "quickActions": "Accesos",
-    "quick": {
-      "events": "Eventos"
-    },
     "rewards": {
       "title": "Recompensas",
       "claim": "Reclamar",
@@ -566,7 +562,9 @@
       "caught": "Ya capturado",
       "caughtCount": "{caught}/{total} capturados",
       "noEncounters": "No hay datos de encuentros para esta zona.",
-      "teamReady": "{ready}/{total}"
+      "teamReady": "{ready}/{total}",
+      "squadStatus": "Estado del escuadrón",
+      "hurtCount": "{count, plural, one {# Pokémon herido} other {# Pokémon heridos}}"
     },
     "run": "Huir",
     "forfeit": "Rendirse",
@@ -726,6 +724,9 @@
     "continueBattle": "Continuar batalla",
     "locked": "Bloqueado",
     "lockedHint": "Conseguí la medalla anterior para desbloquearlo",
+    "stagesIncomplete": "Capítulo incompleto",
+    "stagesIncompleteHint": "Completá todos los stages del capítulo antes de desafiar el gimnasio.",
+    "goToCampaign": "Ir al viaje",
     "badgeEarned": "Medalla obtenida",
     "cooldownHint": "Disponible en {hours}h",
     "skipCooldown": "Saltar cooldown",
@@ -791,6 +792,7 @@
     "statusReadyAvailable": "Disponible",
     "statusReadyCooldown": "Cooldown {hours}h",
     "statusReadyLocked": "Bloqueado",
+    "statusReadyStages": "Completar stages del capítulo",
     "statusReadyCleared": "Completado",
     "statusReadyClosed": "Cerrado",
     "corridorSpecialty": "Especialidad",
@@ -2321,18 +2323,17 @@
     "unlockEyebrow": "Zona desbloqueada",
     "unlockBody": "¡Ya podés ir a {name}!",
     "onboarding": {
-      "eyebrow": "Tu primera salida",
-      "title": "Tres pasos para empezar",
-      "step1Title": "Elegí zona en el Viaje",
-      "step1Body": "Marcá dónde querés avanzar la historia.",
+      "eyebrow": "Cómo empezar",
+      "title": "Tu guía rápida",
+      "step1Title": "Elegí una zona",
+      "step1Body": "En el Viaje marcás dónde avanzar la historia.",
       "step2Title": "Salí a explorar",
-      "step2Body": "Pelear, capturar y ganar experiencia en tu zona.",
+      "step2Body": "Peleá, capturá y ganá XP en tu zona.",
       "step3Title": "Desafiá el gimnasio",
       "step3Body": "Cuando estés listo, ganá la medalla y seguí.",
-      "cta": "¡Vamos!"
+      "cta": "Entendido"
     },
     "role": {
-      "home": "Tu próxima jugada: avanzar el Viaje o cuidar el equipo.",
       "campaign": "Acá elegís dónde avanzar la historia.",
       "battle": "Acá pelear y capturar en tu zona actual.",
       "gyms": "Hitos de progreso: medallas que desbloquean el camino.",

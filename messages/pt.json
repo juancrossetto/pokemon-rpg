@@ -146,10 +146,6 @@
     "activeSquad": "Time ativo",
     "manage": "Gerenciar",
     "emptySlot": "Espaço vazio",
-    "quickActions": "Atalhos",
-    "quick": {
-      "events": "Eventos"
-    },
     "rewards": {
       "title": "Recompensas",
       "claim": "Resgatar",
@@ -566,7 +562,9 @@
       "caught": "Já capturado",
       "caughtCount": "{caught}/{total} capturados",
       "noEncounters": "Sem dados de encontros para esta zona.",
-      "teamReady": "{ready}/{total}"
+      "teamReady": "{ready}/{total}",
+      "squadStatus": "Estado do esquadrão",
+      "hurtCount": "{count, plural, one {# Pokémon ferido} other {# Pokémon feridos}}"
     },
     "run": "Fugir",
     "forfeit": "Desistir",
@@ -726,6 +724,9 @@
     "continueBattle": "Continuar batalha",
     "locked": "Bloqueado",
     "lockedHint": "Consiga a insígnia anterior para desbloquear",
+    "stagesIncomplete": "Capítulo incompleto",
+    "stagesIncompleteHint": "Conclua todos os stages do capítulo antes de desafiar o ginásio.",
+    "goToCampaign": "Ir à jornada",
     "badgeEarned": "Insígnia conquistada",
     "cooldownHint": "Disponível em {hours}h",
     "skipCooldown": "Pular cooldown",
@@ -791,6 +792,7 @@
     "statusReadyAvailable": "Disponível",
     "statusReadyCooldown": "Cooldown {hours}h",
     "statusReadyLocked": "Bloqueado",
+    "statusReadyStages": "Concluir stages do capítulo",
     "statusReadyCleared": "Concluído",
     "statusReadyClosed": "Fechado",
     "corridorSpecialty": "Especialidade",
@@ -2321,18 +2323,17 @@
     "unlockEyebrow": "Zona desbloqueada",
     "unlockBody": "Agora você pode ir a {name}!",
     "onboarding": {
-      "eyebrow": "Sua primeira saída",
-      "title": "Três passos para começar",
-      "step1Title": "Escolha a zona na Jornada",
-      "step1Body": "Marque onde quer avançar a história.",
+      "eyebrow": "Como começar",
+      "title": "Guia rápida",
+      "step1Title": "Escolha uma zona",
+      "step1Body": "Na Jornada você marca onde avançar a história.",
       "step2Title": "Saia para explorar",
       "step2Body": "Batalhe, capture e ganhe XP na sua zona.",
       "step3Title": "Desafie o ginásio",
       "step3Body": "Quando estiver pronto, ganhe a medalha e siga.",
-      "cta": "Vamos!"
+      "cta": "Entendi"
     },
     "role": {
-      "home": "Sua próxima jogada: avançar a Jornada ou cuidar do time.",
       "campaign": "Aqui você escolhe onde avançar a história.",
       "battle": "Aqui você batalha e captura na zona atual.",
       "gyms": "Marcos de progresso: medalhas que abrem o caminho.",

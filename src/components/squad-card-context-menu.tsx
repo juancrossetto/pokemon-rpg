@@ -65,6 +65,7 @@ export function SquadCardContextMenu({
   showFlags = true,
   showViewTeam = true,
   triggerVariant = "default",
+  triggerPosition,
   labels,
   bagCounts = EMPTY_SQUAD_BAG,
   moves,
@@ -102,6 +103,12 @@ export function SquadCardContextMenu({
   showViewTeam?: boolean;
   /** `ghost` = ícono discreto (home strip); `default` = botón más visible. */
   triggerVariant?: "default" | "ghost";
+  /**
+   * Dónde se ancla el disparador. Se corre cuando la esquina ya está ocupada
+   * —en la ficha de Home vive ahí el botón de cerrar, y los dos botones se
+   * pisaban.
+   */
+  triggerPosition?: string;
   labels: SquadContextLabels;
   bagCounts?: SquadBagCounts;
   moves?: (TeamMoveDetail | null)[];
@@ -128,6 +135,8 @@ export function SquadCardContextMenu({
   onNicknameChange?: (next: string | null) => void;
   children: ReactNode;
 }) {
+  const triggerAnchor =
+    triggerPosition ?? (triggerVariant === "ghost" ? "right-0.5 top-0.5" : "right-1.5 top-1.5");
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menu, setMenu] = useState<MenuState>(null);
@@ -231,8 +240,8 @@ export function SquadCardContextMenu({
         }}
         className={
           triggerVariant === "ghost"
-            ? "absolute right-0.5 top-0.5 z-20 flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition duration-150 hover:bg-white/8 hover:text-white/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/25 active:bg-white/12 active:text-white"
-            : "absolute right-1.5 top-1.5 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-[0_4px_12px_rgba(0,0,0,0.45)] backdrop-blur-md transition duration-200 hover:scale-105 hover:border-white/30 hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 active:scale-95"
+            ? `absolute ${triggerAnchor} z-20 flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition duration-150 hover:bg-white/8 hover:text-white/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/25 active:bg-white/12 active:text-white`
+            : `absolute ${triggerAnchor} z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-[0_4px_12px_rgba(0,0,0,0.45)] backdrop-blur-md transition duration-200 hover:scale-105 hover:border-white/30 hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 active:scale-95`
         }
       >
         <span

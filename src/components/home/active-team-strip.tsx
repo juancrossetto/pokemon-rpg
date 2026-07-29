@@ -12,6 +12,7 @@ import {
   type SquadContextLabels,
 } from "@/components/squad-card-context-menu";
 import { SquadCardSheet, type SquadCardSheetLabels } from "@/components/squad-card-sheet";
+import { PokemonShowcaseCard } from "@/components/pokemon-showcase-card";
 import { PokeSparks } from "@/components/poke-sparks";
 import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
 import type { HomeSquadMember } from "@/components/home/squad-types";
@@ -350,60 +351,73 @@ function TeamSlot({
               role="dialog"
               aria-modal="true"
               aria-label={displayName}
-              className="team-detail-sheet relative z-[1] flex max-h-[min(88dvh,calc(100dvh-var(--bottom-nav-h)-env(safe-area-inset-bottom)-1rem))] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-white/12 bg-[#0b0d13] shadow-[0_-12px_48px_rgba(0,0,0,0.55)] sm:rounded-2xl sm:shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
+              className="team-detail-sheet relative z-[1] flex max-h-[min(88dvh,calc(100dvh-var(--bottom-nav-h)-env(safe-area-inset-bottom)-1rem))] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-white/12 bg-[#0b0d13] shadow-[0_-12px_48px_rgba(0,0,0,0.55)] sm:rounded-[1.5rem] sm:shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
             >
-              <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-[15px] font-semibold capitalize text-white">
-                    {displayName}
-                  </p>
-                  <p className="text-[12px] text-on-surface-variant">
-                    {index === 0 ? leadLabel : slotLabel} · {member.levelLabel}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="grid h-11 w-11 place-items-center rounded-lg border border-white/10 text-on-surface-variant"
-                  aria-label={tTeam("drawer.hideDetails")}
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {/* El disparador "…" se corre a la izquierda: la esquina es
+                    del botón de cerrar y los dos se pisaban. */}
+                <SquadCardContextMenu
+                  {...menuProps}
+                  showViewTeam={false}
+                  triggerPosition="right-14 top-3"
                 >
-                  <span className="material-symbols-outlined text-[20px]!">close</span>
-                </button>
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-                <SquadCardContextMenu {...menuProps} showViewTeam={false}>
-                  <div className="team-detail-sheet__hero mb-3 flex flex-col items-center pt-2">
-                    {member.spriteUrl && (
-                      <Image
-                        src={member.spriteUrl}
-                        alt={member.speciesName}
-                        width={120}
-                        height={120}
-                        className="team-detail-sheet__sprite h-28 w-28 object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)]"
+                  <PokemonShowcaseCard
+                    flush
+                    interactive={false}
+                    speciesId={member.speciesId}
+                    speciesName={member.speciesName}
+                    nickname={member.nickname}
+                    types={member.types}
+                    spriteUrl={member.spriteUrl}
+                    fainted={fainted}
+                    faintedLabel={member.labels.fainted}
+                    spriteClassName="team-detail-sheet__sprite"
+                    badges={{
+                      slot: index === 0 ? null : slotLabel,
+                      lead: index === 0 ? leadLabel : null,
+                      level: member.levelLabel,
+                      favorite: member.isFavorite ? member.labels.favorite : null,
+                      tradeLocked: member.isTradeLocked ? member.labels.tradeLocked : null,
+                      canEvolve: canEvolve ? (member.labels.canEvolveBadge ?? "") : null,
+                      heldItem: member.heldItemName,
+                    }}
+                    overlay={
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpen(false);
+                        }}
+                        className="absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full border border-white/12 bg-black/55 text-on-surface-variant backdrop-blur-sm transition hover:border-white/25 hover:text-on-surface"
+                        aria-label={tTeam("drawer.hideDetails")}
+                      >
+                        <span className="material-symbols-outlined text-[20px]!">close</span>
+                      </button>
+                    }
+                  >
+                    <div className="mt-3">
+                      <SquadCardSheet
+                        labels={sheetLabels}
+                        moves={member.moves}
+                        currentHp={member.currentHp}
+                        maxHp={member.maxHp}
+                        xpPct={member.xpPct}
+                        atk={member.atk}
+                        def={member.def}
+                        spAtk={member.spAtk}
+                        spDef={member.spDef}
+                        speed={member.speed}
+                        evolutionChain={member.evolutionChain}
+                        instanceId={member.id}
+                        currentLevel={member.level}
+                        ownedEvolutionItems={member.ownedEvolutionItems}
                       />
-                    )}
-                  </div>
-                  <SquadCardSheet
-                    labels={sheetLabels}
-                    moves={member.moves}
-                    currentHp={member.currentHp}
-                    maxHp={member.maxHp}
-                    xpPct={member.xpPct}
-                    atk={member.atk}
-                    def={member.def}
-                    spAtk={member.spAtk}
-                    spDef={member.spDef}
-                    speed={member.speed}
-                    evolutionChain={member.evolutionChain}
-                    instanceId={member.id}
-                    currentLevel={member.level}
-                    ownedEvolutionItems={member.ownedEvolutionItems}
-                  />
+                    </div>
+                  </PokemonShowcaseCard>
                 </SquadCardContextMenu>
               </div>
 
-              <div className="border-t border-white/10 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <div className="border-t border-white/10 bg-[#0a0a0a] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <Link
                   href="/team"
                   className="flex min-h-11 items-center justify-center gap-1 rounded-xl border border-white/15 text-[13px] font-semibold text-on-surface transition hover:bg-white/5"

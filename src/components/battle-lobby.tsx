@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { HealButton } from "@/components/heal-button";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { StartEncounterButton } from "@/components/start-encounter-button";
@@ -210,26 +211,49 @@ export function BattleLobby({
               )}
             </section>
 
-            <section className="glass-panel rounded-xl border border-white/10 p-4">
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                {t("lobby.shortcuts")}
-              </p>
-              <div className="flex flex-col gap-2">
-                <ShortcutLink href="/gyms" icon="trophy" label={t("lobby.gotoGyms")} />
-                <ShortcutLink href="/pvp" icon="swords" label={t("lobby.gotoPvp")} />
-                {/* El escuadrón completo salió de esta pantalla, pero saber si
-                    podés pelear sigue siendo necesario acá. */}
-                <ShortcutLink
-                  href="/team"
-                  icon="group"
-                  label={t("lobby.gotoTeam")}
-                  hint={t("lobby.teamReady", {
-                    ready: lobby.teamReady,
-                    total: lobby.teamTotal,
-                  })}
+            {/*
+              Centro Pokémon, en lugar de los accesos directos y del listado
+              del equipo.
+
+              Gimnasios, PvP y Equipo ya están a un click en el navbar. Y el
+              escuadrón completo se ve en Inicio y en Equipo: repetirlo acá
+              sería la cuarta pantalla con la misma información. Lo que **no**
+              existe en ningún otro lado es poder curar sin salir del lugar
+              donde farmeás, así que el panel se queda solo con eso.
+
+              Aparece únicamente si hay alguien herido: con el equipo entero no
+              hay nada que decidir y el bloque no se dibuja.
+            */}
+            {lobby.heal.hurtCount > 0 && (
+              <section className="glass-panel rounded-xl border border-white/10 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-error/25 bg-error/10"
+                  >
+                    <span className="material-symbols-outlined text-[18px]! text-error">
+                      healing
+                    </span>
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-label-sm font-semibold text-on-surface">
+                      {t("lobby.squadStatus")}
+                    </p>
+                    <p className="text-[11px] text-on-surface-variant">
+                      {t("lobby.hurtCount", { count: lobby.heal.hurtCount })}
+                    </p>
+                  </div>
+                </div>
+                <HealButton
+                  locale={locale}
+                  needsHealing
+                  cooldownMsLeft={lobby.heal.cooldownMsLeft}
+                  rushCost={lobby.heal.rushCost}
+                  coins={lobby.heal.coins}
+                  teamMaxLevel={lobby.heal.teamMaxLevel}
                 />
-              </div>
-            </section>
+              </section>
+            )}
 
             {lobby.recent.length > 0 && (
               <section className="glass-panel rounded-xl border border-white/10 p-4">
@@ -393,28 +417,3 @@ function LoadoutChip({
   );
 }
 
-function ShortcutLink({
-  href,
-  icon,
-  label,
-  hint,
-}: {
-  href: "/gyms" | "/pvp" | "/team";
-  icon: string;
-  label: string;
-  hint?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-2 text-label-sm text-on-surface transition hover:border-white/20 hover:bg-white/[0.06]"
-    >
-      <span className="material-symbols-outlined text-[18px]! text-pokeball-red">{icon}</span>
-      <span className="flex-1">{label}</span>
-      {hint && <span className="font-mono text-[11px] text-on-surface-variant">{hint}</span>}
-      <span className="material-symbols-outlined text-[16px]! text-on-surface-variant">
-        chevron_right
-      </span>
-    </Link>
-  );
-}

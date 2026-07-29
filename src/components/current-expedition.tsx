@@ -174,8 +174,9 @@ export function CurrentExpedition({
             >
               <Link
                 href={ctaHref}
-                className="expedition-cta flex min-h-11 w-full items-center justify-center rounded-xl bg-pokeball-red px-4 text-[15px] font-bold text-white shadow-[0_10px_28px_rgba(238,21,21,0.4),inset_0_1px_0_rgba(255,255,255,0.22)] transition hover:bg-pokeball-red/90 hover:shadow-[0_12px_32px_rgba(238,21,21,0.5)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:min-h-12 sm:text-[16px]"
+                className="expedition-cta flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ffcb05] to-[#ff8a00] px-4 text-[15px] font-bold text-[#1a1408] shadow-[0_8px_24px_rgba(255,160,20,0.35),inset_0_1px_0_rgba(255,255,255,0.4)] transition hover:brightness-110 hover:shadow-[0_10px_28px_rgba(255,160,20,0.45)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-yellow/70 sm:min-h-12 sm:text-[16px]"
               >
+                <span className="material-symbols-outlined text-[18px]!">explore</span>
                 {ctaLabel}
               </Link>
             </CoachMark>

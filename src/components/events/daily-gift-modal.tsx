@@ -83,7 +83,8 @@ export function DailyGiftModal({
   total: number;
   labels: GiftModalLabels;
   locale: string;
-  /** Si false, al cerrar sin reclamar no deja chip (Home usa IdleRewardWidget). */
+  /** Si false, al cerrar sin reclamar no deja chip flotante. */
+
   showChip?: boolean;
 }) {
   const seen = useSyncExternalStore(subscribe, wasSeen, () => true);
@@ -151,8 +152,9 @@ export function DailyGiftModal({
   if (!open) {
     if (!showChip) return null;
     /*
-      Cerrado y sin reclamar: queda un acceso discreto para volver a abrirlo.
-      En Home el IdleRewardWidget cubre este rol — pasar showChip={false}.
+      Cerrado y sin reclamar: queda un acceso discreto para volver a abrirlo
+      (p. ej. en /events). En Home se pasa showChip={false}: el atajo Events
+      con badge cubre el aviso.
     */
     return (
       <button
@@ -160,12 +162,16 @@ export function DailyGiftModal({
         onClick={reopen}
         className="gift-chip mb-4 inline-flex max-w-full items-center gap-2 rounded-md border border-emerald-400/35 bg-emerald-400/[0.08] py-1.5 pl-1.5 pr-3 text-left transition hover:border-emerald-400/55 hover:bg-emerald-400/[0.13]"
       >
-        <span
+        {/* Arte propio en vez de la ligadura `redeem`. Va sin caja: tiene luz
+            y sombra propias y el recuadro con borde lo aplanaba. */}
+        <Image
+          src="/nav/event-icon.png"
+          alt=""
+          width={28}
+          height={28}
+          className="h-7 w-7 shrink-0 object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
           aria-hidden
-          className="grid h-7 w-7 shrink-0 place-items-center rounded border border-emerald-400/30 bg-emerald-400/10"
-        >
-          <span className="material-symbols-outlined text-[16px]! text-emerald-300">redeem</span>
-        </span>
+        />
         <span className="min-w-0 truncate text-label-sm text-emerald-100">{labels.reopen}</span>
         <span
           aria-hidden

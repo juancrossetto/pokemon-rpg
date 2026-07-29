@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { redirect, Link } from "@/i18n/navigation";
 import { auth } from "@/auth";
+import { gymLeaderImageUrl } from "@/lib/gym-art";
 import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
@@ -55,6 +56,7 @@ export default async function CampaignPage({
         order: true,
         name: true,
         badgeName: true,
+        leaderName: true,
         isElite: true,
         team: { select: { level: true } },
       },
@@ -79,6 +81,9 @@ export default async function CampaignPage({
       gymId: matched.id,
       badgeName: matched.badgeName,
       recommendedLevel: Math.max(...matched.team.map((p) => p.level), 1),
+      // Sprite pixel del líder: identifica el gimnasio mejor que una medalla
+      // genérica repetida en los ocho nodos.
+      leaderSpriteUrl: gymLeaderImageUrl(matched.leaderName),
     };
   }
 

@@ -2,6 +2,8 @@
 
 import { redirect } from "@/i18n/navigation";
 import { isGymOpenAt } from "@/lib/gym-status";
+import { areChapterStagesCompleteForGym } from "@/lib/campaign";
+import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -9,7 +11,7 @@ export type StartGymRunResult =
   | { success: true }
   | {
       success: false;
-      error: "no_lead" | "fainted_lead" | "locked" | "on_cooldown" | "closed";
+      error: "no_lead" | "fainted_lead" | "locked" | "on_cooldown" | "closed" | "stages_incomplete";
       hoursLeft?: number;
       opensHour?: number;
       closesHour?: number;
@@ -72,6 +74,15 @@ export async function startGymRun(gymId: string, locale: string): Promise<StartG
     prisma.badge.findUnique({ where: { userId_gymId: { userId, gymId } } }),
     prisma.gymAttempt.findFirst({ where: { userId, gymId }, orderBy: { attemptedAt: "desc" } }),
   ]);
+
+  // Primera medalla: hay que terminar los stages del capítulo. Revancha libre.
+  if (!ownBadge) {
+    const progress = await ensureCampaignProgress(userId);
+    if (!areChapterStagesCompleteForGym(gym.order, progress.completedStageIds)) {
+      return { success: false, error: "stages_incomplete" };
+    }
+  }
+
   if (!ownBadge && lastAttempt && !lastAttempt.won) {
     const cooldownMs = gym.cooldownHours * 60 * 60 * 1000;
     const elapsedMs = Date.now() - lastAttempt.attemptedAt.getTime();

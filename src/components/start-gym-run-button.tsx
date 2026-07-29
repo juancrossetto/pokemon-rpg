@@ -12,7 +12,10 @@ export function StartGymRunButton({
   gymId: string;
   locale: string;
   label: string;
-  errors: Record<"no_lead" | "fainted_lead" | "locked" | "on_cooldown" | "closed", string>;
+  errors: Record<
+    "no_lead" | "fainted_lead" | "locked" | "on_cooldown" | "closed" | "stages_incomplete",
+    string
+  >;
 }) {
   const [state, formAction, pending] = useActionState<StartGymRunResult | null>(
     async () => (await startGymRun(gymId, locale)) ?? null,

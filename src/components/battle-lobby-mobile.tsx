@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { HealButton } from "@/components/heal-button";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { StartEncounterButton } from "@/components/start-encounter-button";
@@ -185,16 +186,46 @@ export function BattleLobbyMobile({
         />
       </section>
 
-      <section className="lobby-rise grid grid-cols-3 gap-2" style={{ animationDelay: "90ms" }}>
-        <NavTile href="/gyms" icon="trophy" label={t("lobby.gotoGyms")} />
-        <NavTile href="/pvp" icon="swords" label={t("lobby.gotoPvp")} />
-        <NavTile
-          href="/team"
-          icon="group"
-          label={t("lobby.gotoTeam")}
-          badge={`${lobby.teamReady}/${lobby.teamTotal}`}
-        />
-      </section>
+      {/*
+        Los tres tiles de navegación salieron: Gimnasios vive en Aventura, PvP
+        en Combate y Equipo en Colección, todos a un toque en la bottom bar.
+
+        En su lugar, curar. El caso "líder debilitado" ya se resolvía en el CTA,
+        pero solo cuando el daño ya estaba hecho: si el equipo llega herido a la
+        siguiente exploración, no había aviso. Este bloque aparece apenas hay
+        alguien lastimado y evita el viaje de ida y vuelta a Equipo.
+      */}
+      {lobby.heal.hurtCount > 0 && (
+        <section
+          className="lobby-rise flex items-center gap-2.5 rounded-xl border border-error/20 bg-error/[0.06] p-3"
+          style={{ animationDelay: "90ms" }}
+        >
+          <span
+            aria-hidden
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-error/25 bg-error/10"
+          >
+            <span className="material-symbols-outlined text-[20px]! text-error">healing</span>
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-label-sm font-semibold text-on-surface">
+              {t("lobby.squadStatus")}
+            </p>
+            <p className="text-[11px] text-on-surface-variant">
+              {t("lobby.hurtCount", { count: lobby.heal.hurtCount })}
+            </p>
+          </div>
+          <div className="shrink-0">
+            <HealButton
+              locale={locale}
+              needsHealing
+              cooldownMsLeft={lobby.heal.cooldownMsLeft}
+              rushCost={lobby.heal.rushCost}
+              coins={lobby.heal.coins}
+              teamMaxLevel={lobby.heal.teamMaxLevel}
+            />
+          </div>
+        </section>
+      )}
 
       {lobby.unspentTotal > 0 && (
         <Link
@@ -346,28 +377,5 @@ function ResourceTile({
         </span>
       </span>
     </div>
-  );
-}
-
-function NavTile({
-  href,
-  icon,
-  label,
-  badge,
-}: {
-  href: string;
-  icon: string;
-  label: string;
-  badge?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex flex-col items-center gap-1 rounded-xl border border-white/[0.08] bg-black/25 px-1 py-2.5 text-center transition active:scale-[0.97]"
-    >
-      <span className="material-symbols-outlined text-[22px]! text-pokeball-red">{icon}</span>
-      <span className="w-full truncate text-[10px] text-on-surface">{label}</span>
-      {badge && <span className="font-mono text-[9px] text-on-surface-variant">{badge}</span>}
-    </Link>
   );
 }

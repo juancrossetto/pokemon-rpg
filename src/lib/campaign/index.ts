@@ -64,6 +64,8 @@ export {
   applyGymBadgeUnlock,
   buildExpeditionView,
   listLocationsForUi,
+  chapterWildStagesForGym,
+  areChapterStagesCompleteForGym,
 } from "./progress";
 
 export { type Chapter, buildChapters, activeChapterIndex } from "./chapters";

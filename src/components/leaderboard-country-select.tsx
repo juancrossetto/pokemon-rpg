@@ -20,7 +20,9 @@ export function LeaderboardCountrySelect({
 
   return (
     <label className="flex w-full flex-col gap-1">
-      <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-on-surface-variant/70">
+      {/* En mobile el filtro va en una barra de una sola línea y el rótulo
+          sobra: el `aria-label` del select cubre la accesibilidad. */}
+      <span className="hidden text-[10px] font-mono uppercase tracking-[0.16em] text-on-surface-variant/70 lg:block">
         {countryLabel}
       </span>
       <select
@@ -32,7 +34,7 @@ export function LeaderboardCountrySelect({
           if (next) params.set("country", next);
           router.push(`/ranking?${params.toString()}`);
         }}
-        className="w-full rounded-md border border-white/10 bg-black/40 px-2.5 py-2 text-label-sm text-on-surface focus:border-pokeball-red/50 focus:outline-none"
+        className="w-full rounded-md border border-white/10 bg-black/40 px-2.5 py-2 text-label-sm text-on-surface focus:border-white/40 focus:outline-none"
       >
         <option value="">{allLabel}</option>
         {options.map((c) => (

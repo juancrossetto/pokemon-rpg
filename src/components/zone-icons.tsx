@@ -1,15 +1,23 @@
+import Image from "next/image";
+
 /**
- * Iconografía de la campaña, dibujada a mano.
+ * Iconografía de la campaña.
  *
- * Material Symbols daba íconos de app genérica: un edificio de oficinas para
- * una ciudad Pokémon, un `radio_button_unchecked` para cada objetivo, una pesa
- * de gimnasio para el gimnasio. Todos son SVG inline sobre un viewBox de 24×24,
- * sin dependencias, y toman el color del contexto con `currentColor`.
+ * Los nodos del camino usan PNG a color. Objetivos y resumen siguen en SVG
+ * inline sobre 24×24 con `currentColor`, para convivir con Material Symbols.
  *
- * Convención: trazo de 1.4–1.7 y esquinas redondeadas, para que convivan con el
- * peso de Material Symbols en el resto de la app.
+ * Convención SVG: trazo de 1.4–1.7 y esquinas redondeadas.
  */
 export type ZoneIconProps = { className?: string };
+
+/** Sprites del camino: reemplazan los SVG monocromo en la lista de zonas. */
+const PATH_ICON_SRC: Record<"town" | "route" | "forest" | "dungeon" | "gym", string> = {
+  town: "/campaign/path-icons/town.png",
+  route: "/campaign/path-icons/route.png",
+  forest: "/campaign/path-icons/forest.png",
+  dungeon: "/campaign/path-icons/dungeon.png",
+  gym: "/campaign/path-icons/gym.png",
+};
 
 /** Ciudad: edificios con el techo del Centro Pokémon marcado. */
 export function CityIcon({ className = "" }: ZoneIconProps) {
@@ -237,6 +245,23 @@ const ICONS = {
 export type ZoneIconKind = keyof typeof ICONS;
 
 export function ZoneIcon({ kind, className }: { kind: ZoneIconKind; className?: string }) {
+  const src = PATH_ICON_SRC[kind];
+  if (src) {
+    // La plaza isométrica tiene más aire transparente que los otros sprites;
+    // un poco más grande equilibra el peso visual en el nodo.
+    const scale = kind === "town" ? "scale-[1.35]" : "";
+    return (
+      <Image
+        src={src}
+        alt=""
+        width={64}
+        height={64}
+        unoptimized
+        className={`object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)] ${scale} ${className ?? ""}`}
+        aria-hidden
+      />
+    );
+  }
   const Icon = ICONS[kind] ?? RouteIcon;
   return <Icon className={className} />;
 }

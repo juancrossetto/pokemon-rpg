@@ -172,6 +172,38 @@ export function unlockLocationIdAfter(
   return next.order > current.order ? candidateId : currentHighestId;
 }
 
+/**
+ * Stages salvajes del capítulo que cierra el gimnasio `gymOrder`.
+ * Misma partición que `buildChapters`: cada medalla 1–8 corta el tramo;
+ * el Alto Mando (orden > 8) no resetea el buffer entre sí.
+ */
+export function chapterWildStagesForGym(gymOrder: number): CampaignStage[] {
+  let current: CampaignLocation[] = [];
+  for (const loc of KANTO_REGION.locations) {
+    current.push(loc);
+    if (loc.kind !== "gym" || loc.requiresGymOrder == null) continue;
+    const order = loc.requiresGymOrder;
+    if (order === gymOrder) {
+      return current
+        .filter((z) => z.id !== loc.id)
+        .flatMap((z) => z.stages.filter((s) => !s.isGymMilestone));
+    }
+    if (order <= 8) current = [];
+  }
+  return [];
+}
+
+/** Sin stages salvajes pendientes en el capítulo → se puede desafiar el gimnasio. */
+export function areChapterStagesCompleteForGym(
+  gymOrder: number,
+  completedStageIds: readonly string[],
+): boolean {
+  const stages = chapterWildStagesForGym(gymOrder);
+  if (stages.length === 0) return true;
+  const done = new Set(completedStageIds);
+  return stages.every((s) => done.has(s.id));
+}
+
 export function applyStageCompletion(
   progress: CampaignProgressRow,
   stageId: string,

@@ -51,6 +51,8 @@ export type HomeSquadCardLabels = {
 
 export type HomeSquadMember = {
   id: string;
+  /** Para el número de Pokédex de la ficha grande. */
+  speciesId: number;
   level: number;
   isFavorite: boolean;
   isTradeLocked: boolean;
@@ -70,6 +72,7 @@ export type HomeSquadMember = {
   speed: number;
   evolutionChain: EvolutionStage[];
   ownedEvolutionItems?: string[];
+  heldItemName: string | null;
   moves: (HomeSquadMove | null)[];
   labels: Omit<HomeSquadCardLabels, "lead" | "slot" | "level">;
   menuLabels: SquadContextLabels;

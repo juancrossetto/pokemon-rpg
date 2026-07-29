@@ -146,10 +146,6 @@
     "activeSquad": "Active Squad",
     "manage": "Manage",
     "emptySlot": "Empty slot",
-    "quickActions": "Shortcuts",
-    "quick": {
-      "events": "Events"
-    },
     "rewards": {
       "title": "Rewards",
       "claim": "Claim",
@@ -566,7 +562,9 @@
       "caught": "Already caught",
       "caughtCount": "{caught}/{total} caught",
       "noEncounters": "No encounter data for this zone.",
-      "teamReady": "{ready}/{total}"
+      "teamReady": "{ready}/{total}",
+      "squadStatus": "Squad status",
+      "hurtCount": "{count, plural, one {# hurt Pokémon} other {# hurt Pokémon}}"
     },
     "run": "Run",
     "forfeit": "Forfeit",
@@ -726,6 +724,9 @@
     "continueBattle": "Continue battle",
     "locked": "Locked",
     "lockedHint": "Earn the previous badge to unlock this",
+    "stagesIncomplete": "Chapter incomplete",
+    "stagesIncompleteHint": "Clear every stage in this chapter before challenging the gym.",
+    "goToCampaign": "Go to journey",
     "badgeEarned": "Badge earned",
     "cooldownHint": "Available in {hours}h",
     "skipCooldown": "Skip cooldown",
@@ -791,6 +792,7 @@
     "statusReadyAvailable": "Available",
     "statusReadyCooldown": "Cooldown {hours}h",
     "statusReadyLocked": "Locked",
+    "statusReadyStages": "Clear chapter stages",
     "statusReadyCleared": "Cleared",
     "statusReadyClosed": "Closed",
     "corridorSpecialty": "Specialty",
@@ -2321,18 +2323,17 @@
     "unlockEyebrow": "Zone unlocked",
     "unlockBody": "You can now go to {name}!",
     "onboarding": {
-      "eyebrow": "Your first outing",
-      "title": "Three steps to start",
-      "step1Title": "Pick a zone on the Journey",
-      "step1Body": "Mark where you want to advance the story.",
-      "step2Title": "Head out to explore",
-      "step2Body": "Battle, catch, and gain XP in your zone.",
+      "eyebrow": "How to start",
+      "title": "Quick guide",
+      "step1Title": "Pick a zone",
+      "step1Body": "On the Journey, mark where to advance the story.",
+      "step2Title": "Go explore",
+      "step2Body": "Battle, catch, and earn XP in your zone.",
       "step3Title": "Challenge the gym",
       "step3Body": "When ready, earn the badge and keep going.",
-      "cta": "Let's go!"
+      "cta": "Got it"
     },
     "role": {
-      "home": "Your next move: advance the Journey or care for your team.",
       "campaign": "Choose where to advance the story.",
       "battle": "Battle and catch in your current zone.",
       "gyms": "Progress milestones: badges that unlock the path.",

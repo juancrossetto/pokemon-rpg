@@ -50,4 +50,12 @@ export type BattleLobbyData = {
   /** Cuántos del equipo están en pie — el escuadrón completo vive en /team. */
   teamReady: number;
   teamTotal: number;
+  /** Datos del Centro Pokémon: curar sin salir de la pantalla de combate. */
+  heal: {
+    hurtCount: number;
+    cooldownMsLeft: number;
+    rushCost: number;
+    coins: number;
+    teamMaxLevel: number;
+  };
 };

@@ -11,6 +11,8 @@ import { StartGymRunButton } from "@/components/start-gym-run-button";
 import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { gymCooldownRemainingMs } from "@/lib/gym-cooldown";
+import { ensureCampaignProgress } from "@/lib/campaign/ensure";
+import { areChapterStagesCompleteForGym } from "@/lib/campaign";
 
 export default async function GymLeaderPage({
   params,
@@ -41,7 +43,7 @@ export default async function GymLeaderPage({
   if (!gym) redirect({ href: "/gyms", locale });
   if (!gym) return null;
 
-  const [badge, previousBadge, activeRun, lastAttempt, user] = await Promise.all([
+  const [badge, previousBadge, activeRun, lastAttempt, user, progress] = await Promise.all([
     prisma.badge.findUnique({ where: { userId_gymId: { userId, gymId } } }),
     gym.order > 1
       ? prisma.badge.findFirst({ where: { userId, gym: { order: gym.order - 1 } } })
@@ -49,9 +51,12 @@ export default async function GymLeaderPage({
     prisma.gymRun.findFirst({ where: { userId, gymId, status: "ACTIVE" } }),
     prisma.gymAttempt.findFirst({ where: { userId, gymId }, orderBy: { attemptedAt: "desc" } }),
     prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { gems: true } }),
+    ensureCampaignProgress(userId),
   ]);
 
   const locked = gym.order > 1 && !previousBadge;
+  const stagesIncomplete =
+    !badge && !areChapterStagesCompleteForGym(gym.order, progress.completedStageIds);
   const remainingMs =
     !badge && lastAttempt && !lastAttempt.won
       ? gymCooldownRemainingMs({
@@ -75,6 +80,7 @@ export default async function GymLeaderPage({
     locked: t("lockedHint"),
     on_cooldown: t("cooldownHint", { hours: hoursLeft }),
     closed: t("closedHint"),
+    stages_incomplete: t("stagesIncompleteHint"),
   };
 
   return (
@@ -184,6 +190,23 @@ export default async function GymLeaderPage({
               <span className="material-symbols-outlined text-[18px]!">lock</span>
               {t("locked")}
             </span>
+          ) : stagesIncomplete ? (
+            <div className="flex flex-col items-stretch sm:items-end gap-1.5 self-start sm:self-end">
+              <span className="flex items-center gap-1 text-label-md text-on-surface-variant">
+                <span className="material-symbols-outlined text-[18px]!">hiking</span>
+                {t("stagesIncomplete")}
+              </span>
+              <p className="text-label-sm text-on-surface-variant/80 sm:text-right max-w-full sm:max-w-[260px]">
+                {t("stagesIncompleteHint")}
+              </p>
+              <Link
+                href="/campaign"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-label-sm font-semibold text-on-surface transition hover:bg-white/10"
+              >
+                <span className="material-symbols-outlined text-[16px]!">map</span>
+                {t("goToCampaign")}
+              </Link>
+            </div>
           ) : activeRun ? (
             <Link
               href={`/gyms/${gymId}/run`}

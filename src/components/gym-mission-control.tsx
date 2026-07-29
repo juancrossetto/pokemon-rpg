@@ -39,6 +39,12 @@ const STATUS_STYLES: Record<
     border: "border-red-500/35",
     bg: "bg-red-500/10",
   },
+  stages: {
+    dot: "bg-amber-300 shadow-[0_0_8px_rgba(252,211,77,0.55)]",
+    text: "text-amber-200",
+    border: "border-amber-300/35",
+    bg: "bg-amber-300/10",
+  },
   closed: {
     dot: "bg-slate-400",
     text: "text-slate-300",
@@ -97,6 +103,8 @@ function statusLabel(
       return t("statusReadyCleared");
     case "locked":
       return t("statusReadyLocked");
+    case "stages":
+      return t("statusReadyStages");
     case "cooldown":
       return t("statusReadyCooldown", { hours: item.hoursLeft });
     case "closed":
@@ -112,6 +120,8 @@ function statusIcon(kind: GymMissionStatusKind): string {
       return "check_circle";
     case "locked":
       return "lock";
+    case "stages":
+      return "hiking";
     case "cooldown":
       return "timer";
     case "closed":
@@ -197,7 +207,8 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
 
   if (!selected) return null;
 
-  const canChallenge = !selected.locked && !selected.onCooldown && !selected.closed;
+  const canChallenge =
+    !selected.locked && !selected.stagesIncomplete && !selected.onCooldown && !selected.closed;
   const challengeHref = `/gyms/${selected.id}`;
 
   return (
@@ -408,11 +419,13 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                     className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-6 py-3 text-label-md font-semibold uppercase tracking-wide text-white/45"
                   >
                     <span className="material-symbols-outlined text-[18px]!">
-                      {selected.locked ? "lock" : "schedule"}
+                      {selected.locked ? "lock" : selected.stagesIncomplete ? "hiking" : "schedule"}
                     </span>
                     {selected.locked
                       ? t("statusReadyLocked")
-                      : t("statusReadyClosed")}
+                      : selected.stagesIncomplete
+                        ? t("statusReadyStages")
+                        : t("statusReadyClosed")}
                   </button>
                 )}
               </div>

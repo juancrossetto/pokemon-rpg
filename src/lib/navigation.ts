@@ -89,9 +89,17 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: "military_tech",
         iconSrc: "/nav/gym-icon.png",
       },
-      // Eventos salió de la nav primaria: el claim diario/semanal vive en el
-      // home (widget + modal + quick action con badge) y /events queda como
-      // detalle "ver todos los desafíos" accesible desde ahí.
+      {
+        id: "events",
+        labelKey: "events",
+        descriptionKey: "desc.events",
+        href: "/events",
+        icon: "redeem",
+        iconSrc: "/nav/event-icon.png",
+        // El contador queda para cuando el header calcule pendientes; hoy nadie
+        // lo llena, así que no se pinta ningún badge.
+        badgeKey: "eventsPending",
+      },
     ],
   },
   {

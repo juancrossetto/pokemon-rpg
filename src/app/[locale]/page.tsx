@@ -30,9 +30,8 @@ export default async function Home() {
 }
 
 async function Dashboard({ username, userId }: { username: string; userId: string }) {
-  const [t, tc, tt, locale, progress, badges] = await Promise.all([
+  const [t, tt, locale, progress, badges] = await Promise.all([
     getTranslations("home"),
-    getTranslations("campaign"),
     getTranslations("team"),
     getLocale(),
     ensureCampaignProgress(userId),
@@ -46,6 +45,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     where: { ownerId: userId, teamSlot: { not: null } },
     include: {
       species: true,
+      heldItem: { select: { name: true } },
       moves: {
         include: { move: { select: { name: true, type: true, pp: true } } },
         orderBy: { slot: "asc" },
@@ -57,7 +57,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
 
   const eventsSummary = await loadEventsSummary(userId);
   const tEvents = await getTranslations("events");
-  const tNav = await getTranslations("nav");
   const giftLabels = {
     eyebrow: tEvents("eyebrow"),
     title: tEvents("giftTitle"),
@@ -164,6 +163,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
 
       return {
         id: instance.id,
+        speciesId: instance.speciesId,
         level: instance.level,
         isFavorite: instance.isFavorite,
         isTradeLocked: instance.isTradeLocked,
@@ -191,6 +191,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         speed: calculateStat(instance.species.baseSpeed, instance.ptSpeed, instance.level),
         evolutionChain: evolutionChains.get(instance.speciesId) ?? [],
         ownedEvolutionItems: ownedEvolutionItemNames,
+        heldItemName: instance.heldItem?.name ?? null,
         moves,
         labels: {
           hp: tt("stats.hp"),
@@ -265,21 +266,9 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       expedition={expeditionProps}
       events={{
         daily: eventsSummary.daily,
-        weekly: eventsSummary.weekly,
-        pendingCount: eventsSummary.pendingCount,
         showDailyModal: eventsSummary.daily.canClaim,
       }}
       giftLabels={giftLabels}
-      idleLabels={{
-        title: t("rewards.title"),
-        claim: t("rewards.claim"),
-        claiming: t("rewards.claiming"),
-        claimed: t("rewards.claimed"),
-        empty: t("rewards.empty"),
-        seeEvents: t("rewards.seeEvents"),
-        pendingWeekly: t("rewards.pendingWeekly"),
-        dailyReady: t("rewards.dailyReady"),
-      }}
       squad={{
         members,
         emptySlotLabel: t("emptySlot"),
@@ -292,38 +281,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         bagCounts,
         layoutKey: pokemon.map((p) => `${p.id}:${p.teamSlot}`).join("|"),
       }}
-      quickTitle={t("quickActions")}
-      quickActions={[
-        {
-          id: "events",
-          href: "/events",
-          icon: "redeem",
-          label: tNav("events") || t("quick.events"),
-          badge: eventsSummary.pendingCount,
-          attention: eventsSummary.pendingCount > 0,
-        },
-        // Loop temprano primero: batalla salvaje y tienda (restock) antes que
-        // PvP/campaña, que ya viven en la bottom bar y en el CTA de expedición.
-        {
-          id: "battle",
-          href: "/battle",
-          icon: "swords",
-          label: tNav("battle"),
-        },
-        {
-          id: "shop",
-          href: "/shop",
-          icon: "storefront",
-          label: tNav("shop"),
-        },
-        {
-          id: "gyms",
-          href: "/gyms",
-          icon: "military_tech",
-          label: tNav("gyms"),
-          attention: milestone?.kind === "gym",
-        },
-      ]}
       isDev={isDev}
     />
   );

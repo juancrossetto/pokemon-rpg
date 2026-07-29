@@ -145,7 +145,7 @@ export function RegionMapDialog({
                   // dejaba distinguir una ruta de un gimnasio sobre el mapa.
                   <ZoneIcon
                     kind={location.kindKey.replace("kinds.", "") as ZoneIconKind}
-                    className="h-[15px] w-[15px] shrink-0"
+                    className="h-5 w-5 shrink-0"
                   />
                 )}
                 <span className="hidden max-w-[120px] truncate text-[11px] font-semibold leading-none sm:inline">
