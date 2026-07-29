@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { redirect, Link } from "@/i18n/navigation";
+import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { gymLeaderImageUrl } from "@/lib/gym-art";
 import { prisma } from "@/lib/prisma";
@@ -13,13 +13,11 @@ import {
   regionMapSrc,
 } from "@/lib/campaign";
 import { loadMapLocations } from "@/lib/campaign/map-data";
-import { CampaignDevPanel } from "@/components/campaign-dev-panel";
 import {
   CampaignJourney,
   type GymRequirement,
   type JourneySummary,
 } from "@/components/campaign-journey";
-import { HubRoleHint } from "@/components/hub-role-hint";
 
 export default async function CampaignPage({
   params,
@@ -36,7 +34,7 @@ export default async function CampaignPage({
 
   await redirectIfInBattle(userId, locale);
 
-  const [t, tUx, progress] = await Promise.all([
+  const [t, , progress] = await Promise.all([
     getTranslations("campaign"),
     getTranslations("ux"),
     ensureCampaignProgress(userId),
@@ -106,31 +104,11 @@ export default async function CampaignPage({
     teamMaxLevel: Math.max(...team.map((p) => p.level), 1),
   };
 
-  const isDev = process.env.NODE_ENV === "development";
   const milestone = nextMilestone(progress, earnedOrders);
 
   return (
-    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8">
+    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-4 md:py-6">
       <div className="mx-auto max-w-[1400px]">
-        <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
-              {t("eyebrow")}
-            </p>
-            <h1 className="text-headline-lg tracking-tight text-white md:text-display-lg">
-              {t("title")}
-            </h1>
-            <HubRoleHint>{tUx("role.campaign")}</HubRoleHint>
-          </div>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-label-md text-on-surface hover:bg-white/10"
-          >
-            <span className="material-symbols-outlined text-[18px]!">arrow_back</span>
-            {t("backHome")}
-          </Link>
-        </header>
-
         <CampaignJourney
           locale={locale}
           chapters={chapters}
@@ -141,13 +119,9 @@ export default async function CampaignPage({
           gymRequirements={requirementByLocationId}
           regionMapSrc={regionMapSrc(progress.currentRegionId)}
           milestone={milestone}
+          progress={progress}
+          earnedGymOrders={earnedOrders}
         />
-
-        {isDev && (
-          <div className="mt-4">
-            <CampaignDevPanel locale={locale} />
-          </div>
-        )}
       </div>
     </div>
   );

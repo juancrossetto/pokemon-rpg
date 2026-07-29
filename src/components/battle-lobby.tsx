@@ -144,7 +144,6 @@ export function BattleLobby({
                   label={t("explore")}
                   errors={startErrors}
                   disabled={!canExplore}
-                  className="w-full rounded-xl bg-pokeball-red px-6 py-3 text-label-md font-semibold text-white shadow-[0_8px_24px_rgba(238,21,21,0.28)] transition hover:bg-pokeball-red/90 disabled:cursor-not-allowed disabled:bg-surface-container-high disabled:text-on-surface-variant disabled:shadow-none"
                 />
               ) : (
                 <div className="flex flex-col gap-2">

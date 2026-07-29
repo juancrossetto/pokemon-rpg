@@ -142,7 +142,6 @@ export function BattleLobbyMobile({
               label={t("explore")}
               errors={startErrors}
               disabled={!canExplore}
-              className="cta-pulse flex w-full items-center justify-center gap-2 rounded-xl bg-pokeball-red py-4 text-label-md font-bold uppercase tracking-wide text-white shadow-[0_8px_24px_rgba(238,21,21,0.35)] transition disabled:cursor-not-allowed disabled:bg-surface-container-high disabled:text-on-surface-variant disabled:shadow-none"
             />
           ) : (
             <div className="flex flex-col gap-2">

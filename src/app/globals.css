@@ -126,6 +126,7 @@ html[data-icons="ready"] .material-symbols-outlined {
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
+  --font-game: var(--font-lilita), "Lilita One", ui-rounded, system-ui, sans-serif;
 
   /* xs/sm/md/lg/xl NO se agregan acá: Tailwind v4 resuelve max-w-*, w-*, etc.
      contra la misma escala de --spacing, y esos nombres pisarían max-w-md,
@@ -200,6 +201,105 @@ body {
       inset 0 1px 0 rgba(255, 255, 255, 0.07),
       0 28px 56px rgba(0, 0, 0, 0.5),
       0 0 0 1px color-mix(in srgb, var(--type-accent, #ee1515) 28%, transparent);
+  }
+
+  /* CTA primario de juego: dorado contenido, legible sin dominar la pantalla. */
+  .game-cta {
+    --game-cta-ink: #111111;
+    position: relative;
+    display: inline-flex;
+    width: 100%;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    isolation: isolate;
+    overflow: hidden;
+    margin-bottom: 0;
+    padding: 0.55rem 1.1rem;
+    border: 1px solid rgba(255, 203, 5, 0.35);
+    border-radius: 0.75rem;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 50%),
+      linear-gradient(90deg, #e6b800 0%, #d98a00 100%);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.15) inset,
+      0 4px 12px rgba(255, 160, 20, 0.14),
+      0 1px 0 rgba(140, 70, 0, 0.25);
+    color: #ffffff;
+    font-family: var(--font-lilita), var(--font-game), "Lilita One", sans-serif;
+    font-size: 0.95rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    text-transform: uppercase;
+    text-shadow: none;
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease,
+      filter 120ms ease,
+      border-color 120ms ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .game-cta::before {
+    content: none;
+  }
+
+  .game-cta__icon,
+  .game-cta__label {
+    position: relative;
+    z-index: 1;
+  }
+
+  .game-cta:hover:not(.game-cta--disabled):not(:disabled) {
+    filter: brightness(1.08);
+    border-color: rgba(255, 203, 5, 0.6);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.2) inset,
+      0 6px 18px rgba(255, 160, 20, 0.22),
+      0 1px 0 rgba(140, 70, 0, 0.3);
+  }
+
+  .game-cta:active:not(.game-cta--disabled):not(:disabled) {
+    transform: translateY(1px) scale(0.985);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.2) inset,
+      0 4px 12px rgba(255, 160, 20, 0.2),
+      0 1px 0 rgba(180, 90, 0, 0.35);
+  }
+
+  .game-cta:focus-visible {
+    outline: 2px solid #ffcb05;
+    outline-offset: 3px;
+  }
+
+  .game-cta--disabled,
+  .game-cta:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.4) brightness(0.78);
+    box-shadow: none;
+    opacity: 0.7;
+  }
+
+  .game-cta__icon {
+    font-size: 1.2rem !important;
+    line-height: 1 !important;
+    color: #ffffff;
+    -webkit-text-stroke: 0.4px var(--game-cta-ink);
+    paint-order: stroke fill;
+    text-shadow: none;
+    filter: none;
+  }
+
+  .game-cta__label {
+    top: 0.5px;
+    color: #ffffff;
+    /* Contorno negro muy fino; paint-order mantiene el relleno blanco limpio. */
+    -webkit-text-stroke: 0.45px var(--game-cta-ink);
+    paint-order: stroke fill;
+    text-shadow: none;
   }
 
   .glow-active {
@@ -2961,28 +3061,32 @@ html.boot-splash-pending .boot-splash {
   }
 }
 
-/* Botón principal de acción (Explorar). Respiración muy lenta y de baja
-   amplitud: llama la atención sin competir con el combate ni distraer. El
-   `:active` da el feedback táctil que en mobile reemplaza al hover. */
+/* Botón principal de acción (Explorar). Respiración lenta sobre el CTA dorado. */
 .cta-pulse {
   animation: cta-pulse 3.6s ease-in-out infinite;
 }
 .cta-pulse:active {
   transform: scale(0.985);
 }
-.cta-pulse:disabled {
+.cta-pulse:disabled,
+.cta-pulse.game-cta--disabled {
   animation: none;
 }
 
 @keyframes cta-pulse {
   0%,
   100% {
-    box-shadow: 0 8px 24px rgba(238, 21, 21, 0.28);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.15) inset,
+      0 4px 12px rgba(255, 160, 20, 0.14),
+      0 1px 0 rgba(140, 70, 0, 0.25);
   }
   50% {
     box-shadow:
-      0 8px 28px rgba(238, 21, 21, 0.42),
-      0 0 0 3px rgba(238, 21, 21, 0.1);
+      0 1px 0 rgba(255, 255, 255, 0.2) inset,
+      0 6px 18px rgba(255, 160, 20, 0.22),
+      0 1px 0 rgba(140, 70, 0, 0.3),
+      0 0 0 2px rgba(255, 203, 5, 0.08);
   }
 }
 

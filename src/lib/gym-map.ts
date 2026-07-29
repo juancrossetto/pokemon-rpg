@@ -31,3 +31,20 @@ export const GYM_MAP_POINTS: GymMapPoint[] = Object.entries(GYM_CITIES).map(
 
 export const KANTO_MAP_IMAGE = regionMapSrc("kanto");
 export const KANTO_MAP_ASPECT = REGION_MAP_ASPECT;
+
+const LEADER_BY_ORDER: Record<number, string> = {
+  1: "brock",
+  2: "misty",
+  3: "ltsurge",
+  4: "erika",
+  5: "koga",
+  6: "sabrina",
+  7: "blaine",
+  8: "giovanni",
+};
+
+/** Sprite pixel del líder por gymOrder (Kanto). `null` si no hay arte. */
+export function gymLeaderSpriteByOrder(order: number): string | null {
+  const slug = LEADER_BY_ORDER[order];
+  return slug ? `/gyms/leaders/${slug}.png` : null;
+}

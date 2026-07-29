@@ -69,3 +69,19 @@ export {
 } from "./progress";
 
 export { type Chapter, buildChapters, activeChapterIndex } from "./chapters";
+
+export {
+  type CampaignNodeStatus,
+  type CampaignRequirementType,
+  type CampaignPrimaryActionKind,
+  type CampaignActionLabelKey,
+  type CampaignRequirement,
+  type CampaignActionState,
+  type CampaignActionContext,
+  getGymChallengeRequirements,
+  canChallengeGym,
+  getCampaignPrimaryAction,
+  resolveZoneNodeStatus,
+  getMissingRequirements,
+  getZoneUnlockRequirements,
+} from "./action-state";

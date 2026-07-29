@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState, useTransition, type ReactElement } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { CampaignPrimaryObjective } from "@/components/campaign-primary-objective";
 import { selectLocation, setFarmingStage } from "@/actions/campaign";
 import { startTrainerBattle } from "@/actions/route-trainer";
 import { claimZoneObjective } from "@/actions/zone-rewards";
@@ -31,6 +32,14 @@ import { gymBadgeImageUrl } from "@/lib/gym-art";
 import type { Chapter } from "@/lib/campaign/chapters";
 import type { MapLocation } from "@/lib/campaign/map-selection";
 import type { CampaignLocationKind } from "@/lib/campaign/types";
+import {
+  getCampaignPrimaryAction,
+  getZoneUnlockRequirements,
+  resolveZoneNodeStatus,
+  type CampaignNodeStatus,
+  type CampaignProgressRow,
+  type CampaignRequirement,
+} from "@/lib/campaign";
 import { masteryBonuses, masteryProgressPercent } from "@/lib/mastery";
 import {
   ZoneRewardPopup,
@@ -38,11 +47,25 @@ import {
 } from "@/components/zone-reward-popup";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import { showToast } from "@/lib/app-toast";
-import { NextMilestoneChip } from "@/components/next-milestone-chip";
 import { HubHelpPanel, CoachMark } from "@/components/journey-guidance";
 import { UnlockCelebration } from "@/components/unlock-celebration";
+import { CampaignUnlockFeedback } from "@/components/campaign-unlock-feedback";
 import type { CampaignMilestone } from "@/lib/campaign/types";
-import { milestoneCtaKey, milestoneHref } from "@/lib/journey-ux";
+
+function translateRequirement(
+  t: (key: string, values?: Record<string, string | number>) => string,
+  req: CampaignRequirement,
+): string {
+  const raw = req.descriptionParams ?? {};
+  const params: Record<string, string | number> = { ...raw };
+  for (const key of ["location", "stage"] as const) {
+    const val = raw[key];
+    if (typeof val === "string" && val.includes(".")) {
+      params[key] = t(val);
+    }
+  }
+  return t(req.descriptionKey, params);
+}
 
 /** Orden Kanto → tipo de medalla (arte local, no trainers). */
 const BADGE_TYPE_BY_ORDER: Record<number, string> = {
@@ -163,6 +186,8 @@ export function CampaignJourney({
   gymRequirements,
   regionMapSrc,
   milestone,
+  progress,
+  earnedGymOrders,
 }: {
   locale: string;
   chapters: Chapter[];
@@ -173,6 +198,8 @@ export function CampaignJourney({
   gymRequirements: Record<string, GymRequirement>;
   regionMapSrc: string;
   milestone: CampaignMilestone;
+  progress: CampaignProgressRow;
+  earnedGymOrders: number[];
 }) {
   const t = useTranslations("campaign");
   const tUx = useTranslations("ux");
@@ -186,9 +213,37 @@ export function CampaignJourney({
   const zone = chapter?.zones.find((z) => z.id === zoneId) ?? chapter?.zones[0] ?? null;
   const farmingZone =
     chapters.flatMap((c) => c.zones).find((z) => z.id === farmingLocationId) ?? null;
-  const ctaHref = milestoneHref(milestone);
-  const ctaKey = milestoneCtaKey(milestone);
+
+  const gymRecLevel =
+    milestone.kind === "gym" && milestone.locationId
+      ? gymRequirements[milestone.locationId]?.recommendedLevel
+      : chapter?.gym
+        ? gymRequirements[chapter.gym.id]?.recommendedLevel
+        : null;
+
+  const primaryAction = getCampaignPrimaryAction({
+    progress,
+    earnedGymOrders,
+    teamMaxLevel: summary.teamMaxLevel,
+    chapter: chapter ?? null,
+    gymRecommendedLevel: gymRecLevel,
+  });
+
+  const gymChallengeHref =
+    primaryAction.action === "challenge_gym" && primaryAction.milestone.kind === "gym"
+      ? gymRequirements[primaryAction.milestone.locationId ?? ""]?.gymId
+        ? `/gyms/${gymRequirements[primaryAction.milestone.locationId!].gymId}`
+        : primaryAction.href
+      : null;
   const helpBullets = (tUx.raw("help.campaign") as string[]) ?? [];
+  const locationLabelKey =
+    farmingZone?.nameKey ??
+    zone?.nameKey ??
+    primaryAction.locationNameKey ??
+    chapter?.nameKey ??
+    "regions.kanto";
+  const chapterBadgeEarned =
+    chapter?.gymOrder != null && earnedGymOrders.includes(chapter.gymOrder);
 
   function pickZone(id: string) {
     setZoneId(id);
@@ -266,41 +321,79 @@ export function CampaignJourney({
         />
       )}
 
-      <HubHelpPanel storageKey="hub-help-campaign" bullets={helpBullets} />
-
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <NextMilestoneChip milestone={milestone} withCta className="w-full sm:w-auto" />
-        <CoachMark storageKey="coach-explore" message={tUx("coachExplore")}>
+      {/* Una sola línea: breadcrumb + ubicación + acciones secundarias */}
+      <header className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <div className="flex min-w-0 items-center gap-2">
           <Link
-            href={ctaHref}
-            className="hidden min-h-11 items-center justify-center gap-2 rounded-xl bg-pokeball-red px-5 text-label-md font-bold text-white shadow-[0_8px_24px_rgba(238,21,21,0.35)] transition hover:bg-pokeball-red/90 sm:inline-flex"
+            href="/"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-white/5 text-on-surface-variant hover:bg-white/10"
+            aria-label={t("backHome")}
           >
-            <span className="material-symbols-outlined text-[18px]!">
-              {milestone.kind === "gym" ? "military_tech" : "explore"}
-            </span>
-            {t(ctaKey)}
+            <span className="material-symbols-outlined text-[18px]!">arrow_back</span>
           </Link>
-        </CoachMark>
-      </div>
-
-      <JourneyStrip
-        chapters={chapters}
-        activeIndex={chapterIndex}
-        onPick={setChapterIndex}
-        percent={summary.journeyPercent}
-        label={t("journeyProgress")}
-        chapterLabel={t("chapter")}
-      />
-
-      {chapter && (
-        <div className="mt-4">
-          <ChapterHero chapter={chapter} mapSrc={regionMapSrc} />
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+              <span className="text-pokeball-red">{t("regions.kanto")}</span>
+              {chapter && (
+                <>
+                  <span className="mx-1 text-on-surface-variant/40" aria-hidden>/</span>
+                  <span>{t("chapter")} {chapter.number}</span>
+                </>
+              )}
+              {chapter && (
+                <>
+                  <span className="mx-1 text-on-surface-variant/40" aria-hidden>·</span>
+                  <span className="font-mono tracking-normal">{chapter.stagesDone}/{chapter.stagesTotal}</span>
+                </>
+              )}
+            </p>
+            <h1 className="truncate text-body-lg font-bold tracking-tight text-white sm:text-headline-md">
+              {t(locationLabelKey)}
+            </h1>
+          </div>
         </div>
-      )}
+        <details className="group relative">
+          <summary className="flex min-h-9 cursor-pointer list-none items-center gap-1.5 rounded-lg border border-white/12 bg-white/5 px-2.5 py-1.5 text-label-sm text-on-surface-variant marker:content-none hover:bg-white/10 [&::-webkit-details-marker]:hidden">
+            <MapIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
+            <span className="hidden sm:inline">{t("viewFullJourney")}</span>
+            <span className="sm:hidden">{t("journeyProgress")}</span>
+          </summary>
+          <div className="absolute right-0 z-30 mt-2 w-[min(100vw-1.5rem,22rem)] rounded-xl border border-white/10 bg-surface-container p-2 shadow-xl sm:w-96">
+            <JourneyStrip
+              chapters={chapters}
+              activeIndex={chapterIndex}
+              onPick={(i) => {
+                setChapterIndex(i);
+              }}
+              percent={summary.journeyPercent}
+              label={t("journeyProgress")}
+              chapterLabel={t("chapter")}
+            />
+            <div className="mt-2">
+              <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
+            </div>
+            <HubHelpPanel storageKey="hub-help-campaign" bullets={helpBullets} />
+          </div>
+        </details>
+      </header>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)_minmax(280px,340px)]">
-        <aside className="hidden flex-col gap-3 lg:flex">
-          <nav className="glass-panel rounded-xl border border-white/10 p-2">
+      <CoachMark storageKey="coach-explore" message={tUx("coachExplore")}>
+        <div>
+          <CampaignUnlockFeedback
+            action={primaryAction.action}
+            locationName={
+              primaryAction.locationNameKey
+                ? t(primaryAction.locationNameKey)
+                : undefined
+            }
+          />
+          <CampaignPrimaryObjective action={primaryAction} gymHref={gymChallengeHref} />
+        </div>
+      </CoachMark>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_minmax(280px,340px)] lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+        <aside className="hidden flex-col gap-3 xl:flex">
+          <nav className="glass-panel rounded-xl border border-white/10 p-2" aria-label={t("chapter")}>
             {chapters.map((c, i) => {
               const active = i === chapterIndex;
               return (
@@ -309,7 +402,7 @@ export function CampaignJourney({
                   type="button"
                   onClick={() => setChapterIndex(i)}
                   disabled={!c.unlocked}
-                  className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-label-sm transition ${
+                  className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-label-sm transition ${
                     active
                       ? "bg-pokeball-red/15 text-white"
                       : c.unlocked
@@ -323,40 +416,76 @@ export function CampaignJourney({
                   <span className="min-w-0 flex-1 truncate">
                     {c.number}. {t(c.nameKey)}
                   </span>
-                  {c.unlocked && (
-                    <span className="font-mono text-[10px] text-on-surface-variant">
-                      {c.percent}%
-                    </span>
-                  )}
                 </button>
               );
             })}
           </nav>
-
+          <p className="px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+            {t("secondaryChapter")}
+          </p>
           <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
         </aside>
 
         <div className="min-w-0">
           {chapter && (
-            <ol className="relative flex flex-col gap-2">
-              {chapter.zones.map((z, i) => (
-                <ZoneRow
-                  key={z.id}
-                  zone={z}
-                  isLast={i === chapter.zones.length - 1}
-                  selected={zone?.id === z.id}
-                  isFarming={z.id === farmingLocationId}
-                  gymRequirement={gymRequirements[z.id]}
-                  chapter={chapter}
-                  teamMaxLevel={summary.teamMaxLevel}
-                  onPick={() => pickZone(z.id)}
-                />
-              ))}
-            </ol>
+            <>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">
+                {t("chapterPath")}
+              </p>
+              <ol className="relative flex flex-col gap-1.5">
+                {chapter.zones.map((z, i) => {
+                  const nodeStatus = resolveZoneNodeStatus({
+                    zone: z,
+                    farmingLocationId,
+                    selectedZoneId: zone?.id ?? null,
+                    chapter,
+                    badgeEarned: chapterBadgeEarned,
+                  });
+                  return (
+                    <ZoneRow
+                      key={z.id}
+                      zone={z}
+                      isLast={i === chapter.zones.length - 1}
+                      selected={zone?.id === z.id}
+                      isFarming={z.id === farmingLocationId}
+                      gymRequirement={gymRequirements[z.id]}
+                      chapter={chapter}
+                      teamMaxLevel={summary.teamMaxLevel}
+                      nodeStatus={nodeStatus}
+                      unlockRequirements={getZoneUnlockRequirements(z.id, progress)}
+                      onPick={() => pickZone(z.id)}
+                    />
+                  );
+                })}
+              </ol>
+            </>
           )}
+
+          <nav className="mt-4 flex gap-2 overflow-x-auto pb-1 xl:hidden" aria-label={t("chapter")}>
+            {chapters.map((c, i) => {
+              const active = i === chapterIndex;
+              return (
+                <button
+                  key={c.number}
+                  type="button"
+                  onClick={() => setChapterIndex(i)}
+                  disabled={!c.unlocked}
+                  className={`min-h-11 shrink-0 rounded-lg border px-3 py-2 text-label-sm transition ${
+                    active
+                      ? "border-pokeball-red/50 bg-pokeball-red/15 text-white"
+                      : c.unlocked
+                        ? "border-white/10 text-on-surface-variant"
+                        : "border-transparent text-on-surface-variant/40"
+                  }`}
+                >
+                  {c.number}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        <div className="order-first lg:order-none lg:sticky lg:top-20 lg:self-start">
+        <div className="lg:sticky lg:top-20 lg:self-start">
           {zone && (
             <ZonePanel
               zone={zone}
@@ -365,30 +494,16 @@ export function CampaignJourney({
               farmingStageId={farmingStageId}
               pending={pending}
               gymRequirement={gymRequirements[zone.id]}
+              teamMaxLevel={summary.teamMaxLevel}
+              unlockRequirements={getZoneUnlockRequirements(zone.id, progress)}
               onTravel={() => travelTo(zone.id)}
               onFarmStage={farmStage}
               onChallengeTrainer={challengeTrainer}
               onClaim={(objective) => claim(zone.id, objective)}
-              exploreHref={ctaHref}
-              exploreLabel={t(ctaKey)}
-              showExploreCta={zone.id === farmingLocationId && milestone.kind !== "complete"}
             />
           )}
         </div>
       </div>
-
-      <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 px-3 sm:hidden">
-        <Link
-          href={ctaHref}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-pokeball-red text-label-md font-bold text-white shadow-[0_12px_32px_rgba(238,21,21,0.45)]"
-        >
-          <span className="material-symbols-outlined text-[20px]!">
-            {milestone.kind === "gym" ? "military_tech" : "explore"}
-          </span>
-          {t(ctaKey)}
-        </Link>
-      </div>
-      <div className="h-16 sm:hidden" aria-hidden />
     </div>
   );
 }
@@ -502,62 +617,6 @@ function JourneyStrip({
   );
 }
 
-function ChapterHero({ chapter, mapSrc }: { chapter: Chapter; mapSrc: string }) {
-  const t = useTranslations("campaign");
-  const gymStyle = KIND_STYLE.gym;
-
-  return (
-    <section className="glass-panel relative overflow-hidden rounded-xl border border-white/10">
-      <div className="pointer-events-none absolute inset-0">
-        <Image src={mapSrc} alt="" fill className="object-cover opacity-25" sizes="800px" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40" />
-      </div>
-
-      <div className="relative flex flex-wrap items-end justify-between gap-3 p-4">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-pokeball-red">
-            {t("chapter")} {chapter.number}
-          </p>
-          <h2 className="mt-0.5 text-headline-lg tracking-tight text-white">
-            {t(chapter.nameKey)}
-          </h2>
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-label-sm text-on-surface-variant">
-            <span className="inline-flex items-center gap-1">
-              <FootprintIcon className="h-3.5 w-3.5" />
-              {chapter.stagesDone}/{chapter.stagesTotal} {t("stagesShort")}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <PokedexIcon className="h-3.5 w-3.5" />
-              {chapter.speciesCaught}/{chapter.speciesTotal}
-            </span>
-            {chapter.gym && (
-              <span className={`inline-flex items-center gap-1 ${gymStyle.text}`}>
-                <GymIcon className="h-3.5 w-3.5" />
-                {chapter.completed ? t("chapterDone") : t(chapter.gym.nameKey)}
-              </span>
-            )}
-          </p>
-        </div>
-
-        <div className="w-full max-w-[220px]">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">
-              {t("chapterProgress")}
-            </span>
-            <span className="font-mono text-label-sm text-white">{chapter.percent}%</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${PATH_PROGRESS_FILL}`}
-              style={{ width: `${chapter.percent}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function ZoneRow({
   zone,
   isLast,
@@ -566,6 +625,8 @@ function ZoneRow({
   gymRequirement,
   chapter,
   teamMaxLevel,
+  nodeStatus,
+  unlockRequirements,
   onPick,
 }: {
   zone: MapLocation;
@@ -575,56 +636,67 @@ function ZoneRow({
   gymRequirement?: GymRequirement;
   chapter: Chapter;
   teamMaxLevel: number;
+  nodeStatus: CampaignNodeStatus;
+  unlockRequirements: CampaignRequirement[];
   onPick: () => void;
 }) {
   const t = useTranslations("campaign");
   const kind = kindOf(zone);
   const style = KIND_STYLE[kind];
   const isGym = kind === "gym";
-  const done = zone.totalStages > 0 && zone.completedStages >= zone.totalStages;
+  const done = nodeStatus === "completed";
+  const compact = done && !selected && !isFarming;
   const caught = zone.encounters.filter((e) => e.caught).length;
   const pct = zone.totalStages > 0 ? (zone.completedStages / zone.totalStages) * 100 : 0;
-  // El tramo que sale de esta zona se pinta al ritmo de sus stages (gimnasio =
-  // medalla del capítulo). Así el camino se enciende de a poco, no de golpe.
-  const pathPct = isGym
-    ? chapter.completed
-      ? 100
-      : 0
-    : pct;
+  const pathPct = isGym ? (chapter.completed ? 100 : 0) : pct;
 
-  const requirementsLeft = isGym
-    ? [
-        chapter.stagesDone < chapter.stagesTotal ? t("reqStages") : null,
-        gymRequirement && teamMaxLevel < gymRequirement.recommendedLevel
-          ? t("reqLevel", { level: gymRequirement.recommendedLevel })
-          : null,
-      ].filter(Boolean)
-    : [];
+  const requirementsLeft =
+    isGym && zone.unlocked && !chapter.completed
+      ? [
+          chapter.stagesDone < chapter.stagesTotal
+            ? t("reqStagesDetail", {
+                done: chapter.stagesDone,
+                total: chapter.stagesTotal,
+              })
+            : null,
+          gymRequirement && teamMaxLevel < gymRequirement.recommendedLevel
+            ? t("reqLevel", { level: gymRequirement.recommendedLevel })
+            : null,
+        ].filter(Boolean)
+      : [];
+
+  const statusLabel =
+    nodeStatus === "locked"
+      ? t("nodeLocked")
+      : nodeStatus === "completed"
+        ? t("nodeCompleted")
+        : nodeStatus === "in_progress"
+          ? t("nodeInProgress")
+          : nodeStatus === "current"
+            ? t("nodeCurrent")
+            : null;
 
   return (
     <li className="relative flex gap-3">
-      <div className="relative w-11 shrink-0 self-stretch">
+      <div className={`relative w-11 shrink-0 self-stretch ${compact ? "pt-0" : ""}`}>
         <span
           className={`relative z-10 mt-0.5 flex h-11 w-11 items-center justify-center rounded-full border-2 ${
             !zone.unlocked
               ? "border-white/15 bg-surface-container text-on-surface-variant/50"
               : isFarming
                 ? "border-emerald-400 bg-emerald-400/15 text-emerald-400"
-                : `${style.ring} ${style.text}`
+                : done
+                  ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-400"
+                  : `${style.ring} ${style.text}`
           }`}
           style={
-            isFarming || (zone.unlocked && isGym)
+            isFarming || (zone.unlocked && isGym && !done)
               ? { boxShadow: `0 0 16px ${isFarming ? "rgba(52,211,153,0.45)" : style.glow}` }
               : undefined
           }
+          aria-current={selected || isFarming ? "step" : undefined}
         >
           {zone.unlocked && isGym && gymRequirement?.leaderSpriteUrl ? (
-            /*
-              El nodo del gimnasio lleva el sprite de su líder, no la medalla
-              genérica: ocho nodos con el mismo ícono no dejaban distinguir un
-              gimnasio de otro al recorrer el capítulo. El sprite pixel de
-              Showdown pesa poco y ya está en `public/gyms/leaders/`.
-            */
             <Image
               src={gymRequirement.leaderSpriteUrl}
               alt=""
@@ -633,7 +705,11 @@ function ZoneRow({
               className="h-9 w-9 object-contain [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
             />
           ) : zone.unlocked ? (
-            <ZoneIcon kind={style.icon} className="h-8 w-8" />
+            done && !isGym ? (
+              <span className="material-symbols-outlined text-[20px]!">task_alt</span>
+            ) : (
+              <ZoneIcon kind={style.icon} className="h-8 w-8" />
+            )
           ) : (
             <span className="material-symbols-outlined text-[18px]!">lock</span>
           )}
@@ -654,38 +730,49 @@ function ZoneRow({
       <button
         type="button"
         onClick={onPick}
-        className={`glass-panel min-w-0 flex-1 rounded-xl border p-3 text-left transition ${
+        aria-expanded={selected}
+        className={`glass-panel min-h-11 min-w-0 flex-1 rounded-xl border text-left transition ${
+          compact ? "px-3 py-2" : "p-3"
+        } ${
           selected ? "border-white/25 bg-white/[0.04]" : "border-white/10 hover:bg-white/[0.03]"
         } ${!zone.unlocked ? "opacity-55" : ""} ${
           isFarming ? "ring-1 ring-emerald-400/40" : ""
-        } ${
-          // El gimnasio cierra el capítulo: pesa el doble que una ruta.
-          isGym ? "py-4" : ""
-        }`}
+        } ${isGym && !compact ? "py-3.5" : ""}`}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className={`${isGym ? "text-headline-md" : "text-body-md font-semibold"} text-white`}>
+          <h3
+            className={`${
+              isGym && !compact ? "text-headline-md" : "text-body-md font-semibold"
+            } text-white`}
+          >
             {t(zone.nameKey)}
           </h3>
-          <span
-            className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${style.ring} ${style.text}`}
-          >
-            {t(zone.kindKey)}
-          </span>
+          {statusLabel && (
+            <span className="rounded-full border border-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">
+              {statusLabel}
+            </span>
+          )}
+          {!compact && (
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${style.ring} ${style.text}`}
+            >
+              {t(zone.kindKey)}
+            </span>
+          )}
           {isFarming && (
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.35)]">
               <span className="material-symbols-outlined text-[12px]!">my_location</span>
               {t("farming")}
             </span>
           )}
-          {done && !isGym && (
+          {done && !isGym && compact && (
             <span className="material-symbols-outlined text-[16px]! text-emerald-400">
               task_alt
             </span>
           )}
         </div>
 
-        {zone.unlocked && (
+        {!compact && zone.unlocked && (
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-label-sm text-on-surface-variant">
             {zone.totalStages > 0 && (
               <span className="inline-flex items-center gap-1">
@@ -706,7 +793,7 @@ function ZoneRow({
           </div>
         )}
 
-        {zone.unlocked && zone.totalStages > 0 && (
+        {!compact && zone.unlocked && zone.totalStages > 0 && (
           <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
             <div
               className={`h-full rounded-full ${PATH_PROGRESS_FILL} transition-all duration-500`}
@@ -715,14 +802,28 @@ function ZoneRow({
           </div>
         )}
 
-        {isGym && zone.unlocked && requirementsLeft.length > 0 && (
+        {!compact && isGym && zone.unlocked && requirementsLeft.length > 0 && (
           <ul className="mt-2 flex flex-col gap-0.5">
             {requirementsLeft.map((r) => (
               <li key={r} className="flex items-center gap-1 text-[11px] text-on-surface-variant">
-                <span className="material-symbols-outlined text-[13px]! text-error">
+                <span className="material-symbols-outlined text-[13px]! text-on-surface-variant">
                   radio_button_unchecked
                 </span>
                 {r}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {!zone.unlocked && unlockRequirements.length > 0 && (
+          <ul className="mt-2 flex flex-col gap-0.5">
+            {unlockRequirements.map((req) => (
+              <li
+                key={req.id}
+                className="flex items-start gap-1 text-[11px] text-on-surface-variant"
+              >
+                <span className="material-symbols-outlined mt-px text-[13px]!">lock</span>
+                <span>{translateRequirement(t, req)}</span>
               </li>
             ))}
           </ul>
@@ -739,13 +840,12 @@ function ZonePanel({
   farmingStageId,
   pending,
   gymRequirement,
+  teamMaxLevel,
+  unlockRequirements,
   onTravel,
   onFarmStage,
   onChallengeTrainer,
   onClaim,
-  exploreHref,
-  exploreLabel,
-  showExploreCta,
 }: {
   zone: MapLocation;
   chapter: Chapter;
@@ -753,13 +853,12 @@ function ZonePanel({
   farmingStageId: string;
   pending: boolean;
   gymRequirement?: GymRequirement;
+  teamMaxLevel: number;
+  unlockRequirements: CampaignRequirement[];
   onTravel: () => void;
   onFarmStage: (stageId: string) => void;
   onChallengeTrainer: (trainerId: string) => void;
   onClaim: (objective: ZoneObjectiveId) => void;
-  exploreHref?: string;
-  exploreLabel?: string;
-  showExploreCta?: boolean;
 }) {
   const t = useTranslations("campaign");
   const tUx = useTranslations("ux");
@@ -770,6 +869,7 @@ function ZonePanel({
   const seenCount = zone.encounters.filter((e) => e.seen).length;
   const objectives = evaluateObjectives(zone, new Set(zone.claimedObjectives));
   const trainersDone = zone.trainers.filter((tr) => tr.defeated).length;
+  const gymReady = isGym && chapter.stagesDone >= chapter.stagesTotal;
 
   return (
     <section
@@ -818,16 +918,6 @@ function ZonePanel({
         </div>
       </div>
 
-      {showExploreCta && exploreHref && exploreLabel && (
-        <Link
-          href={exploreHref}
-          className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-pokeball-red px-4 text-label-md font-bold text-white transition hover:bg-pokeball-red/90"
-        >
-          <span className="material-symbols-outlined text-[18px]!">explore</span>
-          {exploreLabel}
-        </Link>
-      )}
-
       {zone.unlocked && zone.trainers.length > 0 && (
         <p className="mt-3 rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-label-sm text-on-surface">
           <span className="font-bold text-white">
@@ -838,39 +928,57 @@ function ZonePanel({
       )}
 
       {zone.unlocked && (
-        <div className="mt-3 rounded-lg border border-tertiary/25 bg-tertiary/[0.06] px-3 py-2">
-          <div className="flex items-center justify-between gap-2">
+        <details className="mt-3 rounded-lg border border-tertiary/25 bg-tertiary/[0.06] open:pb-2">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="inline-flex items-center gap-1.5 text-label-sm text-tertiary">
               <MasteryIcon className="h-4 w-4" />
-              {t("mastery")} Lv. {zone.masteryLevel}
+              {t("mastery")} · Lv. {zone.masteryLevel} · {masteryProgressPercent(zone.masteryXp)}%
             </span>
-            <span className="font-mono text-[11px] text-on-surface-variant">
-              {masteryProgressPercent(zone.masteryXp)}%
+            <span className="material-symbols-outlined text-[16px]! text-on-surface-variant">
+              expand_more
             </span>
+          </summary>
+          <div className="border-t border-tertiary/15 px-3 pt-2">
+            <p className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-tertiary/80">
+              {t("objRoleMastery")}
+            </p>
+            <div className="h-1 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-tertiary transition-all duration-500"
+                style={{ width: `${masteryProgressPercent(zone.masteryXp)}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-[10px] text-on-surface-variant">
+              {t("masteryBonuses", {
+                xp: masteryBonuses(zone.masteryLevel).xp,
+                capture: masteryBonuses(zone.masteryLevel).capture,
+                coins: masteryBonuses(zone.masteryLevel).coins,
+              })}
+            </p>
           </div>
-          <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-tertiary transition-all duration-500"
-              style={{ width: `${masteryProgressPercent(zone.masteryXp)}%` }}
-            />
-          </div>
-          <p className="mt-1.5 text-[10px] text-on-surface-variant">
-            {t("masteryBonuses", {
-              xp: masteryBonuses(zone.masteryLevel).xp,
-              capture: masteryBonuses(zone.masteryLevel).capture,
-              coins: masteryBonuses(zone.masteryLevel).coins,
-            })}
-          </p>
-        </div>
+        </details>
       )}
 
       {!zone.unlocked ? (
-        <p className="mt-3 rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-4 text-center text-label-sm text-on-surface-variant">
-          {t("zoneLocked")}
-        </p>
+        <div className="mt-3 rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-4">
+          <p className="text-center text-label-sm text-on-surface-variant">{t("zoneLocked")}</p>
+          {unlockRequirements.length > 0 && (
+            <ul className="mt-3 flex flex-col gap-1.5">
+              {unlockRequirements.map((req) => (
+                <li
+                  key={req.id}
+                  className="flex items-start gap-2 text-label-sm text-on-surface-variant"
+                >
+                  <span className="material-symbols-outlined mt-0.5 text-[16px]!">lock</span>
+                  <span>{translateRequirement(t, req)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       ) : (
         <>
-          {/* Objetivos: lo que responde "¿qué me falta acá?" */}
+          {/* Objetivos: principal vs opcionales */}
           <p className="mt-4 mb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
             {t("objectives")}
           </p>
@@ -879,6 +987,7 @@ function ZonePanel({
               <Objective
                 key={obj.id}
                 state={obj}
+                roleLabel={obj.id === "stages" ? t("objRoleMain") : t("objRoleOptional")}
                 label={t(`obj_${obj.id}`)}
                 claimLabel={t("claim")}
                 claimedLabel={t("claimed")}
@@ -889,9 +998,12 @@ function ZonePanel({
             {isGym && (
               <li className="flex items-center gap-2 rounded-lg border border-tertiary/25 bg-tertiary/[0.06] px-2.5 py-1.5 text-label-sm">
                 <GymIcon className="h-4 w-4 shrink-0 text-tertiary" />
-                <span className="min-w-0 flex-1 truncate text-on-surface-variant">
-                  {t("objBadge")}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-tertiary">
+                    {t("objRoleRequirement")}
+                  </p>
+                  <p className="truncate text-on-surface-variant">{t("objBadge")}</p>
+                </div>
                 <span className="font-mono text-[11px] text-tertiary">
                   {gymRequirement ? `Lv. ${gymRequirement.recommendedLevel}` : ""}
                 </span>
@@ -1010,39 +1122,58 @@ function ZonePanel({
             </>
           )}
 
-          {/* Acciones */}
+          {/* Acciones de zona (no duplican el CTA principal de campaña) */}
           <div className="mt-4 flex flex-col gap-2">
             {isGym ? (
-              chapter.stagesDone < chapter.stagesTotal ? (
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    disabled
-                    className="flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-amber-300/35 bg-amber-300/10 px-4 py-2.5 text-label-md font-semibold text-amber-200"
-                  >
-                    <span className="material-symbols-outlined text-[18px]!">lock</span>
-                    {t("challengeGym")}
-                  </button>
-                  <p className="text-center text-[11px] text-on-surface-variant">
-                    {t("reqStages")} ({chapter.stagesDone}/{chapter.stagesTotal})
-                  </p>
-                </div>
-              ) : (
-                <Link
-                  href={gymRequirement ? `/gyms/${gymRequirement.gymId}` : "/gyms"}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-tertiary px-4 py-2.5 text-label-md font-semibold text-surface transition hover:bg-tertiary/85"
-                >
-                  <span className="material-symbols-outlined text-[18px]!">military_tech</span>
-                  {t("challengeGym")}
-                </Link>
-              )
+              <div className="rounded-lg border border-amber-300/25 bg-amber-300/[0.06] px-3 py-2.5">
+                <p className="text-label-sm text-on-surface">
+                  {gymReady ? t("gymChallengeHint") : t("gymLockedHint")}
+                </p>
+                {!gymReady && (
+                  <ul className="mt-2 flex flex-col gap-1">
+                    <li
+                      className={`flex items-center gap-1.5 text-[11px] ${
+                        chapter.stagesDone >= chapter.stagesTotal
+                          ? "text-emerald-400"
+                          : "text-on-surface-variant"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]!">
+                        {chapter.stagesDone >= chapter.stagesTotal
+                          ? "check_circle"
+                          : "radio_button_unchecked"}
+                      </span>
+                      {t("reqStagesDetail", {
+                        done: chapter.stagesDone,
+                        total: chapter.stagesTotal,
+                      })}
+                    </li>
+                    {gymRequirement && (
+                      <li
+                        className={`flex items-center gap-1.5 text-[11px] ${
+                          teamMaxLevel >= gymRequirement.recommendedLevel
+                            ? "text-emerald-400"
+                            : "text-on-surface-variant"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[14px]!">
+                          {teamMaxLevel >= gymRequirement.recommendedLevel
+                            ? "check_circle"
+                            : "radio_button_unchecked"}
+                        </span>
+                        {t("reqLevel", { level: gymRequirement.recommendedLevel })}
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </div>
             ) : (
               <>
                 <button
                   type="button"
                   disabled={pending || isFarming}
                   onClick={onTravel}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-pokeball-red px-4 py-2.5 text-label-md font-semibold text-white transition hover:bg-pokeball-red/85 disabled:opacity-40"
+                  className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-pokeball-red px-4 py-2.5 text-label-md font-semibold text-white transition hover:bg-pokeball-red/85 disabled:opacity-40"
                 >
                   <span className="material-symbols-outlined text-[18px]!">my_location</span>
                   {isFarming ? t("youAreHere") : t("moveHere")}
@@ -1115,6 +1246,7 @@ function rarityText(rarity: Rarity): string {
 
 function Objective({
   state,
+  roleLabel,
   label,
   claimLabel,
   claimedLabel,
@@ -1122,6 +1254,7 @@ function Objective({
   onClaim,
 }: {
   state: ZoneObjectiveState;
+  roleLabel: string;
   label: string;
   claimLabel: string;
   claimedLabel: string;
@@ -1141,10 +1274,9 @@ function Objective({
             : "border-white/10 bg-black/20 text-on-surface-variant"
       }`}
     >
-      {/*
-        Dos líneas, no una: en la columna de 320px el objetivo entraba truncado
-        ("Completar la P…") y el texto es justamente lo que hay que leer.
-      */}
+      <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/80">
+        {roleLabel}
+      </p>
       <div className="flex items-start gap-2">
         <Icon
           className={`mt-px h-4 w-4 shrink-0 ${

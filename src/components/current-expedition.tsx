@@ -9,6 +9,7 @@ import type { CampaignMilestone } from "@/lib/campaign";
 import { RegionMapDialog, type MapLocation } from "@/components/region-map-dialog";
 import { ExpeditionAmbient } from "@/components/home/expedition-ambient";
 import { NextMilestoneChip } from "@/components/next-milestone-chip";
+import { GameCtaButton } from "@/components/game-cta-button";
 import { milestoneCtaKey, milestoneHref } from "@/lib/journey-ux";
 import { CoachMark } from "@/components/journey-guidance";
 
@@ -172,13 +173,9 @@ export function CurrentExpedition({
               align="top"
               className="pointer-events-auto min-w-0 flex-1"
             >
-              <Link
-                href={ctaHref}
-                className="expedition-cta flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ffcb05] to-[#ff8a00] px-4 text-[15px] font-bold text-[#1a1408] shadow-[0_8px_24px_rgba(255,160,20,0.35),inset_0_1px_0_rgba(255,255,255,0.4)] transition hover:brightness-110 hover:shadow-[0_10px_28px_rgba(255,160,20,0.45)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-yellow/70 sm:min-h-12 sm:text-[16px]"
-              >
-                <span className="material-symbols-outlined text-[18px]!">explore</span>
+              <GameCtaButton href={ctaHref} className="expedition-cta min-h-11 sm:min-h-12">
                 {ctaLabel}
-              </Link>
+              </GameCtaButton>
             </CoachMark>
             <Link
               href="/campaign"

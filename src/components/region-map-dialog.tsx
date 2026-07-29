@@ -8,6 +8,7 @@ import { Link } from "@/i18n/navigation";
 import { selectLocation, setFarmingStage } from "@/actions/campaign";
 import { REGION_MAP_ASPECT } from "@/lib/campaign/region-map";
 import { ZoneIcon, type ZoneIconKind } from "@/components/zone-icons";
+import { gymLeaderSpriteByOrder } from "@/lib/gym-map";
 import type { MapLocation } from "@/lib/campaign/map-selection";
 
 export type { MapLocation, MapStage } from "@/lib/campaign/map-selection";
@@ -25,6 +26,7 @@ export function RegionMapDialog({
   farmingLocationId,
   farmingStageId,
   triggerLabel,
+  gymLeaderSprites,
 }: {
   locale: string;
   regionNameKey: string;
@@ -33,6 +35,8 @@ export function RegionMapDialog({
   farmingLocationId: string;
   farmingStageId: string;
   triggerLabel: string;
+  /** locationId → sprite URL del líder. Solo para nodos de tipo gym. */
+  gymLeaderSprites?: Record<string, string>;
 }) {
   const t = useTranslations("campaign");
   const [open, setOpen] = useState(false);
@@ -140,9 +144,20 @@ export function RegionMapDialog({
                   <span className="material-symbols-outlined shrink-0 text-[15px]!">
                     my_location
                   </span>
+                ) : location.gymOrder != null &&
+                  (gymLeaderSprites?.[location.id] ||
+                    gymLeaderSpriteByOrder(location.gymOrder)) ? (
+                  <Image
+                    src={
+                      gymLeaderSprites?.[location.id] ??
+                      gymLeaderSpriteByOrder(location.gymOrder)!
+                    }
+                    alt=""
+                    width={24}
+                    height={24}
+                    className="h-5 w-5 shrink-0 object-contain [image-rendering:pixelated]"
+                  />
                 ) : (
-                  // El mismo ícono que en la lista de zonas: un pin genérico no
-                  // dejaba distinguir una ruta de un gimnasio sobre el mapa.
                   <ZoneIcon
                     kind={location.kindKey.replace("kinds.", "") as ZoneIconKind}
                     className="h-5 w-5 shrink-0"
