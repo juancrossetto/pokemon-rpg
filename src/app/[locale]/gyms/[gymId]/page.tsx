@@ -20,9 +20,10 @@ export default async function GymLeaderPage({
   params: Promise<{ locale: string; gymId: string }>;
 }) {
   const { locale, gymId } = await params;
-  const [t, tBattle, session] = await Promise.all([
+  const [t, tBattle, tTypes, session] = await Promise.all([
     getTranslations("gyms"),
     getTranslations("battle.errors"),
+    getTranslations("pokedex.pokemonTypes"),
     auth(),
   ]);
 
@@ -73,6 +74,10 @@ export default async function GymLeaderPage({
   const levels = gym.team.map((p) => p.level);
   const minLevel = Math.min(...levels);
   const maxLevel = Math.max(...levels);
+  const typeKey = gym.type.toLowerCase();
+  const typeLabel = tTypes.has(typeKey as "fire") ? tTypes(typeKey as "fire") : gym.type;
+  const badgeKey = `badges.${gym.order}`;
+  const badgeLabel = t.has(badgeKey) ? t(badgeKey) : gym.badgeName;
 
   const errors = {
     no_lead: tBattle("noLead"),
@@ -119,7 +124,7 @@ export default async function GymLeaderPage({
           <div className="min-w-0">
             <h2 className="text-headline-md text-on-surface truncate">{gym.leaderName}</h2>
             <p className="text-label-md" style={{ color }}>
-              {t("primaryType", { type: gym.type })}
+              {t("primaryType", { type: typeLabel })}
             </p>
             <p className="text-label-sm text-on-surface-variant mt-1">{t("threatLevel", { min: minLevel, max: maxLevel })}</p>
           </div>
@@ -155,10 +160,10 @@ export default async function GymLeaderPage({
 
         <div className="glass-panel rounded-xl border border-tertiary/40 p-3 sm:p-6 flex flex-col gap-3 sm:gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <Image src={gymBadgeImageUrl(gym.type)} alt={gym.badgeName} width={40} height={40} className="shrink-0" />
+            <Image src={gymBadgeImageUrl(gym.type)} alt={badgeLabel} width={40} height={40} className="shrink-0" />
             <div className="min-w-0">
               <p className="text-label-sm uppercase text-on-surface-variant">{t("targetReward")}</p>
-              <p className="text-headline-md text-on-surface truncate">{gym.badgeName}</p>
+              <p className="text-headline-md text-on-surface truncate">{badgeLabel}</p>
             </div>
           </div>
 

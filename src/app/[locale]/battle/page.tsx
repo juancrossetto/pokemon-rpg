@@ -23,6 +23,7 @@ import { getRouteTrainer } from "@/lib/campaign/trainers";
 import { avatarById, showdownTrainerSpriteUrl } from "@/lib/avatars";
 import { gymLeaderPortraitUrl, gymTypeTrainerSpriteSlug } from "@/lib/gym-art";
 import { parseTeamSnap } from "@/lib/pvp/team";
+import { resolveBattleBg } from "@/lib/battle-bg";
 
 const ENCOUNTER_ENERGY_COST = 1;
 
@@ -60,7 +61,7 @@ export default async function BattlePage({
     include: {
       pokemonInstance: { include: { species: true, moves: { include: { move: true } } } },
       wildSpecies: true,
-      gym: { select: { type: true, name: true, leaderName: true, badgeName: true } },
+      gym: { select: { type: true, name: true, leaderName: true, badgeName: true, order: true } },
       gymTrainer: { select: { name: true } },
       pvpMatch: {
         select: {
@@ -295,6 +296,12 @@ export default async function BattlePage({
     // Un entrenador de ruta tiene nombre propio: no es un "Pokémon salvaje".
     const routeTrainer = battle.routeTrainerId ? getRouteTrainer(battle.routeTrainerId) : null;
     const tCampaign = await getTranslations("campaign");
+    const tGyms = battle.gym ? await getTranslations("gyms") : null;
+    const gymBadgeKey = battle.gym ? `badges.${battle.gym.order}` : null;
+    const gymBadgeName =
+      tGyms && gymBadgeKey && tGyms.has(gymBadgeKey)
+        ? tGyms(gymBadgeKey)
+        : (battle.gym?.badgeName ?? null);
     const pvpOpponentName =
       battle.opponentUser?.username ?? battle.pvpMatch?.opponent.username ?? null;
     const opponentName = battle.pvpMatchId
@@ -321,6 +328,23 @@ export default async function BattlePage({
       : battle.gymId
         ? "gym"
         : "wild";
+
+    const progress =
+      battleMode === "wild"
+        ? await ensureCampaignProgress(userId)
+        : null;
+    const farmingLocationId = progress?.farmingLocationId ?? null;
+    const locationKind = farmingLocationId
+      ? (getKantoLocation(farmingLocationId)?.kind ?? null)
+      : null;
+    const battleBg = resolveBattleBg({
+      battleMode,
+      battleId: battle.id,
+      locationKind,
+      locationId: farmingLocationId,
+      gymType: battle.gym?.type ?? null,
+      isRouteTrainer: Boolean(routeTrainer),
+    });
 
     initialBattle = {
       battleId: battle.id,
@@ -388,8 +412,9 @@ export default async function BattlePage({
       gymType: battle.gym?.type ?? null,
       gymName: battle.gym?.name ?? null,
       gymLeaderName: battle.gym?.leaderName ?? null,
-      gymBadgeName: battle.gym?.badgeName ?? null,
+      gymBadgeName,
       battleMode,
+      battleBg,
       pvpMatchId: battle.pvpMatchId,
     };
   }

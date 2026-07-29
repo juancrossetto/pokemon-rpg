@@ -3,6 +3,8 @@
 // comandos, pantallas de resultado) no tengan que importar el componente
 // gigante solo por sus tipos.
 
+import type { BattleBgId } from "@/lib/showdown-fx";
+
 export interface Combatant {
   name: string;
   /** Nombre de especie (PokeAPI) — para el GIF animado de Showdown. */
@@ -81,5 +83,7 @@ export interface BattleArenaProps {
   gymBadgeName: string | null;
   /** Modo de batalla: wild | gym | pvp */
   battleMode: "wild" | "gym" | "pvp";
+  /** Fondo Showdown según bioma, location o tipo de gimnasio. */
+  battleBg: BattleBgId;
   pvpMatchId: string | null;
 }

@@ -233,12 +233,17 @@ export function BattleOutcomeScreen({
           >
             {tUx("postBattleJourney")}
           </SoftLeaveButton>
-          <SoftLeaveButton
-            href="/team"
-            className="w-full text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
-          >
-            {tUx("postBattleEvolve")}
-          </SoftLeaveButton>
+          {/* Antes se mostraba siempre y mentía: el copy dice que alguien puede
+              evolucionar aunque nadie tenga oferta. Solo si el resumen de XP
+              trae un evolveOffer (participantes de esta pelea). */}
+          {xpSummary?.some((e) => e.evolveOffer) ? (
+            <SoftLeaveButton
+              href="/team"
+              className="w-full text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
+            >
+              {tUx("postBattleEvolve")}
+            </SoftLeaveButton>
+          ) : null}
           <SoftLeaveButton
             href="/"
             className="mt-1 block w-full text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"

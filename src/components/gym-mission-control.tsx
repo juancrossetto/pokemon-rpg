@@ -186,6 +186,7 @@ function MissionSparks() {
 
 export function GymMissionControl({ items, badgeCount, gems }: Props) {
   const t = useTranslations("gyms");
+  const tTypes = useTranslations("pokedex.pokemonTypes");
   const firstUnlocked = items.find((g) => !g.locked && !g.badgeEarned) ?? items[0];
   const [selectedId, setSelectedId] = useState(firstUnlocked?.id ?? items[0]?.id ?? "");
   const [slideDir, setSlideDir] = useState<"left" | "right">("right");
@@ -199,6 +200,16 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
   const selected = items.find((g) => g.id === selectedId) ?? items[0];
   const color = selected ? typeColor(selected.type) : "#68A090";
 
+  function typeLabel(type: string) {
+    const key = type.toLowerCase();
+    return tTypes.has(key as "fire") ? tTypes(key as "fire") : type;
+  }
+
+  function badgeLabel(gym: Pick<GymMissionItem, "order" | "badgeName">) {
+    const key = `badges.${gym.order}`;
+    return t.has(key) ? t(key) : gym.badgeName;
+  }
+
   function selectGym(next: GymMissionItem) {
     if (!selected || next.id === selected.id) return;
     setSlideDir(next.order >= selected.order ? "right" : "left");
@@ -210,6 +221,8 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
   const canChallenge =
     !selected.locked && !selected.stagesIncomplete && !selected.onCooldown && !selected.closed;
   const challengeHref = `/gyms/${selected.id}`;
+  const selectedTypeLabel = typeLabel(selected.type);
+  const selectedBadgeLabel = badgeLabel(selected);
 
   return (
     <div className="relative isolate flex-1 overflow-hidden">
@@ -255,7 +268,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                   key={gym.id}
                   type="button"
                   onClick={() => selectGym(gym)}
-                  title={`${gym.name} · ${gym.badgeName}`}
+                  title={`${gym.name} · ${badgeLabel(gym)}`}
                   className={`relative flex h-9 w-9 items-center justify-center rounded-md border transition ${
                     gym.badgeEarned
                       ? "border-tertiary/50 bg-tertiary/10"
@@ -264,7 +277,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                 >
                   <Image
                     src={gym.badgeUrl}
-                    alt={gym.badgeName}
+                    alt={badgeLabel(gym)}
                     width={22}
                     height={22}
                     className={`object-contain ${gym.badgeEarned ? "drop-shadow-[0_0_6px_rgba(242,192,0,0.55)]" : "grayscale"}`}
@@ -321,7 +334,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                   className="rounded-md border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white"
                   style={{ backgroundColor: `${color}cc`, borderColor: `${color}` }}
                 >
-                  {selected.type}
+                  {selectedTypeLabel}
                 </span>
               </div>
 
@@ -336,7 +349,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                   <p className="mt-1 text-label-md text-white/75">
                     {selected.leaderName}
                     <span className="mx-2 text-white/25">·</span>
-                    {t("specialist", { type: selected.type })}
+                    {t("specialist", { type: selectedTypeLabel })}
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-label-sm text-white/80">
                     <span>{t("recommendedLevel", { level: selected.recommendedLevel })}</span>
@@ -369,7 +382,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                   <div className="flex flex-col items-center">
                     <Image
                       src={selected.badgeUrl}
-                      alt={selected.badgeName}
+                      alt={selectedBadgeLabel}
                       width={72}
                       height={72}
                       className={`h-16 w-16 object-contain sm:h-[72px] sm:w-[72px] ${
@@ -379,7 +392,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                       }`}
                     />
                     <p className="mt-1 max-w-[9rem] text-center text-[10px] font-bold uppercase tracking-[0.14em] text-electric-yellow">
-                      {selected.badgeName}
+                      {selectedBadgeLabel}
                     </p>
                   </div>
                   <div className="h-14 w-px bg-white/15" />
@@ -473,7 +486,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                             <span className="material-symbols-outlined text-[12px]!">
                               {typeIcon(type)}
                             </span>
-                            {type}
+                            {typeLabel(type)}
                           </span>
                         ))}
                       </div>
@@ -502,7 +515,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                     }}
                   >
                     <span className="material-symbols-outlined text-[16px]!">{typeIcon(type)}</span>
-                    {type}
+                    {typeLabel(type)}
                   </span>
                 ))}
               </div>
@@ -548,7 +561,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                       key={gym.id}
                       type="button"
                       onClick={() => selectGym(gym)}
-                      title={`${gym.name} — ${gym.leaderName}${gym.badgeName ? ` · ${gym.badgeName}` : ""}`}
+                      title={`${gym.name} — ${gym.leaderName}${gym.badgeName ? ` · ${badgeLabel(gym)}` : ""}`}
                       className="absolute -translate-x-1/2 -translate-y-1/2"
                       style={{ left: `${gym.mapFocusX}%`, top: `${gym.mapFocusY}%` }}
                     >
@@ -567,7 +580,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                       >
                         <Image
                           src={gym.badgeUrl}
-                          alt={gym.badgeName || gym.name}
+                          alt={badgeLabel(gym) || gym.name}
                           width={28}
                           height={28}
                           className={`h-5 w-5 object-contain sm:h-6 sm:w-6 ${

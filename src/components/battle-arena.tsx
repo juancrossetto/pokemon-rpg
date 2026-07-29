@@ -101,6 +101,7 @@ export function BattleArena({
   gymLeaderName,
   gymBadgeName,
   battleMode = gymId ? "gym" : "wild",
+  battleBg = "meadow",
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tLog = useTranslations("battle.log");
@@ -1223,7 +1224,7 @@ export function BattleArena({
             }`}
             style={
               {
-                "--arena-bg-image": `url(${showdownBattleBgUrl(isTrainerStyle ? "mountain" : "meadow")})`,
+                "--arena-bg-image": `url(${showdownBattleBgUrl(battleBg)})`,
                 ...(arenaFlash ? { "--arena-flash-color": arenaFlash } : {}),
               } as CSSProperties
             }

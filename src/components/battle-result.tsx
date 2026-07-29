@@ -89,7 +89,7 @@ function FighterCard({
 
   return (
     <div className="flex min-w-0 flex-col items-center gap-2">
-      <div className="relative flex h-24 w-24 items-center justify-center md:h-28 md:w-28">
+      <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden md:h-28 md:w-28">
         {highlight && (
           <>
             <span className="absolute inset-0 rounded-full bg-tertiary/15 blur-2xl" />
@@ -311,7 +311,7 @@ export function BattleResult({
   return createPortal(
     <BattleResultLeaveContext.Provider value={leave}>
     <div
-      className={`battle-result-overlay fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto overscroll-contain px-margin-mobile py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]${
+      className={`battle-result-overlay fixed inset-0 z-[80] flex items-center justify-center overflow-hidden px-margin-mobile py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]${
         leaving ? " is-leaving" : ""
       }`}
       role="dialog"
@@ -321,12 +321,14 @@ export function BattleResult({
       <div className="fixed inset-0 bg-black/78 backdrop-blur-sm" aria-hidden />
       <div className={`pointer-events-none fixed inset-0 ${accentGlow} blur-3xl opacity-50`} aria-hidden />
 
+      {/* Un solo scroll en la card. max-h resta el padding del overlay para
+          que no quede 1–2px de overflow fantasma cuando el contenido entra. */}
       <div
-        className={`result-in relative z-10 my-auto flex max-h-[min(92dvh,48rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border bg-[#0c1018] shadow-[0_24px_80px_rgba(0,0,0,0.65)] ${cardBorder}`}
+        className={`result-in relative z-10 my-auto max-h-[min(calc(100dvh-1.5rem),48rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border bg-[#0c1018] shadow-[0_24px_80px_rgba(0,0,0,0.65)] ${cardBorder}`}
       >
         <div className={`pointer-events-none absolute inset-x-0 top-0 h-36 ${cardTopGlow} blur-2xl`} />
 
-        <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 md:px-6 md:py-6">
+        <div className="relative px-4 py-5 md:px-6 md:py-6">
           <div className="flex flex-col items-center gap-2.5">
             <span className={`result-outcome-pill result-outcome-pill--${headlineTone}`}>
               <span className="material-symbols-outlined text-[14px]!">{outcomePillIcon}</span>

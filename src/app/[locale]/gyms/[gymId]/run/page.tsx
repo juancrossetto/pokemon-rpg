@@ -164,7 +164,7 @@ export default async function GymRunPage({
       locale={locale}
       gymName={gym.name}
       leaderName={gym.leaderName}
-      badgeName={gym.badgeName}
+      badgeName={t.has(`badges.${gym.order}`) ? t(`badges.${gym.order}`) : gym.badgeName}
       gymType={gym.type}
       badgeUrl={gymBadgeImageUrl(gym.type)}
       coinReward={gym.coinReward}

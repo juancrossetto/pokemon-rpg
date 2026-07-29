@@ -17,7 +17,22 @@ export function showdownFxUrl(file: string): string {
   return `${showdownFxBase()}/${file.replace(/^\//, "")}`;
 }
 
-export type BattleBgId = "meadow" | "forest" | "route" | "mountain";
+export type BattleBgId =
+  | "meadow"
+  | "forest"
+  | "route"
+  | "mountain"
+  | "beach"
+  | "beachshore"
+  | "river"
+  | "deepsea"
+  | "city"
+  | "desert"
+  | "thunderplains"
+  | "dampcave"
+  | "earthycave"
+  | "icecave"
+  | "volcanocave";
 
 export function showdownBattleBgUrl(id: BattleBgId = "meadow"): string {
   return showdownFxUrl(`bg-${id}.png`);
