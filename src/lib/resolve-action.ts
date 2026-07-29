@@ -23,6 +23,7 @@ import {
   resolvePlayerHeldItemTrigger,
   type HeldItemSnapshot,
 } from "@/lib/held-items";
+import { multiHitSpec, rollMultiHitCount } from "@/lib/multi-hit";
 
 export interface SideBattleState {
   hp: number;
@@ -203,12 +204,37 @@ export function resolveSingleAction(
       statusNote,
     });
   } else {
+    // `result` ya confirmó el acierto y el daño del primer golpe.
+    const multi = multiHitSpec(move.name);
+    const plannedHits = multi ? rollMultiHitCount(multi) : 1;
+    const hitDamages: number[] = [];
+    let anyCritical = result.critical;
+    let lastEffectiveness = result.effectiveness;
+
+    const dealtFirst = Math.min(result.damage, foe.hp);
     foe.hp = Math.max(0, foe.hp - result.damage);
+    hitDamages.push(dealtFirst);
+
+    for (let i = 1; i < plannedHits; i++) {
+      if (foe.hp <= 0) break;
+      const next = resolveMoveUse(atkStats, defStats, move, {
+        attackerBurned: self.status === "BURN",
+        powerMultiplier: heldItemPowerMultiplier(self.heldItem, move.type),
+        forceHit: true,
+      });
+      const dealt = Math.min(next.damage, foe.hp);
+      foe.hp = Math.max(0, foe.hp - next.damage);
+      hitDamages.push(dealt);
+      if (next.critical) anyCritical = true;
+      lastEffectiveness = next.effectiveness;
+    }
+
+    const totalDamage = hitDamages.reduce((a, b) => a + b, 0);
     let recoilDamage = 0;
     if (move.id === STRUGGLE_MOVE.id || move.name === "struggle") {
       recoilDamage += Math.max(1, Math.floor(self.maxHp / 4));
     }
-    if (self.heldItem?.effect === "LIFE_ORB" && result.damage > 0) {
+    if (self.heldItem?.effect === "LIFE_ORB" && totalDamage > 0) {
       recoilDamage += Math.max(1, Math.floor(self.maxHp * 0.1));
     }
     if (recoilDamage > 0) {
@@ -238,10 +264,12 @@ export function resolveSingleAction(
       category: move.category,
       hit: true,
       isStatus: false,
-      damage: result.damage,
-      effectiveness: result.effectiveness,
+      damage: totalDamage,
+      effectiveness: lastEffectiveness,
       hpAfter: foe.hp,
-      critical: result.critical,
+      critical: anyCritical,
+      hitCount: hitDamages.length,
+      hitDamages,
       recoilDamage: recoilDamage || undefined,
       statusApplied,
       statusNote,

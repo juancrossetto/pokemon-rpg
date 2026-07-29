@@ -20,7 +20,7 @@ Registro de qué está hecho y qué falta en el pulido visual de batalla, para n
 - [x] **Intensidad de sacudida escalada según cuánto HP representó el golpe** — un golpe de 2 ya no sacude igual que uno que casi noquea (compone con el tier de flash por efectividad, son dos señales distintas)
 - [x] Estados persistentes reales: dormido/paralizado/veneno/quemadura con su propio log y daño residual por turno — ya NO es "pendiente hasta que exista de verdad", ya existe
 - [x] Sonido (SFX real por tipo de golpe: normal/crítico/súper efectivo/estado/fallo/ball)
-- [ ] Multi-golpe real (Double-Slap, Comet Punch, etc.) — el motor todavía resuelve estos movimientos como un solo golpe, mecánica y visualmente; para animarlo bien primero hay que sumar el multi-hit real a la fórmula de daño, no es solo un tema de animación
+- [x] Multi-golpe real (Double-Slap, Comet Punch, etc.) — motor (`multi-hit.ts` + `resolve-action`) + animación por golpe en arena + log “Hit N times!”
 
 ## Captura
 

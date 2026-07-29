@@ -60,6 +60,8 @@ export interface ResolveOptions {
   attackerBurned?: boolean;
   /** Multiplicador de poder por objeto equipado (Life Orb, potenciadores de tipo). */
   powerMultiplier?: number;
+  /** Si true, no tira accuracy (golpes 2..N de un multi-hit). */
+  forceHit?: boolean;
 }
 
 /**
@@ -72,7 +74,11 @@ export function resolveMoveUse(
   move: MoveSnapshot,
   options: ResolveOptions = {},
 ): MoveResult {
-  const hit = move.accuracy === null ? true : Math.random() * 100 < move.accuracy;
+  const hit = options.forceHit
+    ? true
+    : move.accuracy === null
+      ? true
+      : Math.random() * 100 < move.accuracy;
   if (!hit || move.category === "STATUS" || move.power === null) {
     return { hit, damage: 0, effectiveness: 1, critical: false };
   }
@@ -136,6 +142,10 @@ export interface TurnEvent {
   effectiveness: number;
   hpAfter: number;
   critical?: boolean;
+  /** Golpes que conectaron en un multi-hit (Double Slap, Pin Missile…). */
+  hitCount?: number;
+  /** Daño de cada golpe, en orden — el cliente anima uno por uno. */
+  hitDamages?: number[];
   skipped?: SkipReason | null;
   /** Despertó / se descongeló justo antes de actuar. */
   statusNote?: "woke" | "thawed" | null;

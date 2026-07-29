@@ -652,6 +652,7 @@
       "notVeryEffective": "It's not very effective...",
       "noEffect": "It had no effect...",
       "critical": "A critical hit!",
+      "hitTimes": "Hit {count} times!",
       "fainted": "{name} fainted!",
       "asleep": "{name} is fast asleep!",
       "paralyzed": "{name} is paralyzed! It can't move!",

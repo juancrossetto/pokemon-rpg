@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { attemptCapture } from "@/lib/capture";
 import { effectivePp } from "@/lib/battle";
 import { fleeOdds, rollFlee } from "@/lib/flee";
+import {
+  multiHitSpec,
+  rollMultiHitCount,
+  rollRangeHits,
+} from "@/lib/multi-hit";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
 import { unspentPointsForLevel } from "@/lib/stats";
 
@@ -77,5 +82,27 @@ describe("unspentPointsForLevel", () => {
     expect(unspentPointsForLevel(1)).toBe(0);
     expect(unspentPointsForLevel(5)).toBe(12);
     expect(unspentPointsForLevel(100)).toBe(297);
+  });
+});
+
+describe("multi-hit", () => {
+  it("maps fixed and range moves by name", () => {
+    expect(multiHitSpec("double-kick")).toEqual({ kind: "fixed", hits: 2 });
+    expect(multiHitSpec("Triple Kick")).toEqual({ kind: "fixed", hits: 3 });
+    expect(multiHitSpec("pin-missile")).toEqual({ kind: "range", min: 2, max: 5 });
+    expect(multiHitSpec("tackle")).toBeNull();
+  });
+
+  it("rolls fixed counts as-is", () => {
+    expect(rollMultiHitCount({ kind: "fixed", hits: 2 })).toBe(2);
+    expect(rollMultiHitCount({ kind: "fixed", hits: 3 })).toBe(3);
+  });
+
+  it("uses Gen III+ 2–5 distribution", () => {
+    expect(rollRangeHits(2, 5, () => 0)).toBe(2);
+    expect(rollRangeHits(2, 5, () => 3 / 8 - 0.001)).toBe(2);
+    expect(rollRangeHits(2, 5, () => 3 / 8)).toBe(3);
+    expect(rollRangeHits(2, 5, () => 6 / 8)).toBe(4);
+    expect(rollRangeHits(2, 5, () => 7 / 8)).toBe(5);
   });
 });

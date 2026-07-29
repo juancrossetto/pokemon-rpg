@@ -54,6 +54,10 @@ function hitSfxForMove(moveType: string, category?: TurnEvent["category"]): SfxK
 }
 
 const LUNGE_MS = 380;
+/** Lunge corto por golpe en multi-hit (Pin Missile, Fury Attack…). */
+const MULTI_STRIKE_MS = 240;
+const MULTI_IMPACT_MS = 300;
+const MULTI_GAP_MS = 70;
 const IMPACT_MS = 560;
 const STATUS_MS = 620;
 const MISS_MS = 500;
@@ -239,6 +243,8 @@ export function BattleArena({
   const [damagePopup, setDamagePopup] = useState<{ side: "player" | "wild"; text: string; key: number } | null>(null);
   const [moveFx, setMoveFx] = useState<{
     key: number;
+    /** Remounta proyectil/contacto/impacto sin reiniciar el banner. */
+    strikeKey: number;
     side: "player" | "wild";
     moveName: string;
     moveType: string;
@@ -471,6 +477,13 @@ export function BattleArena({
       const mode = event.skipped ? "miss" : !event.hit ? "miss" : event.isStatus ? "status" : "hit";
       const projectile =
         mode === "hit" ? resolveMoveProjectile(event.moveType, event.category) : null;
+      const previewDamages =
+        mode === "hit" && event.hitDamages && event.hitDamages.length > 0
+          ? event.hitDamages
+          : mode === "hit"
+            ? [event.damage]
+            : [];
+      const multiHit = previewDamages.length > 1;
 
       // Miss / skip / status suenan al inicio; el hit tipado espera al impacto.
       if (
@@ -489,6 +502,7 @@ export function BattleArena({
 
       setMoveFx({
         key: fxKey,
+        strikeKey: fxKey,
         side: event.side,
         moveName: event.moveName,
         moveType: event.moveType,
@@ -517,10 +531,11 @@ export function BattleArena({
         return;
       }
 
-      setAttackingSide(event.side);
+      // Multi-hit: un strike por golpe adentro del loop (no un solo lunge al inicio).
+      if (!multiHit) setAttackingSide(event.side);
 
       setTimeout(() => {
-        setAttackingSide(null);
+        if (!multiHit) setAttackingSide(null);
 
         if (event.statusNote === "woke") appendLog(tLog("woke", { name: nameFor(event.side) }), event.side);
         if (event.statusNote === "thawed") appendLog(tLog("thawed", { name: nameFor(event.side) }), event.side);
@@ -577,73 +592,108 @@ export function BattleArena({
 
         // SFX tipado + thud de daño al impacto (más audible).
         const typed = hitSfxForMove(event.moveType, event.category);
-        playBattleSfx(typed);
-        if (typed !== "contact" && typed !== "hit") playBattleSfx("damage");
-        if (event.critical) playBattleSfx("crit");
-        else if (event.effectiveness > 1) playBattleSfx("superEffective");
-
         const defenderSide = event.side === "player" ? "wild" : "player";
         const defenderMaxHpNow = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
-        const impactRatio = defenderMaxHpNow > 0 ? event.damage / defenderMaxHpNow : 0;
-        setShakingSide(defenderSide);
-        setImpactIntensity(Math.min(1.7, Math.max(0.55, 0.55 + impactRatio * 2.3)));
-        setArenaFlash(color);
-        setDamagePopup({ side: defenderSide, text: `-${event.damage}`, key: fxKey });
-        if (defenderSide === "wild") setWildHp(event.hpAfter);
-        else {
-          setPlayerHp(event.hpAfter);
-          setParty((prev) =>
-            prev.map((m) => (m.instanceId === activeId ? { ...m, currentHp: event.hpAfter } : m)),
-          );
-        }
-
-        if (event.effectiveness > 1) {
-          setEffPopup({ text: tLog("superEffective"), key: fxKey });
-        } else if (event.effectiveness > 0 && event.effectiveness < 1) {
-          setEffPopup({ text: tLog("notVeryEffective"), key: fxKey });
-        } else if (event.effectiveness === 0) {
-          setEffPopup({ text: tLog("noEffect"), key: fxKey });
-        } else if (event.critical) {
-          setEffPopup({ text: tLog("critical"), key: fxKey });
-        }
+        const hitDamages = previewDamages;
 
         appendLog(tLog("used", { name: nameFor(event.side), move: formatMoveName(event.moveName) }), event.side);
-        if (event.critical) appendLog(tLog("critical"), event.side);
-        if (event.effectiveness > 1) appendLog(tLog("superEffective"), event.side);
-        else if (event.effectiveness > 0 && event.effectiveness < 1) appendLog(tLog("notVeryEffective"), event.side);
-        else if (event.effectiveness === 0) appendLog(tLog("noEffect"), event.side);
-        appendLog(tLog("damage", { name: nameFor(defenderSide), damage: event.damage }), defenderSide);
 
-        if (event.statusApplied) {
-          const label = t(statusLabelKey(event.statusApplied as StatusCondition));
-          appendLog(tLog("statusApplied", { name: nameFor(defenderSide), status: label }), defenderSide);
-          if (defenderSide === "wild") setWildStatus(event.statusApplied);
-          else setPlayerStatus(event.statusApplied);
-        }
-
-        if (event.recoilDamage) {
-          appendLog(tLog("recoil", { name: nameFor(event.side), damage: event.recoilDamage }), event.side);
-          if (event.side === "player") setPlayerHp((hp) => Math.max(0, hp - (event.recoilDamage ?? 0)));
-          else setWildHp((hp) => Math.max(0, hp - (event.recoilDamage ?? 0)));
-        }
-
-        const defenderMaxHp = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
-        if (event.hpAfter > 0 && event.hpAfter / defenderMaxHp <= 0.1) {
-          appendLog(tLog("lowHp", { name: nameFor(defenderSide) }), defenderSide);
-        }
-
-        setTimeout(() => setArenaFlash(null), 280);
         void (async () => {
-          await delay(IMPACT_MS);
-          setShakingSide(null);
+          let hpCursor = defenderSide === "wild" ? wildHp : playerHp;
+
+          for (let i = 0; i < hitDamages.length; i++) {
+            const chunk = hitDamages[i]!;
+            const fxHitKey = fxKey + i + 1;
+
+            if (multiHit) {
+              // Strike + FX de ataque por golpe (lunge / proyectil / contacto).
+              setMoveFx((prev) => (prev ? { ...prev, strikeKey: fxHitKey } : prev));
+              setAttackingSide(event.side);
+              await delay(MULTI_STRIKE_MS);
+              setAttackingSide(null);
+              await delay(40);
+            }
+
+            playBattleSfx(typed);
+            if (typed !== "contact" && typed !== "hit") playBattleSfx("damage");
+            if (i === 0 && event.critical) playBattleSfx("crit");
+            else if (i === 0 && event.effectiveness > 1) playBattleSfx("superEffective");
+
+            const impactRatio = defenderMaxHpNow > 0 ? chunk / defenderMaxHpNow : 0;
+            setShakingSide(defenderSide);
+            setImpactIntensity(Math.min(1.7, Math.max(0.55, 0.55 + impactRatio * 2.3)));
+            setArenaFlash(color);
+            setDamagePopup({ side: defenderSide, text: `-${chunk}`, key: fxHitKey });
+            setMoveFx((prev) => (prev ? { ...prev, strikeKey: fxHitKey + 1000 } : prev));
+
+            hpCursor = Math.max(0, hpCursor - chunk);
+            // Último golpe: HP final del server para no desincronizar.
+            const hpShow = i === hitDamages.length - 1 ? event.hpAfter : hpCursor;
+            if (defenderSide === "wild") setWildHp(hpShow);
+            else {
+              setPlayerHp(hpShow);
+              setParty((prev) =>
+                prev.map((m) =>
+                  m.instanceId === activeId ? { ...m, currentHp: hpShow } : m,
+                ),
+              );
+            }
+
+            if (i === 0) {
+              if (event.effectiveness > 1) {
+                setEffPopup({ text: tLog("superEffective"), key: fxHitKey });
+              } else if (event.effectiveness > 0 && event.effectiveness < 1) {
+                setEffPopup({ text: tLog("notVeryEffective"), key: fxHitKey });
+              } else if (event.effectiveness === 0) {
+                setEffPopup({ text: tLog("noEffect"), key: fxHitKey });
+              } else if (event.critical) {
+                setEffPopup({ text: tLog("critical"), key: fxHitKey });
+              }
+            }
+
+            await delay(multiHit ? MULTI_IMPACT_MS : IMPACT_MS);
+            setShakingSide(null);
+            setArenaFlash(null);
+            setDamagePopup(null);
+            if (i === 0) setEffPopup(null);
+            if (multiHit && i < hitDamages.length - 1) {
+              await delay(MULTI_GAP_MS);
+            }
+          }
+
+          if (multiHit) {
+            appendLog(tLog("hitTimes", { count: hitDamages.length }), event.side);
+          }
+          if (event.critical) appendLog(tLog("critical"), event.side);
+          if (event.effectiveness > 1) appendLog(tLog("superEffective"), event.side);
+          else if (event.effectiveness > 0 && event.effectiveness < 1) appendLog(tLog("notVeryEffective"), event.side);
+          else if (event.effectiveness === 0) appendLog(tLog("noEffect"), event.side);
+          appendLog(tLog("damage", { name: nameFor(defenderSide), damage: event.damage }), defenderSide);
+
+          if (event.statusApplied) {
+            const label = t(statusLabelKey(event.statusApplied as StatusCondition));
+            appendLog(tLog("statusApplied", { name: nameFor(defenderSide), status: label }), defenderSide);
+            if (defenderSide === "wild") setWildStatus(event.statusApplied);
+            else setPlayerStatus(event.statusApplied);
+          }
+
+          if (event.recoilDamage) {
+            appendLog(tLog("recoil", { name: nameFor(event.side), damage: event.recoilDamage }), event.side);
+            if (event.side === "player") setPlayerHp((hp) => Math.max(0, hp - (event.recoilDamage ?? 0)));
+            else setWildHp((hp) => Math.max(0, hp - (event.recoilDamage ?? 0)));
+          }
+
+          const defenderMaxHp = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
+          if (event.hpAfter > 0 && event.hpAfter / defenderMaxHp <= 0.1) {
+            appendLog(tLog("lowHp", { name: nameFor(defenderSide) }), defenderSide);
+          }
+
           setMoveFx(null);
-          setEffPopup(null);
-          setDamagePopup(null);
           await playResidualBeat(event);
           appendItemTriggerLog(event);
           resolve();
         })();
-      }, LUNGE_MS);
+      }, multiHit ? 120 : LUNGE_MS);
     });
   }
 
@@ -1270,7 +1320,7 @@ export function BattleArena({
             {moveFx?.mode === "hit" && moveFx.fxFile && moveFx.fxStyle === "projectile" && (
               // eslint-disable-next-line @next/next/no-img-element -- FX particle from Showdown CDN
               <img
-                key={`proj-${moveFx.key}`}
+                key={`proj-${moveFx.strikeKey}`}
                 src={showdownFxUrl(moveFx.fxFile)}
                 alt=""
                 aria-hidden
@@ -1283,7 +1333,7 @@ export function BattleArena({
             {moveFx?.mode === "hit" && moveFx.fxFile && moveFx.fxStyle === "bolt" && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                key={`bolt-${moveFx.key}`}
+                key={`bolt-${moveFx.strikeKey}`}
                 src={showdownFxUrl(moveFx.fxFile)}
                 alt=""
                 aria-hidden
@@ -1296,7 +1346,7 @@ export function BattleArena({
             {moveFx?.mode === "hit" && moveFx.fxFile && moveFx.fxStyle === "contact" && attackingSide && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                key={`contact-${moveFx.key}`}
+                key={`contact-${moveFx.strikeKey}`}
                 src={showdownFxUrl(moveFx.fxFile)}
                 alt=""
                 aria-hidden
@@ -1364,7 +1414,7 @@ export function BattleArena({
               {moveFx?.mode === "hit" && shakingSide === "wild" && (
                 <>
                   <span
-                    key={`burst-w-${moveFx.key}`}
+                    key={`burst-w-${moveFx.strikeKey}`}
                     className="move-impact absolute inset-0 m-auto pointer-events-none"
                     style={{
                       background: `radial-gradient(circle, ${typeColor(moveFx.moveType)}cc 0%, transparent 70%)`,
@@ -1372,7 +1422,7 @@ export function BattleArena({
                   />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    key={`impact-w-${moveFx.key}`}
+                    key={`impact-w-${moveFx.strikeKey}`}
                     src={impactFxUrl()}
                     alt=""
                     aria-hidden
@@ -1412,7 +1462,7 @@ export function BattleArena({
               {moveFx?.mode === "hit" && shakingSide === "player" && (
                 <>
                   <span
-                    key={`burst-p-${moveFx.key}`}
+                    key={`burst-p-${moveFx.strikeKey}`}
                     className="move-impact absolute inset-0 m-auto pointer-events-none"
                     style={{
                       background: `radial-gradient(circle, ${typeColor(moveFx.moveType)}cc 0%, transparent 70%)`,
@@ -1420,7 +1470,7 @@ export function BattleArena({
                   />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    key={`impact-p-${moveFx.key}`}
+                    key={`impact-p-${moveFx.strikeKey}`}
                     src={impactFxUrl()}
                     alt=""
                     aria-hidden

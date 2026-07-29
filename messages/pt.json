@@ -652,6 +652,7 @@
       "notVeryEffective": "Não é muito efetivo...",
       "noEffect": "Não teve efeito...",
       "critical": "Um golpe crítico!",
+      "hitTimes": "Acertou {count} vezes!",
       "fainted": "{name} desmaiou!",
       "asleep": "{name} está dormindo!",
       "paralyzed": "{name} está paralisado! Não pode se mover!",
