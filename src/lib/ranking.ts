@@ -1,9 +1,10 @@
 import { calculateMaxHp, calculateStat } from "@/lib/stats";
 
-// Ranking segmentado del dossier (fase 4): global, por país y por especie.
-// El "poder" de un Pokémon se calcula con las MISMAS fórmulas que usa el
-// combate (ver stats.ts y la ficha del mercado), así el ranking refleja la
-// fuerza real en batalla y no un número inventado. Suma de los 6 stats.
+// Ranking: PC (poder de combate del equipo activo), PvP (Elo) y Clasificatoria
+// (próximamente). El PC usa las mismas fórmulas de combate que stats.ts.
+
+export type RankingCategory = "combat_power" | "pvp" | "ranked";
+export type RankingScope = "global" | "country" | "friends";
 
 export type PowerInput = {
   level: number;
@@ -22,6 +23,38 @@ export type PowerInput = {
   };
 };
 
+export type RankingFeaturedCreature = {
+  id?: string;
+  name: string;
+  image: string;
+  isShiny?: boolean;
+};
+
+export type RankingEntry = {
+  playerId: string;
+  playerName: string;
+  countryCode?: string;
+  avatarId?: string | null;
+  position: number;
+  featuredCreature?: RankingFeaturedCreature | null;
+  combatPower?: number;
+  medals?: number;
+  wins?: number;
+  losses?: number;
+  winRate?: number;
+  matchesPlayed?: number;
+  rating?: number;
+  isCurrentPlayer?: boolean;
+  createdAt?: Date;
+};
+
+export const RANKING_CATEGORIES: RankingCategory[] = ["combat_power", "pvp", "ranked"];
+
+/** Mínimo de partidas PvP para aparecer en el ladder (Elo). */
+export const PVP_MIN_MATCHES = 5;
+
+export const RANKING_PAGE_SIZE = 20;
+
 export function pokemonPower(p: PowerInput): number {
   const s = p.species;
   return (
@@ -35,9 +68,7 @@ export function pokemonPower(p: PowerInput): number {
 }
 
 /**
- * Poder de un entrenador = suma del poder de su equipo activo (máx. 6). Se usa
- * el equipo y no toda la colección para acotar el costo (6 por jugador) y
- * porque mide la fuerza que el jugador realmente lleva a pelear.
+ * Poder de combate (PC) = suma del poder del equipo activo (máx. 6).
  */
 export function teamPower(team: PowerInput[]): number {
   return team.reduce((total, p) => total + pokemonPower(p), 0);
@@ -50,15 +81,32 @@ export type TrainerRankFields = {
 };
 
 /**
- * Orden del ranking de entrenadores: medallas primero (progresión real),
- * después poder del equipo, y como desempate final la antigüedad de la cuenta
- * (el que llegó antes queda arriba). Determinístico: nunca dos filas empatan
- * en un orden ambiguo.
+ * Orden legacy (clanes): medallas → poder → antigüedad.
+ * El ranking de jugadores usa `compareCombatPower` (PC primero).
  */
 export function compareTrainers(a: TrainerRankFields, b: TrainerRankFields): number {
   if (a.badges !== b.badges) return b.badges - a.badges;
   if (a.power !== b.power) return b.power - a.power;
   return a.createdAt.getTime() - b.createdAt.getTime();
+}
+
+export type CombatPowerRankFields = {
+  id: string;
+  combatPower: number;
+  medals: number;
+  createdAt: Date;
+};
+
+/** Ranking PC: mayor PC → más medallas → cuenta más antigua → id estable. */
+export function compareCombatPower(
+  a: CombatPowerRankFields,
+  b: CombatPowerRankFields,
+): number {
+  if (a.combatPower !== b.combatPower) return b.combatPower - a.combatPower;
+  if (a.medals !== b.medals) return b.medals - a.medals;
+  const byDate = a.createdAt.getTime() - b.createdAt.getTime();
+  if (byDate !== 0) return byDate;
+  return a.id.localeCompare(b.id);
 }
 
 export type CollectorRankFields = {
@@ -67,11 +115,36 @@ export type CollectorRankFields = {
   createdAt: Date;
 };
 
-/** Collectors: más especies únicas, luego shinies, luego antigüedad. */
+/** Collectors (legacy / otros usos): especies → shinies → antigüedad. */
 export function compareCollectors(a: CollectorRankFields, b: CollectorRankFields): number {
   if (a.owned !== b.owned) return b.owned - a.owned;
   if (a.shinies !== b.shinies) return b.shinies - a.shinies;
   return a.createdAt.getTime() - b.createdAt.getTime();
+}
+
+export type PvpRankFields = {
+  id: string;
+  rating: number;
+  wins: number;
+  losses: number;
+  createdAt: Date;
+};
+
+/** Ranking PvP: Elo → victorias → antigüedad → id. */
+export function comparePvpRating(a: PvpRankFields, b: PvpRankFields): number {
+  if (a.rating !== b.rating) return b.rating - a.rating;
+  if (a.wins !== b.wins) return b.wins - a.wins;
+  const byDate = a.createdAt.getTime() - b.createdAt.getTime();
+  if (byDate !== 0) return byDate;
+  return a.id.localeCompare(b.id);
+}
+
+export function pvpMatchesPlayed(wins: number, losses: number): number {
+  return Math.max(0, wins) + Math.max(0, losses);
+}
+
+export function isPvpRankingEligible(wins: number, losses: number): boolean {
+  return pvpMatchesPlayed(wins, losses) >= PVP_MIN_MATCHES;
 }
 
 export function winRate(wins: number, losses: number): number {
@@ -80,7 +153,34 @@ export function winRate(wins: number, losses: number): number {
   return Math.round((wins / total) * 100);
 }
 
-/** Buckets simples para el gráfico de distribución de poder. */
+/** Parsea `?view=` con compat de URLs viejas. */
+export function pickRankingCategory(raw: string | undefined): RankingCategory {
+  if (raw === "ladder" || raw === "pvp") return "pvp";
+  if (raw === "ranked") return "ranked";
+  if (raw === "combat_power" || raw === "trainers") return "combat_power";
+  // collectors / pokedex / species → default PC
+  return "combat_power";
+}
+
+export function rankingHref(
+  category: RankingCategory,
+  scope: RankingScope,
+  countryCode?: string,
+  page?: number,
+): string {
+  const params = new URLSearchParams({ view: category });
+  if (scope === "country" && countryCode) {
+    params.set("country", countryCode);
+  }
+  if (page && page > 1) params.set("page", String(page));
+  return `/ranking?${params.toString()}`;
+}
+
+export function isCurrentPlayerInTop3(position: number | null | undefined): boolean {
+  return typeof position === "number" && position >= 1 && position <= 3;
+}
+
+/** Buckets simples (legacy; no usado en la UI nueva). */
 export function powerDistribution(
   powers: number[],
 ): { labelKey: "low" | "mid" | "high" | "elite"; count: number; pct: number }[] {
@@ -100,5 +200,3 @@ export function powerDistribution(
     pct: Math.round((counts[i] / total) * 100),
   }));
 }
-
-export const RANKING_PAGE_SIZE = 20;
