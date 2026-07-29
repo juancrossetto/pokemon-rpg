@@ -527,28 +527,30 @@ export function ActiveTeamStrip({
   }
 
   useEffect(() => {
-    const rail = railRef.current;
-    if (!rail) return;
+    const railEl = railRef.current;
+    if (!railEl) return;
 
     updateScrollHints();
-    rail.addEventListener("scroll", updateScrollHints, { passive: true });
+    railEl.addEventListener("scroll", updateScrollHints, { passive: true });
     const ro = new ResizeObserver(updateScrollHints);
-    ro.observe(rail);
+    ro.observe(railEl);
 
     function onWheel(e: WheelEvent) {
+      const target = railRef.current;
+      if (!target) return;
       if (window.matchMedia("(max-width: 767px)").matches) return;
-      if (rail.scrollWidth <= rail.clientWidth) return;
+      if (target.scrollWidth <= target.clientWidth) return;
       // Trackpad horizontal nativo; rueda vertical → lateral.
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       e.preventDefault();
-      rail.scrollLeft += e.deltaY;
+      target.scrollLeft += e.deltaY;
       updateScrollHints();
     }
-    rail.addEventListener("wheel", onWheel, { passive: false });
+    railEl.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
-      rail.removeEventListener("scroll", updateScrollHints);
-      rail.removeEventListener("wheel", onWheel);
+      railEl.removeEventListener("scroll", updateScrollHints);
+      railEl.removeEventListener("wheel", onWheel);
       ro.disconnect();
       stopHold();
     };
