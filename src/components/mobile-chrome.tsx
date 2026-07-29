@@ -267,7 +267,9 @@ export function MobileChrome({
       {/* Bottom bar: 4–5 primary destinations + safe-area */}
       <nav
         ref={bottomNavRef}
-        className="fixed bottom-0 inset-x-0 z-50 flex xl:hidden items-stretch min-h-[3.75rem] overflow-visible bg-background/98 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.35)]"
+        className={`fixed bottom-0 inset-x-0 z-50 flex xl:hidden items-stretch min-h-[3.75rem] overflow-visible border-t border-white/10 bg-background/98 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-opacity ${
+          moreOpen ? "pointer-events-none opacity-0" : "opacity-100"
+        }`}
       >
         {lockedHref && lockedLabel ? (
           <Link
@@ -312,25 +314,25 @@ export function MobileChrome({
                   data-active={showActive || undefined}
                   aria-current={showActive ? "page" : undefined}
                   aria-label={item.label}
-                  className={`mobile-nav-tab relative z-10 flex min-h-14 flex-1 min-w-0 flex-col items-center overflow-visible px-1 ${
+                  className={`mobile-nav-tab relative z-10 flex min-h-14 flex-1 min-w-0 flex-col items-center justify-center gap-0.5 px-1 ${
                     showActive
-                      ? "justify-end gap-0 pb-1 text-pokeball-red"
-                      : "justify-end gap-0 pb-1 text-on-surface-variant hover:text-pokeball-red"
+                      ? "text-pokeball-red"
+                      : "text-on-surface-variant hover:text-pokeball-red"
                   }`}
                 >
                   {item.iconSrc ? (
                     <span
-                      className={`mobile-nav-tab-icon relative z-10 flex h-10 w-10 items-center justify-center ${
-                        showActive ? "translate-y-0 scale-105" : "-translate-y-1 scale-100"
+                      className={`mobile-nav-tab-icon relative z-10 flex h-9 w-9 shrink-0 items-center justify-center ${
+                        showActive ? "scale-110" : "scale-100"
                       }`}
                     >
                       <Image
                         src={item.iconSrc}
                         alt=""
-                        width={48}
-                        height={48}
+                        width={40}
+                        height={40}
                         unoptimized
-                        className={`h-10 w-10 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)] transition-[filter,transform] duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                        className={`h-9 w-9 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)] transition-[filter,transform] duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                           showActive ? "brightness-110" : "brightness-95"
                         }`}
                         aria-hidden
@@ -339,8 +341,8 @@ export function MobileChrome({
                     </span>
                   ) : (
                     <span
-                      className={`mobile-nav-tab-icon flex h-10 w-10 items-center justify-center ${
-                        showActive ? "translate-y-0 scale-105" : "-translate-y-1 scale-100"
+                      className={`mobile-nav-tab-icon flex h-9 w-9 shrink-0 items-center justify-center ${
+                        showActive ? "scale-110" : "scale-100"
                       }`}
                     >
                       <span className="material-symbols-outlined text-[24px]!">
@@ -348,17 +350,17 @@ export function MobileChrome({
                       </span>
                     </span>
                   )}
-                  {showActive ? (
-                    <span className="mobile-nav-tab-label max-w-full truncate text-[11px] leading-none font-bold">
-                      {item.label}
-                    </span>
-                  ) : (
-                    <span aria-hidden className="h-[11px]" />
-                  )}
+                  <span
+                    className={`max-w-full truncate text-[10px] leading-none ${
+                      showActive ? "mobile-nav-tab-label font-bold" : "font-medium opacity-80"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
                   {badge > 0 && (
                     <span
                       aria-hidden
-                      className="absolute right-[22%] top-1.5 h-2 w-2 rounded-full bg-tertiary ring-2 ring-background"
+                      className="absolute right-[18%] top-1.5 h-2 w-2 rounded-full bg-tertiary ring-2 ring-background"
                     />
                   )}
                 </Link>
@@ -373,40 +375,40 @@ export function MobileChrome({
                 aria-haspopup="dialog"
                 aria-label={moreLabel}
                 data-active={moreActive || undefined}
-                className={`mobile-nav-tab relative z-10 flex min-h-14 flex-1 min-w-0 flex-col items-center px-1 ${
+                className={`mobile-nav-tab relative z-10 flex min-h-14 flex-1 min-w-0 flex-col items-center justify-center gap-0.5 px-1 ${
                   moreActive
-                    ? "justify-end gap-0 pb-1 text-pokeball-red"
-                    : "justify-end gap-0 pb-1 text-on-surface-variant hover:text-pokeball-red"
+                    ? "text-pokeball-red"
+                    : "text-on-surface-variant hover:text-pokeball-red"
                 }`}
               >
                 {moreOpen ? (
                   <span
-                    className={`mobile-nav-tab-icon flex h-10 w-10 items-center justify-center ${
-                      moreActive ? "translate-y-0 scale-105" : "-translate-y-1 scale-100"
+                    className={`mobile-nav-tab-icon flex h-9 w-9 shrink-0 items-center justify-center ${
+                      moreActive ? "scale-110" : "scale-100"
                     }`}
                   >
                     <span className="material-symbols-outlined text-[24px]!">close</span>
                   </span>
                 ) : (
                   <span
-                    className={`mobile-nav-tab-icon flex h-10 w-10 items-center justify-center ${
-                      moreActive ? "translate-y-0 scale-105" : "-translate-y-1 scale-100"
+                    className={`mobile-nav-tab-icon flex h-9 w-9 shrink-0 items-center justify-center ${
+                      moreActive ? "scale-110" : "scale-100"
                     }`}
                   >
                     <Image
                       src="/nav/menu-icon.png"
                       alt=""
-                      width={48}
-                      height={48}
+                      width={40}
+                      height={40}
                       unoptimized
-                      className="h-10 w-10 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)]"
+                      className="h-9 w-9 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)]"
                       aria-hidden
                     />
                   </span>
                 )}
                 <span
-                  className={`text-[11px] leading-none ${
-                    moreActive ? "mobile-nav-tab-label font-bold" : "font-medium"
+                  className={`max-w-full truncate text-[10px] leading-none ${
+                    moreActive ? "mobile-nav-tab-label font-bold" : "font-medium opacity-80"
                   }`}
                 >
                   {moreLabel}
@@ -436,7 +438,7 @@ export function MobileChrome({
             role="dialog"
             aria-modal="true"
             aria-label={moreLabel}
-            className="market-sheet-in absolute inset-x-0 bottom-0 flex max-h-[86dvh] flex-col rounded-t-2xl border-t border-white/12 bg-background/98 shadow-2xl backdrop-blur-xl"
+            className="market-sheet-in absolute inset-x-0 bottom-0 flex h-[92dvh] flex-col overflow-hidden rounded-t-2xl border-t border-white/12 bg-background/98 shadow-2xl backdrop-blur-xl"
           >
             <div className="shrink-0 px-4 pb-2 pt-2.5">
               <div className="mx-auto mb-2.5 h-1 w-10 rounded-full bg-white/20" />
@@ -455,12 +457,12 @@ export function MobileChrome({
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
               {groups.map((group) => {
                 const items = visibleChildren(group);
                 if (items.length === 0) return null;
                 return (
-                  <section key={group.id} className="mb-4 last:mb-2">
+                  <section key={group.id} className="mb-4 last:mb-3">
                     <p className="mb-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70">
                       {navLabels.text[group.labelKey] ?? group.id}
                     </p>
@@ -495,16 +497,14 @@ export function MobileChrome({
                               className="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2 opacity-45"
                             >
                               {iconNode}
-                              {/* Dos líneas antes que recortar: "Batalla salvaje"
-                                entraba como "Batalla salva…" en 390px. */}
-                            <span className="min-w-0 flex-1 text-label-sm leading-tight">
-                              {label}
-                            </span>
-                            {item.badgeKey && (navLabels.badges[item.badgeKey] ?? 0) > 0 && (
-                              <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-tertiary px-1 text-[10px] font-bold text-surface">
-                                {navLabels.badges[item.badgeKey]}
+                              <span className="min-w-0 flex-1 text-label-sm leading-tight">
+                                {label}
                               </span>
-                            )}
+                              {item.badgeKey && (navLabels.badges[item.badgeKey] ?? 0) > 0 && (
+                                <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-tertiary px-1 text-[10px] font-bold text-surface">
+                                  {navLabels.badges[item.badgeKey]}
+                                </span>
+                              )}
                             </span>
                           );
                         }
@@ -521,8 +521,6 @@ export function MobileChrome({
                             }`}
                           >
                             {iconNode}
-                            {/* Dos líneas antes que recortar: "Batalla salvaje"
-                                entraba como "Batalla salva…" en 390px. */}
                             <span className="min-w-0 flex-1 text-label-sm leading-tight">
                               {label}
                             </span>
@@ -538,22 +536,19 @@ export function MobileChrome({
                   </section>
                 );
               })}
+            </div>
 
-              {/* El idioma vive acá y no en el header: es una preferencia que se
-                  toca una vez, no un dato de consulta constante. Además la
-                  variante `inline` da 3 botones cómodos para el dedo en lugar de
-                  un dropdown de ~20px. */}
-              <div className="mt-1 border-t border-white/10 pt-3">
-                <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70">
-                  {languageLabel}
-                </p>
-                <LocaleSwitcher
-                  currentLocale={locale}
-                  label={languageLabel}
-                  variant="inline"
-                  keepMobileDrawer
-                />
-              </div>
+            {/* Fijo abajo del sheet: si va dentro del scroll, en mobile se corta. */}
+            <div className="shrink-0 border-t border-white/10 bg-background/98 px-4 pt-3 pb-[max(1rem,calc(env(safe-area-inset-bottom)+0.5rem))]">
+              <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70">
+                {languageLabel}
+              </p>
+              <LocaleSwitcher
+                currentLocale={locale}
+                label={languageLabel}
+                variant="inline"
+                keepMobileDrawer
+              />
             </div>
           </div>
         </div>
