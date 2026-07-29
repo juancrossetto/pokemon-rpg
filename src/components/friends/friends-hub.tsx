@@ -10,6 +10,7 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
+import { useTypeLabel } from "@/hooks/use-type-label";
 import { useRouter } from "next/navigation";
 import { AvatarImage } from "@/components/avatar-image";
 import { FlagIcon } from "@/components/flag-icon";
@@ -1007,6 +1008,7 @@ function TrainerCardModal({
   onBlock: () => void;
   onAdd: () => void;
 }) {
+  const typeLabel = useTypeLabel();
   const panelRef = useRef<HTMLDivElement>(null);
   const src = avatarSrc(card.avatarId);
   const fav = card.favorite;
@@ -1148,13 +1150,13 @@ function TrainerCardModal({
                   <span>{labels.card.rarity[fav.rarity] ?? fav.rarity}</span>
                 </p>
                 <div className="relative z-[1] mt-2 flex gap-1">
-                  {fav.types.map((t) => (
+                  {fav.types.map((ty) => (
                     <span
-                      key={t}
+                      key={ty}
                       className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white"
-                      style={{ background: typeColor(t) }}
+                      style={{ background: typeColor(ty) }}
                     >
-                      {t}
+                      {typeLabel(ty)}
                     </span>
                   ))}
                 </div>

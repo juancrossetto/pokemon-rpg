@@ -803,6 +803,21 @@
       "12": "Dragon Seal",
       "13": "Champion Title"
     },
+    "names": {
+      "1": "Pewter Gym",
+      "2": "Cerulean Gym",
+      "3": "Vermilion Gym",
+      "4": "Celadon Gym",
+      "5": "Fuchsia Gym",
+      "6": "Saffron Gym",
+      "7": "Cinnabar Gym",
+      "8": "Viridian Gym",
+      "9": "Elite Four — Lorelei",
+      "10": "Elite Four — Bruno",
+      "11": "Elite Four — Agatha",
+      "12": "Elite Four — Lance",
+      "13": "Champion"
+    },
     "challengeGym": "Challenge Gym",
     "operations": "Operations",
     "operationsHint": "Select a gym to analyze it",
@@ -2381,13 +2396,14 @@
   "handbook": {
     "title": "Trainer handbook",
     "eyebrow": "Game guide",
-    "subtitle": "How the game actually works — journey, duels, and economy, without fluff.",
+    "subtitle": "How the game actually works: journey, battle, duels and economy — no fluff.",
     "open": "Open handbook",
     "close": "Close handbook",
     "toc": "Chapters",
     "readMore": "Read in the handbook",
     "nav": {
       "journey": "Journey",
+      "battle": "Battle",
       "pvp": "PvP",
       "economy": "Economy"
     },
@@ -2421,6 +2437,39 @@
               "Train the squad before challenging the leader.",
               "Rematches and leader TMs feed the long game.",
               "Journey tells you when the gym is the next step."
+            ]
+          }
+        ]
+      },
+      "battle": {
+        "title": "Battle",
+        "lead": "Wilds, trainers and gyms share the same arena. Here’s what matters so you don’t lose to a bad click.",
+        "sections": [
+          {
+            "heading": "Turns and actions",
+            "body": "Each turn you Fight, switch, use the bag, or flee (wilds only). The foe acts after you, unless yours fainted.",
+            "bullets": [
+              "Moves have PP — empty means you can’t use them.",
+              "Switching costs the turn: the incoming Pokémon may take a hit.",
+              "Potions heal in battle; Poké Balls only work on wilds."
+            ]
+          },
+          {
+            "heading": "Capture",
+            "body": "Chip the wild’s HP and throw a ball. Weaker foes (and better balls) raise the odds. If it breaks free, the fight continues.",
+            "bullets": [
+              "Master Ball never fails; Ultra and Great improve odds.",
+              "A full party sends the catch to the PC.",
+              "Shiny and alpha are rare — prioritize catching them."
+            ]
+          },
+          {
+            "heading": "Status and types",
+            "body": "Burn, paralysis, poison and sleep swing fights. Types decide effectiveness: a super-effective hit hurts a lot more.",
+            "bullets": [
+              "Held items change the pace (Focus Sash, Choice…).",
+              "On a win, XP goes to everyone who fought.",
+              "If someone can evolve, we offer it on the result screen."
             ]
           }
         ]

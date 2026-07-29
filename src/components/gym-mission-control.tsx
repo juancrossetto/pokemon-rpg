@@ -10,6 +10,7 @@ import type { GymMissionItem, GymMissionStatusKind } from "@/lib/gym-mission";
 import { KANTO_MAP_IMAGE, KANTO_MAP_ASPECT } from "@/lib/gym-map";
 import { marketFeeDiscount, obedienceLevelCap } from "@/lib/badge-perks";
 import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
+import { HandbookLink } from "@/components/handbook/handbook-trigger";
 
 type Props = {
   items: GymMissionItem[];
@@ -210,6 +211,11 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
     return t.has(key) ? t(key) : gym.badgeName;
   }
 
+  function gymNameLabel(gym: Pick<GymMissionItem, "order" | "name">) {
+    const key = `names.${gym.order}`;
+    return t.has(key) ? t(key) : gym.name;
+  }
+
   function selectGym(next: GymMissionItem) {
     if (!selected || next.id === selected.id) return;
     setSlideDir(next.order >= selected.order ? "right" : "left");
@@ -223,6 +229,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
   const challengeHref = `/gyms/${selected.id}`;
   const selectedTypeLabel = typeLabel(selected.type);
   const selectedBadgeLabel = badgeLabel(selected);
+  const selectedGymName = gymNameLabel(selected);
 
   return (
     <div className="relative isolate flex-1 overflow-hidden">
@@ -251,6 +258,9 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
               </button>
             </div>
             <p className="mt-1 max-w-xl text-label-sm text-on-surface-variant">{t("subtitle")}</p>
+            <div className="mt-2">
+              <HandbookLink chapter="journey" />
+            </div>
           </div>
 
           <div className="shrink-0 rounded-xl border border-white/10 bg-black/35 px-4 py-3 backdrop-blur-md">
@@ -268,7 +278,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                   key={gym.id}
                   type="button"
                   onClick={() => selectGym(gym)}
-                  title={`${gym.name} · ${badgeLabel(gym)}`}
+                  title={`${gymNameLabel(gym)} · ${badgeLabel(gym)}`}
                   className={`relative flex h-9 w-9 items-center justify-center rounded-md border transition ${
                     gym.badgeEarned
                       ? "border-tertiary/50 bg-tertiary/10"
@@ -344,7 +354,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                     {t("operationLabel", { n: selected.order })}
                   </p>
                   <h2 className="mt-1 text-[28px] font-semibold leading-tight text-white sm:text-[36px]">
-                    {selected.name}
+                    {selectedGymName}
                   </h2>
                   <p className="mt-1 text-label-md text-white/75">
                     {selected.leaderName}
@@ -561,7 +571,7 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                       key={gym.id}
                       type="button"
                       onClick={() => selectGym(gym)}
-                      title={`${gym.name} — ${gym.leaderName}${gym.badgeName ? ` · ${badgeLabel(gym)}` : ""}`}
+                      title={`${gymNameLabel(gym)} — ${gym.leaderName}${gym.badgeName ? ` · ${badgeLabel(gym)}` : ""}`}
                       className="absolute -translate-x-1/2 -translate-y-1/2"
                       style={{ left: `${gym.mapFocusX}%`, top: `${gym.mapFocusY}%` }}
                     >
@@ -659,12 +669,12 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
                         className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
                         style={{ backgroundColor: `${gymColor}cc`, color: "#fff" }}
                       >
-                        {gym.type}
+                        {typeLabel(gym.type)}
                       </span>
                     </div>
 
                     <div>
-                      <p className="truncate text-[15px] font-semibold text-white">{gym.name}</p>
+                      <p className="truncate text-[15px] font-semibold text-white">{gymNameLabel(gym)}</p>
                       <p className="truncate text-label-sm text-white/65">
                         {gym.leaderName}
                         <span className="mx-1.5 text-white/25">·</span>

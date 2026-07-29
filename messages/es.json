@@ -803,6 +803,21 @@
       "12": "Sello Dragón",
       "13": "Título de Campeón"
     },
+    "names": {
+      "1": "Gimnasio de Plateada",
+      "2": "Gimnasio de Celeste",
+      "3": "Gimnasio de Carmín",
+      "4": "Gimnasio de Azulona",
+      "5": "Gimnasio de Fucsia",
+      "6": "Gimnasio de Azafrán",
+      "7": "Gimnasio de Canela",
+      "8": "Gimnasio de Verde",
+      "9": "Alto Mando — Lorelei",
+      "10": "Alto Mando — Bruno",
+      "11": "Alto Mando — Agatha",
+      "12": "Alto Mando — Lance",
+      "13": "Campeón"
+    },
     "challengeGym": "Desafiar gimnasio",
     "operations": "Operaciones",
     "operationsHint": "Seleccioná un gimnasio para analizarlo",
@@ -2381,13 +2396,14 @@
   "handbook": {
     "title": "Manual del entrenador",
     "eyebrow": "Guía del juego",
-    "subtitle": "Cómo se juega de verdad: viaje, duelos y economía, sin rodeos.",
+    "subtitle": "Cómo se juega de verdad: viaje, combate, duelos y economía, sin rodeos.",
     "open": "Abrir manual",
     "close": "Cerrar manual",
     "toc": "Capítulos",
     "readMore": "Leer en el manual",
     "nav": {
       "journey": "Viaje",
+      "battle": "Combate",
       "pvp": "PvP",
       "economy": "Economía"
     },
@@ -2421,6 +2437,39 @@
               "Entrená el equipo antes de desafiar al líder.",
               "Las revanchas y las MT del líder refuerzan el long game.",
               "El Viaje te dice cuándo el gimnasio es el siguiente paso."
+            ]
+          }
+        ]
+      },
+      "battle": {
+        "title": "Combate",
+        "lead": "Salvajes, entrenadores y gimnasios comparten la misma arena. Acá está lo que importa para no perder por un mal click.",
+        "sections": [
+          {
+            "heading": "Turnos y acciones",
+            "body": "Cada turno elegís Luchar, cambiar de Pokémon, usar la mochila o huir (solo salvajes). El rival responde después de tu acción, salvo que el tuyo haya quedado fuera de combate.",
+            "bullets": [
+              "Los movimientos tienen PP: si se agotan, no podés usarlos.",
+              "Cambiar de Pokémon gasta el turno: el que entra puede recibir un golpe.",
+              "Las pociones curan en combate; las Poké Balls solo sirven contra salvajes."
+            ]
+          },
+          {
+            "heading": "Captura",
+            "body": "Bajá los HP del salvaje y tirale una ball. Cuanto más débil (y mejor la ball), más chances. Si se rompe, el combate sigue.",
+            "bullets": [
+              "Master Ball captura seguro; Ultra y Great mejoran las odds.",
+              "Si el equipo está lleno, el capturado va al PC.",
+              "Los shiny y alpha son raros: priorizá la captura si aparecen."
+            ]
+          },
+          {
+            "heading": "Estado y tipos",
+            "body": "Quemadura, parálisis, veneno y sueño condicionan el combate. Los tipos definen efectividad: un super efectivo duele mucho más.",
+            "bullets": [
+              "Algunos objetos held cambian el ritmo (Focus Sash, Choice…).",
+              "Al ganar, el XP se reparte entre los que pelearon.",
+              "Si alguien puede evolucionar, te lo ofrecemos en el resumen."
             ]
           }
         ]

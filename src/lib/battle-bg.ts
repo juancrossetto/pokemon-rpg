@@ -25,7 +25,9 @@ const LOCATION_POOL: Record<string, readonly BattleBgId[]> = {
   "viridian-forest": ["forest"],
   "mt-moon": ["dampcave", "earthycave"],
   "rock-tunnel": ["earthycave", "dampcave"],
-  "victory-road": ["mountain", "earthycave"],
+  "victory-road": ["mountain", "earthycave", "dampcave"],
+  "lavender-town": ["dampcave", "city"],
+  "indigo-plateau": ["mountain", "thunderplains"],
   // Costas / agua
   "route-19": ["beach", "beachshore", "river"],
   "route-21": ["beachshore", "beach", "river"],

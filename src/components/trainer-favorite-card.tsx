@@ -7,6 +7,7 @@ import { typeColor } from "@/lib/type-colors";
 import { showdownTypeSymbolUrl } from "@/lib/type-icons";
 import { uiSpriteUrl } from "@/lib/sprites";
 import { TypeAura } from "@/components/type-aura";
+import { useTypeLabel } from "@/hooks/use-type-label";
 
 export type FavoriteCardLabels = {
   favorite: string;
@@ -43,6 +44,7 @@ export function TrainerFavoriteCard({
   isShiny: boolean;
   labels: FavoriteCardLabels;
 }) {
+  const typeLabel = useTypeLabel();
   const primary = types[0] ?? "normal";
 
   return (
@@ -161,7 +163,7 @@ export function TrainerFavoriteCard({
                   borderColor: `${c}aa`,
                   boxShadow: `0 0 8px ${c}40`,
                 }}
-                title={type}
+                title={typeLabel(type)}
               >
                 <Image
                   src={showdownTypeSymbolUrl(type)}

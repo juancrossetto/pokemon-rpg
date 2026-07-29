@@ -15,6 +15,7 @@ import {
   type MarketRarity,
 } from "@/lib/market-hub";
 import { spriteFor } from "@/lib/shiny";
+import { localizePokemonType } from "@/lib/pokemon-type-i18n";
 
 type Expiry = { kind: "soon" } | { kind: "hours"; value: number } | { kind: "days"; value: number };
 
@@ -380,6 +381,7 @@ type PokemonCardProps = {
 
 export async function MarketPokemonCard(props: PokemonCardProps) {
   const t = await getTranslations("market");
+  const tTypes = await getTranslations("pokedex.pokemonTypes");
   const { pokemon } = props;
   const { species } = pokemon;
   const invested =
@@ -427,7 +429,7 @@ export async function MarketPokemonCard(props: PokemonCardProps) {
                   className="rounded px-1 py-px text-[9px] uppercase"
                   style={{ backgroundColor: `${color}26`, color }}
                 >
-                  {type}
+                  {localizePokemonType(tTypes, type)}
                 </span>
               );
             })}

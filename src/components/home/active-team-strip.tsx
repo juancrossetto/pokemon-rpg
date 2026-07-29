@@ -19,6 +19,7 @@ import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import { anyEvolveReady } from "@/lib/evolution-readiness";
 import { CoachMark } from "@/components/journey-guidance";
+import { useTypeLabel } from "@/hooks/use-type-label";
 
 const TEAM_SIZE = 6;
 /** Strip (md+): cards fijas que desbordan → scroll. Grid (mobile): llena el alto. */
@@ -65,6 +66,7 @@ function TeamSlot({
   onDragEnd: () => void;
 }) {
   const tTeam = useTranslations("team");
+  const typeLabel = useTypeLabel();
   const tUx = useTranslations("ux");
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -298,7 +300,7 @@ function TeamSlot({
                   className="rounded-full border border-white/10 bg-black/40 px-1.5 py-px text-[7px] font-bold uppercase tracking-wide"
                   style={{ color }}
                 >
-                  {type}
+                  {typeLabel(type)}
                 </span>
               );
             })}

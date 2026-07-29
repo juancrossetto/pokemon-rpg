@@ -302,6 +302,11 @@ export default async function BattlePage({
       tGyms && gymBadgeKey && tGyms.has(gymBadgeKey)
         ? tGyms(gymBadgeKey)
         : (battle.gym?.badgeName ?? null);
+    const gymNameKey = battle.gym ? `names.${battle.gym.order}` : null;
+    const gymName =
+      tGyms && gymNameKey && tGyms.has(gymNameKey)
+        ? tGyms(gymNameKey)
+        : (battle.gym?.name ?? null);
     const pvpOpponentName =
       battle.opponentUser?.username ?? battle.pvpMatch?.opponent.username ?? null;
     const opponentName = battle.pvpMatchId
@@ -410,7 +415,7 @@ export default async function BattlePage({
       gymId: battle.gymId,
       gymRunId: battle.gymRunId,
       gymType: battle.gym?.type ?? null,
-      gymName: battle.gym?.name ?? null,
+      gymName,
       gymLeaderName: battle.gym?.leaderName ?? null,
       gymBadgeName,
       battleMode,

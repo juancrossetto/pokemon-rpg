@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { CSSProperties, ReactNode } from "react";
 import { typeColor } from "@/lib/type-colors";
+import { useTypeLabel } from "@/hooks/use-type-label";
 
 /**
  * La card grande de un Pokémon: fondo teñido por su tipo, marca de agua de
@@ -75,6 +76,7 @@ export function PokemonShowcaseCard({
 }) {
   const displayName = nickname ?? speciesName;
   const accent = typeColor(types[0] ?? "normal");
+  const typeLabel = useTypeLabel();
 
   return (
     <article
@@ -211,7 +213,7 @@ export function PokemonShowcaseCard({
                 className="rounded-full border border-white/10 bg-black/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
                 style={{ color: typeColor(type) }}
               >
-                {type}
+                {typeLabel(type)}
               </span>
             ))}
             {fainted && faintedLabel ? (

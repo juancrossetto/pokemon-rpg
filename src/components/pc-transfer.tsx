@@ -12,6 +12,7 @@ import {
 import { PcAlert } from "@/components/pc-alert";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import { playPcSfx, unlockPcAudio, type PcSfxKind } from "@/lib/pc-sfx";
+import { useTypeLabel } from "@/hooks/use-type-label";
 
 export type PcMon = {
   id: string;
@@ -465,6 +466,7 @@ function MonCard({
   onHealed: (next: { currentHp: number; maxHp: number }) => void;
   onLeveledUp: (next: { level: number; currentHp: number; maxHp: number }) => void;
 }) {
+  const typeLabel = useTypeLabel();
   const hpPct = Math.max(0, Math.min(100, (mon.currentHp / mon.maxHp) * 100));
   const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
   const canMove = !mon.listed && !mon.breeding;
@@ -575,7 +577,7 @@ function MonCard({
                   className="rounded border px-1.5 py-0.5 text-[10px] uppercase"
                   style={{ backgroundColor: `${color}33`, color, borderColor: `${color}55` }}
                 >
-                  {type}
+                  {typeLabel(type)}
                 </span>
               );
             })}

@@ -14,6 +14,7 @@ import { RENAME_COST } from "@/lib/nickname";
 import { TeamRoster, type TeamMember } from "@/components/team-roster";
 import { TeamHubTabs } from "@/components/team-hub-tabs";
 import { PcTab } from "./pc-tab";
+import { HandbookLink } from "@/components/handbook/handbook-trigger";
 
 const TEAM_SIZE = 6;
 
@@ -269,6 +270,9 @@ export default async function TeamPage({
                 </span>
               )}
             </p>
+            <div className="mt-1.5">
+              <HandbookLink chapter="battle" />
+            </div>
           </div>
 
           <div className="grid w-full grid-cols-2 items-start gap-2 sm:flex sm:w-auto sm:flex-wrap">

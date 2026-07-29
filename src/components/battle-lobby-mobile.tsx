@@ -2,6 +2,9 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { useTypeLabel } from "@/hooks/use-type-label";
+import { HandbookLink } from "@/components/handbook/handbook-trigger";
+import { HubHelpPanel } from "@/components/journey-guidance";
 import { HealButton } from "@/components/heal-button";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
@@ -36,6 +39,8 @@ export function BattleLobbyMobile({
 }) {
   const t = useTranslations("battle");
   const tc = useTranslations("campaign");
+  const tUx = useTranslations("ux");
+  const typeLabel = useTypeLabel();
 
   const canExplore = hasHealthyTeam && lobby.energy >= lobby.energyCost;
 
@@ -64,6 +69,14 @@ export function BattleLobbyMobile({
 
   return (
     <div className="flex flex-col gap-3 px-margin-mobile py-3">
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <HandbookLink chapter="battle" />
+      </div>
+      <HubHelpPanel
+        storageKey="hub-help-battle"
+        bullets={tUx.raw("help.battle") as string[]}
+        handbookChapter="battle"
+      />
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className="lobby-rise relative overflow-hidden rounded-2xl border border-white/12 bg-surface-container-low shadow-[0_18px_44px_rgba(0,0,0,0.5)]">
         {/* Mapa protagonista: toda la imagen abre el mapa completo (el trigger
@@ -126,9 +139,7 @@ export function BattleLobbyMobile({
                   style={{
                     background: `linear-gradient(135deg, ${typeColor(type)}, ${typeColor(type)}cc)`,
                   }}
-                >
-                  {type}
-                </span>
+                >{typeLabel(type)}</span>
               ))}
             </div>
           </div>

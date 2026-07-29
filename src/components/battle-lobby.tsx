@@ -10,6 +10,9 @@ import { RegionMapDialog } from "@/components/region-map-dialog";
 import { itemSpriteUrl } from "@/lib/item-sprites";
 import { BattleLobbyMobile } from "@/components/battle-lobby-mobile";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
+import { useTypeLabel } from "@/hooks/use-type-label";
+import { HubHelpPanel } from "@/components/journey-guidance";
+import { HandbookLink } from "@/components/handbook/handbook-trigger";
 
 /** Color del chip según la densidad de encuentros de la zona. */
 const RATE_STYLE: Record<"low" | "medium" | "high", string> = {
@@ -29,6 +32,8 @@ export function BattleLobby({
 }) {
   const t = useTranslations("battle");
   const tc = useTranslations("campaign");
+  const tUx = useTranslations("ux");
+  const typeLabel = useTypeLabel();
   const canExplore = hasHealthyTeam && lobby.energy >= lobby.energyCost;
 
   const startErrors = {
@@ -71,7 +76,16 @@ export function BattleLobby({
           <p className="mt-1 max-w-lg text-label-md text-on-surface-variant">
             {t("subtitle")}
           </p>
+          <div className="mt-2">
+            <HandbookLink chapter="battle" />
+          </div>
         </header>
+
+        <HubHelpPanel
+          storageKey="hub-help-battle"
+          bullets={tUx.raw("help.battle") as string[]}
+          handbookChapter="battle"
+        />
 
         <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
           <section className="glass-panel relative flex flex-col overflow-hidden rounded-xl border border-white/10 p-4">
@@ -132,9 +146,7 @@ export function BattleLobby({
                     style={{
                       background: `linear-gradient(135deg, ${typeColor(type)}, ${typeColor(type)}cc)`,
                     }}
-                  >
-                    {type}
-                  </span>
+                  >{typeLabel(type)}</span>
                 ))}
               </div>
 
@@ -378,9 +390,7 @@ export function BattleLobby({
                           backgroundColor: `${typeColor(type)}33`,
                           color: typeColor(type),
                         }}
-                      >
-                        {type}
-                      </span>
+                      >{typeLabel(type)}</span>
                     ))}
                   </div>
                 </div>

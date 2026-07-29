@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import type { CapturedPokemonInfo } from "@/actions/attempt-capture";
 import { typeColor } from "@/lib/type-colors";
 import { StatCell } from "@/components/battle/arena-panels";
+import { useTypeLabel } from "@/hooks/use-type-label";
 
 export function CaptureSummary({
   info,
@@ -24,6 +25,7 @@ export function CaptureSummary({
 }) {
   const t = useTranslations("battle");
   const tTeam = useTranslations("team");
+  const typeLabel = useTypeLabel();
 
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
@@ -51,7 +53,7 @@ export function CaptureSummary({
                 className="px-3 py-1 rounded text-label-sm uppercase border"
                 style={{ backgroundColor: `${color}33`, color, borderColor: `${color}55` }}
               >
-                {ty}
+                {typeLabel(ty)}
               </span>
             );
           })}
@@ -75,7 +77,7 @@ export function CaptureSummary({
                 <div key={m.moveId} className="flex justify-between items-center text-label-sm">
                   <span className="text-on-surface">{m.name}</span>
                   <span className="uppercase" style={{ color }}>
-                    {m.type}
+                    {typeLabel(m.type)}
                   </span>
                 </div>
               );

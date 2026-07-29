@@ -15,6 +15,14 @@ La historia no es un menú aparte: es el mapa. Elegís una zona, explorás ahí,
 - **Explorar** gasta energía: 1 punto cada 30 minutos.
 - **Gimnasios** abren el camino; perder impone cooldown (saltable con gemas).
 
+## Combate
+
+Salvajes, entrenadores y gimnasios comparten la misma arena.
+
+- Turnos: Luchar, cambiar, mochila o huir (solo salvajes).
+- Captura: bajá HP y tirale una ball; equipo lleno → PC.
+- Estados y tipos condicionan el combate; el XP se reparte entre quienes pelearon.
+
 ## PvP
 
 Opcional. No bloquea la historia.
@@ -22,16 +30,11 @@ Opcional. No bloquea la historia.
 - Elo clásico, arranque **1000**, **K = 32**.
 - **Ranked** y **Rápido** mueven Elo; Rápido paga ×0,6 monedas.
 - Ligas: Bronce 0 · Plata 1100 · Oro 1250 · Platino 1400 · Diamante 1600 · Maestro 1800 (multiplican monedas al ganar).
-- Victoria base 40 × liga × modo; derrota base 12 × modo.
+- Win base 40 × liga × modo; derrota base 12 × modo.
 - Temporadas mensuales UTC + soft reset `0.7 × rating + 0.3 × 1000` + premio por liga.
 
 ## Economía
 
 - **Monedas**: día a día (tienda, mercado, cures, motes pagos…).
-- **Gemas**: premium (diarias / semanales / temporada PvP); saltar cooldown de gimnasio.
-- **Mercado**: tarifa al publicar 2% (mín. 1), comisión al vender 5%, TTL 7 días.
-- **Energía**: freno de ritmo, no moneda.
-
----
-
-Capítulos pendientes (cuando sumemos al modal): Equipo/PC, Amigos/Clanes, Batalla salvaje en detalle.
+- **Gemas**: premium (cooldown de gimnasio, y más usos a futuro).
+- Mercado entre jugadores con comisión; medallas bajan la tarifa.

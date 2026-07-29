@@ -78,6 +78,8 @@ export default async function GymLeaderPage({
   const typeLabel = tTypes.has(typeKey as "fire") ? tTypes(typeKey as "fire") : gym.type;
   const badgeKey = `badges.${gym.order}`;
   const badgeLabel = t.has(badgeKey) ? t(badgeKey) : gym.badgeName;
+  const nameKey = `names.${gym.order}`;
+  const gymNameLabel = t.has(nameKey) ? t(nameKey) : gym.name;
 
   const errors = {
     no_lead: tBattle("noLead"),
@@ -92,7 +94,7 @@ export default async function GymLeaderPage({
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
       <div className="mx-auto max-w-3xl">
         <p className="text-label-sm uppercase text-on-surface-variant mb-1">{t("leaderAnalysis")}</p>
-        <h1 className="text-headline-lg md:text-display-lg text-white mb-4 md:mb-6">{gym.name}</h1>
+        <h1 className="text-headline-lg md:text-display-lg text-white mb-4 md:mb-6">{gymNameLabel}</h1>
 
         {/* Horizontal también en mobile: apilado, el retrato empujaba el nombre
             y el nivel de amenaza fuera de la primera pantalla. */}

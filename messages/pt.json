@@ -803,6 +803,21 @@
       "12": "Selo Dragão",
       "13": "Título de Campeão"
     },
+    "names": {
+      "1": "Ginásio de Pewter",
+      "2": "Ginásio de Cerulean",
+      "3": "Ginásio de Vermilion",
+      "4": "Ginásio de Celadon",
+      "5": "Ginásio de Fuchsia",
+      "6": "Ginásio de Saffron",
+      "7": "Ginásio de Cinnabar",
+      "8": "Ginásio de Viridian",
+      "9": "Elite Four — Lorelei",
+      "10": "Elite Four — Bruno",
+      "11": "Elite Four — Agatha",
+      "12": "Elite Four — Lance",
+      "13": "Campeão"
+    },
     "challengeGym": "Desafiar ginásio",
     "operations": "Operações",
     "operationsHint": "Selecione um ginásio para analisar",
@@ -2381,13 +2396,14 @@
   "handbook": {
     "title": "Manual do treinador",
     "eyebrow": "Guia do jogo",
-    "subtitle": "Como o jogo funciona de verdade: jornada, duelos e economia, sem enrolação.",
+    "subtitle": "Como o jogo funciona de verdade: jornada, combate, duelos e economia, sem rodeios.",
     "open": "Abrir manual",
     "close": "Fechar manual",
     "toc": "Capítulos",
     "readMore": "Ler no manual",
     "nav": {
       "journey": "Jornada",
+      "battle": "Combate",
       "pvp": "PvP",
       "economy": "Economia"
     },
@@ -2421,6 +2437,39 @@
               "Treine a equipe antes de desafiar o líder.",
               "Revanches e MTs do líder alimentam o long game.",
               "A Jornada diz quando o ginásio é o próximo passo."
+            ]
+          }
+        ]
+      },
+      "battle": {
+        "title": "Combate",
+        "lead": "Selvagens, treinadores e ginásios compartilham a mesma arena. O essencial para não perder por um clique ruim.",
+        "sections": [
+          {
+            "heading": "Turnos e ações",
+            "body": "A cada turno você Luta, troca, usa a mochila ou foge (só selvagens). O rival age depois, a menos que o seu tenha desmaiado.",
+            "bullets": [
+              "Golpes têm PP — sem PP, não dá para usar.",
+              "Trocar gasta o turno: quem entra pode levar dano.",
+              "Poções curam na luta; Poké Balls só funcionam em selvagens."
+            ]
+          },
+          {
+            "heading": "Captura",
+            "body": "Baixe o HP do selvagem e jogue uma ball. Quanto mais fraco (e melhor a ball), maiores as chances. Se quebrar, a luta segue.",
+            "bullets": [
+              "Master Ball não falha; Ultra e Great melhoram as odds.",
+              "Equipe cheia manda o capturado para o PC.",
+              "Shiny e alpha são raros: priorize a captura."
+            ]
+          },
+          {
+            "heading": "Status e tipos",
+            "body": "Queimadura, paralisia, veneno e sono mudam o combate. Tipos definem efetividade: um super efetivo dói bem mais.",
+            "bullets": [
+              "Itens held mudam o ritmo (Focus Sash, Choice…).",
+              "Ao vencer, o XP vai para quem lutou.",
+              "Se alguém puder evoluir, oferecemos no resumo."
             ]
           }
         ]

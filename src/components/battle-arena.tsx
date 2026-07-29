@@ -1136,8 +1136,8 @@ export function BattleArena({
   const wildSpeciesScale = battleSpeciesScale(activeWild.speciesName);
   const playerT = Math.min(1, Math.max(0, (playerSpeciesScale - 0.52) / (1.3 - 0.52)));
   const wildT = Math.min(1, Math.max(0, (wildSpeciesScale - 0.52) / (1.3 - 0.52)));
-  const playerSpritePx = Math.round(arenaH * (0.58 + playerT * 0.3));
-  const wildSpritePx = Math.round(arenaH * (0.32 + wildT * 0.16) * (isAlphaWild ? 1.1 : 1));
+  const playerSpritePx = Math.round(arenaH * (0.62 + playerT * 0.28));
+  const wildSpritePx = Math.round(arenaH * (0.3 + wildT * 0.14) * (isAlphaWild ? 1.1 : 1));
   const playerSpriteClass = [
     "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "player" ? (physicalLunge ? "sprite-lunge-right-hard" : "sprite-lunge-right") : "",
@@ -1219,7 +1219,7 @@ export function BattleArena({
           {/* Arena */}
           <div
             ref={arenaFieldRef}
-            className={`battle-arena-field relative overflow-hidden rounded-xl border border-white/10 flex-1 min-h-0 md:min-h-[360px] ${
+            className={`battle-arena-field relative mx-auto w-full max-w-[44rem] overflow-hidden rounded-xl border border-white/10 flex-1 min-h-0 md:min-h-[380px] ${
               arenaFlash ? "arena-type-flash" : ""
             }`}
             style={
@@ -1347,9 +1347,9 @@ export function BattleArena({
               </span>
             )}
 
-            {/* Opponent sprite — far plate (px from arena height) */}
+            {/* Opponent sprite — far plate, lower so it sits on the grass */}
             <div
-              className="absolute right-[5%] top-[8%] z-[1] origin-bottom"
+              className="absolute right-[6%] top-[18%] z-[1] origin-bottom md:top-[16%]"
               style={{ width: wildSpritePx, height: wildSpritePx }}
             >
               <span className="sprite-ground-shadow sprite-ground-shadow-wild absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />

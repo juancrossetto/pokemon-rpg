@@ -162,7 +162,7 @@ export default async function GymRunPage({
     <GymChallengeCorridor
       gymRunId={run.id}
       locale={locale}
-      gymName={gym.name}
+      gymName={t.has(`names.${gym.order}`) ? t(`names.${gym.order}`) : gym.name}
       leaderName={gym.leaderName}
       badgeName={t.has(`badges.${gym.order}`) ? t(`badges.${gym.order}`) : gym.badgeName}
       gymType={gym.type}

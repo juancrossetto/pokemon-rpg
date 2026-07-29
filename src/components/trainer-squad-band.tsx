@@ -6,6 +6,7 @@ import { typeColor } from "@/lib/type-colors";
 import { showdownTypeSymbolUrl } from "@/lib/type-icons";
 import { uiSpriteUrl } from "@/lib/sprites";
 import { ProgressRail } from "@/components/trainer-profile-parts";
+import { useTypeLabel } from "@/hooks/use-type-label";
 
 export type SquadBandMember = {
   instanceId: string;
@@ -137,6 +138,7 @@ export function TrainerSquadBand({
 }
 
 function TypeOrb({ type }: { type: string }) {
+  const typeLabel = useTypeLabel();
   const color = typeColor(type);
   return (
     <span
@@ -146,7 +148,7 @@ function TypeOrb({ type }: { type: string }) {
         borderColor: `${color}aa`,
         boxShadow: `0 0 6px ${color}33`,
       }}
-      title={type}
+      title={typeLabel(type)}
     >
       <Image
         src={showdownTypeSymbolUrl(type)}
