@@ -9,9 +9,50 @@ import { useTranslations } from "next-intl";
 import { typeColor } from "@/lib/type-colors";
 import { formatMoveName } from "@/lib/format-move-name";
 import { itemSpriteUrl } from "@/lib/item-sprites";
-import type { PokeballStack, PotionStack, RosterMember } from "@/components/battle/arena-types";
+import type {
+  BattleMoveOption,
+  MoveCategory,
+  PokeballStack,
+  PotionStack,
+  RosterMember,
+} from "@/components/battle/arena-types";
+import type { DamageForecast } from "@/lib/damage-forecast";
 
 type MatchupInfo = { label: string; className: string };
+
+/** Ícono por categoría, como el indicador físico/especial de Gen IV+. */
+const CATEGORY_ICON: Record<MoveCategory, string> = {
+  PHYSICAL: "sports_mma",
+  SPECIAL: "auto_awesome",
+  STATUS: "tune",
+};
+
+const CATEGORY_TONE: Record<MoveCategory, string> = {
+  PHYSICAL: "text-orange-300",
+  SPECIAL: "text-sky-300",
+  STATUS: "text-white/60",
+};
+
+/**
+ * Quién pega primero por velocidad. Vive en el panel de comandos y no sobre la
+ * arena: ahí se pisaba con la placa de HP del rival en pantallas angostas, y
+ * además este es el momento en que la info sirve.
+ */
+export function TurnOrderChip({ playerFirst }: { playerFirst: boolean }) {
+  const t = useTranslations("battle");
+  return (
+    <span
+      className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+        playerFirst
+          ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-200"
+          : "border-amber-400/40 bg-amber-500/15 text-amber-200"
+      }`}
+      title={t("turnOrderHint")}
+    >
+      {playerFirst ? t("youMoveFirst") : t("foeMovesFirst")}
+    </span>
+  );
+}
 
 function BackButton({
   disabled,
@@ -47,14 +88,19 @@ export function MovesView({
   choiceLockMoveId,
   isAnimating,
   effectivenessInfo,
+  playerFirst,
+  forecast,
   onSelect,
   onBack,
 }: {
   activePlayerName: string;
-  moves: { moveId: number; name: string; type: string; power?: number | null; pp: number; maxPp: number }[];
+  moves: BattleMoveOption[];
   choiceLockMoveId: number | null;
   isAnimating: boolean;
   effectivenessInfo: (moveType: string) => MatchupInfo;
+  playerFirst: boolean;
+  /** Daño estimado vs el rival actual. null en movimientos de estado. */
+  forecast: (move: BattleMoveOption) => DamageForecast | null;
   onSelect: (moveId: number) => void;
   onBack: () => void;
 }) {
@@ -63,15 +109,13 @@ export function MovesView({
   return (
     <div className="flex flex-col gap-1 h-full min-h-0">
       <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
-        <div className="min-w-0 flex items-baseline gap-2">
+        <div className="min-w-0 flex items-center gap-2">
           <p className="text-xs md:text-sm font-bold text-primary capitalize truncate">{activePlayerName}</p>
-          <p className="hidden md:block text-[10px] uppercase text-on-surface-variant tracking-wider shrink-0">
-            {t("selectCommand")}
-          </p>
+          <TurnOrderChip playerFirst={playerFirst} />
         </div>
         <BackButton disabled={isAnimating} onBack={onBack} label={t("back")} small />
       </div>
-      <p className="text-[10px] uppercase text-on-surface-variant tracking-wider px-0.5 shrink-0 md:hidden">
+      <p className="text-[10px] uppercase text-on-surface-variant tracking-wider px-0.5 shrink-0">
         {t("selectCommand")}
       </p>
       <div className="grid grid-cols-2 grid-rows-2 gap-1 md:gap-1.5 flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto md:overflow-hidden content-stretch">
@@ -82,14 +126,19 @@ export function MovesView({
             onClick={() => onSelect(moves[0]?.moveId ?? 0)}
             className="col-span-2 battle-move-card border-error/40"
           >
-            <p className="text-base font-bold text-error">Struggle</p>
-            <p className="text-label-sm text-on-surface-variant mt-1">PP 0 — recoil</p>
+            <p className="text-base font-bold text-error">{t("struggleName")}</p>
+            <p className="text-label-sm text-on-surface-variant mt-1">{t("struggleHint")}</p>
           </button>
         )}
         {moves.map((m) => {
           const eff = effectivenessInfo(m.type);
           const color = typeColor(m.type);
           const lockedOut = choiceLockMoveId != null && choiceLockMoveId !== m.moveId;
+          const category = m.category ?? "PHYSICAL";
+          const isStatus = category === "STATUS";
+          // Sin accuracy = nunca falla (Swift). Se dice, no se deja vacío.
+          const accuracyLabel = m.accuracy == null ? "—" : `${m.accuracy}%`;
+          const damage = isStatus ? null : forecast(m);
           return (
             <button
               key={m.moveId}
@@ -100,7 +149,18 @@ export function MovesView({
               style={{ borderColor: `${color}55` }}
             >
               <div className="flex justify-between items-start gap-1 min-w-0 shrink-0">
-                <span className="text-xs md:text-sm font-bold text-white leading-tight truncate">{formatMoveName(m.name)}</span>
+                <span className="flex min-w-0 items-center gap-1">
+                  <span
+                    className={`material-symbols-outlined text-[13px]! shrink-0 ${CATEGORY_TONE[category]}`}
+                    title={t(`category.${category}`)}
+                    aria-label={t(`category.${category}`)}
+                  >
+                    {CATEGORY_ICON[category]}
+                  </span>
+                  <span className="text-xs md:text-sm font-bold text-white leading-tight truncate">
+                    {formatMoveName(m.name)}
+                  </span>
+                </span>
                 <span
                   className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] md:text-[10px] uppercase font-bold tracking-wide border"
                   style={{ backgroundColor: `${color}33`, color, borderColor: `${color}66` }}
@@ -108,26 +168,46 @@ export function MovesView({
                   {m.type}
                 </span>
               </div>
-              <div className="mt-auto pt-1 flex justify-between items-end gap-1 shrink-0">
-                <div>
-                  <p className="text-[9px] uppercase tracking-wider text-white/45">{t("powerLabel")}</p>
-                  <p className="text-[11px] md:text-xs text-white font-bold tabular-nums">
-                    {m.power ?? "—"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[9px] uppercase tracking-wider text-white/45">{t("ppLabel")}</p>
-                  <p className="text-[11px] md:text-xs text-white/90 font-bold tabular-nums flex items-center justify-end gap-1">
-                    {lockedOut && (
-                      <span className="material-symbols-outlined text-[14px]! text-amber-300">lock</span>
-                    )}
+              {/* Stats en una sola línea: antes eran 2 renglones (label+valor) y
+                  empujaban la efectividad contra el borde con overflow:hidden. */}
+              <div className="mt-auto flex items-baseline justify-between gap-1 shrink-0 text-[10px] md:text-[11px] tabular-nums">
+                <span className="text-white/90">
+                  <span className="text-white/40 uppercase tracking-wider mr-0.5">{t("powerLabel")}</span>
+                  <span className="font-bold text-white">{m.power ?? "—"}</span>
+                </span>
+                <span className="text-white/90">
+                  <span className="text-white/40 uppercase tracking-wider mr-0.5">{t("accuracyLabel")}</span>
+                  <span className="font-bold">{accuracyLabel}</span>
+                </span>
+                <span className="text-white/90 flex items-center gap-0.5">
+                  {lockedOut && (
+                    <span className="material-symbols-outlined text-[12px]! text-amber-300">lock</span>
+                  )}
+                  <span className="text-white/40 uppercase tracking-wider mr-0.5">{t("ppLabel")}</span>
+                  <span className="font-bold">
                     {m.pp}/{m.maxPp ?? m.pp}
-                  </p>
-                </div>
+                  </span>
+                </span>
               </div>
-              <p className={`text-[9px] md:text-[10px] mt-0.5 leading-tight truncate shrink-0 ${eff.className}`}>
-                {eff.label}
-              </p>
+              {damage?.guaranteedKo ? (
+                <p className="text-[9px] md:text-[10px] leading-snug truncate shrink-0 font-bold text-tertiary">
+                  {t("forecastKo")}
+                </p>
+              ) : (
+                <p
+                  className={`text-[9px] md:text-[10px] leading-snug truncate shrink-0 ${
+                    isStatus ? "text-white/45" : eff.className
+                  }`}
+                >
+                  {isStatus ? t("category.STATUS") : eff.label}
+                  {damage && (
+                    <span className="text-white/55">
+                      {" · "}
+                      {t("forecastRange", { min: damage.minPct, max: damage.maxPct })}
+                    </span>
+                  )}
+                </p>
+              )}
             </button>
           );
         })}
@@ -238,6 +318,8 @@ export function TeamView({
   isAnimating,
   mustSwitch,
   roster,
+  foeName,
+  foeTypes,
   matchupInfo,
   onSwitch,
   onBack,
@@ -245,6 +327,8 @@ export function TeamView({
   isAnimating: boolean;
   mustSwitch: boolean;
   roster: RosterMember[];
+  foeName: string;
+  foeTypes: string[];
   matchupInfo: (types: string[]) => MatchupInfo;
   onSwitch: (member: RosterMember) => void;
   onBack: () => void;
@@ -260,6 +344,25 @@ export function TeamView({
       {mustSwitch && (
         <p className="text-label-sm text-error text-center shrink-0">{t("mustSwitchPrompt")}</p>
       )}
+      {/* Elegir a ciegas era el problema: el rival y sus tipos quedan a la vista
+          mientras se decide, no solo en la placa de arriba. */}
+      <div className="flex flex-wrap items-center gap-1 px-0.5 shrink-0">
+        <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">
+          {t("switchAgainst", { name: foeName })}
+        </span>
+        {foeTypes.map((type) => {
+          const color = typeColor(type);
+          return (
+            <span
+              key={type}
+              className="rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+              style={{ backgroundColor: `${color}33`, color, borderColor: `${color}66` }}
+            >
+              {type}
+            </span>
+          );
+        })}
+      </div>
       <div className="flex flex-col gap-1.5 md:gap-2 flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
         {roster.map((m) => {
           const fainted = m.currentHp <= 0;
@@ -298,7 +401,13 @@ export function TeamView({
                   />
                 </div>
                 <div className="mt-0.5 flex items-center justify-between gap-2">
-                  <span className="text-label-sm text-on-surface-variant">
+                  <span
+                    className={`text-label-sm ${
+                      fainted
+                        ? "rounded bg-error/25 px-1 font-bold uppercase text-error"
+                        : "text-on-surface-variant"
+                    }`}
+                  >
                     {fainted ? t("fainted") : `${m.currentHp}/${m.maxHp}`}
                   </span>
                   {!fainted && (

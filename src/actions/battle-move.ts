@@ -36,6 +36,7 @@ import { resolveLevelUpEffects } from "@/lib/level-up";
 import { lockUsers } from "@/lib/db-locks";
 import { notifySettledPvp, settlePvpMatch } from "@/lib/pvp/settle";
 import { parseTeamSnap, type PvpTeamMemberSnap } from "@/lib/pvp/team";
+import { twoTurnSpec } from "@/lib/two-turn";
 
 const MAX_LOG_LINES = 20;
 
@@ -75,6 +76,8 @@ export interface UseMoveResult {
   wildStatus: StatusCondition | null;
   /** Si porta un objeto Choice, el movimiento al que quedó atado (o null). */
   playerChoiceLockMoveId: number | null;
+  /** Movimiento de 2 turnos en curso (Fly/Dig/Solar Beam…), o null. */
+  playerChargeMoveId: number | null;
   /** Info de rating PvP al cerrar (solo ranked interactivo). */
   pvpResult: {
     matchId: string;
@@ -89,6 +92,7 @@ export interface UseMoveResult {
     spriteUrl: string;
     maxHp: number;
     types: string[];
+    stats: { def: number; spDef: number; speed: number };
   } | null;
 }
 
@@ -160,10 +164,10 @@ export async function submitBattleMove(
   });
   if (!battle) return null;
 
-  // Choice Band/Specs/Scarf: si ya quedó atado a un movimiento esta batalla,
-  // se ignora lo pedido y se fuerza ese movimiento (mismo criterio que los
-  // juegos reales — el menú debería ya venir deshabilitado del lado del cliente).
-  const effectiveMoveId = battle.playerChoiceLockMoveId ?? moveId;
+  // Carga de 2 turnos (Fly/Dig…) manda sobre Choice y sobre lo que eligió
+  // el jugador: el 2º turno está forzado.
+  const effectiveMoveId =
+    battle.playerChargeMoveId ?? battle.playerChoiceLockMoveId ?? moveId;
   const chosenMove = battle.pokemonInstance.moves.find((m) => m.moveId === effectiveMoveId);
   if (!chosenMove) return null;
 
@@ -229,6 +233,12 @@ export async function submitBattleMove(
     baseStats: playerBase,
     heldItem: playerHeldItem,
     isFullyEvolved: playerIsFullyEvolved,
+    chargeMoveId: battle.playerChargeMoveId ?? null,
+    semiInvuln: battle.playerChargeMoveId
+      ? (twoTurnSpec(
+          instance.moves.find((m) => m.moveId === battle.playerChargeMoveId)?.move.name ?? "",
+        )?.invuln ?? null)
+      : null,
   };
   let wildState: SideBattleState = {
     hp: battle.wildCurrentHp,
@@ -244,6 +254,12 @@ export async function submitBattleMove(
     baseStats: wildBase,
     heldItem: wildHeldItem,
     isFullyEvolved: wildIsFullyEvolved,
+    chargeMoveId: battle.wildChargeMoveId ?? null,
+    semiInvuln: battle.wildChargeMoveId
+      ? (twoTurnSpec(
+          wildMoveSnapshots.find((m) => m.id === battle.wildChargeMoveId)?.name ?? "",
+        )?.invuln ?? null)
+      : null,
   };
 
   const playerPpNow = effectivePp(chosenMove.currentPp, chosenMove.move.pp);
@@ -262,11 +278,13 @@ export async function submitBattleMove(
   const chance = disobeyChance(instance.level, badgeCount);
   const disobeyed = chance > 0 && Math.random() < chance;
 
-  // Choice del rival: si ya está atado, fuerza ese movimiento (paridad PvP).
+  // Carga de 2 turnos manda sobre Choice: el rival está obligado a terminar.
   const lockedWild =
-    battle.wildChoiceLockMoveId != null
-      ? wildMoveSnapshots.find((m) => m.id === battle.wildChoiceLockMoveId)
-      : undefined;
+    battle.wildChargeMoveId != null
+      ? wildMoveSnapshots.find((m) => m.id === battle.wildChargeMoveId)
+      : battle.wildChoiceLockMoveId != null
+        ? wildMoveSnapshots.find((m) => m.id === battle.wildChoiceLockMoveId)
+        : undefined;
   const wildPickRaw = lockedWild
     ? lockedWild
     : pickWildMove(
@@ -390,11 +408,18 @@ export async function submitBattleMove(
 
   const playerActed = events.some((e) => e.side === "player" && !e.skipped);
   const wildActed = events.some((e) => e.side === "wild" && !e.skipped);
-  if (wildActed && wi >= 0 && (wildMovePp[wi] ?? 0) > 0) {
+  // El 2º turno de un charge no vuelve a gastar PP (se descontó al empezar).
+  const playerFinishedCharge = events.some(
+    (e) => e.side === "player" && e.chargePhase === "finish",
+  );
+  const wildFinishedCharge = events.some(
+    (e) => e.side === "wild" && e.chargePhase === "finish",
+  );
+  if (wildActed && !wildFinishedCharge && wi >= 0 && (wildMovePp[wi] ?? 0) > 0) {
     wildMovePp[wi] -= 1;
   }
 
-  if (playerActed && playerMoveSnapshot.id !== STRUGGLE_MOVE.id) {
+  if (playerActed && !playerFinishedCharge && playerMoveSnapshot.id !== STRUGGLE_MOVE.id) {
     const maxPp = chosenMove.move.pp ?? 20;
     const current = effectivePp(chosenMove.currentPp, maxPp);
     const nextPp = Math.max(0, current - 1);
@@ -423,7 +448,10 @@ export async function submitBattleMove(
   const spentMaxPp = chosenMove.move.pp ?? 20;
   const spentCurrent = effectivePp(chosenMove.currentPp, spentMaxPp);
   const spentPlayerPp =
-    disobeyed || !playerActed || playerMoveSnapshot.id === STRUGGLE_MOVE.id
+    disobeyed ||
+    !playerActed ||
+    playerFinishedCharge ||
+    playerMoveSnapshot.id === STRUGGLE_MOVE.id
       ? null
       : Math.max(0, spentCurrent - 1);
 
@@ -437,6 +465,9 @@ export async function submitBattleMove(
         ? spentPlayerPp
         : effectivePp(m.currentPp, m.move.pp),
   }));
+
+  const newPlayerChargeMoveId = playerState.chargeMoveId ?? null;
+  const newWildChargeMoveId = wildState.chargeMoveId ?? null;
 
   const wonBattle = wildHp <= 0 && playerHp > 0;
   const fainted = playerHp <= 0;
@@ -481,6 +512,8 @@ export async function submitBattleMove(
     playerItemConsumed,
     wildItemConsumed: battle.wildItemConsumed,
     wildChoiceLockMoveId,
+    playerChargeMoveId: newPlayerChargeMoveId,
+    wildChargeMoveId: newWildChargeMoveId,
   };
 
   if (wonBattle) {
@@ -510,6 +543,11 @@ export async function submitBattleMove(
           spriteUrl: nextMon.spriteUrl,
           maxHp: nextMon.maxHp,
           types: nextMon.types,
+          stats: {
+            def: nextMon.stats.def,
+            spDef: nextMon.stats.spDef,
+            speed: nextMon.stats.speed,
+          },
         };
         const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
         await prisma.$transaction([
@@ -536,6 +574,7 @@ export async function submitBattleMove(
               wildAtkStage: 0,
               wildDefStage: 0,
               wildSpeStage: 0,
+              wildChargeMoveId: null,
               log: finalLog,
             },
           }),
@@ -565,6 +604,7 @@ export async function submitBattleMove(
           rematch: false,
           playerMovesPp,
           playerChoiceLockMoveId: newChoiceLockMoveId,
+          playerChargeMoveId: newPlayerChargeMoveId,
           playerStatus: playerState.status,
           wildStatus: null,
           pvpResult: null,
@@ -651,6 +691,7 @@ export async function submitBattleMove(
         rematch: false,
         playerMovesPp,
         playerChoiceLockMoveId: newChoiceLockMoveId,
+        playerChargeMoveId: newPlayerChargeMoveId,
         playerStatus: playerState.status,
         wildStatus: wildState.status,
         pvpResult,
@@ -683,6 +724,10 @@ export async function submitBattleMove(
         spriteUrl: nextOpponentMon.species.spriteUrl,
         maxHp: nextMaxHp,
         types: nextOpponentMon.species.types,
+        stats: (() => {
+          const s = wildCombatantStats(nextOpponentMon.species, nextOpponentMon.level);
+          return { def: s.def, spDef: s.spDef, speed: s.speed };
+        })(),
       };
 
       const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
@@ -705,6 +750,8 @@ export async function submitBattleMove(
             wildAtkStage: 0,
             wildDefStage: 0,
             wildSpeStage: 0,
+            wildChargeMoveId: null,
+            wildChoiceLockMoveId: null,
             log: finalLog,
           },
         }),
@@ -725,6 +772,7 @@ export async function submitBattleMove(
         rematch: alreadyHasThisBadge,
         playerMovesPp,
         playerChoiceLockMoveId: newChoiceLockMoveId,
+        playerChargeMoveId: newPlayerChargeMoveId,
         playerStatus: playerState.status,
         wildStatus: null,
         pvpResult: null,
@@ -880,6 +928,7 @@ export async function submitBattleMove(
         rematch: alreadyHasThisBadge,
         playerMovesPp,
         playerChoiceLockMoveId: newChoiceLockMoveId,
+        playerChargeMoveId: newPlayerChargeMoveId,
         playerStatus: playerState.status,
         wildStatus: wildState.status,
         pvpResult: null,
@@ -1112,6 +1161,7 @@ export async function submitBattleMove(
     rematch: alreadyHasThisBadge,
     playerMovesPp,
     playerChoiceLockMoveId: newChoiceLockMoveId,
+    playerChargeMoveId: newPlayerChargeMoveId,
     playerStatus: playerState.status,
     wildStatus: wildState.status,
     pvpResult,

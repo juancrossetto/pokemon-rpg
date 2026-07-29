@@ -2,7 +2,8 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { calculateMaxHp } from "@/lib/stats";
+import { calculateMaxHp, calculateStat } from "@/lib/stats";
+import { wildCombatantStats } from "@/lib/combatant";
 import { effectivePp } from "@/lib/battle";
 import { getCurrentEnergy } from "@/lib/energy";
 import { getActiveGymRun } from "@/lib/battle-lock";
@@ -404,6 +405,8 @@ export default async function BattlePage({
         name: m.move.name,
         type: m.move.type,
         power: m.move.power,
+        accuracy: m.move.accuracy,
+        category: m.move.category,
         pp: effectivePp(m.currentPp, m.move.pp),
         maxPp: m.move.pp,
       })),
@@ -411,7 +414,29 @@ export default async function BattlePage({
       opponentParty,
       playerStatus: battle.playerStatus,
       wildStatus: battle.wildStatus,
+      playerStats: {
+        atk: calculateStat(instance.species.baseAttack, instance.ptStrength, instance.level),
+        spAtk: calculateStat(
+          instance.species.baseSpAtk,
+          instance.ptIntelligence,
+          instance.level,
+        ),
+        speed: calculateStat(instance.species.baseSpeed, instance.ptSpeed, instance.level),
+      },
+      wildStats: (() => {
+        const pvpActive = pvpTeam.find((m) => m.slot === currentSlot);
+        if (pvpActive) {
+          return {
+            def: pvpActive.stats.def,
+            spDef: pvpActive.stats.spDef,
+            speed: pvpActive.stats.speed,
+          };
+        }
+        const stats = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
+        return { def: stats.def, spDef: stats.spDef, speed: stats.speed };
+      })(),
       playerChoiceLockMoveId: battle.playerChoiceLockMoveId,
+      playerChargeMoveId: battle.playerChargeMoveId,
       gymId: battle.gymId,
       gymRunId: battle.gymRunId,
       gymType: battle.gym?.type ?? null,

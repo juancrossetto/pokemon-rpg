@@ -6,6 +6,7 @@ import { calculateMaxHp } from "@/lib/stats";
 import { resolveWildCounter, type SideBattleState } from "@/lib/resolve-action";
 import { heldItemSnapshotFromItem } from "@/lib/held-items";
 import type { StatusCondition } from "@/lib/status";
+import { twoTurnSpec } from "@/lib/two-turn";
 
 type BattleWithFighters = {
   id: string;
@@ -28,6 +29,8 @@ type BattleWithFighters = {
   playerItemConsumed?: boolean;
   wildItemConsumed?: boolean;
   wildChoiceLockMoveId?: number | null;
+  playerChargeMoveId?: number | null;
+  wildChargeMoveId?: number | null;
   wildHeldItem?: {
     id: string;
     name: string;
@@ -110,6 +113,8 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
     baseStats: playerBase,
     heldItem: playerHeldItem,
     isFullyEvolved: playerIsFullyEvolved,
+    chargeMoveId: battle.playerChargeMoveId ?? null,
+    semiInvuln: null,
   };
   let wildState: SideBattleState = {
     hp: battle.wildCurrentHp,
@@ -125,6 +130,8 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
     baseStats: wildBase,
     heldItem: wildHeldItem,
     isFullyEvolved: true,
+    chargeMoveId: battle.wildChargeMoveId ?? null,
+    semiInvuln: null,
   };
 
   const wildMoves = await prisma.move.findMany({ where: { id: { in: battle.wildMoveIds } } });
@@ -132,15 +139,30 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
     .map((id) => wildMoves.find((m) => m.id === id))
     .filter((m): m is NonNullable<typeof m> => !!m);
 
+  // Semi-invuln del jugador (p. ej. mid-Fly mientras el rival contraataca por mochila).
+  if (playerState.chargeMoveId) {
+    const charged = await prisma.move.findUnique({
+      where: { id: playerState.chargeMoveId },
+      select: { name: true },
+    });
+    playerState.semiInvuln = charged ? (twoTurnSpec(charged.name)?.invuln ?? null) : null;
+  }
+  if (wildState.chargeMoveId) {
+    const charged = snapshots.find((m) => m.id === wildState.chargeMoveId);
+    wildState.semiInvuln = charged ? (twoTurnSpec(charged.name)?.invuln ?? null) : null;
+  }
+
   const wildMovePp =
     (battle.wildMovePp?.length ?? 0) === battle.wildMoveIds.length && battle.wildMovePp
       ? [...battle.wildMovePp]
       : snapshots.map((m) => m.pp ?? 20);
 
   const lockedWild =
-    battle.wildChoiceLockMoveId != null
-      ? snapshots.find((m) => m.id === battle.wildChoiceLockMoveId)
-      : undefined;
+    battle.wildChargeMoveId != null
+      ? snapshots.find((m) => m.id === battle.wildChargeMoveId)
+      : battle.wildChoiceLockMoveId != null
+        ? snapshots.find((m) => m.id === battle.wildChoiceLockMoveId)
+        : undefined;
   const pick = lockedWild
     ? lockedWild
     : pickWildMove(
@@ -169,7 +191,10 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
   wildState = outcome.wild;
 
   const wildActed = outcome.events.some((e) => e.side === "wild" && !e.skipped);
-  if (wildActed && wi >= 0 && (wildMovePp[wi] ?? 0) > 0) {
+  const wildFinishedCharge = outcome.events.some(
+    (e) => e.side === "wild" && e.chargePhase === "finish",
+  );
+  if (wildActed && !wildFinishedCharge && wi >= 0 && (wildMovePp[wi] ?? 0) > 0) {
     wildMovePp[wi] -= 1;
   }
 
@@ -203,6 +228,8 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
       playerItemConsumed: outcome.itemConsumed,
       wildItemConsumed: battle.wildItemConsumed ?? false,
       wildChoiceLockMoveId,
+      playerChargeMoveId: playerState.chargeMoveId ?? null,
+      wildChargeMoveId: wildState.chargeMoveId ?? null,
     },
   };
 }

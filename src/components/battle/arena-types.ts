@@ -46,6 +46,21 @@ export interface OpponentPartyMember {
   active: boolean;
 }
 
+export type MoveCategory = "PHYSICAL" | "SPECIAL" | "STATUS";
+
+/** Movimiento tal como lo ve el panel de comandos. */
+export interface BattleMoveOption {
+  moveId: number;
+  name: string;
+  type: string;
+  power?: number | null;
+  /** null = nunca falla (Swift). */
+  accuracy?: number | null;
+  category?: MoveCategory;
+  pp: number;
+  maxPp: number;
+}
+
 export type View = "menu" | "moves" | "bag" | "team";
 export type Outcome = "ongoing" | "won" | "lost" | "fled" | "caught" | "trainer_cleared";
 export type LogSide = "player" | "wild" | "system";
@@ -64,7 +79,7 @@ export interface BattleArenaProps {
   opponentName: string | null;
   player: Combatant & { instanceId: string; currentHp: number; maxHp: number };
   wild: Combatant & { currentHp: number; maxHp: number; types: string[]; isShiny?: boolean };
-  moves: { moveId: number; name: string; type: string; power?: number | null; pp: number; maxPp: number }[];
+  moves: BattleMoveOption[];
   initialLog: string[];
   pokeballs: PokeballStack[];
   potions: PotionStack[];
@@ -73,8 +88,15 @@ export interface BattleArenaProps {
   opponentParty: OpponentPartyMember[];
   playerStatus: string | null;
   wildStatus: string | null;
+  /** Stats de combate del activo. El cliente les suma stages y estado para dos
+   *  avisos: quién pega primero y el daño estimado de cada movimiento. El
+   *  servidor sigue siendo el único que resuelve el turno. */
+  playerStats: { atk: number; spAtk: number; speed: number };
+  wildStats: { def: number; spDef: number; speed: number };
   /** Si porta un objeto Choice, el movimiento al que ya quedó atado (o null). */
   playerChoiceLockMoveId: number | null;
+  /** Movimiento de 2 turnos en curso (Fly/Dig…), o null. */
+  playerChargeMoveId: number | null;
   gymId: string | null;
   gymRunId: string | null;
   gymType: string | null;

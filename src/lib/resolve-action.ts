@@ -24,6 +24,12 @@ import {
   type HeldItemSnapshot,
 } from "@/lib/held-items";
 import { multiHitSpec, rollMultiHitCount } from "@/lib/multi-hit";
+import {
+  canHitSemiInvuln,
+  invulnPowerMultiplier,
+  twoTurnSpec,
+  type SemiInvulnKind,
+} from "@/lib/two-turn";
 
 export interface SideBattleState {
   hp: number;
@@ -36,6 +42,10 @@ export interface SideBattleState {
   /** Solo el jugador puede tener objeto equipado por ahora. */
   heldItem?: HeldItemSnapshot | null;
   isFullyEvolved?: boolean;
+  /** Id del move de 2 turnos en curso (Fly/Dig/Solar Beam…). */
+  chargeMoveId?: number | null;
+  /** Semi-invulnerabilidad mientras carga un vanish (Fly/Dig/Dive). */
+  semiInvuln?: SemiInvulnKind | null;
 }
 
 export interface ActionOutcome {
@@ -89,6 +99,9 @@ export function resolveSingleAction(
     if (act.reason === "asleep" && act.newSleepTurns <= 0) {
       self.status = null;
     }
+    // Status le corta la carga: cae / cancela Solar Beam / etc.
+    self.chargeMoveId = null;
+    self.semiInvuln = null;
     const skipEvent: TurnEvent = {
       side: attackerSide,
       moveName: move.name,
@@ -148,12 +161,92 @@ export function resolveSingleAction(
   const playerHpBefore = p.hp;
   const playerStatusBefore = p.status;
 
+  const twoTurn = twoTurnSpec(move.name);
+  const isFinishingCharge =
+    self.chargeMoveId != null && self.chargeMoveId === move.id && twoTurn != null;
+  const isStartingCharge = !isFinishingCharge && twoTurn != null;
+
+  // Turno 1 de un 2-turn: no pega todavía. Vanish → se va; charge → se prepara.
+  if (isStartingCharge && twoTurn) {
+    let selfStatChange: TurnEvent["selfStatChange"] = null;
+    if (twoTurn.chargeStat) {
+      const { stat, stages } = twoTurn.chargeStat;
+      const next = Math.max(-6, Math.min(6, self.stages[stat] + stages));
+      if (next !== self.stages[stat]) {
+        self.stages[stat] = next;
+        selfStatChange = { stat, stages };
+      }
+    }
+    self.chargeMoveId = move.id;
+    self.semiInvuln = twoTurn.invuln ?? null;
+
+    const chargeEvent: TurnEvent = {
+      side: attackerSide,
+      moveName: move.name,
+      moveType: move.type,
+      category: move.category,
+      hit: true,
+      isStatus: false,
+      damage: 0,
+      effectiveness: 1,
+      hpAfter: foe.hp,
+      statusNote,
+      chargePhase: "start",
+      semiInvuln: self.semiInvuln,
+      selfStatChange,
+    };
+    applyResidualToEvent(self, chargeEvent);
+    events.push(chargeEvent);
+
+    const itemResult = resolvePlayerHeldItemTrigger({
+      heldItem: p.heldItem,
+      hpBefore: playerHpBefore,
+      hp: p.hp,
+      maxHp: p.maxHp,
+      statusBefore: playerStatusBefore,
+      status: p.status,
+      alreadyConsumed: playerItemConsumed,
+      isActingThisCall: isPlayer,
+    });
+    p.hp = itemResult.hp;
+    p.status = itemResult.status;
+    if (itemResult.trigger) {
+      chargeEvent.itemName = itemResult.trigger.itemName;
+      chargeEvent.itemEffect = itemResult.trigger.kind;
+      chargeEvent.itemAmount = itemResult.trigger.amount;
+      chargeEvent.itemCuredStatus = itemResult.trigger.curedStatus;
+      chargeEvent.itemHpAfter = p.hp;
+    }
+
+    return {
+      events,
+      player: isPlayer ? self : p,
+      wild: isPlayer ? w : self,
+      itemConsumed: itemResult.consumed,
+    };
+  }
+
+  // Turno 2: deja de estar invulnerable justo antes de pegar.
+  if (isFinishingCharge) {
+    self.semiInvuln = null;
+    self.chargeMoveId = null;
+  }
+
   const atkStats = withStages(self);
   const defStats = withStages(foe);
-  const result = resolveMoveUse(atkStats, defStats, move, {
-    attackerBurned: self.status === "BURN",
-    powerMultiplier: heldItemPowerMultiplier(self.heldItem, move.type),
-  });
+
+  // Si el rival está en el aire / bajo tierra, la mayoría de los golpes fallan.
+  const foeInvuln = foe.semiInvuln ?? null;
+  const blockedByInvuln = !canHitSemiInvuln(move.name, foeInvuln);
+  const invulnMult = invulnPowerMultiplier(move.name, foeInvuln);
+
+  const result = blockedByInvuln
+    ? { hit: false, damage: 0, effectiveness: 1, critical: false }
+    : resolveMoveUse(atkStats, defStats, move, {
+        attackerBurned: self.status === "BURN",
+        powerMultiplier:
+          heldItemPowerMultiplier(self.heldItem, move.type) * invulnMult,
+      });
 
   if (!result.hit) {
     events.push({
@@ -167,6 +260,7 @@ export function resolveSingleAction(
       effectiveness: 1,
       hpAfter: foe.hp,
       statusNote,
+      chargePhase: isFinishingCharge ? "finish" : null,
     });
   } else if (move.category === "STATUS") {
     let statusApplied: StatusCondition | null = null;
@@ -202,6 +296,7 @@ export function resolveSingleAction(
       statusApplied,
       statChange,
       statusNote,
+      chargePhase: isFinishingCharge ? "finish" : null,
     });
   } else {
     // `result` ya confirmó el acierto y el daño del primer golpe.
@@ -219,7 +314,8 @@ export function resolveSingleAction(
       if (foe.hp <= 0) break;
       const next = resolveMoveUse(atkStats, defStats, move, {
         attackerBurned: self.status === "BURN",
-        powerMultiplier: heldItemPowerMultiplier(self.heldItem, move.type),
+        powerMultiplier:
+          heldItemPowerMultiplier(self.heldItem, move.type) * invulnMult,
         forceHit: true,
       });
       const dealt = Math.min(next.damage, foe.hp);
@@ -273,6 +369,7 @@ export function resolveSingleAction(
       recoilDamage: recoilDamage || undefined,
       statusApplied,
       statusNote,
+      chargePhase: isFinishingCharge ? "finish" : null,
     });
   }
 

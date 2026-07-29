@@ -153,6 +153,12 @@ export interface TurnEvent {
   /** Estado del atacante al aplicar residual (para el mensaje del log). */
   residualStatus?: StatusCondition | null;
   statChange?: { stat: "atk" | "def" | "spe"; stages: number } | null;
+  /** Fase de un movimiento de 2 turnos (Fly, Dig, Solar Beam…). */
+  chargePhase?: "start" | "finish" | null;
+  /** Semi-invulnerabilidad activa tras el turno de carga (vanish). */
+  semiInvuln?: "air" | "underground" | "underwater" | null;
+  /** Boost propio al empezar la carga (Skull Bash). */
+  selfStatChange?: { stat: "atk" | "def" | "spe"; stages: number } | null;
   residualDamage?: number;
   residualHpAfter?: number;
   recoilDamage?: number;

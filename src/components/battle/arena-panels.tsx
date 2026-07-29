@@ -8,7 +8,7 @@ import Image from "next/image";
 import { type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { PokeballIcon } from "@/components/pokeball-icon";
-import { statusAbbrKey, statusLabelKey, isStatusCondition } from "@/lib/status";
+import { statusAbbrKey, statusLabelKey, isStatusCondition, type StatStages } from "@/lib/status";
 
 export function PartySidebar({
   name,
@@ -167,12 +167,47 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const STAGE_LABEL_KEY = { atk: "statAtk", def: "statDef", spe: "statSpe" } as const;
+
+/** Chips de stat subido/bajado. Sin esto, un Growl repetido solo dejaba una
+ *  línea vieja en el log y el jugador no sabía cuánto acumuló. */
+function StageBadges({ stages, align }: { stages: StatStages; align: "left" | "right" }) {
+  const tLog = useTranslations("battle.log");
+  const active = (Object.keys(STAGE_LABEL_KEY) as (keyof StatStages)[]).filter(
+    (stat) => stages[stat] !== 0,
+  );
+  if (active.length === 0) return null;
+
+  return (
+    <div className={`mt-0.5 flex flex-wrap gap-1 ${align === "right" ? "justify-end" : ""}`}>
+      {active.map((stat) => {
+        const value = stages[stat];
+        const up = value > 0;
+        const label = tLog(STAGE_LABEL_KEY[stat]);
+        return (
+          <span
+            key={stat}
+            className={`rounded px-1 text-[8px] md:text-[9px] font-bold uppercase leading-tight tabular-nums ${
+              up ? "bg-emerald-500/25 text-emerald-200" : "bg-red-500/25 text-red-200"
+            }`}
+            title={`${label} ${up ? "+" : ""}${value}`}
+          >
+            {label.slice(0, 3)} {up ? "▲" : "▼"}
+            {Math.abs(value)}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export function HpPlate({
   name,
   levelLabel,
   currentHp,
   maxHp,
   status,
+  stages,
   align = "left",
   className = "",
 }: {
@@ -181,6 +216,7 @@ export function HpPlate({
   currentHp: number;
   maxHp: number;
   status?: string | null;
+  stages?: StatStages;
   align?: "left" | "right";
   className?: string;
 }) {
@@ -214,6 +250,7 @@ export function HpPlate({
       >
         {Math.round(hpPct)}% · {currentHp}/{maxHp}
       </p>
+      {stages ? <StageBadges stages={stages} align={align} /> : null}
     </div>
   );
 }

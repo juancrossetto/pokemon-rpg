@@ -909,6 +909,11 @@ model BattleSession {
   wildHeldItemId         String?
   wildItemConsumed       Boolean             @default(false)
   wildChoiceLockMoveId   Int?
+  // Movimientos de 2 turnos (Fly/Dig/Solar Beam…): el id del move mientras
+  // está cargando / en el aire. Se limpia al ejecutar el 2º turno, al
+  // cambiar de Pokémon o si un status le impide actuar.
+  playerChargeMoveId     Int?
+  wildChargeMoveId       Int?
   // PvP interactivo: sesión ligada a un PvpMatch ACTIVE.
   pvpMatchId             String?
   opponentUserId         String?

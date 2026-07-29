@@ -42,6 +42,15 @@ Registro de qué está hecho y qué falta en el pulido visual de batalla, para n
 
 - [x] Registro de batalla en dos columnas (jugador izquierda, rival derecha) con scroll y auto-scroll al fondo
 - [x] Menú Luchar/Pokémon/Mochila/Huir, recuerda la última vista usada entre turnos (salvo justo después de cambiar de Pokémon, que siempre vuelve al menú raíz)
+- [x] Tarjeta de movimiento completa: ícono de categoría (físico/especial/estado), precisión, poder, PP y efectividad — antes solo poder y PP
+- [x] **Daño estimado por movimiento** (`damage-forecast.ts`): rango `~min-max%` del HP del rival, o "¡KO seguro!" cuando el roll bajo ya alcanza. Reusa la parte determinista de la fórmula del servidor; deja afuera crítico y objetos, por eso el `~`
+- [x] Aviso de orden de turno (quién pega primero por velocidad) en el menú raíz y en el de poderes, con stages y parálisis aplicados
+- [x] Badges de stat stages (ATK/DEF/VEL ▲▼N) en las placas de HP — antes un Growl repetido solo dejaba una línea vieja en el log
+- [x] Velocidad de animación 1x/2x/3x persistida (`battle-speed.ts`): escala las esperas del timeline y acorta las FX de un disparo; las animaciones en bucle quedan a 1x
+- [x] Al cambiar de Pokémon se ve contra quién se está eligiendo (nombre + tipos del rival) y los debilitados llevan chip de KO en vez de solo estar atenuados
+- [x] En submenús mobile el log completo se oculta pero sobrevive la última línea; el panel del log es `aria-live` para lectores de pantalla
+- [x] Struggle traducido (antes texto inglés hardcodeado en el botón)
+- [x] **Movimientos de 2 turnos** (Fly, Dig, Dive, Bounce, Solar Beam, Skull Bash, Razor Wind, Sky Attack): turno 1 carga/desaparece, turno 2 pega automático; semi-invulnerabilidad con excepciones (Gust/Earthquake/Surf…) y ×2 donde corresponde; se cancela si un status impide actuar
 
 ## Bug conocido (encontrado en verificación, sin arreglar todavía)
 

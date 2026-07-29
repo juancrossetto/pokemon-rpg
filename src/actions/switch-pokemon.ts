@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { TurnEvent } from "@/lib/battle";
 import { effectivePp, mergeBattleParticipantIds } from "@/lib/battle";
-import { calculateMaxHp } from "@/lib/stats";
+import { calculateMaxHp, calculateStat } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
 
@@ -20,7 +20,17 @@ export interface SwitchPokemonResult {
     spriteUrl: string;
     currentHp: number;
     maxHp: number;
-    moves: { moveId: number; name: string; type: string; power: number | null; pp: number; maxPp: number }[];
+    stats: { atk: number; spAtk: number; speed: number };
+    moves: {
+      moveId: number;
+      name: string;
+      type: string;
+      power: number | null;
+      accuracy: number | null;
+      category: "PHYSICAL" | "SPECIAL" | "STATUS";
+      pp: number;
+      maxPp: number;
+    }[];
   };
   counterAttack: TurnEvent | null;
   outcome: "continues" | "lost" | "fainted";
@@ -59,11 +69,22 @@ export async function switchPokemon(
   }
 
   const newName = newInstance.nickname ?? newInstance.species.name;
+  const newStats = {
+    atk: calculateStat(newInstance.species.baseAttack, newInstance.ptStrength, newInstance.level),
+    spAtk: calculateStat(
+      newInstance.species.baseSpAtk,
+      newInstance.ptIntelligence,
+      newInstance.level,
+    ),
+    speed: calculateStat(newInstance.species.baseSpeed, newInstance.ptSpeed, newInstance.level),
+  };
   const newMoves = newInstance.moves.map((m) => ({
     moveId: m.moveId,
     name: m.move.name,
     type: m.move.type,
     power: m.move.power,
+    accuracy: m.move.accuracy,
+    category: m.move.category,
     pp: effectivePp(m.currentPp, m.move.pp),
     maxPp: m.move.pp,
   }));
@@ -85,6 +106,7 @@ export async function switchPokemon(
     // El objeto equipado del que entra puede ser otro (o ninguno) — el lock
     // de Choice y el consumo de Focus Sash/Sitrus/Lum son por Pokémon.
     playerChoiceLockMoveId: null as number | null,
+    playerChargeMoveId: null as number | null,
     playerItemConsumed: false,
   };
 
@@ -93,7 +115,9 @@ export async function switchPokemon(
     await prisma.battleSession.update({
       where: { id: battle.id },
       data: {
-        pokemonInstanceId: newInstance.id,
+        // Relación (no el scalar): Prisma 7 valida UpdateInput y no acepta
+        // `pokemonInstanceId` en el input "checked".
+        pokemonInstance: { connect: { id: newInstance.id } },
         participantIds,
         ...clearPlayerStatus,
         log: [...battle.log, `switchForced:${newName}`].slice(-MAX_LOG_LINES),
@@ -111,6 +135,7 @@ export async function switchPokemon(
         spriteUrl: newInstance.species.spriteUrl,
         currentHp: newInstance.currentHp,
         maxHp: calculateMaxHp(newInstance.species.baseHp, newInstance.level, newInstance.ptConstitution),
+        stats: newStats,
         moves: newMoves,
       },
       counterAttack: null,
@@ -143,13 +168,13 @@ export async function switchPokemon(
     prisma.battleSession.update({
       where: { id: battle.id },
       data: {
-        pokemonInstanceId: newInstance.id,
+        pokemonInstance: { connect: { id: newInstance.id } },
         log: finalLog,
         participantIds,
         ...clearPlayerStatus,
         ...counter.statePatch,
         // el statePatch puede pisar playerStatus con el del counter (sobre el que entró)
-        ...(lostBattle ? { status: "LOST" } : {}),
+        ...(lostBattle ? { status: "LOST" as const } : {}),
       },
     }),
     ...(lostBattle
@@ -188,6 +213,7 @@ export async function switchPokemon(
       spriteUrl: newInstance.species.spriteUrl,
       currentHp: playerHp,
       maxHp: calculateMaxHp(newInstance.species.baseHp, newInstance.level, newInstance.ptConstitution),
+      stats: newStats,
       moves: newMoves,
     },
     counterAttack: counter.counterAttack,

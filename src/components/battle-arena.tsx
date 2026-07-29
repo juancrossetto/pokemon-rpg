@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { submitBattleMove, type XpSummaryEntry } from "@/actions/battle-move";
 import { fleeBattle } from "@/actions/flee-battle";
@@ -31,21 +31,37 @@ import {
   stopBattleBgm,
 } from "@/lib/battle-bgm";
 import { BattleAudioControls } from "@/components/battle-audio-controls";
+import { BattleSpeedControl } from "@/components/battle/battle-speed-control";
+import {
+  getBattleSpeed,
+  getServerBattleSpeed,
+  scaledDelay,
+  subscribeBattleSpeed,
+} from "@/lib/battle-speed";
 import { impactFxUrl, resolveMoveProjectile, showdownBattleBgUrl, showdownFxUrl } from "@/lib/showdown-fx";
-import { statusAbbrKey, statusLabelKey, isStatusCondition, type StatusCondition } from "@/lib/status";
+import {
+  applyStagesToStats,
+  statusAbbrKey,
+  statusLabelKey,
+  isStatusCondition,
+  type StatStages,
+  type StatusCondition,
+} from "@/lib/status";
 import type { TurnEvent } from "@/lib/battle";
 import type {
   BattleArenaProps,
   LogEntry,
   LogSide,
+  MoveCategory,
   Outcome,
   RosterMember,
   View,
 } from "@/components/battle/arena-types";
+import { forecastDamage } from "@/lib/damage-forecast";
 import { EmptyPartySlot, HpPlate, PartyIcon, PartySidebar } from "@/components/battle/arena-panels";
 import { CaptureSummary } from "@/components/battle/capture-summary";
 import { BattleOutcomeScreen } from "@/components/battle/battle-outcome-screen";
-import { BagView, MovesView, TeamView } from "@/components/battle/command-views";
+import { BagView, MovesView, TeamView, TurnOrderChip } from "@/components/battle/command-views";
 
 export type { BattleArenaProps, OpponentPartyMember } from "@/components/battle/arena-types";
 
@@ -77,8 +93,10 @@ const ITEM_USE_MS = 550;
 const SEND_OUT_BALL_MS = 700; // cuánto se ve solo la pokeball, antes de revelar al Pokémon inicial
 
 function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, scaledDelay(ms)));
 }
+
+const NO_STAGES: StatStages = { atk: 0, def: 0, spe: 0 };
 
 export function BattleArena({
   battleId,
@@ -97,7 +115,10 @@ export function BattleArena({
   opponentParty: initialOpponentParty,
   playerStatus: initialPlayerStatus,
   wildStatus: initialWildStatus,
+  playerStats: initialPlayerStats,
+  wildStats: initialWildStats,
   playerChoiceLockMoveId: initialChoiceLockMoveId,
+  playerChargeMoveId: initialChargeMoveId,
   gymId,
   gymRunId,
   gymType,
@@ -221,6 +242,17 @@ export function BattleArena({
   const [wildMaxHp, setWildMaxHp] = useState(wild.maxHp);
   const [playerStatus, setPlayerStatus] = useState<string | null>(initialPlayerStatus);
   const [wildStatus, setWildStatus] = useState<string | null>(initialWildStatus);
+  // Stages y velocidad se espejan del servidor para dos avisos: los badges de
+  // subida/bajada de stat y quién pega primero. No deciden nada del combate.
+  const [playerStages, setPlayerStages] = useState<StatStages>(NO_STAGES);
+  const [wildStages, setWildStages] = useState<StatStages>(NO_STAGES);
+  const [playerStats, setPlayerStats] = useState(initialPlayerStats);
+  const [wildStats, setWildStats] = useState(initialWildStats);
+  const battleSpeed = useSyncExternalStore(
+    subscribeBattleSpeed,
+    getBattleSpeed,
+    getServerBattleSpeed,
+  );
   const [log, setLog] = useState<LogEntry[]>(() => {
     const entries: LogEntry[] = [];
     for (const text of initialLog) {
@@ -235,6 +267,8 @@ export function BattleArena({
   const [playerEntering, setPlayerEntering] = useState(true);
   const [playerHidden, setPlayerHidden] = useState(true);
   const [wildEntering, setWildEntering] = useState(true);
+  /** Sprite oculto por Fly/Dig/Dive (semi-invulnerable). */
+  const [vanishedSide, setVanishedSide] = useState<"player" | "wild" | null>(null);
   const [badgeEarned, setBadgeEarned] = useState(false);
   const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [tmRewardName, setTmRewardName] = useState<string | null>(null);
@@ -281,6 +315,7 @@ export function BattleArena({
   const [mustSwitch, setMustSwitch] = useState(needsForcedSwitch);
   const [activeMoves, setActiveMoves] = useState(moves);
   const [choiceLockMoveId, setChoiceLockMoveId] = useState(initialChoiceLockMoveId);
+  const [chargeMoveId, setChargeMoveId] = useState(initialChargeMoveId);
   const logEndRef = useRef<HTMLDivElement>(null);
   const [capturedInfo, setCapturedInfo] = useState<CapturedPokemonInfo | null>(null);
   const [caughtSentToPc, setCaughtSentToPc] = useState(false);
@@ -308,6 +343,7 @@ export function BattleArena({
     preloadBattleSfx();
     return () => stopBattleBgm();
   }, [bgmKind]);
+
 
   useEffect(() => {
     if (outcome !== "ongoing") stopBattleBgm();
@@ -409,6 +445,55 @@ export function BattleArena({
     return matchupInfo(best);
   }
 
+  /** Stats efectivos: base del servidor + stages y estado vistos en el log.
+   *  Solo alimentan avisos (orden de turno, daño estimado); el servidor sigue
+   *  siendo el único que resuelve el turno. */
+  function withStages(
+    base: { atk: number; def: number; spAtk: number; spDef: number; speed: number },
+    stages: StatStages,
+    status: string | null,
+  ) {
+    const condition = status && isStatusCondition(status) ? (status as StatusCondition) : null;
+    return applyStagesToStats(base, stages, condition);
+  }
+
+  const stagedPlayer = withStages(
+    { atk: playerStats.atk, def: 1, spAtk: playerStats.spAtk, spDef: 1, speed: playerStats.speed },
+    playerStages,
+    playerStatus,
+  );
+  const stagedWild = withStages(
+    { atk: 1, def: wildStats.def, spAtk: 1, spDef: wildStats.spDef, speed: wildStats.speed },
+    wildStages,
+    wildStatus,
+  );
+
+  // El servidor desempata a favor del jugador (playerActsFirst usa >=).
+  const playerOutspeeds = stagedPlayer.speed >= stagedWild.speed;
+
+  const activePlayerTypes =
+    party.find((m) => m.instanceId === activePlayer.instanceId)?.types ?? [];
+
+  function moveForecast(move: { type: string; power?: number | null; category?: MoveCategory }) {
+    return forecastDamage(
+      {
+        level: activePlayer.level,
+        atk: stagedPlayer.atk,
+        spAtk: stagedPlayer.spAtk,
+        types: activePlayerTypes,
+        burned: playerStatus === "BURN",
+      },
+      {
+        def: stagedWild.def,
+        spDef: stagedWild.spDef,
+        types: activeWild.types,
+        maxHp: wildMaxHp,
+      },
+      move,
+      wildHp,
+    );
+  }
+
   function matchupInfo(multiplier: number): { label: string; className: string } {
     if (multiplier === 0) return { label: t("noEffect"), className: "text-on-surface-variant" };
     if (multiplier > 1) return { label: t("superEffective"), className: "text-tertiary" };
@@ -474,7 +559,16 @@ export function BattleArena({
     return new Promise((resolve) => {
       const color = typeColor(event.moveType);
       const fxKey = Date.now();
-      const mode = event.skipped ? "miss" : !event.hit ? "miss" : event.isStatus ? "status" : "hit";
+      const isChargeStart = event.chargePhase === "start";
+      const mode = event.skipped
+        ? "miss"
+        : isChargeStart
+          ? "status"
+          : !event.hit
+            ? "miss"
+            : event.isStatus
+              ? "status"
+              : "hit";
       const projectile =
         mode === "hit" ? resolveMoveProjectile(event.moveType, event.category) : null;
       const previewDamages =
@@ -496,7 +590,7 @@ export function BattleArena({
         playBattleSfx("status");
       } else if (!event.hit) {
         playBattleSfx("miss");
-      } else if (event.isStatus) {
+      } else if (event.isStatus || isChargeStart) {
         playBattleSfx("status");
       }
 
@@ -521,6 +615,8 @@ export function BattleArena({
         else if (event.skipped === "frozen") appendLog(tLog("frozen", { name: nameFor(event.side) }), event.side);
         else if (event.skipped === "flinch") appendLog(tLog("flinch", { name: nameFor(event.side) }), event.side);
         else appendLog(tLog("disobey", { name: nameFor(event.side) }), event.side);
+        // Un status corta la carga: el sprite vuelve a verse.
+        setVanishedSide((prev) => (prev === event.side ? null : prev));
         void (async () => {
           await delay(STATUS_MS);
           setMoveFx(null);
@@ -529,6 +625,69 @@ export function BattleArena({
           resolve();
         })();
         return;
+      }
+
+      // Turno 1 de Fly/Dig/Solar Beam: no pega; vanish oculta el sprite.
+      if (event.chargePhase === "start") {
+        appendLog(tLog("used", { name: nameFor(event.side), move: formatMoveName(event.moveName) }), event.side);
+        const moveKey = event.moveName.trim().toLowerCase().replace(/\s+/g, "-");
+        if (event.semiInvuln === "air") {
+          appendLog(tLog("flewUp", { name: nameFor(event.side) }), event.side);
+        } else if (event.semiInvuln === "underground") {
+          appendLog(tLog("dugDown", { name: nameFor(event.side) }), event.side);
+        } else if (event.semiInvuln === "underwater") {
+          appendLog(tLog("doveUnder", { name: nameFor(event.side) }), event.side);
+        } else if (moveKey === "skull-bash") {
+          appendLog(tLog("tuckedHead", { name: nameFor(event.side) }), event.side);
+        } else {
+          appendLog(tLog("charging", { name: nameFor(event.side) }), event.side);
+        }
+        if (event.selfStatChange) {
+          const { stat, stages } = event.selfStatChange;
+          const bump = (prev: StatStages): StatStages => ({
+            ...prev,
+            [stat]: Math.max(-6, Math.min(6, prev[stat] + stages)),
+          });
+          if (event.side === "player") setPlayerStages(bump);
+          else setWildStages(bump);
+          const statKey =
+            stat === "atk" ? "statAtk" : stat === "def" ? "statDef" : "statSpe";
+          appendLog(
+            tLog("statChange", {
+              name: nameFor(event.side),
+              stat: tLog(statKey),
+              dir: stages < 0 ? tLog("statDown") : tLog("statUp"),
+            }),
+            event.side,
+          );
+        }
+        if (event.semiInvuln) {
+          setAttackingSide(event.side);
+          void (async () => {
+            await delay(MULTI_STRIKE_MS);
+            setAttackingSide(null);
+            setVanishedSide(event.side);
+            await delay(STATUS_MS);
+            setMoveFx(null);
+            await playResidualBeat(event);
+            appendItemTriggerLog(event);
+            resolve();
+          })();
+        } else {
+          void (async () => {
+            await delay(STATUS_MS);
+            setMoveFx(null);
+            await playResidualBeat(event);
+            appendItemTriggerLog(event);
+            resolve();
+          })();
+        }
+        return;
+      }
+
+      // Turno 2: reaparece antes del golpe.
+      if (event.chargePhase === "finish") {
+        setVanishedSide((prev) => (prev === event.side ? null : prev));
       }
 
       // Multi-hit: un strike por golpe adentro del loop (no un solo lunge al inicio).
@@ -563,6 +722,13 @@ export function BattleArena({
           }
           if (event.statChange) {
             const foe = event.side === "player" ? "wild" : "player";
+            const { stat, stages } = event.statChange;
+            const bump = (prev: StatStages): StatStages => ({
+              ...prev,
+              [stat]: Math.max(-6, Math.min(6, prev[stat] + stages)),
+            });
+            if (foe === "wild") setWildStages(bump);
+            else setPlayerStages(bump);
             const statKey =
               event.statChange.stat === "atk"
                 ? "statAtk"
@@ -743,6 +909,7 @@ export function BattleArena({
     spriteUrl: string;
     maxHp: number;
     types: string[];
+    stats: { def: number; spDef: number; speed: number };
   }) {
     appendLog(tLog("fainted", { name: activeWild.name }), "wild");
     setFaintingSide("wild");
@@ -769,6 +936,9 @@ export function BattleArena({
     });
     setWildHp(next.maxHp);
     setWildMaxHp(next.maxHp);
+    setWildStages(NO_STAGES);
+    setWildStatus(null);
+    setWildStats(next.stats);
     setWildEntering(true);
     setTimeout(() => setWildEntering(false), 400);
     appendLog(t("trainerSendOut", { name: next.name }), "wild");
@@ -795,6 +965,7 @@ export function BattleArena({
     setPlayerStatus(result.playerStatus);
     setWildStatus(result.wildStatus);
     setChoiceLockMoveId(result.playerChoiceLockMoveId);
+    setChargeMoveId(result.playerChargeMoveId);
     setActiveMoves((prev) =>
       prev.map((m) => {
         const upd = result.playerMovesPp.find((p) => p.moveId === m.moveId);
@@ -836,7 +1007,63 @@ export function BattleArena({
       await playFaintThenForceSwitch();
     } else if (result.outcome === "gym_continues" && result.nextOpponent) {
       await playWildFaintThenReveal(result.nextOpponent);
+      setVanishedSide((prev) => (prev === "wild" ? null : prev));
       setView(defaultView);
+    } else if (result.playerChargeMoveId != null) {
+      // 2º turno automático (como en los juegos): no pedimos otro click.
+      setView("menu");
+      const finishId = result.playerChargeMoveId;
+      const finish = await submitBattleMove(battleId, finishId, locale);
+      if (finish) {
+        for (const event of finish.events) {
+          await playEvent(event);
+        }
+        setPlayerMaxHp(finish.playerMaxHp);
+        setPlayerStatus(finish.playerStatus);
+        setWildStatus(finish.wildStatus);
+        setChoiceLockMoveId(finish.playerChoiceLockMoveId);
+        setChargeMoveId(finish.playerChargeMoveId);
+        setActiveMoves((prev) =>
+          prev.map((m) => {
+            const upd = finish.playerMovesPp.find((p) => p.moveId === m.moveId);
+            return upd ? { ...m, pp: upd.pp } : m;
+          }),
+        );
+        if (finish.xpGained) appendLog(t("xpGained", { xp: finish.xpGained }));
+        if (finish.xpSummary) setXpSummary(finish.xpSummary);
+        if (finish.coinsGained > 0) {
+          setCoinsGained(finish.coinsGained);
+          announceCoinDelta(finish.coinsGained);
+        }
+        if (finish.pvpResult) setPvpResult(finish.pvpResult);
+        if (finish.badgeEarned) {
+          appendLog(t("badgeEarned"));
+          playBattleSfx("badge");
+          setBadgeEarned(true);
+          setShowBadgePopup(true);
+        }
+        if (finish.tmRewardName) {
+          appendLog(t("tmEarned", { code: finish.tmRewardName }));
+          setTmRewardName(finish.tmRewardName);
+        }
+        if (finish.outcome === "won") {
+          await playFaintAndFinish("wild", "won");
+        } else if (finish.outcome === "lost") {
+          await playFaintAndFinish("player", "lost");
+        } else if (finish.outcome === "trainer_cleared") {
+          await playFaintAndFinish("wild", "trainer_cleared");
+        } else if (finish.outcome === "fainted") {
+          await playFaintThenForceSwitch();
+        } else if (finish.outcome === "gym_continues" && finish.nextOpponent) {
+          await playWildFaintThenReveal(finish.nextOpponent);
+          setVanishedSide((prev) => (prev === "wild" ? null : prev));
+          setView(defaultView);
+        } else {
+          setView(defaultView);
+        }
+      } else {
+        setView(defaultView);
+      }
     } else {
       setView(defaultView);
     }
@@ -1080,7 +1307,11 @@ export function BattleArena({
     // Status/stages/Choice son del Pokémon activo: al entrar limpio el badge
     // (si el contraataque aplica estado, playEvent lo setea de nuevo).
     setPlayerStatus(null);
+    setPlayerStages(NO_STAGES);
+    setPlayerStats(result.newPlayer.stats);
     setChoiceLockMoveId(null);
+    setChargeMoveId(null);
+    setVanishedSide((prev) => (prev === "player" ? null : prev));
     setParty((prev) =>
       prev.map((m) => {
         if (m.instanceId === outgoing.instanceId) {
@@ -1217,6 +1448,7 @@ export function BattleArena({
   const emptyPlayerSlots = Math.max(0, 6 - party.length);
   const emptyOpponentSlots = Math.max(0, 6 - opponentParty.length);
   const commandExpanded = view !== "menu";
+  const lastLogEntry = log[log.length - 1];
 
   return (
     <div className="flex flex-1 flex-col min-h-0 overflow-hidden px-2 py-1 sm:px-margin-mobile md:px-margin-desktop md:py-4 max-md:h-[calc(100dvh-6.5rem)] max-md:max-h-[calc(100dvh-6.5rem)] md:h-[calc(100dvh-4rem)] md:max-h-[calc(100dvh-4rem)]">
@@ -1269,6 +1501,7 @@ export function BattleArena({
           {/* Arena */}
           <div
             ref={arenaFieldRef}
+            data-battle-speed={battleSpeed}
             className={`battle-arena-field relative mx-auto w-full max-w-[44rem] overflow-hidden rounded-xl border border-white/10 flex-1 min-h-0 md:min-h-[380px] ${
               arenaFlash ? "arena-type-flash" : ""
             }`}
@@ -1279,7 +1512,12 @@ export function BattleArena({
               } as CSSProperties
             }
           >
-            <BattleAudioControls bgmKind={bgmKind} />
+            {/* Mute + velocidad en una sola pastilla horizontal: ocupan menos
+                alto bajo la placa del rival y no se pelean por la misma columna. */}
+            <div className="absolute top-16 left-2 z-30 flex items-center gap-1 md:top-[4.5rem] md:left-3">
+              <BattleAudioControls bgmKind={bgmKind} />
+              <BattleSpeedControl />
+            </div>
             {/* Plates sit opposite their sprite (FireRed layout): foe plate
                 top-left vs foe sprite top-right, player plate bottom-right vs
                 player sprite bottom-left. Same-corner plates were covering the
@@ -1291,6 +1529,7 @@ export function BattleArena({
               currentHp={wildHp}
               maxHp={wildMaxHp}
               status={wildStatus}
+              stages={wildStages}
               align="left"
             />
             <HpPlate
@@ -1300,6 +1539,7 @@ export function BattleArena({
               currentHp={playerHp}
               maxHp={playerMaxHp}
               status={playerStatus}
+              stages={playerStages}
               align="right"
             />
 
@@ -1430,7 +1670,7 @@ export function BattleArena({
                   />
                 </>
               )}
-              {activeWild.spriteUrl && (
+              {activeWild.spriteUrl && vanishedSide !== "wild" && (
                 <BattleSprite
                   speciesName={activeWild.speciesName}
                   facing="front"
@@ -1478,7 +1718,7 @@ export function BattleArena({
                   />
                 </>
               )}
-              {!playerHidden && activePlayer.spriteUrl && (
+              {!playerHidden && vanishedSide !== "player" && activePlayer.spriteUrl && (
                 <BattleSprite
                   speciesName={activePlayer.speciesName}
                   facing="back"
@@ -1546,15 +1786,26 @@ export function BattleArena({
         </div>
         </div>
 
+        {/* En submenús mobile el log completo cede espacio a los comandos, pero
+            quedarse sin ninguna referencia de lo que pasó es peor: sobrevive la
+            última línea. */}
+        {commandExpanded && lastLogEntry && (
+          <p className="md:hidden shrink-0 truncate rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] leading-snug text-white/80">
+            {lastLogEntry.text}
+          </p>
+        )}
+
         <div
           className={`grid min-w-0 gap-1 md:gap-2 min-h-0 shrink-0 items-stretch md:h-[13rem] md:max-h-[13rem] ${
             commandExpanded
-              ? "max-md:h-[11rem] max-md:max-h-[11rem]"
+              ? "max-md:h-[12rem] max-md:max-h-[12rem]"
               : "max-md:h-[7.5rem] max-md:max-h-[7.5rem]"
           } ${commandExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2"}`}
         >
           {/* Log — en submenús mobile cede espacio a los comandos */}
           <div
+            aria-live="polite"
+            aria-label={t("battleLogLabel")}
             className={`glass-panel rounded-xl border border-white/10 px-2 py-1.5 md:px-4 md:py-3 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 bg-black/35 h-full min-h-0 min-w-0 ${
               commandExpanded ? "hidden md:flex" : ""
             }`}
@@ -1575,9 +1826,12 @@ export function BattleArena({
               </p>
             ))}
             {view === "menu" && !isAnimating && outcome === "ongoing" && (
-              <p className="mt-auto pt-1 border-t border-dashed border-white/15 text-[10px] md:text-label-md font-bold text-on-surface leading-snug break-words [overflow-wrap:anywhere]">
-                {t("whatWillDo", { name: activePlayer.name.toUpperCase() })}
-              </p>
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-dashed border-white/15 pt-1">
+                <p className="text-[10px] md:text-label-md font-bold text-on-surface leading-snug break-words [overflow-wrap:anywhere]">
+                  {t("whatWillDo", { name: activePlayer.name.toUpperCase() })}
+                </p>
+                <TurnOrderChip playerFirst={playerOutspeeds} />
+              </div>
             )}
             <div ref={logEndRef} />
           </div>
@@ -1636,9 +1890,11 @@ export function BattleArena({
               <MovesView
                 activePlayerName={activePlayer.name}
                 moves={activeMoves}
-                choiceLockMoveId={choiceLockMoveId}
+                choiceLockMoveId={chargeMoveId ?? choiceLockMoveId}
                 isAnimating={isAnimating}
                 effectivenessInfo={effectivenessInfo}
+                playerFirst={playerOutspeeds}
+                forecast={moveForecast}
                 onSelect={handleMove}
                 onBack={() => setView("menu")}
               />
@@ -1662,6 +1918,8 @@ export function BattleArena({
                 isAnimating={isAnimating}
                 mustSwitch={mustSwitch}
                 roster={teamRoster}
+                foeName={activeWild.name}
+                foeTypes={activeWild.types}
                 matchupInfo={switchMatchupInfo}
                 onSwitch={handleSwitchTo}
                 onBack={() => setView("menu")}
