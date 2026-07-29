@@ -1178,108 +1178,64 @@
     "breedingLocked": "Incubando"
   },
   "ranking": {
-    "eyebrow": "Centro competitivo",
     "title": "Ranking",
     "subtitle": "Competí contra entrenadores de todo el mundo.",
-    "you": "Vos",
-    "hero": {
-      "activePlayers": "Jugadores",
-      "pvpToday": "PvP hoy"
-    },
+    "you": "VOS",
     "boards": {
-      "trainers": {
-        "title": "Entrenadores",
-        "blurb": "Poder de equipo y medallas"
+      "combat_power": {
+        "title": "Poder de combate",
+        "blurb": "Quién tiene el equipo más poderoso."
       },
       "pvp": {
         "title": "PvP",
-        "blurb": "Rating Elo y récord"
+        "blurb": "Quién tiene el mejor rendimiento competitivo (Elo)."
       },
-      "collectors": {
-        "title": "Coleccionistas",
-        "blurb": "Especies únicas y shinies"
-      },
-      "pokedex": {
-        "title": "Pokédex",
-        "blurb": "Mejores ejemplares por especie"
+      "ranked": {
+        "title": "Clasificatoria",
+        "blurb": "Modalidad por temporadas — próximamente."
       }
     },
     "filters": {
-      "title": "Filtros",
-      "global": "Mundial",
+      "global": "Global",
       "myCountry": "Mi país",
-      "country": "País",
-      "species": "Especie",
-      "apply": "Ver",
-      "friendsSoon": "Amigos llega pronto — por ahora Mundial y País."
+      "friends": "Amigos",
+      "friendsSoon": "Amigos — próximamente"
     },
-    "cols": {
-      "power": "Poder",
-      "badges": "Medallas",
-      "rating": "Rating",
-      "tier": "Liga",
-      "record": "V-D",
-      "winrate": "% victorias",
-      "owned": "Especies",
-      "shinies": "Shinies",
-      "completion": "Completado",
-      "level": "Nivel",
-      "shiny": "Shiny"
+    "metric": {
+      "pc": "PC {value}",
+      "medals": "{count, plural, =1 {1 medalla} other {# medallas}}",
+      "elo": "Elo {value}",
+      "pvpRecord": "{wins}V · {losses}D · {winrate}%"
     },
     "yourCard": {
       "title": "Tu posición"
     },
-    "yourPowerBadges": "Poder {power} · {badges} medallas",
-    "yourPvp": "Rating {rating} · {winrate}% de victorias",
-    "yourCollectors": "{owned} especies · {completion}% completado",
-    "yourPokedex": "Poder {power} · Nv. {level}",
+    "yourCombatPower": "PC {power} · {badges, plural, =1 {1 medalla} other {# medallas}}",
+    "yourPvp": "Elo {rating} · {wins}V · {losses}D · {winrate}%",
     "podium": {
       "title": "Top 3"
     },
     "list": {
-      "title": "Clasificación"
+      "title": "Clasificación",
+      "scopeGlobal": "Top global",
+      "scopeCountry": "Top país"
     },
-    "season": {
-      "title": "Pulso de temporada",
-      "players": "Jugadores en el filtro",
-      "topElo": "Elo más alto",
-      "leader": "Líder",
-      "powerDist": "Distribución de poder",
-      "buckets": {
-        "low": "Bajo",
-        "mid": "Medio",
-        "high": "Alto",
-        "elite": "Élite"
-      },
-      "coming": "Próximo: más shinies, más ricos, speedrun de gimnasios y amigos.",
-      "board": "Tabla activa"
+    "ranked": {
+      "eyebrow": "Clasificatoria",
+      "title": "Próximamente",
+      "body": "Estamos preparando una modalidad competitiva por temporadas.",
+      "detail": "La posición se definirá mediante divisiones, puntos y recompensas de temporada."
     },
     "pvpEmpty": {
-      "title": "La temporada PvP aún no arrancó acá",
-      "body": "Sé el primero en subir al ladder. Cada duelo suma rating Elo.",
+      "title": "Nadie cumple el mínimo todavía",
+      "body": "Hace falta al menos {min} partidas PvP para entrar al ranking. Cada duelo actualiza tu Elo.",
       "cta": "Ir a PvP"
     },
-    "badgeCount": "{count, plural, =1 {1 medalla} other {# medallas}}",
-    "power": "Poder {value}",
-    "levelShort": "Nv. {level}",
-    "yourRank": "Tu posición: #{rank} de {total}",
-    "speciesCaption": "{count, plural, =1 {1 {name} registrado} other {# {name} registrados}}",
-    "emptyTrainers": "Todavía no hay entrenadores en este ranking.",
-    "emptyCollectors": "Nadie tiene colección todavía en este segmento.",
-    "emptyPokedex": "Todavía no hay especies para comparar.",
-    "emptySpecies": "Nadie tiene un {name} todavía en este segmento.",
+    "emptyCombatPower": "Todavía no hay entrenadores en este ranking.",
     "pagination": {
       "prev": "Anterior",
       "next": "Siguiente",
       "pageOf": "Página {page} de {total}"
-    },
-    "emptyLadder": "Todavía nadie jugó partidos PvP en este segmento.",
-    "yourLadderRank": "Tu posición en el ladder: #{rank} · {rating} pts",
-    "record": "{wins}V - {losses}D",
-    "views": {
-      "trainers": "Entrenadores",
-      "species": "Pokédex",
-      "ladder": "PvP"
     }
   },
   "clans": {

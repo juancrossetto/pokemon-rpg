@@ -141,7 +141,7 @@ export function MobileChrome({
     const root = bottomNavRef.current;
     if (!root) return;
 
-    function measure() {
+    function measureIndicator() {
       const node = root?.querySelector<HTMLElement>("[data-active]");
       if (!node || !root) {
         setIndicator(null);
@@ -159,10 +159,69 @@ export function MobileChrome({
       });
     }
 
+    /*
+      Publica la altura de la nav SIN safe-area (el padding CSS lo suma).
+      También publica el gap innerHeight−clientHeight: el scroll máximo del
+      documento usa innerHeight, y sin ese extra el padding no alcanza para
+      sacar el contenido de detrás de la nav.
+    */
+    function publishNavHeight() {
+      if (!root) return;
+      const styles = getComputedStyle(root);
+      const padBottom = Number.parseFloat(styles.paddingBottom) || 0;
+      const height = Math.ceil(root.getBoundingClientRect().height - padBottom);
+      const gap = Math.max(
+        0,
+        Math.round(window.innerHeight - document.documentElement.clientHeight),
+      );
+      if (height > 0) {
+        document.documentElement.style.setProperty("--bottom-nav-h", `${height}px`);
+      }
+      document.documentElement.style.setProperty("--vv-gap", `${gap}px`);
+    }
+
+    /*
+      Si innerHeight > clientHeight, `bottom:0` deja la nav fuera de la
+      pantalla visible. Compensamos con bottom inset (sin acortar al
+      visualViewport: eso generaba un hueco negro bajo la barra).
+    */
+    function syncBottomInset() {
+      if (!root) return;
+      const inset = Math.max(
+        0,
+        Math.round(window.innerHeight - document.documentElement.clientHeight),
+      );
+      root.style.bottom = inset > 0 ? `${inset}px` : "";
+    }
+
+    function measure() {
+      syncBottomInset();
+      measureIndicator();
+      publishNavHeight();
+    }
+
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(root);
-    return () => observer.disconnect();
+    observer.observe(document.documentElement);
+    window.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("scroll", measure);
+    // Algunos browsers (y DevTools) cambian inner/client sin disparar resize
+    // al primer paint; un par de ticks cubre ese hueco.
+    const t1 = window.setTimeout(measure, 50);
+    const t2 = window.setTimeout(measure, 300);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("scroll", measure);
+      document.documentElement.style.removeProperty("--bottom-nav-h");
+      document.documentElement.style.removeProperty("--vv-gap");
+      root.style.bottom = "";
+    };
   }, [pathname, moreOpen, primary.length, showMore]);
 
   useEffect(() => {

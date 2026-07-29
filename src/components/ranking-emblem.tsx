@@ -10,9 +10,9 @@ export type RankingEmblemPokemon = {
 export type RankingInsigniaTier = "gold" | "silver" | "bronze" | "common";
 
 const SIZES = {
-  sm: { box: 52, art: 30, label: false },
-  md: { box: 88, art: 52, label: true },
-  lg: { box: 128, art: 76, label: true },
+  sm: { box: 40, art: 24, label: false },
+  md: { box: 72, art: 44, label: true },
+  lg: { box: 96, art: 58, label: true },
 } as const;
 
 export type RankingEmblemSize = keyof typeof SIZES;
@@ -25,10 +25,10 @@ const FRAME_SRC: Record<RankingInsigniaTier, string> = {
 };
 
 const GLOW_FILTER: Record<RankingInsigniaTier, string> = {
-  gold: "drop-shadow(0 0 14px rgba(245,197,66,0.55))",
-  silver: "drop-shadow(0 0 12px rgba(200,210,230,0.45))",
-  bronze: "drop-shadow(0 0 12px rgba(196,138,74,0.5))",
-  common: "drop-shadow(0 0 10px rgba(140,160,190,0.35))",
+  gold: "drop-shadow(0 0 10px rgba(245,197,66,0.45))",
+  silver: "drop-shadow(0 0 6px rgba(200,210,230,0.28))",
+  bronze: "drop-shadow(0 0 6px rgba(196,138,74,0.3))",
+  common: "drop-shadow(0 0 4px rgba(140,160,190,0.18))",
 };
 
 /** Hexágono flat-top alineado al hueco interior de las insignias. */

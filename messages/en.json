@@ -1178,108 +1178,64 @@
     "breedingLocked": "Breeding"
   },
   "ranking": {
-    "eyebrow": "Competitive Hub",
     "title": "Leaderboards",
     "subtitle": "Compete with trainers from around the world.",
-    "you": "You",
-    "hero": {
-      "activePlayers": "Players",
-      "pvpToday": "PvP today"
-    },
+    "you": "YOU",
     "boards": {
-      "trainers": {
-        "title": "Trainers",
-        "blurb": "Team power and badges"
+      "combat_power": {
+        "title": "Combat Power",
+        "blurb": "Who has the strongest active team."
       },
       "pvp": {
         "title": "PvP",
-        "blurb": "Elo rating and record"
+        "blurb": "Who has the best competitive performance (Elo)."
       },
-      "collectors": {
-        "title": "Collectors",
-        "blurb": "Unique species and shinies"
-      },
-      "pokedex": {
-        "title": "Pokédex",
-        "blurb": "Strongest specimens by species"
+      "ranked": {
+        "title": "Ranked",
+        "blurb": "Seasonal competitive mode — coming soon."
       }
     },
     "filters": {
-      "title": "Filters",
       "global": "Global",
       "myCountry": "My country",
-      "country": "Country",
-      "species": "Species",
-      "apply": "View",
-      "friendsSoon": "Friends coming soon — Global and Country for now."
+      "friends": "Friends",
+      "friendsSoon": "Friends — coming soon"
     },
-    "cols": {
-      "power": "Power",
-      "badges": "Badges",
-      "rating": "Rating",
-      "tier": "League",
-      "record": "W-L",
-      "winrate": "Winrate",
-      "owned": "Owned",
-      "shinies": "Shinies",
-      "completion": "Completion",
-      "level": "Level",
-      "shiny": "Shiny"
+    "metric": {
+      "pc": "CP {value}",
+      "medals": "{count, plural, =1 {1 badge} other {# badges}}",
+      "elo": "Elo {value}",
+      "pvpRecord": "{wins}W · {losses}L · {winrate}%"
     },
     "yourCard": {
       "title": "Your ranking"
     },
-    "yourPowerBadges": "Power {power} · {badges} badges",
-    "yourPvp": "Rating {rating} · {winrate}% winrate",
-    "yourCollectors": "{owned} species · {completion}% completion",
-    "yourPokedex": "Power {power} · Lv. {level}",
+    "yourCombatPower": "CP {power} · {badges, plural, =1 {1 badge} other {# badges}}",
+    "yourPvp": "Elo {rating} · {wins}W · {losses}L · {winrate}%",
     "podium": {
       "title": "Top 3"
     },
     "list": {
-      "title": "Leaderboard"
+      "title": "Standings",
+      "scopeGlobal": "Top global",
+      "scopeCountry": "Top country"
     },
-    "season": {
-      "title": "Season pulse",
-      "players": "Players in scope",
-      "topElo": "Highest Elo",
-      "leader": "Sample leader",
-      "powerDist": "Power distribution",
-      "buckets": {
-        "low": "Low",
-        "mid": "Mid",
-        "high": "High",
-        "elite": "Elite"
-      },
-      "coming": "Next up: Most Shinies, Richest, Gym Speedrun, and Friends.",
-      "board": "Active board"
+    "ranked": {
+      "eyebrow": "Ranked",
+      "title": "Coming soon",
+      "body": "We’re preparing a seasonal competitive mode.",
+      "detail": "Placement will use divisions, points, and season rewards."
     },
     "pvpEmpty": {
-      "title": "PvP season hasn’t started here yet",
-      "body": "Be the first on the ladder. Every duel updates your Elo rating.",
+      "title": "No one meets the minimum yet",
+      "body": "You need at least {min} PvP matches to appear on this board. Every duel updates your Elo.",
       "cta": "Go to PvP"
     },
-    "badgeCount": "{count, plural, =1 {1 badge} other {# badges}}",
-    "power": "Power {value}",
-    "levelShort": "Lv. {level}",
-    "yourRank": "Your rank: #{rank} of {total}",
-    "speciesCaption": "{count, plural, =1 {1 {name} registered} other {# {name} registered}}",
-    "emptyTrainers": "No trainers on this leaderboard yet.",
-    "emptyCollectors": "Nobody has a collection in this segment yet.",
-    "emptyPokedex": "No species to compare yet.",
-    "emptySpecies": "Nobody owns a {name} in this segment yet.",
+    "emptyCombatPower": "No trainers on this leaderboard yet.",
     "pagination": {
       "prev": "Previous",
       "next": "Next",
       "pageOf": "Page {page} of {total}"
-    },
-    "emptyLadder": "Nobody has played PvP matches in this segment yet.",
-    "yourLadderRank": "Your ladder rank: #{rank} · {rating} pts",
-    "record": "{wins}W - {losses}L",
-    "views": {
-      "trainers": "Trainers",
-      "species": "Pokédex",
-      "ladder": "PvP"
     }
   },
   "clans": {

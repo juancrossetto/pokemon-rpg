@@ -435,7 +435,9 @@ export function CampaignJourney({
           <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
         </aside>
 
-        <div className="min-w-0">
+        {/* En mobile el panel de zona va arriba (order) para que no quede
+            enterrado bajo el timeline + bottom nav al cargar. */}
+        <div className="min-w-0 order-2 lg:order-none">
           {chapter && (
             <>
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">
@@ -494,7 +496,13 @@ export function CampaignJourney({
           </nav>
         </div>
 
-        <div className="lg:sticky lg:top-20 lg:self-start">
+        {/*
+          `min-w-0` igual que la columna del timeline. Los items de un grid
+          arrancan con `min-width: auto`, así que sin esto la columna no puede
+          encoger por debajo del contenido más ancho que tenga adentro y empuja
+          el track. La columna de al lado ya lo llevaba; ésta quedó sin él.
+        */}
+        <div className="min-w-0 order-1 lg:order-none lg:sticky lg:top-20 lg:self-start">
           {zone && (
             <ZonePanel
               zone={zone}

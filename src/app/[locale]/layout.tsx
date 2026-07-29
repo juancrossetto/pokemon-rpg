@@ -55,6 +55,12 @@ export async function generateMetadata({
 
 export const viewport: Viewport = {
   themeColor: "#0a0806",
+  /* Necesario para que env(safe-area-inset-*) sea > 0 con status bar
+     translucida; sin esto la bottom nav queda bajo el home indicator. */
+  viewportFit: "cover",
+  /* Evita que el chrome del teclado/URL deje fixed bottom fuera del
+     visual viewport en mobile Chromium. */
+  interactiveWidget: "resizes-content",
 };
 
 export default async function LocaleLayout({
@@ -94,7 +100,7 @@ export default async function LocaleLayout({
           html={`${bootSplashEarlyScript()}(${iconsReadyEarlyScript()})();`}
         />
       </head>
-      <body className="relative flex min-h-full flex-col overflow-x-hidden">
+      <body className="relative flex min-h-full flex-col overflow-x-clip">
         <BootSplashMarkup />
         <BootSplashController />
 
