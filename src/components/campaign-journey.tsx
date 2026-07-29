@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useTransition, type ReactElement } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { CampaignPrimaryObjective } from "@/components/campaign-primary-objective";
@@ -17,15 +17,12 @@ import { RARITY_ORDER, type Rarity } from "@/lib/campaign/rarity";
 import { itemSpriteUrl } from "@/lib/item-sprites";
 import {
   FootprintIcon,
-  GymIcon,
   MapIcon,
   MasteryIcon,
   PokeballIcon,
   PokedexIcon,
-  TrainerIcon,
   ZoneIcon,
   type ZoneIconKind,
-  type ZoneIconProps,
 } from "@/components/zone-icons";
 import { gymBadgeImageUrl } from "@/lib/gym-art";
 import type { Chapter } from "@/lib/campaign/chapters";
@@ -151,11 +148,10 @@ const KIND_STYLE: Record<
   },
 };
 
-/** Cada objetivo con su ícono: tres círculos idénticos no decían nada. */
-const OBJECTIVE_ICON: Record<ZoneObjectiveId, (p: ZoneIconProps) => ReactElement> = {
-  stages: FootprintIcon,
-  pokedex: PokedexIcon,
-  trainers: TrainerIcon,
+/** Iconos de objetivo: PNG de juego, sin tile de fondo. */
+const OBJECTIVE_ICON_SRC: Record<Exclude<ZoneObjectiveId, "trainers">, string> = {
+  stages: "/nav/beast-icon.png",
+  pokedex: "/nav/collection-icon.png",
 };
 
 function kindOf(zone: MapLocation): CampaignLocationKind {
@@ -178,6 +174,8 @@ export type GymRequirement = {
   /** Nivel máximo del equipo del líder — referencia para el jugador. */
   recommendedLevel: number;
   badgeName: string;
+  /** Tipo del gimnasio → `/gyms/badges/{type}.png`. */
+  badgeType: string;
   gymId: string;
   /** Sprite del líder. `null` si el gimnasio no tiene arte asociado. */
   leaderSpriteUrl: string | null;
@@ -501,6 +499,9 @@ export function CampaignJourney({
               farmingStageId={farmingStageId}
               pending={pending}
               gymRequirement={gymRequirements[zone.id]}
+              gymWon={
+                zone.gymOrder != null && earnedGymOrders.includes(zone.gymOrder)
+              }
               teamMaxLevel={summary.teamMaxLevel}
               unlockRequirements={getZoneUnlockRequirements(zone.id, progress)}
               onTravel={() => travelTo(zone.id)}
@@ -651,14 +652,15 @@ function ZoneRow({
   const kind = kindOf(zone);
   const style = KIND_STYLE[kind];
   const isGym = kind === "gym";
-  const done = nodeStatus === "completed";
+  const gymWon = isGym && (nodeStatus === "completed" || nodeStatus === "reward_pending");
+  const done = nodeStatus === "completed" || gymWon;
   const compact = done && !selected && !isFarming;
   const caught = zone.encounters.filter((e) => e.caught).length;
   const pct = zone.totalStages > 0 ? (zone.completedStages / zone.totalStages) * 100 : 0;
-  const pathPct = isGym ? (chapter.completed ? 100 : 0) : pct;
+  const pathPct = isGym ? (chapter.completed || gymWon ? 100 : 0) : pct;
 
   const requirementsLeft =
-    isGym && zone.unlocked && !chapter.completed
+    isGym && zone.unlocked && !gymWon
       ? [
           chapter.stagesDone < chapter.stagesTotal
             ? t("reqStagesDetail", {
@@ -675,13 +677,15 @@ function ZoneRow({
   const statusLabel =
     nodeStatus === "locked"
       ? t("nodeLocked")
-      : nodeStatus === "completed"
-        ? t("nodeCompleted")
-        : nodeStatus === "in_progress"
-          ? t("nodeInProgress")
-          : nodeStatus === "current"
-            ? t("nodeCurrent")
-            : null;
+      : gymWon
+        ? t("nodeWon")
+        : nodeStatus === "completed"
+          ? t("nodeCompleted")
+          : nodeStatus === "in_progress"
+            ? t("nodeInProgress")
+            : nodeStatus === "current"
+              ? t("nodeCurrent")
+              : null;
 
   return (
     <li className="relative flex gap-3">
@@ -704,13 +708,22 @@ function ZoneRow({
           aria-current={selected || isFarming ? "step" : undefined}
         >
           {zone.unlocked && isGym && gymRequirement?.leaderSpriteUrl ? (
-            <Image
-              src={gymRequirement.leaderSpriteUrl}
-              alt=""
-              width={40}
-              height={40}
-              className="h-9 w-9 object-contain [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
-            />
+            <span className="relative">
+              <Image
+                src={gymRequirement.leaderSpriteUrl}
+                alt=""
+                width={40}
+                height={40}
+                className={`h-9 w-9 object-contain [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] ${
+                  gymWon ? "opacity-80" : ""
+                }`}
+              />
+              {gymWon ? (
+                <span className="absolute -bottom-0.5 -right-0.5 grid h-4 w-4 place-items-center rounded-full bg-emerald-400 text-surface">
+                  <span className="material-symbols-outlined text-[11px]! leading-none">check</span>
+                </span>
+              ) : null}
+            </span>
           ) : zone.unlocked ? (
             done && !isGym ? (
               <span className="material-symbols-outlined text-[20px]!">task_alt</span>
@@ -775,7 +788,16 @@ function ZoneRow({
             {t(zone.nameKey)}
           </h3>
           {statusLabel && (
-            <span className="rounded-full border border-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant">
+            <span
+              className={`inline-flex items-center gap-0.5 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                gymWon || (done && !isGym)
+                  ? "border-emerald-400/40 bg-emerald-400/12 text-emerald-400"
+                  : "border-white/15 text-on-surface-variant"
+              }`}
+            >
+              {(gymWon || (done && !isGym)) && (
+                <span className="material-symbols-outlined text-[11px]! leading-none">check</span>
+              )}
               {statusLabel}
             </span>
           )}
@@ -793,6 +815,11 @@ function ZoneRow({
             </span>
           )}
           {done && !isGym && compact && (
+            <span className="material-symbols-outlined text-[16px]! text-emerald-400">
+              task_alt
+            </span>
+          )}
+          {gymWon && compact && (
             <span className="material-symbols-outlined text-[16px]! text-emerald-400">
               task_alt
             </span>
@@ -867,6 +894,7 @@ function ZonePanel({
   farmingStageId,
   pending,
   gymRequirement,
+  gymWon = false,
   teamMaxLevel,
   unlockRequirements,
   onTravel,
@@ -880,6 +908,7 @@ function ZonePanel({
   farmingStageId: string;
   pending: boolean;
   gymRequirement?: GymRequirement;
+  gymWon?: boolean;
   teamMaxLevel: number;
   unlockRequirements: CampaignRequirement[];
   onTravel: () => void;
@@ -1003,35 +1032,85 @@ function ZonePanel({
       ) : (
         <>
           {/* Objetivos: principal vs opcionales */}
-          <p className="mt-4 mb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+          <p className="mt-4 mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
             {t("objectives")}
           </p>
           <ul className="flex flex-col gap-1.5">
-            {objectives.map((obj) => (
-              <Objective
-                key={obj.id}
-                state={obj}
-                roleLabel={obj.id === "stages" ? t("objRoleMain") : t("objRoleOptional")}
-                label={t(`obj_${obj.id}`)}
-                claimLabel={t("claim")}
-                claimedLabel={t("claimed")}
-                pending={pending}
-                onClaim={() => onClaim(obj.id)}
-              />
-            ))}
-            {isGym && (
-              <li className="flex items-center gap-2 rounded-lg border border-tertiary/25 bg-tertiary/[0.06] px-2.5 py-1.5 text-label-sm">
-                <GymIcon className="h-4 w-4 shrink-0 text-tertiary" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-tertiary">
-                    {t("objRoleRequirement")}
-                  </p>
-                  <p className="truncate text-on-surface-variant">{t("objBadge")}</p>
-                </div>
-                <span className="font-mono text-[11px] text-tertiary">
-                  {gymRequirement ? `Lv. ${gymRequirement.recommendedLevel}` : ""}
-                </span>
-              </li>
+            {objectives.map((obj) => {
+              const trainerSprite =
+                obj.id === "trainers"
+                  ? (zone.trainers.find((tr) => !tr.defeated)?.spriteUrl ??
+                    zone.trainers[0]?.spriteUrl ??
+                    null)
+                  : null;
+              return (
+                <Objective
+                  key={obj.id}
+                  state={obj}
+                  isMain={obj.id === "stages"}
+                  roleLabel={obj.id === "stages" ? t("objRoleMain") : t("objRoleOptional")}
+                  label={t(`obj_${obj.id}`)}
+                  claimLabel={t("claim")}
+                  claimedLabel={t("claimed")}
+                  pending={pending}
+                  trainerSpriteUrl={trainerSprite}
+                  onClaim={() => onClaim(obj.id)}
+                />
+              );
+            })}
+            {isGym && gymRequirement && (
+              gymWon ? (
+                <li className="flex items-center gap-2.5 rounded-xl border border-emerald-400/35 bg-emerald-400/[0.08] px-2.5 py-2">
+                  <span className="relative grid h-11 w-11 shrink-0 place-items-center" aria-hidden>
+                    <Image
+                      src={gymBadgeImageUrl(gymRequirement.badgeType)}
+                      alt=""
+                      width={44}
+                      height={44}
+                      className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(52,211,153,0.35)]"
+                    />
+                    <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-emerald-400 text-surface">
+                      <span className="material-symbols-outlined text-[11px]! leading-none">
+                        check
+                      </span>
+                    </span>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-400">
+                      {t("nodeWon")}
+                    </p>
+                    <p className="truncate text-label-sm text-on-surface">
+                      {gymRequirement.badgeName || t("objBadge")}
+                    </p>
+                  </div>
+                  <span className="material-symbols-outlined text-[20px]! text-emerald-400">
+                    task_alt
+                  </span>
+                </li>
+              ) : (
+                <li className="flex items-center gap-2.5 rounded-xl border border-tertiary/30 bg-tertiary/[0.07] px-2.5 py-2">
+                  <span className="relative grid h-11 w-11 shrink-0 place-items-center" aria-hidden>
+                    <Image
+                      src={gymBadgeImageUrl(gymRequirement.badgeType)}
+                      alt=""
+                      width={44}
+                      height={44}
+                      className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(242,192,0,0.35)]"
+                    />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-tertiary">
+                      {t("objRoleRequirement")}
+                    </p>
+                    <p className="truncate text-label-sm text-on-surface">
+                      {gymRequirement.badgeName || t("objBadge")}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-md border border-tertiary/25 bg-black/25 px-2 py-1 font-mono text-[11px] text-tertiary">
+                    {`Lv. ${gymRequirement.recommendedLevel}`}
+                  </span>
+                </li>
+              )
             )}
           </ul>
 
@@ -1047,37 +1126,54 @@ function ZonePanel({
                   </span>
                 </span>
               </p>
-              <ul className="flex flex-wrap gap-1.5">
+              <ul className="flex flex-wrap gap-2">
                 {zone.encounters.map((mon) => (
                   <li
                     key={mon.speciesId}
-                    title={mon.seen ? `${mon.name} · ${t(`rarity.${mon.rarity}`)}` : "???"}
-                    className={`relative flex h-11 w-11 items-center justify-center rounded-lg border bg-surface-container-high/50 ${
-                      mon.seen ? RARITY_STYLE[mon.rarity] : "border-white/10"
-                    }`}
+                    title={`${mon.name}${mon.seen ? ` · ${t(`rarity.${mon.rarity}`)}` : ""}`}
+                    className="flex w-14 flex-col items-center gap-1"
                   >
-                    {mon.seen ? (
+                    <span
+                      className={`relative flex h-12 w-12 items-center justify-center rounded-xl border bg-surface-container-high/50 ${
+                        mon.caught
+                          ? RARITY_STYLE[mon.rarity]
+                          : mon.seen
+                            ? RARITY_STYLE[mon.rarity]
+                            : "border-white/10"
+                      }`}
+                    >
                       <Image
                         src={mon.spriteUrl}
                         alt={mon.name}
-                        width={40}
-                        height={40}
-                        className={`h-9 w-9 object-contain ${
-                          mon.caught ? "" : "opacity-60 grayscale"
+                        width={44}
+                        height={44}
+                        className={`h-10 w-10 object-contain ${
+                          mon.caught
+                            ? ""
+                            : mon.seen
+                              ? "opacity-60 grayscale"
+                              : "brightness-0 opacity-40"
                         }`}
                       />
-                    ) : (
-                      // Sin descubrir: la silueta de la pokébola en vez de un
-                      // signo de pregunta suelto, que se leía como un error.
-                      <PokeballIcon className="h-6 w-6 text-on-surface-variant/25" />
-                    )}
-                    {mon.caught && (
-                      <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-400 text-surface">
-                        <span className="material-symbols-outlined text-[10px]! leading-none">
-                          check
+                      {mon.caught && (
+                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-400 text-surface">
+                          <span className="material-symbols-outlined text-[11px]! leading-none">
+                            check
+                          </span>
                         </span>
-                      </span>
-                    )}
+                      )}
+                    </span>
+                    <span
+                      className={`max-w-full truncate text-center text-[9px] capitalize leading-tight ${
+                        mon.caught
+                          ? "text-on-surface"
+                          : mon.seen
+                            ? "text-on-surface-variant"
+                            : "text-on-surface-variant/70"
+                      }`}
+                    >
+                      {mon.name}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -1269,96 +1365,127 @@ function rarityText(rarity: Rarity): string {
 
 function Objective({
   state,
+  isMain,
   roleLabel,
   label,
   claimLabel,
   claimedLabel,
   pending,
+  trainerSpriteUrl,
   onClaim,
 }: {
   state: ZoneObjectiveState;
+  isMain: boolean;
   roleLabel: string;
   label: string;
   claimLabel: string;
   claimedLabel: string;
   pending: boolean;
+  trainerSpriteUrl?: string | null;
   onClaim: () => void;
 }) {
-  const Icon = OBJECTIVE_ICON[state.id];
   const pct = state.target > 0 ? Math.min(100, (state.current / state.target) * 100) : 0;
+  const iconSrc =
+    state.id === "trainers"
+      ? (trainerSpriteUrl ?? "/nav/battle-icon.png")
+      : OBJECTIVE_ICON_SRC[state.id];
+
+  const shell = state.claimable
+    ? "border-tertiary/55 bg-tertiary/[0.12] shadow-[0_0_18px_rgba(242,192,0,0.12)]"
+    : state.done
+      ? "border-emerald-400/35 bg-emerald-400/[0.08]"
+      : isMain
+        ? "border-pokeball-red/25 bg-pokeball-red/[0.06]"
+        : "border-white/10 bg-black/25";
 
   return (
-    <li
-      className={`rounded-lg px-2.5 py-2 text-label-sm transition ${
-        state.claimable
-          ? "border border-tertiary/50 bg-tertiary/10 text-on-surface"
-          : state.done
-            ? "border border-emerald-400/30 bg-emerald-400/[0.07] text-on-surface"
-            : "text-on-surface-variant"
-      }`}
-    >
-      <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/60">
-        {roleLabel}
-      </p>
-      <div className="flex items-start gap-2">
-        <Icon
-          className={`mt-px h-4 w-4 shrink-0 ${
-            state.done ? "text-emerald-400" : "text-on-surface-variant/70"
-          }`}
-        />
-        <span className="min-w-0 flex-1 leading-snug">{label}</span>
-        <span className="shrink-0 font-mono text-[11px] tabular-nums text-on-surface">
-          {state.current}/{state.target}
+    <li className={`rounded-xl border px-2 py-2 transition ${shell}`}>
+      <div className="flex items-center gap-2">
+        <span className="relative grid h-9 w-9 shrink-0 place-items-center" aria-hidden>
+          <Image
+            src={iconSrc}
+            alt=""
+            width={36}
+            height={36}
+            className={`h-8 w-8 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] ${
+              state.id === "trainers" ? "[image-rendering:pixelated]" : ""
+            } ${state.done && state.id === "trainers" ? "opacity-70 grayscale" : ""}`}
+            unoptimized={state.id === "trainers"}
+          />
+          {state.done ? (
+            <span className="absolute -right-0.5 -top-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-emerald-400 text-surface">
+              <span className="material-symbols-outlined text-[10px]! leading-none">check</span>
+            </span>
+          ) : null}
         </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`rounded px-1.5 py-px text-[8px] font-bold uppercase tracking-wider ${
+                isMain
+                  ? "border border-pokeball-red/55 text-pokeball-red"
+                  : "border border-white/15 text-on-surface-variant/80"
+              }`}
+            >
+              {roleLabel}
+            </span>
+            <p className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight text-on-surface">
+              {label}
+            </p>
+            <span className="shrink-0 font-mono text-[12px] tabular-nums text-white">
+              {state.current}
+              <span className="text-on-surface-variant">/{state.target}</span>
+            </span>
+          </div>
+
+          {!state.done ? (
+            <div className="mt-1 h-1 overflow-hidden rounded-full bg-black/40">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  state.claimable ? "bg-tertiary" : isMain ? "bg-pokeball-red/80" : "bg-white/40"
+                }`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      {!state.done && (
-        <div className="ml-6 mt-1.5 h-0.5 overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-full bg-white/35 transition-all duration-500"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      )}
-
-      <div className="ml-6 mt-1.5 flex items-center justify-between gap-2">
-        {/* La recompensa es el gancho: el objeto se ve y la moneda va en el
-            mismo dorado que el contador del header. */}
-        <span
+      <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-white/8 pt-1.5">
+        <div
           title={`${state.reward.quantity}× ${state.reward.itemName}`}
-          className={`inline-flex items-center gap-1.5 text-[11px] ${
-            state.claimed ? "opacity-40" : ""
-          }`}
+          className={`flex items-center gap-1.5 ${state.claimed ? "opacity-45" : ""}`}
         >
-          <span className="inline-flex items-center gap-0.5 text-on-surface-variant">
+          <span className="inline-flex h-8 min-w-[4.25rem] items-center justify-center gap-1 rounded-md border border-white/12 bg-black/35 px-1.5">
             <Image
               src={itemSpriteUrl(state.reward.itemName)}
               alt=""
               width={22}
               height={22}
-              className="h-[22px] w-[22px] object-contain"
+              className="h-[22px] w-[22px] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
             />
-            ×{state.reward.quantity}
+            <span className="font-mono text-[11px] font-semibold tabular-nums text-on-surface">
+              ×{state.reward.quantity}
+            </span>
           </span>
-          <span className="inline-flex items-center gap-0.5 font-mono text-electric-yellow">
-            <span className="material-symbols-outlined text-[14px]!">paid</span>
+          <span className="inline-flex h-8 min-w-[4.25rem] items-center justify-center gap-1 rounded-md border border-electric-yellow/30 bg-electric-yellow/10 px-1.5 font-mono text-[11px] font-semibold tabular-nums text-electric-yellow">
+            <span className="material-symbols-outlined text-[16px]!">paid</span>
             {state.reward.coins}
           </span>
-        </span>
+        </div>
 
         {state.claimable ? (
           <button
             type="button"
             disabled={pending}
             onClick={onClaim}
-            // Relleno sólido: es lo único con fondo lleno del panel, no necesita
-            // un color propio para pedir el click.
-            className="shrink-0 rounded-md bg-tertiary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-surface transition hover:bg-tertiary/85 disabled:opacity-40"
+            className="shrink-0 rounded-md bg-tertiary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-surface shadow-[0_4px_14px_rgba(242,192,0,0.28)] transition hover:bg-tertiary/85 disabled:opacity-40"
           >
             {claimLabel}
           </button>
         ) : state.claimed ? (
-          <span className="shrink-0 text-[10px] uppercase text-on-surface-variant/50">
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-emerald-400/80">
             {claimedLabel}
           </span>
         ) : null}

@@ -202,7 +202,7 @@ export function TeamRoster({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 lg:grid-cols-3">
       {displayMembers.map((member, i) =>
         member ? (
           <PokemonCard

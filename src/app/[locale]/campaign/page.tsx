@@ -53,6 +53,7 @@ export default async function CampaignPage({
         id: true,
         order: true,
         name: true,
+        type: true,
         badgeName: true,
         leaderName: true,
         isElite: true,
@@ -78,6 +79,7 @@ export default async function CampaignPage({
     requirementByLocationId[zone.id] = {
       gymId: matched.id,
       badgeName: matched.badgeName,
+      badgeType: matched.type,
       recommendedLevel: Math.max(...matched.team.map((p) => p.level), 1),
       // Sprite pixel del líder: identifica el gimnasio mejor que una medalla
       // genérica repetida en los ocho nodos.

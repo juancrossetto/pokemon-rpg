@@ -62,7 +62,7 @@ export default async function TeamPage({
 
   if (tab === "pc") {
     return (
-      <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8">
+      <div className="flex-1 px-margin-mobile py-3 md:px-margin-desktop md:py-8">
         <div className="mx-auto max-w-6xl">
           {tabBar}
           <PcTab locale={locale} userId={userId} query={query} />
@@ -249,27 +249,29 @@ export default async function TeamPage({
       : null;
 
   return (
-    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8">
+    <div className="flex-1 px-margin-mobile py-3 md:px-margin-desktop md:py-8">
       <div className="mx-auto max-w-6xl">
         {tabBar}
-        <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="mb-0.5 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90">
+        <header className="mb-3 flex flex-col gap-2.5 md:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+          <div className="min-w-0">
+            <p className="mb-0.5 hidden items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90 sm:flex">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               {t("activeSquad")}
             </p>
-            <h1 className="text-headline-lg text-white tracking-tight">{t("title")}</h1>
-            <p className="mt-0.5 text-label-md text-on-surface-variant">
+            <h1 className="text-[1.35rem] font-semibold tracking-tight text-white md:text-headline-lg">
+              {t("title")}
+            </h1>
+            <p className="mt-0.5 text-[12px] leading-snug text-on-surface-variant md:text-label-md">
               {t("rosterSummary", { ready: healthyCount, total: pokemon.length })}
               {totalUnspent > 0 && (
-                <span className="ml-2 text-tertiary">
+                <span className="ml-1.5 text-tertiary md:ml-2">
                   · {t("unspentPoints", { count: totalUnspent })}
                 </span>
               )}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-start gap-2">
+          <div className="grid w-full grid-cols-2 items-start gap-2 sm:flex sm:w-auto sm:flex-wrap">
             <HealButton
               locale={locale}
               needsHealing={needsHealing}
@@ -277,10 +279,11 @@ export default async function TeamPage({
               rushCost={healRushCost(hurtCount)}
               coins={user.coins}
               teamMaxLevel={pokemon.reduce((max, p) => Math.max(max, p.level), 0)}
+              stretch
             />
             <Link
               href="/team?tab=pc"
-              className="inline-flex items-center gap-1.5 rounded-md border border-white/12 bg-white/[0.03] px-4 py-2 text-label-sm text-on-surface transition hover:border-white/25 hover:bg-white/[0.06]"
+              className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-md border border-white/12 bg-white/[0.03] px-3 py-2 text-[13px] text-on-surface transition hover:border-white/25 hover:bg-white/[0.06] sm:w-auto sm:px-4 sm:text-label-sm"
             >
               <span className="material-symbols-outlined text-[16px]!">storage</span>
               {t("manage")}

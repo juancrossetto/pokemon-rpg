@@ -804,20 +804,12 @@ async function BoardShell({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* La card no lleva `overflow-hidden`: el borde eléctrico se deforma unos
-          píxeles hacia afuera y recortarlo lo aplana justo en los bordes, que
-          es donde se mira. */}
       {me && myRank !== null && (
         <section
-          className="rank-hero relative rounded-xl p-4"
+          className="rank-hero relative overflow-hidden rounded-xl px-5 py-5"
           data-tier={tierForRank(myRank)}
         >
-          {/* Fuera del podio el borde se deforma la mitad: el chisporroteo
-              fuerte queda reservado a los tres primeros. */}
-          <ElectricBorder
-            id="rank-electric-displace"
-            scale={myRank <= 3 ? 14 : 7}
-          />
+          <ElectricBorder id="rank-electric-displace" />
           <p className="relative z-[1] text-[10px] font-mono uppercase tracking-[0.18em] text-white/45">
             {t("yourCard.title")}
           </p>
