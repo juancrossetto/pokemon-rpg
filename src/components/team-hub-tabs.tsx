@@ -131,7 +131,7 @@ export function TeamHubTabs({
   return (
     <div
       ref={rootRef}
-      className="relative mb-5 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1"
+      className="relative mb-3 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1 md:mb-5"
     >
       {indicator ? (
         <span
@@ -156,7 +156,7 @@ export function TeamHubTabs({
             href={entry.href}
             data-active={isActive || undefined}
             aria-current={isActive ? "page" : undefined}
-            className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-label-sm font-semibold transition-colors duration-300 ${
+            className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold transition-colors duration-300 md:px-3 md:py-2 md:text-label-sm ${
               isActive
                 ? "text-white"
                 : "text-on-surface-variant hover:bg-white/[0.05] hover:text-on-surface"

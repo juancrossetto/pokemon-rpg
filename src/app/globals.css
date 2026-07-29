@@ -4725,15 +4725,10 @@ html.boot-splash-pending .boot-splash {
    desenfocados que le dan cuerpo de luz, y un resplandor ambiente. Todas
    heredan el radio del contenedor. */
 .electric-border > span:not(:first-of-type),
-.electric-border__stroke-svg,
 .electric-border__stroke {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-}
-
-.electric-border__stroke-svg {
-  pointer-events: none;
 }
 
 .electric-border__stroke {
@@ -4763,12 +4758,13 @@ html.boot-splash-pending .boot-splash {
   transform: scale(1.03);
 }
 
-/* Mobile / iOS: SMIL dentro de filtros no se re-renderiza; pulsamos luz. */
+/* reduced-motion / CSS mode: glow limpio sin displacement. */
 .electric-border--fallback .electric-border__stroke {
   filter: none !important;
   box-shadow:
     0 0 6px color-mix(in srgb, var(--electric) 55%, transparent),
-    0 0 14px color-mix(in srgb, var(--electric-light) 35%, transparent);
+    0 0 14px color-mix(in srgb, var(--electric-light) 35%, transparent),
+    0 0 28px color-mix(in srgb, var(--electric) 18%, transparent);
   animation: electric-stroke-flicker 2.6s ease-in-out infinite;
 }
 
@@ -4889,44 +4885,13 @@ html.boot-splash-pending .boot-splash {
   }
 }
 
-/* Touch sin JS: mismo fallback por media query. */
-@media (hover: none) and (pointer: coarse) {
-  .electric-border:not(.electric-border--fallback) .electric-border__stroke-svg {
-    display: none;
-  }
-
-  .electric-border:not(.electric-border--fallback) .electric-border__stroke {
-    filter: none !important;
-    box-shadow:
-      0 0 6px color-mix(in srgb, var(--electric) 55%, transparent),
-      0 0 14px color-mix(in srgb, var(--electric-light) 35%, transparent);
-    animation: electric-stroke-flicker 2.6s ease-in-out infinite;
-  }
-
-  .electric-border:not(.electric-border--fallback) .electric-border__halo--near {
-    animation: electric-halo-flicker-near 2.1s ease-in-out infinite;
-  }
-
-  .electric-border:not(.electric-border--fallback) .electric-border__halo--far {
-    animation: electric-halo-flicker-far 3.4s ease-in-out infinite;
-  }
-
-  .electric-border:not(.electric-border--fallback) .electric-border__ambient {
-    animation: electric-ambient-breathe 4.2s ease-in-out infinite;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  /* Sin el filtro el trazo queda quieto y limpio: el efecto es la animación
-     del ruido, así que apagarlo es apagar el movimiento. */
-  .electric-border__stroke-svg {
-    display: none;
-  }
-
   .electric-border__stroke {
     filter: none !important;
     animation: none !important;
-    box-shadow: none !important;
+    box-shadow:
+      0 0 6px color-mix(in srgb, var(--electric) 45%, transparent),
+      0 0 12px color-mix(in srgb, var(--electric-light) 25%, transparent) !important;
   }
 
   .electric-border__halo--near,
@@ -4938,5 +4903,9 @@ html.boot-splash-pending .boot-splash {
 
   .electric-border__halo--far {
     opacity: 0.22;
+  }
+
+  .electric-border__spark {
+    display: none;
   }
 }

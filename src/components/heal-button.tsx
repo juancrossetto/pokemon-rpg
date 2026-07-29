@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, useTransition, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
@@ -7,6 +8,19 @@ import { healTeam } from "@/actions/heal-team";
 import { HEAL_FREE_UNTIL_LEVEL, minutesLeft } from "@/lib/healing";
 import { playBattleSfx } from "@/lib/battle-sfx";
 import { announceCoinDelta } from "@/lib/coin-fx";
+
+function ChanseyIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <Image
+      src="/nav/chansey-icon.png"
+      alt=""
+      width={28}
+      height={28}
+      className={`shrink-0 object-contain ${className}`}
+      aria-hidden
+    />
+  );
+}
 
 /**
  * Centro Pokémon: gratis cuando pasó el cooldown, o pago para saltearlo.
@@ -21,6 +35,7 @@ export function HealButton({
   rushCost,
   coins,
   teamMaxLevel,
+  stretch = false,
 }: {
   locale: string;
   needsHealing: boolean;
@@ -29,6 +44,8 @@ export function HealButton({
   coins: number;
   /** Nivel del Pokémon más alto del equipo. */
   teamMaxLevel: number;
+  /** Ancho completo (toolbar mobile del hub Equipo). */
+  stretch?: boolean;
 }) {
   const t = useTranslations("team");
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +58,13 @@ export function HealButton({
   const noviceFree = teamMaxLevel <= HEAL_FREE_UNTIL_LEVEL;
   const onCooldown = !noviceFree && cooldownMsLeft > 0;
   const canPay = coins >= rushCost;
+  const shell = stretch
+    ? "flex w-full min-w-0 flex-col items-stretch gap-1 sm:w-auto sm:items-end"
+    : "flex flex-col items-end gap-1";
+  const btnBase = stretch
+    ? "inline-flex w-full min-h-10 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-[13px] font-semibold sm:w-auto sm:justify-start sm:px-4 sm:text-label-sm"
+    : "inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-label-sm font-semibold";
+  const hintAlign = stretch ? "text-center sm:text-right" : "text-right";
 
   function run(rush: boolean) {
     setError(null);
@@ -58,18 +82,18 @@ export function HealButton({
 
   if (!needsHealing) {
     return (
-      <div className="flex flex-col items-end gap-1">
+      <div className={shell}>
         <button
           type="button"
           disabled
           title={noviceFree ? t("healNoviceFreeHint", { level: HEAL_FREE_UNTIL_LEVEL }) : undefined}
-          className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-md bg-surface-container-high px-4 py-2 text-label-sm font-semibold text-on-surface-variant"
+          className={`${btnBase} cursor-not-allowed bg-surface-container-high text-on-surface-variant`}
         >
-          <span className="material-symbols-outlined text-[16px]!">healing</span>
+          <ChanseyIcon className="h-5 w-5 opacity-80" />
           {t("autoHeal")}
         </button>
         {noviceFree ? (
-          <span className="whitespace-nowrap text-[10px] font-medium text-emerald-400/90">
+          <span className={`whitespace-nowrap text-[10px] font-medium text-emerald-400/90 ${hintAlign}`}>
             {t("healNoviceFree", { level: HEAL_FREE_UNTIL_LEVEL })}
           </span>
         ) : null}
@@ -78,14 +102,14 @@ export function HealButton({
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className={shell}>
       {onCooldown ? (
         <button
           type="button"
           disabled={pending || !canPay}
           onClick={() => run(true)}
           title={t("healRushHint", { minutes: minutesLeft(cooldownMsLeft) })}
-          className="inline-flex items-center gap-1.5 rounded-md bg-electric-yellow/15 border border-electric-yellow/40 px-4 py-2 text-label-sm font-semibold text-electric-yellow transition hover:bg-electric-yellow/25 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`${btnBase} border border-electric-yellow/40 bg-electric-yellow/15 text-electric-yellow transition hover:bg-electric-yellow/25 disabled:cursor-not-allowed disabled:opacity-50`}
         >
           <span className="material-symbols-outlined text-[16px]!">bolt</span>
           {t("healRush")}
@@ -100,26 +124,30 @@ export function HealButton({
           disabled={pending}
           onClick={() => run(false)}
           title={noviceFree ? t("healNoviceFreeHint", { level: HEAL_FREE_UNTIL_LEVEL }) : undefined}
-          className="inline-flex items-center gap-1.5 rounded-md bg-pokeball-red px-4 py-2 text-label-sm font-semibold text-white shadow-[0_6px_18px_rgba(238,21,21,0.25)] transition hover:bg-pokeball-red/90 active:scale-[0.98] disabled:opacity-60"
+          className={`${btnBase} bg-pokeball-red text-white shadow-[0_6px_18px_rgba(238,21,21,0.25)] transition hover:bg-pokeball-red/90 active:scale-[0.98] disabled:opacity-60`}
         >
-          <span className="material-symbols-outlined text-[16px]!">healing</span>
+          <ChanseyIcon className="h-6 w-6" />
           {t("autoHeal")}
         </button>
       )}
 
       {noviceFree ? (
-        <span className="whitespace-nowrap text-[10px] font-medium text-emerald-400/90">
+        <span className={`whitespace-nowrap text-[10px] font-medium text-emerald-400/90 ${hintAlign}`}>
           {t("healNoviceFree", { level: HEAL_FREE_UNTIL_LEVEL })}
         </span>
       ) : onCooldown ? (
-        <span className="whitespace-nowrap text-[10px] text-on-surface-variant">
+        <span className={`whitespace-nowrap text-[10px] text-on-surface-variant ${hintAlign}`}>
           {t("healCooldown", { minutes: minutesLeft(cooldownMsLeft) })}
         </span>
       ) : (
-        <span className="whitespace-nowrap text-[10px] text-on-surface-variant">{t("healFree")}</span>
+        <span className={`whitespace-nowrap text-[10px] text-on-surface-variant ${hintAlign}`}>
+          {t("healFree")}
+        </span>
       )}
 
-      {error && <span className="text-[10px] text-error">{t(`healErrors.${error}`)}</span>}
+      {error && (
+        <span className={`text-[10px] text-error ${hintAlign}`}>{t(`healErrors.${error}`)}</span>
+      )}
 
       {mounted && fxKey > 0
         ? createPortal(<CenterHealFx key={fxKey} />, document.body)

@@ -96,7 +96,7 @@ export function PokemonShowcaseCard({
     >
       {overlay}
 
-      <div className="relative flex min-h-[156px] w-full flex-col items-center justify-end px-3 pb-0 pt-8 text-left">
+      <div className="relative flex min-h-[120px] w-full flex-col items-center justify-end px-3 pb-0 pt-7 text-left sm:min-h-[156px] sm:pt-8">
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -104,7 +104,7 @@ export function PokemonShowcaseCard({
           }}
         />
         <div
-          className="pointer-events-none absolute left-1/2 top-[40%] h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.08]"
+          className="pointer-events-none absolute left-1/2 top-[40%] h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.08] sm:h-40 sm:w-40"
           style={{
             background:
               "radial-gradient(circle at 50% 50%, transparent 36%, currentColor 37%, currentColor 48%, transparent 49%)",
@@ -164,7 +164,7 @@ export function PokemonShowcaseCard({
           ) : null}
         </div>
 
-        <div className="relative z-[1] flex h-[128px] w-full items-end justify-center">
+        <div className="relative z-[1] flex h-[100px] w-full items-end justify-center sm:h-[128px]">
           <div
             className="absolute bottom-1 h-9 w-24 rounded-[100%] opacity-55 blur-xl transition group-hover:opacity-75"
             style={{ background: accent }}
@@ -177,7 +177,7 @@ export function PokemonShowcaseCard({
               width={128}
               height={128}
               className={[
-                "relative z-[1] h-32 w-32 object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.6)] transition duration-300",
+                "relative z-[1] h-[100px] w-[100px] object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.6)] transition duration-300 sm:h-32 sm:w-32",
                 interactive ? "group-hover:-translate-y-2 group-hover:scale-105" : "",
                 fainted ? "grayscale" : "",
                 spriteClassName,
