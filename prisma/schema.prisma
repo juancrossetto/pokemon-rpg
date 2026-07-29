@@ -67,6 +67,7 @@ model User {
   dailyRewardClaims  DailyRewardClaim[]
   weeklyRewardClaims WeeklyRewardClaim[]
   eventMissionClaims EventMissionClaim[]
+  achievementClaims  AchievementClaim[]
   rewardLedger       RewardLedger[]
   friendshipsAsA     Friendship[]         @relation("FriendshipA")
   friendshipsAsB     Friendship[]         @relation("FriendshipB")
@@ -1045,14 +1046,27 @@ model EventMissionClaim {
   @@index([userId, claimedAt])
 }
 
+/// Recompensa de un logro ya cobrada. El catálogo vive en código
+/// (`ACHIEVEMENTS`); acá solo se marca el cobro one-shot por id.
+model AchievementClaim {
+  userId        String
+  achievementId String
+  claimedAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+  @@index([userId, claimedAt])
+}
+
 /// Auditoría de entregas. Permite investigar un reclamo duplicado, una
 /// recompensa que no llegó o una diferencia de saldo sin reconstruirlo desde
 /// los logs. `payload` guarda las recompensas resueltas por el servidor.
 model RewardLedger {
   id        String   @id @default(cuid())
   userId    String
-  source    String // "daily" | "weekly" | "event_mission" | "pvp"
-  sourceRef String // "cycle-28:12" | "2026-W31:50" | "water-fest:catch-10"
+  source    String // "daily" | "weekly" | "event_mission" | "pvp" | "achievement"
+  sourceRef String // "cycle-28:12" | "2026-W31:50" | "water-fest:catch-10" | "firstSteps"
   payload   Json
   createdAt DateTime @default(now())
 

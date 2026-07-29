@@ -1,8 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useLocale } from "next-intl";
+import { useEffect, useState, useTransition } from "react";
+import { claimAchievement } from "@/actions/claim-achievement";
+import { RewardList } from "@/components/events/reward-chip";
 import { ProgressRail } from "@/components/trainer-profile-parts";
+import { announceCoinDelta } from "@/lib/coin-fx";
+import type { RewardDef } from "@/lib/events/rewards";
 import { gymBadgeImageUrl } from "@/lib/gym-art";
 import { uiSpriteUrl } from "@/lib/sprites";
 import type { Achievement, AchievementRarity, CollectionSlice } from "@/lib/trainer-profile";
@@ -24,6 +29,12 @@ export type VaultLabels = {
   noBadges: string;
   locked: string;
   earnedOn: string;
+  claim: string;
+  claiming: string;
+  claimAll: string;
+  claimed: string;
+  claimError: string;
+  rewardUnits: { coins: string; energy: string; gems: string };
   achievement: Record<string, { name: string; hint: string }>;
   collection: Record<string, string>;
   rarity: Record<string, string>;
@@ -49,7 +60,7 @@ const ACH_RARITY_TONE: Record<AchievementRarity, { ring: string; text: string }>
  */
 export function TrainerVault({
   badges,
-  achievements,
+  achievements: initialAchievements,
   collections,
   labels,
 }: {
@@ -58,7 +69,50 @@ export function TrainerVault({
   collections: CollectionSlice[];
   labels: VaultLabels;
 }) {
+  const locale = useLocale();
   const [tab, setTab] = useState<VaultTab>("badges");
+  const [achievements, setAchievements] = useState(initialAchievements);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [lastGranted, setLastGranted] = useState<RewardDef[] | null>(null);
+
+  useEffect(() => {
+    setAchievements(initialAchievements);
+  }, [initialAchievements]);
+
+  const claimableCount = achievements.filter((a) => a.claimable).length;
+
+  function markClaimed(ids: string[]) {
+    const set = new Set(ids);
+    setAchievements((prev) =>
+      prev
+        .map((a) =>
+          set.has(a.id)
+            ? { ...a, claimed: true, claimable: false }
+            : a,
+        )
+        .sort((a, b) => {
+          if (a.claimable !== b.claimable) return a.claimable ? -1 : 1;
+          if (a.unlocked !== b.unlocked) return a.unlocked ? -1 : 1;
+          return b.pct - a.pct;
+        }),
+    );
+  }
+
+  function claim(id: string | "all") {
+    if (pending) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await claimAchievement(locale, id);
+      if (!result.ok) {
+        setError(labels.claimError);
+        return;
+      }
+      if (result.coinsDelta !== 0) announceCoinDelta(result.coinsDelta);
+      markClaimed(result.claimedIds);
+      setLastGranted(result.granted);
+    });
+  }
 
   const tabs: { id: VaultTab; label: string; count: number }[] = [
     { id: "badges", label: labels.tabBadges, count: badges.length },
@@ -101,7 +155,15 @@ export function TrainerVault({
       <div className="p-3">
         {tab === "badges" && <BadgeCase badges={badges} labels={labels} />}
         {tab === "achievements" && (
-          <AchievementList achievements={achievements} labels={labels} />
+          <AchievementList
+            achievements={achievements}
+            labels={labels}
+            claimableCount={claimableCount}
+            pending={pending}
+            error={error}
+            lastGranted={lastGranted}
+            onClaim={claim}
+          />
         )}
         {tab === "collections" && (
           <CollectionGrid collections={collections} labels={labels} />
@@ -153,67 +215,128 @@ function BadgeCase({ badges, labels }: { badges: VaultBadge[]; labels: VaultLabe
 function AchievementList({
   achievements,
   labels,
+  claimableCount,
+  pending,
+  error,
+  lastGranted,
+  onClaim,
 }: {
   achievements: Achievement[];
   labels: VaultLabels;
+  claimableCount: number;
+  pending: boolean;
+  error: string | null;
+  lastGranted: RewardDef[] | null;
+  onClaim: (id: string | "all") => void;
 }) {
   return (
-    <ul className="flex flex-col gap-1.5">
-      {achievements.map((ach, i) => {
-        const tone = ACH_RARITY_TONE[ach.rarity];
-        const text = labels.achievement[ach.id];
-        return (
-          <li
-            key={ach.id}
-            className={`tp-tap flex items-center gap-2.5 rounded-xl border p-2 transition ${
-              ach.unlocked
-                ? "border-white/[0.1] bg-white/[0.04]"
-                : "border-white/[0.04] bg-white/[0.012]"
-            }`}
-          >
-            <div
-              className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-              style={{
-                background: ach.unlocked ? `${tone.ring}22` : "rgba(255,255,255,0.03)",
-                boxShadow: ach.unlocked ? `inset 0 0 0 1px ${tone.ring}` : undefined,
-              }}
-            >
-              <span
-                className={`material-symbols-outlined text-[18px]! ${
-                  ach.unlocked ? tone.text : "text-white/20"
-                }`}
-              >
-                {ach.unlocked ? ach.icon : "lock"}
-              </span>
-            </div>
+    <div className="flex flex-col gap-2">
+      {claimableCount >= 2 && (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => onClaim("all")}
+          className="self-end rounded-lg border border-pokeball-red/40 bg-pokeball-red/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white transition hover:bg-pokeball-red/25 disabled:opacity-50"
+        >
+          {pending
+            ? labels.claiming
+            : labels.claimAll.replace("{count}", String(claimableCount))}
+        </button>
+      )}
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <p
-                  className={`truncate text-[12px] font-bold ${
-                    ach.unlocked ? "text-white" : "text-white/45"
+      {lastGranted && lastGranted.length > 0 && (
+        <div className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
+          <RewardList
+            rewards={lastGranted}
+            size="sm"
+            unitLabels={{
+              coins: labels.rewardUnits.coins,
+              energy: labels.rewardUnits.energy,
+            }}
+          />
+        </div>
+      )}
+
+      {error && (
+        <p className="text-[10px] text-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      <ul className="flex flex-col gap-1.5">
+        {achievements.map((ach, i) => {
+          const tone = ACH_RARITY_TONE[ach.rarity];
+          const text = labels.achievement[ach.id];
+          return (
+            <li
+              key={ach.id}
+              className={`tp-tap flex items-center gap-2.5 rounded-xl border p-2 transition ${
+                ach.claimable
+                  ? "border-pokeball-red/35 bg-pokeball-red/[0.08]"
+                  : ach.unlocked
+                    ? "border-white/[0.1] bg-white/[0.04]"
+                    : "border-white/[0.04] bg-white/[0.012]"
+              }`}
+            >
+              <div
+                className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                style={{
+                  background: ach.unlocked ? `${tone.ring}22` : "rgba(255,255,255,0.03)",
+                  boxShadow: ach.unlocked ? `inset 0 0 0 1px ${tone.ring}` : undefined,
+                }}
+              >
+                <span
+                  className={`material-symbols-outlined text-[18px]! ${
+                    ach.unlocked ? tone.text : "text-white/20"
                   }`}
                 >
-                  {text?.name ?? ach.id}
-                </p>
-                <span className="shrink-0 font-mono text-[9px] tabular-nums text-on-surface-variant/60">
-                  {Math.min(ach.current, ach.goal)}/{ach.goal}
+                  {ach.unlocked ? ach.icon : "lock"}
                 </span>
               </div>
-              <p className="mb-1 truncate text-[9px] text-on-surface-variant/50">
-                {text?.hint ?? ""}
-              </p>
-              <ProgressRail
-                pct={ach.pct}
-                color={ach.unlocked ? tone.ring : "rgba(255,255,255,0.25)"}
-                height={3}
-                delayMs={i * 45}
-              />
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p
+                    className={`truncate text-[12px] font-bold ${
+                      ach.unlocked ? "text-white" : "text-white/45"
+                    }`}
+                  >
+                    {text?.name ?? ach.id}
+                  </p>
+                  <span className="shrink-0 font-mono text-[9px] tabular-nums text-on-surface-variant/60">
+                    {Math.min(ach.current, ach.goal)}/{ach.goal}
+                  </span>
+                </div>
+                <p className="mb-1 truncate text-[9px] text-on-surface-variant/50">
+                  {text?.hint ?? ""}
+                </p>
+                <ProgressRail
+                  pct={ach.pct}
+                  color={ach.unlocked ? tone.ring : "rgba(255,255,255,0.25)"}
+                  height={3}
+                  delayMs={i * 45}
+                />
+              </div>
+
+              {ach.claimable ? (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => onClaim(ach.id)}
+                  className="shrink-0 rounded-md border border-pokeball-red/50 bg-pokeball-red/20 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white disabled:opacity-50"
+                >
+                  {pending ? labels.claiming : labels.claim}
+                </button>
+              ) : ach.claimed ? (
+                <span className="shrink-0 text-[8px] font-bold uppercase tracking-wide text-white/35">
+                  {labels.claimed}
+                </span>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

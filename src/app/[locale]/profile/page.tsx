@@ -71,7 +71,7 @@ export default async function ProfilePage({
   const userId = session.user.id;
   await redirectIfInBattle(userId, locale);
 
-  const [user, team, badges, counts, recentCatches, recentDefeats, totalGyms] =
+  const [user, team, badges, counts, recentCatches, recentDefeats, totalGyms, achievementClaims] =
     await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
@@ -161,6 +161,10 @@ export default async function ProfilePage({
       // así que incluirlos dejaría el rango Campeón fuera de alcance para
       // siempre —el denominador nunca se alcanzaría—.
       prisma.gym.count({ where: { isElite: false } }),
+      prisma.achievementClaim.findMany({
+        where: { userId },
+        select: { achievementId: true },
+      }),
     ]);
 
   if (!user) {
@@ -220,6 +224,9 @@ export default async function ProfilePage({
     topLevel: levelAgg._max.level ?? 0,
     power: teamPowerTotal,
   };
+
+  const claimedAchievementIds = achievementClaims.map((c) => c.achievementId);
+  const achievements = buildAchievements(stats, claimedAchievementIds);
 
   const rank = rankProgress(stats.badges, totalGyms);
   const title = trainerTitle(stats);
@@ -485,7 +492,7 @@ export default async function ProfilePage({
                 accent: typeColor(b.gym.type),
                 earnedAt: dateFmt.format(b.earnedAt),
               }))}
-              achievements={buildAchievements(stats)}
+              achievements={achievements}
               collections={collections}
               labels={{
                 tabBadges: t("tabs.badges"),
@@ -494,8 +501,18 @@ export default async function ProfilePage({
                 noBadges: t("noBadges"),
                 locked: t("locked"),
                 earnedOn: t("earnedOn"),
+                claim: t("achievements.claim"),
+                claiming: t("achievements.claiming"),
+                claimAll: t("achievements.claimAll"),
+                claimed: t("achievements.claimed"),
+                claimError: t("achievements.claimError"),
+                rewardUnits: {
+                  coins: t("achievements.rewardCoins"),
+                  energy: t("achievements.rewardEnergy"),
+                  gems: t("achievements.rewardGems"),
+                },
                 achievement: Object.fromEntries(
-                  buildAchievements(stats).map((a) => [
+                  achievements.map((a) => [
                     a.id,
                     { name: t(`achievements.${a.id}.name`), hint: t(`achievements.${a.id}.hint`) },
                   ]),

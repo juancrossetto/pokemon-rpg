@@ -2192,7 +2192,15 @@
       "veteran": {
         "name": "Veterano",
         "hint": "Llevá un Pokémon a nivel 60"
-      }
+      },
+      "claim": "Reclamar",
+      "claiming": "…",
+      "claimAll": "Reclamar todos ({count})",
+      "claimed": "Cobrado",
+      "claimError": "No se pudo reclamar. Probá de nuevo.",
+      "rewardCoins": "monedas",
+      "rewardEnergy": "energía",
+      "rewardGems": "gemas"
     }
   },
   "friends": {

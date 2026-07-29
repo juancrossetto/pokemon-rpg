@@ -7,10 +7,9 @@
  * Mismo motivo por el que existen `rarity.ts` y `evolution-readiness.ts`.
  *
  * TODO lo de acá se deriva de datos que el jugador realmente generó. No hay
- * modelo `Achievement` ni campo `rank` en el schema: son una capa de lectura
- * sobre contadores auténticos (medallas, capturas, shinies, victorias). La
- * alternativa —inventar números para llenar la pantalla— daría un perfil que
- * se ve terminado y miente sobre el progreso del jugador.
+ * campo `rank` en el schema: son una capa de lectura sobre contadores
+ * auténticos (medallas, capturas, shinies, victorias). El cobro one-shot de
+ * recompensas vive en `AchievementClaim` + `claimAchievement`.
  *
  * Lo que la spec pedía y NO está acá porque el dato no existe en el schema:
  * amistad, horas jugadas, rachas, incursiones y estrellas de rareza por
@@ -182,6 +181,10 @@ export type Achievement = AchievementDef & {
   current: number;
   pct: number;
   unlocked: boolean;
+  /** Ya cobró la recompensa one-shot. */
+  claimed: boolean;
+  /** Desbloqueado y todavía sin cobrar. */
+  claimable: boolean;
 };
 
 /**
@@ -190,12 +193,26 @@ export type Achievement = AchievementDef & {
  * mostrando lo conseguido y sigue con lo que está a un paso, que es lo que
  * invita a seguir jugando.
  */
-export function buildAchievements(stats: TrainerStats): Achievement[] {
+export function buildAchievements(
+  stats: TrainerStats,
+  claimedIds: Iterable<string> = [],
+): Achievement[] {
+  const claimed = claimedIds instanceof Set ? claimedIds : new Set(claimedIds);
   return ACHIEVEMENTS.map((def) => {
     const current = Math.max(0, stats[def.metric] ?? 0);
     const pct = def.goal > 0 ? Math.min(1, current / def.goal) : 0;
-    return { ...def, current, pct, unlocked: current >= def.goal };
+    const unlocked = current >= def.goal;
+    const isClaimed = claimed.has(def.id);
+    return {
+      ...def,
+      current,
+      pct,
+      unlocked,
+      claimed: isClaimed,
+      claimable: unlocked && !isClaimed,
+    };
   }).sort((a, b) => {
+    if (a.claimable !== b.claimable) return a.claimable ? -1 : 1;
     if (a.unlocked !== b.unlocked) return a.unlocked ? -1 : 1;
     return b.pct - a.pct;
   });

@@ -2192,7 +2192,15 @@
       "veteran": {
         "name": "Veterano",
         "hint": "Leve um Pokémon ao nível 60"
-      }
+      },
+      "claim": "Resgatar",
+      "claiming": "…",
+      "claimAll": "Resgatar todos ({count})",
+      "claimed": "Resgatado",
+      "claimError": "Não foi possível resgatar. Tente de novo.",
+      "rewardCoins": "moedas",
+      "rewardEnergy": "energia",
+      "rewardGems": "gemas"
     }
   },
   "friends": {
