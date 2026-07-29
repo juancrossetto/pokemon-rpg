@@ -44,23 +44,23 @@ export function CampaignPrimaryObjective({
 
   return (
     <section
-      className={`glass-panel rounded-xl border bg-gradient-to-br p-3.5 sm:p-4 ${
+      className={`glass-panel rounded-xl border bg-gradient-to-br p-3 sm:p-3.5 ${
         gymReady
           ? "border-tertiary/45 from-tertiary/[0.12] to-transparent shadow-[0_0_28px_rgba(242,192,0,0.18)]"
-          : "border-electric-yellow/25 from-electric-yellow/[0.07] to-transparent"
+          : "border-pokeball-red/25 from-pokeball-red/[0.06] to-transparent"
       }`}
     >
       <p
         className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
-          gymReady ? "text-tertiary" : "text-electric-yellow"
+          gymReady ? "text-tertiary" : "text-pokeball-red"
         }`}
       >
         {t("nextObjective")}
       </p>
-      <h2 className="mt-1 text-headline-md tracking-tight text-white">{title}</h2>
+      <h2 className="mt-0.5 text-headline-md tracking-tight text-white">{title}</h2>
 
       {action.progress && action.progress.target > 0 && (
-        <div className="mt-3">
+        <div className="mt-2">
           <div className="mb-1 flex items-center justify-between gap-2 text-label-sm text-on-surface-variant">
             <span>{t("objectiveProgress")}</span>
             <span className="font-mono text-on-surface">
@@ -69,7 +69,11 @@ export function CampaignPrimaryObjective({
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#ffcb05] to-[#ff8a00] transition-all duration-500 motion-reduce:transition-none"
+              className={`h-full rounded-full transition-all duration-500 motion-reduce:transition-none ${
+                gymReady
+                  ? "bg-gradient-to-r from-[#ffcb05] to-[#ff8a00]"
+                  : "bg-pokeball-red/80"
+              }`}
               style={{
                 width: `${Math.min(
                   100,
@@ -105,9 +109,9 @@ export function CampaignPrimaryObjective({
         </ul>
       )}
 
-      <div className="mt-4 flex sm:justify-end">
+      <div className="mt-3 flex">
         <div className="w-full sm:w-auto sm:min-w-[14rem]">
-          <GameCtaButton href={href} disabled={!action.enabled}>
+          <GameCtaButton href={href} disabled={!action.enabled} variant={gymReady ? "gold" : "red"}>
             {t(action.labelKey)}
           </GameCtaButton>
         </div>

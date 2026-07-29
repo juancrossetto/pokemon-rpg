@@ -37,10 +37,10 @@ export function HomeGameHub({
   isDev: boolean;
 }) {
   return (
-    <div className="relative flex-1 overflow-x-hidden">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
       <JourneyOnboarding />
-      <div className="relative px-margin-mobile py-3 md:px-margin-desktop md:py-5">
-        <div className="mx-auto flex max-w-3xl flex-col gap-4 xl:max-w-5xl">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col px-margin-mobile py-3 md:px-margin-desktop md:py-5">
+        <div className="mx-auto flex w-full min-h-0 min-w-0 max-w-3xl flex-1 flex-col gap-3 md:gap-4 xl:max-w-5xl">
           {events.showDailyModal && (
             <DailyGiftModal
               days={events.daily.days}
@@ -56,7 +56,11 @@ export function HomeGameHub({
               (Batalla, Tienda, Gimnasios) duplicaban destinos que ya están en
               la barra de navegación; Eventos volvió a la nav, que es donde
               corresponde que viva un destino. */}
-          {expedition ? <CurrentExpedition {...expedition} /> : null}
+          {expedition ? (
+            <div className="shrink-0">
+              <CurrentExpedition {...expedition} />
+            </div>
+          ) : null}
 
           <ActiveTeamStrip
             key={squad.layoutKey}
@@ -70,7 +74,11 @@ export function HomeGameHub({
             initialBagCounts={squad.bagCounts}
           />
 
-          {isDev && <CampaignDevPanel locale={locale} />}
+          {isDev && (
+            <div className="shrink-0">
+              <CampaignDevPanel locale={locale} />
+            </div>
+          )}
         </div>
       </div>
     </div>

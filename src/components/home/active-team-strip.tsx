@@ -21,10 +21,9 @@ import { anyEvolveReady } from "@/lib/evolution-readiness";
 import { CoachMark } from "@/components/journey-guidance";
 
 const TEAM_SIZE = 6;
-/** Ancho pensado para ~2 cards visibles + peek de la tercera en mobile. */
-const SLOT_WIDTH =
-  "w-[min(48vw,168px)] sm:w-[158px] md:w-[168px]";
-const SLOT_HEIGHT = "h-[188px] sm:h-[198px]";
+/** Strip (md+): cards fijas que desbordan → scroll. Grid (mobile): llena el alto. */
+const SLOT_BOX =
+  "h-full min-h-[8.75rem] w-full md:h-[200px] md:min-h-0 md:w-[176px] md:shrink-0 lg:h-[210px] lg:w-[188px]";
 
 function TeamSlot({
   member,
@@ -86,10 +85,14 @@ function TeamSlot({
 
   if (!member) {
     return (
-      <CoachMark storageKey="coach-team-slot" message={tUx("coachTeamSlot")}>
+      <CoachMark
+        storageKey="coach-team-slot"
+        message={tUx("coachTeamSlot")}
+        className="block h-full"
+      >
         <Link
           href="/team?tab=pc"
-          className={`team-slot team-slot--empty group flex ${SLOT_HEIGHT} ${SLOT_WIDTH} shrink-0 flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-white/15 bg-white/[0.02] text-on-surface-variant transition hover:border-white/28 hover:bg-white/[0.04]`}
+          className={`team-slot team-slot--empty group flex ${SLOT_BOX} flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-white/15 bg-white/[0.02] text-on-surface-variant transition hover:border-white/28 hover:bg-white/[0.04]`}
           aria-label={emptyLabel}
         >
           <div className="mb-1.5 flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.03] transition group-hover:border-white/30">
@@ -192,7 +195,7 @@ function TeamSlot({
             setOpen(true);
           }}
           aria-label={`${displayName}, ${member.levelLabel}`}
-          className={`team-card team-slot group relative flex ${SLOT_HEIGHT} ${SLOT_WIDTH} shrink-0 flex-col overflow-hidden rounded-[1.25rem] border text-left transition duration-300 active:scale-[0.97] ${
+          className={`team-card team-slot group relative flex ${SLOT_BOX} flex-col overflow-hidden rounded-[1.25rem] border text-left transition duration-300 active:scale-[0.97] ${
             isOver ? "ring-2 ring-pokeball-red/60 ring-offset-2 ring-offset-background" : ""
           } ${isDragging ? "opacity-40" : "hover:scale-[1.01]"} ${
             isLead || member.isFavorite
@@ -201,7 +204,7 @@ function TeamSlot({
           } ${fainted ? "opacity-80" : ""}`}
           style={{ "--type-accent": accent } as CSSProperties}
         >
-        <div className="relative flex min-h-0 flex-[1.15] flex-col items-center justify-end px-2 pb-0 pt-6">
+        <div className="relative flex min-h-0 flex-[1.4] flex-col items-center justify-end px-2 pb-0 pt-5 md:pt-6">
           <div
             className="pointer-events-none absolute inset-0"
             style={{
@@ -209,7 +212,7 @@ function TeamSlot({
             }}
           />
           <div
-            className="pointer-events-none absolute left-1/2 top-[44%] h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.08]"
+            className="pointer-events-none absolute left-1/2 top-[44%] h-[70%] max-h-32 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.08]"
             style={{
               background:
                 "radial-gradient(circle at 50% 50%, transparent 36%, currentColor 37%, currentColor 48%, transparent 49%)",
@@ -259,7 +262,7 @@ function TeamSlot({
             )}
           </div>
 
-          <div className="relative z-[1] flex h-[84px] w-full items-end justify-center sm:h-[90px]">
+          <div className="relative z-[1] flex h-full min-h-[4.25rem] w-full max-h-[7.75rem] items-end justify-center md:h-[90px] md:max-h-none md:min-h-0">
             <div
               className="absolute bottom-0 h-6 w-14 rounded-[100%] opacity-55 blur-md transition group-hover:opacity-75"
               style={{ background: accent }}
@@ -268,9 +271,9 @@ function TeamSlot({
               <Image
                 src={member.spriteUrl}
                 alt=""
-                width={104}
-                height={104}
-                className={`team-slot__sprite relative z-[1] h-[84px] w-[84px] object-contain drop-shadow-[0_10px_18px_rgba(0,0,0,0.65)] transition duration-300 group-hover:-translate-y-1 group-hover:scale-110 sm:h-[90px] sm:w-[90px] ${
+                width={120}
+                height={120}
+                className={`team-slot__sprite relative z-[1] h-[90%] w-auto max-h-[118px] max-w-[118px] object-contain drop-shadow-[0_10px_18px_rgba(0,0,0,0.65)] transition duration-300 group-hover:-translate-y-1 group-hover:scale-110 md:h-[90px] md:w-[90px] md:max-h-none md:max-w-none ${
                   fainted ? "grayscale" : ""
                 }`}
               />
@@ -282,8 +285,8 @@ function TeamSlot({
           </div>
         </div>
 
-        <div className="relative z-[1] flex flex-col bg-gradient-to-b from-transparent to-black/35 px-2 pb-2 pt-0.5">
-          <p className="truncate text-center text-[13px] font-bold capitalize tracking-tight text-white">
+        <div className="relative z-[1] flex shrink-0 flex-col bg-gradient-to-b from-transparent to-black/35 px-2 pb-2 pt-0.5">
+          <p className="truncate text-center text-[13px] font-bold capitalize tracking-tight text-white md:text-[13px]">
             {displayName}
           </p>
           <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
@@ -455,12 +458,18 @@ export function ActiveTeamStrip({
   initialBagCounts: SquadBagCounts;
 }) {
   const t = useTranslations("pc");
+  const tHome = useTranslations("home");
   const [members, setMembers] = useState(initialMembers);
   const [bagCounts, setBagCounts] = useState(initialBagCounts);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overSlot, setOverSlot] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(false);
+  const railRef = useRef<HTMLDivElement>(null);
+  const holdTimer = useRef<number | null>(null);
+  const holdInterval = useRef<number | null>(null);
 
   useEffect(() => {
     setMembers((prev) => {
@@ -481,6 +490,74 @@ export function ActiveTeamStrip({
   useEffect(() => {
     setBagCounts(initialBagCounts);
   }, [initialBagCounts]);
+
+  function updateScrollHints() {
+    const rail = railRef.current;
+    if (!rail) return;
+    const max = Math.max(0, rail.scrollWidth - rail.clientWidth);
+    setCanPrev(rail.scrollLeft > 2);
+    setCanNext(rail.scrollLeft < max - 2);
+  }
+
+  function scrollRail(dir: -1 | 1) {
+    const rail = railRef.current;
+    if (!rail) return;
+    const card = rail.querySelector<HTMLElement>("[data-team-rail-item]");
+    const step = card ? card.offsetWidth + 10 : Math.round(rail.clientWidth * 0.72);
+    rail.scrollBy({ left: dir * step, behavior: "smooth" });
+  }
+
+  function stopHold() {
+    if (holdTimer.current != null) {
+      window.clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
+    if (holdInterval.current != null) {
+      window.clearInterval(holdInterval.current);
+      holdInterval.current = null;
+    }
+  }
+
+  function startHold(dir: -1 | 1) {
+    stopHold();
+    scrollRail(dir);
+    holdTimer.current = window.setTimeout(() => {
+      holdInterval.current = window.setInterval(() => scrollRail(dir), 220);
+    }, 320);
+  }
+
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+
+    updateScrollHints();
+    rail.addEventListener("scroll", updateScrollHints, { passive: true });
+    const ro = new ResizeObserver(updateScrollHints);
+    ro.observe(rail);
+
+    function onWheel(e: WheelEvent) {
+      if (window.matchMedia("(max-width: 767px)").matches) return;
+      if (rail.scrollWidth <= rail.clientWidth) return;
+      // Trackpad horizontal nativo; rueda vertical → lateral.
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      rail.scrollLeft += e.deltaY;
+      updateScrollHints();
+    }
+    rail.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      rail.removeEventListener("scroll", updateScrollHints);
+      rail.removeEventListener("wheel", onWheel);
+      ro.disconnect();
+      stopHold();
+    };
+  }, []);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(updateScrollHints);
+    return () => cancelAnimationFrame(id);
+  }, [members, pending]);
 
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => members[i] ?? null);
 
@@ -509,9 +586,13 @@ export function ActiveTeamStrip({
     commit([...rest.slice(0, at), mon, ...rest.slice(at)]);
   }
 
+  const showRailNav = canPrev || canNext;
+
   return (
-    <section className={pending ? "opacity-90" : undefined}>
-      <div className="mb-2.5 flex items-center justify-between gap-2">
+    <section
+      className={`flex min-h-0 min-w-0 flex-1 flex-col md:flex-none ${pending ? "opacity-90" : ""}`}
+    >
+      <div className="mb-2 flex shrink-0 items-center justify-between gap-2 md:mb-2.5">
         <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-white">
           <Image
             src="/nav/joystick-icon.png"
@@ -533,86 +614,149 @@ export function ActiveTeamStrip({
       </div>
 
       {error ? (
-        <div className="mb-2 rounded-lg border border-error/40 bg-error-container/30 px-3 py-1.5 text-[12px] text-error">
+        <div className="mb-2 shrink-0 rounded-lg border border-error/40 bg-error-container/30 px-3 py-1.5 text-[12px] text-error">
           {t(`errors.${error}`)}
         </div>
       ) : null}
 
-      <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-2 pt-0.5 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {slots.map((member, i) => (
-          <div
-            key={member?.id ?? `empty-${i}`}
-            className="snap-start"
-            onDragOver={(e) => {
-              e.preventDefault();
-              setOverSlot(i);
-            }}
-            onDragLeave={() => setOverSlot((s) => (s === i ? null : s))}
-            onDrop={(e) => {
-              e.preventDefault();
-              dropOnSlot(i);
-              setDragId(null);
-              setOverSlot(null);
-            }}
-          >
-            <TeamSlot
-              member={member}
-              index={i}
-              leadLabel={leadLabel}
-              slotLabel={slotLabels[i] ?? String(i + 1)}
-              emptyLabel={emptySlotLabel}
-              bagCounts={bagCounts}
-              onBagChange={setBagCounts}
-              onHealed={(id, currentHp, maxHp) =>
-                setMembers((prev) =>
-                  prev.map((m) => (m.id === id ? { ...m, currentHp, maxHp } : m)),
-                )
-              }
-              onLeveledUp={(id, next) =>
-                setMembers((prev) =>
-                  prev.map((m) =>
-                    m.id === id
-                      ? {
-                          ...m,
-                          level: next.level,
-                          currentHp: next.currentHp,
-                          maxHp: next.maxHp,
-                          levelLabel: next.levelLabel,
-                          xpPct: 0,
-                        }
-                      : m,
-                  ),
-                )
-              }
-              onPpRestored={(id, next) =>
-                setMembers((prev) =>
-                  prev.map((m) => {
-                    if (m.id !== id) return m;
-                    return {
-                      ...m,
-                      moves: m.moves.map((slot) => {
-                        if (!slot) return slot;
-                        if (!next.allMoves && slot.name !== next.moveName) return slot;
-                        return {
-                          ...slot,
-                          currentPp: Math.min(slot.maxPp, slot.currentPp + next.restoredBy),
-                        };
-                      }),
-                    };
-                  }),
-                )
-              }
-              isDragging={member !== null && dragId === member.id}
-              isOver={overSlot === i && dragId !== null}
-              pending={pending}
-              onDragStart={setDragId}
-              onDragEnd={() => {
+      {/* Mobile: grilla 2×3. md+: riel con flechas (sin scrollbar; DnD intacto). */}
+      <div className="relative min-h-0 min-w-0 flex-1 md:flex-none">
+        <div
+          ref={railRef}
+          className="grid min-h-0 min-w-0 flex-1 auto-rows-fr grid-cols-2 gap-2 md:flex md:gap-2.5 md:overflow-x-auto md:overscroll-x-contain md:scroll-smooth md:px-1 md:pb-1 md:pt-0.5 md:snap-x md:snap-mandatory md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden"
+        >
+          {slots.map((member, i) => (
+            <div
+              key={member?.id ?? `empty-${i}`}
+              data-team-rail-item
+              className="min-h-0 min-w-0 md:w-[176px] md:shrink-0 md:snap-start lg:w-[188px]"
+              onDragOver={(e) => {
+                e.preventDefault();
+                setOverSlot(i);
+              }}
+              onDragLeave={() => setOverSlot((s) => (s === i ? null : s))}
+              onDrop={(e) => {
+                e.preventDefault();
+                dropOnSlot(i);
                 setDragId(null);
                 setOverSlot(null);
               }}
+            >
+              <TeamSlot
+                member={member}
+                index={i}
+                leadLabel={leadLabel}
+                slotLabel={slotLabels[i] ?? String(i + 1)}
+                emptyLabel={emptySlotLabel}
+                bagCounts={bagCounts}
+                onBagChange={setBagCounts}
+                onHealed={(id, currentHp, maxHp) =>
+                  setMembers((prev) =>
+                    prev.map((m) => (m.id === id ? { ...m, currentHp, maxHp } : m)),
+                  )
+                }
+                onLeveledUp={(id, next) =>
+                  setMembers((prev) =>
+                    prev.map((m) =>
+                      m.id === id
+                        ? {
+                            ...m,
+                            level: next.level,
+                            currentHp: next.currentHp,
+                            maxHp: next.maxHp,
+                            levelLabel: next.levelLabel,
+                            xpPct: 0,
+                          }
+                        : m,
+                    ),
+                  )
+                }
+                onPpRestored={(id, next) =>
+                  setMembers((prev) =>
+                    prev.map((m) => {
+                      if (m.id !== id) return m;
+                      return {
+                        ...m,
+                        moves: m.moves.map((slot) => {
+                          if (!slot) return slot;
+                          if (!next.allMoves && slot.name !== next.moveName) return slot;
+                          return {
+                            ...slot,
+                            currentPp: Math.min(slot.maxPp, slot.currentPp + next.restoredBy),
+                          };
+                        }),
+                      };
+                    }),
+                  )
+                }
+                isDragging={member !== null && dragId === member.id}
+                isOver={overSlot === i && dragId !== null}
+                pending={pending}
+                onDragStart={setDragId}
+                onDragEnd={() => {
+                  setDragId(null);
+                  setOverSlot(null);
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {showRailNav ? (
+          <>
+            <div
+              className={`pointer-events-none absolute inset-y-0 left-0 z-[1] hidden w-14 bg-gradient-to-r from-background via-background/80 to-transparent transition-opacity md:block ${
+                canPrev ? "opacity-100" : "opacity-0"
+              }`}
+              aria-hidden
             />
-          </div>
-        ))}
+            <div
+              className={`pointer-events-none absolute inset-y-0 right-0 z-[1] hidden w-14 bg-gradient-to-l from-background via-background/80 to-transparent transition-opacity md:block ${
+                canNext ? "opacity-100" : "opacity-0"
+              }`}
+              aria-hidden
+            />
+
+            <button
+              type="button"
+              tabIndex={canPrev ? 0 : -1}
+              disabled={!canPrev}
+              aria-label={tHome("scrollTeamPrev")}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                if (!canPrev) return;
+                startHold(-1);
+              }}
+              onPointerUp={stopHold}
+              onPointerLeave={stopHold}
+              onPointerCancel={stopHold}
+              className={`absolute top-1/2 left-0 z-[2] hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/65 text-white shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md transition hover:border-white/30 hover:bg-black/80 active:scale-95 md:grid ${
+                canPrev ? "opacity-100" : "pointer-events-none opacity-0"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[22px]!">chevron_left</span>
+            </button>
+            <button
+              type="button"
+              tabIndex={canNext ? 0 : -1}
+              disabled={!canNext}
+              aria-label={tHome("scrollTeamNext")}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                if (!canNext) return;
+                startHold(1);
+              }}
+              onPointerUp={stopHold}
+              onPointerLeave={stopHold}
+              onPointerCancel={stopHold}
+              className={`absolute top-1/2 right-0 z-[2] hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/65 text-white shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md transition hover:border-white/30 hover:bg-black/80 active:scale-95 md:grid ${
+                canNext ? "opacity-100" : "pointer-events-none opacity-0"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[22px]!">chevron_right</span>
+            </button>
+          </>
+        ) : null}
       </div>
     </section>
   );

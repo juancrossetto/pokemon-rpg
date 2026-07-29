@@ -22,7 +22,6 @@ import {
   MasteryIcon,
   PokeballIcon,
   PokedexIcon,
-  SparkleIcon,
   TrainerIcon,
   ZoneIcon,
   type ZoneIconKind,
@@ -50,6 +49,7 @@ import { showToast } from "@/lib/app-toast";
 import { HubHelpPanel, CoachMark } from "@/components/journey-guidance";
 import { UnlockCelebration } from "@/components/unlock-celebration";
 import { CampaignUnlockFeedback } from "@/components/campaign-unlock-feedback";
+import { GameCtaButton } from "@/components/game-cta-button";
 import type { CampaignMilestone } from "@/lib/campaign/types";
 
 function translateRequirement(
@@ -79,8 +79,15 @@ const BADGE_TYPE_BY_ORDER: Record<number, string> = {
   8: "ground",
 };
 
-const PATH_PROGRESS_FILL =
+const PATH_PROGRESS_FILL_GOLD =
   "bg-gradient-to-r from-[#ffcb05] to-[#ff8a00]";
+
+function zoneBarFill(isGym: boolean, done: boolean, inProgress: boolean): string {
+  if (isGym) return PATH_PROGRESS_FILL_GOLD;
+  if (done) return "bg-emerald-400";
+  if (inProgress) return "bg-pokeball-red/70";
+  return "bg-white/20";
+}
 
 /**
  * Paleta de la campaña — cuatro familias, cada una con un significado.
@@ -404,10 +411,10 @@ export function CampaignJourney({
                   disabled={!c.unlocked}
                   className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-label-sm transition ${
                     active
-                      ? "bg-pokeball-red/15 text-white"
+                      ? "border-l-2 border-l-pokeball-red bg-pokeball-red/8 text-white"
                       : c.unlocked
-                        ? "text-on-surface-variant hover:bg-white/5 hover:text-on-surface"
-                        : "text-on-surface-variant/40"
+                        ? "border-l-2 border-l-transparent text-on-surface-variant hover:bg-white/5 hover:text-on-surface"
+                        : "border-l-2 border-l-transparent text-on-surface-variant/40"
                   }`}
                 >
                   <span className="material-symbols-outlined text-[16px]!">
@@ -472,7 +479,7 @@ export function CampaignJourney({
                   disabled={!c.unlocked}
                   className={`min-h-11 shrink-0 rounded-lg border px-3 py-2 text-label-sm transition ${
                     active
-                      ? "border-pokeball-red/50 bg-pokeball-red/15 text-white"
+                      ? "border-pokeball-red/40 bg-pokeball-red/8 text-white"
                       : c.unlocked
                         ? "border-white/10 text-on-surface-variant"
                         : "border-transparent text-on-surface-variant/40"
@@ -605,7 +612,7 @@ function JourneyStrip({
               </span>
               <span className="h-1 w-full overflow-hidden rounded-full bg-white/10">
                 <span
-                  className={`block h-full rounded-full ${PATH_PROGRESS_FILL} transition-all duration-500`}
+                  className={`block h-full rounded-full ${PATH_PROGRESS_FILL_GOLD} transition-all duration-500`}
                   style={{ width: `${c.unlocked ? c.percent : 0}%` }}
                 />
               </span>
@@ -686,12 +693,12 @@ function ZoneRow({
               : isFarming
                 ? "border-emerald-400 bg-emerald-400/15 text-emerald-400"
                 : done
-                  ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-400"
+                  ? "border-emerald-400/25 bg-emerald-400/8 text-emerald-400/70"
                   : `${style.ring} ${style.text}`
           }`}
           style={
             isFarming || (zone.unlocked && isGym && !done)
-              ? { boxShadow: `0 0 16px ${isFarming ? "rgba(52,211,153,0.45)" : style.glow}` }
+              ? { boxShadow: `0 0 12px ${isFarming ? "rgba(52,211,153,0.20)" : style.glow}` }
               : undefined
           }
           aria-current={selected || isFarming ? "step" : undefined}
@@ -720,7 +727,13 @@ function ZoneRow({
             className="pointer-events-none absolute left-1/2 top-[calc(0.125rem+2.75rem)] bottom-[-0.5rem] w-px -translate-x-1/2 overflow-hidden bg-white/15"
           >
             <span
-              className="absolute inset-x-0 top-0 w-full bg-gradient-to-b from-[#ffcb05] to-[#ff8a00] shadow-[0_0_6px_rgba(255,160,20,0.85)] transition-[height] duration-500 ease-out"
+              className={`absolute inset-x-0 top-0 w-full transition-[height] duration-500 ease-out ${
+                isGym
+                  ? "bg-gradient-to-b from-[#ffcb05] to-[#ff8a00] shadow-[0_0_6px_rgba(255,160,20,0.85)]"
+                  : done
+                    ? "bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.5)]"
+                    : "bg-pokeball-red/70 shadow-[0_0_4px_rgba(238,21,21,0.4)]"
+              }`}
               style={{ height: `${Math.min(100, Math.max(0, pathPct))}%` }}
             />
           </span>
@@ -731,19 +744,33 @@ function ZoneRow({
         type="button"
         onClick={onPick}
         aria-expanded={selected}
-        className={`glass-panel min-h-11 min-w-0 flex-1 rounded-xl border text-left transition ${
-          compact ? "px-3 py-2" : "p-3"
+        className={`glass-panel min-w-0 flex-1 rounded-xl border text-left transition ${
+          compact ? "px-3 py-1.5" : "p-3"
         } ${
-          selected ? "border-white/25 bg-white/[0.04]" : "border-white/10 hover:bg-white/[0.03]"
-        } ${!zone.unlocked ? "opacity-55" : ""} ${
-          isFarming ? "ring-1 ring-emerald-400/40" : ""
+          !zone.unlocked
+            ? "opacity-40 border-white/8 bg-black/10"
+            : isFarming
+              ? "ring-1 ring-emerald-400/30 border-white/15 bg-emerald-950/15"
+              : isGym && !done
+                ? "border-tertiary/20 bg-amber-950/15"
+                : selected && (nodeStatus === "current" || nodeStatus === "in_progress")
+                  ? "border-white/20 bg-emerald-950/20"
+                  : compact
+                    ? "border-white/8 bg-white/[0.015]"
+                    : selected
+                      ? "border-white/20 bg-white/[0.04]"
+                      : "border-white/10 bg-white/[0.025] hover:bg-white/[0.04]"
         } ${isGym && !compact ? "py-3.5" : ""}`}
       >
         <div className="flex flex-wrap items-center gap-2">
           <h3
             className={`${
-              isGym && !compact ? "text-headline-md" : "text-body-md font-semibold"
-            } text-white`}
+              isGym && !compact
+                ? "text-headline-md"
+                : compact
+                  ? "text-body-sm font-semibold"
+                  : "text-body-md font-semibold"
+            } ${compact ? "text-white/70" : "text-white"}`}
           >
             {t(zone.nameKey)}
           </h3>
@@ -760,7 +787,7 @@ function ZoneRow({
             </span>
           )}
           {isFarming && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.35)]">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
               <span className="material-symbols-outlined text-[12px]!">my_location</span>
               {t("farming")}
             </span>
@@ -777,13 +804,13 @@ function ZoneRow({
             {zone.totalStages > 0 && (
               <span className="inline-flex items-center gap-1">
                 <FootprintIcon className="h-3.5 w-3.5" />
-                {zone.completedStages}/{zone.totalStages}
+                <span className="text-on-surface">{zone.completedStages}/{zone.totalStages}</span>
               </span>
             )}
             {zone.encounters.length > 0 && (
               <span className="inline-flex items-center gap-1">
                 <PokedexIcon className="h-3.5 w-3.5" />
-                {caught}/{zone.encounters.length}
+                <span className="text-on-surface">{caught}/{zone.encounters.length}</span>
               </span>
             )}
             <span className="inline-flex items-center gap-1">
@@ -796,7 +823,7 @@ function ZoneRow({
         {!compact && zone.unlocked && zone.totalStages > 0 && (
           <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
             <div
-              className={`h-full rounded-full ${PATH_PROGRESS_FILL} transition-all duration-500`}
+              className={`h-full rounded-full ${zoneBarFill(isGym, done, isFarming || nodeStatus === "current" || nodeStatus === "in_progress")} transition-all duration-500`}
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -874,7 +901,7 @@ function ZonePanel({
   return (
     <section
       className={`glass-panel rounded-xl border p-4 ${
-        isFarming ? "border-emerald-400/50 shadow-[0_0_28px_rgba(52,211,153,0.18)]" : "border-white/10"
+        isFarming ? "border-emerald-400/35 shadow-[0_0_16px_rgba(52,211,153,0.12)]" : "border-white/10"
       }`}
     >
       <div className="flex items-start gap-2.5">
@@ -928,8 +955,8 @@ function ZonePanel({
       )}
 
       {zone.unlocked && (
-        <details className="mt-3 rounded-lg border border-tertiary/25 bg-tertiary/[0.06] open:pb-2">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 marker:content-none [&::-webkit-details-marker]:hidden">
+        <details className="mt-3 border-t border-white/8 pt-3 open:pb-1">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="inline-flex items-center gap-1.5 text-label-sm text-tertiary">
               <MasteryIcon className="h-4 w-4" />
               {t("mastery")} · Lv. {zone.masteryLevel} · {masteryProgressPercent(zone.masteryXp)}%
@@ -938,10 +965,7 @@ function ZonePanel({
               expand_more
             </span>
           </summary>
-          <div className="border-t border-tertiary/15 px-3 pt-2">
-            <p className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-tertiary/80">
-              {t("objRoleMastery")}
-            </p>
+          <div className="mt-2">
             <div className="h-1 overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-tertiary transition-all duration-500"
@@ -1016,7 +1040,7 @@ function ZonePanel({
             <>
               <p className="mt-4 mb-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                 {t("zoneWilds")}
-                <span className="font-mono normal-case tracking-normal">
+                <span className="font-mono normal-case tracking-normal text-on-surface">
                   {caught}/{zone.encounters.length}
                   <span className="ml-1.5 text-on-surface-variant/60">
                     ({seenCount} {t("seenShort")})
@@ -1065,7 +1089,7 @@ function ZonePanel({
             <>
               <p className="mt-4 mb-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                 {t("trainersTitle")}
-                <span className="font-mono normal-case tracking-normal">
+                <span className="font-mono normal-case tracking-normal text-on-surface">
                   {zone.trainers.filter((tr) => tr.defeated).length}/{zone.trainers.length}
                 </span>
               </p>
@@ -1073,10 +1097,10 @@ function ZonePanel({
                 {zone.trainers.map((tr) => (
                   <li
                     key={tr.id}
-                    className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 ${
+                    className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 ${
                       tr.defeated
-                        ? "border-emerald-400/30 bg-emerald-400/[0.07]"
-                        : "border-white/10 bg-black/20"
+                        ? "opacity-60"
+                        : "border border-white/10 bg-black/20"
                     }`}
                   >
                     <span className="relative shrink-0">
@@ -1169,15 +1193,14 @@ function ZonePanel({
               </div>
             ) : (
               <>
-                <button
-                  type="button"
+                <GameCtaButton
+                  icon="my_location"
+                  variant="red"
                   disabled={pending || isFarming}
                   onClick={onTravel}
-                  className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-pokeball-red px-4 py-2.5 text-label-md font-semibold text-white transition hover:bg-pokeball-red/85 disabled:opacity-40"
                 >
-                  <span className="material-symbols-outlined text-[18px]!">my_location</span>
                   {isFarming ? t("youAreHere") : t("moveHere")}
-                </button>
+                </GameCtaButton>
 
                 <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                   {t("pickStage")}
@@ -1266,15 +1289,15 @@ function Objective({
 
   return (
     <li
-      className={`rounded-lg border px-2.5 py-2 text-label-sm transition ${
+      className={`rounded-lg px-2.5 py-2 text-label-sm transition ${
         state.claimable
-          ? "border-tertiary/50 bg-tertiary/10 text-on-surface"
+          ? "border border-tertiary/50 bg-tertiary/10 text-on-surface"
           : state.done
-            ? "border-emerald-400/30 bg-emerald-400/[0.07] text-on-surface"
-            : "border-white/10 bg-black/20 text-on-surface-variant"
+            ? "border border-emerald-400/30 bg-emerald-400/[0.07] text-on-surface"
+            : "text-on-surface-variant"
       }`}
     >
-      <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/80">
+      <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/60">
         {roleLabel}
       </p>
       <div className="flex items-start gap-2">
@@ -1284,7 +1307,7 @@ function Objective({
           }`}
         />
         <span className="min-w-0 flex-1 leading-snug">{label}</span>
-        <span className="shrink-0 font-mono text-[11px] tabular-nums">
+        <span className="shrink-0 font-mono text-[11px] tabular-nums text-on-surface">
           {state.current}/{state.target}
         </span>
       </div>
@@ -1354,10 +1377,10 @@ function JourneySummaryCard({
   const t = useTranslations("campaign");
   // Solo se colorean las medallas y los shinies: lo escaso. El resto es neutro.
   const rows = [
-    { Icon: GymIcon, tone: "text-tertiary", label: t("badges"), value: `${summary.badges}/${summary.badgesTotal}` },
-    { Icon: PokedexIcon, tone: "text-on-surface-variant", label: t("pokedexShort"), value: `${summary.speciesCaught}/${summary.speciesTotal}` },
-    { Icon: MapIcon, tone: "text-on-surface-variant", label: t("zonesUnlocked"), value: `${summary.zonesUnlocked}/${summary.zonesTotal}` },
-    { Icon: SparkleIcon, tone: "text-electric-yellow", label: t("shinies"), value: `${summary.shinies}` },
+    { iconSrc: "/nav/gym-icon.png", label: t("badges"), value: `${summary.badges}/${summary.badgesTotal}` },
+    { iconSrc: "/nav/collection-icon.png", label: t("pokedexShort"), value: `${summary.speciesCaught}/${summary.speciesTotal}` },
+    { iconSrc: "/nav/map-icon.png", label: t("zonesUnlocked"), value: `${summary.zonesUnlocked}/${summary.zonesTotal}` },
+    { iconSrc: "/ranking/insignia-gold.png", label: t("shinies"), value: `${summary.shinies}` },
   ];
 
   return (
@@ -1373,7 +1396,14 @@ function JourneySummaryCard({
         <ul className="flex flex-col gap-1.5">
           {rows.map((r) => (
             <li key={r.label} className="flex items-center gap-2 text-label-sm">
-              <r.Icon className={`h-4 w-4 shrink-0 ${r.tone}`} />
+              <Image
+                src={r.iconSrc}
+                alt=""
+                width={18}
+                height={18}
+                className="h-[18px] w-[18px] shrink-0 object-contain"
+                aria-hidden
+              />
               <span className="min-w-0 flex-1 truncate text-on-surface-variant">{r.label}</span>
               <span className="font-mono text-on-surface">{r.value}</span>
             </li>

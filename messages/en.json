@@ -146,6 +146,8 @@
     "activeSquad": "Active Squad",
     "manage": "Manage",
     "emptySlot": "Empty slot",
+    "scrollTeamPrev": "Previous Pokémon",
+    "scrollTeamNext": "More Pokémon",
     "rewards": {
       "title": "Rewards",
       "claim": "Claim",
@@ -1153,23 +1155,25 @@
     "listed": "For sale",
     "emptyStorage": "You have no Pokémon stored in the PC.",
     "notices": {
-      "deposited": "Pokémon deposited in the PC.",
-      "withdrawn": "Pokémon added to your team."
+      "deposited": "Stored in PC",
+      "withdrawn": "Added to team"
     },
     "errors": {
-      "not_found": "That Pokémon was not found.",
-      "already_in_team": "That Pokémon is already in your team.",
-      "not_in_team": "That Pokémon is not in your team.",
-      "listed": "That Pokémon is listed on the market — cancel the listing first.",
-      "pending_claim": "That Pokémon is in your market bag — collect it before using it.",
-      "team_full": "Your team is full. Deposit a Pokémon first.",
-      "in_battle": "You can't deposit a Pokémon in the middle of a battle.",
-      "last_team_member": "You can't deposit your last active Pokémon.",
-      "rate_limited": "Too many actions in a row. Give it a moment.",
-      "unauthorized": "Session expired. Sign in again.",
-      "breeding": "It is incubating an egg in the nursery."
+      "not_found": "Pokémon not found",
+      "already_in_team": "Already in team",
+      "not_in_team": "Not in team",
+      "listed": "Listed on market — cancel sale first",
+      "pending_claim": "In market bag — collect it first",
+      "team_full": "Team full — swap or free a slot",
+      "in_battle": "Can't move during battle",
+      "last_team_member": "At least one must stay in team",
+      "rate_limited": "Too fast — wait a moment",
+      "unauthorized": "Session expired",
+      "breeding": "Incubating an egg"
     },
-    "dragHint": "Drag to reorder your team, or drop into the PC to store.",
+    "dragChipReorder": "Reorder",
+    "dragChipStore": "Store in PC",
+    "dragChipSwap": "Swap",
     "emptySlot": "Slot {slot} free",
     "breedingLocked": "Breeding"
   },

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { typeColor } from "@/lib/type-colors";
 import { setTeamLayout } from "@/actions/pc";
@@ -9,7 +9,9 @@ import {
   SquadCardContextMenu,
   type SquadContextLabels,
 } from "@/components/squad-card-context-menu";
+import { PcAlert } from "@/components/pc-alert";
 import type { SquadBagCounts } from "@/lib/squad-bag";
+import { playPcSfx, unlockPcAudio, type PcSfxKind } from "@/lib/pc-sfx";
 
 export type PcMon = {
   id: string;
@@ -22,26 +24,24 @@ export type PcMon = {
   maxHp: number;
   isFavorite: boolean;
   isTradeLocked: boolean;
-  /** Publicado en el mercado: está en escrow, no se puede mover. */
   listed: boolean;
-  /** Incubando un huevo en la guardería: queda inmovilizado hasta que eclosione. */
   breeding: boolean;
 };
 
 type Zone = "team" | "box";
-type DragState = { id: string; from: Zone } | null;
+type DragState = { id: string; from: Zone };
+type GhostState = { mon: PcMon; x: number; y: number };
+type CardFx = "swap" | "arrive";
+
+const DRAG_THRESHOLD_PX = 10;
+const FX_MS = 520;
 
 /**
- * Equipo y PC con drag & drop.
+ * Equipo y PC con drag & drop (mouse + touch).
  *
- * El estado local es optimista y se revierte si la acción falla. La página lo
- * monta con una `key` derivada del layout del servidor, así que cualquier
- * cambio hecho por otra vía (una venta en el mercado, por ejemplo) lo resetea
- * sin necesidad de sincronizar con un efecto.
- *
- * Cualquier gesto termina en la misma acción: se manda el equipo completo en
- * orden (`setTeamLayout`). Reordenar, mandar a la PC y traer de la PC son el
- * mismo "así queda el equipo ahora", y el servidor lo aplica atómicamente.
+ * El estado local es optimista y se revierte si la acción falla. Cualquier
+ * gesto termina en `setTeamLayout`: reordenar, mandar a la PC, traer del PC
+ * o intercambiar cuando el equipo está lleno.
  */
 export function PcTransfer({
   locale,
@@ -62,11 +62,22 @@ export function PcTransfer({
   const [team, setTeam] = useState(initialTeam);
   const [box, setBox] = useState(initialBox);
   const [bagCounts, setBagCounts] = useState(initialBagCounts);
-  const [drag, setDrag] = useState<DragState>(null);
+  const [drag, setDrag] = useState<DragState | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const [ghost, setGhost] = useState<GhostState | null>(null);
+  const [cardFx, setCardFx] = useState<Record<string, CardFx>>({});
+  const fxTimers = useRef<Map<string, number>>(new Map());
   const [overSlot, setOverSlot] = useState<number | null>(null);
   const [overBox, setOverBox] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    return () => {
+      for (const id of fxTimers.current.values()) window.clearTimeout(id);
+      fxTimers.current.clear();
+    };
+  }, []);
 
   function patchMon(id: string, patch: Partial<PcMon>) {
     const apply = (list: PcMon[]) =>
@@ -75,11 +86,39 @@ export function PcTransfer({
     setBox((prev) => apply(prev));
   }
 
-  function commit(nextTeam: PcMon[], nextBox: PcMon[]) {
+  function flashCards(ids: string[], kind: CardFx) {
+    setCardFx((prev) => {
+      const next = { ...prev };
+      for (const id of ids) next[id] = kind;
+      return next;
+    });
+    for (const id of ids) {
+      const prev = fxTimers.current.get(id);
+      if (prev) window.clearTimeout(prev);
+      const timer = window.setTimeout(() => {
+        setCardFx((cur) => {
+          if (!(id in cur)) return cur;
+          const { [id]: _, ...rest } = cur;
+          return rest;
+        });
+        fxTimers.current.delete(id);
+      }, FX_MS);
+      fxTimers.current.set(id, timer);
+    }
+  }
+
+  function commit(
+    nextTeam: PcMon[],
+    nextBox: PcMon[],
+    sfx: PcSfxKind,
+    animateIds: string[],
+  ) {
     const previous = { team, box };
     setTeam(nextTeam);
     setBox(nextBox);
     setError(null);
+    playPcSfx(sfx);
+    flashCards(animateIds, sfx === "swap" ? "swap" : "arrive");
     startTransition(async () => {
       const result = await setTeamLayout(
         locale,
@@ -93,59 +132,153 @@ export function PcTransfer({
     });
   }
 
-  function dropOnSlot(index: number) {
-    if (!drag) return;
-    const mon =
-      drag.from === "team"
-        ? team.find((m) => m.id === drag.id)
-        : box.find((m) => m.id === drag.id);
+  function monFrom(source: DragState) {
+    return source.from === "team"
+      ? team.find((m) => m.id === source.id)
+      : box.find((m) => m.id === source.id);
+  }
+
+  function dropOnSlot(index: number, source: DragState) {
+    const mon = monFrom(source);
     if (!mon || mon.listed || mon.breeding) return;
 
-    if (drag.from === "team") {
-      const rest = team.filter((m) => m.id !== mon.id);
-      const at = Math.min(index, rest.length);
-      commit([...rest.slice(0, at), mon, ...rest.slice(at)], box);
+    if (source.from === "team") {
+      if (team[index]?.id === mon.id) return;
+      const without = team.filter((m) => m.id !== mon.id);
+      const nextTeam = [...without];
+      nextTeam.splice(Math.min(index, nextTeam.length), 0, mon);
+      commit(nextTeam, box, "reorder", [mon.id]);
       return;
     }
+
+    const occupant = team[index] ?? null;
+    if (occupant?.id === mon.id) return;
+
+    if (occupant && team.length >= teamSize) {
+      commit(
+        team.map((m, i) => (i === index ? mon : m)),
+        [occupant, ...box.filter((m) => m.id !== mon.id)],
+        "swap",
+        [mon.id, occupant.id],
+      );
+      return;
+    }
+
     if (team.length >= teamSize) {
       setError("team_full");
       return;
     }
+
     const at = Math.min(index, team.length);
     commit(
       [...team.slice(0, at), mon, ...team.slice(at)],
       box.filter((m) => m.id !== mon.id),
+      "withdraw",
+      [mon.id],
     );
   }
 
-  function dropOnBox() {
-    if (!drag || drag.from !== "team") return;
+  function dropOnBox(source: DragState) {
+    if (source.from !== "team") return;
     if (team.length <= 1) {
       setError("last_team_member");
       return;
     }
-    const mon = team.find((m) => m.id === drag.id);
-    if (!mon) return;
+    const mon = team.find((m) => m.id === source.id);
+    if (!mon || mon.listed || mon.breeding) return;
     commit(
       team.filter((m) => m.id !== mon.id),
       [mon, ...box],
+      "store",
+      [mon.id],
     );
   }
 
+  function beginDrag(source: DragState, x: number, y: number) {
+    unlockPcAudio();
+    const mon = monFrom(source);
+    if (!mon) return;
+    dragRef.current = source;
+    setDrag(source);
+    setGhost({ mon, x, y });
+  }
+
+  function clearDragVisual() {
+    dragRef.current = null;
+    setDrag(null);
+    setGhost(null);
+    setOverSlot(null);
+    setOverBox(false);
+  }
+
+  function endDrag(clientX: number, clientY: number) {
+    const source = dragRef.current;
+    if (!source) {
+      clearDragVisual();
+      return;
+    }
+
+    const target = document.elementFromPoint(clientX, clientY)?.closest("[data-pc-drop]");
+    if (target instanceof HTMLElement) {
+      const zone = target.dataset.pcDrop;
+      if (zone === "box") dropOnBox(source);
+      else if (zone?.startsWith("team-")) {
+        dropOnSlot(Number(zone.slice(5)), source);
+      }
+    }
+
+    clearDragVisual();
+  }
+
+  function resolveHover(clientX: number, clientY: number) {
+    setGhost((prev) => (prev ? { ...prev, x: clientX, y: clientY } : prev));
+    const target = document.elementFromPoint(clientX, clientY)?.closest("[data-pc-drop]");
+    if (!(target instanceof HTMLElement)) {
+      setOverSlot(null);
+      setOverBox(false);
+      return;
+    }
+    const zone = target.dataset.pcDrop;
+    if (zone === "box") {
+      setOverBox(true);
+      setOverSlot(null);
+    } else if (zone?.startsWith("team-")) {
+      setOverSlot(Number(zone.slice(5)));
+      setOverBox(false);
+    } else {
+      setOverSlot(null);
+      setOverBox(false);
+    }
+  }
+
   const slots = Array.from({ length: teamSize }, (_, i) => team[i] ?? null);
+  const dragChips = ["dragChipReorder", "dragChipStore", "dragChipSwap"] as const;
 
   return (
     <div className={pending ? "opacity-90 transition-opacity" : undefined}>
-      {error && (
-        <div className="mb-4 rounded-lg border border-error/40 bg-error-container/30 px-4 py-2 text-label-md text-error">
+      {error ? (
+        <PcAlert kind="error" onDismiss={() => setError(null)}>
           {t(`errors.${error}`)}
-        </div>
-      )}
+        </PcAlert>
+      ) : null}
 
-      <p className="mb-3 flex items-center gap-1.5 text-label-sm text-on-surface-variant">
-        <span className="material-symbols-outlined text-[16px]!">drag_indicator</span>
-        {t("dragHint")}
-      </p>
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {dragChips.map((key) => (
+          <span
+            key={key}
+            className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-on-surface-variant"
+          >
+            <span className="material-symbols-outlined text-[13px]! opacity-70">
+              {key === "dragChipReorder"
+                ? "swap_vert"
+                : key === "dragChipStore"
+                  ? "inventory_2"
+                  : "sync_alt"}
+            </span>
+            {t(key)}
+          </span>
+        ))}
+      </div>
 
       <section className="mb-8">
         <h2 className="mb-3 flex items-center gap-2 text-headline-md text-on-surface">
@@ -164,18 +297,9 @@ export function PcTransfer({
           {slots.map((mon, index) => (
             <div
               key={mon?.id ?? `empty-${index}`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setOverSlot(index);
-              }}
-              onDragLeave={() => setOverSlot((s) => (s === index ? null : s))}
-              onDrop={(e) => {
-                e.preventDefault();
-                setOverSlot(null);
-                dropOnSlot(index);
-              }}
-              className={`rounded-xl transition-colors ${
-                overSlot === index ? "ring-2 ring-pokeball-red/60" : ""
+              data-pc-drop={`team-${index}`}
+              className={`rounded-xl transition ${
+                overSlot === index ? "ring-2 ring-pokeball-red/60 scale-[1.01]" : ""
               }`}
             >
               {mon ? (
@@ -184,8 +308,13 @@ export function PcTransfer({
                   slot={index + 1}
                   zone="team"
                   dragging={drag?.id === mon.id}
-                  onDragStart={() => setDrag({ id: mon.id, from: "team" })}
-                  onDragEnd={() => setDrag(null)}
+                  fx={cardFx[mon.id]}
+                  onDragEnd={clearDragVisual}
+                  onPointerDragStart={(x, y) =>
+                    beginDrag({ id: mon.id, from: "team" }, x, y)
+                  }
+                  onPointerDragMove={resolveHover}
+                  onPointerDragEnd={endDrag}
                   levelLabel={t("level", { level: mon.level })}
                   menuLabels={menuLabels}
                   bagCounts={bagCounts}
@@ -210,16 +339,7 @@ export function PcTransfer({
       </section>
 
       <section
-        onDragOver={(e) => {
-          e.preventDefault();
-          setOverBox(true);
-        }}
-        onDragLeave={() => setOverBox(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setOverBox(false);
-          dropOnBox();
-        }}
+        data-pc-drop="box"
         className={`rounded-xl transition-colors ${
           overBox ? "ring-2 ring-electric-yellow/50" : ""
         }`}
@@ -249,8 +369,13 @@ export function PcTransfer({
                 mon={mon}
                 zone="box"
                 dragging={drag?.id === mon.id}
-                onDragStart={() => setDrag({ id: mon.id, from: "box" })}
-                onDragEnd={() => setDrag(null)}
+                fx={cardFx[mon.id]}
+                onDragEnd={clearDragVisual}
+                onPointerDragStart={(x, y) =>
+                  beginDrag({ id: mon.id, from: "box" }, x, y)
+                }
+                onPointerDragMove={resolveHover}
+                onPointerDragEnd={endDrag}
                 levelLabel={t("level", { level: mon.level })}
                 listedLabel={t("listed")}
                 breedingLabel={t("breedingLocked")}
@@ -270,6 +395,35 @@ export function PcTransfer({
           </div>
         )}
       </section>
+
+      {ghost ? <DragGhost mon={ghost.mon} x={ghost.x} y={ghost.y} /> : null}
+    </div>
+  );
+}
+
+function DragGhost({ mon, x, y }: { mon: PcMon; x: number; y: number }) {
+  return (
+    <div
+      className="pc-drag-ghost fixed w-[min(280px,70vw)]"
+      style={{ left: x, top: y }}
+      aria-hidden
+    >
+      <div className="flex items-center gap-2.5 rounded-xl border border-pokeball-red/50 bg-surface-container-high/95 p-2.5 shadow-2xl backdrop-blur-md">
+        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-pokeball-red/40 bg-surface-container-highest">
+          <Image
+            src={mon.spriteUrl}
+            alt=""
+            width={44}
+            height={44}
+            className="h-full w-full object-cover"
+            draggable={false}
+          />
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-label-md capitalize text-on-surface">{mon.name}</p>
+          <p className="text-[11px] text-on-surface-variant">Nv. {mon.level}</p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -279,8 +433,11 @@ function MonCard({
   slot,
   zone,
   dragging,
-  onDragStart,
+  fx,
   onDragEnd,
+  onPointerDragStart,
+  onPointerDragMove,
+  onPointerDragEnd,
   levelLabel,
   listedLabel,
   breedingLabel,
@@ -294,8 +451,11 @@ function MonCard({
   slot?: number;
   zone: Zone;
   dragging: boolean;
-  onDragStart: () => void;
+  fx?: CardFx;
   onDragEnd: () => void;
+  onPointerDragStart: (x: number, y: number) => void;
+  onPointerDragMove: (x: number, y: number) => void;
+  onPointerDragEnd: (x: number, y: number) => void;
   levelLabel: string;
   listedLabel?: string;
   breedingLabel?: string;
@@ -307,6 +467,10 @@ function MonCard({
 }) {
   const hpPct = Math.max(0, Math.min(100, (mon.currentHp / mon.maxHp) * 100));
   const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
+  const canMove = !mon.listed && !mon.breeding;
+  const pointerOrigin = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const fxClass =
+    fx === "swap" ? "pc-card-swap" : fx === "arrive" ? "pc-card-arrive" : "";
 
   return (
     <SquadCardContextMenu
@@ -326,17 +490,49 @@ function MonCard({
       onLeveledUp={onLeveledUp}
     >
       <article
-        draggable={!mon.listed && !mon.breeding}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
         className={`flex items-center gap-3 rounded-xl border border-white/10 bg-glass-surface p-3 pr-8 backdrop-blur-xl transition-opacity ${
-          mon.listed || mon.breeding
-          ? "cursor-not-allowed opacity-60"
-          : "cursor-grab active:cursor-grabbing"
-        } ${dragging ? "opacity-40" : ""}`}
+          canMove ? "" : "opacity-60"
+        } ${dragging ? "pointer-events-none opacity-35" : ""} ${fxClass}`}
       >
-        <span className="material-symbols-outlined shrink-0 text-[18px]! text-on-surface-variant/40">
-          drag_indicator
+        <span
+          onPointerDown={(e) => {
+            if (!canMove || e.button !== 0) return;
+            e.preventDefault();
+            pointerOrigin.current = { x: e.clientX, y: e.clientY, active: false };
+            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (!pointerOrigin.current || !canMove) return;
+            const dx = e.clientX - pointerOrigin.current.x;
+            const dy = e.clientY - pointerOrigin.current.y;
+            if (!pointerOrigin.current.active) {
+              if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+              pointerOrigin.current.active = true;
+              onPointerDragStart(e.clientX, e.clientY);
+            }
+            onPointerDragMove(e.clientX, e.clientY);
+          }}
+          onPointerUp={(e) => {
+            if (pointerOrigin.current?.active) onPointerDragEnd(e.clientX, e.clientY);
+            else onDragEnd();
+            pointerOrigin.current = null;
+            try {
+              (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+            } catch {
+              /* already released */
+            }
+          }}
+          onPointerCancel={() => {
+            pointerOrigin.current = null;
+            onDragEnd();
+          }}
+          className={`shrink-0 touch-none select-none ${
+            canMove ? "cursor-grab active:cursor-grabbing" : "cursor-not-allowed opacity-40"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]! text-on-surface-variant/40">
+            drag_indicator
+          </span>
         </span>
 
         <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface-variant bg-surface-container-high">
@@ -359,12 +555,12 @@ function MonCard({
             <span className="truncate text-label-md capitalize text-on-surface">{mon.name}</span>
             <span className="shrink-0 text-label-sm text-on-surface-variant">{levelLabel}</span>
             {mon.breeding && (
-            <span className="shrink-0 inline-flex items-center gap-0.5 rounded border border-tertiary/30 bg-tertiary/10 px-1.5 py-0.5 text-[10px] text-tertiary">
-              <span className="material-symbols-outlined text-[11px]! leading-none">egg</span>
-              {breedingLabel}
-            </span>
-          )}
-          {mon.listed && listedLabel && (
+              <span className="inline-flex shrink-0 items-center gap-0.5 rounded border border-tertiary/30 bg-tertiary/10 px-1.5 py-0.5 text-[10px] text-tertiary">
+                <span className="material-symbols-outlined text-[11px]! leading-none">egg</span>
+                {breedingLabel}
+              </span>
+            )}
+            {mon.listed && listedLabel && (
               <span className="shrink-0 rounded border border-electric-yellow/30 bg-electric-yellow/10 px-1.5 py-0.5 text-[10px] text-electric-yellow">
                 {listedLabel}
               </span>

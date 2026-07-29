@@ -146,6 +146,8 @@
     "activeSquad": "Equipo activo",
     "manage": "Administrar",
     "emptySlot": "Espacio vacío",
+    "scrollTeamPrev": "Ver Pokémon anteriores",
+    "scrollTeamNext": "Ver más Pokémon",
     "rewards": {
       "title": "Recompensas",
       "claim": "Reclamar",
@@ -1142,7 +1144,7 @@
   },
   "pc": {
     "title": "PC de almacenamiento",
-    "subtitle": "Guardá y retirá Pokémon entre tu equipo activo y el PC.",
+    "subtitle": "Mové Pokémon entre tu equipo y el PC.",
     "level": "Nv. {level}",
     "teamSection": "Equipo activo ({count}/{max})",
     "storageSection": "En el PC ({count})",
@@ -1153,23 +1155,25 @@
     "listed": "En venta",
     "emptyStorage": "No tenés Pokémon guardados en el PC.",
     "notices": {
-      "deposited": "Pokémon depositado en el PC.",
-      "withdrawn": "Pokémon agregado al equipo."
+      "deposited": "Guardado en el PC",
+      "withdrawn": "Sumado al equipo"
     },
     "errors": {
-      "not_found": "No se encontró ese Pokémon.",
-      "already_in_team": "Ese Pokémon ya está en el equipo.",
-      "not_in_team": "Ese Pokémon no está en el equipo.",
-      "listed": "Ese Pokémon está publicado en el mercado — cancelá la publicación primero.",
-      "pending_claim": "Ese Pokémon está en la mochila del mercado — recibilo antes de usarlo.",
-      "team_full": "Tu equipo está lleno. Depositá un Pokémon primero.",
-      "in_battle": "No podés depositar un Pokémon en medio de una batalla.",
-      "last_team_member": "No podés depositar tu último Pokémon activo.",
-      "rate_limited": "Demasiadas operaciones seguidas. Esperá un momento.",
-      "unauthorized": "Sesión expirada. Iniciá sesión de nuevo.",
-      "breeding": "Está incubando un huevo en la guardería."
+      "not_found": "Pokémon no encontrado",
+      "already_in_team": "Ya está en el equipo",
+      "not_in_team": "No está en el equipo",
+      "listed": "Publicado en el mercado — cancelá la venta",
+      "pending_claim": "En la mochila del mercado — recibilo primero",
+      "team_full": "Equipo lleno — intercambiá o liberá un slot",
+      "in_battle": "No podés moverlo en plena batalla",
+      "last_team_member": "Debe quedar al menos uno en el equipo",
+      "rate_limited": "Demasiado rápido — esperá un momento",
+      "unauthorized": "Sesión expirada",
+      "breeding": "Incubando un huevo"
     },
-    "dragHint": "Arrastrá para reordenar el equipo o soltá en la PC para guardar.",
+    "dragChipReorder": "Reordenar",
+    "dragChipStore": "Guardar en PC",
+    "dragChipSwap": "Intercambiar",
     "emptySlot": "Slot {slot} libre",
     "breedingLocked": "Incubando"
   },

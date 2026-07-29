@@ -8,6 +8,8 @@ type SharedProps = {
   icon?: string;
   className?: string;
   disabled?: boolean;
+  /** `"gold"` (default) for rewards/gym, `"red"` for adventure/explore. */
+  variant?: "gold" | "red";
 };
 
 type AsLink = SharedProps & {
@@ -28,8 +30,8 @@ export type GameCtaButtonProps = AsLink | AsButton;
  * Usar en acciones primarias; no para chips ni links secundarios.
  */
 export function GameCtaButton(props: GameCtaButtonProps) {
-  const { children, icon, className = "", disabled } = props;
-  const classes = `game-cta ${disabled ? "game-cta--disabled" : ""} ${className}`.trim();
+  const { children, icon, className = "", disabled, variant = "gold" } = props;
+  const classes = `game-cta ${variant === "red" ? "game-cta--red" : ""} ${disabled ? "game-cta--disabled" : ""} ${className}`.trim();
 
   const content = (
     <>
@@ -57,7 +59,7 @@ export function GameCtaButton(props: GameCtaButtonProps) {
     );
   }
 
-  const { href: _h, icon: _i, className: _c, children: _ch, ...buttonProps } = props as AsButton;
+  const { href: _h, icon: _i, className: _c, children: _ch, variant: _v, ...buttonProps } = props as AsButton & { variant?: string };
   return (
     <button {...buttonProps} disabled={disabled} className={classes}>
       {content}

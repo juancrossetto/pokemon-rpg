@@ -5,6 +5,7 @@ import { calculateMaxHp } from "@/lib/stats";
 import { PC_ERRORS, PC_NOTICES, pickCode } from "@/lib/feedback-codes";
 import { TEAM_SIZE } from "@/lib/market-rules";
 import { PcTransfer, type PcMon } from "@/components/pc-transfer";
+import { PcAlert } from "@/components/pc-alert";
 import { BreedingPanel } from "@/components/breeding-panel";
 import { BREEDING_MIN_LEVEL, msUntilHatch } from "@/lib/breeding";
 import { breedingParentIds } from "@/lib/breeding-lock";
@@ -100,14 +101,10 @@ export async function PcTab({
       </div>
 
       {notice && (
-        <div className="mb-4 rounded-lg border border-tertiary/40 bg-tertiary/10 px-4 py-2 text-label-md text-tertiary">
-          {t(`notices.${notice}`)}
-        </div>
+        <PcAlert kind="success">{t(`notices.${notice}`)}</PcAlert>
       )}
       {error && (
-        <div className="mb-4 rounded-lg border border-error/40 bg-error-container/30 px-4 py-2 text-label-md text-error">
-          {t(`errors.${error}`)}
-        </div>
+        <PcAlert kind="error">{t(`errors.${error}`)}</PcAlert>
       )}
 
       <PcTransfer

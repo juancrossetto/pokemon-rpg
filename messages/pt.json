@@ -146,6 +146,8 @@
     "activeSquad": "Time ativo",
     "manage": "Gerenciar",
     "emptySlot": "Espaço vazio",
+    "scrollTeamPrev": "Pokémon anteriores",
+    "scrollTeamNext": "Mais Pokémon",
     "rewards": {
       "title": "Recompensas",
       "claim": "Resgatar",
@@ -1142,7 +1144,7 @@
   },
   "pc": {
     "title": "PC de armazenamento",
-    "subtitle": "Mova Pokémon entre seu time ativo e o PC.",
+    "subtitle": "Movê Pokémon entre o time e o PC.",
     "level": "Nv. {level}",
     "teamSection": "Time ativo ({count}/{max})",
     "storageSection": "No PC ({count})",
@@ -1153,23 +1155,25 @@
     "listed": "À venda",
     "emptyStorage": "Você não tem Pokémon guardados no PC.",
     "notices": {
-      "deposited": "Pokémon depositado no PC.",
-      "withdrawn": "Pokémon adicionado ao time."
+      "deposited": "Guardado no PC",
+      "withdrawn": "Adicionado ao time"
     },
     "errors": {
-      "not_found": "Esse Pokémon não foi encontrado.",
-      "already_in_team": "Esse Pokémon já está no time.",
-      "not_in_team": "Esse Pokémon não está no time.",
-      "listed": "Esse Pokémon está anunciado no mercado — cancele o anúncio primeiro.",
-      "pending_claim": "Esse Pokémon está na mochila do mercado — receba-o antes de usar.",
-      "team_full": "Seu time está cheio. Deposite um Pokémon primeiro.",
-      "in_battle": "Você não pode depositar um Pokémon no meio de uma batalha.",
-      "last_team_member": "Você não pode depositar seu último Pokémon ativo.",
-      "rate_limited": "Muitas operações seguidas. Espere um momento.",
-      "unauthorized": "Sessão expirada. Entre novamente.",
-      "breeding": "Está chocando um ovo na creche."
+      "not_found": "Pokémon não encontrado",
+      "already_in_team": "Já está no time",
+      "not_in_team": "Não está no time",
+      "listed": "Anunciado no mercado — cancele a venda",
+      "pending_claim": "Na mochila do mercado — receba primeiro",
+      "team_full": "Time cheio — troque ou libere um slot",
+      "in_battle": "Não pode mover em batalha",
+      "last_team_member": "Precisa ficar pelo menos um no time",
+      "rate_limited": "Rápido demais — aguarde um momento",
+      "unauthorized": "Sessão expirada",
+      "breeding": "Chocando um ovo"
     },
-    "dragHint": "Arraste para reordenar o time, ou solte no PC para guardar.",
+    "dragChipReorder": "Reordenar",
+    "dragChipStore": "Guardar no PC",
+    "dragChipSwap": "Trocar",
     "emptySlot": "Slot {slot} livre",
     "breedingLocked": "Chocando"
   },
