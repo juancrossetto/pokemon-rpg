@@ -1396,13 +1396,22 @@ body {
   width: 64%;
   height: 14px;
   border-radius: 999px;
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.45) 0%, transparent 70%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.38) 45%,
+    transparent 72%
+  );
   pointer-events: none;
   z-index: 0;
 }
 .sprite-ground-shadow-player {
   width: 78%;
   height: 16px;
+}
+.sprite-ground-shadow-wild {
+  width: 72%;
+  height: 13px;
 }
 
 @keyframes sprite-idle-bob {

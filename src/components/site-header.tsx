@@ -13,6 +13,8 @@ import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { listNotifications } from "@/lib/notifications";
 import type { CombatLock } from "@/lib/battle-lock";
+import { HandbookHost } from "@/components/handbook/handbook-modal";
+import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   const [t, tUx, session, locale] = await Promise.all([
@@ -193,6 +195,8 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
 
           <LocaleSwitcher currentLocale={locale} label={t("language")} />
 
+          {session?.user && <HandbookTrigger />}
+
           {session?.user && notifications && (
             <NotificationsBell
               initialItems={notifications.items}
@@ -255,6 +259,8 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         registerLabel={t("register")}
         notifications={notifications}
       />
+
+      {session?.user && <HandbookHost />}
     </>
   );
 }

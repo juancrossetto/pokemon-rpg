@@ -17,6 +17,7 @@ import {
 import { PvpTeamEditor } from "@/components/pvp-team-editor";
 import { tierAccentClass, tierForRating } from "@/lib/pvp/tiers";
 import { currentSeasonKey, nextSeasonReset } from "@/lib/pvp/seasons";
+import { HandbookLink } from "@/components/handbook/handbook-trigger";
 
 const PAGE_SIZE = 10;
 
@@ -128,6 +129,9 @@ export default async function PvpPage({
         <div>
           <h1 className="text-headline-lg md:text-display-lg text-white">{t("title")}</h1>
           <p className="text-label-md text-on-surface-variant mt-1">{t("subtitle")}</p>
+          <div className="mt-3">
+            <HandbookLink chapter="pvp" />
+          </div>
         </div>
 
         {error && (

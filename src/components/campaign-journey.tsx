@@ -379,7 +379,11 @@ export function CampaignJourney({
             <div className="mt-2">
               <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
             </div>
-            <HubHelpPanel storageKey="hub-help-campaign" bullets={helpBullets} />
+            <HubHelpPanel
+              storageKey="hub-help-campaign"
+              bullets={helpBullets}
+              handbookChapter="journey"
+            />
           </div>
         </details>
       </header>

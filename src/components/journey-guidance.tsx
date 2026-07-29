@@ -5,16 +5,21 @@ import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { hasSeen, markSeen, type FirstVisitKey } from "@/lib/journey-ux";
+import type { HandbookChapterId } from "@/lib/handbook/chapters";
+import { HandbookLink } from "@/components/handbook/handbook-trigger";
 
 /** Panel colapsable "¿Qué puedo hacer acá?" para hubs densos. */
 export function HubHelpPanel({
   storageKey,
   bullets,
   titleKey = "helpTitle",
+  handbookChapter,
 }: {
   storageKey: FirstVisitKey;
   bullets: string[];
   titleKey?: string;
+  /** Si se pasa, muestra enlace al capítulo del manual. */
+  handbookChapter?: HandbookChapterId;
 }) {
   const t = useTranslations("ux");
   const [open, setOpen] = useState(false);
@@ -46,14 +51,21 @@ export function HubHelpPanel({
         </span>
       </button>
       {open && (
-        <ul className="space-y-1.5 border-t border-white/10 px-3.5 py-3 text-label-sm text-on-surface-variant">
-          {bullets.map((b) => (
-            <li key={b} className="flex gap-2">
-              <span className="mt-0.5 text-pokeball-red">•</span>
-              <span>{b}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="border-t border-white/10 px-3.5 py-3">
+          <ul className="space-y-1.5 text-label-sm text-on-surface-variant">
+            {bullets.map((b) => (
+              <li key={b} className="flex gap-2">
+                <span className="mt-0.5 text-pokeball-red">•</span>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+          {handbookChapter ? (
+            <div className="mt-3 border-t border-white/8 pt-3">
+              <HandbookLink chapter={handbookChapter} />
+            </div>
+          ) : null}
+        </div>
       )}
     </div>
   );

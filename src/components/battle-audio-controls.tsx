@@ -86,7 +86,7 @@ export function BattleAudioControls({ bgmKind }: { bgmKind: BattleBgmKind }) {
 
   return (
     <div
-      className="battle-audio-control group absolute top-3 left-3 z-30 flex items-center"
+      className="battle-audio-control group absolute top-16 left-2 z-30 flex items-center md:top-[4.5rem] md:left-3"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
       onFocusCapture={() => setOpen(true)}

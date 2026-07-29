@@ -2405,5 +2405,187 @@
     "stretch": "Trecho",
     "stretchProgress": "{done}/{total} trechos",
     "goExplore": "Sair para explorar"
+  },
+  "handbook": {
+    "title": "Manual do treinador",
+    "eyebrow": "Guia do jogo",
+    "subtitle": "Como o jogo funciona de verdade: jornada, duelos e economia, sem enrolação.",
+    "open": "Abrir manual",
+    "close": "Fechar manual",
+    "toc": "Capítulos",
+    "readMore": "Ler no manual",
+    "nav": {
+      "journey": "Jornada",
+      "pvp": "PvP",
+      "economy": "Economia"
+    },
+    "chapters": {
+      "journey": {
+        "title": "A jornada por Kanto",
+        "lead": "A história não é um menu à parte: é o mapa. Você escolhe uma zona, explora nela e desafia o ginásio quando estiver pronto. Tudo o mais — equipe, loja, PvP — gira em torno desse ritmo.",
+        "sections": [
+          {
+            "heading": "Escolha onde você está",
+            "body": "Na Jornada você marca a zona ativa. Essa escolha define quais selvagens aparecem ao explorar e quais objetivos estão pendentes. Mudou de zona, mudou o farm.",
+            "bullets": [
+              "Rotas desbloqueiam ao avançar objetivos e medalhas.",
+              "O mapa mostra onde você está e o que vem a seguir.",
+              "Não precisa lutar em todo lugar: priorize o próximo marco."
+            ]
+          },
+          {
+            "heading": "Explorar gasta energia",
+            "body": "Buscar selvagens custa energia. Ela regenera sozinha (1 ponto a cada 30 minutos). Uma barra vazia leva horas para encher: escolha em quais lutas investir.",
+            "bullets": [
+              "Sem energia você não explora nem entra na fila de PvP.",
+              "Ginásios custam mais energia por combate.",
+              "Se ficar no zero: espere, resgate diárias ou passe na loja."
+            ]
+          },
+          {
+            "heading": "Ginásios = progresso",
+            "body": "Medalhas não são só troféus: abrem o caminho. Perder impõe um cooldown; você pode pular com gemas se não quiser esperar.",
+            "bullets": [
+              "Treine a equipe antes de desafiar o líder.",
+              "Revanches e MTs do líder alimentam o long game.",
+              "A Jornada diz quando o ginásio é o próximo passo."
+            ]
+          }
+        ]
+      },
+      "pvp": {
+        "title": "Combate competitivo",
+        "lead": "PvP é opcional. Não trava a história. Se entrar, sobe um ladder Elo, ganha moedas e compete por temporada. Ranked e Rápido movem rating: a diferença é o ritmo e o pagamento.",
+        "sections": [
+          {
+            "heading": "Como o Elo se move",
+            "body": "Você começa em 1000. Cada duelo usa Elo clássico com fator K = 32: vencer alguém mais forte rende mais; perder para alguém mais fraco dói mais. Os dois jogadores atualizam no mesmo confronto.",
+            "bullets": [
+              "Ranked: turno a turno contra o time rival (IA).",
+              "Rápido: simulação instantânea; paga menos moedas (×0,6).",
+              "Desafio direto: por nome de usuário, com cooldown."
+            ]
+          },
+          {
+            "kind": "table",
+            "heading": "Ligas",
+            "caption": "Sua liga multiplica as moedas na vitória. A derrota não usa esse multiplicador.",
+            "columns": [
+              "Liga",
+              "Elo mínimo",
+              "× moedas (vitória)"
+            ],
+            "rows": [
+              [
+                "Bronze",
+                "0",
+                "×1"
+              ],
+              [
+                "Prata",
+                "1100",
+                "×1,15"
+              ],
+              [
+                "Ouro",
+                "1250",
+                "×1,3"
+              ],
+              [
+                "Platina",
+                "1400",
+                "×1,5"
+              ],
+              [
+                "Diamante",
+                "1600",
+                "×1,75"
+              ],
+              [
+                "Mestre",
+                "1800",
+                "×2"
+              ]
+            ]
+          },
+          {
+            "heading": "Moedas por duelo",
+            "body": "Vitória base 40 moedas × liga × modo. Derrota base 12 × modo. Sempre pelo menos 1 moeda.",
+            "bullets": [
+              "Custa 1 energia buscar ou aceitar um combate.",
+              "Você pode montar um time PvP; senão, usa o de aventura.",
+              "Ao terminar você vê o delta de rating (antes → depois)."
+            ]
+          },
+          {
+            "heading": "Temporadas mensais",
+            "body": "Cada mês UTC fecha uma temporada. No primeiro combate do mês novo aplica-se soft reset: 70% do seu rating + 30% de 1000. A temporada anterior é arquivada e você recebe um prêmio pela liga alcançada.",
+            "bullets": [
+              "Bronze 100 moedas · Prata 200 + energia · Ouro 350 + 1 gema",
+              "Platina 500 + 2 gemas · Diamante 750 + 3 · Mestre 1200 + 5",
+              "O ranking ordena pelo Elo atual."
+            ]
+          }
+        ]
+      },
+      "economy": {
+        "title": "Moedas, gemas e mercado",
+        "lead": "Duas moedas, dois balcões. Moedas movem o dia a dia; gemas são o atalho premium. A loja vende pelo sistema; o mercado é entre jogadores — com taxas que freiam abuso.",
+        "sections": [
+          {
+            "heading": "Moedas",
+            "body": "Vêm de explorar, objetivos, diárias, PvP e vendas. Servem na loja oficial, anúncios do mercado, cura, renomear (depois do primeiro apelido grátis) e mais.",
+            "bullets": [
+              "Loja = preços fixos do sistema.",
+              "Mercado = ofertas de outros treinadores.",
+              "Veja o saldo na barra de recursos do header."
+            ]
+          },
+          {
+            "heading": "Gemas",
+            "body": "Moeda premium. Hoje vêm de diárias, semanais e prêmios de temporada PvP. Servem para pular o cooldown de um ginásio (e em breve expandir o PC).",
+            "bullets": [
+              "Cooldown curto (≤6 h) custa 1 gema; até 12 h, 2; mais, 3.",
+              "Não é obrigatório gastar: o cooldown também passa sozinho."
+            ]
+          },
+          {
+            "kind": "table",
+            "heading": "Regras do mercado",
+            "caption": "Anunciar não é de graça: taxa ao listar e comissão ao vender.",
+            "columns": [
+              "Conceito",
+              "Valor"
+            ],
+            "rows": [
+              [
+                "Taxa ao publicar",
+                "2% do preço (mín. 1 moeda)"
+              ],
+              [
+                "Comissão na venda",
+                "5% do preço"
+              ],
+              [
+                "Duração do anúncio",
+                "7 dias"
+              ],
+              [
+                "Confirmação extra",
+                "Compras ≥ 10.000 moedas"
+              ]
+            ]
+          },
+          {
+            "heading": "Energia como freio",
+            "body": "Energia não é moeda, mas é o controle de ritmo: limita o farm e quantos duelos PvP cabem na sessão. Invista com intenção.",
+            "bullets": [
+              "1 ponto a cada 30 minutos.",
+              "Recompensas diárias e semanais também ajudam a manter o ritmo."
+            ]
+          }
+        ]
+      }
+    }
   }
 }

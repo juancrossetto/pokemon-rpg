@@ -7,5 +7,11 @@ import { useTranslations } from "next-intl";
 export function TradeHelp() {
   const t = useTranslations("ux");
   const bullets = (t.raw("help.market") as string[]) ?? [];
-  return <HubHelpPanel storageKey="hub-help-market" bullets={bullets} />;
+  return (
+    <HubHelpPanel
+      storageKey="hub-help-market"
+      bullets={bullets}
+      handbookChapter="economy"
+    />
+  );
 }

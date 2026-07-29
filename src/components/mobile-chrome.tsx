@@ -18,6 +18,7 @@ import type { NavGroup } from "@/lib/navigation";
 import type { NavLabels } from "@/components/nav-links";
 import type { NotificationDTO } from "@/lib/notifications";
 import { consumeMobileNavDrawerOpen } from "@/lib/nav-drawer-persist";
+import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
 
 type NavLink = {
   href: string;
@@ -230,6 +231,7 @@ export function MobileChrome({
                 variant="mobile"
               />
             )}
+          {userName ? <HandbookTrigger className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-on-surface-variant transition hover:text-electric-yellow" /> : null}
           {notifications && (
             <div className="flex h-11 w-11 items-center justify-center">
               <NotificationsBell

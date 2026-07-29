@@ -12,8 +12,9 @@ import {
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { BattleSprite } from "@/components/battle-sprite";
+import Image from "next/image";
 import { LevelUpOffersPanel } from "@/components/level-up-offers";
+import { uiSpriteUrl } from "@/lib/sprites";
 import { playBattleSfx } from "@/lib/battle-sfx";
 import { startResultBgm, stopResultBgm } from "@/lib/battle-bgm";
 import type { XpSummaryEntry } from "@/actions/battle-move";
@@ -75,13 +76,11 @@ const TONE_CLASS: Record<"win" | "ko" | "caught" | "neutral", string> = {
 
 function FighterCard({
   fighter,
-  facing,
   tag,
   defeated,
   highlight,
 }: {
   fighter: ResultFighter;
-  facing: "front" | "back";
   tag: Tag;
   defeated: boolean;
   highlight: boolean;
@@ -97,14 +96,16 @@ function FighterCard({
             <span className="victory-ring absolute inset-1 rounded-full border border-tertiary/40" />
           </>
         )}
-        <BattleSprite
-          speciesName={fighter.speciesName}
-          facing={facing}
-          fallbackUrl={fighter.spriteUrl}
+        {/* Render 3D de HOME, no el GIF pixel de la arena: el resumen es una
+            pieza de vitrina y aguanta el detalle. La flotación es CSS, así que
+            se mantiene aunque la imagen sea estática. */}
+        <Image
+          src={uiSpriteUrl(fighter.spriteUrl)}
           alt={fighter.name}
           width={128}
           height={128}
-          className={`relative h-full w-full object-contain drop-shadow-lg ${
+          unoptimized
+          className={`relative h-full w-full object-contain drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] ${
             defeated ? "translate-y-1 opacity-45 grayscale" : "result-float"
           }`}
         />
@@ -172,13 +173,12 @@ function LevelUpFanfare({
       <div className="relative mt-2 flex flex-wrap items-center justify-center gap-3">
         {leveled.map((entry) => (
           <div key={entry.instanceId} className="flex items-center gap-2">
-            <BattleSprite
-              speciesName={entry.name === player.name ? player.speciesName : entry.name}
-              facing="front"
-              fallbackUrl={entry.fromSpriteUrl}
+            <Image
+              src={uiSpriteUrl(entry.fromSpriteUrl)}
               alt={entry.name}
               width={40}
               height={40}
+              unoptimized
               className="h-10 w-10 object-contain"
             />
             <div className="text-left">
@@ -352,7 +352,6 @@ export function BattleResult({
             <div className="relative grid grid-cols-[1fr_auto_1fr] items-start gap-2 md:gap-3">
               <FighterCard
                 fighter={player}
-                facing="front"
                 tag={playerTag}
                 defeated={mode === "lost"}
                 highlight={playerWon}
@@ -365,7 +364,6 @@ export function BattleResult({
               </div>
               <FighterCard
                 fighter={foe}
-                facing="front"
                 tag={foeTag}
                 defeated={mode !== "lost" && mode !== "fled"}
                 highlight={mode === "lost"}

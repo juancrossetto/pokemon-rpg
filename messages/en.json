@@ -2405,5 +2405,187 @@
     "stretch": "Stretch",
     "stretchProgress": "{done}/{total} stretches",
     "goExplore": "Head out to explore"
+  },
+  "handbook": {
+    "title": "Trainer handbook",
+    "eyebrow": "Game guide",
+    "subtitle": "How the game actually works — journey, duels, and economy, without fluff.",
+    "open": "Open handbook",
+    "close": "Close handbook",
+    "toc": "Chapters",
+    "readMore": "Read in the handbook",
+    "nav": {
+      "journey": "Journey",
+      "pvp": "PvP",
+      "economy": "Economy"
+    },
+    "chapters": {
+      "journey": {
+        "title": "The Kanto journey",
+        "lead": "The story isn't a separate menu — it's the map. Pick a zone, explore there, and challenge the gym when you're ready. Everything else — team, shop, PvP — orbits that loop.",
+        "sections": [
+          {
+            "heading": "Choose where you are",
+            "body": "On Journey you set your active zone. That choice drives which wilds appear when you explore and which objectives are waiting. Change zone, change the grind.",
+            "bullets": [
+              "Routes unlock as you clear objectives and badges.",
+              "The map shows where you stand and what's next.",
+              "You don't need to fight everywhere — chase the next milestone."
+            ]
+          },
+          {
+            "heading": "Exploring spends energy",
+            "body": "Hunting wilds costs energy. It regenerates on its own (1 point every 30 minutes). An empty bar takes hours to refill — spend fights wisely.",
+            "bullets": [
+              "No energy means no exploring and no PvP queue.",
+              "Gym fights cost more energy per battle.",
+              "If you're empty: wait, claim dailies, or visit the shop."
+            ]
+          },
+          {
+            "heading": "Gyms = progress",
+            "body": "Badges aren't just trophies — they open the path. Losing sets a cooldown; you can skip it with gems if you don't want to wait.",
+            "bullets": [
+              "Train the squad before challenging the leader.",
+              "Rematches and leader TMs feed the long game.",
+              "Journey tells you when the gym is the next step."
+            ]
+          }
+        ]
+      },
+      "pvp": {
+        "title": "Competitive battles",
+        "lead": "PvP is optional. It never blocks the story. If you jump in, you climb an Elo ladder, earn coins, and compete by season. Ranked and Quick both move rating — the difference is pace and payout.",
+        "sections": [
+          {
+            "heading": "How Elo moves",
+            "body": "You start at 1000. Every duel uses classic Elo with K = 32: beating someone stronger pays more; losing to someone weaker hurts more. Both players update in the same match.",
+            "bullets": [
+              "Ranked: turn-by-turn vs the rival team (AI).",
+              "Quick: instant sim; pays fewer coins (×0.6).",
+              "Direct challenge: by username, with a cooldown."
+            ]
+          },
+          {
+            "kind": "table",
+            "heading": "Leagues",
+            "caption": "Your league multiplies win coins. Losses ignore this multiplier.",
+            "columns": [
+              "League",
+              "Min Elo",
+              "× coins (win)"
+            ],
+            "rows": [
+              [
+                "Bronze",
+                "0",
+                "×1"
+              ],
+              [
+                "Silver",
+                "1100",
+                "×1.15"
+              ],
+              [
+                "Gold",
+                "1250",
+                "×1.3"
+              ],
+              [
+                "Platinum",
+                "1400",
+                "×1.5"
+              ],
+              [
+                "Diamond",
+                "1600",
+                "×1.75"
+              ],
+              [
+                "Master",
+                "1800",
+                "×2"
+              ]
+            ]
+          },
+          {
+            "heading": "Coins per duel",
+            "body": "Win base 40 coins × league × mode. Loss base 12 × mode. Always at least 1 coin.",
+            "bullets": [
+              "Queueing or accepting a fight costs 1 energy.",
+              "You can set a PvP team; otherwise your adventure team is used.",
+              "After the match you see the rating delta (before → after)."
+            ]
+          },
+          {
+            "heading": "Monthly seasons",
+            "body": "Each UTC month ends a season. On your first fight of the new month, a soft reset applies: 70% of your rating + 30% of 1000. The previous season is archived and you get a prize by league reached.",
+            "bullets": [
+              "Bronze 100 coins · Silver 200 + energy · Gold 350 + 1 gem",
+              "Platinum 500 + 2 gems · Diamond 750 + 3 · Master 1200 + 5",
+              "The ranking ladder sorts by current Elo."
+            ]
+          }
+        ]
+      },
+      "economy": {
+        "title": "Coins, gems, and the market",
+        "lead": "Two currencies, two counters. Coins run the day-to-day; gems are the premium shortcut. The shop sells from the system; the market is player-to-player — with fees that curb abuse.",
+        "sections": [
+          {
+            "heading": "Coins",
+            "body": "Earned from exploring, objectives, dailies, PvP, and sales. Spent in the official shop, market listings, healing, renames (after the first free nickname), and more.",
+            "bullets": [
+              "Shop = fixed system prices.",
+              "Market = other trainers' listings.",
+              "Check your balance on the header resource bar."
+            ]
+          },
+          {
+            "heading": "Gems",
+            "body": "Premium currency. Today they come from dailies, weeklies, and PvP season prizes. Use them to skip a gym cooldown (and soon to expand the PC).",
+            "bullets": [
+              "Short cooldown (≤6 h) costs 1 gem; up to 12 h, 2; longer, 3.",
+              "You never have to spend them — cooldowns also tick down alone."
+            ]
+          },
+          {
+            "kind": "table",
+            "heading": "Market rules",
+            "caption": "Listing isn't free: a fee on post, a commission on sale.",
+            "columns": [
+              "Rule",
+              "Value"
+            ],
+            "rows": [
+              [
+                "Listing fee",
+                "2% of price (min. 1 coin)"
+              ],
+              [
+                "Sale commission",
+                "5% of price"
+              ],
+              [
+                "Listing duration",
+                "7 days"
+              ],
+              [
+                "Extra confirm",
+                "Purchases ≥ 10,000 coins"
+              ]
+            ]
+          },
+          {
+            "heading": "Energy as the pace brake",
+            "body": "Energy isn't currency, but it's the rhythm control: it caps how hard you grind and how many PvP duels fit in a session. Spend it on purpose.",
+            "bullets": [
+              "1 point every 30 minutes.",
+              "Daily and weekly rewards also help you keep pace."
+            ]
+          }
+        ]
+      }
+    }
   }
 }

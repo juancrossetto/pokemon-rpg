@@ -12,6 +12,7 @@ import { forfeitPvpBattle } from "@/actions/forfeit-pvp-battle";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BattleSprite } from "@/components/battle-sprite";
+import { battleSpeciesScale } from "@/lib/battle-sprite-scale";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
 import { typeColor } from "@/lib/type-colors";
 import { formatMoveName } from "@/lib/format-move-name";
@@ -200,6 +201,7 @@ export function BattleArena({
   // actualiza hasta el próximo render) — un ref sincrónico evita que el
   // contraataque tras un switch muestre el nombre del Pokémon que se fue.
   const activePlayerNameRef = useRef(player.name);
+  const activePlayerIdRef = useRef(player.instanceId);
   const [playerHp, setPlayerHp] = useState(player.currentHp);
   const [playerMaxHp, setPlayerMaxHp] = useState(player.maxHp);
   const [activeWild, setActiveWild] = useState({
@@ -286,6 +288,10 @@ export function BattleArena({
   // Sacudida/flash del golpe escalados según % de HP máximo que representó
   // el daño — un golpe débil ya no se ve idéntico a uno que casi noquea.
   const [impactIntensity, setImpactIntensity] = useState(1);
+  // Los sprites se dimensionan contra el alto real del campo, no contra px
+  // fijos: el campo cambia mucho de alto entre mobile, desktop y DevTools.
+  const arenaFieldRef = useRef<HTMLDivElement>(null);
+  const [arenaHeightPx, setArenaHeightPx] = useState(0);
   const bgmKind = isGymBattle || isPvpBattle || opponentName ? "boss" : "wild";
 
   const teamRoster = party.filter((m) => m.instanceId !== activePlayer.instanceId);
@@ -299,6 +305,18 @@ export function BattleArena({
   useEffect(() => {
     if (outcome !== "ongoing") stopBattleBgm();
   }, [outcome]);
+
+  useEffect(() => {
+    const field = arenaFieldRef.current;
+    if (!field) return;
+    const observer = new ResizeObserver(() => {
+      const el = arenaFieldRef.current;
+      if (el) setArenaHeightPx(el.clientHeight);
+    });
+    observer.observe(field);
+    setArenaHeightPx(field.clientHeight);
+    return () => observer.disconnect();
+  }, []);
 
   // Al iniciar la batalla: el rival aparece primero, y un instante después
   // se tira la ball del jugador — se ve SOLO la ball viajando durante
@@ -332,7 +350,7 @@ export function BattleArena({
   /** Objeto equipado del jugador que se activó esta acción (Leftovers, Focus Sash, etc.) — siempre del lado jugador. */
   function appendItemTriggerLog(event: TurnEvent) {
     if (!event.itemEffect || !event.itemName) return;
-    const activeId = activePlayer.instanceId;
+    const activeId = activePlayerIdRef.current;
     const playerName = nameFor("player");
 
     if (event.itemEffect === "leftovers" && event.itemAmount != null) {
@@ -396,7 +414,7 @@ export function BattleArena({
     if (!event.residualDamage || event.residualHpAfter == null) return;
 
     const side = event.side;
-    const activeId = activePlayer.instanceId;
+    const activeId = activePlayerIdRef.current;
     const status =
       event.residualStatus ?? (side === "player" ? playerStatus : wildStatus);
     const flash =
@@ -445,7 +463,7 @@ export function BattleArena({
   }
 
   function playEvent(event: TurnEvent): Promise<void> {
-    const activeId = activePlayer.instanceId;
+    const activeId = activePlayerIdRef.current;
     return new Promise((resolve) => {
       const color = typeColor(event.moveType);
       const fxKey = Date.now();
@@ -639,7 +657,7 @@ export function BattleArena({
     } else {
       setParty((prev) =>
         prev.map((m) =>
-          m.instanceId === activePlayer.instanceId ? { ...m, currentHp: 0 } : m,
+          m.instanceId === activePlayerIdRef.current ? { ...m, currentHp: 0 } : m,
         ),
       );
     }
@@ -657,7 +675,7 @@ export function BattleArena({
     setFaintingSide("player");
     setParty((prev) =>
       prev.map((m) =>
-        m.instanceId === activePlayer.instanceId ? { ...m, currentHp: 0 } : m,
+        m.instanceId === activePlayerIdRef.current ? { ...m, currentHp: 0 } : m,
       ),
     );
     await delay(FAINT_MS);
@@ -963,6 +981,8 @@ export function BattleArena({
     setView("menu");
 
     const outgoing = activePlayer;
+    const outgoingHpSnapshot = playerHp;
+    const outgoingMaxHpSnapshot = playerMaxHp;
     const forced = mustSwitch;
 
     if (!forced) {
@@ -991,7 +1011,10 @@ export function BattleArena({
       "player",
     );
 
+    // Ref sync BEFORE playEvent — counter damage must hit the incoming mon,
+    // not the one that just left (stale activePlayer closure).
     activePlayerNameRef.current = result.newPlayer.name;
+    activePlayerIdRef.current = result.newPlayer.instanceId;
     setActivePlayer({
       instanceId: result.newPlayer.instanceId,
       name: result.newPlayer.name,
@@ -999,7 +1022,8 @@ export function BattleArena({
       level: result.newPlayer.level,
       spriteUrl: result.newPlayer.spriteUrl,
     });
-    setPlayerHp(member.currentHp);
+    // Server already applied wild counter into newPlayer.currentHp.
+    setPlayerHp(result.newPlayer.currentHp);
     setPlayerMaxHp(result.newPlayer.maxHp);
     setActiveMoves(result.newPlayer.moves);
     // Status/stages/Choice son del Pokémon activo: al entrar limpio el badge
@@ -1009,10 +1033,18 @@ export function BattleArena({
     setParty((prev) =>
       prev.map((m) => {
         if (m.instanceId === outgoing.instanceId) {
-          return { ...m, currentHp: playerHp, maxHp: playerMaxHp };
+          return {
+            ...m,
+            currentHp: forced ? 0 : Math.max(0, outgoingHpSnapshot),
+            maxHp: outgoingMaxHpSnapshot,
+          };
         }
-        if (m.instanceId === member.instanceId) {
-          return { ...m, maxHp: result.newPlayer.maxHp };
+        if (m.instanceId === result.newPlayer.instanceId) {
+          return {
+            ...m,
+            currentHp: result.newPlayer.currentHp,
+            maxHp: result.newPlayer.maxHp,
+          };
         }
         return m;
       }),
@@ -1094,10 +1126,19 @@ export function BattleArena({
     !attackingSide && !shakingSide && !faintingSide && !playerEntering && !playerHealing && !ballAnim;
   const wildIdle =
     !attackingSide && !shakingSide && !faintingSide && !wildEntering && !wildAbsorbedByBall && !captureBall;
+  // Tamaño relativo al alto del campo: el jugador ocupa el primer plano
+  // (58–88% del alto) y el rival el fondo (32–48%), y dentro de cada rango
+  // la especie define dónde cae. Fallback para el primer render/SSR.
+  const isAlphaWild = initialLog.some((line) => line === "alpha");
+  const arenaH = arenaHeightPx || 400;
+  const playerSpeciesScale = battleSpeciesScale(activePlayer.speciesName);
+  const wildSpeciesScale = battleSpeciesScale(activeWild.speciesName);
+  const playerT = Math.min(1, Math.max(0, (playerSpeciesScale - 0.52) / (1.3 - 0.52)));
+  const wildT = Math.min(1, Math.max(0, (wildSpeciesScale - 0.52) / (1.3 - 0.52)));
+  const playerSpritePx = Math.round(arenaH * (0.58 + playerT * 0.3));
+  const wildSpritePx = Math.round(arenaH * (0.32 + wildT * 0.16) * (isAlphaWild ? 1.1 : 1));
   const playerSpriteClass = [
-    // Más grande en primer plano: los ani-back de Showdown se ven más chicos
-    // que los ani front del rival con el mismo box.
-    "w-[6.5rem] h-[6.5rem] md:w-[16rem] md:h-[16rem] object-contain drop-shadow-lg origin-bottom",
+    "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "player" ? (physicalLunge ? "sprite-lunge-right-hard" : "sprite-lunge-right") : "",
     shakingSide === "player" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "player" ? "sprite-faint" : "",
@@ -1110,7 +1151,7 @@ export function BattleArena({
     .join(" ");
 
   const wildSpriteClass = [
-    "w-[5.25rem] h-[5.25rem] md:w-40 md:h-40 object-contain drop-shadow-lg origin-bottom",
+    "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "wild" ? (physicalLunge ? "sprite-lunge-left-hard" : "sprite-lunge-left") : "",
     shakingSide === "wild" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
     faintingSide === "wild" ? "sprite-faint" : "",
@@ -1176,7 +1217,8 @@ export function BattleArena({
 
           {/* Arena */}
           <div
-            className={`battle-arena-field relative overflow-hidden rounded-xl border border-white/10 flex-1 min-h-0 md:min-h-[272px] ${
+            ref={arenaFieldRef}
+            className={`battle-arena-field relative overflow-hidden rounded-xl border border-white/10 flex-1 min-h-0 md:min-h-[360px] ${
               arenaFlash ? "arena-type-flash" : ""
             }`}
             style={
@@ -1187,23 +1229,27 @@ export function BattleArena({
             }
           >
             <BattleAudioControls bgmKind={bgmKind} />
+            {/* Plates sit opposite their sprite (FireRed layout): foe plate
+                top-left vs foe sprite top-right, player plate bottom-right vs
+                player sprite bottom-left. Same-corner plates were covering the
+                sprites, which is why the player looked cropped and small. */}
             <HpPlate
-              className="absolute top-2 right-2 z-20 w-[min(100%,160px)] md:top-3 md:right-3 md:w-[min(100%,220px)]"
+              className="absolute top-2 left-2 z-20 w-[min(100%,160px)] md:top-3 md:left-3 md:w-[min(100%,220px)]"
               name={activeWild.name}
               levelLabel={t("level", { level: activeWild.level })}
               currentHp={wildHp}
               maxHp={wildMaxHp}
               status={wildStatus}
-              align="right"
+              align="left"
             />
             <HpPlate
-              className="absolute bottom-2 left-2 z-20 w-[min(100%,160px)] md:bottom-3 md:left-3 md:w-[min(100%,220px)]"
+              className="absolute bottom-2 right-2 z-20 w-[min(100%,160px)] md:bottom-3 md:right-3 md:w-[min(100%,220px)]"
               name={activePlayer.name}
               levelLabel={t("level", { level: activePlayer.level })}
               currentHp={playerHp}
               maxHp={playerMaxHp}
               status={playerStatus}
-              align="left"
+              align="right"
             />
 
             {moveFx && (
@@ -1300,9 +1346,12 @@ export function BattleArena({
               </span>
             )}
 
-            {/* Opponent sprite — upper right */}
-            <div className="absolute right-[6%] top-[14%] md:right-[12%] md:top-[14%] z-[1]">
-              <span className="sprite-ground-shadow absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
+            {/* Opponent sprite — far plate (px from arena height) */}
+            <div
+              className="absolute right-[5%] top-[8%] z-[1] origin-bottom"
+              style={{ width: wildSpritePx, height: wildSpritePx }}
+            >
+              <span className="sprite-ground-shadow sprite-ground-shadow-wild absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
               {damagePopup?.side === "wild" && (
                 <span
                   key={damagePopup.key}
@@ -1337,16 +1386,19 @@ export function BattleArena({
                   isShiny={activeWild.isShiny}
                   fallbackUrl={activeWild.spriteUrl}
                   alt={activeWild.name}
-                  width={160}
-                  height={160}
+                  width={wildSpritePx}
+                  height={wildSpritePx}
                   className={wildSpriteClass}
                   style={shakeStyle("wild")}
                 />
               )}
             </div>
 
-            {/* Player sprite — lower left */}
-            <div className="absolute left-[3%] bottom-[6%] md:left-[8%] md:bottom-[8%] z-[1]">
+            {/* Player sprite — near plate, bottom-left */}
+            <div
+              className="absolute left-[2%] bottom-[2%] z-[1] origin-bottom"
+              style={{ width: playerSpritePx, height: playerSpritePx }}
+            >
               <span className="sprite-ground-shadow sprite-ground-shadow-player absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
               {damagePopup?.side === "player" && (
                 <span
@@ -1381,8 +1433,8 @@ export function BattleArena({
                   facing="back"
                   fallbackUrl={activePlayer.spriteUrl}
                   alt={activePlayer.name}
-                  width={256}
-                  height={256}
+                  width={playerSpritePx}
+                  height={playerSpritePx}
                   className={playerSpriteClass}
                   style={shakeStyle("player")}
                 />
