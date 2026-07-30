@@ -31,6 +31,7 @@ export function BattleOutcomeScreen({
   coinsGained,
   isPvpBattle,
   isGymBattle,
+  isTowerBattle,
   pvpResult,
   showBadgePopup,
   onBadgeContinue,
@@ -38,6 +39,7 @@ export function BattleOutcomeScreen({
   tmRewardName,
   gymId,
   gymRunId,
+  towerRunId,
   gymType,
   gymName,
   gymLeaderName,
@@ -53,6 +55,7 @@ export function BattleOutcomeScreen({
   coinsGained: number;
   isPvpBattle: boolean;
   isGymBattle: boolean;
+  isTowerBattle: boolean;
   pvpResult: PvpResultInfo | null;
   showBadgePopup: boolean;
   onBadgeContinue: () => void;
@@ -60,6 +63,7 @@ export function BattleOutcomeScreen({
   tmRewardName: string | null;
   gymId: string | null;
   gymRunId: string | null;
+  towerRunId: string | null;
   gymType: string | null;
   gymName: string | null;
   gymLeaderName: string | null;
@@ -70,6 +74,7 @@ export function BattleOutcomeScreen({
   const tUx = useTranslations("ux");
   const router = useRouter();
   const [confirmLeaveGym, setConfirmLeaveGym] = useState(false);
+  void towerRunId;
 
   const resultText =
     outcome === "won"
@@ -84,7 +89,12 @@ export function BattleOutcomeScreen({
             ? t("resultTrainerCleared")
             : t("resultFled");
   // El texto largo de derrota explica el próximo paso — va como bajada.
-  const resultSubText = outcome === "lost" ? t("resultLost") : null;
+  const resultSubText =
+    outcome === "lost"
+      ? isTowerBattle
+        ? t("resultLostTower")
+        : t("resultLost")
+      : null;
   const ctaClass =
     "w-full max-w-sm rounded-lg bg-pokeball-red px-6 py-3 text-center text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors";
 
@@ -149,7 +159,11 @@ export function BattleOutcomeScreen({
           onContinue={onBadgeContinue}
         />
       )}
-      {outcome === "lost" && isPvpBattle ? (
+      {outcome === "lost" && isTowerBattle ? (
+        <SoftLeaveButton href="/tower" className={ctaClass}>
+          {t("backToTower")}
+        </SoftLeaveButton>
+      ) : outcome === "lost" && isPvpBattle ? (
         <SoftLeaveButton
           href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}
           className={ctaClass}
@@ -163,6 +177,10 @@ export function BattleOutcomeScreen({
           </SoftLeaveButton>
           <p className="text-center text-label-sm text-on-surface-variant">{tUx("postBattleHeal")}</p>
         </div>
+      ) : outcome === "won" && isTowerBattle ? (
+        <SoftLeaveButton href="/tower" className={ctaClass}>
+          {t("backToTower")}
+        </SoftLeaveButton>
       ) : outcome === "won" && isPvpBattle ? (
         <SoftLeaveButton
           href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}

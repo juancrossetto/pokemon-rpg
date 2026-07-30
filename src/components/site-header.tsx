@@ -73,8 +73,21 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
     : null;
   const lock = combatLock;
   const lockedHref =
-    lock?.kind === "battle" ? "/battle" : lock?.kind === "gym" ? `/gyms/${lock.gymId}/run` : null;
-  const lockedLabel = lock?.kind === "battle" ? t("inBattle") : lock?.kind === "gym" ? t("inGym") : null;
+    lock?.kind === "battle"
+      ? "/battle"
+      : lock?.kind === "gym"
+        ? `/gyms/${lock.gymId}/run`
+        : lock?.kind === "tower"
+          ? "/tower"
+          : null;
+  const lockedLabel =
+    lock?.kind === "battle"
+      ? t("inBattle")
+      : lock?.kind === "gym"
+        ? t("inGym")
+        : lock?.kind === "tower"
+          ? t("inTower")
+          : null;
 
   /**
    * Etiquetas de la navegación, resueltas una sola vez en el servidor. Los

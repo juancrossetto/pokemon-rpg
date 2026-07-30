@@ -104,7 +104,7 @@ export async function writeLedger(
   tx: Prisma.TransactionClient,
   input: {
     userId: string;
-    source: "daily" | "weekly" | "event_mission" | "pvp" | "achievement";
+    source: "daily" | "weekly" | "event_mission" | "pvp" | "achievement" | "tower";
     sourceRef: string;
     result: GrantResult;
   },

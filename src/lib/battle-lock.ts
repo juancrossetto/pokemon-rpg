@@ -24,13 +24,27 @@ export async function getActiveGymRun(
   });
 }
 
+/** Intento de Torre ACTIVE / bendición / descanso. */
+export async function getActiveTowerRun(
+  userId: string,
+): Promise<{ id: string } | null> {
+  return prisma.towerRun.findFirst({
+    where: {
+      userId,
+      status: { in: ["ACTIVE", "AWAITING_BLESSING", "RESTING"] },
+    },
+    select: { id: true },
+  });
+}
+
 export type CombatLock =
   | { kind: "battle" }
   | { kind: "gym"; gymId: string }
+  | { kind: "tower" }
   | null;
 
 /**
- * Prioriza batalla ACTIVE; si no, corrida de gym ACTIVE.
+ * Prioriza batalla ACTIVE; si no, corrida de gym ACTIVE; si no, torre.
  *
  * Envuelto en `cache()` de React: el layout lo pide dos veces (guard + prop
  * para el header) y cada página una más vía `redirectIfInBattle`. Sin esto son
@@ -39,8 +53,10 @@ export type CombatLock =
  */
 export const getCombatLock = cache(async (userId: string): Promise<CombatLock> => {
   if (await hasActiveBattle(userId)) return { kind: "battle" };
-  const run = await getActiveGymRun(userId);
-  if (run) return { kind: "gym", gymId: run.gymId };
+  const gym = await getActiveGymRun(userId);
+  if (gym) return { kind: "gym", gymId: gym.gymId };
+  const tower = await getActiveTowerRun(userId);
+  if (tower) return { kind: "tower" };
   return null;
 });
 
@@ -57,6 +73,7 @@ export function stripLocale(pathname: string): string {
 function isAllowedDuringLock(path: string, lock: NonNullable<CombatLock>): boolean {
   if (path === "/login" || path === "/register") return true;
   if (lock.kind === "battle") return path === "/battle";
+  if (lock.kind === "tower") return path === "/tower" || path === "/battle";
   return path === `/gyms/${lock.gymId}/run` || path === "/battle";
 }
 
@@ -72,6 +89,9 @@ export async function redirectIfInBattle(userId: string, locale: string): Promis
   }
   if (lock?.kind === "gym") {
     redirect({ href: `/gyms/${lock.gymId}/run`, locale });
+  }
+  if (lock?.kind === "tower") {
+    redirect({ href: "/tower", locale });
   }
 }
 
@@ -106,6 +126,8 @@ export async function enforceCombatLockInLayout(
 
   if (lock.kind === "battle") {
     redirect({ href: "/battle", locale });
+  } else if (lock.kind === "tower") {
+    redirect({ href: "/tower", locale });
   } else {
     redirect({ href: `/gyms/${lock.gymId}/run`, locale });
   }
@@ -122,6 +144,10 @@ export async function blockIfInCombat(userId: string, locale: string): Promise<b
     redirect({ href: `/gyms/${lock.gymId}/run`, locale });
     return true;
   }
+  if (lock?.kind === "tower") {
+    redirect({ href: "/tower", locale });
+    return true;
+  }
   return false;
 }
 
@@ -131,4 +157,5 @@ export async function blockIfInCombat(userId: string, locale: string): Promise<b
 export function revalidateCombatUi(locale: string) {
   revalidatePath(`/${locale}`, "layout");
   revalidatePath(`/${locale}/gyms`);
+  revalidatePath(`/${locale}/tower`);
 }

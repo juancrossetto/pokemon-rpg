@@ -121,19 +121,21 @@ export function BattleArena({
   playerChargeMoveId: initialChargeMoveId,
   gymId,
   gymRunId,
+  towerRunId = null,
   gymType,
   gymName,
   gymLeaderName,
   gymBadgeName,
-  battleMode = gymId ? "gym" : "wild",
+  battleMode = gymId ? "gym" : towerRunId ? "tower" : "wild",
   battleBg = "meadow",
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tLog = useTranslations("battle.log");
   const isGymBattle = battleMode === "gym";
   const isPvpBattle = battleMode === "pvp";
-  // Gym, PvP o entrenador de ruta: no captura / no huida “salvaje”.
-  const isTrainerStyle = isGymBattle || isPvpBattle || Boolean(opponentName);
+  const isTowerBattle = battleMode === "tower" || Boolean(towerRunId);
+  // Gym, PvP, Torre o entrenador de ruta: no captura / no huida “salvaje”.
+  const isTrainerStyle = isGymBattle || isPvpBattle || isTowerBattle || Boolean(opponentName);
   const leaderPortrait = gymLeaderName ? gymLeaderPortraitUrl(gymLeaderName) : null;
   const foeLabel = opponentName ?? t("wildFoe");
 
@@ -146,6 +148,9 @@ export function BattleArena({
     if (raw.startsWith("switchForced:")) return tLog("switchForced", { name: raw.slice(14) });
     if (raw.startsWith("challengeTrainer:")) {
       return tLog("challengeTrainer", { name: raw.slice("challengeTrainer:".length) });
+    }
+    if (raw.startsWith("towerFloor:")) {
+      return tLog("towerFloor", { floor: raw.slice("towerFloor:".length) });
     }
     if (raw.startsWith("challengePvp:")) {
       return tLog("challengeTrainer", { name: raw.slice("challengePvp:".length) });
@@ -1380,6 +1385,7 @@ export function BattleArena({
         coinsGained={coinsGained}
         isPvpBattle={isPvpBattle}
         isGymBattle={isGymBattle}
+        isTowerBattle={isTowerBattle}
         pvpResult={pvpResult}
         showBadgePopup={showBadgePopup}
         onBadgeContinue={() => setShowBadgePopup(false)}
@@ -1387,6 +1393,7 @@ export function BattleArena({
         tmRewardName={tmRewardName}
         gymId={gymId}
         gymRunId={gymRunId}
+        towerRunId={towerRunId}
         gymType={gymType}
         gymName={gymName}
         gymLeaderName={gymLeaderName}

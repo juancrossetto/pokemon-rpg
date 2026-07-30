@@ -80,6 +80,9 @@ model User {
   clanApplications   ClanApplication[]
   clanInvitesFrom    ClanInvite[]         @relation("ClanInviteFrom")
   clanInvitesTo      ClanInvite[]         @relation("ClanInviteTo")
+  towerProgress      TowerProgress[]
+  towerRuns          TowerRun[]
+  towerAttemptDays   TowerAttemptDay[]
 }
 
 // ---------- Notificaciones in-app ----------
@@ -838,6 +841,7 @@ model ZoneObjectiveClaim {
 enum BattleKind {
   PVE_WILD
   PVE_GYM
+  PVE_TOWER
   PVP
 }
 
@@ -889,6 +893,7 @@ model BattleSession {
   gymRunId               String? // corrida de gimnasio a la que pertenece esta batalla (null = encuentro salvaje)
   gymTrainerId           String? // entrenador subordinado actual — null = está peleando contra el líder
   gymPokemonSlot         Int? // slot del equipo actual (del entrenador o del líder) que se está peleando
+  towerRunId             String? // intento de Torre de Combate (null = no es torre)
   // Estado de combate en sesión (se limpia al cambiar de Pokémon / fin de batalla).
   playerStatus           StatusCondition?
   wildStatus             StatusCondition?
@@ -927,12 +932,14 @@ model BattleSession {
   gym             Gym?            @relation(fields: [gymId], references: [id])
   gymRun          GymRun?         @relation(fields: [gymRunId], references: [id])
   gymTrainer      GymTrainer?     @relation(fields: [gymTrainerId], references: [id])
+  towerRun        TowerRun?       @relation(fields: [towerRunId], references: [id], onDelete: SetNull)
   pvpMatch        PvpMatch?       @relation(fields: [pvpMatchId], references: [id], onDelete: SetNull)
   opponentUser    User?           @relation("PvpOpponentUser", fields: [opponentUserId], references: [id], onDelete: SetNull)
   wildHeldItem    Item?           @relation("BattleWildHeldItem", fields: [wildHeldItemId], references: [id], onDelete: SetNull)
 
   @@index([userId, status])
   @@index([pvpMatchId])
+  @@index([towerRunId])
 }
 
 // ---------- PvP ----------
@@ -1070,7 +1077,7 @@ model AchievementClaim {
 model RewardLedger {
   id        String   @id @default(cuid())
   userId    String
-  source    String // "daily" | "weekly" | "event_mission" | "pvp" | "achievement"
+  source    String // "daily" | "weekly" | "event_mission" | "pvp" | "achievement" | "tower"
   sourceRef String // "cycle-28:12" | "2026-W31:50" | "water-fest:catch-10" | "firstSteps"
   payload   Json
   createdAt DateTime @default(now())
@@ -1078,4 +1085,77 @@ model RewardLedger {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+// ---------- Torre de Combate ----------
+// Contenido estático en src/lib/tower/; acá solo progreso e intentos.
+
+enum TowerRunStatus {
+  ACTIVE
+  AWAITING_BLESSING
+  RESTING
+  FAILED
+  COMPLETED
+  ABANDONED
+}
+
+/// Progreso permanente + de temporada por torre/dificultad.
+model TowerProgress {
+  id                   String   @id @default(cuid())
+  userId               String
+  towerId              String
+  difficultyId         String
+  highestFloorAllTime  Int      @default(0)
+  highestFloorSeason   Int      @default(0)
+  seasonKey            String
+  claimedFirstClears   String[] @default([])
+  guardiansDefeated    Int      @default(0)
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, towerId, difficultyId])
+  @@index([userId])
+}
+
+/// Intento / ascenso en curso o cerrado.
+model TowerRun {
+  id                    String         @id @default(cuid())
+  userId                String
+  towerId               String
+  difficultyId          String
+  status                TowerRunStatus @default(ACTIVE)
+  currentFloor          Int            @default(1)
+  /// Snapshot del equipo del intento (HP/PP/derrotados + restore de Aventura).
+  teamSnapshot          Json
+  /// Botín acumulado del ascenso, pendiente de reclamar al cerrar.
+  pendingLoot           Json           @default("[]")
+  lootClaimedAt         DateTime?
+  blessingIds           String[]       @default([])
+  offeredBlessingIds    String[]       @default([])
+  teamChangesRemaining  Int            @default(1)
+  attemptsConsumed      Int            @default(1)
+  startedAt             DateTime       @default(now())
+  endedAt               DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  battleSessions BattleSession[]
+
+  @@index([userId, status])
+  @@index([userId, towerId, difficultyId])
+}
+
+/// Contador de intentos por período de Torre (dayKey = towerPeriodKey semanal).
+model TowerAttemptDay {
+  id           String @id @default(cuid())
+  userId       String
+  dayKey       String
+  attemptsUsed Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayKey])
+  @@index([userId])
 }

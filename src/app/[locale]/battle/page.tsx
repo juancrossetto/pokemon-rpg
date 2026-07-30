@@ -331,9 +331,11 @@ export default async function BattlePage({
 
     const battleMode: BattleArenaProps["battleMode"] = battle.pvpMatchId
       ? "pvp"
-      : battle.gymId
-        ? "gym"
-        : "wild";
+      : battle.towerRunId
+        ? "tower"
+        : battle.gymId
+          ? "gym"
+          : "wild";
 
     const progress =
       battleMode === "wild"
@@ -439,6 +441,7 @@ export default async function BattlePage({
       playerChargeMoveId: battle.playerChargeMoveId,
       gymId: battle.gymId,
       gymRunId: battle.gymRunId,
+      towerRunId: battle.towerRunId,
       gymType: battle.gym?.type ?? null,
       gymName,
       gymLeaderName: battle.gym?.leaderName ?? null,

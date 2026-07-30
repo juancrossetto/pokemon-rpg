@@ -100,12 +100,13 @@ export interface BattleArenaProps {
   playerChargeMoveId: number | null;
   gymId: string | null;
   gymRunId: string | null;
+  towerRunId: string | null;
   gymType: string | null;
   gymName: string | null;
   gymLeaderName: string | null;
   gymBadgeName: string | null;
-  /** Modo de batalla: wild | gym | pvp */
-  battleMode: "wild" | "gym" | "pvp";
+  /** Modo de batalla: wild | gym | pvp | tower */
+  battleMode: "wild" | "gym" | "pvp" | "tower";
   /** Fondo Showdown según bioma, location o tipo de gimnasio. */
   battleBg: BattleBgId;
   pvpMatchId: string | null;

@@ -460,7 +460,6 @@ export function ActiveTeamStrip({
   initialBagCounts: SquadBagCounts;
 }) {
   const t = useTranslations("pc");
-  const tHome = useTranslations("home");
   const [members, setMembers] = useState(initialMembers);
   const [bagCounts, setBagCounts] = useState(initialBagCounts);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -470,8 +469,6 @@ export function ActiveTeamStrip({
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const railRef = useRef<HTMLDivElement>(null);
-  const holdTimer = useRef<number | null>(null);
-  const holdInterval = useRef<number | null>(null);
 
   useEffect(() => {
     setMembers((prev) => {
@@ -501,33 +498,6 @@ export function ActiveTeamStrip({
     setCanNext(rail.scrollLeft < max - 2);
   }
 
-  function scrollRail(dir: -1 | 1) {
-    const rail = railRef.current;
-    if (!rail) return;
-    const card = rail.querySelector<HTMLElement>("[data-team-rail-item]");
-    const step = card ? card.offsetWidth + 10 : Math.round(rail.clientWidth * 0.72);
-    rail.scrollBy({ left: dir * step, behavior: "smooth" });
-  }
-
-  function stopHold() {
-    if (holdTimer.current != null) {
-      window.clearTimeout(holdTimer.current);
-      holdTimer.current = null;
-    }
-    if (holdInterval.current != null) {
-      window.clearInterval(holdInterval.current);
-      holdInterval.current = null;
-    }
-  }
-
-  function startHold(dir: -1 | 1) {
-    stopHold();
-    scrollRail(dir);
-    holdTimer.current = window.setTimeout(() => {
-      holdInterval.current = window.setInterval(() => scrollRail(dir), 220);
-    }, 320);
-  }
-
   useEffect(() => {
     const railEl = railRef.current;
     if (!railEl) return;
@@ -554,7 +524,6 @@ export function ActiveTeamStrip({
       railEl.removeEventListener("scroll", updateScrollHints);
       railEl.removeEventListener("wheel", onWheel);
       ro.disconnect();
-      stopHold();
     };
   }, []);
 
@@ -590,7 +559,7 @@ export function ActiveTeamStrip({
     commit([...rest.slice(0, at), mon, ...rest.slice(at)]);
   }
 
-  const showRailNav = canPrev || canNext;
+  const showRailEdges = canPrev || canNext;
 
   return (
     <section
@@ -623,7 +592,7 @@ export function ActiveTeamStrip({
         </div>
       ) : null}
 
-      {/* Mobile: grilla 2×3. md+: riel con flechas (sin scrollbar; DnD intacto). */}
+      {/* Mobile: grilla 2×3. md+: riel horizontal (rueda/trackpad/arrastre; sin flechas). */}
       <div className="relative min-h-0 min-w-0 flex-1 md:flex-none">
         <div
           ref={railRef}
@@ -706,59 +675,20 @@ export function ActiveTeamStrip({
           ))}
         </div>
 
-        {showRailNav ? (
+        {showRailEdges ? (
           <>
             <div
-              className={`pointer-events-none absolute inset-y-0 left-0 z-[1] hidden w-14 bg-gradient-to-r from-background via-background/80 to-transparent transition-opacity md:block ${
+              className={`pointer-events-none absolute inset-y-0 left-0 z-[1] hidden w-10 bg-gradient-to-r from-background via-background/70 to-transparent transition-opacity md:block ${
                 canPrev ? "opacity-100" : "opacity-0"
               }`}
               aria-hidden
             />
             <div
-              className={`pointer-events-none absolute inset-y-0 right-0 z-[1] hidden w-14 bg-gradient-to-l from-background via-background/80 to-transparent transition-opacity md:block ${
+              className={`pointer-events-none absolute inset-y-0 right-0 z-[1] hidden w-10 bg-gradient-to-l from-background via-background/70 to-transparent transition-opacity md:block ${
                 canNext ? "opacity-100" : "opacity-0"
               }`}
               aria-hidden
             />
-
-            <button
-              type="button"
-              tabIndex={canPrev ? 0 : -1}
-              disabled={!canPrev}
-              aria-label={tHome("scrollTeamPrev")}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                if (!canPrev) return;
-                startHold(-1);
-              }}
-              onPointerUp={stopHold}
-              onPointerLeave={stopHold}
-              onPointerCancel={stopHold}
-              className={`absolute top-1/2 left-0 z-[2] hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/65 text-white shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md transition hover:border-white/30 hover:bg-black/80 active:scale-95 md:grid ${
-                canPrev ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[22px]!">chevron_left</span>
-            </button>
-            <button
-              type="button"
-              tabIndex={canNext ? 0 : -1}
-              disabled={!canNext}
-              aria-label={tHome("scrollTeamNext")}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                if (!canNext) return;
-                startHold(1);
-              }}
-              onPointerUp={stopHold}
-              onPointerLeave={stopHold}
-              onPointerCancel={stopHold}
-              className={`absolute top-1/2 right-0 z-[2] hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/65 text-white shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md transition hover:border-white/30 hover:bg-black/80 active:scale-95 md:grid ${
-                canNext ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[22px]!">chevron_right</span>
-            </button>
           </>
         ) : null}
       </div>

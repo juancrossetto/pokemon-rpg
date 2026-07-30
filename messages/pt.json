@@ -64,7 +64,8 @@
       "shop": "Compre itens do sistema.",
       "friends": "Encontre treinadores, inspecione cartas e amplie seu círculo.",
       "clans": "Entre num clã e compita em equipe.",
-      "events": "Presentes diários e desafios semanais."
+      "events": "Presentes diários e desafios semanais.",
+      "tower": "Suba andares em um desafio PvE."
     },
     "battleWild": "Batalha selvagem",
     "menu": "Menu",
@@ -73,7 +74,9 @@
     "navigation": "Navegação",
     "close": "Fechar",
     "events": "Eventos",
-    "profile": "Meu perfil"
+    "profile": "Meu perfil",
+    "tower": "Torre",
+    "inTower": "Na Torre"
   },
   "notifications": {
     "eyebrow": "Alertas ao vivo",
@@ -711,7 +714,8 @@
       "fleeFailed": "Não conseguiu escapar!",
       "brokeFree": "Se libertou!",
       "brokeFreeNamed": "{name} se libertou!",
-      "lowHp": "{name} está prestes a desmaiar!"
+      "lowHp": "{name} está prestes a desmaiar!",
+      "towerFloor": "Andar {floor} da Torre"
     },
     "badgePerks": {
       "title": "Benefícios das medalhas",
@@ -737,7 +741,9 @@
     "rewardsTitle": "Recompensas",
     "backHome": "Voltar ao início",
     "resultLostTitle": "Você perdeu a batalha",
-    "alphaEncounter": "É um Pokémon Alfa! Bem mais forte que o normal."
+    "resultLostTower": "Sua equipe caiu na Torre. O espólio dos andares vencidos já está na sua conta.",
+    "alphaEncounter": "É um Pokémon Alfa! Bem mais forte que o normal.",
+    "backToTower": "Voltar à Torre"
   },
   "gyms": {
     "title": "Ginásios",
@@ -2637,6 +2643,227 @@
           }
         ]
       }
+    }
+  },
+  "tower": {
+    "displayName": "Torre de Combate",
+    "eyebrow": "Modo combate",
+    "tagline": "Até qual andar seu time consegue chegar antes de ser derrotado?",
+    "difficulties": {
+      "normal": "Normal",
+      "expert": "Especialista",
+      "expertSoon": "Especialista: em breve."
+    },
+    "summary": {
+      "current": "Andar atual",
+      "best": "Melhor andar",
+      "attempts": "Tentativas",
+      "nextBoss": "Próximo guardião"
+    },
+    "status": {
+      "not_started": "Pronto para começar a subida.",
+      "locked": "Torre bloqueada.",
+      "active": "Subida em andamento.",
+      "awaiting_battle": "Desafie o andar atual.",
+      "in_battle": "Batalha em andamento.",
+      "awaiting_blessing": "Escolha uma bênção para continuar.",
+      "resting": "Andar de descanso: recupere o time.",
+      "failed": "Tentativa falhou. Reivindique o espólio e aguarde o reset semanal.",
+      "completed": "Você completou a Torre!",
+      "no_attempts": "Subida semanal usada. Reset domingo 21h ART.",
+      "teamHp": "Equipe",
+      "living": "{living}/{total} de pé",
+      "toBoss": "Até o chefe",
+      "toBossHint": "andares",
+      "attempts": "Tentativas",
+      "attemptsHint": "esta semana"
+    },
+    "actions": {
+      "startRun": "Começar subida",
+      "continueRun": "Continuar subida",
+      "challengeFloor": "Desafiar andar",
+      "chooseBlessing": "Escolher bênção",
+      "rest": "Descansar",
+      "restartRun": "Nova subida",
+      "resumeBattle": "Voltar à batalha",
+      "locked": "Bloqueado",
+      "completed": "Torre concluída",
+      "working": "Processando…"
+    },
+    "floorTypes": {
+      "normal": "Combate",
+      "elite": "Elite",
+      "boss": "Guardião",
+      "rest": "Descanso"
+    },
+    "path": {
+      "current": "Atual",
+      "recommendedPc": "PC rec. {pc}"
+    },
+    "team": {
+      "title": "Time da tentativa"
+    },
+    "blessing": {
+      "pickTitle": "Escolha seu próximo benefício",
+      "pickHint": "Vale só para esta subida.",
+      "pickCta": "Escolher",
+      "active": "Bênçãos ativas",
+      "rarity": {
+        "common": "Comum",
+        "rare": "Rara",
+        "epic": "Épica"
+      }
+    },
+    "abandon": {
+      "cta": "Abandonar tentativa",
+      "confirm": "Abandonar a subida? Seu time de Aventura será restaurado."
+    },
+    "floorDetail": {
+      "title": "Andar {n}",
+      "enemies": "{count} inimigo(s)"
+    },
+    "locked": {
+      "title": "Torre selada",
+      "body": "Conquiste {count} medalhas para desbloquear a Torre de Combate.",
+      "cta": "Ir aos ginásios"
+    },
+    "rules": {
+      "title": "Regras da subida",
+      "hp": "O HP persiste entre andares; o time de Aventura é restaurado ao terminar.",
+      "attempts": "{n} tentativa por semana (reinício domingo 21h ART).",
+      "boss": "Guardião a cada 10 andares, com recuperação maior após a vitória.",
+      "blessings": "Escolha bênçãos temporárias em marcos importantes.",
+      "rest": "Nos andares de descanso você escolhe cura ou bênção, nunca as duas."
+    },
+    "errors": {
+      "locked": "Você ainda não desbloqueou a Torre.",
+      "no_attempts": "Você já usou a subida desta semana.",
+      "no_team": "Você precisa de um time ativo.",
+      "difficulty": "Essa dificuldade não está disponível.",
+      "no_run": "Não há subida ativa.",
+      "rest_floor": "Este é um andar de descanso.",
+      "team_down": "Seu time foi derrotado.",
+      "no_enemy": "Não foi possível carregar o inimigo.",
+      "bad_blessing": "Bênção inválida.",
+      "not_rest": "Você não está em um andar de descanso.",
+      "unlockBadges": "Você precisa de mais medalhas.",
+      "towerCleared": "Você já completou esta Torre.",
+      "noAttempts": "Próxima subida: domingo 21h ART."
+    },
+    "modifiers": {
+      "sun_field": {
+        "name": "Campo ensolarado",
+        "desc": "O sol favorece tipos Fogo."
+      },
+      "rain_field": {
+        "name": "Chuva permanente",
+        "desc": "A chuva potencializa ataques de Água."
+      },
+      "fire_boost": {
+        "name": "Fogo avivado",
+        "desc": "+15% de dano do tipo Fogo."
+      },
+      "heal_cut": {
+        "name": "Cura reduzida",
+        "desc": "Curar é menos eficaz."
+      },
+      "speed_surge": {
+        "name": "Onda de velocidade",
+        "desc": "Todos agem mais rápido."
+      },
+      "no_items": {
+        "name": "Sem consumíveis",
+        "desc": "Não é possível usar itens neste andar."
+      }
+    },
+    "blessings": {
+      "vitality": {
+        "name": "Vitalidade",
+        "desc": "+10% de HP máximo nesta tentativa."
+      },
+      "swift": {
+        "name": "Ímpeto",
+        "desc": "+8% de velocidade nesta tentativa."
+      },
+      "mend": {
+        "name": "Alívio",
+        "desc": "Recupera 20% de HP do time vivo."
+      },
+      "second_wind": {
+        "name": "Segundo fôlego",
+        "desc": "Revive uma criatura com 30% de HP."
+      },
+      "tide": {
+        "name": "Maré",
+        "desc": "+15% de dano do tipo Água."
+      },
+      "blaze": {
+        "name": "Chama",
+        "desc": "+15% de dano do tipo Fogo."
+      },
+      "grove": {
+        "name": "Bosque",
+        "desc": "+15% de dano do tipo Planta."
+      },
+      "fortune": {
+        "name": "Fortuna",
+        "desc": "+20% de moedas nesta subida."
+      },
+      "aegis": {
+        "name": "Égide",
+        "desc": "O primeiro golpe concede escudo (em breve)."
+      },
+      "rally": {
+        "name": "Reagrupar",
+        "desc": "Recupera 35% de HP do time vivo."
+      }
+    },
+    "dev": {
+      "title": "DEV · TORRE",
+      "unlock": "Desbloquear (2 medalhas)",
+      "resetAttempts": "Resetar tentativas",
+      "setFloor10": "Ir ao andar 10",
+      "setFloor25": "Ir ao andar 25"
+    },
+    "rest": {
+      "title": "Andar de descanso",
+      "hint": "Só uma das duas. Escolha como encara o próximo trecho.",
+      "recoverTitle": "Recuperar",
+      "recoverBody": "Cura {pct}% do HP máximo de toda a equipe.",
+      "recoverCta": "Curar equipe",
+      "attuneTitle": "Sintonizar",
+      "attuneBody": "Abre mão da cura e leva uma bênção.",
+      "attuneCta": "Buscar bênção",
+      "attuneUnavailable": "Todas as bênçãos já estão no máximo.",
+      "lowHpWarning": "Sua equipe está muito ferida: sintonizar a deixa assim para o próximo andar."
+    },
+    "loot": {
+      "earnedTitle": "Espólio pendente",
+      "earnedEmpty": "Nenhum andar superado ainda.",
+      "nextTitle": "Este andar soma",
+      "firstClear": "Primeira vez",
+      "unitCoins": "moedas",
+      "unitEnergy": "energia"
+    },
+    "result": {
+      "failedTitle": "Tentativa falhou",
+      "failedBody": "Sua equipe caiu na Torre. O HP de Aventura já foi restaurado.",
+      "completedTitle": "Torre concluída!",
+      "completedBody": "Você chegou ao fim. Sua equipe de Aventura já voltou.",
+      "abandonedTitle": "Subida abandonada",
+      "abandonedBody": "Você desistiu. A equipe de Aventura foi restaurada.",
+      "floorReached": "Andar alcançado",
+      "lootKept": "Espólio desta subida",
+      "lootEmpty": "Você não cobrou nenhum andar.",
+      "lootHint": "Reivindique o espólio para creditá-lo na sua conta.",
+      "lootClaimed": "Espólio reivindicado.",
+      "lootAlreadyGranted": "Este espólio já foi creditado durante a subida.",
+      "claimCta": "Reivindicar espólio",
+      "finalTeam": "Equipe ao cair",
+      "teamRestored": "Esses HP são da tentativa. Sua equipe de Aventura está intacta."
+    },
+    "reset": {
+      "nextIn": "Próxima subida em"
     }
   }
 }

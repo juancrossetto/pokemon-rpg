@@ -59,7 +59,7 @@ function pickStable(pool: readonly BattleBgId[], seed: string): BattleBgId {
 }
 
 export function resolveBattleBg(opts: {
-  battleMode: "wild" | "gym" | "pvp";
+  battleMode: "wild" | "gym" | "pvp" | "tower";
   battleId: string;
   locationKind?: CampaignLocationKind | string | null;
   locationId?: string | null;
@@ -67,6 +67,7 @@ export function resolveBattleBg(opts: {
   isRouteTrainer?: boolean;
 }): BattleBgId {
   if (opts.battleMode === "pvp") return "mountain";
+  if (opts.battleMode === "tower") return "mountain";
 
   if (opts.battleMode === "gym") {
     const type = (opts.gymType ?? "").toLowerCase();

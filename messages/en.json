@@ -64,7 +64,8 @@
       "shop": "Buy items from the system.",
       "friends": "Find trainers, inspect cards and grow your circle.",
       "clans": "Join a clan and compete as a team.",
-      "events": "Daily gifts and weekly challenges."
+      "events": "Daily gifts and weekly challenges.",
+      "tower": "Climb floors in a PvE challenge."
     },
     "battleWild": "Wild battle",
     "menu": "Menu",
@@ -73,7 +74,9 @@
     "navigation": "Navigation",
     "close": "Close",
     "events": "Events",
-    "profile": "My profile"
+    "profile": "My profile",
+    "tower": "Tower",
+    "inTower": "In the Tower"
   },
   "notifications": {
     "eyebrow": "Live alerts",
@@ -711,7 +714,8 @@
       "fleeFailed": "Can't escape!",
       "brokeFree": "It broke free!",
       "brokeFreeNamed": "{name} broke free!",
-      "lowHp": "{name} is about to faint!"
+      "lowHp": "{name} is about to faint!",
+      "towerFloor": "Tower floor {floor}"
     },
     "badgePerks": {
       "title": "Badge perks",
@@ -737,7 +741,9 @@
     "rewardsTitle": "Rewards",
     "backHome": "Back home",
     "resultLostTitle": "You lost the battle",
-    "alphaEncounter": "It is an Alpha Pokémon! Far stronger than usual."
+    "resultLostTower": "Your squad fell in the Tower. Loot from cleared floors is already yours.",
+    "alphaEncounter": "It is an Alpha Pokémon! Far stronger than usual.",
+    "backToTower": "Back to Tower"
   },
   "gyms": {
     "title": "Gyms",
@@ -2637,6 +2643,227 @@
           }
         ]
       }
+    }
+  },
+  "tower": {
+    "displayName": "Combat Tower",
+    "eyebrow": "Combat mode",
+    "tagline": "How far can your team climb before defeat?",
+    "difficulties": {
+      "normal": "Normal",
+      "expert": "Expert",
+      "expertSoon": "Expert: coming soon."
+    },
+    "summary": {
+      "current": "Current floor",
+      "best": "Best floor",
+      "attempts": "Attempts",
+      "nextBoss": "Next guardian"
+    },
+    "status": {
+      "not_started": "Ready to start a climb.",
+      "locked": "Tower locked.",
+      "active": "Climb in progress.",
+      "awaiting_battle": "Challenge the current floor.",
+      "in_battle": "Battle in progress.",
+      "awaiting_blessing": "Pick a blessing to continue.",
+      "resting": "Rest floor: recover your team.",
+      "failed": "Run failed. Claim your loot and wait for the weekly reset.",
+      "completed": "You cleared the Tower!",
+      "no_attempts": "Weekly climb used. Next reset Sunday 9pm ART.",
+      "teamHp": "Squad",
+      "living": "{living}/{total} standing",
+      "toBoss": "To boss",
+      "toBossHint": "floors",
+      "attempts": "Attempts",
+      "attemptsHint": "this week"
+    },
+    "actions": {
+      "startRun": "Start climb",
+      "continueRun": "Continue climb",
+      "challengeFloor": "Challenge floor",
+      "chooseBlessing": "Choose blessing",
+      "rest": "Rest",
+      "restartRun": "New climb",
+      "resumeBattle": "Return to battle",
+      "locked": "Locked",
+      "completed": "Tower cleared",
+      "working": "Working…"
+    },
+    "floorTypes": {
+      "normal": "Battle",
+      "elite": "Elite",
+      "boss": "Guardian",
+      "rest": "Rest"
+    },
+    "path": {
+      "current": "Current",
+      "recommendedPc": "Rec. CP {pc}"
+    },
+    "team": {
+      "title": "Run team"
+    },
+    "blessing": {
+      "pickTitle": "Choose your next benefit",
+      "pickHint": "Only lasts for this climb.",
+      "pickCta": "Choose",
+      "active": "Active blessings",
+      "rarity": {
+        "common": "Common",
+        "rare": "Rare",
+        "epic": "Epic"
+      }
+    },
+    "abandon": {
+      "cta": "Abandon run",
+      "confirm": "Abandon the climb? Your Adventure team will be restored."
+    },
+    "floorDetail": {
+      "title": "Floor {n}",
+      "enemies": "{count} enemy(ies)"
+    },
+    "locked": {
+      "title": "Tower sealed",
+      "body": "Earn {count} badges to unlock the Combat Tower.",
+      "cta": "Go to gyms"
+    },
+    "rules": {
+      "title": "Climb rules",
+      "hp": "HP persists between floors; your Adventure team is restored when the run ends.",
+      "attempts": "{n} attempt per week (resets Sunday 9pm ART).",
+      "boss": "A guardian every 10 floors, with stronger recovery after victory.",
+      "blessings": "Pick temporary blessings at key milestones.",
+      "rest": "On rest floors you pick healing or a blessing, never both."
+    },
+    "errors": {
+      "locked": "You have not unlocked the Tower yet.",
+      "no_attempts": "You already used this week's climb.",
+      "no_team": "You need an active team.",
+      "difficulty": "That difficulty is unavailable.",
+      "no_run": "No active climb.",
+      "rest_floor": "This is a rest floor.",
+      "team_down": "Your team is defeated.",
+      "no_enemy": "Could not load the enemy.",
+      "bad_blessing": "Invalid blessing.",
+      "not_rest": "You are not on a rest floor.",
+      "unlockBadges": "You need more badges.",
+      "towerCleared": "You already cleared this Tower.",
+      "noAttempts": "Next climb: Sunday 9pm ART."
+    },
+    "modifiers": {
+      "sun_field": {
+        "name": "Sunny field",
+        "desc": "Sun favors Fire types."
+      },
+      "rain_field": {
+        "name": "Permanent rain",
+        "desc": "Rain boosts Water attacks."
+      },
+      "fire_boost": {
+        "name": "Fanned flames",
+        "desc": "+15% Fire-type damage."
+      },
+      "heal_cut": {
+        "name": "Reduced healing",
+        "desc": "Healing is less effective."
+      },
+      "speed_surge": {
+        "name": "Speed surge",
+        "desc": "Everyone moves faster."
+      },
+      "no_items": {
+        "name": "No consumables",
+        "desc": "Items cannot be used on this floor."
+      }
+    },
+    "blessings": {
+      "vitality": {
+        "name": "Vitality",
+        "desc": "+10% max HP for this run."
+      },
+      "swift": {
+        "name": "Swiftness",
+        "desc": "+8% Speed for this run."
+      },
+      "mend": {
+        "name": "Mend",
+        "desc": "Heal living teammates by 20% HP."
+      },
+      "second_wind": {
+        "name": "Second wind",
+        "desc": "Revive one creature at 30% HP."
+      },
+      "tide": {
+        "name": "Tide",
+        "desc": "+15% Water-type damage."
+      },
+      "blaze": {
+        "name": "Blaze",
+        "desc": "+15% Fire-type damage."
+      },
+      "grove": {
+        "name": "Grove",
+        "desc": "+15% Grass-type damage."
+      },
+      "fortune": {
+        "name": "Fortune",
+        "desc": "+20% coins on this climb."
+      },
+      "aegis": {
+        "name": "Aegis",
+        "desc": "First hit of battle grants a shield (soon)."
+      },
+      "rally": {
+        "name": "Rally",
+        "desc": "Heal living teammates by 35% HP."
+      }
+    },
+    "dev": {
+      "title": "DEV · TOWER",
+      "unlock": "Unlock (2 badges)",
+      "resetAttempts": "Reset attempts",
+      "setFloor10": "Jump to floor 10",
+      "setFloor25": "Jump to floor 25"
+    },
+    "rest": {
+      "title": "Rest floor",
+      "hint": "Only one of the two. Choose how you face the next stretch.",
+      "recoverTitle": "Recover",
+      "recoverBody": "Heals {pct}% of max HP across the squad.",
+      "recoverCta": "Heal squad",
+      "attuneTitle": "Attune",
+      "attuneBody": "Give up the heal and take a blessing instead.",
+      "attuneCta": "Seek blessing",
+      "attuneUnavailable": "All blessings are already maxed out.",
+      "lowHpWarning": "Your squad is badly hurt: attuning leaves it that way for the next floor."
+    },
+    "loot": {
+      "earnedTitle": "Pending loot",
+      "earnedEmpty": "No floors cleared yet.",
+      "nextTitle": "This floor adds",
+      "firstClear": "First clear",
+      "unitCoins": "coins",
+      "unitEnergy": "energy"
+    },
+    "result": {
+      "failedTitle": "Run failed",
+      "failedBody": "Your squad fell in the Tower. Adventure HP is already restored.",
+      "completedTitle": "Tower cleared!",
+      "completedBody": "You reached the top. Your Adventure team is back.",
+      "abandonedTitle": "Climb abandoned",
+      "abandonedBody": "You withdrew. Your Adventure team was restored.",
+      "floorReached": "Floor reached",
+      "lootKept": "Loot from this climb",
+      "lootEmpty": "You didn't clear any floors.",
+      "lootHint": "Claim the loot to credit it to your account.",
+      "lootClaimed": "Loot claimed.",
+      "lootAlreadyGranted": "This loot was already credited during the climb.",
+      "claimCta": "Claim loot",
+      "finalTeam": "Squad at the fall",
+      "teamRestored": "These HP are from the run. Your Adventure team is intact."
+    },
+    "reset": {
+      "nextIn": "Next climb in"
     }
   }
 }

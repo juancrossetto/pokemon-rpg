@@ -7,6 +7,7 @@ import type { CombatLock } from "@/lib/battle-lock";
 function isAllowedPath(pathname: string, lock: NonNullable<CombatLock>): boolean {
   if (pathname === "/login" || pathname === "/register") return true;
   if (lock.kind === "battle") return pathname === "/battle";
+  if (lock.kind === "tower") return pathname === "/tower" || pathname === "/battle";
   if (lock.kind === "gym") {
     return pathname === `/gyms/${lock.gymId}/run` || pathname === "/battle";
   }
@@ -14,11 +15,10 @@ function isAllowedPath(pathname: string, lock: NonNullable<CombatLock>): boolean
 }
 
 /**
- * Si el jugador está en combate / gym y hardcodea otra ruta en la URL,
+ * Si el jugador está en combate / gym / torre y hardcodea otra ruta en la URL,
  * lo mandamos de vuelta. Complementa los redirects de servidor en cada page.
  *
- * Evita bucles: si el lock de gym está stale (corrida ya cerrada) el server
- * redirige /run → ficha del gym, y sin tope el gate volvía a mandar a /run.
+ * Evita bucles: si el lock está stale el server refresca y el gate deja de empujar.
  */
 export function CombatLockGate({ lock }: { lock: CombatLock }) {
   const pathname = usePathname();
@@ -33,15 +33,20 @@ export function CombatLockGate({ lock }: { lock: CombatLock }) {
 
   useEffect(() => {
     if (!lockKind) return;
-    const activeLock =
-      lockKind === "gym" && gymId ? ({ kind: "gym", gymId } as const) : ({ kind: "battle" } as const);
+
+    const activeLock: NonNullable<CombatLock> =
+      lockKind === "gym" && gymId
+        ? { kind: "gym", gymId }
+        : lockKind === "tower"
+          ? { kind: "tower" }
+          : { kind: "battle" };
+
     if (isAllowedPath(pathname, activeLock)) {
       bounceRef.current = 0;
       return;
     }
 
     if (bounceRef.current >= 2) {
-      // Lock probablemente desactualizado tras abandonar/ganar — pedimos RSC fresco.
       router.refresh();
       return;
     }
@@ -49,6 +54,10 @@ export function CombatLockGate({ lock }: { lock: CombatLock }) {
 
     if (lockKind === "battle") {
       if (pathname !== "/battle") router.replace("/battle");
+      return;
+    }
+    if (lockKind === "tower") {
+      if (pathname !== "/tower") router.replace("/tower");
       return;
     }
     const runPath = `/gyms/${gymId}/run`;

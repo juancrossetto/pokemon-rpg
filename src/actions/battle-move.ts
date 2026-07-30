@@ -483,9 +483,11 @@ export async function submitBattleMove(
   let pvpResult: UseMoveResult["pvpResult"] = null;
   const battleKind = battle.pvpMatchId
     ? ("PVP" as const)
-    : battle.gymId
-      ? ("PVE_GYM" as const)
-      : ("PVE_WILD" as const);
+    : battle.towerRunId
+      ? ("PVE_TOWER" as const)
+      : battle.gymId
+        ? ("PVE_GYM" as const)
+        : ("PVE_WILD" as const);
   const gym = battle.gymId ? await prisma.gym.findUnique({ where: { id: battle.gymId } }) : null;
   let xpSummary: XpSummaryEntry[] | null = null;
 
@@ -520,7 +522,7 @@ export async function submitBattleMove(
     log.push(`fainted:${pvpActive?.name ?? battle.wildSpecies.name}`);
     // Mastery: en gimnasios / PvP no aplica (no es farmeo de zona).
     const zone =
-      battle.gymId || battle.routeTrainerId || battle.pvpMatchId
+      battle.gymId || battle.routeTrainerId || battle.pvpMatchId || battle.towerRunId
         ? null
         : await getZoneContext(userId);
     const koXp = zone
@@ -936,12 +938,78 @@ export async function submitBattleMove(
       };
     }
 
+    // Torre de Combate: un piso = una batalla (MVP).
+    if (battle.towerRunId) {
+      const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
+      const { settleTowerFloorWin } = await import("@/lib/tower/settle");
+      const { parseTowerTeamSnapshot } = await import("@/lib/tower/team");
+      const { lockUsers } = await import("@/lib/db-locks");
+
+      await prisma.$transaction([
+        ...instanceUpdates,
+        prisma.battleSession.update({
+          where: { id: battle.id },
+          data: { status: "WON", wildCurrentHp: 0, pendingXp: 0, log: finalLog },
+        }),
+        prisma.battleLog.create({
+          data: { kind: "PVE_TOWER", userId, userWon: true },
+        }),
+      ]);
+
+      await prisma.$transaction(
+        async (tx) => {
+          await lockUsers(tx, userId);
+          const run = await tx.towerRun.findFirstOrThrow({
+            where: { id: battle.towerRunId! },
+          });
+          const snap = parseTowerTeamSnapshot(run.teamSnapshot);
+          const instances = await tx.pokemonInstance.findMany({
+            where: { id: { in: snap.map((m) => m.instanceId) } },
+            select: { id: true, currentHp: true },
+          });
+          // Solo banca en pendingLoot — el grant ocurre al reclamar en /tower.
+          await settleTowerFloorWin(tx, {
+            userId,
+            runId: battle.towerRunId!,
+            instances,
+          });
+        },
+        { timeout: 20_000 },
+      );
+
+      xpSummary = await buildXpSummary();
+      coinsAwarded = 0;
+      revalidatePath(`/${locale}/tower`);
+      revalidatePath(`/${locale}/team`);
+      revalidateCombatUi(locale);
+      return {
+        events,
+        playerMaxHp,
+        wildMaxHp: battle.wildMaxHp,
+        outcome: "won",
+        leveledUpTo,
+        xpGained: share,
+        xpSummary,
+        coinsGained: coinsAwarded,
+        badgeEarned: false,
+        tmRewardName: null,
+        rematch: false,
+        playerMovesPp,
+        playerChoiceLockMoveId: newChoiceLockMoveId,
+        playerChargeMoveId: newPlayerChargeMoveId,
+        playerStatus: playerState.status,
+        wildStatus: wildState.status,
+        pvpResult: null,
+        nextOpponent: null,
+      };
+    }
+
     // Entrenador de ruta: no da stage ni mastery, da su recompensa una vez.
     const routeTrainer = battle.routeTrainerId ? getRouteTrainer(battle.routeTrainerId) : null;
 
     badgeEarned = battle.gymId !== null && !alreadyHasThisBadge;
     const coinsGained =
-      battle.gymId || battle.routeTrainerId
+      battle.gymId || battle.routeTrainerId || battle.towerRunId
         ? null
         : applyBonus(coinsForVictory(battle.wildLevel), zone?.bonuses.coins ?? 0);
     const gymCoins = battle.gymId
@@ -1015,7 +1083,7 @@ export async function submitBattleMove(
 
     xpSummary = await buildXpSummary();
 
-    if (!battle.gymId && !battle.routeTrainerId) {
+    if (!battle.gymId && !battle.routeTrainerId && !battle.towerRunId) {
       await completeFarmingStageOnWildWin(userId);
       if (zone) await grantZoneMastery(userId, zone.locationId);
     } else if (badgeEarned && gym) {
@@ -1097,6 +1165,43 @@ export async function submitBattleMove(
       });
       revalidatePath(`/${locale}/pvp`);
       revalidatePath(`/${locale}/ranking`);
+    } else if (battle.towerRunId) {
+      const { settleTowerFloorLoss } = await import("@/lib/tower/settle");
+      const { parseTowerTeamSnapshot } = await import("@/lib/tower/team");
+      const { lockUsers } = await import("@/lib/db-locks");
+      await prisma.$transaction(
+        async (tx) => {
+          await lockUsers(tx, userId);
+          await tx.pokemonInstance.update({
+            where: { id: instance.id },
+            data: { currentHp: 0 },
+          });
+          await tx.battleSession.update({
+            where: { id: battle.id },
+            data: { status: "LOST", log: finalLog, ...battleStateData },
+          });
+          await tx.battleLog.create({
+            data: { kind: "PVE_TOWER", userId, userWon: false },
+          });
+          const run = await tx.towerRun.findFirstOrThrow({
+            where: { id: battle.towerRunId! },
+          });
+          const snap = parseTowerTeamSnapshot(run.teamSnapshot);
+          const instances = await tx.pokemonInstance.findMany({
+            where: { id: { in: snap.map((m) => m.instanceId) } },
+            select: { id: true, currentHp: true },
+          });
+          await settleTowerFloorLoss(tx, {
+            userId,
+            runId: battle.towerRunId!,
+            instances: instances.map((i) =>
+              i.id === instance.id ? { id: i.id, currentHp: 0 } : i,
+            ),
+          });
+        },
+        { timeout: 20_000 },
+      );
+      revalidatePath(`/${locale}/tower`);
     } else {
       await prisma.$transaction([
         prisma.pokemonInstance.update({ where: { id: instance.id }, data: { currentHp: 0 } }),

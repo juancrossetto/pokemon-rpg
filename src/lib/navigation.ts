@@ -124,6 +124,14 @@ export const NAV_GROUPS: NavGroup[] = [
         iconSrc: "/nav/pvp-icon.png",
       },
       {
+        id: "tower",
+        labelKey: "tower",
+        descriptionKey: "desc.tower",
+        href: "/tower",
+        icon: "apartment",
+        iconSrc: "/nav/battle-wild-icon.png",
+      },
+      {
         id: "ranking",
         labelKey: "ranking",
         descriptionKey: "desc.ranking",
