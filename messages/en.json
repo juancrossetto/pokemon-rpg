@@ -2697,6 +2697,8 @@
       "rest": "Rest"
     },
     "path": {
+      "title": "Path",
+      "reviewTitle": "Your climb",
       "current": "Current",
       "recommendedPc": "Rec. CP {pc}"
     },

@@ -137,7 +137,12 @@ export default async function TowerPage({
   const windowNums = visibleFloorWindow({
     currentFloor: pathFocusFloor,
     totalFloors: COMBAT_TOWER_CONFIG.totalFloors,
-    behind: Math.max(0, pathFocusFloor - 1),
+    /*
+      Ventana corta: si listamos desde el piso 1 el riel mide metros y en
+      mobile el marco se ve “vacío” (poca densidad). 5–6 pisos atrás bastan
+      para leer el recorrido alrededor del piso actual.
+    */
+    behind: activeRun ? 5 : 6,
     ahead: activeRun ? 3 : 1,
   });
   const allFloors = getTowerFloors();
@@ -151,10 +156,6 @@ export default async function TowerPage({
   const offered = activeRun
     ? resolveBlessings(activeRun.offeredBlessingIds)
     : [];
-
-  const nextGuardian =
-    allFloors.find((f) => f.type === "boss" && f.floorNumber >= (activeRun?.currentFloor ?? 1))
-      ?.floorNumber ?? null;
 
   const teamHpPct = team ? averageHpRatio(team) : 0;
   const canAttune = activeRun ? pickBlessingOffers(activeRun.blessingIds).length > 0 : false;
@@ -216,6 +217,11 @@ export default async function TowerPage({
     ? Math.max(0, activeRun.currentFloor - 1)
     : (endedSummary?.runClearedThrough ?? progress?.highestFloorAllTime ?? 0);
   const showResetTimer = attemptsRemaining <= 0 && !activeRun;
+
+  const nextGuardian =
+    allFloors.find(
+      (f) => f.type === "boss" && f.floorNumber >= railCurrentFloor,
+    )?.floorNumber ?? null;
 
   const showActionBar =
     unlocked &&
@@ -312,7 +318,7 @@ export default async function TowerPage({
           ) : null}
 
           <section
-            className={`relative order-2 isolate flex h-[min(52vh,22rem)] flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#0f1014] p-2 sm:h-[min(50vh,24rem)] sm:rounded-2xl sm:p-3 lg:col-start-1 lg:row-start-1 lg:h-auto lg:min-h-[min(62vh,30rem)] lg:max-h-[calc(100dvh-11rem)] ${
+            className={`relative order-2 isolate flex h-[min(38vh,17rem)] flex-col overflow-hidden rounded-xl border border-white/15 bg-[#12141a] p-2 sm:h-[min(48vh,22rem)] sm:rounded-2xl sm:p-3 lg:col-start-1 lg:row-start-1 lg:h-auto lg:min-h-[min(62vh,30rem)] lg:max-h-[calc(100dvh-11rem)] ${
               activeRun || endedSummary ? "lg:row-span-2" : ""
             }`}
           >
@@ -324,15 +330,18 @@ export default async function TowerPage({
               className="object-cover object-top opacity-[0.14]"
             />
             <div
-              className="absolute inset-0 bg-gradient-to-b from-[#0f1014]/30 via-[#0f1014]/85 to-[#0f1014]"
+              className="absolute inset-0 bg-gradient-to-b from-[#12141a]/20 via-[#12141a]/80 to-[#12141a]"
+              aria-hidden
+            />
+            <p className="relative z-10 mb-1 shrink-0 px-0.5 text-[8px] font-bold uppercase tracking-[0.16em] text-white/45 sm:mb-1.5 sm:text-[9px]">
+              {endedSummary ? t("path.reviewTitle") : t("path.title")}
+            </p>
+            <div
+              className="pointer-events-none absolute inset-x-2 top-7 z-20 h-4 bg-gradient-to-b from-[#12141a] to-transparent sm:inset-x-3 sm:top-9 sm:h-5"
               aria-hidden
             />
             <div
-              className="pointer-events-none absolute inset-x-2 top-2 z-20 h-5 rounded-t-lg bg-gradient-to-b from-[#0f1014] to-transparent sm:inset-x-3 sm:top-3 sm:h-6 sm:rounded-t-xl"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-x-2 bottom-2 z-20 h-6 rounded-b-lg bg-gradient-to-t from-[#0f1014] to-transparent sm:inset-x-3 sm:bottom-3 sm:h-8 sm:rounded-b-xl"
+              className="pointer-events-none absolute inset-x-2 bottom-2 z-20 h-5 rounded-b-lg bg-gradient-to-t from-[#12141a] to-transparent sm:inset-x-3 sm:bottom-3 sm:h-7 sm:rounded-b-xl"
               aria-hidden
             />
             <div
