@@ -31,11 +31,14 @@ export function AvatarPicker({
   currentAvatarId,
   labels,
   children,
+  showAffordance = true,
 }: {
   currentAvatarId: string | null;
   labels: AvatarPickerLabels;
   /** Disparador — normalmente el propio retrato del hero. */
   children: React.ReactNode;
+  /** Badge de lápiz sobre el disparador. Desactivar si el hijo ya es un botón de editar. */
+  showAffordance?: boolean;
 }) {
   const locale = useLocale();
   const [open, setOpen] = useState(false);
@@ -189,12 +192,14 @@ export function AvatarPicker({
         className="group relative block rounded-[28%] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pokeball-red/70"
       >
         {children}
-        <span
-          aria-hidden
-          className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-[#14161c] text-on-surface-variant shadow-lg transition group-hover:border-white/40 group-hover:text-white"
-        >
-          <span className="material-symbols-outlined text-[14px]!">edit</span>
-        </span>
+        {showAffordance ? (
+          <span
+            aria-hidden
+            className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-[#14161c] text-on-surface-variant shadow-lg transition group-hover:border-white/40 group-hover:text-white"
+          >
+            <span className="material-symbols-outlined text-[14px]!">edit</span>
+          </span>
+        ) : null}
       </button>
 
       {sheet}

@@ -3664,6 +3664,26 @@ html.boot-splash-pending .boot-splash {
   animation: tp-breathe 6s ease-in-out infinite;
 }
 
+@keyframes tp-scene-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.tp-scene-bob {
+  animation: tp-scene-bob 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-scene-bob {
+    animation: none;
+  }
+}
+
 /* Halo del Pokémon favorito: dos capas desfasadas para que el borde nunca
    quede quieto sin llegar a titilar. */
 @keyframes tp-halo {
@@ -3812,6 +3832,7 @@ html.boot-splash-pending .boot-splash {
 @media (prefers-reduced-motion: reduce) {
   .tp-breathe,
   .tp-halo,
+  .tp-scene-bob,
   .tp-drift,
   .tp-rise,
   .tp-fill,

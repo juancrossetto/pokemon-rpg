@@ -24,16 +24,13 @@ import {
   type TimelineEvent,
   type TrainerStats,
 } from "@/lib/trainer-profile";
-import { TrainerHero } from "@/components/trainer-hero";
-import {
-  TrainerFavoriteCard,
-  TrainerFavoriteEmpty,
-} from "@/components/trainer-favorite-card";
+import { TrainerProfileClient } from "@/components/profile/trainer-profile-client";
 import { TrainerSquadBand } from "@/components/trainer-squad-band";
 import { TrainerVault, RecentCatchStrip } from "@/components/trainer-vault";
 import { TrainerTimeline } from "@/components/trainer-timeline";
 import { MetricTile } from "@/components/metric-tile";
 import { SectionLabel } from "@/components/trainer-profile-parts";
+import { permissionsFor } from "@/lib/trainer-appearance";
 
 const SPECIES_SELECT = {
   id: true,
@@ -292,43 +289,267 @@ export default async function ProfilePage({
   );
 
   const dexPct = Math.round((dexSeen / Math.max(1, dexTotal)) * 100);
+  const companionName = favorite
+    ? (favorite.nickname ?? favorite.species.name)
+    : null;
+  const companionLine = companionName
+    ? t("andCompanion", { companion: companionName })
+    : null;
+  const sceneLabel = companionName
+    ? t("sceneLabel", { name: user.username, companion: companionName })
+    : user.username;
+  const perms = permissionsFor("own");
+  const trainerSprite = avatarById(user.avatarId)?.src ?? null;
+
+  const avatarLabels = {
+    change: t("avatar.change"),
+    title: t("avatar.title"),
+    hint: t("avatar.hint"),
+    save: t("avatar.save"),
+    saving: t("avatar.saving"),
+    cancel: t("avatar.cancel"),
+    error: t("avatar.error"),
+  };
+
+  const vaultNode = (
+    <>
+      <SectionLabel>{t("vault")}</SectionLabel>
+      <TrainerVault
+        badges={badges.map((b) => ({
+          id: b.id,
+          gymName: b.gym.name,
+          badgeName: b.gym.badgeName,
+          leaderName: b.gym.leaderName,
+          type: b.gym.type,
+          accent: typeColor(b.gym.type),
+          earnedAt: dateFmt.format(b.earnedAt),
+        }))}
+        achievements={achievements}
+        collections={collections}
+        labels={{
+          tabBadges: t("tabs.badges"),
+          tabAchievements: t("tabs.achievements"),
+          tabCollections: t("tabs.collections"),
+          noBadges: t("noBadges"),
+          locked: t("locked"),
+          earnedOn: t("earnedOn"),
+          claim: t("achievements.claim"),
+          claiming: t("achievements.claiming"),
+          claimAll: t("achievements.claimAll", { count: "{count}" }),
+          claimed: t("achievements.claimed"),
+          claimError: t("achievements.claimError"),
+          rewardUnits: {
+            coins: t("achievements.rewardCoins"),
+            energy: t("achievements.rewardEnergy"),
+            gems: t("achievements.rewardGems"),
+          },
+          achievement: Object.fromEntries(
+            achievements.map((a) => [
+              a.id,
+              { name: t(`achievements.${a.id}.name`), hint: t(`achievements.${a.id}.hint`) },
+            ]),
+          ),
+          collection: Object.fromEntries(
+            collections.map((c) => [c.id, t(`collections.${c.id}`)]),
+          ),
+          rarity: rarityLabels,
+        }}
+      />
+    </>
+  );
+
+  const teamNode = (
+    <TrainerSquadBand
+      members={Array.from({ length: 6 }, (_, i) => {
+        const p = team.find((m) => m.teamSlot === i + 1);
+        if (!p) return null;
+        const maxHp = calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution);
+        return {
+          instanceId: p.id,
+          name: p.nickname ?? p.species.name,
+          spriteUrl: p.species.spriteUrl,
+          level: p.level,
+          currentHp: Math.min(p.currentHp, maxHp),
+          maxHp,
+          cp: pokemonPower({
+            level: p.level,
+            ptStrength: p.ptStrength,
+            ptSpeed: p.ptSpeed,
+            ptDexterity: p.ptDexterity,
+            ptIntelligence: p.ptIntelligence,
+            ptConstitution: p.ptConstitution,
+            species: p.species,
+          }),
+          types: p.species.types,
+          accent: typeColor(p.species.types[0] ?? "normal"),
+          rarity: speciesRarity(p.species),
+          isShiny: p.isShiny,
+        };
+      })}
+      labels={{
+        lead: t("lead"),
+        level: t("levelShort"),
+        cp: t("cp"),
+        hp: t("hp"),
+        shiny: t("shiny"),
+        empty: t("emptySlot"),
+        rarity: rarityLabels,
+      }}
+    />
+  );
+
+  const statsNode = (
+    <div className="flex flex-col gap-4">
+      <section>
+        <SectionLabel>{t("metrics")}</SectionLabel>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          <MetricTile
+            icon="sports_baseball"
+            label={t("stats.caught")}
+            numericValue={caught}
+            accent="#4ade80"
+            delayMs={40}
+          />
+          <MetricTile
+            icon="auto_awesome"
+            label={t("stats.shinies")}
+            numericValue={shinies}
+            accent="#f2c000"
+            delayMs={80}
+          />
+          <MetricTile
+            icon="hiking"
+            label={t("stats.trainers")}
+            numericValue={trainersDefeated}
+            accent="#fb923c"
+            delayMs={120}
+          />
+          <MetricTile
+            icon="bolt"
+            label={t("stats.power")}
+            numericValue={stats.power}
+            accent="#f2c000"
+            delayMs={160}
+          />
+          <MetricTile
+            icon="menu_book"
+            label={t("stats.dex")}
+            numericValue={dexPct}
+            suffix="%"
+            barPct={dexSeen / Math.max(1, dexTotal)}
+            hint={`${dexSeen}/${dexTotal}`}
+            accent="#60a5fa"
+            delayMs={200}
+          />
+          <MetricTile
+            icon="swords"
+            label={t("stats.pvp")}
+            value={`${user.pvpWins}-${user.pvpLosses}`}
+            hint={t("stats.rating", { rating: user.pvpRating })}
+            accent="#a78bfa"
+            delayMs={240}
+          />
+        </div>
+      </section>
+
+      <section>
+        <SectionLabel>{t("recentCatches")}</SectionLabel>
+        <RecentCatchStrip
+          levelLabel={t("levelShort")}
+          items={recentCatches.slice(0, 8).map((p) => {
+            const rarity = speciesRarity(p.species);
+            return {
+              id: p.id,
+              name: p.nickname ?? p.species.name,
+              spriteUrl: p.species.spriteUrl,
+              accent: typeColor(p.species.types[0] ?? "normal"),
+              isShiny: p.isShiny,
+              level: p.level,
+              rarityLabel: rarityLabels[rarity] ?? rarity,
+            };
+          })}
+          emptyLabel={t("noCatches")}
+        />
+      </section>
+
+      <section className="rounded-[1.4rem] border border-white/8 bg-[#080a10]/80 p-3 backdrop-blur-md">
+        <SectionLabel>{t("activity")}</SectionLabel>
+        <TrainerTimeline
+          events={timeline}
+          now={now}
+          labels={{
+            empty: t("noActivity"),
+            kind: {
+              catch: t("timeline.catch"),
+              badge: t("timeline.badge"),
+              trainer: t("timeline.trainer"),
+              shiny: t("timeline.shiny"),
+            },
+            agoMinutes: t("time.minutes", { n: "{n}" }),
+            agoHours: t("time.hours", { n: "{n}" }),
+            agoDays: t("time.days", { n: "{n}" }),
+            justNow: t("time.now"),
+          }}
+        />
+      </section>
+    </div>
+  );
+
+  const companionStrip =
+    favorite && companionName ? (
+      <section className="rounded-2xl border border-white/8 bg-[#0e1118]/90 px-4 py-3">
+        <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70">
+          {t("companion")}
+        </p>
+        <p className="mt-1 text-[14px] font-semibold text-white">
+          {companionName}
+          <span className="ml-2 font-mono text-[12px] font-medium text-white/55">
+            {t("levelShort")} {favorite.level} · {t("cp")}{" "}
+            {pokemonPower({
+              level: favorite.level,
+              ptStrength: favorite.ptStrength,
+              ptSpeed: favorite.ptSpeed,
+              ptDexterity: favorite.ptDexterity,
+              ptIntelligence: favorite.ptIntelligence,
+              ptConstitution: favorite.ptConstitution,
+              species: favorite.species,
+            }).toLocaleString()}
+          </span>
+        </p>
+        <p className="mt-0.5 text-[11px] capitalize text-on-surface-variant">
+          {favorite.species.types.join(" / ")}
+        </p>
+      </section>
+    ) : null;
 
   return (
-    <div className="flex-1 px-margin-mobile py-5 md:px-margin-desktop md:py-8">
-      {/*
-        Composición AAA: hero → vitrina+métricas → squad (líder dominante) →
-        bóveda + actividad. Cada bloque tiene personalidad propia; no es un
-        dashboard de cards idénticas.
-      */}
-      <div className="mx-auto flex max-w-6xl flex-col gap-5 md:gap-6">
-        <TrainerHero
-          username={user.username}
-          avatarSrc={avatarById(user.avatarId)?.src ?? null}
-          currentAvatarId={user.avatarId}
-          avatarLabels={{
-            change: t("avatar.change"),
-            title: t("avatar.title"),
-            hint: t("avatar.hint"),
-            save: t("avatar.save"),
-            saving: t("avatar.saving"),
-            cancel: t("avatar.cancel"),
-            error: t("avatar.error"),
-          }}
-          country={user.country}
-          rank={rank}
-          title={title}
-          power={stats.power}
-          badges={stats.badges}
-          totalGyms={totalGyms}
-          memberSince={monthFmt.format(user.createdAt)}
-          favoriteSprite={favorite?.species.spriteUrl ?? null}
-          favoriteAccent={favoriteAccent}
-          labels={{
+    <div className="flex-1 px-margin-mobile py-5 pb-bottom-nav md:px-margin-desktop md:py-8">
+      <TrainerProfileClient
+        hero={{
+          username: user.username,
+          companionLine,
+          sceneLabel,
+          country: user.country,
+          title,
+          rank,
+          power: stats.power,
+          badges: stats.badges,
+          totalGyms,
+          memberSince: monthFmt.format(user.createdAt),
+          trainerSpriteUrl: trainerSprite,
+          companionSpriteUrl: favorite?.species.spriteUrl ?? null,
+          companionName,
+          companionAccent: favoriteAccent,
+          appearance: null,
+          canEdit: perms.canEdit,
+          currentAvatarId: user.avatarId,
+          avatarLabels,
+          labels: {
             rank: rankLabels,
             title: titleLabels,
-            power: t("power"),
+            power: t("cp"),
             badges: t("badgesShort"),
-            memberSince: t("memberSince"),
+            startDate: t("startDate"),
             toNextRank: rank.next
               ? t("toNextRank", {
                   count: rank.badgesToNext,
@@ -336,257 +557,58 @@ export default async function ProfilePage({
                 })
               : t("maxRank"),
             maxRank: t("maxRank"),
-          }}
-        />
-
-        {/* Vitrina del favorito + métricas vivas */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-stretch">
-          <div className="lg:col-span-5">
-            {favorite ? (
-              <TrainerFavoriteCard
-                name={favorite.nickname ?? favorite.species.name}
-                spriteUrl={favorite.species.spriteUrl}
-                level={favorite.level}
-                cp={pokemonPower({
-                  level: favorite.level,
-                  ptStrength: favorite.ptStrength,
-                  ptSpeed: favorite.ptSpeed,
-                  ptDexterity: favorite.ptDexterity,
-                  ptIntelligence: favorite.ptIntelligence,
-                  ptConstitution: favorite.ptConstitution,
-                  species: favorite.species,
-                })}
-                types={favorite.species.types}
-                accent={favoriteAccent}
-                rarity={speciesRarity(favorite.species)}
-                isShiny={favorite.isShiny}
-                labels={{
-                  favorite: t("favorite"),
-                  level: t("level"),
-                  cp: t("cp"),
-                  shiny: t("shiny"),
-                  rarity: rarityLabels,
-                  empty: t("noFavorite"),
-                  emptyHint: t("noFavoriteHint"),
-                }}
-              />
-            ) : (
-              <TrainerFavoriteEmpty
-                labels={{
-                  favorite: t("favorite"),
-                  level: t("level"),
-                  cp: t("cp"),
-                  shiny: t("shiny"),
-                  rarity: rarityLabels,
-                  empty: t("noFavorite"),
-                  emptyHint: t("noFavoriteHint"),
-                }}
-              />
-            )}
-          </div>
-
-          <div className="flex flex-col lg:col-span-7">
-            <SectionLabel>{t("metrics")}</SectionLabel>
-            <div className="grid flex-1 grid-cols-2 gap-2.5 sm:grid-cols-4">
-              <MetricTile
-                icon="sports_baseball"
-                label={t("stats.caught")}
-                numericValue={caught}
-                accent="#4ade80"
-                delayMs={40}
-              />
-              <MetricTile
-                icon="auto_awesome"
-                label={t("stats.shinies")}
-                numericValue={shinies}
-                accent="#f2c000"
-                delayMs={80}
-              />
-              <MetricTile
-                icon="menu_book"
-                label={t("stats.dex")}
-                numericValue={dexPct}
-                suffix="%"
-                barPct={dexSeen / Math.max(1, dexTotal)}
-                hint={`${dexSeen}/${dexTotal}`}
-                accent="#60a5fa"
-                delayMs={120}
-              />
-              <MetricTile
-                icon="military_tech"
-                label={t("stats.badges")}
-                value={`${stats.badges}/${totalGyms}`}
-                barPct={stats.badges / Math.max(1, totalGyms)}
-                accent="#ee1515"
-                delayMs={160}
-              />
-              <MetricTile
-                icon="swords"
-                label={t("stats.pvp")}
-                value={`${user.pvpWins}-${user.pvpLosses}`}
-                hint={t("stats.rating", { rating: user.pvpRating })}
-                accent="#a78bfa"
-                delayMs={200}
-              />
-              <MetricTile
-                icon="hiking"
-                label={t("stats.trainers")}
-                numericValue={trainersDefeated}
-                accent="#fb923c"
-                delayMs={240}
-              />
-              <MetricTile
-                icon="bolt"
-                label={t("stats.power")}
-                numericValue={stats.power}
-                accent="#f2c000"
-                delayMs={280}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Active Squad: líder protagonista + soporte */}
-        <section>
-          <SectionLabel>{t("squad")}</SectionLabel>
-          <TrainerSquadBand
-            members={Array.from({ length: 6 }, (_, i) => {
-              const p = team.find((m) => m.teamSlot === i + 1);
-              if (!p) return null;
-              const maxHp = calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution);
-              return {
-                instanceId: p.id,
-                name: p.nickname ?? p.species.name,
-                spriteUrl: p.species.spriteUrl,
-                level: p.level,
-                currentHp: Math.min(p.currentHp, maxHp),
-                maxHp,
-                cp: pokemonPower({
-                  level: p.level,
-                  ptStrength: p.ptStrength,
-                  ptSpeed: p.ptSpeed,
-                  ptDexterity: p.ptDexterity,
-                  ptIntelligence: p.ptIntelligence,
-                  ptConstitution: p.ptConstitution,
-                  species: p.species,
-                }),
-                types: p.species.types,
-                accent: typeColor(p.species.types[0] ?? "normal"),
-                rarity: speciesRarity(p.species),
-                isShiny: p.isShiny,
-              };
-            })}
-            labels={{
-              lead: t("lead"),
-              level: t("levelShort"),
-              cp: t("cp"),
-              hp: t("hp"),
-              shiny: t("shiny"),
-              empty: t("emptySlot"),
-              rarity: rarityLabels,
-            }}
-          />
-        </section>
-
-        {/* Bóveda + capturas + timeline */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <div className="lg:col-span-7">
-            <SectionLabel>{t("vault")}</SectionLabel>
-            <TrainerVault
-              badges={badges.map((b) => ({
-                id: b.id,
-                gymName: b.gym.name,
-                badgeName: b.gym.badgeName,
-                leaderName: b.gym.leaderName,
-                type: b.gym.type,
-                accent: typeColor(b.gym.type),
-                earnedAt: dateFmt.format(b.earnedAt),
-              }))}
-              achievements={achievements}
-              collections={collections}
-              labels={{
-                tabBadges: t("tabs.badges"),
-                tabAchievements: t("tabs.achievements"),
-                tabCollections: t("tabs.collections"),
-                noBadges: t("noBadges"),
-                locked: t("locked"),
-                earnedOn: t("earnedOn"),
-                claim: t("achievements.claim"),
-                claiming: t("achievements.claiming"),
-                /*
-                  Viaja como plantilla, no como texto final: `TrainerVault` es
-                  un componente de cliente y reemplaza `{count}` con la cantidad
-                  reclamable, que sólo conoce después de cobrar. Pasarle el
-                  propio marcador como valor deja el literal intacto y evita el
-                  FORMATTING_ERROR de next-intl, que exige un valor para cada
-                  variable ICU. Mismo criterio que la energía en `site-header`.
-                */
-                claimAll: t("achievements.claimAll", { count: "{count}" }),
-                claimed: t("achievements.claimed"),
-                claimError: t("achievements.claimError"),
-                rewardUnits: {
-                  coins: t("achievements.rewardCoins"),
-                  energy: t("achievements.rewardEnergy"),
-                  gems: t("achievements.rewardGems"),
-                },
-                achievement: Object.fromEntries(
-                  achievements.map((a) => [
-                    a.id,
-                    { name: t(`achievements.${a.id}.name`), hint: t(`achievements.${a.id}.hint`) },
-                  ]),
-                ),
-                collection: Object.fromEntries(
-                  collections.map((c) => [c.id, t(`collections.${c.id}`)]),
-                ),
-                rarity: rarityLabels,
-              }}
-            />
-          </div>
-
-          <div className="flex flex-col gap-4 lg:col-span-5">
-            <section>
-              <SectionLabel>{t("recentCatches")}</SectionLabel>
-              <RecentCatchStrip
-                levelLabel={t("levelShort")}
-                items={recentCatches.slice(0, 8).map((p) => {
-                  const rarity = speciesRarity(p.species);
-                  return {
-                    id: p.id,
-                    name: p.nickname ?? p.species.name,
-                    spriteUrl: p.species.spriteUrl,
-                    accent: typeColor(p.species.types[0] ?? "normal"),
-                    isShiny: p.isShiny,
-                    level: p.level,
-                    rarityLabel: rarityLabels[rarity] ?? rarity,
-                  };
-                })}
-                emptyLabel={t("noCatches")}
-              />
-            </section>
-
-            <section className="rounded-[1.4rem] border border-white/[0.08] bg-[#080a10]/80 p-3 backdrop-blur-md">
-              <SectionLabel>{t("activity")}</SectionLabel>
-              <TrainerTimeline
-                events={timeline}
-                now={now}
-                labels={{
-                  empty: t("noActivity"),
-                  kind: {
-                    catch: t("timeline.catch"),
-                    badge: t("timeline.badge"),
-                    trainer: t("timeline.trainer"),
-                    shiny: t("timeline.shiny"),
-                  },
-                  agoMinutes: t("time.minutes", { n: "{n}" }),
-                  agoHours: t("time.hours", { n: "{n}" }),
-                  agoDays: t("time.days", { n: "{n}" }),
-                  justNow: t("time.now"),
-                }}
-              />
-            </section>
-          </div>
-        </div>
-      </div>
+          },
+        }}
+        hubLabels={{
+          tabs: {
+            summary: t("nav.summary"),
+            badges: t("nav.badges"),
+            team: t("nav.team"),
+            stats: t("nav.stats"),
+          },
+          metrics: t("metrics"),
+          featuredBadges: t("featuredBadges"),
+          viewAllBadges: t("viewAllBadges"),
+          manageTeam: t("manageTeam"),
+        }}
+        metrics={{
+          sectionLabel: t("metrics"),
+          power: stats.power,
+          dexPct,
+          dexHint: `${dexSeen}/${dexTotal}`,
+          badgesLabel: `${stats.badges}/${totalGyms}`,
+          badgesPct: stats.badges / Math.max(1, totalGyms),
+          pvpRecord: `${user.pvpWins}-${user.pvpLosses}`,
+          pvpHint: t("stats.rating", { rating: user.pvpRating }),
+          labels: {
+            power: t("cp"),
+            dex: t("stats.dex"),
+            badges: t("stats.badges"),
+            pvp: t("stats.pvp"),
+          },
+        }}
+        featured={{
+          gymBadges: badges.map((b) => ({
+            id: b.id,
+            badgeName: b.gym.badgeName,
+            type: b.gym.type,
+            accent: typeColor(b.gym.type),
+          })),
+          achievements,
+          labels: {
+            title: t("featuredBadges"),
+            seeAll: t("viewAllBadges"),
+            locked: t("locked"),
+            achievement: Object.fromEntries(
+              achievements.map((a) => [a.id, { name: t(`achievements.${a.id}.name`) }]),
+            ),
+          },
+        }}
+        vault={vaultNode}
+        team={teamNode}
+        stats={statsNode}
+        summaryExtra={companionStrip}
+      />
     </div>
   );
 }
