@@ -39,6 +39,22 @@ type IndicatorBox = { left: number; width: number; height: number; top: number }
 
 const BAR_GROUP_IDS = new Set<string>(MOBILE_BAR_GROUPS);
 
+/**
+ * ¿La app corre anclada al inicio (sin barra de URL)?
+ *
+ * `display-mode: standalone` cubre iOS moderno y Android; `navigator.standalone`
+ * es el flag propietario de Safari iOS, que sigue siendo el único fiable en
+ * algunas versiones. Se consulta en el momento y no se cachea porque el modo
+ * puede diferir entre la pestaña y el icono del inicio.
+ */
+function isStandalone(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia?.("(display-mode: standalone)").matches === true ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
 function NavDrawerIcon({ src, active }: { src: string; active?: boolean }) {
   return (
     <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white/[0.04]">
@@ -114,16 +130,9 @@ export function MobileChrome({
   notifications: { items: NotificationDTO[]; unreadCount: number } | null;
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
-  /** Tras la primera apertura el drawer queda montado (oculto) para no
-   *  volver a decodificar los PNG cada vez que se abre el menú. */
-  const [drawerReady, setDrawerReady] = useState(false);
   const [indicator, setIndicator] = useState<IndicatorBox>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (moreOpen) setDrawerReady(true);
-  }, [moreOpen]);
 
   /*
     Precalienta los PNG de la nav apenas monta el chrome. Sin esto el drawer
@@ -193,11 +202,29 @@ export function MobileChrome({
       const box = node.getBoundingClientRect();
       const insetX = 6;
       const insetY = 4;
-      setIndicator({
+      const next = {
         left: box.left - rootBox.left + insetX,
         top: box.top - rootBox.top + insetY,
         width: Math.max(0, box.width - insetX * 2),
         height: Math.max(0, box.height - insetY * 2),
+      };
+      /*
+        Sólo actualizar si de verdad cambió, y con tolerancia de medio píxel.
+        `getBoundingClientRect` devuelve subpíxeles que oscilan mientras la
+        página se mueve; sin este filtro cada evento provocaba un render nuevo
+        y el indicador —y con él los iconos— temblaba al scrollear.
+      */
+      setIndicator((prev) => {
+        if (
+          prev &&
+          Math.abs(prev.left - next.left) < 0.5 &&
+          Math.abs(prev.top - next.top) < 0.5 &&
+          Math.abs(prev.width - next.width) < 0.5 &&
+          Math.abs(prev.height - next.height) < 0.5
+        ) {
+          return prev;
+        }
+        return next;
       });
     }
 
@@ -226,14 +253,26 @@ export function MobileChrome({
       Si innerHeight > clientHeight, `bottom:0` deja la nav fuera de la
       pantalla visible. Compensamos con bottom inset (sin acortar al
       visualViewport: eso generaba un hueco negro bajo la barra).
+
+      NO se aplica con la app anclada al inicio: ahí no hay barra de URL que
+      compensar, `bottom: 0` + safe-area ya es correcto, y la diferencia entre
+      `innerHeight` y `clientHeight` sólo se despega durante el rebote elástico
+      de iOS. Escribirla ahí hacía que la barra flotara y se moviera al
+      scrollear, que es justo lo que esta compensación quería evitar.
     */
     function syncBottomInset() {
-      if (!root) return;
+      if (!root || isStandalone()) {
+        if (root) root.style.bottom = "";
+        return;
+      }
       const inset = Math.max(
         0,
         Math.round(window.innerHeight - document.documentElement.clientHeight),
       );
-      root.style.bottom = inset > 0 ? `${inset}px` : "";
+      const next = inset > 0 ? `${inset}px` : "";
+      // Sólo escribir si cambió: reasignar el mismo valor en cada evento
+      // provoca recalculo de layout y hace vibrar la barra.
+      if (root.style.bottom !== next) root.style.bottom = next;
     }
 
     function measure() {
@@ -247,8 +286,15 @@ export function MobileChrome({
     observer.observe(root);
     observer.observe(document.documentElement);
     window.addEventListener("resize", measure);
+    /*
+      `visualViewport` sólo por `resize` (teclado abriéndose, rotación).
+
+      El listener de `scroll` era el origen del problema: en iOS se dispara en
+      cada frame del rebote elástico, y `measure` reposiciona la barra y
+      remide el indicador. La barra terminaba persiguiendo al scroll en vez de
+      quedarse fija, y los iconos bailaban con ella.
+    */
     window.visualViewport?.addEventListener("resize", measure);
-    window.visualViewport?.addEventListener("scroll", measure);
     // Algunos browsers (y DevTools) cambian inner/client sin disparar resize
     // al primer paint; un par de ticks cubre ese hueco.
     const t1 = window.setTimeout(measure, 50);
@@ -259,7 +305,6 @@ export function MobileChrome({
       window.clearTimeout(t2);
       window.removeEventListener("resize", measure);
       window.visualViewport?.removeEventListener("resize", measure);
-      window.visualViewport?.removeEventListener("scroll", measure);
       document.documentElement.style.removeProperty("--bottom-nav-h");
       document.documentElement.style.removeProperty("--vv-gap");
       root.style.bottom = "";
@@ -528,32 +573,32 @@ export function MobileChrome({
         encabezado por sección, para que la jerarquía sea la misma en las dos
         superficies aunque el dibujo sea distinto.
       */}
-      {drawerReady && showMore && (
-        <div
-          className={`fixed inset-0 z-[60] xl:hidden ${
-            moreOpen ? "" : "pointer-events-none invisible"
-          }`}
-          role="presentation"
-          aria-hidden={!moreOpen}
-          inert={!moreOpen ? true : undefined}
-        >
+      {/*
+        El drawer se desmonta al cerrarse. Estuvo montado en permanente y
+        oculto con `invisible` para no volver a decodificar los PNG al abrirlo,
+        pero eso deja un `fixed inset-0` con `backdrop-blur` vivo sobre TODA la
+        app: basta que un navegador pinte el backdrop-filter de un elemento con
+        `visibility: hidden` —WebKit lo hace— para que la pantalla entera quede
+        borrosa de forma permanente.
+
+        La optimización además ya no compra nada: los iconos pasaron de ~1.4 MB
+        a ~5 KB cada uno y el `useEffect` de arriba los precalienta al montar el
+        chrome, así que al abrir ya están en caché.
+      */}
+      {moreOpen && showMore && (
+        <div className="fixed inset-0 z-[60] xl:hidden" role="presentation">
           <button
             type="button"
             aria-label={closeLabel}
-            tabIndex={moreOpen ? 0 : -1}
-            className={`absolute inset-0 bg-black/65 backdrop-blur-sm ${
-              moreOpen ? "market-sheet-backdrop-in" : ""
-            }`}
+            className="market-sheet-backdrop-in absolute inset-0 bg-black/65 backdrop-blur-sm"
             onClick={() => setMoreOpen(false)}
           />
           <div
             ref={drawerRef}
             role="dialog"
-            aria-modal={moreOpen}
+            aria-modal="true"
             aria-label={moreLabel}
-            className={`absolute inset-x-0 bottom-0 flex h-[92dvh] flex-col overflow-hidden rounded-t-2xl border-t border-white/12 bg-background/98 shadow-2xl backdrop-blur-xl ${
-              moreOpen ? "market-sheet-in" : ""
-            }`}
+            className="market-sheet-in absolute inset-x-0 bottom-0 flex h-[92dvh] flex-col overflow-hidden rounded-t-2xl border-t border-white/12 bg-background/98 shadow-2xl backdrop-blur-xl"
           >
             <div className="shrink-0 px-4 pb-2 pt-2.5">
               <div className="mx-auto mb-2.5 h-1 w-10 rounded-full bg-white/20" />

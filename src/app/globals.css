@@ -5574,3 +5574,25 @@ html.boot-splash-pending .boot-splash {
     opacity: 0;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   PWA anclada al inicio (iOS standalone)
+   --------------------------------------------------------------------------- */
+
+/*
+  Con la app anclada, iOS deja rebotar el documento al llegar al final del
+  scroll, y durante ese rebote los elementos `position: fixed` se despegan y
+  acompañan el movimiento: la bottom nav se ve flotando en vez de anclada.
+
+  `overscroll-behavior-y: none` cancela el rebote del documento sin tocar el
+  scroll interno de carruseles y hojas, que siguen teniendo el suyo.
+
+  Va acotado a `display-mode: standalone` a propósito: en el navegador el
+  rebote es parte del comportamiento esperado y quitarlo se siente raro.
+*/
+@media all and (display-mode: standalone) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+}
