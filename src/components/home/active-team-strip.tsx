@@ -563,7 +563,7 @@ export function ActiveTeamStrip({
 
   return (
     <section
-      className={`flex min-h-0 min-w-0 flex-1 flex-col md:flex-none ${pending ? "opacity-90" : ""}`}
+      className={`flex min-w-0 flex-col md:flex-none ${pending ? "opacity-90" : ""}`}
     >
       <div className="mb-2 flex shrink-0 items-center justify-between gap-2 md:mb-2.5">
         <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-white">
@@ -592,11 +592,11 @@ export function ActiveTeamStrip({
         </div>
       ) : null}
 
-      {/* Mobile: grilla 2×3. md+: riel horizontal (rueda/trackpad/arrastre; sin flechas). */}
-      <div className="relative min-h-0 min-w-0 flex-1 md:flex-none">
+      {/* Mobile: grilla 2×N a altura natural (scroll del hub). md+: riel horizontal. */}
+      <div className="relative min-w-0 md:flex-none">
         <div
           ref={railRef}
-          className="grid min-h-0 min-w-0 flex-1 auto-rows-fr grid-cols-2 gap-2 md:flex md:gap-2.5 md:overflow-x-auto md:overscroll-x-contain md:scroll-smooth md:px-1 md:pb-1 md:pt-0.5 md:snap-x md:snap-mandatory md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden"
+          className="grid min-w-0 grid-cols-2 gap-2 md:flex md:gap-2.5 md:overflow-x-auto md:overscroll-x-contain md:scroll-smooth md:px-1 md:pb-1 md:pt-0.5 md:snap-x md:snap-mandatory md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden"
         >
           {slots.map((member, i) => (
             <div

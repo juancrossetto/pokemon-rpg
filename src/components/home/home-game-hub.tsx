@@ -37,10 +37,15 @@ export function HomeGameHub({
   isDev: boolean;
 }) {
   return (
-    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain">
       <JourneyOnboarding />
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col px-margin-mobile py-3 md:px-margin-desktop md:py-5">
-        <div className="mx-auto flex w-full min-h-0 min-w-0 max-w-3xl flex-1 flex-col gap-3 md:gap-4 xl:max-w-5xl">
+      {/*
+        Mobile (sobre todo iPhone “Añadir a inicio”): no forzar flex-1 en el
+        equipo. Si el bloque intenta llenar el viewport, las cards se dibujan
+        debajo del bottom nav fijo. Altura natural + scroll del hub.
+      */}
+      <div className="relative flex min-w-0 flex-col px-margin-mobile py-3 md:px-margin-desktop md:py-5">
+        <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-3 md:gap-4 xl:max-w-5xl">
           {events.showDailyModal && (
             <DailyGiftModal
               days={events.daily.days}
@@ -52,10 +57,6 @@ export function HomeGameHub({
             />
           )}
 
-          {/* Primera jugada: expedición + equipo. Los atajos que había debajo
-              (Batalla, Tienda, Gimnasios) duplicaban destinos que ya están en
-              la barra de navegación; Eventos volvió a la nav, que es donde
-              corresponde que viva un destino. */}
           {expedition ? (
             <div className="shrink-0">
               <CurrentExpedition {...expedition} />

@@ -328,7 +328,7 @@ export function MobileChrome({
       {/* Bottom bar: 4–5 primary destinations + safe-area */}
       <nav
         ref={bottomNavRef}
-        className={`fixed bottom-0 inset-x-0 z-50 flex xl:hidden items-stretch min-h-[3.75rem] overflow-visible border-t border-white/10 bg-background/98 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-opacity ${
+        className={`fixed bottom-0 inset-x-0 z-50 flex xl:hidden items-stretch min-h-[3.75rem] overflow-visible border-t border-white/10 bg-background/98 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-opacity ${
           moreOpen ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >

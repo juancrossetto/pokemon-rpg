@@ -157,11 +157,12 @@ html[data-icons="ready"] .material-symbols-outlined {
   }
 
   /* Deja libre la franja de la bottom nav (mobile) + safe-area + holgura.
-     `--vv-gap` cubre innerHeight > clientHeight (mobile chrome / emulación)
-     para que el scroll máximo alcance a despejar la barra. */
+     `--vv-gap` cubre innerHeight > clientHeight (mobile chrome / emulación).
+     En iPhone standalone el home indicator exige safe-area; el 1.75rem extra
+     evita que el último bloque quede pegado al borde de la nav. */
   .pb-bottom-nav {
     padding-bottom: calc(
-      var(--bottom-nav-h) + env(safe-area-inset-bottom) + 1.25rem + var(--vv-gap, 0px)
+      var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 1.75rem + var(--vv-gap, 0px)
     );
   }
 
