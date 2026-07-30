@@ -15,6 +15,9 @@ import type { BattleLobbyData } from "@/lib/battle-lobby";
  * **no** desmontamos BattleArena. El cartel de resultado vive en el cliente
  * hasta que el jugador elige la siguiente acción. Un refresh RSC temprano
  * antes hacía que el lobby (o un redirect a /run) pisara ese resumen.
+ *
+ * Si el cliente también pierde el estado (F5 / remount) y sigue un gym o
+ * torre ACTIVE, mostramos un CTA de vuelta — nunca `null` en blanco.
  */
 export function BattleScreen({
   initialBattle,
@@ -22,6 +25,7 @@ export function BattleScreen({
   hasHealthyTeam,
   lobby,
   gymContinueId = null,
+  towerContinue = false,
 }: {
   initialBattle: BattleArenaProps | null;
   locale: string;
@@ -29,6 +33,8 @@ export function BattleScreen({
   lobby: BattleLobbyData | null;
   /** Corrida de gym ACTIVE sin batalla ACTIVE (entre entrenadores / tras F5). */
   gymContinueId?: string | null;
+  /** Torre ACTIVE/bendición/descanso sin batalla ACTIVE. */
+  towerContinue?: boolean;
 }) {
   const t = useTranslations("battle");
   const [battle, setBattle] = useState(initialBattle);
@@ -59,6 +65,21 @@ export function BattleScreen({
             className="rounded-lg bg-pokeball-red px-6 py-3 text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors"
           >
             {t("continueChallenge")}
+          </Link>
+        </div>
+      );
+    }
+    if (towerContinue) {
+      return (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-margin-mobile py-10">
+          <p className="text-center text-body-md text-on-surface-variant">
+            {t("towerContinuePrompt")}
+          </p>
+          <Link
+            href="/tower"
+            className="rounded-lg bg-pokeball-red px-6 py-3 text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors"
+          >
+            {t("backToTower")}
           </Link>
         </div>
       );

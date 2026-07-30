@@ -224,21 +224,20 @@ export function BattleResult({
     setMounted(true);
     return () => {
       if (leaveTimer.current !== null) window.clearTimeout(leaveTimer.current);
-      stopResultBgm();
     };
   }, []);
 
   useEffect(() => {
+    let playGen = 0;
     if (playerWon) {
-      playBattleSfx("badge");
-      startResultBgm("victory");
+      playGen = startResultBgm("victory");
     } else if (mode === "lost") {
       playBattleSfx("faint");
-      startResultBgm("defeat");
+      playGen = startResultBgm("defeat");
     } else {
       playBattleSfx("miss");
     }
-    return () => stopResultBgm();
+    return () => stopResultBgm(playGen);
   }, [mode, playerWon]);
 
   const leave = useCallback(

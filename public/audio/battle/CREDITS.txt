@@ -19,9 +19,19 @@ boss-battle.m4a
 
 Attribution: Music by Matthew Pablo (www.matthewpablo.com)
 
-Victory / defeat BGM
-====================
-Web Audio fanfares synthesized in src/lib/battle-bgm.ts (no external samples).
+Victory BGM
+===========
+victory.m4a
+  Source: "Victory Fanfare Short" (Heavy_ConceptB.wav)
+  Author: cynicmusic
+  License: CC0
+  https://opengameart.org/content/victory-fanfare-short
+  https://cynicmusic.com / https://pixelsphere.org
+  Converted to AAC .m4a for web delivery.
+
+Defeat BGM
+==========
+Web Audio phrase synthesized in src/lib/battle-bgm.ts (no external sample).
 
 Battle SFX (sfx/*.wav)
 ======================

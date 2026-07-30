@@ -60,9 +60,11 @@ export interface BattleMoveOption {
   category: MoveCategory;
   pp: number;
   maxPp: number;
+  /** PokeAPI move.target.name */
+  target?: string | null;
 }
 
-export type View = "menu" | "moves" | "bag" | "team";
+export type View = "menu" | "moves" | "bag" | "team" | "targets";
 export type Outcome = "ongoing" | "won" | "lost" | "fled" | "caught" | "trainer_cleared";
 export type LogSide = "player" | "wild" | "system";
 
@@ -94,10 +96,15 @@ export interface BattleArenaProps {
    *  servidor sigue siendo el único que resuelve el turno. */
   playerStats: { atk: number; spAtk: number; speed: number };
   wildStats: { def: number; spDef: number; speed: number };
+  /** Stats del slot B (solo DOUBLE), para forecast al elegir target. */
+  playerBStats?: { atk: number; spAtk: number; speed: number } | null;
+  wildBStats?: { def: number; spDef: number; speed: number } | null;
   /** Si porta un objeto Choice, el movimiento al que ya quedó atado (o null). */
   playerChoiceLockMoveId: number | null;
   /** Movimiento de 2 turnos en curso (Fly/Dig…), o null. */
   playerChargeMoveId: number | null;
+  /** Carga de 2 turnos del slot B (solo DOUBLE). */
+  playerChargeMoveIdB?: number | null;
   gymId: string | null;
   gymRunId: string | null;
   towerRunId: string | null;
@@ -110,4 +117,19 @@ export interface BattleArenaProps {
   /** Fondo Showdown según bioma, location o tipo de gimnasio. */
   battleBg: BattleBgId;
   pvpMatchId: string | null;
+  /** SINGLE por defecto; DOUBLE = Torre elite 2v2. */
+  format?: "SINGLE" | "DOUBLE";
+  /** Segundo Pokémon del jugador (solo DOUBLE). */
+  playerB?: (Combatant & { instanceId: string; currentHp: number; maxHp: number }) | null;
+  /** Segundo rival (solo DOUBLE). */
+  wildB?: (Combatant & {
+    currentHp: number;
+    maxHp: number;
+    types: string[];
+    isShiny?: boolean;
+  }) | null;
+  /** Moves del slot B (solo DOUBLE). */
+  movesB?: BattleMoveOption[];
+  playerBStatus?: string | null;
+  wildBStatus?: string | null;
 }

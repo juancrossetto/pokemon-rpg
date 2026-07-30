@@ -189,7 +189,8 @@ export async function challengeTowerFloor(locale: string) {
     return;
   }
 
-  const leadSnap = team.find((m) => !m.defeated && m.currentHp > 0);
+  const living = team.filter((m) => !m.defeated && m.currentHp > 0);
+  const leadSnap = living[0];
   if (!leadSnap) {
     redirect({ href: "/tower?err=team_down", locale });
     return;
@@ -200,6 +201,13 @@ export async function challengeTowerFloor(locale: string) {
     redirect({ href: "/tower?err=no_enemy", locale });
     return;
   }
+
+  // Elite (2 enemigos) + 2+ vivos → batalla doble (Torre).
+  const DOUBLES_ENABLED = true;
+  const wantDoubles =
+    DOUBLES_ENABLED && floor.type === "elite" && floor.enemies.length >= 2 && living.length >= 2;
+  const partnerSnap = wantDoubles ? living[1]! : null;
+  const enemyB = wantDoubles ? floor.enemies[1]! : null;
 
   const species = await prisma.species.findUnique({ where: { id: enemy.speciesId } });
   if (!species) {
@@ -217,6 +225,56 @@ export async function challengeTowerFloor(locale: string) {
   const wildMoves = await prisma.move.findMany({ where: { id: { in: wildMoveIds } } });
   const wildMovePp = wildMoveIds.map((id) => wildMoves.find((m) => m.id === id)?.pp ?? 20);
 
+  let fieldB: import("@/lib/doubles/field-b").DoublesFieldB | undefined;
+  let speciesBName: string | null = null;
+  if (wantDoubles && enemyB && partnerSnap) {
+    const speciesB = await prisma.species.findUnique({ where: { id: enemyB.speciesId } });
+    if (!speciesB) {
+      redirect({ href: "/tower?err=no_enemy", locale });
+      return;
+    }
+    speciesBName = speciesB.name;
+    const scaledB = scaleEnemyForFloor({
+      floorNumber: floor.floorNumber,
+      baseLevel: enemyB.level,
+      baseHp: speciesB.baseHp,
+      hpMult: enemyB.hpMult,
+    });
+    const wildBMoveIds = await getMovesetForLevel(enemyB.speciesId, scaledB.level);
+    const wildBMoves = await prisma.move.findMany({ where: { id: { in: wildBMoveIds } } });
+    const wildBMovePp = wildBMoveIds.map((id) => wildBMoves.find((m) => m.id === id)?.pp ?? 20);
+    const { buildDoublesFieldB, emptyPlayerBState } = await import("@/lib/doubles/field-b");
+    fieldB = buildDoublesFieldB(
+      {
+        speciesId: enemyB.speciesId,
+        level: scaledB.level,
+        currentHp: scaledB.maxHp,
+        maxHp: scaledB.maxHp,
+        moveIds: wildBMoveIds,
+        movePp: wildBMovePp,
+        isShiny: false,
+        status: null,
+        sleepTurns: 0,
+        atkStage: 0,
+        defStage: 0,
+        speStage: 0,
+        heldItemId: null,
+        itemConsumed: false,
+        choiceLockMoveId: null,
+        chargeMoveId: null,
+        chargeTargetLane: null,
+      },
+      emptyPlayerBState(),
+    );
+  }
+
+  const log = [
+    `towerFloor:${floor.floorNumber}`,
+    wantDoubles ? "format:double" : "format:single",
+    `sendOut:${species.name}`,
+    ...(speciesBName ? [`sendOut:${speciesBName}`] : []),
+  ];
+
   await prisma.$transaction(async (tx) => {
     await lockUsers(tx, userId);
     await applySnapshotHpToInstances(tx, team);
@@ -224,6 +282,9 @@ export async function challengeTowerFloor(locale: string) {
       data: {
         userId,
         pokemonInstanceId: leadSnap.instanceId,
+        pokemonInstanceBId: partnerSnap?.instanceId ?? null,
+        format: wantDoubles ? "DOUBLE" : "SINGLE",
+        fieldB: fieldB ? (JSON.parse(JSON.stringify(fieldB)) as object) : undefined,
         towerRunId: run.id,
         wildSpeciesId: enemy.speciesId,
         wildLevel: scaled.level,
@@ -231,8 +292,10 @@ export async function challengeTowerFloor(locale: string) {
         wildMaxHp: scaled.maxHp,
         wildMoveIds,
         wildMovePp,
-        log: [`towerFloor:${floor.floorNumber}`, `sendOut:${species.name}`],
-        participantIds: [leadSnap.instanceId],
+        log,
+        participantIds: partnerSnap
+          ? [leadSnap.instanceId, partnerSnap.instanceId]
+          : [leadSnap.instanceId],
       },
     });
   });

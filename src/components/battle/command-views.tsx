@@ -17,6 +17,7 @@ import type {
   RosterMember,
 } from "@/components/battle/arena-types";
 import type { DamageForecast } from "@/lib/damage-forecast";
+import { isSpreadMove } from "@/lib/move-target";
 
 type MatchupInfo = { label: string; className: string };
 
@@ -159,6 +160,11 @@ export function MovesView({
                   </span>
                   <span className="text-xs md:text-sm font-bold text-white leading-tight truncate">
                     {formatMoveName(m.name)}
+                    {isSpreadMove(m.target, m.name) ? (
+                      <span className="ml-1 text-[9px] font-bold uppercase text-amber-200/90">
+                        {t("spreadMoveTag")}
+                      </span>
+                    ) : null}
                   </span>
                 </span>
                 <span
@@ -417,6 +423,142 @@ export function TeamView({
                   )}
                 </div>
               </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function TargetView({
+  moveName,
+  moveType,
+  foes,
+  isAnimating,
+  onSelect,
+  onBack,
+}: {
+  moveName: string;
+  /** Tipo del move (para el chip del encabezado). */
+  moveType?: string | null;
+  foes: {
+    lane: "A" | "B";
+    name: string;
+    spriteUrl: string;
+    currentHp: number;
+    maxHp: number;
+    fainted: boolean;
+    types: string[];
+    matchup: MatchupInfo;
+    forecast: DamageForecast | null;
+    isStatus: boolean;
+  }[];
+  isAnimating: boolean;
+  onSelect: (lane: "A" | "B") => void;
+  onBack: () => void;
+}) {
+  const t = useTranslations("battle");
+  const typeChipColor = moveType ? typeColor(moveType) : null;
+  return (
+    <div className="flex flex-col gap-1 h-full min-h-0">
+      <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
+        <div className="min-w-0 flex items-center gap-1.5">
+          <p className="text-xs md:text-sm font-bold text-primary truncate">
+            {t("chooseTarget", { move: formatMoveName(moveName) })}
+          </p>
+          {moveType && typeChipColor && (
+            <span
+              className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-wide border"
+              style={{
+                backgroundColor: `${typeChipColor}33`,
+                color: typeChipColor,
+                borderColor: `${typeChipColor}66`,
+              }}
+            >
+              {moveType}
+            </span>
+          )}
+        </div>
+        <BackButton disabled={isAnimating} onBack={onBack} label={t("back")} small />
+      </div>
+      <p className="text-[10px] uppercase text-on-surface-variant tracking-wider px-0.5 shrink-0">
+        {t("selectTarget")}
+      </p>
+      <div className="grid grid-cols-2 gap-1 md:gap-1.5 flex-1 min-h-0">
+        {foes.map((f) => {
+          const hpPct = f.maxHp > 0 ? Math.max(0, (f.currentHp / f.maxHp) * 100) : 0;
+          return (
+            <button
+              key={f.lane}
+              type="button"
+              disabled={isAnimating || f.fainted}
+              onClick={() => onSelect(f.lane)}
+              className="battle-move-card text-left disabled:opacity-40 disabled:cursor-not-allowed flex flex-col gap-1 p-2 min-h-0"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={f.spriteUrl}
+                  alt=""
+                  className={`w-11 h-11 object-contain shrink-0 ${f.fainted ? "grayscale opacity-50" : ""}`}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-white truncate">{f.name}</p>
+                  <div className="flex flex-wrap gap-0.5 mt-0.5">
+                    {f.types.map((ty) => {
+                      const c = typeColor(ty);
+                      return (
+                        <span
+                          key={ty}
+                          className="px-1 py-px rounded text-[8px] uppercase font-bold tracking-wide border"
+                          style={{
+                            backgroundColor: `${c}33`,
+                            color: c,
+                            borderColor: `${c}66`,
+                          }}
+                        >
+                          {ty}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-black/40 overflow-hidden">
+                <div
+                  className={`h-full ${hpPct > 50 ? "bg-emerald-400" : hpPct > 20 ? "bg-amber-400" : "bg-error"}`}
+                  style={{ width: `${hpPct}%` }}
+                />
+              </div>
+              <div className="flex items-baseline justify-between gap-1 text-[10px] tabular-nums">
+                <span className="text-on-surface-variant">
+                  {f.fainted ? t("fainted") : `${f.currentHp}/${f.maxHp}`}
+                </span>
+              </div>
+              {!f.fainted &&
+                (f.forecast?.guaranteedKo ? (
+                  <p className="text-[9px] md:text-[10px] leading-snug truncate font-bold text-tertiary">
+                    {t("forecastKo")}
+                  </p>
+                ) : (
+                  <p
+                    className={`text-[9px] md:text-[10px] leading-snug truncate ${
+                      f.isStatus ? "text-white/45" : f.matchup.className
+                    }`}
+                  >
+                    {f.isStatus ? t("category.STATUS") : f.matchup.label}
+                    {f.forecast && (
+                      <span className="text-white/55">
+                        {" · "}
+                        {t("forecastRange", {
+                          min: f.forecast.minPct,
+                          max: f.forecast.maxPct,
+                        })}
+                      </span>
+                    )}
+                  </p>
+                ))}
             </button>
           );
         })}

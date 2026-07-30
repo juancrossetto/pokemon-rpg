@@ -617,6 +617,9 @@
     "musicCredit": "Music: Matthew Pablo",
     "whatWillDo": "What will {name} do?",
     "selectCommand": "Select command",
+    "selectTarget": "Choose a target",
+    "chooseTarget": "Target for {move}",
+    "spreadMoveTag": "AoE",
     "powerLabel": "POWER",
     "ppLabel": "PP",
     "accuracyLabel": "ACC.",
@@ -743,7 +746,8 @@
     "resultLostTitle": "You lost the battle",
     "resultLostTower": "Your squad fell in the Tower. Loot from cleared floors is already yours.",
     "alphaEncounter": "It is an Alpha Pokémon! Far stronger than usual.",
-    "backToTower": "Back to Tower"
+    "backToTower": "Back to Tower",
+    "towerContinuePrompt": "Your Tower climb is still active. Head back to continue."
   },
   "gyms": {
     "title": "Gyms",

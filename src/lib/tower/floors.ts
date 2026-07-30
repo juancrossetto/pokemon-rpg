@@ -20,7 +20,6 @@ function floorType(n: number): TowerFloorType {
   if (n % 10 === 4) return "rest";
   return "normal";
 }
-
 function blockIndex(floor: number): number {
   return Math.min(BLOCK_SPECIES.length - 1, Math.floor((floor - 1) / 10));
 }

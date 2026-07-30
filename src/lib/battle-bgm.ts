@@ -2,10 +2,8 @@
 
 /**
  * BGM de batalla (Matthew Pablo — "The Last Encounter", CC-BY-SA 3.0).
+ * Victoria: fanfarria corta de cynicmusic (CC0). Derrota: frase Web Audio.
  * @see public/audio/battle/CREDITS.txt
- *
- * Temas de resultado (victoria / derrota): secuencias Web Audio locales —
- * sin assets externos, se detienen al salir del resumen.
  */
 
 export type BattleBgmKind = "wild" | "boss";
@@ -14,6 +12,10 @@ export type ResultBgmKind = "victory" | "defeat";
 const STORAGE_MUTE = "battle-bgm-muted";
 const STORAGE_VOLUME = "battle-bgm-volume";
 export const DEFAULT_BATTLE_BGM_VOLUME = 0.22;
+/** La fanfarria de victoria: un poco por debajo del loop de pelea (era 1.6, muy alta). */
+const RESULT_BGM_VOLUME_BOOST = 0.8;
+const VICTORY_BGM_SRC = "/audio/battle/victory.m4a?v=2";
+
 
 let audio: HTMLAudioElement | null = null;
 let currentKind: BattleBgmKind | null = null;
@@ -24,6 +26,9 @@ let resultTimers: number[] = [];
 let resultLoopTimer: number | null = null;
 let resultKind: ResultBgmKind | null = null;
 let resultAudio: HTMLAudioElement | null = null;
+/** Generación de la fanfarria activa — evita que el cleanup de Strict Mode
+ *  mate el play del remount siguiente. */
+let resultPlayGen = 0;
 
 export function battleBgmUrl(kind: BattleBgmKind): string {
   return kind === "boss" ? "/audio/battle/boss-battle.m4a" : "/audio/battle/wild-battle.m4a";
@@ -70,7 +75,9 @@ export function setBattleBgmVolume(volume: number) {
       audio.muted = false;
     }
   }
-  if (resultAudio) resultAudio.volume = v;
+  if (resultAudio) {
+    resultAudio.volume = Math.min(1, v * RESULT_BGM_VOLUME_BOOST);
+  }
 }
 
 export function startBattleBgm(kind: BattleBgmKind) {
@@ -91,6 +98,10 @@ export function startBattleBgm(kind: BattleBgmKind) {
   void audio.play().catch(() => {
     // Autoplay bloqueado hasta gesto — se reintenta en unlock.
   });
+  // Precarga la fanfarria para que suene al instante al ganar.
+  const warm = new Audio();
+  warm.preload = "auto";
+  warm.src = VICTORY_BGM_SRC;
 }
 
 export function stopBattleBgm() {
@@ -177,40 +188,59 @@ function scheduleDefeatPhrase(audio: AudioContext, when: number, vol: number) {
   }
 }
 
-/** Para la BGM de pelea y reproduce el tema de victoria/derrota una sola vez. */
-export function startResultBgm(kind: ResultBgmKind) {
-  if (typeof window === "undefined") return;
-  if (isBattleBgmMuted()) return;
+/** Para la BGM de pelea y reproduce el tema de victoria/derrota una sola vez.
+ *  Devuelve un id de generación para que `stopResultBgm(id)` solo detenga
+ *  esa reproducción (Strict Mode / remounts). */
+export function startResultBgm(kind: ResultBgmKind): number {
+  if (typeof window === "undefined") return 0;
   stopBattleBgm();
-  stopResultBgm();
+  // Invalidar play anterior sin exigir id (arranque limpio).
+  resultPlayGen += 1;
+  const playGen = resultPlayGen;
+  if (resultAudio) {
+    resultAudio.pause();
+    resultAudio = null;
+  }
+  clearResultSchedule();
+  resultKind = null;
 
-  // Victoria: clip dedicado — una sola pasada, no loop de pantalla de resultado.
+  if (isBattleBgmMuted()) return playGen;
+
+  // Victoria: fanfarria dedicada — una sola pasada, no loop de pantalla de resultado.
   if (kind === "victory") {
     resultKind = kind;
-    if (!resultAudio) {
-      resultAudio = new Audio();
-      resultAudio.preload = "auto";
-    }
-    resultAudio.loop = false;
-    resultAudio.src = "/audio/battle/sfx/victory.wav";
-    resultAudio.volume = getBattleBgmVolume();
-    resultAudio.muted = isBattleBgmMuted();
-    void resultAudio.play().catch(() => {});
-    return;
+    const el = new Audio();
+    resultAudio = el;
+    el.preload = "auto";
+    el.loop = false;
+    el.volume = Math.min(1, getBattleBgmVolume() * RESULT_BGM_VOLUME_BOOST);
+    el.src = VICTORY_BGM_SRC;
+
+    const tryPlay = () => {
+      if (playGen !== resultPlayGen || resultAudio !== el) return;
+      void el.play().catch(() => {});
+    };
+    el.addEventListener("canplaythrough", tryPlay, { once: true });
+    tryPlay();
+    return playGen;
   }
 
   // Derrota: fanfarria Web Audio (una frase, sin repetir).
   const audioCtx = getResultCtx();
-  if (!audioCtx) return;
+  if (!audioCtx) return playGen;
   resultKind = kind;
   const vol = Math.max(0.05, getBattleBgmVolume());
   scheduleDefeatPhrase(audioCtx, audioCtx.currentTime + 0.02, vol);
+  return playGen;
 }
 
-export function stopResultBgm() {
+/** Detiene la fanfarria. Si pasás `playGen`, solo corta si sigue siendo esa. */
+export function stopResultBgm(playGen?: number) {
+  if (playGen != null && playGen !== resultPlayGen) return;
+  resultPlayGen += 1;
   if (resultAudio) {
     resultAudio.pause();
-    resultAudio.currentTime = 0;
+    resultAudio = null;
   }
   clearResultSchedule();
   resultKind = null;

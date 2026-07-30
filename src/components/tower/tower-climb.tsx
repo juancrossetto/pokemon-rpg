@@ -21,7 +21,7 @@ import type {
   TowerPrimaryAction,
   TowerRunCreature,
 } from "@/lib/tower";
-import { floorNodeVisual } from "@/lib/tower/icons";
+import { floorNodeVisual, pokeApiSpriteUrl } from "@/lib/tower/icons";
 
 /* ------------------------------------------------------------------ *
  * Tokens visuales por tipo de piso.
@@ -365,6 +365,53 @@ function FloorNodeFace({
   locked: boolean;
   accent: string;
 }) {
+  // Dobles / elite con 2 enemigos: mostrar ambos sprites en el nodo.
+  if (floor.enemies.length >= 2 && floor.type !== "boss" && floor.type !== "rest") {
+    const [a, b] = floor.enemies;
+    return (
+      <>
+        <div
+          className={`relative flex h-full w-full items-center justify-center ${
+            cleared ? "opacity-40" : ""
+          } ${locked ? "opacity-45" : ""}`}
+        >
+          <Image
+            src={pokeApiSpriteUrl(a!.speciesId, "icon")}
+            alt=""
+            width={40}
+            height={40}
+            unoptimized
+            className="absolute left-0.5 top-1 h-9 w-9 object-contain object-center sm:h-10 sm:w-10"
+          />
+          <Image
+            src={pokeApiSpriteUrl(b!.speciesId, "icon")}
+            alt=""
+            width={40}
+            height={40}
+            unoptimized
+            className="absolute bottom-0.5 right-0.5 h-9 w-9 object-contain object-center sm:h-10 sm:w-10"
+          />
+          <span
+            className="absolute bottom-0 left-0 rounded bg-black/55 px-0.5 text-[8px] font-black uppercase tracking-wide"
+            style={{ color: accent }}
+          >
+            2v2
+          </span>
+        </div>
+        {cleared ? (
+          <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[22px]! font-bold text-emerald-400 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+            check
+          </span>
+        ) : null}
+        {locked ? (
+          <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[16px]! text-white/40 drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
+            lock
+          </span>
+        ) : null}
+      </>
+    );
+  }
+
   const visual = floorNodeVisual(floor);
 
   if (visual.kind === "glyph") {

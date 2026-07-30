@@ -20,6 +20,8 @@ export interface MoveSnapshot {
   accuracy: number | null;
   priority: number;
   pp?: number;
+  /** PokeAPI `move.target.name` (selected-pokemon, all-opponents, …). */
+  target?: string | null;
 }
 
 export const STRUGGLE_MOVE: MoveSnapshot = {
@@ -133,6 +135,10 @@ export type SkipReason = "asleep" | "paralyzed" | "frozen" | "disobey" | "flinch
 
 export interface TurnEvent {
   side: "player" | "wild";
+  /** En dobles: calle del atacante. Singles = omitido / A. */
+  fieldSlot?: "A" | "B";
+  /** En dobles: calle del defensor / objetivo del golpe (puede diferir si hay redirect). */
+  targetFieldSlot?: "A" | "B";
   moveName: string;
   moveType: string;
   /** Categoría del movimiento — el cliente elige proyectil vs contacto. */

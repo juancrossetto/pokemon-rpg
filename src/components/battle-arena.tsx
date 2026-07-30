@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { submitBattleMove, type XpSummaryEntry } from "@/actions/battle-move";
+import { submitDoubleBattleMoves } from "@/actions/double-battle-move";
 import { fleeBattle } from "@/actions/flee-battle";
 import { attemptCapture, type CapturedPokemonInfo } from "@/actions/attempt-capture";
 import { switchPokemon } from "@/actions/switch-pokemon";
@@ -61,7 +62,8 @@ import { forecastDamage } from "@/lib/damage-forecast";
 import { EmptyPartySlot, HpPlate, PartyIcon, PartySidebar } from "@/components/battle/arena-panels";
 import { CaptureSummary } from "@/components/battle/capture-summary";
 import { BattleOutcomeScreen } from "@/components/battle/battle-outcome-screen";
-import { BagView, MovesView, TeamView, TurnOrderChip } from "@/components/battle/command-views";
+import { BagView, MovesView, TargetView, TeamView, TurnOrderChip } from "@/components/battle/command-views";
+import { needsFoeTargetPick, isSpreadMove } from "@/lib/move-target";
 
 export type { BattleArenaProps, OpponentPartyMember } from "@/components/battle/arena-types";
 
@@ -117,8 +119,11 @@ export function BattleArena({
   wildStatus: initialWildStatus,
   playerStats: initialPlayerStats,
   wildStats: initialWildStats,
+  playerBStats: initialPlayerBStats = null,
+  wildBStats: initialWildBStats = null,
   playerChoiceLockMoveId: initialChoiceLockMoveId,
   playerChargeMoveId: initialChargeMoveId,
+  playerChargeMoveIdB: initialChargeMoveIdB = null,
   gymId,
   gymRunId,
   towerRunId = null,
@@ -128,12 +133,22 @@ export function BattleArena({
   gymBadgeName,
   battleMode = gymId ? "gym" : towerRunId ? "tower" : "wild",
   battleBg = "meadow",
+  format = "SINGLE",
+  playerB = null,
+  wildB = null,
+  movesB,
+  playerBStatus: initialPlayerBStatus = null,
+  wildBStatus: initialWildBStatus = null,
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tLog = useTranslations("battle.log");
   const isGymBattle = battleMode === "gym";
   const isPvpBattle = battleMode === "pvp";
   const isTowerBattle = battleMode === "tower" || Boolean(towerRunId);
+  const isDouble =
+    (format === "DOUBLE" || Boolean(playerB && wildB)) &&
+    Boolean(playerB) &&
+    Boolean(wildB);
   // Gym, PvP, Torre o entrenador de ruta: no captura / no huida “salvaje”.
   const isTrainerStyle = isGymBattle || isPvpBattle || isTowerBattle || Boolean(opponentName);
   const leaderPortrait = gymLeaderName ? gymLeaderPortraitUrl(gymLeaderName) : null;
@@ -152,6 +167,9 @@ export function BattleArena({
     if (raw.startsWith("towerFloor:")) {
       return tLog("towerFloor", { floor: raw.slice("towerFloor:".length) });
     }
+    if (raw === "format:double" || raw === "format:single") return null;
+    if (raw.startsWith("doubleMove:")) return null;
+    if (raw === "towerDoubleWin" || raw === "towerDoubleLoss") return null;
     if (raw.startsWith("challengePvp:")) {
       return tLog("challengeTrainer", { name: raw.slice("challengePvp:".length) });
     }
@@ -235,6 +253,8 @@ export function BattleArena({
   const activePlayerIdRef = useRef(player.instanceId);
   const [playerHp, setPlayerHp] = useState(player.currentHp);
   const [playerMaxHp, setPlayerMaxHp] = useState(player.maxHp);
+  const [playerBHp, setPlayerBHp] = useState(playerB?.currentHp ?? 0);
+  const [playerBMaxHp, setPlayerBMaxHp] = useState(playerB?.maxHp ?? 0);
   const [activeWild, setActiveWild] = useState({
     name: wild.name,
     speciesName: wild.speciesName,
@@ -245,8 +265,16 @@ export function BattleArena({
   });
   const [wildHp, setWildHp] = useState(wild.currentHp);
   const [wildMaxHp, setWildMaxHp] = useState(wild.maxHp);
+  const [wildBHp, setWildBHp] = useState(wildB?.currentHp ?? 0);
+  const [wildBMaxHp, setWildBMaxHp] = useState(wildB?.maxHp ?? 0);
   const [playerStatus, setPlayerStatus] = useState<string | null>(initialPlayerStatus);
   const [wildStatus, setWildStatus] = useState<string | null>(initialWildStatus);
+  const [playerBStatus, setPlayerBStatus] = useState<string | null>(initialPlayerBStatus);
+  const [wildBStatus, setWildBStatus] = useState<string | null>(initialWildBStatus);
+  const playerHpRef = useRef(player.currentHp);
+  const playerBHpRef = useRef(playerB?.currentHp ?? 0);
+  const wildHpRef = useRef(wild.currentHp);
+  const wildBHpRef = useRef(wildB?.currentHp ?? 0);
   // Stages y velocidad se espejan del servidor para dos avisos: los badges de
   // subida/bajada de stat y quién pega primero. No deciden nada del combate.
   const [playerStages, setPlayerStages] = useState<StatStages>(NO_STAGES);
@@ -268,18 +296,24 @@ export function BattleArena({
   });
   const [attackingSide, setAttackingSide] = useState<"player" | "wild" | null>(null);
   const [shakingSide, setShakingSide] = useState<"player" | "wild" | null>(null);
+  const [shakingLane, setShakingLane] = useState<"A" | "B">("A");
   const [faintingSide, setFaintingSide] = useState<"player" | "wild" | null>(null);
   const [playerEntering, setPlayerEntering] = useState(true);
   const [playerHidden, setPlayerHidden] = useState(true);
   const [wildEntering, setWildEntering] = useState(true);
-  /** Sprite oculto por Fly/Dig/Dive (semi-invulnerable). */
-  const [vanishedSide, setVanishedSide] = useState<"player" | "wild" | null>(null);
+  /** Sprite oculto por Fly/Dig/Dive (semi-invulnerable), por calle. */
+  const [vanishedKeys, setVanishedKeys] = useState<string[]>([]);
   const [badgeEarned, setBadgeEarned] = useState(false);
   const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [tmRewardName, setTmRewardName] = useState<string | null>(null);
   const [ballAnim, setBallAnim] = useState<"recall" | "throw" | null>("throw");
   const [playerHealing, setPlayerHealing] = useState(false);
-  const [damagePopup, setDamagePopup] = useState<{ side: "player" | "wild"; text: string; key: number } | null>(null);
+  const [damagePopup, setDamagePopup] = useState<{
+    side: "player" | "wild";
+    lane: "A" | "B";
+    text: string;
+    key: number;
+  } | null>(null);
   const [moveFx, setMoveFx] = useState<{
     key: number;
     /** Remounta proyectil/contacto/impacto sin reiniciar el banner. */
@@ -319,8 +353,17 @@ export function BattleArena({
   const [opponentParty, setOpponentParty] = useState(initialOpponentParty);
   const [mustSwitch, setMustSwitch] = useState(needsForcedSwitch);
   const [activeMoves, setActiveMoves] = useState(moves);
+  const [activeMovesB, setActiveMovesB] = useState(movesB ?? []);
+  /** En dobles: primero move(+target) A, luego B. */
+  const [pendingDoubleMoveA, setPendingDoubleMoveA] = useState<number | null>(null);
+  const [pendingDoubleTargetA, setPendingDoubleTargetA] = useState<"A" | "B" | null>(null);
+  const [pendingDoubleMoveB, setPendingDoubleMoveB] = useState<number | null>(null);
+  const [targetPickFor, setTargetPickFor] = useState<"A" | "B" | null>(null);
   const [choiceLockMoveId, setChoiceLockMoveId] = useState(initialChoiceLockMoveId);
   const [chargeMoveId, setChargeMoveId] = useState(initialChargeMoveId);
+  const [chargeMoveIdB, setChargeMoveIdB] = useState<number | null>(
+    initialChargeMoveIdB,
+  );
   const logEndRef = useRef<HTMLDivElement>(null);
   const [capturedInfo, setCapturedInfo] = useState<CapturedPokemonInfo | null>(null);
   const [caughtSentToPc, setCaughtSentToPc] = useState(false);
@@ -391,8 +434,106 @@ export function BattleArena({
     logEndRef.current?.scrollIntoView({ block: "end" });
   }, [log]);
 
-  function nameFor(side: "player" | "wild") {
-    return side === "player" ? activePlayerNameRef.current : activeWild.name;
+  function nameFor(side: "player" | "wild", slot: "A" | "B" = "A") {
+    if (side === "player") {
+      if (slot === "B" && playerB) return playerB.name;
+      return activePlayerNameRef.current;
+    }
+    if (slot === "B" && wildB) return wildB.name;
+    return activeWild.name;
+  }
+
+  function eventLane(event: TurnEvent): "A" | "B" {
+    return event.fieldSlot === "B" ? "B" : "A";
+  }
+
+  function vanishKey(side: "player" | "wild", lane: "A" | "B") {
+    return `${side}:${lane}`;
+  }
+
+  function isVanished(side: "player" | "wild", lane: "A" | "B" = "A") {
+    return vanishedKeys.includes(vanishKey(side, lane));
+  }
+
+  function addVanish(side: "player" | "wild", lane: "A" | "B") {
+    const key = vanishKey(side, lane);
+    setVanishedKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+  }
+
+  function clearVanish(side: "player" | "wild", lane: "A" | "B") {
+    const key = vanishKey(side, lane);
+    setVanishedKeys((prev) => prev.filter((k) => k !== key));
+  }
+
+  function clearVanishSide(side: "player" | "wild") {
+    setVanishedKeys((prev) => prev.filter((k) => !k.startsWith(`${side}:`)));
+  }
+
+  function eventTargetLane(event: TurnEvent): "A" | "B" {
+    let lane: "A" | "B" =
+      event.targetFieldSlot === "A" || event.targetFieldSlot === "B"
+        ? event.targetFieldSlot
+        : event.fieldSlot === "B"
+          ? "B"
+          : "A";
+    // Si el evento apunta a un mon ya a 0, redirigir al partner vivo (animación).
+    const side = event.side === "player" ? "wild" : "player";
+    if (readHp(side, lane) <= 0) {
+      const other: "A" | "B" = lane === "A" ? "B" : "A";
+      if (readHp(side, other) > 0) return other;
+    }
+    return lane;
+  }
+
+  function readHp(side: "player" | "wild", lane: "A" | "B"): number {
+    if (side === "player") return lane === "B" ? playerBHpRef.current : playerHpRef.current;
+    return lane === "B" ? wildBHpRef.current : wildHpRef.current;
+  }
+
+  function readMaxHp(side: "player" | "wild", lane: "A" | "B"): number {
+    if (side === "player") return lane === "B" ? playerBMaxHp : playerMaxHp;
+    return lane === "B" ? wildBMaxHp : wildMaxHp;
+  }
+
+  function writeHp(side: "player" | "wild", lane: "A" | "B", hp: number) {
+    const next = Math.max(0, hp);
+    if (side === "player") {
+      if (lane === "B") {
+        playerBHpRef.current = next;
+        setPlayerBHp(next);
+        if (playerB) {
+          setParty((prev) =>
+            prev.map((m) =>
+              m.instanceId === playerB.instanceId ? { ...m, currentHp: next } : m,
+            ),
+          );
+        }
+      } else {
+        playerHpRef.current = next;
+        setPlayerHp(next);
+        const activeId = activePlayerIdRef.current;
+        setParty((prev) =>
+          prev.map((m) => (m.instanceId === activeId ? { ...m, currentHp: next } : m)),
+        );
+      }
+    } else if (lane === "B") {
+      wildBHpRef.current = next;
+      setWildBHp(next);
+    } else {
+      wildHpRef.current = next;
+      setWildHp(next);
+    }
+  }
+
+  function writeStatus(side: "player" | "wild", lane: "A" | "B", status: string | null) {
+    if (side === "player") {
+      if (lane === "B") setPlayerBStatus(status);
+      else setPlayerStatus(status);
+    } else if (lane === "B") {
+      setWildBStatus(status);
+    } else {
+      setWildStatus(status);
+    }
   }
 
   /** Objeto equipado del jugador que se activó esta acción (Leftovers, Focus Sash, etc.) — siempre del lado jugador. */
@@ -433,8 +574,10 @@ export function BattleArena({
     }
   }
 
-  function shakeStyle(side: "player" | "wild"): CSSProperties | undefined {
-    return shakingSide === side ? ({ "--shake-amt": `${10 * impactIntensity}px` } as CSSProperties) : undefined;
+  function shakeStyle(side: "player" | "wild", lane: "A" | "B" = "A"): CSSProperties | undefined {
+    return shakingSide === side && shakingLane === lane
+      ? ({ "--shake-amt": `${10 * impactIntensity}px` } as CSSProperties)
+      : undefined;
   }
 
   function effectivenessInfo(moveType: string): { label: string; className: string } {
@@ -506,14 +649,109 @@ export function BattleArena({
     return { label: t("regularEffective"), className: "text-on-surface-variant" };
   }
 
+  /** Info de matchup + daño al elegir target en dobles. */
+  function doubleTargetFoes() {
+    const fromB = targetPickFor === "B";
+    const pendingId = fromB ? pendingDoubleMoveB : pendingDoubleMoveA;
+    const movePool = fromB ? activeMovesB : activeMoves;
+    const move = movePool.find((m) => m.moveId === pendingId) ?? null;
+    const isStatus = move?.category === "STATUS";
+
+    const attackerTypes = fromB
+      ? (party.find((m) => m.instanceId === playerB?.instanceId)?.types ?? [])
+      : activePlayerTypes;
+    const attackerLevel = fromB ? (playerB?.level ?? activePlayer.level) : activePlayer.level;
+    const attackerAtk = fromB
+      ? (initialPlayerBStats?.atk ?? playerStats.atk)
+      : stagedPlayer.atk;
+    const attackerSpAtk = fromB
+      ? (initialPlayerBStats?.spAtk ?? playerStats.spAtk)
+      : stagedPlayer.spAtk;
+    const attackerBurned = fromB ? playerBStatus === "BURN" : playerStatus === "BURN";
+
+    const attacker = {
+      level: attackerLevel,
+      atk: attackerAtk,
+      spAtk: attackerSpAtk,
+      types: attackerTypes,
+      burned: attackerBurned,
+    };
+
+    const laneA = {
+      lane: "A" as const,
+      name: activeWild.name,
+      spriteUrl: activeWild.spriteUrl,
+      currentHp: wildHp,
+      maxHp: wildMaxHp,
+      fainted: wildHp <= 0,
+      types: activeWild.types,
+      matchup: move
+        ? matchupInfo(getTypeEffectiveness(move.type, activeWild.types))
+        : matchupInfo(1),
+      forecast:
+        move && !isStatus
+          ? forecastDamage(
+              attacker,
+              {
+                def: stagedWild.def,
+                spDef: stagedWild.spDef,
+                types: activeWild.types,
+                maxHp: wildMaxHp,
+              },
+              move,
+              wildHp,
+            )
+          : null,
+      isStatus: Boolean(isStatus),
+    };
+
+    const bTypes = wildB?.types ?? [];
+    const laneB = {
+      lane: "B" as const,
+      name: wildB?.name ?? "—",
+      spriteUrl: wildB?.spriteUrl ?? "",
+      currentHp: wildBHp,
+      maxHp: wildBMaxHp,
+      fainted: wildBHp <= 0,
+      types: bTypes,
+      matchup: move
+        ? matchupInfo(getTypeEffectiveness(move.type, bTypes))
+        : matchupInfo(1),
+      forecast:
+        move && !isStatus
+          ? forecastDamage(
+              attacker,
+              {
+                def: initialWildBStats?.def ?? stagedWild.def,
+                spDef: initialWildBStats?.spDef ?? stagedWild.spDef,
+                types: bTypes,
+                maxHp: wildBMaxHp,
+              },
+              move,
+              wildBHp,
+            )
+          : null,
+      isStatus: Boolean(isStatus),
+    };
+
+    return { move, foes: [laneA, laneB] };
+  }
+
   /** Daño residual (burn/poison): beat visual propio, DESPUÉS del ataque. */
   async function playResidualBeat(event: TurnEvent) {
     if (!event.residualDamage || event.residualHpAfter == null) return;
 
     const side = event.side;
-    const activeId = activePlayerIdRef.current;
+    const lane = eventLane(event);
     const status =
-      event.residualStatus ?? (side === "player" ? playerStatus : wildStatus);
+      event.residualStatus ??
+      (side === "player"
+        ? lane === "B"
+          ? playerBStatus
+          : playerStatus
+        : lane === "B"
+          ? wildBStatus
+          : wildStatus);
     const flash =
       status === "BURN" ? "#E85D04" : status === "POISON" ? "#A040A0" : "#9CA3AF";
     const abbr =
@@ -529,29 +767,22 @@ export function BattleArena({
           ? "residualPoison"
           : "residual";
     appendLog(
-      tLog(residualKey, { name: nameFor(side), damage: event.residualDamage }),
+      tLog(residualKey, { name: nameFor(side, lane), damage: event.residualDamage }),
       side,
     );
     setMoveFx(null);
     setEffPopup(null);
     setArenaFlash(flash);
     setShakingSide(side);
+    setShakingLane(eventLane(event));
     setImpactIntensity(0.75);
     setDamagePopup({
       side,
+      lane: eventLane(event),
       text: abbr ? `${abbr} -${event.residualDamage}` : `-${event.residualDamage}`,
       key: Date.now(),
     });
-    if (side === "player") {
-      setPlayerHp(event.residualHpAfter);
-      setParty((prev) =>
-        prev.map((m) =>
-          m.instanceId === activeId ? { ...m, currentHp: event.residualHpAfter! } : m,
-        ),
-      );
-    } else {
-      setWildHp(event.residualHpAfter);
-    }
+    writeHp(side, lane, event.residualHpAfter);
 
     await delay(RESIDUAL_MS);
     setShakingSide(null);
@@ -560,7 +791,8 @@ export function BattleArena({
   }
 
   function playEvent(event: TurnEvent): Promise<void> {
-    const activeId = activePlayerIdRef.current;
+    const lane = eventLane(event);
+    const targetLane = eventTargetLane(event);
     return new Promise((resolve) => {
       const color = typeColor(event.moveType);
       const fxKey = Date.now();
@@ -613,15 +845,15 @@ export function BattleArena({
       });
 
       if (event.skipped) {
-        if (event.statusNote === "woke") appendLog(tLog("woke", { name: nameFor(event.side) }), event.side);
-        if (event.statusNote === "thawed") appendLog(tLog("thawed", { name: nameFor(event.side) }), event.side);
-        if (event.skipped === "asleep") appendLog(tLog("asleep", { name: nameFor(event.side) }), event.side);
-        else if (event.skipped === "paralyzed") appendLog(tLog("paralyzed", { name: nameFor(event.side) }), event.side);
-        else if (event.skipped === "frozen") appendLog(tLog("frozen", { name: nameFor(event.side) }), event.side);
-        else if (event.skipped === "flinch") appendLog(tLog("flinch", { name: nameFor(event.side) }), event.side);
-        else appendLog(tLog("disobey", { name: nameFor(event.side) }), event.side);
+        if (event.statusNote === "woke") appendLog(tLog("woke", { name: nameFor(event.side, lane) }), event.side);
+        if (event.statusNote === "thawed") appendLog(tLog("thawed", { name: nameFor(event.side, lane) }), event.side);
+        if (event.skipped === "asleep") appendLog(tLog("asleep", { name: nameFor(event.side, lane) }), event.side);
+        else if (event.skipped === "paralyzed") appendLog(tLog("paralyzed", { name: nameFor(event.side, lane) }), event.side);
+        else if (event.skipped === "frozen") appendLog(tLog("frozen", { name: nameFor(event.side, lane) }), event.side);
+        else if (event.skipped === "flinch") appendLog(tLog("flinch", { name: nameFor(event.side, lane) }), event.side);
+        else appendLog(tLog("disobey", { name: nameFor(event.side, lane) }), event.side);
         // Un status corta la carga: el sprite vuelve a verse.
-        setVanishedSide((prev) => (prev === event.side ? null : prev));
+        clearVanish(event.side, lane);
         void (async () => {
           await delay(STATUS_MS);
           setMoveFx(null);
@@ -634,18 +866,18 @@ export function BattleArena({
 
       // Turno 1 de Fly/Dig/Solar Beam: no pega; vanish oculta el sprite.
       if (event.chargePhase === "start") {
-        appendLog(tLog("used", { name: nameFor(event.side), move: formatMoveName(event.moveName) }), event.side);
+        appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
         const moveKey = event.moveName.trim().toLowerCase().replace(/\s+/g, "-");
         if (event.semiInvuln === "air") {
-          appendLog(tLog("flewUp", { name: nameFor(event.side) }), event.side);
+          appendLog(tLog("flewUp", { name: nameFor(event.side, lane) }), event.side);
         } else if (event.semiInvuln === "underground") {
-          appendLog(tLog("dugDown", { name: nameFor(event.side) }), event.side);
+          appendLog(tLog("dugDown", { name: nameFor(event.side, lane) }), event.side);
         } else if (event.semiInvuln === "underwater") {
-          appendLog(tLog("doveUnder", { name: nameFor(event.side) }), event.side);
+          appendLog(tLog("doveUnder", { name: nameFor(event.side, lane) }), event.side);
         } else if (moveKey === "skull-bash") {
-          appendLog(tLog("tuckedHead", { name: nameFor(event.side) }), event.side);
+          appendLog(tLog("tuckedHead", { name: nameFor(event.side, lane) }), event.side);
         } else {
-          appendLog(tLog("charging", { name: nameFor(event.side) }), event.side);
+          appendLog(tLog("charging", { name: nameFor(event.side, lane) }), event.side);
         }
         if (event.selfStatChange) {
           const { stat, stages } = event.selfStatChange;
@@ -653,13 +885,13 @@ export function BattleArena({
             ...prev,
             [stat]: Math.max(-6, Math.min(6, prev[stat] + stages)),
           });
-          if (event.side === "player") setPlayerStages(bump);
-          else setWildStages(bump);
+          if (event.side === "player" && lane === "A") setPlayerStages(bump);
+          else if (event.side === "wild" && lane === "A") setWildStages(bump);
           const statKey =
             stat === "atk" ? "statAtk" : stat === "def" ? "statDef" : "statSpe";
           appendLog(
             tLog("statChange", {
-              name: nameFor(event.side),
+              name: nameFor(event.side, lane),
               stat: tLog(statKey),
               dir: stages < 0 ? tLog("statDown") : tLog("statUp"),
             }),
@@ -671,7 +903,7 @@ export function BattleArena({
           void (async () => {
             await delay(MULTI_STRIKE_MS);
             setAttackingSide(null);
-            setVanishedSide(event.side);
+            addVanish(event.side, lane);
             await delay(STATUS_MS);
             setMoveFx(null);
             await playResidualBeat(event);
@@ -692,7 +924,7 @@ export function BattleArena({
 
       // Turno 2: reaparece antes del golpe.
       if (event.chargePhase === "finish") {
-        setVanishedSide((prev) => (prev === event.side ? null : prev));
+        clearVanish(event.side, lane);
       }
 
       // Multi-hit: un strike por golpe adentro del loop (no un solo lunge al inicio).
@@ -701,11 +933,11 @@ export function BattleArena({
       setTimeout(() => {
         if (!multiHit) setAttackingSide(null);
 
-        if (event.statusNote === "woke") appendLog(tLog("woke", { name: nameFor(event.side) }), event.side);
-        if (event.statusNote === "thawed") appendLog(tLog("thawed", { name: nameFor(event.side) }), event.side);
+        if (event.statusNote === "woke") appendLog(tLog("woke", { name: nameFor(event.side, lane) }), event.side);
+        if (event.statusNote === "thawed") appendLog(tLog("thawed", { name: nameFor(event.side, lane) }), event.side);
 
         if (!event.hit) {
-          appendLog(tLog("miss", { name: nameFor(event.side), move: formatMoveName(event.moveName) }), event.side);
+          appendLog(tLog("miss", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
           void (async () => {
             await delay(MISS_MS);
             setMoveFx(null);
@@ -717,13 +949,12 @@ export function BattleArena({
         }
 
         if (event.isStatus) {
-          appendLog(tLog("used", { name: nameFor(event.side), move: formatMoveName(event.moveName) }), event.side);
+          appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
           if (event.statusApplied) {
             const foe = event.side === "player" ? "wild" : "player";
             const label = t(statusLabelKey(event.statusApplied as StatusCondition));
-            appendLog(tLog("statusApplied", { name: nameFor(foe), status: label }), foe);
-            if (foe === "wild") setWildStatus(event.statusApplied);
-            else setPlayerStatus(event.statusApplied);
+            appendLog(tLog("statusApplied", { name: nameFor(foe, targetLane), status: label }), foe);
+            writeStatus(foe, targetLane, event.statusApplied);
           }
           if (event.statChange) {
             const foe = event.side === "player" ? "wild" : "player";
@@ -732,8 +963,8 @@ export function BattleArena({
               ...prev,
               [stat]: Math.max(-6, Math.min(6, prev[stat] + stages)),
             });
-            if (foe === "wild") setWildStages(bump);
-            else setPlayerStages(bump);
+            if (foe === "wild" && targetLane === "A") setWildStages(bump);
+            else if (foe === "player" && targetLane === "A") setPlayerStages(bump);
             const statKey =
               event.statChange.stat === "atk"
                 ? "statAtk"
@@ -742,7 +973,7 @@ export function BattleArena({
                   : "statSpe";
             appendLog(
               tLog("statChange", {
-                name: nameFor(foe),
+                name: nameFor(foe, targetLane),
                 stat: tLog(statKey),
                 dir: event.statChange.stages < 0 ? tLog("statDown") : tLog("statUp"),
               }),
@@ -764,13 +995,13 @@ export function BattleArena({
         // SFX tipado + thud de daño al impacto (más audible).
         const typed = hitSfxForMove(event.moveType, event.category);
         const defenderSide = event.side === "player" ? "wild" : "player";
-        const defenderMaxHpNow = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
+        const defenderMaxHpNow = readMaxHp(defenderSide, targetLane);
         const hitDamages = previewDamages;
 
-        appendLog(tLog("used", { name: nameFor(event.side), move: formatMoveName(event.moveName) }), event.side);
+        appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
 
         void (async () => {
-          let hpCursor = defenderSide === "wild" ? wildHp : playerHp;
+          let hpCursor = readHp(defenderSide, targetLane);
 
           for (let i = 0; i < hitDamages.length; i++) {
             const chunk = hitDamages[i]!;
@@ -792,23 +1023,21 @@ export function BattleArena({
 
             const impactRatio = defenderMaxHpNow > 0 ? chunk / defenderMaxHpNow : 0;
             setShakingSide(defenderSide);
+            setShakingLane(targetLane);
             setImpactIntensity(Math.min(1.7, Math.max(0.55, 0.55 + impactRatio * 2.3)));
             setArenaFlash(color);
-            setDamagePopup({ side: defenderSide, text: `-${chunk}`, key: fxHitKey });
+            setDamagePopup({
+              side: defenderSide,
+              lane: targetLane,
+              text: `-${chunk}`,
+              key: fxHitKey,
+            });
             setMoveFx((prev) => (prev ? { ...prev, strikeKey: fxHitKey + 1000 } : prev));
 
             hpCursor = Math.max(0, hpCursor - chunk);
             // Último golpe: HP final del server para no desincronizar.
             const hpShow = i === hitDamages.length - 1 ? event.hpAfter : hpCursor;
-            if (defenderSide === "wild") setWildHp(hpShow);
-            else {
-              setPlayerHp(hpShow);
-              setParty((prev) =>
-                prev.map((m) =>
-                  m.instanceId === activeId ? { ...m, currentHp: hpShow } : m,
-                ),
-              );
-            }
+            writeHp(defenderSide, targetLane, hpShow);
 
             if (i === 0) {
               if (event.effectiveness > 1) {
@@ -839,24 +1068,26 @@ export function BattleArena({
           if (event.effectiveness > 1) appendLog(tLog("superEffective"), event.side);
           else if (event.effectiveness > 0 && event.effectiveness < 1) appendLog(tLog("notVeryEffective"), event.side);
           else if (event.effectiveness === 0) appendLog(tLog("noEffect"), event.side);
-          appendLog(tLog("damage", { name: nameFor(defenderSide), damage: event.damage }), defenderSide);
+          appendLog(tLog("damage", { name: nameFor(defenderSide, targetLane), damage: event.damage }), defenderSide);
 
           if (event.statusApplied) {
             const label = t(statusLabelKey(event.statusApplied as StatusCondition));
-            appendLog(tLog("statusApplied", { name: nameFor(defenderSide), status: label }), defenderSide);
-            if (defenderSide === "wild") setWildStatus(event.statusApplied);
-            else setPlayerStatus(event.statusApplied);
+            appendLog(tLog("statusApplied", { name: nameFor(defenderSide, targetLane), status: label }), defenderSide);
+            writeStatus(defenderSide, targetLane, event.statusApplied);
           }
 
           if (event.recoilDamage) {
-            appendLog(tLog("recoil", { name: nameFor(event.side), damage: event.recoilDamage }), event.side);
-            if (event.side === "player") setPlayerHp((hp) => Math.max(0, hp - (event.recoilDamage ?? 0)));
-            else setWildHp((hp) => Math.max(0, hp - (event.recoilDamage ?? 0)));
+            appendLog(tLog("recoil", { name: nameFor(event.side, lane), damage: event.recoilDamage }), event.side);
+            writeHp(
+              event.side,
+              lane,
+              Math.max(0, readHp(event.side, lane) - (event.recoilDamage ?? 0)),
+            );
           }
 
-          const defenderMaxHp = defenderSide === "wild" ? wildMaxHp : playerMaxHp;
+          const defenderMaxHp = readMaxHp(defenderSide, targetLane);
           if (event.hpAfter > 0 && event.hpAfter / defenderMaxHp <= 0.1) {
-            appendLog(tLog("lowHp", { name: nameFor(defenderSide) }), defenderSide);
+            appendLog(tLog("lowHp", { name: nameFor(defenderSide, targetLane) }), defenderSide);
           }
 
           setMoveFx(null);
@@ -949,10 +1180,267 @@ export function BattleArena({
     appendLog(t("trainerSendOut", { name: next.name }), "wild");
   }
 
+  playerHpRef.current = playerHp;
+  playerBHpRef.current = playerBHp;
+  wildHpRef.current = wildHp;
+  wildBHpRef.current = wildBHp;
+
+  function livingFoeLanes(): ("A" | "B")[] {
+    const out: ("A" | "B")[] = [];
+    if (wildHpRef.current > 0) out.push("A");
+    if (wildBHpRef.current > 0) out.push("B");
+    return out;
+  }
+
+  function clampFoeLane(lane: "A" | "B" | null | undefined): "A" | "B" | null {
+    const living = livingFoeLanes();
+    if (living.length === 0) return null;
+    if (lane === "A" || lane === "B") {
+      if (living.includes(lane)) return lane;
+    }
+    return living[0] ?? null;
+  }
+
+  function moveNeedsTargetPick(moveId: number, fromB: boolean): boolean {
+    if (livingFoeLanes().length < 2) return false;
+    const pool = fromB ? activeMovesB : activeMoves;
+    const m = pool.find((x) => x.moveId === moveId);
+    // Sin data de move: igual pedimos target (mejor que auto-pegarle al A).
+    if (!m) return true;
+    return needsFoeTargetPick(m.target, m.name);
+  }
+
+  /**
+   * En dobles, un mon en carga (Fly/Dig…) no elige move ni target: quedan
+   * forzados del turno 1 (si el target murió, el finish falla solo).
+   */
+  async function enterDoubleFight(opts?: {
+    lockA?: number | null;
+    lockB?: number | null;
+  }) {
+    const lockA = opts?.lockA !== undefined ? opts.lockA : chargeMoveId;
+    const lockB = opts?.lockB !== undefined ? opts.lockB : chargeMoveIdB;
+    const aAlive = playerHpRef.current > 0;
+    const bAlive = playerBHpRef.current > 0;
+
+    setPendingDoubleMoveA(null);
+    setPendingDoubleTargetA(null);
+    setPendingDoubleMoveB(null);
+    setTargetPickFor(null);
+
+    if (aAlive && lockA != null) {
+      // Target ya locked en servidor; no pedimos de nuevo.
+      setPendingDoubleMoveA(lockA);
+      setPendingDoubleTargetA(null);
+
+      if (bAlive && lockB != null) {
+        await runDoubleTurn(lockA, lockB, null, null);
+        return;
+      }
+      if (!bAlive) {
+        await runDoubleTurn(lockA, -1, null, null);
+        return;
+      }
+      setView("moves");
+      return;
+    }
+
+    if (!aAlive && bAlive && lockB != null) {
+      await runDoubleTurn(-1, lockB, null, null);
+      return;
+    }
+
+    setView("moves");
+  }
+
+  async function runDoubleTurn(
+    moveA: number,
+    moveB: number,
+    targetA: "A" | "B" | null,
+    targetB: "A" | "B" | null,
+  ) {
+    setPendingDoubleMoveA(null);
+    setPendingDoubleTargetA(null);
+    setPendingDoubleMoveB(null);
+    setTargetPickFor(null);
+    setIsAnimating(true);
+    setView("menu");
+
+    const result = await submitDoubleBattleMoves(
+      battleId,
+      moveA,
+      moveB,
+      locale,
+      clampFoeLane(targetA),
+      clampFoeLane(targetB),
+    );
+    if (!result) {
+      setIsAnimating(false);
+      return;
+    }
+
+    for (const event of result.events) {
+      await playEvent(event);
+    }
+
+    setPlayerMaxHp(result.playerMaxHp);
+    setWildMaxHp(result.wildMaxHp);
+    setPlayerHp(result.playerHp);
+    setWildHp(result.wildHp);
+    playerHpRef.current = result.playerHp;
+    wildHpRef.current = result.wildHp;
+    if (result.playerBMaxHp != null) setPlayerBMaxHp(result.playerBMaxHp);
+    if (result.wildBMaxHp != null) setWildBMaxHp(result.wildBMaxHp);
+    if (result.playerBHp != null) {
+      playerBHpRef.current = result.playerBHp;
+      setPlayerBHp(result.playerBHp);
+    }
+    if (result.wildBHp != null) {
+      wildBHpRef.current = result.wildBHp;
+      setWildBHp(result.wildBHp);
+    }
+    setPlayerStatus(result.playerStatus);
+    setWildStatus(result.wildStatus);
+    setPlayerBStatus(result.playerBStatus);
+    setWildBStatus(result.wildBStatus);
+    setChargeMoveId(result.playerChargeMoveId);
+    setChargeMoveIdB(result.playerChargeMoveIdB ?? null);
+    setActiveMoves((prev) =>
+      prev.map((m) => {
+        const upd = result.playerMovesPp.find((p) => p.moveId === m.moveId);
+        return upd ? { ...m, pp: upd.pp } : m;
+      }),
+    );
+    setActiveMovesB((prev) =>
+      prev.map((m) => {
+        const upd = result.playerMovesPpB.find((p) => p.moveId === m.moveId);
+        return upd ? { ...m, pp: upd.pp } : m;
+      }),
+    );
+
+    const bothFoesDown =
+      result.wildHp <= 0 && (result.wildBHp == null || result.wildBHp <= 0);
+    const bothPlayersDown =
+      result.playerHp <= 0 && (result.playerBHp == null || result.playerBHp <= 0);
+
+    if (result.outcome === "won" || bothFoesDown) {
+      await playFaintAndFinish("wild", "won");
+    } else if (result.outcome === "lost" || bothPlayersDown) {
+      await playFaintAndFinish("player", "lost");
+    } else {
+      setIsAnimating(false);
+      if (defaultView === "moves") {
+        await enterDoubleFight({
+          lockA: result.playerChargeMoveId,
+          lockB: result.playerChargeMoveIdB ?? null,
+        });
+      } else {
+        setView(defaultView);
+      }
+    }
+  }
+
+  async function handleDoubleTarget(lane: "A" | "B") {
+    if (isAnimating || outcome !== "ongoing") return;
+    unlockBattleAudio();
+    resumeBattleBgm();
+
+    if (targetPickFor === "A" && pendingDoubleMoveA != null) {
+      const aAlive = playerHp > 0;
+      const bAlive = playerBHp > 0;
+      if (aAlive && bAlive) {
+        setPendingDoubleTargetA(lane);
+        setTargetPickFor(null);
+        if (chargeMoveIdB != null) {
+          // B en carga: target ya locked; no pedir.
+          await runDoubleTurn(pendingDoubleMoveA, chargeMoveIdB, lane, null);
+          return;
+        }
+        setView("moves");
+        return;
+      }
+      await runDoubleTurn(
+        aAlive ? pendingDoubleMoveA : -1,
+        bAlive ? pendingDoubleMoveA : -1,
+        aAlive ? lane : null,
+        bAlive ? lane : null,
+      );
+      return;
+    }
+
+    if (targetPickFor === "B" && pendingDoubleMoveA != null && pendingDoubleMoveB != null) {
+      await runDoubleTurn(
+        pendingDoubleMoveA,
+        pendingDoubleMoveB,
+        pendingDoubleTargetA,
+        lane,
+      );
+    }
+  }
+
   async function handleMove(moveId: number) {
     if (isAnimating || outcome !== "ongoing" || mustSwitch) return;
     unlockBattleAudio();
     resumeBattleBgm();
+
+    if (isDouble) {
+      const aAlive = playerHpRef.current > 0;
+      const bAlive = playerBHpRef.current > 0;
+      const foes = livingFoeLanes();
+
+      // Fase A: aún no hay move A confirmado.
+      if (pendingDoubleMoveA == null) {
+        // Si A está en carga, el servidor fuerza el move — no dejamos elegir otro.
+        const effectiveA = chargeMoveId ?? moveId;
+        const moveMeta = activeMoves.find((x) => x.moveId === effectiveA);
+        const spread = moveMeta ? isSpreadMove(moveMeta.target, moveMeta.name) : false;
+        // Target solo al empezar; en el finish de carga no se vuelve a pedir.
+        if (chargeMoveId == null && foes.length >= 2 && !spread) {
+          setPendingDoubleMoveA(effectiveA);
+          setTargetPickFor("A");
+          setView("targets");
+          return;
+        }
+        if (aAlive && bAlive) {
+          setPendingDoubleMoveA(effectiveA);
+          setPendingDoubleTargetA(null);
+          if (chargeMoveIdB != null) {
+            await runDoubleTurn(effectiveA, chargeMoveIdB, null, null);
+            return;
+          }
+          setView("moves");
+          return;
+        }
+        const onlyLane = foes[0] ?? null;
+        await runDoubleTurn(
+          aAlive ? effectiveA : -1,
+          bAlive ? (chargeMoveIdB ?? effectiveA) : -1,
+          aAlive && chargeMoveId == null ? onlyLane : null,
+          bAlive && chargeMoveIdB == null ? onlyLane : null,
+        );
+        return;
+      }
+
+      // Fase B: move del partner (o carga forzada).
+      const effectiveB = chargeMoveIdB ?? moveId;
+      const moveMetaB = activeMovesB.find((x) => x.moveId === effectiveB);
+      const spreadB = moveMetaB ? isSpreadMove(moveMetaB.target, moveMetaB.name) : false;
+      // Si B está en carga, no re-elige target.
+      if (chargeMoveIdB == null && foes.length >= 2 && !spreadB) {
+        setPendingDoubleMoveB(effectiveB);
+        setTargetPickFor("B");
+        setView("targets");
+        return;
+      }
+      await runDoubleTurn(
+        pendingDoubleMoveA,
+        effectiveB,
+        pendingDoubleTargetA,
+        chargeMoveIdB != null ? null : (foes[0] ?? null),
+      );
+      return;
+    }
+
     setIsAnimating(true);
     setView("menu");
 
@@ -1012,7 +1500,7 @@ export function BattleArena({
       await playFaintThenForceSwitch();
     } else if (result.outcome === "gym_continues" && result.nextOpponent) {
       await playWildFaintThenReveal(result.nextOpponent);
-      setVanishedSide((prev) => (prev === "wild" ? null : prev));
+      clearVanishSide("wild");
       setView(defaultView);
     } else if (result.playerChargeMoveId != null) {
       // 2º turno automático (como en los juegos): no pedimos otro click.
@@ -1061,7 +1549,7 @@ export function BattleArena({
           await playFaintThenForceSwitch();
         } else if (finish.outcome === "gym_continues" && finish.nextOpponent) {
           await playWildFaintThenReveal(finish.nextOpponent);
-          setVanishedSide((prev) => (prev === "wild" ? null : prev));
+          clearVanishSide("wild");
           setView(defaultView);
         } else {
           setView(defaultView);
@@ -1316,7 +1804,7 @@ export function BattleArena({
     setPlayerStats(result.newPlayer.stats);
     setChoiceLockMoveId(null);
     setChargeMoveId(null);
-    setVanishedSide((prev) => (prev === "player" ? null : prev));
+    clearVanishSide("player");
     setParty((prev) =>
       prev.map((m) => {
         if (m.instanceId === outgoing.instanceId) {
@@ -1429,7 +1917,9 @@ export function BattleArena({
   const playerSpriteClass = [
     "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "player" ? (physicalLunge ? "sprite-lunge-right-hard" : "sprite-lunge-right") : "",
-    shakingSide === "player" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
+    shakingSide === "player" && shakingLane === "A"
+      ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}`
+      : "",
     faintingSide === "player" ? "sprite-faint" : "",
     ballAnim === "recall" ? "sprite-recall" : "",
     playerEntering ? "sprite-enter" : "",
@@ -1439,14 +1929,36 @@ export function BattleArena({
     .filter(Boolean)
     .join(" ");
 
+  const playerBSpriteClass = [
+    "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
+    shakingSide === "player" && shakingLane === "B"
+      ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}`
+      : "",
+    playerIdle ? "sprite-idle-bob" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   const wildSpriteClass = [
     "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "wild" ? (physicalLunge ? "sprite-lunge-left-hard" : "sprite-lunge-left") : "",
-    shakingSide === "wild" ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}` : "",
+    shakingSide === "wild" && shakingLane === "A"
+      ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}`
+      : "",
     faintingSide === "wild" ? "sprite-faint" : "",
     wildEntering ? "sprite-enter" : "",
     wildAbsorbedByBall ? "sprite-absorb-ball" : "",
     captureBall === "fail" ? "sprite-enter" : "",
+    wildIdle ? "sprite-idle-bob" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const wildBSpriteClass = [
+    "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
+    shakingSide === "wild" && shakingLane === "B"
+      ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}`
+      : "",
     wildIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
@@ -1539,6 +2051,18 @@ export function BattleArena({
               stages={wildStages}
               align="left"
             />
+            {isDouble && wildB && (
+              <HpPlate
+                className="absolute top-2 left-[calc(min(100%,160px)+0.75rem)] z-20 w-[min(100%,140px)] md:top-3 md:left-[calc(min(100%,220px)+0.85rem)] md:w-[min(100%,190px)]"
+                name={wildB.name}
+                levelLabel={t("level", { level: wildB.level })}
+                currentHp={wildBHp}
+                maxHp={wildBMaxHp}
+                status={wildBStatus}
+                stages={NO_STAGES}
+                align="left"
+              />
+            )}
             <HpPlate
               className="absolute bottom-2 right-2 z-20 w-[min(100%,160px)] md:bottom-3 md:right-3 md:w-[min(100%,220px)]"
               name={activePlayer.name}
@@ -1549,6 +2073,18 @@ export function BattleArena({
               stages={playerStages}
               align="right"
             />
+            {isDouble && playerB && (
+              <HpPlate
+                className="absolute bottom-2 right-[calc(min(100%,160px)+0.75rem)] z-20 w-[min(100%,140px)] md:bottom-3 md:right-[calc(min(100%,220px)+0.85rem)] md:w-[min(100%,190px)]"
+                name={playerB.name}
+                levelLabel={t("level", { level: playerB.level })}
+                currentHp={playerBHp}
+                maxHp={playerBMaxHp}
+                status={playerBStatus}
+                stages={NO_STAGES}
+                align="right"
+              />
+            )}
 
             {moveFx && (
               <div
@@ -1646,11 +2182,29 @@ export function BattleArena({
 
             {/* Opponent sprite — far plate, lower so it sits on the grass */}
             <div
-              className="absolute right-[6%] top-[18%] z-[1] origin-bottom md:top-[16%]"
-              style={{ width: wildSpritePx, height: wildSpritePx }}
+              className={`absolute z-[1] origin-bottom ${
+                isDouble
+                  ? "right-[4%] top-[14%] md:top-[12%]"
+                  : "right-[6%] top-[18%] md:top-[16%]"
+              } ${view === "targets" && wildHp > 0 ? "cursor-pointer ring-2 ring-amber-300/80 rounded-lg" : ""}`}
+              style={{
+                width: isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx,
+                height: isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx,
+                opacity: wildHp <= 0 ? 0.35 : 1,
+              }}
+              onClick={() => {
+                if (view === "targets" && wildHp > 0) void handleDoubleTarget("A");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && view === "targets" && wildHp > 0) {
+                  void handleDoubleTarget("A");
+                }
+              }}
+              role={view === "targets" ? "button" : undefined}
+              tabIndex={view === "targets" && wildHp > 0 ? 0 : undefined}
             >
               <span className="sprite-ground-shadow sprite-ground-shadow-wild absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
-              {damagePopup?.side === "wild" && (
+              {damagePopup?.side === "wild" && damagePopup.lane === "A" && (
                 <span
                   key={damagePopup.key}
                   className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
@@ -1658,7 +2212,7 @@ export function BattleArena({
                   {damagePopup.text}
                 </span>
               )}
-              {moveFx?.mode === "hit" && shakingSide === "wild" && (
+              {moveFx?.mode === "hit" && shakingSide === "wild" && shakingLane === "A" && (
                 <>
                   <span
                     key={`burst-w-${moveFx.strikeKey}`}
@@ -1677,28 +2231,101 @@ export function BattleArena({
                   />
                 </>
               )}
-              {activeWild.spriteUrl && vanishedSide !== "wild" && (
+              {activeWild.spriteUrl && !isVanished("wild", "A") && (
                 <BattleSprite
                   speciesName={activeWild.speciesName}
                   facing="front"
                   isShiny={activeWild.isShiny}
                   fallbackUrl={activeWild.spriteUrl}
                   alt={activeWild.name}
-                  width={wildSpritePx}
-                  height={wildSpritePx}
+                  width={isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx}
+                  height={isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx}
                   className={wildSpriteClass}
-                  style={shakeStyle("wild")}
+                  style={shakeStyle("wild", "A")}
                 />
               )}
             </div>
 
+            {isDouble && wildB && (
+              <div
+                className={`absolute right-[28%] top-[22%] z-[1] origin-bottom md:right-[30%] md:top-[20%] ${
+                  view === "targets" && wildBHp > 0
+                    ? "cursor-pointer ring-2 ring-amber-300/80 rounded-lg"
+                    : ""
+                }`}
+                style={{
+                  width: Math.round(wildSpritePx * 0.78),
+                  height: Math.round(wildSpritePx * 0.78),
+                  opacity: wildBHp <= 0 ? 0.35 : 1,
+                }}
+                onClick={() => {
+                  if (view === "targets" && wildBHp > 0) void handleDoubleTarget("B");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && view === "targets" && wildBHp > 0) {
+                    void handleDoubleTarget("B");
+                  }
+                }}
+                role={view === "targets" ? "button" : undefined}
+                tabIndex={view === "targets" && wildBHp > 0 ? 0 : undefined}
+              >
+                <span className="sprite-ground-shadow sprite-ground-shadow-wild absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
+                {damagePopup?.side === "wild" && damagePopup.lane === "B" && (
+                  <span
+                    key={damagePopup.key}
+                    className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
+                  >
+                    {damagePopup.text}
+                  </span>
+                )}
+                {moveFx?.mode === "hit" && shakingSide === "wild" && shakingLane === "B" && (
+                  <>
+                    <span
+                      key={`burst-wb-${moveFx.strikeKey}`}
+                      className="move-impact absolute inset-0 m-auto pointer-events-none"
+                      style={{
+                        background: `radial-gradient(circle, ${typeColor(moveFx.moveType)}cc 0%, transparent 70%)`,
+                      }}
+                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      key={`impact-wb-${moveFx.strikeKey}`}
+                      src={impactFxUrl()}
+                      alt=""
+                      aria-hidden
+                      className="fx-impact absolute inset-0 m-auto pointer-events-none"
+                    />
+                  </>
+                )}
+                {!isVanished("wild", "B") && (
+                  <BattleSprite
+                    speciesName={wildB.speciesName}
+                    facing="front"
+                    isShiny={wildB.isShiny ?? false}
+                    fallbackUrl={wildB.spriteUrl}
+                    alt={wildB.name}
+                    width={Math.round(wildSpritePx * 0.78)}
+                    height={Math.round(wildSpritePx * 0.78)}
+                    className={wildBSpriteClass}
+                    style={shakeStyle("wild", "B")}
+                  />
+                )}
+              </div>
+            )}
+
             {/* Player sprite — near plate, bottom-left */}
             <div
-              className="absolute left-[2%] bottom-[2%] z-[1] origin-bottom"
-              style={{ width: playerSpritePx, height: playerSpritePx }}
+              className={`absolute z-[1] origin-bottom ${
+                isDouble ? "left-[2%] bottom-[2%]" : "left-[2%] bottom-[2%]"
+              }`}
+              style={{
+                width: isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx,
+                height: isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx,
+                opacity: playerHp <= 0 ? 0.35 : 1,
+              }}
             >
               <span className="sprite-ground-shadow sprite-ground-shadow-player absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
-              {damagePopup?.side === "player" && (
+              {damagePopup?.side === "player" && damagePopup.lane === "A" && (
                 <span
                   key={damagePopup.key}
                   className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
@@ -1706,7 +2333,7 @@ export function BattleArena({
                   {damagePopup.text}
                 </span>
               )}
-              {moveFx?.mode === "hit" && shakingSide === "player" && (
+              {moveFx?.mode === "hit" && shakingSide === "player" && shakingLane === "A" && (
                 <>
                   <span
                     key={`burst-p-${moveFx.strikeKey}`}
@@ -1725,16 +2352,16 @@ export function BattleArena({
                   />
                 </>
               )}
-              {!playerHidden && vanishedSide !== "player" && activePlayer.spriteUrl && (
+              {!playerHidden && !isVanished("player", "A") && activePlayer.spriteUrl && (
                 <BattleSprite
                   speciesName={activePlayer.speciesName}
                   facing="back"
                   fallbackUrl={activePlayer.spriteUrl}
                   alt={activePlayer.name}
-                  width={playerSpritePx}
-                  height={playerSpritePx}
+                  width={isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx}
+                  height={isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx}
                   className={playerSpriteClass}
-                  style={shakeStyle("player")}
+                  style={shakeStyle("player", "A")}
                 />
               )}
               {ballAnim && (
@@ -1747,6 +2374,39 @@ export function BattleArena({
                 </div>
               )}
             </div>
+
+            {isDouble && playerB && (
+              <div
+                className="absolute left-[30%] bottom-[6%] z-[1] origin-bottom md:left-[32%]"
+                style={{
+                  width: Math.round(playerSpritePx * 0.78),
+                  height: Math.round(playerSpritePx * 0.78),
+                  opacity: playerBHp <= 0 ? 0.35 : 1,
+                }}
+              >
+                <span className="sprite-ground-shadow sprite-ground-shadow-player absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
+                {damagePopup?.side === "player" && damagePopup.lane === "B" && (
+                  <span
+                    key={damagePopup.key}
+                    className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
+                  >
+                    {damagePopup.text}
+                  </span>
+                )}
+                {!isVanished("player", "B") && (
+                  <BattleSprite
+                    speciesName={playerB.speciesName}
+                    facing="back"
+                    fallbackUrl={playerB.spriteUrl}
+                    alt={playerB.name}
+                    width={Math.round(playerSpritePx * 0.78)}
+                    height={Math.round(playerSpritePx * 0.78)}
+                    className={playerBSpriteClass}
+                    style={shakeStyle("player", "B")}
+                  />
+                )}
+              </div>
+            )}
           </div>
 
           {/* Opponent sidebar (desktop) */}
@@ -1835,9 +2495,17 @@ export function BattleArena({
             {view === "menu" && !isAnimating && outcome === "ongoing" && (
               <div className="mt-auto flex items-center justify-between gap-2 border-t border-dashed border-white/15 pt-1">
                 <p className="text-[10px] md:text-label-md font-bold text-on-surface leading-snug break-words [overflow-wrap:anywhere]">
-                  {t("whatWillDo", { name: activePlayer.name.toUpperCase() })}
+                  {isDouble
+                    ? t("whatWillDo", {
+                        name: (
+                          pendingDoubleMoveA != null && playerB
+                            ? playerB.name
+                            : activePlayer.name
+                        ).toUpperCase(),
+                      })
+                    : t("whatWillDo", { name: activePlayer.name.toUpperCase() })}
                 </p>
-                <TurnOrderChip playerFirst={playerOutspeeds} />
+                {!isDouble && <TurnOrderChip playerFirst={playerOutspeeds} />}
               </div>
             )}
             <div ref={logEndRef} />
@@ -1853,8 +2521,12 @@ export function BattleArena({
                   onClick={() => {
                     unlockBattleAudio();
                     resumeBattleBgm();
-                    setView("moves");
                     setDefaultView("moves");
+                    if (isDouble) {
+                      void enterDoubleFight();
+                    } else {
+                      setView("moves");
+                    }
                   }}
                   className="battle-cmd-btn battle-cmd-fight"
                 >
@@ -1863,7 +2535,7 @@ export function BattleArena({
                 </button>
                 <button
                   type="button"
-                  disabled={isAnimating || !hasHealthyBackup}
+                  disabled={isAnimating || isDouble || !hasHealthyBackup}
                   onClick={() => setView("team")}
                   className="battle-cmd-btn"
                 >
@@ -1872,7 +2544,7 @@ export function BattleArena({
                 </button>
                 <button
                   type="button"
-                  disabled={isAnimating || (!hasBalls && !hasPotions)}
+                  disabled={isAnimating || isDouble || (!hasBalls && !hasPotions)}
                   onClick={() => setView("bag")}
                   className="battle-cmd-btn"
                 >
@@ -1895,17 +2567,62 @@ export function BattleArena({
 
             {view === "moves" && (
               <MovesView
-                activePlayerName={activePlayer.name}
-                moves={activeMoves}
-                choiceLockMoveId={chargeMoveId ?? choiceLockMoveId}
+                activePlayerName={
+                  isDouble && pendingDoubleMoveA != null && playerB
+                    ? playerB.name
+                    : activePlayer.name
+                }
+                moves={
+                  isDouble && pendingDoubleMoveA != null ? activeMovesB : activeMoves
+                }
+                choiceLockMoveId={
+                  isDouble && pendingDoubleMoveA != null
+                    ? chargeMoveIdB
+                    : (chargeMoveId ?? choiceLockMoveId)
+                }
                 isAnimating={isAnimating}
                 effectivenessInfo={effectivenessInfo}
                 playerFirst={playerOutspeeds}
                 forecast={moveForecast}
                 onSelect={handleMove}
-                onBack={() => setView("menu")}
+                onBack={() => {
+                  if (isDouble && pendingDoubleMoveA != null) {
+                    setPendingDoubleMoveA(null);
+                    setPendingDoubleTargetA(null);
+                    setPendingDoubleMoveB(null);
+                    setTargetPickFor(null);
+                    setView("moves");
+                    return;
+                  }
+                  setView("menu");
+                }}
               />
             )}
+
+            {view === "targets" && isDouble && (() => {
+              const { move, foes } = doubleTargetFoes();
+              return (
+                <TargetView
+                  moveName={move?.name ?? ""}
+                  moveType={move?.type ?? null}
+                  foes={foes}
+                  isAnimating={isAnimating}
+                  onSelect={handleDoubleTarget}
+                  onBack={() => {
+                    if (targetPickFor === "B") {
+                      setPendingDoubleMoveB(null);
+                      setTargetPickFor(null);
+                      setView("moves");
+                      return;
+                    }
+                    setPendingDoubleMoveA(null);
+                    setPendingDoubleTargetA(null);
+                    setTargetPickFor(null);
+                    setView("moves");
+                  }}
+                />
+              );
+            })()}
 
             {view === "bag" && (
               <BagView

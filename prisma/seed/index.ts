@@ -51,6 +51,7 @@ interface PokeApiMove {
   priority: number;
   damage_class: { name: "physical" | "special" | "status" };
   effect_entries: { effect: string; language: { name: string } }[];
+  target: { name: string };
 }
 
 function statFrom(pokemon: PokeApiPokemon, name: string): number {
@@ -187,8 +188,11 @@ async function seedSpeciesAndMoves() {
         pp: move.pp,
         priority: move.priority,
         effectText: effect?.effect ?? null,
+        target: move.target?.name ?? "selected-pokemon",
       },
-      update: {},
+      update: {
+        target: move.target?.name ?? "selected-pokemon",
+      },
     });
     moveIdByName.set(move.name, move.id);
   });

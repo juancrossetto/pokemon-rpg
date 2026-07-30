@@ -617,6 +617,9 @@
     "musicCredit": "Música: Matthew Pablo",
     "whatWillDo": "¿Qué debería hacer {name}?",
     "selectCommand": "Elegí un comando",
+    "selectTarget": "Elegí un objetivo",
+    "chooseTarget": "Objetivo de {move}",
+    "spreadMoveTag": "Área",
     "powerLabel": "PODER",
     "ppLabel": "PP",
     "accuracyLabel": "PREC.",
@@ -743,7 +746,8 @@
     "resultLostTitle": "Perdiste la batalla",
     "resultLostTower": "Tu equipo cayó en la Torre. El botín de los pisos ganados ya está en tu cuenta.",
     "alphaEncounter": "¡Es un Pokémon Alfa! Viene mucho más fuerte de lo normal.",
-    "backToTower": "Volver a la Torre"
+    "backToTower": "Volver a la Torre",
+    "towerContinuePrompt": "Tu ascenso en la Torre sigue activo. Volvé para continuar."
   },
   "gyms": {
     "title": "Gimnasios",

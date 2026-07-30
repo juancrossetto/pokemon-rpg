@@ -46,6 +46,11 @@ export interface SideBattleState {
   chargeMoveId?: number | null;
   /** Semi-invulnerabilidad mientras carga un vanish (Fly/Dig/Dive). */
   semiInvuln?: SemiInvulnKind | null;
+  /**
+   * Calle rival elegida al empezar la carga (dobles).
+   * En el 2º turno se respeta; si ese slot está vacío, el golpe falla.
+   */
+  chargeTargetLane?: "A" | "B" | null;
 }
 
 export interface ActionOutcome {
@@ -77,6 +82,12 @@ export function resolveSingleAction(
   player: SideBattleState,
   wild: SideBattleState,
   playerItemConsumed = false,
+  opts?: {
+    powerMultiplier?: number;
+    /** Dobles spread: hits 2..N no reaplican burn/poison ni re-tiran canAct. */
+    skipResidual?: boolean;
+    assumeCanAct?: boolean;
+  },
 ): ActionOutcome {
   const events: TurnEvent[] = [];
   const p: SideBattleState = { ...player, stages: { ...player.stages } };
@@ -92,8 +103,12 @@ export function resolveSingleAction(
     self.sleepTurns = rollSleepTurns();
   }
 
-  const act = canActThisTurn(self.status, self.sleepTurns);
-  self.sleepTurns = act.newSleepTurns;
+  const act = opts?.assumeCanAct
+    ? { canAct: true as const, reason: null, newSleepTurns: self.sleepTurns }
+    : canActThisTurn(self.status, self.sleepTurns);
+  if (!opts?.assumeCanAct) {
+    self.sleepTurns = act.newSleepTurns;
+  }
 
   if (!act.canAct && act.reason) {
     if (act.reason === "asleep" && act.newSleepTurns <= 0) {
@@ -102,6 +117,7 @@ export function resolveSingleAction(
     // Status le corta la carga: cae / cancela Solar Beam / etc.
     self.chargeMoveId = null;
     self.semiInvuln = null;
+    self.chargeTargetLane = null;
     const skipEvent: TurnEvent = {
       side: attackerSide,
       moveName: move.name,
@@ -230,6 +246,7 @@ export function resolveSingleAction(
   if (isFinishingCharge) {
     self.semiInvuln = null;
     self.chargeMoveId = null;
+    self.chargeTargetLane = null;
   }
 
   const atkStats = withStages(self);
@@ -245,7 +262,9 @@ export function resolveSingleAction(
     : resolveMoveUse(atkStats, defStats, move, {
         attackerBurned: self.status === "BURN",
         powerMultiplier:
-          heldItemPowerMultiplier(self.heldItem, move.type) * invulnMult,
+          heldItemPowerMultiplier(self.heldItem, move.type) *
+          invulnMult *
+          (opts?.powerMultiplier ?? 1),
       });
 
   if (!result.hit) {
@@ -315,7 +334,9 @@ export function resolveSingleAction(
       const next = resolveMoveUse(atkStats, defStats, move, {
         attackerBurned: self.status === "BURN",
         powerMultiplier:
-          heldItemPowerMultiplier(self.heldItem, move.type) * invulnMult,
+          heldItemPowerMultiplier(self.heldItem, move.type) *
+          invulnMult *
+          (opts?.powerMultiplier ?? 1),
         forceHit: true,
       });
       const dealt = Math.min(next.damage, foe.hp);
@@ -327,14 +348,16 @@ export function resolveSingleAction(
 
     const totalDamage = hitDamages.reduce((a, b) => a + b, 0);
     let recoilDamage = 0;
-    if (move.id === STRUGGLE_MOVE.id || move.name === "struggle") {
-      recoilDamage += Math.max(1, Math.floor(self.maxHp / 4));
-    }
-    if (self.heldItem?.effect === "LIFE_ORB" && totalDamage > 0) {
-      recoilDamage += Math.max(1, Math.floor(self.maxHp * 0.1));
-    }
-    if (recoilDamage > 0) {
-      self.hp = Math.max(0, self.hp - recoilDamage);
+    if (!opts?.skipResidual) {
+      if (move.id === STRUGGLE_MOVE.id || move.name === "struggle") {
+        recoilDamage += Math.max(1, Math.floor(self.maxHp / 4));
+      }
+      if (self.heldItem?.effect === "LIFE_ORB" && totalDamage > 0) {
+        recoilDamage += Math.max(1, Math.floor(self.maxHp * 0.1));
+      }
+      if (recoilDamage > 0) {
+        self.hp = Math.max(0, self.hp - recoilDamage);
+      }
     }
 
     // Fuego descongela al rival si lo golpea (Gen II+).
@@ -374,7 +397,7 @@ export function resolveSingleAction(
   }
 
   const last = events[events.length - 1];
-  if (last) applyResidualToEvent(self, last);
+  if (last && !opts?.skipResidual) applyResidualToEvent(self, last);
 
   const itemResult = resolvePlayerHeldItemTrigger({
     heldItem: p.heldItem,

@@ -196,6 +196,11 @@ model Move {
   pp         Int
   priority   Int          @default(0)
   effectText String?
+  /**
+   * PokeAPI move.target.name — selected-pokemon, all-opponents,
+   * all-other-pokemon, user, etc. Default = single-target clásico.
+   */
+  target     String       @default("selected-pokemon")
 
   learnableBy SpeciesMove[]
   knownBy     PokemonMove[]
@@ -263,7 +268,8 @@ model PokemonInstance {
   species        Species         @relation(fields: [speciesId], references: [id])
   moves          PokemonMove[]
   listings       MarketListing[]
-  battleSessions BattleSession[]
+  battleSessions BattleSession[]  @relation("BattlePlayerA")
+  battleSessionsB BattleSession[] @relation("BattlePlayerB")
 
   @@unique([ownerId, teamSlot]) // dos Pokémon no pueden compartir slot. Postgres
   // trata cada NULL como distinto, así que el PC (teamSlot null) no se ve afectado.
@@ -872,10 +878,18 @@ enum BattleSessionStatus {
   CAUGHT
 }
 
+/** SINGLE = 1v1 (default). DOUBLE = 2v2 en campo (Torre elite MVP). */
+enum BattleFormat {
+  SINGLE
+  DOUBLE
+}
+
 model BattleSession {
   id                     String              @id @default(cuid())
   userId                 String
   pokemonInstanceId      String
+  /// Segundo activo del jugador en dobles (null en singles o slot vacío).
+  pokemonInstanceBId     String?
   wildSpeciesId          Int
   wildLevel              Int
   wildCurrentHp          Int
@@ -885,6 +899,10 @@ model BattleSession {
   wildIsShiny            Boolean             @default(false)
   routeTrainerId         String? // entrenador de ruta (datos estáticos, ver trainers.ts) // se tira al generar el encuentro para que se vea variante en combate
   status                 BattleSessionStatus @default(ACTIVE)
+  format                 BattleFormat        @default(SINGLE)
+  /// Slot B del rival + estado de combate del slot B del jugador (dobles).
+  /// Shape: DoublesFieldB en src/lib/doubles/field-b.ts. Null en singles.
+  fieldB                 Json?
   log                    String[]            @default([])
   participantIds         String[]            @default([]) // todos los Pokémon del jugador que pelearon en esta sesión (para repartir XP al terminar)
   pendingXp              Int                 @default(0) // XP acumulada de KOs previos en la misma sesión, pendiente de repartir al terminar
@@ -926,16 +944,17 @@ model BattleSession {
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
 
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pokemonInstance PokemonInstance @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
-  wildSpecies     Species         @relation(fields: [wildSpeciesId], references: [id])
-  gym             Gym?            @relation(fields: [gymId], references: [id])
-  gymRun          GymRun?         @relation(fields: [gymRunId], references: [id])
-  gymTrainer      GymTrainer?     @relation(fields: [gymTrainerId], references: [id])
-  towerRun        TowerRun?       @relation(fields: [towerRunId], references: [id], onDelete: SetNull)
-  pvpMatch        PvpMatch?       @relation(fields: [pvpMatchId], references: [id], onDelete: SetNull)
-  opponentUser    User?           @relation("PvpOpponentUser", fields: [opponentUserId], references: [id], onDelete: SetNull)
-  wildHeldItem    Item?           @relation("BattleWildHeldItem", fields: [wildHeldItemId], references: [id], onDelete: SetNull)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pokemonInstance  PokemonInstance  @relation("BattlePlayerA", fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
+  pokemonInstanceB PokemonInstance? @relation("BattlePlayerB", fields: [pokemonInstanceBId], references: [id], onDelete: SetNull)
+  wildSpecies      Species          @relation(fields: [wildSpeciesId], references: [id])
+  gym              Gym?             @relation(fields: [gymId], references: [id])
+  gymRun           GymRun?          @relation(fields: [gymRunId], references: [id])
+  gymTrainer       GymTrainer?      @relation(fields: [gymTrainerId], references: [id])
+  towerRun         TowerRun?        @relation(fields: [towerRunId], references: [id], onDelete: SetNull)
+  pvpMatch         PvpMatch?        @relation(fields: [pvpMatchId], references: [id], onDelete: SetNull)
+  opponentUser     User?            @relation("PvpOpponentUser", fields: [opponentUserId], references: [id], onDelete: SetNull)
+  wildHeldItem     Item?            @relation("BattleWildHeldItem", fields: [wildHeldItemId], references: [id], onDelete: SetNull)
 
   @@index([userId, status])
   @@index([pvpMatchId])

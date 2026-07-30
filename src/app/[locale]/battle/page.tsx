@@ -6,7 +6,7 @@ import { calculateMaxHp, calculateStat } from "@/lib/stats";
 import { wildCombatantStats } from "@/lib/combatant";
 import { effectivePp } from "@/lib/battle";
 import { getCurrentEnergy } from "@/lib/energy";
-import { getActiveGymRun } from "@/lib/battle-lock";
+import { getActiveGymRun, getActiveTowerRun } from "@/lib/battle-lock";
 import { healCooldownMsLeft, healRushCost } from "@/lib/healing";
 import { BattleScreen } from "@/components/battle-screen";
 import type { BattleArenaProps, OpponentPartyMember } from "@/components/battle-arena";
@@ -25,6 +25,7 @@ import { avatarById, showdownTrainerSpriteUrl } from "@/lib/avatars";
 import { gymLeaderPortraitUrl, gymTypeTrainerSpriteSlug } from "@/lib/gym-art";
 import { parseTeamSnap } from "@/lib/pvp/team";
 import { resolveBattleBg } from "@/lib/battle-bg";
+import { parseDoublesFieldB } from "@/lib/doubles";
 
 const ENCOUNTER_ENERGY_COST = 1;
 
@@ -61,6 +62,7 @@ export default async function BattlePage({
     orderBy: { updatedAt: "desc" },
     include: {
       pokemonInstance: { include: { species: true, moves: { include: { move: true } } } },
+      pokemonInstanceB: { include: { species: true, moves: { include: { move: true } } } },
       wildSpecies: true,
       gym: { select: { type: true, name: true, leaderName: true, badgeName: true, order: true } },
       gymTrainer: { select: { name: true } },
@@ -81,11 +83,11 @@ export default async function BattlePage({
   let lobby: BattleLobbyData | null = null;
 
   if (!battle) {
-    // En un desafío de gym no se puede escapar al encuentro salvaje para curar.
+    // En un desafío de gym/torre no se puede escapar al encuentro salvaje para curar.
     // Importante: NO redirigir acá automáticamente. Si el server action de
-    // batalla revalida el layout, un redirect a /run mata la animación de KO
+    // batalla revalida el layout, un redirect mata la animación de KO
     // y el cartel de resultado. CombatLockGate + el CTA del resumen llevan
-    // al jugador de vuelta al pasillo cuando corresponde.
+    // al jugador de vuelta cuando corresponde.
     const gymRun = await getActiveGymRun(userId);
     if (gymRun) {
       return (
@@ -95,6 +97,19 @@ export default async function BattlePage({
           hasHealthyTeam={true}
           lobby={null}
           gymContinueId={gymRun.gymId}
+        />
+      );
+    }
+
+    const towerRun = await getActiveTowerRun(userId);
+    if (towerRun) {
+      return (
+        <BattleScreen
+          initialBattle={null}
+          locale={locale}
+          hasHealthyTeam={true}
+          lobby={null}
+          towerContinue
         />
       );
     }
@@ -354,6 +369,14 @@ export default async function BattlePage({
       isRouteTrainer: Boolean(routeTrainer),
     });
 
+    const isDouble = battle.format === "DOUBLE";
+    const fieldB = isDouble ? parseDoublesFieldB(battle.fieldB) : null;
+    const instB = battle.pokemonInstanceB;
+    const wildBSpecies =
+      fieldB?.wild.speciesId != null
+        ? await prisma.species.findUnique({ where: { id: fieldB.wild.speciesId } })
+        : null;
+
     initialBattle = {
       battleId: battle.id,
       locale,
@@ -361,6 +384,7 @@ export default async function BattlePage({
       trainerPortraitUrl,
       opponentPortraitUrl,
       opponentName,
+      format: isDouble ? "DOUBLE" : "SINGLE",
       pokeballs: pokeballs.map((p) => ({
         itemId: p.itemId,
         name: p.item.name,
@@ -378,7 +402,12 @@ export default async function BattlePage({
         speciesName: r.species.name,
         level: r.level,
         spriteUrl: r.species.spriteUrl,
-        currentHp: r.id === instance.id ? instance.currentHp : r.currentHp,
+        currentHp:
+          r.id === instance.id
+            ? instance.currentHp
+            : r.id === instB?.id
+              ? instB.currentHp
+              : r.currentHp,
         maxHp: calculateMaxHp(r.species.baseHp, r.level, r.ptConstitution),
         types: r.species.types,
       })),
@@ -391,6 +420,22 @@ export default async function BattlePage({
         currentHp: instance.currentHp,
         maxHp: playerMaxHp,
       },
+      playerB:
+        isDouble && instB
+          ? {
+              instanceId: instB.id,
+              name: instB.nickname ?? instB.species.name,
+              speciesName: instB.species.name,
+              level: instB.level,
+              spriteUrl: instB.species.spriteUrl,
+              currentHp: instB.currentHp,
+              maxHp: calculateMaxHp(
+                instB.species.baseHp,
+                instB.level,
+                instB.ptConstitution,
+              ),
+            }
+          : null,
       wild: {
         name: pvpTeam.find((m) => m.slot === currentSlot)?.name ?? battle.wildSpecies.name,
         speciesName:
@@ -402,6 +447,19 @@ export default async function BattlePage({
         maxHp: battle.wildMaxHp,
         types: battle.wildSpecies.types,
       },
+      wildB:
+        isDouble && fieldB && wildBSpecies
+          ? {
+              name: wildBSpecies.name,
+              speciesName: wildBSpecies.name,
+              level: fieldB.wild.level,
+              spriteUrl: spriteFor(wildBSpecies.spriteUrl, fieldB.wild.isShiny),
+              isShiny: fieldB.wild.isShiny,
+              currentHp: fieldB.wild.currentHp,
+              maxHp: fieldB.wild.maxHp,
+              types: wildBSpecies.types,
+            }
+          : null,
       moves: instance.moves.map((m) => ({
         moveId: m.moveId,
         name: m.move.name,
@@ -411,11 +469,46 @@ export default async function BattlePage({
         category: m.move.category,
         pp: effectivePp(m.currentPp, m.move.pp),
         maxPp: m.move.pp,
+        target: m.move.target ?? null,
       })),
+      movesB:
+        isDouble && instB
+          ? instB.moves.map((m) => ({
+              moveId: m.moveId,
+              name: m.move.name,
+              type: m.move.type,
+              power: m.move.power,
+              accuracy: m.move.accuracy,
+              category: m.move.category,
+              pp: effectivePp(m.currentPp, m.move.pp),
+              maxPp: m.move.pp,
+              target: m.move.target ?? null,
+            }))
+          : undefined,
       initialLog: battle.log,
-      opponentParty,
+      opponentParty:
+        isDouble && fieldB && wildBSpecies
+          ? [
+              {
+                slot: 1,
+                name: battle.wildSpecies.name,
+                spriteUrl: battle.wildSpecies.spriteUrl,
+                fainted: battle.wildCurrentHp <= 0,
+                active: true,
+              },
+              {
+                slot: 2,
+                name: wildBSpecies.name,
+                spriteUrl: wildBSpecies.spriteUrl,
+                fainted: fieldB.wild.currentHp <= 0,
+                active: true,
+              },
+            ]
+          : opponentParty,
       playerStatus: battle.playerStatus,
       wildStatus: battle.wildStatus,
+      playerBStatus: fieldB?.player.status ?? null,
+      wildBStatus: fieldB?.wild.status ?? null,
       playerStats: {
         atk: calculateStat(instance.species.baseAttack, instance.ptStrength, instance.level),
         spAtk: calculateStat(
@@ -425,6 +518,18 @@ export default async function BattlePage({
         ),
         speed: calculateStat(instance.species.baseSpeed, instance.ptSpeed, instance.level),
       },
+      playerBStats:
+        isDouble && instB
+          ? {
+              atk: calculateStat(instB.species.baseAttack, instB.ptStrength, instB.level),
+              spAtk: calculateStat(
+                instB.species.baseSpAtk,
+                instB.ptIntelligence,
+                instB.level,
+              ),
+              speed: calculateStat(instB.species.baseSpeed, instB.ptSpeed, instB.level),
+            }
+          : null,
       wildStats: (() => {
         const pvpActive = pvpTeam.find((m) => m.slot === currentSlot);
         if (pvpActive) {
@@ -437,8 +542,16 @@ export default async function BattlePage({
         const stats = wildCombatantStats(battle.wildSpecies, battle.wildLevel);
         return { def: stats.def, spDef: stats.spDef, speed: stats.speed };
       })(),
+      wildBStats:
+        isDouble && fieldB && wildBSpecies
+          ? (() => {
+              const stats = wildCombatantStats(wildBSpecies, fieldB.wild.level);
+              return { def: stats.def, spDef: stats.spDef, speed: stats.speed };
+            })()
+          : null,
       playerChoiceLockMoveId: battle.playerChoiceLockMoveId,
       playerChargeMoveId: battle.playerChargeMoveId,
+      playerChargeMoveIdB: fieldB?.player.chargeMoveId ?? null,
       gymId: battle.gymId,
       gymRunId: battle.gymRunId,
       towerRunId: battle.towerRunId,
