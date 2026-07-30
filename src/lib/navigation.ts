@@ -54,8 +54,8 @@ export type NavGroup = {
  *
  * Decisiones que vale la pena dejar escritas:
  *
- * - **Gimnasios va en Aventura, no en Combate.** Son hitos de progreso: dan
- *   medallas y desbloquean contenido. Combate agrupa lo que se juega por
+ * - **Gimnasios y Torre van en Aventura, no en Combate.** Son hitos de
+ *   progreso (medallas / ascenso semanal). Combate agrupa lo que se juega por
  *   enfrentarse, no por avanzar.
  * - **`/battle` se llama "Batalla salvaje".** La ruta no cambia; el label sí,
  *   porque "Batalla" a secas no distinguía entre el PvE de exploración y el
@@ -64,8 +64,8 @@ export type NavGroup = {
  * - **Mercado y Tienda viven en un solo hub (`/market`).** Misma economía de
  *   monedas, dos modos: tienda oficial (`?tab=shop`) y P2P (browse/sell/…).
  *   Fusionar las UIs limpia el menú; los backends siguen separados.
- * - **Ranking vive solo en Combate.** El ranking de clanes es otra cosa y ya
- *   vive dentro de `/clans`.
+ * - **Ranking vive en Comunidad.** Es comparación social entre entrenadores;
+ *   el ranking de clanes sigue dentro de `/clans`.
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -88,6 +88,14 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/gyms",
         icon: "military_tech",
         iconSrc: "/nav/gym-icon.png",
+      },
+      {
+        id: "tower",
+        labelKey: "tower",
+        descriptionKey: "desc.tower",
+        href: "/tower",
+        icon: "apartment",
+        iconSrc: "/nav/tower-icon.png",
       },
       {
         id: "events",
@@ -122,22 +130,6 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/pvp",
         icon: "sports_mma",
         iconSrc: "/nav/pvp-icon.png",
-      },
-      {
-        id: "tower",
-        labelKey: "tower",
-        descriptionKey: "desc.tower",
-        href: "/tower",
-        icon: "apartment",
-        iconSrc: "/nav/battle-wild-icon.png",
-      },
-      {
-        id: "ranking",
-        labelKey: "ranking",
-        descriptionKey: "desc.ranking",
-        href: "/ranking",
-        icon: "trophy",
-        iconSrc: "/nav/ranking-icon.png",
       },
     ],
   },
@@ -213,6 +205,14 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/clans",
         icon: "groups",
         iconSrc: "/nav/clan-icon.png",
+      },
+      {
+        id: "ranking",
+        labelKey: "ranking",
+        descriptionKey: "desc.ranking",
+        href: "/ranking",
+        icon: "trophy",
+        iconSrc: "/nav/ranking-icon.png",
       },
     ],
   },

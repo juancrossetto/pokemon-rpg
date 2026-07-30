@@ -674,52 +674,54 @@ export function TowerEndedSummary({
 
   return (
     <section
-      className="relative overflow-hidden rounded-2xl border px-3 py-3 sm:px-4"
+      className="relative overflow-hidden rounded-xl border px-2.5 py-2 sm:rounded-2xl sm:px-4 sm:py-3"
       style={{
         borderColor: `${accent}44`,
         background: `linear-gradient(180deg, ${accent}14 0%, rgba(10,12,18,0.92) 55%)`,
       }}
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <p
-            className="text-[10px] font-black uppercase tracking-[0.22em]"
+            className="text-[9px] font-black uppercase tracking-[0.2em] sm:text-[10px] sm:tracking-[0.22em]"
             style={{ color: accent }}
           >
             {t(titleKey)}
           </p>
-          <p className="mt-1 text-[12px] leading-snug text-white/70">{t(bodyKey)}</p>
+          <p className="mt-0.5 line-clamp-1 text-[11px] leading-snug text-white/65 sm:mt-1 sm:line-clamp-none sm:text-[12px] sm:text-white/70">
+            {t(bodyKey)}
+          </p>
         </div>
-        <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-1.5 text-right">
-          <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-on-surface-variant/65">
+        <div className="shrink-0 rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-right sm:rounded-xl sm:px-3 sm:py-1.5">
+          <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-on-surface-variant/65 sm:text-[8px] sm:tracking-[0.16em]">
             {t("result.floorReached")}
           </p>
-          <p className="font-mono text-[22px] font-black leading-none tabular-nums text-white">
+          <p className="font-mono text-[20px] font-black leading-none tabular-nums text-white sm:text-[22px]">
             {floorReached}
           </p>
         </div>
       </div>
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-white/[0.08] bg-black/25 px-3 py-2.5">
-          <p className="mb-1.5 text-[8px] font-bold uppercase tracking-[0.16em] text-electric-yellow/80">
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3">
+        <div className="rounded-lg border border-white/[0.08] bg-black/25 px-2 py-1.5 sm:rounded-xl sm:px-3 sm:py-2.5">
+          <p className="mb-1 text-[7px] font-bold uppercase tracking-[0.14em] text-electric-yellow/80 sm:mb-1.5 sm:text-[8px] sm:tracking-[0.16em]">
             {t("result.lootKept")}
           </p>
           {loot.length > 0 ? (
             <RewardList rewards={loot} size="sm" unitLabels={unitLabels} />
           ) : (
-            <p className="text-[11px] text-on-surface-variant/55">{t("result.lootEmpty")}</p>
+            <p className="text-[10px] text-on-surface-variant/55 sm:text-[11px]">{t("result.lootEmpty")}</p>
           )}
           {lootClaimed ? (
-            <p className="mt-2 text-[10px] font-semibold text-emerald-300/90">
+            <p className="mt-1 text-[9px] font-semibold text-emerald-300/90 sm:mt-2 sm:text-[10px]">
               {t("result.lootClaimed")}
             </p>
           ) : alreadyGranted ? (
-            <p className="mt-2 text-[10px] leading-snug text-on-surface-variant/55">
+            <p className="mt-1 line-clamp-2 text-[9px] leading-snug text-on-surface-variant/55 sm:mt-2 sm:text-[10px]">
               {t("result.lootAlreadyGranted")}
             </p>
           ) : (
-            <p className="mt-2 text-[10px] leading-snug text-on-surface-variant/55">
+            <p className="mt-1 line-clamp-2 text-[9px] leading-snug text-on-surface-variant/55 sm:mt-2 sm:text-[10px]">
               {t("result.lootHint")}
             </p>
           )}
@@ -728,19 +730,19 @@ export function TowerEndedSummary({
               type="button"
               disabled={pending}
               onClick={() => start(async () => claimTowerLoot(locale, runId))}
-              className="mt-2.5 flex w-full min-h-11 items-center justify-center gap-1.5 rounded-xl bg-electric-yellow px-3 py-2 text-[12px] font-black uppercase tracking-wider text-surface transition hover:bg-electric-yellow/90 disabled:opacity-50"
+              className="mt-1.5 flex w-full min-h-9 items-center justify-center gap-1 rounded-lg bg-electric-yellow px-2 py-1.5 text-[11px] font-black uppercase tracking-wider text-surface transition hover:bg-electric-yellow/90 disabled:opacity-50 sm:mt-2.5 sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2 sm:text-[12px]"
             >
-              <span className="material-symbols-outlined text-[18px]!">redeem</span>
+              <span className="material-symbols-outlined text-[16px]! sm:text-[18px]!">redeem</span>
               {pending ? t("actions.working") : t("result.claimCta")}
             </button>
           ) : null}
         </div>
 
-        <div className="rounded-xl border border-white/[0.08] bg-black/25 px-3 py-2.5">
-          <p className="mb-1.5 text-[8px] font-bold uppercase tracking-[0.16em] text-on-surface-variant/65">
+        <div className="rounded-lg border border-white/[0.08] bg-black/25 px-2 py-1.5 sm:rounded-xl sm:px-3 sm:py-2.5">
+          <p className="mb-1 text-[7px] font-bold uppercase tracking-[0.14em] text-on-surface-variant/65 sm:mb-1.5 sm:text-[8px] sm:tracking-[0.16em]">
             {t("result.finalTeam")}
           </p>
-          <ul className="grid grid-cols-6 gap-1">
+          <ul className="grid grid-cols-3 gap-0.5 sm:grid-cols-6 sm:gap-1">
             {team.map((m) => {
               const down = m.defeated || m.currentHp <= 0;
               const pct = m.maxHp > 0 ? m.currentHp / m.maxHp : 0;
@@ -749,7 +751,7 @@ export function TowerEndedSummary({
                 <li
                   key={m.instanceId}
                   title={`${m.nickname ?? m.speciesName} · ${m.currentHp}/${m.maxHp}`}
-                  className={`relative flex flex-col items-center rounded-lg border px-0.5 pb-1 pt-1 ${
+                  className={`relative flex flex-col items-center rounded-md border px-0.5 pb-0.5 pt-0.5 sm:rounded-lg sm:pb-1 sm:pt-1 ${
                     down
                       ? "border-error/25 bg-error/10"
                       : "border-white/[0.08] bg-white/[0.03]"
@@ -761,14 +763,14 @@ export function TowerEndedSummary({
                     width={36}
                     height={36}
                     unoptimized
-                    className={`h-8 w-8 object-contain ${down ? "grayscale opacity-70" : ""}`}
+                    className={`h-6 w-6 object-contain sm:h-8 sm:w-8 ${down ? "grayscale opacity-70" : ""}`}
                   />
                   {down ? (
-                    <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[14px]! text-error">
+                    <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[11px]! text-error sm:text-[14px]!">
                       skull
                     </span>
                   ) : null}
-                  <div className="mt-0.5 h-[3px] w-full overflow-hidden rounded-full bg-white/10">
+                  <div className="mt-0.5 h-[2px] w-full overflow-hidden rounded-full bg-white/10 sm:h-[3px]">
                     <div
                       className="h-full rounded-full"
                       style={{
@@ -781,7 +783,7 @@ export function TowerEndedSummary({
               );
             })}
           </ul>
-          <p className="mt-2 text-[10px] leading-snug text-on-surface-variant/55">
+          <p className="mt-1 hidden text-[10px] leading-snug text-on-surface-variant/55 sm:mt-2 sm:block">
             {t("result.teamRestored")}
           </p>
         </div>
@@ -1208,13 +1210,23 @@ export function TowerActionBar({
 }) {
   const t = useTranslations("tower");
   const [pending, start] = useTransition();
-  const [now, setNow] = useState(() => Date.now());
+  /*
+    El countdown no puede usar Date.now() en el primer paint: SSR y cliente
+    difieren en ~1s y React tira hydration mismatch. Arrancamos sin reloj y
+    lo activamos recién en el efecto.
+  */
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!resetAtMs) return;
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    if (!resetAtMs || action.enabled) {
+      setNow(null);
+      return;
+    }
+    const tick = () => setNow(Date.now());
+    tick();
+    const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [resetAtMs]);
+  }, [resetAtMs, action.enabled]);
 
   const run = () =>
     start(async () => {
@@ -1225,16 +1237,18 @@ export function TowerActionBar({
       }
     });
 
-  const remainingMs = resetAtMs ? Math.max(0, resetAtMs - now) : 0;
-  const timerLabel =
-    resetAtMs && !action.enabled && remainingMs > 0
-      ? formatTowerCountdown(remainingMs)
-      : null;
+  const showTimer = Boolean(resetAtMs) && !action.enabled;
+  const timerLabel = showTimer
+    ? now != null
+      ? formatTowerCountdown(Math.max(0, resetAtMs! - now))
+      : "—"
+    : null;
 
   return (
-    <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 -mx-margin-mobile mt-2 border-t border-white/10 bg-[#0b0d13]/95 px-margin-mobile py-2.5 backdrop-blur-xl md:-mx-margin-desktop md:px-margin-desktop xl:bottom-0">
+    <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] z-30 border-t border-white/10 bg-[#0b0d13]/95 px-margin-mobile pt-2 pb-2.5 backdrop-blur-xl sm:pt-2.5 sm:pb-3 md:px-margin-desktop xl:bottom-0">
+      <div className="mx-auto w-full max-w-6xl">
       {activeBlessings.length > 0 && (
-        <ul className="mb-2 flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <ul className="mb-1.5 flex gap-1 overflow-x-auto [scrollbar-width:none] sm:mb-2 [&::-webkit-scrollbar]:hidden">
           {activeBlessings.map((name, i) => (
             <li
               key={`${name}-${i}`}
@@ -1246,11 +1260,11 @@ export function TowerActionBar({
         </ul>
       )}
       {timerLabel ? (
-        <div className="mb-2 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
-          <span className="material-symbols-outlined text-[16px]! text-on-surface-variant">
+        <div className="mb-1.5 flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 sm:mb-2 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2">
+          <span className="material-symbols-outlined text-[15px]! text-on-surface-variant sm:text-[16px]!">
             schedule
           </span>
-          <p className="text-[11px] text-on-surface-variant">
+          <p className="text-[10px] text-on-surface-variant sm:text-[11px]">
             {t("reset.nextIn")}{" "}
             <span className="font-mono font-bold tabular-nums text-white">{timerLabel}</span>
           </p>
@@ -1272,10 +1286,11 @@ export function TowerActionBar({
         </GameCtaButton>
       )}
       {action.reasonKey && (
-        <p className="mt-1 text-center text-[10px] text-on-surface-variant">
+        <p className="mt-1.5 pb-0.5 text-center text-[10px] leading-snug text-on-surface-variant">
           {t(action.reasonKey)}
         </p>
       )}
+      </div>
     </div>
   );
 }
