@@ -120,4 +120,65 @@ describe("forecastDamage", () => {
     )!;
     expect(forecast.maxPct).toBe(100);
   });
+
+  it("returns null when category is missing (never assume PHYSICAL)", () => {
+    expect(
+      forecastDamage(attacker, defender, { type: "water", power: 65 }, 200),
+    ).toBeNull();
+  });
+
+  // Regresión: Seadra (mucho Atq, poco Atq.Esp) vs Rapidash del líder de
+  // Cinnabar. Bubble Beam es SPECIAL — si el forecast usara Atq/Def (o
+  // defaultara PHYSICAL), marcaría KO seguro; el daño real deja ~20% HP.
+  it("does not mark KO for special water vs Rapidash when Atk >> SpAtk", () => {
+    const seadra = {
+      level: 45,
+      atk: 107,
+      spAtk: 90,
+      types: ["water"],
+      burned: false,
+    };
+    const rapidash = {
+      def: 63,
+      spDef: 72,
+      types: ["fire"],
+      maxHp: 106,
+    };
+    const bubbleBeam = { type: "water", power: 65, category: "SPECIAL" } as const;
+
+    const special = forecastDamage(seadra, rapidash, bubbleBeam, 106)!;
+    expect(special.guaranteedKo).toBe(false);
+    expect(special.maxPct).toBeLessThan(100);
+
+    const physical = forecastDamage(
+      seadra,
+      rapidash,
+      { ...bubbleBeam, category: "PHYSICAL" },
+      106,
+    )!;
+    expect(physical.guaranteedKo).toBe(true);
+  });
+
+  it("ignores Defense stage drops when forecasting special moves", () => {
+    const seadra = {
+      level: 45,
+      atk: 107,
+      spAtk: 90,
+      types: ["water"],
+      burned: false,
+    };
+    const arcanineFull = {
+      def: 80,
+      spDef: 80,
+      types: ["fire"],
+      maxHp: 141,
+    };
+    const arcanineLeered = { ...arcanineFull, def: 40 }; // −2 Def
+    const bubbleBeam = { type: "water", power: 65, category: "SPECIAL" } as const;
+
+    const before = forecastDamage(seadra, arcanineFull, bubbleBeam, 141)!;
+    const after = forecastDamage(seadra, arcanineLeered, bubbleBeam, 141)!;
+    expect(after).toEqual(before);
+    expect(after.guaranteedKo).toBe(false);
+  });
 });

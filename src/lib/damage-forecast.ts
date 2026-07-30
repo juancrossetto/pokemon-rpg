@@ -47,20 +47,25 @@ export function forecastDamage(
   move: ForecastMove,
   defenderCurrentHp: number,
 ): DamageForecast | null {
-  const category = move.category ?? "PHYSICAL";
-  if (category === "STATUS" || move.power == null || defender.maxHp <= 0) return null;
+  // Sin categoría no estimamos: defaultar a PHYSICAL inflaba el aviso cuando el
+  // atacante tenía mucho Atq y el move era SPECIAL (p. ej. Seadra + Bubble Beam).
+  const category = move.category;
+  if (!category || category === "STATUS" || move.power == null || defender.maxHp <= 0) {
+    return null;
+  }
 
   let atkStat = category === "PHYSICAL" ? attacker.atk : attacker.spAtk;
   if (category === "PHYSICAL" && attacker.burned) {
     atkStat = Math.max(1, Math.floor(atkStat * 0.5));
   }
   const defStat = category === "PHYSICAL" ? defender.def : defender.spDef;
-  if (defStat <= 0) return null;
+  if (defStat <= 0 || atkStat <= 0) return null;
 
   const base = Math.floor(
     (Math.floor((2 * attacker.level) / 5 + 2) * move.power * (atkStat / defStat)) / 50 + 2,
   );
-  const stab = attacker.types.includes(move.type) ? 1.5 : 1;
+  const moveType = move.type.toLowerCase();
+  const stab = attacker.types.some((t) => t.toLowerCase() === moveType) ? 1.5 : 1;
   const effectiveness = getTypeEffectiveness(move.type, defender.types);
   const scale = base * stab * effectiveness;
 

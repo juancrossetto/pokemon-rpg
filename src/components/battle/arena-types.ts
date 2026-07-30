@@ -56,7 +56,8 @@ export interface BattleMoveOption {
   power?: number | null;
   /** null = nunca falla (Swift). */
   accuracy?: number | null;
-  category?: MoveCategory;
+  /** Obligatorio: el forecast de daño elige Atq/Def vs Atq.Esp/SpDef con esto. */
+  category: MoveCategory;
   pp: number;
   maxPp: number;
 }

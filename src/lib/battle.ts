@@ -93,7 +93,8 @@ export function resolveMoveUse(
     (Math.floor((2 * attacker.level) / 5 + 2) * move.power * (atkStat / defStat)) / 50 + 2,
   );
 
-  const stab = attacker.types.includes(move.type) ? 1.5 : 1;
+  const moveType = move.type.toLowerCase();
+  const stab = attacker.types.some((t) => t.toLowerCase() === moveType) ? 1.5 : 1;
   const effectiveness = getTypeEffectiveness(move.type, defender.types);
   const critical = Math.random() < 1 / 16;
   const critMult = critical ? 1.5 : 1;

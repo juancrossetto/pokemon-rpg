@@ -134,7 +134,7 @@ export function MovesView({
           const eff = effectivenessInfo(m.type);
           const color = typeColor(m.type);
           const lockedOut = choiceLockMoveId != null && choiceLockMoveId !== m.moveId;
-          const category = m.category ?? "PHYSICAL";
+          const category = m.category;
           const isStatus = category === "STATUS";
           // Sin accuracy = nunca falla (Swift). Se dice, no se deja vacío.
           const accuracyLabel = m.accuracy == null ? "—" : `${m.accuracy}%`;
