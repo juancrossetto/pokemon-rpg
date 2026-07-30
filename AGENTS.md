@@ -38,14 +38,16 @@ login sólo sirve para medir CSS/estructura, no para ver pantallas reales.
 
 ### Rutas y locale
 
-Todo el árbol de páginas vive bajo `src/app/[locale]/...`. **No hay
-`middleware.ts`** en el repo — el locale se resuelve vía
-`src/i18n/request.ts` (`getRequestConfig`, con fallback a `routing.defaultLocale
-= "es"`) y el plugin `next-intl/plugin` en `next.config.ts`. `/` sin locale
-redirige igual a `/es/...` en la práctica; el mecanismo exacto no está
-verificado a fondo — no asumas el comportamiento estándar de next-intl con
-middleware si algo de routing se rompe, y mirá `node_modules/next/dist/docs/`
-antes de tocarlo (ver banner arriba).
+Todo el árbol de páginas vive bajo `src/app/[locale]/...`.
+
+**En este Next el middleware se llama `proxy.ts`, no `middleware.ts`** —
+vive en `src/proxy.ts` y el build lo reporta como `ƒ Proxy (Middleware)`.
+Buscar `middleware.ts` no encuentra nada y lleva a concluir, erróneamente, que
+no hay middleware. Ahí se monta `createMiddleware(routing)` de next-intl (que
+resuelve el locale y redirige `/` → `/es`) y además se inyecta el pathname a
+los Server Components vía headers `x-middleware-request-*` + la lista de
+override — patrón interno de Next, ver `node_modules/next/dist/docs/` antes de
+tocarlo. Los mensajes se cargan en `src/i18n/request.ts` (`getRequestConfig`).
 
 ### i18n: paridad de claves + placeholders ICU
 
