@@ -125,7 +125,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
    */
   const primary = session?.user
     ? [
-        { href: "/", label: t("home"), icon: "home", iconSrc: "/nav/home-icon.png?v=2" },
+        { href: "/", label: t("home"), icon: "home", iconSrc: "/nav/home-icon.png?v=4" },
         ...MOBILE_BAR_GROUPS.flatMap((id) => {
           const group = NAV_GROUPS.find((g) => g.id === id);
           const first = group ? visibleChildren(group)[0] : undefined;
@@ -137,11 +137,11 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
                   icon: group.icon,
                   groupId: group.id,
                   ...(group.id === "combat"
-                    ? { iconSrc: "/nav/battle-icon.png" }
+                    ? { iconSrc: "/nav/battle-icon.png?v=4" }
                     : group.id === "adventure"
-                      ? { iconSrc: "/nav/adventure-icon.png" }
+                      ? { iconSrc: "/nav/adventure-icon.png?v=4" }
                       : group.id === "collection"
-                        ? { iconSrc: "/nav/collection-icon.png" }
+                        ? { iconSrc: "/nav/collection-icon.png?v=4" }
                         : {}),
                 },
               ]

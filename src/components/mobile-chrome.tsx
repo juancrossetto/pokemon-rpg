@@ -9,6 +9,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { ResourceBar, type ResourceBarLabels } from "@/components/resource-bar";
 import {
+  allNavIconSrcs,
   groupMatches,
   itemMatches,
   MOBILE_BAR_GROUPS,
@@ -37,6 +38,24 @@ type NavLink = {
 type IndicatorBox = { left: number; width: number; height: number; top: number } | null;
 
 const BAR_GROUP_IDS = new Set<string>(MOBILE_BAR_GROUPS);
+
+function NavDrawerIcon({ src, active }: { src: string; active?: boolean }) {
+  return (
+    <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white/[0.04]">
+      <Image
+        src={src}
+        alt=""
+        width={36}
+        height={36}
+        unoptimized
+        className={`h-9 w-9 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] ${
+          active ? "brightness-110" : "brightness-95"
+        }`}
+        aria-hidden
+      />
+    </span>
+  );
+}
 
 export function MobileChrome({
   brand,
@@ -95,9 +114,32 @@ export function MobileChrome({
   notifications: { items: NotificationDTO[]; unreadCount: number } | null;
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
+  /** Tras la primera apertura el drawer queda montado (oculto) para no
+   *  volver a decodificar los PNG cada vez que se abre el menú. */
+  const [drawerReady, setDrawerReady] = useState(false);
   const [indicator, setIndicator] = useState<IndicatorBox>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (moreOpen) setDrawerReady(true);
+  }, [moreOpen]);
+
+  /*
+    Precalienta los PNG de la nav apenas monta el chrome. Sin esto el drawer
+    los pide al abrir y se ve el pop-in (antes sumaban ~30 MB en frío).
+  */
+  useEffect(() => {
+    const urls = new Set<string>([
+      ...allNavIconSrcs(),
+      ...primary.map((p) => p.iconSrc).filter((u): u is string => Boolean(u)),
+    ]);
+    for (const url of urls) {
+      const img = new window.Image();
+      img.decoding = "async";
+      img.src = url;
+    }
+  }, [primary]);
   const bottomNavRef = useRef<HTMLElement>(null);
   const showMore = groups.length > 0;
   // `usePathname` de next-intl ya viene sin el prefijo de idioma, así que se
@@ -457,7 +499,7 @@ export function MobileChrome({
                     }`}
                   >
                     <Image
-                      src="/nav/menu-icon.png"
+                      src="/nav/menu-icon.png?v=4"
                       alt=""
                       width={40}
                       height={40}
@@ -486,20 +528,32 @@ export function MobileChrome({
         encabezado por sección, para que la jerarquía sea la misma en las dos
         superficies aunque el dibujo sea distinto.
       */}
-      {moreOpen && showMore && (
-        <div className="fixed inset-0 z-[60] xl:hidden" role="presentation">
+      {drawerReady && showMore && (
+        <div
+          className={`fixed inset-0 z-[60] xl:hidden ${
+            moreOpen ? "" : "pointer-events-none invisible"
+          }`}
+          role="presentation"
+          aria-hidden={!moreOpen}
+          inert={!moreOpen ? true : undefined}
+        >
           <button
             type="button"
             aria-label={closeLabel}
-            className="market-sheet-backdrop-in absolute inset-0 bg-black/65 backdrop-blur-sm"
+            tabIndex={moreOpen ? 0 : -1}
+            className={`absolute inset-0 bg-black/65 backdrop-blur-sm ${
+              moreOpen ? "market-sheet-backdrop-in" : ""
+            }`}
             onClick={() => setMoreOpen(false)}
           />
           <div
             ref={drawerRef}
             role="dialog"
-            aria-modal="true"
+            aria-modal={moreOpen}
             aria-label={moreLabel}
-            className="market-sheet-in absolute inset-x-0 bottom-0 flex h-[92dvh] flex-col overflow-hidden rounded-t-2xl border-t border-white/12 bg-background/98 shadow-2xl backdrop-blur-xl"
+            className={`absolute inset-x-0 bottom-0 flex h-[92dvh] flex-col overflow-hidden rounded-t-2xl border-t border-white/12 bg-background/98 shadow-2xl backdrop-blur-xl ${
+              moreOpen ? "market-sheet-in" : ""
+            }`}
           >
             <div className="shrink-0 px-4 pb-2 pt-2.5">
               <div className="mx-auto mb-2.5 h-1 w-10 rounded-full bg-white/20" />
@@ -532,18 +586,10 @@ export function MobileChrome({
                         const active = itemMatches(pathname, item);
                         const label = navLabels.text[item.labelKey] ?? item.id;
                         const iconNode = item.iconSrc ? (
-                          <Image
-                            src={item.iconSrc}
-                            alt=""
-                            width={36}
-                            height={36}
-                            unoptimized
-                            className="h-9 w-9 shrink-0 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]"
-                            aria-hidden
-                          />
+                          <NavDrawerIcon src={item.iconSrc} active={active} />
                         ) : (
                           <span
-                            className={`material-symbols-outlined text-[20px]! ${
+                            className={`material-symbols-outlined flex h-9 w-9 shrink-0 items-center justify-center text-[20px]! ${
                               active ? "text-pokeball-red" : "text-on-surface-variant"
                             }`}
                           >

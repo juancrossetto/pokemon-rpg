@@ -79,7 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.campaign",
         href: "/campaign",
         icon: "map",
-        iconSrc: "/nav/map-icon.png",
+        iconSrc: "/nav/map-icon.png?v=4",
       },
       {
         id: "gyms",
@@ -87,7 +87,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.gyms",
         href: "/gyms",
         icon: "military_tech",
-        iconSrc: "/nav/gym-icon.png",
+        iconSrc: "/nav/gym-icon.png?v=4",
       },
       {
         id: "tower",
@@ -95,7 +95,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.tower",
         href: "/tower",
         icon: "apartment",
-        iconSrc: "/nav/tower-icon.png",
+        iconSrc: "/nav/tower-icon.png?v=4",
       },
       {
         id: "events",
@@ -103,7 +103,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.events",
         href: "/events",
         icon: "redeem",
-        iconSrc: "/nav/event-icon.png",
+        iconSrc: "/nav/event-icon.png?v=4",
         // El contador queda para cuando el header calcule pendientes; hoy nadie
         // lo llena, así que no se pinta ningún badge.
         badgeKey: "eventsPending",
@@ -121,7 +121,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.battleWild",
         href: "/battle",
         icon: "sports_martial_arts",
-        iconSrc: "/nav/battle-wild-icon.png",
+        iconSrc: "/nav/battle-wild-icon.png?v=4",
       },
       {
         id: "pvp",
@@ -129,7 +129,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.pvp",
         href: "/pvp",
         icon: "sports_mma",
-        iconSrc: "/nav/pvp-icon.png",
+        iconSrc: "/nav/pvp-icon.png?v=4",
       },
     ],
   },
@@ -147,7 +147,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.team",
         href: "/team",
         icon: "group",
-        iconSrc: "/nav/team-icon.png?v=3",
+        iconSrc: "/nav/team-icon.png?v=4",
         // El PC vive como tab dentro de /team; la ruta vieja redirige.
         matchRoutes: ["/pc"],
       },
@@ -157,7 +157,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.pokedex",
         href: "/pokedex",
         icon: "auto_stories",
-        iconSrc: "/nav/collection-icon.png",
+        iconSrc: "/nav/collection-icon.png?v=4",
       },
       {
         id: "inventory",
@@ -165,7 +165,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.inventory",
         href: "/inventory",
         icon: "backpack",
-        iconSrc: "/nav/bag-icon.png?v=2",
+        iconSrc: "/nav/bag-icon.png?v=4",
       },
     ],
   },
@@ -180,7 +180,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.market",
         href: "/market",
         icon: "storefront",
-        iconSrc: "/nav/shop-icon.png",
+        iconSrc: "/nav/shop-icon.png?v=4",
         matchRoutes: ["/shop"],
       },
     ],
@@ -196,7 +196,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.friends",
         href: "/friends",
         icon: "handshake",
-        iconSrc: "/nav/friends-icon.png",
+        iconSrc: "/nav/friends-icon.png?v=4",
       },
       {
         id: "clans",
@@ -204,7 +204,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.clans",
         href: "/clans",
         icon: "groups",
-        iconSrc: "/nav/clan-icon.png",
+        iconSrc: "/nav/clan-icon.png?v=4",
       },
       {
         id: "ranking",
@@ -212,7 +212,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.ranking",
         href: "/ranking",
         icon: "trophy",
-        iconSrc: "/nav/ranking-icon.png",
+        iconSrc: "/nav/ranking-icon.png?v=4",
       },
     ],
   },
@@ -224,7 +224,7 @@ export const NAV_HOME: NavItem = {
   labelKey: "home",
   href: "/",
   icon: "home",
-  iconSrc: "/nav/home-icon.png?v=2",
+  iconSrc: "/nav/home-icon.png?v=4",
 };
 
 /**
@@ -238,6 +238,23 @@ export const MOBILE_BAR_GROUPS = ["adventure", "combat", "collection"] as const;
 
 export function visibleChildren(group: NavGroup): NavItem[] {
   return group.children.filter((child) => !child.hidden);
+}
+
+/** Todas las URLs de íconos PNG de la nav (para preload en mobile). */
+export function allNavIconSrcs(): string[] {
+  const urls = new Set<string>();
+  if (NAV_HOME.iconSrc) urls.add(NAV_HOME.iconSrc);
+  for (const group of NAV_GROUPS) {
+    for (const child of visibleChildren(group)) {
+      if (child.iconSrc) urls.add(child.iconSrc);
+    }
+  }
+  // Tabs de la bottom bar (grupo, no ítem).
+  urls.add("/nav/adventure-icon.png?v=4");
+  urls.add("/nav/battle-icon.png?v=4");
+  urls.add("/nav/collection-icon.png?v=4");
+  urls.add("/nav/menu-icon.png?v=4");
+  return [...urls];
 }
 
 /** ¿La ruta actual cae dentro de este destino? */
