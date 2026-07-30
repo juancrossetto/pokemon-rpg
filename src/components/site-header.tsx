@@ -222,7 +222,6 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               name={session.user.name ?? "?"}
               avatarId={user?.avatarId ?? null}
               logoutLabel={t("logout")}
-              trainerLabel={t("trainer")}
               profileLabel={t("profile")}
             />
           ) : (
@@ -258,7 +257,6 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         userName={session?.user ? (session.user.name ?? "?") : null}
         avatarId={user?.avatarId ?? null}
         logoutLabel={t("logout")}
-        trainerLabel={t("trainer")}
         profileLabel={t("profile")}
         lockedHref={lockedHref}
         lockedLabel={lockedLabel}

@@ -235,7 +235,7 @@ export default function RegisterPage() {
                           <AvatarImage
                             src={opt.src}
                             alt={opt.id}
-                            className="h-full w-full object-contain p-0.5 [image-rendering:pixelated]"
+                            className="trainer-sprite-thumb h-full w-full"
                           />
                         </button>
                       ))}

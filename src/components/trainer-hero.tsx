@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { FlagIcon } from "@/components/flag-icon";
 import { Ambience, ProgressRail, RankFrame } from "@/components/trainer-profile-parts";
+import { AvatarPicker, type AvatarPickerLabels } from "@/components/avatar-picker";
 import type { RankProgress } from "@/lib/trainer-profile";
 
 export type TrainerHeroLabels = {
@@ -41,6 +42,8 @@ export function TrainerHero({
   favoriteSprite,
   favoriteAccent,
   labels,
+  avatarLabels,
+  currentAvatarId,
 }: {
   username: string;
   avatarSrc: string | null;
@@ -54,6 +57,8 @@ export function TrainerHero({
   favoriteSprite: string | null;
   favoriteAccent: string;
   labels: TrainerHeroLabels;
+  avatarLabels: AvatarPickerLabels;
+  currentAvatarId: string | null;
 }) {
   return (
     <section className="relative overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-[#0d0f14]">
@@ -89,7 +94,14 @@ export function TrainerHero({
       <Ambience color={favoriteAccent} />
 
       <div className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:gap-6 sm:p-7">
-        <RankFrame src={avatarSrc} alt={username} rank={rank.tier} size={116} />
+        {/*
+          El retrato es el disparador del selector: es donde el jugador va a
+          buscar cómo cambiarlo. Antes el avatar sólo se podía elegir al
+          registrarse y después no había ninguna forma de tocarlo.
+        */}
+        <AvatarPicker currentAvatarId={currentAvatarId} labels={avatarLabels}>
+          <RankFrame src={avatarSrc} alt={username} rank={rank.tier} size={148} />
+        </AvatarPicker>
 
         <div className="min-w-0 flex-1">
           {/* Rango + título: la jerarquía arranca acá, no en el nombre */}

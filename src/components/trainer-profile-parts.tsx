@@ -14,6 +14,10 @@ import type { RankProgress } from "@/lib/trainer-profile";
  * poco más adentro. El relieve sale de tres capas —metal, luz superior interna
  * y sombra inferior interna—, no de un `box-shadow` suelto, porque `clip-path`
  * recorta las sombras exteriores y dejaría el borde plano.
+ *
+ * Los sprites de entrenador de Showdown son 80×80 con mucho padding
+ * transparente: sin zoom quedan como un monigote en el centro del hexágono.
+ * Escalamos ~1.9× y recortamos el aire vacío (piernas/márgenes).
  */
 export function RankFrame({
   src,
@@ -29,7 +33,8 @@ export function RankFrame({
   breathe?: boolean;
 }) {
   const hex = "polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)";
-  const inner = Math.round(size * 0.86);
+  /* Antes 0.86: el bisel de metal comía demasiado el retrato. */
+  const inner = Math.round(size * 0.9);
 
   return (
     <div
@@ -77,7 +82,7 @@ export function RankFrame({
             width={inner}
             height={inner}
             unoptimized
-            className="h-full w-full object-contain [image-rendering:pixelated]"
+            className="trainer-sprite-fill h-full w-full"
           />
         ) : (
           <span className="flex h-full w-full items-center justify-center text-2xl font-bold text-white/70">

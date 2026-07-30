@@ -2228,6 +2228,15 @@
       "rewardCoins": "coins",
       "rewardEnergy": "energy",
       "rewardGems": "gems"
+    },
+    "avatar": {
+      "change": "Change portrait",
+      "title": "Choose your portrait",
+      "hint": "Shown on your profile and in the ranking.",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "error": "Couldn't save. Try again."
     }
   },
   "friends": {

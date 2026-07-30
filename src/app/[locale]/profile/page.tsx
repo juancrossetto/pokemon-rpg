@@ -304,6 +304,16 @@ export default async function ProfilePage({
         <TrainerHero
           username={user.username}
           avatarSrc={avatarById(user.avatarId)?.src ?? null}
+          currentAvatarId={user.avatarId}
+          avatarLabels={{
+            change: t("avatar.change"),
+            title: t("avatar.title"),
+            hint: t("avatar.hint"),
+            save: t("avatar.save"),
+            saving: t("avatar.saving"),
+            cancel: t("avatar.cancel"),
+            error: t("avatar.error"),
+          }}
           country={user.country}
           rank={rank}
           title={title}
@@ -503,7 +513,15 @@ export default async function ProfilePage({
                 earnedOn: t("earnedOn"),
                 claim: t("achievements.claim"),
                 claiming: t("achievements.claiming"),
-                claimAll: t("achievements.claimAll"),
+                /*
+                  Viaja como plantilla, no como texto final: `TrainerVault` es
+                  un componente de cliente y reemplaza `{count}` con la cantidad
+                  reclamable, que sólo conoce después de cobrar. Pasarle el
+                  propio marcador como valor deja el literal intacto y evita el
+                  FORMATTING_ERROR de next-intl, que exige un valor para cada
+                  variable ICU. Mismo criterio que la energía en `site-header`.
+                */
+                claimAll: t("achievements.claimAll", { count: "{count}" }),
                 claimed: t("achievements.claimed"),
                 claimError: t("achievements.claimError"),
                 rewardUnits: {

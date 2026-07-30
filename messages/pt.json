@@ -2228,6 +2228,15 @@
       "rewardCoins": "moedas",
       "rewardEnergy": "energia",
       "rewardGems": "gemas"
+    },
+    "avatar": {
+      "change": "Mudar retrato",
+      "title": "Escolha seu retrato",
+      "hint": "Aparece no seu perfil e no ranking.",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "cancel": "Cancelar",
+      "error": "Não foi possível salvar. Tente de novo."
     }
   },
   "friends": {

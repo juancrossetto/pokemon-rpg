@@ -3130,6 +3130,22 @@ html.boot-splash-pending .boot-splash {
   animation: market-fade-in 0.2s ease-out both;
 }
 
+.user-menu-panel {
+  transform-origin: top right;
+  animation: user-menu-panel-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes user-menu-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes market-sheet-in {
   from {
     transform: translateY(14%);
@@ -3158,7 +3174,8 @@ html.boot-splash-pending .boot-splash {
   }
 
   .market-sheet-in,
-  .market-sheet-backdrop-in {
+  .market-sheet-backdrop-in,
+  .user-menu-panel {
     animation: none;
   }
 }
@@ -3663,6 +3680,33 @@ html.boot-splash-pending .boot-splash {
 
 .tp-halo {
   animation: tp-halo 4.5s ease-in-out infinite;
+}
+
+/*
+  Sprites de entrenador Showdown: 80×80 con mucho padding transparente.
+  `.trainer-sprite-fill` = marcos grandes (hexágono, menú). Zoom fuerte.
+  `.trainer-sprite-thumb` = celdas chicas de la grilla. Zoom suave: el fill
+  en ~70px corta cabeza/pies y deja torsos sueltos.
+*/
+.trainer-sprite-fill {
+  object-fit: contain;
+  image-rendering: pixelated;
+  transform: scale(1.95);
+  transform-origin: center 62%;
+}
+
+.trainer-sprite-thumb {
+  object-fit: contain;
+  image-rendering: pixelated;
+  transform: scale(1.12);
+  transform-origin: center center;
+  padding: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trainer-sprite-fill {
+    transform: scale(1.85);
+  }
 }
 
 /* Barrido metálico de las medallas. Corre en `background-position` sobre un

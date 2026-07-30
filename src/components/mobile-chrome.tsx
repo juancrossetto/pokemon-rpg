@@ -87,7 +87,6 @@ export function MobileChrome({
   userName,
   avatarId,
   logoutLabel,
-  trainerLabel,
   profileLabel,
   lockedHref,
   lockedLabel,
@@ -114,7 +113,6 @@ export function MobileChrome({
   userName: string | null;
   avatarId?: string | null;
   logoutLabel: string;
-  trainerLabel: string;
   profileLabel: string;
   lockedHref: string | null;
   lockedLabel: string | null;
@@ -228,88 +226,80 @@ export function MobileChrome({
       });
     }
 
-    /*
-      Publica la altura de la nav SIN safe-area (el padding CSS lo suma).
-      También publica el gap innerHeight−clientHeight: el scroll máximo del
-      documento usa innerHeight, y sin ese extra el padding no alcanza para
-      sacar el contenido de detrás de la nav.
-    */
+    measureIndicator();
+    const raf = window.requestAnimationFrame(measureIndicator);
+    return () => window.cancelAnimationFrame(raf);
+  }, [pathname, moreOpen, primary.length, showMore]);
+
+  /*
+    Altura de la nav para el padding de contenido. Vive en un efecto aparte
+    del indicador y NO depende de `pathname`: antes, cada navegación hacía
+    cleanup → borraba `--bottom-nav-h` / `style.bottom` → remedia → y la barra
+    saltaba un frame hacia arriba.
+
+    Tampoco tocamos `style.bottom` según innerHeight−clientHeight: ese gap
+    cambia al hacer click, al esconderse la barra de URL y al reflow de cada
+    pantalla, y era lo que levantaba los iconos fuera de lugar.
+  */
+  useEffect(() => {
+    const root = bottomNavRef.current;
+    if (!root) return;
+
     function publishNavHeight() {
       if (!root) return;
       const styles = getComputedStyle(root);
       const padBottom = Number.parseFloat(styles.paddingBottom) || 0;
       const height = Math.ceil(root.getBoundingClientRect().height - padBottom);
+      if (height > 0) {
+        document.documentElement.style.setProperty("--bottom-nav-h", `${height}px`);
+      }
+    }
+
+    function publishVvGap() {
+      /*
+        Sólo para padding de contenido (`.pb-bottom-nav`), no para mover la
+        barra. En standalone el gap es ruido del overscroll; lo forzamos a 0.
+      */
+      if (isStandalone()) {
+        document.documentElement.style.setProperty("--vv-gap", "0px");
+        return;
+      }
       const gap = Math.max(
         0,
         Math.round(window.innerHeight - document.documentElement.clientHeight),
       );
-      if (height > 0) {
-        document.documentElement.style.setProperty("--bottom-nav-h", `${height}px`);
-      }
       document.documentElement.style.setProperty("--vv-gap", `${gap}px`);
     }
 
-    /*
-      Si innerHeight > clientHeight, `bottom:0` deja la nav fuera de la
-      pantalla visible. Compensamos con bottom inset (sin acortar al
-      visualViewport: eso generaba un hueco negro bajo la barra).
+    // Anclar siempre al borde: cualquier inset dinámico es la fuente del salto.
+    root.style.bottom = "";
 
-      NO se aplica con la app anclada al inicio: ahí no hay barra de URL que
-      compensar, `bottom: 0` + safe-area ya es correcto, y la diferencia entre
-      `innerHeight` y `clientHeight` sólo se despega durante el rebote elástico
-      de iOS. Escribirla ahí hacía que la barra flotara y se moviera al
-      scrollear, que es justo lo que esta compensación quería evitar.
-    */
-    function syncBottomInset() {
-      if (!root || isStandalone()) {
-        if (root) root.style.bottom = "";
-        return;
-      }
-      const inset = Math.max(
-        0,
-        Math.round(window.innerHeight - document.documentElement.clientHeight),
-      );
-      const next = inset > 0 ? `${inset}px` : "";
-      // Sólo escribir si cambió: reasignar el mismo valor en cada evento
-      // provoca recalculo de layout y hace vibrar la barra.
-      if (root.style.bottom !== next) root.style.bottom = next;
-    }
+    publishNavHeight();
+    publishVvGap();
 
-    function measure() {
-      syncBottomInset();
-      measureIndicator();
-      publishNavHeight();
-    }
-
-    measure();
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver(publishNavHeight);
     observer.observe(root);
-    observer.observe(document.documentElement);
-    window.addEventListener("resize", measure);
-    /*
-      `visualViewport` sólo por `resize` (teclado abriéndose, rotación).
 
-      El listener de `scroll` era el origen del problema: en iOS se dispara en
-      cada frame del rebote elástico, y `measure` reposiciona la barra y
-      remide el indicador. La barra terminaba persiguiendo al scroll en vez de
-      quedarse fija, y los iconos bailaban con ella.
+    function onViewportSettle() {
+      publishNavHeight();
+      publishVvGap();
+    }
+
+    window.addEventListener("resize", onViewportSettle);
+    /*
+      visualViewport resize = teclado / rotación. No escuchamos `scroll`:
+      en iOS dispara en cada frame del rebote y hacía bailar la barra.
     */
-    window.visualViewport?.addEventListener("resize", measure);
-    // Algunos browsers (y DevTools) cambian inner/client sin disparar resize
-    // al primer paint; un par de ticks cubre ese hueco.
-    const t1 = window.setTimeout(measure, 50);
-    const t2 = window.setTimeout(measure, 300);
+    window.visualViewport?.addEventListener("resize", onViewportSettle);
+
     return () => {
       observer.disconnect();
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-      window.removeEventListener("resize", measure);
-      window.visualViewport?.removeEventListener("resize", measure);
+      window.removeEventListener("resize", onViewportSettle);
+      window.visualViewport?.removeEventListener("resize", onViewportSettle);
       document.documentElement.style.removeProperty("--bottom-nav-h");
       document.documentElement.style.removeProperty("--vv-gap");
-      root.style.bottom = "";
     };
-  }, [pathname, moreOpen, primary.length, showMore]);
+  }, [primary.length, showMore]);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -392,7 +382,6 @@ export function MobileChrome({
                 name={userName}
                 avatarId={avatarId ?? null}
                 logoutLabel={logoutLabel}
-                trainerLabel={trainerLabel}
                 profileLabel={profileLabel}
               />
             </div>
