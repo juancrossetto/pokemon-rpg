@@ -11,9 +11,12 @@ import { runWildCounterAttack } from "@/lib/wild-counter";
 const MAX_LOG_LINES = 20;
 
 export interface UseItemResult {
+  /** HP tras la cura, antes del contraataque del rival. */
   healedTo: number;
   healedBy: number;
   itemName: string;
+  /** Full Restore también limpia status. */
+  statusCured?: boolean;
   counterAttack: TurnEvent | null;
   outcome: "continues" | "lost" | "fainted";
 }
@@ -53,9 +56,15 @@ export async function applyBattleItem(
   const maxHp = calculateMaxHp(instance.species.baseHp, instance.level, instance.ptConstitution);
   const healedTo = Math.min(maxHp, instance.currentHp + healAmount);
   const healedBy = healedTo - instance.currentHp;
+  // Full Restore en los juegos clásicos también limpia status.
+  const curesStatus = item.name.trim().toLowerCase() === "full restore";
+  const playerStatusAfterHeal = curesStatus ? null : battle.playerStatus;
+  const playerSleepTurnsAfterHeal = curesStatus ? 0 : battle.playerSleepTurns;
 
   const counter = await runWildCounterAttack({
     ...battle,
+    playerStatus: playerStatusAfterHeal,
+    playerSleepTurns: playerSleepTurnsAfterHeal,
     pokemonInstance: { ...instance, currentHp: healedTo },
   });
 
@@ -104,10 +113,13 @@ export async function applyBattleItem(
 
   revalidatePath(`/${locale}/team`);
 
+  // healedTo = HP tras la cura (antes del contraataque). El cliente anima la
+  // barra a este valor y después reproduce counterAttack, que baja el HP.
   return {
-    healedTo: playerHp,
+    healedTo,
     healedBy,
     itemName: item.name,
+    statusCured: curesStatus && battle.playerStatus != null,
     counterAttack: counter.counterAttack,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
   };

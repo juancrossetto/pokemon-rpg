@@ -1834,14 +1834,15 @@ export function BattleArena({
       return;
     }
 
-    setPlayerHp(result.healedTo);
-    setParty((prev) =>
-      prev.map((m) =>
-        m.instanceId === activePlayer.instanceId ? { ...m, currentHp: result.healedTo } : m,
-      ),
-    );
+    // Primero la cura completa (barra + ref), después el contraataque baja el HP.
+    // Antes healedTo venía ya con el daño del rival aplicado: la animación del
+    // golpe no movía la barra y parecía que el rival no atacaba.
+    writeHp("player", "A", result.healedTo);
     appendLog(tLog("usedItem", { name: result.itemName ?? used?.name ?? "?" }), "player");
     appendLog(t("healedBy", { name: activePlayer.name, hp: result.healedBy }), "player");
+    if (result.statusCured) {
+      writeStatus("player", "A", null);
+    }
 
     if (result.counterAttack) {
       await playEvent(result.counterAttack);

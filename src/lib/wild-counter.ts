@@ -1,7 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { STRUGGLE_MOVE, type MoveSnapshot, type TurnEvent } from "@/lib/battle";
 import { pickWildMove } from "@/lib/battle-ai";
-import { playerStagesFromSession, wildStagesFromSession } from "@/lib/battle-stages";
+import {
+  playerStageColumns,
+  playerStagesFromSession,
+  wildStageColumns,
+  wildStagesFromSession,
+} from "@/lib/battle-stages";
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import { calculateMaxHp } from "@/lib/stats";
 import { resolveWildCounter, type SideBattleState } from "@/lib/resolve-action";
@@ -212,12 +217,8 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
       wildStatus: wildState.status,
       playerSleepTurns: playerState.sleepTurns,
       wildSleepTurns: wildState.sleepTurns,
-      playerAtkStage: playerState.stages.atk,
-      playerDefStage: playerState.stages.def,
-      playerSpeStage: playerState.stages.spe,
-      wildAtkStage: wildState.stages.atk,
-      wildDefStage: wildState.stages.def,
-      wildSpeStage: wildState.stages.spe,
+      ...playerStageColumns(playerState.stages),
+      ...wildStageColumns(wildState.stages),
       playerItemConsumed: outcome.itemConsumed,
       wildItemConsumed: battle.wildItemConsumed ?? false,
       wildChoiceLockMoveId,
