@@ -415,16 +415,34 @@ export async function submitDoubleBattleMoves(
   );
 
   if (wildAMove.id > 0 && !wildAFinishedCharge) {
-    const idx = wildASnaps.findIndex((m) => m.id === wildAMove.id);
-    if (idx >= 0) wildAPp[idx] = Math.max(0, (wildAPp[idx] ?? 0) - 1);
+    const wildAActed = events.some(
+      (e) => e.side === "wild" && (e.fieldSlot ?? "A") === "A" && !e.skipped,
+    );
+    if (wildAActed) {
+      const idx = wildASnaps.findIndex((m) => m.id === wildAMove.id);
+      if (idx >= 0) wildAPp[idx] = Math.max(0, (wildAPp[idx] ?? 0) - 1);
+    }
   }
   if (wildBMove.id > 0 && !wildBFinishedCharge) {
-    const idx = wildBSnaps.findIndex((m) => m.id === wildBMove.id);
-    if (idx >= 0) wildBPp[idx] = Math.max(0, (wildBPp[idx] ?? 0) - 1);
+    const wildBActed = events.some(
+      (e) => e.side === "wild" && e.fieldSlot === "B" && !e.skipped,
+    );
+    if (wildBActed) {
+      const idx = wildBSnaps.findIndex((m) => m.id === wildBMove.id);
+      if (idx >= 0) wildBPp[idx] = Math.max(0, (wildBPp[idx] ?? 0) - 1);
+    }
   }
 
-  const moveAPp = finishedChargeA ? { slot: null, nextPp: null } : moveA;
-  const moveBPp = finishedChargeB ? { slot: null, nextPp: null } : moveB;
+  const moveAPp =
+    finishedChargeA ||
+    !events.some((e) => e.side === "player" && (e.fieldSlot ?? "A") === "A" && !e.skipped)
+      ? { slot: null, nextPp: null }
+      : moveA;
+  const moveBPp =
+    finishedChargeB ||
+    !events.some((e) => e.side === "player" && e.fieldSlot === "B" && !e.skipped)
+      ? { slot: null, nextPp: null }
+      : moveB;
 
   const nextFieldB: DoublesFieldB = {
     ...buildDoublesFieldB(

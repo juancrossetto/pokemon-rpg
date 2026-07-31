@@ -295,9 +295,11 @@ export function BattleArena({
     return entries;
   });
   const [attackingSide, setAttackingSide] = useState<"player" | "wild" | null>(null);
+  const [attackingLane, setAttackingLane] = useState<"A" | "B">("A");
   const [shakingSide, setShakingSide] = useState<"player" | "wild" | null>(null);
   const [shakingLane, setShakingLane] = useState<"A" | "B">("A");
   const [faintingSide, setFaintingSide] = useState<"player" | "wild" | null>(null);
+  const [faintingLane, setFaintingLane] = useState<"A" | "B">("A");
   const [playerEntering, setPlayerEntering] = useState(true);
   const [playerHidden, setPlayerHidden] = useState(true);
   const [wildEntering, setWildEntering] = useState(true);
@@ -900,6 +902,7 @@ export function BattleArena({
         }
         if (event.semiInvuln) {
           setAttackingSide(event.side);
+          setAttackingLane(lane);
           void (async () => {
             await delay(MULTI_STRIKE_MS);
             setAttackingSide(null);
@@ -928,9 +931,13 @@ export function BattleArena({
       }
 
       // Multi-hit: un strike por golpe adentro del loop (no un solo lunge al inicio).
-      if (!multiHit) setAttackingSide(event.side);
+      if (!multiHit) {
+        setAttackingSide(event.side);
+        setAttackingLane(lane);
+      }
 
-      setTimeout(() => {
+      void (async () => {
+        await delay(multiHit ? 120 : LUNGE_MS);
         if (!multiHit) setAttackingSide(null);
 
         if (event.statusNote === "woke") appendLog(tLog("woke", { name: nameFor(event.side, lane) }), event.side);
@@ -938,26 +945,24 @@ export function BattleArena({
 
         if (!event.hit) {
           appendLog(tLog("miss", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
-          void (async () => {
-            await delay(MISS_MS);
-            setMoveFx(null);
-            await playResidualBeat(event);
-            appendItemTriggerLog(event);
-            resolve();
-          })();
+          await delay(MISS_MS);
+          setMoveFx(null);
+          await playResidualBeat(event);
+          appendItemTriggerLog(event);
+          resolve();
           return;
         }
 
         if (event.isStatus) {
           appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
           if (event.statusApplied) {
-            const foe = event.side === "player" ? "wild" : "player";
+            const foe = event.targetSide ?? (event.side === "player" ? "wild" : "player");
             const label = t(statusLabelKey(event.statusApplied as StatusCondition));
             appendLog(tLog("statusApplied", { name: nameFor(foe, targetLane), status: label }), foe);
             writeStatus(foe, targetLane, event.statusApplied);
           }
           if (event.statChange) {
-            const foe = event.side === "player" ? "wild" : "player";
+            const foe = event.targetSide ?? (event.side === "player" ? "wild" : "player");
             const { stat, stages } = event.statChange;
             const bump = (prev: StatStages): StatStages => ({
               ...prev,
@@ -981,121 +986,118 @@ export function BattleArena({
             );
           }
           setArenaFlash(color);
-          setTimeout(() => setArenaFlash(null), 320);
-          void (async () => {
-            await delay(STATUS_MS);
-            setMoveFx(null);
-            await playResidualBeat(event);
-            appendItemTriggerLog(event);
-            resolve();
-          })();
+          void delay(320).then(() => setArenaFlash(null));
+          await delay(STATUS_MS);
+          setMoveFx(null);
+          await playResidualBeat(event);
+          appendItemTriggerLog(event);
+          resolve();
           return;
         }
 
         // SFX tipado + thud de daño al impacto (más audible).
         const typed = hitSfxForMove(event.moveType, event.category);
-        const defenderSide = event.side === "player" ? "wild" : "player";
+        const defenderSide =
+          event.targetSide ?? (event.side === "player" ? "wild" : "player");
         const defenderMaxHpNow = readMaxHp(defenderSide, targetLane);
         const hitDamages = previewDamages;
 
         appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
 
-        void (async () => {
-          let hpCursor = readHp(defenderSide, targetLane);
+        let hpCursor = readHp(defenderSide, targetLane);
 
-          for (let i = 0; i < hitDamages.length; i++) {
-            const chunk = hitDamages[i]!;
-            const fxHitKey = fxKey + i + 1;
-
-            if (multiHit) {
-              // Strike + FX de ataque por golpe (lunge / proyectil / contacto).
-              setMoveFx((prev) => (prev ? { ...prev, strikeKey: fxHitKey } : prev));
-              setAttackingSide(event.side);
-              await delay(MULTI_STRIKE_MS);
-              setAttackingSide(null);
-              await delay(40);
-            }
-
-            playBattleSfx(typed);
-            if (typed !== "contact" && typed !== "hit") playBattleSfx("damage");
-            if (i === 0 && event.critical) playBattleSfx("crit");
-            else if (i === 0 && event.effectiveness > 1) playBattleSfx("superEffective");
-
-            const impactRatio = defenderMaxHpNow > 0 ? chunk / defenderMaxHpNow : 0;
-            setShakingSide(defenderSide);
-            setShakingLane(targetLane);
-            setImpactIntensity(Math.min(1.7, Math.max(0.55, 0.55 + impactRatio * 2.3)));
-            setArenaFlash(color);
-            setDamagePopup({
-              side: defenderSide,
-              lane: targetLane,
-              text: `-${chunk}`,
-              key: fxHitKey,
-            });
-            setMoveFx((prev) => (prev ? { ...prev, strikeKey: fxHitKey + 1000 } : prev));
-
-            hpCursor = Math.max(0, hpCursor - chunk);
-            // Último golpe: HP final del server para no desincronizar.
-            const hpShow = i === hitDamages.length - 1 ? event.hpAfter : hpCursor;
-            writeHp(defenderSide, targetLane, hpShow);
-
-            if (i === 0) {
-              if (event.effectiveness > 1) {
-                setEffPopup({ text: tLog("superEffective"), key: fxHitKey });
-              } else if (event.effectiveness > 0 && event.effectiveness < 1) {
-                setEffPopup({ text: tLog("notVeryEffective"), key: fxHitKey });
-              } else if (event.effectiveness === 0) {
-                setEffPopup({ text: tLog("noEffect"), key: fxHitKey });
-              } else if (event.critical) {
-                setEffPopup({ text: tLog("critical"), key: fxHitKey });
-              }
-            }
-
-            await delay(multiHit ? MULTI_IMPACT_MS : IMPACT_MS);
-            setShakingSide(null);
-            setArenaFlash(null);
-            setDamagePopup(null);
-            if (i === 0) setEffPopup(null);
-            if (multiHit && i < hitDamages.length - 1) {
-              await delay(MULTI_GAP_MS);
-            }
-          }
+        for (let i = 0; i < hitDamages.length; i++) {
+          const chunk = hitDamages[i]!;
+          const fxHitKey = fxKey + i + 1;
 
           if (multiHit) {
-            appendLog(tLog("hitTimes", { count: hitDamages.length }), event.side);
-          }
-          if (event.critical) appendLog(tLog("critical"), event.side);
-          if (event.effectiveness > 1) appendLog(tLog("superEffective"), event.side);
-          else if (event.effectiveness > 0 && event.effectiveness < 1) appendLog(tLog("notVeryEffective"), event.side);
-          else if (event.effectiveness === 0) appendLog(tLog("noEffect"), event.side);
-          appendLog(tLog("damage", { name: nameFor(defenderSide, targetLane), damage: event.damage }), defenderSide);
-
-          if (event.statusApplied) {
-            const label = t(statusLabelKey(event.statusApplied as StatusCondition));
-            appendLog(tLog("statusApplied", { name: nameFor(defenderSide, targetLane), status: label }), defenderSide);
-            writeStatus(defenderSide, targetLane, event.statusApplied);
+            // Strike + FX de ataque por golpe (lunge / proyectil / contacto).
+            setMoveFx((prev) => (prev ? { ...prev, strikeKey: fxHitKey } : prev));
+            setAttackingSide(event.side);
+            setAttackingLane(lane);
+            await delay(MULTI_STRIKE_MS);
+            setAttackingSide(null);
+            await delay(40);
           }
 
-          if (event.recoilDamage) {
-            appendLog(tLog("recoil", { name: nameFor(event.side, lane), damage: event.recoilDamage }), event.side);
-            writeHp(
-              event.side,
-              lane,
-              Math.max(0, readHp(event.side, lane) - (event.recoilDamage ?? 0)),
-            );
+          playBattleSfx(typed);
+          if (typed !== "contact" && typed !== "hit") playBattleSfx("damage");
+          if (i === 0 && event.critical) playBattleSfx("crit");
+          else if (i === 0 && event.effectiveness > 1) playBattleSfx("superEffective");
+
+          const impactRatio = defenderMaxHpNow > 0 ? chunk / defenderMaxHpNow : 0;
+          setShakingSide(defenderSide);
+          setShakingLane(targetLane);
+          setImpactIntensity(Math.min(1.7, Math.max(0.55, 0.55 + impactRatio * 2.3)));
+          setArenaFlash(color);
+          setDamagePopup({
+            side: defenderSide,
+            lane: targetLane,
+            text: `-${chunk}`,
+            key: fxHitKey,
+          });
+
+          hpCursor = Math.max(0, hpCursor - chunk);
+          // Último golpe: HP final del server para no desincronizar.
+          const hpShow = i === hitDamages.length - 1 ? event.hpAfter : hpCursor;
+          writeHp(defenderSide, targetLane, hpShow);
+
+          if (i === 0) {
+            if (event.effectiveness > 1) {
+              setEffPopup({ text: tLog("superEffective"), key: fxHitKey });
+            } else if (event.effectiveness > 0 && event.effectiveness < 1) {
+              setEffPopup({ text: tLog("notVeryEffective"), key: fxHitKey });
+            } else if (event.effectiveness === 0) {
+              setEffPopup({ text: tLog("noEffect"), key: fxHitKey });
+            } else if (event.critical) {
+              setEffPopup({ text: tLog("critical"), key: fxHitKey });
+            }
           }
 
-          const defenderMaxHp = readMaxHp(defenderSide, targetLane);
-          if (event.hpAfter > 0 && event.hpAfter / defenderMaxHp <= 0.1) {
-            appendLog(tLog("lowHp", { name: nameFor(defenderSide, targetLane) }), defenderSide);
+          await delay(multiHit ? MULTI_IMPACT_MS : IMPACT_MS);
+          setShakingSide(null);
+          setArenaFlash(null);
+          setDamagePopup(null);
+          if (i === 0) setEffPopup(null);
+          if (multiHit && i < hitDamages.length - 1) {
+            await delay(MULTI_GAP_MS);
           }
+        }
 
-          setMoveFx(null);
-          await playResidualBeat(event);
-          appendItemTriggerLog(event);
-          resolve();
-        })();
-      }, multiHit ? 120 : LUNGE_MS);
+        if (multiHit) {
+          appendLog(tLog("hitTimes", { count: hitDamages.length }), event.side);
+        }
+        if (event.critical) appendLog(tLog("critical"), event.side);
+        if (event.effectiveness > 1) appendLog(tLog("superEffective"), event.side);
+        else if (event.effectiveness > 0 && event.effectiveness < 1) appendLog(tLog("notVeryEffective"), event.side);
+        else if (event.effectiveness === 0) appendLog(tLog("noEffect"), event.side);
+        appendLog(tLog("damage", { name: nameFor(defenderSide, targetLane), damage: event.damage }), defenderSide);
+
+        if (event.statusApplied) {
+          const label = t(statusLabelKey(event.statusApplied as StatusCondition));
+          appendLog(tLog("statusApplied", { name: nameFor(defenderSide, targetLane), status: label }), defenderSide);
+          writeStatus(defenderSide, targetLane, event.statusApplied);
+        }
+
+        if (event.recoilDamage) {
+          appendLog(tLog("recoil", { name: nameFor(event.side, lane), damage: event.recoilDamage }), event.side);
+          writeHp(
+            event.side,
+            lane,
+            Math.max(0, readHp(event.side, lane) - (event.recoilDamage ?? 0)),
+          );
+        }
+
+        const defenderMaxHp = readMaxHp(defenderSide, targetLane);
+        if (event.hpAfter > 0 && event.hpAfter / defenderMaxHp <= 0.1) {
+          appendLog(tLog("lowHp", { name: nameFor(defenderSide, targetLane) }), defenderSide);
+        }
+
+        setMoveFx(null);
+        await playResidualBeat(event);
+        appendItemTriggerLog(event);
+        resolve();
+      })();
     });
   }
 
@@ -1916,11 +1918,15 @@ export function BattleArena({
   const wildSpritePx = Math.round(arenaH * (0.3 + wildT * 0.14) * (isAlphaWild ? 1.1 : 1));
   const playerSpriteClass = [
     "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
-    attackingSide === "player" ? (physicalLunge ? "sprite-lunge-right-hard" : "sprite-lunge-right") : "",
+    attackingSide === "player" && attackingLane === "A"
+      ? physicalLunge
+        ? "sprite-lunge-right-hard"
+        : "sprite-lunge-right"
+      : "",
     shakingSide === "player" && shakingLane === "A"
       ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}`
       : "",
-    faintingSide === "player" ? "sprite-faint" : "",
+    faintingSide === "player" && faintingLane === "A" ? "sprite-faint" : "",
     ballAnim === "recall" ? "sprite-recall" : "",
     playerEntering ? "sprite-enter" : "",
     playerHealing ? "sprite-heal" : "",
@@ -1931,9 +1937,15 @@ export function BattleArena({
 
   const playerBSpriteClass = [
     "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
+    attackingSide === "player" && attackingLane === "B"
+      ? physicalLunge
+        ? "sprite-lunge-right-hard"
+        : "sprite-lunge-right"
+      : "",
     shakingSide === "player" && shakingLane === "B"
       ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}`
       : "",
+    faintingSide === "player" && faintingLane === "B" ? "sprite-faint" : "",
     playerIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
@@ -1941,11 +1953,15 @@ export function BattleArena({
 
   const wildSpriteClass = [
     "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
-    attackingSide === "wild" ? (physicalLunge ? "sprite-lunge-left-hard" : "sprite-lunge-left") : "",
+    attackingSide === "wild" && attackingLane === "A"
+      ? physicalLunge
+        ? "sprite-lunge-left-hard"
+        : "sprite-lunge-left"
+      : "",
     shakingSide === "wild" && shakingLane === "A"
       ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}`
       : "",
-    faintingSide === "wild" ? "sprite-faint" : "",
+    faintingSide === "wild" && faintingLane === "A" ? "sprite-faint" : "",
     wildEntering ? "sprite-enter" : "",
     wildAbsorbedByBall ? "sprite-absorb-ball" : "",
     captureBall === "fail" ? "sprite-enter" : "",
@@ -1956,9 +1972,15 @@ export function BattleArena({
 
   const wildBSpriteClass = [
     "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
+    attackingSide === "wild" && attackingLane === "B"
+      ? physicalLunge
+        ? "sprite-lunge-left-hard"
+        : "sprite-lunge-left"
+      : "",
     shakingSide === "wild" && shakingLane === "B"
       ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}`
       : "",
+    faintingSide === "wild" && faintingLane === "B" ? "sprite-faint" : "",
     wildIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
@@ -1970,10 +1992,10 @@ export function BattleArena({
   const lastLogEntry = log[log.length - 1];
 
   return (
-    <div className="flex flex-1 flex-col min-h-0 overflow-hidden px-2 py-1 sm:px-margin-mobile md:px-margin-desktop md:py-4 max-md:h-[calc(100dvh-6.5rem)] max-md:max-h-[calc(100dvh-6.5rem)] md:h-[calc(100dvh-4rem)] md:max-h-[calc(100dvh-4rem)]">
-      <div className="mx-auto w-full max-w-6xl flex flex-col gap-1 md:gap-2 flex-1 min-h-0 overflow-hidden md:h-full">
+    <div className="flex flex-1 flex-col min-h-0 overflow-hidden px-2 py-1 sm:px-margin-mobile md:px-margin-desktop md:py-4 h-full max-h-full">
+      <div className="mx-auto w-full max-w-6xl flex flex-col gap-1 md:gap-2 flex-1 min-h-0 overflow-hidden">
         {/* Top — mayor parte del alto en mobile */}
-        <div className="flex min-h-0 flex-col gap-1 md:gap-2 max-md:flex-1 max-md:min-h-[52%] md:flex-1 md:min-h-0">
+        <div className="flex min-h-0 flex-col gap-1 md:gap-2 flex-1">
         {/* Mobile: opponent balls — solo íconos, sin título largo */}
         <div className="lg:hidden shrink-0">
           <div
@@ -2651,7 +2673,6 @@ export function BattleArena({
             )}
           </div>
         </div>
-        <div className="max-md:h-[100px] max-md:shrink-0 md:hidden" aria-hidden="true" />
       </div>
     </div>
   );

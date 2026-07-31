@@ -91,13 +91,17 @@ function effectiveSpeed(side: SideBattleState): number {
 
 function tagEvents(
   events: TurnEvent[],
-  attackerLane: FieldLane,
-  targetLane: FieldLane,
+  attackerSlot: DoubleSlot,
+  targetSlot: DoubleSlot,
 ): TurnEvent[] {
+  const targetSide = slotSide(targetSlot);
   return events.map((e) => ({
     ...e,
-    fieldSlot: attackerLane,
-    targetFieldSlot: targetLane,
+    fieldSlot: slotLane(attackerSlot),
+    targetFieldSlot: slotLane(targetSlot),
+    // Necesario para spreads que pegan al aliado (Earthquake): el cliente
+    // no puede asumir que el defensor es siempre el bando contrario.
+    targetSide,
   }));
 }
 
@@ -188,7 +192,7 @@ function resolveHitOnTarget(
   }
 
   return {
-    events: tagEvents(outcome.events, slotLane(action.slot), slotLane(targetSlot)),
+    events: tagEvents(outcome.events, action.slot, targetSlot),
     itemA,
     itemB,
   };
@@ -232,12 +236,13 @@ export function resolveDoubleTurn(
   });
 
   livingActions.sort((a, b) => {
+    // Prioridad primero (Quick Attack, Protect…), Speed después — igual que singles.
+    if (a.move.priority !== b.move.priority) return b.move.priority - a.move.priority;
     const sa = getSlot(field, a.slot)!;
     const sb = getSlot(field, b.slot)!;
     const spdA = effectiveSpeed(sa);
     const spdB = effectiveSpeed(sb);
     if (spdA !== spdB) return spdB - spdA;
-    if (a.move.priority !== b.move.priority) return b.move.priority - a.move.priority;
     const aPlayer = slotSide(a.slot) === "player";
     const bPlayer = slotSide(b.slot) === "player";
     if (aPlayer !== bPlayer) return aPlayer ? -1 : 1;
@@ -336,8 +341,8 @@ export function resolveDoubleTurn(
                 chargePhase: "finish",
               },
             ],
-            slotLane(action.slot),
-            preferredLane,
+            action.slot,
+            preferred,
           ),
         );
         continue;
@@ -374,8 +379,8 @@ export function resolveDoubleTurn(
                 semiInvuln: attacker.semiInvuln,
               },
             ],
-            slotLane(action.slot),
-            preferredLane,
+            action.slot,
+            preferred,
           ),
         );
         continue;

@@ -68,6 +68,60 @@ const rockSlide: MoveSnapshot = {
 };
 
 describe("resolveDoubleTurn", () => {
+  it("orders by priority before speed (Quick Attack first)", () => {
+    const quickAttack: MoveSnapshot = {
+      id: 98,
+      name: "quick-attack",
+      type: "normal",
+      category: "PHYSICAL",
+      power: 40,
+      accuracy: 100,
+      priority: 1,
+      target: "selected-pokemon",
+    };
+    const field: DoubleField = {
+      playerA: mon("Slow", 100, 10),
+      playerB: mon("Fast", 100, 200),
+      wildA: mon("WA", 100, 50),
+      wildB: mon("WB", 100, 50),
+    };
+    const { events } = resolveDoubleTurn(
+      field,
+      [
+        { slot: "playerA", move: quickAttack, targetLane: "A" },
+        { slot: "playerB", move: tackle, targetLane: "A" },
+        { slot: "wildA", move: tackle, targetLane: "A" },
+        { slot: "wildB", move: tackle, targetLane: "A" },
+      ],
+      false,
+      false,
+    );
+    const firstHit = events.find((e) => e.hit && !e.skipped && e.damage > 0);
+    expect(firstHit?.side).toBe("player");
+    expect(firstHit?.fieldSlot).toBe("A");
+    expect(firstHit?.moveName).toBe("quick-attack");
+  });
+
+  it("tags targetSide on ally hits from Earthquake", () => {
+    const field: DoubleField = {
+      playerA: mon("A", 100, 80),
+      playerB: mon("B", 100, 10),
+      wildA: mon("WA", 100, 50),
+      wildB: mon("WB", 100, 50),
+    };
+    const { events } = resolveDoubleTurn(
+      field,
+      [{ slot: "playerA", move: earthquake }],
+      false,
+      false,
+    );
+    const allyHit = events.find(
+      (e) => e.side === "player" && e.targetSide === "player" && e.damage > 0,
+    );
+    expect(allyHit).toBeTruthy();
+    expect(allyHit?.targetFieldSlot).toBe("B");
+  });
+
   it("orders by speed across four slots", () => {
     const field: DoubleField = {
       playerA: mon("A", 100, 40),

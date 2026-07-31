@@ -1552,24 +1552,34 @@ body {
 [data-battle-speed="2"] :is(.sprite-shake, .sprite-flash, .sprite-flash-heavy,
     .sprite-lunge-right, .sprite-lunge-right-hard, .sprite-lunge-left, .sprite-lunge-left-hard,
     .move-orb-right, .move-orb-left, .fx-projectile-right, .fx-projectile-left,
-    .fx-contact-right, .fx-contact-left, .fx-bolt, .fx-impact-pop,
+    .fx-contact-right, .fx-contact-left, .fx-bolt, .fx-impact,
     .move-beam-right, .move-beam-left, .move-impact, .arena-type-flash) {
   animation-duration: 0.2s;
 }
-[data-battle-speed="2"] :is(.damage-popup, .eff-popup, .move-banner-in, .sprite-faint,
-    .sprite-enter, .sprite-recall) {
+[data-battle-speed="2"] :is(.damage-popup, .eff-popup, .move-banner, .sprite-faint,
+    .sprite-enter, .sprite-recall,
+    .ball-throw-travel, .ball-shake-once, .ball-catch-flash, .ball-break,
+    .sprite-absorb-ball, .sprite-heal) {
   animation-duration: 0.5s;
+}
+[data-battle-speed="2"] .health-bar-fill {
+  transition-duration: 0.15s;
 }
 [data-battle-speed="3"] :is(.sprite-shake, .sprite-flash, .sprite-flash-heavy,
     .sprite-lunge-right, .sprite-lunge-right-hard, .sprite-lunge-left, .sprite-lunge-left-hard,
     .move-orb-right, .move-orb-left, .fx-projectile-right, .fx-projectile-left,
-    .fx-contact-right, .fx-contact-left, .fx-bolt, .fx-impact-pop,
+    .fx-contact-right, .fx-contact-left, .fx-bolt, .fx-impact,
     .move-beam-right, .move-beam-left, .move-impact, .arena-type-flash) {
   animation-duration: 0.14s;
 }
-[data-battle-speed="3"] :is(.damage-popup, .eff-popup, .move-banner-in, .sprite-faint,
-    .sprite-enter, .sprite-recall) {
+[data-battle-speed="3"] :is(.damage-popup, .eff-popup, .move-banner, .sprite-faint,
+    .sprite-enter, .sprite-recall,
+    .ball-throw-travel, .ball-shake-once, .ball-catch-flash, .ball-break,
+    .sprite-absorb-ball, .sprite-heal) {
   animation-duration: 0.34s;
+}
+[data-battle-speed="3"] .health-bar-fill {
+  transition-duration: 0.1s;
 }
 
 ::-webkit-scrollbar {

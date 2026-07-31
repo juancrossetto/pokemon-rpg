@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { typeColor } from "@/lib/type-colors";
 import { gymBadgeImageUrl } from "@/lib/gym-art";
@@ -21,6 +23,9 @@ type GymBadgePopupProps = {
 /**
  * Celebración de medalla — mismo lenguaje visual que el popup de evolución
  * (rays, sparks, glow, card oscura centrada).
+ *
+ * Portal a `document.body`: el resumen aplica `transform` en `.result-in`,
+ * y eso rompe `position: fixed` si el popup queda como hijo del card.
  */
 export function GymBadgePopup({
   gymType,
@@ -33,10 +38,14 @@ export function GymBadgePopup({
 }: GymBadgePopupProps) {
   const accent = typeColor(gymType);
   const title = badgeName ?? labels.badgeEarned;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-margin-mobile"
+      className="fixed inset-0 z-[90] flex items-center justify-center px-margin-mobile"
       role="dialog"
       aria-modal="true"
       aria-labelledby="gym-badge-title"
@@ -126,7 +135,10 @@ export function GymBadgePopup({
               className="absolute inset-3 rounded-full border opacity-60"
               style={{ borderColor: `${accent}77`, boxShadow: `0 0 28px ${accent}55` }}
             />
-            <div className="evolve-pad absolute -bottom-1 left-1/2 h-2.5 w-[55%] -translate-x-1/2 rounded-[100%] blur-[2px]" style={{ background: `${accent}88` }} />
+            <div
+              className="evolve-pad absolute -bottom-1 left-1/2 h-2.5 w-[55%] -translate-x-1/2 rounded-[100%] blur-[2px]"
+              style={{ background: `${accent}88` }}
+            />
             <Image
               src={gymBadgeImageUrl(gymType)}
               alt={title}
@@ -166,6 +178,7 @@ export function GymBadgePopup({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

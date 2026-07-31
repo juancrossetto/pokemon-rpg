@@ -103,10 +103,13 @@ export function resolveMoveUse(
   const randomFactor = 0.85 + Math.random() * 0.15;
   const itemMult = options.powerMultiplier ?? 1;
 
-  const damage = Math.max(
-    0,
-    Math.floor(base * stab * effectiveness * critMult * randomFactor * itemMult),
-  );
+  const damage =
+    effectiveness === 0
+      ? 0
+      : Math.max(
+          1,
+          Math.floor(base * stab * effectiveness * critMult * randomFactor * itemMult),
+        );
   return { hit, damage, effectiveness, critical };
 }
 
@@ -139,6 +142,8 @@ export interface TurnEvent {
   fieldSlot?: "A" | "B";
   /** En dobles: calle del defensor / objetivo del golpe (puede diferir si hay redirect). */
   targetFieldSlot?: "A" | "B";
+  /** En dobles: bando del defensor (puede ser aliado en Earthquake / Surf). */
+  targetSide?: "player" | "wild";
   moveName: string;
   moveType: string;
   /** Categoría del movimiento — el cliente elige proyectil vs contacto. */
