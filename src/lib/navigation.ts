@@ -236,8 +236,28 @@ export const NAV_HOME: NavItem = {
  */
 export const MOBILE_BAR_GROUPS = ["adventure", "combat", "collection"] as const;
 
+/**
+ * Accesos rápidos del drawer mobile (fuera de los tres tabs de grupo).
+ * Se resuelven por id contra `NAV_GROUPS` para no duplicar href/iconos.
+ */
+export const MOBILE_NAV_SHORTCUTS = [
+  "pokedex",
+  "ranking",
+  "market",
+  "inventory",
+] as const;
+
 export function visibleChildren(group: NavGroup): NavItem[] {
   return group.children.filter((child) => !child.hidden);
+}
+
+/** Busca un destino por id en todos los grupos. */
+export function findNavItem(id: string): NavItem | undefined {
+  for (const group of NAV_GROUPS) {
+    const hit = visibleChildren(group).find((child) => child.id === id);
+    if (hit) return hit;
+  }
+  return undefined;
 }
 
 /** Todas las URLs de íconos PNG de la nav (para preload en mobile). */

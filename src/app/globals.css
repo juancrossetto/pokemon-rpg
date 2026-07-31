@@ -3131,6 +3131,77 @@ html.boot-splash-pending .boot-splash {
   animation: market-fade-in 0.2s ease-out both;
 }
 
+/* Sheet de navegación mobile: keyframes (más fiables que transition al montar). */
+@keyframes mobile-nav-sheet-in {
+  0% {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+  72% {
+    transform: translate3d(0, -2.5%, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes mobile-nav-sheet-out {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes mobile-nav-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mobile-nav-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.mobile-nav-sheet {
+  will-change: transform, opacity;
+}
+
+.mobile-nav-sheet.is-open {
+  animation: mobile-nav-sheet-in 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.mobile-nav-sheet.is-closing {
+  animation: mobile-nav-sheet-out 0.32s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.mobile-nav-sheet.is-dragging {
+  animation: none !important;
+}
+
+.mobile-nav-sheet-backdrop.is-open {
+  animation: mobile-nav-backdrop-in 0.28s ease-out both;
+  pointer-events: auto;
+}
+
+.mobile-nav-sheet-backdrop.is-closing {
+  animation: mobile-nav-backdrop-out 0.28s ease-in both;
+  pointer-events: none;
+}
+
 .user-menu-panel {
   transform-origin: top right;
   animation: user-menu-panel-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -3176,8 +3247,27 @@ html.boot-splash-pending .boot-splash {
 
   .market-sheet-in,
   .market-sheet-backdrop-in,
+  .mobile-nav-sheet.is-open,
+  .mobile-nav-sheet.is-closing,
+  .mobile-nav-sheet-backdrop.is-open,
+  .mobile-nav-sheet-backdrop.is-closing,
   .user-menu-panel {
-    animation: none;
+    animation: none !important;
+  }
+
+  .mobile-nav-sheet {
+    transform: none;
+    opacity: 1;
+  }
+
+  .mobile-nav-sheet-backdrop.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile-nav-sheet-backdrop.is-closing {
+    opacity: 0;
+    pointer-events: none;
   }
 }
 

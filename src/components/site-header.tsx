@@ -17,9 +17,10 @@ import { HandbookHost } from "@/components/handbook/handbook-modal";
 import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
-  const [t, tUx, session, locale] = await Promise.all([
+  const [t, tUx, tHandbook, session, locale] = await Promise.all([
     getTranslations("nav"),
     getTranslations("ux"),
+    getTranslations("handbook"),
     auth(),
     getLocale(),
   ]);
@@ -266,6 +267,12 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         navLabels={navLabels}
         moreLabel={t("menu")}
         closeLabel={t("close")}
+        shortcutsLabel={t("shortcuts")}
+        retapHint={t("retapHint")}
+        seeAllNavLabel={t("seeAllNav")}
+        emptyNavLabel={t("emptyNav")}
+        swipeGroupsLabel={t("swipeGroups")}
+        handbookLabel={tHandbook("open")}
         loginLabel={t("login")}
         registerLabel={t("register")}
         notifications={notifications}

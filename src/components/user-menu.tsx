@@ -18,6 +18,8 @@ export function UserMenu({
   logoutLabel,
   profileLabel,
   profileHref = "/profile",
+  handbookLabel,
+  onHandbook,
 }: {
   name: string;
   avatarId: string | null;
@@ -30,6 +32,9 @@ export function UserMenu({
   */
   profileLabel: string;
   profileHref?: string;
+  /** En mobile angosto el trigger del manual se mueve acá. */
+  handbookLabel?: string;
+  onHandbook?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -100,6 +105,22 @@ export function UserMenu({
           <div className="mx-3 h-px bg-linear-to-r from-transparent via-white/12 to-transparent" />
 
           <div className="p-1.5">
+            {handbookLabel && onHandbook ? (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onHandbook();
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-[13px] text-on-surface transition-colors hover:bg-white/6"
+              >
+                <span className="material-symbols-outlined text-[18px]! text-electric-yellow">
+                  menu_book
+                </span>
+                {handbookLabel}
+              </button>
+            ) : null}
             <button
               type="button"
               role="menuitem"

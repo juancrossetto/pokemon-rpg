@@ -416,7 +416,7 @@ export function ResourceBar({
         quedar solo como ícono). Gemas van dentro del popover.
       */}
       {isMobile && (
-        <div className="relative max-[480px]:block min-[481px]:hidden">
+        <div className="relative">
           <button
             type="button"
             aria-expanded={open === "all"}
@@ -436,8 +436,6 @@ export function ResourceBar({
             <span className="font-mono text-[11px] font-semibold tabular-nums text-electric-yellow">
               {coins}
             </span>
-            {/* Las gemas también en el chip: hasta 480px no había ningún lugar
-                donde verlas sin abrir el popover. */}
             <span className="mx-0.5 h-3 w-px bg-white/15" aria-hidden />
             <span className="material-symbols-outlined text-[14px]! text-fuchsia-400">diamond</span>
             <span className="font-mono text-[11px] font-semibold tabular-nums text-fuchsia-300">
@@ -511,7 +509,7 @@ export function ResourceBar({
         </div>
       )}
 
-      <div className={isMobile ? "hidden min-[481px]:block" : "block"}>{pills}</div>
+      {!isMobile && <div className="block">{pills}</div>}
     </div>
   );
 }
