@@ -176,7 +176,9 @@ describe("scaling and auto-ascent", () => {
 
   it("MVP config stays within planned scope", () => {
     expect(COMBAT_TOWER_CONFIG.totalFloors).toBe(30);
-    expect(COMBAT_TOWER_CONFIG.rules.dailyAttempts).toBe(3);
+    expect(COMBAT_TOWER_CONFIG.resetType).toBe("weekly");
+    // Un ascenso por período semanal (el campo se llama dailyAttempts por legado).
+    expect(COMBAT_TOWER_CONFIG.rules.dailyAttempts).toBe(1);
     expect(COMBAT_TOWER_CONFIG.unlock.minBadges).toBe(2);
   });
 });
