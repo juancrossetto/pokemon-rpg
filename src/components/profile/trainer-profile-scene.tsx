@@ -23,7 +23,7 @@ export type ProfileSceneProps = {
 
 function SceneSkeleton() {
   return (
-    <div className="flex h-full w-full items-end justify-center gap-6 pb-6" aria-hidden>
+    <div className="flex h-full w-full items-end justify-center gap-6 pb-4" aria-hidden>
       <span className="h-36 w-28 animate-pulse rounded-2xl bg-white/5" />
       <span className="h-28 w-28 animate-pulse rounded-2xl bg-white/5" />
     </div>
@@ -77,7 +77,7 @@ export function TrainerProfileScene(props: ProfileSceneProps) {
     );
   }
 
-  return <TrainerScene2D {...props} reducedMotion={reducedMotion} />;
+  return <TrainerScene2D {...props} />;
 }
 
 function TrainerScene2D({
@@ -86,81 +86,92 @@ function TrainerScene2D({
   companionSpriteUrl,
   accent,
   sceneLabel,
-  reducedMotion,
-}: ProfileSceneProps & { reducedMotion: boolean }) {
-  const bob = reducedMotion ? "" : "tp-scene-bob";
+}: ProfileSceneProps) {
+  /*
+    Escena tipo Pokémon GO: entrenador y compañero parados sobre la misma línea
+    de piso, solapados, cada uno con su sombra.
 
+    Dos decisiones que arreglan lo que se veía mal antes:
+
+    1. Se dimensiona con `max-h` + `max-w` sobre la propia imagen, no con
+       `h-full w-auto` dentro de una caja con `object-contain`. Con lo anterior,
+       cualquier arte que no fuera un retrato vertical (hay avatares cuadrados y
+       uno apaisado de 400×240) se enviaba a una caja alta y angosta y quedaba
+       en franja, chiquito y flotando. Con los dos máximos sobre el `<img>`, la
+       imagen se achica sola respetando su relación de aspecto y nunca queda
+       letterboxeada.
+
+    2. El arte del entrenador llega ya recortado al bounding box opaco
+       (`/avatars/stage/`), así que su borde inferior son los pies y apoyan en
+       la línea de piso. El render HOME del compañero sí trae aire propio, y por
+       eso se le da un poco más de altura y un desplazamiento hacia abajo.
+
+    3. El escenario **no tiene altura fija**. Con una altura fija y el grupo
+       anclado abajo, cualquier arte que tocara antes su límite de ancho que el
+       de alto —el apaisado, sin ir más lejos— quedaba a media altura y dejaba
+       la mitad superior de la card vacía: se veía "muy abajo". Ahora la altura
+       la marcan las figuras y el `min-h` solo evita que la card colapse cuando
+       el arte es muy chico.
+  */
   return (
     <div
-      className="relative flex h-[240px] w-full items-end justify-center sm:h-[280px] lg:h-[320px]"
+      className="relative mx-auto flex w-full max-w-lg items-end justify-center pb-3"
       role="img"
       aria-label={sceneLabel}
     >
-      {companionSpriteUrl && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.1]"
-          style={{
-            maskImage: "radial-gradient(ellipse at center, #000 28%, transparent 70%)",
-            WebkitMaskImage: "radial-gradient(ellipse at center, #000 28%, transparent 70%)",
-          }}
-        >
-          <Image
-            src={companionSpriteUrl}
-            alt=""
-            width={280}
-            height={280}
-            unoptimized
-            className="h-[200px] w-[200px] object-contain sm:h-[240px] sm:w-[240px]"
-          />
-        </div>
-      )}
-
+      {/* Luz de piso: ancla la escena y separa las figuras del fondo. */}
       <div
         aria-hidden
-        className="absolute bottom-3 left-1/2 h-5 w-[70%] max-w-xs -translate-x-1/2 rounded-[100%] bg-black/55"
-        style={{ boxShadow: `0 0 36px ${accent}40` }}
-      />
-      <div
-        aria-hidden
-        className="absolute bottom-4 left-1/2 h-2.5 w-[55%] max-w-[14rem] -translate-x-1/2 rounded-[100%]"
+        className="absolute inset-x-0 bottom-0 h-24"
         style={{
-          background: `radial-gradient(ellipse, ${accent}55 0%, transparent 70%)`,
+          background: `radial-gradient(60% 100% at 50% 100%, ${accent}22 0%, transparent 72%)`,
         }}
       />
 
-      <div className="relative z-1 flex items-end justify-center gap-0 pb-5 sm:gap-2">
+      <div className="flex min-h-[150px] items-end justify-center sm:min-h-[180px] lg:min-h-[205px]">
         {companionSpriteUrl ? (
-          <div className={`relative ${bob}`} style={{ animationDelay: "0.4s" }}>
+          <figure className="relative -mr-8 flex shrink-0 items-end sm:-mr-10">
+            <span
+              aria-hidden
+              className="absolute inset-x-0 bottom-0 mx-auto h-3 w-[70%] rounded-[100%] bg-black/55 blur-[3px]"
+            />
+            {/* Nudge mínimo para el aire que traen los renders HOME por debajo
+                del Pokémon. Con más, el compañero se hunde por debajo de la
+                línea de piso del entrenador y se pierde el suelo compartido. */}
             <Image
               src={companionSpriteUrl}
               alt=""
-              width={180}
-              height={180}
+              width={320}
+              height={320}
               unoptimized
-              className="relative z-2 h-[148px] w-[148px] object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)] [image-rendering:pixelated] sm:h-[176px] sm:w-[176px]"
+              className="relative max-h-[170px] w-auto max-w-[11rem] translate-y-[2%] object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.5)] sm:max-h-[210px] sm:max-w-[14rem] lg:max-h-[250px] lg:max-w-[17rem]"
             />
-          </div>
+          </figure>
         ) : null}
 
-        <div className={`relative ${bob}`}>
+        <figure className="relative z-[1] flex shrink-0 items-end">
+          <span
+            aria-hidden
+            className="absolute inset-x-0 bottom-0 mx-auto h-2.5 w-[62%] rounded-[100%] bg-black/55 blur-[3px]"
+          />
           {trainerSpriteUrl ? (
             <Image
               src={trainerSpriteUrl}
               alt={username}
-              width={160}
-              height={200}
+              width={280}
+              height={420}
               unoptimized
-              className="relative z-1 h-[168px] w-[132px] object-contain drop-shadow-[0_14px_28px_rgba(0,0,0,0.6)] [image-rendering:pixelated] sm:h-[200px] sm:w-[152px]"
+              priority
+              className="relative max-h-[178px] w-auto max-w-[12rem] object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.5)] sm:max-h-[220px] sm:max-w-[15rem] lg:max-h-[262px] lg:max-w-[19rem]"
             />
           ) : (
-            <div className="flex h-[148px] w-[100px] items-end justify-center rounded-xl bg-white/5 sm:h-[176px]">
-              <span className="material-symbols-outlined mb-6 text-[48px]! text-white/40">
+            <span className="flex h-[170px] w-[5.5rem] items-end justify-center rounded-xl bg-white/5 sm:h-[210px] lg:h-[250px]">
+              <span className="material-symbols-outlined mb-4 text-[44px]! text-white/40">
                 person
               </span>
-            </div>
+            </span>
           )}
-        </div>
+        </figure>
       </div>
     </div>
   );

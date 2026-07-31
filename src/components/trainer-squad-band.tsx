@@ -4,7 +4,7 @@ import Image from "next/image";
 import type { DexRarity } from "@/lib/pokedex";
 import { typeColor } from "@/lib/type-colors";
 import { showdownTypeSymbolUrl } from "@/lib/type-icons";
-import { uiSpriteUrl } from "@/lib/sprites";
+import { defaultSpriteUrl } from "@/lib/sprites";
 import { ProgressRail } from "@/components/trainer-profile-parts";
 import { useTypeLabel } from "@/hooks/use-type-label";
 
@@ -108,7 +108,7 @@ export function TrainerSquadBand({
                 style={{ background: color }}
               />
               <Image
-                src={uiSpriteUrl(member.spriteUrl, member.isShiny)}
+                src={defaultSpriteUrl(member.spriteUrl, member.isShiny)}
                 alt={member.name}
                 width={128}
                 height={128}

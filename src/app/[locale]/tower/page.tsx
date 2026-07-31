@@ -251,15 +251,15 @@ export default async function TowerPage({
           className="absolute inset-0 bg-gradient-to-t from-[#0b0d13] via-[#0b0d13]/75 to-[#0b0d13]/25"
           aria-hidden
         />
-        <div className="relative z-10 flex min-h-[3.75rem] flex-col justify-end gap-0.5 px-3 py-2 sm:min-h-[10rem] sm:gap-1 sm:px-5 sm:py-4">
-          <p className="hidden text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 sm:block">
+        <div className="relative z-10 flex min-h-[8.5rem] flex-col justify-end gap-1 px-3.5 py-3 sm:min-h-[10rem] sm:px-5 sm:py-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
             {t("eyebrow")}
           </p>
-          <div className="flex flex-wrap items-center gap-2 sm:items-end sm:justify-between">
-            <h1 className="text-lg font-bold tracking-tight text-white drop-shadow-sm sm:text-headline-md">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h1 className="text-headline-sm font-bold tracking-tight text-white drop-shadow-sm sm:text-headline-md">
               {t(COMBAT_TOWER_CONFIG.nameKey)}
             </h1>
-            <span className="rounded-full border border-white/25 bg-black/35 px-2 py-0.5 text-[10px] text-white/85 backdrop-blur-sm sm:px-3 sm:py-1 sm:text-label-sm">
+            <span className="rounded-full border border-white/25 bg-black/35 px-2.5 py-0.5 text-[10px] text-white/85 backdrop-blur-sm sm:px-3 sm:py-1 sm:text-label-sm">
               {t("difficulties.normal")}
             </span>
           </div>

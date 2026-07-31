@@ -166,6 +166,41 @@ export function ProgressRail({
 }
 
 /**
+ * Riel de progreso del hero.
+ *
+ * Más alto que `ProgressRail`, con degradé de tres paradas —del acento apagado
+ * al acento pleno y remate casi blanco en la punta—, brillo propio y un
+ * destello que recorre la parte llena. El degradé se pinta sobre el ancho total
+ * del riel y no sobre el relleno, así el color en un punto dado no cambia
+ * cuando el progreso avanza: la punta siempre es la parte clara.
+ */
+export function GradientRail({
+  pct,
+  color,
+  delayMs = 0,
+}: {
+  pct: number;
+  color: string;
+  delayMs?: number;
+}) {
+  const clamped = Math.max(0, Math.min(1, pct));
+  return (
+    <div className="tp-rail relative h-2 w-full overflow-hidden rounded-full">
+      <div
+        className="tp-rail__fill absolute inset-y-0 left-0 rounded-full"
+        style={
+          {
+            "--tp-fill": `${Math.round(clamped * 100)}%`,
+            "--tp-accent": color,
+            animationDelay: `${delayMs}ms`,
+          } as CSSProperties
+        }
+      />
+    </div>
+  );
+}
+
+/**
  * Widget de métrica legacy — preferí `@/components/metric-tile` en perfil.
  * Se mantiene por si algún bloque aún lo importa.
  */

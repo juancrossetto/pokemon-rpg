@@ -38,9 +38,8 @@ function AvatarOrb({
   active?: boolean;
 }) {
   /*
-    sm = trigger del header; md = cabecera del menú. El zoom vive en
-    `.trainer-sprite-fill` (globals): los sprites Showdown son 80×80 con
-    padding transparente y sin eso se ven diminutos.
+    sm = trigger del header; md = cabecera del menú. El framing vive en
+    `.trainer-sprite-fill` (globals) para los retratos locales `*1`.
   */
   const dim = size === "md" ? "h-14 w-14" : "h-10 w-10";
   const shape = "rounded-[28%]";

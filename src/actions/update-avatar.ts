@@ -12,12 +12,8 @@ export type UpdateAvatarResult =
 /**
  * Cambia el retrato del entrenador.
  *
- * Hasta ahora el avatar sólo se podía elegir al registrarse: `avatarId` se
- * escribía una vez en `register` y no había forma de tocarlo después.
- *
- * El id se valida contra `AVATAR_OPTIONS` y no se guarda lo que llegue: el
- * campo alimenta una URL del CDN de Showdown, así que aceptar un valor
- * arbitrario dejaría al jugador apuntar el retrato a cualquier recurso.
+ * El id se valida contra el catálogo local (`/avatars/{slug}1|2.png`) y se
+ * normaliza al id canónico (slug). No se acepta un path arbitrario.
  */
 export async function updateAvatar(
   avatarId: string,
@@ -26,16 +22,17 @@ export async function updateAvatar(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
 
-  if (!avatarById(avatarId)) return { ok: false, error: "invalid" };
+  const option = avatarById(avatarId);
+  if (!option) return { ok: false, error: "invalid" };
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { avatarId },
+    data: { avatarId: option.id },
   });
 
   // El avatar vive en el header (server component), así que revalidar sólo
   // `/profile` dejaría el de arriba desactualizado hasta la próxima navegación.
   revalidatePath(`/${locale}`, "layout");
 
-  return { ok: true, avatarId };
+  return { ok: true, avatarId: option.id };
 }

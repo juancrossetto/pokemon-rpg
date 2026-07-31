@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useLocale } from "next-intl";
 import { updateAvatar } from "@/actions/update-avatar";
 import { AvatarImage } from "@/components/avatar-image";
-import { AVATAR_OPTIONS } from "@/lib/avatars";
+import { AVATAR_OPTIONS, avatarById } from "@/lib/avatars";
 
 export type AvatarPickerLabels = {
   change: string;
@@ -32,9 +32,16 @@ export function AvatarPicker({
   labels,
   children,
   showAffordance = true,
+  onSaved,
 }: {
   currentAvatarId: string | null;
   labels: AvatarPickerLabels;
+  /**
+   * Se llama con el id elegido apenas se confirma, **antes** de que el servidor
+   * responda, para que quien renderiza el retrato lo pinte ya. Si la escritura
+   * falla se vuelve a llamar con el id anterior.
+   */
+  onSaved?: (avatarId: string | null) => void;
   /** Disparador — normalmente el propio retrato del hero. */
   children: React.ReactNode;
   /** Badge de lápiz sobre el disparador. Desactivar si el hijo ya es un botón de editar. */
@@ -43,7 +50,8 @@ export function AvatarPicker({
   const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [selected, setSelected] = useState<string | null>(currentAvatarId);
+  const resolvedCurrentId = avatarById(currentAvatarId)?.id ?? currentAvatarId;
+  const [selected, setSelected] = useState<string | null>(resolvedCurrentId);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -58,7 +66,7 @@ export function AvatarPicker({
     cada vez que se cierra el panel.
   */
   function openPicker() {
-    setSelected(currentAvatarId);
+    setSelected(avatarById(currentAvatarId)?.id ?? currentAvatarId);
     setError(null);
     setOpen(true);
   }
@@ -76,16 +84,38 @@ export function AvatarPicker({
     };
   }, [open]);
 
+  /*
+    Guardar cierra el panel en el acto y pinta el avatar nuevo; la escritura
+    sigue en segundo plano.
+
+    Antes esto esperaba a `updateAvatar` dentro de la transición, y esa promesa
+    no resuelve cuando termina el UPDATE: resuelve cuando termina el
+    `revalidatePath(..., "layout")` que dispara, o sea cuando el servidor
+    volvió a renderizar el layout entero (header, con sus consultas) más la
+    página de perfil (dieciocho consultas) contra una base remota. El panel se
+    quedaba en "Guardando…" todo ese rato tapando la pantalla y después se
+    cerraba de golpe, así que el cambio nunca se veía ocurrir.
+
+    Revalidar sigue haciendo falta —el header vive en el layout y el próximo
+    render tiene que traer el avatar nuevo—, pero ya no bloquea el feedback.
+  */
   function save() {
     if (!selected || pending) return;
+    const next = selected;
+    const previous = resolvedCurrentId;
     setError(null);
+    onSaved?.(next);
+    setOpen(false);
+
     start(async () => {
-      const result = await updateAvatar(selected, locale);
+      const result = await updateAvatar(next, locale);
       if (!result.ok) {
+        // Volver atrás y reabrir con el motivo: es la única forma de contarlo
+        // una vez que el panel ya se cerró.
+        onSaved?.(previous);
         setError(labels.error);
-        return;
+        setOpen(true);
       }
-      setOpen(false);
     });
   }
 

@@ -2083,18 +2083,14 @@
     "toNextRank": "{count} badges to {rank}",
     "maxRank": "Max rank reached",
     "withCompanion": "{name} and {companion}",
-    "andCompanion": "and {companion}",
     "sceneLabel": "Trainer {name} with companion {companion}.",
     "companion": "Companion",
-    "featuredBadges": "Featured badges",
-    "viewAllBadges": "View all",
     "manageTeam": "Manage team",
     "favorite": "Favourite",
     "nav": {
       "summary": "Overview",
       "badges": "Badges",
-      "team": "Team",
-      "stats": "Stats"
+      "team": "Team"
     },
     "noFavorite": "No favourite",
     "noFavoriteHint": "Mark a Pokémon as favourite from your team and it will headline your profile.",
@@ -2104,7 +2100,6 @@
     "shiny": "Shiny",
     "lead": "Lead",
     "emptySlot": "Empty",
-    "metrics": "Metrics",
     "squad": "Active squad",
     "vault": "Vault",
     "activity": "Activity",
@@ -2156,14 +2151,9 @@
       "pseudo": "Pseudo-legendaries"
     },
     "stats": {
-      "caught": "Caught",
-      "shinies": "Shinies",
       "dex": "Pokédex",
-      "badges": "Badges",
       "pvp": "PvP",
-      "rating": "Rating {rating}",
-      "trainers": "Trainers",
-      "power": "Team power"
+      "rating": "Rating {rating}"
     },
     "timeline": {
       "catch": "Caught",
@@ -2255,6 +2245,14 @@
       "saving": "Saving…",
       "cancel": "Cancel",
       "error": "Couldn't save. Try again."
+    },
+    "facts": "Trainer card",
+    "factsRows": {
+      "pvpWins": "PvP wins",
+      "tower": "Tower",
+      "floor": "Floor {floor}",
+      "journey": "Journey",
+      "rank": "Rank"
     }
   },
   "friends": {

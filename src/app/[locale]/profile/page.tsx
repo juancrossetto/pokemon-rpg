@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { avatarById } from "@/lib/avatars";
+import { uiSpriteUrl } from "@/lib/sprites";
 import { typeColor } from "@/lib/type-colors";
 import { calculateMaxHp } from "@/lib/stats";
 import { pokemonPower } from "@/lib/ranking";
@@ -17,20 +18,17 @@ import {
 import {
   buildAchievements,
   buildCollection,
-  mergeTimeline,
   rankProgress,
-  trainerTitle,
   type CollectionSlice,
-  type TimelineEvent,
   type TrainerStats,
 } from "@/lib/trainer-profile";
 import { TrainerProfileClient } from "@/components/profile/trainer-profile-client";
 import { TrainerSquadBand } from "@/components/trainer-squad-band";
-import { TrainerVault, RecentCatchStrip } from "@/components/trainer-vault";
-import { TrainerTimeline } from "@/components/trainer-timeline";
-import { MetricTile } from "@/components/metric-tile";
+import { TrainerVault } from "@/components/trainer-vault";
 import { SectionLabel } from "@/components/trainer-profile-parts";
 import { permissionsFor } from "@/lib/trainer-appearance";
+import { getKantoLocation } from "@/lib/campaign";
+import type { StatRow } from "@/components/profile/trainer-stat-rows";
 
 const SPECIES_SELECT = {
   id: true,
@@ -68,8 +66,16 @@ export default async function ProfilePage({
   const userId = session.user.id;
   await redirectIfInBattle(userId, locale);
 
-  const [user, team, badges, counts, recentCatches, recentDefeats, totalGyms, achievementClaims] =
-    await Promise.all([
+  const [
+    user,
+    team,
+    badges,
+    counts,
+    totalGyms,
+    achievementClaims,
+    towerAgg,
+    campaign,
+  ] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -127,33 +133,6 @@ export default async function ProfilePage({
           _max: { level: true },
         }),
       ]),
-      prisma.pokemonInstance.findMany({
-        where: { ownerId: userId },
-        select: {
-          id: true,
-          nickname: true,
-          level: true,
-          isShiny: true,
-          caughtAt: true,
-          species: {
-            select: {
-              name: true,
-              spriteUrl: true,
-              types: true,
-              captureRate: true,
-              id: true,
-            },
-          },
-        },
-        orderBy: { caughtAt: "desc" },
-        take: 10,
-      }),
-      prisma.trainerDefeat.findMany({
-        where: { userId },
-        select: { trainerId: true, locationId: true, defeatedAt: true },
-        orderBy: { defeatedAt: "desc" },
-        take: 5,
-      }),
       // Sin el Alto Mando: el schema aclara que esos no cuentan como medalla,
       // así que incluirlos dejaría el rango Campeón fuera de alcance para
       // siempre —el denominador nunca se alcanzaría—.
@@ -161,6 +140,16 @@ export default async function ProfilePage({
       prisma.achievementClaim.findMany({
         where: { userId },
         select: { achievementId: true },
+      }),
+      // Piso más alto de la torre en cualquier dificultad: el jugador piensa en
+      // "hasta qué piso llegué", no en el desglose por modo.
+      prisma.towerProgress.aggregate({
+        where: { userId },
+        _max: { highestFloorAllTime: true },
+      }),
+      prisma.campaignProgress.findUnique({
+        where: { userId },
+        select: { highestUnlockedLocationId: true },
       }),
     ]);
 
@@ -226,7 +215,6 @@ export default async function ProfilePage({
   const achievements = buildAchievements(stats, claimedAchievementIds);
 
   const rank = rankProgress(stats.badges, totalGyms);
-  const title = trainerTitle(stats);
 
   // Favorito: el marcado por el jugador; si no marcó ninguno, el líder.
   const favorite = team.find((p) => p.isFavorite) ?? team[0] ?? null;
@@ -240,35 +228,8 @@ export default async function ProfilePage({
     buildCollection("pseudo", countOwnedIn(PSEUDO_IDS), pseudoTotal, "#a78bfa"),
   ];
 
-  const timeline = mergeTimeline([
-    ...recentCatches.map<TimelineEvent>((p) => ({
-      id: `catch-${p.id}`,
-      kind: p.isShiny ? "shiny" : "catch",
-      label: p.nickname ?? p.species.name,
-      at: p.caughtAt,
-      spriteUrl: p.species.spriteUrl,
-      accent: typeColor(p.species.types[0] ?? "normal"),
-    })),
-    ...badges.map<TimelineEvent>((b) => ({
-      id: `badge-${b.id}`,
-      kind: "badge",
-      label: b.gym.badgeName,
-      at: b.earnedAt,
-      accent: typeColor(b.gym.type),
-    })),
-    ...recentDefeats.map<TimelineEvent>((d) => ({
-      id: `trainer-${d.trainerId}-${d.locationId}`,
-      kind: "trainer",
-      label: tCampaign.has(`trainers.${d.trainerId}`)
-        ? tCampaign(`trainers.${d.trainerId}`)
-        : d.trainerId.replace(/_/g, " "),
-      at: d.defeatedAt,
-    })),
-  ]);
-
   const dateFmt = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" });
   const monthFmt = new Intl.DateTimeFormat(locale, { month: "short", year: "numeric" });
-  const now = new Date();
 
   const rankLabels = Object.fromEntries(
     ["bronze", "silver", "gold", "diamond", "master", "champion"].map((id) => [
@@ -276,30 +237,25 @@ export default async function ProfilePage({
       t(`rank.${id}`),
     ]),
   );
-  const titleLabels = Object.fromEntries(
-    [
-      "rookie", "trainer", "collector", "gymLeaderBane", "researcher",
-      "duelist", "legendTamer", "shinyHunter", "mythKeeper", "champion",
-    ].map((id) => [id, t(`titles.${id}`)]),
-  );
   const rarityLabels = Object.fromEntries(
     ["common", "rare", "epic", "legendary", "mythical", "ultraBeast", "paradox"].map(
       (id) => [id, t(`rarity.${id}`)],
     ),
   );
 
-  const dexPct = Math.round((dexSeen / Math.max(1, dexTotal)) * 100);
   const companionName = favorite
     ? (favorite.nickname ?? favorite.species.name)
     : null;
-  const companionLine = companionName
-    ? t("andCompanion", { companion: companionName })
-    : null;
+  // El nombre del compañero va solo, sin el "y ": bajo el nombre del entrenador
+  // y en cuerpo chico, nombra al Pokémon sin robarle protagonismo.
+  const companionLine = companionName;
   const sceneLabel = companionName
     ? t("sceneLabel", { name: user.username, companion: companionName })
     : user.username;
   const perms = permissionsFor("own");
-  const trainerSprite = avatarById(user.avatarId)?.src ?? null;
+  // `stageSrc` y no `profileSrc`: la escena alinea los pies con la línea de
+  // piso, y para eso el arte tiene que venir sin margen transparente.
+  const trainerSprite = avatarById(user.avatarId)?.stageSrc ?? null;
 
   const avatarLabels = {
     change: t("avatar.change"),
@@ -398,129 +354,88 @@ export default async function ProfilePage({
     />
   );
 
-  const statsNode = (
-    <div className="flex flex-col gap-4">
-      <section>
-        <SectionLabel>{t("metrics")}</SectionLabel>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-          <MetricTile
-            icon="sports_baseball"
-            label={t("stats.caught")}
-            numericValue={caught}
-            accent="#4ade80"
-            delayMs={40}
-          />
-          <MetricTile
-            icon="auto_awesome"
-            label={t("stats.shinies")}
-            numericValue={shinies}
-            accent="#f2c000"
-            delayMs={80}
-          />
-          <MetricTile
-            icon="hiking"
-            label={t("stats.trainers")}
-            numericValue={trainersDefeated}
-            accent="#fb923c"
-            delayMs={120}
-          />
-          <MetricTile
-            icon="bolt"
-            label={t("stats.power")}
-            numericValue={stats.power}
-            accent="#f2c000"
-            delayMs={160}
-          />
-          <MetricTile
-            icon="menu_book"
-            label={t("stats.dex")}
-            numericValue={dexPct}
-            suffix="%"
-            barPct={dexSeen / Math.max(1, dexTotal)}
-            hint={`${dexSeen}/${dexTotal}`}
-            accent="#60a5fa"
-            delayMs={200}
-          />
-          <MetricTile
-            icon="swords"
-            label={t("stats.pvp")}
-            value={`${user.pvpWins}-${user.pvpLosses}`}
-            hint={t("stats.rating", { rating: user.pvpRating })}
-            accent="#a78bfa"
-            delayMs={240}
-          />
-        </div>
-      </section>
+  /*
+    Ficha del entrenador: una fila por dato, cada dato una sola vez.
 
-      <section>
-        <SectionLabel>{t("recentCatches")}</SectionLabel>
-        <RecentCatchStrip
-          levelLabel={t("levelShort")}
-          items={recentCatches.slice(0, 8).map((p) => {
-            const rarity = speciesRarity(p.species);
-            return {
-              id: p.id,
-              name: p.nickname ?? p.species.name,
-              spriteUrl: p.species.spriteUrl,
-              accent: typeColor(p.species.types[0] ?? "normal"),
-              isShiny: p.isShiny,
-              level: p.level,
-              rarityLabel: rarityLabels[rarity] ?? rarity,
-            };
-          })}
-          emptyLabel={t("noCatches")}
-        />
-      </section>
+    Antes esto estaba repartido en tres lugares —insignias destacadas, grilla de
+    métricas y pestaña de estadísticas— y los tres contaban partes de lo mismo.
+    Las medallas siguen enteras en su pestaña, así que acá no se repiten.
+  */
+  const highestFloor = towerAgg._max.highestFloorAllTime ?? 0;
+  const reachedLocation = campaign?.highestUnlockedLocationId
+    ? getKantoLocation(campaign.highestUnlockedLocationId)
+    : null;
 
-      <section className="rounded-[1.4rem] border border-white/8 bg-[#080a10]/80 p-3 backdrop-blur-md">
-        <SectionLabel>{t("activity")}</SectionLabel>
-        <TrainerTimeline
-          events={timeline}
-          now={now}
-          labels={{
-            empty: t("noActivity"),
-            kind: {
-              catch: t("timeline.catch"),
-              badge: t("timeline.badge"),
-              trainer: t("timeline.trainer"),
-              shiny: t("timeline.shiny"),
-            },
-            agoMinutes: t("time.minutes", { n: "{n}" }),
-            agoHours: t("time.hours", { n: "{n}" }),
-            agoDays: t("time.days", { n: "{n}" }),
-            justNow: t("time.now"),
-          }}
-        />
-      </section>
-    </div>
-  );
-
-  const companionStrip =
-    favorite && companionName ? (
-      <section className="rounded-2xl border border-white/8 bg-[#0e1118]/90 px-4 py-3">
-        <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70">
-          {t("companion")}
-        </p>
-        <p className="mt-1 text-[14px] font-semibold text-white">
-          {companionName}
-          <span className="ml-2 font-mono text-[12px] font-medium text-white/55">
-            {t("levelShort")} {favorite.level} · {t("cp")}{" "}
-            {pokemonPower({
-              level: favorite.level,
-              ptStrength: favorite.ptStrength,
-              ptSpeed: favorite.ptSpeed,
-              ptDexterity: favorite.ptDexterity,
-              ptIntelligence: favorite.ptIntelligence,
-              ptConstitution: favorite.ptConstitution,
-              species: favorite.species,
-            }).toLocaleString()}
-          </span>
-        </p>
-        <p className="mt-0.5 text-[11px] capitalize text-on-surface-variant">
-          {favorite.species.types.join(" / ")}
-        </p>
-      </section>
-    ) : null;
+  const trainerFacts: StatRow[] = [
+    {
+      id: "power",
+      icon: "bolt",
+      label: t("cp"),
+      value: stats.power.toLocaleString(),
+      accent: "#f2c000",
+    },
+    /*
+      Rango y título salieron del banner. El rango absorbe además la barra de
+      medallas que vivía ahí: el `hint` dice cuánto falta y la fila lleva el
+      mismo progreso, así que el dato completo entra en un renglón.
+    */
+    {
+      id: "rank",
+      icon: "workspace_premium",
+      label: t("factsRows.rank"),
+      value: rankLabels[rank.tier.id] ?? rank.tier.id,
+      hint: rank.next
+        ? t("toNextRank", {
+            count: rank.badgesToNext,
+            rank: rankLabels[rank.next.id] ?? rank.next.id,
+          })
+        : `${stats.badges}/${totalGyms}`,
+      pct: rank.pct,
+      accent: rank.tier.accent,
+    },
+    {
+      id: "since",
+      icon: "calendar_month",
+      label: t("startDate"),
+      value: monthFmt.format(user.createdAt),
+      accent: "#94a3b8",
+    },
+    {
+      id: "dex",
+      icon: "menu_book",
+      iconSrc: "/nav/collection-icon.png",
+      label: t("stats.dex"),
+      value: String(dexSeen),
+      hint: `${dexSeen}/${dexTotal}`,
+      pct: dexSeen / Math.max(1, dexTotal),
+      accent: "#60a5fa",
+    },
+    {
+      id: "pvp",
+      icon: "swords",
+      iconSrc: "/nav/pvp-icon.png",
+      label: t("factsRows.pvpWins"),
+      value: String(user.pvpWins),
+      hint: t("stats.rating", { rating: user.pvpRating }),
+      accent: "#a78bfa",
+    },
+    {
+      id: "tower",
+      icon: "apartment",
+      iconSrc: "/nav/battle-icon.png",
+      label: t("factsRows.tower"),
+      value: highestFloor > 0 ? t("factsRows.floor", { floor: highestFloor }) : "—",
+      accent: "#f472b6",
+    },
+    {
+      id: "journey",
+      icon: "map",
+      iconSrc: "/nav/map-icon.png",
+      label: t("factsRows.journey"),
+      value: reachedLocation ? tCampaign(reachedLocation.nameKey) : "—",
+      accent: "#34d399",
+    },
+  ];
 
   return (
     <div className="flex-1 px-margin-mobile py-5 pb-bottom-nav md:px-margin-desktop md:py-8">
@@ -530,84 +445,33 @@ export default async function ProfilePage({
           companionLine,
           sceneLabel,
           country: user.country,
-          title,
-          rank,
+          rankPct: rank.pct,
+          rankAccent: rank.tier.accent,
           power: stats.power,
-          badges: stats.badges,
-          totalGyms,
-          memberSince: monthFmt.format(user.createdAt),
           trainerSpriteUrl: trainerSprite,
-          companionSpriteUrl: favorite?.species.spriteUrl ?? null,
+          companionSpriteUrl: favorite
+            ? uiSpriteUrl(favorite.species.spriteUrl, favorite.isShiny)
+            : null,
           companionName,
           companionAccent: favoriteAccent,
           appearance: null,
           canEdit: perms.canEdit,
           currentAvatarId: user.avatarId,
           avatarLabels,
-          labels: {
-            rank: rankLabels,
-            title: titleLabels,
-            power: t("cp"),
-            badges: t("badgesShort"),
-            startDate: t("startDate"),
-            toNextRank: rank.next
-              ? t("toNextRank", {
-                  count: rank.badgesToNext,
-                  rank: rankLabels[rank.next.id] ?? rank.next.id,
-                })
-              : t("maxRank"),
-            maxRank: t("maxRank"),
-          },
+          labels: { power: t("cp") },
         }}
         hubLabels={{
           tabs: {
             summary: t("nav.summary"),
             badges: t("nav.badges"),
             team: t("nav.team"),
-            stats: t("nav.stats"),
           },
-          metrics: t("metrics"),
-          featuredBadges: t("featuredBadges"),
-          viewAllBadges: t("viewAllBadges"),
+          facts: t("facts"),
           manageTeam: t("manageTeam"),
         }}
-        metrics={{
-          sectionLabel: t("metrics"),
-          power: stats.power,
-          dexPct,
-          dexHint: `${dexSeen}/${dexTotal}`,
-          badgesLabel: `${stats.badges}/${totalGyms}`,
-          badgesPct: stats.badges / Math.max(1, totalGyms),
-          pvpRecord: `${user.pvpWins}-${user.pvpLosses}`,
-          pvpHint: t("stats.rating", { rating: user.pvpRating }),
-          labels: {
-            power: t("cp"),
-            dex: t("stats.dex"),
-            badges: t("stats.badges"),
-            pvp: t("stats.pvp"),
-          },
-        }}
-        featured={{
-          gymBadges: badges.map((b) => ({
-            id: b.id,
-            badgeName: b.gym.badgeName,
-            type: b.gym.type,
-            accent: typeColor(b.gym.type),
-          })),
-          achievements,
-          labels: {
-            title: t("featuredBadges"),
-            seeAll: t("viewAllBadges"),
-            locked: t("locked"),
-            achievement: Object.fromEntries(
-              achievements.map((a) => [a.id, { name: t(`achievements.${a.id}.name`) }]),
-            ),
-          },
-        }}
+        facts={trainerFacts}
         vault={vaultNode}
         team={teamNode}
-        stats={statsNode}
-        summaryExtra={companionStrip}
       />
     </div>
   );

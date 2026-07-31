@@ -15,7 +15,8 @@
     "db:seed": "tsx prisma/seed/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "avatars:stage": "node scripts/build-avatar-stage.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",

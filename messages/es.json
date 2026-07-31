@@ -2083,18 +2083,14 @@
     "toNextRank": "{count} medallas para {rank}",
     "maxRank": "Rango máximo alcanzado",
     "withCompanion": "{name} y {companion}",
-    "andCompanion": "y {companion}",
     "sceneLabel": "Entrenador {name} junto a su compañero {companion}.",
     "companion": "Compañero",
-    "featuredBadges": "Insignias destacadas",
-    "viewAllBadges": "Ver todas",
     "manageTeam": "Administrar equipo",
     "favorite": "Favorito",
     "nav": {
       "summary": "Resumen",
       "badges": "Insignias",
-      "team": "Equipo",
-      "stats": "Estadísticas"
+      "team": "Equipo"
     },
     "noFavorite": "Sin favorito",
     "noFavoriteHint": "Marcá un Pokémon como favorito desde tu equipo y va a presidir tu perfil.",
@@ -2104,7 +2100,6 @@
     "shiny": "Shiny",
     "lead": "Líder",
     "emptySlot": "Vacío",
-    "metrics": "Métricas",
     "squad": "Equipo activo",
     "vault": "Bóveda",
     "activity": "Actividad",
@@ -2156,14 +2151,9 @@
       "pseudo": "Pseudolegendarios"
     },
     "stats": {
-      "caught": "Capturados",
-      "shinies": "Shinies",
       "dex": "Pokédex",
-      "badges": "Medallas",
       "pvp": "PvP",
-      "rating": "Rating {rating}",
-      "trainers": "Entrenadores",
-      "power": "Poder de equipo"
+      "rating": "Rating {rating}"
     },
     "timeline": {
       "catch": "Capturó",
@@ -2255,6 +2245,14 @@
       "saving": "Guardando…",
       "cancel": "Cancelar",
       "error": "No se pudo guardar. Probá de nuevo."
+    },
+    "facts": "Ficha del entrenador",
+    "factsRows": {
+      "pvpWins": "Victorias PvP",
+      "tower": "Torre",
+      "floor": "Piso {floor}",
+      "journey": "Aventura",
+      "rank": "Rango"
     }
   },
   "friends": {

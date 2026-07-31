@@ -40,3 +40,18 @@ export function homeSpriteUrl(spriteUrl: string, shiny = false): string {
 export function uiSpriteUrl(spriteUrl: string, isShiny = false): string {
   return homeSpriteUrl(spriteUrl, isShiny);
 }
+
+const DEFAULT_BASE =
+  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon";
+
+/**
+ * Sprite "común" de PokeAPI (`sprites/pokemon/{id}.png`): el clásico, plano y
+ * chico. Para listas donde el render HOME —volumétrico, con luz de estudio— pesa
+ * demasiado y cada miembro compite con el héroe de la pantalla.
+ */
+export function defaultSpriteUrl(spriteUrl: string, shiny = false): string {
+  const id = speciesIdFromSpriteUrl(spriteUrl);
+  if (id == null) return spriteUrl;
+  const useShiny = shiny || isShinySpriteUrl(spriteUrl);
+  return useShiny ? `${DEFAULT_BASE}/shiny/${id}.png` : `${DEFAULT_BASE}/${id}.png`;
+}

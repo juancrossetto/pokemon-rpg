@@ -7,37 +7,29 @@ import {
   type IdentityHeroLabels,
 } from "@/components/profile/trainer-identity-hero";
 import {
-  TrainerMetricsSummary,
+  TrainerFacts,
   type ProfileHubLabels,
   type ProfileTabId,
 } from "@/components/profile/trainer-profile-hub";
-import { TrainerFeaturedBadges } from "@/components/profile/trainer-featured-badges";
+import type { StatRow } from "@/components/profile/trainer-stat-rows";
 import type { AvatarPickerLabels } from "@/components/avatar-picker";
-import type { RankProgress, Achievement } from "@/lib/trainer-profile";
 import type { TrainerAppearance } from "@/lib/trainer-appearance";
-import type { FeaturedGymBadge } from "@/components/profile/trainer-featured-badges";
 
 export function TrainerProfileClient({
   hero,
   hubLabels,
-  metrics,
-  featured,
+  facts,
   vault,
   team,
-  stats,
-  summaryExtra,
 }: {
   hero: {
     username: string;
     companionLine: string | null;
     sceneLabel: string;
     country: string;
-    title: string;
-    rank: RankProgress;
+    rankPct: number;
+    rankAccent: string;
     power: number;
-    badges: number;
-    totalGyms: number;
-    memberSince: string;
     trainerSpriteUrl: string | null;
     companionSpriteUrl: string | null;
     companionName: string | null;
@@ -49,46 +41,42 @@ export function TrainerProfileClient({
     labels: IdentityHeroLabels;
   };
   hubLabels: ProfileHubLabels;
-  metrics: {
-    sectionLabel: string;
-    power: number;
-    dexPct: number;
-    dexHint: string;
-    badgesLabel: string;
-    badgesPct: number;
-    pvpRecord: string;
-    pvpHint: string;
-    labels: { power: string; dex: string; badges: string; pvp: string };
-  };
-  featured: {
-    gymBadges: FeaturedGymBadge[];
-    achievements: Achievement[];
-    labels: {
-      title: string;
-      seeAll: string;
-      locked: string;
-      achievement: Record<string, { name: string }>;
-    };
-  };
+  facts: StatRow[];
   vault: ReactNode;
   team: ReactNode;
-  stats: ReactNode;
-  summaryExtra: ReactNode;
 }) {
   const [tab, setTab] = useState<ProfileTabId>("summary");
-  const tabs: ProfileTabId[] = ["summary", "badges", "team", "stats"];
+  const tabs: ProfileTabId[] = ["summary", "badges", "team"];
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-4 md:gap-5">
+    <div className="mx-auto flex max-w-5xl flex-col gap-4 md:gap-5">
       <TrainerIdentityHero {...hero} />
 
       <div className="flex flex-col gap-4">
+        {/*
+          Control segmentado con indicador que se desliza, en vez de la píldora
+          roja que saltaba de una pestaña a otra. El rojo es el color de acción
+          de la app y acá pintaba de marca un simple selector de sección; el
+          indicador neutro deja que el contenido tenga el color.
+
+          Las pestañas ocupan una columna exacta de la grilla, así que al
+          indicador le alcanza con un `translateX` de múltiplos de 100% — sin
+          medir nodos ni efectos.
+        */}
         <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-20 -mx-1 bg-background/90 px-1 py-1.5 backdrop-blur-xl xl:top-16">
           <div
             role="tablist"
             aria-label="Profile sections"
-            className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bg-[#10131a]/95 p-1"
+            className="relative grid grid-cols-3 rounded-xl border border-white/10 bg-[#10131a]/95 p-1"
           >
+            <span
+              aria-hidden
+              className="profile-tab-indicator pointer-events-none absolute bottom-1 left-1 top-1 rounded-lg border border-white/12 bg-white/[0.09]"
+              style={{
+                width: "calc((100% - 0.5rem) / 3)",
+                transform: `translateX(${tabs.indexOf(tab) * 100}%)`,
+              }}
+            />
             {tabs.map((id) => {
               const active = tab === id;
               return (
@@ -98,10 +86,8 @@ export function TrainerProfileClient({
                   role="tab"
                   aria-selected={active}
                   onClick={() => setTab(id)}
-                  className={`min-h-10 flex-1 rounded-lg px-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition sm:text-[12px] ${
-                    active
-                      ? "bg-pokeball-red text-white shadow-[0_6px_16px_rgba(200,16,46,0.35)]"
-                      : "text-on-surface-variant hover:bg-white/5 hover:text-white"
+                  className={`relative z-[1] min-h-10 rounded-lg px-2 text-[12px] font-semibold tracking-tight transition-colors sm:text-[13px] ${
+                    active ? "text-white" : "text-on-surface-variant hover:text-white/85"
                   }`}
                 >
                   {hubLabels.tabs[id]}
@@ -112,10 +98,8 @@ export function TrainerProfileClient({
         </div>
 
         {tab === "summary" && (
-          <div className="flex flex-col gap-4" role="tabpanel">
-            <TrainerFeaturedBadges {...featured} onSeeAll={() => setTab("badges")} />
-            <TrainerMetricsSummary {...metrics} />
-            {summaryExtra}
+          <div role="tabpanel">
+            <TrainerFacts sectionLabel={hubLabels.facts} rows={facts} />
           </div>
         )}
         {tab === "badges" && <div role="tabpanel">{vault}</div>}
@@ -132,7 +116,6 @@ export function TrainerProfileClient({
             {team}
           </div>
         )}
-        {tab === "stats" && <div role="tabpanel">{stats}</div>}
       </div>
     </div>
   );
