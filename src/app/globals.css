@@ -2892,9 +2892,14 @@ html.boot-splash-pending .boot-splash {
   }
 }
 
-/* Bottom nav mobile: fondo rojo suave que se desliza con rebote elástico. */
+/* Bottom nav mobile: fondo rojo suave que se desliza con rebote elástico.
+   Sin `--animate` no hay transition: el primer paint (refresh / PWA) no debe
+   “tirar” los iconos desde 0,0 con el overshoot del cubic-bezier. */
 .mobile-nav-active-bg {
   background: rgba(238, 21, 21, 0.08);
+}
+
+.mobile-nav-active-bg--animate {
   transition:
     left 820ms cubic-bezier(0.34, 1.55, 0.45, 1),
     width 720ms cubic-bezier(0.22, 1.4, 0.36, 1),
@@ -2913,6 +2918,11 @@ html.boot-splash-pending .boot-splash {
     filter 680ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.mobile-nav-tab--no-motion,
+.mobile-nav-tab--no-motion .mobile-nav-tab-icon {
+  transition: none !important;
+}
+
 @keyframes mobile-nav-label-in {
   from {
     opacity: 0;
@@ -2929,7 +2939,7 @@ html.boot-splash-pending .boot-splash {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mobile-nav-active-bg,
+  .mobile-nav-active-bg--animate,
   .mobile-nav-tab,
   .mobile-nav-tab-icon {
     transition: none;
@@ -4429,6 +4439,8 @@ html.boot-splash-pending .boot-splash {
   --friends-rail-ink: #1a1410;
   /* Placa visible: 28–34px. */
   --friends-rail-w: clamp(28px, 9vw, 34px);
+  width: 100%;
+  min-width: 0;
   animation: friends-card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
   transition:
     border-color 220ms ease,
@@ -4438,6 +4450,8 @@ html.boot-splash-pending .boot-splash {
 
 .friends-card__body {
   width: calc(100% - var(--friends-rail-w));
+  max-width: 100%;
+  min-width: 0;
 }
 
 .friends-card__rail {
@@ -4464,6 +4478,19 @@ html.boot-splash-pending .boot-splash {
   );
   border-left: 1px solid color-mix(in srgb, black 18%, transparent);
   box-shadow: inset 1px 0 0 color-mix(in srgb, white 22%, transparent);
+}
+
+/* Mobile: se queda el rail flúor + nombre; sólo se oculta el chip de nivel. */
+@media (max-width: 639px) {
+  .friends-card__rail {
+    justify-content: center;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+  }
+
+  .friends-card__rail-code {
+    display: none;
+  }
 }
 
 .friends-card__rail-code {
@@ -4631,6 +4658,8 @@ html.boot-splash-pending .boot-splash {
     opacity: 1 !important;
     translate: none;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+    left: 0 !important;
+    right: 0 !important;
   }
 }
 
@@ -6295,14 +6324,24 @@ html.boot-splash-pending .boot-splash {
   `overscroll-behavior-y: none` cancela el rebote del documento sin tocar el
   scroll interno de carruseles y hojas, que siguen teniendo el suyo.
 
-  Va acotado a `display-mode: standalone` a propósito: en el navegador el
-  rebote es parte del comportamiento esperado y quitarlo se siente raro.
+  Va acotado a standalone a propósito: en el navegador el rebote es parte del
+  comportamiento esperado y quitarlo se siente raro.
+
+  `.is-standalone` lo pone MobileChrome cuando `navigator.standalone` es true
+  pero el media query aún no aplica (Safari iOS antiguo).
 */
 @media all and (display-mode: standalone) {
   html,
   body {
+    overscroll-behavior: none;
     overscroll-behavior-y: none;
   }
+}
+
+html.is-standalone,
+html.is-standalone body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 
 /* Indicador del selector de secciones del perfil. Mismo rebote elástico que el

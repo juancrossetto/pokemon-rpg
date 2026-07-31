@@ -44,6 +44,8 @@ type IndicatorBox = { left: number; width: number; height: number; top: number }
 
 const BAR_GROUP_IDS = new Set<string>(MOBILE_BAR_GROUPS);
 const SWIPE_CLOSE_PX = 96;
+/** Hasta acá el toque es tap; recién después arranca el drag del sheet. */
+const SWIPE_DRAG_START_PX = 10;
 
 /**
  * ¿La app corre anclada al inicio (sin barra de URL)?
@@ -243,13 +245,19 @@ export function MobileChrome({
    */
   const [drawerFocusGroupId, setDrawerFocusGroupId] = useState<string | null>(null);
   const [indicator, setIndicator] = useState<IndicatorBox>(null);
+  /** Tras la 1ª medición: evita que el indicador “rebote” al hidratar/refrescar. */
+  const [indicatorAnimated, setIndicatorAnimated] = useState(false);
+  /** Igual para scale/label de tabs: sin motion en el primer paint. */
+  const [tabMotionReady, setTabMotionReady] = useState(false);
   const [sheetDragY, setSheetDragY] = useState(0);
   const [isSwipeDragging, setIsSwipeDragging] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const swipeStartY = useRef<number | null>(null);
   const sheetDragYRef = useRef(0);
+  const swipeDraggingRef = useRef(false);
   const groupSwipeStart = useRef<{ x: number; y: number } | null>(null);
+  const indicatorSeenRef = useRef(false);
   /** Mientras el sheet está en el DOM (incluye animación de salida). */
   const moreOpen = drawerPresent;
   /** UI “abierta”: durante el slide-out los tabs vuelven al destino de la ruta. */
@@ -267,7 +275,11 @@ export function MobileChrome({
   }
 
   function openMore(focusGroupId: string | null = null) {
+    // Ignorar mientras sale: un segundo toque/ghost-click en Más reiniciaría
+    // la animación de entrada (rebote) y dejaría el menú abierto.
+    if (drawerPresent && drawerPhase === "closing") return;
     sheetDragYRef.current = 0;
+    swipeDraggingRef.current = false;
     setSheetDragY(0);
     setIsSwipeDragging(false);
     setDrawerFocusGroupId(focusGroupId);
@@ -277,6 +289,7 @@ export function MobileChrome({
 
   function closeMore() {
     if (!drawerPresent || drawerPhase === "closing") return;
+    swipeDraggingRef.current = false;
     setIsSwipeDragging(false);
     sheetDragYRef.current = 0;
     setSheetDragY(0);
@@ -295,8 +308,24 @@ export function MobileChrome({
     setDrawerPhase("open");
     setDrawerFocusGroupId(null);
     sheetDragYRef.current = 0;
+    swipeDraggingRef.current = false;
     setSheetDragY(0);
     setIsSwipeDragging(false);
+    // Devolver foco al opener recién cuando el sheet ya no está: si se hace
+    // en mitad del cierre, iOS puede disparar un click fantasma en Más y
+    // reabrir el drawer (drawerShown ya es false → el toggle llama openMore).
+    requestAnimationFrame(() => {
+      moreButtonRef.current?.focus({ preventScroll: true });
+    });
+  }
+
+  function toggleMoreDrawer() {
+    if (drawerPhase === "closing") return;
+    if (drawerShown && !groupMode) {
+      closeMore();
+      return;
+    }
+    openMore(null);
   }
 
   // Fallback si animationend no dispara.
@@ -321,6 +350,22 @@ export function MobileChrome({
       img.src = url;
     }
   }, [primary]);
+
+  // Clase en <html> para CSS de standalone también cuando sólo hay
+  // navigator.standalone (Safari iOS viejo sin display-mode).
+  useEffect(() => {
+    if (!isStandalone()) return;
+    document.documentElement.classList.add("is-standalone");
+    return () => document.documentElement.classList.remove("is-standalone");
+  }, []);
+
+  // Habilita transitions de tabs tras el primer frame estable.
+  useEffect(() => {
+    const id = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => setTabMotionReady(true));
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, []);
   const bottomNavRef = useRef<HTMLElement>(null);
   // Invitados también tienen "Más" (idioma + CTA de login).
   const showMore = groups.length > 0 || !userName;
@@ -431,6 +476,11 @@ export function MobileChrome({
         }
         return next;
       });
+      if (!indicatorSeenRef.current) {
+        indicatorSeenRef.current = true;
+        // Un frame después de pintar la posición final, recién ahí animar.
+        window.requestAnimationFrame(() => setIndicatorAnimated(true));
+      }
     }
 
     measureIndicator();
@@ -503,14 +553,23 @@ export function MobileChrome({
       observer.disconnect();
       window.removeEventListener("resize", onViewportSettle);
       window.visualViewport?.removeEventListener("resize", onViewportSettle);
-      document.documentElement.style.removeProperty("--bottom-nav-h");
-      document.documentElement.style.removeProperty("--vv-gap");
+      // No borrar --bottom-nav-h/--vv-gap acá: en remount (Strict/locale) el
+      // hueco a 0 hacía saltar la barra un frame antes de volver a medir.
     };
   }, [primary.length, showMore]);
 
+  // Bloqueo de scroll mientras el sheet esté montado (también durante el
+  // slide-out). La trampa de foco sólo aplica con el sheet usable.
+  useEffect(() => {
+    if (!moreOpen) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [moreOpen]);
+
   useEffect(() => {
     if (!moreOpen || !drawerShown) return;
-    const opener = moreButtonRef.current;
 
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -536,7 +595,6 @@ export function MobileChrome({
     }
 
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
     const raf = requestAnimationFrame(() => {
       drawerRef.current?.querySelector<HTMLElement>("a[href], button")?.focus();
     });
@@ -544,8 +602,7 @@ export function MobileChrome({
     return () => {
       cancelAnimationFrame(raf);
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-      opener?.focus();
+      // El foco al opener vive en finishClose — no acá (ver comentario ahí).
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- closeMore sólo se usa en el handler Escape
   }, [moreOpen, drawerShown, drawerFocusGroupId]);
@@ -553,21 +610,32 @@ export function MobileChrome({
   function onHandleTouchStart(event: TouchEvent<HTMLDivElement>) {
     if (!drawerShown) return;
     swipeStartY.current = event.touches[0]?.clientY ?? null;
-    setIsSwipeDragging(true);
+    swipeDraggingRef.current = false;
+    // No marcar dragging todavía: un tap en el asa mataba la animación
+    // (`is-dragging { animation: none }`) y al soltar reiniciaba el sheet-in
+    // con su overshoot — exactamente el rebote al tocar la X.
   }
 
   function onHandleTouchMove(event: TouchEvent<HTMLDivElement>) {
     if (swipeStartY.current == null) return;
     const y = event.touches[0]?.clientY ?? swipeStartY.current;
     const next = Math.max(0, y - swipeStartY.current);
+    if (!swipeDraggingRef.current && next < SWIPE_DRAG_START_PX) return;
+    if (!swipeDraggingRef.current) {
+      swipeDraggingRef.current = true;
+      setIsSwipeDragging(true);
+    }
     sheetDragYRef.current = next;
     setSheetDragY(next);
   }
 
   function onHandleTouchEnd() {
+    const dragged = sheetDragYRef.current;
+    const wasDragging = swipeDraggingRef.current;
     swipeStartY.current = null;
+    swipeDraggingRef.current = false;
     setIsSwipeDragging(false);
-    if (sheetDragYRef.current >= SWIPE_CLOSE_PX) {
+    if (wasDragging && dragged >= SWIPE_CLOSE_PX) {
       closeMore();
       return;
     }
@@ -753,7 +821,9 @@ export function MobileChrome({
             {indicator && (
               <span
                 aria-hidden
-                className="mobile-nav-active-bg pointer-events-none absolute rounded-lg"
+                className={`mobile-nav-active-bg pointer-events-none absolute rounded-lg${
+                  indicatorAnimated ? " mobile-nav-active-bg--animate" : ""
+                }`}
                 style={{
                   left: indicator.left,
                   top: indicator.top,
@@ -803,6 +873,8 @@ export function MobileChrome({
                     }
                   }}
                   className={`mobile-nav-tab relative z-10 flex min-h-14 flex-1 min-w-0 flex-col items-center justify-center gap-0.5 px-1 ${
+                    tabMotionReady ? "" : "mobile-nav-tab--no-motion "
+                  }${
                     showActive
                       ? "text-pokeball-red"
                       : "text-on-surface-variant hover:text-pokeball-red"
@@ -820,9 +892,11 @@ export function MobileChrome({
                         width={40}
                         height={40}
                         unoptimized
-                        className={`h-9 w-9 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)] transition-[filter,transform] duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                          showActive ? "brightness-110" : "brightness-95"
-                        }`}
+                        className={`h-9 w-9 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)] ${
+                          tabMotionReady
+                            ? "transition-[filter,transform] duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] "
+                            : ""
+                        }${showActive ? "brightness-110" : "brightness-95"}`}
                         aria-hidden
                         priority
                       />
@@ -848,7 +922,9 @@ export function MobileChrome({
                   )}
                   <span
                     className={`max-w-full truncate text-[10px] leading-none ${
-                      showActive ? "mobile-nav-tab-label font-bold" : "font-medium opacity-80"
+                      showActive
+                        ? `font-bold${tabMotionReady ? " mobile-nav-tab-label" : ""}`
+                        : "font-medium opacity-80"
                     }`}
                   >
                     {item.label}
@@ -866,15 +942,14 @@ export function MobileChrome({
               <button
                 ref={moreButtonRef}
                 type="button"
-                onClick={() => {
-                  if (drawerShown && !groupMode) closeMore();
-                  else openMore(null);
-                }}
+                onClick={toggleMoreDrawer}
                 aria-expanded={drawerShown && !groupMode}
                 aria-haspopup="dialog"
                 aria-label={moreLabel}
                 data-active={moreActive || undefined}
                 className={`mobile-nav-tab relative z-10 flex min-h-14 flex-1 min-w-0 flex-col items-center justify-center gap-0.5 px-1 ${
+                  tabMotionReady ? "" : "mobile-nav-tab--no-motion "
+                }${
                   moreActive
                     ? "text-pokeball-red"
                     : "text-on-surface-variant hover:text-pokeball-red"
@@ -907,7 +982,9 @@ export function MobileChrome({
                 )}
                 <span
                   className={`max-w-full truncate text-[10px] leading-none ${
-                    moreActive ? "mobile-nav-tab-label font-bold" : "font-medium opacity-80"
+                    moreActive
+                      ? `font-bold${tabMotionReady ? " mobile-nav-tab-label" : ""}`
+                      : "font-medium opacity-80"
                   }`}
                 >
                   {moreLabel}
@@ -958,21 +1035,32 @@ export function MobileChrome({
                 : {}),
             }}
           >
-            <div
-              className="shrink-0 touch-none px-4 pb-2 pt-2.5"
-              onTouchStart={onHandleTouchStart}
-              onTouchMove={onHandleTouchMove}
-              onTouchEnd={onHandleTouchEnd}
-              onTouchCancel={onHandleTouchEnd}
-            >
-              <div className="mx-auto mb-2.5 h-1 w-10 rounded-full bg-white/20" />
+            <div className="shrink-0 px-4 pb-2 pt-2.5">
+              {/*
+                Sólo el asa arrastra para cerrar. Antes el header entero
+                (incluida la X) tenía los touch handlers y un tap reiniciaba
+                la animación de apertura.
+              */}
+              <div
+                className="touch-none mx-auto mb-2.5 flex w-full cursor-grab justify-center py-1 active:cursor-grabbing"
+                onTouchStart={onHandleTouchStart}
+                onTouchMove={onHandleTouchMove}
+                onTouchEnd={onHandleTouchEnd}
+                onTouchCancel={onHandleTouchEnd}
+                aria-hidden
+              >
+                <div className="h-1 w-10 rounded-full bg-white/20" />
+              </div>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-label-sm uppercase tracking-wider text-on-surface-variant">
                   {sheetTitle}
                 </p>
                 <button
                   type="button"
-                  onClick={closeMore}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    closeMore();
+                  }}
                   aria-label={closeLabel}
                   className="flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-on-surface-variant"
                 >

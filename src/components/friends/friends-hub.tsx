@@ -366,24 +366,24 @@ export function FriendsHub({
 
   return (
     <div className="friends-hub relative flex flex-1 flex-col gap-5 px-margin-mobile py-6 md:px-margin-desktop md:py-8">
-      <header className="friends-hero relative isolate min-h-[10.5rem] overflow-hidden rounded-2xl border border-white/10 sm:min-h-[12rem]">
+      <header className="friends-hero relative isolate overflow-hidden rounded-2xl border border-white/10">
         <Image
           src="/friends/friends-banner.webp"
           alt=""
           fill
           priority
           sizes="(max-width: 1280px) 100vw, 1152px"
-          className="object-cover object-[center_55%]"
+          className="object-cover object-[72%_42%] sm:object-[center_55%]"
         />
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-r from-[#0b0d13]/92 via-[#0b0d13]/72 to-[#0b0d13]/35"
+          className="absolute inset-0 bg-gradient-to-r from-[#0b0d13]/88 via-[#0b0d13]/55 to-[#0b0d13]/20 max-sm:from-[#0b0d13]/80 max-sm:via-[#0b0d13]/45 max-sm:to-transparent"
         />
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-t from-[#0b0d13]/90 via-transparent to-[#0b0d13]/25"
+          className="absolute inset-0 bg-gradient-to-t from-[#0b0d13]/92 via-[#0b0d13]/25 to-[#0b0d13]/15"
         />
-        <div className="relative z-[1] flex h-full min-h-[10.5rem] flex-col justify-end gap-5 px-5 py-6 sm:min-h-[12rem] md:flex-row md:items-end md:justify-between md:px-8 md:py-7">
+        <div className="relative z-[1] flex min-h-[9.5rem] flex-col justify-end gap-3 px-4 py-4 sm:min-h-[12rem] sm:gap-5 sm:px-5 sm:py-6 md:flex-row md:items-end md:justify-between md:px-8 md:py-7">
           <div>
             <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
@@ -393,14 +393,14 @@ export function FriendsHub({
               <span className="material-symbols-outlined text-[16px]!">handshake</span>
               {labels.eyebrow}
             </p>
-            <h1 className="text-headline-lg tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] md:text-display-lg">
+            <h1 className="text-headline-md tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] sm:text-headline-lg md:text-display-lg">
               {labels.title}
             </h1>
-            <p className="mt-2 max-w-xl text-body-md text-white/75">
+            <p className="mt-2 hidden max-w-xl text-body-md text-white/75 sm:block">
               {labels.subtitle}
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 md:gap-3">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3">
             <HeroStat
               label={labels.friendsCount}
               value={String(initial.counts.friends)}
@@ -441,7 +441,7 @@ export function FriendsHub({
             </span>
           ) : null}
         </div>
-        <p className="mt-1.5 px-1 text-[11px] text-on-surface-variant/80">
+        <p className="mt-1.5 hidden px-1 text-[11px] text-on-surface-variant/80 sm:block">
           {labels.searchHint}
         </p>
 
@@ -528,7 +528,7 @@ export function FriendsHub({
           art={initial.friends.length === 0 ? "/events/friend-cubone.png" : undefined}
         />
       ) : (
-        <div className="friends-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="friends-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredFriends.map((friend, index) => (
             <FriendCard
               key={friend.userId}
@@ -819,20 +819,18 @@ function FriendCard({
 
   return (
     <article
-      className="friends-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/95 content-visibility-auto"
+      className="friends-card group relative flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/95"
       data-presence={friend.presence}
       style={
         {
           ...style,
-          containIntrinsicSize: "0 340px",
-          contentVisibility: "auto",
           ["--friends-rail" as string]: railPlate,
           ["--friends-rail-ink" as string]: railInk,
         } as CSSProperties
       }
     >
       <aside className="friends-card__rail" aria-hidden>
-        <span className="friends-card__rail-code">
+        <span className="friends-card__rail-code max-sm:hidden">
           <span className="friends-card__rail-code-mark">{railCode}</span>
           <span className="friends-card__rail-code-sep" />
           <span className="friends-card__rail-code-lv">{friend.level}</span>
@@ -843,13 +841,14 @@ function FriendCard({
       <button
         type="button"
         onClick={onOpen}
-        className="friends-card__body relative z-[1] flex w-full flex-col text-left"
+        className="friends-card__body relative z-[1] flex w-full min-w-0 flex-col text-left max-sm:flex-row max-sm:items-stretch"
       >
         {/*
           Banner tipo perfil: entrenador (stage) + compañero solapados,
           estáticos — sin bob idle.
+          Mobile: franja lateral corta (fila). sm+: portrait encima del texto.
         */}
-        <span className="friends-card__banner relative isolate block aspect-[4/5] w-full overflow-hidden">
+        <span className="friends-card__banner relative isolate block aspect-[16/10] w-full shrink-0 overflow-hidden max-sm:aspect-auto max-sm:w-[9.25rem] max-sm:self-stretch sm:aspect-[4/5] sm:w-full">
           <span
             aria-hidden
             className="absolute inset-0"
@@ -862,15 +861,15 @@ function FriendCard({
           />
           <span
             aria-hidden
-            className="absolute inset-x-0 bottom-0 h-16"
+            className="absolute inset-x-0 bottom-0 h-10 sm:h-16"
             style={{
               background: `radial-gradient(55% 100% at 50% 100%, ${favAccent}33 0%, transparent 70%)`,
             }}
           />
 
-          <span className="absolute inset-x-0 bottom-2 flex items-end justify-center px-1.5 sm:px-2">
+          <span className="absolute inset-x-0 bottom-1.5 flex items-end justify-center px-1 sm:bottom-2 sm:px-2">
             {companionUrl ? (
-              <span className="relative z-0 -mr-4 mb-0.5 flex shrink-0 items-end sm:-mr-5">
+              <span className="relative z-0 -mr-3 mb-0.5 flex shrink-0 items-end sm:-mr-5">
                 <span
                   aria-hidden
                   className="absolute inset-x-1 bottom-0 mx-auto h-2 w-[65%] rounded-[100%] bg-black/50 blur-[2px]"
@@ -880,7 +879,7 @@ function FriendCard({
                   alt={friend.favorite?.name ?? ""}
                   width={160}
                   height={160}
-                  className="relative max-h-[6.25rem] w-auto max-w-[5rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.5)] sm:max-h-[7rem] sm:max-w-[5.75rem]"
+                  className="relative max-h-[4.5rem] w-auto max-w-[3.5rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.5)] sm:max-h-[7rem] sm:max-w-[5.75rem]"
                   unoptimized
                 />
               </span>
@@ -897,12 +896,12 @@ function FriendCard({
                   alt={friend.username}
                   width={200}
                   height={280}
-                  className="relative max-h-[7.75rem] w-auto max-w-[5.25rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.55)] sm:max-h-[8.75rem] sm:max-w-[6rem]"
+                  className="relative max-h-[5.5rem] w-auto max-w-[3.75rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.55)] sm:max-h-[8.75rem] sm:max-w-[6rem]"
                   unoptimized
                 />
               ) : (
-                <span className="mb-1 flex h-24 w-16 items-end justify-center rounded-xl bg-white/5">
-                  <span className="material-symbols-outlined mb-3 text-[36px]! text-white/35">
+                <span className="mb-1 flex h-16 w-12 items-end justify-center rounded-xl bg-white/5 sm:h-24 sm:w-16">
+                  <span className="material-symbols-outlined mb-2 text-[28px]! text-white/35 sm:mb-3 sm:text-[36px]!">
                     person
                   </span>
                 </span>
@@ -911,21 +910,21 @@ function FriendCard({
           </span>
 
           {friend.isFavorite ? (
-            <span className="absolute left-2 top-2 z-[2] material-symbols-outlined text-tertiary text-[16px]! drop-shadow">
+            <span className="absolute left-1.5 top-1.5 z-[2] material-symbols-outlined text-tertiary text-[14px]! drop-shadow sm:left-2 sm:top-2 sm:text-[16px]!">
               star
             </span>
           ) : null}
 
           {friend.favorite ? (
-            <span className="absolute bottom-1.5 left-2 z-[2] max-w-[62%] truncate rounded-md bg-black/45 px-1.5 py-0.5 text-[9px] font-medium capitalize tracking-wide text-white/80 backdrop-blur-[2px]">
+            <span className="absolute bottom-1 left-1 z-[2] max-w-[70%] truncate rounded-md bg-black/45 px-1 py-0.5 text-[8px] font-medium capitalize tracking-wide text-white/80 backdrop-blur-[2px] sm:bottom-1.5 sm:left-2 sm:max-w-[62%] sm:px-1.5 sm:text-[9px]">
               {friend.favorite.name}
             </span>
           ) : null}
         </span>
 
-        <span className="flex flex-col gap-1 border-t border-white/8 bg-[#0e1118]/85 px-2.5 py-2.5 backdrop-blur-sm sm:px-3">
+        <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 border-t border-white/8 bg-[#0e1118]/85 px-2.5 py-2 backdrop-blur-sm max-sm:border-t-0 max-sm:border-l max-sm:border-white/8 sm:gap-1 sm:px-3 sm:py-2.5">
           <span className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate text-[13px] font-semibold tracking-tight text-white">
+            <span className="truncate text-[13px] font-semibold tracking-tight text-white sm:text-[13px]">
               {friend.username}
             </span>
             <FlagIcon code={friend.country} className="h-3 w-4 shrink-0" />
@@ -946,7 +945,7 @@ function FriendCard({
           </span>
 
           {friend.regionLabel ? (
-            <span className="truncate text-[10px] text-on-surface-variant/85">
+            <span className="hidden truncate text-[10px] text-on-surface-variant/85 sm:block">
               {friend.regionLabel}
             </span>
           ) : null}
@@ -965,7 +964,7 @@ function FriendCard({
         </span>
       </button>
 
-      <div className="friends-actions absolute bottom-0 z-[2] flex translate-y-full items-center justify-center gap-1 border-t border-white/10 bg-[#0b0d13]/95 px-1.5 py-2 opacity-0 backdrop-blur-md transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+      <div className="friends-actions absolute bottom-0 z-[2] flex translate-y-full items-center justify-center gap-1 border-t border-white/10 bg-[#0b0d13]/95 px-1.5 py-1.5 opacity-0 backdrop-blur-md transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 sm:py-2">
         <ActionIcon label={labels.actions.profile} icon="badge" onClick={onOpen} />
         <ActionIcon
           label={friend.isFavorite ? labels.actions.unfavorite : labels.actions.favorite}
