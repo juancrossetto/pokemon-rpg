@@ -269,7 +269,7 @@ export default async function ProfilePage({
 
   const vaultNode = (
     <>
-      <SectionLabel>{t("vault")}</SectionLabel>
+      <SectionLabel color="#ff6a00">{t("vault")}</SectionLabel>
       <TrainerVault
         badges={badges.map((b) => ({
           id: b.id,
@@ -366,13 +366,18 @@ export default async function ProfilePage({
     ? getKantoLocation(campaign.highestUnlockedLocationId)
     : null;
 
+  /*
+    Un solo acento en toda la ficha (ver TRAINER_FACT_ACCENT). Los PNG de nav
+    traían su propia paleta y rompían esa unidad — salvo el Pokédex outline,
+    que ya viene en la misma tinta dorada.
+  */
   const trainerFacts: StatRow[] = [
     {
       id: "power",
       icon: "bolt",
+      iconSrc: "/nav/cp-profile.png",
       label: t("cp"),
       value: stats.power.toLocaleString(),
-      accent: "#f2c000",
     },
     /*
       Rango y título salieron del banner. El rango absorbe además la barra de
@@ -382,6 +387,7 @@ export default async function ProfilePage({
     {
       id: "rank",
       icon: "workspace_premium",
+      iconSrc: "/nav/trophy-profile.png",
       label: t("factsRows.rank"),
       value: rankLabels[rank.tier.id] ?? rank.tier.id,
       hint: rank.next
@@ -391,49 +397,44 @@ export default async function ProfilePage({
           })
         : `${stats.badges}/${totalGyms}`,
       pct: rank.pct,
-      accent: rank.tier.accent,
     },
     {
       id: "since",
       icon: "calendar_month",
+      iconSrc: "/nav/birth-profile.png",
       label: t("startDate"),
       value: monthFmt.format(user.createdAt),
-      accent: "#94a3b8",
     },
     {
       id: "dex",
       icon: "menu_book",
-      iconSrc: "/nav/collection-icon.png",
+      iconSrc: "/nav/pokedex-profile.png",
       label: t("stats.dex"),
       value: String(dexSeen),
       hint: `${dexSeen}/${dexTotal}`,
       pct: dexSeen / Math.max(1, dexTotal),
-      accent: "#60a5fa",
     },
     {
       id: "pvp",
       icon: "swords",
-      iconSrc: "/nav/pvp-icon.png",
+      iconSrc: "/nav/pvp-profile.png",
       label: t("factsRows.pvpWins"),
       value: String(user.pvpWins),
       hint: t("stats.rating", { rating: user.pvpRating }),
-      accent: "#a78bfa",
     },
     {
       id: "tower",
       icon: "apartment",
-      iconSrc: "/nav/battle-icon.png",
+      iconSrc: "/nav/tower-profile.png",
       label: t("factsRows.tower"),
       value: highestFloor > 0 ? t("factsRows.floor", { floor: highestFloor }) : "—",
-      accent: "#f472b6",
     },
     {
       id: "journey",
       icon: "map",
-      iconSrc: "/nav/map-icon.png",
+      iconSrc: "/nav/map-profile.png",
       label: t("factsRows.journey"),
       value: reachedLocation ? tCampaign(reachedLocation.nameKey) : "—",
-      accent: "#34d399",
     },
   ];
 

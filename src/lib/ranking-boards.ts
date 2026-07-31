@@ -7,6 +7,7 @@ import {
   winRate,
   type RankingEntry,
   type RankingFeaturedCreature,
+  type RankingTeamSprite,
 } from "@/lib/ranking";
 
 const SPECIES_STATS_SELECT = {
@@ -62,6 +63,24 @@ function pickMainFromTeam(
     .filter((p) => p.teamSlot != null)
     .sort((a, b) => (a.teamSlot ?? 99) - (b.teamSlot ?? 99))[0];
   return toFeatured(lead);
+}
+
+function pickTeamSprites(
+  team: Array<{
+    teamSlot: number | null;
+    isShiny: boolean;
+    species: { name: string; spriteUrl: string };
+  }>,
+): RankingTeamSprite[] {
+  return team
+    .filter((p) => p.teamSlot != null)
+    .sort((a, b) => (a.teamSlot ?? 99) - (b.teamSlot ?? 99))
+    .slice(0, 5)
+    .map((p) => ({
+      name: p.species.name,
+      image: p.species.spriteUrl,
+      isShiny: p.isShiny,
+    }));
 }
 
 function withPositions(
@@ -121,6 +140,7 @@ export async function loadCombatPowerBoard(
         medals: u._count.badges,
         combatPower: teamPower(team),
         featuredCreature: pickMainFromTeam(u.pokemon),
+        teamSprites: pickTeamSprites(team),
       };
     })
     .sort((a, b) =>

@@ -87,12 +87,12 @@ export function TrainerIdentityHero({
 
       <div className="relative px-3 pb-6 pt-5 sm:px-5">
         <div className="mb-1 text-center">
-          <h1 className="flex items-center justify-center gap-2 text-[1.35rem] font-black leading-tight tracking-tight text-white sm:text-2xl">
+          <h1 className="flex items-center justify-center gap-2 text-[1.55rem] font-semibold leading-none tracking-[-0.03em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:text-[1.85rem]">
             <span className="truncate">{username}</span>
             <FlagIcon code={country} className="h-4 w-6 shrink-0 rounded-[2px] opacity-90" />
           </h1>
           {companionLine ? (
-            <p className="mt-0.5 text-[11px] font-medium capitalize tracking-wide text-white/45">
+            <p className="mt-1.5 text-[11px] font-medium capitalize tracking-[0.08em] text-white/45">
               {companionLine}
             </p>
           ) : null}

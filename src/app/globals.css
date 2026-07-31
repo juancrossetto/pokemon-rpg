@@ -3710,8 +3710,8 @@ html.boot-splash-pending .boot-splash {
 .trainer-sprite-fill {
   object-fit: cover;
   object-position: center 18%;
-  transform: scale(1.08);
-  transform-origin: center 20%;
+  transform: scale(1.12);
+  transform-origin: center 18%;
 }
 
 .trainer-sprite-thumb {

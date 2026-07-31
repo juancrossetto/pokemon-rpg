@@ -4,90 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
 import { avatarById } from "@/lib/avatars";
-import { AvatarImage } from "@/components/avatar-image";
-
-const AVATAR_COLORS = [
-  "bg-pokeball-red/80",
-  "bg-tertiary/80",
-  "bg-electric-yellow/70 text-surface",
-  "bg-primary/80",
-  "bg-secondary/80",
-];
-
-function avatarTone(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase() || "?";
-}
-
-function AvatarOrb({
-  name,
-  src,
-  size = "sm",
-  active = false,
-}: {
-  name: string;
-  src: string | null;
-  size?: "sm" | "md";
-  active?: boolean;
-}) {
-  /*
-    sm = trigger del header; md = cabecera del menú. El framing vive en
-    `.trainer-sprite-fill` (globals) para los retratos locales `*1`.
-  */
-  const dim = size === "md" ? "h-14 w-14" : "h-10 w-10";
-  const shape = "rounded-[28%]";
-
-  return (
-    <span
-      className={`relative inline-flex shrink-0 items-center justify-center ${dim}`}
-      aria-hidden={size === "md" ? true : undefined}
-    >
-      <span
-        className={`absolute inset-0 ${shape} transition-[box-shadow,filter] duration-200 ${
-          active
-            ? "shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_0_12px_rgba(200,16,46,0.4)]"
-            : "shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-        }`}
-        style={{
-          background:
-            "linear-gradient(145deg, rgba(255,255,255,0.5) 0%, rgba(200,16,46,0.8) 45%, rgba(40,12,14,0.95) 100%)",
-        }}
-      />
-      <span
-        className={`absolute inset-px overflow-hidden ${shape} ${
-          src ? "bg-[#12141a]" : `text-white ${avatarTone(name)}`
-        }`}
-      >
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute inset-0 z-1 ${shape}`}
-          style={{
-            background:
-              "linear-gradient(160deg, rgba(255,255,255,0.18) 0%, transparent 36%, transparent 68%, rgba(0,0,0,0.32) 100%)",
-          }}
-        />
-        {src ? (
-          <AvatarImage
-            src={src}
-            alt={name}
-            className="trainer-sprite-fill relative h-full w-full"
-          />
-        ) : (
-          <span className="relative flex h-full w-full items-center justify-center text-[12px] font-bold tracking-wide">
-            {initials(name)}
-          </span>
-        )}
-      </span>
-    </span>
-  );
-}
+import { TrainerAvatar } from "@/components/trainer-avatar";
 
 /**
  * Menú de cuenta. Solo cuenta: los módulos de juego (equipo, inventario, PC)
@@ -143,9 +60,9 @@ export function UserMenu({
         onClick={() => setOpen((v) => !v)}
         // El contenedor sigue la silueta de la placa: con `rounded-full` el
         // anillo de foco dibujaba un círculo alrededor de un avatar cuadrado.
-        className="group relative flex items-center justify-center rounded-[28%] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pokeball-red/70"
+        className="group relative flex items-center justify-center rounded-[28%] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40"
       >
-        <AvatarOrb name={name} src={avatar?.src ?? null} active={open} />
+        <TrainerAvatar name={name} src={avatar?.src ?? null} size="sm" active={open} />
       </button>
 
       {open && (
@@ -160,7 +77,7 @@ export function UserMenu({
             onClick={() => setOpen(false)}
             className="group/profile flex items-center gap-3 px-3.5 py-3 transition-colors hover:bg-white/4"
           >
-            <AvatarOrb name={name} src={avatar?.src ?? null} size="md" />
+            <TrainerAvatar name={name} src={avatar?.src ?? null} size="md" />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[13px] font-semibold leading-tight text-on-surface">
                 {name}

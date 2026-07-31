@@ -136,14 +136,21 @@ export function Ambience({ color, count = 14 }: { color: string; count?: number 
 export function ProgressRail({
   pct,
   color,
+  toColor,
   height = 6,
   delayMs = 0,
 }: {
   pct: number;
   color: string;
+  /** Si viene, el relleno va de `color` → `toColor` (p. ej. naranja flúor → amarillo). */
+  toColor?: string;
   height?: number;
   delayMs?: number;
 }) {
+  const fill = toColor
+    ? `linear-gradient(90deg, ${color}, #ff9f0a 55%, ${toColor})`
+    : `linear-gradient(90deg,${color}99,${color})`;
+
   return (
     <div
       className="w-full overflow-hidden rounded-full bg-white/8"
@@ -155,8 +162,8 @@ export function ProgressRail({
         style={
           {
             "--tp-fill": `${Math.round(Math.max(0, Math.min(1, pct)) * 100)}%`,
-            background: `linear-gradient(90deg,${color}99,${color})`,
-            boxShadow: `0 0 10px ${color}66`,
+            background: fill,
+            boxShadow: `0 0 10px ${color}88`,
             animationDelay: `${delayMs}ms`,
           } as CSSProperties
         }
@@ -239,10 +246,20 @@ export function MetricTile({
 }
 
 /** Etiqueta pequeña de sección, con la línea de acento del juego. */
-export function SectionLabel({ children }: { children: React.ReactNode }) {
+export function SectionLabel({
+  children,
+  color = "#ee1515",
+}: {
+  children: React.ReactNode;
+  /** Color del punto y del texto. Por defecto rojo Pokéball. */
+  color?: string;
+}) {
   return (
-    <p className="mb-2.5 flex items-center gap-2 text-label-sm uppercase tracking-[0.2em] text-pokeball-red">
-      <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
+    <p
+      className="mb-2.5 flex items-center gap-2 text-label-sm uppercase tracking-[0.2em]"
+      style={{ color }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
       {children}
     </p>
   );

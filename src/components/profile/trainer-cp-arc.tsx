@@ -1,5 +1,9 @@
 "use client";
 
+const ARC_ORANGE = "#ff4d00";
+const ARC_MID = "#ff9f0a";
+const ARC_YELLOW = "#ffe566";
+
 /**
  * PC centrado sobre el Pokémon, con el arco de progreso alrededor.
  *
@@ -9,28 +13,32 @@
  *
  * El SVG conserva su relación de aspecto (nada de `preserveAspectRatio="none"`):
  * estirado, el trazo engorda de un lado y adelgaza del otro.
+ *
+ * Glow flúor contenido — halo corto, sin mancha naranja que robe la escena.
  */
 export function TrainerCpArc({
   label,
   value,
   pct,
-  color,
 }: {
   label: string;
   value: number;
   /** 0–1. */
   pct: number;
-  color: string;
+  /** @deprecated El arco usa naranja flúor fijo. Se ignora. */
+  color?: string;
 }) {
   const filled = Math.round(Math.max(0, Math.min(1, pct)) * 100);
-  const gradientId = "cp-arc-gradient";
+  const gradientId = "cp-arc-fluor";
 
   return (
     <>
-      {/* El número arriba de todo; la escena se baja para no chocarlo. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] flex flex-col items-center">
-        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/50">{label}</p>
-        <p className="font-mono text-[2.35rem] font-black leading-none tracking-tight text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.7)] sm:text-[2.75rem]">
+      {/* PC + número: Inter moderno — rótulo liviano, cifra bold con tracking cerrado. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] flex items-baseline justify-center gap-2 pt-0.5">
+        <p className="text-[0.95rem] font-medium uppercase leading-none tracking-[0.22em] text-white/45 sm:text-[1.05rem]">
+          {label}
+        </p>
+        <p className="text-[2.45rem] font-bold leading-none tracking-[-0.04em] text-white tabular-nums drop-shadow-[0_3px_14px_rgba(0,0,0,0.7)] sm:text-[2.9rem]">
           {value.toLocaleString()}
         </p>
       </div>
@@ -50,9 +58,9 @@ export function TrainerCpArc({
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-            <stop offset="55%" stopColor={color} />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="0%" stopColor={ARC_ORANGE} />
+            <stop offset="55%" stopColor={ARC_MID} />
+            <stop offset="100%" stopColor={ARC_YELLOW} />
           </linearGradient>
         </defs>
 
@@ -62,6 +70,17 @@ export function TrainerCpArc({
           strokeWidth="2.5"
           strokeLinecap="round"
         />
+        {/* Halo fino: poco blur, poca opacidad — flúor sin mancha. */}
+        <path
+          d="M8 146 A 152 152 0 0 1 312 146"
+          stroke={ARC_ORANGE}
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          pathLength={100}
+          strokeDasharray={`${filled} 100`}
+          opacity={0.28}
+          style={{ filter: "blur(1.5px)" }}
+        />
         <path
           d="M8 146 A 152 152 0 0 1 312 146"
           stroke={`url(#${gradientId})`}
@@ -69,7 +88,9 @@ export function TrainerCpArc({
           strokeLinecap="round"
           pathLength={100}
           strokeDasharray={`${filled} 100`}
-          style={{ filter: `drop-shadow(0 0 6px ${color}99)` }}
+          style={{
+            filter: `drop-shadow(0 0 3px ${ARC_ORANGE}66)`,
+          }}
         />
       </svg>
     </>

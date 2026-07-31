@@ -166,7 +166,7 @@ export function AvatarPicker({
                           <AvatarImage
                             src={opt.src}
                             alt={opt.slug}
-                            className="trainer-sprite-thumb h-full w-full"
+                            className="trainer-sprite-fill absolute inset-0 h-full w-full"
                           />
                           {active && (
                             <span className="absolute bottom-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-pokeball-red">

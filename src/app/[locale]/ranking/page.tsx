@@ -149,11 +149,6 @@ async function CombatPowerBoard({
       page={page}
       entries={entries}
       formatPrimary={(e) => (e.combatPower ?? 0).toLocaleString()}
-      formatSecondary={(e) => {
-        const medals = t("metric.medals", { count: e.medals ?? 0 });
-        const name = e.featuredCreature?.name;
-        return name ? `${name} · ${medals}` : medals;
-      }}
       formatYourMetrics={(e) =>
         t("yourCombatPower", {
           power: e.combatPower ?? 0,

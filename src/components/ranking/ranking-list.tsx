@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { FlagIcon } from "@/components/flag-icon";
+import { TrainerAvatar } from "@/components/trainer-avatar";
 import { spriteFor } from "@/lib/shiny";
+import { avatarById } from "@/lib/avatars";
 import { tierForRank } from "@/components/ranking-emblem";
 import type { RankingEntry } from "@/lib/ranking";
 
@@ -11,21 +13,29 @@ function tierAccent(rank: number): string {
   return "";
 }
 
+export type RankingPortrait = "avatar" | "creature";
+
 export function RankingListItem({
   entry,
   youLabel,
   primaryMetric,
   secondaryMetric,
+  portrait = "creature",
 }: {
   entry: RankingEntry;
   youLabel: string;
   primaryMetric: string;
   secondaryMetric?: string;
+  /** Combat Power → avatar; PvP y otros → criatura destacada. */
+  portrait?: RankingPortrait;
 }) {
   const isMe = !!entry.isCurrentPlayer;
   const rank = entry.position;
   const creature = entry.featuredCreature;
   const sprite = creature ? spriteFor(creature.image, !!creature.isShiny) : null;
+  const avatarSrc = avatarById(entry.avatarId ?? null)?.src ?? null;
+  const useAvatar = portrait === "avatar";
+  const hasPortrait = useAvatar ? !!avatarSrc || !!entry.playerName : !!sprite;
   const tier = tierForRank(rank);
 
   return (
@@ -51,13 +61,32 @@ export function RankingListItem({
           ) : null}
           {isMe ? <span className="lb-row__you-tag">{youLabel}</span> : null}
         </p>
-        {secondaryMetric || creature?.name ? (
-          <p className="lb-row__sub truncate">{secondaryMetric ?? creature?.name}</p>
+        {useAvatar && (entry.teamSprites?.length ?? 0) > 0 ? (
+          <span className="lb-row__team mt-0.5 flex items-center gap-0.5" aria-hidden>
+            {entry.teamSprites!.map((mon, i) => (
+              <Image
+                key={`${mon.name}-${i}`}
+                src={spriteFor(mon.image, !!mon.isShiny)}
+                alt=""
+                width={28}
+                height={28}
+                title={mon.name}
+                className="h-6 w-6 object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+                unoptimized
+              />
+            ))}
+          </span>
+        ) : secondaryMetric || (!useAvatar && creature?.name) ? (
+          <p className="lb-row__sub truncate">
+            {secondaryMetric ?? creature?.name}
+          </p>
         ) : null}
       </div>
 
-      <div className={`lb-row__avatar ${sprite ? "" : "lb-row__avatar--empty"}`}>
-        {sprite ? (
+      <div className={`lb-row__avatar ${hasPortrait ? "" : "lb-row__avatar--empty"}`}>
+        {useAvatar ? (
+          <TrainerAvatar name={entry.playerName} src={avatarSrc} size="md" framed={false} />
+        ) : sprite ? (
           <Image
             src={sprite}
             alt={creature?.name ?? ""}
@@ -86,6 +115,7 @@ export function RankingList({
   scopeLabel,
   formatPrimary,
   formatSecondary,
+  portrait = "creature",
 }: {
   entries: RankingEntry[];
   youLabel: string;
@@ -93,6 +123,7 @@ export function RankingList({
   scopeLabel?: string;
   formatPrimary: (e: RankingEntry) => string;
   formatSecondary?: (e: RankingEntry) => string | undefined;
+  portrait?: RankingPortrait;
 }) {
   if (entries.length === 0) return null;
 
@@ -112,6 +143,7 @@ export function RankingList({
             youLabel={youLabel}
             primaryMetric={formatPrimary(entry)}
             secondaryMetric={formatSecondary?.(entry)}
+            portrait={portrait}
           />
         ))}
       </ol>

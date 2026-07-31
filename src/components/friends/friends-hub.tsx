@@ -12,8 +12,8 @@ import {
 import { createPortal } from "react-dom";
 import { useTypeLabel } from "@/hooks/use-type-label";
 import { useRouter } from "next/navigation";
-import { AvatarImage } from "@/components/avatar-image";
 import { FlagIcon } from "@/components/flag-icon";
+import { TrainerAvatar } from "@/components/trainer-avatar";
 import { avatarById } from "@/lib/avatars";
 import { uiSpriteUrl } from "@/lib/sprites";
 import { typeColor } from "@/lib/type-colors";
@@ -671,9 +671,7 @@ function SearchRow({
   return (
     <div className="flex items-center gap-3 border-b border-white/5 px-4 py-3 last:border-0">
       <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-        <span className="flex h-10 w-10 shrink-0 overflow-hidden rounded-full border border-white/10 bg-surface-container">
-          {src ? <AvatarImage src={src} alt={hit.username} className="h-full w-full object-cover" /> : null}
-        </span>
+        <TrainerAvatar name={hit.username} src={src} size="sm" />
         <span className="min-w-0">
           <span className="flex items-center gap-1.5">
             <span className="truncate font-semibold text-white">{hit.username}</span>
@@ -731,7 +729,7 @@ function FriendCard({
   const src = avatarSrc(friend.avatarId);
   const favAccent = friend.favorite
     ? typeColor(friend.favorite.types[0] ?? "normal")
-    : "rgba(238,21,21,0.35)";
+    : "rgba(255,106,0,0.28)";
 
   return (
     <article
@@ -739,7 +737,7 @@ function FriendCard({
       style={
         {
           ...style,
-          containIntrinsicSize: "0 148px",
+          containIntrinsicSize: "0 168px",
           contentVisibility: "auto",
         } as CSSProperties
       }
@@ -754,24 +752,36 @@ function FriendCard({
       <button
         type="button"
         onClick={onOpen}
-        className="relative z-[1] flex w-full gap-3 p-3.5 text-left"
+        className="relative z-[1] flex w-full items-end gap-3 p-3.5 text-left"
       >
-        <span className="relative shrink-0">
-          <span className="flex h-14 w-14 overflow-hidden rounded-xl border border-white/15 bg-surface-container">
-            {src ? (
-              <AvatarImage src={src} alt={friend.username} className="h-full w-full object-cover" />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center text-lg font-bold text-white/50">
-                {friend.username.slice(0, 1).toUpperCase()}
-              </span>
-            )}
+        {/*
+          Mini-escena al estilo del hero de perfil: retrato + compañero
+          solapados sobre la misma línea base.
+        */}
+        <span className="relative flex h-[4.75rem] w-[7.25rem] shrink-0 items-end sm:w-[8.5rem]">
+          {friend.favorite ? (
+            <span className="absolute bottom-0 left-0 z-0">
+              <Image
+                src={uiSpriteUrl(friend.favorite.spriteUrl, friend.favorite.isShiny)}
+                alt={friend.favorite.name}
+                width={72}
+                height={72}
+                className="friends-fav-idle h-14 w-14 object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.45)] sm:h-16 sm:w-16"
+                unoptimized
+              />
+            </span>
+          ) : null}
+          <span className="relative z-[1] ml-auto">
+            <TrainerAvatar
+              name={friend.username}
+              src={src}
+              size="lg"
+              presenceClassName={PRESENCE_META[friend.presence].dot}
+            />
           </span>
-          <span
-            className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0c0e14] ${PRESENCE_META[friend.presence].dot}`}
-          />
         </span>
 
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 flex-1 pb-0.5">
           <span className="flex items-center gap-1.5">
             <span className="truncate text-title-sm font-semibold text-white">
               {friend.username}
@@ -801,19 +811,6 @@ function FriendCard({
             {relativeTime(friend.lastSeenAt, labels)}
           </span>
         </span>
-
-        {friend.favorite ? (
-          <span className="relative hidden h-14 w-14 shrink-0 sm:block">
-            <Image
-              src={uiSpriteUrl(friend.favorite.spriteUrl, friend.favorite.isShiny)}
-              alt={friend.favorite.name}
-              width={56}
-              height={56}
-              className="friends-fav-idle h-full w-full object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.15)]"
-              unoptimized
-            />
-          </span>
-        ) : null}
       </button>
 
       <div className="friends-actions absolute inset-x-0 bottom-0 z-[2] flex translate-y-full items-center justify-center gap-1 border-t border-white/10 bg-[#0b0d13]/95 px-2 py-2 opacity-0 backdrop-blur-md transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
@@ -899,9 +896,7 @@ function RequestsPanel({
             className="flex items-center gap-3 rounded-2xl border border-white/10 bg-glass-surface px-4 py-3"
           >
             <button type="button" onClick={() => onOpen(r.userId)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-              <span className="flex h-11 w-11 overflow-hidden rounded-xl border border-white/10 bg-surface-container">
-                {src ? <AvatarImage src={src} alt={r.username} className="h-full w-full object-cover" /> : null}
-              </span>
+              <TrainerAvatar name={r.username} src={src} size="md" />
               <span className="min-w-0">
                 <span className="block truncate font-semibold text-white">{r.username}</span>
                 <span className="text-[11px] text-on-surface-variant">
@@ -968,9 +963,7 @@ function BlockedPanel({
             key={b.userId}
             className="flex items-center gap-3 rounded-2xl border border-white/10 bg-glass-surface px-4 py-3"
           >
-            <span className="flex h-11 w-11 overflow-hidden rounded-xl border border-white/10 bg-surface-container opacity-60">
-              {src ? <AvatarImage src={src} alt={b.username} className="h-full w-full object-cover" /> : null}
-            </span>
+            <TrainerAvatar name={b.username} src={src} size="md" className="opacity-60" />
             <span className="min-w-0 flex-1 truncate font-semibold text-white/80">
               {b.username}
             </span>
@@ -1047,13 +1040,13 @@ function TrainerCardModal({
           className="pointer-events-none absolute inset-0"
           style={{
             background: fav
-              ? `radial-gradient(55% 50% at 18% 30%, ${fav.accent}33 0%, transparent 60%), radial-gradient(40% 40% at 85% 10%, rgba(238,21,21,0.18) 0%, transparent 50%)`
-              : "radial-gradient(40% 40% at 85% 10%, rgba(238,21,21,0.18) 0%, transparent 50%)",
+              ? `radial-gradient(55% 50% at 18% 30%, ${fav.accent}33 0%, transparent 60%), radial-gradient(40% 40% at 85% 10%, rgba(255,106,0,0.14) 0%, transparent 50%)`
+              : "radial-gradient(40% 40% at 85% 10%, rgba(255,106,0,0.12) 0%, transparent 50%)",
           }}
         />
 
         <div className="relative z-[1] flex items-center justify-between border-b border-white/8 px-4 py-3 sm:px-6">
-          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
+          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#ff6a00]">
             <span className="material-symbols-outlined text-[16px]!">id_card</span>
             {labels.card.trainerCard}
             {card.extensions.clanTag ? (
@@ -1076,20 +1069,12 @@ function TrainerCardModal({
           {/* Left — identity + favorite */}
           <div className="flex flex-col gap-4 border-b border-white/8 p-5 sm:p-6 lg:border-b-0 lg:border-r">
             <div className="flex items-start gap-4">
-              <span className="relative shrink-0">
-                <span className="flex h-20 w-20 overflow-hidden rounded-2xl border border-white/15 bg-surface-container shadow-[0_0_0_1px_rgba(238,21,21,0.25)]">
-                  {src ? (
-                    <AvatarImage src={src} alt={card.username} className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-2xl font-bold text-white/40">
-                      {card.username.slice(0, 1).toUpperCase()}
-                    </span>
-                  )}
-                </span>
-                <span
-                  className={`absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-[#090b11] ${PRESENCE_META[card.presence].dot}`}
-                />
-              </span>
+              <TrainerAvatar
+                name={card.username}
+                src={src}
+                size="xl"
+                presenceClassName={PRESENCE_META[card.presence].dot}
+              />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h2 className="truncate text-headline-sm text-white">{card.username}</h2>

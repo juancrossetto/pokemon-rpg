@@ -30,6 +30,13 @@ export type RankingFeaturedCreature = {
   isShiny?: boolean;
 };
 
+/** Sprite compacto del equipo activo (fila bajo el nombre en Combat Power). */
+export type RankingTeamSprite = {
+  name: string;
+  image: string;
+  isShiny?: boolean;
+};
+
 export type RankingEntry = {
   playerId: string;
   playerName: string;
@@ -37,6 +44,8 @@ export type RankingEntry = {
   avatarId?: string | null;
   position: number;
   featuredCreature?: RankingFeaturedCreature | null;
+  /** Equipo activo ordenado por slot — Combat Power. */
+  teamSprites?: RankingTeamSprite[];
   combatPower?: number;
   medals?: number;
   wins?: number;

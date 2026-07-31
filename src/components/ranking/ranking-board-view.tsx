@@ -92,6 +92,7 @@ export function RankingBoardView({
         scopeLabel={labels.scopeLabel}
         formatPrimary={formatPrimary}
         formatSecondary={formatSecondary}
+        portrait={category === "combat_power" ? "avatar" : "creature"}
       />
 
       <RankingPagination

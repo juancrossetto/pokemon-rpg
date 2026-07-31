@@ -4,11 +4,19 @@ import Image from "next/image";
 
 import { ProgressRail } from "@/components/trainer-profile-parts";
 
+/** Acento único de la ficha — alineado al oro de los iconos de perfil. */
+export const TRAINER_FACT_ACCENT = "#e8c056";
+
+/** Caja fija: todos los PNG de la ficha ocupan el mismo marco. */
+const FACT_ICON_BOX = "grid h-9 w-9 shrink-0 place-items-center";
+const FACT_ICON_IMG =
+  "h-[34px] w-[34px] object-contain drop-shadow-[0_2px_5px_rgba(0,0,0,0.5)]";
+
 export type StatRow = {
   id: string;
-  /** Material Symbol. Se ignora si viene `iconSrc`. */
+  /** Material Symbol de respaldo si falta `iconSrc`. */
   icon: string;
-  /** Arte propio (PNG) — para Pokédex, torre, aventura. */
+  /** Arte propio (PNG) — set `*-profile.png` de la ficha. */
   iconSrc?: string;
   label: string;
   value: string;
@@ -16,20 +24,18 @@ export type StatRow = {
   hint?: string;
   /** 0–1. Si viene, se dibuja un hilo de progreso bajo la fila. */
   pct?: number;
-  accent: string;
 };
 
 /**
  * Actividad del entrenador como lista, no como grilla de tiles.
  *
- * En una pantalla ancha, cuatro tiles de 2×2 dejaban el dato a un extremo y el
- * título al otro, con medio metro de vacío en el medio: mucha información
- * repartida y poca legible de un vistazo. Una lista de filas —ícono, etiqueta a
- * la izquierda, valor a la derecha— empareja todos los valores en una misma
- * columna, que es lo que la hace escaneable (y es el patrón de la pantalla de
- * perfil de GO que se tomó como referencia).
+ * Íconos uniformes (mismo marco, sombra y object-fit) + acento único en
+ * valores. Mezclar Material Symbols con PNG de distinto tamaño rompía el
+ * ritmo visual de la lista.
  */
 export function TrainerStatRows({ rows }: { rows: StatRow[] }) {
+  const accent = TRAINER_FACT_ACCENT;
+
   return (
     <ul className="overflow-hidden rounded-2xl border border-white/8 bg-[#0e1118]/90">
       {rows.map((row, index) => (
@@ -38,30 +44,22 @@ export function TrainerStatRows({ rows }: { rows: StatRow[] }) {
           className={index > 0 ? "border-t border-white/[0.06]" : undefined}
         >
           <div className="flex items-center gap-3 px-3.5 py-2.5">
-            {/*
-              Arte y símbolo comparten la misma caja: mezclar PNG sueltos con
-              chips con borde dejaba las filas desalineadas y con dos pesos
-              visuales distintos en la misma lista.
-            */}
-            <span
-              aria-hidden
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border"
-              style={{
-                borderColor: `${row.accent}40`,
-                background: `${row.accent}14`,
-                color: row.accent,
-              }}
-            >
+            <span aria-hidden className={FACT_ICON_BOX}>
               {row.iconSrc ? (
                 <Image
                   src={row.iconSrc}
                   alt=""
-                  width={24}
-                  height={24}
-                  className="h-[22px] w-[22px] object-contain"
+                  width={68}
+                  height={68}
+                  className={FACT_ICON_IMG}
                 />
               ) : (
-                <span className="material-symbols-outlined text-[17px]!">{row.icon}</span>
+                <span
+                  className="material-symbols-outlined text-[22px]!"
+                  style={{ color: accent }}
+                >
+                  {row.icon}
+                </span>
               )}
             </span>
 
@@ -72,7 +70,7 @@ export function TrainerStatRows({ rows }: { rows: StatRow[] }) {
             <span className="shrink-0 text-right">
               <span
                 className="block font-mono text-[14px] font-bold tabular-nums leading-none"
-                style={{ color: row.accent }}
+                style={{ color: accent }}
               >
                 {row.value}
               </span>
@@ -86,7 +84,12 @@ export function TrainerStatRows({ rows }: { rows: StatRow[] }) {
 
           {row.pct != null ? (
             <div className="px-3.5 pb-2.5">
-              <ProgressRail pct={row.pct} color={row.accent} height={3} />
+              <ProgressRail
+                pct={row.pct}
+                color="#ff4d00"
+                toColor="#ffe566"
+                height={3}
+              />
             </div>
           ) : null}
         </li>
