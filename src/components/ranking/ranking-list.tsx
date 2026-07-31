@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { FlagIcon } from "@/components/flag-icon";
-import { TrainerAvatar } from "@/components/trainer-avatar";
+import { AvatarImage } from "@/components/avatar-image";
 import { spriteFor } from "@/lib/shiny";
 import { avatarById } from "@/lib/avatars";
 import { tierForRank } from "@/components/ranking-emblem";
@@ -54,12 +54,17 @@ function RankingPortraitView({
       </svg>
       <span className="lb-sphere__gap">
         {useAvatar ? (
-          <TrainerAvatar
-            name={entry.playerName}
-            src={avatarSrc}
-            size={size}
-            className="lb-sphere__avatar"
-          />
+          avatarSrc ? (
+            <AvatarImage
+              src={avatarSrc}
+              alt={entry.playerName}
+              className="lb-sphere__face"
+            />
+          ) : (
+            <span className="lb-sphere__initials">
+              {entry.playerName.slice(0, 2).toUpperCase()}
+            </span>
+          )
         ) : sprite ? (
           <Image
             src={sprite}

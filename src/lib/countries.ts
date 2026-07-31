@@ -75,3 +75,18 @@ export function getCountryOptions(locale: string): CountryOption[] {
 
   return [...preferred, ...rest];
 }
+
+/**
+ * Opciones de país acotadas a un set de códigos (p. ej. países con perfiles).
+ * Conserva el orden de `getCountryOptions` (prioridad Latam + A–Z).
+ */
+export function getCountryOptionsForCodes(
+  locale: string,
+  codes: Iterable<string>,
+): CountryOption[] {
+  const allowed = new Set(
+    [...codes].map((c) => c.trim().toUpperCase()).filter((c) => c.length === 2),
+  );
+  if (allowed.size === 0) return [];
+  return getCountryOptions(locale).filter((c) => allowed.has(c.code));
+}

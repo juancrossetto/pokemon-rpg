@@ -228,3 +228,15 @@ export async function loadPvpBoard(
 
   return withPositions(ranked, userId);
 }
+
+/** Códigos ISO de países que tienen al menos un perfil. */
+export async function listActiveRankingCountryCodes(): Promise<string[]> {
+  const rows = await prisma.user.findMany({
+    distinct: ["country"],
+    select: { country: true },
+    orderBy: { country: "asc" },
+  });
+  return rows
+    .map((r) => r.country?.trim().toUpperCase())
+    .filter((c): c is string => Boolean(c) && c.length === 2);
+}

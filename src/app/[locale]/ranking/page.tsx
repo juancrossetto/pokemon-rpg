@@ -1,12 +1,16 @@
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
+import { getCountryOptionsForCodes } from "@/lib/countries";
 import { prisma } from "@/lib/prisma";
-import { getCountryOptions } from "@/lib/countries";
 import { RankingCategorySelect } from "@/components/ranking/ranking-category-select";
 import { RankingScopeFilter } from "@/components/ranking/ranking-scope-filter";
 import { RankingBoardView } from "@/components/ranking/ranking-board-view";
 import { RankedComingSoon } from "@/components/ranking/ranking-empty-state";
-import { loadCombatPowerBoard, loadPvpBoard } from "@/lib/ranking-boards";
+import {
+  listActiveRankingCountryCodes,
+  loadCombatPowerBoard,
+  loadPvpBoard,
+} from "@/lib/ranking-boards";
 import {
   PVP_MIN_MATCHES,
   pickRankingCategory,
@@ -28,22 +32,22 @@ export default async function RankingPage({
   const category = pickRankingCategory(query.view);
   const page = Math.max(1, Number(query.page) > 0 ? Math.floor(Number(query.page)) : 1);
 
-  const me = userId
-    ? await prisma.user.findUnique({
-        where: { id: userId },
-        select: { country: true, username: true },
-      })
-    : null;
+  const [activeCountryCodes, accountCountry] = await Promise.all([
+    listActiveRankingCountryCodes(),
+    userId
+      ? prisma.user
+          .findUnique({ where: { id: userId }, select: { country: true } })
+          .then((u) => u?.country?.trim().toUpperCase() || undefined)
+      : Promise.resolve(undefined),
+  ]);
 
-  const countryOptions = getCountryOptions(locale);
-  const myCountryName = me?.country
-    ? countryOptions.find((c) => c.code === me.country)?.name
-    : undefined;
+  const countryOptions = getCountryOptionsForCodes(locale, activeCountryCodes);
+  const activeSet = new Set(countryOptions.map((c) => c.code));
 
-  // Scope: solo Global o Mi país (país del perfil). Sin selector de otros países.
-  const wantsCountry = Boolean(query.country && me?.country && query.country === me.country);
-  const scope: RankingScope = wantsCountry && me?.country ? "country" : "global";
-  const countryFilter = scope === "country" && me?.country ? me.country : "";
+  const requestedCountry = query.country?.trim().toUpperCase() ?? "";
+  const countryFilter =
+    requestedCountry && activeSet.has(requestedCountry) ? requestedCountry : "";
+  const scope: RankingScope = countryFilter ? "country" : "global";
 
   const categoryLabels = {
     combat_power: {
@@ -76,7 +80,7 @@ export default async function RankingPage({
           <RankingCategorySelect
             category={category}
             scope={scope}
-            countryCode={me?.country ?? undefined}
+            countryCode={countryFilter || undefined}
             ariaLabel={t("title")}
             labels={categoryLabels}
           />
@@ -85,11 +89,16 @@ export default async function RankingPage({
             <RankingScopeFilter
               category={category}
               scope={scope}
-              countryCode={me?.country ?? undefined}
-              countryName={myCountryName}
+              selectedCountry={countryFilter || undefined}
+              accountCountry={
+                accountCountry && activeSet.has(accountCountry)
+                  ? accountCountry
+                  : undefined
+              }
+              countries={countryOptions}
               labels={{
                 global: t("filters.global"),
-                myCountry: t("filters.myCountry"),
+                country: t("filters.myCountry"),
                 friends: t("filters.friends"),
                 friendsSoon: t("filters.friendsSoon"),
               }}

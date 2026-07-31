@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { typeColor } from "@/lib/type-colors";
+import { neonTypeColor } from "@/lib/type-colors";
 import { spriteFor } from "@/lib/shiny";
 import {
   POKEDEX_REGIONS,
@@ -535,7 +535,22 @@ function ViewToggle({
 }
 
 /**
- * Aura sutil detrás del Pokémon: pinceladas / salpicaduras del color del tipo,
+ * Degradé flúor del tipo (o pareja de tipos) sobre base oscura.
+ * Mismo criterio que el hero del perfil: tipo primario → secundario; si hay
+ * uno solo, el segundo stop es el mismo matiz corrido.
+ */
+function typeFluorBackground(types: string[]): string {
+  const primary = types[0] ?? "normal";
+  const from = neonTypeColor(primary);
+  const to = types[1] ? neonTypeColor(types[1]) : neonTypeColor(primary, 42);
+  return [
+    `radial-gradient(ellipse 120% 85% at 50% -5%, ${from}c8 0%, ${from}66 38%, transparent 68%)`,
+    `linear-gradient(165deg, ${from}b0 0%, ${to}7a 36%, ${to}40 62%, #07090e 92%)`,
+  ].join(", ");
+}
+
+/**
+ * Aura sutil detrás del Pokémon: pinceladas / salpicaduras del color flúor,
  * bien difuminadas. Casi no se notan; el sprite sigue siendo protagonista.
  */
 function EnergyAura({ color }: { color: string }) {
@@ -544,67 +559,28 @@ function EnergyAura({ color }: { color: string }) {
       aria-hidden
       className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
     >
-      {/* Halo central muy suave */}
       <div
-        className="absolute left-1/2 top-[30%] h-[55%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.38]"
+        className="absolute left-1/2 top-[30%] h-[55%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-70"
         style={{
-          background: `radial-gradient(ellipse at center, ${color}70 0%, ${color}28 42%, transparent 72%)`,
+          background: `radial-gradient(ellipse at center, ${color}ee 0%, ${color}66 42%, transparent 72%)`,
           filter: "blur(18px)",
         }}
       />
-
-      {/* Pincelada inferior irregular (no línea recta) */}
       <div
-        className="absolute left-[-8%] bottom-[18%] h-[38%] w-[70%] -rotate-[8deg] opacity-[0.34]"
+        className="absolute left-[-8%] bottom-[18%] h-[38%] w-[70%] -rotate-[8deg] opacity-60"
         style={{
-          background: `radial-gradient(ellipse 90% 55% at 50% 60%, ${color}80 0%, ${color}30 40%, transparent 72%)`,
+          background: `radial-gradient(ellipse 90% 55% at 50% 60%, ${color}f0 0%, ${color}70 40%, transparent 72%)`,
           filter: "blur(14px)",
           borderRadius: "60% 40% 55% 45% / 45% 55% 40% 60%",
         }}
       />
       <div
-        className="absolute right-[-10%] bottom-[22%] h-[32%] w-[58%] rotate-[11deg] opacity-[0.3]"
+        className="absolute right-[-10%] bottom-[22%] h-[32%] w-[58%] rotate-[11deg] opacity-55"
         style={{
-          background: `radial-gradient(ellipse 85% 50% at 45% 55%, ${color}75 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse 85% 50% at 45% 55%, ${color}d0 0%, transparent 70%)`,
           filter: "blur(16px)",
           borderRadius: "40% 60% 50% 50% / 55% 40% 60% 45%",
         }}
-      />
-
-      {/* Pinceladas laterales / salpicaduras */}
-      <div
-        className="absolute left-[4%] top-[28%] h-[28%] w-[34%] -rotate-[18deg] opacity-[0.28]"
-        style={{
-          background: `radial-gradient(ellipse at 60% 50%, ${color}66 0%, transparent 68%)`,
-          filter: "blur(12px)",
-          borderRadius: "70% 30% 60% 40% / 40% 60% 30% 70%",
-        }}
-      />
-      <div
-        className="absolute right-[2%] top-[22%] h-[26%] w-[30%] rotate-[22deg] opacity-[0.25]"
-        style={{
-          background: `radial-gradient(ellipse at 40% 55%, ${color}55 0%, transparent 70%)`,
-          filter: "blur(13px)",
-          borderRadius: "30% 70% 40% 60% / 60% 30% 70% 40%",
-        }}
-      />
-
-      {/* Salpicaduras puntuales muy tenues */}
-      <div
-        className="absolute left-[22%] top-[48%] h-3 w-3 rounded-full opacity-[0.32]"
-        style={{ background: color, filter: "blur(3px)" }}
-      />
-      <div
-        className="absolute right-[24%] top-[42%] h-2 w-2 rounded-full opacity-[0.28]"
-        style={{ background: color, filter: "blur(2.5px)" }}
-      />
-      <div
-        className="absolute left-[38%] bottom-[28%] h-2.5 w-4 rounded-full opacity-[0.26] -rotate-12"
-        style={{ background: color, filter: "blur(3px)" }}
-      />
-      <div
-        className="absolute right-[32%] bottom-[34%] h-2 w-2.5 rounded-full opacity-[0.24] rotate-6"
-        style={{ background: color, filter: "blur(2.5px)" }}
       />
     </div>
   );
@@ -622,7 +598,7 @@ function DexCard({
   onToggle: () => void;
 }) {
   const primary = entry.types[0] ?? "normal";
-  const glow = typeColor(primary);
+  const glow = neonTypeColor(primary);
   const unseen = entry.status === "unseen";
   const seenOnly = entry.status === "seen";
   const caught = entry.status === "caught";
@@ -652,15 +628,19 @@ function DexCard({
           "hover:-translate-y-0.5",
           unseen
             ? "border-white/10 bg-[#0c0e12] hover:border-white/18"
-            : "border-white/12 bg-[#080a0e] hover:border-white/22",
+            : "border-white/12 hover:border-white/22",
           expanded && caught ? "border-white/25" : "",
           caught ? "dex-caught-pulse" : "",
         ].join(" ")}
-        style={{
-          boxShadow: unseen
+        style={
+          unseen
             ? undefined
-            : `0 0 0 1px ${glow}14, 0 10px 24px -16px ${glow}40`,
-        }}
+            : {
+                background: typeFluorBackground(entry.types),
+                boxShadow: `0 0 0 1px ${glow}44, 0 14px 32px -12px ${glow}88`,
+                borderColor: `${glow}66`,
+              }
+        }
       >
         {/* Acento inferior por tipo */}
         <span
@@ -761,7 +741,7 @@ function DexCard({
         </div>
 
         {/* Footer */}
-        <div className="relative z-20 mt-auto space-y-1.5 border-t border-white/[0.06] bg-black/45 px-3 pb-3 pt-2.5 backdrop-blur-[2px]">
+        <div className="relative z-20 mt-auto space-y-1.5 border-t border-white/[0.06] bg-black/50 px-3 pb-3 pt-2.5 backdrop-blur-[2px]">
           <p
             className={[
               "truncate text-[13px] font-semibold capitalize leading-tight",
@@ -774,7 +754,7 @@ function DexCard({
           {!unseen ? (
             <div className="flex flex-wrap justify-center gap-1">
               {entry.types.map((t) => {
-                const c = typeColor(t);
+                const c = neonTypeColor(t);
                 const label = labels.pokemonTypes[t.toLowerCase()] ?? t;
                 return (
                   <span
@@ -830,7 +810,7 @@ function DexListRow({
   onToggle: () => void;
 }) {
   const primary = entry.types[0] ?? "normal";
-  const glow = typeColor(primary);
+  const glow = neonTypeColor(primary);
   const unseen = entry.status === "unseen";
   const rarityStyle = RARITY_STYLES[entry.rarity];
 
@@ -839,8 +819,23 @@ function DexListRow({
       <button
         type="button"
         onClick={onToggle}
-        className="group relative flex w-full items-center gap-3 overflow-hidden rounded-md border border-white/10 bg-black/25 px-3 py-2.5 text-left transition hover:border-white/20 hover:bg-black/40"
-        style={{ boxShadow: unseen ? undefined : `inset 3px 0 0 ${glow}66` }}
+        className={[
+          "group relative flex w-full items-center gap-3 overflow-hidden rounded-md border px-3 py-2.5 text-left transition",
+          unseen
+            ? "border-white/10 bg-black/25 hover:border-white/20 hover:bg-black/40"
+            : "border-white/10 hover:border-white/22",
+        ].join(" ")}
+        style={
+          unseen
+            ? undefined
+            : {
+                background: [
+                  `linear-gradient(90deg, ${glow}88 0%, ${glow}3a 48%, rgba(7,9,14,0.92) 100%)`,
+                ].join(", "),
+                boxShadow: `inset 3px 0 0 ${glow}`,
+                borderColor: `${glow}55`,
+              }
+        }
       >
         <span className="relative z-10 w-10 shrink-0 font-mono text-[11px] text-on-surface-variant">
           #{String(entry.id).padStart(3, "0")}

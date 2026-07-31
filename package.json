@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "avatars:stage": "node scripts/build-avatar-stage.mjs"
+    "avatars:stage": "node scripts/build-avatar-stage.mjs",
+    "avatars:knockout": "node scripts/knockout-avatar-portraits.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",
