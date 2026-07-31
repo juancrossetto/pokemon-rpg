@@ -3332,6 +3332,126 @@ html.boot-splash-pending .boot-splash {
   animation: dex-caught-pulse 1.2s ease-out 1;
 }
 
+/* Fondo card: gris oscuro arriba + tipografía display (Anton). */
+.dex-card {
+  font-family: var(--font-display);
+  background:
+    radial-gradient(
+      ellipse 120% 70% at 50% 18%,
+      #4a5060 0%,
+      #353a46 55%,
+      #252830 100%
+    );
+}
+
+/* Esquinas apenas redondeadas. Antes era un chaflán con `clip-path`, que además
+   recortaba el degradé del banner en las puntas; `overflow: hidden` en la card
+   ya contiene el fondo y deja el borde parejo. */
+.dex-card--cut {
+  border-radius: 0.65rem;
+  clip-path: none;
+}
+
+/* Mini damero de rombos: pixel oscuro / claro, casi imperceptible. */
+.dex-card__mesh {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.22;
+  background-image: repeating-conic-gradient(
+    from 45deg,
+    rgba(0, 0, 0, 0.28) 0deg 90deg,
+    rgba(255, 255, 255, 0.2) 90deg 180deg
+  );
+  background-size: 3px 3px;
+  mix-blend-mode: soft-light;
+  mask-image: linear-gradient(180deg, black 0%, black 42%, transparent 70%);
+}
+
+.dex-card__mesh--dim {
+  opacity: 0.16;
+  mix-blend-mode: soft-light;
+  mask-image: none;
+}
+
+/* Badge redondo del logo de tipo. */
+.dex-card__type-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.dex-card__name {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.05;
+}
+
+@media (min-width: 640px) {
+  .dex-card__name {
+    font-size: 0.95rem;
+  }
+}
+
+.dex-card__rarity {
+  font-family: var(--font-sans);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+/* Chips unificados: mismo rombo suave para región / nº / estado. */
+.dex-card__chip {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  pointer-events: none;
+  border-radius: 0.35rem;
+  background: rgba(14, 17, 24, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: rotate(45deg);
+}
+
+.dex-card__chip-inner {
+  display: grid;
+  place-items: center;
+  transform: rotate(-45deg);
+}
+
+.dex-card__chip-letter,
+.dex-card__chip-num {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.dex-card__chip-letter {
+  font-size: 13px;
+}
+
+.dex-card__chip-num {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dex-caught-pulse {
     animation: none;
