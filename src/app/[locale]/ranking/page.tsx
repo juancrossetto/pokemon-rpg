@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCountryOptions } from "@/lib/countries";
-import { RankingCategoryTabs } from "@/components/ranking/ranking-category-tabs";
+import { RankingCategorySelect } from "@/components/ranking/ranking-category-select";
 import { RankingScopeFilter } from "@/components/ranking/ranking-scope-filter";
 import { RankingBoardView } from "@/components/ranking/ranking-board-view";
 import { RankedComingSoon } from "@/components/ranking/ranking-empty-state";
@@ -73,10 +73,11 @@ export default async function RankingPage({
         </header>
 
         <div className="rk-panel mb-3 md:mb-4">
-          <RankingCategoryTabs
+          <RankingCategorySelect
             category={category}
             scope={scope}
             countryCode={me?.country ?? undefined}
+            ariaLabel={t("title")}
             labels={categoryLabels}
           />
 
@@ -149,12 +150,6 @@ async function CombatPowerBoard({
       page={page}
       entries={entries}
       formatPrimary={(e) => (e.combatPower ?? 0).toLocaleString()}
-      formatYourMetrics={(e) =>
-        t("yourCombatPower", {
-          power: e.combatPower ?? 0,
-          badges: e.medals ?? 0,
-        })
-      }
       labels={{
         you: t("you"),
         yourTitle: t("yourCard.title"),
@@ -196,14 +191,6 @@ async function PvpBoardView({
       formatPrimary={(e) => String(e.rating ?? 0)}
       formatSecondary={(e) =>
         t("metric.pvpRecord", {
-          wins: e.wins ?? 0,
-          losses: e.losses ?? 0,
-          winrate: e.winRate ?? 0,
-        })
-      }
-      formatYourMetrics={(e) =>
-        t("yourPvp", {
-          rating: e.rating ?? 0,
           wins: e.wins ?? 0,
           losses: e.losses ?? 0,
           winrate: e.winRate ?? 0,

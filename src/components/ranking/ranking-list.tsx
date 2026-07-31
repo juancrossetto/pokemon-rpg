@@ -6,17 +6,138 @@ import { avatarById } from "@/lib/avatars";
 import { tierForRank } from "@/components/ranking-emblem";
 import type { RankingEntry } from "@/lib/ranking";
 
-function tierAccent(rank: number): string {
-  if (rank === 1) return "lb-row--gold";
-  if (rank === 2) return "lb-row--silver";
-  if (rank === 3) return "lb-row--bronze";
-  return "";
-}
-
 export type RankingPortrait = "avatar" | "creature";
+
+/** Mínimo de jugadores para que el podio tenga sentido. */
+const PODIUM_MIN_ENTRIES = 4;
 
 /** Qué mide la columna de score — define el tono y el rótulo (PC/CP o Elo). */
 export type RankingMetricKind = "cp" | "elo";
+
+/** Métrica del ranking: número y rótulo, sin icono. Misma forma en podio y fila. */
+function RowMetric({
+  metricLabel,
+  primaryMetric,
+}: {
+  metricLabel: string;
+  primaryMetric: string;
+}) {
+  return (
+    <p className="lb-row__metric lb-row__metric--stat">
+      <span className="lb-row__metric-value">{primaryMetric}</span>
+      <span className="lb-row__metric-label">{metricLabel}</span>
+    </p>
+  );
+}
+
+function RankingPortraitView({
+  entry,
+  portrait,
+  size,
+  className = "",
+}: {
+  entry: RankingEntry;
+  portrait: RankingPortrait;
+  size: "md" | "lg" | "xl";
+  className?: string;
+}) {
+  const creature = entry.featuredCreature;
+  const sprite = creature ? spriteFor(creature.image, !!creature.isShiny) : null;
+  const avatarSrc = avatarById(entry.avatarId ?? null)?.src ?? null;
+  const useAvatar = portrait === "avatar";
+  const empty = useAvatar ? false : !sprite;
+
+  return (
+    <div className={`lb-sphere ${empty ? "lb-sphere--empty" : ""} ${className}`}>
+      <svg className="lb-sphere__ring" viewBox="0 0 100 100" aria-hidden focusable="false">
+        <circle className="lb-sphere__ring-core" cx="50" cy="50" r="47" />
+      </svg>
+      <span className="lb-sphere__gap">
+        {useAvatar ? (
+          <TrainerAvatar
+            name={entry.playerName}
+            src={avatarSrc}
+            size={size}
+            className="lb-sphere__avatar"
+          />
+        ) : sprite ? (
+          <Image
+            src={sprite}
+            alt={creature?.name ?? ""}
+            width={size === "xl" ? 96 : size === "lg" ? 72 : 56}
+            height={size === "xl" ? 96 : size === "lg" ? 72 : 56}
+            className="lb-sphere__sprite"
+            unoptimized
+          />
+        ) : (
+          <span className="lb-sphere__initials">
+            {entry.playerName.slice(0, 2).toUpperCase()}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+function PodiumSlot({
+  entry,
+  place,
+  youLabel,
+  primaryMetric,
+  secondaryMetric,
+  portrait,
+  metricKind,
+  metricLabel,
+}: {
+  entry: RankingEntry;
+  place: 1 | 2 | 3;
+  youLabel: string;
+  primaryMetric: string;
+  secondaryMetric?: string;
+  portrait: RankingPortrait;
+  metricKind: RankingMetricKind;
+  metricLabel: string;
+}) {
+  const isMe = !!entry.isCurrentPlayer;
+  const placeClass =
+    place === 1 ? "lb-podium__slot--1" : place === 2 ? "lb-podium__slot--2" : "lb-podium__slot--3";
+  const size = place === 1 ? "xl" : "lg";
+
+  return (
+    <article
+      className={`lb-podium__slot ${placeClass} lb-row--metric-${metricKind} ${isMe ? "lb-podium__slot--you" : ""}`}
+      data-place={place}
+    >
+      <p className="lb-podium__place" aria-label={`#${place}`}>
+        <span className="material-symbols-outlined lb-podium__chevron" aria-hidden>
+          keyboard_double_arrow_up
+        </span>
+        <span>{place}°</span>
+      </p>
+
+      <RankingPortraitView entry={entry} portrait={portrait} size={size} />
+
+      <div className="lb-podium__meta">
+        <p className="lb-podium__name">
+          <span className="truncate">{entry.playerName}</span>
+          {entry.countryCode ? (
+            <FlagIcon
+              code={entry.countryCode}
+              className="h-2.5 w-auto shrink-0 rounded-[1px] opacity-70"
+            />
+          ) : null}
+        </p>
+        {secondaryMetric || (portrait === "creature" && entry.featuredCreature?.name) ? (
+          <p className="lb-podium__sub truncate">
+            {secondaryMetric ?? entry.featuredCreature?.name}
+          </p>
+        ) : null}
+        <RowMetric metricLabel={metricLabel} primaryMetric={primaryMetric} />
+        {isMe ? <span className="lb-row__you-tag">{youLabel}</span> : null}
+      </div>
+    </article>
+  );
+}
 
 export function RankingListItem({
   entry,
@@ -33,38 +154,24 @@ export function RankingListItem({
   secondaryMetric?: string;
   portrait?: RankingPortrait;
   metricKind?: RankingMetricKind;
-  /** Rótulo corto localizado: "PC", "CP", "Elo". */
   metricLabel: string;
 }) {
   const isMe = !!entry.isCurrentPlayer;
   const rank = entry.position;
-  const creature = entry.featuredCreature;
-  const sprite = creature ? spriteFor(creature.image, !!creature.isShiny) : null;
-  const avatarSrc = avatarById(entry.avatarId ?? null)?.src ?? null;
-  const useAvatar = portrait === "avatar";
-  const hasPortrait = useAvatar ? !!avatarSrc || !!entry.playerName : !!sprite;
   const tier = tierForRank(rank);
+  const useAvatar = portrait === "avatar";
 
   return (
     <li
-      className={`lb-row lb-row--card ${tierAccent(rank)} ${isMe ? "lb-row--you" : ""} lb-row--metric-${metricKind}`}
+      className={`lb-row lb-row--metric-${metricKind} ${isMe ? "lb-row--you" : ""}`}
       data-rank={rank}
       data-tier={tier}
     >
-      <div className={`lb-row__avatar ${hasPortrait ? "" : "lb-row__avatar--empty"}`}>
-        {useAvatar ? (
-          <TrainerAvatar name={entry.playerName} src={avatarSrc} size="md" framed={false} />
-        ) : sprite ? (
-          <Image
-            src={sprite}
-            alt={creature?.name ?? ""}
-            width={56}
-            height={56}
-            className="lb-row__sprite"
-            unoptimized
-          />
-        ) : null}
-      </div>
+      <span className="lb-row__rank-num" aria-label={`#${rank}`}>
+        {rank}
+      </span>
+
+      <RankingPortraitView entry={entry} portrait={portrait} size="md" />
 
       <div className="lb-row__identity min-w-0 flex-1">
         <p className="lb-row__name">
@@ -76,18 +183,6 @@ export function RankingListItem({
             />
           ) : null}
           {isMe ? <span className="lb-row__you-tag">{youLabel}</span> : null}
-        </p>
-
-        <p className="lb-row__metric">
-          <span className="lb-row__metric-icon" aria-hidden>
-            {metricKind === "cp" ? (
-              <span className="lb-row__metric-diamond" />
-            ) : (
-              <span className="material-symbols-outlined">swords</span>
-            )}
-          </span>
-          <span className="lb-row__metric-label">{metricLabel}</span>
-          <span className="lb-row__metric-value">{primaryMetric}</span>
         </p>
 
         {useAvatar && (entry.teamSprites?.length ?? 0) > 0 ? (
@@ -105,15 +200,15 @@ export function RankingListItem({
               />
             ))}
           </span>
-        ) : secondaryMetric || (!useAvatar && creature?.name) ? (
+        ) : secondaryMetric || (!useAvatar && entry.featuredCreature?.name) ? (
           <p className="lb-row__sub truncate">
-            {secondaryMetric ?? creature?.name}
+            {secondaryMetric ?? entry.featuredCreature?.name}
           </p>
         ) : null}
       </div>
 
-      <div className="lb-row__rank-badge" aria-label={`#${rank}`}>
-        <span className="lb-row__rank-badge-num">{rank}</span>
+      <div className="lb-row__metric-col">
+        <RowMetric metricLabel={metricLabel} primaryMetric={primaryMetric} />
       </div>
     </li>
   );
@@ -142,6 +237,21 @@ export function RankingList({
 }) {
   if (entries.length === 0) return null;
 
+  // Con pocos jugadores (típico de la tabla por país) el podio queda desangelado
+  // —un aro solo en medio de la nada— y sobra la jerarquía: se muestra plana.
+  const showPodium = entries.length >= PODIUM_MIN_ENTRIES;
+
+  const podium = showPodium
+    ? [1, 2, 3]
+        .map((place) => entries.find((e) => e.position === place) ?? null)
+        .filter((e): e is RankingEntry => e != null)
+    : [];
+  const rest = showPodium ? entries.filter((e) => e.position > 3) : entries;
+
+  const first = podium.find((e) => e.position === 1) ?? null;
+  const second = podium.find((e) => e.position === 2) ?? null;
+  const third = podium.find((e) => e.position === 3) ?? null;
+
   return (
     <section className="lb-board">
       <div className="lb-board__head">
@@ -150,20 +260,68 @@ export function RankingList({
           {scopeLabel ? <p className="lb-board__scope">{scopeLabel}</p> : null}
         </div>
       </div>
-      <ol className="lb-board__list">
-        {entries.map((entry) => (
-          <RankingListItem
-            key={`${entry.playerId}-${entry.position}`}
-            entry={entry}
-            youLabel={youLabel}
-            primaryMetric={formatPrimary(entry)}
-            secondaryMetric={formatSecondary?.(entry)}
-            portrait={portrait}
-            metricKind={metricKind}
-            metricLabel={metricLabel}
-          />
-        ))}
-      </ol>
+
+      {podium.length > 0 ? (
+        <div className="lb-podium" role="list">
+          {second ? (
+            <PodiumSlot
+              entry={second}
+              place={2}
+              youLabel={youLabel}
+              primaryMetric={formatPrimary(second)}
+              secondaryMetric={formatSecondary?.(second)}
+              portrait={portrait}
+              metricKind={metricKind}
+              metricLabel={metricLabel}
+            />
+          ) : (
+            <span className="lb-podium__slot lb-podium__slot--2 lb-podium__slot--ghost" aria-hidden />
+          )}
+          {first ? (
+            <PodiumSlot
+              entry={first}
+              place={1}
+              youLabel={youLabel}
+              primaryMetric={formatPrimary(first)}
+              secondaryMetric={formatSecondary?.(first)}
+              portrait={portrait}
+              metricKind={metricKind}
+              metricLabel={metricLabel}
+            />
+          ) : null}
+          {third ? (
+            <PodiumSlot
+              entry={third}
+              place={3}
+              youLabel={youLabel}
+              primaryMetric={formatPrimary(third)}
+              secondaryMetric={formatSecondary?.(third)}
+              portrait={portrait}
+              metricKind={metricKind}
+              metricLabel={metricLabel}
+            />
+          ) : (
+            <span className="lb-podium__slot lb-podium__slot--3 lb-podium__slot--ghost" aria-hidden />
+          )}
+        </div>
+      ) : null}
+
+      {rest.length > 0 ? (
+        <ol className="lb-board__list">
+          {rest.map((entry) => (
+            <RankingListItem
+              key={`${entry.playerId}-${entry.position}`}
+              entry={entry}
+              youLabel={youLabel}
+              primaryMetric={formatPrimary(entry)}
+              secondaryMetric={formatSecondary?.(entry)}
+              portrait={portrait}
+              metricKind={metricKind}
+              metricLabel={metricLabel}
+            />
+          ))}
+        </ol>
+      ) : null}
     </section>
   );
 }

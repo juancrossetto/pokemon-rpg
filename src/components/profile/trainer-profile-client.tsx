@@ -1,19 +1,14 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
-import {
-  TrainerIdentityHero,
-  type IdentityHeroLabels,
-} from "@/components/profile/trainer-identity-hero";
+import { TrainerIdentityHero } from "@/components/profile/trainer-identity-hero";
 import {
   TrainerFacts,
   type ProfileHubLabels,
   type ProfileTabId,
 } from "@/components/profile/trainer-profile-hub";
 import type { StatRow } from "@/components/profile/trainer-stat-rows";
-import type { AvatarPickerLabels } from "@/components/avatar-picker";
-import type { TrainerAppearance } from "@/lib/trainer-appearance";
 
 export function TrainerProfileClient({
   hero,
@@ -22,24 +17,9 @@ export function TrainerProfileClient({
   vault,
   team,
 }: {
-  hero: {
-    username: string;
-    companionLine: string | null;
-    sceneLabel: string;
-    country: string;
-    rankPct: number;
-    rankAccent: string;
-    power: number;
-    trainerSpriteUrl: string | null;
-    companionSpriteUrl: string | null;
-    companionName: string | null;
-    companionAccent: string;
-    appearance?: TrainerAppearance | null;
-    canEdit: boolean;
-    currentAvatarId: string | null;
-    avatarLabels: AvatarPickerLabels;
-    labels: IdentityHeroLabels;
-  };
+  /* Derivado del componente: repetir el shape a mano lo dejaba desincronizado
+     cada vez que el banner sumaba un dato. */
+  hero: ComponentProps<typeof TrainerIdentityHero>;
   hubLabels: ProfileHubLabels;
   facts: StatRow[];
   vault: ReactNode;

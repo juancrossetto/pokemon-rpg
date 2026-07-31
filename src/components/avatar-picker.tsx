@@ -2,9 +2,11 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
 import { updateAvatar } from "@/actions/update-avatar";
 import { AvatarImage } from "@/components/avatar-image";
+import { useSetOptimisticAvatarId } from "@/components/optimistic-avatar";
 import { AVATAR_OPTIONS, avatarById } from "@/lib/avatars";
 
 export type AvatarPickerLabels = {
@@ -48,6 +50,9 @@ export function AvatarPicker({
   showAffordance?: boolean;
 }) {
   const locale = useLocale();
+  const { data: session } = useSession();
+  const userKey = session?.user?.id ?? "";
+  const setOptimisticAvatarId = useSetOptimisticAvatarId();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const resolvedCurrentId = avatarById(currentAvatarId)?.id ?? currentAvatarId;
@@ -105,6 +110,7 @@ export function AvatarPicker({
     const previous = resolvedCurrentId;
     setError(null);
     onSaved?.(next);
+    setOptimisticAvatarId(next, userKey);
     setOpen(false);
 
     start(async () => {
@@ -113,6 +119,7 @@ export function AvatarPicker({
         // Volver atrás y reabrir con el motivo: es la única forma de contarlo
         // una vez que el panel ya se cerró.
         onSaved?.(previous);
+        setOptimisticAvatarId(previous, userKey);
         setError(labels.error);
         setOpen(true);
       }

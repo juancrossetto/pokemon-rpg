@@ -43,6 +43,64 @@ import {
   toggleFriendFavorite,
   unblockTrainer,
 } from "@/actions/friends";
+import { type RankTierId } from "@/lib/trainer-profile";
+
+/** Código corto del rango en la franja (categoría, no el label largo). */
+const RANK_RAIL_CODE: Record<RankTierId, string> = {
+  bronze: "I",
+  silver: "II",
+  gold: "III",
+  diamond: "IV",
+  master: "V",
+  champion: "VI",
+};
+
+/** Color flúor del tipo para la placa lateral (más vivo que typeColor base). */
+const TYPE_RAIL_FLUOR: Record<string, string> = {
+  normal: "#d4d48a",
+  fire: "#ff7a28",
+  water: "#4a9fff",
+  electric: "#ffe14a",
+  grass: "#6dff4a",
+  ice: "#7ef0f0",
+  fighting: "#ff4a3a",
+  poison: "#c44aff",
+  ground: "#f0c45a",
+  flying: "#b49aff",
+  psychic: "#ff5aa8",
+  bug: "#c4e832",
+  rock: "#d4b04a",
+  ghost: "#9a6aff",
+  dragon: "#7a4aff",
+  dark: "#8a6a8a",
+  steel: "#c8d0e8",
+  fairy: "#ff9ac4",
+};
+
+function railFluorForType(type: string | null): string | null {
+  if (!type) return null;
+  return TYPE_RAIL_FLUOR[type] ?? typeColor(type);
+}
+
+/** Tipos oscuros: tinta clara sobre la placa flúor. */
+const RAIL_LIGHT_INK_TYPES = new Set([
+  "dark",
+  "ghost",
+  "dragon",
+  "poison",
+  "fighting",
+  "rock",
+]);
+
+/** Paleta de respaldo si no hay Pokémon principal. */
+const RANK_RAIL_FALLBACK: Record<RankTierId, { plate: string; ink: string }> = {
+  bronze: { plate: "#9a7a52", ink: "#1c140e" },
+  silver: { plate: "#9aa3ad", ink: "#15181c" },
+  gold: { plate: "#c4a45a", ink: "#1a150a" },
+  diamond: { plate: "#7f9aa4", ink: "#101518" },
+  master: { plate: "#8b7d9e", ink: "#141018" },
+  champion: { plate: "#a86b6b", ink: "#1a1010" },
+};
 
 export type FriendsLabels = {
   community: string;
@@ -748,22 +806,44 @@ function FriendCard({
     ? uiSpriteUrl(friend.favorite.spriteUrl, friend.favorite.isShiny)
     : null;
   const rankLabel = labels.card.ranks[friend.rankTierId] ?? friend.rankTierId;
+  const railCode = RANK_RAIL_CODE[friend.rankTierId] ?? "I";
+  const mainType = friend.favorite?.types[0]?.toLowerCase() ?? null;
+  const fallback = RANK_RAIL_FALLBACK[friend.rankTierId] ?? RANK_RAIL_FALLBACK.bronze;
+  const railPlate = railFluorForType(mainType) ?? fallback.plate;
+  const railInk = mainType
+    ? RAIL_LIGHT_INK_TYPES.has(mainType)
+      ? "#f4f1ec"
+      : "#1a1410"
+    : fallback.ink;
+  const isOffline = friend.presence === "offline";
 
   return (
     <article
       className="friends-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/95 content-visibility-auto"
+      data-presence={friend.presence}
       style={
         {
           ...style,
           containIntrinsicSize: "0 340px",
           contentVisibility: "auto",
+          ["--friends-rail" as string]: railPlate,
+          ["--friends-rail-ink" as string]: railInk,
         } as CSSProperties
       }
     >
+      <aside className="friends-card__rail" aria-hidden>
+        <span className="friends-card__rail-code">
+          <span className="friends-card__rail-code-mark">{railCode}</span>
+          <span className="friends-card__rail-code-sep" />
+          <span className="friends-card__rail-code-lv">{friend.level}</span>
+        </span>
+        <span className="friends-card__rail-name">{friend.username}</span>
+      </aside>
+
       <button
         type="button"
         onClick={onOpen}
-        className="relative z-[1] flex w-full flex-col text-left"
+        className="friends-card__body relative z-[1] flex w-full flex-col text-left"
       >
         {/*
           Banner tipo perfil: entrenador (stage) + compañero solapados,
@@ -788,9 +868,9 @@ function FriendCard({
             }}
           />
 
-          <span className="absolute inset-x-0 bottom-2 flex items-end justify-center px-2">
+          <span className="absolute inset-x-0 bottom-2 flex items-end justify-center px-1.5 sm:px-2">
             {companionUrl ? (
-              <span className="relative z-0 -mr-5 mb-0.5 flex shrink-0 items-end sm:-mr-6">
+              <span className="relative z-0 -mr-4 mb-0.5 flex shrink-0 items-end sm:-mr-5">
                 <span
                   aria-hidden
                   className="absolute inset-x-1 bottom-0 mx-auto h-2 w-[65%] rounded-[100%] bg-black/50 blur-[2px]"
@@ -800,7 +880,7 @@ function FriendCard({
                   alt={friend.favorite?.name ?? ""}
                   width={160}
                   height={160}
-                  className="relative max-h-[6.5rem] w-auto max-w-[5.5rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.5)] sm:max-h-[7.25rem] sm:max-w-[6.25rem]"
+                  className="relative max-h-[6.25rem] w-auto max-w-[5rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.5)] sm:max-h-[7rem] sm:max-w-[5.75rem]"
                   unoptimized
                 />
               </span>
@@ -817,7 +897,7 @@ function FriendCard({
                   alt={friend.username}
                   width={200}
                   height={280}
-                  className="relative max-h-[8.25rem] w-auto max-w-[5.75rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.55)] sm:max-h-[9.25rem] sm:max-w-[6.5rem]"
+                  className="relative max-h-[7.75rem] w-auto max-w-[5.25rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.55)] sm:max-h-[8.75rem] sm:max-w-[6rem]"
                   unoptimized
                 />
               ) : (
@@ -830,10 +910,6 @@ function FriendCard({
             </span>
           </span>
 
-          <span
-            className={`absolute right-2.5 top-2.5 z-[2] h-2.5 w-2.5 rounded-full border-2 border-[#0c0e14] ${PRESENCE_META[friend.presence].dot}`}
-            title={labels.presence[friend.presence]}
-          />
           {friend.isFavorite ? (
             <span className="absolute left-2 top-2 z-[2] material-symbols-outlined text-tertiary text-[16px]! drop-shadow">
               star
@@ -841,13 +917,13 @@ function FriendCard({
           ) : null}
 
           {friend.favorite ? (
-            <span className="absolute bottom-1.5 left-2 z-[2] max-w-[70%] truncate rounded-md bg-black/45 px-1.5 py-0.5 text-[9px] font-medium capitalize tracking-wide text-white/80 backdrop-blur-[2px]">
+            <span className="absolute bottom-1.5 left-2 z-[2] max-w-[62%] truncate rounded-md bg-black/45 px-1.5 py-0.5 text-[9px] font-medium capitalize tracking-wide text-white/80 backdrop-blur-[2px]">
               {friend.favorite.name}
             </span>
           ) : null}
         </span>
 
-        <span className="flex flex-col gap-1 border-t border-white/8 bg-[#0e1118]/85 px-3 py-2.5 backdrop-blur-sm">
+        <span className="flex flex-col gap-1 border-t border-white/8 bg-[#0e1118]/85 px-2.5 py-2.5 backdrop-blur-sm sm:px-3">
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-[13px] font-semibold tracking-tight text-white">
               {friend.username}
@@ -869,31 +945,27 @@ function FriendCard({
             </span>
           </span>
 
-          <span className="truncate text-[10px] text-on-surface-variant/85">
-            <span className="tabular-nums text-white/70">{friend.badgeCount}</span>
-            {" "}
-            {labels.badges}
-            {friend.regionLabel ? (
-              <>
-                <span className="mx-1 opacity-35">·</span>
-                <span>{friend.regionLabel}</span>
-              </>
-            ) : null}
-          </span>
+          {friend.regionLabel ? (
+            <span className="truncate text-[10px] text-on-surface-variant/85">
+              {friend.regionLabel}
+            </span>
+          ) : null}
 
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <PresenceBadge
               status={friend.presence}
               label={labels.presence[friend.presence]}
             />
-            <span className="truncate text-[9px] text-on-surface-variant/60">
-              {labels.lastSeen} {relativeTime(friend.lastSeenAt, labels)}
-            </span>
+            {isOffline ? (
+              <span className="truncate text-[9px] text-on-surface-variant/60">
+                {labels.lastSeen} {relativeTime(friend.lastSeenAt, labels)}
+              </span>
+            ) : null}
           </span>
         </span>
       </button>
 
-      <div className="friends-actions absolute inset-x-0 bottom-0 z-[2] flex translate-y-full items-center justify-center gap-1 border-t border-white/10 bg-[#0b0d13]/95 px-1.5 py-2 opacity-0 backdrop-blur-md transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+      <div className="friends-actions absolute bottom-0 z-[2] flex translate-y-full items-center justify-center gap-1 border-t border-white/10 bg-[#0b0d13]/95 px-1.5 py-2 opacity-0 backdrop-blur-md transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
         <ActionIcon label={labels.actions.profile} icon="badge" onClick={onOpen} />
         <ActionIcon
           label={friend.isFavorite ? labels.actions.unfavorite : labels.actions.favorite}

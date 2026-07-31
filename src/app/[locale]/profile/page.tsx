@@ -1,11 +1,12 @@
 import { getTranslations } from "next-intl/server";
+import { Barlow, Chakra_Petch, Oxanium } from "next/font/google";
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { avatarById } from "@/lib/avatars";
 import { uiSpriteUrl } from "@/lib/sprites";
-import { typeColor } from "@/lib/type-colors";
+import { neonTypeColor, typeColor } from "@/lib/type-colors";
 import { calculateMaxHp } from "@/lib/stats";
 import { pokemonPower } from "@/lib/ranking";
 import {
@@ -29,6 +30,32 @@ import { SectionLabel } from "@/components/trainer-profile-parts";
 import { permissionsFor } from "@/lib/trainer-appearance";
 import { getKantoLocation } from "@/lib/campaign";
 import type { StatRow } from "@/components/profile/trainer-stat-rows";
+
+/*
+  Tipografías del banner de identidad. Se declaran acá —y no en el layout— para
+  que el payload viaje sólo en la ruta /profile: el resto de la app no las carga.
+  Las variables se aplican a un contenedor de esta página y el CSS las consume
+  únicamente bajo `.tp-hero`, así el sistema tipográfico global queda intacto.
+*/
+const chakraPetch = Chakra_Petch({
+  variable: "--font-chakra",
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  // Italic real: inclinar por CSS produce una cursiva sintética deformada.
+  style: ["normal", "italic"],
+});
+
+const barlow = Barlow({
+  variable: "--font-barlow",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
+const oxanium = Oxanium({
+  variable: "--font-oxanium",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
 
 const SPECIES_SELECT = {
   id: true,
@@ -219,6 +246,18 @@ export default async function ProfilePage({
   // Favorito: el marcado por el jugador; si no marcó ninguno, el líder.
   const favorite = team.find((p) => p.isFavorite) ?? team[0] ?? null;
   const favoriteAccent = favorite ? typeColor(favorite.species.types[0] ?? "normal") : "#ee1515";
+
+  /*
+    Degradé del nombre según los tipos del compañero: cada perfil termina con su
+    propia firma cromática. Con doble tipo cada extremo toma uno; con tipo único
+    el segundo extremo es el mismo matiz corrido, para que haya recorrido y no
+    un color plano.
+  */
+  const heroTypes = favorite?.species.types ?? [];
+  const heroGradientFrom = neonTypeColor(heroTypes[0] ?? "normal");
+  const heroGradientTo = heroTypes[1]
+    ? neonTypeColor(heroTypes[1])
+    : neonTypeColor(heroTypes[0] ?? "normal", 42);
 
   const collections: CollectionSlice[] = [
     buildCollection("legendary", stats.legendaries, legendaryTotal, "#f5cb46"),
@@ -439,7 +478,9 @@ export default async function ProfilePage({
   ];
 
   return (
-    <div className="flex-1 px-margin-mobile py-5 pb-bottom-nav md:px-margin-desktop md:py-8">
+    <div
+      className={`${chakraPetch.variable} ${barlow.variable} ${oxanium.variable} flex-1 px-margin-mobile py-5 pb-bottom-nav md:px-margin-desktop md:py-8`}
+    >
       <TrainerProfileClient
         hero={{
           username: user.username,
@@ -448,6 +489,12 @@ export default async function ProfilePage({
           country: user.country,
           rankPct: rank.pct,
           rankAccent: rank.tier.accent,
+          rankLabel: rankLabels[rank.tier.id] ?? rank.tier.id,
+          gradientFrom: heroGradientFrom,
+          gradientTo: heroGradientTo,
+          topLevel: stats.topLevel,
+          badges: stats.badges,
+          totalGyms: stats.totalGyms,
           power: stats.power,
           trainerSpriteUrl: trainerSprite,
           companionSpriteUrl: favorite
@@ -459,7 +506,11 @@ export default async function ProfilePage({
           canEdit: perms.canEdit,
           currentAvatarId: user.avatarId,
           avatarLabels,
-          labels: { power: t("cp") },
+          labels: {
+            power: t("cp"),
+            level: t("levelShort"),
+            badges: t("badgesShort"),
+          },
         }}
         hubLabels={{
           tabs: {

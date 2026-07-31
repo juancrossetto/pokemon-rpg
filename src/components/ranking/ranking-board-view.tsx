@@ -4,7 +4,6 @@ import { RankingEmptyState } from "@/components/ranking/ranking-empty-state";
 import { RankingList } from "@/components/ranking/ranking-list";
 import {
   RANKING_PAGE_SIZE,
-  isCurrentPlayerInTop3,
   rankingHref,
   type RankingCategory,
   type RankingEntry,
@@ -20,7 +19,6 @@ export function RankingBoardView({
   labels,
   formatPrimary,
   formatSecondary,
-  formatYourMetrics,
   empty,
 }: {
   category: "combat_power" | "pvp";
@@ -46,9 +44,6 @@ export function RankingBoardView({
   };
   formatPrimary: (e: RankingEntry) => string;
   formatSecondary?: (e: RankingEntry) => string | undefined;
-  formatYourMetrics: (e: RankingEntry) => string;
-  /** @deprecated list metrics = primary + secondary en la fila */
-  formatListMetrics?: (e: RankingEntry) => string;
   empty?: boolean;
 }) {
   if (empty || entries.length === 0) {
@@ -77,14 +72,7 @@ export function RankingBoardView({
   return (
     <div className="flex flex-col gap-2.5 md:gap-3">
       {showYouStrip && me ? (
-        <CurrentPlayerRanking
-          entry={me}
-          category={category}
-          youLabel={labels.you}
-          title={labels.yourTitle}
-          metricsLine={formatYourMetrics(me)}
-          compact={isCurrentPlayerInTop3(me.position)}
-        />
+        <CurrentPlayerRanking entry={me} title={labels.yourTitle} />
       ) : null}
 
       <RankingList

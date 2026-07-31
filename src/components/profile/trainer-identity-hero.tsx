@@ -11,6 +11,8 @@ import type { TrainerAppearance } from "@/lib/trainer-appearance";
 
 export type IdentityHeroLabels = {
   power: string;
+  level: string;
+  badges: string;
 };
 
 /**
@@ -29,6 +31,12 @@ export function TrainerIdentityHero({
   country,
   rankPct,
   rankAccent,
+  rankLabel,
+  gradientFrom,
+  gradientTo,
+  topLevel,
+  badges,
+  totalGyms,
   power,
   trainerSpriteUrl,
   companionSpriteUrl,
@@ -48,6 +56,14 @@ export function TrainerIdentityHero({
   /** 0–1 — alimenta el arco alrededor del PC. */
   rankPct: number;
   rankAccent: string;
+  /** Rango ya traducido ("Oro", "Diamante"…) — el título del banner. */
+  rankLabel: string;
+  /** Extremos del degradé del nombre, derivados de los tipos del compañero. */
+  gradientFrom: string;
+  gradientTo: string;
+  topLevel: number;
+  badges: number;
+  totalGyms: number;
   power: number;
   trainerSpriteUrl: string | null;
   companionSpriteUrl: string | null;
@@ -77,7 +93,13 @@ export function TrainerIdentityHero({
   return (
     <section
       className="tp-hero relative overflow-hidden rounded-[1.75rem] border border-white/8"
-      style={{ ["--hero-accent" as string]: companionAccent }}
+      style={
+        {
+          "--hero-accent": companionAccent,
+          "--id-grad-from": gradientFrom,
+          "--id-grad-to": gradientTo,
+        } as React.CSSProperties
+      }
     >
       {/* Capas del fondo. Ver `.tp-hero__*` en globals.css. */}
       <span aria-hidden className="tp-hero__sweep" />
@@ -86,16 +108,36 @@ export function TrainerIdentityHero({
       <span aria-hidden className="tp-hero__vignette" />
 
       <div className="relative px-3 pb-6 pt-5 sm:px-5">
-        <div className="mb-1 text-center">
-          <h1 className="flex items-center justify-center gap-2 text-[1.55rem] font-semibold leading-none tracking-[-0.03em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:text-[1.85rem]">
-            <span className="truncate">{username}</span>
-            <FlagIcon code={country} className="h-4 w-6 shrink-0 rounded-[2px] opacity-90" />
+        {/* Cabecera editorial: nombre → rango → metadatos. Ver `.tp-id__*`. */}
+        <div className="tp-id mb-1 text-center">
+          <h1 className="tp-id__name">
+            <span className="tp-id__name-text truncate">{username}</span>
+            <FlagIcon code={country} className="tp-id__flag" />
           </h1>
-          {companionLine ? (
-            <p className="mt-1.5 text-[11px] font-medium capitalize tracking-[0.08em] text-white/45">
-              {companionLine}
-            </p>
-          ) : null}
+
+          <p className="tp-id__title">{rankLabel}</p>
+
+          <p className="tp-id__meta">
+            <span className="tp-id__meta-item">
+              <span className="tp-id__meta-key">{labels.level}</span>
+              <span className="tp-id__meta-num">{topLevel}</span>
+            </span>
+            <span aria-hidden className="tp-id__meta-sep" />
+            <span className="tp-id__meta-item">
+              <span className="tp-id__meta-num">
+                {badges}/{totalGyms}
+              </span>
+              <span className="tp-id__meta-key">{labels.badges}</span>
+            </span>
+            {companionLine ? (
+              <>
+                <span aria-hidden className="tp-id__meta-sep" />
+                <span className="tp-id__meta-item tp-id__meta-item--companion">
+                  {companionLine}
+                </span>
+              </>
+            ) : null}
+          </p>
         </div>
 
         <div className="relative mx-auto max-w-2xl">

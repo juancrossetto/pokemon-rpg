@@ -33,12 +33,12 @@ export function TrainerCpArc({
 
   return (
     <>
-      {/* PC + número: Inter moderno — rótulo liviano, cifra bold con tracking cerrado. */}
+      {/* PC + número: rótulo en Barlow, cifra en Oxanium (ver `.tp-id__cp-*`). */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] flex items-baseline justify-center gap-2 pt-0.5">
-        <p className="text-[0.95rem] font-medium uppercase leading-none tracking-[0.22em] text-white/45 sm:text-[1.05rem]">
+        <p className="tp-id__cp-label text-[0.95rem] uppercase leading-none tracking-[0.22em] text-white/45 sm:text-[1.05rem]">
           {label}
         </p>
-        <p className="text-[2.45rem] font-bold leading-none tracking-[-0.04em] text-white tabular-nums drop-shadow-[0_3px_14px_rgba(0,0,0,0.7)] sm:text-[2.9rem]">
+        <p className="tp-id__cp-value text-[2.45rem] leading-none tracking-[-0.02em] text-white tabular-nums drop-shadow-[0_3px_14px_rgba(0,0,0,0.7)] sm:text-[2.9rem]">
           {value.toLocaleString()}
         </p>
       </div>

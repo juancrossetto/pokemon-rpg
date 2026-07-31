@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
 import { avatarById } from "@/lib/avatars";
+import { useOptimisticAvatarId } from "@/components/optimistic-avatar";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 
 /**
@@ -32,7 +33,12 @@ export function UserMenu({
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const avatar = avatarById(avatarId);
+  const { data: session } = useSession();
+  const resolvedAvatarId = useOptimisticAvatarId(
+    avatarId,
+    session?.user?.id,
+  );
+  const avatar = avatarById(resolvedAvatarId);
 
   useEffect(() => {
     if (!open) return;
