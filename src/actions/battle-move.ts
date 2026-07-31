@@ -4,6 +4,13 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidateCombatUi } from "@/lib/battle-lock";
+import {
+  playerStageColumns,
+  playerStagesFromSession,
+  RESET_WILD_STAGES,
+  wildStageColumns,
+  wildStagesFromSession,
+} from "@/lib/battle-stages";
 import { calculateMaxHp, xpForLevel, UNSPENT_POINTS_PER_LEVEL } from "@/lib/stats";
 import {
   effectivePp,
@@ -224,11 +231,7 @@ export async function submitBattleMove(
     maxHp: playerMaxHpBase,
     status: battle.playerStatus ?? null,
     sleepTurns: battle.playerSleepTurns ?? 0,
-    stages: {
-      atk: battle.playerAtkStage ?? 0,
-      def: battle.playerDefStage ?? 0,
-      spe: battle.playerSpeStage ?? 0,
-    },
+    stages: playerStagesFromSession(battle),
     name: instance.nickname ?? instance.species.name,
     baseStats: playerBase,
     heldItem: playerHeldItem,
@@ -245,11 +248,7 @@ export async function submitBattleMove(
     maxHp: battle.wildMaxHp,
     status: battle.wildStatus ?? null,
     sleepTurns: battle.wildSleepTurns ?? 0,
-    stages: {
-      atk: battle.wildAtkStage ?? 0,
-      def: battle.wildDefStage ?? 0,
-      spe: battle.wildSpeStage ?? 0,
-    },
+    stages: wildStagesFromSession(battle),
     name: pvpActive?.name ?? battle.wildSpecies.name,
     baseStats: wildBase,
     heldItem: wildHeldItem,
@@ -311,6 +310,7 @@ export async function submitBattleMove(
 
   let playerItemConsumed = battle.playerItemConsumed;
   let flinchWild = false;
+  let flinchPlayer = false;
 
   if (disobeyed) {
     events.push({
@@ -347,28 +347,36 @@ export async function submitBattleMove(
 
     for (const side of order) {
       if (playerState.hp <= 0 || wildState.hp <= 0) break;
-      if (side === "wild" && flinchWild) {
+      const move = side === "player" ? playerMoveSnapshot : wildMove;
+
+      // El flinch sólo corta el turno de quien todavía no se movió.
+      if (side === "wild" ? flinchWild : flinchPlayer) {
         events.push({
-          side: "wild",
-          moveName: wildMove.name,
-          moveType: wildMove.type,
-          category: wildMove.category,
+          side,
+          moveName: move.name,
+          moveType: move.type,
+          category: move.category,
           hit: false,
           isStatus: false,
           damage: 0,
           effectiveness: 1,
-          hpAfter: playerState.hp,
+          hpAfter: side === "wild" ? playerState.hp : wildState.hp,
           skipped: "flinch",
         });
         continue;
       }
-      const move = side === "player" ? playerMoveSnapshot : wildMove;
+
       const outcome = resolveSingleAction(side, move, playerState, wildState, playerItemConsumed);
       events.push(...outcome.events);
       playerState = outcome.player;
       wildState = outcome.wild;
       playerItemConsumed = outcome.itemConsumed;
 
+      // Flinch del propio movimiento (Bite, Rock Slide, Fake Out…).
+      if (outcome.causedFlinch) {
+        if (side === "player") flinchWild = true;
+        else flinchPlayer = true;
+      }
       if (side === "player" && playerHeldItem?.effect === "FLINCH_CHANCE") {
         const playerHitLanded = outcome.events.some((e) => e.hit && !e.isStatus);
         if (playerHitLanded && Math.random() < (playerHeldItem.value ?? 0.1)) {
@@ -400,6 +408,9 @@ export async function submitBattleMove(
     } else if (!e.hit && !e.skipped) {
       log.push(`miss:${name}:${e.moveName}`);
     }
+    if (e.noEffect) log.push("nothing");
+    if (e.healAmount) log.push(`heal:${name}:${e.healAmount}`);
+    if (e.recoilDamage) log.push(`recoil:${name}:${e.recoilDamage}`);
     if (e.residualDamage) {
       const kind = e.residualStatus === "BURN" ? "burn" : e.residualStatus === "POISON" ? "poison" : "status";
       log.push(`residual:${name}:${e.residualDamage}:${kind}`);
@@ -504,12 +515,8 @@ export async function submitBattleMove(
     wildStatus: wildState.status,
     playerSleepTurns: playerState.sleepTurns,
     wildSleepTurns: wildState.sleepTurns,
-    playerAtkStage: playerState.stages.atk,
-    playerDefStage: playerState.stages.def,
-    playerSpeStage: playerState.stages.spe,
-    wildAtkStage: wildState.stages.atk,
-    wildDefStage: wildState.stages.def,
-    wildSpeStage: wildState.stages.spe,
+    ...playerStageColumns(playerState.stages),
+    ...wildStageColumns(wildState.stages),
     playerChoiceLockMoveId: newChoiceLockMoveId,
     playerItemConsumed,
     wildItemConsumed: battle.wildItemConsumed,
@@ -573,9 +580,7 @@ export async function submitBattleMove(
               opponentSlot: nextMon.slot,
               wildStatus: null,
               wildSleepTurns: 0,
-              wildAtkStage: 0,
-              wildDefStage: 0,
-              wildSpeStage: 0,
+              ...RESET_WILD_STAGES,
               wildChargeMoveId: null,
               log: finalLog,
             },
@@ -749,9 +754,7 @@ export async function submitBattleMove(
             pendingXp: { increment: koXp },
             wildStatus: null,
             wildSleepTurns: 0,
-            wildAtkStage: 0,
-            wildDefStage: 0,
-            wildSpeStage: 0,
+            ...RESET_WILD_STAGES,
             wildChargeMoveId: null,
             wildChoiceLockMoveId: null,
             log: finalLog,

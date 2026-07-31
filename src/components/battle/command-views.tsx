@@ -210,7 +210,19 @@ export function MovesView({
                     <span className="text-white/55">
                       {" · "}
                       {t("forecastRange", { min: damage.minPct, max: damage.maxPct })}
+                      {damage.hits &&
+                        ` ${
+                          damage.hits.min === damage.hits.max
+                            ? t("forecastHitsFixed", { hits: damage.hits.max })
+                            : t("forecastHitsRange", {
+                                min: damage.hits.min,
+                                max: damage.hits.max,
+                              })
+                        }`}
                     </span>
+                  )}
+                  {damage?.twoTurn && (
+                    <span className="text-amber-300/80">{` · ${t("forecastTwoTurn")}`}</span>
                   )}
                 </p>
               )}

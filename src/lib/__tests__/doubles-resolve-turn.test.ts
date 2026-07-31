@@ -56,6 +56,40 @@ const earthquake: MoveSnapshot = {
   target: "all-other-pokemon",
 };
 
+const swordsDance: MoveSnapshot = {
+  id: 14,
+  name: "swords-dance",
+  type: "normal",
+  category: "STATUS",
+  power: null,
+  accuracy: null,
+  priority: 0,
+  target: "user",
+};
+
+const recover: MoveSnapshot = {
+  id: 105,
+  name: "recover",
+  type: "normal",
+  category: "STATUS",
+  power: null,
+  accuracy: null,
+  priority: 0,
+  target: "user",
+};
+
+/** Flinch garantizado y prioridad alta: ideal para probar el retroceso. */
+const fakeOut: MoveSnapshot = {
+  id: 252,
+  name: "fake-out",
+  type: "normal",
+  category: "PHYSICAL",
+  power: 40,
+  accuracy: 100,
+  priority: 3,
+  target: "selected-pokemon",
+};
+
 const rockSlide: MoveSnapshot = {
   id: 157,
   name: "rock-slide",
@@ -359,5 +393,62 @@ describe("resolveDoubleTurn", () => {
         (e) => e.chargePhase === "finish" && e.fieldSlot === "A" && e.hit && e.damage > 0,
       ),
     ).toBe(false);
+  });
+
+  it("resuelve un movimiento de auto-boost sin pedir objetivo", () => {
+    const field: DoubleField = {
+      playerA: mon("A", 100, 90),
+      playerB: mon("B", 100, 80),
+      wildA: mon("WA", 100, 40),
+      wildB: mon("WB", 100, 30),
+    };
+
+    const out = resolveDoubleTurn(field, [{ slot: "playerA", move: swordsDance }], false, false);
+
+    expect(out.field.playerA.stages.atk).toBe(2);
+    const boost = out.events.find((e) => e.moveName === "swords-dance");
+    // El objetivo es uno mismo: el cliente no debe animar al rival.
+    expect(boost?.targetSide).toBe("player");
+    expect(boost?.targetFieldSlot).toBe("A");
+    expect(out.field.wildA.hp).toBe(100);
+  });
+
+  it("cura al usuario con Recover en vez de perder el turno", () => {
+    const field: DoubleField = {
+      playerA: mon("A", 40, 90, { maxHp: 100 }),
+      playerB: mon("B", 100, 80),
+      wildA: mon("WA", 100, 40),
+      wildB: mon("WB", 100, 30),
+    };
+
+    const out = resolveDoubleTurn(field, [{ slot: "playerA", move: recover }], false, false);
+
+    expect(out.field.playerA.hp).toBe(90);
+    expect(out.events.find((e) => e.moveName === "recover")?.healAmount).toBe(50);
+  });
+
+  it("el retroceso le hace perder el turno a quien todavía no se movió", () => {
+    const field: DoubleField = {
+      playerA: mon("A", 100, 200), // pega primero
+      playerB: null,
+      wildA: mon("WA", 300, 10, { maxHp: 300 }),
+      wildB: null,
+    };
+
+    const out = resolveDoubleTurn(
+      field,
+      [
+        { slot: "playerA", move: fakeOut, targetLane: "A" },
+        { slot: "wildA", move: tackle, targetLane: "A" },
+      ],
+      false,
+      false,
+    );
+
+    expect(out.events.some((e) => e.causedFlinch)).toBe(true);
+    const wildEvent = out.events.find((e) => e.side === "wild");
+    expect(wildEvent?.skipped).toBe("flinch");
+    // El rival nunca llegó a pegar.
+    expect(out.field.playerA.hp).toBe(100);
   });
 });

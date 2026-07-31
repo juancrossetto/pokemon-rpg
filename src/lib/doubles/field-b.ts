@@ -16,7 +16,12 @@ export interface DoublesWildSlot {
   sleepTurns: number;
   atkStage: number;
   defStage: number;
+  /** Sesiones anteriores a las 6 stats no traen spa/spd/acc/eva. */
+  spaStage?: number;
+  spdStage?: number;
   speStage: number;
+  accStage?: number;
+  evaStage?: number;
   heldItemId: string | null;
   itemConsumed: boolean;
   choiceLockMoveId: number | null;
@@ -30,7 +35,11 @@ export interface DoublesPlayerBState {
   sleepTurns: number;
   atkStage: number;
   defStage: number;
+  spaStage?: number;
+  spdStage?: number;
   speStage: number;
+  accStage?: number;
+  evaStage?: number;
   choiceLockMoveId: number | null;
   itemConsumed: boolean;
   chargeMoveId: number | null;
@@ -52,7 +61,11 @@ export function emptyPlayerBState(): DoublesPlayerBState {
     sleepTurns: 0,
     atkStage: 0,
     defStage: 0,
+    spaStage: 0,
+    spdStage: 0,
     speStage: 0,
+    accStage: 0,
+    evaStage: 0,
     choiceLockMoveId: null,
     itemConsumed: false,
     chargeMoveId: null,

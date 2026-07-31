@@ -45,6 +45,10 @@ import {
   statusAbbrKey,
   statusLabelKey,
   isStatusCondition,
+  clampStage,
+  emptyStatStages,
+  statLabelKey,
+  type BattleStat,
   type StatStages,
   type StatusCondition,
 } from "@/lib/status";
@@ -92,13 +96,15 @@ const BALL_BREAK_MS = 520;
 const FAINT_MS = 1100;
 const RECALL_MS = 450;
 const ITEM_USE_MS = 550;
+/** Brillo verde de curación (Recover, drenaje, Rest). */
+const HEAL_PULSE_MS = 560;
 const SEND_OUT_BALL_MS = 700; // cuánto se ve solo la pokeball, antes de revelar al Pokémon inicial
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, scaledDelay(ms)));
 }
 
-const NO_STAGES: StatStages = { atk: 0, def: 0, spe: 0 };
+const NO_STAGES: StatStages = emptyStatStages();
 
 export function BattleArena({
   battleId,
@@ -192,6 +198,15 @@ export function BattleArena({
     if (raw.startsWith("disobey:")) return tLog("disobey", { name: raw.slice("disobey:".length) });
     if (raw.startsWith("woke:")) return tLog("woke", { name: raw.slice("woke:".length) });
     if (raw.startsWith("thawed:")) return tLog("thawed", { name: raw.slice("thawed:".length) });
+    if (raw === "nothing") return tLog("nothingHappened");
+    if (raw.startsWith("heal:")) {
+      const [name, amount] = raw.slice("heal:".length).split(":");
+      return tLog("healed", { name: name ?? "", amount: Number(amount) || 0 });
+    }
+    if (raw.startsWith("recoil:")) {
+      const [name, dmg] = raw.slice("recoil:".length).split(":");
+      return tLog("recoil", { name: name ?? "", damage: Number(dmg) || 0 });
+    }
     if (raw.startsWith("residual:")) {
       const rest = raw.slice("residual:".length);
       const [name, dmg, kind] = rest.split(":");
@@ -309,7 +324,11 @@ export function BattleArena({
   const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [tmRewardName, setTmRewardName] = useState<string | null>(null);
   const [ballAnim, setBallAnim] = useState<"recall" | "throw" | null>("throw");
-  const [playerHealing, setPlayerHealing] = useState(false);
+  // Quién está brillando de curación: objeto del jugador, Recover o drenaje.
+  const [healingTarget, setHealingTarget] = useState<{
+    side: "player" | "wild";
+    lane: "A" | "B";
+  } | null>(null);
   const [damagePopup, setDamagePopup] = useState<{
     side: "player" | "wild";
     lane: "A" | "B";
@@ -472,14 +491,16 @@ export function BattleArena({
   }
 
   function eventTargetLane(event: TurnEvent): "A" | "B" {
-    let lane: "A" | "B" =
+    const lane: "A" | "B" =
       event.targetFieldSlot === "A" || event.targetFieldSlot === "B"
         ? event.targetFieldSlot
         : event.fieldSlot === "B"
           ? "B"
           : "A";
     // Si el evento apunta a un mon ya a 0, redirigir al partner vivo (animación).
-    const side = event.side === "player" ? "wild" : "player";
+    // El defensor no siempre es el bando contrario: Earthquake pega al aliado
+    // y un auto-boost se apunta a uno mismo.
+    const side = event.targetSide ?? (event.side === "player" ? "wild" : "player");
     if (readHp(side, lane) <= 0) {
       const other: "A" | "B" = lane === "A" ? "B" : "A";
       if (readHp(side, other) > 0) return other;
@@ -607,6 +628,47 @@ export function BattleArena({
     return applyStagesToStats(base, stages, condition);
   }
 
+  /** Brillo verde + barra que sube. Lo comparten Recover, Rest y el drenaje. */
+  async function playHealBeat(
+    side: "player" | "wild",
+    lane: "A" | "B",
+    amount: number,
+    hpAfter: number,
+  ) {
+    playBattleSfx("heal");
+    setHealingTarget({ side, lane });
+    writeHp(side, lane, hpAfter);
+    appendLog(tLog("healed", { name: nameFor(side, lane), amount }), side);
+    await delay(HEAL_PULSE_MS);
+    setHealingTarget(null);
+  }
+
+  /** Refleja un cambio de stage en los chips del panel y lo escribe en el log. */
+  function applyStageChange(
+    side: "player" | "wild",
+    lane: "A" | "B",
+    stat: BattleStat,
+    stages: number,
+  ) {
+    const bump = (prev: StatStages): StatStages => ({
+      ...prev,
+      [stat]: clampStage(prev[stat] + stages),
+    });
+    // Los paneles del slot B todavía no muestran chips de stage.
+    if (lane === "A") {
+      if (side === "player") setPlayerStages(bump);
+      else setWildStages(bump);
+    }
+    appendLog(
+      tLog("statChange", {
+        name: nameFor(side, lane),
+        stat: tLog(statLabelKey(stat)),
+        dir: stages < 0 ? tLog("statDown") : tLog("statUp"),
+      }),
+      side,
+    );
+  }
+
   const stagedPlayer = withStages(
     { atk: playerStats.atk, def: 1, spAtk: playerStats.spAtk, spDef: 1, speed: playerStats.speed },
     playerStages,
@@ -624,7 +686,12 @@ export function BattleArena({
   const activePlayerTypes =
     party.find((m) => m.instanceId === activePlayer.instanceId)?.types ?? [];
 
-  function moveForecast(move: { type: string; power?: number | null; category?: MoveCategory }) {
+  function moveForecast(move: {
+    name?: string;
+    type: string;
+    power?: number | null;
+    category?: MoveCategory;
+  }) {
     return forecastDamage(
       {
         level: activePlayer.level,
@@ -679,6 +746,12 @@ export function BattleArena({
       burned: attackerBurned,
     };
 
+    // Un spread reparte: el pronóstico por calle tiene que bajar ×0.75 igual
+    // que el servidor, si no promete un KO que no ocurre.
+    const spreadTargets =
+      move && isSpreadMove(null, move.name) && wildHp > 0 && wildBHp > 0 ? 2 : 1;
+    const forecastCtx = { targetCount: spreadTargets };
+
     const laneA = {
       lane: "A" as const,
       name: activeWild.name,
@@ -702,6 +775,7 @@ export function BattleArena({
               },
               move,
               wildHp,
+              forecastCtx,
             )
           : null,
       isStatus: Boolean(isStatus),
@@ -731,6 +805,7 @@ export function BattleArena({
               },
               move,
               wildBHp,
+              forecastCtx,
             )
           : null,
       isStatus: Boolean(isStatus),
@@ -883,22 +958,7 @@ export function BattleArena({
         }
         if (event.selfStatChange) {
           const { stat, stages } = event.selfStatChange;
-          const bump = (prev: StatStages): StatStages => ({
-            ...prev,
-            [stat]: Math.max(-6, Math.min(6, prev[stat] + stages)),
-          });
-          if (event.side === "player" && lane === "A") setPlayerStages(bump);
-          else if (event.side === "wild" && lane === "A") setWildStages(bump);
-          const statKey =
-            stat === "atk" ? "statAtk" : stat === "def" ? "statDef" : "statSpe";
-          appendLog(
-            tLog("statChange", {
-              name: nameFor(event.side, lane),
-              stat: tLog(statKey),
-              dir: stages < 0 ? tLog("statDown") : tLog("statUp"),
-            }),
-            event.side,
-          );
+          applyStageChange(event.side, lane, stat, stages);
         }
         if (event.semiInvuln) {
           setAttackingSide(event.side);
@@ -944,7 +1004,16 @@ export function BattleArena({
         if (event.statusNote === "thawed") appendLog(tLog("thawed", { name: nameFor(event.side, lane) }), event.side);
 
         if (!event.hit) {
-          appendLog(tLog("miss", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
+          // "Falló" e "inmune" son cosas distintas: Fissure contra un Flying no
+          // erró la puntería, simplemente no le hace nada.
+          if (event.noEffect) {
+            appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
+            appendLog(tLog("noEffect"), event.side);
+            setEffPopup({ text: tLog("noEffect"), key: fxKey });
+            void delay(MISS_MS).then(() => setEffPopup(null));
+          } else {
+            appendLog(tLog("miss", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
+          }
           await delay(MISS_MS);
           setMoveFx(null);
           await playResidualBeat(event);
@@ -964,26 +1033,16 @@ export function BattleArena({
           if (event.statChange) {
             const foe = event.targetSide ?? (event.side === "player" ? "wild" : "player");
             const { stat, stages } = event.statChange;
-            const bump = (prev: StatStages): StatStages => ({
-              ...prev,
-              [stat]: Math.max(-6, Math.min(6, prev[stat] + stages)),
-            });
-            if (foe === "wild" && targetLane === "A") setWildStages(bump);
-            else if (foe === "player" && targetLane === "A") setPlayerStages(bump);
-            const statKey =
-              event.statChange.stat === "atk"
-                ? "statAtk"
-                : event.statChange.stat === "def"
-                  ? "statDef"
-                  : "statSpe";
-            appendLog(
-              tLog("statChange", {
-                name: nameFor(foe, targetLane),
-                stat: tLog(statKey),
-                dir: event.statChange.stages < 0 ? tLog("statDown") : tLog("statUp"),
-              }),
-              foe,
-            );
+            applyStageChange(foe, targetLane, stat, stages);
+          }
+          for (const boost of event.selfStatChanges ?? []) {
+            applyStageChange(event.side, lane, boost.stat, boost.stages);
+          }
+          if (event.healAmount && event.healHpAfter != null) {
+            await playHealBeat(event.side, lane, event.healAmount, event.healHpAfter);
+          }
+          if (event.noEffect) {
+            appendLog(tLog("nothingHappened"), event.side);
           }
           setArenaFlash(color);
           void delay(320).then(() => setArenaFlash(null));
@@ -1079,12 +1138,23 @@ export function BattleArena({
           writeStatus(defenderSide, targetLane, event.statusApplied);
         }
 
+        if (event.ohko) {
+          appendLog(tLog("ohko", { name: nameFor(defenderSide, targetLane) }), defenderSide);
+        }
+
+        if (event.healAmount && event.healHpAfter != null) {
+          await playHealBeat(event.side, lane, event.healAmount, event.healHpAfter);
+        }
+
         if (event.recoilDamage) {
           appendLog(tLog("recoil", { name: nameFor(event.side, lane), damage: event.recoilDamage }), event.side);
+          // El servidor manda el HP exacto: recalcularlo acá desfasaba cuando
+          // el mismo golpe curaba (drenaje) y hacía retroceso.
           writeHp(
             event.side,
             lane,
-            Math.max(0, readHp(event.side, lane) - (event.recoilDamage ?? 0)),
+            event.recoilHpAfter ??
+              Math.max(0, readHp(event.side, lane) - event.recoilDamage),
           );
         }
 
@@ -1101,10 +1171,16 @@ export function BattleArena({
     });
   }
 
-  async function playFaintAndFinish(side: "player" | "wild", finalOutcome: Outcome) {
-    appendLog(tLog("fainted", { name: nameFor(side) }), side);
-    playBattleSfx("faint");
-    setFaintingSide(side);
+  async function playFaintAndFinish(
+    side: "player" | "wild",
+    finalOutcome: Outcome,
+    opts?: { skipFaintBeat?: boolean },
+  ) {
+    if (!opts?.skipFaintBeat) {
+      appendLog(tLog("fainted", { name: nameFor(side) }), side);
+      playBattleSfx("faint");
+      setFaintingSide(side);
+    }
     if (side === "wild") {
       setOpponentParty((prev) =>
         prev.map((m) => (m.active ? { ...m, fainted: true, active: false } : m)),
@@ -1116,7 +1192,7 @@ export function BattleArena({
         ),
       );
     }
-    await delay(FAINT_MS);
+    if (!opts?.skipFaintBeat) await delay(FAINT_MS);
     // Un beat corto para que el KO asiente antes del cartel.
     await delay(450);
     setOutcome(finalOutcome);
@@ -1212,6 +1288,17 @@ export function BattleArena({
     return needsFoeTargetPick(m.target, m.name);
   }
 
+  /** KO de una calle suelta en dobles: el combate sigue, pero el sprite cae. */
+  async function playLaneFaint(side: "player" | "wild", lane: "A" | "B") {
+    appendLog(tLog("fainted", { name: nameFor(side, lane) }), side);
+    playBattleSfx("faint");
+    setFaintingSide(side);
+    setFaintingLane(lane);
+    await delay(FAINT_MS);
+    setFaintingSide(null);
+    setFaintingLane("A");
+  }
+
   /**
    * En dobles, un mon en carga (Fly/Dig…) no elige move ni target: quedan
    * forzados del turno 1 (si el target murió, el finish falla solo).
@@ -1268,6 +1355,13 @@ export function BattleArena({
     setIsAnimating(true);
     setView("menu");
 
+    const hpBefore = {
+      playerA: playerHpRef.current,
+      playerB: playerBHpRef.current,
+      wildA: wildHpRef.current,
+      wildB: wildBHpRef.current,
+    };
+
     const result = await submitDoubleBattleMoves(
       battleId,
       moveA,
@@ -1320,15 +1414,33 @@ export function BattleArena({
       }),
     );
 
+    // Cada calle que cayó en este turno se anima por separado; sin esto el
+    // sprite noqueado se quedaba en pantalla hasta el final del combate.
+    const laneKos: { side: "player" | "wild"; lane: "A" | "B" }[] = [];
+    if (hpBefore.wildA > 0 && result.wildHp <= 0) laneKos.push({ side: "wild", lane: "A" });
+    if (hpBefore.wildB > 0 && (result.wildBHp ?? 0) <= 0) {
+      laneKos.push({ side: "wild", lane: "B" });
+    }
+    if (hpBefore.playerA > 0 && result.playerHp <= 0) {
+      laneKos.push({ side: "player", lane: "A" });
+    }
+    if (hpBefore.playerB > 0 && (result.playerBHp ?? 0) <= 0) {
+      laneKos.push({ side: "player", lane: "B" });
+    }
+    for (const ko of laneKos) {
+      await playLaneFaint(ko.side, ko.lane);
+    }
+
     const bothFoesDown =
       result.wildHp <= 0 && (result.wildBHp == null || result.wildBHp <= 0);
     const bothPlayersDown =
       result.playerHp <= 0 && (result.playerBHp == null || result.playerBHp <= 0);
 
+    // Los KO ya se animaron arriba: el cierre sólo marca el resultado.
     if (result.outcome === "won" || bothFoesDown) {
-      await playFaintAndFinish("wild", "won");
+      await playFaintAndFinish("wild", "won", { skipFaintBeat: true });
     } else if (result.outcome === "lost" || bothPlayersDown) {
-      await playFaintAndFinish("player", "lost");
+      await playFaintAndFinish("player", "lost", { skipFaintBeat: true });
     } else {
       setIsAnimating(false);
       if (defaultView === "moves") {
@@ -1394,10 +1506,9 @@ export function BattleArena({
       if (pendingDoubleMoveA == null) {
         // Si A está en carga, el servidor fuerza el move — no dejamos elegir otro.
         const effectiveA = chargeMoveId ?? moveId;
-        const moveMeta = activeMoves.find((x) => x.moveId === effectiveA);
-        const spread = moveMeta ? isSpreadMove(moveMeta.target, moveMeta.name) : false;
+        // Spread y auto-target (Swords Dance, Recover) no eligen rival.
         // Target solo al empezar; en el finish de carga no se vuelve a pedir.
-        if (chargeMoveId == null && foes.length >= 2 && !spread) {
+        if (chargeMoveId == null && moveNeedsTargetPick(effectiveA, false)) {
           setPendingDoubleMoveA(effectiveA);
           setTargetPickFor("A");
           setView("targets");
@@ -1425,10 +1536,8 @@ export function BattleArena({
 
       // Fase B: move del partner (o carga forzada).
       const effectiveB = chargeMoveIdB ?? moveId;
-      const moveMetaB = activeMovesB.find((x) => x.moveId === effectiveB);
-      const spreadB = moveMetaB ? isSpreadMove(moveMetaB.target, moveMetaB.name) : false;
       // Si B está en carga, no re-elige target.
-      if (chargeMoveIdB == null && foes.length >= 2 && !spreadB) {
+      if (chargeMoveIdB == null && moveNeedsTargetPick(effectiveB, true)) {
         setPendingDoubleMoveB(effectiveB);
         setTargetPickFor("B");
         setView("targets");
@@ -1712,10 +1821,10 @@ export function BattleArena({
       prev.map((p) => (p.itemId === itemId ? { ...p, quantity: p.quantity - 1 } : p)).filter((p) => p.quantity > 0),
     );
 
-    setPlayerHealing(true);
+    setHealingTarget({ side: "player", lane: "A" });
     playBattleSfx("heal");
     await delay(ITEM_USE_MS);
-    setPlayerHealing(false);
+    setHealingTarget(null);
 
     const result = await applyBattleItem(battleId, itemId, locale);
     if (!result) {
@@ -1902,7 +2011,7 @@ export function BattleArena({
   const wildAbsorbedByBall =
     captureBall === "idle" || captureBall === "wobble" || captureBall === "success";
   const playerIdle =
-    !attackingSide && !shakingSide && !faintingSide && !playerEntering && !playerHealing && !ballAnim;
+    !attackingSide && !shakingSide && !faintingSide && !playerEntering && !healingTarget && !ballAnim;
   const wildIdle =
     !attackingSide && !shakingSide && !faintingSide && !wildEntering && !wildAbsorbedByBall && !captureBall;
   // Tamaño relativo al alto del campo: el jugador ocupa el primer plano
@@ -1929,7 +2038,7 @@ export function BattleArena({
     faintingSide === "player" && faintingLane === "A" ? "sprite-faint" : "",
     ballAnim === "recall" ? "sprite-recall" : "",
     playerEntering ? "sprite-enter" : "",
-    playerHealing ? "sprite-heal" : "",
+    healingTarget?.side === "player" && healingTarget.lane === "A" ? "sprite-heal" : "",
     playerIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
@@ -1946,6 +2055,7 @@ export function BattleArena({
       ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}`
       : "",
     faintingSide === "player" && faintingLane === "B" ? "sprite-faint" : "",
+    healingTarget?.side === "player" && healingTarget.lane === "B" ? "sprite-heal" : "",
     playerIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
@@ -1965,6 +2075,7 @@ export function BattleArena({
     wildEntering ? "sprite-enter" : "",
     wildAbsorbedByBall ? "sprite-absorb-ball" : "",
     captureBall === "fail" ? "sprite-enter" : "",
+    healingTarget?.side === "wild" && healingTarget.lane === "A" ? "sprite-heal" : "",
     wildIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
@@ -1981,6 +2092,7 @@ export function BattleArena({
       ? `sprite-shake ${seFlash ? "sprite-flash-heavy" : "sprite-flash"}`
       : "",
     faintingSide === "wild" && faintingLane === "B" ? "sprite-faint" : "",
+    healingTarget?.side === "wild" && healingTarget.lane === "B" ? "sprite-heal" : "",
     wildIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)

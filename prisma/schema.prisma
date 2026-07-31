@@ -919,10 +919,18 @@ model BattleSession {
   wildSleepTurns         Int                 @default(0)
   playerAtkStage         Int                 @default(0)
   playerDefStage         Int                 @default(0)
+  playerSpaStage         Int                 @default(0)
+  playerSpdStage         Int                 @default(0)
   playerSpeStage         Int                 @default(0)
+  playerAccStage         Int                 @default(0)
+  playerEvaStage         Int                 @default(0)
   wildAtkStage           Int                 @default(0)
   wildDefStage           Int                 @default(0)
+  wildSpaStage           Int                 @default(0)
+  wildSpdStage           Int                 @default(0)
   wildSpeStage           Int                 @default(0)
+  wildAccStage           Int                 @default(0)
+  wildEvaStage           Int                 @default(0)
   fleeAttempts           Int                 @default(0) // fallos de huida; sube la chance (Gen III)
   // Objeto equipado del jugador (fijo para toda la batalla, no se puede
   // cambiar en combate — ver blockIfInCombat en equip-held-item).

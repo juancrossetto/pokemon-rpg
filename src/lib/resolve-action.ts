@@ -8,15 +8,30 @@ import {
 import {
   applyStagesToStats,
   canActThisTurn,
+  clampStage,
+  emptyStatStages,
   residualDamage,
   rollSleepTurns,
   secondaryStatusByMove,
   statChangeByMove,
   statusInflictedByMove,
   tryApplyStatus,
+  type BattleStat,
   type StatStages,
   type StatusCondition,
 } from "@/lib/status";
+import {
+  drainFraction,
+  flinchChance,
+  healFraction,
+  highCritStage,
+  isOhkoMove,
+  isRestMove,
+  moveKey,
+  ohkoAccuracy,
+  recoilFraction,
+  selfStatChanges,
+} from "@/lib/move-effects";
 import {
   applyHeldItemToStats,
   heldItemPowerMultiplier,
@@ -24,6 +39,7 @@ import {
   type HeldItemSnapshot,
 } from "@/lib/held-items";
 import { multiHitSpec, rollMultiHitCount } from "@/lib/multi-hit";
+import { getTypeEffectiveness } from "@/lib/type-effectiveness";
 import {
   canHitSemiInvuln,
   invulnPowerMultiplier,
@@ -59,6 +75,8 @@ export interface ActionOutcome {
   wild: SideBattleState;
   /** true si Focus Sash/Sitrus Berry/Lum Berry se acaban de gastar en esta acción. */
   itemConsumed: boolean;
+  /** El golpe hizo retroceder al objetivo: pierde el turno si aún no se movió. */
+  causedFlinch?: boolean;
 }
 
 function withStages(side: SideBattleState): CombatantStats {
@@ -67,8 +85,23 @@ function withStages(side: SideBattleState): CombatantStats {
   return applyHeldItemToStats(staged, side.heldItem, side.isFullyEvolved ?? true);
 }
 
+/** Mismos stats pero sin stages: base del crítico (que ignora stages adversas). */
+function withoutStages(side: SideBattleState): CombatantStats {
+  const mod = applyStagesToStats(side.baseStats, emptyStatStages(), side.status);
+  const staged = { ...side.baseStats, ...mod };
+  return applyHeldItemToStats(staged, side.heldItem, side.isFullyEvolved ?? true);
+}
+
 export function emptyStages(): StatStages {
-  return { atk: 0, def: 0, spe: 0 };
+  return emptyStatStages();
+}
+
+/** Aplica un cambio de stage y devuelve el delta real (0 si ya estaba al tope). */
+function bumpStage(target: StatStages, stat: BattleStat, stages: number): number {
+  const next = clampStage(target[stat] + stages);
+  const delta = next - target[stat];
+  target[stat] = next;
+  return delta;
 }
 
 /**
@@ -251,16 +284,112 @@ export function resolveSingleAction(
 
   const atkStats = withStages(self);
   const defStats = withStages(foe);
+  const critBaselineStats = {
+    atk: withoutStages(self).atk,
+    spAtk: withoutStages(self).spAtk,
+    def: withoutStages(foe).def,
+    spDef: withoutStages(foe).spDef,
+  };
+  const accuracyStageDelta = self.stages.acc - foe.stages.eva;
 
   // Si el rival está en el aire / bajo tierra, la mayoría de los golpes fallan.
   const foeInvuln = foe.semiInvuln ?? null;
   const blockedByInvuln = !canHitSemiInvuln(move.name, foeInvuln);
   const invulnMult = invulnPowerMultiplier(move.name, foeInvuln);
 
+  /** Residual del atacante + objeto del jugador + estado final. */
+  function finishAction(): ActionOutcome {
+    const last = events[events.length - 1];
+    if (last && !opts?.skipResidual) applyResidualToEvent(self, last);
+
+    const itemResult = resolvePlayerHeldItemTrigger({
+      heldItem: p.heldItem,
+      hpBefore: playerHpBefore,
+      hp: p.hp,
+      maxHp: p.maxHp,
+      statusBefore: playerStatusBefore,
+      status: p.status,
+      alreadyConsumed: playerItemConsumed,
+      isActingThisCall: isPlayer,
+    });
+    p.hp = itemResult.hp;
+    p.status = itemResult.status;
+    if (itemResult.trigger && last) {
+      last.itemName = itemResult.trigger.itemName;
+      last.itemEffect = itemResult.trigger.kind;
+      last.itemAmount = itemResult.trigger.amount;
+      last.itemCuredStatus = itemResult.trigger.curedStatus;
+      last.itemHpAfter = p.hp;
+    }
+
+    return {
+      events,
+      player: isPlayer ? self : foe,
+      wild: isPlayer ? foe : self,
+      itemConsumed: itemResult.consumed,
+      causedFlinch: events.some((e) => e.causedFlinch === true),
+    };
+  }
+
+  // OHKO: no usa la fórmula de daño. Precisión por diferencia de nivel y
+  // fallo garantizado contra un rival de nivel superior (Gen III+).
+  if (isOhkoMove(move.name) && move.category !== "STATUS") {
+    const immune = getTypeEffectiveness(move.type, foe.baseStats.types) === 0;
+    const landed =
+      !blockedByInvuln &&
+      !immune &&
+      Math.random() * 100 < ohkoAccuracy(self.baseStats.level, foe.baseStats.level);
+    // El daño reportado es el HP que se llevó: así el cliente anima la barra
+    // completa en vez de un "-0".
+    const dealt = landed ? foe.hp : 0;
+    if (landed) foe.hp = 0;
+
+    events.push({
+      side: attackerSide,
+      moveName: move.name,
+      moveType: move.type,
+      category: move.category,
+      hit: landed,
+      isStatus: false,
+      damage: dealt,
+      effectiveness: immune ? 0 : 1,
+      hpAfter: foe.hp,
+      hitDamages: landed ? [dealt] : undefined,
+      hitCount: landed ? 1 : undefined,
+      statusNote,
+      ohko: landed,
+      noEffect: immune,
+      chargePhase: isFinishingCharge ? "finish" : null,
+    });
+    return finishAction();
+  }
+
+  // Dream Eater sólo funciona contra un rival dormido.
+  if (moveKey(move.name) === "dream-eater" && foe.status !== "SLEEP") {
+    events.push({
+      side: attackerSide,
+      moveName: move.name,
+      moveType: move.type,
+      category: move.category,
+      hit: false,
+      isStatus: false,
+      damage: 0,
+      effectiveness: 1,
+      hpAfter: foe.hp,
+      statusNote,
+      noEffect: true,
+      chargePhase: isFinishingCharge ? "finish" : null,
+    });
+    return finishAction();
+  }
+
   const result = blockedByInvuln
     ? { hit: false, damage: 0, effectiveness: 1, critical: false }
     : resolveMoveUse(atkStats, defStats, move, {
         attackerBurned: self.status === "BURN",
+        critBaselineStats,
+        critStage: highCritStage(move.name),
+        accuracyStageDelta,
         powerMultiplier:
           heldItemPowerMultiplier(self.heldItem, move.type) *
           invulnMult *
@@ -284,22 +413,58 @@ export function resolveSingleAction(
   } else if (move.category === "STATUS") {
     let statusApplied: StatusCondition | null = null;
     let statChange: TurnEvent["statChange"] = null;
+    let healAmount = 0;
+    let noEffect = false;
+    const appliedSelfStats: { stat: BattleStat; stages: number }[] = [];
+
+    const healPct = healFraction(move.name);
+    const selfBoosts = selfStatChanges(move.name);
     const inflict = statusInflictedByMove(move.name);
     const statMv = statChangeByMove(move.name);
 
-    if (inflict) {
+    if (isRestMove(move.name)) {
+      // Rest cura todo y duerme al usuario 2 turnos, aunque ya tuviera estado.
+      if (self.hp >= self.maxHp && self.status == null) {
+        noEffect = true;
+      } else {
+        healAmount = self.maxHp - self.hp;
+        self.hp = self.maxHp;
+        self.status = "SLEEP";
+        self.sleepTurns = 2;
+      }
+    } else if (healPct != null) {
+      if (self.hp >= self.maxHp) {
+        noEffect = true;
+      } else {
+        healAmount = Math.min(
+          self.maxHp - self.hp,
+          Math.max(1, Math.floor(self.maxHp * healPct)),
+        );
+        self.hp += healAmount;
+      }
+    } else if (selfBoosts) {
+      for (const boost of selfBoosts) {
+        const delta = bumpStage(self.stages, boost.stat, boost.stages);
+        if (delta !== 0) appliedSelfStats.push({ stat: boost.stat, stages: delta });
+      }
+      if (appliedSelfStats.length === 0) noEffect = true;
+    } else if (inflict) {
       const applied = tryApplyStatus(foe.status, inflict, foe.baseStats.types);
       if (applied) {
         foe.status = applied;
         statusApplied = applied;
         if (applied === "SLEEP") foe.sleepTurns = rollSleepTurns();
+      } else {
+        noEffect = true;
       }
     } else if (statMv) {
-      const next = Math.max(-6, Math.min(6, foe.stages[statMv.stat] + statMv.stages));
-      if (next !== foe.stages[statMv.stat]) {
-        foe.stages[statMv.stat] = next;
-        statChange = { stat: statMv.stat, stages: statMv.stages };
-      }
+      const delta = bumpStage(foe.stages, statMv.stat, statMv.stages);
+      if (delta !== 0) statChange = { stat: statMv.stat, stages: delta };
+      else noEffect = true;
+    } else {
+      // Clima, pantallas, trampas… todavía sin mecánica en el motor: se avisa
+      // en vez de fingir que el turno hizo algo.
+      noEffect = true;
     }
 
     events.push({
@@ -314,6 +479,11 @@ export function resolveSingleAction(
       hpAfter: foe.hp,
       statusApplied,
       statChange,
+      selfStatChange: appliedSelfStats[0] ?? null,
+      selfStatChanges: appliedSelfStats.length > 0 ? appliedSelfStats : undefined,
+      healAmount: healAmount || undefined,
+      healHpAfter: healAmount > 0 ? self.hp : undefined,
+      noEffect: noEffect || undefined,
       statusNote,
       chargePhase: isFinishingCharge ? "finish" : null,
     });
@@ -333,6 +503,8 @@ export function resolveSingleAction(
       if (foe.hp <= 0) break;
       const next = resolveMoveUse(atkStats, defStats, move, {
         attackerBurned: self.status === "BURN",
+        critBaselineStats,
+        critStage: highCritStage(move.name),
         powerMultiplier:
           heldItemPowerMultiplier(self.heldItem, move.type) *
           invulnMult *
@@ -347,10 +519,26 @@ export function resolveSingleAction(
     }
 
     const totalDamage = hitDamages.reduce((a, b) => a + b, 0);
+
+    // Drenaje: se cura antes del retroceso, igual que en los juegos.
+    let healAmount = 0;
+    const drain = drainFraction(move.name);
+    if (drain != null && totalDamage > 0 && self.hp > 0 && self.hp < self.maxHp) {
+      healAmount = Math.min(
+        self.maxHp - self.hp,
+        Math.max(1, Math.floor(totalDamage * drain)),
+      );
+      self.hp += healAmount;
+    }
+
     let recoilDamage = 0;
     if (!opts?.skipResidual) {
       if (move.id === STRUGGLE_MOVE.id || move.name === "struggle") {
         recoilDamage += Math.max(1, Math.floor(self.maxHp / 4));
+      }
+      const recoil = recoilFraction(move.name);
+      if (recoil != null && totalDamage > 0) {
+        recoilDamage += Math.max(1, Math.floor(totalDamage * recoil));
       }
       if (self.heldItem?.effect === "LIFE_ORB" && totalDamage > 0) {
         recoilDamage += Math.max(1, Math.floor(self.maxHp * 0.1));
@@ -376,6 +564,11 @@ export function resolveSingleAction(
       }
     }
 
+    // El flinch lo consume quien resuelve el turno: sólo sirve si el objetivo
+    // todavía no se movió.
+    const flinchP = flinchChance(move.name);
+    const causedFlinch = flinchP > 0 && foe.hp > 0 && Math.random() < flinchP;
+
     events.push({
       side: attackerSide,
       moveName: move.name,
@@ -390,41 +583,18 @@ export function resolveSingleAction(
       hitCount: hitDamages.length,
       hitDamages,
       recoilDamage: recoilDamage || undefined,
+      recoilHpAfter: recoilDamage > 0 ? self.hp : undefined,
+      healAmount: healAmount || undefined,
+      healHpAfter: healAmount > 0 ? self.hp : undefined,
+      healFromDrain: healAmount > 0 ? true : undefined,
+      causedFlinch: causedFlinch || undefined,
       statusApplied,
       statusNote,
       chargePhase: isFinishingCharge ? "finish" : null,
     });
   }
 
-  const last = events[events.length - 1];
-  if (last && !opts?.skipResidual) applyResidualToEvent(self, last);
-
-  const itemResult = resolvePlayerHeldItemTrigger({
-    heldItem: p.heldItem,
-    hpBefore: playerHpBefore,
-    hp: p.hp,
-    maxHp: p.maxHp,
-    statusBefore: playerStatusBefore,
-    status: p.status,
-    alreadyConsumed: playerItemConsumed,
-    isActingThisCall: isPlayer,
-  });
-  p.hp = itemResult.hp;
-  p.status = itemResult.status;
-  if (itemResult.trigger && last) {
-    last.itemName = itemResult.trigger.itemName;
-    last.itemEffect = itemResult.trigger.kind;
-    last.itemAmount = itemResult.trigger.amount;
-    last.itemCuredStatus = itemResult.trigger.curedStatus;
-    last.itemHpAfter = p.hp;
-  }
-
-  return {
-    events,
-    player: isPlayer ? self : foe,
-    wild: isPlayer ? foe : self,
-    itemConsumed: itemResult.consumed,
-  };
+  return finishAction();
 }
 
 function applyResidualToEvent(self: SideBattleState, event: TurnEvent) {

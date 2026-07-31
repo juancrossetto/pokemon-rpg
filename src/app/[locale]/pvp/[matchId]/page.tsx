@@ -506,6 +506,15 @@ function formatTurnLine(
   if (raw.startsWith("woke:")) return tLog("woke", { name: raw.slice("woke:".length) });
   if (raw.startsWith("thawed:")) return tLog("thawed", { name: raw.slice("thawed:".length) });
   if (raw.startsWith("fainted:")) return tLog("fainted", { name: raw.slice("fainted:".length) });
+  if (raw === "nothing") return tLog("nothingHappened");
+  if (raw.startsWith("heal:")) {
+    const [name, amount] = raw.slice("heal:".length).split(":");
+    return tLog("healed", { name: name ?? "", amount: Number(amount) || 0 });
+  }
+  if (raw.startsWith("recoil:")) {
+    const [name, dmg] = raw.slice("recoil:".length).split(":");
+    return tLog("recoil", { name: name ?? "", damage: Number(dmg) || 0 });
+  }
   if (raw.startsWith("residual:")) {
     const rest = raw.slice("residual:".length);
     const [name, dmg, kind] = rest.split(":");

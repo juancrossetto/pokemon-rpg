@@ -1,12 +1,45 @@
 /** Condiciones de estado no volátiles + cambios de stats en batalla. */
 
 export type StatusCondition = "BURN" | "PARALYSIS" | "POISON" | "SLEEP" | "FREEZE";
-export type BattleStat = "atk" | "def" | "spe";
+/** Stats modificables por stage. `acc`/`eva` sólo afectan la tirada de precisión. */
+export type BattleStat = "atk" | "def" | "spa" | "spd" | "spe" | "acc" | "eva";
 
 export interface StatStages {
   atk: number;
   def: number;
+  spa: number;
+  spd: number;
   spe: number;
+  acc: number;
+  eva: number;
+}
+
+export const BATTLE_STATS: readonly BattleStat[] = [
+  "atk",
+  "def",
+  "spa",
+  "spd",
+  "spe",
+  "acc",
+  "eva",
+];
+
+export function emptyStatStages(): StatStages {
+  return { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 };
+}
+
+/**
+ * Completa un objeto de stages parcial. Las batallas guardadas antes de que
+ * existieran spa/spd/acc/eva llegan sin esas claves.
+ */
+export function normalizeStages(raw: Partial<StatStages> | null | undefined): StatStages {
+  const base = emptyStatStages();
+  if (!raw) return base;
+  for (const stat of BATTLE_STATS) {
+    const value = raw[stat];
+    if (typeof value === "number" && Number.isFinite(value)) base[stat] = clampStage(value);
+  }
+  return base;
 }
 
 export function clampStage(stage: number): number {
@@ -20,6 +53,13 @@ export function stageMultiplier(stage: number): number {
   return 2 / (2 - s);
 }
 
+/** Precisión/evasión usan una tabla propia con base 3 en vez de 2. */
+export function accuracyStageMultiplier(stage: number): number {
+  const s = clampStage(stage);
+  if (s >= 0) return (3 + s) / 3;
+  return 3 / (3 - s);
+}
+
 export function applyStagesToStats(
   base: { atk: number; def: number; spAtk: number; spDef: number; speed: number },
   stages: StatStages,
@@ -30,8 +70,8 @@ export function applyStagesToStats(
   return {
     atk: Math.max(1, Math.floor(base.atk * stageMultiplier(stages.atk))),
     def: Math.max(1, Math.floor(base.def * stageMultiplier(stages.def))),
-    spAtk: base.spAtk,
-    spDef: base.spDef,
+    spAtk: Math.max(1, Math.floor(base.spAtk * stageMultiplier(stages.spa))),
+    spDef: Math.max(1, Math.floor(base.spDef * stageMultiplier(stages.spd))),
     speed,
   };
 }
@@ -120,7 +160,47 @@ const STAT_MOVES: Record<string, { stat: BattleStat; stages: number }> = {
   "baby-doll-eyes": { stat: "atk", stages: -1 },
   babydolleyes: { stat: "atk", stages: -1 },
   charm: { stat: "atk", stages: -2 },
+  "scary-face": { stat: "spe", stages: -2 },
+  scaryface: { stat: "spe", stages: -2 },
+  "cotton-spore": { stat: "spe", stages: -2 },
+  cottonspore: { stat: "spe", stages: -2 },
+  "sand-attack": { stat: "acc", stages: -1 },
+  sandattack: { stat: "acc", stages: -1 },
+  smokescreen: { stat: "acc", stages: -1 },
+  flash: { stat: "acc", stages: -1 },
+  kinesis: { stat: "acc", stages: -1 },
+  "sweet-scent": { stat: "eva", stages: -2 },
+  sweetscent: { stat: "eva", stages: -2 },
+  "fake-tears": { stat: "spd", stages: -2 },
+  faketears: { stat: "spd", stages: -2 },
+  "metal-sound": { stat: "spd", stages: -2 },
+  metalsound: { stat: "spd", stages: -2 },
+  confide: { stat: "spa", stages: -1 },
+  "eerie-impulse": { stat: "spa", stages: -2 },
+  tickle: { stat: "atk", stages: -1 },
+  "feather-dance": { stat: "atk", stages: -2 },
+  featherdance: { stat: "atk", stages: -2 },
 };
+
+/** Clave i18n del nombre corto de la stat (para el log de subidas/bajadas). */
+export function statLabelKey(stat: BattleStat): string {
+  switch (stat) {
+    case "atk":
+      return "statAtk";
+    case "def":
+      return "statDef";
+    case "spa":
+      return "statSpAtk";
+    case "spd":
+      return "statSpDef";
+    case "spe":
+      return "statSpe";
+    case "acc":
+      return "statAcc";
+    case "eva":
+      return "statEva";
+  }
+}
 
 export function normalizeMoveKey(name: string): string {
   return name.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");

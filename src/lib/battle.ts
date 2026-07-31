@@ -1,5 +1,5 @@
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
-import type { StatusCondition } from "@/lib/status";
+import { accuracyStageMultiplier, type BattleStat, type StatusCondition } from "@/lib/status";
 
 export interface CombatantStats {
   level: number;
@@ -64,10 +64,37 @@ export interface ResolveOptions {
   powerMultiplier?: number;
   /** Si true, no tira accuracy (golpes 2..N de un multi-hit). */
   forceHit?: boolean;
+  /**
+   * Stats sin stages (pero con objetos). Desde Gen II el crítico ignora los
+   * stages que perjudican al atacante: Atq/AtqEsp bajado y Def/DefEsp subida.
+   */
+  critBaselineStats?: Pick<CombatantStats, "atk" | "spAtk"> & Pick<CombatantStats, "def" | "spDef">;
+  /** Nivel de crítico extra del movimiento (Slash, Stone Edge…). */
+  critStage?: number;
+  /** `acc` del atacante menos `eva` del defensor, ya combinados. */
+  accuracyStageDelta?: number;
+  /** Multiplicador adicional sobre la precisión del movimiento. */
+  accuracyMultiplier?: number;
+}
+
+/** Probabilidad de crítico por nivel (Gen VI: 1/16 → 1/8 → 1/2 → siempre). */
+export function critChanceForStage(stage: number): number {
+  if (stage <= 0) return 1 / 16;
+  if (stage === 1) return 1 / 8;
+  if (stage === 2) return 1 / 2;
+  return 1;
 }
 
 /**
- * Fórmula Gen III+ con STAB, tipo, variación, crítico (1/16 → ×1.5)
+ * Los juegos tiran uno de 16 valores discretos entre 0.85 y 1.00 (ambos
+ * incluidos). `0.85 + random()*0.15` nunca llegaba a 1.00.
+ */
+function rollDamageVariance(): number {
+  return (85 + Math.floor(Math.random() * 16)) / 100;
+}
+
+/**
+ * Fórmula Gen VI con STAB, tipo, variación, crítico (1/16 → ×1.5)
  * y burn en físicos.
  */
 export function resolveMoveUse(
@@ -76,20 +103,39 @@ export function resolveMoveUse(
   move: MoveSnapshot,
   options: ResolveOptions = {},
 ): MoveResult {
+  const accuracyStageMult = accuracyStageMultiplier(options.accuracyStageDelta ?? 0);
+  const effectiveAccuracy =
+    move.accuracy === null
+      ? null
+      : move.accuracy * accuracyStageMult * (options.accuracyMultiplier ?? 1);
   const hit = options.forceHit
     ? true
-    : move.accuracy === null
+    : effectiveAccuracy === null
       ? true
-      : Math.random() * 100 < move.accuracy;
+      : Math.random() * 100 < effectiveAccuracy;
   if (!hit || move.category === "STATUS" || move.power === null) {
     return { hit, damage: 0, effectiveness: 1, critical: false };
   }
 
-  let atkStat = move.category === "PHYSICAL" ? attacker.atk : attacker.spAtk;
-  if (move.category === "PHYSICAL" && options.attackerBurned) {
+  const effectiveness = getTypeEffectiveness(move.type, defender.types);
+  const critical = Math.random() < critChanceForStage(options.critStage ?? 0);
+
+  const isPhysical = move.category === "PHYSICAL";
+  let atkStat = isPhysical ? attacker.atk : attacker.spAtk;
+  let defStat = isPhysical ? defender.def : defender.spDef;
+
+  // El crítico descarta el stage que juega en contra del atacante, nunca el
+  // que lo favorece: por eso es max() del lado ofensivo y min() del defensivo.
+  const baseline = options.critBaselineStats;
+  if (critical && baseline) {
+    atkStat = Math.max(atkStat, isPhysical ? baseline.atk : baseline.spAtk);
+    defStat = Math.min(defStat, isPhysical ? baseline.def : baseline.spDef);
+  }
+
+  if (isPhysical && options.attackerBurned) {
     atkStat = Math.max(1, Math.floor(atkStat * 0.5));
   }
-  const defStat = move.category === "PHYSICAL" ? defender.def : defender.spDef;
+  defStat = Math.max(1, defStat);
 
   const base = Math.floor(
     (Math.floor((2 * attacker.level) / 5 + 2) * move.power * (atkStat / defStat)) / 50 + 2,
@@ -97,10 +143,8 @@ export function resolveMoveUse(
 
   const moveType = move.type.toLowerCase();
   const stab = attacker.types.some((t) => t.toLowerCase() === moveType) ? 1.5 : 1;
-  const effectiveness = getTypeEffectiveness(move.type, defender.types);
-  const critical = Math.random() < 1 / 16;
   const critMult = critical ? 1.5 : 1;
-  const randomFactor = 0.85 + Math.random() * 0.15;
+  const randomFactor = rollDamageVariance();
   const itemMult = options.powerMultiplier ?? 1;
 
   const damage =
@@ -164,16 +208,32 @@ export interface TurnEvent {
   statusApplied?: StatusCondition | null;
   /** Estado del atacante al aplicar residual (para el mensaje del log). */
   residualStatus?: StatusCondition | null;
-  statChange?: { stat: "atk" | "def" | "spe"; stages: number } | null;
+  statChange?: { stat: BattleStat; stages: number } | null;
   /** Fase de un movimiento de 2 turnos (Fly, Dig, Solar Beam…). */
   chargePhase?: "start" | "finish" | null;
   /** Semi-invulnerabilidad activa tras el turno de carga (vanish). */
   semiInvuln?: "air" | "underground" | "underwater" | null;
-  /** Boost propio al empezar la carga (Skull Bash). */
-  selfStatChange?: { stat: "atk" | "def" | "spe"; stages: number } | null;
+  /** Boost propio: carga (Skull Bash) o movimiento de auto-buff (Swords Dance). */
+  selfStatChange?: { stat: BattleStat; stages: number } | null;
+  /** Varios boosts propios en un mismo uso (Calm Mind, Dragon Dance…). */
+  selfStatChanges?: { stat: BattleStat; stages: number }[];
+  /** HP que el atacante recuperó (curación directa o drenaje). */
+  healAmount?: number;
+  /** HP del atacante tras curarse — el cliente lo aplica sin recalcular. */
+  healHpAfter?: number;
+  /** La curación viene de drenar al rival (Giga Drain), no de Recover. */
+  healFromDrain?: boolean;
+  /** El movimiento se usó pero no tuvo ningún efecto. */
+  noEffect?: boolean;
+  /** KO fulminante (Fissure, Guillotine…). */
+  ohko?: boolean;
+  /** El golpe hizo retroceder al objetivo: pierde su turno. */
+  causedFlinch?: boolean;
   residualDamage?: number;
   residualHpAfter?: number;
   recoilDamage?: number;
+  /** HP del atacante tras el retroceso — evita recalcular en el cliente. */
+  recoilHpAfter?: number;
   /** PP restante del movimiento del jugador tras usarlo (si aplica). */
   playerPpAfter?: number;
   /** Objeto equipado del jugador que se activó en esta acción (Leftovers, Focus Sash, etc.). */

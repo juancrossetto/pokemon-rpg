@@ -3,6 +3,8 @@
  * @see https://pokeapi.co/api/v2/move-target/
  */
 
+import { healFraction, isRestMove, selfStatChanges } from "@/lib/move-effects";
+
 export type MoveTargetKind =
   | "selected-pokemon"
   | "all-opponents"
@@ -62,6 +64,12 @@ export function normalizeMoveTarget(
   const key = (moveName ?? "").trim().toLowerCase().replace(/\s+/g, "-");
   if (SPREAD_ALL_BY_NAME.has(key)) return "all-other-pokemon";
   if (SPREAD_FOES_BY_NAME.has(key)) return "all-opponents";
+  // Curación y auto-boost se apuntan a uno mismo. Sin esto, un Move sin
+  // `target` sincronizado caía en "selected-pokemon" y en dobles el juego
+  // pedía "¿a qué rival?" para un Swords Dance.
+  if (healFraction(key) != null || isRestMove(key) || selfStatChanges(key) != null) {
+    return "user";
+  }
   return "selected-pokemon";
 }
 

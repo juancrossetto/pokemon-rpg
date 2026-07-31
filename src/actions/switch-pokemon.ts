@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { TurnEvent } from "@/lib/battle";
 import { effectivePp, mergeBattleParticipantIds } from "@/lib/battle";
+import { RESET_PLAYER_STAGES } from "@/lib/battle-stages";
 import { calculateMaxHp, calculateStat } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
@@ -100,9 +101,7 @@ export async function switchPokemon(
   const clearPlayerStatus = {
     playerStatus: null as null,
     playerSleepTurns: 0,
-    playerAtkStage: 0,
-    playerDefStage: 0,
-    playerSpeStage: 0,
+    ...RESET_PLAYER_STAGES,
     // El objeto equipado del que entra puede ser otro (o ninguno) — el lock
     // de Choice y el consumo de Focus Sash/Sitrus/Lum son por Pokémon.
     playerChoiceLockMoveId: null as number | null,

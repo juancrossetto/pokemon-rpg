@@ -723,7 +723,14 @@
       "brokeFree": "It broke free!",
       "brokeFreeNamed": "{name} broke free!",
       "lowHp": "{name} is about to faint!",
-      "towerFloor": "Tower floor {floor}"
+      "towerFloor": "Tower floor {floor}",
+      "statSpAtk": "Sp. Atk",
+      "statSpDef": "Sp. Def",
+      "statAcc": "Accuracy",
+      "statEva": "Evasiveness",
+      "healed": "{name} restored {amount} HP!",
+      "nothingHappened": "But nothing happened...",
+      "ohko": "It's a one-hit KO! {name} went down instantly."
     },
     "badgePerks": {
       "title": "Badge perks",
@@ -752,7 +759,10 @@
     "resultLostTower": "Your squad fell in the Tower. Loot from cleared floors is already yours.",
     "alphaEncounter": "It is an Alpha Pokémon! Far stronger than usual.",
     "backToTower": "Back to Tower",
-    "towerContinuePrompt": "Your Tower climb is still active. Head back to continue."
+    "towerContinuePrompt": "Your Tower climb is still active. Head back to continue.",
+    "forecastHitsFixed": "(x{hits})",
+    "forecastHitsRange": "(x{min}-{max})",
+    "forecastTwoTurn": "2 turns"
   },
   "gyms": {
     "title": "Gyms",

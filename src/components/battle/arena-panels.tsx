@@ -8,7 +8,14 @@ import Image from "next/image";
 import { type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { PokeballIcon } from "@/components/pokeball-icon";
-import { statusAbbrKey, statusLabelKey, isStatusCondition, type StatStages } from "@/lib/status";
+import {
+  BATTLE_STATS,
+  isStatusCondition,
+  statLabelKey,
+  statusAbbrKey,
+  statusLabelKey,
+  type StatStages,
+} from "@/lib/status";
 
 export function PartySidebar({
   name,
@@ -167,15 +174,11 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-const STAGE_LABEL_KEY = { atk: "statAtk", def: "statDef", spe: "statSpe" } as const;
-
 /** Chips de stat subido/bajado. Sin esto, un Growl repetido solo dejaba una
  *  línea vieja en el log y el jugador no sabía cuánto acumuló. */
 function StageBadges({ stages, align }: { stages: StatStages; align: "left" | "right" }) {
   const tLog = useTranslations("battle.log");
-  const active = (Object.keys(STAGE_LABEL_KEY) as (keyof StatStages)[]).filter(
-    (stat) => stages[stat] !== 0,
-  );
+  const active = BATTLE_STATS.filter((stat) => stages[stat] !== 0);
   if (active.length === 0) return null;
 
   return (
@@ -183,7 +186,7 @@ function StageBadges({ stages, align }: { stages: StatStages; align: "left" | "r
       {active.map((stat) => {
         const value = stages[stat];
         const up = value > 0;
-        const label = tLog(STAGE_LABEL_KEY[stat]);
+        const label = tLog(statLabelKey(stat));
         return (
           <span
             key={stat}

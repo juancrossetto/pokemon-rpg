@@ -723,7 +723,14 @@
       "brokeFree": "Se libertou!",
       "brokeFreeNamed": "{name} se libertou!",
       "lowHp": "{name} está prestes a desmaiar!",
-      "towerFloor": "Andar {floor} da Torre"
+      "towerFloor": "Andar {floor} da Torre",
+      "statSpAtk": "Ataque Esp.",
+      "statSpDef": "Defesa Esp.",
+      "statAcc": "Precisão",
+      "statEva": "Evasão",
+      "healed": "{name} recuperou {amount} PS!",
+      "nothingHappened": "Mas não aconteceu nada...",
+      "ohko": "Golpe fulminante! {name} caiu de uma só vez."
     },
     "badgePerks": {
       "title": "Benefícios das medalhas",
@@ -752,7 +759,10 @@
     "resultLostTower": "Sua equipe caiu na Torre. O espólio dos andares vencidos já está na sua conta.",
     "alphaEncounter": "É um Pokémon Alfa! Bem mais forte que o normal.",
     "backToTower": "Voltar à Torre",
-    "towerContinuePrompt": "Sua subida na Torre ainda está ativa. Volte para continuar."
+    "towerContinuePrompt": "Sua subida na Torre ainda está ativa. Volte para continuar.",
+    "forecastHitsFixed": "(×{hits})",
+    "forecastHitsRange": "(×{min}-{max})",
+    "forecastTwoTurn": "2 turnos"
   },
   "gyms": {
     "title": "Ginásios",

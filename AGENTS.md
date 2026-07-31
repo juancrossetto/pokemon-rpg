@@ -124,9 +124,27 @@ El resolutor determinístico vive en `src/lib/battle.ts` +
 `src/lib/resolve-action.ts`, apoyado por `capture.ts`, `flee.ts`,
 `multi-hit.ts` y `type-effectiveness.ts`. Es lo único con cobertura de tests
 real (`src/lib/__tests__/combat-core.test.ts`,
-`combat-engine.test.ts`, `damage-forecast.test.ts`, `two-turn.test.ts`) —
-correr `npx vitest run combat` antes y después de tocar cualquiera de esos
-archivos.
+`combat-engine.test.ts`, `damage-forecast.test.ts`, `two-turn.test.ts`,
+`move-effects.test.ts`) — correr `npx vitest run combat move-effects` antes y
+después de tocar cualquiera de esos archivos.
+
+La referencia es **Gen VI** (crítico 1/16 → ×1.5, STAB 1.5, spread ×0.75) con
+dos ajustes de Gen VII a propósito: parálisis reduce Velocidad a la mitad y la
+quemadura hace 1/16 por turno. Si algo no coincide con Bulbapedia, revisar
+primero contra Gen VI antes de "arreglarlo".
+
+Lo que el schema de `Move` no guarda (PokeAPI no lo expone) se resuelve por
+nombre en módulos puros: `multi-hit.ts`, `two-turn.ts` y `move-effects.ts`
+(curación, drenaje, auto-boost, OHKO, retroceso, flinch, crítico alto). Un
+movimiento de estado que no esté en ninguna tabla devuelve `noEffect: true` en
+vez de fingir que el turno hizo algo — si agregás una mecánica nueva, sumala a
+la tabla correspondiente o el jugador va a ver "pero no pasó nada".
+
+Los stages viven en las 7 stats (`atk`, `def`, `spa`, `spd`, `spe`, `acc`,
+`eva`) y se persisten en columnas planas de `BattleSession`. La conversión
+entre columnas y el objeto `StatStages` está centralizada en
+`src/lib/battle-stages.ts`: agregar una stat es un cambio ahí más la
+migración, no un literal repetido en cada acción de combate.
 
 ### Navegación
 

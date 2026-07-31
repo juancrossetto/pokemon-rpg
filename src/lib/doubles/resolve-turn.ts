@@ -249,6 +249,9 @@ export function resolveDoubleTurn(
     return 0;
   });
 
+  // Slots que perdieron el turno por retroceso de un golpe anterior.
+  const flinched = new Set<DoubleSlot>();
+
   for (const action of livingActions) {
     const attacker = getSlot(field, action.slot);
     if (!attacker || attacker.hp <= 0) continue;
@@ -256,9 +259,48 @@ export function resolveDoubleTurn(
     const atkSide = slotSide(action.slot);
     const targetKind = normalizeMoveTarget(action.move.target, action.move.name);
 
-    // Self / field effects: no golpe a rival (MVP).
+    if (flinched.has(action.slot)) {
+      events.push(
+        ...tagEvents(
+          [
+            {
+              side: atkSide,
+              moveName: action.move.name,
+              moveType: action.move.type,
+              category: action.move.category,
+              hit: false,
+              isStatus: false,
+              damage: 0,
+              effectiveness: 1,
+              hpAfter: 0,
+              skipped: "flinch",
+            },
+          ],
+          action.slot,
+          action.slot,
+        ),
+      );
+      continue;
+    }
+
+    // Self-target (Swords Dance, Recover…): se resuelve con un rival vivo como
+    // defensor ficticio — el movimiento no lo toca, pero el motor necesita dos
+    // lados. Antes se salteaba y el turno se perdía sin efecto.
     if (isSelfOrAllyOnlyMove(action.move.target, action.move.name)) {
       void targetKind;
+      const bystander = livingFoeOrRedirect(field, defaultTarget(action.slot));
+      if (!bystander) continue;
+      const hit = resolveHitOnTarget(field, action, bystander, itemA, itemB, 1);
+      itemA = hit.itemA;
+      itemB = hit.itemB;
+      // El objetivo real es uno mismo: el cliente no debe animar al rival.
+      events.push(
+        ...hit.events.map((e) => ({
+          ...e,
+          targetSide: atkSide,
+          targetFieldSlot: slotLane(action.slot),
+        })),
+      );
       continue;
     }
 
@@ -294,6 +336,7 @@ export function resolveDoubleTurn(
         itemA = hit.itemA;
         itemB = hit.itemB;
         events.push(...hit.events);
+        if (hit.events.some((e) => e.causedFlinch)) flinched.add(t);
         // Si el atacante se saltó el turno (sleep etc.), no seguir pegando.
         if (hit.events.some((e) => e.skipped)) break;
       }
@@ -351,6 +394,7 @@ export function resolveDoubleTurn(
       itemA = hit.itemA;
       itemB = hit.itemB;
       events.push(...hit.events);
+      if (hit.events.some((e) => e.causedFlinch)) flinched.add(preferred);
       continue;
     }
 
@@ -394,6 +438,7 @@ export function resolveDoubleTurn(
     itemA = hit.itemA;
     itemB = hit.itemB;
     events.push(...hit.events);
+    if (hit.events.some((e) => e.causedFlinch)) flinched.add(targetSlot);
 
     // Lockea la calle elegida (no la del redirect).
     if (hit.events.some((e) => e.chargePhase === "start")) {

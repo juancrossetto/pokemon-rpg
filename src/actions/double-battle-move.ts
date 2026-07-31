@@ -19,10 +19,18 @@ import {
   type TurnEvent,
 } from "@/lib/battle";
 import { pickWildMove } from "@/lib/battle-ai";
+import {
+  playerStageColumns,
+  playerStagesFromSession,
+  slotStageColumns,
+  stagesFromSlot,
+  wildStageColumns,
+  wildStagesFromSession,
+} from "@/lib/battle-stages";
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import type { SideBattleState } from "@/lib/resolve-action";
 import { heldItemSnapshotFromItem } from "@/lib/held-items";
-import type { StatusCondition } from "@/lib/status";
+import { normalizeStages, type StatusCondition } from "@/lib/status";
 import { twoTurnSpec, type SemiInvulnKind } from "@/lib/two-turn";
 import {
   parseDoublesFieldB,
@@ -205,7 +213,7 @@ export async function submitDoubleBattleMoves(
     .map((id) => wildAMoves.find((x) => x.id === id))
     .filter((m): m is NonNullable<typeof m> => !!m)
     .map(toSnapshot);
-  let wildAPp =
+  const wildAPp =
     (battle.wildMovePp?.length ?? 0) === battle.wildMoveIds.length && battle.wildMovePp
       ? [...battle.wildMovePp]
       : wildASnaps.map((m) => m.pp ?? 20);
@@ -216,7 +224,7 @@ export async function submitDoubleBattleMoves(
     .map((id) => wildBMoves.find((x) => x.id === id))
     .filter((m): m is NonNullable<typeof m> => !!m)
     .map(toSnapshot);
-  let wildBPp =
+  const wildBPp =
     wildBDef.movePp.length === wildBDef.moveIds.length
       ? [...wildBDef.movePp]
       : wildBSnaps.map((m) => m.pp ?? 20);
@@ -235,11 +243,7 @@ export async function submitDoubleBattleMoves(
     maxHp: calculateMaxHp(instA.species.baseHp, instA.level, instA.ptConstitution),
     status: battle.playerStatus ?? null,
     sleepTurns: battle.playerSleepTurns ?? 0,
-    stages: {
-      atk: battle.playerAtkStage ?? 0,
-      def: battle.playerDefStage ?? 0,
-      spe: battle.playerSpeStage ?? 0,
-    },
+    stages: playerStagesFromSession(battle),
     name: instA.nickname ?? instA.species.name,
     baseStats: playerCombatantStats(instA.species, instA.level, instA),
     heldItem: heldItemSnapshotFromItem(instA.heldItem),
@@ -254,11 +258,7 @@ export async function submitDoubleBattleMoves(
     maxHp: calculateMaxHp(instB.species.baseHp, instB.level, instB.ptConstitution),
     status: fieldBParsed.player.status,
     sleepTurns: fieldBParsed.player.sleepTurns,
-    stages: {
-      atk: fieldBParsed.player.atkStage,
-      def: fieldBParsed.player.defStage,
-      spe: fieldBParsed.player.speStage,
-    },
+    stages: stagesFromSlot(fieldBParsed.player),
     name: instB.nickname ?? instB.species.name,
     baseStats: playerCombatantStats(instB.species, instB.level, instB),
     heldItem: heldItemSnapshotFromItem(instB.heldItem),
@@ -283,11 +283,7 @@ export async function submitDoubleBattleMoves(
     maxHp: battle.wildMaxHp,
     status: battle.wildStatus ?? null,
     sleepTurns: battle.wildSleepTurns ?? 0,
-    stages: {
-      atk: battle.wildAtkStage ?? 0,
-      def: battle.wildDefStage ?? 0,
-      spe: battle.wildSpeStage ?? 0,
-    },
+    stages: wildStagesFromSession(battle),
     name: battle.wildSpecies.name,
     baseStats: wildCombatantStats(battle.wildSpecies, battle.wildLevel),
     heldItem: null,
@@ -302,11 +298,7 @@ export async function submitDoubleBattleMoves(
     maxHp: wildBDef.maxHp,
     status: wildBDef.status,
     sleepTurns: wildBDef.sleepTurns,
-    stages: {
-      atk: wildBDef.atkStage,
-      def: wildBDef.defStage,
-      spe: wildBDef.speStage,
-    },
+    stages: stagesFromSlot(wildBDef),
     name: speciesB.name,
     baseStats: wildCombatantStats(speciesB, wildBDef.level),
     heldItem: null,
@@ -452,9 +444,7 @@ export async function submitDoubleBattleMoves(
         movePp: wildBPp,
         status: field.wildB?.status ?? null,
         sleepTurns: field.wildB?.sleepTurns ?? 0,
-        atkStage: field.wildB?.stages.atk ?? 0,
-        defStage: field.wildB?.stages.def ?? 0,
-        speStage: field.wildB?.stages.spe ?? 0,
+        ...slotStageColumns(normalizeStages(field.wildB?.stages)),
         itemConsumed: wildBDef.itemConsumed,
         choiceLockMoveId: wildBDef.choiceLockMoveId,
         chargeMoveId: field.wildB?.chargeMoveId ?? null,
@@ -463,9 +453,7 @@ export async function submitDoubleBattleMoves(
       {
         status: field.playerB?.status ?? null,
         sleepTurns: field.playerB?.sleepTurns ?? 0,
-        atkStage: field.playerB?.stages.atk ?? 0,
-        defStage: field.playerB?.stages.def ?? 0,
-        speStage: field.playerB?.stages.spe ?? 0,
+        ...slotStageColumns(normalizeStages(field.playerB?.stages)),
         choiceLockMoveId: fieldBParsed.player.choiceLockMoveId,
         itemConsumed: resolved.playerItemConsumedB,
         chargeMoveId: field.playerB?.chargeMoveId ?? null,
@@ -703,12 +691,8 @@ export async function submitDoubleBattleMoves(
         wildStatus: field.wildA.status,
         playerSleepTurns: field.playerA.sleepTurns,
         wildSleepTurns: field.wildA.sleepTurns,
-        playerAtkStage: field.playerA.stages.atk,
-        playerDefStage: field.playerA.stages.def,
-        playerSpeStage: field.playerA.stages.spe,
-        wildAtkStage: field.wildA.stages.atk,
-        wildDefStage: field.wildA.stages.def,
-        wildSpeStage: field.wildA.stages.spe,
+        ...playerStageColumns(field.playerA.stages),
+        ...wildStageColumns(field.wildA.stages),
         playerItemConsumed: resolved.playerItemConsumedA,
         playerChargeMoveId: field.playerA.chargeMoveId ?? null,
         wildChargeMoveId: field.wildA.chargeMoveId ?? null,
