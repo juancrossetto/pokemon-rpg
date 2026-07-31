@@ -1147,6 +1147,8 @@ model TowerRun {
   currentFloor          Int            @default(1)
   /// Snapshot del equipo del intento (HP/PP/derrotados + restore de Aventura).
   teamSnapshot          Json
+  /// Si no es null, el ascenso está pausado: Aventura restaurada, se puede salir de /tower.
+  parkedAt              DateTime?
   /// Botín acumulado del ascenso, pendiente de reclamar al cerrar.
   pendingLoot           Json           @default("[]")
   lootClaimedAt         DateTime?

@@ -1,14 +1,16 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import {
   abandonTowerRun,
   applyTowerRest,
   challengeTowerFloor,
   chooseTowerBlessing,
+  parkTowerRun,
   startTowerRun,
 } from "@/actions/tower";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { GameCtaButton } from "@/components/game-cta-button";
 import { Link } from "@/i18n/navigation";
 import type { TowerBlessing, TowerFloor, TowerPrimaryAction, TowerRunCreature } from "@/lib/tower";
@@ -208,21 +210,133 @@ export function TowerBlessingSelector({
   );
 }
 
-export function TowerAbandonButton({ locale }: { locale: string }) {
+export function TowerParkButton({
+  locale,
+  variant = "panel",
+}: {
+  locale: string;
+  variant?: "panel" | "header" | "bar";
+}) {
   const t = useTranslations("tower");
+  const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
+
+  const trigger =
+    variant === "header" ? (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => setOpen(true)}
+        className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/35 bg-black/40 px-2.5 py-0.5 text-[10px] font-semibold text-white/90 backdrop-blur-sm transition-colors hover:bg-white/10 disabled:opacity-40 sm:min-h-9 sm:px-3 sm:text-label-sm"
+      >
+        <span className="material-symbols-outlined text-[14px]! sm:text-[16px]!">home</span>
+        {t("park.cta")}
+      </button>
+    ) : variant === "bar" ? (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => setOpen(true)}
+        className="mt-1.5 w-full min-h-9 text-center text-[11px] font-medium text-white/70 underline-offset-2 transition-colors hover:text-white hover:underline disabled:opacity-40"
+      >
+        {t("park.cta")}
+      </button>
+    ) : (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => setOpen(true)}
+        className="min-h-11 w-full rounded-lg border border-white/20 bg-white/[0.04] px-4 py-2 text-label-sm text-on-surface transition-colors hover:bg-white/[0.08] disabled:opacity-40"
+      >
+        {t("park.cta")}
+      </button>
+    );
+
   return (
-    <button
-      type="button"
-      disabled={pending}
-      onClick={() => {
-        if (!window.confirm(t("abandon.confirm"))) return;
-        start(async () => abandonTowerRun(locale));
-      }}
-      className="min-h-11 w-full rounded-lg border border-error/30 px-4 py-2 text-label-sm text-error/90 transition-colors hover:bg-error/10 disabled:opacity-40"
-    >
-      {t("abandon.cta")}
-    </button>
+    <>
+      {trigger}
+      <ConfirmModal
+        open={open}
+        title={t("park.title")}
+        body={t("park.body")}
+        confirmLabel={t("park.confirmCta")}
+        cancelLabel={t("park.cancel")}
+        pending={pending}
+        onCancel={() => setOpen(false)}
+        onConfirm={() => {
+          start(async () => {
+            await parkTowerRun(locale);
+            setOpen(false);
+          });
+        }}
+      />
+    </>
+  );
+}
+
+export function TowerAbandonButton({
+  locale,
+  variant = "panel",
+}: {
+  locale: string;
+  /** panel = bloque ancho; header = chip del hero; bar = link bajo el CTA. */
+  variant?: "panel" | "header" | "bar";
+}) {
+  const t = useTranslations("tower");
+  const [open, setOpen] = useState(false);
+  const [pending, start] = useTransition();
+
+  const trigger =
+    variant === "header" ? (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => setOpen(true)}
+        className="inline-flex min-h-8 items-center gap-1 rounded-full border border-error/40 bg-black/40 px-2.5 py-0.5 text-[10px] font-semibold text-error/95 backdrop-blur-sm transition-colors hover:bg-error/15 disabled:opacity-40 sm:min-h-9 sm:px-3 sm:text-label-sm"
+      >
+        <span className="material-symbols-outlined text-[14px]! sm:text-[16px]!">logout</span>
+        {t("abandon.cta")}
+      </button>
+    ) : variant === "bar" ? (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => setOpen(true)}
+        className="mt-1 w-full min-h-8 text-center text-[10px] font-medium text-error/70 underline-offset-2 transition-colors hover:text-error hover:underline disabled:opacity-40"
+      >
+        {t("abandon.cta")}
+      </button>
+    ) : (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => setOpen(true)}
+        className="min-h-11 w-full rounded-lg border border-error/30 px-4 py-2 text-label-sm text-error/90 transition-colors hover:bg-error/10 disabled:opacity-40"
+      >
+        {t("abandon.cta")}
+      </button>
+    );
+
+  return (
+    <>
+      {trigger}
+      <ConfirmModal
+        open={open}
+        tone="danger"
+        title={t("abandon.title")}
+        body={t("abandon.body")}
+        confirmLabel={t("abandon.confirmCta")}
+        cancelLabel={t("abandon.cancel")}
+        pending={pending}
+        onCancel={() => setOpen(false)}
+        onConfirm={() => {
+          start(async () => {
+            await abandonTowerRun(locale);
+            setOpen(false);
+          });
+        }}
+      />
+    </>
   );
 }
 

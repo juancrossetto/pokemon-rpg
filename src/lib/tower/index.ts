@@ -42,6 +42,8 @@ export {
   parseTowerTeamSnapshot,
   syncSnapshotFromInstances,
   applySnapshotHpToInstances,
+  applyTowerRunStateToInstances,
+  freezeTowerRunFromInstances,
   restoreAdventureTeam,
   primeTeamForTowerRun,
   towerTeamSnapshotJson,
@@ -51,6 +53,8 @@ export {
   settleTowerFloorWin,
   settleTowerFloorLoss,
   abandonTowerRunInTx,
+  parkTowerRunInTx,
+  resumeTowerRunInTx,
   grantFloorRewards,
 } from "./settle";
 export {

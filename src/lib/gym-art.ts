@@ -1,3 +1,5 @@
+import { showdownTypeSymbolUrl } from "@/lib/type-icons";
+
 // Medallas: arte local en public/gyms/badges/ (Showdown no tiene gym badges).
 //
 // Líderes — dos resoluciones:
@@ -16,8 +18,24 @@ const LEADER_SLUGS: Record<string, string> = {
   Giovanni: "giovanni",
 };
 
+/** Tipos con PNG local en `public/gyms/badges/`. El resto (Elite / sellos) cae al ícono de tipo. */
+const LOCAL_BADGE_TYPES = new Set([
+  "rock",
+  "water",
+  "electric",
+  "grass",
+  "poison",
+  "psychic",
+  "fire",
+  "ground",
+]);
+
 export function gymBadgeImageUrl(type: string): string {
-  return `/gyms/badges/${type}.png`;
+  const key = type.trim().toLowerCase();
+  if (LOCAL_BADGE_TYPES.has(key)) {
+    return `/gyms/badges/${key}.png`;
+  }
+  return showdownTypeSymbolUrl(key);
 }
 
 /** Sprite pixel Showdown — cards, listas, UI chica. */

@@ -76,17 +76,30 @@ export function parseTowerTeamSnapshot(raw: unknown): TowerRunCreature[] {
 /** Sincroniza snapshot desde HP/PP reales de las instancias tras un combate. */
 export function syncSnapshotFromInstances(
   snapshot: TowerRunCreature[],
-  instances: { id: string; currentHp: number }[],
+  instances: { id: string; currentHp: number; moves?: { slot: number; currentPp: number }[] }[],
 ): TowerRunCreature[] {
   const byId = new Map(instances.map((i) => [i.id, i]));
   return snapshot.map((m) => {
     const inst = byId.get(m.instanceId);
     if (!inst) return m;
     const hp = Math.max(0, inst.currentHp);
+    const runPp =
+      inst.moves && inst.moves.length > 0
+        ? m.adventurePp.map((ap) => {
+            const live = inst.moves!.find((x) => x.slot === ap.slot);
+            return {
+              slot: ap.slot,
+              pp: live ? Math.max(0, live.currentPp) : (m.runPp?.find((r) => r.slot === ap.slot)?.pp ?? ap.maxPp),
+              maxPp: ap.maxPp,
+            };
+          })
+        : (m.runPp ??
+          m.adventurePp.map((ap) => ({ slot: ap.slot, pp: ap.maxPp, maxPp: ap.maxPp })));
     return {
       ...m,
       currentHp: hp,
       defeated: hp <= 0,
+      runPp,
     };
   });
 }
@@ -107,6 +120,48 @@ export async function applySnapshotHpToInstances(
     )}) AS v(id, hp)
     WHERE p.id = v.id
   `;
+}
+
+/** Aplica HP + PP del intento (reanudar tras pausa). */
+export async function applyTowerRunStateToInstances(
+  tx: Prisma.TransactionClient,
+  snapshot: TowerRunCreature[],
+): Promise<void> {
+  if (snapshot.length === 0) return;
+  await applySnapshotHpToInstances(tx, snapshot);
+
+  const ppRows = snapshot.flatMap((m) => {
+    const src =
+      m.runPp && m.runPp.length > 0
+        ? m.runPp
+        : m.adventurePp.map((ap) => ({ slot: ap.slot, pp: ap.maxPp, maxPp: ap.maxPp }));
+    return src.map((pp) =>
+      Prisma.sql`(${m.instanceId}, ${pp.slot}, ${Math.max(0, pp.pp)})`,
+    );
+  });
+  if (ppRows.length === 0) return;
+
+  await tx.$executeRaw`
+    UPDATE "PokemonMove" AS m
+    SET "currentPp" = v.pp::int
+    FROM (VALUES ${Prisma.join(ppRows)}) AS v("pokemonInstanceId", slot, pp)
+    WHERE m."pokemonInstanceId" = v."pokemonInstanceId" AND m.slot = v.slot::int
+  `;
+}
+
+/**
+ * Congela el estado del intento desde las instancias vivas y escribe runPp.
+ * No toca adventureHp/adventurePp.
+ */
+export function freezeTowerRunFromInstances(
+  snapshot: TowerRunCreature[],
+  instances: {
+    id: string;
+    currentHp: number;
+    moves: { slot: number; currentPp: number }[];
+  }[],
+): TowerRunCreature[] {
+  return syncSnapshotFromInstances(snapshot, instances);
 }
 
 /** Restaura HP/PP de Aventura al cerrar el intento. */

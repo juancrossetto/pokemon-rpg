@@ -15,6 +15,8 @@ import {
   restoreAdventureTeam,
   syncSnapshotFromInstances,
   towerTeamSnapshotJson,
+  freezeTowerRunFromInstances,
+  applyTowerRunStateToInstances,
 } from "./team";
 import type { TowerRunCreature } from "./types";
 import { currentSeasonKey } from "@/lib/pvp/seasons";
@@ -268,12 +270,16 @@ export async function abandonTowerRunInTx(
   });
   if (["FAILED", "COMPLETED", "ABANDONED"].includes(run.status)) return;
   const team = parseTowerTeamSnapshot(run.teamSnapshot);
-  await restoreAdventureTeam(tx, team);
+  // Si ya estaba pausado, Aventura ya está restaurada: no pisar curas hechas afuera.
+  if (!run.parkedAt) {
+    await restoreAdventureTeam(tx, team);
+  }
   await tx.towerRun.update({
     where: { id: run.id },
     data: {
       status: "ABANDONED",
       endedAt: new Date(),
+      parkedAt: null,
       teamSnapshot: towerTeamSnapshotJson(team),
     },
   });
@@ -281,6 +287,61 @@ export async function abandonTowerRunInTx(
     where: { userId, towerRunId: runId, status: "ACTIVE" },
     data: { status: "FLED" },
   });
+}
+
+/** Pausa el ascenso: congela HP/PP del intento y restaura Aventura. */
+export async function parkTowerRunInTx(
+  tx: Prisma.TransactionClient,
+  runId: string,
+  userId: string,
+  instances: {
+    id: string;
+    currentHp: number;
+    moves: { slot: number; currentPp: number }[];
+  }[],
+): Promise<void> {
+  const run = await tx.towerRun.findFirstOrThrow({
+    where: { id: runId, userId },
+  });
+  if (!["ACTIVE", "AWAITING_BLESSING", "RESTING"].includes(run.status)) return;
+  if (run.parkedAt) return;
+
+  const activeBattle = await tx.battleSession.findFirst({
+    where: { userId, towerRunId: runId, status: "ACTIVE" },
+    select: { id: true },
+  });
+  if (activeBattle) throw new Error("IN_BATTLE");
+
+  const team = freezeTowerRunFromInstances(parseTowerTeamSnapshot(run.teamSnapshot), instances);
+  await restoreAdventureTeam(tx, team);
+  await tx.towerRun.update({
+    where: { id: run.id },
+    data: {
+      parkedAt: new Date(),
+      teamSnapshot: towerTeamSnapshotJson(team),
+    },
+  });
+}
+
+/** Reanuda un ascenso pausado: reaplica HP/PP del intento. */
+export async function resumeTowerRunInTx(
+  tx: Prisma.TransactionClient,
+  runId: string,
+  userId: string,
+): Promise<boolean> {
+  const run = await tx.towerRun.findFirst({
+    where: { id: runId, userId },
+  });
+  if (!run?.parkedAt) return false;
+  if (!["ACTIVE", "AWAITING_BLESSING", "RESTING"].includes(run.status)) return false;
+
+  const team = parseTowerTeamSnapshot(run.teamSnapshot);
+  await applyTowerRunStateToInstances(tx, team);
+  await tx.towerRun.update({
+    where: { id: run.id },
+    data: { parkedAt: null },
+  });
+  return true;
 }
 
 export async function claimTowerRunLootInTx(

@@ -2745,7 +2745,17 @@
     },
     "abandon": {
       "cta": "Abandon run",
-      "confirm": "Abandon the climb? Your Adventure team will be restored."
+      "title": "Abandon this climb?",
+      "body": "This attempt's progress is lost and your Adventure team is restored.",
+      "confirmCta": "Abandon",
+      "cancel": "Stay in the Tower"
+    },
+    "park": {
+      "cta": "Leave to Adventure",
+      "title": "Leave to Adventure?",
+      "body": "Your climb progress is saved (run HP/PP). Your Adventure team returns as it was when you entered. You can continue later from the Tower.",
+      "confirmCta": "Leave to Adventure",
+      "cancel": "Stay"
     },
     "floorDetail": {
       "title": "Floor {n}",
@@ -2758,7 +2768,7 @@
     },
     "rules": {
       "title": "Climb rules",
-      "hp": "HP persists between floors; your Adventure team is restored when the run ends.",
+      "hp": "Run HP is saved when you leave to Adventure; your Adventure team returns as it was on entry. Coming back to the Tower resumes the climb state.",
       "attempts": "{n} attempt per week (resets Sunday 9pm ART).",
       "boss": "A guardian every 10 floors, with stronger recovery after victory.",
       "blessings": "Pick temporary blessings at key milestones.",

@@ -13,6 +13,7 @@ import {
 } from "@/actions/tower";
 import { GameCtaButton } from "@/components/game-cta-button";
 import { RewardList } from "@/components/events/reward-chip";
+import { TowerAbandonButton, TowerParkButton } from "@/components/tower/tower-ui";
 import type { RewardDef } from "@/lib/events/rewards";
 import type {
   TowerBlessing,
@@ -1248,12 +1249,18 @@ export function TowerActionBar({
   locale,
   activeBlessings,
   resetAtMs,
+  canAbandon = false,
+  canPark = false,
 }: {
   action: TowerPrimaryAction;
   locale: string;
   activeBlessings: string[];
   /** Epoch ms del próximo domingo 21hs ART; muestra countdown si el CTA está bloqueado. */
   resetAtMs?: number | null;
+  /** Muestra “Abandonar intento” bajo el CTA cuando hay corrida activa. */
+  canAbandon?: boolean;
+  /** Muestra “Salir a Aventura” (pausa el ascenso). */
+  canPark?: boolean;
 }) {
   const t = useTranslations("tower");
   const [pending, start] = useTransition();
@@ -1337,6 +1344,8 @@ export function TowerActionBar({
           {t(action.reasonKey)}
         </p>
       )}
+      {canPark ? <TowerParkButton locale={locale} variant="bar" /> : null}
+      {canAbandon ? <TowerAbandonButton locale={locale} variant="bar" /> : null}
       </div>
     </div>
   );

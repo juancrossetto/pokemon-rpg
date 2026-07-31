@@ -2745,7 +2745,17 @@
     },
     "abandon": {
       "cta": "Abandonar intento",
-      "confirm": "¿Abandonar el ascenso? Se restaurará tu equipo de Aventura."
+      "title": "¿Abandonar el ascenso?",
+      "body": "Se pierde el progreso de este intento y se restaura tu equipo de Aventura.",
+      "confirmCta": "Abandonar",
+      "cancel": "Seguir en la Torre"
+    },
+    "park": {
+      "cta": "Salir a Aventura",
+      "title": "¿Salir a Aventura?",
+      "body": "El progreso del ascenso se guarda (HP/PP del intento). Tu equipo de Aventura vuelve como estaba al entrar. Podés continuar después desde la Torre.",
+      "confirmCta": "Salir a Aventura",
+      "cancel": "Quedarme"
     },
     "floorDetail": {
       "title": "Piso {n}",
@@ -2758,7 +2768,7 @@
     },
     "rules": {
       "title": "Reglas del ascenso",
-      "hp": "El HP persiste entre pisos; tu equipo de Aventura se restaura al terminar.",
+      "hp": "El HP del intento se guarda al salir a Aventura; tu equipo de Aventura vuelve como al entrar. Al volver a la Torre, retoma el estado del ascenso.",
       "attempts": "{n} intento por semana (reinicio domingo 21hs ART).",
       "boss": "Guardián cada 10 pisos, con recuperación mayor al vencerlo.",
       "blessings": "Elegí bendiciones temporales en hitos clave.",
