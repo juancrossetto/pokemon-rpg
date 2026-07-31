@@ -41,6 +41,8 @@ export function RankingBoardView({
     prev: string;
     next: string;
     pageOf: (page: number, total: number) => string;
+    /** Rótulo corto: "PC" / "CP" / "Elo". */
+    metricLabel: string;
   };
   formatPrimary: (e: RankingEntry) => string;
   formatSecondary?: (e: RankingEntry) => string | undefined;
@@ -93,6 +95,8 @@ export function RankingBoardView({
         formatPrimary={formatPrimary}
         formatSecondary={formatSecondary}
         portrait={category === "combat_power" ? "avatar" : "creature"}
+        metricKind={category === "combat_power" ? "cp" : "elo"}
+        metricLabel={labels.metricLabel}
       />
 
       <RankingPagination

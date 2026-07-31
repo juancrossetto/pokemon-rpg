@@ -747,6 +747,7 @@ function FriendCard({
   const companionUrl = friend.favorite
     ? uiSpriteUrl(friend.favorite.spriteUrl, friend.favorite.isShiny)
     : null;
+  const rankLabel = labels.card.ranks[friend.rankTierId] ?? friend.rankTierId;
 
   return (
     <article
@@ -754,7 +755,7 @@ function FriendCard({
       style={
         {
           ...style,
-          containIntrinsicSize: "0 320px",
+          containIntrinsicSize: "0 340px",
           contentVisibility: "auto",
         } as CSSProperties
       }
@@ -838,28 +839,56 @@ function FriendCard({
               star
             </span>
           ) : null}
+
+          {friend.favorite ? (
+            <span className="absolute bottom-1.5 left-2 z-[2] max-w-[70%] truncate rounded-md bg-black/45 px-1.5 py-0.5 text-[9px] font-medium capitalize tracking-wide text-white/80 backdrop-blur-[2px]">
+              {friend.favorite.name}
+            </span>
+          ) : null}
         </span>
 
-        <span className="flex flex-col gap-1 border-t border-white/[0.06] px-3 py-2.5">
+        <span className="flex flex-col gap-1 border-t border-white/8 bg-[#0e1118]/85 px-3 py-2.5 backdrop-blur-sm">
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-[13px] font-semibold tracking-tight text-white">
               {friend.username}
             </span>
             <FlagIcon code={friend.country} className="h-3 w-4 shrink-0" />
           </span>
-          <span className="truncate text-[10px] text-on-surface-variant">
+
+          <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] text-on-surface-variant">
             <span className="tabular-nums text-white/75">
               {labels.level} {friend.level}
             </span>
-            <span className="mx-1 opacity-40">·</span>
-            <span>{labels.card.titles[friend.titleId] ?? friend.titleId}</span>
+            <span className="opacity-35">·</span>
+            <span className="truncate">
+              {labels.card.titles[friend.titleId] ?? friend.titleId}
+            </span>
+            <span className="opacity-35">·</span>
+            <span className="shrink-0 rounded-full border border-white/12 bg-white/[0.06] px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-white/80">
+              {rankLabel}
+            </span>
           </span>
-          <PresenceBadge
-            status={friend.presence}
-            label={labels.presence[friend.presence]}
-          />
-          <span className="truncate text-[9px] text-on-surface-variant/70">
-            {labels.lastSeen} {relativeTime(friend.lastSeenAt, labels)}
+
+          <span className="truncate text-[10px] text-on-surface-variant/85">
+            <span className="tabular-nums text-white/70">{friend.badgeCount}</span>
+            {" "}
+            {labels.badges}
+            {friend.regionLabel ? (
+              <>
+                <span className="mx-1 opacity-35">·</span>
+                <span>{friend.regionLabel}</span>
+              </>
+            ) : null}
+          </span>
+
+          <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <PresenceBadge
+              status={friend.presence}
+              label={labels.presence[friend.presence]}
+            />
+            <span className="truncate text-[9px] text-on-surface-variant/60">
+              {labels.lastSeen} {relativeTime(friend.lastSeenAt, labels)}
+            </span>
           </span>
         </span>
       </button>

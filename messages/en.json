@@ -1265,8 +1265,10 @@
     },
     "metric": {
       "pc": "CP {value}",
+      "cpLabel": "CP",
       "medals": "{count, plural, =1 {1 badge} other {# badges}}",
       "elo": "Elo {value}",
+      "eloLabel": "Elo",
       "pvpRecord": "{wins}W · {losses}L · {winrate}%"
     },
     "yourCard": {

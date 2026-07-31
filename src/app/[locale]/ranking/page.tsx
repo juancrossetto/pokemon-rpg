@@ -165,6 +165,7 @@ async function CombatPowerBoard({
         prev: t("pagination.prev"),
         next: t("pagination.next"),
         pageOf: (p, total) => t("pagination.pageOf", { page: p, total }),
+        metricLabel: t("metric.cpLabel"),
       }}
     />
   );
@@ -221,6 +222,7 @@ async function PvpBoardView({
         prev: t("pagination.prev"),
         next: t("pagination.next"),
         pageOf: (p, total) => t("pagination.pageOf", { page: p, total }),
+        metricLabel: t("metric.eloLabel"),
       }}
     />
   );
