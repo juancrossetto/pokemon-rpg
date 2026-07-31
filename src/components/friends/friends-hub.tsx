@@ -137,6 +137,12 @@ function avatarSrc(avatarId: string | null): string | null {
   return avatarById(avatarId)?.src ?? null;
 }
 
+/** Cuerpo completo recortado — misma arte que el banner del perfil. */
+function avatarStageSrc(avatarId: string | null): string | null {
+  const av = avatarById(avatarId);
+  return av?.stageSrc ?? av?.profileSrc ?? null;
+}
+
 function relativeTime(
   iso: string | null,
   labels: Pick<FriendsLabels, "justNow" | "minutesAgo" | "hoursAgo" | "daysAgo" | "neverSeen">,
@@ -302,29 +308,37 @@ export function FriendsHub({
 
   return (
     <div className="friends-hub relative flex flex-1 flex-col gap-5 px-margin-mobile py-6 md:px-margin-desktop md:py-8">
-      <header className="friends-hero relative overflow-hidden rounded-2xl border border-white/10 bg-glass-surface px-5 py-6 md:px-8 md:py-8">
+      <header className="friends-hero relative isolate min-h-[10.5rem] overflow-hidden rounded-2xl border border-white/10 sm:min-h-[12rem]">
+        <Image
+          src="/friends/friends-banner.webp"
+          alt=""
+          fill
+          priority
+          sizes="(max-width: 1280px) 100vw, 1152px"
+          className="object-cover object-[center_55%]"
+        />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(70% 90% at 8% 0%, rgba(238,21,21,0.22) 0%, transparent 55%), radial-gradient(50% 60% at 90% 20%, rgba(56,189,248,0.08) 0%, transparent 50%)",
-          }}
+          className="absolute inset-0 bg-gradient-to-r from-[#0b0d13]/92 via-[#0b0d13]/72 to-[#0b0d13]/35"
         />
-        <div className="relative z-[1] flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-t from-[#0b0d13]/90 via-transparent to-[#0b0d13]/25"
+        />
+        <div className="relative z-[1] flex h-full min-h-[10.5rem] flex-col justify-end gap-5 px-5 py-6 sm:min-h-[12rem] md:flex-row md:items-end md:justify-between md:px-8 md:py-7">
           <div>
             <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
               {labels.community}
             </p>
-            <p className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-pokeball-red">
+            <p className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff6a00]">
               <span className="material-symbols-outlined text-[16px]!">handshake</span>
               {labels.eyebrow}
             </p>
-            <h1 className="text-headline-lg tracking-tight text-white md:text-display-lg">
+            <h1 className="text-headline-lg tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] md:text-display-lg">
               {labels.title}
             </h1>
-            <p className="mt-2 max-w-xl text-body-md text-on-surface-variant">
+            <p className="mt-2 max-w-xl text-body-md text-white/75">
               {labels.subtitle}
             </p>
           </div>
@@ -456,7 +470,7 @@ export function FriendsHub({
           art={initial.friends.length === 0 ? "/events/friend-cubone.png" : undefined}
         />
       ) : (
-        <div className="friends-grid grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="friends-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filteredFriends.map((friend, index) => (
             <FriendCard
               key={friend.userId}
@@ -726,94 +740,131 @@ function FriendCard({
   onRemove: () => void;
   onBlock: () => void;
 }) {
-  const src = avatarSrc(friend.avatarId);
+  const stageSrc = avatarStageSrc(friend.avatarId);
   const favAccent = friend.favorite
     ? typeColor(friend.favorite.types[0] ?? "normal")
     : "rgba(255,106,0,0.28)";
+  const companionUrl = friend.favorite
+    ? uiSpriteUrl(friend.favorite.spriteUrl, friend.favorite.isShiny)
+    : null;
 
   return (
     <article
-      className="friends-card group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/90 content-visibility-auto"
+      className="friends-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/95 content-visibility-auto"
       style={
         {
           ...style,
-          containIntrinsicSize: "0 168px",
+          containIntrinsicSize: "0 320px",
           contentVisibility: "auto",
         } as CSSProperties
       }
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-80 transition duration-500 group-hover:opacity-100"
-        style={{
-          background: `radial-gradient(80% 70% at 100% 0%, ${favAccent}33 0%, transparent 55%)`,
-        }}
-      />
       <button
         type="button"
         onClick={onOpen}
-        className="relative z-[1] flex w-full items-end gap-3 p-3.5 text-left"
+        className="relative z-[1] flex w-full flex-col text-left"
       >
         {/*
-          Mini-escena al estilo del hero de perfil: retrato + compañero
-          solapados sobre la misma línea base.
+          Banner tipo perfil: entrenador (stage) + compañero solapados,
+          estáticos — sin bob idle.
         */}
-        <span className="relative flex h-[4.75rem] w-[7.25rem] shrink-0 items-end sm:w-[8.5rem]">
-          {friend.favorite ? (
-            <span className="absolute bottom-0 left-0 z-0">
-              <Image
-                src={uiSpriteUrl(friend.favorite.spriteUrl, friend.favorite.isShiny)}
-                alt={friend.favorite.name}
-                width={72}
-                height={72}
-                className="friends-fav-idle h-14 w-14 object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.45)] sm:h-16 sm:w-16"
-                unoptimized
+        <span className="friends-card__banner relative isolate block aspect-[4/5] w-full overflow-hidden">
+          <span
+            aria-hidden
+            className="absolute inset-0"
+            style={{
+              background: `
+                radial-gradient(70% 55% at 50% 100%, ${favAccent}40 0%, transparent 62%),
+                linear-gradient(180deg, #141820 0%, #0a0c11 100%)
+              `,
+            }}
+          />
+          <span
+            aria-hidden
+            className="absolute inset-x-0 bottom-0 h-16"
+            style={{
+              background: `radial-gradient(55% 100% at 50% 100%, ${favAccent}33 0%, transparent 70%)`,
+            }}
+          />
+
+          <span className="absolute inset-x-0 bottom-2 flex items-end justify-center px-2">
+            {companionUrl ? (
+              <span className="relative z-0 -mr-5 mb-0.5 flex shrink-0 items-end sm:-mr-6">
+                <span
+                  aria-hidden
+                  className="absolute inset-x-1 bottom-0 mx-auto h-2 w-[65%] rounded-[100%] bg-black/50 blur-[2px]"
+                />
+                <Image
+                  src={companionUrl}
+                  alt={friend.favorite?.name ?? ""}
+                  width={160}
+                  height={160}
+                  className="relative max-h-[6.5rem] w-auto max-w-[5.5rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.5)] sm:max-h-[7.25rem] sm:max-w-[6.25rem]"
+                  unoptimized
+                />
+              </span>
+            ) : null}
+
+            <span className="relative z-[1] flex shrink-0 items-end">
+              <span
+                aria-hidden
+                className="absolute inset-x-2 bottom-0 mx-auto h-2 w-[58%] rounded-[100%] bg-black/50 blur-[2px]"
               />
+              {stageSrc ? (
+                <Image
+                  src={stageSrc}
+                  alt={friend.username}
+                  width={200}
+                  height={280}
+                  className="relative max-h-[8.25rem] w-auto max-w-[5.75rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.55)] sm:max-h-[9.25rem] sm:max-w-[6.5rem]"
+                  unoptimized
+                />
+              ) : (
+                <span className="mb-1 flex h-24 w-16 items-end justify-center rounded-xl bg-white/5">
+                  <span className="material-symbols-outlined mb-3 text-[36px]! text-white/35">
+                    person
+                  </span>
+                </span>
+              )}
+            </span>
+          </span>
+
+          <span
+            className={`absolute right-2.5 top-2.5 z-[2] h-2.5 w-2.5 rounded-full border-2 border-[#0c0e14] ${PRESENCE_META[friend.presence].dot}`}
+            title={labels.presence[friend.presence]}
+          />
+          {friend.isFavorite ? (
+            <span className="absolute left-2 top-2 z-[2] material-symbols-outlined text-tertiary text-[16px]! drop-shadow">
+              star
             </span>
           ) : null}
-          <span className="relative z-[1] ml-auto">
-            <TrainerAvatar
-              name={friend.username}
-              src={src}
-              size="lg"
-              presenceClassName={PRESENCE_META[friend.presence].dot}
-            />
-          </span>
         </span>
 
-        <span className="min-w-0 flex-1 pb-0.5">
-          <span className="flex items-center gap-1.5">
-            <span className="truncate text-title-sm font-semibold text-white">
+        <span className="flex flex-col gap-1 border-t border-white/[0.06] px-3 py-2.5">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-[13px] font-semibold tracking-tight text-white">
               {friend.username}
             </span>
-            {friend.isFavorite ? (
-              <span className="material-symbols-outlined text-tertiary text-[14px]!">star</span>
-            ) : null}
             <FlagIcon code={friend.country} className="h-3 w-4 shrink-0" />
           </span>
-          <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-on-surface-variant">
-            <span className="tabular-nums text-white/80">
+          <span className="truncate text-[10px] text-on-surface-variant">
+            <span className="tabular-nums text-white/75">
               {labels.level} {friend.level}
             </span>
-            <span>·</span>
+            <span className="mx-1 opacity-40">·</span>
             <span>{labels.card.titles[friend.titleId] ?? friend.titleId}</span>
-            <span>·</span>
-            <span>{friend.regionLabel}</span>
           </span>
-          <span className="mt-1.5 block">
-            <PresenceBadge
-              status={friend.presence}
-              label={labels.presence[friend.presence]}
-            />
-          </span>
-          <span className="mt-1 block text-[10px] text-on-surface-variant/80">
-            {labels.lastSeen}{" "}
-            {relativeTime(friend.lastSeenAt, labels)}
+          <PresenceBadge
+            status={friend.presence}
+            label={labels.presence[friend.presence]}
+          />
+          <span className="truncate text-[9px] text-on-surface-variant/70">
+            {labels.lastSeen} {relativeTime(friend.lastSeenAt, labels)}
           </span>
         </span>
       </button>
 
-      <div className="friends-actions absolute inset-x-0 bottom-0 z-[2] flex translate-y-full items-center justify-center gap-1 border-t border-white/10 bg-[#0b0d13]/95 px-2 py-2 opacity-0 backdrop-blur-md transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+      <div className="friends-actions absolute inset-x-0 bottom-0 z-[2] flex translate-y-full items-center justify-center gap-1 border-t border-white/10 bg-[#0b0d13]/95 px-1.5 py-2 opacity-0 backdrop-blur-md transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
         <ActionIcon label={labels.actions.profile} icon="badge" onClick={onOpen} />
         <ActionIcon
           label={friend.isFavorite ? labels.actions.unfavorite : labels.actions.favorite}

@@ -4213,9 +4213,9 @@ html.boot-splash-pending .boot-splash {
 
 @media (hover: hover) {
   .friends-card:hover {
-    border-color: rgba(238, 21, 21, 0.35);
+    border-color: rgba(255, 106, 0, 0.4);
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
   }
 
   .friends-card:hover .friends-actions {
