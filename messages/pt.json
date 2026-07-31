@@ -2745,7 +2745,17 @@
     },
     "abandon": {
       "cta": "Abandonar tentativa",
-      "confirm": "Abandonar a subida? Seu time de Aventura será restaurado."
+      "title": "Abandonar a subida?",
+      "body": "O progresso desta tentativa é perdido e seu time de Aventura é restaurado.",
+      "confirmCta": "Abandonar",
+      "cancel": "Continuar na Torre"
+    },
+    "park": {
+      "cta": "Sair para Aventura",
+      "title": "Sair para Aventura?",
+      "body": "O progresso da subida é salvo (HP/PP da tentativa). Seu time de Aventura volta como estava ao entrar. Você pode continuar depois pela Torre.",
+      "confirmCta": "Sair para Aventura",
+      "cancel": "Ficar"
     },
     "floorDetail": {
       "title": "Andar {n}",
@@ -2758,7 +2768,7 @@
     },
     "rules": {
       "title": "Regras da subida",
-      "hp": "O HP persiste entre andares; o time de Aventura é restaurado ao terminar.",
+      "hp": "O HP da tentativa é salvo ao sair para Aventura; seu time de Aventura volta como na entrada. Voltar à Torre retoma o estado da subida.",
       "attempts": "{n} tentativa por semana (reinício domingo 21h ART).",
       "boss": "Guardião a cada 10 andares, com recuperação maior após a vitória.",
       "blessings": "Escolha bênçãos temporárias em marcos importantes.",

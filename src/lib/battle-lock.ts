@@ -24,16 +24,18 @@ export async function getActiveGymRun(
   });
 }
 
-/** Intento de Torre ACTIVE / bendición / descanso. */
+/** Intento de Torre abierto (incluye pausado). */
 export async function getActiveTowerRun(
   userId: string,
-): Promise<{ id: string } | null> {
+  opts?: { includeParked?: boolean },
+): Promise<{ id: string; parkedAt: Date | null } | null> {
   return prisma.towerRun.findFirst({
     where: {
       userId,
       status: { in: ["ACTIVE", "AWAITING_BLESSING", "RESTING"] },
+      ...(opts?.includeParked ? {} : { parkedAt: null }),
     },
-    select: { id: true },
+    select: { id: true, parkedAt: true },
   });
 }
 
@@ -55,7 +57,8 @@ export const getCombatLock = cache(async (userId: string): Promise<CombatLock> =
   if (await hasActiveBattle(userId)) return { kind: "battle" };
   const gym = await getActiveGymRun(userId);
   if (gym) return { kind: "gym", gymId: gym.gymId };
-  const tower = await getActiveTowerRun(userId);
+  // Pausado = se puede salir a Aventura; no bloquea el resto del juego.
+  const tower = await getActiveTowerRun(userId, { includeParked: false });
   if (tower) return { kind: "tower" };
   return null;
 });

@@ -148,6 +148,11 @@ export interface TowerRunCreature {
   adventureHp: number;
   /** PP de Aventura + max PP por slot (1–4). */
   adventurePp: { slot: number; pp: number; maxPp: number }[];
+  /**
+   * PP del intento (se congela al pausar). Si falta (runs viejos), al reanudar
+   * se usa maxPp de adventurePp.
+   */
+  runPp?: { slot: number; pp: number; maxPp: number }[];
 }
 
 export interface TowerPrimaryAction {

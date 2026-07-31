@@ -17,6 +17,8 @@ import {
   primeTeamForTowerRun,
   TOWER_TEAM_INCLUDE,
   abandonTowerRunInTx,
+  parkTowerRunInTx,
+  resumeTowerRunInTx,
   applyHealToSnapshot,
   applyRestRecovery,
   applyReviveOne,
@@ -177,6 +179,16 @@ export async function challengeTowerFloor(locale: string) {
     return;
   }
 
+  if (run.parkedAt) {
+    await prisma.$transaction(
+      async (tx) => {
+        await lockUsers(tx, userId);
+        await resumeTowerRunInTx(tx, run.id, userId);
+      },
+      { timeout: 20_000 },
+    );
+  }
+
   const floor = getTowerFloor(run.currentFloor, run.towerId);
   if (!floor || floor.type === "rest") {
     redirect({ href: "/tower?err=rest_floor", locale });
@@ -323,6 +335,90 @@ export async function abandonTowerRun(locale: string) {
     async (tx) => {
       await lockUsers(tx, userId);
       await abandonTowerRunInTx(tx, run.id, userId);
+    },
+    { timeout: 20_000 },
+  );
+
+  revalidatePath(`/${locale}/tower`);
+  revalidateCombatUi(locale);
+  redirect({ href: "/tower", locale });
+}
+
+/** Sale a Aventura sin abandonar: congela el equipo del intento. */
+export async function parkTowerRun(locale: string) {
+  const userId = await requireUser(locale);
+  if (!userId) return;
+
+  const activeBattle = await prisma.battleSession.findFirst({
+    where: { userId, status: "ACTIVE" },
+    select: { id: true },
+  });
+  if (activeBattle) {
+    redirect({ href: "/battle", locale });
+    return;
+  }
+
+  const run = await prisma.towerRun.findFirst({
+    where: {
+      userId,
+      status: { in: ["ACTIVE", "AWAITING_BLESSING", "RESTING"] },
+      parkedAt: null,
+    },
+  });
+  if (!run) {
+    redirect({ href: "/tower", locale });
+    return;
+  }
+
+  const team = parseTowerTeamSnapshot(run.teamSnapshot);
+  const instances = await prisma.pokemonInstance.findMany({
+    where: { id: { in: team.map((m) => m.instanceId) } },
+    select: {
+      id: true,
+      currentHp: true,
+      moves: { select: { slot: true, currentPp: true } },
+    },
+  });
+
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        await lockUsers(tx, userId);
+        await parkTowerRunInTx(tx, run.id, userId, instances);
+      },
+      { timeout: 20_000 },
+    );
+  } catch {
+    redirect({ href: "/tower?err=no_run", locale });
+    return;
+  }
+
+  revalidatePath(`/${locale}/tower`);
+  revalidateCombatUi(locale);
+  redirect({ href: "/", locale });
+}
+
+/** Reanuda un ascenso pausado (al volver a /tower). */
+export async function resumeTowerRun(locale: string) {
+  const userId = await requireUser(locale);
+  if (!userId) return;
+
+  const run = await prisma.towerRun.findFirst({
+    where: {
+      userId,
+      status: { in: ["ACTIVE", "AWAITING_BLESSING", "RESTING"] },
+      parkedAt: { not: null },
+    },
+  });
+  if (!run) {
+    redirect({ href: "/tower", locale });
+    return;
+  }
+
+  await prisma.$transaction(
+    async (tx) => {
+      await lockUsers(tx, userId);
+      await resumeTowerRunInTx(tx, run.id, userId);
     },
     { timeout: 20_000 },
   );

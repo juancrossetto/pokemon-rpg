@@ -4,6 +4,7 @@ import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCombatLock } from "@/lib/battle-lock";
+import { lockUsers } from "@/lib/db-locks";
 import {
   COMBAT_TOWER_CONFIG,
   DEFAULT_DIFFICULTY_ID,
@@ -15,11 +16,12 @@ import {
   resolveBlessings,
   visibleFloorWindow,
   getTowerFloors,
+  resumeTowerRunInTx,
 } from "@/lib/tower";
 import { reconcileTowerPeriodAttempts } from "@/lib/tower/attempts";
 import { nextTowerReset } from "@/lib/tower/week";
 import { parsePendingLoot } from "@/lib/tower/settle";
-import { TowerAbandonButton, TowerLockedState } from "@/components/tower/tower-ui";
+import { TowerAbandonButton, TowerParkButton, TowerLockedState } from "@/components/tower/tower-ui";
 import {
   TowerActionBar,
   TowerBlessingDraft,
@@ -83,7 +85,7 @@ export default async function TowerPage({
     vuelve a quedar bloqueado con timer.
   */
   const attemptState = await reconcileTowerPeriodAttempts(userId);
-  const [badgeCount, progress, activeRun, lastEndedRun] = await Promise.all([
+  let [badgeCount, progress, activeRun, lastEndedRun] = await Promise.all([
     prisma.badge.count({ where: { userId } }),
     prisma.towerProgress.findUnique({
       where: {
@@ -108,6 +110,23 @@ export default async function TowerPage({
       orderBy: [{ currentFloor: "desc" }, { endedAt: "desc" }],
     }),
   ]);
+
+  /*
+    Auto-resume al abrir la Torre: mutar + redirect (no revalidatePath en
+    render — Next lo rechaza). El siguiente request ve layout/navbar al día.
+  */
+  if (activeRun?.parkedAt) {
+    const parkedId = activeRun.id;
+    await prisma.$transaction(
+      async (tx) => {
+        await lockUsers(tx, userId);
+        await resumeTowerRunInTx(tx, parkedId, userId);
+      },
+      { timeout: 20_000 },
+    );
+    redirect({ href: "/tower", locale });
+    return null;
+  }
 
   const unlocked = isTowerUnlocked(badgeCount);
   const attemptsMax = attemptState.attemptsMax;
@@ -259,9 +278,12 @@ export default async function TowerPage({
             <h1 className="text-headline-sm font-bold tracking-tight text-white drop-shadow-sm sm:text-headline-md">
               {t(COMBAT_TOWER_CONFIG.nameKey)}
             </h1>
-            <span className="rounded-full border border-white/25 bg-black/35 px-2.5 py-0.5 text-[10px] text-white/85 backdrop-blur-sm sm:px-3 sm:py-1 sm:text-label-sm">
-              {t("difficulties.normal")}
-            </span>
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span className="rounded-full border border-white/25 bg-black/35 px-2.5 py-0.5 text-[10px] text-white/85 backdrop-blur-sm sm:px-3 sm:py-1 sm:text-label-sm">
+                {t("difficulties.normal")}
+              </span>
+              {activeRun ? <TowerParkButton locale={locale} variant="header" /> : null}
+            </div>
           </div>
           <p className="hidden max-w-xl text-label-md text-white/75 sm:block">{t("tagline")}</p>
         </div>
@@ -396,7 +418,12 @@ export default async function TowerPage({
               </ul>
             </details>
 
-            {activeRun ? <TowerAbandonButton locale={locale} /> : null}
+            {activeRun ? (
+              <div className="flex flex-col gap-2">
+                <TowerParkButton locale={locale} variant="panel" />
+                <TowerAbandonButton locale={locale} variant="panel" />
+              </div>
+            ) : null}
           </aside>
         </div>
       )}
@@ -411,6 +438,8 @@ export default async function TowerPage({
           locale={locale}
           activeBlessings={activeBlessingNames}
           resetAtMs={showResetTimer ? resetAt.getTime() : null}
+          canAbandon={Boolean(activeRun)}
+          canPark={Boolean(activeRun)}
         />
       ) : null}
 
