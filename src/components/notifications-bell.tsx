@@ -1,104 +1,31 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import {
+  deleteNotificationAction,
   markAllNotificationsReadAction,
   markNotificationReadAction,
 } from "@/actions/notifications";
-import type { NotificationDTO } from "@/lib/notifications";
 
-const TYPE_META: Record<
-  NotificationDTO["type"],
-  { icon: string; accent: string; glow: string; labelKey: "sale" | "expired" | "gym" | "pvp" | "reward" | "friends" | "clans" }
-> = {
-  MARKET_SOLD: {
-    icon: "payments",
-    accent: "from-electric-yellow/25 via-pokeball-red/20 to-transparent",
-    glow: "shadow-[0_0_24px_rgba(250,204,21,0.18)]",
-    labelKey: "sale",
-  },
-  MARKET_EXPIRED: {
-    icon: "schedule",
-    accent: "from-white/10 to-transparent",
-    glow: "",
-    labelKey: "expired",
-  },
-  GYM_WON: {
-    icon: "military_tech",
-    accent: "from-tertiary/25 to-transparent",
-    glow: "shadow-[0_0_20px_rgba(52,211,153,0.15)]",
-    labelKey: "gym",
-  },
-  GYM_LOST: {
-    icon: "heart_broken",
-    accent: "from-error/20 to-transparent",
-    glow: "",
-    labelKey: "gym",
-  },
-  GYM_TM_REWARD: {
-    icon: "smart_display",
-    accent: "from-tertiary/25 via-electric-yellow/10 to-transparent",
-    glow: "shadow-[0_0_20px_rgba(242,192,0,0.2)]",
-    labelKey: "reward",
-  },
-  PVP_WON: {
-    icon: "sports_mma",
-    accent: "from-pokeball-red/25 to-transparent",
-    glow: "shadow-[0_0_20px_rgba(239,68,68,0.15)]",
-    labelKey: "pvp",
-  },
-  PVP_LOST: {
-    icon: "sports_mma",
-    accent: "from-white/10 to-transparent",
-    glow: "",
-    labelKey: "pvp",
-  },
-  FRIEND_REQUEST: {
-    icon: "person_add",
-    accent: "from-sky-400/25 via-pokeball-red/10 to-transparent",
-    glow: "shadow-[0_0_20px_rgba(56,189,248,0.15)]",
-    labelKey: "friends",
-  },
-  FRIEND_ACCEPTED: {
-    icon: "handshake",
-    accent: "from-emerald-400/25 to-transparent",
-    glow: "shadow-[0_0_20px_rgba(52,211,153,0.15)]",
-    labelKey: "friends",
-  },
-  CLAN_INVITE: {
-    icon: "mail",
-    accent: "from-pokeball-red/25 via-electric-yellow/10 to-transparent",
-    glow: "shadow-[0_0_20px_rgba(238,21,21,0.15)]",
-    labelKey: "clans",
-  },
-  CLAN_APPLICATION: {
-    icon: "person_add",
-    accent: "from-electric-yellow/20 to-transparent",
-    glow: "",
-    labelKey: "clans",
-  },
-  CLAN_ACCEPTED: {
-    icon: "groups",
-    accent: "from-emerald-400/25 to-transparent",
-    glow: "shadow-[0_0_20px_rgba(52,211,153,0.15)]",
-    labelKey: "clans",
-  },
-  CLAN_KICKED: {
-    icon: "person_off",
-    accent: "from-error/20 to-transparent",
-    glow: "",
-    labelKey: "clans",
-  },
-  CLAN_ROLE_CHANGED: {
-    icon: "military_tech",
-    accent: "from-tertiary/20 to-transparent",
-    glow: "",
-    labelKey: "clans",
-  },
-};
+const ACTION_BTN =
+  "grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#ff8a00] to-[#f2c000] text-[#1a1200] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition hover:brightness-110 active:brightness-95";
+import { TrainerAvatar } from "@/components/trainer-avatar";
+import { gymLeaderImageUrl } from "@/lib/gym-art";
+import { itemSpriteUrl } from "@/lib/item-sprites";
+import type { NotificationDTO, NotificationImageKind } from "@/lib/notifications";
+
+const PERSON_TYPES = new Set<NotificationDTO["type"]>([
+  "PVP_WON",
+  "PVP_LOST",
+  "FRIEND_REQUEST",
+  "FRIEND_ACCEPTED",
+  "CLAN_INVITE",
+  "CLAN_APPLICATION",
+]);
 
 function relativeTime(iso: string, t: ReturnType<typeof useTranslations<"notifications">>) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -214,6 +141,90 @@ function detailFor(
   }
 }
 
+type Media = { src: string; kind: NotificationImageKind };
+
+function resolveMedia(item: NotificationDTO): Media | null {
+  const p = item.payload;
+  if (p.imageUrl) {
+    return { src: p.imageUrl, kind: p.imageKind ?? "item" };
+  }
+  if (p.leaderName) {
+    const leader = gymLeaderImageUrl(p.leaderName);
+    if (leader) return { src: leader, kind: "leader" };
+  }
+  if (p.itemName) {
+    const base = p.itemName.replace(/\s*×\d+\s*$/u, "").trim();
+    if (base && base !== "—") return { src: itemSpriteUrl(base), kind: "item" };
+  }
+  return null;
+}
+
+function NotificationThumb({ item, unread }: { item: NotificationDTO; unread: boolean }) {
+  const p = item.payload;
+  const person = (p.opponentName ?? p.trainerName)?.trim() || null;
+  const media = resolveMedia(item);
+  const tag = p.clanTag?.slice(0, 3).toUpperCase();
+
+  // PvP / amigos / clan con actor: mismo retrato que el resto de la app.
+  if (person && (PERSON_TYPES.has(item.type) || media?.kind === "avatar")) {
+    return (
+      <TrainerAvatar
+        name={person}
+        src={media?.kind === "avatar" ? media.src : (p.imageUrl ?? null)}
+        size="sm"
+        className={unread ? "ring-1 ring-[#ff8a00]/50 rounded-[28%]" : undefined}
+      />
+    );
+  }
+
+  if (media) {
+    const cover = media.kind === "leader";
+    return (
+      <span
+        className={[
+          "relative flex h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-[#151820]",
+          unread ? "ring-1 ring-[#ff8a00]/50" : "ring-1 ring-white/10",
+        ].join(" ")}
+      >
+        <Image
+          src={media.src}
+          alt=""
+          fill
+          sizes="44px"
+          className={cover ? "object-cover object-top" : "object-contain p-1"}
+          unoptimized={media.src.startsWith("http")}
+        />
+      </span>
+    );
+  }
+
+  if (tag) {
+    return (
+      <span
+        className={[
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg font-mono text-[11px] font-bold",
+          unread
+            ? "bg-[#ff8a00]/15 text-[#f2c000] ring-1 ring-[#ff8a00]/40"
+            : "bg-white/[0.04] text-white/45 ring-1 ring-white/10",
+        ].join(" ")}
+      >
+        {tag}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={[
+        "flex h-11 w-11 shrink-0 rounded-lg",
+        unread
+          ? "bg-[#ff8a00]/15 ring-1 ring-[#ff8a00]/35"
+          : "bg-white/[0.04] ring-1 ring-white/10",
+      ].join(" ")}
+    />
+  );
+}
+
 export function NotificationsBell({
   initialItems,
   initialUnread,
@@ -231,10 +242,6 @@ export function NotificationsBell({
 
   const hasUnreadSale = items.some((i) => i.type === "MARKET_SOLD" && !i.readAt);
 
-  // Ajuste durante el render en vez de useEffect: el servidor vuelve a mandar
-  // la lista en cada revalidación y el estado local sólo existe para el marcado
-  // optimista al abrir el panel. Con el efecto, cada refresh renderizaba una
-  // vez con los datos viejos antes de corregirse.
   const [lastServerItems, setLastServerItems] = useState(initialItems);
   if (lastServerItems !== initialItems) {
     setLastServerItems(initialItems);
@@ -279,18 +286,29 @@ export function NotificationsBell({
     });
   }
 
-  function onItemClick(item: NotificationDTO) {
-    if (!item.readAt) {
-      startTransition(async () => {
-        await markNotificationReadAction(item.id);
-        setUnread((n) => Math.max(0, n - 1));
-        setItems((prev) =>
-          prev.map((row) =>
-            row.id === item.id ? { ...row, readAt: new Date().toISOString() } : row,
-          ),
-        );
-      });
-    }
+  function markOneRead(item: NotificationDTO) {
+    if (item.readAt) return;
+    startTransition(async () => {
+      await markNotificationReadAction(item.id);
+      setUnread((n) => Math.max(0, n - 1));
+      setItems((prev) =>
+        prev.map((row) =>
+          row.id === item.id ? { ...row, readAt: new Date().toISOString() } : row,
+        ),
+      );
+    });
+  }
+
+  function deleteOne(item: NotificationDTO) {
+    startTransition(async () => {
+      await deleteNotificationAction(item.id);
+      if (!item.readAt) setUnread((n) => Math.max(0, n - 1));
+      setItems((prev) => prev.filter((row) => row.id !== item.id));
+    });
+  }
+
+  function onOpen(item: NotificationDTO) {
+    markOneRead(item);
     setOpen(false);
   }
 
@@ -304,17 +322,13 @@ export function NotificationsBell({
         onClick={openPanel}
         className={`relative flex h-8 w-8 items-center justify-center rounded-md border transition ${
           hasUnreadSale
-            ? "border-electric-yellow/50 bg-electric-yellow/10 text-electric-yellow"
+            ? "border-[#ff8a00]/55 bg-[#ff8a00]/10 text-[#f2c000]"
             : "border-white/10 bg-white/5 text-on-surface-variant hover:bg-white/10 hover:text-on-surface"
         }`}
       >
         <span className="material-symbols-outlined text-[18px]!">notifications</span>
         {unread > 0 && (
-          <span
-            className={`absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-md bg-pokeball-red px-1 text-[10px] font-bold text-white ${
-              hasUnreadSale ? "animate-pulse" : ""
-            }`}
-          >
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-md bg-gradient-to-r from-[#ff8a00] to-[#f2c000] px-1 text-[10px] font-bold text-[#1a1200]">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
@@ -324,127 +338,123 @@ export function NotificationsBell({
         <div
           role="dialog"
           aria-label={t("title")}
-          className="fixed inset-x-3 top-[calc(3.5rem+env(safe-area-inset-top)+0.35rem)] z-[80] flex max-h-[min(78dvh,560px)] w-auto flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#070a10]/96 shadow-[0_28px_80px_rgba(0,0,0,0.65)] backdrop-blur-2xl xl:absolute xl:inset-x-auto xl:right-0 xl:top-full xl:mt-2 xl:max-h-none xl:w-[min(94vw,400px)]"
+          className="fixed inset-x-3 top-[calc(3.5rem+env(safe-area-inset-top)+0.35rem)] z-[80] flex max-h-[min(78dvh,560px)] w-auto flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14] shadow-[0_28px_80px_rgba(0,0,0,0.7)] xl:absolute xl:inset-x-auto xl:right-0 xl:top-full xl:mt-2 xl:max-h-none xl:w-[min(94vw,360px)]"
         >
-          <div className="relative shrink-0 border-b border-white/10 px-4 pb-3 pt-4">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-pokeball-red/15 via-transparent to-electric-yellow/10" />
-            <div className="relative space-y-1">
-              <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-electric-yellow/80">
-                {t("eyebrow")}
-              </p>
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="min-w-0 text-[17px] font-semibold tracking-tight text-white">
-                  {t("title")}
-                </h2>
-                {unread > 0 && (
-                  <button
-                    type="button"
-                    onClick={markAllRead}
-                    className="shrink-0 rounded-md border border-white/12 bg-white/5 px-2.5 py-1.5 text-[11px] font-medium leading-none text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
-                  >
-                    {t("markAllRead")}
-                  </button>
-                )}
-              </div>
+          <header className="flex shrink-0 items-center justify-between gap-2 border-b border-white/8 px-3.5 py-3">
+            <h2 className="text-[15px] font-semibold text-white">{t("title")}</h2>
+            <div className="flex items-center gap-1">
+              {unread > 0 && (
+                <button
+                  type="button"
+                  onClick={markAllRead}
+                  className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-[#f2c000] transition hover:bg-[#ff8a00]/15"
+                >
+                  {t("markAllRead")}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label={t("close")}
+                className="grid h-7 w-7 place-items-center rounded-md text-white/45 transition hover:bg-white/8 hover:text-white"
+              >
+                <span className="material-symbols-outlined text-[18px]!">close</span>
+              </button>
             </div>
-          </div>
+          </header>
 
-          <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2.5 xl:max-h-[min(72vh,480px)]">
+          <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2.5 xl:max-h-[min(62vh,420px)]">
             {items.length === 0 ? (
-              <li className="rounded-xl border border-dashed border-white/10 px-4 py-12 text-center text-label-sm text-on-surface-variant">
+              <li className="rounded-xl border border-dashed border-white/10 px-3 py-10 text-center text-[13px] text-white/40">
                 {t("empty")}
               </li>
             ) : (
               items.map((item) => {
-                const meta = TYPE_META[item.type];
                 const unreadItem = !item.readAt;
                 const coins =
                   item.type === "MARKET_SOLD" && typeof item.payload.coins === "number"
                     ? item.payload.coins
                     : null;
-
-                const card = (
-                  <div
-                    className={`relative overflow-hidden rounded-xl border transition ${
-                      unreadItem
-                        ? `border-white/14 bg-gradient-to-br ${meta.accent} ${meta.glow}`
-                        : "border-white/6 bg-white/[0.02]"
-                    } ${unreadItem && item.type === "MARKET_SOLD" ? "ring-1 ring-electric-yellow/25" : ""}`}
-                  >
-                    {unreadItem && item.type === "MARKET_SOLD" && (
-                      <div className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-electric-yellow/20 blur-2xl" />
-                    )}
-                    <div className="relative flex gap-3 p-3">
-                      <span
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${
-                          unreadItem
-                            ? item.type === "MARKET_SOLD"
-                              ? "border-electric-yellow/40 bg-electric-yellow/15 text-electric-yellow"
-                              : "border-pokeball-red/40 bg-pokeball-red/15 text-pokeball-red"
-                            : "border-white/10 bg-white/[0.03] text-on-surface-variant"
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[20px]!">{meta.icon}</span>
-                      </span>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-on-surface-variant/80">
-                              {t(`kind.${meta.labelKey}`)}
-                            </p>
-                            <p
-                              className={`mt-0.5 text-[14px] font-semibold leading-tight ${
-                                unreadItem ? "text-white" : "text-on-surface-variant"
-                              }`}
-                            >
-                              {headlineFor(item, t)}
-                            </p>
-                          </div>
-                          {unreadItem && (
-                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-pokeball-red shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-                          )}
-                        </div>
-
-                        <p className="mt-1 text-[12px] leading-snug text-on-surface-variant">
-                          {detailFor(item, t)}
-                        </p>
-
-                        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                          {coins !== null && (
-                            <span className="inline-flex items-center gap-1 rounded-md border border-electric-yellow/35 bg-electric-yellow/10 px-2 py-0.5 font-mono text-[12px] font-semibold text-electric-yellow">
-                              <span className="material-symbols-outlined text-[14px]!">paid</span>+
-                              {coins.toLocaleString()}
-                            </span>
-                          )}
-                          <span className="text-[11px] text-on-surface-variant/60">
-                            {relativeTime(item.createdAt, t)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
+                const headline = headlineFor(item, t);
+                const detail = detailFor(item, t);
 
                 return (
                   <li key={item.id}>
-                    {item.href ? (
-                      <Link
-                        href={item.href}
-                        onClick={() => onItemClick(item)}
-                        className="block rounded-xl outline-none transition hover:brightness-110 focus-visible:ring-2 focus-visible:ring-pokeball-red/50"
-                      >
-                        {card}
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onItemClick(item)}
-                        className="block w-full rounded-xl text-left outline-none transition hover:brightness-110 focus-visible:ring-2 focus-visible:ring-pokeball-red/50"
-                      >
-                        {card}
-                      </button>
-                    )}
+                    <div
+                      className={[
+                        "flex items-center gap-2.5 overflow-hidden rounded-xl border px-2.5 py-2 transition",
+                        unreadItem
+                          ? "border-[#ff8a00]/30 bg-gradient-to-r from-[#ff8a00]/14 via-[#f2c000]/06 to-[#141820]"
+                          : "border-white/8 bg-[#141820] hover:border-white/14",
+                      ].join(" ")}
+                    >
+                      <NotificationThumb item={item} unread={unreadItem} />
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p
+                            className={[
+                              "truncate text-[13px] font-semibold leading-tight",
+                              unreadItem ? "text-white" : "text-white/75",
+                            ].join(" ")}
+                          >
+                            {headline}
+                          </p>
+                          <span className="shrink-0 text-[10px] tabular-nums text-white/35">
+                            {relativeTime(item.createdAt, t)}
+                          </span>
+                        </div>
+                        {detail && (
+                          <p className="mt-0.5 truncate text-[12px] leading-snug text-white/45">
+                            {detail}
+                          </p>
+                        )}
+                        {coins !== null && (
+                          <p className="mt-1 text-[12px] font-semibold tabular-nums text-[#f2c000]">
+                            +{coins.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-1 self-center">
+                        {item.href ? (
+                          <Link
+                            href={item.href}
+                            onClick={() => onOpen(item)}
+                            aria-label={t("openAction")}
+                            title={t("openAction")}
+                            className={ACTION_BTN}
+                          >
+                            <span className="material-symbols-outlined text-[17px]!">
+                              drafts
+                            </span>
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onOpen(item)}
+                            aria-label={t("markRead")}
+                            title={t("markRead")}
+                            className={ACTION_BTN}
+                          >
+                            <span className="material-symbols-outlined text-[17px]!">
+                              drafts
+                            </span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => deleteOne(item)}
+                          aria-label={t("deleteAction")}
+                          title={t("deleteAction")}
+                          className={ACTION_BTN}
+                        >
+                          <span className="material-symbols-outlined text-[17px]!">
+                            delete
+                          </span>
+                        </button>
+                      </div>
+                    </div>
                   </li>
                 );
               })

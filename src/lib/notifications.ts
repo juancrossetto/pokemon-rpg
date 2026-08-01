@@ -1,6 +1,11 @@
 import type { NotificationType, Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { proceedsFor } from "@/lib/market-rules";
+import { avatarById } from "@/lib/avatars";
+import { gymBadgeImageUrl, gymLeaderImageUrl } from "@/lib/gym-art";
+import { itemSpriteUrl } from "@/lib/item-sprites";
+
+export type NotificationImageKind = "avatar" | "item" | "pokemon" | "badge" | "leader";
 
 export type NotificationPayload = {
   buyerName?: string;
@@ -16,7 +21,30 @@ export type NotificationPayload = {
   /** Nombre del clan (notificaciones de clan). */
   clanName?: string;
   clanTag?: string;
+  /** Miniatura: avatar de usuario, ítem, medalla o líder. */
+  imageUrl?: string;
+  imageKind?: NotificationImageKind;
 };
+
+async function avatarUrlForUserId(userId: string): Promise<string | undefined> {
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { avatarId: true },
+  });
+  return avatarById(u?.avatarId)?.src ?? undefined;
+}
+
+async function avatarUrlForUsername(username: string): Promise<string | undefined> {
+  const u = await prisma.user.findFirst({
+    where: { username },
+    select: { avatarId: true },
+  });
+  return avatarById(u?.avatarId)?.src ?? undefined;
+}
+
+function itemImageFromName(itemName: string): string {
+  return itemSpriteUrl(itemName.replace(/\s*×\d+\s*$/u, "").trim());
+}
 
 export type NotificationDTO = {
   id: string;
@@ -81,6 +109,56 @@ export async function createNotification(input: {
   });
 }
 
+/** Tipos cuya miniatura es el otro entrenador (no ítem/medalla). */
+const PERSON_IMAGE_TYPES = new Set<NotificationType>([
+  "PVP_WON",
+  "PVP_LOST",
+  "FRIEND_REQUEST",
+  "FRIEND_ACCEPTED",
+  "CLAN_INVITE",
+  "CLAN_APPLICATION",
+]);
+
+function personNameFromPayload(p: NotificationPayload): string | undefined {
+  const name = p.opponentName ?? p.trainerName;
+  return name?.trim() || undefined;
+}
+
+/** Completa imageUrl de avisos viejos / sin avatar guardado, por username. */
+async function enrichPersonImages(items: NotificationDTO[]): Promise<NotificationDTO[]> {
+  const names = new Set<string>();
+  for (const item of items) {
+    if (!PERSON_IMAGE_TYPES.has(item.type)) continue;
+    if (item.payload.imageUrl) continue;
+    const name = personNameFromPayload(item.payload);
+    if (name) names.add(name);
+  }
+  if (names.size === 0) return items;
+
+  const users = await prisma.user.findMany({
+    where: { username: { in: [...names] } },
+    select: { username: true, avatarId: true },
+  });
+  const avatarByUsername = new Map(
+    users.map((u) => [u.username, avatarById(u.avatarId)?.src ?? undefined] as const),
+  );
+
+  return items.map((item) => {
+    if (!PERSON_IMAGE_TYPES.has(item.type) || item.payload.imageUrl) return item;
+    const name = personNameFromPayload(item.payload);
+    if (!name) return item;
+    const imageUrl = avatarByUsername.get(name);
+    return {
+      ...item,
+      payload: {
+        ...item.payload,
+        ...(imageUrl ? { imageUrl } : {}),
+        imageKind: "avatar",
+      },
+    };
+  });
+}
+
 export async function listNotifications(userId: string, limit = HISTORY_LIMIT): Promise<{
   items: NotificationDTO[];
   unreadCount: number;
@@ -94,16 +172,18 @@ export async function listNotifications(userId: string, limit = HISTORY_LIMIT): 
     prisma.notification.count({ where: { userId, readAt: null } }),
   ]);
 
+  const base = rows.map((row) => ({
+    id: row.id,
+    type: row.type,
+    payload: (row.payload ?? {}) as NotificationPayload,
+    href: row.href,
+    readAt: row.readAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+  }));
+
   return {
     unreadCount,
-    items: rows.map((row) => ({
-      id: row.id,
-      type: row.type,
-      payload: (row.payload ?? {}) as NotificationPayload,
-      href: row.href,
-      readAt: row.readAt?.toISOString() ?? null,
-      createdAt: row.createdAt.toISOString(),
-    })),
+    items: await enrichPersonImages(base),
   };
 }
 
@@ -118,26 +198,47 @@ export async function markNotificationsRead(userId: string, ids?: string[]) {
   });
 }
 
+export async function deleteNotifications(userId: string, ids: string[]) {
+  if (ids.length === 0) return;
+  await prisma.notification.deleteMany({
+    where: { userId, id: { in: ids } },
+  });
+}
+
 /** Aviso al vendedor: alguien compró su publicación. */
 export async function notifyMarketSold(listingId: string) {
   const listing = await prisma.marketListing.findUnique({
     where: { id: listingId },
     include: {
       buyer: { select: { username: true } },
-      pokemon: { select: { nickname: true, species: { select: { name: true } } } },
+      pokemon: {
+        select: {
+          nickname: true,
+          species: { select: { name: true, spriteUrl: true } },
+        },
+      },
     },
   });
   if (!listing || listing.status !== "SOLD" || !listing.buyer) return;
 
   let itemName = "—";
+  let imageUrl: string | undefined;
+  let imageKind: NotificationImageKind | undefined;
+
   if (listing.kind === "POKEMON" && listing.pokemon) {
     itemName = listing.pokemon.nickname ?? listing.pokemon.species.name;
+    imageUrl = listing.pokemon.species.spriteUrl || undefined;
+    imageKind = imageUrl ? "pokemon" : undefined;
   } else if (listing.itemId) {
     const item = await prisma.item.findUnique({
       where: { id: listing.itemId },
       select: { name: true },
     });
     itemName = item?.name ?? "—";
+    if (item?.name) {
+      imageUrl = itemImageFromName(item.name);
+      imageKind = "item";
+    }
     if (listing.quantity && listing.quantity > 1) {
       itemName = `${itemName} ×${listing.quantity}`;
     }
@@ -150,6 +251,8 @@ export async function notifyMarketSold(listingId: string) {
       buyerName: listing.buyer.username,
       itemName,
       coins: proceedsFor(listing.price),
+      imageUrl,
+      imageKind,
     },
     href: "/market?tab=mine",
   });
@@ -160,26 +263,40 @@ export async function notifyMarketExpired(listingId: string) {
   const listing = await prisma.marketListing.findUnique({
     where: { id: listingId },
     include: {
-      pokemon: { select: { nickname: true, species: { select: { name: true } } } },
+      pokemon: {
+        select: {
+          nickname: true,
+          species: { select: { name: true, spriteUrl: true } },
+        },
+      },
     },
   });
   if (!listing || listing.status !== "EXPIRED") return;
 
   let itemName = "—";
+  let imageUrl: string | undefined;
+  let imageKind: NotificationImageKind | undefined;
+
   if (listing.kind === "POKEMON" && listing.pokemon) {
     itemName = listing.pokemon.nickname ?? listing.pokemon.species.name;
+    imageUrl = listing.pokemon.species.spriteUrl || undefined;
+    imageKind = imageUrl ? "pokemon" : undefined;
   } else if (listing.itemId) {
     const item = await prisma.item.findUnique({
       where: { id: listing.itemId },
       select: { name: true },
     });
     itemName = item?.name ?? "—";
+    if (item?.name) {
+      imageUrl = itemImageFromName(item.name);
+      imageKind = "item";
+    }
   }
 
   await createNotification({
     userId: listing.sellerId,
     type: "MARKET_EXPIRED",
-    payload: { itemName },
+    payload: { itemName, imageUrl, imageKind },
     href: "/market?tab=mine",
   });
 }
@@ -192,9 +309,15 @@ export async function notifyGymResult(
 ) {
   const gym = await prisma.gym.findUnique({
     where: { id: gymId },
-    select: { name: true, leaderName: true },
+    select: { name: true, leaderName: true, type: true },
   });
   if (!gym) return;
+
+  const badgeUrl = gymBadgeImageUrl(gym.type);
+  const leaderUrl = gymLeaderImageUrl(gym.leaderName) ?? undefined;
+  // Victoria → medalla; derrota → líder.
+  const imageUrl = won ? badgeUrl : leaderUrl ?? badgeUrl;
+  const imageKind: NotificationImageKind = won ? "badge" : leaderUrl ? "leader" : "badge";
 
   await createNotification({
     userId,
@@ -203,6 +326,8 @@ export async function notifyGymResult(
       gymName: gym.name,
       leaderName: gym.leaderName,
       rematch: opts?.rematch ?? false,
+      imageUrl,
+      imageKind,
     },
     href: `/gyms/${gymId}`,
   });
@@ -223,6 +348,8 @@ export async function notifyGymTmReward(userId: string, gymId: string, itemName:
       itemName,
       gymName: gym.name,
       leaderName: gym.leaderName,
+      imageUrl: itemImageFromName(itemName),
+      imageKind: "item",
     },
     href: "/inventory",
   });
@@ -235,17 +362,30 @@ export async function notifyPvpResult(input: {
   loserName: string;
   matchId: string;
 }) {
+  const [winnerAvatar, loserAvatar] = await Promise.all([
+    avatarUrlForUserId(input.winnerId),
+    avatarUrlForUserId(input.loserId),
+  ]);
+
   await Promise.all([
     createNotification({
       userId: input.winnerId,
       type: "PVP_WON",
-      payload: { opponentName: input.loserName },
+      payload: {
+        opponentName: input.loserName,
+        imageUrl: loserAvatar,
+        imageKind: "avatar",
+      },
       href: `/pvp/${input.matchId}`,
     }),
     createNotification({
       userId: input.loserId,
       type: "PVP_LOST",
-      payload: { opponentName: input.winnerName },
+      payload: {
+        opponentName: input.winnerName,
+        imageUrl: winnerAvatar,
+        imageKind: "avatar",
+      },
       href: `/pvp/${input.matchId}`,
     }),
   ]);
@@ -257,10 +397,15 @@ export async function notifyFriendRequest(input: {
   fromUserName: string;
   tx?: Prisma.TransactionClient;
 }) {
+  const imageUrl = await avatarUrlForUsername(input.fromUserName);
   await createNotification({
     userId: input.toUserId,
     type: "FRIEND_REQUEST",
-    payload: { trainerName: input.fromUserName },
+    payload: {
+      trainerName: input.fromUserName,
+      imageUrl,
+      imageKind: imageUrl ? "avatar" : undefined,
+    },
     href: "/friends?filter=requests",
     tx: input.tx,
   });
@@ -272,10 +417,15 @@ export async function notifyFriendAccepted(input: {
   friendName: string;
   tx?: Prisma.TransactionClient;
 }) {
+  const imageUrl = await avatarUrlForUsername(input.friendName);
   await createNotification({
     userId: input.toUserId,
     type: "FRIEND_ACCEPTED",
-    payload: { trainerName: input.friendName },
+    payload: {
+      trainerName: input.friendName,
+      imageUrl,
+      imageKind: imageUrl ? "avatar" : undefined,
+    },
     href: "/friends",
     tx: input.tx,
   });
@@ -289,6 +439,7 @@ export async function notifyClanInvite(input: {
   fromUserName: string;
   tx?: Prisma.TransactionClient;
 }) {
+  const imageUrl = await avatarUrlForUsername(input.fromUserName);
   await createNotification({
     userId: input.toUserId,
     type: "CLAN_INVITE",
@@ -296,6 +447,8 @@ export async function notifyClanInvite(input: {
       clanName: input.clanName,
       clanTag: input.clanTag,
       trainerName: input.fromUserName,
+      imageUrl,
+      imageKind: imageUrl ? "avatar" : undefined,
     },
     href: `/clans/${input.clanId}`,
     tx: input.tx,
@@ -310,6 +463,7 @@ export async function notifyClanApplication(input: {
   trainerName: string;
   tx?: Prisma.TransactionClient;
 }) {
+  const imageUrl = await avatarUrlForUsername(input.trainerName);
   await createNotification({
     userId: input.toUserId,
     type: "CLAN_APPLICATION",
@@ -317,6 +471,8 @@ export async function notifyClanApplication(input: {
       clanName: input.clanName,
       clanTag: input.clanTag,
       trainerName: input.trainerName,
+      imageUrl,
+      imageKind: imageUrl ? "avatar" : undefined,
     },
     href: `/clans/${input.clanId}?tab=admin`,
     tx: input.tx,
