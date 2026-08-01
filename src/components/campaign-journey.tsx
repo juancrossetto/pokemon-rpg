@@ -3,8 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
-import { CampaignPrimaryObjective } from "@/components/campaign-primary-objective";
+import { CampaignPrimaryObjective, CampaignJourneyMenuTrigger } from "@/components/campaign-primary-objective";
 import { selectLocation, setFarmingStage } from "@/actions/campaign";
 import { startTrainerBattle } from "@/actions/route-trainer";
 import { claimZoneObjective } from "@/actions/zone-rewards";
@@ -13,14 +12,10 @@ import {
   type ZoneObjectiveId,
   type ZoneObjectiveState,
 } from "@/lib/campaign/objectives";
-import { RARITY_ORDER, type Rarity } from "@/lib/campaign/rarity";
+import { type Rarity } from "@/lib/campaign/rarity";
 import { itemSpriteUrl } from "@/lib/item-sprites";
 import {
-  FootprintIcon,
-  MapIcon,
   MasteryIcon,
-  PokeballIcon,
-  PokedexIcon,
   ZoneIcon,
   type ZoneIconKind,
 } from "@/components/zone-icons";
@@ -29,6 +24,10 @@ import type { Chapter } from "@/lib/campaign/chapters";
 import type { MapLocation } from "@/lib/campaign/map-selection";
 import type { CampaignLocationKind } from "@/lib/campaign/types";
 import {
+  campaignBannerForChapter,
+  campaignMapHasArt,
+  campaignMapArtLayout,
+  campaignMapSrc,
   getCampaignPrimaryAction,
   getZoneUnlockRequirements,
   resolveZoneNodeStatus,
@@ -76,13 +75,17 @@ const BADGE_TYPE_BY_ORDER: Record<number, string> = {
   8: "ground",
 };
 
-const PATH_PROGRESS_FILL_GOLD =
-  "bg-gradient-to-r from-[#ffcb05] to-[#ff8a00]";
+const PATH_PROGRESS_FILL_GOLD = "campaign-warm-bar";
+/** Dorado/naranja de “hecho” en el recorrido — glow tipo mockup. */
+const PATH_DONE_GOLD = "#f0a020";
+const PATH_DONE_GOLD_SOFT = "rgba(240, 160, 32, 0.16)";
+const PATH_DONE_GOLD_RING = "rgba(240, 160, 32, 0.75)";
+const PATH_NODE_SM = "h-8 w-8"; /* rail normal */
+const PATH_NODE_GYM = "h-12 w-12 sm:h-14 sm:w-14"; /* gimnasio: sprite del líder */
 
 function zoneBarFill(isGym: boolean, done: boolean, inProgress: boolean): string {
-  if (isGym) return PATH_PROGRESS_FILL_GOLD;
-  if (done) return "bg-emerald-400";
-  if (inProgress) return "bg-pokeball-red/70";
+  if (isGym || inProgress) return PATH_PROGRESS_FILL_GOLD;
+  if (done) return "bg-[#f0a020]";
   return "bg-white/20";
 }
 
@@ -118,35 +121,38 @@ const KIND_STYLE: Record<
 > = {
   town: {
     icon: "town",
-    text: "text-on-surface-variant",
-    ring: "border-white/15 bg-white/[0.06]",
+    text: "text-white/55",
+    ring: "border-white/12 bg-[#1a1c24]",
     glow: "rgba(255,255,255,0.18)",
   },
   route: {
     icon: "route",
-    text: "text-on-surface-variant",
-    ring: "border-white/15 bg-white/[0.06]",
+    text: "text-white/55",
+    ring: "border-white/12 bg-[#1a1c24]",
     glow: "rgba(255,255,255,0.18)",
   },
   forest: {
     icon: "forest",
-    text: "text-on-surface-variant",
-    ring: "border-white/15 bg-white/[0.06]",
+    text: "text-white/55",
+    ring: "border-white/12 bg-[#1a1c24]",
     glow: "rgba(255,255,255,0.18)",
   },
   dungeon: {
     icon: "dungeon",
-    text: "text-on-surface-variant",
-    ring: "border-white/15 bg-white/[0.06]",
+    text: "text-white/55",
+    ring: "border-white/12 bg-[#1a1c24]",
     glow: "rgba(255,255,255,0.18)",
   },
   gym: {
     icon: "gym",
-    text: "text-tertiary",
-    ring: "border-tertiary/50 bg-tertiary/10",
-    glow: "rgba(242,192,0,0.45)",
+    text: "text-[#ffcb05]",
+    ring: "border-[#ffcb05]/45 bg-[#1a1c24]",
+    glow: "rgba(255,203,5,0.45)",
   },
 };
+
+const SECTION_LABEL =
+  "text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45";
 
 /** Iconos de objetivo: PNG de juego, sin tile de fondo. */
 const OBJECTIVE_ICON_SRC: Record<Exclude<ZoneObjectiveId, "trainers">, string> = {
@@ -209,13 +215,18 @@ export function CampaignJourney({
   const t = useTranslations("campaign");
   const tUx = useTranslations("ux");
   const [chapterIndex, setChapterIndex] = useState(initialChapter);
-  const [zoneId, setZoneId] = useState<string | null>(farmingLocationId);
+  /** null = ninguna card del recorrido expandida (todas colapsadas). */
+  const [zoneId, setZoneId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [claimPopup, setClaimPopup] = useState<ZoneRewardClaim | null>(null);
   const [unlockToast, setUnlockToast] = useState<{ id: string; name: string } | null>(null);
 
   const chapter = chapters[chapterIndex] ?? chapters[0];
-  const zone = chapter?.zones.find((z) => z.id === zoneId) ?? chapter?.zones[0] ?? null;
+  const zone =
+    (zoneId ? chapter?.zones.find((z) => z.id === zoneId) : null) ??
+    chapter?.zones.find((z) => z.id === farmingLocationId) ??
+    chapter?.zones[0] ??
+    null;
   const farmingZone =
     chapters.flatMap((c) => c.zones).find((z) => z.id === farmingLocationId) ?? null;
 
@@ -241,17 +252,29 @@ export function CampaignJourney({
         : primaryAction.href
       : null;
   const helpBullets = (tUx.raw("help.campaign") as string[]) ?? [];
+  // Título del banner = destino del capítulo que estás mirando (no farming sticky).
   const locationLabelKey =
-    farmingZone?.nameKey ??
-    zone?.nameKey ??
-    primaryAction.locationNameKey ??
     chapter?.nameKey ??
+    zone?.nameKey ??
+    farmingZone?.nameKey ??
+    primaryAction.locationNameKey ??
     "regions.kanto";
+  const bannerArt = campaignBannerForChapter(chapter?.number ?? 1);
   const chapterBadgeEarned =
     chapter?.gymOrder != null && earnedGymOrders.includes(chapter.gymOrder);
 
+  function openChapter(i: number) {
+    setChapterIndex(i);
+    const next = chapters[i];
+    if (!next) return;
+    // Al cambiar de capítulo, colapsar el recorrido otra vez.
+    if (!next.zones.some((z) => z.id === zoneId)) {
+      setZoneId(null);
+    }
+  }
+
   function pickZone(id: string) {
-    setZoneId(id);
+    setZoneId((prev) => (prev === id ? null : id));
   }
 
   function travelTo(id: string) {
@@ -301,7 +324,8 @@ export function CampaignJourney({
       const key = "pokerpg:zones-unlocked-count";
       const prev = Number(window.sessionStorage.getItem(key) ?? "0");
       if (summary.zonesUnlocked > prev && prev > 0 && farmingZone) {
-        setUnlockToast({ id: farmingZone.id, name: t(farmingZone.nameKey) });
+        const toast = { id: farmingZone.id, name: t(farmingZone.nameKey) };
+        requestAnimationFrame(() => setUnlockToast(toast));
       }
       window.sessionStorage.setItem(key, String(summary.zonesUnlocked));
     } catch {
@@ -326,66 +350,7 @@ export function CampaignJourney({
         />
       )}
 
-      {/* Una sola línea: breadcrumb + ubicación + acciones secundarias */}
-      <header className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <Link
-            href="/"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-white/5 text-on-surface-variant hover:bg-white/10"
-            aria-label={t("backHome")}
-          >
-            <span className="material-symbols-outlined text-[18px]!">arrow_back</span>
-          </Link>
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-              <span className="text-pokeball-red">{t("regions.kanto")}</span>
-              {chapter && (
-                <>
-                  <span className="mx-1 text-on-surface-variant/40" aria-hidden>/</span>
-                  <span>{t("chapter")} {chapter.number}</span>
-                </>
-              )}
-              {chapter && (
-                <>
-                  <span className="mx-1 text-on-surface-variant/40" aria-hidden>·</span>
-                  <span className="font-mono tracking-normal">{chapter.stagesDone}/{chapter.stagesTotal}</span>
-                </>
-              )}
-            </p>
-            <h1 className="truncate text-body-lg font-bold tracking-tight text-white sm:text-headline-md">
-              {t(locationLabelKey)}
-            </h1>
-          </div>
-        </div>
-        <details className="group relative">
-          <summary className="flex min-h-9 cursor-pointer list-none items-center gap-1.5 rounded-lg border border-white/12 bg-white/5 px-2.5 py-1.5 text-label-sm text-on-surface-variant marker:content-none hover:bg-white/10 [&::-webkit-details-marker]:hidden">
-            <MapIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
-            <span className="hidden sm:inline">{t("viewFullJourney")}</span>
-            <span className="sm:hidden">{t("journeyProgress")}</span>
-          </summary>
-          <div className="absolute right-0 z-30 mt-2 w-[min(100vw-1.5rem,22rem)] rounded-xl border border-white/10 bg-surface-container p-2 shadow-xl sm:w-96">
-            <JourneyStrip
-              chapters={chapters}
-              activeIndex={chapterIndex}
-              onPick={(i) => {
-                setChapterIndex(i);
-              }}
-              percent={summary.journeyPercent}
-              label={t("journeyProgress")}
-              chapterLabel={t("chapter")}
-            />
-            <div className="mt-2">
-              <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
-            </div>
-            <HubHelpPanel
-              storageKey="hub-help-campaign"
-              bullets={helpBullets}
-              handbookChapter="journey"
-            />
-          </div>
-        </details>
-      </header>
-
+      {/* Hero banner ilustrado + próximo objetivo */}
       <CoachMark storageKey="coach-explore" message={tUx("coachExplore")}>
         <div>
           <CampaignUnlockFeedback
@@ -396,31 +361,78 @@ export function CampaignJourney({
                 : undefined
             }
           />
-          <CampaignPrimaryObjective action={primaryAction} gymHref={gymChallengeHref} />
+          <CampaignPrimaryObjective
+            action={primaryAction}
+            gymHref={gymChallengeHref}
+            bannerSrc={bannerArt.src}
+            bannerObjectPosition={bannerArt.objectPosition}
+            locationName={t(locationLabelKey)}
+            regionLabel={t("regions.kanto")}
+            chapterLabel={chapter ? `${t("chapter")} ${chapter.number}` : null}
+            stagesDone={chapter?.stagesDone ?? 0}
+            stagesTotal={chapter?.stagesTotal ?? 0}
+            journeyMenu={
+              <details className="group relative">
+                <CampaignJourneyMenuTrigger
+                  desktopLabel={t("viewFullJourney")}
+                  mobileLabel={t("journeyProgress")}
+                />
+                <div className="absolute right-0 z-30 mt-2 w-[min(100vw-1.5rem,22rem)] rounded-2xl game-float-card p-2 sm:w-96">
+                  <JourneyStrip
+                    chapters={chapters}
+                    activeIndex={chapterIndex}
+                    onPick={(i) => {
+                      openChapter(i);
+                    }}
+                    percent={summary.journeyPercent}
+                    label={t("journeyProgress")}
+                    chapterLabel={t("chapter")}
+                  />
+                  <div className="mt-2">
+                    <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
+                  </div>
+                  <HubHelpPanel
+                    storageKey="hub-help-campaign"
+                    bullets={helpBullets}
+                    handbookChapter="journey"
+                  />
+                </div>
+              </details>
+            }
+          />
         </div>
       </CoachMark>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_minmax(280px,340px)] lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
         <aside className="hidden flex-col gap-3 xl:flex">
-          <nav className="glass-panel rounded-xl border border-white/10 p-2" aria-label={t("chapter")}>
+          <nav className="game-float-card rounded-2xl p-2" aria-label={t("chapter")}>
+            <p className={`mb-1.5 px-1.5 pt-1 ${SECTION_LABEL}`}>{t("chapterPath")}</p>
             {chapters.map((c, i) => {
               const active = i === chapterIndex;
               return (
                 <button
                   key={c.number}
                   type="button"
-                  onClick={() => setChapterIndex(i)}
+                  onClick={() => openChapter(i)}
                   disabled={!c.unlocked}
-                  className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-label-sm transition ${
+                  className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-label-sm transition ${
                     active
-                      ? "border-l-2 border-l-pokeball-red bg-pokeball-red/8 text-white"
+                      ? "bg-[#1a1c24] text-white ring-1 ring-[#ff8a00]/55 shadow-[0_0_18px_rgba(255,138,0,0.22)]"
                       : c.unlocked
-                        ? "border-l-2 border-l-transparent text-on-surface-variant hover:bg-white/5 hover:text-on-surface"
-                        : "border-l-2 border-l-transparent text-on-surface-variant/40"
+                        ? "text-white/55 hover:bg-[#1a1c24] hover:text-white"
+                        : "text-white/30"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[16px]!">
-                    {c.completed ? "task_alt" : c.unlocked ? "play_circle" : "lock"}
+                  <span
+                    className={`material-symbols-outlined text-[16px]! ${
+                      c.completed
+                        ? "text-[#ffcb05]"
+                        : active
+                          ? "text-[#ff8a00]"
+                          : ""
+                    }`}
+                  >
+                    {c.completed ? "check_circle" : c.unlocked ? "play_arrow" : "lock"}
                   </span>
                   <span className="min-w-0 flex-1 truncate">
                     {c.number}. {t(c.nameKey)}
@@ -429,9 +441,7 @@ export function CampaignJourney({
               );
             })}
           </nav>
-          <p className="px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-            {t("secondaryChapter")}
-          </p>
+          <p className={`px-1 ${SECTION_LABEL}`}>{t("secondaryChapter")}</p>
           <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
         </aside>
 
@@ -440,15 +450,13 @@ export function CampaignJourney({
         <div className="min-w-0 order-2 lg:order-none">
           {chapter && (
             <>
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">
-                {t("chapterPath")}
-              </p>
-              <ol className="relative flex flex-col gap-1.5">
+              <p className={`mb-2 ${SECTION_LABEL}`}>{t("chapterPath")}</p>
+              <ol className="relative flex flex-col gap-3.5">
                 {chapter.zones.map((z, i) => {
                   const nodeStatus = resolveZoneNodeStatus({
                     zone: z,
                     farmingLocationId,
-                    selectedZoneId: zone?.id ?? null,
+                    selectedZoneId: zoneId,
                     chapter,
                     badgeEarned: chapterBadgeEarned,
                   });
@@ -457,7 +465,7 @@ export function CampaignJourney({
                       key={z.id}
                       zone={z}
                       isLast={i === chapter.zones.length - 1}
-                      selected={zone?.id === z.id}
+                      selected={zoneId === z.id}
                       isFarming={z.id === farmingLocationId}
                       gymRequirement={gymRequirements[z.id]}
                       chapter={chapter}
@@ -479,14 +487,14 @@ export function CampaignJourney({
                 <button
                   key={c.number}
                   type="button"
-                  onClick={() => setChapterIndex(i)}
+                  onClick={() => openChapter(i)}
                   disabled={!c.unlocked}
-                  className={`min-h-11 shrink-0 rounded-lg border px-3 py-2 text-label-sm transition ${
+                  className={`min-h-11 shrink-0 rounded-lg px-3 py-2 text-label-sm transition ${
                     active
-                      ? "border-pokeball-red/40 bg-pokeball-red/8 text-white"
+                      ? "game-float-card text-white ring-1 ring-[#ff8a00]/55"
                       : c.unlocked
-                        ? "border-white/10 text-on-surface-variant"
-                        : "border-transparent text-on-surface-variant/40"
+                        ? "bg-[#1a1c24] text-white/55"
+                        : "bg-[#12141c] text-white/30"
                   }`}
                 >
                   {c.number}
@@ -546,19 +554,13 @@ function JourneyStrip({
   chapterLabel: string;
 }) {
   return (
-    <section className="glass-panel rounded-xl border border-white/10 p-3">
+    <section className="game-float-card rounded-2xl p-3">
       <div className="mb-2.5 flex items-center justify-between gap-3">
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">
-          {label}
-        </span>
-        <span className="font-mono text-label-sm text-on-surface">{percent}%</span>
+        <span className={SECTION_LABEL}>{label}</span>
+        <span className="font-mono text-label-sm text-white/70">{percent}%</span>
       </div>
-      {/*
-        Medallas del gimnasio (arte local), no trainers ni números sueltos.
-        Una fila entra en mobile; el activo se marca en verde como "estás acá".
-      */}
       <div
-        className="grid gap-1 sm:gap-1.5"
+        className="grid items-stretch gap-1 sm:gap-1.5"
         style={{ gridTemplateColumns: `repeat(${chapters.length}, minmax(0, 1fr))` }}
       >
         {chapters.map((c, i) => {
@@ -571,27 +573,27 @@ function JourneyStrip({
               onClick={() => onPick(i)}
               disabled={!c.unlocked}
               title={`${chapterLabel} ${c.number}`}
-              className={`flex min-w-0 flex-col items-center gap-1.5 rounded-xl border px-0.5 py-2 transition sm:px-1.5 ${
+              className={`relative flex min-h-[3.75rem] min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl px-0.5 py-2 transition sm:min-h-[4rem] sm:px-1 ${
                 active
-                  ? "border-emerald-400/55 bg-emerald-400/10 shadow-[0_0_16px_rgba(52,211,153,0.2)]"
+                  ? "bg-[#ff8a00]/14"
                   : c.unlocked
-                    ? "border-white/10 bg-black/25 hover:bg-white/5"
-                    : "border-white/5 bg-black/10 opacity-45"
+                    ? "bg-[#161822] hover:bg-[#1a1c24]"
+                    : "bg-[#12141c] opacity-45"
               }`}
             >
               <span
-                className={`relative flex h-8 w-8 items-center justify-center rounded-full border sm:h-9 sm:w-9 ${
-                  c.completed
-                    ? "border-tertiary/50 bg-tertiary/15"
-                    : active
-                      ? "border-emerald-400/40 bg-emerald-400/10"
+                className={`relative flex h-8 w-8 items-center justify-center rounded-full sm:h-9 sm:w-9 ${
+                  active
+                    ? "bg-[#1a1208] shadow-[0_0_0_2px_#ff8a00]"
+                    : c.completed
+                      ? "bg-[#1a1c24] shadow-[0_0_0_1px_rgba(224,168,0,0.45)]"
                       : c.unlocked
-                        ? "border-white/20 bg-white/[0.06]"
-                        : "border-white/10 bg-black/30"
+                        ? "bg-[#12141c] shadow-[0_0_0_1px_rgba(255,255,255,0.12)]"
+                        : "bg-[#0c0e14] shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
                 }`}
               >
                 {!c.unlocked ? (
-                  <span className="material-symbols-outlined text-[16px]! text-on-surface-variant/55">
+                  <span className="material-symbols-outlined text-[16px]! text-white/40">
                     lock
                   </span>
                 ) : badgeType ? (
@@ -602,28 +604,21 @@ function JourneyStrip({
                     height={28}
                     unoptimized
                     className={`h-6 w-6 object-contain sm:h-7 sm:w-7 ${
-                      c.completed ? "" : "opacity-55 grayscale"
+                      c.completed || active ? "" : "opacity-55 grayscale"
                     }`}
                     aria-hidden
                   />
                 ) : (
                   <span
                     className={`material-symbols-outlined text-[18px]! ${
-                      c.completed ? "text-tertiary" : "text-on-surface-variant"
+                      c.completed || active ? "text-[#e0a800]" : "text-white/50"
                     }`}
                   >
                     {c.completed ? "military_tech" : "flag"}
                   </span>
                 )}
-                {c.completed && (
-                  <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-400 text-surface">
-                    <span className="material-symbols-outlined text-[10px]! leading-none">
-                      check
-                    </span>
-                  </span>
-                )}
               </span>
-              <span className="h-1 w-full overflow-hidden rounded-full bg-white/10">
+              <span className="h-1 w-[85%] overflow-hidden rounded-full bg-black/45">
                 <span
                   className={`block h-full rounded-full ${PATH_PROGRESS_FILL_GOLD} transition-all duration-500`}
                   style={{ width: `${c.unlocked ? c.percent : 0}%` }}
@@ -666,10 +661,29 @@ function ZoneRow({
   const isGym = kind === "gym";
   const gymWon = isGym && (nodeStatus === "completed" || nodeStatus === "reward_pending");
   const done = nodeStatus === "completed" || gymWon;
-  const compact = done && !selected && !isFarming;
+  /** Solo la card clickeada se expande; el resto queda colapsada. */
+  const compact = !selected;
   const caught = zone.encounters.filter((e) => e.caught).length;
   const pct = zone.totalStages > 0 ? (zone.completedStages / zone.totalStages) * 100 : 0;
-  const pathPct = isGym ? (chapter.completed || gymWon ? 100 : 0) : pct;
+  const pathPct = isGym
+    ? chapter.completed || gymWon
+      ? 100
+      : 0
+    : done
+      ? 100
+      : pct;
+  const hasStageArt = campaignMapHasArt(zone.id);
+  const artLayout = campaignMapArtLayout(zone.id);
+  const artBleed = hasStageArt && artLayout === "bleed";
+  const thumbSrc = campaignMapSrc(zone.id);
+  const nodeClass = isGym ? PATH_NODE_GYM : PATH_NODE_SM;
+  /** Debajo del círculo (mt-2 + tamaño del nodo). */
+  const railLineTop = isGym
+    ? "top-[calc(0.5rem+3rem)] sm:top-[calc(0.5rem+3.5rem)]"
+    : "top-[calc(0.5rem+2rem)]";
+  const lineFilled =
+    done || pathPct >= 100 || isFarming || nodeStatus === "current" || nodeStatus === "in_progress";
+  const lineFillPct = done || pathPct >= 100 ? 100 : Math.min(100, Math.max(0, pathPct));
 
   const requirementsLeft =
     isGym && zone.unlocked && !gymWon
@@ -700,93 +714,263 @@ function ZoneRow({
               : null;
 
   return (
-    <li className="relative flex gap-3">
-      <div className={`relative w-11 shrink-0 self-stretch ${compact ? "pt-0" : ""}`}>
+    <li className="relative flex items-stretch gap-3">
+      {/* Ancho fijo (= gimnasio) para centrar nodos chicos y la línea. */}
+      <div className="relative w-12 shrink-0 self-stretch sm:w-14">
         <span
-          className={`relative z-10 mt-0.5 flex h-11 w-11 items-center justify-center rounded-full border-2 ${
+          className={`relative z-10 mx-auto mt-2 flex ${nodeClass} items-center justify-center rounded-full border ${
             !zone.unlocked
-              ? "border-white/15 bg-surface-container text-on-surface-variant/50"
-              : isFarming
-                ? "border-emerald-400 bg-emerald-400/15 text-emerald-400"
+              ? "border-white/15 bg-[#12141c] text-white/35"
+              : isFarming || nodeStatus === "current"
+                ? "border-[#ff8a00] bg-[#1a1208] text-[#ff8a00]"
                 : done
-                  ? "border-emerald-400/25 bg-emerald-400/8 text-emerald-400/70"
+                  ? "bg-[#14110c]"
                   : `${style.ring} ${style.text}`
           }`}
           style={
-            isFarming || (zone.unlocked && isGym && !done)
-              ? { boxShadow: `0 0 12px ${isFarming ? "rgba(52,211,153,0.20)" : style.glow}` }
-              : undefined
+            done && zone.unlocked
+              ? {
+                  borderColor: PATH_DONE_GOLD_RING,
+                  color: PATH_DONE_GOLD,
+                  boxShadow: `0 0 10px rgba(240,160,32,0.45), inset 0 0 8px rgba(240,160,32,0.12)`,
+                }
+              : isFarming || nodeStatus === "current"
+                ? { boxShadow: "0 0 12px rgba(255,138,0,0.4)" }
+                : zone.unlocked && isGym && !done
+                  ? { boxShadow: `0 0 10px ${style.glow}` }
+                  : undefined
           }
           aria-current={selected || isFarming ? "step" : undefined}
         >
-          {zone.unlocked && isGym && gymRequirement?.leaderSpriteUrl ? (
-            <span className="relative">
-              <Image
-                src={gymRequirement.leaderSpriteUrl}
-                alt=""
-                width={40}
-                height={40}
-                className={`h-9 w-9 object-contain [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] ${
-                  gymWon ? "opacity-80" : ""
-                }`}
-              />
-              {gymWon ? (
-                <span className="absolute -bottom-0.5 -right-0.5 grid h-4 w-4 place-items-center rounded-full bg-emerald-400 text-surface">
-                  <span className="material-symbols-outlined text-[11px]! leading-none">check</span>
-                </span>
-              ) : null}
+          {!zone.unlocked ? (
+            <span
+              className={`material-symbols-outlined ${isGym ? "text-[20px]! sm:text-[22px]!" : "text-[15px]!"}`}
+            >
+              lock
             </span>
-          ) : zone.unlocked ? (
-            done && !isGym ? (
-              <span className="material-symbols-outlined text-[20px]!">task_alt</span>
-            ) : (
-              <ZoneIcon kind={style.icon} className="h-8 w-8" />
-            )
+          ) : done ? (
+            <span
+              className={`material-symbols-outlined font-bold ${isGym ? "text-[22px]! sm:text-[24px]!" : "text-[16px]!"}`}
+              style={{
+                color: PATH_DONE_GOLD,
+                filter: "drop-shadow(0 0 4px rgba(240,160,32,0.85))",
+              }}
+            >
+              check
+            </span>
+          ) : isGym && gymRequirement?.leaderSpriteUrl ? (
+            <Image
+              src={gymRequirement.leaderSpriteUrl}
+              alt=""
+              width={56}
+              height={56}
+              unoptimized
+              className={
+                gymRequirement.leaderSpriteUrl.includes("/avatars/")
+                  ? "h-10 w-10 object-contain object-bottom sm:h-11 sm:w-11 drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
+                  : "h-10 w-10 object-contain object-bottom sm:h-11 sm:w-11 [image-rendering:pixelated]"
+              }
+            />
           ) : (
-            <span className="material-symbols-outlined text-[18px]!">lock</span>
+            <ZoneIcon kind={style.icon} className={isGym ? "h-7 w-7 sm:h-8 sm:w-8" : "h-4 w-4"} />
           )}
         </span>
-        {!isLast && (
+        {!isLast ? (
           <span
             aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[calc(0.125rem+2.75rem)] bottom-[-0.5rem] w-px -translate-x-1/2 overflow-hidden bg-white/15"
+            className={`pointer-events-none absolute left-1/2 z-0 w-[2px] min-h-[1.5rem] -translate-x-1/2 overflow-hidden rounded-full bg-white/20 ${railLineTop} -bottom-3.5`}
           >
             <span
-              className={`absolute inset-x-0 top-0 w-full transition-[height] duration-500 ease-out ${
-                isGym
-                  ? "bg-gradient-to-b from-[#ffcb05] to-[#ff8a00] shadow-[0_0_6px_rgba(255,160,20,0.85)]"
-                  : done
-                    ? "bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.5)]"
-                    : "bg-pokeball-red/70 shadow-[0_0_4px_rgba(238,21,21,0.4)]"
-              }`}
-              style={{ height: `${Math.min(100, Math.max(0, pathPct))}%` }}
+              className="absolute inset-x-0 top-0 w-full rounded-full transition-[height] duration-500 ease-out"
+              style={{
+                height: `${lineFillPct}%`,
+                background: lineFilled
+                  ? `linear-gradient(180deg, ${PATH_DONE_GOLD} 0%, #ff8a00 100%)`
+                  : "transparent",
+                boxShadow:
+                  lineFilled && lineFillPct > 0
+                    ? "0 0 6px rgba(240,160,32,0.65)"
+                    : undefined,
+              }}
             />
           </span>
-        )}
+        ) : null}
       </div>
 
       <button
         type="button"
         onClick={onPick}
         aria-expanded={selected}
-        className={`glass-panel min-w-0 flex-1 rounded-xl border text-left transition ${
-          compact ? "px-3 py-1.5" : "p-3"
+        className={`game-float-card game-float-card--interactive relative min-w-0 flex-1 overflow-hidden rounded-2xl text-left transition ${
+          hasStageArt && zone.unlocked ? "p-0" : compact ? "px-3 py-1.5" : "p-3"
         } ${
           !zone.unlocked
-            ? "opacity-40 border-white/8 bg-black/10"
-            : isFarming
-              ? "ring-1 ring-emerald-400/30 border-white/15 bg-emerald-950/15"
+            ? "opacity-45"
+            : isFarming || nodeStatus === "current"
+              ? "ring-1 ring-[#ff8a00]/55 shadow-[0_0_20px_rgba(255,138,0,0.18)]"
               : isGym && !done
-                ? "border-tertiary/20 bg-amber-950/15"
-                : selected && (nodeStatus === "current" || nodeStatus === "in_progress")
-                  ? "border-white/20 bg-emerald-950/20"
-                  : compact
-                    ? "border-white/8 bg-white/[0.015]"
-                    : selected
-                      ? "border-white/20 bg-white/[0.04]"
-                      : "border-white/10 bg-white/[0.025] hover:bg-white/[0.04]"
-        } ${isGym && !compact ? "py-3.5" : ""}`}
+                ? "ring-1 ring-[#ffcb05]/40"
+                : selected
+                  ? "ring-1 ring-[#ff8a00]/30"
+                  : ""
+        }`}
       >
+        {artBleed && zone.unlocked ? (
+          <div
+            className={`relative isolate ${
+              compact ? "min-h-[5.5rem]" : "min-h-[7.5rem] sm:min-h-[8.5rem]"
+            }`}
+          >
+            <div className="pointer-events-none absolute inset-0">
+              <Image
+                src={thumbSrc}
+                alt=""
+                fill
+                sizes="(max-width: 768px) 100vw, 720px"
+                quality={95}
+                unoptimized
+                className="object-cover object-center"
+                priority={false}
+              />
+              {/* Solo legibilidad a la izquierda — el panorama se ve entero. */}
+              <div className="absolute inset-0 bg-linear-to-r from-[#0a0b10]/75 via-[#0a0b10]/25 to-transparent sm:via-[#0a0b10]/12 sm:w-[55%]" />
+              <div className="absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-[#0a0b10]/35 to-transparent" />
+            </div>
+            <div
+              className={`relative z-[1] flex flex-col justify-center ${
+                compact ? "px-3 py-2.5" : "px-3.5 py-3 sm:px-4 sm:py-3.5"
+              }`}
+            >
+              <ZoneRowBody
+                zone={zone}
+                t={t}
+                compact={compact}
+                isGym={isGym}
+                gymWon={gymWon}
+                done={done}
+                statusLabel={statusLabel}
+                nodeStatus={nodeStatus}
+                style={style}
+                isFarming={isFarming}
+                caught={caught}
+                pct={pct}
+                requirementsLeft={requirementsLeft}
+                unlockRequirements={unlockRequirements}
+              />
+            </div>
+          </div>
+        ) : (
+        <div
+          className={`flex ${
+            hasStageArt && zone.unlocked
+              ? compact
+                ? "min-h-[5.25rem] items-stretch"
+                : "min-h-[7rem] items-stretch sm:min-h-[7.75rem]"
+              : compact
+                ? "items-center gap-2.5"
+                : "items-start gap-2.5"
+          }`}
+        >
+          {zone.unlocked && (hasStageArt || !compact) ? (
+            <span
+              className={`relative shrink-0 overflow-hidden ${
+                hasStageArt
+                  ? compact
+                    ? "w-[5.25rem] self-stretch"
+                    : "w-[6.5rem] self-stretch sm:w-[7.5rem]"
+                  : "mt-0.5 h-12 w-12 rounded-xl ring-1 ring-white/10"
+              }`}
+            >
+              <Image
+                src={thumbSrc}
+                alt=""
+                fill
+                sizes={hasStageArt ? "100px" : "48px"}
+                className="object-cover"
+              />
+              {hasStageArt ? (
+                <>
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 bg-linear-to-r from-transparent via-[#12141c]/25 to-[#12141c]"
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-[#12141c]/70 to-transparent"
+                  />
+                </>
+              ) : (
+                <span className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
+              )}
+            </span>
+          ) : null}
+
+          <div
+            className={`min-w-0 flex-1 ${
+              hasStageArt && zone.unlocked
+                ? compact
+                  ? "flex flex-col justify-center py-2 pr-3 pl-2"
+                  : "flex flex-col justify-center py-2.5 pr-3 pl-2 sm:py-3 sm:pr-3.5"
+                : ""
+            }`}
+          >
+              <ZoneRowBody
+                zone={zone}
+                t={t}
+                compact={compact}
+                isGym={isGym}
+                gymWon={gymWon}
+                done={done}
+                statusLabel={statusLabel}
+                nodeStatus={nodeStatus}
+                style={style}
+                isFarming={isFarming}
+                caught={caught}
+                pct={pct}
+                requirementsLeft={requirementsLeft}
+                unlockRequirements={unlockRequirements}
+              />
+          </div>
+        </div>
+        )}
+      </button>
+    </li>
+  );
+}
+
+function ZoneRowBody({
+  zone,
+  t,
+  compact,
+  isGym,
+  gymWon,
+  done,
+  statusLabel,
+  nodeStatus,
+  style,
+  isFarming,
+  caught,
+  pct,
+  requirementsLeft,
+  unlockRequirements,
+}: {
+  zone: MapLocation;
+  t: ReturnType<typeof useTranslations>;
+  compact: boolean;
+  isGym: boolean;
+  gymWon: boolean;
+  done: boolean;
+  statusLabel: string | null;
+  nodeStatus: CampaignNodeStatus;
+  style: (typeof KIND_STYLE)[CampaignLocationKind];
+  isFarming: boolean;
+  caught: number;
+  pct: number;
+  requirementsLeft: (string | null)[];
+  unlockRequirements: CampaignRequirement[];
+}) {
+  return (
+    <>
         <div className="flex flex-wrap items-center gap-2">
           <h3
             className={`${
@@ -795,17 +979,24 @@ function ZoneRow({
                 : compact
                   ? "text-body-sm font-semibold"
                   : "text-body-md font-semibold"
-            } ${compact ? "text-white/70" : "text-white"}`}
+            } ${compact ? "text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.65)]" : "text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)]"}`}
           >
             {t(zone.nameKey)}
           </h3>
           {statusLabel && (
             <span
-              className={`inline-flex items-center gap-0.5 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+              className={`inline-flex items-center gap-0.5 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
                 gymWon || (done && !isGym)
-                  ? "border-emerald-400/40 bg-emerald-400/12 text-emerald-400"
-                  : "border-white/15 text-on-surface-variant"
+                  ? ""
+                  : nodeStatus === "current" || nodeStatus === "in_progress"
+                    ? "bg-[#ff8a00]/18 text-[#ff9a4a]"
+                    : "bg-[#1a1c24]/80 text-white/45"
               }`}
+              style={
+                gymWon || (done && !isGym)
+                  ? { backgroundColor: PATH_DONE_GOLD_SOFT, color: PATH_DONE_GOLD }
+                  : undefined
+              }
             >
               {(gymWon || (done && !isGym)) && (
                 <span className="material-symbols-outlined text-[11px]! leading-none">check</span>
@@ -815,52 +1006,42 @@ function ZoneRow({
           )}
           {!compact && (
             <span
-              className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${style.ring} ${style.text}`}
+              className={`rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${style.ring} ${style.text}`}
             >
               {t(zone.kindKey)}
             </span>
           )}
           {isFarming && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+            <span className="inline-flex items-center gap-1 rounded-md bg-[#ff8a00]/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ff9a4a]">
               <span className="material-symbols-outlined text-[12px]!">my_location</span>
               {t("farming")}
-            </span>
-          )}
-          {done && !isGym && compact && (
-            <span className="material-symbols-outlined text-[16px]! text-emerald-400">
-              task_alt
-            </span>
-          )}
-          {gymWon && compact && (
-            <span className="material-symbols-outlined text-[16px]! text-emerald-400">
-              task_alt
             </span>
           )}
         </div>
 
         {!compact && zone.unlocked && (
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-label-sm text-on-surface-variant">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-label-sm text-white/70 drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)]">
             {zone.totalStages > 0 && (
               <span className="inline-flex items-center gap-1">
-                <FootprintIcon className="h-3.5 w-3.5" />
-                <span className="text-on-surface">{zone.completedStages}/{zone.totalStages}</span>
+                <Image src="/nav/adventure-icon.png" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
+                <span className="text-white">{zone.completedStages}/{zone.totalStages}</span>
               </span>
             )}
             {zone.encounters.length > 0 && (
               <span className="inline-flex items-center gap-1">
-                <PokedexIcon className="h-3.5 w-3.5" />
-                <span className="text-on-surface">{caught}/{zone.encounters.length}</span>
+                <Image src="/nav/collection-icon.png" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
+                <span className="text-white">{caught}/{zone.encounters.length}</span>
               </span>
             )}
             <span className="inline-flex items-center gap-1">
-              <PokeballIcon className="h-3.5 w-3.5" />
+              <Image src="/nav/battle-wild-icon.png" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
               {t("wildLevels", { min: zone.levelMin, max: zone.levelMax })}
             </span>
           </div>
         )}
 
         {!compact && zone.unlocked && zone.totalStages > 0 && (
-          <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/40">
             <div
               className={`h-full rounded-full ${zoneBarFill(isGym, done, isFarming || nodeStatus === "current" || nodeStatus === "in_progress")} transition-all duration-500`}
               style={{ width: `${pct}%` }}
@@ -871,8 +1052,8 @@ function ZoneRow({
         {!compact && isGym && zone.unlocked && requirementsLeft.length > 0 && (
           <ul className="mt-2 flex flex-col gap-0.5">
             {requirementsLeft.map((r) => (
-              <li key={r} className="flex items-center gap-1 text-[11px] text-on-surface-variant">
-                <span className="material-symbols-outlined text-[13px]! text-on-surface-variant">
+              <li key={r} className="flex items-center gap-1 text-[11px] text-white/50">
+                <span className="material-symbols-outlined text-[13px]! text-[#ff8a00]">
                   radio_button_unchecked
                 </span>
                 {r}
@@ -881,12 +1062,12 @@ function ZoneRow({
           </ul>
         )}
 
-        {!zone.unlocked && unlockRequirements.length > 0 && (
+        {!compact && !zone.unlocked && unlockRequirements.length > 0 && (
           <ul className="mt-2 flex flex-col gap-0.5">
             {unlockRequirements.map((req) => (
               <li
                 key={req.id}
-                className="flex items-start gap-1 text-[11px] text-on-surface-variant"
+                className="flex items-start gap-1 text-[11px] text-white/45"
               >
                 <span className="material-symbols-outlined mt-px text-[13px]!">lock</span>
                 <span>{translateRequirement(t, req)}</span>
@@ -894,8 +1075,7 @@ function ZoneRow({
             ))}
           </ul>
         )}
-      </button>
-    </li>
+    </>
   );
 }
 
@@ -941,79 +1121,84 @@ function ZonePanel({
 
   return (
     <section
-      className={`glass-panel rounded-xl border p-4 ${
-        isFarming ? "border-emerald-400/35 shadow-[0_0_16px_rgba(52,211,153,0.12)]" : "border-white/10"
+      className={`game-float-card rounded-2xl p-4 ${
+        isFarming ? "ring-1 ring-[#ff8a00]/45 shadow-[0_0_22px_rgba(255,138,0,0.16)]" : ""
       }`}
     >
       <div className="flex items-start gap-2.5">
         <span
-          className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 ${style.ring} ${style.text}`}
+          className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 ${style.ring} ${style.text}`}
           style={
             isGym && gymRequirement?.leaderSpriteUrl
               ? { boxShadow: `0 0 16px ${style.glow}` }
-              : undefined
+              : { boxShadow: "0 0 16px rgba(255,138,0,0.2)" }
           }
         >
           {isGym && gymRequirement?.leaderSpriteUrl ? (
             <Image
               src={gymRequirement.leaderSpriteUrl}
               alt=""
-              width={44}
-              height={44}
-              className="h-10 w-10 object-contain [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+              width={48}
+              height={48}
+              unoptimized
+              className={
+                gymRequirement.leaderSpriteUrl.includes("/avatars/")
+                  ? "h-11 w-11 object-contain object-bottom drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                  : "h-11 w-11 object-contain object-bottom [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+              }
             />
           ) : (
-            <ZoneIcon kind={style.icon} className="h-9 w-9" />
+            <ZoneIcon kind={style.icon} className="h-10 w-10" />
           )}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-headline-md text-white">{t(zone.nameKey)}</h3>
             {isFarming && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+              <span className="inline-flex items-center gap-1 rounded-md bg-[#ff8a00]/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ff9a4a]">
                 <span className="material-symbols-outlined text-[12px]!">my_location</span>
                 {tUx("youAreHere")}
               </span>
             )}
           </div>
-          <p className="text-label-sm text-on-surface-variant">
+          <p className="text-label-sm text-white/45">
             {t(zone.kindKey)}
-            <span className="mx-1.5 text-on-surface-variant/40">•</span>
+            <span className="mx-1.5 text-white/25">•</span>
             {t("wildLevels", { min: zone.levelMin, max: zone.levelMax })}
-            <span className="mx-1.5 text-on-surface-variant/40">•</span>
+            <span className="mx-1.5 text-white/25">•</span>
             {t(`encounterRate.${zone.encounterRate}`)}
           </p>
         </div>
       </div>
 
       {zone.unlocked && zone.trainers.length > 0 && (
-        <p className="mt-3 rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-label-sm text-on-surface">
-          <span className="font-bold text-white">
+        <p className="game-float-tile mt-3 rounded-xl px-3 py-2 text-label-sm text-white/80">
+          <span className="font-bold text-[#ffcb05]">
             {trainersDone}/{zone.trainers.length}
           </span>{" "}
-          <span className="text-on-surface-variant">{t("obj_trainers")}</span>
+          <span className="text-white/45">{t("obj_trainers")}</span>
         </p>
       )}
 
       {zone.unlocked && (
-        <details className="mt-3 border-t border-white/8 pt-3 open:pb-1">
+        <details className="mt-3 border-t border-white/[0.08] pt-3 open:pb-1">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden">
-            <span className="inline-flex items-center gap-1.5 text-label-sm text-tertiary">
+            <span className="inline-flex items-center gap-1.5 text-label-sm text-[#ff9a4a]">
               <MasteryIcon className="h-4 w-4" />
               {t("mastery")} · Lv. {zone.masteryLevel} · {masteryProgressPercent(zone.masteryXp)}%
             </span>
-            <span className="material-symbols-outlined text-[16px]! text-on-surface-variant">
+            <span className="material-symbols-outlined text-[16px]! text-white/40">
               expand_more
             </span>
           </summary>
           <div className="mt-2">
-            <div className="h-1 overflow-hidden rounded-full bg-white/10">
+            <div className="h-1.5 overflow-hidden rounded-full bg-black/40">
               <div
-                className="h-full rounded-full bg-tertiary transition-all duration-500"
+                className="campaign-warm-bar h-full rounded-full transition-all duration-500"
                 style={{ width: `${masteryProgressPercent(zone.masteryXp)}%` }}
               />
             </div>
-            <p className="mt-1.5 text-[10px] text-on-surface-variant">
+            <p className="mt-1.5 text-[10px] text-white/45">
               {t("masteryBonuses", {
                 xp: masteryBonuses(zone.masteryLevel).xp,
                 capture: masteryBonuses(zone.masteryLevel).capture,
@@ -1025,14 +1210,14 @@ function ZonePanel({
       )}
 
       {!zone.unlocked ? (
-        <div className="mt-3 rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-4">
-          <p className="text-center text-label-sm text-on-surface-variant">{t("zoneLocked")}</p>
+        <div className="game-float-tile mt-3 rounded-xl border-dashed px-3 py-4">
+          <p className="text-center text-label-sm text-white/45">{t("zoneLocked")}</p>
           {unlockRequirements.length > 0 && (
             <ul className="mt-3 flex flex-col gap-1.5">
               {unlockRequirements.map((req) => (
                 <li
                   key={req.id}
-                  className="flex items-start gap-2 text-label-sm text-on-surface-variant"
+                  className="flex items-start gap-2 text-label-sm text-white/50"
                 >
                   <span className="material-symbols-outlined mt-0.5 text-[16px]!">lock</span>
                   <span>{translateRequirement(t, req)}</span>
@@ -1044,9 +1229,7 @@ function ZonePanel({
       ) : (
         <>
           {/* Objetivos: principal vs opcionales */}
-          <p className="mt-4 mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-            {t("objectives")}
-          </p>
+          <p className={`mt-4 mb-2 ${SECTION_LABEL}`}>{t("objectives")}</p>
           <ul className="flex flex-col gap-1.5">
             {objectives.map((obj) => {
               const trainerSprite =
@@ -1072,53 +1255,53 @@ function ZonePanel({
             })}
             {isGym && gymRequirement && (
               gymWon ? (
-                <li className="flex items-center gap-2.5 rounded-xl border border-emerald-400/35 bg-emerald-400/[0.08] px-2.5 py-2">
+                <li className="game-float-tile flex items-center gap-2.5 rounded-xl px-2.5 py-2 ring-1 ring-[#ffcb05]/35">
                   <span className="relative grid h-11 w-11 shrink-0 place-items-center" aria-hidden>
                     <Image
                       src={gymBadgeImageUrl(gymRequirement.badgeType)}
                       alt=""
                       width={44}
                       height={44}
-                      className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(52,211,153,0.35)]"
+                      className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(255,203,5,0.35)]"
                     />
-                    <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-emerald-400 text-surface">
+                    <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-[#ffcb05] text-[#1a1208]">
                       <span className="material-symbols-outlined text-[11px]! leading-none">
                         check
                       </span>
                     </span>
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-400">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#ffcb05]">
                       {t("nodeWon")}
                     </p>
-                    <p className="truncate text-label-sm text-on-surface">
+                    <p className="truncate text-label-sm text-white">
                       {gymRequirement.badgeName || t("objBadge")}
                     </p>
                   </div>
-                  <span className="material-symbols-outlined text-[20px]! text-emerald-400">
+                  <span className="material-symbols-outlined text-[20px]! text-[#ffcb05]">
                     task_alt
                   </span>
                 </li>
               ) : (
-                <li className="flex items-center gap-2.5 rounded-xl border border-tertiary/30 bg-tertiary/[0.07] px-2.5 py-2">
+                <li className="game-float-tile flex items-center gap-2.5 rounded-xl px-2.5 py-2 ring-1 ring-[#ff8a00]/35">
                   <span className="relative grid h-11 w-11 shrink-0 place-items-center" aria-hidden>
                     <Image
                       src={gymBadgeImageUrl(gymRequirement.badgeType)}
                       alt=""
                       width={44}
                       height={44}
-                      className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(242,192,0,0.35)]"
+                      className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(255,138,0,0.35)]"
                     />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-tertiary">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#ff9a4a]">
                       {t("objRoleRequirement")}
                     </p>
-                    <p className="truncate text-label-sm text-on-surface">
+                    <p className="truncate text-label-sm text-white">
                       {gymRequirement.badgeName || t("objBadge")}
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-md border border-tertiary/25 bg-black/25 px-2 py-1 font-mono text-[11px] text-tertiary">
+                  <span className="shrink-0 rounded-md bg-[#12141c] px-2 py-1 font-mono text-[11px] text-[#ffcb05]">
                     {`Lv. ${gymRequirement.recommendedLevel}`}
                   </span>
                 </li>
@@ -1129,11 +1312,11 @@ function ZonePanel({
           {/* Pokédex de la zona */}
           {zone.encounters.length > 0 && (
             <>
-              <p className="mt-4 mb-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+              <p className={`mt-4 mb-1.5 flex items-center justify-between ${SECTION_LABEL}`}>
                 {t("zoneWilds")}
-                <span className="font-mono normal-case tracking-normal text-on-surface">
+                <span className="font-mono normal-case tracking-normal text-white/70">
                   {caught}/{zone.encounters.length}
-                  <span className="ml-1.5 text-on-surface-variant/60">
+                  <span className="ml-1.5 text-white/40">
                     ({seenCount} {t("seenShort")})
                   </span>
                 </span>
@@ -1146,12 +1329,12 @@ function ZonePanel({
                     className="flex w-14 flex-col items-center gap-1"
                   >
                     <span
-                      className={`relative flex h-12 w-12 items-center justify-center rounded-xl border bg-surface-container-high/50 ${
+                      className={`relative flex h-12 w-12 items-center justify-center rounded-xl bg-[#1a1c24] border ${
                         mon.caught
                           ? RARITY_STYLE[mon.rarity]
                           : mon.seen
                             ? RARITY_STYLE[mon.rarity]
-                            : "border-white/10"
+                            : "border-white/8"
                       }`}
                     >
                       <Image
@@ -1178,10 +1361,10 @@ function ZonePanel({
                     <span
                       className={`max-w-full truncate text-center text-[9px] capitalize leading-tight ${
                         mon.caught
-                          ? "text-on-surface"
+                          ? "text-white"
                           : mon.seen
-                            ? "text-on-surface-variant"
-                            : "text-on-surface-variant/70"
+                            ? "text-white/55"
+                            : "text-white/35"
                       }`}
                     >
                       {mon.name}
@@ -1195,9 +1378,9 @@ function ZonePanel({
           {/* Entrenadores de la zona */}
           {zone.trainers.length > 0 && (
             <>
-              <p className="mt-4 mb-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+              <p className={`mt-4 mb-1.5 flex items-center justify-between ${SECTION_LABEL}`}>
                 {t("trainersTitle")}
-                <span className="font-mono normal-case tracking-normal text-on-surface">
+                <span className="font-mono normal-case tracking-normal text-white/70">
                   {zone.trainers.filter((tr) => tr.defeated).length}/{zone.trainers.length}
                 </span>
               </p>
@@ -1205,10 +1388,8 @@ function ZonePanel({
                 {zone.trainers.map((tr) => (
                   <li
                     key={tr.id}
-                    className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 ${
-                      tr.defeated
-                        ? "opacity-60"
-                        : "border border-white/10 bg-black/20"
+                    className={`game-float-tile flex items-center gap-2 rounded-xl px-2.5 py-1.5 ${
+                      tr.defeated ? "opacity-60" : ""
                     }`}
                   >
                     <span className="relative shrink-0">
@@ -1228,10 +1409,10 @@ function ZonePanel({
                         </span>
                       )}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-label-sm text-on-surface">
+                    <span className="min-w-0 flex-1 truncate text-label-sm text-white">
                       {t(tr.nameKey)}
                     </span>
-                    <span className="shrink-0 font-mono text-[10px] text-on-surface-variant">
+                    <span className="shrink-0 font-mono text-[10px] text-white/45">
                       Lv. {tr.level}
                     </span>
                     {tr.defeated ? (
@@ -1243,7 +1424,7 @@ function ZonePanel({
                         type="button"
                         disabled={pending}
                         onClick={() => onChallengeTrainer(tr.id)}
-                        className="shrink-0 rounded-md bg-pokeball-red px-2 py-1 text-[10px] font-bold uppercase text-white transition hover:bg-pokeball-red/85 disabled:opacity-40"
+                        className="shrink-0 rounded-md bg-pokeball-red px-2 py-1 text-[10px] font-bold uppercase text-white transition hover:brightness-110 disabled:opacity-40"
                       >
                         {t("trainerFight")}
                       </button>
@@ -1257,8 +1438,8 @@ function ZonePanel({
           {/* Acciones de zona (no duplican el CTA principal de campaña) */}
           <div className="mt-4 flex flex-col gap-2">
             {isGym ? (
-              <div className="rounded-lg border border-amber-300/25 bg-amber-300/[0.06] px-3 py-2.5">
-                <p className="text-label-sm text-on-surface">
+              <div className="game-float-tile rounded-xl px-3 py-2.5 ring-1 ring-tertiary/25">
+                <p className="text-label-sm text-white/80">
                   {gymReady ? t("gymChallengeHint") : t("gymLockedHint")}
                 </p>
                 {!gymReady && (
@@ -1267,7 +1448,7 @@ function ZonePanel({
                       className={`flex items-center gap-1.5 text-[11px] ${
                         chapter.stagesDone >= chapter.stagesTotal
                           ? "text-emerald-400"
-                          : "text-on-surface-variant"
+                          : "text-white/45"
                       }`}
                     >
                       <span className="material-symbols-outlined text-[14px]!">
@@ -1285,7 +1466,7 @@ function ZonePanel({
                         className={`flex items-center gap-1.5 text-[11px] ${
                           teamMaxLevel >= gymRequirement.recommendedLevel
                             ? "text-emerald-400"
-                            : "text-on-surface-variant"
+                            : "text-white/45"
                         }`}
                       >
                         <span className="material-symbols-outlined text-[14px]!">
@@ -1310,9 +1491,7 @@ function ZonePanel({
                   {isFarming ? t("youAreHere") : t("moveHere")}
                 </GameCtaButton>
 
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                  {t("pickStage")}
-                </p>
+                <p className={`mt-1 ${SECTION_LABEL}`}>{t("pickStage")}</p>
                 <ul className="flex flex-col gap-1">
                   {zone.stages.map((stage) => {
                     const current = stage.id === farmingStageId;
@@ -1322,15 +1501,15 @@ function ZonePanel({
                           type="button"
                           disabled={pending || !stage.unlocked || stage.isGym}
                           onClick={() => onFarmStage(stage.id)}
-                          className={`flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-label-sm transition ${
+                          className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-label-sm transition ${
                             current
-                              ? "border-pokeball-red/40 bg-pokeball-red/10 text-white"
+                              ? "bg-[#1a1c24] text-white ring-1 ring-[#ff8a00]/50 shadow-[0_0_14px_rgba(255,138,0,0.18)]"
                               : stage.unlocked && !stage.isGym
-                                ? "border-white/10 bg-black/20 text-on-surface hover:bg-white/5"
-                                : "border-white/5 bg-black/10 text-on-surface-variant/50"
+                                ? "game-float-tile text-white/80 hover:brightness-110"
+                                : "bg-[#12141c] text-white/30"
                           }`}
                         >
-                          <span className="material-symbols-outlined text-[15px]!">
+                          <span className={`material-symbols-outlined text-[15px]! ${current ? "text-[#ff8a00]" : stage.done ? "text-[#ffcb05]" : ""}`}>
                             {stage.isGym
                               ? "military_tech"
                               : !stage.unlocked
@@ -1354,25 +1533,6 @@ function ZonePanel({
       )}
     </section>
   );
-}
-
-/** Rareza más alta de la zona — sin depender de que la hayas visto. */
-function topRarityOf(encounters: { rarity: Rarity }[]): Rarity {
-  return encounters.reduce<Rarity>(
-    (best, e) => (RARITY_ORDER[e.rarity] > RARITY_ORDER[best] ? e.rarity : best),
-    "common",
-  );
-}
-
-/** Mismo criterio que `RARITY_STYLE`: un solo tono, subiendo de intensidad. */
-function rarityText(rarity: Rarity): string {
-  return {
-    common: "text-on-surface-variant",
-    uncommon: "text-on-surface",
-    rare: "text-tertiary/70",
-    veryRare: "text-tertiary",
-    elite: "text-electric-yellow",
-  }[rarity];
 }
 
 function Objective({
@@ -1403,15 +1563,15 @@ function Objective({
       : OBJECTIVE_ICON_SRC[state.id];
 
   const shell = state.claimable
-    ? "border-tertiary/55 bg-tertiary/[0.12] shadow-[0_0_18px_rgba(242,192,0,0.12)]"
+    ? "game-float-tile ring-1 ring-[#ffcb05]/45"
     : state.done
-      ? "border-emerald-400/35 bg-emerald-400/[0.08]"
+      ? "game-float-tile ring-1 ring-emerald-400/30"
       : isMain
-        ? "border-pokeball-red/25 bg-pokeball-red/[0.06]"
-        : "border-white/10 bg-black/25";
+        ? "game-float-tile ring-1 ring-[#ff8a00]/35"
+        : "game-float-tile";
 
   return (
-    <li className={`rounded-xl border px-2 py-2 transition ${shell}`}>
+    <li className={`rounded-xl px-2 py-2 transition ${shell}`}>
       <div className="flex items-center gap-2">
         <span className="relative grid h-9 w-9 shrink-0 place-items-center" aria-hidden>
           <Image
@@ -1425,7 +1585,7 @@ function Objective({
             unoptimized={state.id === "trainers"}
           />
           {state.done ? (
-            <span className="absolute -right-0.5 -top-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-emerald-400 text-surface">
+            <span className="absolute -right-0.5 -top-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-[#ffcb05] text-[#1a1208]">
               <span className="material-symbols-outlined text-[10px]! leading-none">check</span>
             </span>
           ) : null}
@@ -1436,26 +1596,26 @@ function Objective({
             <span
               className={`rounded px-1.5 py-px text-[8px] font-bold uppercase tracking-wider ${
                 isMain
-                  ? "border border-pokeball-red/55 text-pokeball-red"
-                  : "border border-white/15 text-on-surface-variant/80"
+                  ? "bg-[#ff8a00]/18 text-[#ff9a4a]"
+                  : "bg-[#12141c] text-white/45"
               }`}
             >
               {roleLabel}
             </span>
-            <p className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight text-on-surface">
+            <p className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight text-white">
               {label}
             </p>
             <span className="shrink-0 font-mono text-[12px] tabular-nums text-white">
               {state.current}
-              <span className="text-on-surface-variant">/{state.target}</span>
+              <span className="text-white/40">/{state.target}</span>
             </span>
           </div>
 
           {!state.done ? (
-            <div className="mt-1 h-1 overflow-hidden rounded-full bg-black/40">
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#12141c]">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  state.claimable ? "bg-tertiary" : isMain ? "bg-pokeball-red/80" : "bg-white/40"
+                  state.claimable ? "campaign-warm-bar" : isMain ? "campaign-warm-bar" : "bg-white/35"
                 }`}
                 style={{ width: `${pct}%` }}
               />
@@ -1464,12 +1624,12 @@ function Objective({
         </div>
       </div>
 
-      <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-white/8 pt-1.5">
+      <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-white/[0.08] pt-1.5">
         <div
           title={`${state.reward.quantity}× ${state.reward.itemName}`}
           className={`flex items-center gap-1.5 ${state.claimed ? "opacity-45" : ""}`}
         >
-          <span className="inline-flex h-8 min-w-[4.25rem] items-center justify-center gap-1 rounded-md border border-white/12 bg-black/35 px-1.5">
+          <span className="inline-flex h-8 min-w-[4.25rem] items-center justify-center gap-1 rounded-md bg-[#12141c] px-1.5">
             <Image
               src={itemSpriteUrl(state.reward.itemName)}
               alt=""
@@ -1477,11 +1637,11 @@ function Objective({
               height={22}
               className="h-[22px] w-[22px] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
             />
-            <span className="font-mono text-[11px] font-semibold tabular-nums text-on-surface">
+            <span className="font-mono text-[11px] font-semibold tabular-nums text-white">
               ×{state.reward.quantity}
             </span>
           </span>
-          <span className="inline-flex h-8 min-w-[4.25rem] items-center justify-center gap-1 rounded-md border border-electric-yellow/30 bg-electric-yellow/10 px-1.5 font-mono text-[11px] font-semibold tabular-nums text-electric-yellow">
+          <span className="inline-flex h-8 min-w-[4.25rem] items-center justify-center gap-1 rounded-md bg-electric-yellow/10 px-1.5 font-mono text-[11px] font-semibold tabular-nums text-[#ffcb05]">
             <span className="material-symbols-outlined text-[16px]!">paid</span>
             {state.reward.coins}
           </span>
@@ -1492,12 +1652,12 @@ function Objective({
             type="button"
             disabled={pending}
             onClick={onClaim}
-            className="shrink-0 rounded-md bg-tertiary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-surface shadow-[0_4px_14px_rgba(242,192,0,0.28)] transition hover:bg-tertiary/85 disabled:opacity-40"
+            className="shrink-0 rounded-md bg-[#ffcb05] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#1a1208] shadow-[0_4px_14px_rgba(255,203,5,0.28)] transition hover:brightness-110 disabled:opacity-40"
           >
             {claimLabel}
           </button>
         ) : state.claimed ? (
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-emerald-400/80">
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-emerald-400/90">
             {claimedLabel}
           </span>
         ) : null}
@@ -1523,15 +1683,13 @@ function JourneySummaryCard({
   ];
 
   return (
-    <section className="glass-panel relative overflow-hidden rounded-xl border border-white/10 p-3">
+    <section className="game-float-card relative overflow-hidden rounded-2xl p-3">
       <div className="pointer-events-none absolute inset-0">
-        <Image src={mapSrc} alt="" fill className="object-cover opacity-[0.12]" sizes="240px" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/90" />
+        <Image src={mapSrc} alt="" fill className="object-cover opacity-[0.08]" sizes="240px" />
+        <div className="absolute inset-0 bg-linear-to-b from-[#12141c]/80 to-[#12141c]" />
       </div>
       <div className="relative">
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-          {t("journeySummary")}
-        </p>
+        <p className={`mb-2 ${SECTION_LABEL}`}>{t("journeySummary")}</p>
         <ul className="flex flex-col gap-1.5">
           {rows.map((r) => (
             <li key={r.label} className="flex items-center gap-2 text-label-sm">
@@ -1543,8 +1701,8 @@ function JourneySummaryCard({
                 className="h-[18px] w-[18px] shrink-0 object-contain"
                 aria-hidden
               />
-              <span className="min-w-0 flex-1 truncate text-on-surface-variant">{r.label}</span>
-              <span className="font-mono text-on-surface">{r.value}</span>
+              <span className="min-w-0 flex-1 truncate text-white/50">{r.label}</span>
+              <span className="font-mono text-white">{r.value}</span>
             </li>
           ))}
         </ul>

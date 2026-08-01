@@ -133,16 +133,16 @@ export function HomeIdentityBanner({
             <span className="h-3 w-px shrink-0 bg-white/15" aria-hidden />
 
             {identity.clanName ? (
-              <span className="inline-flex min-w-0 max-w-[70%] items-center gap-1.5 sm:max-w-[42%]">
+              <span className="inline-flex min-w-0 items-center gap-1.5">
                 {identity.clanEmblem != null ? (
                   <ClanEmblemBadge
                     emblem={identity.clanEmblem}
                     size={14}
                     title={identity.clanName}
-                    className="translate-y-px"
+                    className="translate-y-px shrink-0"
                   />
                 ) : null}
-                <span className="truncate text-white/75">{identity.clanName}</span>
+                <span className="text-white/75">{identity.clanName}</span>
               </span>
             ) : (
               <span className="shrink-0">{labels.noClan}</span>

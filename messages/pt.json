@@ -1982,6 +1982,7 @@
     "reqStagesDetail": "Conclua os stages do capítulo ({done}/{total})",
     "reqLevel": "Time de nível {level}+",
     "nextObjective": "Próximo objetivo",
+    "objectivesCompleted": "objetivos concluídos",
     "objectiveProgress": "Progresso",
     "objectiveClearChapterStages": "Conclua os stages do capítulo antes do ginásio",
     "objectiveChallengeGym": "Desafie o líder em {name}",
@@ -1989,6 +1990,9 @@
     "exploreLocation": "Explorar",
     "viewFullJourney": "Jornada completa",
     "chapterPath": "Percurso do capítulo",
+    "chapterNames": {
+      "elite_four": "Elite dos Quatro"
+    },
     "nodeLocked": "Bloqueado",
     "nodeCompleted": "Concluído",
     "nodeWon": "Conquistado",

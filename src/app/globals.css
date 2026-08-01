@@ -2427,7 +2427,8 @@ body {
   transform: scale(0.94);
 }
 
-/* Cards flotantes del home — sólido #12141C + bisel. */
+/* Cards flotantes sólidas — #12141C + bisel (home, campaign, …). */
+.game-float-card,
 .home-float-card {
   background-color: #12141c;
   border: none;
@@ -2437,12 +2438,25 @@ body {
     0 10px 24px rgba(0, 0, 0, 0.45);
 }
 
+.game-float-card--interactive:hover,
 .home-float-card:hover {
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.12),
     inset -1px -1px 0 rgba(0, 0, 0, 0.45),
     0 14px 28px rgba(0, 0, 0, 0.5);
   filter: brightness(1.05);
+}
+
+/* Tile anidado opaco dentro de float cards. */
+.game-float-tile {
+  background-color: #1a1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Campaign adventure — barra de progreso cálida (rojo → naranja → oro). */
+.campaign-warm-bar {
+  background: linear-gradient(90deg, #ee1515 0%, #ff8a00 52%, #ffcb05 100%);
+  box-shadow: 0 0 14px rgba(255, 140, 20, 0.45);
 }
 
 .home-solid-btn {

@@ -23,7 +23,18 @@ export {
   getKantoStage,
 } from "./kanto";
 
-export { campaignMapPath, campaignMapSrc, campaignMapFallback } from "./maps";
+export {
+  campaignMapPath,
+  campaignMapSrc,
+  campaignMapFallback,
+  campaignMapHasArt,
+  campaignMapArtLayout,
+  campaignBannerSrc,
+  campaignBannerArt,
+  campaignBannerForZones,
+  campaignBannerForChapter,
+  type CampaignBannerArt,
+} from "./maps";
 
 export {
   type MapLocation,

@@ -46,11 +46,13 @@ export function buildChapters(
     // lista "Ciudad Azulona" se lee mejor que ocho "Gimnasio de …" iguales.
     const last = zones[zones.length - 1];
     const lastOrder = gymOrderByLocationId[last.id];
-    // El tramo final se llama por su meta ("Campeón"), no por la última ciudad.
-    const destination =
-      lastOrder !== undefined && eliteOrders.has(lastOrder)
-        ? last
-        : ([...zones].reverse().find((z) => z.kindKey === "kinds.town") ?? last);
+    const isEliteChapter =
+      lastOrder !== undefined && eliteOrders.has(lastOrder);
+    // Tramo final (Calle Victoria → Campeón): un solo capítulo "Alto Mando".
+    const nameKey = isEliteChapter
+      ? "chapterNames.elite_four"
+      : ([...zones].reverse().find((z) => z.kindKey === "kinds.town") ?? last)
+          .nameKey;
     const gymOrder = gym ? (gymOrderByLocationId[gym.id] ?? null) : null;
     const badgeEarned = gymOrder !== null && earned.has(gymOrder);
 
@@ -71,7 +73,7 @@ export function buildChapters(
 
     chapters.push({
       number: chapters.length + 1,
-      nameKey: destination.nameKey,
+      nameKey,
       zones,
       gym,
       gymOrder,

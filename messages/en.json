@@ -1982,6 +1982,7 @@
     "reqStagesDetail": "Clear chapter stages ({done}/{total})",
     "reqLevel": "Team at level {level}+",
     "nextObjective": "Next objective",
+    "objectivesCompleted": "objectives completed",
     "objectiveProgress": "Progress",
     "objectiveClearChapterStages": "Clear the chapter stages before the gym",
     "objectiveChallengeGym": "Challenge the gym leader at {name}",
@@ -1989,6 +1990,9 @@
     "exploreLocation": "Explore",
     "viewFullJourney": "Full journey",
     "chapterPath": "Chapter path",
+    "chapterNames": {
+      "elite_four": "Elite Four"
+    },
     "nodeLocked": "Locked",
     "nodeCompleted": "Done",
     "nodeWon": "Won",

@@ -1,4 +1,5 @@
 import { showdownTypeSymbolUrl } from "@/lib/type-icons";
+import { showdownTrainerSpriteUrl } from "@/lib/avatars";
 
 // Medallas: arte local en public/gyms/badges/ (Showdown no tiene gym badges).
 //
@@ -16,6 +17,36 @@ const LEADER_SLUGS: Record<string, string> = {
   Sabrina: "sabrina",
   Blaine: "blaine",
   Giovanni: "giovanni",
+  // Alto Mando + Campeón (Kanto)
+  Lorelei: "lorelei",
+  Bruno: "bruno",
+  Agatha: "agatha",
+  Lance: "lance",
+  Blue: "blue",
+};
+
+/** Líderes con PNG local en `public/gyms/leaders/`. El resto usa CDN Showdown. */
+const LOCAL_LEADER_SLUGS = new Set([
+  "brock",
+  "misty",
+  "ltsurge",
+  "erika",
+  "koga",
+  "sabrina",
+  "blaine",
+  "giovanni",
+]);
+
+/**
+ * Alto Mando / Campeón: cuerpo completo desde el catálogo de avatares (`*2`),
+ * en vez del sprite pixel de Showdown / `gyms/leaders`.
+ */
+const LEADER_AVATAR_BODY_SLUG: Partial<Record<string, string>> = {
+  Lorelei: "lorelei",
+  Bruno: "brunoaltomando",
+  Agatha: "agatha",
+  Lance: "lance",
+  Blue: "gary",
 };
 
 /** Tipos con PNG local en `public/gyms/badges/`. El resto (Elite / sellos) cae al ícono de tipo. */
@@ -38,16 +69,32 @@ export function gymBadgeImageUrl(type: string): string {
   return showdownTypeSymbolUrl(key);
 }
 
-/** Sprite pixel Showdown — cards, listas, UI chica. */
+/** Sprite — cards, listas, UI chica. Prefiere avatar *2 (Alto Mando), luego leaders locales, luego CDN. */
 export function gymLeaderImageUrl(leaderName: string): string | null {
+  const avatarSlug = LEADER_AVATAR_BODY_SLUG[leaderName];
+  if (avatarSlug) {
+    return `/avatars/${avatarSlug}2.png`;
+  }
   const slug = LEADER_SLUGS[leaderName];
-  return slug ? `/gyms/leaders/${slug}.png` : null;
+  if (!slug) return null;
+  if (LOCAL_LEADER_SLUGS.has(slug)) {
+    return `/gyms/leaders/${slug}.png`;
+  }
+  return showdownTrainerSpriteUrl(slug);
 }
 
 /** Retrato grande — detalle de gimnasio / pantallas hero. */
 export function gymLeaderPortraitUrl(leaderName: string): string | null {
+  const avatarSlug = LEADER_AVATAR_BODY_SLUG[leaderName];
+  if (avatarSlug) {
+    return `/avatars/${avatarSlug}2.png`;
+  }
   const slug = LEADER_SLUGS[leaderName];
-  return slug ? `/gyms/portraits/${slug}.png` : null;
+  if (!slug) return null;
+  if (LOCAL_LEADER_SLUGS.has(slug)) {
+    return `/gyms/portraits/${slug}.png`;
+  }
+  return showdownTrainerSpriteUrl(slug);
 }
 
 /** Sprite genérico de entrenador del gimnasio (pre-líder). */
