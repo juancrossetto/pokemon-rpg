@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { lockUsers } from "@/lib/db-locks";
 import { allowAction } from "@/lib/rate-limit";
 import { blockIfInCombat, revalidateCombatUi } from "@/lib/battle-lock";
-import { getCurrentEnergy } from "@/lib/energy";
+import { getCurrentEnergy, PVP_BATTLE_ENERGY_COST as PVP_ENERGY_COST } from "@/lib/energy";
 import { ensureSeason } from "@/lib/pvp/seasons";
 import {
   PVP_TEAM_INCLUDE,
@@ -17,7 +17,6 @@ import {
 } from "@/lib/pvp/team";
 import { primeChallengerTeamForBattle } from "@/lib/pvp/restore";
 
-const PVP_ENERGY_COST = 1;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const PVP_LIMIT = 15;
 const MATCH_POOL = 8;

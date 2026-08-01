@@ -96,8 +96,9 @@ la clave tiene variables tira `FORMATTING_ERROR` en runtime, no en build.
 Varios módulos en `src/lib/` exponen lógica de dominio que tanto Server
 Components como Client Components necesitan, pero **no importan Prisma**
 aunque exista una versión "completa" del mismo dominio que sí lo hace
-(`rarity.ts`, `evolution-readiness.ts`, `trainer-profile.ts`, `market-hub.ts`
-tiene contraparte en `evolution-chain.ts`, `friends.ts`). La razón: si un
+(`rarity.ts`, `evolution-readiness.ts`, `trainer-profile.ts`, `market-hub.ts`,
+`next-step.ts`, `events/limited.ts` tienen contraparte en `evolution-chain.ts`,
+`friends.ts`, `events/state.ts`). La razón: si un
 Client Component importa —aunque sea sólo un tipo— desde un archivo que en
 algún punto hace `import { prisma }`, Next empaqueta `pg` en el bundle del
 browser y el build muere con `Can't resolve 'dns'`/`'fs'`. Al agregar lógica
@@ -111,7 +112,11 @@ principio, en vez de reexportar y toparse con el error más tarde.
 pisos, bendiciones y botín acumulado (`TowerRun.pendingLoot`, se reclama al
 cerrar el intento) · `gyms` desafíos de gimnasio con corridas (`GymRun`) ·
 `pvp` ladder asíncrono · `market` compraventa entre jugadores · `clans`
-guilds · `friends` amistades/bloqueos · `events` misiones temporales ·
+guilds · `friends` amistades/bloqueos · `events` regalo diario, desafío semanal
+y **evento por tiempo limitado** (`events/limited.ts`: la edición vigente sale
+del número de semana ISO, no de una tabla de programación, y su ventana es la
+misma semana de juego que usa el semanal; los reclamos van a
+`EventMissionClaim`, cuya PK incluye la semana) ·
 `pokedex` registro de especies vistas/capturadas · `profile` estadísticas,
 rango y logros **derivados** de contadores reales (medallas, capturas,
 victorias) — no hay stats inventadas, ver `src/lib/trainer-profile.ts` ·
@@ -145,6 +150,24 @@ Los stages viven en las 7 stats (`atk`, `def`, `spa`, `spd`, `spe`, `acc`,
 entre columnas y el objeto `StatStages` está centralizada en
 `src/lib/battle-stages.ts`: agregar una stat es un cambio ahí más la
 migración, no un literal repetido en cada acción de combate.
+
+### Guía del jugador y energía
+
+`src/lib/next-step.ts` resuelve la etapa del jugador (novato / aventura /
+Alto Mando / campeón) y devuelve **una sola** acción recomendada. Su campo
+`standalone` es la regla que evita dos CTA compitiendo en el home: durante la
+historia devuelve `false` porque el hero de expedición ya es esa acción, y sólo
+se dibuja la card en los extremos del recorrido. Ojo con un detalle que se
+presta a confusión: `/gyms` **no lista los nodos del Alto Mando**
+(`computeGymStatuses` filtra `isElite` salvo que se pida lo contrario), así que
+todo CTA que apunte ahí con las 8 medallas ganadas tiene que resolver el id del
+gimnasio élite y linkear directo — `milestoneHref` acepta ese `gymHref`.
+
+Los costos de energía viven todos en `src/lib/energy.ts`
+(`WILD_ENCOUNTER_ENERGY_COST`, `GYM_BATTLE_ENERGY_COST`,
+`PVP_BATTLE_ENERGY_COST`); antes estaban repetidos como constantes locales en
+cuatro archivos y no había dónde leer "cuánto cuesta jugar" ni para recalibrar
+el ritmo ni para mostrárselo al jugador.
 
 ### Navegación
 

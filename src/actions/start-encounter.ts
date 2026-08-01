@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { getMovesetForLevel } from "@/lib/moveset";
-import { getCurrentEnergy } from "@/lib/energy";
+import { getCurrentEnergy, WILD_ENCOUNTER_ENERGY_COST } from "@/lib/energy";
 import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { getKantoStage, resolveSpawn } from "@/lib/campaign";
@@ -14,8 +14,6 @@ import { rollShiny } from "@/lib/shiny";
 import { recordSeenSpecies } from "@/lib/zone-progress";
 import { pickEventItemName, rollExplorationEvent } from "@/lib/campaign/events";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
-
-const FALLBACK_ENERGY_COST = 1;
 
 export type StartEncounterResult =
   | { success: true }
@@ -49,7 +47,7 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
   const stage = getKantoStage(progress.farmingStageId);
   if (!stage) return { success: false, error: "no_stage" };
 
-  const energyCost = stage.energyCost ?? FALLBACK_ENERGY_COST;
+  const energyCost = stage.energyCost ?? WILD_ENCOUNTER_ENERGY_COST;
 
   const [user, lead] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: userId } }),

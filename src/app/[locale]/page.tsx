@@ -10,7 +10,9 @@ import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { buildExpeditionView } from "@/lib/campaign";
 import { loadMapLocations } from "@/lib/campaign/map-data";
 import { loadEventsSummary } from "@/lib/events/state";
+import { getNextStep, isEliteMilestone } from "@/lib/next-step";
 import { HomeGameHub } from "@/components/home/home-game-hub";
+import { NextStepCard } from "@/components/home/next-step-card";
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolution-chain";
@@ -255,6 +257,34 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
 
   const milestone = expedition?.milestone;
 
+  /**
+   * Próximo paso del jugador.
+   *
+   * Solo cuentan las medallas regulares: los sellos del Alto Mando también son
+   * filas de `Badge`, y contarlos haría que el jugador pareciera tener 9 de 8.
+   *
+   * El hub `/gyms` no lista los nodos élite (`computeGymStatuses` los filtra),
+   * así que cuando el hito es uno de ellos hay que resolver su id y linkear
+   * directo — si no, el CTA del hero aterriza en una pantalla que se ve
+   * terminada y no ofrece a dónde seguir.
+   */
+  const KANTO_BADGE_TOTAL = 8;
+  const regularBadgeCount = badges.filter((b) => b.gym.order <= KANTO_BADGE_TOTAL).length;
+  const eliteGym =
+    milestone && isEliteMilestone(milestone, KANTO_BADGE_TOTAL)
+      ? await prisma.gym.findFirst({
+          where: { order: milestone.gymOrder },
+          select: { id: true },
+        })
+      : null;
+  const eliteGymHref = eliteGym ? `/gyms/${eliteGym.id}` : null;
+  const nextStep = getNextStep({
+    teamSize: pokemon.length,
+    badgeCount: regularBadgeCount,
+    totalBadges: KANTO_BADGE_TOTAL,
+    milestone: milestone ?? null,
+    eliteGymHref,
+  });
   const topBoard = await loadCombatPowerBoard("", userId);
   const railTop = topBoard.slice(0, 5).map((row) => ({
     position: row.position,
@@ -401,6 +431,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           farmingStageId: progress.farmingStageId,
           stagesDone: locationStagesDone,
           stagesTotal: locationStages.length,
+          gymHref: eliteGymHref,
         }
       : null;
 
@@ -588,6 +619,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     <HomeGameHub
       locale={locale}
       expedition={expeditionProps}
+      nextStep={nextStep.standalone ? <NextStepCard step={nextStep} /> : null}
       events={{
         daily: eventsSummary.daily,
         showDailyModal: eventsSummary.daily.canClaim,

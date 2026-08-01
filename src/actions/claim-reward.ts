@@ -6,6 +6,12 @@ import { prisma } from "@/lib/prisma";
 import { lockUsers } from "@/lib/db-locks";
 import { DAILY_CYCLE, nextDay, slotForDay } from "@/lib/events/daily";
 import { WEEKLY_CHALLENGE, weeklyPercent } from "@/lib/events/weekly";
+import {
+  activeLimitedEvent,
+  isMissionComplete,
+  missionById,
+  type LimitedMetric,
+} from "@/lib/events/limited";
 import { grantRewards, writeLedger } from "@/lib/events/grant";
 import { dayKey, serverNow, weekKey, weekStart } from "@/lib/events/time";
 import type { RewardDef } from "@/lib/events/rewards";
@@ -197,4 +203,96 @@ export async function claimWeeklyMilestone(
     revalidatePath(`/${locale}`, "layout");
   }
   return settled ?? { ok: false, error: "invalid" };
+}
+
+/**
+ * Reclama una misión del evento por tiempo limitado.
+ *
+ * El cliente manda el id de la misión, nunca el evento ni el progreso: el
+ * servidor resuelve cuál es la edición vigente con su propio reloj. Si la
+ * semana cambió entre que se pintó la pantalla y el jugador tocó el botón, el
+ * `eventCode` ya es otro y el reclamo no encuentra la misión completa — que es
+ * el comportamiento correcto para algo que caduca.
+ */
+export async function claimEventMission(
+  locale: string,
+  missionId: string,
+): Promise<ClaimRewardResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "unauthorized" };
+  const userId = session.user.id;
+
+  const now = serverNow();
+  const event = activeLimitedEvent(now);
+  const mission = missionById(event.def, missionId);
+  if (!mission) return { ok: false, error: "invalid" };
+
+  const since = event.startsAt;
+  let missionOutcome: ClaimRewardResult | null = null;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockUsers(tx, userId);
+
+      const existing = await tx.eventMissionClaim.findUnique({
+        where: {
+          userId_eventCode_missionId: { userId, eventCode: event.code, missionId },
+        },
+        select: { missionId: true },
+      });
+      if (existing) {
+        missionOutcome = { ok: false, error: "already_claimed" };
+        return;
+      }
+
+      const [wins, catches, shinies, zones] = await Promise.all([
+        tx.battleLog.count({ where: { userId, userWon: true, createdAt: { gte: since } } }),
+        tx.pokemonInstance.count({ where: { ownerId: userId, caughtAt: { gte: since } } }),
+        tx.pokemonInstance.count({
+          where: { ownerId: userId, isShiny: true, caughtAt: { gte: since } },
+        }),
+        tx.zoneObjectiveClaim.count({ where: { userId, claimedAt: { gte: since } } }),
+      ]);
+
+      const metrics: Record<LimitedMetric, number> = {
+        battles: wins,
+        catches,
+        shinies,
+        zones,
+      };
+      if (!isMissionComplete(mission, metrics[mission.metric])) {
+        missionOutcome = { ok: false, error: "not_available" };
+        return;
+      }
+
+      await tx.eventMissionClaim.create({
+        data: { userId, eventCode: event.code, missionId },
+      });
+
+      const result = await grantRewards(tx, userId, mission.rewards);
+      await writeLedger(tx, {
+        userId,
+        source: "event_mission",
+        sourceRef: `${event.code}:${missionId}`,
+        result,
+      });
+
+      missionOutcome = {
+        ok: true,
+        granted: result.granted,
+        coinsDelta: result.coinsDelta,
+        energyDelta: result.energyDelta,
+      };
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) return { ok: false, error: "already_claimed" };
+    throw error;
+  }
+
+  const settledMission = missionOutcome as ClaimRewardResult | null;
+  if (settledMission?.ok) {
+    revalidatePath(`/${locale}/events`);
+    revalidatePath(`/${locale}`, "layout");
+  }
+  return settledMission ?? { ok: false, error: "invalid" };
 }

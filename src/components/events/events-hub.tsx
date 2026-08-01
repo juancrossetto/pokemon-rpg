@@ -3,12 +3,16 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
-import { claimDailyReward, claimWeeklyMilestone } from "@/actions/claim-reward";
+import {
+  claimDailyReward,
+  claimEventMission,
+  claimWeeklyMilestone,
+} from "@/actions/claim-reward";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import { RewardChip, RewardList } from "@/components/events/reward-chip";
 import { DailyCalendar } from "@/components/events/daily-calendar";
 import type { RewardDef } from "@/lib/events/rewards";
-import type { DailyState, WeeklyState } from "@/lib/events/state";
+import type { DailyState, LimitedEventState, WeeklyState } from "@/lib/events/state";
 
 export type EventsLabels = {
   eyebrow: string;
@@ -39,11 +43,15 @@ export type EventsLabels = {
   errorClaimed: string;
   errorNotAvailable: string;
   errorGeneric: string;
-  eventsSoon: string;
   close: string;
   statusToday: string;
   statusClaimed: string;
   statusUpcoming: string;
+  limitedBadge: string;
+  limitedEnds: string;
+  limitedName: string;
+  limitedTagline: string;
+  limitedMissions: Record<string, string>;
 };
 
 const fill = (template: string, values: Record<string, string | number>) =>
@@ -83,12 +91,14 @@ function formatRemaining(ms: number): string {
 export function EventsHub({
   daily,
   weekly,
+  limited,
   pendingCount,
   labels,
   locale,
 }: {
   daily: DailyState;
   weekly: WeeklyState;
+  limited: LimitedEventState;
   pendingCount: number;
   labels: EventsLabels;
   locale: string;
@@ -139,6 +149,17 @@ export function EventsHub({
         </p>
       )}
 
+      {/* El evento va primero: es lo único de la pantalla que caduca. */}
+      <LimitedPanel
+        limited={limited}
+        labels={labels}
+        locale={locale}
+        now={now}
+        onReveal={setReveal}
+        onError={onError}
+        clearError={() => setError(null)}
+      />
+
       <DailyPanel
         daily={daily}
         labels={labels}
@@ -159,19 +180,166 @@ export function EventsHub({
         clearError={() => setError(null)}
       />
 
-      {/* Eventos por tiempo limitado: el sistema los soporta, pero no hay
-          ninguno configurado. Se dice, en vez de inventar uno de relleno. */}
-      <section className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center">
-        <span aria-hidden className="material-symbols-outlined text-[28px]! text-on-surface-variant/40">
-          celebration
-        </span>
-        <p className="mt-1 text-label-sm text-on-surface-variant">{labels.eventsSoon}</p>
-      </section>
-
       {reveal && (
         <RewardReveal rewards={reveal} labels={labels} onClose={() => setReveal(null)} />
       )}
     </div>
+  );
+}
+
+/* ── Evento por tiempo limitado ───────────────────────────────────────── */
+
+/**
+ * A diferencia del semanal, cada misión se cobra por separado y la card se
+ * tiñe con el color de la edición: el evento tiene que distinguirse a simple
+ * vista de las dos secciones permanentes que tiene debajo.
+ */
+function LimitedPanel({
+  limited,
+  labels,
+  locale,
+  now,
+  onReveal,
+  onError,
+  clearError,
+}: {
+  limited: LimitedEventState;
+  labels: EventsLabels;
+  locale: string;
+  now: number;
+  onReveal: (rewards: RewardDef[]) => void;
+  onError: (code: string) => void;
+  clearError: () => void;
+}) {
+  const [pending, startTransition] = useTransition();
+  const [busy, setBusy] = useState<string | null>(null);
+  const remaining = new Date(limited.endsAt).getTime() - now;
+  const accent = limited.accent;
+
+  function claim(missionId: string) {
+    if (pending) return;
+    clearError();
+    setBusy(missionId);
+    startTransition(async () => {
+      const result = await claimEventMission(locale, missionId);
+      setBusy(null);
+      if (!result.ok) {
+        onError(result.error);
+        return;
+      }
+      if (result.coinsDelta !== 0) announceCoinDelta(result.coinsDelta);
+      onReveal(result.granted);
+    });
+  }
+
+  return (
+    <section
+      className="glass-panel relative overflow-hidden rounded-xl border p-3 sm:p-4"
+      style={{
+        borderColor: `${accent}59`,
+        background: `linear-gradient(135deg, ${accent}1f, transparent 65%)`,
+      }}
+    >
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+        <div className="flex min-w-0 items-start gap-2.5">
+          <span
+            aria-hidden
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border"
+            style={{ borderColor: `${accent}66`, background: `${accent}1f`, color: accent }}
+          >
+            <span className="material-symbols-outlined text-[20px]!">{limited.icon}</span>
+          </span>
+          <div className="min-w-0">
+            <p
+              className="text-[10px] font-bold uppercase tracking-[0.18em]"
+              style={{ color: accent }}
+            >
+              {labels.limitedBadge}
+            </p>
+            <h2 className="text-label-md font-semibold text-white">{labels.limitedName}</h2>
+            <p className="text-[11px] leading-snug text-on-surface-variant">
+              {labels.limitedTagline}
+            </p>
+          </div>
+        </div>
+        <p className="shrink-0 font-mono text-[11px] text-on-surface-variant">
+          {fill(labels.limitedEnds, { time: formatRemaining(remaining) })}
+        </p>
+      </div>
+
+      <ul className="flex flex-col gap-1.5">
+        {limited.missions.map((mission) => {
+          const done = mission.current >= mission.target;
+          const pct = Math.min(100, Math.round((mission.current / mission.target) * 100));
+          return (
+            <li
+              key={mission.id}
+              className={`rounded-lg border px-2.5 py-2 ${
+                mission.claimable
+                  ? "border-tertiary/55 bg-tertiary/10"
+                  : mission.claimed
+                    ? "border-white/[0.07] bg-white/[0.02] opacity-60"
+                    : "border-white/10 bg-black/20"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className={`material-symbols-outlined text-[16px]! ${
+                    done ? "text-emerald-400" : "text-on-surface-variant/60"
+                  }`}
+                >
+                  {done ? "task_alt" : "radio_button_unchecked"}
+                </span>
+                <span className="min-w-0 flex-1 text-label-sm leading-snug text-on-surface">
+                  {labels.limitedMissions[mission.id] ?? mission.id}
+                </span>
+                <span className="shrink-0 font-mono text-[11px] tabular-nums text-on-surface-variant">
+                  {mission.current}/{mission.target}
+                </span>
+              </div>
+
+              {!done && (
+                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full transition-[width] duration-500"
+                    style={{ width: `${pct}%`, background: accent }}
+                  />
+                </div>
+              )}
+
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <RewardList rewards={mission.rewards} size="sm" unitLabels={labels.rewards} />
+                {mission.claimed ? (
+                  <span className="flex items-center gap-1 text-[10px] uppercase text-emerald-400">
+                    <span aria-hidden className="material-symbols-outlined text-[13px]!">
+                      check
+                    </span>
+                    {labels.claimed}
+                  </span>
+                ) : mission.claimable ? (
+                  <button
+                    type="button"
+                    onClick={() => claim(mission.id)}
+                    disabled={pending}
+                    className="h-9 shrink-0 rounded-md bg-tertiary px-3 text-[10px] font-bold uppercase tracking-wide text-surface transition hover:bg-tertiary/85 disabled:opacity-60"
+                  >
+                    {busy === mission.id ? "…" : labels.claim}
+                  </button>
+                ) : mission.href ? (
+                  <Link
+                    href={mission.href}
+                    className="shrink-0 rounded-md border border-white/12 px-2 py-1 text-[10px] uppercase text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
+                  >
+                    {labels.goTo}
+                  </Link>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

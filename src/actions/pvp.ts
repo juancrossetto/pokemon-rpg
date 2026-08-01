@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { lockUsers } from "@/lib/db-locks";
 import { allowAction } from "@/lib/rate-limit";
 import { blockIfInCombat } from "@/lib/battle-lock";
-import { getCurrentEnergy } from "@/lib/energy";
+import { getCurrentEnergy, PVP_BATTLE_ENERGY_COST as PVP_ENERGY_COST } from "@/lib/energy";
 import { simulatePvpBattle } from "@/lib/pvp-battle";
 import { ensureSeason } from "@/lib/pvp/seasons";
 import { notifySettledPvp, settlePvpMatch } from "@/lib/pvp/settle";
@@ -22,7 +22,6 @@ import {
 // Combate rápido: simulación server-authoritative instantánea (modo QUICK).
 // El ranked jugable está en start-pvp-battle.ts.
 
-const PVP_ENERGY_COST = 1;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const PVP_LIMIT = 15;
 const MATCH_POOL = 8;

@@ -16,6 +16,14 @@ type Props = {
   items: GymMissionItem[];
   badgeCount: number;
   gems: number;
+  /**
+   * Ruta al siguiente nodo del Alto Mando, o `null` si todavía no corresponde.
+   *
+   * Este hub sólo lista los 8 gimnasios de medalla, así que con las 8 ganadas
+   * la pantalla se ve terminada y no hay nada que indique que la aventura
+   * sigue. El banner es ese cartel.
+   */
+  eliteHref?: string | null;
 };
 
 const STATUS_STYLES: Record<
@@ -185,7 +193,7 @@ function MissionSparks() {
   );
 }
 
-export function GymMissionControl({ items, badgeCount, gems }: Props) {
+export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props) {
   const t = useTranslations("gyms");
   const tTypes = useTranslations("pokedex.pokemonTypes");
   const firstUnlocked = items.find((g) => !g.locked && !g.badgeEarned) ?? items[0];
@@ -304,6 +312,44 @@ export function GymMissionControl({ items, badgeCount, gems }: Props) {
             )}
           </div>
         </header>
+
+        {eliteHref && (
+          <section className="relative overflow-hidden rounded-2xl border border-electric-yellow/35 bg-gradient-to-r from-electric-yellow/[0.14] via-black/40 to-black/50 p-4">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-electric-yellow/70 to-transparent"
+            />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <span
+                  aria-hidden
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-electric-yellow/40 bg-electric-yellow/10 text-electric-yellow"
+                >
+                  <span className="material-symbols-outlined text-[24px]!">
+                    workspace_premium
+                  </span>
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-electric-yellow">
+                    {t("eliteEyebrow")}
+                  </p>
+                  <h2 className="mt-0.5 text-[17px] font-semibold leading-tight text-white">
+                    {t("eliteTitle")}
+                  </h2>
+                  <p className="mt-1 max-w-lg text-label-sm text-on-surface-variant">
+                    {t("eliteBody")}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href={eliteHref}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-pokeball-red px-5 text-label-sm font-bold uppercase tracking-wide text-white transition hover:bg-pokeball-red/85 active:scale-[0.98]"
+              >
+                {t("eliteCta")}
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* HERO + SIDE PANEL */}
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.9fr)] lg:gap-7">

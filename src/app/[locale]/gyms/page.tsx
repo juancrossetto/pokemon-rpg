@@ -21,15 +21,34 @@ export default async function GymsPage({
 
   await redirectIfInBattle(session.user.id, locale);
 
-  const [statuses, user] = await Promise.all([
-    computeGymStatuses(session.user.id),
+  // Se pide todo de una y se parte acá: el Alto Mando no va en la grilla de
+  // medallas, pero sí decide si aparece el banner de continuidad.
+  const [allStatuses, user] = await Promise.all([
+    computeGymStatuses(session.user.id, true),
     prisma.user.findUniqueOrThrow({
       where: { id: session.user.id },
       select: { gems: true },
     }),
   ]);
-  const items = toGymMissionItems(statuses);
+  const items = toGymMissionItems(allStatuses.filter((status) => !status.gym.isElite));
   const badgeCount = items.filter((s) => s.badgeEarned).length;
 
-  return <GymMissionControl items={items} badgeCount={badgeCount} gems={user.gems} />;
+  /**
+   * Con las 8 medallas el hub queda todo en verde y no dice que la aventura
+   * sigue en el Alto Mando. Se ofrece el primer nodo élite sin sello; si ya
+   * están todos, no hay banner y la pantalla efectivamente está terminada.
+   */
+  const allBadgesEarned = items.length > 0 && badgeCount === items.length;
+  const nextElite = allBadgesEarned
+    ? allStatuses.find((status) => status.gym.isElite && !status.badgeEarned)
+    : undefined;
+
+  return (
+    <GymMissionControl
+      items={items}
+      badgeCount={badgeCount}
+      gems={user.gems}
+      eliteHref={nextElite ? `/gyms/${nextElite.gym.id}` : null}
+    />
+  );
 }

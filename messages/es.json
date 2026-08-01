@@ -897,6 +897,10 @@
     "badgePerksTitle": "Con tus medallas",
     "obedienceCap": "Tu equipo obedece hasta Nv. {level}",
     "marketDiscount": "−{pct}% en tarifas del mercado",
+    "eliteEyebrow": "Alto Mando",
+    "eliteTitle": "Tenés las 8 medallas",
+    "eliteBody": "La aventura sigue: cuatro maestros del Alto Mando y el Campeón, uno atrás del otro.",
+    "eliteCta": "Ir al Alto Mando",
     "closedHint": "El gimnasio está cerrado a esta hora.",
     "closedChip": "Cerrado",
     "hours": "Horario {opens}:00 – {closes}:00",
@@ -2147,7 +2151,35 @@
     "errorNotAvailable": "Todavía no alcanzaste ese hito.",
     "errorGeneric": "No se pudo reclamar. Probá de nuevo.",
     "emptyEvents": "No hay eventos activos por ahora. Volvé pronto.",
-    "eventsSoon": "Los eventos por tiempo limitado llegan pronto.",
+    "limited": {
+      "badge": "Evento por tiempo limitado",
+      "endsIn": "Termina en {time}",
+      "catalog": {
+        "battleRush": {
+          "name": "Semana de combate",
+          "tagline": "Ganá combates antes de que se termine la semana."
+        },
+        "catchFever": {
+          "name": "Fiebre de captura",
+          "tagline": "Llená la Pokédex: cada captura de esta semana cuenta."
+        },
+        "explorerWeek": {
+          "name": "Semana del explorador",
+          "tagline": "Completá objetivos de zona y seguí el mapa."
+        }
+      },
+      "missions": {
+        "wins-10": "Ganá 10 combates",
+        "wins-30": "Ganá 30 combates",
+        "wins-60": "Ganá 60 combates",
+        "catch-15": "Capturá 15 Pokémon",
+        "catch-25": "Capturá 25 Pokémon",
+        "catch-40": "Capturá 40 Pokémon",
+        "shiny-1": "Capturá un Pokémon variocolor",
+        "zones-2": "Completá 2 objetivos de zona",
+        "zones-5": "Completá 5 objetivos de zona"
+      }
+    },
     "close": "Cerrar",
     "statusToday": "Disponible hoy",
     "statusClaimed": "Reclamado",
@@ -2499,6 +2531,8 @@
       "step2Body": "Peleá, capturá y ganá XP en tu zona.",
       "step3Title": "Desafiá el gimnasio",
       "step3Body": "Cuando estés listo, ganá la medalla y seguí.",
+      "step4Title": "Manejá tu energía",
+      "step4Body": "Cada combate gasta energía y se recarga sola: 1 punto cada 30 minutos.",
       "cta": "Entendido"
     },
     "role": {
@@ -2534,6 +2568,11 @@
     "energyEmptyShop": "Ir a la tienda",
     "energyEmptyRewards": "Reclamar recompensas",
     "energyEmptyTeam": "Cuidar el equipo",
+    "energyCostsTitle": "En qué se gasta",
+    "energyCostExplore": "Explorar",
+    "energyCostGym": "Combate de gimnasio",
+    "energyCostPvp": "Combate PvP",
+    "energyPacing": "La barra llena alcanza para una sesión larga. Cuando se vacía tarda horas en volver, así que elegí en qué la gastás.",
     "postBattleContinue": "Seguir explorando",
     "postBattleJourney": "Volver al Viaje",
     "postBattleEvolve": "Tu equipo puede evolucionar",
@@ -2994,5 +3033,22 @@
     "reset": {
       "nextIn": "Próximo ascenso en"
     }
+  },
+  "nextStep": {
+    "eyebrow": "Tu próximo paso",
+    "starterTitle": "Elegí tu primer Pokémon",
+    "starterBody": "Sin equipo no podés explorar. Elegí un compañero y arrancá la aventura.",
+    "starterCta": "Elegir inicial",
+    "storyTitle": "Seguí la historia",
+    "storyBody": "Tu próxima parada está marcada en el Viaje.",
+    "storyCta": "Ver el Viaje",
+    "eliteTitle": "Ganaste las 8 medallas",
+    "eliteBody": "La aventura no termina acá: te espera el Alto Mando, cuatro maestros y el Campeón, uno atrás del otro.",
+    "eliteCta": "Desafiar al Alto Mando",
+    "eliteSecondaryCta": "Torre",
+    "championTitle": "Sos Campeón de Kanto",
+    "championBody": "La historia terminó, pero la Torre reinicia cada semana y el ladder PvP nunca cierra.",
+    "championCta": "Subir la Torre",
+    "championSecondaryCta": "PvP"
   }
 }
