@@ -39,6 +39,7 @@ export const PC_ERRORS = [
   "in_battle",
   "last_team_member",
   "rate_limited",
+  "trade_locked",
 ] as const;
 
 export const PC_NOTICES = ["deposited", "withdrawn"] as const;

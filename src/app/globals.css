@@ -133,6 +133,7 @@ html[data-icons="ready"] .material-symbols-outlined {
   --font-mono: var(--font-jetbrains-mono);
   --font-game: var(--font-lilita), "Lilita One", ui-rounded, system-ui, sans-serif;
   --font-display: var(--font-anton), "Anton", "Arial Narrow", system-ui, sans-serif;
+  --font-identity: var(--font-unbounded), "Unbounded", system-ui, sans-serif;
 
   /* xs/sm/md/lg/xl NO se agregan acá: Tailwind v4 resuelve max-w-*, w-*, etc.
      contra la misma escala de --spacing, y esos nombres pisarían max-w-md,
@@ -235,7 +236,7 @@ body {
       0 1px 0 rgba(255, 255, 255, 0.15) inset,
       0 4px 12px rgba(255, 160, 20, 0.14),
       0 1px 0 rgba(140, 70, 0, 0.25);
-    color: #ffffff;
+    color: var(--game-cta-ink);
     font-family: var(--font-lilita), var(--font-game), "Lilita One", sans-serif;
     font-size: 0.95rem;
     font-weight: 400;
@@ -295,46 +296,43 @@ body {
   .game-cta__icon {
     font-size: 1.2rem !important;
     line-height: 1 !important;
-    color: #ffffff;
-    -webkit-text-stroke: 0.4px var(--game-cta-ink);
-    paint-order: stroke fill;
+    color: var(--game-cta-ink);
     text-shadow: none;
     filter: none;
   }
 
   .game-cta__label {
     top: 0.5px;
-    color: #ffffff;
-    /* Contorno negro muy fino; paint-order mantiene el relleno blanco limpio. */
-    -webkit-text-stroke: 0.45px var(--game-cta-ink);
-    paint-order: stroke fill;
+    color: var(--game-cta-ink);
     text-shadow: none;
   }
 
   .game-cta--red {
-    border-color: rgba(238, 21, 21, 0.4);
+    --game-cta-ink: #ffffff;
+    border-color: rgba(238, 21, 21, 0.45);
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 50%),
-      linear-gradient(90deg, #d41515 0%, #b81212 100%);
+      linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 48%),
+      linear-gradient(90deg, #ff3b3b 0%, #ee1515 42%, #b01028 100%);
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.15) inset,
-      0 4px 12px rgba(238, 21, 21, 0.18),
-      0 1px 0 rgba(100, 10, 10, 0.25);
+      0 1px 0 rgba(255, 255, 255, 0.22) inset,
+      0 4px 14px rgba(238, 21, 21, 0.28),
+      0 1px 0 rgba(90, 8, 16, 0.35);
   }
 
   .game-cta--red:hover:not(.game-cta--disabled):not(:disabled) {
-    border-color: rgba(238, 21, 21, 0.6);
+    filter: brightness(1.08);
+    border-color: rgba(255, 80, 80, 0.65);
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.2) inset,
-      0 6px 18px rgba(238, 21, 21, 0.26),
-      0 1px 0 rgba(100, 10, 10, 0.3);
+      0 1px 0 rgba(255, 255, 255, 0.28) inset,
+      0 6px 18px rgba(238, 21, 21, 0.34),
+      0 1px 0 rgba(90, 8, 16, 0.4);
   }
 
   .game-cta--red:active:not(.game-cta--disabled):not(:disabled) {
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.2) inset,
-      0 4px 12px rgba(238, 21, 21, 0.22),
-      0 1px 0 rgba(120, 10, 10, 0.35);
+      0 4px 12px rgba(238, 21, 21, 0.28),
+      0 1px 0 rgba(110, 10, 20, 0.4);
   }
 
   .game-cta--red:focus-visible {
@@ -2130,6 +2128,36 @@ body {
 }
 
 /* Item use on squad / PC cards (heal, PP, rare candy). */
+@keyframes team-deposit-out {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.04) translateY(-4px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.55) translateY(18px);
+    filter: blur(3px);
+  }
+}
+
+.team-slot--depositing {
+  pointer-events: none;
+  animation: team-deposit-out 480ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .team-slot--depositing {
+    animation: none;
+    opacity: 0.35;
+  }
+}
+
 @keyframes squad-fx-ring {
   0% {
     transform: scale(0.55);
@@ -2352,6 +2380,212 @@ body {
   animation: coin-spin-nudge 0.45s ease-out;
 }
 
+/* Home hub panels — look de juego (pulse / reward bob). */
+@keyframes home-panel-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.08);
+  }
+}
+
+.home-panel-pulse {
+  animation: home-panel-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes home-reward-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.home-reward-bob {
+  animation: home-reward-bob 1.6s ease-in-out infinite;
+}
+
+@keyframes home-reward-shine {
+  0%,
+  100% {
+    filter: brightness(1) drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    filter: brightness(1.18) drop-shadow(0 0 10px rgba(255, 154, 74, 0.45));
+  }
+}
+
+.home-reward-shine {
+  animation: home-reward-shine 2s ease-in-out infinite;
+}
+
+.home-qa-tile:active {
+  transform: scale(0.94);
+}
+
+/* Cards flotantes del home — sólido #12141C + bisel. */
+.home-float-card {
+  background-color: #12141c;
+  border: none;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.4),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.home-float-card:hover {
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.12),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.45),
+    0 14px 28px rgba(0, 0, 0, 0.5);
+  filter: brightness(1.05);
+}
+
+.home-solid-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 3px 0 rgba(0, 0, 0, 0.28);
+}
+
+.home-solid-btn--muted {
+  color: rgba(255, 255, 255, 0.75);
+  background: #1a2035;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.06),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Zone objective status badge (no full-width button). */
+.home-obj-badge {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  border-radius: 0.375rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #0c1018;
+}
+
+.home-obj-badge--ready {
+  background: #3bc8b6;
+  box-shadow: 0 0 12px rgba(59, 200, 182, 0.35);
+}
+
+.home-obj-badge--done {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.home-obj-cta {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.home-obj-cta--red {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(90deg, #ff3b3b 0%, #ee1515 42%, #b01028 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 3px 10px rgba(238, 21, 21, 0.28),
+    0 1px 0 rgba(90, 8, 16, 0.35);
+}
+
+.home-obj-cta--red:active {
+  filter: brightness(0.95);
+  transform: translateY(1px);
+}
+
+/* Daily progression path */
+.home-daily-node {
+  border: none;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.1),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.35),
+    0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.home-daily-node--done {
+  background: #3bc8b6;
+}
+
+.home-daily-node--current {
+  background: #262d47;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 2px #fbcd3a,
+    0 10px 22px rgba(251, 205, 58, 0.25);
+}
+
+.home-daily-node--todo {
+  background: #1a1d28;
+  opacity: 0.72;
+}
+
+.home-path-connector {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.home-path-connector::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(251, 205, 58, 0.85) 40%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: home-path-flow 1.4s linear infinite;
+  opacity: 0.55;
+}
+
+.home-path-connector--filled {
+  background: #3bc8b6;
+}
+
+.home-path-connector--filled::after {
+  display: none;
+}
+
+@keyframes home-path-flow {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-panel-pulse,
+  .home-reward-bob,
+  .home-reward-shine,
+  .home-path-connector::after {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .result-in,
   .result-float,
@@ -2383,6 +2617,7 @@ body {
   .squad-fx-spark,
   .squad-fx-pulse,
   .squad-fx-heal-cross,
+  .team-slot--depositing,
   .center-heal-wash,
   .center-heal-burst,
   .center-heal-ring,
@@ -2864,14 +3099,11 @@ html.boot-splash-pending .boot-splash {
 */
 .nav-link-text {
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0.01em;
-  font-weight: 500;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.12em;
+  font-weight: 600;
 }
-
-/* Apertura del dropdown: 8px y 120ms. Lo justo para que se lea de dónde sale
-   sin que el menú se sienta lento al navegar rápido. */
 
 /*
   Subrayado activo del navbar.
@@ -2990,14 +3222,91 @@ html.boot-splash-pending .boot-splash {
   }
 }
 
-/* Apertura del dropdown: 8px y 120ms. Lo justo para que se lea de dónde sale
-   sin que el menú se sienta lento al navegar rápido. */
-.nav-dropdown-in {
-  animation: nav-dropdown-in 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  transform-origin: top left;
+/* Dropdown del navbar desktop: se despliega desde el trigger (clip), sin scale. */
+.nav-dropdown {
+  transform-origin: top center;
+  will-change: clip-path, opacity;
+}
+
+.nav-dropdown--in {
+  animation: nav-dropdown-in 180ms ease-out both;
+}
+
+.nav-dropdown--out {
+  animation: nav-dropdown-out 140ms ease-in both;
+  pointer-events: none;
 }
 
 @keyframes nav-dropdown-in {
+  from {
+    opacity: 0.4;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes nav-dropdown-out {
+  from {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+.nav-dropdown--in .nav-dropdown__item {
+  animation: nav-dropdown-item-in 160ms ease-out both;
+}
+
+.nav-dropdown--in .nav-dropdown__item:nth-child(1) {
+  animation-delay: 30ms;
+}
+.nav-dropdown--in .nav-dropdown__item:nth-child(2) {
+  animation-delay: 55ms;
+}
+.nav-dropdown--in .nav-dropdown__item:nth-child(3) {
+  animation-delay: 80ms;
+}
+.nav-dropdown--in .nav-dropdown__item:nth-child(4) {
+  animation-delay: 105ms;
+}
+.nav-dropdown--in .nav-dropdown__item:nth-child(5) {
+  animation-delay: 130ms;
+}
+.nav-dropdown--in .nav-dropdown__item:nth-child(6) {
+  animation-delay: 155ms;
+}
+
+@keyframes nav-dropdown-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-dropdown--in,
+  .nav-dropdown--out,
+  .nav-dropdown--in .nav-dropdown__item {
+    animation: none;
+  }
+}
+
+/* Apertura del dropdown legacy — reemplazada por `.nav-dropdown-*` arriba. */
+.nav-dropdown-in {
+  /* no-op keep for any stray className; prefer .nav-dropdown--in */
+}
+
+@keyframes nav-dropdown-in-legacy {
   from {
     opacity: 0;
     transform: translateY(-6px);
@@ -4899,10 +5208,6 @@ html.boot-splash-pending .boot-splash {
   animation: idle-chest-bob 2.2s ease-in-out infinite;
 }
 
-.team-slot__sprite {
-  animation: team-slot-idle 3.6s ease-in-out infinite;
-}
-
 .team-slot.team-card {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
@@ -5079,12 +5384,6 @@ html.boot-splash-pending .boot-splash {
   animation: team-detail-sheen 1.35s ease-out 0.3s both;
 }
 
-.team-detail-sheet__sprite {
-  /* El retardo alinea el rebote del sprite con el final del giro de la card:
-     antes caía mientras la card todavía estaba de perfil y no se veía. */
-  animation: team-detail-sprite-in 0.72s cubic-bezier(0.22, 1.15, 0.36, 1) 0.62s both;
-}
-
 .quick-action--attention {
   animation: quick-action-glow 2.6s ease-in-out infinite;
 }
@@ -5097,14 +5396,12 @@ html.boot-splash-pending .boot-splash {
   .expedition-ambient__beacon,
   .idle-reward--ready,
   .idle-reward--ready .idle-reward__chest,
-  .team-slot__sprite,
   .quick-action--attention {
     animation: none !important;
   }
 
   .team-detail-backdrop,
   .team-detail-sheet,
-  .team-detail-sheet__sprite,
   /* El destello del giro también se apaga: es puro adorno. */
   .team-detail-sheet::after {
     animation: none !important;

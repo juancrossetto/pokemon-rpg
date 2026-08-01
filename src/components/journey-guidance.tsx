@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
-import { hasSeen, markSeen, type FirstVisitKey } from "@/lib/journey-ux";
+import { hasSeen, markSeen, hasSeenThisSession, markSeenThisSession, type FirstVisitKey } from "@/lib/journey-ux";
 import type { HandbookChapterId } from "@/lib/handbook/chapters";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
 
@@ -197,22 +197,29 @@ export function CoachMark({
   children,
   align = "bottom",
   className = "",
+  /** Si true: a lo sumo una vez por sesión de pestaña (no al reabrir el tip por un slot vacío nuevo). */
+  oncePerSession = false,
 }: {
   storageKey: FirstVisitKey;
   message: string;
   children: ReactNode;
   align?: "top" | "bottom";
   className?: string;
+  oncePerSession?: boolean;
 }) {
   const t = useTranslations("ux");
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (!hasSeen(storageKey)) setShow(true);
-  }, [storageKey]);
+    if (hasSeen(storageKey)) return;
+    if (oncePerSession && hasSeenThisSession(storageKey)) return;
+    setShow(true);
+    if (oncePerSession) markSeenThisSession(storageKey);
+  }, [storageKey, oncePerSession]);
 
   function dismiss() {
     markSeen(storageKey);
+    markSeenThisSession(storageKey);
     setShow(false);
   }
 

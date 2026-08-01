@@ -193,6 +193,10 @@ export function PcTransfer({
     }
     const mon = team.find((m) => m.id === source.id);
     if (!mon || mon.listed || mon.breeding) return;
+    if (mon.isTradeLocked) {
+      setError("trade_locked");
+      return;
+    }
     commit(
       team.filter((m) => m.id !== mon.id),
       [mon, ...box],
@@ -335,6 +339,13 @@ export function PcTransfer({
                     })
                   }
                   onFlagsChange={(next) => patchMon(mon.id, next)}
+                  onDepositToPc={
+                    team.length > 1
+                      ? () =>
+                          dropOnBox({ id: mon.id, from: "team" })
+                      : undefined
+                  }
+                  canDepositToPc={team.length > 1}
                 />
               ) : (
                 <div className="flex min-h-[92px] items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.02] text-label-sm text-on-surface-variant/50">
@@ -456,6 +467,8 @@ function MonCard({
   onHealed,
   onLeveledUp,
   onFlagsChange,
+  onDepositToPc,
+  canDepositToPc = true,
 }: {
   mon: PcMon;
   slot?: number;
@@ -475,6 +488,8 @@ function MonCard({
   onHealed: (next: { currentHp: number; maxHp: number }) => void;
   onLeveledUp: (next: { level: number; currentHp: number; maxHp: number }) => void;
   onFlagsChange: (next: { isFavorite?: boolean; isTradeLocked?: boolean }) => void;
+  onDepositToPc?: () => void;
+  canDepositToPc?: boolean;
 }) {
   const typeLabel = useTypeLabel();
   const hpPct = Math.max(0, Math.min(100, (mon.currentHp / mon.maxHp) * 100));
@@ -501,6 +516,8 @@ function MonCard({
       onHealed={onHealed}
       onLeveledUp={onLeveledUp}
       onFlagsChange={onFlagsChange}
+      onDepositToPc={zone === "team" ? onDepositToPc : undefined}
+      canDepositToPc={canDepositToPc}
     >
       <article
         className={`flex items-center gap-3 rounded-xl border border-white/10 bg-glass-surface p-3 pr-8 backdrop-blur-xl transition-opacity ${

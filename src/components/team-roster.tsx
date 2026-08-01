@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { useState, useTransition } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
+import { setTeamLayout } from "@/actions/pc";
+import { playPcSfx } from "@/lib/pc-sfx";
 import { AllocatePointsPanel } from "@/components/allocate-points-panel";
 import { SquadCardSheet } from "@/components/squad-card-sheet";
 import { PokemonShowcaseCard } from "@/components/pokemon-showcase-card";
@@ -175,6 +177,11 @@ export function TeamRoster({
 }) {
   const [overrides, setOverrides] = useState<Record<string, MemberPatch>>({});
   const [bag, setBag] = useState(bagCounts);
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  const [depositingId, setDepositingId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const router = useRouter();
+  const locale = useLocale();
   const serverFp = membersFingerprint(members);
   const [syncedFp, setSyncedFp] = useState(serverFp);
   const bagFp = `${bagCounts.heal}:${bagCounts.leppa}:${bagCounts.rareCandy}:${bagCounts.healItemName}:${bagCounts.ppItemName}`;
@@ -183,6 +190,8 @@ export function TeamRoster({
   if (serverFp !== syncedFp) {
     setSyncedFp(serverFp);
     setOverrides({});
+    setRemovedIds(new Set());
+    setDepositingId(null);
   }
   if (bagFp !== syncedBagFp) {
     setSyncedBagFp(bagFp);
@@ -190,10 +199,12 @@ export function TeamRoster({
   }
 
   const displayMembers = members.map((m) => {
-    if (!m) return null;
+    if (!m || removedIds.has(m.instanceId)) return null;
     const patch = overrides[m.instanceId];
     return patch ? { ...m, ...patch } : m;
   });
+
+  const teamCount = displayMembers.filter(Boolean).length;
 
   function patchMember(instanceId: string, patch: MemberPatch) {
     setOverrides((prev) => {
@@ -214,6 +225,41 @@ export function TeamRoster({
     });
   }
 
+  function depositToPc(instanceId: string) {
+    if (depositingId || teamCount <= 1) return;
+    const target = displayMembers.find((m) => m?.instanceId === instanceId);
+    if (!target) return;
+    if (target.isTradeLocked) return;
+    const nextIds = displayMembers
+      .filter((m): m is TeamMember => m !== null && m.instanceId !== instanceId)
+      .map((m) => m.instanceId);
+    if (nextIds.length === 0) return;
+
+    setDepositingId(instanceId);
+    playPcSfx("store");
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const delay = reduced ? 0 : 480;
+
+    window.setTimeout(() => {
+      setRemovedIds((prev) => new Set(prev).add(instanceId));
+      setDepositingId(null);
+      startTransition(async () => {
+        const result = await setTeamLayout(locale, nextIds);
+        if (!result.ok) {
+          setRemovedIds((prev) => {
+            const n = new Set(prev);
+            n.delete(instanceId);
+            return n;
+          });
+        } else {
+          router.refresh();
+        }
+      });
+    }, delay);
+  }
+
   return (
     <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 lg:grid-cols-3">
       {displayMembers.map((member, i) =>
@@ -232,6 +278,9 @@ export function TeamRoster({
               member.instanceId === initialSelectedId ? initialTeachItemId : null
             }
             onMemberPatch={(patch) => patchMember(member.instanceId, patch)}
+            onDepositToPc={() => depositToPc(member.instanceId)}
+            canDepositToPc={teamCount > 1}
+            isDepositing={depositingId === member.instanceId}
           />
         ) : (
           <EmptySlot
@@ -254,6 +303,9 @@ function PokemonCard({
   autoOpenTeach,
   initialTeachItemId,
   onMemberPatch,
+  onDepositToPc,
+  canDepositToPc,
+  isDepositing,
 }: {
   member: TeamMember;
   labels: TeamRosterLabels;
@@ -263,6 +315,9 @@ function PokemonCard({
   autoOpenTeach: boolean;
   initialTeachItemId: string | null;
   onMemberPatch: (patch: MemberPatch) => void;
+  onDepositToPc: () => void;
+  canDepositToPc: boolean;
+  isDepositing: boolean;
 }) {
   const displayName = member.nickname ?? member.speciesName;
   const fainted = member.currentHp <= 0;
@@ -276,6 +331,7 @@ function PokemonCard({
   const xpPct = levelSpan > 0 ? Math.max(0, Math.min(100, (xpIntoLevel / levelSpan) * 100)) : 0;
 
   return (
+    <div className={isDepositing ? "team-slot--depositing" : undefined}>
     <SquadCardContextMenu
       instanceId={member.instanceId}
       pokemonName={displayName}
@@ -303,6 +359,8 @@ function PokemonCard({
       autoOpenTeach={autoOpenTeach}
       initialTeachItemId={initialTeachItemId}
       onBagChange={onBagChange}
+      onDepositToPc={onDepositToPc}
+      canDepositToPc={canDepositToPc}
       onHealed={(next) =>
         onMemberPatch({ currentHp: next.currentHp, maxHp: next.maxHp })
       }
@@ -393,6 +451,7 @@ function PokemonCard({
           ) : null}
       </PokemonShowcaseCard>
     </SquadCardContextMenu>
+    </div>
   );
 }
 

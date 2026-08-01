@@ -36,6 +36,12 @@ export type SquadContextLabels = {
   heal: string;
   restorePp: string;
   rareCandy: string;
+  /** Depositar del equipo al PC. */
+  depositToPc?: string;
+  /** Tooltip / aviso: no se puede dejar el último del equipo. */
+  depositLastBlocked?: string;
+  /** Aviso: bloqueado con candado. */
+  depositLockedBlocked?: string;
   teachTm?: string;
   heldItem?: string;
   rename?: string;
@@ -85,6 +91,9 @@ export function SquadCardContextMenu({
   onFlagsChange,
   onHeldChange,
   onNicknameChange,
+  /** Si se pasa, muestra "Dejar en el PC". `canDepositToPc` deshabilita el último. */
+  onDepositToPc,
+  canDepositToPc = true,
   children,
 }: {
   instanceId: string;
@@ -133,6 +142,8 @@ export function SquadCardContextMenu({
   onFlagsChange?: (next: { isFavorite?: boolean; isTradeLocked?: boolean }) => void;
   onHeldChange?: (next: HeldItemInfo | null) => void;
   onNicknameChange?: (next: string | null) => void;
+  onDepositToPc?: () => void;
+  canDepositToPc?: boolean;
   children: ReactNode;
 }) {
   const triggerAnchor =
@@ -141,6 +152,7 @@ export function SquadCardContextMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const [menu, setMenu] = useState<MenuState>(null);
   const [panel, setPanel] = useState<ManagePanel>(autoOpenTeach ? "teach" : null);
+  const [depositNotice, setDepositNotice] = useState<string | null>(null);
   const canTeach = Boolean(moves && compatibleTms && teachLabels && labels.teachTm);
   const canHold = Boolean(ownedHeldItems && heldLabels && labels.heldItem);
   const canRename = Boolean(speciesName && renameLabels && labels.rename);
@@ -190,6 +202,7 @@ export function SquadCardContextMenu({
     const x = Math.min(clientX, window.innerWidth - mw - pad);
     const y = Math.min(clientY, window.innerHeight - mh - pad);
     actions.clearFeedback();
+    setDepositNotice(null);
     setMenu({ x: Math.max(pad, x), y: Math.max(pad, y) });
   }
 
@@ -341,6 +354,32 @@ export function SquadCardContextMenu({
               />
             </>
           ) : null}
+          {onDepositToPc && labels.depositToPc ? (
+            <>
+              <div className="my-1 border-t border-white/8" />
+              <MenuItem
+                imageSrc="/nav/pc-icon.png"
+                label={labels.depositToPc}
+                disabled={busy}
+                onSelect={() => {
+                  if (isTradeLocked) {
+                    setDepositNotice(
+                      labels.depositLockedBlocked ?? labels.depositToPc ?? null,
+                    );
+                    return;
+                  }
+                  if (!canDepositToPc) {
+                    setDepositNotice(
+                      labels.depositLastBlocked ?? labels.depositToPc ?? null,
+                    );
+                    return;
+                  }
+                  setMenu(null);
+                  onDepositToPc();
+                }}
+              />
+            </>
+          ) : null}
           {showViewTeam ? (
             <>
               <div className="my-1 border-t border-white/8" />
@@ -357,17 +396,17 @@ export function SquadCardContextMenu({
               </Link>
             </>
           ) : null}
-          {feedback ? (
+          {depositNotice || feedback ? (
             <p
               className={[
                 "mx-2 mb-1 mt-1 rounded-md px-2 py-1.5 text-[11px] leading-snug",
-                feedback.kind === "error"
+                depositNotice || feedback?.kind === "error"
                   ? "bg-error/15 text-error"
                   : "bg-emerald-500/15 text-emerald-300",
               ].join(" ")}
               role="status"
             >
-              {feedback.text}
+              {depositNotice ?? feedback?.text}
             </p>
           ) : null}
         </div>
@@ -462,15 +501,19 @@ function ConsumableMenuItem({
 
 function MenuItem({
   icon,
+  imageSrc,
   iconClassName = "text-on-surface-variant",
   label,
   disabled,
+  title,
   onSelect,
 }: {
-  icon: string;
+  icon?: string;
+  imageSrc?: string;
   iconClassName?: string;
   label: string;
   disabled?: boolean;
+  title?: string;
   onSelect: () => void;
 }) {
   return (
@@ -478,10 +521,24 @@ function MenuItem({
       type="button"
       role="menuitem"
       disabled={disabled}
+      title={title}
       onClick={onSelect}
       className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-on-surface transition hover:bg-white/8 disabled:opacity-50"
     >
-      <span className={`material-symbols-outlined text-[18px]! ${iconClassName}`}>{icon}</span>
+      {imageSrc ? (
+        <Image
+          src={imageSrc}
+          alt=""
+          width={18}
+          height={18}
+          unoptimized
+          className="h-[18px] w-[18px] shrink-0 object-contain"
+        />
+      ) : (
+        <span className={`material-symbols-outlined text-[18px]! ${iconClassName}`}>
+          {icon}
+        </span>
+      )}
       {label}
     </button>
   );

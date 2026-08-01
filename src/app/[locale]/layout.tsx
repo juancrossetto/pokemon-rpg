@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { Anton, Inter, JetBrains_Mono, Lilita_One } from "next/font/google";
+import { Anton, Inter, JetBrains_Mono, Lilita_One, Unbounded } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { BootSplashController } from "@/components/boot-splash";
 import { BootSplashMarkup } from "@/components/boot-splash-markup";
@@ -36,6 +36,13 @@ const anton = Anton({
   variable: "--font-anton",
   subsets: ["latin"],
   weight: "400",
+});
+
+/** Display geométrica — banner de identidad en home. */
+const unbounded = Unbounded({
+  variable: "--font-unbounded",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
 
 export function generateStaticParams() {
@@ -85,7 +92,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`dark ${inter.variable} ${jetbrainsMono.variable} ${lilita.variable} ${anton.variable} h-full antialiased`}
+      className={`dark ${inter.variable} ${jetbrainsMono.variable} ${lilita.variable} ${anton.variable} ${unbounded.variable} h-full antialiased`}
       // boot-splash early script puede agregar `boot-splash-pending` antes
       // de hidratar; React no debe pelear por className en ese caso.
       suppressHydrationWarning

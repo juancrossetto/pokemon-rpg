@@ -188,6 +188,9 @@
       "lockOn": "Lock from trading",
       "lockOff": "Unlock trading",
       "viewTeam": "Open My Team",
+      "depositToPc": "Send to PC",
+      "depositLastBlocked": "You must keep at least one Pokémon on the team.",
+      "depositLockedBlocked": "This Pokémon is locked. Unlock it before sending it to the PC.",
       "favoriteBadge": "Favorite",
       "lockedBadge": "Trade locked",
       "heal": "Use potion / berry",
@@ -210,21 +213,75 @@
       "actionFailed": "Couldn't save the change. Try again."
     },
     "rail": {
-      "filtersTitle": "Filters",
-      "filterAll": "Full squad",
-      "filterFavorites": "Favorites",
-      "filterInjured": "Injured",
-      "filterReady": "Ready",
-      "filtersClear": "Clear all",
-      "medalsTitle": "Badge case",
-      "medalsEmpty": "No badges earned yet.",
-      "medalsProgress": "{earned}/{total}",
-      "medalsViewAll": "View gyms",
+      "matchBadge": "Match",
+      "pvpKind": "PvP",
+      "clanKind": "Clans",
+      "pvpTitle": "PvP battles",
+      "pvpPlay": "Go to PvP",
+      "pvpEmpty": "No PvP matches yet.",
+      "pvpSubtitle": "{wins}W · {losses}L · Elo {rating}",
+      "modeRankedBlurb": "Ranked matchup",
+      "modeQuickBlurb": "Quick matchup",
+      "resultWin": "Winner",
+      "resultLoss": "Loss",
+      "statusOpen": "Ready",
+      "statusSoon": "Soon",
+      "matchDetails": "Match details",
+      "scoreLabel": "Result",
+      "elo": "Elo",
+      "you": "You",
+      "clanTitle": "Clan war",
+      "clanSubtitle": "Compete against other clans each season.",
+      "clanOpen": "Open clan",
+      "clanFind": "Find a clan",
+      "clanGuest": "No clan",
+      "clanRivalSoon": "Rival",
       "topTitle": "Top 5",
       "topEmpty": "The ranking is still empty.",
       "topViewAll": "View ranking",
-      "cp": "CP",
-      "you": "You"
+      "cp": "CP"
+    },
+    "hub": {
+      "identity": {
+        "level": "Lv.",
+        "combatPower": "CP",
+        "clan": "Clan",
+        "noClan": "No clan",
+        "streak": "Streak",
+        "streakDays": "{n} days",
+        "viewProfile": "Profile",
+        "lastAchievement": "Latest achievement"
+      },
+      "quickAccess": {
+        "title": "Quick access"
+      },
+      "daily": {
+        "title": "Daily activity",
+        "energy": "Energy",
+        "pending": "To claim",
+        "done": "Done",
+        "claimGift": "Claim the daily gift"
+      },
+      "objectives": {
+        "title": "Zone objectives",
+        "empty": "Pick a journey zone to see objectives.",
+        "rewards": "Rewards",
+        "claimable": "READY",
+        "claimed": "CLAIMED",
+        "go": "GO",
+        "openCampaign": "Open journey",
+        "stages": "Stages",
+        "pokedex": "Pokédex",
+        "trainers": "Trainers"
+      },
+      "history": {
+        "title": "Recent history",
+        "empty": "No recent activity yet.",
+        "caught": "You caught {name}.",
+        "shiny": "You caught a shiny {name}!",
+        "badge": "You earned the {name} badge.",
+        "trainer": "You defeated {name}."
+      }
     }
   },
   "pokedex": {
@@ -1263,7 +1320,8 @@
       "last_team_member": "At least one must stay in team",
       "rate_limited": "Too fast — wait a moment",
       "unauthorized": "Session expired",
-      "breeding": "Incubating an egg"
+      "breeding": "Incubating an egg",
+      "trade_locked": "It's locked — unlock it before storing in the PC"
     },
     "dragChipReorder": "Reorder",
     "dragChipStore": "Store in PC",

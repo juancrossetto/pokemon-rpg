@@ -15,19 +15,72 @@ import type { HomeSquadMember } from "@/components/home/squad-types";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolution-chain";
 import { loadCombatPowerBoard } from "@/lib/ranking-boards";
+import { loadTrainerStats } from "@/lib/achievements/stats";
+import {
+  buildAchievements,
+  rankProgress,
+  trainerTitle,
+} from "@/lib/trainer-profile";
+import { pokemonPower } from "@/lib/ranking";
+import { regionMeta } from "@/lib/campaign/regions";
+import { evaluateObjectives } from "@/lib/campaign/objectives";
+import { avatarById } from "@/lib/avatars";
+import { findNavItem } from "@/lib/navigation";
+import { dayKey, serverNow } from "@/lib/events/time";
+import type {
+  HomeIdentity,
+  HomeObjective,
+  HomeQuickLink,
+  HomeRailPvp,
+  HomeRailPvpMatch,
+} from "@/lib/home-hub";
+import type { HomeHubLabels } from "@/components/home/home-game-hub";
+import { tierForRating } from "@/lib/pvp/tiers";
 
 const TEAM_SIZE = 6;
 
-const KANTO_BADGE_SLOTS: { order: number; type: string }[] = [
-  { order: 1, type: "rock" },
-  { order: 2, type: "water" },
-  { order: 3, type: "electric" },
-  { order: 4, type: "grass" },
-  { order: 5, type: "poison" },
-  { order: 6, type: "psychic" },
-  { order: 7, type: "fire" },
-  { order: 8, type: "ground" },
-];
+const HOME_QUICK_LINK_IDS = [
+  "pvp",
+  "gyms",
+  "friends",
+  "market",
+  "clans",
+  "pokedex",
+] as const;
+
+/** Racha de días consecutivos con reclamo diario (hoy o ayer como ancla). */
+async function loadLoginStreak(userId: string): Promise<number> {
+  const rows = await prisma.dailyRewardClaim.findMany({
+    where: { userId },
+    select: { dayKey: true },
+    distinct: ["dayKey"],
+    orderBy: { dayKey: "desc" },
+    take: 60,
+  });
+  if (rows.length === 0) return 0;
+  const keys = new Set(rows.map((r) => r.dayKey));
+  const today = dayKey(serverNow());
+  const yesterdayDate = new Date(serverNow().getTime() - 86_400_000);
+  const yesterday = dayKey(yesterdayDate);
+
+  let anchor = "";
+  if (keys.has(today)) anchor = today;
+  else if (keys.has(yesterday)) anchor = yesterday;
+  else return 0;
+
+  let streak = 0;
+  let current = anchor;
+  while (keys.has(current)) {
+    streak += 1;
+    const parts = current.split("-");
+    const year = Number(parts[0]);
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    const previous = new Date(Date.UTC(year, month - 1, day - 1));
+    current = previous.toISOString().slice(0, 10);
+  }
+  return streak;
+}
 
 export default async function Home() {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
@@ -42,10 +95,9 @@ export default async function Home() {
 }
 
 async function Dashboard({ username, userId }: { username: string; userId: string }) {
-  const [t, tt, tGyms, locale, progress, badges] = await Promise.all([
+  const [t, tt, locale, progress, badges] = await Promise.all([
     getTranslations("home"),
     getTranslations("team"),
-    getTranslations("gyms"),
     getLocale(),
     ensureCampaignProgress(userId),
     prisma.badge.findMany({
@@ -68,8 +120,86 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   });
   const bagCounts = await loadSquadBagCounts(userId);
 
-  const eventsSummary = await loadEventsSummary(userId);
-  const tEvents = await getTranslations("events");
+  if (pokemon.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-margin-mobile py-8 text-center">
+        <p className="text-label-md text-pokeball-red uppercase tracking-widest">
+          {t("greeting", { username })}
+        </p>
+        <h1 className="max-w-xl text-headline-lg md:text-display-lg text-white">
+          {t("noTeamTitle")}
+        </h1>
+        <p className="max-w-md text-body-lg text-on-surface-variant">{t("noTeamSubtitle")}</p>
+        <Link
+          href="/starter"
+          className="mt-2 rounded-md bg-pokeball-red px-6 py-2 text-label-md text-white transition-colors hover:bg-pokeball-red/80"
+        >
+          {t("chooseStarterLink")}
+        </Link>
+      </div>
+    );
+  }
+
+  const [
+    eventsSummary,
+    tEvents,
+    tProfile,
+    tCampaign,
+    tNav,
+    userRow,
+    trainerStats,
+    achievementClaims,
+    loginStreak,
+    recentPvpMatches,
+  ] = await Promise.all([
+    loadEventsSummary(userId),
+    getTranslations("events"),
+    getTranslations("profile"),
+    getTranslations("campaign"),
+    getTranslations("nav"),
+    prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: {
+        username: true,
+        avatarId: true,
+        country: true,
+        clanMembership: {
+          select: {
+            clan: { select: { id: true, tag: true, name: true, emblem: true } },
+          },
+        },
+      },
+    }),
+    loadTrainerStats(prisma, userId),
+    prisma.achievementClaim.findMany({
+      where: { userId },
+      select: { achievementId: true },
+    }),
+    loadLoginStreak(userId),
+    prisma.pvpMatch.findMany({
+      where: {
+        OR: [{ challengerId: userId }, { opponentId: userId }],
+        status: { in: ["COMPLETED", "FORFEIT"] },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: {
+        id: true,
+        challengerId: true,
+        opponentId: true,
+        winnerId: true,
+        mode: true,
+        createdAt: true,
+        challengerRatingBefore: true,
+        challengerRatingAfter: true,
+        opponentRatingBefore: true,
+        opponentRatingAfter: true,
+        challenger: { select: { username: true, country: true, avatarId: true } },
+        opponent: { select: { username: true, country: true, avatarId: true } },
+      },
+    }),
+  ]);
+
   const giftLabels = {
     eyebrow: tEvents("eyebrow"),
     title: tEvents("giftTitle"),
@@ -91,26 +221,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       item: tEvents("rewards.item"),
     },
   };
-
-  if (pokemon.length === 0) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-margin-mobile py-8 text-center">
-        <p className="text-label-md text-pokeball-red uppercase tracking-widest">
-          {t("greeting", { username })}
-        </p>
-        <h1 className="max-w-xl text-headline-lg md:text-display-lg text-white">
-          {t("noTeamTitle")}
-        </h1>
-        <p className="max-w-md text-body-lg text-on-surface-variant">{t("noTeamSubtitle")}</p>
-        <Link
-          href="/starter"
-          className="mt-2 rounded-md bg-pokeball-red px-6 py-2 text-label-md text-white transition-colors hover:bg-pokeball-red/80"
-        >
-          {t("chooseStarterLink")}
-        </Link>
-      </div>
-    );
-  }
 
   const speciesIds = [...new Set(pokemon.map((p) => p.speciesId))];
   const [evolutionChains, ownedEvolutionItems] = await Promise.all([
@@ -144,21 +254,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   ).length;
 
   const milestone = expedition?.milestone;
-
-  const earnedOrders = new Set(badges.map((b) => b.gym.order));
-  const railBadges = KANTO_BADGE_SLOTS.map((slot) => {
-    const earned = badges.find((b) => b.gym.order === slot.order);
-    const badgeKey = `badges.${slot.order}`;
-    const name = tGyms.has(badgeKey)
-      ? tGyms(badgeKey)
-      : (earned?.gym.badgeName ?? slot.type);
-    return {
-      order: slot.order,
-      type: earned?.gym.type ?? slot.type,
-      name,
-      earned: earnedOrders.has(slot.order),
-    };
-  });
 
   const topBoard = await loadCombatPowerBoard("", userId);
   const railTop = topBoard.slice(0, 5).map((row) => ({
@@ -276,6 +371,9 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           lockOn: t("squadMenu.lockOn"),
           lockOff: t("squadMenu.lockOff"),
           viewTeam: t("squadMenu.viewTeam"),
+          depositToPc: t("squadMenu.depositToPc"),
+          depositLastBlocked: t("squadMenu.depositLastBlocked"),
+          depositLockedBlocked: t("squadMenu.depositLockedBlocked"),
           hint: t("squadMenu.hint"),
           heal: t("squadMenu.heal"),
           restorePp: t("squadMenu.restorePp"),
@@ -306,6 +404,186 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         }
       : null;
 
+  const combatPower = pokemon.reduce(
+    (sum, p) =>
+      sum +
+      pokemonPower({
+        level: p.level,
+        ptStrength: p.ptStrength,
+        ptDexterity: p.ptDexterity,
+        ptIntelligence: p.ptIntelligence,
+        ptSpeed: p.ptSpeed,
+        ptConstitution: p.ptConstitution,
+        species: {
+          baseHp: p.species.baseHp,
+          baseAttack: p.species.baseAttack,
+          baseDefense: p.species.baseDefense,
+          baseSpAtk: p.species.baseSpAtk,
+          baseSpDef: p.species.baseSpDef,
+          baseSpeed: p.species.baseSpeed,
+        },
+      }),
+    0,
+  );
+
+  const statsWithPower = { ...trainerStats, power: combatPower };
+  const rank = rankProgress(statsWithPower.badges, statsWithPower.totalGyms);
+  const titleId = trainerTitle(statsWithPower);
+  const achievements = buildAchievements(
+    statsWithPower,
+    achievementClaims.map((c) => c.achievementId),
+  );
+  const lastAchievement =
+    achievements.find((a) => a.unlocked)?.id ??
+    achievements.find((a) => a.pct > 0)?.id ??
+    null;
+
+  const region = regionMeta(progress.currentRegionId);
+  const avatar = avatarById(userRow.avatarId);
+  const companion =
+    members.find((m) => m.isFavorite) ?? members[0] ?? null;
+
+  const dateLabelFmt = new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "2-digit",
+  });
+  const railPvpRecent: HomeRailPvpMatch[] = recentPvpMatches.map((m) => {
+    const asChallenger = m.challengerId === userId;
+    const foe = asChallenger ? m.opponent : m.challenger;
+    const before = asChallenger ? m.challengerRatingBefore : m.opponentRatingBefore;
+    const after = asChallenger ? m.challengerRatingAfter : m.opponentRatingAfter;
+    return {
+      id: m.id,
+      won: m.winnerId === userId,
+      opponentName: foe.username,
+      opponentCountry: foe.country ?? "",
+      opponentAvatarId: foe.avatarId,
+      mode: m.mode === "QUICK" ? "QUICK" : "RANKED",
+      ratingDelta: (after ?? before ?? 0) - (before ?? 0),
+      dateLabel: dateLabelFmt.format(m.createdAt).replace(/\//g, "."),
+    };
+  });
+  const railPvp: HomeRailPvp = {
+    rating: trainerStats.pvpRating,
+    wins: trainerStats.pvpWins,
+    losses: trainerStats.pvpLosses,
+    tier: tierForRating(trainerStats.pvpRating),
+    selfName: userRow.username || username,
+    selfAvatarId: userRow.avatarId,
+    selfCountry: userRow.country ?? "",
+    recent: railPvpRecent,
+  };
+
+  const identity: HomeIdentity = {
+    username: userRow.username || username,
+    avatarId: userRow.avatarId,
+    avatarSrc: avatar?.src ?? null,
+    avatarProfileSrc: avatar?.profileSrc ?? null,
+    avatarStageSrc: avatar?.stageSrc ?? null,
+    level: statsWithPower.topLevel,
+    titleId,
+    rankTierId: rank.tier.id,
+    regionId: region.id,
+    regionLabel: tCampaign(`regions.${region.id}`),
+    combatPower,
+    clanTag: userRow.clanMembership?.clan.tag ?? null,
+    clanName: userRow.clanMembership?.clan.name ?? null,
+    clanEmblem: userRow.clanMembership?.clan.emblem ?? null,
+    loginStreak,
+    lastAchievementId: lastAchievement,
+    country: userRow.country,
+    companionTypes: companion?.types ?? [],
+  };
+
+  const farmingZone =
+    mapLocations.find((l) => l.id === progress.farmingLocationId) ??
+    mapLocations.find((l) => l.id === expedition?.location.id) ??
+    null;
+  const zoneObjectives = farmingZone
+    ? evaluateObjectives(farmingZone, new Set(farmingZone.claimedObjectives))
+    : [];
+  const homeObjectives: HomeObjective[] = zoneObjectives.map((o) => ({
+    id: o.id,
+    labelKey: o.id,
+    current: o.current,
+    target: o.target,
+    done: o.done,
+    claimable: o.claimable,
+    claimed: o.claimed,
+    rewardCoins: o.reward.coins,
+    rewardItem: o.reward.itemName,
+    rewardQty: o.reward.quantity,
+  }));
+  const objectiveZoneName = farmingZone
+    ? tCampaign(farmingZone.nameKey)
+    : null;
+
+  const quickLinks: HomeQuickLink[] = HOME_QUICK_LINK_IDS.flatMap((id) => {
+    const item = findNavItem(id);
+    if (!item?.iconSrc) return [];
+    return [{ id, href: item.href, iconSrc: item.iconSrc, labelKey: id }];
+  });
+
+  const titleKeys = [
+    "rookie",
+    "trainer",
+    "collector",
+    "gymLeaderBane",
+    "researcher",
+    "duelist",
+    "legendTamer",
+    "shinyHunter",
+    "mythKeeper",
+    "champion",
+  ] as const;
+  const rankKeys = [
+    "bronze",
+    "silver",
+    "gold",
+    "diamond",
+    "master",
+    "champion",
+  ] as const;
+  const achievementLabelEntries = Object.fromEntries(
+    achievements.map((a) => [a.id, tProfile(`achievements.${a.id}.name`)]),
+  );
+
+  const hubLabels: HomeHubLabels = {
+    identity: {
+      level: t("hub.identity.level"),
+      combatPower: t("hub.identity.combatPower"),
+      clan: t("hub.identity.clan"),
+      noClan: t("hub.identity.noClan"),
+      streak: t("hub.identity.streak"),
+      streakDays: t("hub.identity.streakDays", { n: "{n}" }),
+      viewProfile: t("hub.identity.viewProfile"),
+      titles: Object.fromEntries(titleKeys.map((k) => [k, tProfile(`titles.${k}`)])),
+      ranks: Object.fromEntries(rankKeys.map((k) => [k, tProfile(`rank.${k}`)])),
+      lastAchievement: t("hub.identity.lastAchievement"),
+      achievements: achievementLabelEntries,
+    },
+    quickAccess: {
+      title: t("hub.quickAccess.title"),
+      items: Object.fromEntries(
+        HOME_QUICK_LINK_IDS.map((id) => [id, tNav(id)]),
+      ),
+    },
+    objectives: {
+      title: t("hub.objectives.title"),
+      empty: t("hub.objectives.empty"),
+      rewards: t("hub.objectives.rewards"),
+      claimable: t("hub.objectives.claimable"),
+      claimed: t("hub.objectives.claimed"),
+      go: t("hub.objectives.go"),
+      openCampaign: t("hub.objectives.openCampaign"),
+      objectiveLabels: {
+        stages: t("hub.objectives.stages"),
+        pokedex: t("hub.objectives.pokedex"),
+        trainers: t("hub.objectives.trainers"),
+      },
+    },
+  };
+
   return (
     <HomeGameHub
       locale={locale}
@@ -322,17 +600,27 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         slotLabels: Array.from({ length: TEAM_SIZE }, (_, i) =>
           tt("slotLabel", { slot: i + 1 }),
         ),
-        manageLabel: t("manage"),
-        title: t("activeSquad"),
         bagCounts,
         layoutKey: pokemon.map((p) => `${p.id}:${p.teamSlot}`).join("|"),
+        title: t("activeSquad"),
+        manageHref: "/team",
+        manageLabel: t("manage"),
       }}
       rail={{
-        badges: railBadges,
-        badgesEarned: earnedOrders.size,
-        badgesTotal: KANTO_BADGE_SLOTS.length,
+        pvp: railPvp,
+        clanWars: {
+          clanId: userRow.clanMembership?.clan.id ?? null,
+          clanName: userRow.clanMembership?.clan.name ?? null,
+          clanTag: userRow.clanMembership?.clan.tag ?? null,
+          clanEmblem: userRow.clanMembership?.clan.emblem ?? null,
+        },
         top: railTop,
       }}
+      identity={identity}
+      objectives={homeObjectives}
+      objectiveZoneName={objectiveZoneName}
+      quickLinks={quickLinks}
+      hubLabels={hubLabels}
       isDev={isDev}
     />
   );

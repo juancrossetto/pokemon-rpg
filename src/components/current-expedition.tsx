@@ -8,7 +8,6 @@ import { typeColor } from "@/lib/type-colors";
 import type { CampaignMilestone } from "@/lib/campaign";
 import { RegionMapDialog, type MapLocation } from "@/components/region-map-dialog";
 import { ExpeditionAmbient } from "@/components/home/expedition-ambient";
-import { NextMilestoneChip } from "@/components/next-milestone-chip";
 import { GameCtaButton } from "@/components/game-cta-button";
 import { milestoneCtaKey, milestoneHref } from "@/lib/journey-ux";
 import { CoachMark } from "@/components/journey-guidance";
@@ -30,6 +29,8 @@ export type CurrentExpeditionProps = {
   farmingStageId: string;
   stagesDone: number;
   stagesTotal: number;
+  /** `rail` = card angosta de la columna izquierda del home. */
+  variant?: "hero" | "rail";
 };
 
 export function CurrentExpedition({
@@ -49,6 +50,7 @@ export function CurrentExpedition({
   farmingStageId,
   stagesDone,
   stagesTotal,
+  variant = "hero",
 }: CurrentExpeditionProps) {
   const t = useTranslations("campaign");
   const tUx = useTranslations("ux");
@@ -57,6 +59,115 @@ export function CurrentExpedition({
   const ctaLabel = t(milestoneCtaKey(milestone));
   const stagePct =
     stagesTotal > 0 ? Math.max(0, Math.min(100, (stagesDone / stagesTotal) * 100)) : 0;
+
+  if (variant === "rail") {
+    return (
+      <section className="expedition-rail relative flex min-h-[12.25rem] flex-col overflow-hidden rounded-2xl border border-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.45)]">
+        <div className="pointer-events-none absolute inset-0">
+          <Image
+            src={mapSrc}
+            alt=""
+            fill
+            className="object-cover object-[center_40%] scale-[1.08] opacity-55"
+            sizes="280px"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
+          <ExpeditionAmbient kind={locationKind} />
+        </div>
+
+        <RegionMapDialog
+          locale={locale}
+          regionNameKey={regionNameKey}
+          mapSrc={mapSrc}
+          locations={locations}
+          farmingLocationId={farmingLocationId}
+          farmingStageId={farmingStageId}
+          triggerLabel={t("openMap")}
+        />
+
+        <div className="pointer-events-none relative z-[1] flex flex-1 flex-col justify-between gap-2 p-2.5">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-pokeball-red">
+              {t(regionNameKey)}
+            </p>
+            <h2 className="mt-0.5 truncate text-[16px] font-bold leading-tight tracking-tight text-white">
+              {t(locationNameKey)}
+            </h2>
+            <p className="mt-0.5 truncate text-[11px] text-white/65">
+              {t(stageNameKey)}
+              <span className="mx-1 text-white/30">·</span>
+              <span className="font-mono text-electric-yellow/90">
+                Nv. {levelMin}–{levelMax}
+              </span>
+            </p>
+            {wildTypes.length > 0 ? (
+              <ul className="pointer-events-auto mt-1.5 flex flex-wrap gap-1" aria-label={t("predictedTypes")}>
+                {wildTypes.slice(0, 4).map((type) => {
+                  const color = typeColor(type);
+                  return (
+                    <li key={type}>
+                      <span
+                        className="flex h-6 w-6 items-center justify-center rounded-full border"
+                        style={{
+                          background: `radial-gradient(circle at 35% 30%, ${color}ee, ${color}88)`,
+                          borderColor: `${color}aa`,
+                        }}
+                        title={tTypes(type.toLowerCase() as "normal")}
+                      >
+                        <Image
+                          src={showdownTypeSymbolUrl(type)}
+                          alt=""
+                          width={12}
+                          height={12}
+                          unoptimized
+                          className="h-2.5 w-2.5 object-contain brightness-110"
+                        />
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            {stagesTotal > 0 ? (
+              <div>
+                <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-white/60">
+                  <span>{t("journeyProgress")}</span>
+                  <span className="font-mono tabular-nums text-white/80">
+                    {stagesDone}/{stagesTotal}
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-pokeball-red to-electric-yellow"
+                    style={{ width: `${stagePct}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            <CoachMark
+              storageKey={milestone.kind === "gym" ? "coach-gym" : "coach-explore"}
+              message={milestone.kind === "gym" ? tUx("coachGym") : tUx("coachExplore")}
+              align="top"
+              className="pointer-events-auto"
+            >
+              <GameCtaButton
+                href={ctaHref}
+                variant="red"
+                className="expedition-cta min-h-9 w-full text-[11px]!"
+              >
+                {ctaLabel}
+              </GameCtaButton>
+            </CoachMark>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="expedition-hero relative flex min-h-[220px] flex-col overflow-hidden rounded-2xl border border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.55)] sm:min-h-[260px] lg:min-h-[300px]">
@@ -141,8 +252,6 @@ export function CurrentExpedition({
         </div>
 
         <div className="space-y-2.5">
-          <NextMilestoneChip milestone={milestone} className="pointer-events-auto w-full max-w-md" />
-
           {stagesTotal > 0 && (
             <div>
               <div className="mb-1 flex items-center justify-between gap-2 text-[11px] text-white/60">
@@ -173,7 +282,11 @@ export function CurrentExpedition({
               align="top"
               className="pointer-events-auto min-w-0 flex-1"
             >
-              <GameCtaButton href={ctaHref} className="expedition-cta min-h-11 sm:min-h-12">
+              <GameCtaButton
+                href={ctaHref}
+                variant="red"
+                className="expedition-cta min-h-11 sm:min-h-12"
+              >
                 {ctaLabel}
               </GameCtaButton>
             </CoachMark>

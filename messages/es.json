@@ -188,6 +188,9 @@
       "lockOn": "Bloquear venta",
       "lockOff": "Desbloquear venta",
       "viewTeam": "Ver en Mi equipo",
+      "depositToPc": "Dejar en el PC",
+      "depositLastBlocked": "Tenés que dejar al menos un Pokémon en el equipo.",
+      "depositLockedBlocked": "Este Pokémon está bloqueado. Desbloquealo para guardarlo en el PC.",
       "favoriteBadge": "Favorito",
       "lockedBadge": "Venta bloqueada",
       "heal": "Usar poción / baya",
@@ -210,21 +213,75 @@
       "actionFailed": "No se pudo guardar el cambio. Probá de nuevo."
     },
     "rail": {
-      "filtersTitle": "Filtros",
-      "filterAll": "Todo el equipo",
-      "filterFavorites": "Favoritos",
-      "filterInjured": "Heridos",
-      "filterReady": "Listos",
-      "filtersClear": "Limpiar",
-      "medalsTitle": "Medallero",
-      "medalsEmpty": "Todavía no ganaste medallas.",
-      "medalsProgress": "{earned}/{total}",
-      "medalsViewAll": "Ver gimnasios",
+      "matchBadge": "Match",
+      "pvpKind": "PvP",
+      "clanKind": "Clanes",
+      "pvpTitle": "Batallas PvP",
+      "pvpPlay": "Ir a PvP",
+      "pvpEmpty": "Todavía no jugaste PvP.",
+      "pvpSubtitle": "{wins}V · {losses}D · Elo {rating}",
+      "modeRankedBlurb": "Enfrentamiento ranked",
+      "modeQuickBlurb": "Enfrentamiento rápido",
+      "resultWin": "Victoria",
+      "resultLoss": "Derrota",
+      "statusOpen": "Listo",
+      "statusSoon": "Pronto",
+      "matchDetails": "Ver detalle",
+      "scoreLabel": "Resultado",
+      "elo": "Elo",
+      "you": "Vos",
+      "clanTitle": "Guerra de clanes",
+      "clanSubtitle": "Competí contra otros clanes en temporada.",
+      "clanOpen": "Ver clan",
+      "clanFind": "Buscar clan",
+      "clanGuest": "Sin clan",
+      "clanRivalSoon": "Rival",
       "topTitle": "Top 5",
       "topEmpty": "El ranking todavía está vacío.",
       "topViewAll": "Ver ranking",
-      "cp": "PC",
-      "you": "Vos"
+      "cp": "PC"
+    },
+    "hub": {
+      "identity": {
+        "level": "Nv.",
+        "combatPower": "PC",
+        "clan": "Clan",
+        "noClan": "Sin clan",
+        "streak": "Racha",
+        "streakDays": "{n} días",
+        "viewProfile": "Perfil",
+        "lastAchievement": "Último logro"
+      },
+      "quickAccess": {
+        "title": "Accesos rápidos"
+      },
+      "daily": {
+        "title": "Actividad diaria",
+        "energy": "Energía",
+        "pending": "Por reclamar",
+        "done": "Hecho",
+        "claimGift": "Reclamar el regalo diario"
+      },
+      "objectives": {
+        "title": "Objetivos de zona",
+        "empty": "Elegí una zona en el viaje para ver objetivos.",
+        "rewards": "Recompensas",
+        "claimable": "LISTO",
+        "claimed": "COBRADO",
+        "go": "IR",
+        "openCampaign": "Ir al viaje",
+        "stages": "Stages",
+        "pokedex": "Pokédex",
+        "trainers": "Entrenadores"
+      },
+      "history": {
+        "title": "Historial reciente",
+        "empty": "Todavía no hay actividad reciente.",
+        "caught": "Capturaste a {name}.",
+        "shiny": "¡Capturaste un {name} shiny!",
+        "badge": "Conseguiste la medalla {name}.",
+        "trainer": "Derrotaste a {name}."
+      }
     }
   },
   "pokedex": {
@@ -1263,7 +1320,8 @@
       "last_team_member": "Debe quedar al menos uno en el equipo",
       "rate_limited": "Demasiado rápido — esperá un momento",
       "unauthorized": "Sesión expirada",
-      "breeding": "Incubando un huevo"
+      "breeding": "Incubando un huevo",
+      "trade_locked": "Está bloqueado — desbloquealo para guardarlo en el PC"
     },
     "dragChipReorder": "Reordenar",
     "dragChipStore": "Guardar en PC",

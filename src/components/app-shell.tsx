@@ -52,7 +52,7 @@ export async function AppShell({
       <Providers>
         <CombatLockGate lock={combatLock} />
         <SiteHeader combatLock={combatLock} />
-        <div className="pb-bottom-nav relative z-10 flex min-h-0 flex-1 flex-col pt-[calc(3.5rem+env(safe-area-inset-top))] xl:pt-16">
+        <div className="pb-bottom-nav relative z-10 flex min-h-0 flex-1 flex-col pt-[calc(3.5rem+env(safe-area-inset-top))] xl:pt-14">
           {children}
         </div>
       </Providers>

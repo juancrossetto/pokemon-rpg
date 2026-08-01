@@ -170,16 +170,16 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         navbar completo va desde `xl`, y de 768 a 1279 manda el chrome táctil
         —bottom bar + drawer— que consume la misma configuración de grupos.
       */}
-      <nav className="fixed top-0 w-full z-50 hidden h-16 xl:flex justify-between items-center gap-4 px-6 bg-background/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
-        <div className="flex items-center min-w-0">
+      <nav className="fixed top-0 z-50 hidden h-14 w-full items-center justify-between gap-4 border-b border-white/[0.07] bg-[#0b0d13]/85 px-5 shadow-[0_8px_28px_rgba(0,0,0,0.32)] backdrop-blur-2xl xl:flex">
+        <div className="flex min-w-0 items-center">
           <Link href={brandHref} className="shrink-0">
-            <BrandLogo alt={t("brand")} priority sizes="80px" className="h-9 w-auto" />
+            <BrandLogo alt={t("brand")} priority sizes="72px" className="h-8 w-auto" />
           </Link>
           {lockedHref && lockedLabel ? (
             <div className="ml-4 flex items-center gap-1">
               <Link
                 href={lockedHref}
-                className="inline-flex items-center gap-1.5 rounded-md bg-pokeball-red/15 border border-pokeball-red/50 px-3 py-1 text-label-sm text-pokeball-red font-bold"
+                className="inline-flex items-center gap-1.5 rounded-md border border-pokeball-red/50 bg-pokeball-red/15 px-3 py-1 text-label-sm font-bold text-pokeball-red"
               >
                 <span className="material-symbols-outlined text-[16px]!">
                   {lock?.kind === "gym" ? "military_tech" : "swords"}
@@ -188,13 +188,11 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               </Link>
             </div>
           ) : (
-            session?.user && (
-              <NavLinks groups={NAV_GROUPS} labels={navLabels} />
-            )
+            session?.user && <NavLinks groups={NAV_GROUPS} labels={navLabels} />
           )}
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex shrink-0 items-center gap-2.5">
           {user && energy !== null && energyMax !== null && (
             <ResourceBar
               energy={energy}

@@ -7,9 +7,9 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { setTeamLayout } from "@/actions/pc";
 import { typeColor } from "@/lib/type-colors";
+import { playPcSfx } from "@/lib/pc-sfx";
 import {
   SquadCardContextMenu,
-  type SquadContextLabels,
 } from "@/components/squad-card-context-menu";
 import { SquadCardSheet, type SquadCardSheetLabels } from "@/components/squad-card-sheet";
 import { PokemonShowcaseCard } from "@/components/pokemon-showcase-card";
@@ -23,9 +23,9 @@ import { useTypeLabel } from "@/hooks/use-type-label";
 import type { HomeSquadFilter } from "@/components/home/home-desktop-rail";
 
 const TEAM_SIZE = 6;
-/** Strip (md+): cards fijas que desbordan → scroll. Grid (mobile): llena el alto. */
+/** Mobile compacto · md+ fila de 6. */
 const SLOT_BOX =
-  "h-full min-h-[6.75rem] w-full md:h-[200px] md:min-h-0 md:w-[176px] md:shrink-0 lg:h-[210px] lg:w-[188px]";
+  "h-full min-h-[6.75rem] w-full md:h-[230px] md:min-h-0";
 
 function TeamSlot({
   member,
@@ -39,11 +39,15 @@ function TeamSlot({
   onLeveledUp,
   onPpRestored,
   onFlagsChange,
+  onDepositToPc,
+  canDepositToPc,
+  isDepositing,
   isDragging,
   isOver,
   pending,
   onDragStart,
   onDragEnd,
+  showEmptyCoach,
 }: {
   member: HomeSquadMember | null;
   index: number;
@@ -65,11 +69,16 @@ function TeamSlot({
     id: string,
     next: { isFavorite?: boolean; isTradeLocked?: boolean },
   ) => void;
+  onDepositToPc: (id: string) => void;
+  canDepositToPc: boolean;
+  isDepositing: boolean;
   isDragging: boolean;
   isOver: boolean;
   pending: boolean;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
+  /** Un solo coach mark en el primer slot vacío, no uno por cada hueco. */
+  showEmptyCoach?: boolean;
 }) {
   const tTeam = useTranslations("team");
   const typeLabel = useTypeLabel();
@@ -92,24 +101,29 @@ function TeamSlot({
   }, [open]);
 
   if (!member) {
+    const emptySlot = (
+      <Link
+        href="/team?tab=pc"
+        className={`team-slot team-slot--empty group flex ${SLOT_BOX} flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/[0.02] text-on-surface-variant transition hover:border-white/28 hover:bg-white/[0.04] md:rounded-[1.25rem]`}
+        aria-label={emptyLabel}
+      >
+        <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.03] transition group-hover:border-white/30 md:mb-1.5 md:h-11 md:w-11">
+          <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">add</span>
+        </div>
+        <span className="hidden px-2 text-center text-[10px] uppercase tracking-wider text-on-surface-variant/75 md:block">
+          {emptyLabel}
+        </span>
+      </Link>
+    );
+    if (!showEmptyCoach) return emptySlot;
     return (
       <CoachMark
         storageKey="coach-team-slot"
         message={tUx("coachTeamSlot")}
+        oncePerSession
         className="block h-full"
       >
-        <Link
-          href="/team?tab=pc"
-          className={`team-slot team-slot--empty group flex ${SLOT_BOX} flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/[0.02] text-on-surface-variant transition hover:border-white/28 hover:bg-white/[0.04] md:rounded-[1.25rem]`}
-          aria-label={emptyLabel}
-        >
-          <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.03] transition group-hover:border-white/30 md:mb-1.5 md:h-11 md:w-11">
-            <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">add</span>
-          </div>
-          <span className="hidden px-2 text-center text-[10px] uppercase tracking-wider text-on-surface-variant/75 md:block">
-            {emptyLabel}
-          </span>
-        </Link>
+        {emptySlot}
       </CoachMark>
     );
   }
@@ -180,6 +194,11 @@ function TeamSlot({
       }),
     onFlagsChange: (next: { isFavorite?: boolean; isTradeLocked?: boolean }) =>
       onFlagsChange(member.id, next),
+    onDepositToPc: () => {
+      setOpen(false);
+      onDepositToPc(member.id);
+    },
+    canDepositToPc,
   };
 
   return (
@@ -187,7 +206,7 @@ function TeamSlot({
       <SquadCardContextMenu {...menuProps} showViewTeam triggerVariant="ghost">
         <button
           type="button"
-          draggable={!pending}
+          draggable={!pending && !isDepositing}
           onDragStart={(e) => {
             skipClickRef.current = true;
             onDragStart(member.id);
@@ -201,13 +220,15 @@ function TeamSlot({
             });
           }}
           onClick={() => {
-            if (skipClickRef.current) return;
+            if (skipClickRef.current || isDepositing) return;
             setOpen(true);
           }}
           aria-label={`${displayName}, ${member.levelLabel}`}
           className={`team-card team-slot group relative flex ${SLOT_BOX} flex-col overflow-hidden rounded-xl border text-left transition duration-300 active:scale-[0.97] md:rounded-[1.25rem] ${
-            isOver ? "ring-2 ring-pokeball-red/60 ring-offset-2 ring-offset-background" : ""
-          } ${isDragging ? "opacity-40" : "hover:scale-[1.01]"} ${
+            isDepositing ? "team-slot--depositing" : ""
+          } ${isOver ? "ring-2 ring-pokeball-red/60 ring-offset-2 ring-offset-background" : ""} ${
+            isDragging ? "opacity-40" : isDepositing ? "" : "hover:scale-[1.01]"
+          } ${
             isLead || member.isFavorite
               ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
               : "border-white/[0.08] hover:border-white/20"
@@ -287,7 +308,7 @@ function TeamSlot({
                 alt=""
                 width={120}
                 height={120}
-                className={`team-slot__sprite relative z-[1] h-[88%] w-auto max-h-[68px] max-w-[68px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)] transition duration-300 group-hover:-translate-y-1 group-hover:scale-110 md:h-[90px] md:w-[90px] md:max-h-none md:max-w-none ${
+                className={`relative z-[1] h-[88%] w-auto max-h-[68px] max-w-[68px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105 md:h-[90px] md:w-[90px] md:max-h-none md:max-w-none ${
                   fainted ? "grayscale" : ""
                 }`}
               />
@@ -388,7 +409,6 @@ function TeamSlot({
                     spriteUrl={member.spriteUrl}
                     fainted={fainted}
                     faintedLabel={member.labels.fainted}
-                    spriteClassName="team-detail-sheet__sprite"
                     badges={{
                       slot: index === 0 ? null : slotLabel,
                       lead: index === 0 ? leadLabel : null,
@@ -458,31 +478,31 @@ export function ActiveTeamStrip({
   emptySlotLabel,
   leadLabel,
   slotLabels,
-  manageLabel,
-  title,
   initialBagCounts,
   focusFilter = "all",
+  title,
+  manageHref,
+  manageLabel,
 }: {
   locale: string;
   initialMembers: HomeSquadMember[];
   emptySlotLabel: string;
   leadLabel: string;
   slotLabels: string[];
-  manageLabel: string;
-  title: string;
   initialBagCounts: SquadBagCounts;
   focusFilter?: HomeSquadFilter;
+  title?: string;
+  manageHref?: string;
+  manageLabel?: string;
 }) {
   const t = useTranslations("pc");
   const [members, setMembers] = useState(initialMembers);
   const [bagCounts, setBagCounts] = useState(initialBagCounts);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overSlot, setOverSlot] = useState<number | null>(null);
+  const [depositingId, setDepositingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(false);
-  const railRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMembers((prev) => {
@@ -504,49 +524,8 @@ export function ActiveTeamStrip({
     setBagCounts(initialBagCounts);
   }, [initialBagCounts]);
 
-  function updateScrollHints() {
-    const rail = railRef.current;
-    if (!rail) return;
-    const max = Math.max(0, rail.scrollWidth - rail.clientWidth);
-    setCanPrev(rail.scrollLeft > 2);
-    setCanNext(rail.scrollLeft < max - 2);
-  }
-
-  useEffect(() => {
-    const railEl = railRef.current;
-    if (!railEl) return;
-
-    updateScrollHints();
-    railEl.addEventListener("scroll", updateScrollHints, { passive: true });
-    const ro = new ResizeObserver(updateScrollHints);
-    ro.observe(railEl);
-
-    function onWheel(e: WheelEvent) {
-      const target = railRef.current;
-      if (!target) return;
-      if (window.matchMedia("(max-width: 767px)").matches) return;
-      if (target.scrollWidth <= target.clientWidth) return;
-      // Trackpad horizontal nativo; rueda vertical → lateral.
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      e.preventDefault();
-      target.scrollLeft += e.deltaY;
-      updateScrollHints();
-    }
-    railEl.addEventListener("wheel", onWheel, { passive: false });
-
-    return () => {
-      railEl.removeEventListener("scroll", updateScrollHints);
-      railEl.removeEventListener("wheel", onWheel);
-      ro.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    const id = requestAnimationFrame(updateScrollHints);
-    return () => cancelAnimationFrame(id);
-  }, [members, pending]);
-
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => members[i] ?? null);
+  const firstEmptyIndex = slots.findIndex((m) => m === null);
 
   function commit(next: HomeSquadMember[]) {
     const previous = members;
@@ -573,32 +552,68 @@ export function ActiveTeamStrip({
     commit([...rest.slice(0, at), mon, ...rest.slice(at)]);
   }
 
-  const showRailEdges = canPrev || canNext;
+  function depositToPc(id: string) {
+    if (depositingId || pending) return;
+    const mon = members.find((m) => m.id === id);
+    if (!mon) return;
+    if (mon.isTradeLocked) {
+      setError("trade_locked");
+      return;
+    }
+    if (members.length <= 1) {
+      setError("last_team_member");
+      return;
+    }
+    const next = members.filter((m) => m.id !== id);
+    if (next.length === members.length) return;
+
+    setError(null);
+    setDepositingId(id);
+    playPcSfx("store");
+
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const delay = reduced ? 0 : 480;
+
+    window.setTimeout(() => {
+      const previous = members;
+      setMembers(next);
+      setDepositingId(null);
+      startTransition(async () => {
+        const result = await setTeamLayout(
+          locale,
+          next.map((m) => m.id),
+        );
+        if (!result.ok) {
+          setMembers(previous);
+          setError(result.error);
+        }
+      });
+    }, delay);
+  }
+
+  const canDeposit = members.length > 1;
 
   return (
     <section
-      className={`flex min-w-0 flex-col md:flex-none ${pending ? "opacity-90" : ""}`}
+      className={`relative flex min-w-0 flex-col ${pending ? "opacity-90" : ""}`}
     >
-      <div className="mb-2 flex shrink-0 items-center justify-between gap-2 md:mb-2.5">
-        <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-white">
-          <Image
-            src="/nav/joystick-icon.png"
-            alt=""
-            width={36}
-            height={36}
-            className="h-9 w-9 shrink-0 object-contain"
-            aria-hidden
-          />
-          {title}
-        </h2>
-        <Link
-          href="/team"
-          className="inline-flex min-h-11 items-center gap-0.5 text-[13px] text-on-surface-variant transition hover:text-white"
-        >
-          {manageLabel}
-          <span className="material-symbols-outlined text-[16px]!">chevron_right</span>
-        </Link>
-      </div>
+      {title ? (
+        <div className="mb-2 flex items-end justify-between gap-3 px-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+            {title}
+          </p>
+          {manageHref && manageLabel ? (
+            <Link
+              href={manageHref}
+              className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40 transition hover:text-white/75"
+            >
+              {manageLabel}
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       {error ? (
         <div className="mb-2 shrink-0 rounded-lg border border-error/40 bg-error-container/30 px-3 py-1.5 text-[12px] text-error">
@@ -606,12 +621,9 @@ export function ActiveTeamStrip({
         </div>
       ) : null}
 
-      {/* Mobile: grilla 3×2 compacta. md+: riel horizontal. */}
-      <div className="relative min-w-0 md:flex-none">
-        <div
-          ref={railRef}
-          className="grid min-w-0 grid-cols-3 gap-1.5 md:flex md:gap-2.5 md:overflow-x-auto md:overscroll-x-contain md:scroll-smooth md:px-1 md:pb-1 md:pt-0.5 md:snap-x md:snap-mandatory md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden"
-        >
+      {/* Mobile 3×2 · md+ los 6 en una fila. */}
+      <div className="min-w-0">
+        <div className="grid min-w-0 grid-cols-3 gap-1.5 md:grid-cols-6 md:gap-2">
           {slots.map((member, i) => {
             const matches =
               !member ||
@@ -623,7 +635,7 @@ export function ActiveTeamStrip({
             <div
               key={member?.id ?? `empty-${i}`}
               data-team-rail-item
-              className={`min-h-0 min-w-0 transition-opacity duration-200 md:w-[176px] md:shrink-0 md:snap-start lg:w-[188px] ${
+              className={`min-h-0 min-w-0 transition-opacity duration-200 ${
                 matches ? "opacity-100" : "opacity-35"
               }`}
               onDragOver={(e) => {
@@ -645,6 +657,7 @@ export function ActiveTeamStrip({
                 slotLabel={slotLabels[i] ?? String(i + 1)}
                 emptyLabel={emptySlotLabel}
                 bagCounts={bagCounts}
+                showEmptyCoach={i === firstEmptyIndex}
                 onBagChange={setBagCounts}
                 onHealed={(id, currentHp, maxHp) =>
                   setMembers((prev) =>
@@ -697,9 +710,12 @@ export function ActiveTeamStrip({
                     }),
                   )
                 }
+                onDepositToPc={depositToPc}
+                canDepositToPc={canDeposit}
+                isDepositing={member !== null && depositingId === member.id}
                 isDragging={member !== null && dragId === member.id}
                 isOver={overSlot === i && dragId !== null}
-                pending={pending}
+                pending={pending || depositingId !== null}
                 onDragStart={setDragId}
                 onDragEnd={() => {
                   setDragId(null);
@@ -710,23 +726,6 @@ export function ActiveTeamStrip({
             );
           })}
         </div>
-
-        {showRailEdges ? (
-          <>
-            <div
-              className={`pointer-events-none absolute inset-y-0 left-0 z-[1] hidden w-10 bg-gradient-to-r from-background via-background/70 to-transparent transition-opacity md:block ${
-                canPrev ? "opacity-100" : "opacity-0"
-              }`}
-              aria-hidden
-            />
-            <div
-              className={`pointer-events-none absolute inset-y-0 right-0 z-[1] hidden w-10 bg-gradient-to-l from-background via-background/70 to-transparent transition-opacity md:block ${
-                canNext ? "opacity-100" : "opacity-0"
-              }`}
-              aria-hidden
-            />
-          </>
-        ) : null}
       </div>
     </section>
   );

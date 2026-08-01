@@ -45,6 +45,25 @@ export function markSeen(key: FirstVisitKey): void {
   }
 }
 
+/** Una sola vez por pestaña/sesión (p. ej. tip de slot vacío al entrar, no al depositar). */
+export function hasSeenThisSession(key: FirstVisitKey): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return window.sessionStorage.getItem(PREFIX + key) === "1";
+  } catch {
+    return true;
+  }
+}
+
+export function markSeenThisSession(key: FirstVisitKey): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(PREFIX + key, "1");
+  } catch {
+    /* private mode */
+  }
+}
+
 export function hasSeenUnlock(locationId: string): boolean {
   if (typeof window === "undefined") return true;
   try {

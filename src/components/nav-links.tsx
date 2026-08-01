@@ -36,7 +36,7 @@ function PendingBadge({ count, className = "" }: { count: number; className?: st
 type IndicatorBox = { left: number; width: number } | null;
 
 const TRIGGER_BASE =
-  "nav-link-text relative flex h-16 items-center gap-0.5 px-2.5 whitespace-nowrap transition-colors xl:gap-1 xl:px-3";
+  "nav-link-text relative flex h-14 items-center gap-0.5 px-2.5 whitespace-nowrap uppercase tracking-[0.12em] transition-colors xl:gap-1 xl:px-3";
 
 export function NavLinks({
   groups,
@@ -110,7 +110,7 @@ export function NavLinks({
   const homeActive = pathname === "/";
 
   return (
-    <div ref={rootRef} className="relative ml-2 flex items-center xl:ml-4">
+    <div ref={rootRef} className="relative ml-2 flex items-center xl:ml-3">
       {indicator && (
         <span
           aria-hidden
@@ -190,6 +190,8 @@ function NavGroupMenu({
   const panelId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const [panelMounted, setPanelMounted] = useState(open);
+  const [panelPhase, setPanelPhase] = useState<"in" | "out">(open ? "in" : "out");
   const active = groupMatches(pathname, group);
   // El grupo acumula los pendientes de sus hijos: el jugador ve que hay algo
   // que hacer en Aventura sin tener que abrir el menú.
@@ -206,6 +208,23 @@ function NavGroupMenu({
       onToggle();
     }
   }
+
+  useEffect(() => {
+    if (open) {
+      setPanelMounted(true);
+      setPanelPhase("in");
+      return;
+    }
+    if (!panelMounted) return;
+    setPanelPhase("out");
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const ms = reduced ? 0 : 160;
+    const timer = window.setTimeout(() => setPanelMounted(false), ms);
+    return () => window.clearTimeout(timer);
+    // panelMounted intencional: al cerrar necesitamos el valor actual para
+    // decidir si hay que animar la salida.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ver arriba
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -230,14 +249,18 @@ function NavGroupMenu({
         aria-expanded={open}
         aria-controls={panelId}
         className={`${TRIGGER_BASE} ${
-          active || open ? "text-white" : "text-on-surface-variant hover:text-on-surface"
+          open
+            ? "rounded-t-lg rounded-b-none bg-[#14161e] text-white ring-1 ring-inset ring-white/10"
+            : active
+              ? "rounded-lg text-white"
+              : "rounded-lg text-on-surface-variant hover:bg-white/[0.04] hover:text-on-surface"
         }`}
       >
         {labels.text[group.labelKey] ?? group.id}
         <PendingBadge count={groupBadge} />
         <span
           aria-hidden
-          className={`material-symbols-outlined hidden text-[16px]! transition-transform duration-150 xl:inline ${
+          className={`material-symbols-outlined hidden text-[14px]! transition-transform duration-200 ease-out xl:inline ${
             open ? "rotate-180" : ""
           }`}
         >
@@ -245,75 +268,62 @@ function NavGroupMenu({
         </span>
       </button>
 
-      {open && (
+      {panelMounted && (
         <div
           ref={panelRef}
           id={panelId}
           role="menu"
           aria-label={labels.text[group.labelKey]}
-          className="nav-dropdown-in absolute left-0 top-full z-50 w-[276px] rounded-xl border border-white/10 bg-surface-container-low/98 p-1.5 shadow-2xl backdrop-blur-xl"
+          aria-hidden={!open}
+          className={`nav-dropdown absolute left-0 top-full z-50 min-w-full w-max overflow-hidden rounded-b-lg border border-t-0 border-white/10 bg-[#14161e] py-1 shadow-[0_12px_28px_rgba(0,0,0,0.4)] ${
+            panelPhase === "in" ? "nav-dropdown--in" : "nav-dropdown--out"
+          }`}
         >
-          <p className="px-2.5 pb-1.5 pt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-on-surface-variant/70">
-            {labels.text[group.labelKey]}
-          </p>
-          {items.map((item) => {
-            const itemActive = itemMatches(pathname, item);
-            const label = labels.text[item.labelKey] ?? item.id;
-            const description = labels.description[item.id];
+          <div className="flex flex-col">
+            {items.map((item) => {
+              const itemActive = itemMatches(pathname, item);
+              const label = labels.text[item.labelKey] ?? item.id;
 
-            if (item.disabled) {
-              return (
-                <span
-                  key={item.id}
-                  role="menuitem"
-                  aria-disabled
-                  className="flex cursor-not-allowed items-start gap-2.5 rounded-lg px-2.5 py-2 opacity-45"
-                >
-                  <span className="material-symbols-outlined mt-px text-[18px]!">{item.icon}</span>
-                  <span className="min-w-0">
-                    <span className="block text-label-md">{label}</span>
-                    <span className="block text-[11px] text-on-surface-variant">{labels.soon}</span>
+              if (item.disabled) {
+                return (
+                  <span
+                    key={item.id}
+                    role="menuitem"
+                    aria-disabled
+                    className="nav-dropdown__item flex cursor-not-allowed items-center justify-center gap-1 whitespace-nowrap px-3 py-2 opacity-45"
+                  >
+                    <span className="nav-link-text leading-tight">{label}</span>
+                    <span className="text-[10px] text-on-surface-variant">
+                      ({labels.soon})
+                    </span>
                   </span>
-                </span>
-              );
-            }
+                );
+              }
 
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                role="menuitem"
-                aria-current={itemActive ? "page" : undefined}
-                onClick={onClose}
-                className={`flex items-start gap-2.5 rounded-lg px-2.5 py-2 transition-colors ${
-                  itemActive
-                    ? "bg-pokeball-red/10 text-white"
-                    : "text-on-surface hover:bg-white/[0.06]"
-                }`}
-              >
-                <span
-                  className={`material-symbols-outlined mt-px text-[18px]! ${
-                    itemActive ? "text-pokeball-red" : "text-on-surface-variant"
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  role="menuitem"
+                  tabIndex={open ? 0 : -1}
+                  aria-current={itemActive ? "page" : undefined}
+                  onClick={onClose}
+                  className={`nav-dropdown__item flex items-center justify-center gap-1 whitespace-nowrap px-3 py-2 uppercase tracking-[0.1em] transition-colors duration-150 ${
+                    itemActive
+                      ? "bg-white/[0.08] text-white"
+                      : "text-on-surface/90 hover:bg-white/[0.05] hover:text-white"
                   }`}
                 >
-                  {item.icon}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="nav-link-text flex items-center gap-1.5 leading-tight">
+                  <span className="nav-link-text flex items-center justify-center gap-1.5 leading-tight">
                     {label}
-                    <PendingBadge count={item.badgeKey ? (labels.badges[item.badgeKey] ?? 0) : 0} />
+                    <PendingBadge
+                      count={item.badgeKey ? (labels.badges[item.badgeKey] ?? 0) : 0}
+                    />
                   </span>
-                  {description && (
-                    // Las descripciones se ocultan en pantallas medianas: en
-                    // 1024 el dropdown competía con el contenido de la página.
-                    <span className="mt-0.5 hidden text-[11px] leading-snug text-on-surface-variant xl:block">
-                      {description}
-                    </span>
-                  )}
-                </span>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

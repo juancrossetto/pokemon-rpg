@@ -133,6 +133,7 @@ export async function depositPokemon(locale: string, formData: FormData) {
       });
       if (!instance) throw new PcError("not_found");
       if (instance.teamSlot === null) throw new PcError("not_in_team");
+      if (instance.isTradeLocked) throw new PcError("trade_locked");
       if (instance.battleSessions.length > 0) throw new PcError("in_battle");
 
       const others = await tx.pokemonInstance.count({
@@ -214,12 +215,13 @@ export async function setTeamLayout(
         throw new PcError("listed");
       }
 
-      // Los que salen del equipo no pueden estar en una batalla activa.
+      // Los que salen del equipo no pueden estar en una batalla activa ni bloqueados.
       const leaving = await tx.pokemonInstance.findMany({
         where: { ownerId: userId, teamSlot: { not: null }, id: { notIn: ids } },
         include: { battleSessions: { where: { status: "ACTIVE" }, select: { id: true } } },
       });
       if (leaving.some((i) => i.battleSessions.length > 0)) throw new PcError("in_battle");
+      if (leaving.some((i) => i.isTradeLocked)) throw new PcError("trade_locked");
 
       // Dos fases: el `@@unique([ownerId, teamSlot])` haría chocar cualquier
       // permutación si asignáramos los slots directamente. Con NULL no hay

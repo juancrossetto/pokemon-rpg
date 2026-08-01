@@ -43,7 +43,7 @@ export function TrainerProfileClient({
           indicador le alcanza con un `translateX` de múltiplos de 100% — sin
           medir nodos ni efectos.
         */}
-        <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-20 -mx-1 bg-background/90 px-1 py-1.5 backdrop-blur-xl xl:top-16">
+        <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-20 -mx-1 bg-background/90 px-1 py-1.5 backdrop-blur-xl xl:top-14">
           <div
             role="tablist"
             aria-label="Profile sections"
