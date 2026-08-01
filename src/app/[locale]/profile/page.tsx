@@ -96,6 +96,7 @@ export default async function ProfilePage({
   const [
     user,
     team,
+    favoriteRow,
     badges,
     counts,
     totalGyms,
@@ -133,6 +134,24 @@ export default async function ProfilePage({
           species: { select: SPECIES_SELECT },
         },
         orderBy: { teamSlot: "asc" },
+      }),
+      prisma.pokemonInstance.findFirst({
+        where: { ownerId: userId, isFavorite: true },
+        select: {
+          id: true,
+          nickname: true,
+          level: true,
+          currentHp: true,
+          isShiny: true,
+          isFavorite: true,
+          teamSlot: true,
+          ptStrength: true,
+          ptSpeed: true,
+          ptDexterity: true,
+          ptIntelligence: true,
+          ptConstitution: true,
+          species: { select: SPECIES_SELECT },
+        },
       }),
       prisma.badge.findMany({
         where: { userId },
@@ -243,8 +262,8 @@ export default async function ProfilePage({
 
   const rank = rankProgress(stats.badges, totalGyms);
 
-  // Favorito: el marcado por el jugador; si no marcó ninguno, el líder.
-  const favorite = team.find((p) => p.isFavorite) ?? team[0] ?? null;
+  // Favorito: el marcado por el jugador (aunque esté en el PC); si no hay, el líder.
+  const favorite = favoriteRow ?? team[0] ?? null;
   const favoriteAccent = favorite ? typeColor(favorite.species.types[0] ?? "normal") : "#ee1515";
 
   /*

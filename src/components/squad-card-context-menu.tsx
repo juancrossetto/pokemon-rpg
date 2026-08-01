@@ -324,6 +324,11 @@ export function SquadCardContextMenu({
               <div className="my-1 border-t border-white/8" />
               <MenuItem
                 icon={isFavorite ? "star" : "star_outline"}
+                iconClassName={
+                  isFavorite
+                    ? "ms-fill text-electric-yellow"
+                    : "text-on-surface-variant"
+                }
                 label={isFavorite ? labels.favoriteOff : labels.favoriteOn}
                 disabled={busy}
                 onSelect={actions.toggleFavorite}
@@ -457,11 +462,13 @@ function ConsumableMenuItem({
 
 function MenuItem({
   icon,
+  iconClassName = "text-on-surface-variant",
   label,
   disabled,
   onSelect,
 }: {
   icon: string;
+  iconClassName?: string;
   label: string;
   disabled?: boolean;
   onSelect: () => void;
@@ -474,7 +481,7 @@ function MenuItem({
       onClick={onSelect}
       className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-on-surface transition hover:bg-white/8 disabled:opacity-50"
     >
-      <span className="material-symbols-outlined text-[18px]! text-on-surface-variant">{icon}</span>
+      <span className={`material-symbols-outlined text-[18px]! ${iconClassName}`}>{icon}</span>
       {label}
     </button>
   );

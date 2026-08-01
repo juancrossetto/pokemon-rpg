@@ -20,6 +20,11 @@
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
+/* Estrella / iconos “sólidos” (favorito, etc.) — el default es outline (FILL 0). */
+.material-symbols-outlined.ms-fill {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
 html[data-icons="pending"] .material-symbols-outlined {
   visibility: hidden;
 }

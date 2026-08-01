@@ -208,6 +208,23 @@
       "leveled": "Used {item}: Lv. {level}!",
       "resolvingLevelUp": "Resolving level-up…",
       "actionFailed": "Couldn't save the change. Try again."
+    },
+    "rail": {
+      "filtersTitle": "Filters",
+      "filterAll": "Full squad",
+      "filterFavorites": "Favorites",
+      "filterInjured": "Injured",
+      "filterReady": "Ready",
+      "filtersClear": "Clear all",
+      "medalsTitle": "Badge case",
+      "medalsEmpty": "No badges earned yet.",
+      "medalsProgress": "{earned}/{total}",
+      "medalsViewAll": "View gyms",
+      "topTitle": "Top 5",
+      "topEmpty": "The ranking is still empty.",
+      "topViewAll": "View ranking",
+      "cp": "CP",
+      "you": "You"
     }
   },
   "pokedex": {

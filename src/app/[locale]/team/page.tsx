@@ -327,6 +327,7 @@ export default async function TeamPage({
             evolveUseStone: t("drawer.evolveUseStone", { item: "{item}" }),
             evolving: t("drawer.evolving"),
             canEvolveBadge: t("drawer.canEvolveBadge"),
+            favoriteBadge: tMenu("favoriteBadge"),
             showDetails: t("drawer.showDetails"),
             hideDetails: t("drawer.hideDetails"),
             tabAbout: t("drawer.tabAbout"),

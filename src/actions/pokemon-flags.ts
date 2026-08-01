@@ -17,6 +17,8 @@ function revalidateSquad(locale: string) {
   revalidatePath(`/${locale}/pc`);
   revalidatePath(`/${locale}/market`);
   revalidatePath(`/${locale}/ranking`);
+  revalidatePath(`/${locale}/profile`);
+  revalidatePath(`/${locale}/friends`);
   revalidatePath(`/${locale}`);
 }
 

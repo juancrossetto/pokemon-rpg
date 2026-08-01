@@ -14,8 +14,20 @@ import { HomeGameHub } from "@/components/home/home-game-hub";
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolution-chain";
+import { loadCombatPowerBoard } from "@/lib/ranking-boards";
 
 const TEAM_SIZE = 6;
+
+const KANTO_BADGE_SLOTS: { order: number; type: string }[] = [
+  { order: 1, type: "rock" },
+  { order: 2, type: "water" },
+  { order: 3, type: "electric" },
+  { order: 4, type: "grass" },
+  { order: 5, type: "poison" },
+  { order: 6, type: "psychic" },
+  { order: 7, type: "fire" },
+  { order: 8, type: "ground" },
+];
 
 export default async function Home() {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
@@ -30,14 +42,15 @@ export default async function Home() {
 }
 
 async function Dashboard({ username, userId }: { username: string; userId: string }) {
-  const [t, tt, locale, progress, badges] = await Promise.all([
+  const [t, tt, tGyms, locale, progress, badges] = await Promise.all([
     getTranslations("home"),
     getTranslations("team"),
+    getTranslations("gyms"),
     getLocale(),
     ensureCampaignProgress(userId),
     prisma.badge.findMany({
       where: { userId },
-      include: { gym: { select: { order: true } } },
+      include: { gym: { select: { order: true, badgeName: true, type: true } } },
     }),
   ]);
 
@@ -131,6 +144,39 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   ).length;
 
   const milestone = expedition?.milestone;
+
+  const earnedOrders = new Set(badges.map((b) => b.gym.order));
+  const railBadges = KANTO_BADGE_SLOTS.map((slot) => {
+    const earned = badges.find((b) => b.gym.order === slot.order);
+    const badgeKey = `badges.${slot.order}`;
+    const name = tGyms.has(badgeKey)
+      ? tGyms(badgeKey)
+      : (earned?.gym.badgeName ?? slot.type);
+    return {
+      order: slot.order,
+      type: earned?.gym.type ?? slot.type,
+      name,
+      earned: earnedOrders.has(slot.order),
+    };
+  });
+
+  const topBoard = await loadCombatPowerBoard("", userId);
+  const railTop = topBoard.slice(0, 5).map((row) => ({
+    position: row.position,
+    playerId: row.playerId,
+    playerName: row.playerName,
+    countryCode: row.countryCode ?? "",
+    avatarId: row.avatarId ?? null,
+    combatPower: row.combatPower ?? 0,
+    isCurrentPlayer: Boolean(row.isCurrentPlayer),
+    featured: row.featuredCreature
+      ? {
+          name: row.featuredCreature.name,
+          image: row.featuredCreature.image,
+          isShiny: Boolean(row.featuredCreature.isShiny),
+        }
+      : null,
+  }));
 
   const members: HomeSquadMember[] = slots
     .filter((instance): instance is NonNullable<typeof instance> => instance !== null)
@@ -280,6 +326,12 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         title: t("activeSquad"),
         bagCounts,
         layoutKey: pokemon.map((p) => `${p.id}:${p.teamSlot}`).join("|"),
+      }}
+      rail={{
+        badges: railBadges,
+        badgesEarned: earnedOrders.size,
+        badgesTotal: KANTO_BADGE_SLOTS.length,
+        top: railTop,
       }}
       isDev={isDev}
     />

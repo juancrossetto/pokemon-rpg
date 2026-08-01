@@ -20,11 +20,12 @@ import type { SquadBagCounts } from "@/lib/squad-bag";
 import { anyEvolveReady } from "@/lib/evolution-readiness";
 import { CoachMark } from "@/components/journey-guidance";
 import { useTypeLabel } from "@/hooks/use-type-label";
+import type { HomeSquadFilter } from "@/components/home/home-desktop-rail";
 
 const TEAM_SIZE = 6;
 /** Strip (md+): cards fijas que desbordan → scroll. Grid (mobile): llena el alto. */
 const SLOT_BOX =
-  "h-full min-h-[8.75rem] w-full md:h-[200px] md:min-h-0 md:w-[176px] md:shrink-0 lg:h-[210px] lg:w-[188px]";
+  "h-full min-h-[6.75rem] w-full md:h-[200px] md:min-h-0 md:w-[176px] md:shrink-0 lg:h-[210px] lg:w-[188px]";
 
 function TeamSlot({
   member,
@@ -37,6 +38,7 @@ function TeamSlot({
   onHealed,
   onLeveledUp,
   onPpRestored,
+  onFlagsChange,
   isDragging,
   isOver,
   pending,
@@ -58,6 +60,10 @@ function TeamSlot({
   onPpRestored: (
     id: string,
     next: { moveName: string; restoredBy: number; allMoves: boolean },
+  ) => void;
+  onFlagsChange: (
+    id: string,
+    next: { isFavorite?: boolean; isTradeLocked?: boolean },
   ) => void;
   isDragging: boolean;
   isOver: boolean;
@@ -94,13 +100,13 @@ function TeamSlot({
       >
         <Link
           href="/team?tab=pc"
-          className={`team-slot team-slot--empty group flex ${SLOT_BOX} flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-white/15 bg-white/[0.02] text-on-surface-variant transition hover:border-white/28 hover:bg-white/[0.04]`}
+          className={`team-slot team-slot--empty group flex ${SLOT_BOX} flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/[0.02] text-on-surface-variant transition hover:border-white/28 hover:bg-white/[0.04] md:rounded-[1.25rem]`}
           aria-label={emptyLabel}
         >
-          <div className="mb-1.5 flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.03] transition group-hover:border-white/30">
-            <span className="material-symbols-outlined text-[22px]!">add</span>
+          <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-white/15 bg-white/[0.03] transition group-hover:border-white/30 md:mb-1.5 md:h-11 md:w-11">
+            <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">add</span>
           </div>
-          <span className="px-2 text-center text-[10px] uppercase tracking-wider text-on-surface-variant/75">
+          <span className="hidden px-2 text-center text-[10px] uppercase tracking-wider text-on-surface-variant/75 md:block">
             {emptyLabel}
           </span>
         </Link>
@@ -172,6 +178,8 @@ function TeamSlot({
         ...next,
         levelLabel: tTeam("level", { level: next.level }),
       }),
+    onFlagsChange: (next: { isFavorite?: boolean; isTradeLocked?: boolean }) =>
+      onFlagsChange(member.id, next),
   };
 
   return (
@@ -197,7 +205,7 @@ function TeamSlot({
             setOpen(true);
           }}
           aria-label={`${displayName}, ${member.levelLabel}`}
-          className={`team-card team-slot group relative flex ${SLOT_BOX} flex-col overflow-hidden rounded-[1.25rem] border text-left transition duration-300 active:scale-[0.97] ${
+          className={`team-card team-slot group relative flex ${SLOT_BOX} flex-col overflow-hidden rounded-xl border text-left transition duration-300 active:scale-[0.97] md:rounded-[1.25rem] ${
             isOver ? "ring-2 ring-pokeball-red/60 ring-offset-2 ring-offset-background" : ""
           } ${isDragging ? "opacity-40" : "hover:scale-[1.01]"} ${
             isLead || member.isFavorite
@@ -206,7 +214,7 @@ function TeamSlot({
           } ${fainted ? "opacity-80" : ""}`}
           style={{ "--type-accent": accent } as CSSProperties}
         >
-        <div className="relative flex min-h-0 flex-[1.4] flex-col items-center justify-end px-2 pb-0 pt-5 md:pt-6">
+        <div className="relative flex min-h-0 flex-[1.15] flex-col items-center justify-end px-1 pb-0 pt-3.5 md:flex-[1.4] md:px-2 md:pt-6">
           <div
             className="pointer-events-none absolute inset-0"
             style={{
@@ -214,7 +222,7 @@ function TeamSlot({
             }}
           />
           <div
-            className="pointer-events-none absolute left-1/2 top-[44%] h-[70%] max-h-32 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.08]"
+            className="pointer-events-none absolute left-1/2 top-[44%] hidden h-[70%] max-h-32 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.08] md:block"
             style={{
               background:
                 "radial-gradient(circle at 50% 50%, transparent 36%, currentColor 37%, currentColor 48%, transparent 49%)",
@@ -223,12 +231,14 @@ function TeamSlot({
             aria-hidden
           />
 
-          <PokeSparks seed={member.id} accent={accent} />
+          <div className="hidden md:contents">
+            <PokeSparks seed={member.id} accent={accent} />
+          </div>
 
-          <div className="absolute left-2 top-1.5 z-[2] flex max-w-[calc(100%-0.75rem)] flex-wrap items-center gap-0.5">
+          <div className="absolute left-1 top-1 z-[2] flex max-w-[calc(100%-0.5rem)] flex-wrap items-center gap-0.5 md:left-2 md:top-1.5 md:max-w-[calc(100%-0.75rem)]">
             {isLead ? (
               <span className="flex items-center text-violet-300" title={leadLabel}>
-                <span className="material-symbols-outlined text-[15px]! leading-none">
+                <span className="material-symbols-outlined text-[13px]! leading-none md:text-[15px]!">
                   military_tech
                 </span>
               </span>
@@ -238,35 +248,37 @@ function TeamSlot({
                 className="flex items-center text-electric-yellow"
                 title={member.labels.favorite}
               >
-                <span className="material-symbols-outlined text-[14px]! leading-none">star</span>
+                <span className="material-symbols-outlined ms-fill text-[12px]! leading-none md:text-[14px]!">
+                  star
+                </span>
               </span>
             )}
             {member.isTradeLocked && (
               <span
-                className="flex items-center text-white/50"
+                className="hidden items-center text-white/50 md:flex"
                 title={member.labels.tradeLocked}
               >
                 <span className="material-symbols-outlined text-[13px]! leading-none">lock</span>
               </span>
             )}
-            <span className="rounded-full border border-white/15 bg-black/45 px-1.5 py-0.5 font-mono text-[10px] font-semibold leading-none text-white backdrop-blur-sm">
+            <span className="rounded-full border border-white/15 bg-black/45 px-1 py-px font-mono text-[9px] font-semibold leading-none text-white backdrop-blur-sm md:px-1.5 md:py-0.5 md:text-[10px]">
               {member.levelLabel}
             </span>
             {canEvolve && (
               <span
-                className="inline-flex items-center rounded-full border border-tertiary/40 bg-tertiary/20 px-1 py-0.5 text-tertiary backdrop-blur-sm"
+                className="inline-flex items-center rounded-full border border-tertiary/40 bg-tertiary/20 px-0.5 py-px text-tertiary backdrop-blur-sm md:px-1 md:py-0.5"
                 title={member.labels.canEvolveBadge}
               >
-                <span className="material-symbols-outlined text-[11px]! leading-none">
+                <span className="material-symbols-outlined text-[10px]! leading-none md:text-[11px]!">
                   auto_awesome
                 </span>
               </span>
             )}
           </div>
 
-          <div className="relative z-[1] flex h-full min-h-[4.25rem] w-full max-h-[7.75rem] items-end justify-center md:h-[90px] md:max-h-none md:min-h-0">
+          <div className="relative z-[1] flex h-full min-h-[2.75rem] w-full max-h-[4.25rem] items-end justify-center md:h-[90px] md:max-h-none md:min-h-0">
             <div
-              className="absolute bottom-0 h-6 w-14 rounded-[100%] opacity-55 blur-md transition group-hover:opacity-75"
+              className="absolute bottom-0 h-4 w-10 rounded-[100%] opacity-55 blur-md transition group-hover:opacity-75 md:h-6 md:w-14"
               style={{ background: accent }}
             />
             {member.spriteUrl ? (
@@ -275,23 +287,23 @@ function TeamSlot({
                 alt=""
                 width={120}
                 height={120}
-                className={`team-slot__sprite relative z-[1] h-[90%] w-auto max-h-[118px] max-w-[118px] object-contain drop-shadow-[0_10px_18px_rgba(0,0,0,0.65)] transition duration-300 group-hover:-translate-y-1 group-hover:scale-110 md:h-[90px] md:w-[90px] md:max-h-none md:max-w-none ${
+                className={`team-slot__sprite relative z-[1] h-[88%] w-auto max-h-[68px] max-w-[68px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)] transition duration-300 group-hover:-translate-y-1 group-hover:scale-110 md:h-[90px] md:w-[90px] md:max-h-none md:max-w-none ${
                   fainted ? "grayscale" : ""
                 }`}
               />
             ) : (
-              <span className="material-symbols-outlined relative z-[1] text-[40px]! text-white/25">
+              <span className="material-symbols-outlined relative z-[1] text-[28px]! text-white/25 md:text-[40px]!">
                 sports_baseball
               </span>
             )}
           </div>
         </div>
 
-        <div className="relative z-[1] flex shrink-0 flex-col bg-gradient-to-b from-transparent to-black/35 px-2 pb-2 pt-0.5">
-          <p className="truncate text-center text-[13px] font-bold capitalize tracking-tight text-white md:text-[13px]">
+        <div className="relative z-[1] flex shrink-0 flex-col bg-gradient-to-b from-transparent to-black/35 px-1.5 pb-1.5 pt-0 md:px-2 md:pb-2 md:pt-0.5">
+          <p className="truncate text-center text-[11px] font-bold capitalize tracking-tight text-white md:text-[13px]">
             {displayName}
           </p>
-          <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
+          <div className="mt-0.5 hidden flex-wrap items-center justify-center gap-0.5 md:flex">
             {member.types.slice(0, 2).map((type) => {
               const color = typeColor(type);
               return (
@@ -311,22 +323,22 @@ function TeamSlot({
             )}
           </div>
 
-          <div className="mt-1.5 space-y-1">
+          <div className="mt-1 space-y-1 md:mt-1.5">
             <div
-              className="grid grid-cols-[1.6rem_minmax(0,1fr)] items-center gap-1"
+              className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-0.5 md:grid-cols-[1.6rem_minmax(0,1fr)] md:gap-1"
               title={`${member.currentHp}/${member.maxHp}`}
             >
-              <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
+              <span className="text-[7px] font-bold uppercase tracking-wider text-white/45 md:text-[8px]">
                 {member.labels.hp}
               </span>
               <SegmentedStatBar
                 pct={hpPct}
                 variant={hpBarVariant(hpPct)}
                 segments={10}
-                heightClass="h-2"
+                heightClass="h-1.5 md:h-2"
               />
             </div>
-            <div className="grid grid-cols-[1.6rem_minmax(0,1fr)] items-center gap-1">
+            <div className="hidden grid-cols-[1.6rem_minmax(0,1fr)] items-center gap-1 md:grid">
               <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
                 {member.labels.exp}
               </span>
@@ -344,7 +356,7 @@ function TeamSlot({
 
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-[80] flex items-end justify-center pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] sm:items-center sm:p-4 sm:pb-4 xl:pb-4">
+          <div className="fixed inset-0 z-[80] flex items-end justify-center px-margin-mobile pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.5rem)] sm:items-center sm:p-4 sm:pb-4 xl:pb-4">
             <button
               type="button"
               aria-label={tTeam("drawer.hideDetails")}
@@ -356,7 +368,7 @@ function TeamSlot({
               role="dialog"
               aria-modal="true"
               aria-label={displayName}
-              className="team-detail-sheet relative z-[1] flex max-h-[min(88dvh,calc(100dvh-var(--bottom-nav-h)-env(safe-area-inset-bottom)-1rem))] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-white/12 bg-[#0b0d13] shadow-[0_-12px_48px_rgba(0,0,0,0.55)] sm:rounded-[1.5rem] sm:shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
+              className="team-detail-sheet relative z-[1] flex max-h-[min(88dvh,calc(100dvh-var(--bottom-nav-h)-env(safe-area-inset-bottom)-1.5rem))] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#0b0d13] shadow-[0_12px_48px_rgba(0,0,0,0.55)] sm:rounded-[1.5rem] sm:shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
             >
               <div className="min-h-0 flex-1 overflow-y-auto">
                 {/* El disparador "…" se corre a la izquierda: la esquina es
@@ -449,6 +461,7 @@ export function ActiveTeamStrip({
   manageLabel,
   title,
   initialBagCounts,
+  focusFilter = "all",
 }: {
   locale: string;
   initialMembers: HomeSquadMember[];
@@ -458,6 +471,7 @@ export function ActiveTeamStrip({
   manageLabel: string;
   title: string;
   initialBagCounts: SquadBagCounts;
+  focusFilter?: HomeSquadFilter;
 }) {
   const t = useTranslations("pc");
   const [members, setMembers] = useState(initialMembers);
@@ -592,17 +606,26 @@ export function ActiveTeamStrip({
         </div>
       ) : null}
 
-      {/* Mobile: grilla 2×N a altura natural (scroll del hub). md+: riel horizontal. */}
+      {/* Mobile: grilla 3×2 compacta. md+: riel horizontal. */}
       <div className="relative min-w-0 md:flex-none">
         <div
           ref={railRef}
-          className="grid min-w-0 grid-cols-2 gap-2 md:flex md:gap-2.5 md:overflow-x-auto md:overscroll-x-contain md:scroll-smooth md:px-1 md:pb-1 md:pt-0.5 md:snap-x md:snap-mandatory md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden"
+          className="grid min-w-0 grid-cols-3 gap-1.5 md:flex md:gap-2.5 md:overflow-x-auto md:overscroll-x-contain md:scroll-smooth md:px-1 md:pb-1 md:pt-0.5 md:snap-x md:snap-mandatory md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden"
         >
-          {slots.map((member, i) => (
+          {slots.map((member, i) => {
+            const matches =
+              !member ||
+              focusFilter === "all" ||
+              (focusFilter === "favorites" && member.isFavorite) ||
+              (focusFilter === "injured" && member.currentHp < member.maxHp) ||
+              (focusFilter === "ready" && member.currentHp >= member.maxHp);
+            return (
             <div
               key={member?.id ?? `empty-${i}`}
               data-team-rail-item
-              className="min-h-0 min-w-0 md:w-[176px] md:shrink-0 md:snap-start lg:w-[188px]"
+              className={`min-h-0 min-w-0 transition-opacity duration-200 md:w-[176px] md:shrink-0 md:snap-start lg:w-[188px] ${
+                matches ? "opacity-100" : "opacity-35"
+              }`}
               onDragOver={(e) => {
                 e.preventDefault();
                 setOverSlot(i);
@@ -662,6 +685,18 @@ export function ActiveTeamStrip({
                     }),
                   )
                 }
+                onFlagsChange={(id, next) =>
+                  setMembers((prev) =>
+                    prev.map((m) => {
+                      if (m.id === id) return { ...m, ...next };
+                      // Un solo favorito: al marcar uno se limpia el resto en UI.
+                      if (next.isFavorite === true && m.isFavorite) {
+                        return { ...m, isFavorite: false };
+                      }
+                      return m;
+                    }),
+                  )
+                }
                 isDragging={member !== null && dragId === member.id}
                 isOver={overSlot === i && dragId !== null}
                 pending={pending}
@@ -672,7 +707,8 @@ export function ActiveTeamStrip({
                 }}
               />
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {showRailEdges ? (

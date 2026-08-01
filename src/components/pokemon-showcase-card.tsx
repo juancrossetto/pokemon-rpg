@@ -134,7 +134,9 @@ export function PokemonShowcaseCard({
               title={badges.favorite}
               className="inline-flex items-center rounded-full border border-electric-yellow/35 bg-black/45 px-1.5 py-0.5 text-electric-yellow backdrop-blur-sm"
             >
-              <span className="material-symbols-outlined text-[11px]! leading-none">star</span>
+              <span className="material-symbols-outlined ms-fill text-[11px]! leading-none">
+                star
+              </span>
             </span>
           ) : null}
           {badges.tradeLocked ? (

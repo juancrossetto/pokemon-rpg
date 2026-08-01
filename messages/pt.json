@@ -208,6 +208,23 @@
       "leveled": "Usou {item}: Nv. {level}!",
       "resolvingLevelUp": "Resolvendo o level-up…",
       "actionFailed": "Não foi possível salvar a mudança. Tente novamente."
+    },
+    "rail": {
+      "filtersTitle": "Filtros",
+      "filterAll": "Time completo",
+      "filterFavorites": "Favoritos",
+      "filterInjured": "Feridos",
+      "filterReady": "Prontos",
+      "filtersClear": "Limpar",
+      "medalsTitle": "Medalhas",
+      "medalsEmpty": "Ainda não ganhou medalhas.",
+      "medalsProgress": "{earned}/{total}",
+      "medalsViewAll": "Ver ginásios",
+      "topTitle": "Top 5",
+      "topEmpty": "O ranking ainda está vazio.",
+      "topViewAll": "Ver ranking",
+      "cp": "PC",
+      "you": "Você"
     }
   },
   "pokedex": {

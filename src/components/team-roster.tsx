@@ -114,6 +114,7 @@ export interface TeamRosterLabels {
   evolveUseStone: string;
   evolving: string;
   canEvolveBadge: string;
+  favoriteBadge: string;
   showDetails: string;
   hideDetails: string;
   tabAbout: string;
@@ -195,10 +196,22 @@ export function TeamRoster({
   });
 
   function patchMember(instanceId: string, patch: MemberPatch) {
-    setOverrides((prev) => ({
-      ...prev,
-      [instanceId]: { ...prev[instanceId], ...patch },
-    }));
+    setOverrides((prev) => {
+      const next: Record<string, MemberPatch> = {
+        ...prev,
+        [instanceId]: { ...prev[instanceId], ...patch },
+      };
+      // Un solo favorito por entrenador: al marcar uno se limpia el resto.
+      if (patch.isFavorite === true) {
+        for (const m of members) {
+          if (!m || m.instanceId === instanceId) continue;
+          if (m.isFavorite || prev[m.instanceId]?.isFavorite) {
+            next[m.instanceId] = { ...prev[m.instanceId], isFavorite: false };
+          }
+        }
+      }
+      return next;
+    });
   }
 
   return (
@@ -318,6 +331,7 @@ function PokemonCard({
           slot: member.slotLabel,
           lead: member.isLead ? labels.lead : null,
           level: member.levelLabel,
+          favorite: member.isFavorite ? labels.favoriteBadge : null,
           canEvolve: canEvolve ? labels.canEvolveBadge : null,
           heldItem: member.heldItem?.name ?? null,
         }}

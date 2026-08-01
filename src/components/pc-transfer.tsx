@@ -82,7 +82,13 @@ export function PcTransfer({
 
   function patchMon(id: string, patch: Partial<PcMon>) {
     const apply = (list: PcMon[]) =>
-      list.map((m) => (m.id === id ? { ...m, ...patch } : m));
+      list.map((m) => {
+        if (m.id === id) return { ...m, ...patch };
+        if (patch.isFavorite === true && m.isFavorite) {
+          return { ...m, isFavorite: false };
+        }
+        return m;
+      });
     setTeam((prev) => apply(prev));
     setBox((prev) => apply(prev));
   }
@@ -328,6 +334,7 @@ export function PcTransfer({
                       maxHp: next.maxHp,
                     })
                   }
+                  onFlagsChange={(next) => patchMon(mon.id, next)}
                 />
               ) : (
                 <div className="flex min-h-[92px] items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.02] text-label-sm text-on-surface-variant/50">
@@ -391,6 +398,7 @@ export function PcTransfer({
                     maxHp: next.maxHp,
                   })
                 }
+                onFlagsChange={(next) => patchMon(mon.id, next)}
               />
             ))}
           </div>
@@ -447,6 +455,7 @@ function MonCard({
   onBagChange,
   onHealed,
   onLeveledUp,
+  onFlagsChange,
 }: {
   mon: PcMon;
   slot?: number;
@@ -465,6 +474,7 @@ function MonCard({
   onBagChange: (next: SquadBagCounts) => void;
   onHealed: (next: { currentHp: number; maxHp: number }) => void;
   onLeveledUp: (next: { level: number; currentHp: number; maxHp: number }) => void;
+  onFlagsChange: (next: { isFavorite?: boolean; isTradeLocked?: boolean }) => void;
 }) {
   const typeLabel = useTypeLabel();
   const hpPct = Math.max(0, Math.min(100, (mon.currentHp / mon.maxHp) * 100));
@@ -490,6 +500,7 @@ function MonCard({
       onBagChange={onBagChange}
       onHealed={onHealed}
       onLeveledUp={onLeveledUp}
+      onFlagsChange={onFlagsChange}
     >
       <article
         className={`flex items-center gap-3 rounded-xl border border-white/10 bg-glass-surface p-3 pr-8 backdrop-blur-xl transition-opacity ${
@@ -556,6 +567,11 @@ function MonCard({
           <div className="flex items-center gap-1.5">
             <span className="truncate text-label-md capitalize text-on-surface">{mon.name}</span>
             <span className="shrink-0 text-label-sm text-on-surface-variant">{levelLabel}</span>
+            {mon.isFavorite ? (
+              <span className="material-symbols-outlined ms-fill shrink-0 text-[14px]! text-electric-yellow">
+                star
+              </span>
+            ) : null}
             {mon.breeding && (
               <span className="inline-flex shrink-0 items-center gap-0.5 rounded border border-tertiary/30 bg-tertiary/10 px-1.5 py-0.5 text-[10px] text-tertiary">
                 <span className="material-symbols-outlined text-[11px]! leading-none">egg</span>
