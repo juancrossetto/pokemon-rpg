@@ -27,9 +27,7 @@ export default async function FriendsPage({
 
   const filterRaw = query.filter;
   const initialFilter =
-    filterRaw === "online" ||
     filterRaw === "favorites" ||
-    filterRaw === "recent" ||
     filterRaw === "requests" ||
     filterRaw === "blocked" ||
     filterRaw === "all"

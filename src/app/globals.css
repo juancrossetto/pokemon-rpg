@@ -2886,8 +2886,23 @@ html.boot-splash-pending .boot-splash {
     width 300ms cubic-bezier(0.32, 1.12, 0.6, 1);
 }
 
+/* Friends: subrayado flúor que se desliza entre filtros (mismo gesto que nav). */
+.friends-filter-indicator {
+  background: #ff7a28;
+  box-shadow:
+    0 0 8px rgba(255, 122, 40, 0.85),
+    0 0 16px rgba(255, 122, 40, 0.45);
+  transition:
+    left 380ms cubic-bezier(0.34, 1.42, 0.5, 1),
+    width 300ms cubic-bezier(0.32, 1.12, 0.6, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nav-indicator {
+    transition: none;
+  }
+
+  .friends-filter-indicator {
     transition: none;
   }
 }
@@ -4449,9 +4464,12 @@ html.boot-splash-pending .boot-splash {
 }
 
 .friends-card__body {
+  /* Reserva el rail absoluto a la derecha; no usar w-full en el markup
+     o Tailwind pisa este calc y el texto queda tapado. */
   width: calc(100% - var(--friends-rail-w));
-  max-width: 100%;
+  max-width: calc(100% - var(--friends-rail-w));
   min-width: 0;
+  overflow: hidden;
 }
 
 .friends-card__rail {
@@ -4480,16 +4498,15 @@ html.boot-splash-pending .boot-splash {
   box-shadow: inset 1px 0 0 color-mix(in srgb, white 22%, transparent);
 }
 
-/* Mobile: se queda el rail flúor + nombre; sólo se oculta el chip de nivel. */
+/* Mobile: sin rail vertical — el body usa el ancho completo. */
 @media (max-width: 639px) {
-  .friends-card__rail {
-    justify-content: center;
-    padding-top: 0.65rem;
-    padding-bottom: 0.65rem;
+  .friends-card__body {
+    width: 100%;
+    max-width: 100%;
   }
 
-  .friends-card__rail-code {
-    display: none;
+  .friends-card .friends-actions {
+    right: 0;
   }
 }
 
@@ -4653,13 +4670,8 @@ html.boot-splash-pending .boot-splash {
   }
 
   .friends-actions {
-    position: static !important;
-    transform: none !important;
-    opacity: 1 !important;
-    translate: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    left: 0 !important;
-    right: 0 !important;
+    /* Desktop: overlay al hover. Mobile usa acciones inline en la meta. */
+    display: none !important;
   }
 }
 
