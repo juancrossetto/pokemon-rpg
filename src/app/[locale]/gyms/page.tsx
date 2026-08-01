@@ -5,6 +5,10 @@ import { computeGymStatuses } from "@/lib/gym-status";
 import { toGymMissionItems } from "@/lib/gym-mission";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { GymMissionControl } from "@/components/gym-mission-control";
+import {
+  DEFAULT_GYM_REGION_ID,
+  listGymRegions,
+} from "@/lib/gym-regions";
 
 export default async function GymsPage({
   params,
@@ -30,6 +34,8 @@ export default async function GymsPage({
       select: { gems: true },
     }),
   ]);
+  // Hoy todos los gyms sembrados son Kanto. Cuando entren otras ligas,
+  // filtrar acá por región (campo en Gym o por rango de `order`).
   const items = toGymMissionItems(allStatuses.filter((status) => !status.gym.isElite));
   const badgeCount = items.filter((s) => s.badgeEarned).length;
 
@@ -43,12 +49,21 @@ export default async function GymsPage({
     ? allStatuses.find((status) => status.gym.isElite && !status.badgeEarned)
     : undefined;
 
+  const regions = listGymRegions().map((region) => ({
+    id: region.id,
+    available: region.available,
+    badgeTarget: region.badgeTarget,
+    badgeCount: region.id === DEFAULT_GYM_REGION_ID ? badgeCount : 0,
+  }));
+
   return (
     <GymMissionControl
       items={items}
       badgeCount={badgeCount}
       gems={user.gems}
       eliteHref={nextElite ? `/gyms/${nextElite.gym.id}` : null}
+      regions={regions}
+      initialRegionId={DEFAULT_GYM_REGION_ID}
     />
   );
 }

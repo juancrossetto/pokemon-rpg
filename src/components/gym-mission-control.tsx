@@ -3,14 +3,26 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
-import { typeIcon } from "@/lib/type-icons";
+import { showdownTypeSymbolUrl } from "@/lib/type-icons";
 import type { GymMissionItem, GymMissionStatusKind } from "@/lib/gym-mission";
 import { KANTO_MAP_IMAGE, KANTO_MAP_ASPECT } from "@/lib/gym-map";
 import { marketFeeDiscount, obedienceLevelCap } from "@/lib/badge-perks";
 import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
+import { GameCtaButton } from "@/components/game-cta-button";
+import {
+  DEFAULT_GYM_REGION_ID,
+  gymRegionDef,
+  type GymRegionId,
+} from "@/lib/gym-regions";
+
+export type GymRegionTab = {
+  id: GymRegionId;
+  available: boolean;
+  badgeTarget: number;
+  badgeCount: number;
+};
 
 type Props = {
   items: GymMissionItem[];
@@ -24,6 +36,9 @@ type Props = {
    * sigue. El banner es ese cartel.
    */
   eliteHref?: string | null;
+  /** Ligas del hub (Kanto activo; el resto “próximamente”). */
+  regions: GymRegionTab[];
+  initialRegionId?: GymRegionId;
 };
 
 const STATUS_STYLES: Record<
@@ -80,6 +95,213 @@ function DifficultyStars({ value, color }: { value: number; color: string }) {
           ★
         </span>
       ))}
+    </span>
+  );
+}
+
+/** Chip de tipo: símbolo Showdown + fondo degradé compacto. */
+function TypeChip({
+  type,
+  label,
+  size = "sm",
+}: {
+  type: string;
+  label: string;
+  size?: "xs" | "sm";
+}) {
+  const color = typeColor(type);
+  const iconPx = size === "xs" ? 12 : 14;
+  return (
+    <span
+      title={label}
+      className={`inline-flex items-center gap-1 border ${
+        size === "xs" ? "rounded-md px-1.5 py-0.5" : "rounded-lg px-2 py-1"
+      }`}
+      style={{
+        color,
+        borderColor: `${color}40`,
+        background: `linear-gradient(155deg, ${color}32 0%, rgba(10,12,18,0.88) 70%)`,
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+      }}
+    >
+      <span
+        className={`relative inline-flex shrink-0 items-center justify-center ${
+          size === "xs" ? "h-4 w-4 rounded" : "h-5 w-5 rounded-md"
+        }`}
+        style={{
+          background: `linear-gradient(145deg, ${color}, ${color}99)`,
+          boxShadow: `0 0 10px ${color}33`,
+        }}
+      >
+        <Image
+          src={showdownTypeSymbolUrl(type)}
+          alt=""
+          width={iconPx}
+          height={iconPx}
+          unoptimized
+          className="object-contain brightness-110 contrast-125"
+        />
+      </span>
+      <span
+        className={`font-bold uppercase tracking-wide ${
+          size === "xs" ? "text-[9px]" : "text-[10px]"
+        }`}
+      >
+        {label}
+      </span>
+    </span>
+  );
+}
+
+function SkeletonBlock({ className = "" }: { className?: string }) {
+  return <span className={`animate-pulse rounded-md bg-white/[0.07] ${className}`} />;
+}
+
+/** Misma silueta que el hub activo, para no saltar el layout al cambiar de liga. */
+function GymRegionSkeletonHero({
+  regionLabel,
+  lockedTitle,
+  lockedBody,
+}: {
+  regionLabel: string;
+  lockedTitle: string;
+  lockedBody: string;
+}) {
+  return (
+    <div className="relative min-h-[280px] overflow-hidden rounded-2xl border border-white/10 bg-black/40 md:min-h-[380px]">
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-40"
+        style={{
+          background:
+            "linear-gradient(125deg, rgba(255,255,255,0.06) 0%, transparent 40%), linear-gradient(to top, rgba(6,8,14,0.95) 10%, rgba(6,8,14,0.55) 100%)",
+        }}
+      />
+      <div className="relative z-10 flex h-full flex-col justify-between gap-6 p-5 sm:p-7">
+        <div className="flex items-start justify-between gap-3">
+          <SkeletonBlock className="h-7 w-28" />
+          <SkeletonBlock className="h-7 w-16" />
+        </div>
+        <div className="grid items-end gap-5 sm:grid-cols-[1fr_auto]">
+          <div className="min-w-0 space-y-2.5">
+            <SkeletonBlock className="h-3 w-28" />
+            <SkeletonBlock className="h-9 w-[70%] max-w-xs" />
+            <SkeletonBlock className="h-4 w-48" />
+            <SkeletonBlock className="h-4 w-40" />
+          </div>
+          <SkeletonBlock className="mx-auto h-40 w-32 rounded-xl sm:mx-0 sm:h-48 sm:w-36" />
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex items-center gap-4">
+            <SkeletonBlock className="h-16 w-16 rounded-full" />
+            <div className="space-y-2">
+              <SkeletonBlock className="h-3 w-20" />
+              <SkeletonBlock className="h-8 w-28 rounded-xl" />
+            </div>
+          </div>
+          <SkeletonBlock className="h-11 w-full rounded-xl sm:w-44" />
+        </div>
+      </div>
+
+      <div className="absolute inset-x-4 bottom-4 z-20 sm:inset-x-6 sm:bottom-6">
+        <div className="rounded-xl border border-white/12 bg-black/70 px-4 py-3 text-center backdrop-blur-md">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
+            {regionLabel}
+          </p>
+          <p className="mt-1 text-[15px] font-semibold text-white">{lockedTitle}</p>
+          <p className="mt-1 text-[12px] text-on-surface-variant">{lockedBody}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GymRegionSkeletonAside() {
+  return (
+    <aside className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/40 p-5 backdrop-blur-xl sm:p-6">
+      <SkeletonBlock className="h-3 w-28" />
+      <div className="space-y-2">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-md border border-white/8 bg-white/[0.03] px-2.5 py-2"
+          >
+            <SkeletonBlock className="h-10 w-10 shrink-0 rounded-md" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <SkeletonBlock className="h-3.5 w-24" />
+              <SkeletonBlock className="h-5 w-20" />
+            </div>
+            <SkeletonBlock className="h-3 w-10" />
+          </div>
+        ))}
+      </div>
+      <SkeletonBlock className="h-3 w-24" />
+      <div className="flex flex-wrap gap-1.5">
+        {[0, 1, 2, 3].map((i) => (
+          <SkeletonBlock key={i} className="h-7 w-16 rounded-lg" />
+        ))}
+      </div>
+      <SkeletonBlock className="mt-auto h-10 w-full rounded-md" />
+    </aside>
+  );
+}
+
+function GymRegionSkeletonOps({ operationsLabel }: { operationsLabel: string }) {
+  return (
+    <section>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <SkeletonBlock className="h-3 w-24" />
+        <span className="text-label-sm text-on-surface-variant/50">{operationsLabel}</span>
+      </div>
+      <div className="flex gap-2.5 overflow-hidden sm:gap-3">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="min-h-[132px] w-[min(72vw,200px)] shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/35 sm:min-h-[148px] sm:w-[210px]"
+          >
+            <div className="flex h-full flex-col justify-between p-3.5">
+              <div className="flex justify-between">
+                <SkeletonBlock className="h-5 w-8" />
+                <SkeletonBlock className="h-5 w-12" />
+              </div>
+              <div className="space-y-1.5">
+                <SkeletonBlock className="h-4 w-32" />
+                <SkeletonBlock className="h-3 w-24" />
+              </div>
+              <div className="flex items-center justify-between border-t border-white/10 pt-2">
+                <SkeletonBlock className="h-5 w-14" />
+                <SkeletonBlock className="h-5 w-5 rounded-full" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CoinReward({ amount, compact = false }: { amount: number; compact?: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center ${
+        compact ? "gap-1" : "gap-1.5"
+      }`}
+    >
+      <span
+        className={`material-symbols-outlined text-electric-yellow ${
+          compact ? "text-[14px]!" : "text-[20px]!"
+        }`}
+        aria-hidden
+      >
+        paid
+      </span>
+      <span
+        className={`font-mono font-bold tabular-nums text-electric-yellow ${
+          compact ? "text-[12px]" : "text-lg"
+        }`}
+      >
+        +{amount.toLocaleString()}
+      </span>
     </span>
   );
 }
@@ -193,7 +415,14 @@ function MissionSparks() {
   );
 }
 
-export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props) {
+export function GymMissionControl({
+  items,
+  badgeCount,
+  gems,
+  eliteHref,
+  regions,
+  initialRegionId = DEFAULT_GYM_REGION_ID,
+}: Props) {
   const t = useTranslations("gyms");
   const tTypes = useTranslations("pokedex.pokemonTypes");
   const firstUnlocked = items.find((g) => !g.locked && !g.badgeEarned) ?? items[0];
@@ -202,12 +431,19 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
   // Vista de operaciones: cards o mapa de región. Antes el mapa era la ruta
   // /gyms/map, una segunda pantalla con exactamente los mismos datos.
   const [view, setView] = useState<"list" | "map">("list");
+  const [regionId, setRegionId] = useState<GymRegionId>(initialRegionId);
 
   // `selected` ya cae en items[0] cuando el id guardado no existe, así que el
   // efecto que "corregía" selectedId no cambiaba nada de lo que se renderiza:
   // sólo disparaba un render extra. El resto del componente usa `selected`.
   const selected = items.find((g) => g.id === selectedId) ?? items[0];
   const color = selected ? typeColor(selected.type) : "#68A090";
+  const activeRegion = regions.find((r) => r.id === regionId) ?? regions[0];
+  const regionAvailable = activeRegion?.available ?? false;
+  const regionLabel = t(`regions.${gymRegionDef(regionId).id}`);
+  const badgeTotal = activeRegion?.badgeTarget || items.length || 8;
+  const regionBadgeCount = regionAvailable ? badgeCount : (activeRegion?.badgeCount ?? 0);
+  const progressPct = Math.min(100, Math.round((regionBadgeCount / badgeTotal) * 100));
 
   function typeLabel(type: string) {
     const key = type.toLowerCase();
@@ -230,14 +466,13 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
     setSelectedId(next.id);
   }
 
-  if (!selected) return null;
-
-  const canChallenge =
-    !selected.locked && !selected.stagesIncomplete && !selected.onCooldown && !selected.closed;
-  const challengeHref = `/gyms/${selected.id}`;
-  const selectedTypeLabel = typeLabel(selected.type);
-  const selectedBadgeLabel = badgeLabel(selected);
-  const selectedGymName = gymNameLabel(selected);
+  const canChallenge = selected
+    ? !selected.locked && !selected.stagesIncomplete && !selected.onCooldown && !selected.closed
+    : false;
+  const challengeHref = selected ? `/gyms/${selected.id}` : "/gyms";
+  const selectedTypeLabel = selected ? typeLabel(selected.type) : "";
+  const selectedBadgeLabel = selected ? badgeLabel(selected) : "";
+  const selectedGymName = selected ? gymNameLabel(selected) : "";
 
   return (
     <div className="relative isolate flex-1 overflow-hidden">
@@ -245,75 +480,43 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
       <HoloGrid />
       <MissionSparks />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-6 px-margin-mobile py-6 md:gap-8 md:px-margin-desktop md:py-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-margin-desktop sm:py-6 md:gap-6 md:py-8">
         {/* HEADER */}
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <p className="mb-1 text-[11px] font-mono uppercase tracking-[0.22em] text-secondary/80">
-              {t("missionEyebrow")}
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-headline-lg text-white md:text-display-lg">{t("title")}</h1>
+        <header className="min-w-0">
+          <p className="mb-1.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-secondary sm:text-[11px]">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-secondary" />
+            {t("missionEyebrow")}
+            <span className="text-white/20">/</span>
+            <span className="font-semibold tracking-[0.18em] text-on-surface-variant">
+              {regionLabel}
+            </span>
+          </p>
+          <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+            <h1 className="text-[clamp(1.75rem,5vw,2.75rem)] font-semibold leading-none tracking-tight text-white">
+              {t("title")}
+            </h1>
+            {regionAvailable && (
               <button
                 type="button"
                 onClick={() => setView((v) => (v === "list" ? "map" : "list"))}
-                className="inline-flex items-center gap-1.5 rounded-md border border-white/12 px-3 py-1.5 text-label-sm text-on-surface transition hover:border-pokeball-red/50"
+                className="mb-0.5 inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3 py-1 text-[11px] font-semibold text-white/80 transition hover:border-white/25 hover:bg-white/[0.1] hover:text-white"
               >
-                <span className="material-symbols-outlined text-[16px]!">
+                <span className="material-symbols-outlined text-[15px]!">
                   {view === "list" ? "map" : "view_list"}
                 </span>
                 {view === "list" ? t("viewMap") : t("backToList")}
               </button>
-            </div>
-            <p className="mt-1 max-w-xl text-label-sm text-on-surface-variant">{t("subtitle")}</p>
-            <div className="mt-2">
-              <HandbookLink chapter="journey" />
-            </div>
-          </div>
-
-          <div className="shrink-0 rounded-xl border border-white/10 bg-black/35 px-4 py-3 backdrop-blur-md">
-            <div className="mb-2 flex items-center justify-between gap-4">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-on-surface-variant">
-                {t("progressLabel")}
-              </span>
-              <span className="font-mono text-label-sm text-tertiary">
-                {t("badgeProgress", { count: badgeCount })}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {items.map((gym) => (
-                <button
-                  key={gym.id}
-                  type="button"
-                  onClick={() => selectGym(gym)}
-                  title={`${gymNameLabel(gym)} · ${badgeLabel(gym)}`}
-                  className={`relative flex h-9 w-9 items-center justify-center rounded-md border transition ${
-                    gym.badgeEarned
-                      ? "border-tertiary/50 bg-tertiary/10"
-                      : "border-white/10 bg-white/[0.03] opacity-55"
-                  } ${selected.id === gym.id ? "ring-1 ring-pokeball-red/60" : ""}`}
-                >
-                  <Image
-                    src={gym.badgeUrl}
-                    alt={badgeLabel(gym)}
-                    width={22}
-                    height={22}
-                    className={`object-contain ${gym.badgeEarned ? "drop-shadow-[0_0_6px_rgba(242,192,0,0.55)]" : "grayscale"}`}
-                  />
-                </button>
-              ))}
-            </div>
-            {badgeCount > 0 && (
-              <p className="mt-2 max-w-xs text-[11px] text-on-surface-variant/80">
-                {t("obedienceCap", { level: obedienceLevelCap(badgeCount) })}
-                <span className="mx-1.5 text-white/20">·</span>
-                {t("marketDiscount", { pct: Math.round(marketFeeDiscount(badgeCount) * 100) })}
-              </p>
             )}
+          </div>
+          <p className="mt-2 truncate text-[13px] text-white/55">
+            {t("subtitle", { region: regionLabel })}
+          </p>
+          <div className="mt-2.5">
+            <HandbookLink chapter="journey" />
           </div>
         </header>
 
-        {eliteHref && (
+        {regionAvailable && eliteHref && (
           <section className="relative overflow-hidden rounded-2xl border border-electric-yellow/35 bg-gradient-to-r from-electric-yellow/[0.14] via-black/40 to-black/50 p-4">
             <span
               aria-hidden
@@ -341,26 +544,72 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
                   </p>
                 </div>
               </div>
-              <Link
-                href={eliteHref}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-pokeball-red px-5 text-label-sm font-bold uppercase tracking-wide text-white transition hover:bg-pokeball-red/85 active:scale-[0.98]"
-              >
+              <GameCtaButton href={eliteHref} variant="gold" icon="workspace_premium">
                 {t("eliteCta")}
-              </Link>
+              </GameCtaButton>
             </div>
           </section>
         )}
 
-        {/* HERO + SIDE PANEL */}
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.9fr)] lg:gap-7">
+        {/* Ligas encima del mapa / progreso encima del panel — gap corto */}
+        <section className="grid gap-x-6 gap-y-2 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.9fr)] lg:gap-x-7">
+          <div className="flex min-w-0 flex-col gap-2">
+            <div
+              className="grid grid-cols-4 gap-1 sm:gap-1.5"
+              role="tablist"
+              aria-label={t("regionsLabel")}
+            >
+              {regions.map((region) => {
+                const active = region.id === regionId;
+                const label = t(`regions.${region.id}`);
+                return (
+                  <button
+                    key={region.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => {
+                      setRegionId(region.id);
+                      if (region.available) setView("list");
+                    }}
+                    className={[
+                      "flex min-w-0 flex-col justify-center rounded-lg border px-2 py-1.5 text-left transition sm:px-2.5",
+                      active
+                        ? "border-white/20 bg-white/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                        : "border-white/8 bg-black/20 text-on-surface-variant hover:border-white/16 hover:text-on-surface",
+                    ].join(" ")}
+                  >
+                    <span className="truncate text-[11px] font-semibold leading-tight tracking-wide sm:text-[12px]">
+                      {label}
+                    </span>
+                    <span className="truncate font-mono text-[9px] leading-tight tabular-nums opacity-65 sm:text-[10px]">
+                      {region.available
+                        ? `${region.badgeCount}/${region.badgeTarget}`
+                        : t("regionComingSoon")}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {!regionAvailable && (
+              <GymRegionSkeletonHero
+                regionLabel={regionLabel}
+                lockedTitle={t("regionLockedTitle", { region: regionLabel })}
+                lockedBody={t("regionLockedBody")}
+              />
+            )}
+
+            {regionAvailable && selected && (
           <div
             key={selected.id}
             className={`gym-mission-hero relative min-h-[320px] overflow-hidden rounded-2xl border border-white/12 shadow-[0_24px_60px_rgba(0,0,0,0.45)] md:min-h-[420px] ${
               slideDir === "right" ? "gym-mission-slide-right" : "gym-mission-slide-left"
             }`}
-            style={{ boxShadow: `0 24px 60px rgba(0,0,0,0.45), 0 0 0 1px ${color}33, 0 0 40px ${color}18` }}
+            style={{
+              boxShadow: `0 24px 60px rgba(0,0,0,0.45), 0 0 0 1px ${color}33, 0 0 40px ${color}18`,
+            }}
           >
-            {/* Backdrop: mapa de región enfocado en la ciudad */}
             <div className="absolute inset-0">
               <Image
                 src={selected.mapSrc}
@@ -386,18 +635,13 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
             <div className="relative z-10 flex h-full flex-col justify-between gap-6 p-5 sm:p-7 md:p-8">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <StatusBadge kind={selected.status} label={statusLabel(selected, t)} />
-                <span
-                  className="rounded-md border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white"
-                  style={{ backgroundColor: `${color}cc`, borderColor: `${color}` }}
-                >
-                  {selectedTypeLabel}
-                </span>
+                <TypeChip type={selected.type} label={selectedTypeLabel} />
               </div>
 
               <div className="grid items-end gap-5 sm:grid-cols-[1fr_auto]">
                 <div className="min-w-0">
                   <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/55">
-                    {t("operationLabel", { n: selected.order })}
+                    {t("operationLabel", { n: selected.order, total: badgeTotal })}
                   </p>
                   <h2 className="mt-1 text-[28px] font-semibold leading-tight text-white sm:text-[36px]">
                     {selectedGymName}
@@ -434,7 +678,7 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div className="flex items-center gap-4">
+                <div className="flex min-w-0 items-center gap-4">
                   <div className="flex flex-col items-center">
                     <Image
                       src={selected.badgeUrl}
@@ -456,52 +700,140 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
                     <p className="text-[10px] font-mono uppercase tracking-wider text-white/45">
                       {t("rewards")}
                     </p>
-                    <div className="mt-1.5 flex items-center gap-3">
-                      <span className="inline-flex items-center gap-1.5 text-lg font-mono font-semibold text-electric-yellow">
-                        <span className="material-symbols-outlined text-[22px]!">paid</span>
-                        {selected.coinReward}
-                      </span>
+                    <div className="mt-1.5">
+                      <CoinReward amount={selected.coinReward} />
                     </div>
                   </div>
                 </div>
 
-                {canChallenge || selected.badgeEarned ? (
-                  <Link
-                    href={challengeHref}
-                    className="gym-challenge-btn inline-flex items-center justify-center gap-2 rounded-md bg-pokeball-red px-6 py-3 text-label-md font-semibold uppercase tracking-wide text-white transition"
-                  >
-                    <span className="material-symbols-outlined text-[18px]!">swords</span>
-                    {selected.badgeEarned ? t("rematch") : t("challengeGym")}
-                  </Link>
-                ) : selected.onCooldown ? (
-                  <SkipGymCooldownButton
-                    gymId={selected.id}
-                    hoursLeft={selected.hoursLeft}
-                    remainingMs={selected.remainingMs}
-                    gems={gems}
-                    compact
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    disabled
-                    className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-6 py-3 text-label-md font-semibold uppercase tracking-wide text-white/45"
-                  >
-                    <span className="material-symbols-outlined text-[18px]!">
-                      {selected.locked ? "lock" : selected.stagesIncomplete ? "hiking" : "schedule"}
-                    </span>
-                    {selected.locked
-                      ? t("statusReadyLocked")
-                      : selected.stagesIncomplete
-                        ? t("statusReadyStages")
-                        : t("statusReadyClosed")}
-                  </button>
-                )}
+                {/*
+                  `.game-cta` trae width:100%; en una fila flex se desborda del
+                  padding de la card. El wrapper limita el ancho (mismo patrón
+                  que campaign-primary-objective).
+                */}
+                <div className="w-full shrink-0 sm:w-auto sm:min-w-[11rem] sm:max-w-[16rem]">
+                  {canChallenge || selected.badgeEarned ? (
+                    <GameCtaButton
+                      href={challengeHref}
+                      variant="gold"
+                      icon="swords"
+                    >
+                      {selected.badgeEarned ? t("rematch") : t("challengeGym")}
+                    </GameCtaButton>
+                  ) : selected.onCooldown ? (
+                    <SkipGymCooldownButton
+                      gymId={selected.id}
+                      hoursLeft={selected.hoursLeft}
+                      remainingMs={selected.remainingMs}
+                      gems={gems}
+                      compact
+                    />
+                  ) : (
+                    <GameCtaButton
+                      type="button"
+                      disabled
+                      variant="gold"
+                      icon={
+                        selected.locked
+                          ? "lock"
+                          : selected.stagesIncomplete
+                            ? "hiking"
+                            : "schedule"
+                      }
+                    >
+                      {selected.locked
+                        ? t("statusReadyLocked")
+                        : selected.stagesIncomplete
+                          ? t("statusReadyStages")
+                          : t("statusReadyClosed")}
+                    </GameCtaButton>
+                  )}
+                </div>
               </div>
             </div>
           </div>
+            )}
+          </div>
 
-          {/* SIDE PANEL */}
+          <div className="flex min-w-0 flex-col gap-2">
+            <div className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-3 backdrop-blur-md sm:px-4 sm:py-3.5">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-on-surface-variant sm:text-[11px]">
+                  {t("progressLabel")}
+                </span>
+                <span className="font-mono text-[12px] font-semibold text-tertiary sm:text-label-sm">
+                  {regionAvailable
+                    ? t("badgeProgress", { count: regionBadgeCount, total: badgeTotal })
+                    : t("badgeProgress", { count: 0, total: badgeTotal })}
+                </span>
+              </div>
+              <div
+                className="mb-2.5 h-1 overflow-hidden rounded-full bg-white/10 sm:mb-3 sm:h-1.5"
+                role="progressbar"
+                aria-valuenow={regionAvailable ? regionBadgeCount : 0}
+                aria-valuemin={0}
+                aria-valuemax={badgeTotal}
+              >
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-tertiary/80 to-electric-yellow transition-[width] duration-500"
+                  style={{ width: regionAvailable ? `${progressPct}%` : "0%" }}
+                />
+              </div>
+              <div className="relative grid grid-cols-8 gap-1">
+                {regionAvailable
+                  ? items.map((gym) => (
+                      <button
+                        key={gym.id}
+                        type="button"
+                        onClick={() => selectGym(gym)}
+                        title={`${gymNameLabel(gym)} · ${badgeLabel(gym)}`}
+                        className={`relative z-10 flex aspect-square w-full items-center justify-center rounded-md border transition sm:rounded-full ${
+                          gym.badgeEarned
+                            ? "border-tertiary/55 bg-tertiary/15"
+                            : "border-white/10 bg-[#0c1018]/90 opacity-55"
+                        } ${
+                          selected?.id === gym.id
+                            ? "ring-2 ring-pokeball-red/70"
+                            : "hover:opacity-100"
+                        }`}
+                      >
+                        <Image
+                          src={gym.badgeUrl}
+                          alt={badgeLabel(gym)}
+                          width={20}
+                          height={20}
+                          className={`h-[55%] w-[55%] object-contain ${gym.badgeEarned ? "drop-shadow-[0_0_6px_rgba(242,192,0,0.55)]" : "grayscale"}`}
+                        />
+                      </button>
+                    ))
+                  : Array.from({ length: badgeTotal }, (_, i) => (
+                      <span
+                        key={i}
+                        className="flex aspect-square w-full items-center justify-center rounded-md border border-white/8 bg-white/[0.03] sm:rounded-full"
+                      >
+                        <SkeletonBlock className="h-[45%] w-[45%] rounded-full" />
+                      </span>
+                    ))}
+              </div>
+              {regionAvailable && regionBadgeCount > 0 && (
+                <p className="mt-2 text-[10px] leading-snug text-on-surface-variant/80 sm:mt-2.5 sm:text-[11px]">
+                  {t("obedienceCap", { level: obedienceLevelCap(regionBadgeCount) })}
+                  <span className="mx-1 text-white/20">·</span>
+                  {t("marketDiscount", {
+                    pct: Math.round(marketFeeDiscount(regionBadgeCount) * 100),
+                  })}
+                </p>
+              )}
+              {!regionAvailable && (
+                <p className="mt-2 text-[10px] text-on-surface-variant/65 sm:mt-2.5 sm:text-[11px]">
+                  {t("regionComingSoon")}
+                </p>
+              )}
+            </div>
+
+            {!regionAvailable && <GymRegionSkeletonAside />}
+
+            {regionAvailable && selected && (
           <aside
             key={`panel-${selected.id}`}
             className="gym-mission-panel flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/40 p-5 backdrop-blur-xl sm:p-6"
@@ -529,21 +861,14 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-label-md capitalize text-on-surface">{member.name}</p>
-                      <div className="mt-0.5 flex flex-wrap gap-1">
+                      <div className="mt-1 flex flex-wrap gap-1">
                         {member.types.map((type) => (
-                          <span
+                          <TypeChip
                             key={type}
-                            className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] uppercase"
-                            style={{
-                              color: typeColor(type),
-                              backgroundColor: `${typeColor(type)}22`,
-                            }}
-                          >
-                            <span className="material-symbols-outlined text-[12px]!">
-                              {typeIcon(type)}
-                            </span>
-                            {typeLabel(type)}
-                          </span>
+                            type={type}
+                            label={typeLabel(type)}
+                            size="xs"
+                          />
                         ))}
                       </div>
                     </div>
@@ -559,20 +884,9 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
               <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.18em] text-on-surface-variant">
                 {t("weaknesses")}
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {selected.weaknesses.map((type) => (
-                  <span
-                    key={type}
-                    className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-label-sm capitalize"
-                    style={{
-                      color: typeColor(type),
-                      borderColor: `${typeColor(type)}55`,
-                      backgroundColor: `${typeColor(type)}18`,
-                    }}
-                  >
-                    <span className="material-symbols-outlined text-[16px]!">{typeIcon(type)}</span>
-                    {typeLabel(type)}
-                  </span>
+                  <TypeChip key={type} type={type} label={typeLabel(type)} size="sm" />
                 ))}
               </div>
             </div>
@@ -581,17 +895,23 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
               {t("trainerCount", { count: selected.trainerCount })}
             </div>
           </aside>
+            )}
+          </div>
         </section>
 
-        {/* OPERATIONS: carrusel de cards o mapa de región (mismos datos) */}
+        {!regionAvailable && (
+          <GymRegionSkeletonOps operationsLabel={t("operations")} />
+        )}
+
+        {regionAvailable && (
         <section>
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="text-[11px] font-mono uppercase tracking-[0.2em] text-on-surface-variant">
-              {view === "list" ? t("operations") : t("mapTitle")}
+              {view === "list"
+                ? t("operations")
+                : t("mapTitle", { region: regionLabel })}
             </h3>
-            <p className="text-label-sm text-on-surface-variant/70">
-              {t("operationsHint")}
-            </p>
+            <p className="text-label-sm text-on-surface-variant/70">{t("operationsHint")}</p>
           </div>
 
           {view === "map" ? (
@@ -602,7 +922,7 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
               >
                 <Image
                   src={KANTO_MAP_IMAGE}
-                  alt={t("mapTitle")}
+                  alt={t("mapTitle", { region: regionLabel })}
                   fill
                   sizes="(max-width: 768px) 100vw, 768px"
                   className="object-contain"
@@ -664,90 +984,95 @@ export function GymMissionControl({ items, badgeCount, gems, eliteHref }: Props)
               </div>
             </div>
           ) : (
-          <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]">
-            {items.map((gym) => {
-              const gymColor = typeColor(gym.type);
-              const active = gym.id === selected.id;
-              const style = STATUS_STYLES[gym.status];
+            <div className="relative">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-[#07090f] to-transparent sm:w-8"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-[#07090f] to-transparent sm:w-8"
+              />
+              <div className="no-scrollbar flex snap-x snap-mandatory gap-2.5 overflow-x-auto sm:gap-3">
+                {items.map((gym) => {
+                  const gymColor = typeColor(gym.type);
+                  const active = gym.id === selected.id;
+                  const style = STATUS_STYLES[gym.status];
 
-              return (
-                <button
-                  key={gym.id}
-                  type="button"
-                  onClick={() => selectGym(gym)}
-                  className={`gym-mission-card group relative min-h-[148px] w-[220px] shrink-0 overflow-hidden rounded-xl border text-left transition duration-300 ${
-                    active
-                      ? "border-pokeball-red/70 shadow-[0_0_24px_rgba(238,21,21,0.28)]"
-                      : "border-white/10 hover:border-pokeball-red/50 hover:shadow-[0_0_22px_rgba(238,21,21,0.22)] hover:scale-[1.02]"
-                  } ${gym.locked && !active ? "opacity-70" : ""}`}
-                >
-                  <div className="absolute inset-0">
-                    <Image
-                      src={gym.mapSrc}
-                      alt=""
-                      fill
-                      sizes="220px"
-                      className="object-cover opacity-40 transition duration-500 group-hover:opacity-55"
-                      style={{
-                        objectPosition: `${gym.mapFocusX}% ${gym.mapFocusY}%`,
-                        transform: "scale(1.9)",
-                        transformOrigin: `${gym.mapFocusX}% ${gym.mapFocusY}%`,
-                      }}
-                    />
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background: `linear-gradient(160deg, ${gymColor}40 0%, transparent 45%), linear-gradient(to top, rgba(8,10,16,0.96) 20%, rgba(8,10,16,0.55) 100%)`,
-                      }}
-                    />
-                  </div>
+                  return (
+                    <button
+                      key={gym.id}
+                      type="button"
+                      onClick={() => selectGym(gym)}
+                      className={`gym-mission-card group relative min-h-[132px] w-[min(72vw,200px)] shrink-0 snap-start overflow-hidden rounded-xl border text-left transition duration-300 sm:min-h-[148px] sm:w-[210px] ${
+                        active
+                          ? "border-pokeball-red/70 shadow-[0_0_24px_rgba(238,21,21,0.28)]"
+                          : "border-white/10 hover:border-pokeball-red/50 hover:shadow-[0_0_22px_rgba(238,21,21,0.22)] hover:scale-[1.02]"
+                      } ${gym.locked && !active ? "opacity-70" : ""}`}
+                    >
+                      <div className="absolute inset-0">
+                        <Image
+                          src={gym.mapSrc}
+                          alt=""
+                          fill
+                          sizes="220px"
+                          className="object-cover opacity-40 transition duration-500 group-hover:opacity-55"
+                          style={{
+                            objectPosition: `${gym.mapFocusX}% ${gym.mapFocusY}%`,
+                            transform: "scale(1.9)",
+                            transformOrigin: `${gym.mapFocusX}% ${gym.mapFocusY}%`,
+                          }}
+                        />
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            background: `linear-gradient(160deg, ${gymColor}40 0%, transparent 45%), linear-gradient(to top, rgba(8,10,16,0.96) 20%, rgba(8,10,16,0.55) 100%)`,
+                          }}
+                        />
+                      </div>
 
-                  <div className="relative z-10 flex h-full flex-col justify-between p-3.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${style.border} ${style.bg} ${style.text}`}
-                      >
-                        <span className="material-symbols-outlined text-[12px]!">
-                          {statusIcon(gym.status)}
-                        </span>
-                      </span>
-                      <span
-                        className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
-                        style={{ backgroundColor: `${gymColor}cc`, color: "#fff" }}
-                      >
-                        {typeLabel(gym.type)}
-                      </span>
-                    </div>
+                      <div className="relative z-10 flex h-full flex-col justify-between p-3.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${style.border} ${style.bg} ${style.text}`}
+                          >
+                            <span className="material-symbols-outlined text-[12px]!">
+                              {statusIcon(gym.status)}
+                            </span>
+                          </span>
+                          <TypeChip type={gym.type} label={typeLabel(gym.type)} size="xs" />
+                        </div>
 
-                    <div>
-                      <p className="truncate text-[15px] font-semibold text-white">{gymNameLabel(gym)}</p>
-                      <p className="truncate text-label-sm text-white/65">
-                        {gym.leaderName}
-                        <span className="mx-1.5 text-white/25">·</span>
-                        {t("levelLabel", { level: gym.recommendedLevel })}
-                      </p>
-                    </div>
+                        <div>
+                          <p className="truncate text-[15px] font-semibold text-white">
+                            {gymNameLabel(gym)}
+                          </p>
+                          <p className="truncate text-label-sm text-white/65">
+                            {gym.leaderName}
+                            <span className="mx-1.5 text-white/25">·</span>
+                            {t("levelLabel", { level: gym.recommendedLevel })}
+                          </p>
+                        </div>
 
-                    <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-2">
-                      <span className="inline-flex items-center gap-1 font-mono text-[12px] text-electric-yellow">
-                        <span className="material-symbols-outlined text-[14px]!">paid</span>
-                        {gym.coinReward}
-                      </span>
-                      <Image
-                        src={gym.badgeUrl}
-                        alt=""
-                        width={22}
-                        height={22}
-                        className={`object-contain ${gym.badgeEarned ? "" : "opacity-70 grayscale"}`}
-                      />
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                        <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-2">
+                          <CoinReward amount={gym.coinReward} compact />
+                          <Image
+                            src={gym.badgeUrl}
+                            alt=""
+                            width={22}
+                            height={22}
+                            className={`object-contain ${gym.badgeEarned ? "" : "opacity-70 grayscale"}`}
+                          />
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </section>
+        )}
       </div>
     </div>
   );
