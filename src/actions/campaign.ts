@@ -85,6 +85,8 @@ export async function setFarmingStage(
   const stage = getKantoStage(stageId);
   if (!stage) return { success: false, error: "invalid" };
 
+  if (stage.isGymMilestone) return { success: false, error: "invalid" };
+
   const progress = await ensureCampaignProgress(userId);
   if (!isStageUnlocked(stage, progress)) {
     return { success: false, error: "locked" };

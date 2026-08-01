@@ -9,7 +9,8 @@ import { getMovesetForLevel } from "@/lib/moveset";
 import { calculateMaxHp, calculateStat, unspentPointsForLevel, xpForLevel } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { captureStatusBonus } from "@/lib/status";
-import { getZoneContext } from "@/lib/zone-progress";
+import { getZoneContext, grantZoneMastery } from "@/lib/zone-progress";
+import { completeFarmingStageOnWildWin } from "@/lib/campaign/sync";
 import { runWildCounterAttack } from "@/lib/wild-counter";
 import { revalidateCombatUi } from "@/lib/battle-lock";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
@@ -70,7 +71,7 @@ export async function attemptCapture(
     }),
   ]);
   if (!battle) return null;
-  if (battle.gymId) return null;
+  if (battle.gymId || battle.routeTrainerId) return null;
   if (!inventoryItem || inventoryItem.quantity < 1) return null;
   if (inventoryItem.item.type !== "POKEBALL") return null;
 
@@ -135,8 +136,15 @@ export async function attemptCapture(
 
     await markSpeciesSeen(userId, battle.wildSpeciesId);
 
+    // Misma progresión de campaña que un KO: capturar también completa el stage.
+    if (!battle.towerRunId) {
+      await completeFarmingStageOnWildWin(userId);
+      if (zone) await grantZoneMastery(userId, zone.locationId);
+    }
+
     revalidatePath(`/${locale}/team`);
     revalidatePath(`/${locale}/pokedex`);
+    revalidatePath(`/${locale}/campaign`);
     revalidateCombatUi(locale);
 
     const movesById = new Map(moves.map((m) => [m.id, m]));

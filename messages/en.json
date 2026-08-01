@@ -452,7 +452,7 @@
       "profileConfig": "Profile configuration",
       "abort": "Abort sequence",
       "dataExtraction": "Data extraction",
-      "avatarMeta": "REQ_1_IMG"
+      "avatarMeta": "REQ_2_IMG"
     }
   },
   "starter": {
@@ -1703,6 +1703,7 @@
   },
   "pvp": {
     "title": "PvP battle",
+    "eyebrow": "Arena",
     "subtitle": "Face other trainers and climb the rating ladder.",
     "rating": "Rating",
     "tier": "League",
@@ -1731,9 +1732,11 @@
     "rankedBlurb": "Play turn by turn against the rival's team (AI). Earn Elo and coins.",
     "quickBlurb": "Instant simulation. Great for a quick bout.",
     "challengeTitle": "Direct challenge",
-    "challengeBlurb": "Fight a trainer by username (10 min cooldown).",
-    "challengePlaceholder": "Username",
+    "challengeBlurb": "Search a trainer by name and challenge them (10 min cooldown).",
+    "challengePlaceholder": "Search trainer…",
     "challengeSubmit": "Challenge",
+    "challengeNoResults": "No trainers match that search.",
+    "challengeClear": "Clear rival",
     "rematch": "Rematch",
     "teamTitle": "PvP team",
     "teamBlurb": "If you don't set a preset, your adventure team is used.",
@@ -1800,7 +1803,8 @@
     "stageProgress": "{done}/{total} stretches",
     "gymMilestone": "Gym",
     "errors": {
-      "noStage": "No valid stretch. Pick one on the Journey map."
+      "noStage": "No valid stretch. Pick one on the Journey map.",
+      "stageLocked": "That stretch is still locked. Pick another on the Journey map."
     },
     "dev": {
       "title": "Dev · campaign",
@@ -1963,6 +1967,7 @@
     "pickZoneHint": "Tap an unlocked zone to set your location and wild encounters.",
     "pickStage": "Farming stage",
     "moveHere": "Move here",
+    "startExploring": "Explore this zone",
     "youAreHere": "You are here",
     "viewList": "View list",
     "encounterRate": {
@@ -1979,6 +1984,7 @@
     "chapterDone": "Chapter complete",
     "stagesShort": "stages",
     "objectives": "Objectives",
+    "zoneRewards": "Rewards",
     "objStages": "Clear every stage",
     "objPokedex": "Complete the zone Pokédex",
     "objBadge": "Earn the badge",
@@ -2049,6 +2055,17 @@
     "claim": "Claim",
     "claimed": "Claimed",
     "rewardClaimed": "Reward claimed",
+    "rewardClaimFailed": "Couldn’t claim the reward. Try again.",
+    "rewardClaimNotDone": "You haven’t finished this objective yet.",
+    "rewardClaimAlready": "You already claimed this reward.",
+    "rewardClaimMissingItem": "The reward item is missing. Try again later.",
+    "trainerErrorLocked": "That area is still locked.",
+    "trainerErrorBeaten": "You already defeated that trainer.",
+    "trainerErrorNoLead": "You need a Pokémon on your team to battle.",
+    "trainerErrorFaintedLead": "Your team is fainted. Heal before battling.",
+    "trainerErrorNotFound": "We couldn’t find that trainer.",
+    "trainerErrorInBattle": "You already have a battle in progress.",
+    "trainerErrorFailed": "Couldn’t start the battle. Try again.",
     "rewardCoins": "Coins",
     "rewardContinue": "Continue",
     "rarity": {

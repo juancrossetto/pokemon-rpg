@@ -14,7 +14,15 @@ import {
 
 export type ClaimResult =
   | { ok: true; coins: number; itemName: string; quantity: number }
-  | { ok: false; error: "unauthorized" | "invalid" | "not_done" | "already_claimed" };
+  | {
+      ok: false;
+      error:
+        | "unauthorized"
+        | "invalid"
+        | "not_done"
+        | "already_claimed"
+        | "missing_item";
+    };
 
 /**
  * Cobra la recompensa de un objetivo de zona.
@@ -22,6 +30,7 @@ export type ClaimResult =
  * El estado se recalcula en el servidor a partir de la DB: el cliente manda qué
  * quiere cobrar, no cuánto le corresponde. Con el lock, dos clicks simultáneos
  * no pueden cobrar dos veces (y el PK de la tabla es la segunda barrera).
+ * Si falta el ítem en el catálogo, falla sin marcar el claim (se puede reintentar).
  */
 export async function claimZoneObjective(
   locale: string,
@@ -61,25 +70,25 @@ export async function claimZoneObjective(
       return;
     }
 
+    const item = await tx.item.findFirst({
+      where: { name: state.reward.itemName },
+      select: { id: true },
+    });
+    if (!item) {
+      failure = { ok: false, error: "missing_item" };
+      return;
+    }
+
     await tx.zoneObjectiveClaim.create({ data: { userId, locationId, objective } });
     await tx.user.update({
       where: { id: userId },
       data: { coins: { increment: state.reward.coins } },
     });
-
-    // El objeto sale del catálogo sembrado; si faltara, la recompensa igual
-    // paga las monedas en vez de tirar la transacción entera.
-    const item = await tx.item.findFirst({
-      where: { name: state.reward.itemName },
-      select: { id: true },
+    await tx.inventoryItem.upsert({
+      where: { userId_itemId: { userId, itemId: item.id } },
+      create: { userId, itemId: item.id, quantity: state.reward.quantity },
+      update: { quantity: { increment: state.reward.quantity } },
     });
-    if (item) {
-      await tx.inventoryItem.upsert({
-        where: { userId_itemId: { userId, itemId: item.id } },
-        create: { userId, itemId: item.id, quantity: state.reward.quantity },
-        update: { quantity: { increment: state.reward.quantity } },
-      });
-    }
   });
 
   if (failure) return failure;

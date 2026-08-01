@@ -1,53 +1,62 @@
 import { prisma } from "@/lib/prisma";
+import { lockUsers } from "@/lib/db-locks";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import {
   applyGymBadgeUnlock,
   applyStageCompletion,
+  firstFarmableStage,
   getKantoLocation,
   getKantoStage,
-  isStageUnlocked,
+  resolveFarmingAfterStageComplete,
+  type CampaignProgressRow,
 } from "@/lib/campaign";
 
-/** Mark farming stage complete after a wild win; unlock next location/stage. */
+function rowFromDb(row: {
+  currentRegionId: string;
+  highestUnlockedLocationId: string;
+  selectedLocationId: string;
+  farmingLocationId: string;
+  farmingStageId: string;
+  highestCompletedStageId: string | null;
+  completedStageIds: string[];
+  lastMilestoneId: string | null;
+}): CampaignProgressRow {
+  return {
+    currentRegionId: row.currentRegionId,
+    highestUnlockedLocationId: row.highestUnlockedLocationId,
+    selectedLocationId: row.selectedLocationId,
+    farmingLocationId: row.farmingLocationId,
+    farmingStageId: row.farmingStageId,
+    highestCompletedStageId: row.highestCompletedStageId,
+    completedStageIds: row.completedStageIds,
+    lastMilestoneId: row.lastMilestoneId,
+  };
+}
+
+/** Mark farming stage complete after a wild win/catch; unlock next location/stage. */
 export async function completeFarmingStageOnWildWin(userId: string): Promise<void> {
-  const progress = await ensureCampaignProgress(userId);
-  const stage = getKantoStage(progress.farmingStageId);
-  if (!stage || stage.isGymMilestone) return;
+  await ensureCampaignProgress(userId);
 
-  const patch = applyStageCompletion(progress, stage.id);
-  if (!Object.keys(patch).length) return;
-
-  const merged = { ...progress, ...patch };
-  const location = getKantoLocation(merged.farmingLocationId);
-  let farmingStageId = merged.farmingStageId;
-  let farmingLocationId = merged.farmingLocationId;
-  let selectedLocationId = merged.selectedLocationId;
-
-  if (location) {
-    const nextInLoc = location.stages.find(
-      (s) => s.order > stage.order && isStageUnlocked(s, merged),
+  await prisma.$transaction(async (tx) => {
+    await lockUsers(tx, userId);
+    const progress = rowFromDb(
+      await tx.campaignProgress.findUniqueOrThrow({ where: { userId } }),
     );
-    if (nextInLoc) {
-      farmingStageId = nextInLoc.id;
-    } else if (patch.highestUnlockedLocationId) {
-      const unlocked = getKantoLocation(patch.highestUnlockedLocationId);
-      const first = unlocked?.stages[0];
-      if (unlocked && first && unlocked.id !== location.id) {
-        farmingLocationId = unlocked.id;
-        selectedLocationId = unlocked.id;
-        farmingStageId = first.id;
-      }
-    }
-  }
+    const stage = getKantoStage(progress.farmingStageId);
+    if (!stage || stage.isGymMilestone) return;
 
-  await prisma.campaignProgress.update({
-    where: { userId },
-    data: {
-      ...patch,
-      farmingStageId,
-      farmingLocationId,
-      selectedLocationId,
-    },
+    const patch = applyStageCompletion(progress, stage.id);
+    if (!Object.keys(patch).length) return;
+
+    const farming = resolveFarmingAfterStageComplete(progress, stage.id, patch);
+
+    await tx.campaignProgress.update({
+      where: { userId },
+      data: {
+        ...patch,
+        ...farming,
+      },
+    });
   });
 }
 
@@ -56,32 +65,41 @@ export async function syncCampaignAfterGymBadge(
   userId: string,
   gymOrder: number,
 ): Promise<void> {
-  const progress = await ensureCampaignProgress(userId);
-  const patch = applyGymBadgeUnlock(progress, gymOrder);
-  if (!Object.keys(patch).length) return;
+  await ensureCampaignProgress(userId);
 
-  const merged = { ...progress, ...patch };
-  let farmingStageId = merged.farmingStageId;
-  let farmingLocationId = merged.farmingLocationId;
-  let selectedLocationId = merged.selectedLocationId;
+  await prisma.$transaction(async (tx) => {
+    await lockUsers(tx, userId);
+    const progress = rowFromDb(
+      await tx.campaignProgress.findUniqueOrThrow({ where: { userId } }),
+    );
+    const patch = applyGymBadgeUnlock(progress, gymOrder);
+    if (!Object.keys(patch).length) return;
 
-  if (patch.highestUnlockedLocationId) {
-    const unlocked = getKantoLocation(patch.highestUnlockedLocationId);
-    const first = unlocked?.stages.find((s) => !s.isGymMilestone) ?? unlocked?.stages[0];
-    if (unlocked && first) {
-      farmingLocationId = unlocked.id;
-      selectedLocationId = unlocked.id;
-      farmingStageId = first.id;
+    const merged = { ...progress, ...patch };
+    let farmingStageId = merged.farmingStageId;
+    let farmingLocationId = merged.farmingLocationId;
+    let selectedLocationId = merged.selectedLocationId;
+
+    if (patch.highestUnlockedLocationId) {
+      const unlocked = getKantoLocation(patch.highestUnlockedLocationId);
+      const first = unlocked ? firstFarmableStage(unlocked.id) : null;
+      if (unlocked && first) {
+        farmingLocationId = unlocked.id;
+        selectedLocationId = unlocked.id;
+        farmingStageId = first.id;
+      } else if (unlocked) {
+        selectedLocationId = unlocked.id;
+      }
     }
-  }
 
-  await prisma.campaignProgress.update({
-    where: { userId },
-    data: {
-      ...patch,
-      farmingStageId,
-      farmingLocationId,
-      selectedLocationId,
-    },
+    await tx.campaignProgress.update({
+      where: { userId },
+      data: {
+        ...patch,
+        farmingStageId,
+        farmingLocationId,
+        selectedLocationId,
+      },
+    });
   });
 }

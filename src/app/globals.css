@@ -2453,6 +2453,21 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* PvP — Elo grande con degradé naranja brillante. */
+.pvp-rating-num {
+  background-image: linear-gradient(
+    180deg,
+    #fff3a8 0%,
+    #ffcb05 22%,
+    #ff9a00 58%,
+    #ff5c00 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(255, 140, 20, 0.55));
+}
+
 /* Campaign adventure — barra de progreso cálida (rojo → naranja → oro). */
 .campaign-warm-bar {
   background: linear-gradient(90deg, #ee1515 0%, #ff8a00 52%, #ffcb05 100%);
@@ -3496,15 +3511,11 @@ html.boot-splash-pending .boot-splash {
 
 /* Sheet de navegación mobile: keyframes (más fiables que transition al montar). */
 @keyframes mobile-nav-sheet-in {
-  0% {
+  from {
     transform: translate3d(0, 100%, 0);
     opacity: 0;
   }
-  72% {
-    transform: translate3d(0, -2.5%, 0);
-    opacity: 1;
-  }
-  100% {
+  to {
     transform: translate3d(0, 0, 0);
     opacity: 1;
   }
@@ -3544,11 +3555,12 @@ html.boot-splash-pending .boot-splash {
 }
 
 .mobile-nav-sheet.is-open {
-  animation: mobile-nav-sheet-in 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: mobile-nav-sheet-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .mobile-nav-sheet.is-closing {
-  animation: mobile-nav-sheet-out 0.32s cubic-bezier(0.4, 0, 1, 1) both;
+  animation: mobile-nav-sheet-out 0.28s cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
 }
 
 .mobile-nav-sheet.is-dragging {

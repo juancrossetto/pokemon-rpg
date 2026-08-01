@@ -21,7 +21,7 @@ import {
 } from "@/components/zone-icons";
 import { gymBadgeImageUrl } from "@/lib/gym-art";
 import type { Chapter } from "@/lib/campaign/chapters";
-import type { MapLocation } from "@/lib/campaign/map-selection";
+import type { MapEncounter, MapLocation } from "@/lib/campaign/map-selection";
 import type { CampaignLocationKind } from "@/lib/campaign/types";
 import {
   campaignBannerForChapter,
@@ -42,6 +42,10 @@ import {
 } from "@/components/zone-reward-popup";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import { showToast } from "@/lib/app-toast";
+import {
+  campaignClaimErrorKey,
+  campaignTrainerErrorKey,
+} from "@/lib/campaign/client-errors";
 import { HubHelpPanel, CoachMark } from "@/components/journey-guidance";
 import { UnlockCelebration } from "@/components/unlock-celebration";
 import { CampaignUnlockFeedback } from "@/components/campaign-unlock-feedback";
@@ -80,8 +84,8 @@ const PATH_PROGRESS_FILL_GOLD = "campaign-warm-bar";
 const PATH_DONE_GOLD = "#f0a020";
 const PATH_DONE_GOLD_SOFT = "rgba(240, 160, 32, 0.16)";
 const PATH_DONE_GOLD_RING = "rgba(240, 160, 32, 0.75)";
-const PATH_NODE_SM = "h-8 w-8"; /* rail normal */
-const PATH_NODE_GYM = "h-12 w-12 sm:h-14 sm:w-14"; /* gimnasio: sprite del líder */
+const PATH_NODE_SM = "h-6 w-6 sm:h-8 sm:w-8"; /* rail normal — compacto en mobile */
+const PATH_NODE_GYM = "h-9 w-9 sm:h-12 sm:w-12 lg:h-14 lg:w-14"; /* gimnasio */
 
 function zoneBarFill(isGym: boolean, done: boolean, inProgress: boolean): string {
   if (isGym || inProgress) return PATH_PROGRESS_FILL_GOLD;
@@ -300,7 +304,7 @@ export function CampaignJourney({
     startTransition(async () => {
       const result = await claimZoneObjective(locale, locationId, objective);
       if (!result.ok) {
-        showToast(t("rewardClaimed"), "error");
+        showToast(t(campaignClaimErrorKey(result.error)), "error");
         return;
       }
       announceCoinDelta(result.coins);
@@ -315,7 +319,10 @@ export function CampaignJourney({
 
   function challengeTrainer(trainerId: string) {
     startTransition(async () => {
-      await startTrainerBattle(trainerId, locale);
+      const result = await startTrainerBattle(trainerId, locale);
+      if (result && !result.success) {
+        showToast(t(campaignTrainerErrorKey(result.error)), "error");
+      }
     });
   }
 
@@ -403,6 +410,10 @@ export function CampaignJourney({
         </div>
       </CoachMark>
 
+      {/*
+        Mobile: mapa → detalle (objetivos / premios).
+        Desktop lg+: recorrido | panel sticky. xl+: + aside de capítulos.
+      */}
       <div className="mt-4 grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_minmax(280px,340px)] lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
         <aside className="hidden flex-col gap-3 xl:flex">
           <nav className="game-float-card rounded-2xl p-2" aria-label={t("chapter")}>
@@ -445,13 +456,38 @@ export function CampaignJourney({
           <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
         </aside>
 
-        {/* En mobile el panel de zona va arriba (order) para que no quede
-            enterrado bajo el timeline + bottom nav al cargar. */}
-        <div className="min-w-0 order-2 lg:order-none">
+        <div className="min-w-0 order-1 lg:order-none">
+          <nav
+            className="mb-3 flex gap-1.5 overflow-x-auto pb-1 xl:hidden"
+            aria-label={t("chapter")}
+          >
+            {chapters.map((c, i) => {
+              const active = i === chapterIndex;
+              return (
+                <button
+                  key={c.number}
+                  type="button"
+                  onClick={() => openChapter(i)}
+                  disabled={!c.unlocked}
+                  title={`${t("chapter")} ${c.number}`}
+                  className={`min-h-8 shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold leading-tight transition sm:min-h-10 sm:px-3 sm:py-1.5 sm:text-label-sm ${
+                    active
+                      ? "game-float-card text-white ring-1 ring-[#ff8a00]/55"
+                      : c.unlocked
+                        ? "bg-[#1a1c24] text-white/55"
+                        : "bg-[#12141c] text-white/30"
+                  }`}
+                >
+                  {t(c.nameKey)}
+                </button>
+              );
+            })}
+          </nav>
+
           {chapter && (
             <>
               <p className={`mb-2 ${SECTION_LABEL}`}>{t("chapterPath")}</p>
-              <ol className="relative flex flex-col gap-3.5">
+              <ol className="relative flex flex-col gap-2.5 sm:gap-3.5">
                 {chapter.zones.map((z, i) => {
                   const nodeStatus = resolveZoneNodeStatus({
                     zone: z,
@@ -479,38 +515,13 @@ export function CampaignJourney({
               </ol>
             </>
           )}
-
-          <nav className="mt-4 flex gap-2 overflow-x-auto pb-1 xl:hidden" aria-label={t("chapter")}>
-            {chapters.map((c, i) => {
-              const active = i === chapterIndex;
-              return (
-                <button
-                  key={c.number}
-                  type="button"
-                  onClick={() => openChapter(i)}
-                  disabled={!c.unlocked}
-                  className={`min-h-11 shrink-0 rounded-lg px-3 py-2 text-label-sm transition ${
-                    active
-                      ? "game-float-card text-white ring-1 ring-[#ff8a00]/55"
-                      : c.unlocked
-                        ? "bg-[#1a1c24] text-white/55"
-                        : "bg-[#12141c] text-white/30"
-                  }`}
-                >
-                  {c.number}
-                </button>
-              );
-            })}
-          </nav>
         </div>
 
         {/*
-          `min-w-0` igual que la columna del timeline. Los items de un grid
-          arrancan con `min-width: auto`, así que sin esto la columna no puede
-          encoger por debajo del contenido más ancho que tenga adentro y empuja
-          el track. La columna de al lado ya lo llevaba; ésta quedó sin él.
+          `min-w-0`: sin esto el track del grid no puede encoger por debajo del
+          contenido más ancho y empuja la columna hermana.
         */}
-        <div className="min-w-0 order-1 lg:order-none lg:sticky lg:top-20 lg:self-start">
+        <div className="min-w-0 order-2 lg:order-none lg:sticky lg:top-20 lg:self-start">
           {zone && (
             <ZonePanel
               zone={zone}
@@ -679,8 +690,8 @@ function ZoneRow({
   const nodeClass = isGym ? PATH_NODE_GYM : PATH_NODE_SM;
   /** Debajo del círculo (mt-2 + tamaño del nodo). */
   const railLineTop = isGym
-    ? "top-[calc(0.5rem+3rem)] sm:top-[calc(0.5rem+3.5rem)]"
-    : "top-[calc(0.5rem+2rem)]";
+    ? "top-[calc(0.5rem+2.25rem)] sm:top-[calc(0.5rem+3rem)] lg:top-[calc(0.5rem+3.5rem)]"
+    : "top-[calc(0.5rem+1.5rem)] sm:top-[calc(0.5rem+2rem)]";
   const lineFilled =
     done || pathPct >= 100 || isFarming || nodeStatus === "current" || nodeStatus === "in_progress";
   const lineFillPct = done || pathPct >= 100 ? 100 : Math.min(100, Math.max(0, pathPct));
@@ -714,11 +725,11 @@ function ZoneRow({
               : null;
 
   return (
-    <li className="relative flex items-stretch gap-3">
+    <li className="relative flex items-stretch gap-2 sm:gap-3">
       {/* Ancho fijo (= gimnasio) para centrar nodos chicos y la línea. */}
-      <div className="relative w-12 shrink-0 self-stretch sm:w-14">
+      <div className="relative w-9 shrink-0 self-stretch sm:w-12 lg:w-14">
         <span
-          className={`relative z-10 mx-auto mt-2 flex ${nodeClass} items-center justify-center rounded-full border ${
+          className={`relative z-10 mx-auto mt-1.5 flex ${nodeClass} items-center justify-center rounded-full border sm:mt-2 ${
             !zone.unlocked
               ? "border-white/15 bg-[#12141c] text-white/35"
               : isFarming || nodeStatus === "current"
@@ -744,13 +755,13 @@ function ZoneRow({
         >
           {!zone.unlocked ? (
             <span
-              className={`material-symbols-outlined ${isGym ? "text-[20px]! sm:text-[22px]!" : "text-[15px]!"}`}
+              className={`material-symbols-outlined ${isGym ? "text-[16px]! sm:text-[20px]! lg:text-[22px]!" : "text-[12px]! sm:text-[15px]!"}`}
             >
               lock
             </span>
           ) : done ? (
             <span
-              className={`material-symbols-outlined font-bold ${isGym ? "text-[22px]! sm:text-[24px]!" : "text-[16px]!"}`}
+              className={`material-symbols-outlined font-bold ${isGym ? "text-[16px]! sm:text-[22px]! lg:text-[24px]!" : "text-[12px]! sm:text-[16px]!"}`}
               style={{
                 color: PATH_DONE_GOLD,
                 filter: "drop-shadow(0 0 4px rgba(240,160,32,0.85))",
@@ -767,12 +778,15 @@ function ZoneRow({
               unoptimized
               className={
                 gymRequirement.leaderSpriteUrl.includes("/avatars/")
-                  ? "h-10 w-10 object-contain object-bottom sm:h-11 sm:w-11 drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
-                  : "h-10 w-10 object-contain object-bottom sm:h-11 sm:w-11 [image-rendering:pixelated]"
+                  ? "h-7 w-7 object-contain object-bottom drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-10 sm:w-10 lg:h-11 lg:w-11"
+                  : "h-7 w-7 object-contain object-bottom [image-rendering:pixelated] sm:h-10 sm:w-10 lg:h-11 lg:w-11"
               }
             />
           ) : (
-            <ZoneIcon kind={style.icon} className={isGym ? "h-7 w-7 sm:h-8 sm:w-8" : "h-4 w-4"} />
+            <ZoneIcon
+              kind={style.icon}
+              className={isGym ? "h-5 w-5 sm:h-7 sm:w-7 lg:h-8 lg:w-8" : "h-3 w-3 sm:h-4 sm:w-4"}
+            />
           )}
         </span>
         {!isLast ? (
@@ -801,24 +815,24 @@ function ZoneRow({
         type="button"
         onClick={onPick}
         aria-expanded={selected}
-        className={`game-float-card game-float-card--interactive relative min-w-0 flex-1 overflow-hidden rounded-2xl text-left transition ${
-          hasStageArt && zone.unlocked ? "p-0" : compact ? "px-3 py-1.5" : "p-3"
+        className={`game-float-card game-float-card--interactive relative min-w-0 flex-1 overflow-hidden rounded-xl text-left transition sm:rounded-2xl ${
+          hasStageArt && zone.unlocked ? "p-0" : compact ? "px-2.5 py-1 sm:px-3 sm:py-1.5" : "p-2.5 sm:p-3"
         } ${
           !zone.unlocked
             ? "opacity-45"
-            : isFarming || nodeStatus === "current"
-              ? "ring-1 ring-[#ff8a00]/55 shadow-[0_0_20px_rgba(255,138,0,0.18)]"
-              : isGym && !done
-                ? "ring-1 ring-[#ffcb05]/40"
-                : selected
-                  ? "ring-1 ring-[#ff8a00]/30"
+            : selected
+              ? "ring-2 ring-[#ffcb05]/80 shadow-[0_0_28px_rgba(255,203,5,0.42),0_0_0_1px_rgba(255,203,5,0.25)]"
+              : isFarming || nodeStatus === "current"
+                ? "ring-1 ring-[#ff8a00]/55 shadow-[0_0_20px_rgba(255,138,0,0.18)]"
+                : isGym && !done
+                  ? "ring-1 ring-[#ffcb05]/40"
                   : ""
         }`}
       >
         {artBleed && zone.unlocked ? (
           <div
             className={`relative isolate ${
-              compact ? "min-h-[5.5rem]" : "min-h-[7.5rem] sm:min-h-[8.5rem]"
+              compact ? "min-h-[4.25rem] sm:min-h-[5.5rem]" : "min-h-[6.25rem] sm:min-h-[8.5rem]"
             }`}
           >
             <div className="pointer-events-none absolute inset-0">
@@ -835,10 +849,16 @@ function ZoneRow({
               {/* Solo legibilidad a la izquierda — el panorama se ve entero. */}
               <div className="absolute inset-0 bg-linear-to-r from-[#0a0b10]/75 via-[#0a0b10]/25 to-transparent sm:via-[#0a0b10]/12 sm:w-[55%]" />
               <div className="absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-[#0a0b10]/35 to-transparent" />
+              {selected ? (
+                <div
+                  aria-hidden
+                  className="absolute inset-0 bg-[radial-gradient(80%_70%_at_20%_50%,rgba(255,203,5,0.22)_0%,transparent_65%)]"
+                />
+              ) : null}
             </div>
             <div
               className={`relative z-[1] flex flex-col justify-center ${
-                compact ? "px-3 py-2.5" : "px-3.5 py-3 sm:px-4 sm:py-3.5"
+                compact ? "px-2.5 py-2 sm:px-3 sm:py-2.5" : "px-3 py-2.5 sm:px-4 sm:py-3.5"
               }`}
             >
               <ZoneRowBody
@@ -860,14 +880,13 @@ function ZoneRow({
             </div>
           </div>
         ) : (
-        <div
-          className={`flex ${
+        <div className={`flex ${
             hasStageArt && zone.unlocked
               ? compact
-                ? "min-h-[5.25rem] items-stretch"
-                : "min-h-[7rem] items-stretch sm:min-h-[7.75rem]"
+                ? "min-h-[4.25rem] items-stretch sm:min-h-[5.25rem]"
+                : "min-h-[5.75rem] items-stretch sm:min-h-[7.75rem]"
               : compact
-                ? "items-center gap-2.5"
+                ? "items-center gap-2"
                 : "items-start gap-2.5"
           }`}
         >
@@ -876,9 +895,9 @@ function ZoneRow({
               className={`relative shrink-0 overflow-hidden ${
                 hasStageArt
                   ? compact
-                    ? "w-[5.25rem] self-stretch"
-                    : "w-[6.5rem] self-stretch sm:w-[7.5rem]"
-                  : "mt-0.5 h-12 w-12 rounded-xl ring-1 ring-white/10"
+                    ? "w-[4.25rem] self-stretch sm:w-[5.25rem]"
+                    : "w-[5.25rem] self-stretch sm:w-[7.5rem]"
+                  : "mt-0.5 h-10 w-10 rounded-xl ring-1 ring-white/10 sm:h-12 sm:w-12"
               }`}
             >
               <Image
@@ -909,8 +928,8 @@ function ZoneRow({
             className={`min-w-0 flex-1 ${
               hasStageArt && zone.unlocked
                 ? compact
-                  ? "flex flex-col justify-center py-2 pr-3 pl-2"
-                  : "flex flex-col justify-center py-2.5 pr-3 pl-2 sm:py-3 sm:pr-3.5"
+                  ? "flex flex-col justify-center py-1.5 pr-2.5 pl-1.5 sm:py-2 sm:pr-3 sm:pl-2"
+                  : "flex flex-col justify-center py-2 pr-2.5 pl-1.5 sm:py-3 sm:pr-3.5 sm:pl-2"
                 : ""
             }`}
           >
@@ -971,21 +990,21 @@ function ZoneRowBody({
 }) {
   return (
     <>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <h3
             className={`${
               isGym && !compact
-                ? "text-headline-md"
+                ? "text-[14px] font-bold leading-tight sm:text-headline-md"
                 : compact
-                  ? "text-body-sm font-semibold"
-                  : "text-body-md font-semibold"
+                  ? "text-[12px] font-semibold leading-tight sm:text-body-sm"
+                  : "text-[13px] font-semibold leading-tight sm:text-body-md"
             } ${compact ? "text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.65)]" : "text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)]"}`}
           >
             {t(zone.nameKey)}
           </h3>
           {statusLabel && (
             <span
-              className={`inline-flex items-center gap-0.5 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+              className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider sm:px-2 sm:text-[9px] ${
                 gymWon || (done && !isGym)
                   ? ""
                   : nodeStatus === "current" || nodeStatus === "in_progress"
@@ -999,7 +1018,7 @@ function ZoneRowBody({
               }
             >
               {(gymWon || (done && !isGym)) && (
-                <span className="material-symbols-outlined text-[11px]! leading-none">check</span>
+                <span className="material-symbols-outlined text-[10px]! leading-none sm:text-[11px]!">check</span>
               )}
               {statusLabel}
             </span>
@@ -1127,7 +1146,7 @@ function ZonePanel({
     >
       <div className="flex items-start gap-2.5">
         <span
-          className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 ${style.ring} ${style.text}`}
+          className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 sm:h-14 sm:w-14 ${style.ring} ${style.text}`}
           style={
             isGym && gymRequirement?.leaderSpriteUrl
               ? { boxShadow: `0 0 16px ${style.glow}` }
@@ -1143,12 +1162,12 @@ function ZonePanel({
               unoptimized
               className={
                 gymRequirement.leaderSpriteUrl.includes("/avatars/")
-                  ? "h-11 w-11 object-contain object-bottom drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
-                  : "h-11 w-11 object-contain object-bottom [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                  ? "h-10 w-10 object-contain object-bottom drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] sm:h-11 sm:w-11"
+                  : "h-10 w-10 object-contain object-bottom [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] sm:h-11 sm:w-11"
               }
             />
           ) : (
-            <ZoneIcon kind={style.icon} className="h-10 w-10" />
+            <ZoneIcon kind={style.icon} className="h-9 w-9 sm:h-10 sm:w-10" />
           )}
         </span>
         <div className="min-w-0 flex-1">
@@ -1161,7 +1180,7 @@ function ZonePanel({
               </span>
             )}
           </div>
-          <p className="text-label-sm text-white/45">
+          <p className="hidden text-label-sm text-white/45 lg:block">
             {t(zone.kindKey)}
             <span className="mx-1.5 text-white/25">•</span>
             {t("wildLevels", { min: zone.levelMin, max: zone.levelMax })}
@@ -1172,7 +1191,7 @@ function ZonePanel({
       </div>
 
       {zone.unlocked && zone.trainers.length > 0 && (
-        <p className="game-float-tile mt-3 rounded-xl px-3 py-2 text-label-sm text-white/80">
+        <p className="game-float-tile mt-3 hidden rounded-xl px-3 py-2 text-label-sm text-white/80 lg:block">
           <span className="font-bold text-[#ffcb05]">
             {trainersDone}/{zone.trainers.length}
           </span>{" "}
@@ -1181,7 +1200,7 @@ function ZonePanel({
       )}
 
       {zone.unlocked && (
-        <details className="mt-3 border-t border-white/[0.08] pt-3 open:pb-1">
+        <details className="mt-3 hidden border-t border-white/[0.08] pt-3 open:pb-1 lg:block">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="inline-flex items-center gap-1.5 text-label-sm text-[#ff9a4a]">
               <MasteryIcon className="h-4 w-4" />
@@ -1228,10 +1247,9 @@ function ZonePanel({
         </div>
       ) : (
         <>
-          {/* Objetivos: principal vs opcionales */}
           <p className={`mt-4 mb-2 ${SECTION_LABEL}`}>{t("objectives")}</p>
-          <ul className="flex flex-col gap-1.5">
-            {objectives.map((obj) => {
+          <ul className="flex flex-col divide-y divide-white/[0.06]">
+            {objectives.map((obj, index) => {
               const trainerSprite =
                 obj.id === "trainers"
                   ? (zone.trainers.find((tr) => !tr.defeated)?.spriteUrl ??
@@ -1242,6 +1260,7 @@ function ZonePanel({
                 <Objective
                   key={obj.id}
                   state={obj}
+                  step={index + 1}
                   isMain={obj.id === "stages"}
                   roleLabel={obj.id === "stages" ? t("objRoleMain") : t("objRoleOptional")}
                   label={t(`obj_${obj.id}`)}
@@ -1249,6 +1268,7 @@ function ZonePanel({
                   claimedLabel={t("claimed")}
                   pending={pending}
                   trainerSpriteUrl={trainerSprite}
+                  encounters={obj.id === "pokedex" ? zone.encounters : undefined}
                   onClaim={() => onClaim(obj.id)}
                 />
               );
@@ -1309,10 +1329,9 @@ function ZonePanel({
             )}
           </ul>
 
-          {/* Pokédex de la zona */}
           {zone.encounters.length > 0 && (
-            <>
-              <p className={`mt-4 mb-1.5 flex items-center justify-between ${SECTION_LABEL}`}>
+            <div className="mt-4 hidden lg:block">
+              <p className={`mb-1.5 flex items-center justify-between ${SECTION_LABEL}`}>
                 {t("zoneWilds")}
                 <span className="font-mono normal-case tracking-normal text-white/70">
                   {caught}/{zone.encounters.length}
@@ -1372,14 +1391,13 @@ function ZonePanel({
                   </li>
                 ))}
               </ul>
-            </>
+            </div>
           )}
 
-          {/* Entrenadores de la zona */}
           {zone.trainers.length > 0 && (
             <>
               <p className={`mt-4 mb-1.5 flex items-center justify-between ${SECTION_LABEL}`}>
-                {t("trainersTitle")}
+                <span>{t("trainersTitle")}</span>
                 <span className="font-mono normal-case tracking-normal text-white/70">
                   {zone.trainers.filter((tr) => tr.defeated).length}/{zone.trainers.length}
                 </span>
@@ -1435,10 +1453,9 @@ function ZonePanel({
             </>
           )}
 
-          {/* Acciones de zona (no duplican el CTA principal de campaña) */}
           <div className="mt-4 flex flex-col gap-2">
             {isGym ? (
-              <div className="game-float-tile rounded-xl px-3 py-2.5 ring-1 ring-tertiary/25">
+              <div className="game-float-tile hidden rounded-xl px-3 py-2.5 ring-1 ring-tertiary/25 lg:block">
                 <p className="text-label-sm text-white/80">
                   {gymReady ? t("gymChallengeHint") : t("gymLockedHint")}
                 </p>
@@ -1482,50 +1499,63 @@ function ZonePanel({
               </div>
             ) : (
               <>
-                <GameCtaButton
-                  icon="my_location"
-                  variant="red"
-                  disabled={pending || isFarming}
-                  onClick={onTravel}
-                >
-                  {isFarming ? t("youAreHere") : t("moveHere")}
-                </GameCtaButton>
+                {!isFarming ? (
+                  <GameCtaButton
+                    icon="explore"
+                    variant="red"
+                    disabled={pending}
+                    onClick={onTravel}
+                  >
+                    {t("startExploring")}
+                  </GameCtaButton>
+                ) : (
+                  <GameCtaButton href="/battle" icon="explore" variant="red">
+                    {t("continueExpedition")}
+                  </GameCtaButton>
+                )}
 
-                <p className={`mt-1 ${SECTION_LABEL}`}>{t("pickStage")}</p>
-                <ul className="flex flex-col gap-1">
-                  {zone.stages.map((stage) => {
-                    const current = stage.id === farmingStageId;
-                    return (
-                      <li key={stage.id}>
-                        <button
-                          type="button"
-                          disabled={pending || !stage.unlocked || stage.isGym}
-                          onClick={() => onFarmStage(stage.id)}
-                          className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-label-sm transition ${
-                            current
-                              ? "bg-[#1a1c24] text-white ring-1 ring-[#ff8a00]/50 shadow-[0_0_14px_rgba(255,138,0,0.18)]"
-                              : stage.unlocked && !stage.isGym
-                                ? "game-float-tile text-white/80 hover:brightness-110"
-                                : "bg-[#12141c] text-white/30"
-                          }`}
-                        >
-                          <span className={`material-symbols-outlined text-[15px]! ${current ? "text-[#ff8a00]" : stage.done ? "text-[#ffcb05]" : ""}`}>
-                            {stage.isGym
-                              ? "military_tech"
-                              : !stage.unlocked
-                                ? "lock"
-                                : stage.done
-                                  ? "task_alt"
-                                  : current
-                                    ? "my_location"
-                                    : "radio_button_unchecked"}
-                          </span>
-                          <span className="min-w-0 flex-1 truncate">{t(stage.nameKey)}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+                {/* Stages solo desktop: en mobile el objetivo principal ya marca el progreso. */}
+                <div className="hidden lg:block">
+                  <p className={`mt-1 ${SECTION_LABEL}`}>{t("pickStage")}</p>
+                  <ul className="flex flex-col gap-1">
+                    {zone.stages.map((stage) => {
+                      const current = stage.id === farmingStageId;
+                      return (
+                        <li key={stage.id}>
+                          <button
+                            type="button"
+                            disabled={pending || !stage.unlocked || stage.isGym}
+                            onClick={() => onFarmStage(stage.id)}
+                            className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-label-sm transition ${
+                              current
+                                ? "bg-[#1a1c24] text-white ring-1 ring-[#ffcb05]/65 shadow-[0_0_16px_rgba(255,203,5,0.28)]"
+                                : stage.unlocked && !stage.isGym
+                                  ? "game-float-tile text-white/80 hover:brightness-110"
+                                  : "bg-[#12141c] text-white/30"
+                            }`}
+                          >
+                            <span
+                              className={`material-symbols-outlined text-[15px]! ${
+                                current || stage.done ? "text-[#ffcb05]" : ""
+                              }`}
+                            >
+                              {stage.isGym
+                                ? "military_tech"
+                                : !stage.unlocked
+                                  ? "lock"
+                                  : stage.done
+                                    ? "task_alt"
+                                    : current
+                                      ? "my_location"
+                                      : "radio_button_unchecked"}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate">{t(stage.nameKey)}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               </>
             )}
           </div>
@@ -1537,6 +1567,7 @@ function ZonePanel({
 
 function Objective({
   state,
+  step,
   isMain,
   roleLabel,
   label,
@@ -1544,9 +1575,11 @@ function Objective({
   claimedLabel,
   pending,
   trainerSpriteUrl,
+  encounters,
   onClaim,
 }: {
   state: ZoneObjectiveState;
+  step: number;
   isMain: boolean;
   roleLabel: string;
   label: string;
@@ -1554,6 +1587,7 @@ function Objective({
   claimedLabel: string;
   pending: boolean;
   trainerSpriteUrl?: string | null;
+  encounters?: MapEncounter[];
   onClaim: () => void;
 }) {
   const pct = state.target > 0 ? Math.min(100, (state.current / state.target) * 100) : 0;
@@ -1563,107 +1597,198 @@ function Objective({
       : OBJECTIVE_ICON_SRC[state.id];
 
   const shell = state.claimable
-    ? "game-float-tile ring-1 ring-[#ffcb05]/45"
-    : state.done
-      ? "game-float-tile ring-1 ring-emerald-400/30"
-      : isMain
-        ? "game-float-tile ring-1 ring-[#ff8a00]/35"
-        : "game-float-tile";
+    ? "rounded-lg bg-[#ffcb05]/[0.07]"
+    : "";
 
   return (
-    <li className={`rounded-xl px-2 py-2 transition ${shell}`}>
-      <div className="flex items-center gap-2">
-        <span className="relative grid h-9 w-9 shrink-0 place-items-center" aria-hidden>
-          <Image
-            src={iconSrc}
-            alt=""
-            width={36}
-            height={36}
-            className={`h-8 w-8 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] ${
-              state.id === "trainers" ? "[image-rendering:pixelated]" : ""
-            } ${state.done && state.id === "trainers" ? "opacity-70 grayscale" : ""}`}
-            unoptimized={state.id === "trainers"}
-          />
+    <li className={`px-0.5 py-2.5 transition ${shell}`}>
+      <div className="flex items-start gap-2">
+        <span
+          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold tabular-nums ${
+            state.done
+              ? "bg-[#ffcb05]/20 text-[#ffcb05]"
+              : isMain
+                ? "bg-[#ff8a00]/20 text-[#ff9a4a]"
+                : "bg-white/8 text-white/55"
+          }`}
+          aria-hidden
+        >
           {state.done ? (
-            <span className="absolute -right-0.5 -top-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-[#ffcb05] text-[#1a1208]">
-              <span className="material-symbols-outlined text-[10px]! leading-none">check</span>
-            </span>
-          ) : null}
+            <span className="material-symbols-outlined text-[14px]! leading-none">check</span>
+          ) : (
+            step
+          )}
         </span>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
+            <span className="relative hidden h-7 w-7 shrink-0 place-items-center sm:grid" aria-hidden>
+              <Image
+                src={iconSrc}
+                alt=""
+                width={28}
+                height={28}
+                className={`h-6 w-6 object-contain ${
+                  state.id === "trainers" ? "[image-rendering:pixelated]" : ""
+                } ${state.done && state.id === "trainers" ? "opacity-70 grayscale" : ""}`}
+                unoptimized={state.id === "trainers"}
+              />
+            </span>
             <span
-              className={`rounded px-1.5 py-px text-[8px] font-bold uppercase tracking-wider ${
+              className={`hidden rounded px-1.5 py-px text-[8px] font-bold uppercase tracking-wider sm:inline ${
                 isMain
                   ? "bg-[#ff8a00]/18 text-[#ff9a4a]"
-                  : "bg-[#12141c] text-white/45"
+                  : "bg-white/5 text-white/45"
               }`}
             >
               {roleLabel}
             </span>
-            <p className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight text-white">
+            <p className="min-w-0 flex-1 truncate text-[12px] font-semibold leading-tight text-white sm:text-[13px]">
               {label}
             </p>
-            <span className="shrink-0 font-mono text-[12px] tabular-nums text-white">
+            <span className="shrink-0 font-mono text-[11px] tabular-nums text-white/90 sm:text-[12px]">
               {state.current}
               <span className="text-white/40">/{state.target}</span>
             </span>
           </div>
 
           {!state.done ? (
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#12141c]">
+            <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10 sm:h-1.5">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  state.claimable ? "campaign-warm-bar" : isMain ? "campaign-warm-bar" : "bg-white/35"
+                  state.claimable || isMain ? "campaign-warm-bar" : "bg-white/35"
                 }`}
                 style={{ width: `${pct}%` }}
               />
             </div>
           ) : null}
-        </div>
-      </div>
 
-      <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-white/[0.08] pt-1.5">
-        <div
-          title={`${state.reward.quantity}× ${state.reward.itemName}`}
-          className={`flex items-center gap-1.5 ${state.claimed ? "opacity-45" : ""}`}
-        >
-          <span className="inline-flex h-8 min-w-[4.25rem] items-center justify-center gap-1 rounded-md bg-[#12141c] px-1.5">
-            <Image
-              src={itemSpriteUrl(state.reward.itemName)}
-              alt=""
-              width={22}
-              height={22}
-              className="h-[22px] w-[22px] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
+          {encounters && encounters.length > 0 ? (
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {encounters.map((mon) => (
+                <li
+                  key={mon.speciesId}
+                  title={mon.name}
+                  className="relative flex h-9 w-9 items-center justify-center"
+                >
+                  <Image
+                    src={mon.spriteUrl}
+                    alt={mon.name}
+                    width={36}
+                    height={36}
+                    className={`h-8 w-8 object-contain ${
+                      mon.caught
+                        ? ""
+                        : mon.seen
+                          ? "opacity-55 grayscale"
+                          : "brightness-0 opacity-40"
+                    }`}
+                  />
+                  {mon.caught ? (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-emerald-400 text-surface">
+                      <span className="material-symbols-outlined text-[9px]! leading-none">
+                        check
+                      </span>
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <ObjectiveRewardBits state={state} compact />
+            <ObjectiveClaimControl
+              state={state}
+              claimLabel={claimLabel}
+              claimedLabel={claimedLabel}
+              pending={pending}
+              onClaim={onClaim}
             />
-            <span className="font-mono text-[11px] font-semibold tabular-nums text-white">
-              ×{state.reward.quantity}
-            </span>
-          </span>
-          <span className="inline-flex h-8 min-w-[4.25rem] items-center justify-center gap-1 rounded-md bg-electric-yellow/10 px-1.5 font-mono text-[11px] font-semibold tabular-nums text-[#ffcb05]">
-            <span className="material-symbols-outlined text-[16px]!">paid</span>
-            {state.reward.coins}
-          </span>
+          </div>
         </div>
-
-        {state.claimable ? (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={onClaim}
-            className="shrink-0 rounded-md bg-[#ffcb05] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#1a1208] shadow-[0_4px_14px_rgba(255,203,5,0.28)] transition hover:brightness-110 disabled:opacity-40"
-          >
-            {claimLabel}
-          </button>
-        ) : state.claimed ? (
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-emerald-400/90">
-            {claimedLabel}
-          </span>
-        ) : null}
       </div>
     </li>
   );
+}
+
+function ObjectiveRewardBits({
+  state,
+  compact = false,
+}: {
+  state: ZoneObjectiveState;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      title={`${state.reward.quantity}× ${state.reward.itemName}`}
+      className={`flex items-center gap-2 ${state.claimed ? "opacity-45" : ""} ${compact ? "sm:gap-2.5" : "gap-2.5"}`}
+    >
+      <span className="inline-flex items-center gap-0.5">
+        <Image
+          src={itemSpriteUrl(state.reward.itemName)}
+          alt=""
+          width={22}
+          height={22}
+          className={`object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)] ${
+            compact ? "h-[18px] w-[18px] sm:h-[22px] sm:w-[22px]" : "h-[22px] w-[22px]"
+          }`}
+        />
+        <span
+          className={`font-mono font-semibold tabular-nums text-white ${
+            compact ? "text-[10px] sm:text-[11px]" : "text-[11px]"
+          }`}
+        >
+          ×{state.reward.quantity}
+        </span>
+      </span>
+      <span
+        className={`inline-flex items-center gap-0.5 font-mono font-semibold tabular-nums text-[#ffcb05] ${
+          compact ? "text-[10px] sm:text-[11px]" : "text-[11px]"
+        }`}
+      >
+        <span className={`material-symbols-outlined ${compact ? "text-[14px]! sm:text-[16px]!" : "text-[16px]!"}`}>
+          paid
+        </span>
+        {state.reward.coins}
+      </span>
+    </div>
+  );
+}
+
+function ObjectiveClaimControl({
+  state,
+  claimLabel,
+  claimedLabel,
+  pending,
+  onClaim,
+}: {
+  state: ZoneObjectiveState;
+  claimLabel: string;
+  claimedLabel: string;
+  pending: boolean;
+  onClaim: () => void;
+}) {
+  if (state.claimable) {
+    return (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={onClaim}
+        className="shrink-0 rounded-md bg-[#ffcb05] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#1a1208] shadow-[0_4px_14px_rgba(255,203,5,0.28)] transition hover:brightness-110 disabled:opacity-40 sm:px-2.5"
+      >
+        {claimLabel}
+      </button>
+    );
+  }
+  if (state.claimed) {
+    return (
+      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-emerald-400/90 sm:text-[10px]">
+        {claimedLabel}
+      </span>
+    );
+  }
+  return null;
 }
 
 function JourneySummaryCard({

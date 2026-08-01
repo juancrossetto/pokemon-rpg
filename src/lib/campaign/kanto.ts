@@ -518,11 +518,14 @@ export const KANTO_REGION: CampaignRegion = {
 };
 
 export const DEFAULT_REGION_ID = "kanto" as const;
-/** Pallet + Route 1 open at start so Explore works immediately. */
+/**
+ * Route 1 queda desbloqueada al inicio (Pallet tiene order menor, también
+ * entra). El farming arranca en Pallet: el gate del gym 1 exige `pallet-1`.
+ */
 export const DEFAULT_UNLOCKED_LOCATION_ID = "route-1";
-export const DEFAULT_SELECTED_LOCATION_ID = "route-1";
-export const DEFAULT_FARMING_LOCATION_ID = "route-1";
-export const DEFAULT_FARMING_STAGE_ID = "r1-1";
+export const DEFAULT_SELECTED_LOCATION_ID = "pallet-town";
+export const DEFAULT_FARMING_LOCATION_ID = "pallet-town";
+export const DEFAULT_FARMING_STAGE_ID = "pallet-1";
 
 export function allKantoStages(): CampaignStage[] {
   return KANTO_REGION.locations.flatMap((l) => l.stages).sort((a, b) => a.order - b.order);

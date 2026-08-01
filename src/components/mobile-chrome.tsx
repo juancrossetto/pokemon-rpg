@@ -258,6 +258,8 @@ export function MobileChrome({
   const swipeDraggingRef = useRef(false);
   const groupSwipeStart = useRef<{ x: number; y: number } | null>(null);
   const indicatorSeenRef = useRef(false);
+  /** Evita que el click fantasma post-cierre (iOS) reabra el drawer. */
+  const closeCooldownUntilRef = useRef(0);
   /** Mientras el sheet está en el DOM (incluye animación de salida). */
   const moreOpen = drawerPresent;
   /** UI “abierta”: durante el slide-out los tabs vuelven al destino de la ruta. */
@@ -278,6 +280,7 @@ export function MobileChrome({
     // Ignorar mientras sale: un segundo toque/ghost-click en Más reiniciaría
     // la animación de entrada (rebote) y dejaría el menú abierto.
     if (drawerPresent && drawerPhase === "closing") return;
+    if (Date.now() < closeCooldownUntilRef.current) return;
     sheetDragYRef.current = 0;
     swipeDraggingRef.current = false;
     setSheetDragY(0);
@@ -293,6 +296,7 @@ export function MobileChrome({
     setIsSwipeDragging(false);
     sheetDragYRef.current = 0;
     setSheetDragY(0);
+    closeCooldownUntilRef.current = Date.now() + 450;
     if (
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -311,16 +315,22 @@ export function MobileChrome({
     swipeDraggingRef.current = false;
     setSheetDragY(0);
     setIsSwipeDragging(false);
-    // Devolver foco al opener recién cuando el sheet ya no está: si se hace
-    // en mitad del cierre, iOS puede disparar un click fantasma en Más y
-    // reabrir el drawer (drawerShown ya es false → el toggle llama openMore).
-    requestAnimationFrame(() => {
-      moreButtonRef.current?.focus({ preventScroll: true });
-    });
+    closeCooldownUntilRef.current = Date.now() + 450;
+    // No devolver foco al botón Más en táctil: iOS dispara un click fantasma
+    // que reabre el drawer (parece un “rebote” que no cierra).
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(pointer: fine)").matches
+    ) {
+      requestAnimationFrame(() => {
+        moreButtonRef.current?.focus({ preventScroll: true });
+      });
+    }
   }
 
   function toggleMoreDrawer() {
     if (drawerPhase === "closing") return;
+    if (Date.now() < closeCooldownUntilRef.current) return;
     if (drawerShown && !groupMode) {
       closeMore();
       return;
@@ -359,12 +369,12 @@ export function MobileChrome({
     return () => document.documentElement.classList.remove("is-standalone");
   }, []);
 
-  // Habilita transitions de tabs tras el primer frame estable.
+  // Habilita transitions de tabs tras asentar el layout (más lento en PWA
+  // standalone: si no, el scale del tab activo “salta” al refrescar).
   useEffect(() => {
-    const id = window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => setTabMotionReady(true));
-    });
-    return () => window.cancelAnimationFrame(id);
+    const delay = isStandalone() ? 700 : 120;
+    const t = window.setTimeout(() => setTabMotionReady(true), delay);
+    return () => window.clearTimeout(t);
   }, []);
   const bottomNavRef = useRef<HTMLElement>(null);
   // Invitados también tienen "Más" (idioma + CTA de login).
@@ -399,6 +409,7 @@ export function MobileChrome({
     if (!consumeMobileNavDrawerOpen()) return;
     const raf = requestAnimationFrame(() => openMore(null));
     return () => cancelAnimationFrame(raf);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al montar (persistencia de locale)
   }, []);
 
   // Cerrar al navegar (p. ej. primer toque de un tab mientras el sheet está abierto).
@@ -645,16 +656,11 @@ export function MobileChrome({
 
   function onSheetAnimationEnd(event: AnimationEvent<HTMLDivElement>) {
     if (event.target !== drawerRef.current) return;
-    if (drawerPhase === "closing") {
-      finishClose();
-      return;
-    }
-    // Asiento del sheet: micro-vibración si el dispositivo la soporta.
-    try {
-      navigator.vibrate?.(10);
-    } catch {
-      // sin vibración — ok
-    }
+    // Sólo terminar al completar la salida — un animationend de la entrada
+    // interrumpida no debe desmontar a mitad de gesto.
+    if (drawerPhase !== "closing") return;
+    if (event.animationName && !event.animationName.includes("sheet-out")) return;
+    finishClose();
   }
 
   function shiftMiniGroup(dir: -1 | 1) {
@@ -922,9 +928,7 @@ export function MobileChrome({
                   )}
                   <span
                     className={`max-w-full truncate text-[10px] leading-none ${
-                      showActive
-                        ? `font-bold${tabMotionReady ? " mobile-nav-tab-label" : ""}`
-                        : "font-medium opacity-80"
+                      showActive ? "font-bold" : "font-medium opacity-80"
                     }`}
                   >
                     {item.label}
@@ -982,9 +986,7 @@ export function MobileChrome({
                 )}
                 <span
                   className={`max-w-full truncate text-[10px] leading-none ${
-                    moreActive
-                      ? `font-bold${tabMotionReady ? " mobile-nav-tab-label" : ""}`
-                      : "font-medium opacity-80"
+                    moreActive ? "font-bold" : "font-medium opacity-80"
                   }`}
                 >
                   {moreLabel}

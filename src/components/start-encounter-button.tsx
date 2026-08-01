@@ -12,7 +12,7 @@ export function StartEncounterButton({
 }: {
   locale: string;
   label: string;
-  errors: Record<"no_lead" | "fainted_lead" | "no_energy" | "no_stage", string>;
+  errors: Record<"no_lead" | "fainted_lead" | "no_energy" | "no_stage" | "locked", string>;
   disabled?: boolean;
   /** @deprecated El CTA usa GameCtaButton; se mantiene por compatibilidad de callers. */
   className?: string;

@@ -452,7 +452,7 @@
       "profileConfig": "Configuração de perfil",
       "abort": "Abortar sequência",
       "dataExtraction": "Extração de dados",
-      "avatarMeta": "REQ_1_IMG"
+      "avatarMeta": "REQ_2_IMG"
     }
   },
   "starter": {
@@ -1703,6 +1703,7 @@
   },
   "pvp": {
     "title": "Combate PvP",
+    "eyebrow": "Arena",
     "subtitle": "Enfrente outros treinadores e suba no ladder por rating.",
     "rating": "Rating",
     "tier": "Liga",
@@ -1731,9 +1732,11 @@
     "rankedBlurb": "Jogue turno a turno contra a equipe do rival (IA). Ganha Elo e moedas.",
     "quickBlurb": "Simulação instantânea. Ideal para uma partida rápida.",
     "challengeTitle": "Desafio direto",
-    "challengeBlurb": "Lutar contra um treinador pelo nome (cooldown 10 min).",
-    "challengePlaceholder": "Nome de usuário",
+    "challengeBlurb": "Busque um treinador pelo nome e desafie-o (cooldown 10 min).",
+    "challengePlaceholder": "Buscar treinador…",
     "challengeSubmit": "Desafiar",
+    "challengeNoResults": "Nenhum treinador corresponde a essa busca.",
+    "challengeClear": "Remover rival",
     "rematch": "Revanche",
     "teamTitle": "Equipe PvP",
     "teamBlurb": "Se você não montar um preset, usa a equipe de aventura.",
@@ -1800,7 +1803,8 @@
     "stageProgress": "{done}/{total} trechos",
     "gymMilestone": "Ginásio",
     "errors": {
-      "noStage": "Não há um trecho válido. Escolha um no mapa da Jornada."
+      "noStage": "Não há um trecho válido. Escolha um no mapa da Jornada.",
+      "stageLocked": "Esse trecho ainda está bloqueado. Escolha outro no mapa da Jornada."
     },
     "dev": {
       "title": "Dev · campanha",
@@ -1963,6 +1967,7 @@
     "pickZoneHint": "Toque uma zona desbloqueada para se localizar e definir os selvagens.",
     "pickStage": "Stage de farm",
     "moveHere": "Vir para cá",
+    "startExploring": "Explorar esta zona",
     "youAreHere": "Você está aqui",
     "viewList": "Ver lista",
     "encounterRate": {
@@ -1979,6 +1984,7 @@
     "chapterDone": "Capítulo completo",
     "stagesShort": "stages",
     "objectives": "Objetivos",
+    "zoneRewards": "Prêmios",
     "objStages": "Concluir todos os stages",
     "objPokedex": "Completar a Pokédex da zona",
     "objBadge": "Conquistar a insígnia",
@@ -2049,6 +2055,17 @@
     "claim": "Resgatar",
     "claimed": "Resgatado",
     "rewardClaimed": "Recompensa resgatada",
+    "rewardClaimFailed": "Não foi possível resgatar a recompensa. Tente de novo.",
+    "rewardClaimNotDone": "Você ainda não concluiu este objetivo.",
+    "rewardClaimAlready": "Você já resgatou esta recompensa.",
+    "rewardClaimMissingItem": "Falta o item da recompensa. Tente mais tarde.",
+    "trainerErrorLocked": "Essa área ainda está bloqueada.",
+    "trainerErrorBeaten": "Você já derrotou esse treinador.",
+    "trainerErrorNoLead": "Você precisa de um Pokémon na equipe para batalhar.",
+    "trainerErrorFaintedLead": "Sua equipe está debilitada. Cure antes de batalhar.",
+    "trainerErrorNotFound": "Não encontramos esse treinador.",
+    "trainerErrorInBattle": "Você já tem uma batalha em andamento.",
+    "trainerErrorFailed": "Não foi possível iniciar a batalha. Tente de novo.",
     "rewardCoins": "Moedas",
     "rewardContinue": "Continuar",
     "rarity": {

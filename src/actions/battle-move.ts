@@ -622,50 +622,53 @@ export async function submitBattleMove(
       // Equipo rival vaciado — victoria PvP.
       const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
       const match = battle.pvpMatch;
-      await prisma.$transaction(async (tx) => {
-        await lockUsers(tx, userId, match.opponentId);
-        await tx.pokemonInstance.update({
-          where: { id: instance.id },
-          data: { currentHp: playerHp },
-        });
-        await tx.battleSession.update({
-          where: { id: battle.id },
-          data: { ...battleStateData, status: "WON", wildCurrentHp: 0, log: finalLog },
-        });
-        await tx.battleLog.create({
-          data: {
-            kind: "PVP",
-            userId,
+      await prisma.$transaction(
+        async (tx) => {
+          await lockUsers(tx, userId, match.opponentId);
+          await tx.pokemonInstance.update({
+            where: { id: instance.id },
+            data: { currentHp: playerHp },
+          });
+          await tx.battleSession.update({
+            where: { id: battle.id },
+            data: { ...battleStateData, status: "WON", wildCurrentHp: 0, log: finalLog },
+          });
+          await tx.battleLog.create({
+            data: {
+              kind: "PVP",
+              userId,
+              opponentId: match.opponentId,
+              userWon: true,
+            },
+          });
+          const settled = await settlePvpMatch(tx, {
+            matchId: match.id,
+            challengerId: match.challengerId,
             opponentId: match.opponentId,
-            userWon: true,
-          },
-        });
-        const settled = await settlePvpMatch(tx, {
-          matchId: match.id,
-          challengerId: match.challengerId,
-          opponentId: match.opponentId,
-          challengerWon: true,
-          mode: match.mode,
-          seasonKey: match.seasonKey ?? "unknown",
-          challengerRatingBefore: match.challengerRatingBefore,
-          opponentRatingBefore: match.opponentRatingBefore,
-          challengerTeam: match.challengerTeam,
-          koLog: [
-            ...match.koLog,
-            `a:${playerState.name}>b:${pvpActive?.name ?? battle.wildSpecies.name}`,
-          ],
-          turnLog: finalLog,
-          turns: match.turns + 1,
-          restoreTeam: true,
-        });
-        pvpResult = {
-          matchId: match.id,
-          ratingBefore: match.challengerRatingBefore,
-          ratingAfter: settled.challengerAfter,
-          coinsAwarded: settled.coinsAwarded,
-        };
-        coinsAwarded = settled.coinsAwarded;
-      });
+            challengerWon: true,
+            mode: match.mode,
+            seasonKey: match.seasonKey ?? "unknown",
+            challengerRatingBefore: match.challengerRatingBefore,
+            opponentRatingBefore: match.opponentRatingBefore,
+            challengerTeam: match.challengerTeam,
+            koLog: [
+              ...match.koLog,
+              `a:${playerState.name}>b:${pvpActive?.name ?? battle.wildSpecies.name}`,
+            ],
+            turnLog: finalLog,
+            turns: match.turns + 1,
+            restoreTeam: true,
+          });
+          pvpResult = {
+            matchId: match.id,
+            ratingBefore: match.challengerRatingBefore,
+            ratingAfter: settled.challengerAfter,
+            coinsAwarded: settled.coinsAwarded,
+          };
+          coinsAwarded = settled.coinsAwarded;
+        },
+        { timeout: 20_000 },
+      );
 
       const oppUser = await prisma.user.findUnique({
         where: { id: match.opponentId },
@@ -1105,50 +1108,53 @@ export async function submitBattleMove(
 
     if (battle.pvpMatchId && battle.pvpMatch) {
       const match = battle.pvpMatch;
-      await prisma.$transaction(async (tx) => {
-        await lockUsers(tx, userId, match.opponentId);
-        await tx.pokemonInstance.update({
-          where: { id: instance.id },
-          data: { currentHp: 0 },
-        });
-        await tx.battleSession.update({
-          where: { id: battle.id },
-          data: { status: "LOST", log: finalLog, ...battleStateData },
-        });
-        await tx.battleLog.create({
-          data: {
-            kind: "PVP",
-            userId,
+      await prisma.$transaction(
+        async (tx) => {
+          await lockUsers(tx, userId, match.opponentId);
+          await tx.pokemonInstance.update({
+            where: { id: instance.id },
+            data: { currentHp: 0 },
+          });
+          await tx.battleSession.update({
+            where: { id: battle.id },
+            data: { status: "LOST", log: finalLog, ...battleStateData },
+          });
+          await tx.battleLog.create({
+            data: {
+              kind: "PVP",
+              userId,
+              opponentId: match.opponentId,
+              userWon: false,
+            },
+          });
+          const settled = await settlePvpMatch(tx, {
+            matchId: match.id,
+            challengerId: match.challengerId,
             opponentId: match.opponentId,
-            userWon: false,
-          },
-        });
-        const settled = await settlePvpMatch(tx, {
-          matchId: match.id,
-          challengerId: match.challengerId,
-          opponentId: match.opponentId,
-          challengerWon: false,
-          mode: match.mode,
-          seasonKey: match.seasonKey ?? "unknown",
-          challengerRatingBefore: match.challengerRatingBefore,
-          opponentRatingBefore: match.opponentRatingBefore,
-          challengerTeam: match.challengerTeam,
-          koLog: [
-            ...match.koLog,
-            `b:${pvpActive?.name ?? battle.wildSpecies.name}>a:${playerState.name}`,
-          ],
-          turnLog: finalLog,
-          turns: match.turns + 1,
-          restoreTeam: true,
-        });
-        pvpResult = {
-          matchId: match.id,
-          ratingBefore: match.challengerRatingBefore,
-          ratingAfter: settled.challengerAfter,
-          coinsAwarded: settled.coinsAwarded,
-        };
-        coinsAwarded = settled.coinsAwarded;
-      });
+            challengerWon: false,
+            mode: match.mode,
+            seasonKey: match.seasonKey ?? "unknown",
+            challengerRatingBefore: match.challengerRatingBefore,
+            opponentRatingBefore: match.opponentRatingBefore,
+            challengerTeam: match.challengerTeam,
+            koLog: [
+              ...match.koLog,
+              `b:${pvpActive?.name ?? battle.wildSpecies.name}>a:${playerState.name}`,
+            ],
+            turnLog: finalLog,
+            turns: match.turns + 1,
+            restoreTeam: true,
+          });
+          pvpResult = {
+            matchId: match.id,
+            ratingBefore: match.challengerRatingBefore,
+            ratingAfter: settled.challengerAfter,
+            coinsAwarded: settled.coinsAwarded,
+          };
+          coinsAwarded = settled.coinsAwarded;
+        },
+        { timeout: 20_000 },
+      );
 
       const oppUser = await prisma.user.findUnique({
         where: { id: match.opponentId },

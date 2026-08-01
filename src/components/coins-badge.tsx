@@ -21,19 +21,62 @@ const PREFERRED_MS_PER_COIN = 48;
 /** Tope para que un premio grande no tarde una eternidad. */
 const MAX_COUNT_MS = 5200;
 const MIN_COUNT_MS = 1600;
+/** Saltos mayores (admin / sync raro) se snappean sin animar. */
+const MAX_ANIM_JUMP = 50_000;
+
+const LAST_SHOWN_KEY = "pokerpg:coins-last-shown";
+
+function readLastShown(): number | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(LAST_SHOWN_KEY);
+    if (raw == null) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLastShown(n: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(LAST_SHOWN_KEY, String(n));
+  } catch {
+    /* private mode */
+  }
+}
+
+function initialDisplay(coins: number): number {
+  if (typeof window === "undefined") return coins;
+  const pending = peekPendingCoinDelta();
+  if (pending !== 0) return Math.max(0, coins - pending);
+  const last = readLastShown();
+  if (
+    last !== null &&
+    last !== coins &&
+    Math.abs(coins - last) <= MAX_ANIM_JUMP
+  ) {
+    return last;
+  }
+  return coins;
+}
 
 /**
- * Contador de monedas del header: suma/resta de a 1, lento, para que se vea.
- * Escucha `announceCoinDelta` y también el prop `coins` tras un refresh.
+ * Contador de monedas del header: suma/resta de a 1.
+ *
+ * Escucha `announceCoinDelta` y el prop `coins` tras un refresh. Si el layout
+ * se remonta con el total nuevo *antes* del anuncio (carrera con
+ * `revalidatePath(..., "layout")`), anima desde el último valor mostrado.
  */
 export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgeProps) {
-  const [display, setDisplay] = useState(coins);
+  const [display, setDisplay] = useState(() => initialDisplay(coins));
   const [fx, setFx] = useState<"up" | "down" | null>(null);
   const [floater, setFloater] = useState<number | null>(null);
-  const displayRef = useRef(coins);
+  const displayRef = useRef(display);
   const targetRef = useRef(coins);
   const rafRef = useRef<number | null>(null);
-  const mountedRef = useRef(false);
+  const readyRef = useRef(false);
   const clearFxRef = useRef<number | null>(null);
 
   function stopTicking() {
@@ -43,41 +86,60 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
     }
   }
 
+  function commitDisplay(n: number) {
+    displayRef.current = n;
+    writeLastShown(n);
+    setDisplay(n);
+  }
+
   function tweenTo(target: number, announcedDelta?: number) {
     targetRef.current = target;
     const from = displayRef.current;
-    if (from === target) return;
+    if (from === target) {
+      clearPendingCoinDelta();
+      writeLastShown(target);
+      return;
+    }
+
+    clearPendingCoinDelta();
 
     const delta = target - from;
-    const step = delta > 0 ? 1 : -1;
-    setFx(step > 0 ? "up" : "down");
+    const abs = Math.abs(delta);
+    setFx(delta > 0 ? "up" : "down");
     setFloater(announcedDelta ?? delta);
 
     if (clearFxRef.current) window.clearTimeout(clearFxRef.current);
     stopTicking();
 
-    const abs = Math.abs(delta);
     const duration = Math.min(
       MAX_COUNT_MS,
       Math.max(MIN_COUNT_MS, abs * PREFERRED_MS_PER_COIN),
     );
-    const startedAt = performance.now();
-    const startFrom = from;
+    const msPerStep = duration / abs;
+    let current = from;
+    let acc = 0;
+    let last = performance.now();
 
     const frame = (now: number) => {
       const end = targetRef.current;
-      const progress = Math.min(1, (now - startedAt) / duration);
-      const next =
-        progress >= 1 ? end : Math.round(startFrom + (end - startFrom) * progress);
+      const dir = end >= current ? 1 : -1;
+      acc += now - last;
+      last = now;
 
-      if (next !== displayRef.current) {
-        displayRef.current = next;
-        setDisplay(next);
+      while (acc >= msPerStep && current !== end) {
+        acc -= msPerStep;
+        current += dir;
+      }
+      if ((dir > 0 && current > end) || (dir < 0 && current < end)) {
+        current = end;
       }
 
-      if (progress >= 1) {
+      if (current !== displayRef.current) {
+        commitDisplay(current);
+      }
+
+      if (current === end) {
         rafRef.current = null;
-        clearPendingCoinDelta();
         clearFxRef.current = window.setTimeout(() => {
           setFx(null);
           setFloater(null);
@@ -91,28 +153,30 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
   }
 
   useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      // Remount tras revalidate: el saldo del server ya es el final, pero
-      // quedó un delta pendiente — arrancamos desde el valor anterior.
-      const pending = peekPendingCoinDelta();
-      if (pending !== 0) {
-        const from = Math.max(0, coins - pending);
-        if (from !== coins) {
-          displayRef.current = from;
-          targetRef.current = coins;
-          setDisplay(from);
-          tweenTo(coins, pending);
-          return;
-        }
+    const start = displayRef.current;
+    const pending = peekPendingCoinDelta();
+    const floaterDelta =
+      pending !== 0 ? pending : start !== coins ? coins - start : undefined;
+
+    const kick = requestAnimationFrame(() => {
+      readyRef.current = true;
+      if (start !== coins) {
+        tweenTo(coins, floaterDelta);
+      } else {
+        clearPendingCoinDelta();
+        writeLastShown(coins);
       }
-      displayRef.current = coins;
-      targetRef.current = coins;
-      setDisplay(coins);
-      return;
-    }
-    tweenTo(coins);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo reaccionamos al prop
+    });
+    return () => cancelAnimationFrame(kick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  }, []);
+
+  useEffect(() => {
+    if (!readyRef.current) return;
+    if (coins === targetRef.current) return;
+    const kick = requestAnimationFrame(() => tweenTo(coins));
+    return () => cancelAnimationFrame(kick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prop-driven
   }, [coins]);
 
   useEffect(() => {
@@ -123,6 +187,7 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
     }
     window.addEventListener(COIN_DELTA_EVENT, onDelta);
     return () => window.removeEventListener(COIN_DELTA_EVENT, onDelta);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable listener
   }, []);
 
   useEffect(() => {

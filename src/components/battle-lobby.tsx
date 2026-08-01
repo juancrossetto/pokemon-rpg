@@ -41,6 +41,7 @@ export function BattleLobby({
     fainted_lead: t("errors.faintedLead"),
     no_energy: t("errors.noEnergy"),
     no_stage: tc("errors.noStage"),
+    locked: tc("errors.stageLocked"),
   };
 
   const locationLabel = lobby.expedition

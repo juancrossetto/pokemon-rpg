@@ -27,34 +27,37 @@ export async function forfeitPvpBattle(locale: string) {
   }
   const match = battle.pvpMatch;
 
-  await prisma.$transaction(async (tx) => {
-    await lockUsers(tx, userId, match.opponentId);
-    await tx.battleSession.update({
-      where: { id: battle.id },
-      data: { status: "LOST" },
-    });
-    await tx.battleLog.create({
-      data: {
-        kind: "PVP",
-        userId,
+  await prisma.$transaction(
+    async (tx) => {
+      await lockUsers(tx, userId, match.opponentId);
+      await tx.battleSession.update({
+        where: { id: battle.id },
+        data: { status: "LOST" },
+      });
+      await tx.battleLog.create({
+        data: {
+          kind: "PVP",
+          userId,
+          opponentId: match.opponentId,
+          userWon: false,
+        },
+      });
+      await settlePvpMatch(tx, {
+        matchId: match.id,
+        challengerId: match.challengerId,
         opponentId: match.opponentId,
-        userWon: false,
-      },
-    });
-    await settlePvpMatch(tx, {
-      matchId: match.id,
-      challengerId: match.challengerId,
-      opponentId: match.opponentId,
-      challengerWon: false,
-      mode: match.mode,
-      seasonKey: match.seasonKey ?? "unknown",
-      challengerRatingBefore: match.challengerRatingBefore,
-      opponentRatingBefore: match.opponentRatingBefore,
-      challengerTeam: match.challengerTeam,
-      status: "FORFEIT",
-      restoreTeam: true,
-    });
-  });
+        challengerWon: false,
+        mode: match.mode,
+        seasonKey: match.seasonKey ?? "unknown",
+        challengerRatingBefore: match.challengerRatingBefore,
+        opponentRatingBefore: match.opponentRatingBefore,
+        challengerTeam: match.challengerTeam,
+        status: "FORFEIT",
+        restoreTeam: true,
+      });
+    },
+    { timeout: 20_000 },
+  );
 
   const [me, opp] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),

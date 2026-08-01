@@ -110,72 +110,75 @@ export async function findMatch(locale: string) {
   let error: string | undefined;
   let matchId: string | undefined;
   try {
-    await prisma.$transaction(async (tx) => {
-      await lockUsers(tx, userId, opponent.id);
+    await prisma.$transaction(
+      async (tx) => {
+        await lockUsers(tx, userId, opponent.id);
 
-      const fresh = await tx.user.findUniqueOrThrow({
-        where: { id: userId },
-        select: {
-          energy: true,
-          energyMax: true,
-          energyUpdatedAt: true,
-          pvpRating: true,
-        },
-      });
-      const currentEnergy = getCurrentEnergy(
-        fresh.energy,
-        fresh.energyMax,
-        fresh.energyUpdatedAt,
-      );
-      if (currentEnergy < PVP_ENERGY_COST) throw new PvpError("no_energy");
+        const fresh = await tx.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: {
+            energy: true,
+            energyMax: true,
+            energyUpdatedAt: true,
+            pvpRating: true,
+          },
+        });
+        const currentEnergy = getCurrentEnergy(
+          fresh.energy,
+          fresh.energyMax,
+          fresh.energyUpdatedAt,
+        );
+        if (currentEnergy < PVP_ENERGY_COST) throw new PvpError("no_energy");
 
-      const season = await ensureSeason(tx, userId);
-      await ensureSeason(tx, opponent.id);
+        const season = await ensureSeason(tx, userId);
+        await ensureSeason(tx, opponent.id);
 
-      const opp = await tx.user.findUniqueOrThrow({
-        where: { id: opponent.id },
-        select: { pvpRating: true },
-      });
+        const opp = await tx.user.findUniqueOrThrow({
+          where: { id: opponent.id },
+          select: { pvpRating: true },
+        });
 
-      const match = await tx.pvpMatch.create({
-        data: {
+        const match = await tx.pvpMatch.create({
+          data: {
+            challengerId: userId,
+            opponentId: opponent.id,
+            mode: "QUICK",
+            status: "ACTIVE",
+            seasonKey: season.seasonKey,
+            challengerRatingBefore: season.resetApplied ? season.rating : fresh.pvpRating,
+            opponentRatingBefore: opp.pvpRating,
+            challengerTeam,
+            opponentTeam,
+          },
+          select: { id: true },
+        });
+        matchId = match.id;
+
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            energy: currentEnergy - PVP_ENERGY_COST,
+            energyUpdatedAt: new Date(),
+          },
+        });
+
+        await settlePvpMatch(tx, {
+          matchId: match.id,
           challengerId: userId,
           opponentId: opponent.id,
+          challengerWon,
           mode: "QUICK",
-          status: "ACTIVE",
           seasonKey: season.seasonKey,
           challengerRatingBefore: season.resetApplied ? season.rating : fresh.pvpRating,
           opponentRatingBefore: opp.pvpRating,
-          challengerTeam,
-          opponentTeam,
-        },
-        select: { id: true },
-      });
-      matchId = match.id;
-
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          energy: currentEnergy - PVP_ENERGY_COST,
-          energyUpdatedAt: new Date(),
-        },
-      });
-
-      await settlePvpMatch(tx, {
-        matchId: match.id,
-        challengerId: userId,
-        opponentId: opponent.id,
-        challengerWon,
-        mode: "QUICK",
-        seasonKey: season.seasonKey,
-        challengerRatingBefore: season.resetApplied ? season.rating : fresh.pvpRating,
-        opponentRatingBefore: opp.pvpRating,
-        koLog: result.koLog,
-        turnLog: result.turnLog,
-        turns: result.turns,
-        restoreTeam: false,
-      });
-    });
+          koLog: result.koLog,
+          turnLog: result.turnLog,
+          turns: result.turns,
+          restoreTeam: false,
+        });
+      },
+      { timeout: 20_000 },
+    );
   } catch (e) {
     if (e instanceof PvpError) error = e.code;
     else throw e;

@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   CAMPAIGN_DEFAULTS,
-  getKantoLocation,
-  getKantoStage,
+  repairCampaignProgressPatch,
   type CampaignProgressRow,
 } from "@/lib/campaign";
 
@@ -45,7 +44,7 @@ export async function ensureCampaignProgress(userId: string): Promise<CampaignPr
     update: {},
   });
 
-  const repair = repairPatch(toRow(row));
+  const repair = repairCampaignProgressPatch(toRow(row));
   if (!repair) return toRow(row);
 
   const fixed = await prisma.campaignProgress.update({
@@ -53,29 +52,4 @@ export async function ensureCampaignProgress(userId: string): Promise<CampaignPr
     data: repair,
   });
   return toRow(fixed);
-}
-
-/** Devuelve el patch necesario si el progreso apunta a contenido inexistente. */
-function repairPatch(progress: CampaignProgressRow): Partial<CampaignProgressRow> | null {
-  const location = getKantoLocation(progress.farmingLocationId);
-  const stage = getKantoStage(progress.farmingStageId);
-  if (location && stage && stage.locationId === location.id) return null;
-
-  const fallbackLocation = location ?? getKantoLocation(CAMPAIGN_DEFAULTS.farmingLocationId);
-  const fallbackStage =
-    fallbackLocation?.stages.find((s) => !s.isGymMilestone) ?? fallbackLocation?.stages[0];
-
-  if (!fallbackLocation || !fallbackStage) {
-    return {
-      farmingLocationId: CAMPAIGN_DEFAULTS.farmingLocationId,
-      farmingStageId: CAMPAIGN_DEFAULTS.farmingStageId,
-      selectedLocationId: CAMPAIGN_DEFAULTS.selectedLocationId,
-    };
-  }
-
-  return {
-    farmingLocationId: fallbackLocation.id,
-    farmingStageId: fallbackStage.id,
-    selectedLocationId: fallbackLocation.id,
-  };
 }

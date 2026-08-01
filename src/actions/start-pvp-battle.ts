@@ -155,81 +155,86 @@ export async function startPvpBattle(
 
   let matchId: string | undefined;
   try {
-    await prisma.$transaction(async (tx) => {
-      await lockUsers(tx, userId, opponent!.id);
+    await prisma.$transaction(
+      async (tx) => {
+        await lockUsers(tx, userId, opponent!.id);
 
-      const fresh = await tx.user.findUniqueOrThrow({
-        where: { id: userId },
-        select: {
-          energy: true,
-          energyMax: true,
-          energyUpdatedAt: true,
-          pvpRating: true,
-        },
-      });
-      const currentEnergy = getCurrentEnergy(
-        fresh.energy,
-        fresh.energyMax,
-        fresh.energyUpdatedAt,
-      );
-      if (currentEnergy < PVP_ENERGY_COST) {
-        throw new Error("no_energy");
-      }
+        const fresh = await tx.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: {
+            energy: true,
+            energyMax: true,
+            energyUpdatedAt: true,
+            pvpRating: true,
+          },
+        });
+        const currentEnergy = getCurrentEnergy(
+          fresh.energy,
+          fresh.energyMax,
+          fresh.energyUpdatedAt,
+        );
+        if (currentEnergy < PVP_ENERGY_COST) {
+          throw new Error("no_energy");
+        }
 
-      const season = await ensureSeason(tx, userId);
-      await ensureSeason(tx, opponent!.id);
+        const season = await ensureSeason(tx, userId);
+        await ensureSeason(tx, opponent!.id);
 
-      const oppFresh = await tx.user.findUniqueOrThrow({
-        where: { id: opponent!.id },
-        select: { pvpRating: true },
-      });
+        const oppFresh = await tx.user.findUniqueOrThrow({
+          where: { id: opponent!.id },
+          select: { pvpRating: true },
+        });
 
-      const match = await tx.pvpMatch.create({
-        data: {
-          challengerId: userId,
-          opponentId: opponent!.id,
-          mode: "RANKED",
-          status: "ACTIVE",
-          seasonKey: season.seasonKey,
-          challengerRatingBefore: season.resetApplied ? season.rating : fresh.pvpRating,
-          opponentRatingBefore: oppFresh.pvpRating,
-          challengerTeam,
-          opponentTeam,
-        },
-        select: { id: true },
-      });
-      matchId = match.id;
+        const match = await tx.pvpMatch.create({
+          data: {
+            challengerId: userId,
+            opponentId: opponent!.id,
+            mode: "RANKED",
+            status: "ACTIVE",
+            seasonKey: season.seasonKey,
+            challengerRatingBefore: season.resetApplied ? season.rating : fresh.pvpRating,
+            opponentRatingBefore: oppFresh.pvpRating,
+            challengerTeam,
+            opponentTeam,
+          },
+          select: { id: true },
+        });
+        matchId = match.id;
 
-      await primeChallengerTeamForBattle(tx, challengerTeam);
+        await primeChallengerTeamForBattle(tx, challengerTeam);
 
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          energy: currentEnergy - PVP_ENERGY_COST,
-          energyUpdatedAt: new Date(),
-        },
-      });
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            energy: currentEnergy - PVP_ENERGY_COST,
+            energyUpdatedAt: new Date(),
+          },
+        });
 
-      await tx.battleSession.create({
-        data: {
-          userId,
-          pokemonInstanceId: lead.instanceId,
-          wildSpeciesId: firstOpp.speciesId,
-          wildLevel: firstOpp.level,
-          wildCurrentHp: firstOpp.maxHp,
-          wildMaxHp: firstOpp.maxHp,
-          wildMoveIds: firstOpp.moves.map((m) => m.id),
-          wildMovePp: firstOpp.moves.map((m) => m.maxPp),
-          wildHeldItemId: firstOpp.heldItemId,
-          wildItemConsumed: false,
-          pvpMatchId: match.id,
-          opponentUserId: opponent!.id,
-          opponentSlot: firstOpp.slot,
-          log: [`challengePvp:${opponent!.username}`, `sendOut:${firstOpp.speciesName}`],
-          participantIds: [lead.instanceId],
-        },
-      });
-    });
+        await tx.battleSession.create({
+          data: {
+            userId,
+            pokemonInstanceId: lead.instanceId,
+            wildSpeciesId: firstOpp.speciesId,
+            wildLevel: firstOpp.level,
+            wildCurrentHp: firstOpp.maxHp,
+            wildMaxHp: firstOpp.maxHp,
+            wildMoveIds: firstOpp.moves.map((m) => m.id),
+            wildMovePp: firstOpp.moves.map((m) => m.maxPp),
+            wildHeldItemId: firstOpp.heldItemId,
+            wildItemConsumed: false,
+            pvpMatchId: match.id,
+            opponentUserId: opponent!.id,
+            opponentSlot: firstOpp.slot,
+            log: [`challengePvp:${opponent!.username}`, `sendOut:${firstOpp.speciesName}`],
+            participantIds: [lead.instanceId],
+          },
+        });
+      },
+      // ensureSeason ×2 + prime del equipo (N updates) contra Supabase remota
+      // suele pasar los 5s default — mismo margen que tower/battle-move.
+      { timeout: 20_000 },
+    );
   } catch (e) {
     if (e instanceof Error && e.message === "no_energy") {
       backToPvp(locale, "no_energy");
@@ -248,7 +253,67 @@ export async function startPvpBattle(
   redirect({ href: "/battle", locale });
 }
 
+export type PvpOpponentHit = {
+  userId: string;
+  username: string;
+  country: string;
+  avatarId: string | null;
+  pvpRating: number;
+};
+
+/** Búsqueda live para desafío directo (mín. 2 chars). */
+export async function searchPvpOpponents(
+  query: string,
+): Promise<{ ok: true; hits: PvpOpponentHit[] } | { ok: false; error: string }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "unauthorized" };
+  const userId = session.user.id;
+
+  if (!allowAction(`pvp:search:${userId}`, 40, 60_000)) {
+    return { ok: false, error: "rate_limited" };
+  }
+
+  const q = query.trim();
+  if (q.length < 2) return { ok: true, hits: [] };
+
+  const users = await prisma.user.findMany({
+    where: {
+      id: { not: userId },
+      username: { contains: q, mode: "insensitive" },
+      OR: [
+        { pokemon: { some: { pvpSlot: { not: null } } } },
+        { pokemon: { some: { teamSlot: { not: null } } } },
+      ],
+    },
+    take: 8,
+    select: {
+      id: true,
+      username: true,
+      country: true,
+      avatarId: true,
+      pvpRating: true,
+    },
+    orderBy: { username: "asc" },
+  });
+
+  return {
+    ok: true,
+    hits: users.map((u) => ({
+      userId: u.id,
+      username: u.username,
+      country: u.country,
+      avatarId: u.avatarId,
+      pvpRating: u.pvpRating,
+    })),
+  };
+}
+
 export async function startPvpChallenge(locale: string, formData: FormData) {
+  const opponentUserId = String(formData.get("opponentUserId") ?? "").trim();
+  if (opponentUserId) {
+    await startPvpBattle(locale, { rematchUserId: opponentUserId });
+    return;
+  }
   const username = String(formData.get("username") ?? "").trim();
   await startPvpBattle(locale, { opponentUsername: username || undefined });
 }

@@ -233,6 +233,99 @@ export function applyStageCompletion(
   };
 }
 
+/** Primer stage farmeable (no milestone de gym) de una ubicación. */
+export function firstFarmableStage(locationId: string): CampaignStage | null {
+  const loc = getKantoLocation(locationId);
+  return loc?.stages.find((s) => !s.isGymMilestone) ?? null;
+}
+
+/**
+ * Tras completar un stage, elige farming/selection siguientes.
+ * Nunca apunta a un gym milestone (esas pelea van por `/gyms`).
+ */
+export function resolveFarmingAfterStageComplete(
+  progress: CampaignProgressRow,
+  completedStageId: string,
+  patch: Partial<CampaignProgressRow>,
+): Pick<
+  CampaignProgressRow,
+  "farmingStageId" | "farmingLocationId" | "selectedLocationId"
+> {
+  const merged = { ...progress, ...patch };
+  const stage = getKantoStage(completedStageId);
+  const location = stage ? getKantoLocation(merged.farmingLocationId) : null;
+
+  let farmingStageId = merged.farmingStageId;
+  let farmingLocationId = merged.farmingLocationId;
+  let selectedLocationId = merged.selectedLocationId;
+
+  if (location && stage) {
+    const nextInLoc = location.stages.find(
+      (s) => s.order > stage.order && !s.isGymMilestone && isStageUnlocked(s, merged),
+    );
+    if (nextInLoc) {
+      farmingStageId = nextInLoc.id;
+    } else if (patch.highestUnlockedLocationId) {
+      const unlocked = getKantoLocation(patch.highestUnlockedLocationId);
+      const first = unlocked ? firstFarmableStage(unlocked.id) : null;
+      if (unlocked && first && unlocked.id !== location.id) {
+        farmingLocationId = unlocked.id;
+        selectedLocationId = unlocked.id;
+        farmingStageId = first.id;
+      } else if (unlocked && unlocked.id !== location.id) {
+        // Gym hub u otra zona sin salvajes: seleccioná la zona, seguí farmeando acá.
+        selectedLocationId = unlocked.id;
+      }
+    }
+  }
+
+  return { farmingStageId, farmingLocationId, selectedLocationId };
+}
+
+/**
+ * Patch de reparación si el progreso apunta a contenido inexistente o a un
+ * gym milestone. Usado por `ensureCampaignProgress` y testeable sin Prisma.
+ */
+export function repairCampaignProgressPatch(
+  progress: CampaignProgressRow,
+): Partial<CampaignProgressRow> | null {
+  const location = getKantoLocation(progress.farmingLocationId);
+  const stage = getKantoStage(progress.farmingStageId);
+  if (location && stage && stage.locationId === location.id && !stage.isGymMilestone) {
+    return null;
+  }
+
+  for (let i = progress.completedStageIds.length - 1; i >= 0; i--) {
+    const done = getKantoStage(progress.completedStageIds[i]!);
+    if (done && !done.isGymMilestone) {
+      return {
+        farmingLocationId: done.locationId,
+        farmingStageId: done.id,
+        selectedLocationId: progress.selectedLocationId,
+      };
+    }
+  }
+
+  const fallbackLocation =
+    (location?.stages.some((s) => !s.isGymMilestone) ? location : null) ??
+    getKantoLocation(CAMPAIGN_DEFAULTS.farmingLocationId);
+  const fallbackStage = fallbackLocation?.stages.find((s) => !s.isGymMilestone) ?? null;
+
+  if (!fallbackLocation || !fallbackStage) {
+    return {
+      farmingLocationId: CAMPAIGN_DEFAULTS.farmingLocationId,
+      farmingStageId: CAMPAIGN_DEFAULTS.farmingStageId,
+      selectedLocationId: CAMPAIGN_DEFAULTS.selectedLocationId,
+    };
+  }
+
+  return {
+    farmingLocationId: fallbackLocation.id,
+    farmingStageId: fallbackStage.id,
+    selectedLocationId: progress.selectedLocationId || fallbackLocation.id,
+  };
+}
+
 /** After earning a gym badge, mark gym milestone stage complete and unlock next. */
 export function applyGymBadgeUnlock(
   progress: CampaignProgressRow,

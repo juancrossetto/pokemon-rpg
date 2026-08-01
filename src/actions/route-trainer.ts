@@ -7,13 +7,21 @@ import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
+import { ensureCampaignProgress } from "@/lib/campaign/ensure";
+import { isLocationUnlocked } from "@/lib/campaign";
 import { getRouteTrainer } from "@/lib/campaign/trainers";
 
 export type StartTrainerResult =
   | { success: true }
   | {
       success: false;
-      error: "no_lead" | "fainted_lead" | "not_found" | "already_beaten" | "in_battle";
+      error:
+        | "no_lead"
+        | "fainted_lead"
+        | "not_found"
+        | "already_beaten"
+        | "in_battle"
+        | "locked";
     };
 
 /**
@@ -51,6 +59,11 @@ export async function startTrainerBattle(
 
   const trainer = getRouteTrainer(trainerId);
   if (!trainer) return { success: false, error: "not_found" };
+
+  const progress = await ensureCampaignProgress(userId);
+  if (!isLocationUnlocked(trainer.locationId, progress)) {
+    return { success: false, error: "locked" };
+  }
 
   const beaten = await prisma.trainerDefeat.findUnique({
     where: { userId_trainerId: { userId, trainerId } },
