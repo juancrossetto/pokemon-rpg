@@ -3,7 +3,14 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { CoinsBadge } from "@/components/coins-badge";
-import { formatCountdown, msUntilNextEnergyPoint, REGEN_MS_PER_POINT } from "@/lib/energy";
+import {
+  formatCountdown,
+  GYM_BATTLE_ENERGY_COST,
+  msUntilNextEnergyPoint,
+  PVP_BATTLE_ENERGY_COST,
+  REGEN_MS_PER_POINT,
+  WILD_ENCOUNTER_ENERGY_COST,
+} from "@/lib/energy";
 
 export type ResourceBarLabels = {
   energy: string;
@@ -16,6 +23,11 @@ export type ResourceBarLabels = {
   energyEmptyShop?: string;
   energyEmptyRewards?: string;
   energyEmptyTeam?: string;
+  energyCostsTitle: string;
+  energyCostExplore: string;
+  energyCostGym: string;
+  energyCostPvp: string;
+  energyPacing: string;
   coins: string;
   coinsBalance: string;
   coinsShop: string;
@@ -269,6 +281,37 @@ export function ResourceBar({
           ? labels.energyFull
           : labels.energyNext.replace("{time}", countdown ?? "--:--")}
       </p>
+
+      {/*
+        En qué se gasta. Sin esta lista la barra baja sola y el jugador no
+        tiene forma de saber que un gimnasio cuesta el doble que explorar,
+        que es la decisión que la energía le está pidiendo que tome.
+      */}
+      <div className="rounded-lg border border-white/8 bg-white/[0.03] p-2.5">
+        <p className="mb-1.5 text-[10px] uppercase tracking-[0.14em] text-on-surface-variant/70">
+          {labels.energyCostsTitle}
+        </p>
+        <ul className="space-y-1">
+          {[
+            { label: labels.energyCostExplore, cost: WILD_ENCOUNTER_ENERGY_COST },
+            { label: labels.energyCostGym, cost: GYM_BATTLE_ENERGY_COST },
+            { label: labels.energyCostPvp, cost: PVP_BATTLE_ENERGY_COST },
+          ].map((row) => (
+            <li key={row.label} className="flex items-center justify-between gap-2">
+              <span>{row.label}</span>
+              <span className="flex shrink-0 items-center gap-0.5 font-mono text-[11px] tabular-nums text-sky-300">
+                <span aria-hidden className="material-symbols-outlined text-[13px]!">
+                  bolt
+                </span>
+                {row.cost}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-[11px] leading-snug text-on-surface-variant/70">
+          {labels.energyPacing}
+        </p>
+      </div>
       {energy <= 0 && (
         <div className="space-y-2 rounded-lg border border-sky-400/25 bg-sky-500/10 p-2.5">
           <p className="font-semibold text-sky-200">

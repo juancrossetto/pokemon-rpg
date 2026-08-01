@@ -113,6 +113,13 @@ export function JourneyOnboarding({
       title: t("onboarding.step3Title"),
       body: t("onboarding.step3Body"),
     },
+    // La energía se explica acá y no cuando se agota: enterarse del límite
+    // recién cuando frena la partida es lo que lo hace sentir un castigo.
+    {
+      iconSrc: "/nav/home-icon.png",
+      title: t("onboarding.step4Title"),
+      body: t("onboarding.step4Body"),
+    },
   ];
 
   return createPortal(

@@ -897,6 +897,10 @@
     "badgePerksTitle": "With your badges",
     "obedienceCap": "Your team obeys up to Lv. {level}",
     "marketDiscount": "−{pct}% market listing fees",
+    "eliteEyebrow": "Elite Four",
+    "eliteTitle": "You have all 8 badges",
+    "eliteBody": "The adventure goes on: the four Elite masters and the Champion, back to back.",
+    "eliteCta": "Go to the Elite Four",
     "closedHint": "The gym is closed at this hour.",
     "closedChip": "Closed",
     "hours": "Open {opens}:00 – {closes}:00",
@@ -2151,7 +2155,35 @@
     "errorNotAvailable": "You haven't reached that milestone yet.",
     "errorGeneric": "Could not claim. Try again.",
     "emptyEvents": "No active events right now. Check back soon.",
-    "eventsSoon": "Limited-time events are coming soon.",
+    "limited": {
+      "badge": "Limited-time event",
+      "endsIn": "Ends in {time}",
+      "catalog": {
+        "battleRush": {
+          "name": "Battle Week",
+          "tagline": "Win battles before the week runs out."
+        },
+        "catchFever": {
+          "name": "Catch Fever",
+          "tagline": "Fill the Pokédex — every catch this week counts."
+        },
+        "explorerWeek": {
+          "name": "Explorer Week",
+          "tagline": "Clear zone objectives and push the map forward."
+        }
+      },
+      "missions": {
+        "wins-10": "Win 10 battles",
+        "wins-30": "Win 30 battles",
+        "wins-60": "Win 60 battles",
+        "catch-15": "Catch 15 Pokémon",
+        "catch-25": "Catch 25 Pokémon",
+        "catch-40": "Catch 40 Pokémon",
+        "shiny-1": "Catch a shiny Pokémon",
+        "zones-2": "Clear 2 zone objectives",
+        "zones-5": "Clear 5 zone objectives"
+      }
+    },
     "close": "Close",
     "statusToday": "Available today",
     "statusClaimed": "Claimed",
@@ -2503,6 +2535,8 @@
       "step2Body": "Battle, catch, and earn XP in your zone.",
       "step3Title": "Challenge the gym",
       "step3Body": "When ready, earn the badge and keep going.",
+      "step4Title": "Manage your energy",
+      "step4Body": "Every battle spends energy and it refills on its own: 1 point every 30 minutes.",
       "cta": "Got it"
     },
     "role": {
@@ -2538,6 +2572,11 @@
     "energyEmptyShop": "Go to the shop",
     "energyEmptyRewards": "Claim rewards",
     "energyEmptyTeam": "Care for your team",
+    "energyCostsTitle": "What it's spent on",
+    "energyCostExplore": "Exploring",
+    "energyCostGym": "Gym battle",
+    "energyCostPvp": "PvP battle",
+    "energyPacing": "A full bar covers a long session. Once it empties it takes hours to come back, so pick what you spend it on.",
     "postBattleContinue": "Keep exploring",
     "postBattleJourney": "Back to the Journey",
     "postBattleEvolve": "Your team can evolve",
@@ -2998,5 +3037,22 @@
     "reset": {
       "nextIn": "Next climb in"
     }
+  },
+  "nextStep": {
+    "eyebrow": "Your next step",
+    "starterTitle": "Pick your first Pokémon",
+    "starterBody": "You can't explore without a team. Pick a partner and start the adventure.",
+    "starterCta": "Pick a starter",
+    "storyTitle": "Continue the story",
+    "storyBody": "Your next stop is marked on the Journey.",
+    "storyCta": "Open the Journey",
+    "eliteTitle": "You earned all 8 badges",
+    "eliteBody": "It doesn't end here: the Elite Four are waiting, four masters and the Champion, back to back.",
+    "eliteCta": "Challenge the Elite Four",
+    "eliteSecondaryCta": "Tower",
+    "championTitle": "You're the Kanto Champion",
+    "championBody": "The story is over, but the Tower resets every week and the PvP ladder never closes.",
+    "championCta": "Climb the Tower",
+    "championSecondaryCta": "PvP"
   }
 }

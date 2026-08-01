@@ -6,8 +6,24 @@
 // número que hay que tocar para recalibrar el ritmo del juego.
 export const REGEN_MS_PER_POINT = 30 * 60 * 1000;
 
+/**
+ * Costo de cada actividad.
+ *
+ * Estos tres números estaban repetidos como constantes locales en cuatro
+ * archivos (`start-encounter`, `battle/page`, `pvp`, `start-pvp-battle`), así
+ * que no había ningún lugar donde leer "cuánto cuesta jugar" — ni para
+ * recalibrar el ritmo ni para mostrárselo al jugador, que era justamente lo
+ * que faltaba: la barra se vaciaba sin que nada dijera en qué se fue.
+ */
+
+/** Costo por encuentro salvaje. Un stage puede pisarlo con `energyCost`. */
+export const WILD_ENCOUNTER_ENERGY_COST = 1;
+
 /** Costo por combate de gimnasio (subordinado o líder). */
 export const GYM_BATTLE_ENERGY_COST = 2;
+
+/** Costo por combate de PvP. */
+export const PVP_BATTLE_ENERGY_COST = 1;
 
 export function getCurrentEnergy(energy: number, energyMax: number, energyUpdatedAt: Date): number {
   const elapsedMs = Date.now() - energyUpdatedAt.getTime();

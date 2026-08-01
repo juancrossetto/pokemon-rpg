@@ -1,8 +1,19 @@
 import type { CampaignMilestone } from "@/lib/campaign/types";
 
-/** Destino del CTA principal según el próximo hito del viaje. */
-export function milestoneHref(milestone: CampaignMilestone): string {
-  if (milestone.kind === "gym") return "/gyms";
+/**
+ * Destino del CTA principal según el próximo hito del viaje.
+ *
+ * Los gimnasios van al hub `/gyms`, que es el mapa de misión y da contexto.
+ * La excepción son los nodos del Alto Mando: `computeGymStatuses` los filtra,
+ * así que el hub no los muestra y el jugador con las 8 medallas quedaba
+ * mirando una pantalla completa sin saber que faltaba un paso. Para esos casos
+ * quien llama pasa `gymHref` con la ruta directa al gimnasio.
+ */
+export function milestoneHref(
+  milestone: CampaignMilestone,
+  opts?: { gymHref?: string | null },
+): string {
+  if (milestone.kind === "gym") return opts?.gymHref ?? "/gyms";
   if (milestone.kind === "complete") return "/campaign";
   return "/battle";
 }

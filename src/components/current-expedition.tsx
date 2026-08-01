@@ -31,6 +31,8 @@ export type CurrentExpeditionProps = {
   stagesTotal: number;
   /** `rail` = card angosta de la columna izquierda del home. */
   variant?: "hero" | "rail";
+  /** Ruta directa al gimnasio del hito, cuando `/gyms` no lo lista (Alto Mando). */
+  gymHref?: string | null;
 };
 
 export function CurrentExpedition({
@@ -51,11 +53,12 @@ export function CurrentExpedition({
   stagesDone,
   stagesTotal,
   variant = "hero",
+  gymHref,
 }: CurrentExpeditionProps) {
   const t = useTranslations("campaign");
   const tUx = useTranslations("ux");
   const tTypes = useTranslations("pokedex.pokemonTypes");
-  const ctaHref = milestoneHref(milestone);
+  const ctaHref = milestoneHref(milestone, { gymHref });
   const ctaLabel = t(milestoneCtaKey(milestone));
   const stagePct =
     stagesTotal > 0 ? Math.max(0, Math.min(100, (stagesDone / stagesTotal) * 100)) : 0;

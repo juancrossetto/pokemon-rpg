@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateMaxHp, calculateStat } from "@/lib/stats";
 import { wildCombatantStats } from "@/lib/combatant";
 import { effectivePp } from "@/lib/battle";
-import { getCurrentEnergy } from "@/lib/energy";
+import { getCurrentEnergy, WILD_ENCOUNTER_ENERGY_COST } from "@/lib/energy";
 import { getActiveGymRun, getActiveTowerRun } from "@/lib/battle-lock";
 import { healCooldownMsLeft, healRushCost } from "@/lib/healing";
 import { BattleScreen } from "@/components/battle-screen";
@@ -26,8 +26,6 @@ import { gymLeaderPortraitUrl, gymTypeTrainerSpriteSlug } from "@/lib/gym-art";
 import { parseTeamSnap } from "@/lib/pvp/team";
 import { resolveBattleBg } from "@/lib/battle-bg";
 import { parseDoublesFieldB } from "@/lib/doubles";
-
-const ENCOUNTER_ENERGY_COST = 1;
 
 export default async function BattlePage({
   params,
@@ -164,7 +162,7 @@ export default async function BattlePage({
 
     const stage = getKantoStage(progress.farmingStageId);
     const location = getKantoLocation(progress.farmingLocationId);
-    const energyCost = stage?.energyCost ?? ENCOUNTER_ENERGY_COST;
+    const energyCost = stage?.energyCost ?? WILD_ENCOUNTER_ENERGY_COST;
 
     // Las zonas del mapa ya traen sus especies y cuáles capturaste, así que la
     // lista de encuentros sale de ahí en vez de repetir las queries.

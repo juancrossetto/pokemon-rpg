@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { CurrentExpedition, type CurrentExpeditionProps } from "@/components/current-expedition";
 import { ActiveTeamStrip } from "@/components/home/active-team-strip";
 import { DailyGiftModal, type GiftModalLabels } from "@/components/events/daily-gift-modal";
@@ -55,6 +56,7 @@ export type HomeHubLabels = {
 export function HomeGameHub({
   locale,
   expedition,
+  nextStep,
   events,
   giftLabels,
   squad,
@@ -68,6 +70,12 @@ export function HomeGameHub({
 }: {
   locale: string;
   expedition: CurrentExpeditionProps | null;
+  /**
+   * Card de "próximo paso", ya renderizada en el servidor. Llega como slot
+   * porque este componente es de cliente y el copy se resuelve con
+   * `getTranslations`; viene `null` mientras el hero de expedición alcance.
+   */
+  nextStep: ReactNode;
   events: {
     daily: DailyState;
     showDailyModal: boolean;
@@ -97,7 +105,7 @@ export function HomeGameHub({
   isDev: boolean;
 }) {
   return (
-    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain">
+    <div className="relative flex min-w-0 flex-1 flex-col overflow-x-hidden">
       <JourneyOnboarding />
       <div className="relative flex min-w-0 flex-col px-margin-mobile py-3 md:px-margin-desktop md:py-5">
         <div className="mx-auto flex w-full min-w-0 max-w-3xl gap-4 md:gap-5 xl:max-w-6xl 2xl:max-w-7xl">
@@ -125,6 +133,8 @@ export function HomeGameHub({
                 showChip
               />
             )}
+
+            {nextStep && <div className="shrink-0">{nextStep}</div>}
 
             {/* Mobile / tablet: el rail está oculto, acá va la expedición. */}
             {expedition ? (

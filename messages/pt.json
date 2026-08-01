@@ -897,6 +897,10 @@
     "badgePerksTitle": "Com suas medalhas",
     "obedienceCap": "Seu time obedece até Nv. {level}",
     "marketDiscount": "−{pct}% nas taxas do mercado",
+    "eliteEyebrow": "Elite dos Quatro",
+    "eliteTitle": "Você tem as 8 medalhas",
+    "eliteBody": "A aventura continua: os quatro mestres da Elite e o Campeão, um atrás do outro.",
+    "eliteCta": "Ir para a Elite",
     "closedHint": "O ginásio está fechado a esta hora.",
     "closedChip": "Fechado",
     "hours": "Horário {opens}:00 – {closes}:00",
@@ -2151,7 +2155,35 @@
     "errorNotAvailable": "Você ainda não atingiu esse marco.",
     "errorGeneric": "Não foi possível resgatar. Tente de novo.",
     "emptyEvents": "Nenhum evento ativo agora. Volte em breve.",
-    "eventsSoon": "Eventos por tempo limitado chegam em breve.",
+    "limited": {
+      "badge": "Evento por tempo limitado",
+      "endsIn": "Termina em {time}",
+      "catalog": {
+        "battleRush": {
+          "name": "Semana de combate",
+          "tagline": "Vença batalhas antes que a semana acabe."
+        },
+        "catchFever": {
+          "name": "Febre de captura",
+          "tagline": "Encha a Pokédex: cada captura desta semana conta."
+        },
+        "explorerWeek": {
+          "name": "Semana do explorador",
+          "tagline": "Complete objetivos de zona e avance no mapa."
+        }
+      },
+      "missions": {
+        "wins-10": "Vença 10 batalhas",
+        "wins-30": "Vença 30 batalhas",
+        "wins-60": "Vença 60 batalhas",
+        "catch-15": "Capture 15 Pokémon",
+        "catch-25": "Capture 25 Pokémon",
+        "catch-40": "Capture 40 Pokémon",
+        "shiny-1": "Capture um Pokémon shiny",
+        "zones-2": "Complete 2 objetivos de zona",
+        "zones-5": "Complete 5 objetivos de zona"
+      }
+    },
     "close": "Fechar",
     "statusToday": "Disponível hoje",
     "statusClaimed": "Resgatado",
@@ -2503,6 +2535,8 @@
       "step2Body": "Batalhe, capture e ganhe XP na sua zona.",
       "step3Title": "Desafie o ginásio",
       "step3Body": "Quando estiver pronto, ganhe a medalha e siga.",
+      "step4Title": "Cuide da sua energia",
+      "step4Body": "Cada batalha gasta energia e ela se recarrega sozinha: 1 ponto a cada 30 minutos.",
       "cta": "Entendi"
     },
     "role": {
@@ -2538,6 +2572,11 @@
     "energyEmptyShop": "Ir à loja",
     "energyEmptyRewards": "Resgatar recompensas",
     "energyEmptyTeam": "Cuidar do time",
+    "energyCostsTitle": "Em que se gasta",
+    "energyCostExplore": "Explorar",
+    "energyCostGym": "Batalha de ginásio",
+    "energyCostPvp": "Batalha PvP",
+    "energyPacing": "A barra cheia dá para uma sessão longa. Quando esvazia demora horas para voltar, então escolha no que gastar.",
     "postBattleContinue": "Continuar explorando",
     "postBattleJourney": "Voltar à Jornada",
     "postBattleEvolve": "Seu time pode evoluir",
@@ -2998,5 +3037,22 @@
     "reset": {
       "nextIn": "Próxima subida em"
     }
+  },
+  "nextStep": {
+    "eyebrow": "Seu próximo passo",
+    "starterTitle": "Escolha seu primeiro Pokémon",
+    "starterBody": "Sem time não dá para explorar. Escolha um parceiro e comece a aventura.",
+    "starterCta": "Escolher inicial",
+    "storyTitle": "Continue a história",
+    "storyBody": "Sua próxima parada está marcada na Jornada.",
+    "storyCta": "Abrir a Jornada",
+    "eliteTitle": "Você ganhou as 8 medalhas",
+    "eliteBody": "Não acaba aqui: a Elite dos Quatro espera, quatro mestres e o Campeão, um atrás do outro.",
+    "eliteCta": "Desafiar a Elite",
+    "eliteSecondaryCta": "Torre",
+    "championTitle": "Você é Campeão de Kanto",
+    "championBody": "A história terminou, mas a Torre reinicia toda semana e o ranking PvP nunca fecha.",
+    "championCta": "Subir a Torre",
+    "championSecondaryCta": "PvP"
   }
 }

@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { DAILY_CYCLE, nextDay, slotForDay, type DailyRewardVariant } from "./daily";
 import { WEEKLY_CHALLENGE, weeklyPercent, type WeeklyObjectiveId } from "./weekly";
+import { activeLimitedEvent, isMissionComplete, missionProgress } from "./limited";
+import type { LimitedMetric } from "./limited";
 import { dayKey, nextDailyReset, nextWeeklyReset, serverNow, weekKey, weekStart } from "./time";
 import type { RewardBundle } from "./rewards";
 
@@ -46,9 +48,33 @@ export type WeeklyState = {
   nextResetAt: string;
 };
 
+export type LimitedMissionState = {
+  id: string;
+  metric: LimitedMetric;
+  current: number;
+  target: number;
+  rewards: RewardBundle;
+  href: string | null;
+  claimed: boolean;
+  claimable: boolean;
+};
+
+export type LimitedEventState = {
+  /** `<id>@<semana>` — lo que el cliente manda al reclamar. */
+  code: string;
+  nameKey: string;
+  taglineKey: string;
+  icon: string;
+  accent: string;
+  /** ISO. El cliente lo usa para la cuenta regresiva, no para decidir. */
+  endsAt: string;
+  missions: LimitedMissionState[];
+};
+
 export type EventsSummary = {
   daily: DailyState;
   weekly: WeeklyState;
+  limited: LimitedEventState;
   /** Acciones reclamables ahora — alimenta el badge de navegación. */
   pendingCount: number;
 };
@@ -66,8 +92,21 @@ export async function loadEventsSummary(userId: string): Promise<EventsSummary> 
   const currentWeek = weekKey(now);
   const since = weekStart(now);
 
-  const [dailyClaims, todayClaim, weeklyClaims, wins, catches, zoneObjectives] =
-    await Promise.all([
+  // El evento limitado corre exactamente la semana de juego (`activeLimitedEvent`
+  // deriva su ventana de `weekStart`/`nextWeeklyReset`), así que comparte el
+  // mismo `since` que el desafío semanal en vez de repetir tres conteos.
+  const limited = activeLimitedEvent(now);
+
+  const [
+    dailyClaims,
+    todayClaim,
+    weeklyClaims,
+    wins,
+    catches,
+    shinies,
+    zoneObjectives,
+    limitedClaims,
+  ] = await Promise.all([
       prisma.dailyRewardClaim.count({ where: { userId, cycleId: DAILY_CYCLE.id } }),
       prisma.dailyRewardClaim.findFirst({
         where: { userId, dayKey: today },
@@ -79,7 +118,14 @@ export async function loadEventsSummary(userId: string): Promise<EventsSummary> 
       }),
       prisma.battleLog.count({ where: { userId, userWon: true, createdAt: { gte: since } } }),
       prisma.pokemonInstance.count({ where: { ownerId: userId, caughtAt: { gte: since } } }),
+      prisma.pokemonInstance.count({
+        where: { ownerId: userId, isShiny: true, caughtAt: { gte: since } },
+      }),
       prisma.zoneObjectiveClaim.count({ where: { userId, claimedAt: { gte: since } } }),
+      prisma.eventMissionClaim.findMany({
+        where: { userId, eventCode: limited.code },
+        select: { missionId: true },
+      }),
       ]);
 
   // Días de login de la semana = días distintos con reclamo diario. Es el dato
@@ -152,11 +198,45 @@ export async function loadEventsSummary(userId: string): Promise<EventsSummary> 
     nextResetAt: nextWeeklyReset(now).toISOString(),
   };
 
+  const limitedMetrics: Record<LimitedMetric, number> = {
+    battles: wins,
+    catches,
+    shinies,
+    zones: zoneObjectives,
+  };
+  const claimedMissionIds = new Set(limitedClaims.map((row) => row.missionId));
+
+  const limitedState: LimitedEventState = {
+    code: limited.code,
+    nameKey: limited.def.nameKey,
+    taglineKey: limited.def.taglineKey,
+    icon: limited.def.icon,
+    accent: limited.def.accent,
+    endsAt: limited.endsAt.toISOString(),
+    missions: limited.def.missions.map((mission) => {
+      const raw = limitedMetrics[mission.metric];
+      const claimed = claimedMissionIds.has(mission.id);
+      return {
+        id: mission.id,
+        metric: mission.metric,
+        current: missionProgress(mission, raw),
+        target: mission.target,
+        rewards: mission.rewards,
+        href: mission.href,
+        claimed,
+        claimable: isMissionComplete(mission, raw) && !claimed,
+      };
+    }),
+  };
+
   return {
     daily,
     weekly,
+    limited: limitedState,
     pendingCount:
-      (daily.canClaim ? 1 : 0) + milestones.filter((milestone) => milestone.claimable).length,
+      (daily.canClaim ? 1 : 0) +
+      milestones.filter((milestone) => milestone.claimable).length +
+      limitedState.missions.filter((mission) => mission.claimable).length,
   };
 }
 

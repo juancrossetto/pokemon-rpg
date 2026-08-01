@@ -62,11 +62,22 @@ export default async function EventsPage({
     errorClaimed: t("errorClaimed"),
     errorNotAvailable: t("errorNotAvailable"),
     errorGeneric: t("errorGeneric"),
-    eventsSoon: t("eventsSoon"),
     close: t("close"),
     statusToday: t("statusToday"),
     statusClaimed: t("statusClaimed"),
     statusUpcoming: t("statusUpcoming"),
+    limitedBadge: t("limited.badge"),
+    limitedEnds: t("limited.endsIn", { time: "{time}" }),
+    // El catálogo del evento vive en código y expone la clave; acá se resuelve
+    // solo la edición vigente en vez de mandar las tres traducidas.
+    limitedName: t(`limited.catalog.${summary.limited.nameKey}`),
+    limitedTagline: t(`limited.catalog.${summary.limited.taglineKey}`),
+    limitedMissions: Object.fromEntries(
+      summary.limited.missions.map((mission) => [
+        mission.id,
+        t(`limited.missions.${mission.id}`),
+      ]),
+    ),
   };
 
   return (
@@ -75,6 +86,7 @@ export default async function EventsPage({
         <EventsHub
           daily={summary.daily}
           weekly={summary.weekly}
+          limited={summary.limited}
           pendingCount={summary.pendingCount}
           labels={labels}
           locale={locale}
