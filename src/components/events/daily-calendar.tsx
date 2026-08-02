@@ -13,11 +13,10 @@ export type CalendarLabels = {
 };
 
 /**
- * Calendario del regalo diario.
+ * Calendario del regalo diario (grilla clásica).
  *
- * Vive aparte porque lo usan dos superficies —el Event Hub y el modal de
- * bienvenida— y tenerlo duplicado garantizaba que en algún momento uno
- * mostrara estados distintos del otro.
+ * Sigue en el Event Hub. El modal de bienvenida usa `DailyRewardStrip` (popup
+ * horizontal); esta grilla se conserva para fusionar ambos más adelante.
  *
  * Cuatro columnas en mobile y siete desde `sm`: una grilla de 7 en 320px deja
  * casilleros de 38px, donde no entra ni el número ni el sprite.

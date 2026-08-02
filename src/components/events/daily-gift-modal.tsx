@@ -6,34 +6,39 @@ import { createPortal } from "react-dom";
 import { claimDailyReward } from "@/actions/claim-reward";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import { showToast } from "@/lib/app-toast";
-import { DailyCalendar, type CalendarLabels } from "@/components/events/daily-calendar";
+import type { CalendarLabels } from "@/components/events/daily-calendar";
+import {
+  DailyRewardStrip,
+  type StripLabels,
+} from "@/components/events/daily-reward-strip";
 import { RewardList } from "@/components/events/reward-chip";
 import type { RewardDef } from "@/lib/events/rewards";
 import type { DailyDayState } from "@/lib/events/state";
 
-export type GiftModalLabels = CalendarLabels & {
-  eyebrow: string;
-  title: string;
-  subtitle: string;
-  /** Con `{current}` y `{total}`. */
-  progress: string;
-  claim: string;
-  claiming: string;
-  close: string;
-  claimedTitle: string;
-  continueLabel: string;
-  /** Texto del acceso que reabre el modal tras cerrarlo sin reclamar. */
-  reopen: string;
-};
+export type GiftModalLabels = CalendarLabels &
+  StripLabels & {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    /** Con `{current}` y `{total}`. */
+    progress: string;
+    claim: string;
+    claiming: string;
+    close: string;
+    claimedTitle: string;
+    continueLabel: string;
+    /** Texto del acceso que reabre el modal tras cerrarlo sin reclamar. */
+    reopen: string;
+  };
 
 const SEEN_KEY = "pokerpg:daily-gift-seen";
 
 /**
  * Estado "ya lo vi en esta sesión", sobre `sessionStorage`.
  *
- * `useSyncExternalStore` y no `useState` + efecto: el snapshot del servidor
- * devuelve siempre `false`, así que no hay desajuste de hidratación, y leer en
- * el render evita el render en cascada que marca el lint.
+ * Dos stores:
+ * - `isClient`: false en SSR/hidratación → no pintamos ni modal ni chip.
+ * - `seen`: lee sessionStorage sólo en cliente.
  */
 let listeners: Array<() => void> = [];
 
@@ -58,17 +63,39 @@ function reopen(): void {
   for (const listener of listeners) listener();
 }
 
-const OAK_GIFT_ART = "/events/gift_oak.png";
+/** Store vacío: false en SSR, true en cliente (React re-render post-hidratación). */
+function subscribeClient(): () => void {
+  return () => {};
+}
+
+function TitleFlourish({ side }: { side: "left" | "right" }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 72 18"
+      className={`h-[14px] w-[56px] shrink-0 text-[#ff8a00] drop-shadow-[0_0_6px_rgba(255,138,0,0.7)] sm:h-4 sm:w-[72px] ${
+        side === "right" ? "scale-x-[-1]" : ""
+      }`}
+    >
+      <path
+        d="M1 9h22M23 9h14l6-5M37 9l6 5M50 4v10M56 9h8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="square"
+        strokeLinejoin="miter"
+      />
+      <rect x="64" y="6" width="6" height="6" fill="currentColor" transform="rotate(45 67 9)" />
+    </svg>
+  );
+}
 
 /**
- * Modal del regalo diario, centrado y modal de verdad.
+ * Modal del regalo diario (popup horizontal tipo Daily Reward).
  *
- * Se abre **una sola vez por sesión** cuando hay un regalo sin reclamar. El
- * brief pedía no interrumpir en cada navegación: al cerrarlo o reclamarlo se
- * marca visto y no vuelve a aparecer hasta la próxima sesión, pero el regalo
- * sigue accesible desde Eventos y desde el badge del navbar.
- *
- * La ilustración es el Profesor Oak con el regalo (`public/events/gift_oak.png`).
+ * Se abre **una sola vez por sesión** cuando hay un regalo sin reclamar.
+ * La grilla clásica (`DailyCalendar` + cabecera Oak) se conserva en Eventos
+ * para fusionar más adelante; acá vive el strip nuevo.
  */
 export function DailyGiftModal({
   days,
@@ -83,15 +110,14 @@ export function DailyGiftModal({
   total: number;
   labels: GiftModalLabels;
   locale: string;
-  /** Si false, al cerrar sin reclamar no deja chip flotante. */
-
   showChip?: boolean;
 }) {
+  const isClient = useSyncExternalStore(subscribeClient, () => true, () => false);
   const seen = useSyncExternalStore(subscribe, wasSeen, () => true);
   const [claimed, setClaimed] = useState<RewardDef[] | null>(null);
   const [pending, startTransition] = useTransition();
   const panelRef = useRef<HTMLDivElement>(null);
-  const open = !seen || claimed !== null;
+  const open = (isClient && !seen) || claimed !== null;
 
   useEffect(() => {
     if (!open) return;
@@ -133,8 +159,6 @@ export function DailyGiftModal({
     startTransition(async () => {
       const result = await claimDailyReward(locale);
       if (!result.ok) {
-        // Otra pestaña se adelantó: avisar en vez de cerrar en silencio, que
-        // parecía un botón roto.
         showToast(labels.claimedTitle, "info");
         markSeen();
         return;
@@ -149,21 +173,16 @@ export function DailyGiftModal({
     setClaimed(null);
   }
 
+  if (!isClient) return null;
+
   if (!open) {
     if (!showChip) return null;
-    /*
-      Cerrado y sin reclamar: queda un acceso discreto para volver a abrirlo
-      (p. ej. en /events). En Home se pasa showChip={false}: el atajo Events
-      con badge cubre el aviso.
-    */
     return (
       <button
         type="button"
         onClick={reopen}
-        className="gift-chip mb-4 inline-flex max-w-full items-center gap-2 rounded-md border border-emerald-400/35 bg-emerald-400/[0.08] py-1.5 pl-1.5 pr-3 text-left transition hover:border-emerald-400/55 hover:bg-emerald-400/[0.13]"
+        className="gift-chip mb-4 inline-flex max-w-full items-center gap-2 rounded-md border border-[#ff8a00]/40 bg-[#ff8a00]/10 py-1.5 pl-1.5 pr-3 text-left transition hover:border-[#ff8a00]/60 hover:bg-[#ff8a00]/16"
       >
-        {/* Arte propio en vez de la ligadura `redeem`. Va sin caja: tiene luz
-            y sombra propias y el recuadro con borde lo aplanaba. */}
         <Image
           src="/nav/event-icon.png"
           alt=""
@@ -172,10 +191,12 @@ export function DailyGiftModal({
           className="h-7 w-7 shrink-0 object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
           aria-hidden
         />
-        <span className="min-w-0 truncate text-label-sm text-emerald-100">{labels.reopen}</span>
+        <span className="min-w-0 truncate text-label-sm text-[#ffe0a8]">
+          {labels.reopen}
+        </span>
         <span
           aria-hidden
-          className="material-symbols-outlined shrink-0 text-[16px]! text-emerald-400/80"
+          className="material-symbols-outlined shrink-0 text-[16px]! text-[#ff8a00]"
         >
           chevron_right
         </span>
@@ -200,117 +221,64 @@ export function DailyGiftModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="daily-gift-title"
-        className="gift-modal-in reward-halo relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-tertiary/30 bg-[#0b0d13]/98 backdrop-blur-xl"
+        className="gift-modal-in daily-reward-popup relative flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[#ff8a00]/40 shadow-[0_0_48px_rgba(255,138,0,0.22),0_28px_90px_rgba(0,0,0,0.7)]"
       >
         <span
           aria-hidden
-          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-tertiary/70 to-transparent"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#1a2744] via-[#101a30] to-[#0a1224]"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(255,138,0,0.22),transparent_50%)]"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#ff9a1a] to-transparent"
         />
 
-        {/*
-          ── Cabecera ─────────────────────────────────────────────────
-          Oak es la ilustración hero (derecha), no un thumbnail al lado
-          del título. El texto queda a la izquierda con espacio libre.
-        */}
-        <div className="relative shrink-0 overflow-hidden">
-          <div aria-hidden className="pointer-events-none absolute inset-0">
-            <Image
-              src="/campaign/maps/regions/kanto.webp"
-              alt=""
-              fill
-              sizes="512px"
-              className="object-cover object-center opacity-[0.13]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0b0d13] via-[#0b0d13]/92 to-[#0b0d13]/50" />
-            <div
-              className="absolute inset-0 opacity-[0.07]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(rgba(242,192,0,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(242,192,0,0.5) 1px, transparent 1px)",
-                backgroundSize: "28px 28px",
-              }}
-            />
-          </div>
+        <button
+          type="button"
+          onClick={close}
+          aria-label={labels.close}
+          className="absolute right-2.5 top-2.5 z-30 grid h-10 w-10 place-items-center text-[#f2c000] transition hover:text-[#ffe066] sm:right-3 sm:top-3"
+        >
+          <span aria-hidden className="material-symbols-outlined text-[28px]! font-bold drop-shadow-[0_0_8px_rgba(242,192,0,0.65)]">
+            close
+          </span>
+        </button>
 
-          <button
-            type="button"
-            onClick={close}
-            aria-label={labels.close}
-            className="absolute right-3 top-3 z-30 grid h-9 w-9 place-items-center rounded-md border border-white/10 bg-black/55 text-on-surface-variant backdrop-blur-sm transition hover:border-white/25 hover:text-on-surface"
-          >
-            <span aria-hidden className="material-symbols-outlined text-[20px]!">
-              close
-            </span>
-          </button>
-
-          <div className="relative flex min-h-[152px] items-stretch sm:min-h-[168px]">
-            <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center py-4 pl-4 pr-3">
-              <p className="mb-0.5 flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-[0.22em] text-tertiary/90">
-                <span aria-hidden className="h-1 w-1 rounded-full bg-tertiary" />
-                {labels.eyebrow}
-              </p>
-              <h2
-                id="daily-gift-title"
-                className="text-[clamp(1.35rem,5.5vw,1.85rem)] font-semibold leading-tight tracking-tight text-white"
-              >
-                {labels.title}
-              </h2>
-              <p className="mt-1.5 text-[11px] leading-snug text-on-surface-variant sm:text-label-sm">
-                {labels.subtitle}
-              </p>
-
-              <div className="mt-3 flex items-center gap-2">
-                <span
-                  role="progressbar"
-                  aria-valuenow={currentDay}
-                  aria-valuemin={1}
-                  aria-valuemax={total}
-                  className="h-1 w-full max-w-[140px] overflow-hidden rounded-full bg-white/10"
-                >
-                  <span
-                    className="block h-full rounded-full bg-gradient-to-r from-tertiary/70 to-tertiary transition-[width] duration-500"
-                    style={{ width: `${(currentDay / total) * 100}%` }}
-                  />
-                </span>
-                <span className="shrink-0 font-mono text-[10px] text-tertiary">
-                  {labels.progress
-                    .replace("{current}", String(currentDay))
-                    .replace("{total}", String(total))}
-                </span>
-              </div>
-            </div>
-
-            <div
-              aria-hidden
-              className="gift-lead relative z-[5] flex w-[124px] shrink-0 items-end justify-center self-stretch pt-9 sm:w-[148px]"
+        <div className="relative shrink-0 px-4 pb-0 pt-5 sm:px-8 sm:pt-7">
+          <div className="flex items-center justify-center gap-2 sm:gap-4">
+            <TitleFlourish side="left" />
+            <h2
+              id="daily-gift-title"
+              className="daily-reward-title text-center text-[clamp(1.55rem,4.5vw,2.15rem)] font-black uppercase tracking-[0.04em] text-[#ff9a1a]"
             >
-              <span className="pointer-events-none absolute inset-x-0 bottom-0 top-8 bg-[radial-gradient(ellipse_at_50%_60%,rgba(242,192,0,0.18),transparent_72%)]" />
-              <Image
-                src={OAK_GIFT_ART}
-                alt=""
-                width={280}
-                height={300}
-                priority
-                unoptimized
-                className="relative h-[128px] w-auto max-w-full object-contain object-bottom drop-shadow-[0_8px_18px_rgba(0,0,0,0.5)] sm:h-[144px]"
-              />
-            </div>
+              {labels.title}
+            </h2>
+            <TitleFlourish side="right" />
           </div>
+          <p className="mt-2 text-center text-[13px] text-white/90 sm:text-[15px]">
+            {labels.subtitle}
+          </p>
+          <p className="sr-only">
+            {labels.progress
+              .replace("{current}", String(currentDay))
+              .replace("{total}", String(total))}
+          </p>
         </div>
 
-        {/* ── Calendario: el único bloque que scrollea ───────────────── */}
-        <div className="min-h-0 flex-1 overflow-y-auto border-y border-white/[0.07] px-4 py-3">
-          <DailyCalendar days={days} labels={labels} compact />
+        <div className="relative px-3 py-4 sm:px-7 sm:py-5">
+          <DailyRewardStrip days={days} labels={labels} />
         </div>
 
-        {/* ── Acción, fija abajo ────────────────────────────────────── */}
-        <div className="shrink-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+        <div className="relative shrink-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-1 sm:px-8">
           {claimed ? (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-center gap-2 rounded-xl border border-tertiary/25 bg-gradient-to-b from-white/[0.06] to-transparent px-3 py-3">
+              <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl border border-[#ff8a00]/30 bg-gradient-to-b from-[#ff8a00]/10 to-transparent px-3 py-3">
                 <span
                   aria-hidden
-                  className="material-symbols-outlined text-[20px]! text-emerald-400"
+                  className="material-symbols-outlined text-[20px]! text-[#ff8a00]"
                 >
                   check_circle
                 </span>
@@ -321,7 +289,7 @@ export function DailyGiftModal({
                 type="button"
                 data-autofocus
                 onClick={close}
-                className="h-12 w-full rounded-md bg-pokeball-red text-label-md font-bold text-white transition hover:bg-pokeball-red/85"
+                className="h-12 w-full rounded-lg bg-pokeball-red text-label-md font-bold text-white transition hover:bg-pokeball-red/85"
               >
                 {labels.continueLabel}
               </button>
@@ -332,7 +300,7 @@ export function DailyGiftModal({
               data-autofocus
               onClick={claim}
               disabled={pending}
-              className="daily-claim-cta h-12 w-full rounded-md bg-tertiary text-label-md font-bold uppercase tracking-wide text-surface transition hover:bg-tertiary/85 disabled:opacity-60"
+              className="daily-claim-cta h-12 w-full rounded-lg bg-gradient-to-b from-[#ffb000] to-[#ff7a00] text-label-md font-black uppercase tracking-wide text-[#1a1200] shadow-[0_0_24px_rgba(255,138,0,0.4)] transition hover:brightness-110 disabled:opacity-60"
             >
               {pending ? labels.claiming : labels.claim}
             </button>

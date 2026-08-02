@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type AnimationEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -10,13 +16,23 @@ import {
   markAllNotificationsReadAction,
   markNotificationReadAction,
 } from "@/actions/notifications";
-
-const ACTION_BTN =
-  "grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#ff8a00] to-[#f2c000] text-[#1a1200] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition hover:brightness-110 active:brightness-95";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { gymLeaderImageUrl } from "@/lib/gym-art";
 import { itemSpriteUrl } from "@/lib/item-sprites";
 import type { NotificationDTO, NotificationImageKind } from "@/lib/notifications";
+
+const ACTION_BTN =
+  "grid h-6 w-6 place-items-center rounded-md bg-gradient-to-br from-[#ff8a00] to-[#f2c000] text-[#1a1200] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition hover:brightness-110 active:brightness-95";
+
+type PanelPhase = "closed" | "open" | "closing";
+type Section = "unread" | "read";
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
 
 const PERSON_TYPES = new Set<NotificationDTO["type"]>([
   "PVP_WON",
@@ -171,7 +187,7 @@ function NotificationThumb({ item, unread }: { item: NotificationDTO; unread: bo
       <TrainerAvatar
         name={person}
         src={media?.kind === "avatar" ? media.src : (p.imageUrl ?? null)}
-        size="sm"
+        size="xs"
         className={unread ? "ring-1 ring-[#ff8a00]/50 rounded-[28%]" : undefined}
       />
     );
@@ -182,7 +198,7 @@ function NotificationThumb({ item, unread }: { item: NotificationDTO; unread: bo
     return (
       <span
         className={[
-          "relative flex h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-[#151820]",
+          "relative flex h-9 w-9 shrink-0 overflow-hidden rounded-md bg-[#151820]",
           unread ? "ring-1 ring-[#ff8a00]/50" : "ring-1 ring-white/10",
         ].join(" ")}
       >
@@ -190,8 +206,8 @@ function NotificationThumb({ item, unread }: { item: NotificationDTO; unread: bo
           src={media.src}
           alt=""
           fill
-          sizes="44px"
-          className={cover ? "object-cover object-top" : "object-contain p-1"}
+          sizes="36px"
+          className={cover ? "object-cover object-top" : "object-contain p-0.5"}
           unoptimized={media.src.startsWith("http")}
         />
       </span>
@@ -202,10 +218,10 @@ function NotificationThumb({ item, unread }: { item: NotificationDTO; unread: bo
     return (
       <span
         className={[
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg font-mono text-[11px] font-bold",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-bold",
           unread
             ? "bg-[#ff8a00]/15 text-[#f2c000] ring-1 ring-[#ff8a00]/40"
-            : "bg-white/[0.04] text-white/45 ring-1 ring-white/10",
+            : "bg-white/4 text-white/45 ring-1 ring-white/10",
         ].join(" ")}
       >
         {tag}
@@ -216,10 +232,10 @@ function NotificationThumb({ item, unread }: { item: NotificationDTO; unread: bo
   return (
     <span
       className={[
-        "flex h-11 w-11 shrink-0 rounded-lg",
+        "flex h-9 w-9 shrink-0 rounded-md",
         unread
           ? "bg-[#ff8a00]/15 ring-1 ring-[#ff8a00]/35"
-          : "bg-white/[0.04] ring-1 ring-white/10",
+          : "bg-white/4 ring-1 ring-white/10",
       ].join(" ")}
     />
   );
@@ -234,13 +250,20 @@ export function NotificationsBell({
 }) {
   const t = useTranslations("notifications");
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [phase, setPhase] = useState<PanelPhase>("closed");
+  const [section, setSection] = useState<Section>("unread");
   const [items, setItems] = useState(initialItems);
   const [unread, setUnread] = useState(initialUnread);
   const [, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  const hasUnreadSale = items.some((i) => i.type === "MARKET_SOLD" && !i.readAt);
+  const open = phase === "open";
+  const panelVisible = phase !== "closed";
+  const unreadItems = items.filter((i) => !i.readAt);
+  const readItems = items.filter((i) => !!i.readAt);
+  const visibleItems = section === "unread" ? unreadItems : readItems;
+  const hasUnreadSale = unreadItems.some((i) => i.type === "MARKET_SOLD");
 
   const [lastServerItems, setLastServerItems] = useState(initialItems);
   if (lastServerItems !== initialItems) {
@@ -249,13 +272,20 @@ export function NotificationsBell({
     setUnread(initialUnread);
   }
 
+  function requestClose() {
+    setPhase((current) => {
+      if (current !== "open") return current;
+      return prefersReducedMotion() ? "closed" : "closing";
+    });
+  }
+
   useEffect(() => {
     if (!open) return;
     function onPointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)) requestClose();
     }
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") requestClose();
     }
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKey);
@@ -265,12 +295,26 @@ export function NotificationsBell({
     };
   }, [open]);
 
-  function openPanel() {
-    setOpen((v) => {
-      const next = !v;
-      if (next && hasUnreadSale) router.refresh();
-      return next;
-    });
+  function togglePanel() {
+    if (phase === "closing") return;
+    if (phase === "open") {
+      requestClose();
+      return;
+    }
+    setSection("unread");
+    setPhase("open");
+    if (hasUnreadSale) router.refresh();
+  }
+
+  function onPanelAnimationEnd(event: AnimationEvent<HTMLDivElement>) {
+    if (event.target !== panelRef.current) return;
+    if (
+      event.animationName &&
+      !event.animationName.includes("notifications-panel-out")
+    ) {
+      return;
+    }
+    setPhase((current) => (current === "closing" ? "closed" : current));
   }
 
   function markAllRead() {
@@ -307,9 +351,9 @@ export function NotificationsBell({
     });
   }
 
-  function onOpen(item: NotificationDTO) {
+  function onNavigate(item: NotificationDTO) {
     markOneRead(item);
-    setOpen(false);
+    requestClose();
   }
 
   return (
@@ -319,11 +363,13 @@ export function NotificationsBell({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={t("title")}
-        onClick={openPanel}
-        className={`relative flex h-8 w-8 items-center justify-center rounded-md border transition ${
-          hasUnreadSale
-            ? "border-[#ff8a00]/55 bg-[#ff8a00]/10 text-[#f2c000]"
-            : "border-white/10 bg-white/5 text-on-surface-variant hover:bg-white/10 hover:text-on-surface"
+        onClick={togglePanel}
+        className={`relative z-[81] flex h-8 w-8 items-center justify-center rounded-md border transition ${
+          open || phase === "closing"
+            ? "border-white/18 bg-[#0b0d13] text-on-surface shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset]"
+            : hasUnreadSale
+              ? "border-[#ff8a00]/55 bg-[#ff8a00]/10 text-[#f2c000]"
+              : "border-white/10 bg-white/5 text-on-surface-variant hover:bg-white/10 hover:text-on-surface"
         }`}
       >
         <span className="material-symbols-outlined text-[18px]!">notifications</span>
@@ -334,132 +380,210 @@ export function NotificationsBell({
         )}
       </button>
 
-      {open && (
+      {panelVisible && (
         <div
+          ref={panelRef}
           role="dialog"
           aria-label={t("title")}
-          className="fixed inset-x-3 top-[calc(3.5rem+env(safe-area-inset-top)+0.35rem)] z-[80] flex max-h-[min(78dvh,560px)] w-auto flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14] shadow-[0_28px_80px_rgba(0,0,0,0.7)] xl:absolute xl:inset-x-auto xl:right-0 xl:top-full xl:mt-2 xl:max-h-none xl:w-[min(94vw,360px)]"
+          onAnimationEnd={onPanelAnimationEnd}
+          className={[
+            "notifications-panel fixed inset-x-3 top-[calc(3.5rem+env(safe-area-inset-top)+0.35rem)] z-[80] w-auto xl:absolute xl:inset-x-auto xl:right-0 xl:top-full xl:mt-2 xl:w-[min(94vw,360px)]",
+            phase === "closing" ? "is-closing" : "is-open",
+          ].join(" ")}
         >
-          <header className="flex shrink-0 items-center justify-between gap-2 border-b border-white/8 px-3.5 py-3">
-            <h2 className="text-[15px] font-semibold text-white">{t("title")}</h2>
-            <div className="flex items-center gap-1">
-              {unread > 0 && (
+          <div className="relative flex max-h-[min(78dvh,560px)] w-full flex-col overflow-visible rounded-2xl border border-white/[0.07] bg-[#0b0d13] shadow-[0_28px_80px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur-2xl xl:max-h-none">
+            <svg
+              aria-hidden
+              viewBox="0 0 22 10"
+              className="notifications-panel__caret pointer-events-none absolute -top-[9px] right-1.5 z-20 h-2.5 w-[22px] xl:right-[9px]"
+            >
+              <path
+                d="M1 9.5 L11 1.2 L21 9.5"
+                fill="none"
+                stroke="rgba(255,255,255,0.16)"
+                strokeWidth="1.1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path d="M2.4 9.7 L11 2.35 L19.6 9.7 Z" fill="#0b0d13" />
+            </svg>
+            {/* Tapa el trazo del borde bajo el pico para que no se vea una costura. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute top-0 right-[11px] z-20 h-[2px] w-4 -translate-y-px bg-[#0b0d13] xl:right-[14px]"
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/16 to-transparent"
+            />
+            <div className="flex min-h-0 max-h-[min(78dvh,560px)] flex-1 flex-col overflow-hidden rounded-2xl xl:max-h-none">
+            <header className="relative flex shrink-0 items-center justify-between gap-2 border-b border-white/[0.07] bg-gradient-to-b from-white/4 to-transparent px-3 py-2.5">
+              <h2 className="text-[14px] font-semibold text-white">{t("title")}</h2>
+              <div className="flex items-center gap-1">
+                {unread > 0 && (
+                  <button
+                    type="button"
+                    onClick={markAllRead}
+                    className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-[#f2c000] transition hover:bg-[#ff8a00]/15"
+                  >
+                    {t("markAllRead")}
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={markAllRead}
-                  className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-[#f2c000] transition hover:bg-[#ff8a00]/15"
+                  onClick={requestClose}
+                  aria-label={t("close")}
+                  className="grid h-6 w-6 place-items-center rounded-md text-white/45 transition hover:bg-white/8 hover:text-white"
                 >
-                  {t("markAllRead")}
+                  <span className="material-symbols-outlined text-[16px]!">close</span>
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label={t("close")}
-                className="grid h-7 w-7 place-items-center rounded-md text-white/45 transition hover:bg-white/8 hover:text-white"
-              >
-                <span className="material-symbols-outlined text-[18px]!">close</span>
-              </button>
-            </div>
-          </header>
+              </div>
+            </header>
 
-          <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2.5 xl:max-h-[min(62vh,420px)]">
-            {items.length === 0 ? (
-              <li className="rounded-xl border border-dashed border-white/10 px-3 py-10 text-center text-[13px] text-white/40">
-                {t("empty")}
-              </li>
-            ) : (
-              items.map((item) => {
-                const unreadItem = !item.readAt;
-                const coins =
-                  item.type === "MARKET_SOLD" && typeof item.payload.coins === "number"
-                    ? item.payload.coins
-                    : null;
-                const headline = headlineFor(item, t);
-                const detail = detailFor(item, t);
-
+            <div
+              role="tablist"
+              aria-label={t("title")}
+              className="grid shrink-0 grid-cols-2 gap-0.5 border-b border-white/[0.07] p-1.5"
+            >
+              {(
+                [
+                  { id: "unread" as const, label: t("filterUnread"), count: unreadItems.length },
+                  { id: "read" as const, label: t("filterRead"), count: readItems.length },
+                ] as const
+              ).map((tab) => {
+                const active = section === tab.id;
                 return (
-                  <li key={item.id}>
-                    <div
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setSection(tab.id)}
+                    className={[
+                      "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-semibold transition",
+                      active
+                        ? "bg-[#ff8a00]/18 text-[#f2c000] ring-1 ring-[#ff8a00]/35"
+                        : "text-white/45 hover:bg-white/5 hover:text-white/70",
+                    ].join(" ")}
+                  >
+                    {tab.label}
+                    <span
                       className={[
-                        "flex items-center gap-2.5 overflow-hidden rounded-xl border px-2.5 py-2 transition",
-                        unreadItem
-                          ? "border-[#ff8a00]/30 bg-gradient-to-r from-[#ff8a00]/14 via-[#f2c000]/06 to-[#141820]"
-                          : "border-white/8 bg-[#141820] hover:border-white/14",
+                        "min-w-4 rounded px-1 text-[10px] tabular-nums",
+                        active ? "bg-[#ff8a00]/25 text-[#f2c000]" : "bg-white/6 text-white/35",
                       ].join(" ")}
                     >
-                      <NotificationThumb item={item} unread={unreadItem} />
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p
-                            className={[
-                              "truncate text-[13px] font-semibold leading-tight",
-                              unreadItem ? "text-white" : "text-white/75",
-                            ].join(" ")}
-                          >
-                            {headline}
-                          </p>
-                          <span className="shrink-0 text-[10px] tabular-nums text-white/35">
-                            {relativeTime(item.createdAt, t)}
-                          </span>
-                        </div>
-                        {detail && (
-                          <p className="mt-0.5 truncate text-[12px] leading-snug text-white/45">
-                            {detail}
-                          </p>
-                        )}
-                        {coins !== null && (
-                          <p className="mt-1 text-[12px] font-semibold tabular-nums text-[#f2c000]">
-                            +{coins.toLocaleString()}
-                          </p>
-                        )}
-                      </div>
+            <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-1.5 xl:max-h-[min(62vh,420px)]">
+              {items.length === 0 ? (
+                <li className="rounded-lg border border-dashed border-white/10 px-3 py-8 text-center text-[12px] text-white/40">
+                  {t("empty")}
+                </li>
+              ) : visibleItems.length === 0 ? (
+                <li className="rounded-lg border border-dashed border-white/10 px-3 py-8 text-center text-[12px] text-white/40">
+                  {section === "unread" ? t("emptyUnread") : t("emptyRead")}
+                </li>
+              ) : (
+                visibleItems.map((item) => {
+                  const unreadItem = !item.readAt;
+                  const coins =
+                    item.type === "MARKET_SOLD" &&
+                    typeof item.payload.coins === "number"
+                      ? item.payload.coins
+                      : null;
+                  const headline = headlineFor(item, t);
+                  const detail = detailFor(item, t);
 
-                      <div className="flex shrink-0 items-center gap-1 self-center">
-                        {item.href ? (
-                          <Link
-                            href={item.href}
-                            onClick={() => onOpen(item)}
-                            aria-label={t("openAction")}
-                            title={t("openAction")}
-                            className={ACTION_BTN}
-                          >
-                            <span className="material-symbols-outlined text-[17px]!">
-                              drafts
+                  return (
+                    <li key={item.id}>
+                      <div
+                        className={[
+                          "flex items-center gap-2 overflow-hidden rounded-lg border px-2 py-1.5 transition",
+                          unreadItem
+                            ? "border-[#ff8a00]/28 bg-gradient-to-r from-[#ff8a00]/12 via-[#f2c000]/05 to-[#141820]"
+                            : "border-white/6 bg-[#141820]/80 hover:border-white/12",
+                        ].join(" ")}
+                      >
+                        <NotificationThumb item={item} unread={unreadItem} />
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline justify-between gap-1.5">
+                            <p
+                              className={[
+                                "truncate text-[12px] font-semibold leading-tight",
+                                unreadItem ? "text-white" : "text-white/70",
+                              ].join(" ")}
+                            >
+                              {headline}
+                            </p>
+                            <span className="shrink-0 text-[9px] tabular-nums text-white/35">
+                              {relativeTime(item.createdAt, t)}
                             </span>
-                          </Link>
-                        ) : (
+                          </div>
+                          {detail && (
+                            <p className="mt-px truncate text-[11px] leading-snug text-white/40">
+                              {detail}
+                            </p>
+                          )}
+                          {coins !== null && (
+                            <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-[#f2c000]">
+                              +{coins.toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-0.5 self-center">
+                          {item.href ? (
+                            <Link
+                              href={item.href}
+                              onClick={() => onNavigate(item)}
+                              aria-label={t("openAction")}
+                              title={t("openAction")}
+                              className={ACTION_BTN}
+                            >
+                              <span className="material-symbols-outlined text-[14px]!">
+                                {unreadItem ? "drafts" : "open_in_new"}
+                              </span>
+                            </Link>
+                          ) : unreadItem ? (
+                            <button
+                              type="button"
+                              onClick={() => markOneRead(item)}
+                              aria-label={t("markRead")}
+                              title={t("markRead")}
+                              className={ACTION_BTN}
+                            >
+                              <span className="material-symbols-outlined text-[14px]!">
+                                drafts
+                              </span>
+                            </button>
+                          ) : null}
                           <button
                             type="button"
-                            onClick={() => onOpen(item)}
-                            aria-label={t("markRead")}
-                            title={t("markRead")}
+                            onClick={() => deleteOne(item)}
+                            aria-label={t("deleteAction")}
+                            title={t("deleteAction")}
                             className={ACTION_BTN}
                           >
-                            <span className="material-symbols-outlined text-[17px]!">
-                              drafts
+                            <span className="material-symbols-outlined text-[14px]!">
+                              delete
                             </span>
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => deleteOne(item)}
-                          aria-label={t("deleteAction")}
-                          title={t("deleteAction")}
-                          className={ACTION_BTN}
-                        >
-                          <span className="material-symbols-outlined text-[17px]!">
-                            delete
-                          </span>
-                        </button>
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                );
-              })
-            )}
-          </ul>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+            </div>
+          </div>
         </div>
       )}
     </div>

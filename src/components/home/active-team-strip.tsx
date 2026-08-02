@@ -85,6 +85,7 @@ function TeamSlot({
   const tUx = useTranslations("ux");
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const skipClickRef = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -141,7 +142,6 @@ function TeamSlot({
   );
   const displayName = member.nickname ?? member.speciesName;
   const isLead = index === 0;
-  const skipClickRef = useRef(false);
 
   const sheetLabels: SquadCardSheetLabels = {
     showDetails: member.labels.showDetails,
@@ -345,30 +345,70 @@ function TeamSlot({
           </div>
 
           <div className="mt-1 space-y-1 md:mt-1.5">
-            <div
-              className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-0.5 md:grid-cols-[1.6rem_minmax(0,1fr)] md:gap-1"
-              title={`${member.currentHp}/${member.maxHp}`}
-            >
-              <span className="text-[7px] font-bold uppercase tracking-wider text-white/45 md:text-[8px]">
-                {member.labels.hp}
-              </span>
-              <SegmentedStatBar
-                pct={hpPct}
-                variant={hpBarVariant(hpPct)}
-                segments={10}
-                heightClass="h-1.5 md:h-2"
-              />
+            {/* Mobile: barras rectangulares HP + EXP. Desktop: segmentadas. */}
+            <div className="space-y-1 md:hidden">
+              <div
+                className="grid grid-cols-[1.4rem_minmax(0,1fr)] items-center gap-1"
+                title={`${member.labels.hp} ${member.currentHp}/${member.maxHp}`}
+              >
+                <span className="text-[7px] font-bold uppercase tracking-wider text-white/45">
+                  {member.labels.hp}
+                </span>
+                <div className="h-1.5 overflow-hidden rounded-[2px] bg-white/12">
+                  <div
+                    className={`h-full rounded-[2px] transition-[width] duration-300 ${
+                      fainted
+                        ? "bg-error"
+                        : hpPct <= 25
+                          ? "bg-gradient-to-r from-orange-500 to-electric-yellow"
+                          : "bg-gradient-to-r from-emerald-500 to-lime-400"
+                    }`}
+                    style={{ width: `${hpPct}%` }}
+                  />
+                </div>
+              </div>
+              <div
+                className="grid grid-cols-[1.4rem_minmax(0,1fr)] items-center gap-1"
+                title={`${member.labels.exp} ${Math.round(member.xpPct)}%`}
+              >
+                <span className="text-[7px] font-bold uppercase tracking-wider text-white/45">
+                  {member.labels.exp}
+                </span>
+                <div className="h-1.5 overflow-hidden rounded-[2px] bg-white/12">
+                  <div
+                    className="h-full rounded-[2px] bg-gradient-to-r from-orange-500 to-electric-yellow transition-[width] duration-300"
+                    style={{ width: `${Math.max(0, Math.min(100, member.xpPct))}%` }}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="hidden grid-cols-[1.6rem_minmax(0,1fr)] items-center gap-1 md:grid">
-              <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
-                {member.labels.exp}
-              </span>
-              <SegmentedStatBar
-                pct={member.xpPct}
-                variant="xp"
-                segments={10}
-                heightClass="h-2"
-              />
+
+            <div className="hidden space-y-1 md:block">
+              <div
+                className="grid grid-cols-[1.6rem_minmax(0,1fr)] items-center gap-1"
+                title={`${member.currentHp}/${member.maxHp}`}
+              >
+                <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
+                  {member.labels.hp}
+                </span>
+                <SegmentedStatBar
+                  pct={hpPct}
+                  variant={hpBarVariant(hpPct)}
+                  segments={10}
+                  heightClass="h-2"
+                />
+              </div>
+              <div className="grid grid-cols-[1.6rem_minmax(0,1fr)] items-center gap-1">
+                <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
+                  {member.labels.exp}
+                </span>
+                <SegmentedStatBar
+                  pct={member.xpPct}
+                  variant="xp"
+                  segments={10}
+                  heightClass="h-2"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -504,7 +544,9 @@ export function ActiveTeamStrip({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
+  const [lastInitialMembers, setLastInitialMembers] = useState(initialMembers);
+  if (lastInitialMembers !== initialMembers) {
+    setLastInitialMembers(initialMembers);
     setMembers((prev) => {
       const byId = new Map(initialMembers.map((m) => [m.id, m]));
       const merged = prev
@@ -518,11 +560,12 @@ export function ActiveTeamStrip({
       }
       return merged;
     });
-  }, [initialMembers]);
-
-  useEffect(() => {
+  }
+  const [lastBagCounts, setLastBagCounts] = useState(initialBagCounts);
+  if (lastBagCounts !== initialBagCounts) {
+    setLastBagCounts(initialBagCounts);
     setBagCounts(initialBagCounts);
-  }, [initialBagCounts]);
+  }
 
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => members[i] ?? null);
   const firstEmptyIndex = slots.findIndex((m) => m === null);

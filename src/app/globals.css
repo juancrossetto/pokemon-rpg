@@ -2861,6 +2861,102 @@ body {
   }
 }
 
+/* Título del popup Daily Reward: brillo flúor naranja/amarillo (no celeste). */
+.daily-reward-title {
+  text-shadow:
+    0 0 10px rgba(255, 138, 0, 0.95),
+    0 0 28px rgba(242, 192, 0, 0.55),
+    0 0 48px rgba(255, 138, 0, 0.35);
+}
+
+.daily-reward-popup {
+  animation: gift-modal-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/*
+  Cards del strip Daily Reward — forma tech con pestaña izquierda
+  (clip-path), borde neón y estados claimed / today / special / rare.
+*/
+.daily-reward-card {
+  border: 2.5px solid rgba(255, 138, 0, 0.45);
+  border-radius: 14px;
+  background:
+    linear-gradient(165deg, rgba(255, 138, 0, 0.1) 0%, transparent 42%),
+    linear-gradient(180deg, #152038 0%, #0c1428 100%);
+  box-shadow:
+    0 0 12px rgba(255, 138, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  clip-path: polygon(
+    0 10px,
+    8px 0,
+    100% 0,
+    100% 100%,
+    8px 100%,
+    0 calc(100% - 10px)
+  );
+}
+
+.daily-reward-card.is-idle {
+  border-color: rgba(255, 138, 0, 0.4);
+}
+
+.daily-reward-card.is-claimed {
+  border-color: rgba(255, 138, 0, 0.65);
+  box-shadow:
+    0 0 16px rgba(255, 138, 0, 0.35),
+    inset 0 0 18px rgba(255, 138, 0, 0.06);
+}
+
+.daily-reward-card.is-today {
+  border-color: #ff8a00;
+  box-shadow:
+    0 0 0 1px rgba(255, 154, 26, 0.35),
+    0 0 22px rgba(255, 138, 0, 0.55),
+    inset 0 0 24px rgba(255, 138, 0, 0.12);
+  animation: day-today-pulse 2.6s ease-in-out infinite;
+}
+
+.daily-reward-card.is-special {
+  border-color: #7dff4a;
+  box-shadow:
+    0 0 18px rgba(125, 255, 74, 0.4),
+    inset 0 0 16px rgba(125, 255, 74, 0.08);
+}
+
+.daily-reward-card.is-final {
+  border-color: #ff3b3b;
+  box-shadow:
+    0 0 18px rgba(255, 59, 59, 0.42),
+    inset 0 0 16px rgba(255, 59, 59, 0.1);
+}
+
+.daily-reward-badge {
+  border-radius: 999px;
+  line-height: 1.1;
+}
+
+.daily-reward-badge.is-special {
+  background: #7dff4a;
+  color: #06200a;
+  box-shadow: 0 0 10px rgba(125, 255, 74, 0.65);
+}
+
+.daily-reward-badge.is-rare {
+  background: #ff3b3b;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 59, 59, 0.65);
+}
+
+.daily-reward-check {
+  border-radius: 8px;
+  border: 2.5px solid #ff8a00;
+  background: #0c1428;
+  color: #ff8a00;
+  box-shadow:
+    0 0 14px rgba(255, 138, 0, 0.7),
+    inset 0 0 8px rgba(255, 138, 0, 0.15);
+}
+
 /* Entrada del modal de regalo: sube y crece apenas. Corta —280ms— para que no
    se interponga entre el jugador y el botón de reclamar. */
 .gift-modal-in {
@@ -2903,18 +2999,29 @@ body {
 @keyframes day-today-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(242, 192, 0, 0);
+    box-shadow:
+      0 0 0 1px rgba(255, 154, 26, 0.25),
+      0 0 18px rgba(255, 138, 0, 0.4),
+      inset 0 0 24px rgba(255, 138, 0, 0.1);
   }
   50% {
-    box-shadow: 0 0 0 3px rgba(242, 192, 0, 0.14);
+    box-shadow:
+      0 0 0 2px rgba(255, 154, 26, 0.45),
+      0 0 28px rgba(255, 138, 0, 0.65),
+      inset 0 0 28px rgba(255, 138, 0, 0.16);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .gift-modal-in,
+  .daily-reward-popup,
   .gift-lead,
   .day-today {
     animation: none;
+  }
+
+  .daily-reward-title {
+    text-shadow: none;
   }
 }
 
@@ -2942,10 +3049,10 @@ body {
 @keyframes daily-claim-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(238, 21, 21, 0);
+    box-shadow: 0 0 0 0 rgba(255, 138, 0, 0);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(238, 21, 21, 0.16);
+    box-shadow: 0 0 0 4px rgba(255, 138, 0, 0.28);
   }
 }
 
@@ -3593,6 +3700,55 @@ html.boot-splash-pending .boot-splash {
   }
 }
 
+/*
+  Panel de notificaciones: nace del botón del header (origen top-right) con
+  overshoot elástico al abrir y un pequeño “tirón” al cerrar antes de volver.
+*/
+.notifications-panel {
+  transform-origin: top right;
+  will-change: transform, opacity;
+}
+
+.notifications-panel.is-open {
+  animation: notifications-panel-in 0.48s cubic-bezier(0.34, 1.56, 0.45, 1) both;
+}
+
+.notifications-panel.is-closing {
+  animation: notifications-panel-out 0.34s cubic-bezier(0.55, 0.08, 0.68, 0.4) both;
+  pointer-events: none;
+}
+
+@keyframes notifications-panel-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -14px, 0) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes notifications-panel-out {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  38% {
+    opacity: 1;
+    transform: translate3d(0, 5px, 0) scale(1.035);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -16px, 0) scale(0.88);
+  }
+}
+
+/* Pico: triángulo SVG; el relleno tapa la base contra el borde del panel. */
+.notifications-panel__caret {
+  overflow: visible;
+}
+
 @keyframes market-sheet-in {
   from {
     transform: translateY(14%);
@@ -3626,7 +3782,9 @@ html.boot-splash-pending .boot-splash {
   .mobile-nav-sheet.is-closing,
   .mobile-nav-sheet-backdrop.is-open,
   .mobile-nav-sheet-backdrop.is-closing,
-  .user-menu-panel {
+  .user-menu-panel,
+  .notifications-panel.is-open,
+  .notifications-panel.is-closing {
     animation: none !important;
   }
 

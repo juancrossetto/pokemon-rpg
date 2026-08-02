@@ -73,7 +73,7 @@ export function UserMenu({
         // anillo de foco dibujaba un círculo alrededor de un avatar cuadrado.
         className="group relative flex items-center justify-center rounded-[28%] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40"
       >
-        <TrainerAvatar name={name} src={avatar?.src ?? null} size="sm" active={open} />
+        <TrainerAvatar name={name} src={avatar?.src ?? null} size="xs" active={open} />
       </button>
 
       {open && (

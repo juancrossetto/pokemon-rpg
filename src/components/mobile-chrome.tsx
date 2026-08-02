@@ -741,16 +741,16 @@ export function MobileChrome({
   return (
     <>
       {/* Top bar mobile: brand + resources chip + account — ~56–64px + safe-area */}
-      <header className="fixed top-0 inset-x-0 z-50 flex xl:hidden items-center justify-between gap-2 px-3 min-h-14 bg-background/95 backdrop-blur-xl border-b border-white/10 pt-[env(safe-area-inset-top)]">
+      <header className="fixed top-0 inset-x-0 z-50 flex min-h-14 items-center justify-between gap-2 border-b border-white/10 bg-background/95 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-xl xl:hidden">
         <Link
           href={lockedHref ?? brandHref}
-          className="flex h-11 w-11 shrink-0 items-center justify-center"
+          className="flex h-8 shrink-0 items-center justify-center"
           aria-label={brand}
         >
           <BrandLogo alt={brand} priority sizes="64px" className="h-7 w-auto" />
         </Link>
 
-        <div className="flex min-w-0 items-center gap-1 shrink-0">
+        <div className="flex h-8 min-w-0 shrink-0 items-center gap-1.5">
           {energy !== null &&
             energyMax !== null &&
             energyUpdatedAt &&
@@ -767,29 +767,25 @@ export function MobileChrome({
               />
             )}
           {userName ? (
-            <HandbookTrigger className="hidden min-[401px]:inline-flex h-11 w-11 items-center justify-center rounded-lg text-on-surface-variant transition hover:text-electric-yellow" />
+            <HandbookTrigger className="hidden min-[401px]:inline-flex h-8 w-8 items-center justify-center rounded-md text-on-surface-variant transition hover:text-electric-yellow" />
           ) : null}
           {notifications && (
-            <div className="flex h-11 w-11 items-center justify-center">
-              <NotificationsBell
-                initialItems={notifications.items}
-                initialUnread={notifications.unreadCount}
-              />
-            </div>
+            <NotificationsBell
+              initialItems={notifications.items}
+              initialUnread={notifications.unreadCount}
+            />
           )}
           {userName ? (
-            <div className="flex h-11 w-11 items-center justify-center">
-              <UserMenu
-                name={userName}
-                avatarId={avatarId ?? null}
-                logoutLabel={logoutLabel}
-                profileLabel={profileLabel}
-                handbookLabel={handbookLabel}
-                onHandbook={() =>
-                  openHandbook(chapterForPath(pathname) ?? undefined)
-                }
-              />
-            </div>
+            <UserMenu
+              name={userName}
+              avatarId={avatarId ?? null}
+              logoutLabel={logoutLabel}
+              profileLabel={profileLabel}
+              handbookLabel={handbookLabel}
+              onHandbook={() =>
+                openHandbook(chapterForPath(pathname) ?? undefined)
+              }
+            />
           ) : (
             <div className="flex items-center gap-1.5">
               <Link href="/login" className="text-[11px] text-on-surface-variant px-1.5 py-1">

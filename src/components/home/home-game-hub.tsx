@@ -107,7 +107,7 @@ export function HomeGameHub({
   return (
     <div className="relative flex min-w-0 flex-1 flex-col overflow-x-hidden">
       <JourneyOnboarding />
-      <div className="relative flex min-w-0 flex-col px-margin-mobile py-3 md:px-margin-desktop md:py-5">
+      <div className="relative flex min-w-0 flex-col px-margin-mobile py-2 md:px-margin-desktop md:py-5">
         <div className="mx-auto flex w-full min-w-0 max-w-3xl gap-4 md:gap-5 xl:max-w-6xl 2xl:max-w-7xl">
           <HomeDesktopRail
             pvp={rail.pvp}
@@ -116,9 +116,9 @@ export function HomeGameHub({
             expedition={expedition}
           />
 
-          <div className="mx-auto flex min-w-0 flex-1 flex-col gap-5 md:gap-6 xl:gap-5">
+          <div className="mx-auto flex min-w-0 flex-1 flex-col gap-3 md:gap-6 xl:gap-5">
             {/* Reserva la altura de la expedición del rail; Quick Access llena el hueco. */}
-            <div className="flex flex-col gap-4 xl:min-h-[12.25rem]">
+            <div className="flex flex-col gap-2.5 xl:min-h-[12.25rem] xl:gap-4">
               <HomeIdentityBanner identity={identity} labels={hubLabels.identity} />
               <HomeQuickAccess links={quickLinks} labels={hubLabels.quickAccess} />
             </div>

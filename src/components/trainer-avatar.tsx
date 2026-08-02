@@ -3,6 +3,8 @@
 import { AvatarImage } from "@/components/avatar-image";
 
 const SIZE_CLASS = {
+  /** Header / chrome: alinea con campana y resource chip (h-8). */
+  xs: "h-8 w-8",
   sm: "h-11 w-11",
   md: "h-14 w-14",
   lg: "h-16 w-16",
@@ -10,6 +12,7 @@ const SIZE_CLASS = {
 } as const;
 
 const INITIALS_CLASS = {
+  xs: "text-[10px]",
   sm: "text-[12px]",
   md: "text-[13px]",
   lg: "text-[15px]",
@@ -113,7 +116,7 @@ export function TrainerAvatar({
       {presenceClassName ? (
         <span
           className={`absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-[#0c0e14] ${
-            size === "xl" ? "h-3.5 w-3.5" : "h-3 w-3"
+            size === "xl" ? "h-3.5 w-3.5" : size === "xs" ? "h-2 w-2" : "h-3 w-3"
           } ${presenceClassName}`}
         />
       ) : null}

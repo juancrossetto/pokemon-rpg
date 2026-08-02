@@ -217,6 +217,8 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     statusToday: tEvents("statusToday"),
     statusClaimed: tEvents("statusClaimed"),
     statusUpcoming: tEvents("statusUpcoming"),
+    badgeSpecial: tEvents("badgeSpecial"),
+    badgeRare: tEvents("badgeRare"),
     rewards: {
       coins: tEvents("rewards.coins"),
       energy: tEvents("rewards.energy"),
