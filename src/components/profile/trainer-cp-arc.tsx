@@ -33,26 +33,25 @@ export function TrainerCpArc({
 
   return (
     <>
-      {/* PC + número: rótulo Inter, cifra mono (ver `.tp-id__cp-*`). */}
+      {/* PC + número: sin fondo — el arco pasa detrás del texto. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] flex items-baseline justify-center gap-2 pt-0.5">
         <p className="tp-id__cp-label text-[0.95rem] uppercase leading-none tracking-[0.22em] text-white/45 sm:text-[1.05rem]">
           {label}
         </p>
-        <p className="tp-id__cp-value text-[2.45rem] leading-none tracking-[-0.02em] text-white tabular-nums drop-shadow-[0_3px_14px_rgba(0,0,0,0.7)] sm:text-[2.9rem]">
+        <p className="tp-id__cp-value text-[2.45rem] leading-none tracking-[-0.02em] text-white tabular-nums drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-[2.9rem]">
           {value.toLocaleString()}
         </p>
       </div>
 
       {/*
-        El arco envuelve a las figuras: arranca debajo del número y su cuerda
-        cae a la altura de los pies. `xMidYMax meet` conserva la relación de
-        aspecto —estirado, el trazo engorda de un lado y adelgaza del otro— y lo
-        ancla abajo, que es lo que mantiene las puntas sobre la línea de piso.
+        Arco de piso a piso. El pico queda DENTRO del viewBox (antes salía por
+        arriba y el borde superior del SVG cortaba el trazo como si hubiera un
+        rectángulo negro sobre el CP).
       */}
       <svg
-        viewBox="0 0 320 150"
+        viewBox="0 0 320 168"
         preserveAspectRatio="xMidYMax meet"
-        className="pointer-events-none absolute inset-x-0 bottom-2 top-[3.6rem] z-[1] mx-auto w-full max-w-[27rem]"
+        className="pointer-events-none absolute inset-x-0 bottom-2 top-0 z-[1] mx-auto w-full max-w-[27rem] overflow-visible"
         fill="none"
         aria-hidden
       >
@@ -64,15 +63,15 @@ export function TrainerCpArc({
           </linearGradient>
         </defs>
 
+        {/* Pico en y≈18 — debajo del rótulo PC, sin clip. */}
         <path
-          d="M8 146 A 152 152 0 0 1 312 146"
+          d="M16 158 A 142 142 0 0 1 304 158"
           stroke="rgba(255,255,255,0.10)"
           strokeWidth="2.5"
           strokeLinecap="round"
         />
-        {/* Halo fino: poco blur, poca opacidad — flúor sin mancha. */}
         <path
-          d="M8 146 A 152 152 0 0 1 312 146"
+          d="M16 158 A 142 142 0 0 1 304 158"
           stroke={ARC_ORANGE}
           strokeWidth="3.5"
           strokeLinecap="round"
@@ -82,7 +81,7 @@ export function TrainerCpArc({
           style={{ filter: "blur(1.5px)" }}
         />
         <path
-          d="M8 146 A 152 152 0 0 1 312 146"
+          d="M16 158 A 142 142 0 0 1 304 158"
           stroke={`url(#${gradientId})`}
           strokeWidth="2.5"
           strokeLinecap="round"

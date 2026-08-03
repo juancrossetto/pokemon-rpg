@@ -54,12 +54,35 @@ function readPending(): { delta: number; at: number } | null {
   return null;
 }
 
+/**
+ * Reserva el delta sin animar todavía. Sirve cuando el server ya revalidó el
+ * layout (saldo nuevo) pero el FX de loot todavía no llegó al header: el badge
+ * arranca en `coins - pending` y espera `announceCoinDelta` / `flushPendingCoinDelta`.
+ */
+export function seedPendingCoinDelta(delta: number): void {
+  if (typeof window === "undefined" || !Number.isFinite(delta) || delta === 0) return;
+  const next = (readPending()?.delta ?? 0) + delta;
+  writePending(next);
+}
+
 export function announceCoinDelta(delta: number): void {
   if (typeof window === "undefined" || !Number.isFinite(delta) || delta === 0) return;
   const next = (readPending()?.delta ?? 0) + delta;
   writePending(next);
   window.dispatchEvent(
     new CustomEvent<CoinDeltaDetail>(COIN_DELTA_EVENT, { detail: { delta } }),
+  );
+}
+
+/** Dispara la animación con el pending ya sembrado (sin sumar otra vez). */
+export function flushPendingCoinDelta(): void {
+  if (typeof window === "undefined") return;
+  const pending = readPending();
+  if (!pending || pending.delta === 0) return;
+  window.dispatchEvent(
+    new CustomEvent<CoinDeltaDetail>(COIN_DELTA_EVENT, {
+      detail: { delta: pending.delta },
+    }),
   );
 }
 

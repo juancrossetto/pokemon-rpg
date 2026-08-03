@@ -291,6 +291,7 @@ export async function loadFriendsHub(userId: string): Promise<FriendsHubSnapshot
         topLevel: level,
       }),
       rankTierId: rankProgress(badges, totalGyms).tier.id,
+      pvpRating: u.pvpRating,
       badgeCount: badges,
       regionId,
       regionLabel: regionLabel(regionId),

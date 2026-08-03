@@ -12,9 +12,10 @@ export default async function FriendsPage({
   searchParams: Promise<{ filter?: string }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
-  const [t, tNav, session] = await Promise.all([
+  const [t, tNav, tPvp, session] = await Promise.all([
     getTranslations("friends"),
     getTranslations("nav"),
+    getTranslations("pvp"),
     auth(),
   ]);
 
@@ -133,13 +134,15 @@ export default async function FriendsPage({
         mythKeeper: t("card.titles.mythKeeper"),
         champion: t("card.titles.champion"),
       },
-      ranks: {
-        bronze: t("card.ranks.bronze"),
-        silver: t("card.ranks.silver"),
-        gold: t("card.ranks.gold"),
-        diamond: t("card.ranks.diamond"),
-        master: t("card.ranks.master"),
-        champion: t("card.ranks.champion"),
+      pvpTiers: {
+        beginner: tPvp("tiers.beginner"),
+        rising: tPvp("tiers.rising"),
+        advanced: tPvp("tiers.advanced"),
+        elite: tPvp("tiers.elite"),
+        bronzeMaster: tPvp("tiers.bronzeMaster"),
+        crystalMaster: tPvp("tiers.crystalMaster"),
+        champion: tPvp("tiers.champion"),
+        legendary: tPvp("tiers.legendary"),
       },
       activityCatch: t("card.activityCatch"),
       activityBadge: t("card.activityBadge"),

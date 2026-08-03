@@ -101,7 +101,7 @@ export function CampaignPrimaryObjective({
           </Link>
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[9px] font-semibold uppercase tracking-[0.14em] text-[#ff9a4a] sm:text-[10px] sm:tracking-[0.18em]">
+            <p className="truncate text-[9px] font-semibold uppercase tracking-[0.14em] text-pokeball-red sm:text-[10px] sm:tracking-[0.18em]">
               {regionLabel}
               {chapterLabel ? (
                 <>
@@ -130,14 +130,14 @@ export function CampaignPrimaryObjective({
       {/* Próximo objetivo: desktop only — en mobile el panel de zona ya lo cubre. */}
       <section
         className={`game-float-card hidden rounded-2xl p-3 sm:p-3.5 lg:block ${
-          gymReady ? "ring-1 ring-electric-yellow/40" : "ring-1 ring-[#ff8a00]/28"
+          gymReady ? "ring-1 ring-electric-yellow/40" : "ring-1 ring-pokeball-red/28"
         }`}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0 flex-1">
             <p
               className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                gymReady ? "text-electric-yellow" : "text-[#ff8a00]"
+                gymReady ? "text-electric-yellow" : "text-pokeball-red"
               }`}
             >
               {t("nextObjective")}

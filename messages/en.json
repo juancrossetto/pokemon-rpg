@@ -264,9 +264,6 @@
         "viewProfile": "Profile",
         "lastAchievement": "Latest achievement"
       },
-      "quickAccess": {
-        "title": "Quick access"
-      },
       "daily": {
         "title": "Daily activity",
         "energy": "Energy",
@@ -277,14 +274,28 @@
       "objectives": {
         "title": "Zone objectives",
         "empty": "Pick a journey zone to see objectives.",
+        "emptyWeekly": "The weekly challenge resets on Monday.",
+        "emptyEvent": "No active event right now.",
         "rewards": "Rewards",
         "claimable": "READY",
         "claimed": "CLAIMED",
         "go": "GO",
         "openCampaign": "Open journey",
-        "stages": "Stages",
-        "pokedex": "Pokédex",
-        "trainers": "Trainers"
+        "openEvents": "See events",
+        "stages": "Clear all stages",
+        "pokedex": "Complete the Pokédex",
+        "trainers": "Defeat trainers",
+        "progressTitle": "Missions & events",
+        "tabAdventure": "Adventure",
+        "tabWeekly": "Weekly",
+        "tabEvent": "Event",
+        "weeklyReady": "{count} ready",
+        "tabMissions": "Missions",
+        "tabRewards": "Rewards",
+        "tabPokedex": "Pokédex",
+        "rewardCoins": "Coins",
+        "pokedexSeen": "Seen",
+        "pokedexCaught": "Caught"
       },
       "history": {
         "title": "Recent history",
@@ -293,6 +304,22 @@
         "shiny": "You caught a shiny {name}!",
         "badge": "You earned the {name} badge.",
         "trainer": "You defeated {name}."
+      },
+      "dailyActions": {
+        "title": "Daily actions",
+        "statusAvailable": "Available",
+        "statusDone": "Done",
+        "statusReady": "Ready",
+        "statusBadges": "{count}/{total}",
+        "statusStreakDay": "Day {n}",
+        "items": {
+          "daily": "Daily gift",
+          "pvp": "PvP",
+          "gyms": "Gym",
+          "streak": "Streak",
+          "friends": "Friends",
+          "market": "Market"
+        }
       }
     }
   },
@@ -1872,18 +1899,26 @@
     "rating": "Rating",
     "tier": "League",
     "tiers": {
-      "bronze": "Bronze",
-      "silver": "Silver",
-      "gold": "Gold",
-      "platinum": "Platinum",
-      "diamond": "Diamond",
-      "master": "Master"
+      "beginner": "Beginner",
+      "rising": "Rising",
+      "advanced": "Advanced",
+      "elite": "Elite",
+      "bronzeMaster": "Bronze Master",
+      "crystalMaster": "Crystal Master",
+      "champion": "Champion",
+      "legendary": "Legendary"
     },
     "season": "Season {key}",
     "seasonEnds": "Ends {date}",
     "wins": "{count} wins",
     "losses": "{count} losses",
+    "winsLabel": "Wins",
+    "lossesLabel": "Losses",
     "winRate": "{pct}% win rate",
+    "winRateShort": "WR",
+    "streak": "Streak",
+    "rankLabel": "Rank",
+    "rankUnranked": "N/R",
     "findMatch": "Quick match",
     "rankedMatch": "Ranked",
     "searching": "Searching…",
@@ -1891,12 +1926,37 @@
     "noTeam": "No team",
     "noEnergy": "No energy",
     "energyCost": "Costs 1 energy · you have {energy}",
+    "energyCostShort": "1⚡ · {energy}",
     "viewLadder": "View ladder",
     "modesTitle": "Modes",
-    "rankedBlurb": "Play turn by turn against the rival's team (AI). Earn Elo and coins.",
-    "quickBlurb": "Instant simulation. Great for a quick bout.",
+    "modeChallenge": "Challenge",
+    "rankedBlurb": "Ranked turn-by-turn. Moves Elo, league, and badge.",
+    "quickBlurb": "Instant simulation. Coins only — no Elo change.",
+    "rankedBlurbShort": "Elo & badge",
+    "quickBlurbShort": "Coins only",
+    "challengeBlurbShort": "By name",
+    "rankStanding": "{tier} {division}",
     "challengeTitle": "Direct challenge",
     "challengeBlurb": "Search a trainer by name and challenge them (10 min cooldown).",
+    "difficultyEasy": "Easy",
+    "difficultyNormal": "Normal",
+    "difficultyHard": "Hard",
+    "rewardCoinsHint": "Coins",
+    "seasonTrackTitle": "Season rewards",
+    "seasonTrackHint": "End-of-season rewards by league",
+    "seasonCountdown": "{days}d {hours}h {minutes}m",
+    "seasonCountdownTitle": "Season ends",
+    "seasonStatsTitle": "Season",
+    "rivalsTitle": "Recent rivals",
+    "emptyRivals": "No recent rivals yet.",
+    "viewMatch": "View match",
+    "missionTitle": "Objectives",
+    "missionNextTier": "Next rank",
+    "missionWins": "Wins",
+    "you": "You",
+    "lastRival": "Rival",
+    "teamBlurbShort": "Competitive preset",
+    "teamPickerToggle": "Pick Pokémon",
     "challengePlaceholder": "Search trainer…",
     "challengeSubmit": "Challenge",
     "challengeNoResults": "No trainers match that search.",
@@ -1927,6 +1987,8 @@
     "fainted": "Fainted",
     "battleLog": "Battle rundown",
     "turnLog": "Turn log",
+    "turnLogShow": "Show log",
+    "turnLogHide": "Hide",
     "defeated": "of {owner} defeated",
     "noKos": "No Pokémon fainted in this battle.",
     "noTurnLog": "No turn log was saved.",
@@ -2309,20 +2371,23 @@
     "dailyNext": "Back in {time}",
     "dailyProgress": "Day {current} of {total}",
     "weeklyTitle": "Weekly challenge",
-    "weeklySubtitle": "Four objectives, four rewards. Resets every Monday.",
+    "weeklySubtitle": "Six objectives and five milestones. Resets every Monday.",
     "weeklyPercent": "{percent}% complete",
     "weeklyReset": "New week in {time}",
     "objectives": {
       "logins": "Log in on 5 days",
-      "battles": "Win 25 battles",
-      "catches": "Catch 10 creatures",
-      "zones": "Complete 3 zone objectives"
+      "battles": "Win 30 battles",
+      "catches": "Catch 15 creatures",
+      "zones": "Complete 4 zone objectives",
+      "shinies": "Catch 1 shiny Pokémon",
+      "gyms": "Win 2 gym challenges"
     },
     "milestone": "{percent}% milestone",
     "claim": "Claim",
     "claimed": "Claimed",
     "locked": "Locked",
     "goTo": "Go",
+    "rewardsLabel": "Rewards:",
     "rewards": {
       "coins": "coins",
       "energy": "energy",
@@ -2339,6 +2404,7 @@
     "limited": {
       "badge": "Limited-time event",
       "endsIn": "Ends in {time}",
+      "partOf": "Part {current} of {total}:",
       "catalog": {
         "battleRush": {
           "name": "Battle Week",
@@ -2354,15 +2420,21 @@
         }
       },
       "missions": {
-        "wins-10": "Win 10 battles",
+        "wins-5": "Win 5 battles",
+        "wins-15": "Win 15 battles",
         "wins-30": "Win 30 battles",
-        "wins-60": "Win 60 battles",
+        "wins-55": "Win 55 battles",
+        "wins-80": "Win 80 battles",
+        "catch-8": "Catch 8 Pokémon",
         "catch-15": "Catch 15 Pokémon",
         "catch-25": "Catch 25 Pokémon",
         "catch-40": "Catch 40 Pokémon",
+        "catch-70": "Catch 70 Pokémon",
         "shiny-1": "Catch a shiny Pokémon",
-        "zones-2": "Clear 2 zone objectives",
-        "zones-5": "Clear 5 zone objectives"
+        "zones-1": "Clear 1 zone objective",
+        "zones-3": "Clear 3 zone objectives",
+        "zones-5": "Clear 5 zone objectives",
+        "zones-8": "Clear 8 zone objectives"
       }
     },
     "close": "Close",
@@ -2392,6 +2464,7 @@
     "memberSince": "Since",
     "startDate": "Start date:",
     "toNextRank": "{count} badges to {rank}",
+    "toNextLeague": "{pct}% to {rank}",
     "maxRank": "Max rank reached",
     "withCompanion": "{name} and {companion}",
     "sceneLabel": "Trainer {name} with companion {companion}.",
@@ -2563,7 +2636,7 @@
       "tower": "Tower",
       "floor": "Floor {floor}",
       "journey": "Journey",
-      "rank": "Rank"
+      "rank": "League"
     }
   },
   "friends": {
@@ -2860,20 +2933,26 @@
       },
       "pvp": {
         "title": "Competitive battles",
-        "lead": "PvP is optional. It never blocks the story. If you jump in, you climb an Elo ladder, earn coins, and compete by season. Ranked and Quick both move rating — the difference is pace and payout.",
+        "lead": "PvP is optional. It never blocks the story. Ranked (and challenges) move Elo and your badge; Quick only pays coins.",
         "sections": [
           {
             "heading": "How Elo moves",
-            "body": "You start at 1000. Every duel uses classic Elo with K = 32: beating someone stronger pays more; losing to someone weaker hurts more. Both players update in the same match.",
+            "body": "You start at 1000. Only Ranked and challenges use classic Elo (K = 32): beating someone stronger pays more; losing to someone weaker hurts more. Quick never changes rating.",
             "bullets": [
-              "Ranked: turn-by-turn vs the rival team (AI).",
-              "Quick: instant sim; pays fewer coins (×0.6).",
-              "Direct challenge: by username, with a cooldown."
+              "Ranked: turn-by-turn — Elo, league, division, and badge.",
+              "Quick: instant sim; coins only (×0.6).",
+              "Direct challenge: by username, with a cooldown; moves Elo like Ranked."
             ]
           },
           {
+            "kind": "rankBadges",
+            "heading": "Rank badges",
+            "body": "Your badge shows your Elo league. Each league has 3 divisions (III → II → I). After I, you promote to III of the next league.",
+            "caption": "Eight leagues × three divisions — from Beginner to Legendary"
+          },
+          {
             "kind": "table",
-            "heading": "Leagues",
+            "heading": "Leagues and rewards",
             "caption": "Your league multiplies win coins. Losses ignore this multiplier.",
             "columns": [
               "League",
@@ -2882,34 +2961,44 @@
             ],
             "rows": [
               [
-                "Bronze",
+                "Beginner",
                 "0",
                 "×1"
               ],
               [
-                "Silver",
+                "Rising",
                 "1100",
                 "×1.15"
               ],
               [
-                "Gold",
-                "1250",
+                "Advanced",
+                "1200",
                 "×1.3"
               ],
               [
-                "Platinum",
-                "1400",
-                "×1.5"
+                "Elite",
+                "1325",
+                "×1.45"
               ],
               [
-                "Diamond",
+                "Bronze Master",
+                "1450",
+                "×1.6"
+              ],
+              [
+                "Crystal Master",
                 "1600",
-                "×1.75"
+                "×1.8"
               ],
               [
-                "Master",
+                "Champion",
                 "1800",
-                "×2"
+                "×2.1"
+              ],
+              [
+                "Legendary",
+                "2000",
+                "×2.4"
               ]
             ]
           },
@@ -2926,8 +3015,8 @@
             "heading": "Monthly seasons",
             "body": "Each UTC month ends a season. On your first fight of the new month, a soft reset applies: 70% of your rating + 30% of 1000. The previous season is archived and you get a prize by league reached.",
             "bullets": [
-              "Bronze 100 coins · Silver 200 + energy · Gold 350 + 1 gem",
-              "Platinum 500 + 2 gems · Diamond 750 + 3 · Master 1200 + 5",
+              "Beginner 200 + 5 energy · Rising 400 + 8 · Advanced 650 + 10 + 1 gem · Elite 900 + 12 + 2 gems",
+              "Bronze Master 1300 + 15 + 3 · Crystal Master 1800 + 18 + 5 · Champion 2500 + 22 + 8 · Legendary 4000 + 30 + 12 gems",
               "The ranking ladder sorts by current Elo."
             ]
           }

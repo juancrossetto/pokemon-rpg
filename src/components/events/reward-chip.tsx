@@ -6,6 +6,7 @@ import type { RewardDef } from "@/lib/events/rewards";
 /** Íconos HD del strip Daily Reward. */
 const COIN_BUNDLE_HD = "/items/hd/poke-coin-bundle-s.png";
 const ENERGY_HD = "/items/hd/energy.png";
+const GEM_HD = "/items/hd/gem.png";
 
 /**
  * Representación visual de una recompensa. Es la única pieza que sabe cómo se
@@ -21,12 +22,28 @@ export function RewardChip({
   unitLabels,
 }: {
   reward: RewardDef;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   /** `{ coins: "monedas", energy: "energía" }` ya traducido. */
   unitLabels: { coins: string; energy: string };
 }) {
-  const box = size === "lg" ? "h-11 w-11" : size === "sm" ? "h-6 w-6" : "h-8 w-8";
-  const text = size === "lg" ? "text-label-md" : "text-[11px]";
+  // El PNG HD es el protagonista: en `lg` ocupa lo que antes ocupaba la cajita
+  // que lo envolvía. `xs` es para filas densas (cards de eventos con 3 premios).
+  const box =
+    size === "lg"
+      ? "h-14 w-14"
+      : size === "sm"
+        ? "h-8 w-8"
+        : size === "xs"
+          ? "h-4 w-4"
+          : "h-10 w-10";
+  const text =
+    size === "lg"
+      ? "text-[15px] font-bold"
+      : size === "sm"
+        ? "text-[12px] font-semibold"
+        : size === "xs"
+          ? "text-[10px] font-semibold"
+          : "text-[13px] font-semibold";
 
   if (reward.kind === "item") {
     const hd = itemHdIconUrl(reward.itemName);
@@ -37,8 +54,8 @@ export function RewardChip({
           <Image
             src={src}
             alt=""
-            width={44}
-            height={44}
+            width={64}
+            height={64}
             className={[
               "max-h-full max-w-full object-contain",
               hd ? "drop-shadow-[0_1px_3px_rgba(0,0,0,0.45)]" : "[image-rendering:pixelated]",
@@ -57,7 +74,7 @@ export function RewardChip({
   const isCoins = reward.kind === "coins";
   const isGems = reward.kind === "gems";
   const isEnergy = reward.kind === "energy";
-  const hdAsset = isCoins ? COIN_BUNDLE_HD : isEnergy ? ENERGY_HD : null;
+  const hdAsset = isCoins ? COIN_BUNDLE_HD : isEnergy ? ENERGY_HD : isGems ? GEM_HD : null;
   const tone = isCoins
     ? "text-tertiary"
     : isGems
@@ -71,8 +88,8 @@ export function RewardChip({
           <Image
             src={hdAsset}
             alt=""
-            width={44}
-            height={44}
+            width={64}
+            height={64}
             className="max-h-full max-w-full object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.45)]"
             unoptimized
           />
@@ -81,10 +98,10 @@ export function RewardChip({
         <span
           aria-hidden
           className={`material-symbols-outlined shrink-0 ${
-            size === "lg" ? "text-[26px]!" : "text-[18px]!"
+            size === "lg" ? "text-[26px]!" : size === "xs" ? "text-[14px]!" : "text-[18px]!"
           } ${tone}`}
         >
-          diamond
+          bolt
         </span>
       )}
       <span className={`${text} font-mono ${tone}`}>
@@ -193,16 +210,23 @@ function CompactRewardRow({
                   unoptimized
                 />
               </span>
+            ) : reward.kind === "gems" ? (
+              <span className={`grid ${iconBox} place-items-center`}>
+                <Image
+                  src={GEM_HD}
+                  alt=""
+                  width={iconPx}
+                  height={iconPx}
+                  className="max-h-full max-w-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
+                  unoptimized
+                />
+              </span>
             ) : (
               <span
                 aria-hidden
                 className={`material-symbols-outlined leading-none ${iconGlyph} ${tone}`}
               >
-                {reward.kind === "coins"
-                  ? "paid"
-                  : reward.kind === "gems"
-                    ? "diamond"
-                    : "bolt"}
+                {reward.kind === "coins" ? "paid" : "bolt"}
               </span>
             )}
             <span className={`${amountCls} ${tone}`}>
@@ -302,12 +326,14 @@ function StripRewardSolo({
     );
   } else {
     icon = (
-      <span
-        aria-hidden
-        className={`material-symbols-outlined text-[2.75rem]! leading-none sm:text-[3.25rem]! ${tone}`}
-      >
-        diamond
-      </span>
+      <Image
+        src={GEM_HD}
+        alt=""
+        width={128}
+        height={128}
+        className={stripIconImg}
+        unoptimized
+      />
     );
     amount = <span className={amountCls}>{compactAmount(reward)}</span>;
     sr = (
@@ -337,7 +363,7 @@ export function RewardList({
   claimedOverlay,
 }: {
   rewards: RewardDef[];
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   unitLabels: { coins: string; energy: string };
   /**
    * `calendar`: fila compacta cuando hay 2+ premios, para no romper la grilla
@@ -371,7 +397,13 @@ export function RewardList({
   }
 
   return (
-    <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+    <span
+      className={`inline-flex items-center ${
+        size === "xs"
+          ? "flex-nowrap gap-x-1"
+          : "flex-wrap gap-x-2 gap-y-1"
+      }`}
+    >
       {rewards.map((reward, index) => (
         <RewardChip
           key={`${reward.kind}-${index}`}

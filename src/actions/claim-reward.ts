@@ -155,10 +155,16 @@ export async function claimWeeklyMilestone(
         return;
       }
 
-      const [wins, catches, zones, loginRows] = await Promise.all([
+      const [wins, catches, zones, shinies, gymWins, loginRows] = await Promise.all([
         tx.battleLog.count({ where: { userId, userWon: true, createdAt: { gte: since } } }),
         tx.pokemonInstance.count({ where: { ownerId: userId, caughtAt: { gte: since } } }),
         tx.zoneObjectiveClaim.count({ where: { userId, claimedAt: { gte: since } } }),
+        tx.pokemonInstance.count({
+          where: { ownerId: userId, isShiny: true, caughtAt: { gte: since } },
+        }),
+        tx.gymAttempt.count({
+          where: { userId, won: true, attemptedAt: { gte: since } },
+        }),
         tx.dailyRewardClaim.findMany({
           where: { userId, claimedAt: { gte: since } },
           select: { dayKey: true },
@@ -171,6 +177,8 @@ export async function claimWeeklyMilestone(
         battles: wins,
         catches,
         zones,
+        shinies,
+        gyms: gymWins,
       };
       if (weeklyPercent(WEEKLY_CHALLENGE, progress) < milestone) {
         outcome = { ok: false, error: "not_available" };

@@ -360,7 +360,7 @@ function TeamSlot({
                       fainted
                         ? "bg-error"
                         : hpPct <= 25
-                          ? "bg-gradient-to-r from-orange-500 to-electric-yellow"
+                          ? "bg-gradient-to-r from-orange-500 to-amber-300"
                           : "bg-gradient-to-r from-emerald-500 to-lime-400"
                     }`}
                     style={{ width: `${hpPct}%` }}
@@ -376,7 +376,7 @@ function TeamSlot({
                 </span>
                 <div className="h-1.5 overflow-hidden rounded-[2px] bg-white/12">
                   <div
-                    className="h-full rounded-[2px] bg-gradient-to-r from-orange-500 to-electric-yellow transition-[width] duration-300"
+                    className="h-full rounded-[2px] bg-gradient-to-r from-orange-500 to-amber-300 transition-[width] duration-300"
                     style={{ width: `${Math.max(0, Math.min(100, member.xpPct))}%` }}
                   />
                 </div>
@@ -523,6 +523,7 @@ export function ActiveTeamStrip({
   title,
   manageHref,
   manageLabel,
+  onCompanionTypesChange,
 }: {
   locale: string;
   initialMembers: HomeSquadMember[];
@@ -534,6 +535,8 @@ export function ActiveTeamStrip({
   title?: string;
   manageHref?: string;
   manageLabel?: string;
+  /** Tipos del favorito (o líder) — el banner de home pinta el flúor con esto. */
+  onCompanionTypesChange?: (types: string[]) => void;
 }) {
   const t = useTranslations("pc");
   const [members, setMembers] = useState(initialMembers);
@@ -741,7 +744,14 @@ export function ActiveTeamStrip({
                     }),
                   )
                 }
-                onFlagsChange={(id, next) =>
+                onFlagsChange={(id, next) => {
+                  if (next.isFavorite === true) {
+                    const picked = members.find((m) => m.id === id);
+                    onCompanionTypesChange?.(picked?.types ?? []);
+                  } else if (next.isFavorite === false) {
+                    // Sin favorito: el banner vuelve al líder (slot 1 / primero).
+                    onCompanionTypesChange?.(members[0]?.types ?? []);
+                  }
                   setMembers((prev) =>
                     prev.map((m) => {
                       if (m.id === id) return { ...m, ...next };
@@ -751,8 +761,8 @@ export function ActiveTeamStrip({
                       }
                       return m;
                     }),
-                  )
-                }
+                  );
+                }}
                 onDepositToPc={depositToPc}
                 canDepositToPc={canDeposit}
                 isDepositing={member !== null && depositingId === member.id}

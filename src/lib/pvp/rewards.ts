@@ -25,32 +25,51 @@ export function pvpMatchRewards(input: {
 /** Premio al cerrar temporada según la liga alcanzada. */
 export function seasonEndRewards(tier: PvpTier): RewardBundle {
   switch (tier) {
-    case "bronze":
-      return [{ kind: "coins", amount: 100 }];
-    case "silver":
+    case "beginner":
       return [
         { kind: "coins", amount: 200 },
         { kind: "energy", amount: 5 },
       ];
-    case "gold":
+    case "rising":
       return [
-        { kind: "coins", amount: 350 },
+        { kind: "coins", amount: 400 },
+        { kind: "energy", amount: 8 },
+      ];
+    case "advanced":
+      return [
+        { kind: "coins", amount: 650 },
+        { kind: "energy", amount: 10 },
         { kind: "gems", amount: 1 },
       ];
-    case "platinum":
+    case "elite":
       return [
-        { kind: "coins", amount: 500 },
+        { kind: "coins", amount: 900 },
         { kind: "gems", amount: 2 },
+        { kind: "energy", amount: 12 },
       ];
-    case "diamond":
+    case "bronzeMaster":
       return [
-        { kind: "coins", amount: 750 },
+        { kind: "coins", amount: 1300 },
         { kind: "gems", amount: 3 },
+        { kind: "energy", amount: 15 },
       ];
-    case "master":
+    case "crystalMaster":
       return [
-        { kind: "coins", amount: 1200 },
+        { kind: "coins", amount: 1800 },
         { kind: "gems", amount: 5 },
+        { kind: "energy", amount: 18 },
+      ];
+    case "champion":
+      return [
+        { kind: "coins", amount: 2500 },
+        { kind: "gems", amount: 8 },
+        { kind: "energy", amount: 22 },
+      ];
+    case "legendary":
+      return [
+        { kind: "coins", amount: 4000 },
+        { kind: "gems", amount: 12 },
+        { kind: "energy", amount: 30 },
       ];
   }
 }

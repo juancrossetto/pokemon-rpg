@@ -7,9 +7,9 @@
  * El resto son aliases / derivados que consumen Tailwind (`bg-primary`,
  * `text-tertiary`, `bg-pokeball-red`, `bg-gem`, …) y los CTAs en globals.css.
  *
- *   primary   → acción / CTAs rojos / chips accent
- *   secondary → azul (agua, énfasis frío)
- *   tertiary  → oro / energía / CTAs dorados
+ *   primary   → acción / CTAs / chips accent
+ *   secondary → énfasis frío / agua
+ *   tertiary  → CTAs secundarios / acentos
  *   gem       → premium (diamantes)
  *
  * Importado desde `src/app/globals.css`. No dupliques hexes de marca en
@@ -18,9 +18,9 @@
 
 :root {
   /* ── KNOBS (editá acá) ─────────────────────────────────────────────────── */
-  --theme-primary: #ee1515;
-  --theme-secondary: #3b4cca;
-  --theme-tertiary: #ffcb05;
+  --theme-primary: #e879f9; /* fucsia */
+  --theme-secondary: #8b5cf6; /* violeta */
+  --theme-tertiary: #3b82f6; /* azul */
   --theme-gem: #c026d3;
 
   /* Superficies oscuras (Rotom-OS). Cambiá estos si querés otro “fondo”. */
@@ -41,12 +41,12 @@
   --theme-primary-bright: color-mix(in srgb, var(--theme-primary) 72%, white);
   --theme-primary-deep: color-mix(in srgb, var(--theme-primary) 65%, black);
   --theme-tertiary-bright: color-mix(in srgb, var(--theme-tertiary) 82%, white);
-  --theme-tertiary-deep: color-mix(in srgb, var(--theme-tertiary) 55%, #8c4600);
+  --theme-tertiary-deep: color-mix(in srgb, var(--theme-tertiary) 55%, #0b1f5c);
 
   /* ── Material / Tailwind semantic (primary · secondary · tertiary) ─────── */
   --color-primary: color-mix(in srgb, var(--theme-primary) 52%, white);
   --color-on-primary: color-mix(in srgb, var(--theme-primary) 55%, black);
-  --color-primary-container: color-mix(in srgb, var(--theme-primary) 70%, #ff6a4a);
+  --color-primary-container: color-mix(in srgb, var(--theme-primary) 70%, white);
   --color-on-primary-container: color-mix(in srgb, var(--theme-primary) 60%, black);
   --color-inverse-primary: color-mix(in srgb, var(--theme-primary) 78%, black);
   --color-surface-tint: var(--color-primary);
@@ -64,14 +64,14 @@
   --color-on-secondary-fixed: color-mix(in srgb, var(--theme-secondary) 55%, black);
   --color-on-secondary-fixed-variant: color-mix(in srgb, var(--theme-secondary) 72%, black);
 
-  --color-tertiary: color-mix(in srgb, var(--theme-tertiary) 90%, #c48900);
-  --color-on-tertiary: #3d2f00;
-  --color-tertiary-container: color-mix(in srgb, var(--theme-tertiary) 75%, #a87a00);
-  --color-on-tertiary-container: #4f3d00;
+  --color-tertiary: color-mix(in srgb, var(--theme-tertiary) 88%, white);
+  --color-on-tertiary: color-mix(in srgb, var(--theme-tertiary) 55%, black);
+  --color-tertiary-container: color-mix(in srgb, var(--theme-tertiary) 72%, black);
+  --color-on-tertiary-container: color-mix(in srgb, var(--theme-tertiary) 45%, white);
   --color-tertiary-fixed: color-mix(in srgb, var(--theme-tertiary) 40%, white);
   --color-tertiary-fixed-dim: var(--color-tertiary);
-  --color-on-tertiary-fixed: #241a00;
-  --color-on-tertiary-fixed-variant: #584400;
+  --color-on-tertiary-fixed: color-mix(in srgb, var(--theme-tertiary) 70%, black);
+  --color-on-tertiary-fixed-variant: color-mix(in srgb, var(--theme-tertiary) 75%, black);
 
   /* ── Superficies / fondo / outline ─────────────────────────────────────── */
   --color-surface: var(--theme-surface);

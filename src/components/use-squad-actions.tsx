@@ -192,7 +192,10 @@ export function useSquadActions({
         return;
       }
       onFlagsChange?.({ isFavorite: result.isFavorite });
-      softRefresh();
+      // Sin router.refresh(): el flag ya es optimista en la UI (estrella +
+      // acento del banner en home). revalidatePath en la action calienta el
+      // cache para la próxima navegación; refrescar el home entero acá
+      // dejaba el color del banner colgado varios segundos.
     });
   }
 

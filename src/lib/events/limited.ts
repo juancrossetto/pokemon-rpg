@@ -53,8 +53,15 @@ export type LimitedEventDef = {
   /** Claves bajo `events.limited.catalog.<id>.`. */
   nameKey: string;
   taglineKey: string;
-  /** Material Symbols. */
-  icon: string;
+  /**
+   * Nombre canónico de ítem (clave de `ITEM_HD_ICON_IDS`) — el evento se
+   * presenta con el PNG HD, no con un glifo.
+   *
+   * Antes era una ligadura de Material Symbols y `catching_pokemon` no existe
+   * en el subset cargado: el navegador dibujaba el texto crudo
+   * "CATCHING_POKEMON" encima del título.
+   */
+  iconItem: string;
   /** Color de acento en hex — la card del evento no debe verse como el resto. */
   accent: string;
   missions: LimitedMission[];
@@ -73,15 +80,25 @@ export const LIMITED_EVENTS: LimitedEventDef[] = [
     id: "battle-rush",
     nameKey: "battleRush.name",
     taglineKey: "battleRush.tagline",
-    icon: "swords",
+    iconItem: "Life Orb",
     accent: "#ef4444",
     missions: [
       {
-        id: "wins-10",
+        id: "wins-5",
         metric: "battles",
-        target: 10,
+        target: 5,
         href: "/battle",
-        rewards: [{ kind: "item", itemName: "Super Potion", quantity: 3 }],
+        rewards: [{ kind: "item", itemName: "Potion", quantity: 5 }],
+      },
+      {
+        id: "wins-15",
+        metric: "battles",
+        target: 15,
+        href: "/battle",
+        rewards: [
+          { kind: "item", itemName: "Super Potion", quantity: 3 },
+          { kind: "coins", amount: 400 },
+        ],
       },
       {
         id: "wins-30",
@@ -94,13 +111,23 @@ export const LIMITED_EVENTS: LimitedEventDef[] = [
         ],
       },
       {
-        id: "wins-60",
+        id: "wins-55",
         metric: "battles",
-        target: 60,
+        target: 55,
+        href: "/battle",
+        rewards: [
+          { kind: "item", itemName: "Full Restore", quantity: 2 },
+          { kind: "coins", amount: 900 },
+        ],
+      },
+      {
+        id: "wins-80",
+        metric: "battles",
+        target: 80,
         href: "/battle",
         rewards: [
           { kind: "item", itemName: "Rare Candy", quantity: 1 },
-          { kind: "gems", amount: 2 },
+          { kind: "gems", amount: 3 },
         ],
       },
     ],
@@ -109,9 +136,16 @@ export const LIMITED_EVENTS: LimitedEventDef[] = [
     id: "catch-fever",
     nameKey: "catchFever.name",
     taglineKey: "catchFever.tagline",
-    icon: "catching_pokemon",
-    accent: "#22c55e",
+    iconItem: "Poke Ball",
+    accent: "#a855f7",
     missions: [
+      {
+        id: "catch-8",
+        metric: "catches",
+        target: 8,
+        href: "/battle",
+        rewards: [{ kind: "item", itemName: "Poke Ball", quantity: 10 }],
+      },
       {
         id: "catch-15",
         metric: "catches",
@@ -130,6 +164,17 @@ export const LIMITED_EVENTS: LimitedEventDef[] = [
         ],
       },
       {
+        id: "catch-70",
+        metric: "catches",
+        target: 70,
+        href: "/battle",
+        rewards: [
+          { kind: "item", itemName: "Ultra Ball", quantity: 8 },
+          { kind: "energy", amount: 12 },
+          { kind: "coins", amount: 1100 },
+        ],
+      },
+      {
         id: "shiny-1",
         metric: "shinies",
         target: 1,
@@ -142,15 +187,25 @@ export const LIMITED_EVENTS: LimitedEventDef[] = [
     id: "explorer-week",
     nameKey: "explorerWeek.name",
     taglineKey: "explorerWeek.tagline",
-    icon: "explore",
+    iconItem: "Escape Rope",
     accent: "#38bdf8",
     missions: [
       {
-        id: "zones-2",
+        id: "zones-1",
         metric: "zones",
-        target: 2,
+        target: 1,
         href: "/campaign",
-        rewards: [{ kind: "item", itemName: "Poke Ball", quantity: 10 }],
+        rewards: [{ kind: "item", itemName: "Poke Ball", quantity: 8 }],
+      },
+      {
+        id: "zones-3",
+        metric: "zones",
+        target: 3,
+        href: "/campaign",
+        rewards: [
+          { kind: "item", itemName: "Great Ball", quantity: 5 },
+          { kind: "coins", amount: 500 },
+        ],
       },
       {
         id: "zones-5",
@@ -160,6 +215,16 @@ export const LIMITED_EVENTS: LimitedEventDef[] = [
         rewards: [
           { kind: "coins", amount: 1000 },
           { kind: "energy", amount: 10 },
+        ],
+      },
+      {
+        id: "zones-8",
+        metric: "zones",
+        target: 8,
+        href: "/campaign",
+        rewards: [
+          { kind: "item", itemName: "Oran Berry", quantity: 8 },
+          { kind: "coins", amount: 800 },
         ],
       },
       {

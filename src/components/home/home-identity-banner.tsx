@@ -5,8 +5,10 @@ import type { CSSProperties } from "react";
 import { Link } from "@/i18n/navigation";
 import { FlagIcon } from "@/components/flag-icon";
 import { ClanEmblemBadge } from "@/components/clans/clan-emblem-badge";
+import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
 import { neonTypeColor } from "@/lib/type-colors";
 import type { HomeIdentity } from "@/lib/home-hub";
+import { divisionRoman, type PvpDivision, type PvpTier } from "@/lib/pvp/tiers";
 
 export function HomeIdentityBanner({
   identity,
@@ -22,12 +24,14 @@ export function HomeIdentityBanner({
     streakDays: string;
     viewProfile: string;
     titles: Record<string, string>;
-    ranks: Record<string, string>;
+    pvpTiers: Record<string, string>;
     lastAchievement: string;
     achievements: Record<string, string>;
   };
 }) {
-  const rank = labels.ranks[identity.rankTierId] ?? identity.rankTierId;
+  const pvpTier = identity.pvpTier as PvpTier;
+  const pvpTierLabel = labels.pvpTiers[identity.pvpTier] ?? identity.pvpTier;
+  const standingLabel = `${pvpTierLabel} ${divisionRoman(identity.pvpDivision as PvpDivision)}`;
   const profileArt =
     identity.avatarStageSrc ?? identity.avatarProfileSrc ?? identity.avatarSrc;
 
@@ -49,7 +53,6 @@ export function HomeIdentityBanner({
         } as CSSProperties
       }
     >
-      {/* Base + mesh moderno */}
       <div
         aria-hidden
         className="absolute inset-0"
@@ -62,17 +65,14 @@ export function HomeIdentityBanner({
           `,
         }}
       />
-      {/* Brillo superior / borde glass */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 rounded-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_0_0_1px_rgba(255,255,255,0.06),0_12px_32px_rgba(0,0,0,0.4)]"
       />
-      {/* Sheen diagonal sutil */}
       <div
         aria-hidden
         className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 rotate-12 bg-linear-to-r from-transparent via-white/4 to-transparent"
       />
-      {/* Escenario del avatar */}
       <div
         aria-hidden
         className="absolute inset-y-0 right-0 w-[48%] sm:w-[42%]"
@@ -110,18 +110,42 @@ export function HomeIdentityBanner({
           className="text-[10px] font-semibold uppercase tracking-[0.14em]"
           style={{ color: `color-mix(in srgb, ${fluorFrom} 72%, white)` }}
         >
-          {rank}
-          <span className="mx-1.5 text-white/25">·</span>
-          <span className="text-white/55">{identity.regionLabel}</span>
+          {identity.regionLabel}
         </p>
 
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <h2 className="page-title truncate text-xl tracking-tight text-white sm:text-2xl">
-            {identity.username}
-          </h2>
-          {identity.country ? (
-            <FlagIcon code={identity.country} className="h-3.5 w-[1.15rem] shrink-0" />
-          ) : null}
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h2 className="page-title truncate text-xl tracking-tight text-white sm:text-2xl">
+              {identity.username}
+            </h2>
+            {identity.country ? (
+              <FlagIcon
+                code={identity.country}
+                className="h-3.5 w-[1.15rem] shrink-0"
+              />
+            ) : null}
+            <span
+              className="group/rank relative shrink-0"
+              title={`${standingLabel} · ${identity.pvpRating}`}
+            >
+              <PvpRankBadge
+                tier={pvpTier}
+                division={identity.pvpDivision as PvpDivision}
+                label={pvpTierLabel}
+                size="sm"
+              />
+              <span
+                role="tooltip"
+                className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/15 bg-black/90 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-white/85 opacity-0 shadow-lg transition duration-150 group-hover/rank:opacity-100 group-focus-within/rank:opacity-100"
+              >
+                {standingLabel}
+                <span className="mx-1 text-white/30">·</span>
+                <span className="font-mono tabular-nums text-electric-yellow">
+                  {identity.pvpRating}
+                </span>
+              </span>
+            </span>
+          </div>
         </div>
 
         <div className="flex min-w-0 flex-col gap-1.5 text-[12px] leading-snug text-white/60 sm:h-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-1 sm:text-[13px] sm:leading-none">

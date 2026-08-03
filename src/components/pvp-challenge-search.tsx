@@ -38,11 +38,13 @@ export function PvpChallengeSearch({
     if (searchTimer.current) clearTimeout(searchTimer.current);
     const q = query.trim();
     if (q.length < 2) {
-      setHits([]);
-      setSearching(false);
-      return;
+      const frame = requestAnimationFrame(() => {
+        setHits([]);
+        setSearching(false);
+      });
+      return () => cancelAnimationFrame(frame);
     }
-    setSearching(true);
+    const arm = requestAnimationFrame(() => setSearching(true));
     searchTimer.current = setTimeout(() => {
       void searchPvpOpponents(q).then((res) => {
         if (res.ok) setHits(res.hits);
@@ -52,6 +54,7 @@ export function PvpChallengeSearch({
       });
     }, 280);
     return () => {
+      cancelAnimationFrame(arm);
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
   }, [query, selected]);
@@ -84,50 +87,29 @@ export function PvpChallengeSearch({
   const showHits = !selected && panelOpen && hits.length > 0;
 
   return (
-    <div ref={rootRef} className="flex flex-wrap gap-2">
-      <form
-        action={startPvpChallenge.bind(null, locale)}
-        className="flex min-w-0 flex-1 flex-wrap gap-2"
-      >
+    <div ref={rootRef} className="pvp-mode-challenge w-full">
+      <form action={startPvpChallenge.bind(null, locale)} className="pvp-mode-challenge__row">
         {selected ? (
           <input type="hidden" name="opponentUserId" value={selected.userId} />
         ) : null}
 
-        <div className="relative min-w-48 flex-1">
+        <div className="relative min-w-0 flex-1">
           {selected ? (
-            <div className="flex items-center gap-2.5 border-b border-electric-yellow/35 px-1 py-1.5">
-              <TrainerAvatar
-                name={selected.username}
-                src={avatarSrc(selected.avatarId)}
-                size="sm"
-              />
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5">
-                  <span className="truncate text-[13px] font-bold text-white">
-                    {selected.username}
-                  </span>
-                  <FlagIcon code={selected.country} className="h-3 w-4 shrink-0" />
-                </span>
-                <span
-                  className={`text-[11px] tabular-nums ${tierAccentClass(tierForRating(selected.pvpRating))}`}
-                >
-                  {t("rating")} {selected.pvpRating}
-                </span>
-              </span>
+            <div className="pvp-mode-field">
+              <FlagIcon code={selected.country} className="h-3.5 w-auto shrink-0 rounded-xs" />
+              <span className="pvp-mode-field__text min-w-0 flex-1 truncate">{selected.username}</span>
               <button
                 type="button"
                 onClick={clearSelection}
                 aria-label={t("challengeClear")}
-                className="shrink-0 rounded-md p-1 text-white/45 hover:bg-white/10 hover:text-white"
+                className="pvp-mode-field__clear"
               >
-                <span className="material-symbols-outlined text-[18px]!">close</span>
+                <span className="material-symbols-outlined text-[16px]!">close</span>
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 border-b border-white/12 px-1 py-2 focus-within:border-pokeball-red/50">
-              <span className="material-symbols-outlined text-[18px]! text-white/40">
-                search
-              </span>
+            <label className="pvp-mode-field">
+              <span className="material-symbols-outlined text-[16px]! text-white/40">search</span>
               <input
                 value={query}
                 onChange={(e) => {
@@ -140,14 +122,13 @@ export function PvpChallengeSearch({
                 placeholder={t("challengePlaceholder")}
                 autoComplete="off"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/35 focus:outline-none"
               />
               {searching ? (
-                <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/40">
+                <span className="shrink-0 text-[9px] uppercase tracking-wider text-white/40">
                   {t("searching")}
                 </span>
               ) : null}
-            </div>
+            </label>
           )}
 
           {showHits ? (
@@ -161,6 +142,7 @@ export function PvpChallengeSearch({
                     type="button"
                     role="option"
                     onClick={() => pick(hit)}
+                    aria-selected={false}
                     className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-white/5"
                   >
                     <TrainerAvatar
@@ -198,7 +180,7 @@ export function PvpChallengeSearch({
           label={t("challengeSubmit")}
           pendingLabel={t("starting")}
           disabled={!canFight || !selected}
-          className="game-cta w-auto! min-h-10! px-5"
+          className="game-cta pvp-mode-btn pvp-mode-btn--compact"
         />
       </form>
     </div>

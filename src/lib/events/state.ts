@@ -64,7 +64,8 @@ export type LimitedEventState = {
   code: string;
   nameKey: string;
   taglineKey: string;
-  icon: string;
+  /** Nombre canónico de ítem para el PNG HD del encabezado. */
+  iconItem: string;
   accent: string;
   /** ISO. El cliente lo usa para la cuenta regresiva, no para decidir. */
   endsAt: string;
@@ -105,28 +106,32 @@ export async function loadEventsSummary(userId: string): Promise<EventsSummary> 
     catches,
     shinies,
     zoneObjectives,
+    gymWins,
     limitedClaims,
   ] = await Promise.all([
-      prisma.dailyRewardClaim.count({ where: { userId, cycleId: DAILY_CYCLE.id } }),
-      prisma.dailyRewardClaim.findFirst({
-        where: { userId, dayKey: today },
-        select: { dayIndex: true },
-      }),
-      prisma.weeklyRewardClaim.findMany({
-        where: { userId, weekKey: currentWeek },
-        select: { milestone: true },
-      }),
-      prisma.battleLog.count({ where: { userId, userWon: true, createdAt: { gte: since } } }),
-      prisma.pokemonInstance.count({ where: { ownerId: userId, caughtAt: { gte: since } } }),
-      prisma.pokemonInstance.count({
-        where: { ownerId: userId, isShiny: true, caughtAt: { gte: since } },
-      }),
-      prisma.zoneObjectiveClaim.count({ where: { userId, claimedAt: { gte: since } } }),
-      prisma.eventMissionClaim.findMany({
-        where: { userId, eventCode: limited.code },
-        select: { missionId: true },
-      }),
-      ]);
+    prisma.dailyRewardClaim.count({ where: { userId, cycleId: DAILY_CYCLE.id } }),
+    prisma.dailyRewardClaim.findFirst({
+      where: { userId, dayKey: today },
+      select: { dayIndex: true },
+    }),
+    prisma.weeklyRewardClaim.findMany({
+      where: { userId, weekKey: currentWeek },
+      select: { milestone: true },
+    }),
+    prisma.battleLog.count({ where: { userId, userWon: true, createdAt: { gte: since } } }),
+    prisma.pokemonInstance.count({ where: { ownerId: userId, caughtAt: { gte: since } } }),
+    prisma.pokemonInstance.count({
+      where: { ownerId: userId, isShiny: true, caughtAt: { gte: since } },
+    }),
+    prisma.zoneObjectiveClaim.count({ where: { userId, claimedAt: { gte: since } } }),
+    prisma.gymAttempt.count({
+      where: { userId, won: true, attemptedAt: { gte: since } },
+    }),
+    prisma.eventMissionClaim.findMany({
+      where: { userId, eventCode: limited.code },
+      select: { missionId: true },
+    }),
+  ]);
 
   // Días de login de la semana = días distintos con reclamo diario. Es el dato
   // más honesto que existe: no hay tabla de sesiones.
@@ -159,6 +164,8 @@ export async function loadEventsSummary(userId: string): Promise<EventsSummary> 
     battles: wins,
     catches,
     zones: zoneObjectives,
+    shinies,
+    gyms: gymWins,
   };
   const percent = weeklyPercent(WEEKLY_CHALLENGE, progress);
   const claimedMilestones = new Set(weeklyClaims.map((row) => row.milestone));
@@ -210,7 +217,7 @@ export async function loadEventsSummary(userId: string): Promise<EventsSummary> 
     code: limited.code,
     nameKey: limited.def.nameKey,
     taglineKey: limited.def.taglineKey,
-    icon: limited.def.icon,
+    iconItem: limited.def.iconItem,
     accent: limited.def.accent,
     endsAt: limited.endsAt.toISOString(),
     missions: limited.def.missions.map((mission) => {

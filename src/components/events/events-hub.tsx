@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { Link } from "@/i18n/navigation";
+import { itemHdIconUrl } from "@/lib/item-sprites";
 import {
   claimDailyReward,
   claimEventMission,
@@ -52,6 +54,10 @@ export type EventsLabels = {
   limitedName: string;
   limitedTagline: string;
   limitedMissions: Record<string, string>;
+  /** "Parte {current} de {total}:" */
+  limitedPartOf: string;
+  /** "Recompensas:" */
+  rewardsLabel: string;
 };
 
 const fill = (template: string, values: Record<string, string | number>) =>
@@ -233,104 +239,86 @@ function LimitedPanel({
   }
 
   return (
-    <section
-      className="glass-panel relative overflow-hidden rounded-xl border p-3 sm:p-4"
-      style={{
-        borderColor: `${accent}59`,
-        background: `linear-gradient(135deg, ${accent}1f, transparent 65%)`,
-      }}
-    >
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-        <div className="flex min-w-0 items-start gap-2.5">
-          <span
-            aria-hidden
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border"
-            style={{ borderColor: `${accent}66`, background: `${accent}1f`, color: accent }}
-          >
-            <span className="material-symbols-outlined text-[20px]!">{limited.icon}</span>
-          </span>
-          <div className="min-w-0">
-            <p
-              className="text-[10px] font-bold uppercase tracking-[0.18em]"
-              style={{ color: accent }}
-            >
-              {labels.limitedBadge}
-            </p>
-            <h2 className="text-label-md font-semibold text-white">{labels.limitedName}</h2>
-            <p className="text-[11px] leading-snug text-on-surface-variant">
-              {labels.limitedTagline}
-            </p>
-          </div>
-        </div>
-        <p className="shrink-0 font-mono text-[11px] text-on-surface-variant">
+    <section className="ev-quest" style={{ ["--ev-accent" as string]: accent }}>
+      <header className="ev-ribbon">
+        <span aria-hidden className="ev-ribbon__icon">
+          <Image
+            src={itemHdIconUrl(limited.iconItem) ?? "/items/hd/poke-ball.png"}
+            alt=""
+            width={72}
+            height={72}
+            className="h-full w-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
+            unoptimized
+          />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="ev-ribbon__eyebrow">{labels.limitedBadge}</span>
+          <span className="ev-ribbon__title">{labels.limitedName}</span>
+        </span>
+        <span className="ev-ribbon__timer">
+          <span className="material-symbols-outlined text-[14px]!">schedule</span>
           {fill(labels.limitedEnds, { time: formatRemaining(remaining) })}
-        </p>
-      </div>
+        </span>
+      </header>
 
-      <ul className="flex flex-col gap-1.5">
-        {limited.missions.map((mission) => {
+      <ul className="ev-quest__list">
+        {limited.missions.map((mission, index) => {
           const done = mission.current >= mission.target;
           const pct = Math.min(100, Math.round((mission.current / mission.target) * 100));
+          const partLabel = fill(labels.limitedPartOf, {
+            current: index + 1,
+            total: limited.missions.length,
+          });
+          const missionText = labels.limitedMissions[mission.id] ?? mission.id;
+          const badgeReward = mission.rewards[0] ?? null;
           return (
             <li
               key={mission.id}
-              className={`rounded-lg border px-2.5 py-2 ${
-                mission.claimable
-                  ? "border-tertiary/55 bg-tertiary/10"
-                  : mission.claimed
-                    ? "border-white/[0.07] bg-white/[0.02] opacity-60"
-                    : "border-white/10 bg-black/20"
+              className={`ev-quest__card ${mission.claimable ? "is-ready" : ""} ${
+                mission.claimed ? "is-done" : ""
               }`}
             >
-              <div className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className={`material-symbols-outlined text-[16px]! ${
-                    done ? "text-emerald-400" : "text-on-surface-variant/60"
-                  }`}
-                >
-                  {done ? "task_alt" : "radio_button_unchecked"}
-                </span>
-                <span className="min-w-0 flex-1 text-label-sm leading-snug text-on-surface">
-                  {labels.limitedMissions[mission.id] ?? mission.id}
-                </span>
-                <span className="shrink-0 font-mono text-[11px] tabular-nums text-on-surface-variant">
-                  {mission.current}/{mission.target}
-                </span>
+              <div className="ev-quest__body">
+                <div className="ev-quest__main min-w-0 flex-1">
+                  <div className="ev-quest__track">
+                    <SegmentedBar pct={done ? 100 : pct} segments={4} />
+                    {badgeReward ? <MissionBadge reward={badgeReward} /> : null}
+                  </div>
+                  <p className="ev-quest__text">
+                    <span className="ev-quest__part">{partLabel}</span>{" "}
+                    {missionText}
+                  </p>
+                </div>
+                <ProgressRing
+                  current={Math.min(mission.current, mission.target)}
+                  target={mission.target}
+                />
               </div>
 
-              {!done && (
-                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full transition-[width] duration-500"
-                    style={{ width: `${pct}%`, background: accent }}
-                  />
-                </div>
-              )}
-
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <RewardList rewards={mission.rewards} size="sm" unitLabels={labels.rewards} />
-                {mission.claimed ? (
-                  <span className="flex items-center gap-1 text-[10px] uppercase text-emerald-400">
-                    <span aria-hidden className="material-symbols-outlined text-[13px]!">
-                      check
-                    </span>
-                    {labels.claimed}
+              <div className="ev-quest__foot">
+                <span className="ev-quest__rewards">
+                  <span className="ev-quest__rewards-label">{labels.rewardsLabel}</span>
+                  <span className="ev-quest__rewards-pill">
+                    <RewardList
+                      rewards={mission.rewards}
+                      size="xs"
+                      unitLabels={labels.rewards}
+                    />
                   </span>
+                </span>
+                {mission.claimed ? (
+                  <span className="ev-tag ev-tag--done">{labels.claimed}</span>
                 ) : mission.claimable ? (
                   <button
                     type="button"
                     onClick={() => claim(mission.id)}
                     disabled={pending}
-                    className="h-9 shrink-0 rounded-md bg-tertiary px-3 text-[10px] font-bold uppercase tracking-wide text-surface transition hover:bg-tertiary/85 disabled:opacity-60"
+                    className="ev-cta ev-cta--solid"
                   >
                     {busy === mission.id ? "…" : labels.claim}
                   </button>
                 ) : mission.href ? (
-                  <Link
-                    href={mission.href}
-                    className="shrink-0 rounded-md border border-white/12 px-2 py-1 text-[10px] uppercase text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
-                  >
+                  <Link href={mission.href} className="ev-cta">
                     {labels.goTo}
                   </Link>
                 ) : null}
@@ -340,6 +328,72 @@ function LimitedPanel({
         })}
       </ul>
     </section>
+  );
+}
+
+/** Barra por tramos: degradé continuo de la 1ª a la última franja. */
+function SegmentedBar({ pct, segments = 4 }: { pct: number; segments?: number }) {
+  const filled = (pct / 100) * segments;
+  return (
+    <span
+      className="ev-seg"
+      aria-hidden
+      style={{ ["--ev-seg-n" as string]: segments }}
+    >
+      {Array.from({ length: segments }, (_, i) => (
+        <span key={i} className="ev-seg__slot">
+          <span
+            className="ev-seg__fill"
+            style={{
+              width: `${Math.max(0, Math.min(1, filled - i)) * 100}%`,
+              ["--ev-seg-i" as string]: i,
+            }}
+          />
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Insignia al final de la barra — premio de la misión, como en la referencia. */
+function MissionBadge({ reward }: { reward: RewardDef }) {
+  let src = "/items/hd/poke-ball.png";
+  if (reward.kind === "item") {
+    src = itemHdIconUrl(reward.itemName) ?? "/items/hd/poke-ball.png";
+  } else if (reward.kind === "coins") {
+    src = "/items/hd/poke-coin-bundle-s.png";
+  } else if (reward.kind === "energy") {
+    src = "/items/hd/energy.png";
+  } else if (reward.kind === "gems") {
+    src = "/items/hd/gem.png";
+  }
+  return (
+    <span className="ev-quest__badge" aria-hidden>
+      <Image src={src} alt="" width={40} height={40} className="h-full w-full object-contain" unoptimized />
+    </span>
+  );
+}
+
+/** Anillo con la fracción al centro, como el contador de la referencia. */
+function ProgressRing({ current, target }: { current: number; target: number }) {
+  const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+  return (
+    <span className="ev-ring">
+      <svg viewBox="0 0 56 56" aria-hidden focusable="false">
+        <circle className="ev-ring__track" cx="28" cy="28" r="23" pathLength={100} />
+        <circle
+          className="ev-ring__fill"
+          cx="28"
+          cy="28"
+          r="23"
+          pathLength={100}
+          strokeDasharray={`${pct} 100`}
+        />
+      </svg>
+      <span className="ev-ring__label">
+        {current}/{target}
+      </span>
+    </span>
   );
 }
 
@@ -380,51 +434,60 @@ function DailyPanel({
   }
 
   return (
-    <section className="glass-panel p-3 sm:p-4">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-        <div className="min-w-0">
-          <h2 className="text-label-md font-semibold text-white">{labels.dailyTitle}</h2>
-          <p className="text-[11px] leading-snug text-on-surface-variant">
-            {labels.dailySubtitle}
-          </p>
+    <section className="ev-quest" style={{ ["--ev-accent" as string]: "#38bdf8" }}>
+      <header className="ev-ribbon">
+        <span aria-hidden className="ev-ribbon__icon">
+          <span className="material-symbols-outlined text-[22px]! text-white">
+            redeem
+          </span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="ev-ribbon__title">{labels.dailyTitle}</span>
+        </span>
+        <span className="ev-ribbon__timer">
+          <span className="material-symbols-outlined text-[14px]!">today</span>
+          {fill(labels.dailyProgress, {
+            current: daily.currentDay,
+            total: daily.length,
+          })}
+        </span>
+      </header>
+
+      <div className="ev-quest__list ev-daily__body">
+        <p className="ev-daily__hint">{labels.dailySubtitle}</p>
+        <DailyCalendar
+          days={daily.days}
+          labels={{
+            dailyDay: labels.dailyDay,
+            statusToday: labels.statusToday,
+            statusClaimed: labels.statusClaimed,
+            statusUpcoming: labels.statusUpcoming,
+            rewards: labels.rewards,
+          }}
+        />
+
+        <div className="ev-daily__action">
+          {daily.canClaim ? (
+            <button
+              type="button"
+              onClick={claim}
+              disabled={pending}
+              className="ev-cta ev-cta--solid ev-daily__claim"
+            >
+              {pending ? "…" : labels.dailyClaim}
+            </button>
+          ) : (
+            <p className="ev-claimed-note">
+              <span aria-hidden className="material-symbols-outlined text-[16px]!">
+                check_circle
+              </span>
+              {labels.dailyClaimed}
+              <span className="opacity-60">
+                · {fill(labels.dailyNext, { time: formatRemaining(remaining) })}
+              </span>
+            </p>
+          )}
         </div>
-        <p className="shrink-0 font-mono text-[11px] text-on-surface-variant">
-          {fill(labels.dailyProgress, { current: daily.currentDay, total: daily.length })}
-        </p>
-      </div>
-
-      <DailyCalendar
-        days={daily.days}
-        labels={{
-          dailyDay: labels.dailyDay,
-          statusToday: labels.statusToday,
-          statusClaimed: labels.statusClaimed,
-          statusUpcoming: labels.statusUpcoming,
-          rewards: labels.rewards,
-        }}
-      />
-
-      <div className="mt-3">
-        {daily.canClaim ? (
-          <button
-            type="button"
-            onClick={claim}
-            disabled={pending}
-            className="ui-btn-primary daily-claim-cta h-11 w-full text-label-sm font-bold uppercase tracking-wide"
-          >
-            {pending ? "…" : labels.dailyClaim}
-          </button>
-        ) : (
-          <p className="flex h-11 items-center justify-center gap-2 rounded-md border border-white/10 text-label-sm text-on-surface-variant">
-            <span aria-hidden className="material-symbols-outlined text-[16px]! text-emerald-400">
-              check_circle
-            </span>
-            {labels.dailyClaimed}
-            <span className="text-on-surface-variant/60">
-              · {fill(labels.dailyNext, { time: formatRemaining(remaining) })}
-            </span>
-          </p>
-        )}
       </div>
     </section>
   );
@@ -452,6 +515,8 @@ function WeeklyPanel({
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState<number | null>(null);
   const remaining = new Date(weekly.nextResetAt).getTime() - now;
+  const accent = "#ec4899";
+  const objectiveTotal = weekly.objectives.length;
 
   function claim(milestone: number) {
     if (pending) return;
@@ -470,114 +535,129 @@ function WeeklyPanel({
   }
 
   return (
-    <section className="glass-panel p-3 sm:p-4">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-        <div className="min-w-0">
-          <h2 className="text-label-md font-semibold text-white">{labels.weeklyTitle}</h2>
-          <p className="text-[11px] leading-snug text-on-surface-variant">
-            {labels.weeklySubtitle}
-          </p>
-        </div>
-        <p className="shrink-0 font-mono text-[11px] text-on-surface-variant">
-          {fill(labels.weeklyReset, { time: formatRemaining(remaining) })}
-        </p>
-      </div>
-
-      {/* La barra dice qué mide, no es un porcentaje suelto. */}
-      <div className="mb-3">
-        <div className="mb-1 flex items-center justify-between text-label-sm">
-          <span className="text-on-surface-variant">
+    <section className="ev-quest" style={{ ["--ev-accent" as string]: accent }}>
+      <header className="ev-ribbon">
+        <span aria-hidden className="ev-ribbon__icon">
+          <span className="material-symbols-outlined text-[22px]! text-white">
+            calendar_month
+          </span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="ev-ribbon__eyebrow">
             {fill(labels.weeklyPercent, { percent: weekly.percent })}
           </span>
-        </div>
-        <div
-          role="progressbar"
-          aria-valuenow={weekly.percent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          className="h-1.5 overflow-hidden rounded-full bg-white/10"
-        >
-          <div
-            className="h-full rounded-full bg-pokeball-red transition-[width] duration-500"
-            style={{ width: `${weekly.percent}%` }}
-          />
-        </div>
-      </div>
+          <span className="ev-ribbon__title">{labels.weeklyTitle}</span>
+        </span>
+        <span className="ev-ribbon__timer">
+          <span className="material-symbols-outlined text-[14px]!">schedule</span>
+          {fill(labels.weeklyReset, { time: formatRemaining(remaining) })}
+        </span>
+      </header>
 
-      <ul className="mb-3 flex flex-col gap-1.5">
-        {weekly.objectives.map((objective) => {
+      <ul className="ev-quest__list">
+        {weekly.objectives.map((objective, index) => {
           const done = objective.current >= objective.target;
+          const pct = Math.min(
+            100,
+            Math.round((objective.current / Math.max(1, objective.target)) * 100),
+          );
+          const partLabel = fill(labels.limitedPartOf, {
+            current: index + 1,
+            total: objectiveTotal,
+          });
           return (
             <li
               key={objective.id}
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-2.5 py-2 text-label-sm"
+              className={`ev-quest__card ${done ? "is-done" : ""}`}
             >
-              <span
-                aria-hidden
-                className={`material-symbols-outlined text-[16px]! ${
-                  done ? "text-emerald-400" : "text-on-surface-variant/60"
-                }`}
-              >
-                {done ? "task_alt" : "radio_button_unchecked"}
-              </span>
-              <span className="min-w-0 flex-1 leading-snug text-on-surface">
-                {labels.objectives[objective.id]}
-              </span>
-              <span className="shrink-0 font-mono text-[11px] tabular-nums text-on-surface-variant">
-                {Math.min(objective.current, objective.target)}/{objective.target}
-              </span>
-              {!done && objective.href && (
-                <Link
-                  href={objective.href}
-                  className="shrink-0 rounded-md border border-white/12 px-2 py-1 text-[10px] uppercase text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
-                >
-                  {labels.goTo}
-                </Link>
-              )}
+              <div className="ev-quest__body">
+                <div className="ev-quest__main min-w-0 flex-1">
+                  <div className="ev-quest__track">
+                    <SegmentedBar pct={done ? 100 : pct} segments={4} />
+                  </div>
+                  <p className="ev-quest__text">
+                    <span className="ev-quest__part">{partLabel}</span>{" "}
+                    {labels.objectives[objective.id]}
+                  </p>
+                </div>
+                <ProgressRing
+                  current={Math.min(objective.current, objective.target)}
+                  target={objective.target}
+                />
+              </div>
+              <div className="ev-quest__foot">
+                <span className="ev-quest__rewards" />
+                {done ? (
+                  <span className="ev-tag ev-tag--done">{labels.claimed}</span>
+                ) : objective.href ? (
+                  <Link href={objective.href} className="ev-cta">
+                    {labels.goTo}
+                  </Link>
+                ) : null}
+              </div>
             </li>
           );
         })}
-      </ul>
 
-      <ul className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-        {weekly.milestones.map((milestone) => (
-          <li
-            key={milestone.percent}
-            className={`flex flex-col items-center gap-1.5 rounded-lg border p-2 text-center ${
-              milestone.claimable
-                ? "border-tertiary/55 bg-tertiary/10"
-                : milestone.claimed
-                  ? "border-white/[0.07] bg-white/[0.02] opacity-60"
-                  : "border-white/10 bg-black/20"
-            }`}
-          >
-            <span className="font-mono text-[10px] uppercase text-on-surface-variant">
-              {fill(labels.milestone, { percent: milestone.percent })}
-            </span>
-            <RewardList rewards={milestone.rewards} size="sm" unitLabels={labels.rewards} />
-            {milestone.claimed ? (
-              <span className="flex items-center gap-1 text-[10px] uppercase text-emerald-400">
-                <span aria-hidden className="material-symbols-outlined text-[13px]!">
-                  check
+        {weekly.milestones.map((milestone) => {
+          const pct = Math.min(
+            100,
+            Math.round((weekly.percent / milestone.percent) * 100),
+          );
+          const badgeReward = milestone.rewards[0] ?? null;
+          return (
+            <li
+              key={milestone.percent}
+              className={`ev-quest__card ${milestone.claimable ? "is-ready" : ""} ${
+                milestone.claimed ? "is-done" : ""
+              }`}
+            >
+              <div className="ev-quest__body">
+                <div className="ev-quest__main min-w-0 flex-1">
+                  <div className="ev-quest__track">
+                    <SegmentedBar pct={pct} segments={4} />
+                    {badgeReward ? <MissionBadge reward={badgeReward} /> : null}
+                  </div>
+                  <p className="ev-quest__text">
+                    <span className="ev-quest__part">
+                      {fill(labels.milestone, { percent: milestone.percent })}
+                    </span>
+                  </p>
+                </div>
+                <ProgressRing
+                  current={Math.min(weekly.percent, milestone.percent)}
+                  target={milestone.percent}
+                />
+              </div>
+              <div className="ev-quest__foot">
+                <span className="ev-quest__rewards">
+                  <span className="ev-quest__rewards-label">{labels.rewardsLabel}</span>
+                  <span className="ev-quest__rewards-pill">
+                    <RewardList
+                      rewards={milestone.rewards}
+                      size="xs"
+                      unitLabels={labels.rewards}
+                    />
+                  </span>
                 </span>
-                {labels.claimed}
-              </span>
-            ) : milestone.claimable ? (
-              <button
-                type="button"
-                onClick={() => claim(milestone.percent)}
-                disabled={pending}
-                className="h-9 w-full rounded-md bg-tertiary text-[10px] font-bold uppercase tracking-wide text-surface transition hover:bg-tertiary/85 disabled:opacity-60"
-              >
-                {busy === milestone.percent ? "…" : labels.claim}
-              </button>
-            ) : (
-              <span className="flex h-9 items-center text-[10px] uppercase text-on-surface-variant/60">
-                {labels.locked}
-              </span>
-            )}
-          </li>
-        ))}
+                {milestone.claimed ? (
+                  <span className="ev-tag ev-tag--done">{labels.claimed}</span>
+                ) : milestone.claimable ? (
+                  <button
+                    type="button"
+                    onClick={() => claim(milestone.percent)}
+                    disabled={pending}
+                    className="ev-cta ev-cta--solid"
+                  >
+                    {busy === milestone.percent ? "…" : labels.claim}
+                  </button>
+                ) : (
+                  <span className="ev-tag">{labels.locked}</span>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

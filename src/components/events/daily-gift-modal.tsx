@@ -11,7 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { claimDailyReward } from "@/actions/claim-reward";
-import { announceCoinDelta } from "@/lib/coin-fx";
+import { flushPendingCoinDelta, seedPendingCoinDelta } from "@/lib/coin-fx";
 import { showToast } from "@/lib/app-toast";
 import type { CalendarLabels } from "@/components/events/daily-calendar";
 import {
@@ -114,6 +114,18 @@ function resolveLootTarget(kind: LootVisual["target"]): { x: number; y: number }
   };
 }
 
+/** Destello breve en la pastilla del header cuando llega el loot. */
+function pulseLootTarget(kind: LootVisual["target"]): void {
+  if (kind !== "coins" && kind !== "energy" && kind !== "gems") return;
+  const pill = document.querySelector(`[data-loot-target="${kind}"]`);
+  if (!pill) return;
+  pill.classList.remove("loot-target-pulse");
+  // Re-trigger CSS animation.
+  void (pill as HTMLElement).offsetWidth;
+  pill.classList.add("loot-target-pulse");
+  window.setTimeout(() => pill.classList.remove("loot-target-pulse"), 900);
+}
+
 export type GiftModalLabels = CalendarLabels &
   StripLabels & {
     eyebrow: string;
@@ -172,7 +184,7 @@ function TitleFlourish({ side }: { side: "left" | "right" }) {
     <svg
       aria-hidden
       viewBox="0 0 72 18"
-      className={`h-[14px] w-[56px] shrink-0 text-[#ff8a00] drop-shadow-[0_0_6px_rgba(255,138,0,0.7)] sm:h-4 sm:w-[72px] ${
+      className={`h-[14px] w-[56px] shrink-0 text-pokeball-red drop-shadow-[0_0_6px_color-mix(in_srgb,var(--color-pokeball-red)_70%,transparent)] sm:h-4 sm:w-[72px] ${
         side === "right" ? "scale-x-[-1]" : ""
       }`}
     >
@@ -288,8 +300,9 @@ export function DailyGiftModal({
     function finish() {
       if (lootDoneRef.current) return;
       lootDoneRef.current = true;
+      // Por si el flush del vuelo no corrió (Escape / reduced motion).
       if (pendingCoinsRef.current !== 0) {
-        announceCoinDelta(pendingCoinsRef.current);
+        flushPendingCoinDelta();
         pendingCoinsRef.current = 0;
       }
       setLoot(null);
@@ -327,6 +340,12 @@ export function DailyGiftModal({
           });
         }
         setLootPhase("fly");
+        // El contador del header arranca cuando el loot sale hacia la pastilla.
+        if (pendingCoinsRef.current !== 0) {
+          flushPendingCoinDelta();
+          pendingCoinsRef.current = 0;
+        }
+        pulseLootTarget(visual.target);
         flyTimer = window.setTimeout(() => finish(), FLY_MS);
       }, HOLD_MS);
     });
@@ -351,6 +370,7 @@ export function DailyGiftModal({
       }
       markSeen();
       pendingCoinsRef.current = result.coinsDelta;
+      if (result.coinsDelta !== 0) seedPendingCoinDelta(result.coinsDelta);
       lootDoneRef.current = false;
       setLootPhase("hold");
       setFlyStyle({});
@@ -366,7 +386,7 @@ export function DailyGiftModal({
     if (lootDoneRef.current) return;
     lootDoneRef.current = true;
     if (pendingCoinsRef.current !== 0) {
-      announceCoinDelta(pendingCoinsRef.current);
+      flushPendingCoinDelta();
       pendingCoinsRef.current = 0;
     }
     setLoot(null);
@@ -460,7 +480,7 @@ export function DailyGiftModal({
       <button
         type="button"
         onClick={reopen}
-        className="gift-chip mb-4 inline-flex max-w-full items-center gap-2 rounded-md border border-[#ff8a00]/40 bg-[#ff8a00]/10 py-1.5 pl-1.5 pr-3 text-left transition hover:border-[#ff8a00]/60 hover:bg-[#ff8a00]/16"
+        className="gift-chip mb-4 inline-flex max-w-full items-center gap-2 rounded-md border border-pokeball-red/40 bg-pokeball-red/10 py-1.5 pl-1.5 pr-3 text-left transition hover:border-pokeball-red/60 hover:bg-pokeball-red/16"
       >
         <Image
           src="/nav/event-icon.png"
@@ -470,12 +490,12 @@ export function DailyGiftModal({
           className="h-7 w-7 shrink-0 object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
           aria-hidden
         />
-        <span className="min-w-0 truncate text-label-sm text-[#ffe0a8]">
+        <span className="min-w-0 truncate text-label-sm text-electric-yellow/90">
           {labels.reopen}
         </span>
         <span
           aria-hidden
-          className="material-symbols-outlined shrink-0 text-[16px]! text-[#ff8a00]"
+          className="material-symbols-outlined shrink-0 text-[16px]! text-pokeball-red"
         >
           chevron_right
         </span>
@@ -500,7 +520,7 @@ export function DailyGiftModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="daily-gift-title"
-        className="gift-modal-in daily-reward-popup relative flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[#ff8a00]/45 shadow-[0_0_48px_rgba(255,180,0,0.28),0_28px_90px_rgba(0,0,0,0.7)]"
+        className="gift-modal-in daily-reward-popup relative flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-pokeball-red/45 shadow-[0_0_48px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent),0_28px_90px_rgba(0,0,0,0.7)]"
       >
         <span
           aria-hidden
@@ -511,11 +531,11 @@ export function DailyGiftModal({
           type="button"
           onClick={closeBanner}
           aria-label={labels.close}
-          className="absolute right-1.5 top-1.5 z-30 grid h-7 w-7 place-items-center text-[#f2c000] transition hover:text-[#ffe066] sm:right-3 sm:top-3 sm:h-10 sm:w-10"
+          className="absolute right-1.5 top-1.5 z-30 grid h-7 w-7 place-items-center text-electric-yellow transition hover:text-electric-yellow/80 sm:right-3 sm:top-3 sm:h-10 sm:w-10"
         >
           <span
             aria-hidden
-            className="material-symbols-outlined text-[18px]! font-bold drop-shadow-[0_0_8px_rgba(242,192,0,0.65)] sm:text-[28px]!"
+            className="material-symbols-outlined text-[18px]! font-bold drop-shadow-[0_0_8px_color-mix(in_srgb,var(--color-electric-yellow)_65%,transparent)] sm:text-[28px]!"
           >
             close
           </span>
@@ -526,7 +546,7 @@ export function DailyGiftModal({
             <TitleFlourish side="left" />
             <h2
               id="daily-gift-title"
-              className="daily-reward-title text-center text-[clamp(1.55rem,4.5vw,2.15rem)] text-[#ff9a1a]"
+              className="daily-reward-title text-center text-[clamp(1.55rem,4.5vw,2.15rem)] text-pokeball-red"
             >
               {labels.title}
             </h2>

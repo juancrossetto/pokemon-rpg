@@ -14,6 +14,11 @@ export type HomeIdentity = {
   level: number;
   titleId: string;
   rankTierId: string;
+  /** Liga clasificatoria PvP (Elo). */
+  pvpTier: string;
+  /** División I / II / III dentro de la liga. */
+  pvpDivision: 1 | 2 | 3;
+  pvpRating: number;
   regionId: string;
   regionLabel: string;
   combatPower: number;
@@ -28,13 +33,18 @@ export type HomeIdentity = {
   companionTypes: string[];
 };
 
-export type HomeDailyItem = {
+/** Tile de “acciones diarias” (ex Quick Access). */
+export type HomeDailyAction = {
   id: string;
-  label: string;
-  done: boolean;
   href: string | null;
-  current?: number;
-  target?: number;
+  /** Si true, abre el modal de daily gift en vez de navegar. */
+  openDailyGift?: boolean;
+  iconSrc: string;
+  labelKey: string;
+  /** Chip de estado: "Disponible", "Día 7", "6/0", etc. */
+  status: string | null;
+  /** Resalta el tile (regalo listo, gym listo…). */
+  hot?: boolean;
 };
 
 export type HomeObjective = {
@@ -59,6 +69,7 @@ export type HomeFeedItem = {
   accent?: string | null;
 };
 
+/** @deprecated Preferí HomeDailyAction. */
 export type HomeQuickLink = {
   id: string;
   href: string;
@@ -84,6 +95,7 @@ export type HomeRailPvp = {
   wins: number;
   losses: number;
   tier: string;
+  division: 1 | 2 | 3;
   selfName: string;
   selfAvatarId: string | null;
   selfCountry: string;

@@ -18,10 +18,14 @@ import {
 import {
   buildAchievements,
   buildCollection,
-  rankProgress,
   type CollectionSlice,
   type TrainerStats,
 } from "@/lib/trainer-profile";
+import {
+  divisionRoman,
+  nextRankProgress,
+  rankForRating,
+} from "@/lib/pvp/tiers";
 import { TrainerProfileClient } from "@/components/profile/trainer-profile-client";
 import { TrainerSquadBand } from "@/components/trainer-squad-band";
 import { TrainerVault } from "@/components/trainer-vault";
@@ -53,9 +57,10 @@ export default async function ProfilePage({
   // `tCampaign` sólo para los nombres de entrenador de la línea de tiempo: esos
   // viven en el namespace de campaña y `t` está scopeado a `profile`, así que
   // buscarlos con `t` caería siempre al fallback del id crudo.
-  const [t, tCampaign, session] = await Promise.all([
+  const [t, tCampaign, tPvp, session] = await Promise.all([
     getTranslations("profile"),
     getTranslations("campaign"),
+    getTranslations("pvp"),
     auth(),
   ]);
 
@@ -233,7 +238,8 @@ export default async function ProfilePage({
   const claimedAchievementIds = achievementClaims.map((c) => c.achievementId);
   const achievements = buildAchievements(stats, claimedAchievementIds);
 
-  const rank = rankProgress(stats.badges, totalGyms);
+  const pvpStanding = rankForRating(user.pvpRating);
+  const pvpProgress = nextRankProgress(user.pvpRating);
 
   // Favorito: el marcado por el jugador (aunque esté en el PC); si no hay, el líder.
   const favorite = favoriteRow ?? team[0] ?? null;
@@ -262,12 +268,12 @@ export default async function ProfilePage({
   const dateFmt = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" });
   const monthFmt = new Intl.DateTimeFormat(locale, { month: "short", year: "numeric" });
 
-  const rankLabels = Object.fromEntries(
-    ["bronze", "silver", "gold", "diamond", "master", "champion"].map((id) => [
-      id,
-      t(`rank.${id}`),
-    ]),
-  );
+  const pvpTierLabel = tPvp(`tiers.${pvpStanding.tier}`);
+  const pvpStandingLabel = `${pvpTierLabel} ${divisionRoman(pvpStanding.division)}`;
+  const nextPvpLabel = pvpProgress.next
+    ? `${tPvp(`tiers.${pvpProgress.next.tier}`)} ${divisionRoman(pvpProgress.next.division)}`
+    : null;
+
   const rarityLabels = Object.fromEntries(
     ["common", "rare", "epic", "legendary", "mythical", "ultraBeast", "paradox"].map(
       (id) => [id, t(`rarity.${id}`)],
@@ -420,14 +426,14 @@ export default async function ProfilePage({
       icon: "workspace_premium",
       iconSrc: "/nav/trophy-profile.png",
       label: t("factsRows.rank"),
-      value: rankLabels[rank.tier.id] ?? rank.tier.id,
-      hint: rank.next
-        ? t("toNextRank", {
-            count: rank.badgesToNext,
-            rank: rankLabels[rank.next.id] ?? rank.next.id,
+      value: pvpStandingLabel,
+      hint: nextPvpLabel
+        ? t("toNextLeague", {
+            pct: Math.round(pvpProgress.pct),
+            rank: nextPvpLabel,
           })
-        : `${stats.badges}/${totalGyms}`,
-      pct: rank.pct,
+        : t("stats.rating", { rating: user.pvpRating }),
+      pct: pvpProgress.pct / 100,
     },
     {
       id: "since",
@@ -479,9 +485,12 @@ export default async function ProfilePage({
           companionLine,
           sceneLabel,
           country: user.country,
-          rankPct: rank.pct,
-          rankAccent: rank.tier.accent,
-          rankLabel: rankLabels[rank.tier.id] ?? rank.tier.id,
+          rankPct: pvpProgress.pct / 100,
+          rankAccent: "#2eb8ff",
+          rankLabel: pvpStandingLabel,
+          pvpTier: pvpStanding.tier,
+          pvpDivision: pvpStanding.division,
+          pvpTierLabel,
           gradientFrom: heroGradientFrom,
           gradientTo: heroGradientTo,
           topLevel: stats.topLevel,

@@ -42,7 +42,10 @@ export type FriendListEntry = {
   /** Nivel de entrenador proxy = máximo nivel de Pokémon. */
   level: number;
   titleId: string;
+  /** Rango por medallas — sólo acento de rail / legacy. */
   rankTierId: RankTierId;
+  /** Elo clasificatoria — insignia visible. */
+  pvpRating: number;
   badgeCount: number;
   regionId: string | null;
   regionLabel: string;

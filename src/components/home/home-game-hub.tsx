@@ -1,22 +1,23 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { CurrentExpedition, type CurrentExpeditionProps } from "@/components/current-expedition";
 import { ActiveTeamStrip } from "@/components/home/active-team-strip";
 import { DailyGiftModal, type GiftModalLabels } from "@/components/events/daily-gift-modal";
-import { CampaignDevPanel } from "@/components/campaign-dev-panel";
 import { HomeIdentityBanner } from "@/components/home/home-identity-banner";
 import {
-  HomeMissionsCarousel,
-  HomeQuickAccess,
+  HomeDailyActions,
+  HomeEventsProgress,
+  type HomeEventsAdventure,
+  type HomeEventsLimited,
+  type HomeEventsWeekly,
 } from "@/components/home/home-world-panels";
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { DailyState } from "@/lib/events/state";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import type {
+  HomeDailyAction,
   HomeIdentity,
-  HomeObjective,
-  HomeQuickLink,
   HomeRailClanWars,
   HomeRailPvp,
 } from "@/lib/home-hub";
@@ -36,20 +37,27 @@ export type HomeHubLabels = {
     streakDays: string;
     viewProfile: string;
     titles: Record<string, string>;
-    ranks: Record<string, string>;
+    pvpTiers: Record<string, string>;
     lastAchievement: string;
     achievements: Record<string, string>;
   };
-  quickAccess: { title: string; items: Record<string, string> };
-  objectives: {
-    title: string;
-    empty: string;
-    rewards: string;
+  dailyActions: { title: string; items: Record<string, string> };
+  eventsPanel: {
+    progressTitle: string;
+    emptyAdventure: string;
+    emptyWeekly: string;
+    emptyEvent: string;
     claimable: string;
     claimed: string;
-    go: string;
     openCampaign: string;
+    openEvents: string;
+    tabAdventure: string;
+    tabWeekly: string;
+    tabEvent: string;
+    weeklyReady: string;
     objectiveLabels: Record<string, string>;
+    weeklyLabels: Record<string, string>;
+    missionLabels: Record<string, string>;
   };
 };
 
@@ -62,19 +70,14 @@ export function HomeGameHub({
   squad,
   rail,
   identity,
-  objectives,
-  objectiveZoneName,
-  quickLinks,
+  adventure,
+  weekly,
+  limited,
+  dailyActions,
   hubLabels,
-  isDev,
 }: {
   locale: string;
   expedition: CurrentExpeditionProps | null;
-  /**
-   * Card de "próximo paso", ya renderizada en el servidor. Llega como slot
-   * porque este componente es de cliente y el copy se resuelve con
-   * `getTranslations`; viene `null` mientras el hero de expedición alcance.
-   */
   nextStep: ReactNode;
   events: {
     daily: DailyState;
@@ -98,12 +101,26 @@ export function HomeGameHub({
     top: HomeRailRankEntry[];
   };
   identity: HomeIdentity;
-  objectives: HomeObjective[];
-  objectiveZoneName: string | null;
-  quickLinks: HomeQuickLink[];
+  adventure: HomeEventsAdventure;
+  weekly: HomeEventsWeekly;
+  limited: HomeEventsLimited;
+  dailyActions: HomeDailyAction[];
   hubLabels: HomeHubLabels;
-  isDev: boolean;
 }) {
+  // Acento del banner = tipos del favorito. Vive en estado local para
+  // cambiar al marcar estrella, sin esperar el RSC refresh del home.
+  const [companionTypes, setCompanionTypes] = useState(identity.companionTypes);
+  const [lastServerTypes, setLastServerTypes] = useState(identity.companionTypes);
+  if (lastServerTypes !== identity.companionTypes) {
+    setLastServerTypes(identity.companionTypes);
+    setCompanionTypes(identity.companionTypes);
+  }
+
+  const bannerIdentity: HomeIdentity = {
+    ...identity,
+    companionTypes,
+  };
+
   return (
     <div className="relative flex min-w-0 flex-1 flex-col overflow-x-hidden">
       <JourneyOnboarding />
@@ -117,10 +134,12 @@ export function HomeGameHub({
           />
 
           <div className="mx-auto flex min-w-0 flex-1 flex-col gap-3 md:gap-6 xl:gap-5">
-            {/* Reserva la altura de la expedición del rail; Quick Access llena el hueco. */}
             <div className="flex flex-col gap-2.5 xl:min-h-[12.25rem] xl:gap-4">
-              <HomeIdentityBanner identity={identity} labels={hubLabels.identity} />
-              <HomeQuickAccess links={quickLinks} labels={hubLabels.quickAccess} />
+              <HomeIdentityBanner identity={bannerIdentity} labels={hubLabels.identity} />
+              <HomeDailyActions
+                actions={dailyActions}
+                labels={hubLabels.dailyActions}
+              />
             </div>
 
             {events.showDailyModal && (
@@ -136,7 +155,6 @@ export function HomeGameHub({
 
             {nextStep && <div className="shrink-0">{nextStep}</div>}
 
-            {/* Mobile / tablet: el rail está oculto, acá va la expedición. */}
             {expedition ? (
               <div className="xl:hidden">
                 <CurrentExpedition {...expedition} />
@@ -154,19 +172,15 @@ export function HomeGameHub({
               title={squad.title}
               manageHref={squad.manageHref}
               manageLabel={squad.manageLabel}
+              onCompanionTypesChange={setCompanionTypes}
             />
 
-            <HomeMissionsCarousel
-              zoneName={objectiveZoneName}
-              objectives={objectives}
-              labels={hubLabels.objectives}
+            <HomeEventsProgress
+              adventure={adventure}
+              weekly={weekly}
+              limited={limited}
+              labels={hubLabels.eventsPanel}
             />
-
-            {isDev ? (
-              <div className="shrink-0 opacity-80">
-                <CampaignDevPanel locale={locale} />
-              </div>
-            ) : null}
           </div>
         </div>
       </div>

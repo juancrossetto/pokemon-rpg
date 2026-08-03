@@ -264,9 +264,6 @@
         "viewProfile": "Perfil",
         "lastAchievement": "Último logro"
       },
-      "quickAccess": {
-        "title": "Accesos rápidos"
-      },
       "daily": {
         "title": "Actividad diaria",
         "energy": "Energía",
@@ -277,14 +274,28 @@
       "objectives": {
         "title": "Objetivos de zona",
         "empty": "Elegí una zona en el viaje para ver objetivos.",
+        "emptyWeekly": "El desafío semanal se reinicia el lunes.",
+        "emptyEvent": "No hay evento activo por ahora.",
         "rewards": "Recompensas",
         "claimable": "LISTO",
         "claimed": "COBRADO",
         "go": "IR",
-        "openCampaign": "Ir al viaje",
-        "stages": "Stages",
-        "pokedex": "Pokédex",
-        "trainers": "Entrenadores"
+        "openCampaign": "Abrir viaje",
+        "openEvents": "Ver eventos",
+        "stages": "Completar stages",
+        "pokedex": "Completar Pokédex",
+        "trainers": "Derrotar entrenadores",
+        "progressTitle": "Misiones y eventos",
+        "tabAdventure": "Aventura",
+        "tabWeekly": "Semanal",
+        "tabEvent": "Evento",
+        "weeklyReady": "{count} listos",
+        "tabMissions": "Misiones",
+        "tabRewards": "Recompensas",
+        "tabPokedex": "Pokédex",
+        "rewardCoins": "Monedas",
+        "pokedexSeen": "Vistos",
+        "pokedexCaught": "Capturados"
       },
       "history": {
         "title": "Historial reciente",
@@ -293,6 +304,22 @@
         "shiny": "¡Capturaste un {name} shiny!",
         "badge": "Conseguiste la medalla {name}.",
         "trainer": "Derrotaste a {name}."
+      },
+      "dailyActions": {
+        "title": "Acciones diarias",
+        "statusAvailable": "Disponible",
+        "statusDone": "Hecho",
+        "statusReady": "Listo",
+        "statusBadges": "{count}/{total}",
+        "statusStreakDay": "Día {n}",
+        "items": {
+          "daily": "Regalo diario",
+          "pvp": "PvP",
+          "gyms": "Gimnasio",
+          "streak": "Racha",
+          "friends": "Amigos",
+          "market": "Mercado"
+        }
       }
     }
   },
@@ -1872,18 +1899,26 @@
     "rating": "Rating",
     "tier": "Liga",
     "tiers": {
-      "bronze": "Bronce",
-      "silver": "Plata",
-      "gold": "Oro",
-      "platinum": "Platino",
-      "diamond": "Diamante",
-      "master": "Maestro"
+      "beginner": "Principiante",
+      "rising": "Ascendente",
+      "advanced": "Avanzado",
+      "elite": "Élite",
+      "bronzeMaster": "Maestro Bronce",
+      "crystalMaster": "Maestro Cristal",
+      "champion": "Campeón",
+      "legendary": "Legendario"
     },
     "season": "Temporada {key}",
     "seasonEnds": "Cierra {date}",
     "wins": "{count} victorias",
     "losses": "{count} derrotas",
+    "winsLabel": "Victorias",
+    "lossesLabel": "Derrotas",
     "winRate": "{pct}% de victorias",
+    "winRateShort": "WR",
+    "streak": "Racha",
+    "rankLabel": "Rank",
+    "rankUnranked": "N/C",
     "findMatch": "Combate rápido",
     "rankedMatch": "Ranked",
     "searching": "Buscando…",
@@ -1891,12 +1926,37 @@
     "noTeam": "Sin equipo",
     "noEnergy": "Sin energía",
     "energyCost": "Cuesta 1 energía · tenés {energy}",
+    "energyCostShort": "1⚡ · {energy}",
     "viewLadder": "Ver ladder",
     "modesTitle": "Modos",
-    "rankedBlurb": "Jugá turno a turno contra el equipo del rival (IA). Gana Elo y monedas.",
-    "quickBlurb": "Simulación instantánea. Ideal para una partida rápida.",
+    "modeChallenge": "Desafío",
+    "rankedBlurb": "Clasificatoria turno a turno. Mueve Elo, liga e insignia.",
+    "quickBlurb": "Simulación instantánea. Solo monedas — no mueve Elo.",
+    "rankedBlurbShort": "Elo e insignia",
+    "quickBlurbShort": "Solo monedas",
+    "challengeBlurbShort": "Por nombre",
+    "rankStanding": "{tier} {division}",
     "challengeTitle": "Desafío directo",
     "challengeBlurb": "Buscá un entrenador por nombre y desafialo (cooldown 10 min).",
+    "difficultyEasy": "Fácil",
+    "difficultyNormal": "Normal",
+    "difficultyHard": "Alta",
+    "rewardCoinsHint": "Monedas",
+    "seasonTrackTitle": "Premios de temporada",
+    "seasonTrackHint": "Recompensas al cierre según tu liga",
+    "seasonCountdown": "{days}d {hours}h {minutes}m",
+    "seasonCountdownTitle": "Cierre de temporada",
+    "seasonStatsTitle": "Temporada",
+    "rivalsTitle": "Últimos rivales",
+    "emptyRivals": "Todavía no hay rivales recientes.",
+    "viewMatch": "Ver combate",
+    "missionTitle": "Objetivos",
+    "missionNextTier": "Próximo rango",
+    "missionWins": "Victorias",
+    "you": "Vos",
+    "lastRival": "Rival",
+    "teamBlurbShort": "Preset competitivo",
+    "teamPickerToggle": "Elegir Pokémon",
     "challengePlaceholder": "Buscar entrenador…",
     "challengeSubmit": "Desafiar",
     "challengeNoResults": "Ningún entrenador coincide con esa búsqueda.",
@@ -1927,6 +1987,8 @@
     "fainted": "Debilitado",
     "battleLog": "Desarrollo del combate",
     "turnLog": "Registro de turnos",
+    "turnLogShow": "Ver registro",
+    "turnLogHide": "Ocultar",
     "defeated": "de {owner} venció a",
     "noKos": "Ningún Pokémon cayó en este combate.",
     "noTurnLog": "No hay registro de turnos guardado.",
@@ -2309,20 +2371,23 @@
     "dailyNext": "Vuelve en {time}",
     "dailyProgress": "Día {current} de {total}",
     "weeklyTitle": "Desafío semanal",
-    "weeklySubtitle": "Cuatro objetivos, cuatro recompensas. Se reinicia cada lunes.",
+    "weeklySubtitle": "Seis objetivos y cinco hitos. Se reinicia cada lunes.",
     "weeklyPercent": "{percent}% completado",
     "weeklyReset": "Nueva semana en {time}",
     "objectives": {
       "logins": "Iniciá sesión 5 días",
-      "battles": "Ganá 25 combates",
-      "catches": "Atrapá 10 criaturas",
-      "zones": "Completá 3 objetivos de zona"
+      "battles": "Ganá 30 combates",
+      "catches": "Atrapá 15 criaturas",
+      "zones": "Completá 4 objetivos de zona",
+      "shinies": "Capturá 1 Pokémon variocolor",
+      "gyms": "Ganá 2 desafíos de gimnasio"
     },
     "milestone": "Hito {percent}%",
     "claim": "Reclamar",
     "claimed": "Reclamado",
     "locked": "Bloqueado",
     "goTo": "Ir",
+    "rewardsLabel": "Recompensas:",
     "rewards": {
       "coins": "monedas",
       "energy": "energía",
@@ -2339,6 +2404,7 @@
     "limited": {
       "badge": "Evento por tiempo limitado",
       "endsIn": "Termina en {time}",
+      "partOf": "Parte {current} de {total}:",
       "catalog": {
         "battleRush": {
           "name": "Semana de combate",
@@ -2354,15 +2420,21 @@
         }
       },
       "missions": {
-        "wins-10": "Ganá 10 combates",
+        "wins-5": "Ganá 5 combates",
+        "wins-15": "Ganá 15 combates",
         "wins-30": "Ganá 30 combates",
-        "wins-60": "Ganá 60 combates",
+        "wins-55": "Ganá 55 combates",
+        "wins-80": "Ganá 80 combates",
+        "catch-8": "Capturá 8 Pokémon",
         "catch-15": "Capturá 15 Pokémon",
         "catch-25": "Capturá 25 Pokémon",
         "catch-40": "Capturá 40 Pokémon",
+        "catch-70": "Capturá 70 Pokémon",
         "shiny-1": "Capturá un Pokémon variocolor",
-        "zones-2": "Completá 2 objetivos de zona",
-        "zones-5": "Completá 5 objetivos de zona"
+        "zones-1": "Completá 1 objetivo de zona",
+        "zones-3": "Completá 3 objetivos de zona",
+        "zones-5": "Completá 5 objetivos de zona",
+        "zones-8": "Completá 8 objetivos de zona"
       }
     },
     "close": "Cerrar",
@@ -2392,6 +2464,7 @@
     "memberSince": "Desde",
     "startDate": "Fecha de inicio:",
     "toNextRank": "{count} medallas para {rank}",
+    "toNextLeague": "{pct}% hacia {rank}",
     "maxRank": "Rango máximo alcanzado",
     "withCompanion": "{name} y {companion}",
     "sceneLabel": "Entrenador {name} junto a su compañero {companion}.",
@@ -2563,7 +2636,7 @@
       "tower": "Torre",
       "floor": "Piso {floor}",
       "journey": "Aventura",
-      "rank": "Rango"
+      "rank": "Liga"
     }
   },
   "friends": {
@@ -2860,20 +2933,26 @@
       },
       "pvp": {
         "title": "Combate competitivo",
-        "lead": "El PvP es opcional. No bloquea la historia. Si entrás, escalás un ladder Elo, sumás monedas y competís por temporada. Ranked y Rápido mueven rating: la diferencia es el ritmo y el pago.",
+        "lead": "El PvP es opcional. No bloquea la historia. La clasificatoria (Ranked y desafío) mueve Elo e insignia; el modo Rápido solo paga monedas.",
         "sections": [
           {
             "heading": "Cómo se mueve el Elo",
-            "body": "Arrancás en 1000. Cada duelo usa Elo clásico con factor K = 32: ganar contra alguien más fuerte suma más; perder contra alguien más débil duele más. Ambos jugadores se actualizan en el mismo partido.",
+            "body": "Arrancás en 1000. Solo Ranked y desafío usan Elo clásico (K = 32): ganar contra alguien más fuerte suma más; perder contra alguien más débil duele más. Rápido no cambia rating.",
             "bullets": [
-              "Ranked: turno a turno contra el equipo rival (IA).",
-              "Rápido: simulación instantánea; paga menos monedas (×0,6).",
-              "Desafío directo: por nombre de usuario, con cooldown."
+              "Ranked: turno a turno — Elo, liga, división e insignia.",
+              "Rápido: simulación instantánea; solo monedas (×0,6).",
+              "Desafío directo: por nombre, con cooldown; mueve Elo como Ranked."
             ]
           },
           {
+            "kind": "rankBadges",
+            "heading": "Insignias de clasificatoria",
+            "body": "Tu insignia marca la liga Elo. Dentro de cada liga hay 3 divisiones (III → II → I). Al llegar a I, el próximo paso es III de la liga siguiente.",
+            "caption": "Ocho ligas × tres divisiones — de Principiante a Legendario"
+          },
+          {
             "kind": "table",
-            "heading": "Ligas",
+            "heading": "Ligas y recompensas",
             "caption": "Tu liga multiplica las monedas al ganar. La derrota no usa este multiplicador.",
             "columns": [
               "Liga",
@@ -2882,34 +2961,44 @@
             ],
             "rows": [
               [
-                "Bronce",
+                "Principiante",
                 "0",
                 "×1"
               ],
               [
-                "Plata",
+                "Ascendente",
                 "1100",
                 "×1,15"
               ],
               [
-                "Oro",
-                "1250",
+                "Avanzado",
+                "1200",
                 "×1,3"
               ],
               [
-                "Platino",
-                "1400",
-                "×1,5"
+                "Élite",
+                "1325",
+                "×1,45"
               ],
               [
-                "Diamante",
+                "Maestro Bronce",
+                "1450",
+                "×1,6"
+              ],
+              [
+                "Maestro Cristal",
                 "1600",
-                "×1,75"
+                "×1,8"
               ],
               [
-                "Maestro",
+                "Campeón",
                 "1800",
-                "×2"
+                "×2,1"
+              ],
+              [
+                "Legendario",
+                "2000",
+                "×2,4"
               ]
             ]
           },
@@ -2926,8 +3015,8 @@
             "heading": "Temporadas mensuales",
             "body": "Cada mes UTC cierra una temporada. En el primer combate del mes nuevo se aplica un soft reset: 70% de tu rating + 30% de 1000. Se archiva la temporada anterior y cobrás un premio según la liga alcanzada.",
             "bullets": [
-              "Bronce 100 monedas · Plata 200 + energía · Oro 350 + 1 gema",
-              "Platino 500 + 2 gemas · Diamante 750 + 3 · Maestro 1200 + 5",
+              "Principiante 200 + 5 energía · Ascendente 400 + 8 · Avanzado 650 + 10 + 1 gema · Élite 900 + 12 + 2 gemas",
+              "Maestro Bronce 1300 + 15 + 3 · Maestro Cristal 1800 + 18 + 5 · Campeón 2500 + 22 + 8 · Legendario 4000 + 30 + 12 gemas",
               "El ladder del ranking ordena por Elo actual."
             ]
           }

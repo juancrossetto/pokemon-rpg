@@ -1082,7 +1082,7 @@ model DailyRewardClaim {
 model WeeklyRewardClaim {
   userId    String
   weekKey   String
-  milestone Int // porcentaje del objetivo: 25 | 50 | 75 | 100
+  milestone Int // porcentaje del objetivo: 20 | 40 | 60 | 80 | 100
   claimedAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

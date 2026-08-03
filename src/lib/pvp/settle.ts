@@ -7,7 +7,8 @@ import { bumpSeasonStats } from "@/lib/pvp/seasons";
 import { restoreChallengerTeam } from "@/lib/pvp/restore";
 
 /**
- * Cierra un PvpMatch ACTIVE/FORFEIT: Elo, monedas, season stats, restore HP.
+ * Cierra un PvpMatch: monedas, season stats, restore HP.
+ * Elo solo en RANKED — QUICK paga monedas sin mover rating.
  * Asume que el caller ya tomó lockUsers de ambos.
  */
 export async function settlePvpMatch(
@@ -34,15 +35,23 @@ export async function settlePvpMatch(
   opponentAfter: number;
   coinsAwarded: number;
 }> {
-  const { challengerAfter, opponentAfter } = ratingDeltas(
-    input.challengerRatingBefore,
-    input.opponentRatingBefore,
-    input.challengerWon,
-  );
+  const affectsRating = input.mode === "RANKED";
+  const { challengerAfter, opponentAfter } = affectsRating
+    ? ratingDeltas(
+        input.challengerRatingBefore,
+        input.opponentRatingBefore,
+        input.challengerWon,
+      )
+    : {
+        challengerAfter: input.challengerRatingBefore,
+        opponentAfter: input.opponentRatingBefore,
+      };
 
   const winnerId = input.challengerWon ? input.challengerId : input.opponentId;
   const loserId = input.challengerWon ? input.opponentId : input.challengerId;
+  // Quick no mueve Elo: el multiplicador de monedas usa el rating actual.
   const winnerRating = input.challengerWon ? challengerAfter : opponentAfter;
+  const loserRating = input.challengerWon ? opponentAfter : challengerAfter;
 
   const winBundle = pvpMatchRewards({
     won: true,
@@ -51,7 +60,7 @@ export async function settlePvpMatch(
   });
   const lossBundle = pvpMatchRewards({
     won: false,
-    rating: input.challengerWon ? opponentAfter : challengerAfter,
+    rating: loserRating,
     mode: input.mode,
   });
 
@@ -73,7 +82,7 @@ export async function settlePvpMatch(
   await tx.user.update({
     where: { id: input.challengerId },
     data: {
-      pvpRating: challengerAfter,
+      ...(affectsRating ? { pvpRating: challengerAfter } : {}),
       ...(input.challengerWon
         ? { pvpWins: { increment: 1 } }
         : { pvpLosses: { increment: 1 } }),
@@ -82,7 +91,7 @@ export async function settlePvpMatch(
   await tx.user.update({
     where: { id: input.opponentId },
     data: {
-      pvpRating: opponentAfter,
+      ...(affectsRating ? { pvpRating: opponentAfter } : {}),
       ...(input.challengerWon
         ? { pvpLosses: { increment: 1 } }
         : { pvpWins: { increment: 1 } }),

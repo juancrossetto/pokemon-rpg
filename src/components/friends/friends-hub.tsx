@@ -44,6 +44,27 @@ import {
   unblockTrainer,
 } from "@/actions/friends";
 import { type RankTierId } from "@/lib/trainer-profile";
+import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
+import {
+  divisionRoman,
+  rankForRating,
+  tierBadgeSrc,
+  type PvpTier,
+} from "@/lib/pvp/tiers";
+
+function pvpStandingLabel(
+  rating: number,
+  tiers: Record<string, string>,
+): { tier: PvpTier; division: 1 | 2 | 3; label: string; tierLabel: string } {
+  const standing = rankForRating(rating);
+  const tierLabel = tiers[standing.tier] ?? standing.tier;
+  return {
+    tier: standing.tier,
+    division: standing.division,
+    tierLabel,
+    label: `${tierLabel} ${divisionRoman(standing.division)}`,
+  };
+}
 
 /** Color flúor del tipo para la placa lateral (más vivo que typeColor base). */
 const TYPE_RAIL_FLUOR: Record<string, string> = {
@@ -158,7 +179,7 @@ export type FriendsLabels = {
     cp: string;
     rarity: Record<string, string>;
     titles: Record<string, string>;
-    ranks: Record<string, string>;
+    pvpTiers: Record<string, string>;
     activityCatch: string;
     activityBadge: string;
     activityTrainer: string;
@@ -288,11 +309,13 @@ export function FriendsHub({
     if (searchTimer.current) clearTimeout(searchTimer.current);
     const q = query.trim();
     if (q.length < 2) {
-      setHits([]);
-      setSearching(false);
-      return;
+      const frame = requestAnimationFrame(() => {
+        setHits([]);
+        setSearching(false);
+      });
+      return () => cancelAnimationFrame(frame);
     }
-    setSearching(true);
+    const frame = requestAnimationFrame(() => setSearching(true));
     searchTimer.current = setTimeout(() => {
       void searchTrainers(q).then((res) => {
         if (res.ok) setHits(res.hits);
@@ -300,6 +323,7 @@ export function FriendsHub({
       });
     }, 280);
     return () => {
+      cancelAnimationFrame(frame);
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
   }, [query]);
@@ -402,7 +426,7 @@ export function FriendsHub({
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
               {labels.community}
             </p>
-            <p className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff6a00]">
+            <p className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-pokeball-red">
               <span className="material-symbols-outlined text-[16px]!">handshake</span>
               {labels.eyebrow}
             </p>
@@ -488,7 +512,7 @@ export function FriendsHub({
         ref={filterRailRef}
         role="tablist"
         aria-label={labels.filters.all}
-        className="relative mx-auto flex max-w-full items-center justify-center gap-x-4 overflow-x-auto px-1 pb-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-x-7 [&::-webkit-scrollbar]:hidden"
+        className="friends-filter-rail relative mx-auto flex max-w-full items-center justify-center gap-x-4 overflow-x-auto px-1 pb-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-x-7 [&::-webkit-scrollbar]:hidden"
       >
         {filterIndicator ? (
           <span
@@ -555,7 +579,7 @@ export function FriendsHub({
             initial.friends.length === 0 ? labels.emptyFriends : labels.emptyFilter
           }
           hint={initial.friends.length === 0 ? labels.emptyFriendsHint : undefined}
-          art={initial.friends.length === 0 ? "/events/friend-cubone.png" : undefined}
+          art="/events/friend-cubone.png"
         />
       ) : (
         <div className="friends-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -835,7 +859,7 @@ function FriendCard({
   const companionUrl = friend.favorite
     ? uiSpriteUrl(friend.favorite.spriteUrl, friend.favorite.isShiny)
     : null;
-  const rankLabel = labels.card.ranks[friend.rankTierId] ?? friend.rankTierId;
+  const standing = pvpStandingLabel(friend.pvpRating, labels.card.pvpTiers);
   const mainType = friend.favorite?.types[0]?.toLowerCase() ?? null;
   const fallback = RANK_RAIL_FALLBACK[friend.rankTierId] ?? RANK_RAIL_FALLBACK.bronze;
   const railPlate = railFluorForType(mainType) ?? fallback.plate;
@@ -974,8 +998,16 @@ function FriendCard({
                 {labels.card.titles[friend.titleId] ?? friend.titleId}
               </span>
               <span className="opacity-35">·</span>
-              <span className="shrink-0 rounded-full border border-white/12 bg-white/[0.06] px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-white/80">
-                {rankLabel}
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/12 bg-white/[0.06] py-px pl-0.5 pr-1.5 text-[9px] font-semibold uppercase tracking-wide text-white/80">
+                <Image
+                  src={tierBadgeSrc(standing.tier)}
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="h-4 w-4 object-contain"
+                  unoptimized
+                />
+                {standing.label}
               </span>
             </span>
 
@@ -1107,7 +1139,9 @@ function RequestsPanel({
   onCancel: (id: string) => void;
 }) {
   if (requests.length === 0) {
-    return <EmptyState title={labels.emptyRequests} />;
+    return (
+      <EmptyState title={labels.emptyRequests} art="/events/friend-cubone.png" />
+    );
   }
   return (
     <div className="flex flex-col gap-2">
@@ -1176,7 +1210,9 @@ function BlockedPanel({
   pending: boolean;
   onUnblock: (id: string) => void;
 }) {
-  if (blocked.length === 0) return <EmptyState title={labels.emptyBlocked} />;
+  if (blocked.length === 0) {
+    return <EmptyState title={labels.emptyBlocked} art="/events/friend-cubone.png" />;
+  }
   return (
     <div className="flex flex-col gap-2">
       {blocked.map((b) => {
@@ -1228,6 +1264,7 @@ function TrainerCardModal({
   const panelRef = useRef<HTMLDivElement>(null);
   const src = avatarSrc(card.avatarId);
   const fav = card.favorite;
+  const standing = pvpStandingLabel(card.pvpRating, labels.card.pvpTiers);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -1269,7 +1306,7 @@ function TrainerCardModal({
         />
 
         <div className="relative z-[1] flex items-center justify-between border-b border-white/8 px-4 py-3 sm:px-6">
-          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#ff6a00]">
+          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
             <span className="material-symbols-outlined text-[16px]!">id_card</span>
             {labels.card.trainerCard}
             {card.extensions.clanTag ? (
@@ -1306,12 +1343,26 @@ function TrainerCardModal({
                 <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.16em] text-tertiary">
                   {labels.card.titles[card.titleId] ?? card.titleId}
                 </p>
-                <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-on-surface-variant">
+                <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-on-surface-variant">
                   <span className="text-white">
                     {labels.level} {card.level}
                   </span>
                   <span>{card.regionLabel}</span>
-                  <span>{labels.card.ranks[card.rankTierId] ?? card.rankTierId}</span>
+                  <span className="inline-flex items-center gap-1.5 text-white/85">
+                    <PvpRankBadge
+                      tier={standing.tier}
+                      division={standing.division}
+                      label={standing.tierLabel}
+                      size="sm"
+                      className="shrink-0"
+                    />
+                    <span className="font-semibold uppercase tracking-wide">
+                      {standing.label}
+                      <span className="ml-1.5 font-mono text-white/50">
+                        {card.pvpRating}
+                      </span>
+                    </span>
+                  </span>
                 </p>
                 <div className="mt-2">
                   <PresenceBadge

@@ -32,25 +32,16 @@ import { avatarById } from "@/lib/avatars";
 import { findNavItem } from "@/lib/navigation";
 import { dayKey, serverNow } from "@/lib/events/time";
 import type {
+  HomeDailyAction,
   HomeIdentity,
   HomeObjective,
-  HomeQuickLink,
   HomeRailPvp,
   HomeRailPvpMatch,
 } from "@/lib/home-hub";
 import type { HomeHubLabels } from "@/components/home/home-game-hub";
-import { tierForRating } from "@/lib/pvp/tiers";
+import { rankForRating, type PvpTier } from "@/lib/pvp/tiers";
 
 const TEAM_SIZE = 6;
-
-const HOME_QUICK_LINK_IDS = [
-  "pvp",
-  "gyms",
-  "friends",
-  "market",
-  "clans",
-  "pokedex",
-] as const;
 
 /** Racha de días consecutivos con reclamo diario (hoy o ayer como ancla). */
 async function loadLoginStreak(userId: string): Promise<number> {
@@ -152,7 +143,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     tEvents,
     tProfile,
     tCampaign,
-    tNav,
+    tPvp,
     userRow,
     trainerStats,
     achievementClaims,
@@ -163,7 +154,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     getTranslations("events"),
     getTranslations("profile"),
     getTranslations("campaign"),
-    getTranslations("nav"),
+    getTranslations("pvp"),
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: {
@@ -246,7 +237,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     regionBadges.map((b) => b.gym.order),
   );
   const mapLocations = await loadMapLocations(userId, progress);
-  const isDev = process.env.NODE_ENV === "development";
 
   const spawnSpecies = expedition
     ? await prisma.species.findMany({
@@ -512,11 +502,13 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       dateLabel: dateLabelFmt.format(m.createdAt).replace(/\//g, "."),
     };
   });
+  const pvpStanding = rankForRating(trainerStats.pvpRating);
   const railPvp: HomeRailPvp = {
     rating: trainerStats.pvpRating,
     wins: trainerStats.pvpWins,
     losses: trainerStats.pvpLosses,
-    tier: tierForRating(trainerStats.pvpRating),
+    tier: pvpStanding.tier,
+    division: pvpStanding.division,
     selfName: userRow.username || username,
     selfAvatarId: userRow.avatarId,
     selfCountry: userRow.country ?? "",
@@ -532,6 +524,9 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     level: statsWithPower.topLevel,
     titleId,
     rankTierId: rank.tier.id,
+    pvpTier: pvpStanding.tier,
+    pvpDivision: pvpStanding.division,
+    pvpRating: trainerStats.pvpRating,
     regionId: region.id,
     regionLabel: tCampaign(`regions.${region.id}`),
     combatPower,
@@ -612,11 +607,70 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     ? tCampaign(farmingZone.nameKey)
     : null;
 
-  const quickLinks: HomeQuickLink[] = HOME_QUICK_LINK_IDS.flatMap((id) => {
-    const item = findNavItem(id);
-    if (!item?.iconSrc) return [];
-    return [{ id, href: item.href, iconSrc: item.iconSrc, labelKey: id }];
-  });
+  const gymReady = milestone?.kind === "gym";
+  const dailyCanClaim = eventsSummary.daily.canClaim;
+
+  const dailyActions: HomeDailyAction[] = [
+    {
+      id: "daily",
+      href: null,
+      openDailyGift: true,
+      iconSrc: "/nav/event-icon.png?v=4",
+      labelKey: "daily",
+      status: dailyCanClaim
+        ? t("hub.dailyActions.statusAvailable")
+        : t("hub.dailyActions.statusDone"),
+      hot: dailyCanClaim,
+    },
+    {
+      id: "pvp",
+      href: findNavItem("pvp")?.href ?? "/pvp",
+      iconSrc: findNavItem("pvp")?.iconSrc ?? "/nav/pvp-icon.png?v=4",
+      labelKey: "pvp",
+      status: t("hub.dailyActions.statusBadges", {
+        count: railPvp.wins,
+        total: Math.max(railPvp.wins + railPvp.losses, 1),
+      }),
+      hot: false,
+    },
+    {
+      id: "gyms",
+      href: findNavItem("gyms")?.href ?? "/gyms",
+      iconSrc: findNavItem("gyms")?.iconSrc ?? "/nav/gym-icon.png?v=4",
+      labelKey: "gyms",
+      status: gymReady
+        ? t("hub.dailyActions.statusReady")
+        : t("hub.dailyActions.statusBadges", {
+            count: regularBadgeCount,
+            total: badgeTotal,
+          }),
+      hot: gymReady,
+    },
+    {
+      id: "streak",
+      href: "/events",
+      iconSrc: "/nav/ranking-icon.png?v=4",
+      labelKey: "streak",
+      status: t("hub.dailyActions.statusStreakDay", { n: loginStreak }),
+      hot: loginStreak >= 3,
+    },
+    {
+      id: "friends",
+      href: findNavItem("friends")?.href ?? "/friends",
+      iconSrc: findNavItem("friends")?.iconSrc ?? "/nav/friends-icon.png?v=4",
+      labelKey: "friends",
+      status: null,
+      hot: false,
+    },
+    {
+      id: "market",
+      href: findNavItem("market")?.href ?? "/market",
+      iconSrc: findNavItem("market")?.iconSrc ?? "/nav/shop-icon.png?v=4",
+      labelKey: "market",
+      status: null,
+      hot: false,
+    },
+  ];
 
   const titleKeys = [
     "rookie",
@@ -630,18 +684,20 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     "mythKeeper",
     "champion",
   ] as const;
-  const rankKeys = [
-    "bronze",
-    "silver",
-    "gold",
-    "diamond",
-    "master",
-    "champion",
-  ] as const;
   const achievementLabelEntries = Object.fromEntries(
     achievements.map((a) => [a.id, tProfile(`achievements.${a.id}.name`)]),
   );
 
+  const pvpTierKeys = [
+    "beginner",
+    "rising",
+    "advanced",
+    "elite",
+    "bronzeMaster",
+    "crystalMaster",
+    "champion",
+    "legendary",
+  ] as const satisfies readonly PvpTier[];
   const hubLabels: HomeHubLabels = {
     identity: {
       level: t("hub.identity.level"),
@@ -652,29 +708,55 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       streakDays: t("hub.identity.streakDays", { n: "{n}" }),
       viewProfile: t("hub.identity.viewProfile"),
       titles: Object.fromEntries(titleKeys.map((k) => [k, tProfile(`titles.${k}`)])),
-      ranks: Object.fromEntries(rankKeys.map((k) => [k, tProfile(`rank.${k}`)])),
+      pvpTiers: Object.fromEntries(
+        pvpTierKeys.map((k) => [k, tPvp(`tiers.${k}`)]),
+      ),
       lastAchievement: t("hub.identity.lastAchievement"),
       achievements: achievementLabelEntries,
     },
-    quickAccess: {
-      title: t("hub.quickAccess.title"),
-      items: Object.fromEntries(
-        HOME_QUICK_LINK_IDS.map((id) => [id, tNav(id)]),
-      ),
+    dailyActions: {
+      title: t("hub.dailyActions.title"),
+      items: {
+        daily: t("hub.dailyActions.items.daily"),
+        pvp: t("hub.dailyActions.items.pvp"),
+        gyms: t("hub.dailyActions.items.gyms"),
+        streak: t("hub.dailyActions.items.streak"),
+        friends: t("hub.dailyActions.items.friends"),
+        market: t("hub.dailyActions.items.market"),
+      },
     },
-    objectives: {
-      title: t("hub.objectives.title"),
-      empty: t("hub.objectives.empty"),
-      rewards: t("hub.objectives.rewards"),
+    eventsPanel: {
+      progressTitle: t("hub.objectives.progressTitle"),
+      emptyAdventure: t("hub.objectives.empty"),
+      emptyWeekly: t("hub.objectives.emptyWeekly"),
+      emptyEvent: t("hub.objectives.emptyEvent"),
       claimable: t("hub.objectives.claimable"),
       claimed: t("hub.objectives.claimed"),
-      go: t("hub.objectives.go"),
       openCampaign: t("hub.objectives.openCampaign"),
+      openEvents: t("hub.objectives.openEvents"),
+      tabAdventure: t("hub.objectives.tabAdventure"),
+      tabWeekly: t("hub.objectives.tabWeekly"),
+      tabEvent: t("hub.objectives.tabEvent"),
+      weeklyReady: t("hub.objectives.weeklyReady", { count: "{count}" }),
       objectiveLabels: {
         stages: t("hub.objectives.stages"),
         pokedex: t("hub.objectives.pokedex"),
         trainers: t("hub.objectives.trainers"),
       },
+      weeklyLabels: {
+        logins: tEvents("objectives.logins"),
+        battles: tEvents("objectives.battles"),
+        catches: tEvents("objectives.catches"),
+        zones: tEvents("objectives.zones"),
+        shinies: tEvents("objectives.shinies"),
+        gyms: tEvents("objectives.gyms"),
+      },
+      missionLabels: Object.fromEntries(
+        eventsSummary.limited.missions.map((mission) => [
+          mission.id,
+          tEvents(`limited.missions.${mission.id}`),
+        ]),
+      ),
     },
   };
 
@@ -707,11 +789,34 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         top: railTop,
       }}
       identity={identity}
-      objectives={homeObjectives}
-      objectiveZoneName={objectiveZoneName}
-      quickLinks={quickLinks}
+      adventure={{
+        zoneName: objectiveZoneName,
+        objectives: homeObjectives,
+      }}
+      weekly={{
+        percent: eventsSummary.weekly.percent,
+        objectives: eventsSummary.weekly.objectives.map((o) => ({
+          id: o.id,
+          current: o.current,
+          target: o.target,
+          href: o.href,
+        })),
+        claimableMilestones: eventsSummary.weekly.milestones.filter((m) => m.claimable)
+          .length,
+      }}
+      limited={{
+        name: tEvents(`limited.catalog.${eventsSummary.limited.nameKey}`),
+        missions: eventsSummary.limited.missions.map((m) => ({
+          id: m.id,
+          current: m.current,
+          target: m.target,
+          claimed: m.claimed,
+          claimable: m.claimable,
+          href: m.href,
+        })),
+      }}
+      dailyActions={dailyActions}
       hubLabels={hubLabels}
-      isDev={isDev}
     />
   );
 }

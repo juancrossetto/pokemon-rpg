@@ -155,13 +155,18 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
   useEffect(() => {
     const start = displayRef.current;
     const pending = peekPendingCoinDelta();
-    const floaterDelta =
-      pending !== 0 ? pending : start !== coins ? coins - start : undefined;
 
     const kick = requestAnimationFrame(() => {
       readyRef.current = true;
+      if (pending !== 0 && start !== coins) {
+        // Saldo server ya incluye el premio, pero el FX todavía no: quedamos
+        // en `start` hasta announce/flush (sync con el vuelo del loot).
+        targetRef.current = start;
+        writeLastShown(start);
+        return;
+      }
       if (start !== coins) {
-        tweenTo(coins, floaterDelta);
+        tweenTo(coins, pending !== 0 ? pending : coins - start);
       } else {
         clearPendingCoinDelta();
         writeLastShown(coins);
@@ -173,6 +178,7 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
 
   useEffect(() => {
     if (!readyRef.current) return;
+    if (peekPendingCoinDelta() !== 0) return;
     if (coins === targetRef.current) return;
     const kick = requestAnimationFrame(() => tweenTo(coins));
     return () => cancelAnimationFrame(kick);
@@ -183,12 +189,28 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
     function onDelta(event: Event) {
       const delta = (event as CustomEvent<CoinDeltaDetail>).detail?.delta;
       if (!delta || !Number.isFinite(delta)) return;
-      tweenTo(targetRef.current + delta, delta);
+      const from = displayRef.current;
+      // Si el prop ya trae el premio (revalidate temprano), animamos hasta
+      // ese total. Si todavía no, sumamos el delta al valor en pantalla.
+      const end =
+        delta > 0 ? Math.max(coins, from + delta) : Math.min(coins, from + delta);
+      if (from === end) {
+        clearPendingCoinDelta();
+        setFx(delta > 0 ? "up" : "down");
+        setFloater(delta);
+        if (clearFxRef.current) window.clearTimeout(clearFxRef.current);
+        clearFxRef.current = window.setTimeout(() => {
+          setFx(null);
+          setFloater(null);
+        }, 900);
+        return;
+      }
+      tweenTo(end, delta);
     }
     window.addEventListener(COIN_DELTA_EVENT, onDelta);
     return () => window.removeEventListener(COIN_DELTA_EVENT, onDelta);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable listener
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- coins kept fresh
+  }, [coins]);
 
   useEffect(() => {
     return () => {

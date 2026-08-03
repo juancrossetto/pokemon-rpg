@@ -4,8 +4,8 @@ import type { RewardBundle } from "./rewards";
  * Desafío semanal.
  *
  * A diferencia del regalo diario —que solo pide entrar—, la recompensa semanal
- * se gana jugando. El progreso de los cuatro objetivos se **deriva de datos que
- * el juego ya guarda**, no de contadores nuevos:
+ * se gana jugando. El progreso de los objetivos se **deriva de datos que el
+ * juego ya guarda**, no de contadores nuevos:
  *
  * | Objetivo   | Fuente                                    |
  * |------------|-------------------------------------------|
@@ -13,6 +13,8 @@ import type { RewardBundle } from "./rewards";
  * | `battles`  | `BattleLog` con `userWon`                 |
  * | `catches`  | `PokemonInstance.caughtAt`                |
  * | `zones`    | `ZoneObjectiveClaim.claimedAt`            |
+ * | `shinies`  | `PokemonInstance` shiny + `caughtAt`      |
+ * | `gyms`     | `GymAttempt` ganados                      |
  *
  * Esa decisión evita agregar contadores que habría que incrementar desde cinco
  * actions distintas y que se desincronizan en cuanto una falla a mitad de
@@ -25,7 +27,13 @@ import type { RewardBundle } from "./rewards";
  * semana entera jugando la campaña.
  */
 
-export type WeeklyObjectiveId = "logins" | "battles" | "catches" | "zones";
+export type WeeklyObjectiveId =
+  | "logins"
+  | "battles"
+  | "catches"
+  | "zones"
+  | "shinies"
+  | "gyms";
 
 export type WeeklyObjective = {
   id: WeeklyObjectiveId;
@@ -36,7 +44,7 @@ export type WeeklyObjective = {
 
 export type WeeklyMilestone = {
   /** Porcentaje del progreso total que lo desbloquea. */
-  percent: 25 | 50 | 75 | 100;
+  percent: number;
   rewards: RewardBundle;
 };
 
@@ -47,35 +55,42 @@ export type WeeklyChallenge = {
 };
 
 /**
- * Los objetivos están calibrados para una semana de juego moderado, no
- * intensivo: 25 combates son unos 4 por día, muy por debajo de los ~48
- * diarios que permite la energía. La idea es que entrar seguido alcance.
+ * Calibrado para una semana de juego moderado: hay que tocar varios sistemas,
+ * pero ninguno pide farmear hasta el límite de energía.
  */
 export const WEEKLY_CHALLENGE: WeeklyChallenge = {
-  id: "weekly-v1",
+  id: "weekly-v2",
   objectives: [
     { id: "logins", target: 5, href: null },
-    { id: "battles", target: 25, href: "/battle" },
-    { id: "catches", target: 10, href: "/battle" },
-    { id: "zones", target: 3, href: "/campaign" },
+    { id: "battles", target: 30, href: "/battle" },
+    { id: "catches", target: 15, href: "/battle" },
+    { id: "zones", target: 4, href: "/campaign" },
+    { id: "shinies", target: 1, href: "/battle" },
+    { id: "gyms", target: 2, href: "/gyms" },
   ],
   milestones: [
-    { percent: 25, rewards: [{ kind: "item", itemName: "Poke Ball", quantity: 5 }] },
+    { percent: 20, rewards: [{ kind: "item", itemName: "Poke Ball", quantity: 8 }] },
     {
-      percent: 50,
+      percent: 40,
       rewards: [
-        { kind: "coins", amount: 600 },
-        { kind: "item", itemName: "Super Potion", quantity: 2 },
+        { kind: "coins", amount: 500 },
+        { kind: "item", itemName: "Potion", quantity: 5 },
       ],
     },
-    { percent: 75, rewards: [{ kind: "energy", amount: 15 }] },
+    {
+      percent: 60,
+      rewards: [
+        { kind: "coins", amount: 800 },
+        { kind: "item", itemName: "Great Ball", quantity: 5 },
+      ],
+    },
+    { percent: 80, rewards: [{ kind: "energy", amount: 20 }] },
     {
       percent: 100,
       rewards: [
         { kind: "item", itemName: "Rare Candy", quantity: 1 },
-        { kind: "coins", amount: 1000 },
-        // Goteo semanal de gemas: es la vía principal para juntarlas.
-        { kind: "gems", amount: 2 },
+        { kind: "coins", amount: 1200 },
+        { kind: "gems", amount: 3 },
       ],
     },
   ],
@@ -85,8 +100,8 @@ export const WEEKLY_CHALLENGE: WeeklyChallenge = {
  * Porcentaje completado de la semana.
  *
  * Cada objetivo aporta lo mismo y se recorta a su meta, así que llenar uno de
- * más no compensa tener otro en cero: hay que tocar los cuatro sistemas al
- * menos un poco, que es justamente lo que el desafío quiere premiar.
+ * más no compensa tener otro en cero: hay que tocar varios sistemas al menos
+ * un poco, que es justamente lo que el desafío quiere premiar.
  */
 export function weeklyPercent(
   challenge: WeeklyChallenge,

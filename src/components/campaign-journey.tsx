@@ -79,17 +79,19 @@ const BADGE_TYPE_BY_ORDER: Record<number, string> = {
   8: "ground",
 };
 
-const PATH_PROGRESS_FILL_GOLD = "campaign-warm-bar";
-/** Dorado/naranja de “hecho” en el recorrido — glow tipo mockup. */
-const PATH_DONE_GOLD = "#f0a020";
-const PATH_DONE_GOLD_SOFT = "rgba(240, 160, 32, 0.16)";
-const PATH_DONE_GOLD_RING = "rgba(240, 160, 32, 0.75)";
+const PATH_PROGRESS_FILL = "campaign-warm-bar";
+/** Hecho / valor → tertiary del theme. */
+const PATH_DONE = "var(--color-electric-yellow)";
+const PATH_DONE_SOFT = "color-mix(in srgb, var(--color-electric-yellow) 16%, transparent)";
+const PATH_DONE_RING = "color-mix(in srgb, var(--color-electric-yellow) 75%, transparent)";
+const PATH_DONE_GLOW = "color-mix(in srgb, var(--color-electric-yellow) 55%, transparent)";
+const PATH_DONE_GLOW_STRONG = "color-mix(in srgb, var(--color-electric-yellow) 88%, transparent)";
 const PATH_NODE_SM = "h-6 w-6 sm:h-8 sm:w-8"; /* rail normal — compacto en mobile */
 const PATH_NODE_GYM = "h-9 w-9 sm:h-12 sm:w-12 lg:h-14 lg:w-14"; /* gimnasio */
 
 function zoneBarFill(isGym: boolean, done: boolean, inProgress: boolean): string {
-  if (isGym || inProgress) return PATH_PROGRESS_FILL_GOLD;
-  if (done) return "bg-[#f0a020]";
+  if (isGym || inProgress) return PATH_PROGRESS_FILL;
+  if (done) return "bg-electric-yellow";
   return "bg-white/20";
 }
 
@@ -101,9 +103,9 @@ function zoneBarFill(isGym: boolean, done: boolean, inProgress: boolean): string
  * regla ahora es que el color solo aparece cuando informa:
  *
  * - Neutro (blancos)  → estructura y tipo de zona. La identidad la da el ícono.
- * - Rojo              → dónde estás y la acción principal.
- * - Dorado            → gimnasios, recompensas y rareza. El eje de "valor".
- * - Verde             → hecho: capturado, entrenador vencido, objetivo cumplido.
+ * - Primary           → dónde estás y la acción principal.
+ * - Tertiary          → gimnasios, recompensas y “hecho” del path.
+ * - Verde             → capturado / entrenador vencido / objetivo cumplido.
  */
 
 /** Rareza sobre un solo tono: la jerarquía se lee por intensidad, no por color. */
@@ -112,7 +114,7 @@ const RARITY_STYLE: Record<Rarity, string> = {
   uncommon: "border-white/25",
   rare: "border-tertiary/35",
   veryRare: "border-tertiary/60",
-  elite: "border-electric-yellow shadow-[0_0_10px_rgba(242,192,0,0.35)]",
+  elite: "border-electric-yellow shadow-[0_0_10px_color-mix(in_srgb,var(--color-electric-yellow)_35%,transparent)]",
 };
 
 /**
@@ -151,7 +153,7 @@ const KIND_STYLE: Record<
     icon: "gym",
     text: "text-electric-yellow",
     ring: "border-electric-yellow/45 bg-[#1a1c24]",
-    glow: "rgba(255,203,5,0.45)",
+    glow: "color-mix(in srgb, var(--color-electric-yellow) 45%, transparent)",
   },
 };
 
@@ -428,7 +430,7 @@ export function CampaignJourney({
                   disabled={!c.unlocked}
                   className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-label-sm transition ${
                     active
-                      ? "bg-[#1a1c24] text-white ring-1 ring-[#ff8a00]/55 shadow-[0_0_18px_rgba(255,138,0,0.22)]"
+                      ? "bg-[#1a1c24] text-white ring-1 ring-pokeball-red/55 shadow-[0_0_18px_color-mix(in_srgb,var(--color-pokeball-red)_22%,transparent)]"
                       : c.unlocked
                         ? "text-white/55 hover:bg-[#1a1c24] hover:text-white"
                         : "text-white/30"
@@ -439,7 +441,7 @@ export function CampaignJourney({
                       c.completed
                         ? "text-electric-yellow"
                         : active
-                          ? "text-[#ff8a00]"
+                          ? "text-pokeball-red"
                           : ""
                     }`}
                   >
@@ -472,7 +474,7 @@ export function CampaignJourney({
                   title={`${t("chapter")} ${c.number}`}
                   className={`min-h-8 shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold leading-tight transition sm:min-h-10 sm:px-3 sm:py-1.5 sm:text-label-sm ${
                     active
-                      ? "game-float-card text-white ring-1 ring-[#ff8a00]/55"
+                      ? "game-float-card text-white ring-1 ring-pokeball-red/55"
                       : c.unlocked
                         ? "bg-[#1a1c24] text-white/55"
                         : "bg-[#12141c] text-white/30"
@@ -586,7 +588,7 @@ function JourneyStrip({
               title={`${chapterLabel} ${c.number}`}
               className={`relative flex min-h-[3.75rem] min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl px-0.5 py-2 transition sm:min-h-[4rem] sm:px-1 ${
                 active
-                  ? "bg-[#ff8a00]/14"
+                  ? "bg-pokeball-red/14"
                   : c.unlocked
                     ? "bg-[#161822] hover:bg-[#1a1c24]"
                     : "bg-[#12141c] opacity-45"
@@ -595,9 +597,9 @@ function JourneyStrip({
               <span
                 className={`relative flex h-8 w-8 items-center justify-center rounded-full sm:h-9 sm:w-9 ${
                   active
-                    ? "bg-[#1a1208] shadow-[0_0_0_2px_#ff8a00]"
+                    ? "bg-[color-mix(in_srgb,var(--color-pokeball-red)_14%,#0a0610)] shadow-[0_0_0_2px_var(--color-pokeball-red)]"
                     : c.completed
-                      ? "bg-[#1a1c24] shadow-[0_0_0_1px_rgba(224,168,0,0.45)]"
+                      ? "bg-[#1a1c24] shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-electric-yellow)_45%,transparent)]"
                       : c.unlocked
                         ? "bg-[#12141c] shadow-[0_0_0_1px_rgba(255,255,255,0.12)]"
                         : "bg-[#0c0e14] shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
@@ -622,7 +624,7 @@ function JourneyStrip({
                 ) : (
                   <span
                     className={`material-symbols-outlined text-[18px]! ${
-                      c.completed || active ? "text-[#e0a800]" : "text-white/50"
+                      c.completed || active ? "text-electric-yellow" : "text-white/50"
                     }`}
                   >
                     {c.completed ? "military_tech" : "flag"}
@@ -631,7 +633,7 @@ function JourneyStrip({
               </span>
               <span className="h-1 w-[85%] overflow-hidden rounded-full bg-black/45">
                 <span
-                  className={`block h-full rounded-full ${PATH_PROGRESS_FILL_GOLD} transition-all duration-500`}
+                  className={`block h-full rounded-full ${PATH_PROGRESS_FILL} transition-all duration-500`}
                   style={{ width: `${c.unlocked ? c.percent : 0}%` }}
                 />
               </span>
@@ -733,20 +735,20 @@ function ZoneRow({
             !zone.unlocked
               ? "border-white/15 bg-[#12141c] text-white/35"
               : isFarming || nodeStatus === "current"
-                ? "border-[#ff8a00] bg-[#1a1208] text-[#ff8a00]"
+                ? "border-pokeball-red bg-[color-mix(in_srgb,var(--color-pokeball-red)_14%,#0a0610)] text-pokeball-red"
                 : done
-                  ? "bg-[#14110c]"
+                  ? "bg-[color-mix(in_srgb,var(--color-electric-yellow)_10%,#0a0610)]"
                   : `${style.ring} ${style.text}`
           }`}
           style={
             done && zone.unlocked
               ? {
-                  borderColor: PATH_DONE_GOLD_RING,
-                  color: PATH_DONE_GOLD,
-                  boxShadow: `0 0 10px rgba(240,160,32,0.45), inset 0 0 8px rgba(240,160,32,0.12)`,
+                  borderColor: PATH_DONE_RING,
+                  color: PATH_DONE,
+                  boxShadow: `0 0 8px ${PATH_DONE_GLOW}, 0 0 16px ${PATH_DONE_GLOW}, inset 0 0 8px ${PATH_DONE_SOFT}`,
                 }
               : isFarming || nodeStatus === "current"
-                ? { boxShadow: "0 0 12px rgba(255,138,0,0.4)" }
+                ? { boxShadow: "0 0 12px color-mix(in srgb, var(--color-pokeball-red) 40%, transparent)" }
                 : zone.unlocked && isGym && !done
                   ? { boxShadow: `0 0 10px ${style.glow}` }
                   : undefined
@@ -763,8 +765,8 @@ function ZoneRow({
             <span
               className={`material-symbols-outlined font-bold ${isGym ? "text-[16px]! sm:text-[22px]! lg:text-[24px]!" : "text-[12px]! sm:text-[16px]!"}`}
               style={{
-                color: PATH_DONE_GOLD,
-                filter: "drop-shadow(0 0 4px rgba(240,160,32,0.85))",
+                color: PATH_DONE,
+                filter: `drop-shadow(0 0 5px ${PATH_DONE_GLOW_STRONG})`,
               }}
             >
               check
@@ -792,19 +794,16 @@ function ZoneRow({
         {!isLast ? (
           <span
             aria-hidden
-            className={`pointer-events-none absolute left-1/2 z-0 w-[2px] min-h-[1.5rem] -translate-x-1/2 overflow-hidden rounded-full bg-white/20 ${railLineTop} -bottom-3.5`}
+            className={`pointer-events-none absolute left-1/2 z-0 w-[2px] min-h-[1.5rem] -translate-x-1/2 overflow-visible rounded-full bg-white/15 ${railLineTop} -bottom-3.5`}
           >
             <span
-              className="absolute inset-x-0 top-0 w-full rounded-full transition-[height] duration-500 ease-out"
+              className="campaign-path-neon absolute inset-x-0 top-0 w-full rounded-full transition-[height] duration-500 ease-out"
               style={{
                 height: `${lineFillPct}%`,
                 background: lineFilled
-                  ? `linear-gradient(180deg, ${PATH_DONE_GOLD} 0%, #ff8a00 100%)`
+                  ? `linear-gradient(180deg, ${PATH_DONE} 0%, var(--theme-primary-bright) 55%, var(--color-pokeball-red) 100%)`
                   : "transparent",
-                boxShadow:
-                  lineFilled && lineFillPct > 0
-                    ? "0 0 6px rgba(240,160,32,0.65)"
-                    : undefined,
+                opacity: lineFilled && lineFillPct > 0 ? 1 : 0,
               }}
             />
           </span>
@@ -821,9 +820,9 @@ function ZoneRow({
           !zone.unlocked
             ? "opacity-45"
             : selected
-              ? "ring-2 ring-electric-yellow/80 shadow-[0_0_28px_rgba(255,203,5,0.42),0_0_0_1px_rgba(255,203,5,0.25)]"
+              ? "ring-2 ring-electric-yellow/80 shadow-[0_0_28px_color-mix(in_srgb,var(--color-electric-yellow)_42%,transparent),0_0_0_1px_color-mix(in_srgb,var(--color-electric-yellow)_25%,transparent)]"
               : isFarming || nodeStatus === "current"
-                ? "ring-1 ring-[#ff8a00]/55 shadow-[0_0_20px_rgba(255,138,0,0.18)]"
+                ? "ring-1 ring-pokeball-red/55 shadow-[0_0_20px_color-mix(in_srgb,var(--color-pokeball-red)_18%,transparent)]"
                 : isGym && !done
                   ? "ring-1 ring-electric-yellow/40"
                   : ""
@@ -852,7 +851,7 @@ function ZoneRow({
               {selected ? (
                 <div
                   aria-hidden
-                  className="absolute inset-0 bg-[radial-gradient(80%_70%_at_20%_50%,rgba(255,203,5,0.22)_0%,transparent_65%)]"
+                  className="absolute inset-0 bg-[radial-gradient(80%_70%_at_20%_50%,color-mix(in_srgb,var(--color-electric-yellow)_22%,transparent)_0%,transparent_65%)]"
                 />
               ) : null}
             </div>
@@ -1008,12 +1007,12 @@ function ZoneRowBody({
                 gymWon || (done && !isGym)
                   ? ""
                   : nodeStatus === "current" || nodeStatus === "in_progress"
-                    ? "bg-[#ff8a00]/18 text-[#ff9a4a]"
+                    ? "bg-pokeball-red/18 text-pokeball-red"
                     : "bg-[#1a1c24]/80 text-white/45"
               }`}
               style={
                 gymWon || (done && !isGym)
-                  ? { backgroundColor: PATH_DONE_GOLD_SOFT, color: PATH_DONE_GOLD }
+                  ? { backgroundColor: PATH_DONE_SOFT, color: PATH_DONE }
                   : undefined
               }
             >
@@ -1031,7 +1030,7 @@ function ZoneRowBody({
             </span>
           )}
           {isFarming && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-[#ff8a00]/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ff9a4a]">
+            <span className="inline-flex items-center gap-1 rounded-md bg-pokeball-red/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-pokeball-red">
               <span className="material-symbols-outlined text-[12px]!">my_location</span>
               {t("farming")}
             </span>
@@ -1072,7 +1071,7 @@ function ZoneRowBody({
           <ul className="mt-2 flex flex-col gap-0.5">
             {requirementsLeft.map((r) => (
               <li key={r} className="flex items-center gap-1 text-[11px] text-white/50">
-                <span className="material-symbols-outlined text-[13px]! text-[#ff8a00]">
+                <span className="material-symbols-outlined text-[13px]! text-pokeball-red">
                   radio_button_unchecked
                 </span>
                 {r}
@@ -1141,7 +1140,7 @@ function ZonePanel({
   return (
     <section
       className={`game-float-card rounded-2xl p-4 ${
-        isFarming ? "ring-1 ring-[#ff8a00]/45 shadow-[0_0_22px_rgba(255,138,0,0.16)]" : ""
+        isFarming ? "ring-1 ring-pokeball-red/45 shadow-[0_0_22px_color-mix(in_srgb,var(--color-pokeball-red)_16%,transparent)]" : ""
       }`}
     >
       <div className="flex items-start gap-2.5">
@@ -1150,7 +1149,7 @@ function ZonePanel({
           style={
             isGym && gymRequirement?.leaderSpriteUrl
               ? { boxShadow: `0 0 16px ${style.glow}` }
-              : { boxShadow: "0 0 16px rgba(255,138,0,0.2)" }
+              : { boxShadow: "0 0 16px color-mix(in srgb, var(--color-pokeball-red) 20%, transparent)" }
           }
         >
           {isGym && gymRequirement?.leaderSpriteUrl ? (
@@ -1174,7 +1173,7 @@ function ZonePanel({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-headline-md text-white">{t(zone.nameKey)}</h3>
             {isFarming && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-[#ff8a00]/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ff9a4a]">
+              <span className="inline-flex items-center gap-1 rounded-md bg-pokeball-red/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-pokeball-red">
                 <span className="material-symbols-outlined text-[12px]!">my_location</span>
                 {tUx("youAreHere")}
               </span>
@@ -1202,7 +1201,7 @@ function ZonePanel({
       {zone.unlocked && (
         <details className="mt-3 hidden border-t border-white/[0.08] pt-3 open:pb-1 lg:block">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden">
-            <span className="inline-flex items-center gap-1.5 text-label-sm text-[#ff9a4a]">
+            <span className="inline-flex items-center gap-1.5 text-label-sm text-pokeball-red">
               <MasteryIcon className="h-4 w-4" />
               {t("mastery")} · Lv. {zone.masteryLevel} · {masteryProgressPercent(zone.masteryXp)}%
             </span>
@@ -1282,7 +1281,7 @@ function ZonePanel({
                       alt=""
                       width={44}
                       height={44}
-                      className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(255,203,5,0.35)]"
+                      className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_color-mix(in_srgb,var(--color-electric-yellow)_35%,transparent)]"
                     />
                     <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-electric-yellow text-[#1a1208]">
                       <span className="material-symbols-outlined text-[11px]! leading-none">
@@ -1303,18 +1302,18 @@ function ZonePanel({
                   </span>
                 </li>
               ) : (
-                <li className="game-float-tile flex items-center gap-2.5 rounded-xl px-2.5 py-2 ring-1 ring-[#ff8a00]/35">
+                <li className="game-float-tile flex items-center gap-2.5 rounded-xl px-2.5 py-2 ring-1 ring-pokeball-red/35">
                   <span className="relative grid h-11 w-11 shrink-0 place-items-center" aria-hidden>
                     <Image
                       src={gymBadgeImageUrl(gymRequirement.badgeType)}
                       alt=""
                       width={44}
                       height={44}
-                      className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(255,138,0,0.35)]"
+                      className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_color-mix(in_srgb,var(--color-pokeball-red)_35%,transparent)]"
                     />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#ff9a4a]">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-pokeball-red">
                       {t("objRoleRequirement")}
                     </p>
                     <p className="truncate text-label-sm text-white">
@@ -1528,7 +1527,7 @@ function ZonePanel({
                             onClick={() => onFarmStage(stage.id)}
                             className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-label-sm transition ${
                               current
-                                ? "bg-[#1a1c24] text-white ring-1 ring-electric-yellow/65 shadow-[0_0_16px_rgba(255,203,5,0.28)]"
+                                ? "bg-[#1a1c24] text-white ring-1 ring-electric-yellow/65 shadow-[0_0_16px_color-mix(in_srgb,var(--color-electric-yellow)_28%,transparent)]"
                                 : stage.unlocked && !stage.isGym
                                   ? "game-float-tile text-white/80 hover:brightness-110"
                                   : "bg-[#12141c] text-white/30"
@@ -1608,7 +1607,7 @@ function Objective({
             state.done
               ? "bg-electric-yellow/20 text-electric-yellow"
               : isMain
-                ? "bg-[#ff8a00]/20 text-[#ff9a4a]"
+                ? "bg-pokeball-red/20 text-pokeball-red"
                 : "bg-white/8 text-white/55"
           }`}
           aria-hidden
@@ -1637,7 +1636,7 @@ function Objective({
             <span
               className={`hidden rounded px-1.5 py-px text-[8px] font-bold uppercase tracking-wider sm:inline ${
                 isMain
-                  ? "bg-[#ff8a00]/18 text-[#ff9a4a]"
+                  ? "bg-pokeball-red/18 text-pokeball-red"
                   : "bg-white/5 text-white/45"
               }`}
             >
@@ -1775,7 +1774,7 @@ function ObjectiveClaimControl({
         type="button"
         disabled={pending}
         onClick={onClaim}
-        className="shrink-0 rounded-md bg-electric-yellow px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#1a1208] shadow-[0_4px_14px_rgba(255,203,5,0.28)] transition hover:brightness-110 disabled:opacity-40 sm:px-2.5"
+        className="shrink-0 rounded-md bg-electric-yellow px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#1a1208] shadow-[0_4px_14px_color-mix(in_srgb,var(--color-electric-yellow)_28%,transparent)] transition hover:brightness-110 disabled:opacity-40 sm:px-2.5"
       >
         {claimLabel}
       </button>

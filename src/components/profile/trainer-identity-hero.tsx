@@ -6,8 +6,10 @@ import { FlagIcon } from "@/components/flag-icon";
 import { AvatarPicker, type AvatarPickerLabels } from "@/components/avatar-picker";
 import { TrainerProfileScene } from "@/components/profile/trainer-profile-scene";
 import { TrainerCpArc } from "@/components/profile/trainer-cp-arc";
+import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
 import { avatarById } from "@/lib/avatars";
 import type { TrainerAppearance } from "@/lib/trainer-appearance";
+import type { PvpDivision, PvpTier } from "@/lib/pvp/tiers";
 
 export type IdentityHeroLabels = {
   power: string;
@@ -32,6 +34,9 @@ export function TrainerIdentityHero({
   rankPct,
   rankAccent,
   rankLabel,
+  pvpTier,
+  pvpDivision,
+  pvpTierLabel,
   gradientFrom,
   gradientTo,
   topLevel,
@@ -56,8 +61,11 @@ export function TrainerIdentityHero({
   /** 0–1 — alimenta el arco alrededor del PC. */
   rankPct: number;
   rankAccent: string;
-  /** Rango ya traducido ("Oro", "Diamante"…) — el título del banner. */
+  /** Liga clasificatoria ya traducida ("Principiante I"…). */
   rankLabel: string;
+  pvpTier: PvpTier;
+  pvpDivision: PvpDivision;
+  pvpTierLabel: string;
   /** Extremos del degradé del nombre, derivados de los tipos del compañero. */
   gradientFrom: string;
   gradientTo: string;
@@ -108,14 +116,31 @@ export function TrainerIdentityHero({
       <span aria-hidden className="tp-hero__vignette" />
 
       <div className="relative px-3 pb-6 pt-5 sm:px-5">
-        {/* Cabecera editorial: nombre → rango → metadatos. Ver `.tp-id__*`. */}
+        {/* Cabecera editorial: nombre → liga PvP → metadatos. Ver `.tp-id__*`. */}
         <div className="tp-id mb-1 text-center">
           <h1 className="tp-id__name">
             <span className="tp-id__name-text truncate">{username}</span>
             <FlagIcon code={country} className="tp-id__flag" />
+            <span
+              className="tp-id__badge group relative inline-flex shrink-0 outline-none"
+              tabIndex={0}
+              aria-label={rankLabel}
+            >
+              <PvpRankBadge
+                tier={pvpTier}
+                division={pvpDivision}
+                label={pvpTierLabel}
+                size="sm"
+                className="shrink-0"
+              />
+              <span
+                role="tooltip"
+                className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/15 bg-black/90 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus:opacity-100"
+              >
+                {rankLabel}
+              </span>
+            </span>
           </h1>
-
-          <p className="tp-id__title">{rankLabel}</p>
 
           <p className="tp-id__meta">
             <span className="tp-id__meta-item">

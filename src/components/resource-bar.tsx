@@ -515,8 +515,8 @@ export function ResourceBar({
               className="h-[18px] w-[18px] object-contain"
               unoptimized
             />
-            <span className="font-mono text-[11px] font-semibold tabular-nums text-electric-yellow">
-              {coins}
+            <span data-loot-target="coins" className="inline-flex">
+              <CoinsBadge coins={coins} size="bar" showIcon={false} />
             </span>
             <span className="mx-0.5 h-3 w-px bg-white/15" aria-hidden />
             <Image

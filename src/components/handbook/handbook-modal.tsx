@@ -1,21 +1,28 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
-import {
-  HANDBOOK_CHAPTER_META,
-} from "@/lib/handbook/chapters";
+import { HANDBOOK_CHAPTER_META } from "@/lib/handbook/chapters";
 import {
   closeHandbook,
   setHandbookChapter,
   useHandbookState,
 } from "@/lib/handbook/open";
+import { PVP_TIERS, tierBadgeSrc, type PvpTier } from "@/lib/pvp/tiers";
 
 type Section =
   | { kind?: "prose"; heading: string; body: string }
   | { kind?: "prose"; heading: string; body: string; bullets: string[] }
-  | { kind: "table"; heading: string; caption?: string; columns: string[]; rows: string[][] };
+  | {
+      kind: "table";
+      heading: string;
+      caption?: string;
+      columns: string[];
+      rows: string[][];
+    }
+  | { kind: "rankBadges"; heading: string; body?: string; caption?: string };
 
 type ChapterContent = {
   title: string;
@@ -183,7 +190,9 @@ export function HandbookModal() {
 }
 
 function HandbookSection({ section }: { section: Section }) {
-  const isTable = "columns" in section && Array.isArray(section.columns);
+  const tPvp = useTranslations("pvp");
+  const isTable = section.kind === "table" && Array.isArray(section.columns);
+  const isRankBadges = section.kind === "rankBadges";
 
   return (
     <section>
@@ -204,6 +213,42 @@ function HandbookSection({ section }: { section: Section }) {
             </li>
           ))}
         </ul>
+      ) : null}
+      {isRankBadges ? (
+        <div className="mt-3">
+          {"caption" in section && section.caption ? (
+            <p className="mb-3 text-[11px] text-on-surface-variant">{section.caption}</p>
+          ) : null}
+          <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            {PVP_TIERS.map((tier) => {
+              const label = tPvp(`tiers.${tier.id}` as `tiers.${PvpTier}`);
+              const mult = Number.isInteger(tier.coinMult)
+                ? `×${tier.coinMult}`
+                : `×${String(tier.coinMult).replace(".", ",")}`;
+              return (
+                <li
+                  key={tier.id}
+                  className="flex flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2 py-3 text-center"
+                >
+                  <Image
+                    src={tierBadgeSrc(tier.id)}
+                    alt={label}
+                    width={72}
+                    height={72}
+                    className="h-16 w-16 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.4)]"
+                    unoptimized
+                  />
+                  <span className="text-[11px] font-bold leading-tight text-on-surface">
+                    {label}
+                  </span>
+                  <span className="font-mono text-[10px] text-on-surface-variant">
+                    {tier.minRating}+ · {mult}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       ) : null}
       {isTable ? (
         <div className="mt-3 overflow-x-auto rounded-xl border border-white/10">

@@ -48,20 +48,20 @@ export function DailyCalendar({
         return (
           <li
             key={day.day}
-            className={`day-cell relative flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg border p-1.5 text-center ${
+            className={`day-cell relative flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md border p-1.5 text-center ${
               // Alto fijo (no min-h): el día final trae varios premios y con
               // altura fluida estiraba la fila entera y rompía la grilla.
-              compact ? "h-[68px]" : "h-[78px]"
+              compact ? "h-[68px]" : "h-[76px]"
             } ${
               isToday
-                ? "day-today border-tertiary/70 bg-gradient-to-b from-tertiary/[0.18] to-tertiary/[0.04]"
+                ? "day-today border-[color-mix(in_srgb,var(--ev-accent)_70%,transparent)] bg-[#12141c]"
                 : isClaimed
-                  ? "border-white/[0.06] bg-white/[0.015]"
+                  ? "border-white/[0.06] bg-[#0e1016] opacity-55"
                   : isFinal
-                    ? "border-electric-yellow/45 bg-gradient-to-b from-electric-yellow/[0.10] to-transparent"
+                    ? "border-electric-yellow/40 bg-[#12141c]"
                     : isSpecial
-                      ? "border-tertiary/25 bg-gradient-to-b from-tertiary/[0.06] to-transparent"
-                      : "border-white/[0.09] bg-white/[0.02]"
+                      ? "border-[color-mix(in_srgb,var(--ev-accent)_35%,transparent)] bg-[#12141c]"
+                      : "border-white/[0.08] bg-[#12141c]"
             }`}
           >
             {/* Brillo superior: da volumen a la celda sin sumar otro borde. */}
@@ -100,7 +100,7 @@ export function DailyCalendar({
               // cuáles ya cobraste al recorrer la grilla.
               <span
                 aria-hidden
-                className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-emerald-500/90"
+                className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-tertiary"
               >
                 <span className="material-symbols-outlined text-[11px]! leading-none text-surface">
                   check

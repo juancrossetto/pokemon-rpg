@@ -9,6 +9,7 @@ import { ClanEmblemBadge } from "@/components/clans/clan-emblem-badge";
 import { avatarById } from "@/lib/avatars";
 import { uiSpriteUrl } from "@/lib/sprites";
 import type { HomeRailClanWars, HomeRailPvp, HomeRailPvpMatch } from "@/lib/home-hub";
+import { divisionRoman, type PvpDivision, type PvpTier } from "@/lib/pvp/tiers";
 import {
   CurrentExpedition,
   type CurrentExpeditionProps,
@@ -42,7 +43,7 @@ function RailAvatar({
     <div
       className={`relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-[#1a1c24] ${
         glow
-          ? "shadow-[0_0_14px_rgba(255,122,40,0.35)] ring-1 ring-[#ff7a28]/50"
+          ? "shadow-[0_0_14px_color-mix(in_srgb,var(--color-pokeball-red)_35%,transparent)] ring-1 ring-pokeball-red/50"
           : "ring-1 ring-white/10"
       }`}
     >
@@ -65,9 +66,9 @@ function MatchCta({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="mt-2 flex w-full items-center justify-center rounded-lg bg-linear-to-r from-electric-yellow to-[#ff7a28] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#1a1208] shadow-[0_4px_12px_rgba(255,122,40,0.25)] transition hover:brightness-110"
+      className="game-cta mt-2 !min-h-9 w-full px-3 py-2 text-[10px]!"
     >
-      {label}
+      <span className="game-cta__label">{label}</span>
     </Link>
   );
 }
@@ -87,10 +88,13 @@ export function HomeDesktopRail({
   expedition?: CurrentExpeditionProps | null;
 }) {
   const t = useTranslations("home.rail");
+  const tPvp = useTranslations("pvp");
   const featured = pvp.recent[0] ?? null;
   const schedule = pvp.recent;
   const clanHref = clanWars.clanId ? `/clans/${clanWars.clanId}` : "/clans";
   const clanLabel = clanWars.clanName ?? t("clanGuest");
+  const pvpTier = pvp.tier as PvpTier;
+  const pvpTierLabel = tPvp(`tiers.${pvpTier}`);
 
   return (
     <aside className="sticky top-4 hidden h-fit w-[16.5rem] shrink-0 flex-col gap-2 xl:flex 2xl:w-[17.5rem]">
@@ -101,16 +105,21 @@ export function HomeDesktopRail({
       {/* Match PvP */}
       <section className="flex min-h-0 flex-col overflow-hidden rounded-[1.2rem] border border-white/10 bg-[#12141c]/95 px-2.5 py-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.32)]">
         <div className="flex items-center gap-1.5">
-          <span className="rounded-md bg-electric-yellow px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#1a1208]">
+          <span className="rounded-md bg-electric-yellow px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-on-tertiary">
             {t("matchBadge")}
           </span>
           <span className="text-[10px] font-semibold text-white/80">{t("pvpKind")}</span>
         </div>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <h3 className="page-title text-[0.98rem] leading-none text-white">
-            {t("pvpTitle")}
-          </h3>
+          <div className="min-w-0 flex-1">
+            <h3 className="page-title text-[0.98rem] leading-none text-white">
+              {t("pvpTitle")}
+            </h3>
+            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-white/45">
+              {pvpTierLabel} {divisionRoman(pvp.division as PvpDivision)} · {pvp.rating}
+            </p>
+          </div>
           {featured ? (
             <span
               className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
@@ -127,7 +136,7 @@ export function HomeDesktopRail({
               {featured.won ? t("resultWin") : t("resultLoss")}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-md bg-[#ff7a28]/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#ffb56e]">
+            <span className="inline-flex items-center gap-1 rounded-md bg-pokeball-red/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-pokeball-red">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-electric-yellow" />
               {t("statusOpen")}
             </span>
@@ -175,13 +184,13 @@ export function HomeDesktopRail({
                 <Link
                   href={`/pvp/${m.id}`}
                   className={`flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition hover:bg-white/[0.04] ${
-                    i === 0 ? "bg-white/[0.05] ring-1 ring-[#ff7a28]/30" : ""
+                    i === 0 ? "bg-white/[0.05] ring-1 ring-pokeball-red/30" : ""
                   }`}
                 >
                   <span
                     className={`shrink-0 rounded-md px-1.5 py-1 font-mono text-[9px] font-bold tabular-nums ${
                       i === 0
-                        ? "bg-[#ff7a28] text-[#1a1208]"
+                        ? "bg-pokeball-red text-white"
                         : "bg-white/8 text-white/55"
                     }`}
                   >
@@ -189,7 +198,7 @@ export function HomeDesktopRail({
                   </span>
                   <span className="min-w-0 flex-1 truncate text-[10px] text-white/80">
                     <span className="font-semibold text-white">{t("you")}</span>
-                    <span className="mx-1 text-[#ff9a4a]">vs</span>
+                    <span className="mx-1 text-pokeball-red">vs</span>
                     <span className="font-semibold text-white">{m.opponentName}</span>
                   </span>
                   <span
@@ -214,7 +223,7 @@ export function HomeDesktopRail({
       {/* Match Clan */}
       <section className="overflow-hidden rounded-[1.2rem] border border-white/10 bg-[#12141c]/95 px-2.5 py-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.32)]">
         <div className="flex items-center gap-1.5">
-          <span className="rounded-md bg-electric-yellow px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#1a1208]">
+          <span className="rounded-md bg-electric-yellow px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-on-tertiary">
             {t("matchBadge")}
           </span>
           <span className="text-[10px] font-semibold text-white/80">{t("clanKind")}</span>
@@ -224,7 +233,7 @@ export function HomeDesktopRail({
           <h3 className="page-title text-[0.98rem] leading-none text-white">
             {t("clanTitle")}
           </h3>
-          <span className="inline-flex items-center gap-1 rounded-md bg-[#ff7a28]/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#ffb56e]">
+          <span className="inline-flex items-center gap-1 rounded-md bg-pokeball-red/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-pokeball-red">
             <span className="h-1.5 w-1.5 rounded-full bg-electric-yellow/70" />
             {clanWars.status === "active"
               ? t("statusLive")
@@ -237,7 +246,7 @@ export function HomeDesktopRail({
 
         <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
           <div className="flex min-w-0 flex-col items-center gap-0.5 text-center">
-            <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-[#1a1c24] shadow-[0_0_14px_rgba(255,122,40,0.3)] ring-1 ring-[#ff7a28]/45">
+            <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-[#1a1c24] shadow-[0_0_14px_color-mix(in_srgb,var(--color-pokeball-red)_30%,transparent)] ring-1 ring-pokeball-red/45">
               {clanWars.clanEmblem != null ? (
                 <ClanEmblemBadge
                   emblem={clanWars.clanEmblem}
@@ -253,7 +262,7 @@ export function HomeDesktopRail({
             <p className="w-full truncate text-[10px] font-semibold text-white">
               {clanLabel}
             </p>
-            <p className="inline-flex items-center gap-0.5 text-[9px] text-[#f5c542]">
+            <p className="inline-flex items-center gap-0.5 text-[9px] text-electric-yellow">
               <span className="material-symbols-outlined text-[11px]!">star</span>
               {clanWars.clanTag ? `#${clanWars.clanTag}` : "—"}
             </p>
@@ -319,7 +328,7 @@ export function HomeDesktopRail({
           </p>
           <Link
             href="/ranking"
-            className="text-[10px] font-semibold text-[#ff9a4a] transition hover:text-[#ffb56e]"
+            className="text-[10px] font-semibold text-pokeball-red transition hover:text-electric-yellow"
           >
             {t("topViewAll")}
           </Link>
@@ -336,7 +345,7 @@ export function HomeDesktopRail({
                   key={row.playerId}
                   className={`flex items-center gap-2 py-1 ${
                     i > 0 ? "border-t border-white/[0.06]" : ""
-                  } ${row.isCurrentPlayer ? "rounded-md bg-[#ff7a28]/10 px-1" : ""}`}
+                  } ${row.isCurrentPlayer ? "rounded-md bg-pokeball-red/10 px-1" : ""}`}
                 >
                   <span className="w-3.5 shrink-0 text-center font-mono text-[10px] font-bold tabular-nums text-white/55">
                     {row.position}
@@ -413,7 +422,7 @@ function PvpVersus({
         <p className="w-full truncate text-[10px] font-semibold text-white">
           {labels.you}
         </p>
-        <p className="inline-flex items-center gap-0.5 text-[9px] text-[#f5c542]">
+        <p className="inline-flex items-center gap-0.5 text-[9px] text-electric-yellow">
           <span className="material-symbols-outlined text-[11px]!">star</span>
           {selfRating}
         </p>
@@ -453,7 +462,7 @@ function PvpVersus({
             <FlagIcon code={match.opponentCountry} className="h-2 w-3 shrink-0" />
           ) : null}
         </p>
-        <p className="inline-flex items-center gap-0.5 text-[9px] text-[#f5c542]/70">
+        <p className="inline-flex items-center gap-0.5 text-[9px] text-electric-yellow/70">
           <span className="material-symbols-outlined text-[11px]!">star</span>
           —
         </p>

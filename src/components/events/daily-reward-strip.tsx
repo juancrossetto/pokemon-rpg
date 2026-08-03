@@ -110,7 +110,7 @@ export function DailyRewardStrip({
                   isToday ? "is-today" : isClaimed ? "is-claimed" : "is-idle",
                   isFinal ? "is-final" : isSpecial ? "is-special" : "is-normal",
                   isToday && onClaimToday
-                    ? "cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#ffe14a]/70"
+                    ? "cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-electric-yellow/70"
                     : "",
                   claiming && isToday ? "opacity-70" : "",
                 ].join(" ")}

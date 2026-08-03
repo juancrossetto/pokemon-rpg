@@ -45,6 +45,8 @@ export default async function EventsPage({
       battles: t("objectives.battles"),
       catches: t("objectives.catches"),
       zones: t("objectives.zones"),
+      shinies: t("objectives.shinies"),
+      gyms: t("objectives.gyms"),
     },
     milestone: t("milestone", { percent: "{percent}" }),
     claim: t("claim"),
@@ -78,6 +80,8 @@ export default async function EventsPage({
         t(`limited.missions.${mission.id}`),
       ]),
     ),
+    limitedPartOf: t("limited.partOf", { current: "{current}", total: "{total}" }),
+    rewardsLabel: t("rewardsLabel"),
   };
 
   return (

@@ -1,43 +1,20 @@
 "use client";
 
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { Link } from "@/i18n/navigation";
-import { itemSpriteUrl } from "@/lib/item-sprites";
-import type {
-  HomeFeedItem,
-  HomeObjective,
-  HomeQuickLink,
-} from "@/lib/home-hub";
+import { openDailyRewardModal } from "@/lib/daily-gift-fx";
+import type { HomeDailyAction, HomeObjective } from "@/lib/home-hub";
 
-const C = {
-  reward: "#ff9a4a",
-  progress: "#3BC8B6",
-  info: "#5b9dff",
-  special: "#b57bff",
-  combat: "#ff5a5a",
-  btnYellow: "#FBCD3A",
-  btnGreen: "#3BC8B6",
-} as const;
-
-const COIN_SPRITE =
-  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/nugget.png";
-
-const OBJECTIVE_ICON: Record<string, string> = {
-  stages: "/nav/map-icon.png?v=4",
-  pokedex: "/nav/collection-icon.png?v=4",
-  trainers: "/nav/battle-wild-icon.png?v=4",
-};
-
-const QA_ACCENT: Record<string, string> = {
-  pvp: C.combat,
-  gyms: C.reward,
-  friends: C.info,
-  shop: C.special,
-  market: C.special,
-  clans: C.special,
-  pokedex: C.info,
-  ranking: C.reward,
+const ACCENT: Record<string, string> = {
+  daily: "var(--color-pokeball-red)",
+  pvp: "var(--color-electric-yellow)",
+  gyms: "var(--theme-primary-bright)",
+  streak: "var(--color-pokeball-red)",
+  friends: "var(--color-water-blue)",
+  market: "var(--color-gem)",
+  clans: "var(--color-water-blue)",
+  pokedex: "var(--color-electric-yellow)",
 };
 
 function SectionLabel({
@@ -52,13 +29,13 @@ function SectionLabel({
   actionLabel?: string;
 }) {
   return (
-    <div className="mb-2 flex items-start justify-between gap-3 px-0.5">
+    <div className="mb-2.5 flex items-start justify-between gap-3 px-0.5">
       <div className="min-w-0">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
           {title}
         </p>
         {subtitle ? (
-          <p className="mt-px truncate text-[11px] font-normal leading-tight text-white/40">
+          <p className="mt-px truncate text-[12px] font-semibold leading-tight text-white/70">
             {subtitle}
           </p>
         ) : null}
@@ -76,284 +53,441 @@ function SectionLabel({
 }
 
 /**
- * Card estilo ejemplo: título + progreso, fila reward (ítem / oro), CTA.
+ * Acciones diarias estilo Clash: tiles grandes, chip de estado, glow + hover.
  */
-function ObjectiveCard({
-  obj,
-  title,
+export function HomeDailyActions({
+  actions,
   labels,
 }: {
-  obj: HomeObjective;
-  title: string;
-  labels: { claimable: string; claimed: string; go: string };
-}) {
-  const completed = obj.claimed || (obj.done && !obj.claimable);
-  const icon = OBJECTIVE_ICON[obj.id] ?? "/nav/adventure-icon.png?v=4";
-  const selectable = !completed;
-  const hasItem = Boolean(obj.rewardItem) && obj.rewardQty > 0;
-  const hasGold = obj.rewardCoins > 0;
-
-  const ctaClass = selectable
-    ? "home-obj-cta home-obj-cta--red"
-    : "border border-white/10 bg-transparent text-white/45";
-
-  const ctaLabel = (
-    obj.claimable
-      ? labels.claimable
-      : completed
-        ? labels.claimed
-        : labels.go || "IR"
-  ).toUpperCase();
-
-  const body = (
-    <>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-[15px] font-bold leading-tight text-white">
-            {title}
-          </p>
-          <p className="mt-0.5 text-[11px] font-normal text-white/40">
-            {obj.current}/{obj.target}
-          </p>
-        </div>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/35">
-          <Image
-            src={icon}
-            alt=""
-            width={28}
-            height={28}
-            className="h-7 w-7 object-contain"
-            unoptimized
-          />
-        </span>
-      </div>
-
-      <div className="flex items-center justify-between gap-2">
-        {hasItem ? (
-          <span className="flex min-w-0 items-center gap-1.5">
-            <Image
-              src={itemSpriteUrl(obj.rewardItem)}
-              alt=""
-              width={22}
-              height={22}
-              className="h-[22px] w-[22px] object-contain [image-rendering:pixelated]"
-              unoptimized
-            />
-            <span className="truncate text-[11px] font-bold uppercase tracking-wide text-white">
-              ×{obj.rewardQty}
-            </span>
-          </span>
-        ) : (
-          <span />
-        )}
-        {hasGold ? (
-          <span className="flex shrink-0 items-center gap-1">
-            <Image
-              src={COIN_SPRITE}
-              alt=""
-              width={16}
-              height={16}
-              className="h-4 w-4 object-contain [image-rendering:pixelated]"
-              unoptimized
-            />
-            <span className="font-mono text-[13px] font-bold tabular-nums text-white">
-              {obj.rewardCoins.toLocaleString()}
-            </span>
-          </span>
-        ) : null}
-      </div>
-
-      <div className="h-px bg-white/[0.08]" />
-
-      <span
-        className={`flex h-9 w-full items-center justify-center rounded-md text-[11px] font-black uppercase tracking-[0.14em] leading-none transition ${ctaClass}`}
-      >
-        {ctaLabel}
-      </span>
-    </>
-  );
-
-  const shell =
-    "home-float-card relative flex min-w-0 w-full flex-col gap-2.5 overflow-hidden rounded-2xl p-3 transition active:scale-[0.98]";
-
-  if (selectable) {
-    return (
-      <Link href="/campaign" className={`${shell} hover:brightness-105`}>
-        {body}
-      </Link>
-    );
-  }
-
-  return <div className={shell}>{body}</div>;
-}
-
-/** Objetivos de zona — fila full-width como Active Squad. */
-export function HomeMissionsCarousel({
-  zoneName,
-  objectives,
-  labels,
-}: {
-  zoneName: string | null;
-  objectives: HomeObjective[];
-  labels: {
-    title: string;
-    empty: string;
-    claimable: string;
-    claimed: string;
-    go: string;
-    openCampaign: string;
-    objectiveLabels: Record<string, string>;
-  };
-}) {
-  return (
-    <section className="hidden min-w-0 md:block">
-      <SectionLabel
-        title={labels.title}
-        subtitle={zoneName}
-        actionHref="/campaign"
-        actionLabel={labels.openCampaign}
-      />
-      {objectives.length === 0 ? (
-        <p className="px-0.5 text-[12px] text-on-surface-variant">{labels.empty}</p>
-      ) : (
-        <div className="grid grid-cols-3 gap-1.5 md:gap-2">
-          {objectives.map((obj) => (
-            <ObjectiveCard
-              key={obj.id}
-              obj={obj}
-              title={labels.objectiveLabels[obj.id] ?? obj.labelKey}
-              labels={{
-                claimable: labels.claimable,
-                claimed: labels.claimed,
-                go: labels.go,
-              }}
-            />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-/** Accesos rápidos: una sola card (oculto en mobile). */
-export function HomeQuickAccess({
-  links,
-  labels,
-}: {
-  links: HomeQuickLink[];
+  actions: HomeDailyAction[];
   labels: { title: string; items: Record<string, string> };
 }) {
   return (
-    <div className="hidden min-w-0 md:block">
+    <section className="min-w-0" aria-label={labels.title}>
       <SectionLabel title={labels.title} />
-      <section
-        className="home-float-card rounded-2xl px-2 py-2 md:px-2.5 md:py-2.5"
-        aria-label={labels.title}
-      >
-        <div className="grid grid-cols-3 gap-1 sm:grid-cols-6 sm:gap-1.5">
-          {links.map((link) => {
-            const accent = QA_ACCENT[link.id] ?? C.info;
-            return (
-              <Link
-                key={link.id}
-                href={link.href}
-                className="group flex flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 transition hover:bg-white/[0.05] active:scale-[0.96]"
-                style={{ "--type-accent": accent } as CSSProperties}
-              >
+      <div className="grid grid-cols-6 gap-1.5 sm:gap-2.5">
+        {actions.map((action) => {
+          const accent = ACCENT[action.id] ?? "var(--color-electric-yellow)";
+          const label = labels.items[action.labelKey] ?? action.labelKey;
+          const className = [
+            "home-daily-tile group relative flex flex-col items-center gap-1 overflow-hidden rounded-xl px-0.5 py-2 text-center transition sm:gap-1.5 sm:rounded-2xl sm:px-1.5 sm:py-3",
+            "active:scale-[0.96]",
+            action.hot ? "home-daily-tile--hot" : "",
+          ].join(" ");
+          const style = { "--daily-accent": accent } as CSSProperties;
+
+          const inner = (
+            <>
+              <span
+                aria-hidden
+                className="home-daily-tile__glow pointer-events-none absolute inset-0"
+              />
+              <span className="relative z-[1] flex h-9 w-9 items-center justify-center sm:h-14 sm:w-14">
                 <Image
-                  src={link.iconSrc}
+                  src={action.iconSrc}
                   alt=""
-                  width={36}
-                  height={36}
-                  className="h-8 w-8 object-contain drop-shadow-[0_3px_8px_rgba(0,0,0,0.45)] transition group-hover:scale-105 sm:h-9 sm:w-9"
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.55)] transition duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_14px_color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
                   unoptimized
                 />
-                <span className="max-w-full truncate text-center text-[9px] font-semibold leading-tight text-white/75 group-hover:text-white sm:text-[10px]">
-                  {labels.items[link.labelKey] ?? link.labelKey}
+              </span>
+              <span className="relative z-[1] max-w-full truncate px-0.5 text-[8px] font-bold uppercase tracking-[0.04em] text-white/85 group-hover:text-white sm:text-[11px] sm:tracking-[0.06em]">
+                {label}
+              </span>
+              {action.status ? (
+                <span
+                  className={`relative z-[1] max-w-[95%] truncate rounded-md px-1 py-0.5 font-mono text-[8px] font-bold tabular-nums leading-none sm:px-1.5 sm:text-[10px] ${
+                    action.hot
+                      ? "bg-[color-mix(in_srgb,var(--daily-accent)_28%,transparent)] text-white ring-1 ring-[color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
+                      : "bg-black/35 text-white/60"
+                  }`}
+                >
+                  {action.status}
                 </span>
+              ) : (
+                <span className="h-[12px] sm:h-[14px]" aria-hidden />
+              )}
+            </>
+          );
+
+          if (action.openDailyGift) {
+            return (
+              <button
+                key={action.id}
+                type="button"
+                onClick={() => openDailyRewardModal()}
+                className={className}
+                style={style}
+              >
+                {inner}
+              </button>
+            );
+          }
+
+          if (action.href) {
+            return (
+              <Link
+                key={action.id}
+                href={action.href}
+                className={className}
+                style={style}
+              >
+                {inner}
               </Link>
             );
-          })}
-        </div>
-      </section>
-    </div>
-  );
-}
+          }
 
-export function HomeFeedPanel({
-  title,
-  icon,
-  items,
-  empty,
-  seeAllHref,
-  seeAllLabel,
-}: {
-  title: string;
-  icon: string;
-  items: HomeFeedItem[];
-  empty: string;
-  seeAllHref?: string;
-  seeAllLabel?: string;
-}) {
-  return (
-    <section className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#0c0e14]/92 p-3.5 sm:p-4">
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white">
-          <span className="material-symbols-outlined text-[16px]!" style={{ color: C.info }}>
-            {icon}
-          </span>
-          {title}
-        </p>
-        {seeAllHref && seeAllLabel ? (
-          <Link
-            href={seeAllHref}
-            className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/70 transition hover:text-white"
-          >
-            {seeAllLabel}
-          </Link>
-        ) : null}
+          return (
+            <div key={action.id} className={className} style={style}>
+              {inner}
+            </div>
+          );
+        })}
       </div>
-      {items.length === 0 ? (
-        <p className="text-[12px] text-on-surface-variant">{empty}</p>
-      ) : (
-        <ul className="flex flex-1 flex-col gap-1.5">
-          {items.map((item) => {
-            const body = (
-              <span className="flex items-start gap-2 rounded-md px-1.5 py-1.5">
-                <span
-                  aria-hidden
-                  className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{ background: C.info }}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[12px] leading-snug text-white/85">
-                    {item.text}
-                  </span>
-                  {item.at ? (
-                    <span className="mt-0.5 block text-[10px] text-on-surface-variant/70">
-                      {item.at}
-                    </span>
-                  ) : null}
-                </span>
-              </span>
-            );
-            return (
-              <li key={item.id}>
-                {item.href ? (
-                  <Link
-                    href={item.href}
-                    className="block rounded-md transition hover:bg-white/[0.04]"
-                  >
-                    {body}
-                  </Link>
-                ) : (
-                  body
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
     </section>
   );
 }
+
+/** @deprecated Preferí HomeDailyActions. */
+export const HomeQuickAccess = HomeDailyActions;
+
+type EventsTab = "adventure" | "weekly" | "event";
+
+export type HomeEventsAdventure = {
+  zoneName: string | null;
+  objectives: HomeObjective[];
+};
+
+export type HomeEventsWeekly = {
+  percent: number;
+  objectives: Array<{
+    id: string;
+    current: number;
+    target: number;
+    href: string | null;
+  }>;
+  claimableMilestones: number;
+};
+
+export type HomeEventsLimited = {
+  name: string;
+  missions: Array<{
+    id: string;
+    current: number;
+    target: number;
+    claimed: boolean;
+    claimable: boolean;
+    href: string | null;
+  }>;
+};
+
+/**
+ * Hub de misiones en home: aventura de zona + semanal + evento limitado.
+ * Misma card con pestañas que el viejo progreso de zona, pero con info accionable.
+ */
+export function HomeEventsProgress({
+  adventure,
+  weekly,
+  limited,
+  labels,
+}: {
+  adventure: HomeEventsAdventure;
+  weekly: HomeEventsWeekly;
+  limited: HomeEventsLimited;
+  labels: {
+    progressTitle: string;
+    emptyAdventure: string;
+    emptyWeekly: string;
+    emptyEvent: string;
+    claimable: string;
+    claimed: string;
+    openCampaign: string;
+    openEvents: string;
+    tabAdventure: string;
+    tabWeekly: string;
+    tabEvent: string;
+    weeklyReady: string;
+    objectiveLabels: Record<string, string>;
+    weeklyLabels: Record<string, string>;
+    missionLabels: Record<string, string>;
+  };
+}) {
+  const [tab, setTab] = useState<EventsTab>(() =>
+    adventure.objectives.length > 0 ? "adventure" : "weekly",
+  );
+
+  const adventureDone = adventure.objectives.filter(
+    (o) => o.done || o.claimed,
+  ).length;
+  const adventurePct =
+    adventure.objectives.length === 0
+      ? 0
+      : Math.round((adventureDone / adventure.objectives.length) * 100);
+
+  const limitedDone = limited.missions.filter(
+    (m) => m.claimed || m.current >= m.target,
+  ).length;
+  const limitedPct =
+    limited.missions.length === 0
+      ? 0
+      : Math.round((limitedDone / limited.missions.length) * 100);
+
+  const tabs: { id: EventsTab; label: string; hot?: boolean }[] = [
+    {
+      id: "adventure",
+      label: labels.tabAdventure,
+      hot: adventure.objectives.some((o) => o.claimable),
+    },
+    {
+      id: "weekly",
+      label: labels.tabWeekly,
+      hot: weekly.claimableMilestones > 0,
+    },
+    {
+      id: "event",
+      label: labels.tabEvent,
+      hot: limited.missions.some((m) => m.claimable),
+    },
+  ];
+
+  const footer =
+    tab === "adventure"
+      ? {
+          pct: adventurePct,
+          left: `${adventurePct}%`,
+          right: `${adventureDone}/${adventure.objectives.length}`,
+          href: "/campaign" as const,
+          cta: labels.openCampaign,
+          icon: "map",
+        }
+      : tab === "weekly"
+        ? {
+            pct: weekly.percent,
+            left: `${weekly.percent}%`,
+            right:
+              weekly.claimableMilestones > 0
+                ? labels.weeklyReady.replace(
+                    "{count}",
+                    String(weekly.claimableMilestones),
+                  )
+                : `${weekly.objectives.filter((o) => o.current >= o.target).length}/${weekly.objectives.length}`,
+            href: "/events" as const,
+            cta: labels.openEvents,
+            icon: "event",
+          }
+        : {
+            pct: limitedPct,
+            left: `${limitedPct}%`,
+            right: `${limitedDone}/${limited.missions.length}`,
+            href: "/events" as const,
+            cta: labels.openEvents,
+            icon: "event",
+          };
+
+  const subtitle =
+    tab === "adventure"
+      ? adventure.zoneName
+      : tab === "event"
+        ? limited.name
+        : null;
+
+  return (
+    <section className="min-w-0">
+      <SectionLabel
+        title={labels.progressTitle}
+        subtitle={subtitle}
+        actionHref={footer.href}
+        actionLabel={footer.cta}
+      />
+
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#12141c]/90">
+        <div
+          role="tablist"
+          className="flex border-b border-white/8"
+          aria-label={labels.progressTitle}
+        >
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              onClick={() => setTab(t.id)}
+              className={`relative flex-1 px-2 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] transition sm:text-[11px] ${
+                tab === t.id
+                  ? "bg-white/[0.06] text-white shadow-[inset_0_-2px_0_0_var(--color-pokeball-red)]"
+                  : "text-white/40 hover:text-white/70"
+              }`}
+            >
+              {t.label}
+              {t.hot ? (
+                <span
+                  aria-hidden
+                  className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-pokeball-red shadow-[0_0_6px_var(--color-pokeball-red)]"
+                />
+              ) : null}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-3.5 sm:p-4">
+          {tab === "adventure" ? (
+            adventure.objectives.length === 0 ? (
+              <p className="py-4 text-center text-[13px] text-white/45">
+                {labels.emptyAdventure}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {adventure.objectives.map((obj) => {
+                  const complete = obj.done || obj.claimed;
+                  return (
+                    <li
+                      key={obj.id}
+                      className="flex items-center gap-2.5 rounded-xl bg-white/[0.03] px-2.5 py-2"
+                    >
+                      <MissionCheck complete={complete} />
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/85">
+                        {labels.objectiveLabels[obj.id] ?? obj.labelKey}
+                      </span>
+                      {obj.claimable ? (
+                        <span className="shrink-0 rounded-md bg-pokeball-red/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-pokeball-red">
+                          {labels.claimable}
+                        </span>
+                      ) : null}
+                      <span
+                        className={`shrink-0 font-mono text-[12px] font-bold tabular-nums ${
+                          complete ? "text-electric-yellow" : "text-white/45"
+                        }`}
+                      >
+                        {obj.current}/{obj.target}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : null}
+
+          {tab === "weekly" ? (
+            weekly.objectives.length === 0 ? (
+              <p className="py-4 text-center text-[13px] text-white/45">
+                {labels.emptyWeekly}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {weekly.objectives.map((obj) => {
+                  const complete = obj.current >= obj.target;
+                  return (
+                    <li
+                      key={obj.id}
+                      className="flex items-center gap-2.5 rounded-xl bg-white/[0.03] px-2.5 py-2"
+                    >
+                      <MissionCheck complete={complete} />
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/85">
+                        {labels.weeklyLabels[obj.id] ?? obj.id}
+                      </span>
+                      <span
+                        className={`shrink-0 font-mono text-[12px] font-bold tabular-nums ${
+                          complete ? "text-electric-yellow" : "text-white/45"
+                        }`}
+                      >
+                        {Math.min(obj.current, obj.target)}/{obj.target}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : null}
+
+          {tab === "event" ? (
+            limited.missions.length === 0 ? (
+              <p className="py-4 text-center text-[13px] text-white/45">
+                {labels.emptyEvent}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {limited.missions.map((mission) => {
+                  const complete =
+                    mission.claimed || mission.current >= mission.target;
+                  return (
+                    <li
+                      key={mission.id}
+                      className="flex items-center gap-2.5 rounded-xl bg-white/[0.03] px-2.5 py-2"
+                    >
+                      <MissionCheck complete={complete} />
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/85">
+                        {labels.missionLabels[mission.id] ?? mission.id}
+                      </span>
+                      {mission.claimable ? (
+                        <span className="shrink-0 rounded-md bg-pokeball-red/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-pokeball-red">
+                          {labels.claimable}
+                        </span>
+                      ) : mission.claimed ? (
+                        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-white/35">
+                          {labels.claimed}
+                        </span>
+                      ) : null}
+                      <span
+                        className={`shrink-0 font-mono text-[12px] font-bold tabular-nums ${
+                          complete ? "text-electric-yellow" : "text-white/45"
+                        }`}
+                      >
+                        {mission.current}/{mission.target}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : null}
+
+          <div className="mt-4">
+            <div className="mb-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">
+              <span>{footer.left}</span>
+              <span>{footer.right}</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-black/45">
+              <div
+                className="campaign-warm-bar h-full rounded-full transition-[width] duration-500"
+                style={{ width: `${footer.pct}%` }}
+              />
+            </div>
+          </div>
+
+          <Link
+            href={footer.href}
+            className="mt-3.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-pokeball-red/45 bg-transparent text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:border-pokeball-red/70 hover:bg-pokeball-red/10"
+          >
+            <span className="material-symbols-outlined text-[16px]!">
+              {footer.icon}
+            </span>
+            {footer.cta}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MissionCheck({ complete }: { complete: boolean }) {
+  return (
+    <span
+      className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${
+        complete
+          ? "bg-[color-mix(in_srgb,var(--color-electric-yellow)_18%,transparent)] text-electric-yellow"
+          : "bg-white/6 text-white/35"
+      }`}
+    >
+      <span className="material-symbols-outlined text-[16px]!">
+        {complete ? "check_circle" : "radio_button_unchecked"}
+      </span>
+    </span>
+  );
+}
+
+/** @deprecated Preferí HomeEventsProgress. */
+export const HomeZoneProgress = HomeEventsProgress;
+/** @deprecated Preferí HomeEventsProgress. */
+export const HomeMissionsCarousel = HomeEventsProgress;
