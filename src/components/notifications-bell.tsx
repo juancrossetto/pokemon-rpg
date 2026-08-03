@@ -16,6 +16,7 @@ import {
   markAllNotificationsReadAction,
   markNotificationReadAction,
 } from "@/actions/notifications";
+import { openDailyRewardModal } from "@/lib/daily-gift-fx";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { gymLeaderImageUrl } from "@/lib/gym-art";
 import { itemSpriteUrl } from "@/lib/item-sprites";
@@ -88,6 +89,8 @@ function headlineFor(
       return t("clanKickedTitle");
     case "CLAN_ROLE_CHANGED":
       return t("clanRoleChangedTitle");
+    case "DAILY_REWARD_READY":
+      return t("dailyRewardReadyTitle");
     default:
       return t("unknown");
   }
@@ -152,6 +155,8 @@ function detailFor(
         clanName: p.clanName ?? "—",
         clanTag: p.clanTag ?? "???",
       });
+    case "DAILY_REWARD_READY":
+      return t("dailyRewardReadyDetail");
     default:
       return "";
   }
@@ -354,6 +359,9 @@ export function NotificationsBell({
   function onNavigate(item: NotificationDTO) {
     markOneRead(item);
     requestClose();
+    if (item.type === "DAILY_REWARD_READY") {
+      openDailyRewardModal();
+    }
   }
 
   return (
@@ -510,33 +518,69 @@ export function NotificationsBell({
                             : "border-white/6 bg-[#141820]/80 hover:border-white/12",
                         ].join(" ")}
                       >
-                        <NotificationThumb item={item} unread={unreadItem} />
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline justify-between gap-1.5">
-                            <p
-                              className={[
-                                "truncate text-[12px] font-semibold leading-tight",
-                                unreadItem ? "text-white" : "text-white/70",
-                              ].join(" ")}
-                            >
-                              {headline}
-                            </p>
-                            <span className="shrink-0 text-[9px] tabular-nums text-white/35">
-                              {relativeTime(item.createdAt, t)}
-                            </span>
-                          </div>
-                          {detail && (
-                            <p className="mt-px truncate text-[11px] leading-snug text-white/40">
-                              {detail}
-                            </p>
-                          )}
-                          {coins !== null && (
-                            <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-[#f2c000]">
-                              +{coins.toLocaleString()}
-                            </p>
-                          )}
-                        </div>
+                        {item.href ? (
+                          <Link
+                            href={item.href}
+                            onClick={() => onNavigate(item)}
+                            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                          >
+                            <NotificationThumb item={item} unread={unreadItem} />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline justify-between gap-1.5">
+                                <p
+                                  className={[
+                                    "truncate text-[12px] font-semibold leading-tight",
+                                    unreadItem ? "text-white" : "text-white/70",
+                                  ].join(" ")}
+                                >
+                                  {headline}
+                                </p>
+                                <span className="shrink-0 text-[9px] tabular-nums text-white/35">
+                                  {relativeTime(item.createdAt, t)}
+                                </span>
+                              </div>
+                              {detail && (
+                                <p className="mt-px truncate text-[11px] leading-snug text-white/40">
+                                  {detail}
+                                </p>
+                              )}
+                              {coins !== null && (
+                                <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-[#f2c000]">
+                                  +{coins.toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+                          </Link>
+                        ) : (
+                          <>
+                            <NotificationThumb item={item} unread={unreadItem} />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline justify-between gap-1.5">
+                                <p
+                                  className={[
+                                    "truncate text-[12px] font-semibold leading-tight",
+                                    unreadItem ? "text-white" : "text-white/70",
+                                  ].join(" ")}
+                                >
+                                  {headline}
+                                </p>
+                                <span className="shrink-0 text-[9px] tabular-nums text-white/35">
+                                  {relativeTime(item.createdAt, t)}
+                                </span>
+                              </div>
+                              {detail && (
+                                <p className="mt-px truncate text-[11px] leading-snug text-white/40">
+                                  {detail}
+                                </p>
+                              )}
+                              {coins !== null && (
+                                <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-[#f2c000]">
+                                  +{coins.toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+                          </>
+                        )}
 
                         <div className="flex shrink-0 items-center gap-0.5 self-center">
                           {item.href ? (

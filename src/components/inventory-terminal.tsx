@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
-import { itemSpriteUrl } from "@/lib/item-sprites";
+import { itemDisplayUrl } from "@/lib/item-sprites";
 import { formatMoveName } from "@/lib/format-move-name";
 import { typeColor } from "@/lib/type-colors";
 // Desde @/lib/rarity y NO desde @/lib/market-hub: ese importa prisma, y en un
@@ -279,16 +279,16 @@ function ItemCard({
             style={{ background: style.glow }}
           />
           <Image
-            src={itemSpriteUrl(entry.name)}
+            src={itemDisplayUrl(entry.name)}
             alt=""
             width={44}
             height={44}
             unoptimized
-            className="relative h-11 w-11 object-contain [image-rendering:pixelated] transition-transform duration-200 group-hover:scale-110"
+            className="relative h-11 w-11 object-contain transition-transform duration-200 group-hover:scale-110"
           />
         </span>
         <span className="w-full truncate text-center text-[11px] font-medium leading-tight text-white">
-          {entry.name}
+          {entry.displayName}
         </span>
         <span className="w-full truncate text-center text-[9px] uppercase tracking-wide text-on-surface-variant/70">
           {categoryLabel}
@@ -335,7 +335,9 @@ function DetailPanel({
           <p className={`text-[10px] uppercase tracking-[0.18em] ${style.text}`}>
             {labels.rarity[rarity]}
           </p>
-          <h2 className="truncate text-[17px] font-bold leading-tight text-white">{entry.name}</h2>
+          <h2 className="truncate text-[17px] font-bold leading-tight text-white">
+            {entry.displayName}
+          </h2>
         </div>
         <button
           type="button"
@@ -353,12 +355,12 @@ function DetailPanel({
           style={{ background: style.glow }}
         />
         <Image
-          src={itemSpriteUrl(entry.name)}
-          alt={entry.name}
+          src={itemDisplayUrl(entry.name)}
+          alt={entry.displayName}
           width={80}
           height={80}
           unoptimized
-          className="relative h-20 w-20 object-contain [image-rendering:pixelated]"
+          className="relative h-20 w-20 object-contain"
         />
       </div>
 

@@ -43,15 +43,17 @@ export default async function CampaignPage({
   const [zones, badges, gyms, team, shinies] = await Promise.all([
     loadMapLocations(userId, progress),
     prisma.badge.findMany({
-      where: { userId },
+      where: { userId, gym: { regionId: progress.currentRegionId } },
       include: { gym: { select: { order: true } } },
     }),
     // El nivel recomendado sale del equipo real del líder, no de un número fijo.
     prisma.gym.findMany({
+      where: { regionId: progress.currentRegionId },
       orderBy: { order: "asc" },
       select: {
         id: true,
         order: true,
+        regionId: true,
         name: true,
         type: true,
         badgeName: true,
@@ -96,7 +98,9 @@ export default async function CampaignPage({
   const summary: JourneySummary = {
     badges: earnedOrders.filter((o) => !eliteOrders.has(o)).length,
     // Los sellos del Alto Mando no son medallas de gimnasio.
-    badgesTotal: gyms.filter((g) => !g.isElite).length || 8,
+    badgesTotal:
+      gyms.filter((g) => !g.isElite && g.regionId === progress.currentRegionId).length ||
+      8,
     speciesCaught: [...allSpecies.values()].filter((e) => e.caught).length,
     speciesTotal: allSpecies.size,
     zonesUnlocked: zones.filter((z) => z.unlocked).length,

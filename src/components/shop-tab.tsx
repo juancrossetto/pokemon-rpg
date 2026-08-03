@@ -5,6 +5,7 @@ import {
   SHOP_CATEGORIES,
   itemKey,
   resolveDescription,
+  resolveItemDisplayName,
   toProduct,
   type ShopProduct,
 } from "@/lib/shop";
@@ -52,7 +53,15 @@ export async function ShopTab({
   };
 
   const products: ShopProduct[] = items.map((item) =>
-    toProduct(item, ownedByItem.get(item.id) ?? 0, resolveDescription(item, describe)),
+    toProduct(
+      item,
+      ownedByItem.get(item.id) ?? 0,
+      resolveDescription(item, describe),
+      resolveItemDisplayName(item.name, (key) => {
+        const path = `names.${key}`;
+        return t.has(path) ? t(path) : null;
+      }),
+    ),
   );
 
   const labels: ShopLabels = {

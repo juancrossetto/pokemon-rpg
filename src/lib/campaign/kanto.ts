@@ -517,24 +517,36 @@ export const KANTO_REGION: CampaignRegion = {
   ],
 };
 
-export const DEFAULT_REGION_ID = "kanto" as const;
+/**
+ * Defaults de Kanto — viven en `@/lib/regions`; se reexportan acá para no
+ * romper imports existentes.
+ */
+export {
+  DEFAULT_REGION_ID,
+} from "@/lib/regions";
+
+import { REGIONS } from "@/lib/regions";
+
 /**
  * Route 1 queda desbloqueada al inicio (Pallet tiene order menor, también
  * entra). El farming arranca en Pallet: el gate del gym 1 exige `pallet-1`.
  */
-export const DEFAULT_UNLOCKED_LOCATION_ID = "route-1";
-export const DEFAULT_SELECTED_LOCATION_ID = "pallet-town";
-export const DEFAULT_FARMING_LOCATION_ID = "pallet-town";
-export const DEFAULT_FARMING_STAGE_ID = "pallet-1";
+export const DEFAULT_UNLOCKED_LOCATION_ID = REGIONS.kanto.defaults.unlockedLocationId;
+export const DEFAULT_SELECTED_LOCATION_ID = REGIONS.kanto.defaults.selectedLocationId;
+export const DEFAULT_FARMING_LOCATION_ID = REGIONS.kanto.defaults.farmingLocationId;
+export const DEFAULT_FARMING_STAGE_ID = REGIONS.kanto.defaults.farmingStageId;
 
+/** @deprecated Prefer `allStages("kanto")` from `./content`. */
 export function allKantoStages(): CampaignStage[] {
   return KANTO_REGION.locations.flatMap((l) => l.stages).sort((a, b) => a.order - b.order);
 }
 
+/** @deprecated Prefer `getLocation("kanto", id)` from `./content`. */
 export function getKantoLocation(id: string): CampaignLocation | undefined {
   return KANTO_REGION.locations.find((l) => l.id === id);
 }
 
+/** @deprecated Prefer `getStage("kanto", id)` from `./content`. */
 export function getKantoStage(id: string): CampaignStage | undefined {
   return allKantoStages().find((s) => s.id === id);
 }

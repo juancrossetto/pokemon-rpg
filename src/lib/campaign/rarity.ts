@@ -29,9 +29,11 @@ export const RARITY_ORDER: Record<Rarity, number> = {
   elite: 4,
 };
 
+import { LEGENDARY_IDS, MYTHICAL_IDS } from "@/lib/pokedex";
+
 /**
- * Solo se listan las que no son comunes: el default es `common`, así que la
- * tabla queda corta y mantenible.
+ * Overrides manuales. Lo que no está acá cae a legendario/mítico (élite) o
+ * `common` — evita mantener una tabla de 251+ entradas al sumar gens.
  */
 const SPECIES_RARITY: Record<number, Rarity> = {
   // Poco comunes: evoluciones intermedias y bichos de zona específica
@@ -83,7 +85,10 @@ const SPECIES_RARITY: Record<number, Rarity> = {
 };
 
 export function speciesRarity(speciesId: number): Rarity {
-  return SPECIES_RARITY[speciesId] ?? "common";
+  const override = SPECIES_RARITY[speciesId];
+  if (override) return override;
+  if (MYTHICAL_IDS.has(speciesId) || LEGENDARY_IDS.has(speciesId)) return "elite";
+  return "common";
 }
 
 export function speciesWeight(speciesId: number): number {

@@ -25,6 +25,8 @@ import {
 } from "@/lib/trainer-profile";
 import { pokemonPower } from "@/lib/ranking";
 import { regionMeta } from "@/lib/campaign/regions";
+import { regionBadgeTarget } from "@/lib/regions";
+import { resolveItemDisplayName } from "@/lib/shop";
 import { evaluateObjectives } from "@/lib/campaign/objectives";
 import { avatarById } from "@/lib/avatars";
 import { findNavItem } from "@/lib/navigation";
@@ -97,14 +99,17 @@ export default async function Home() {
 }
 
 async function Dashboard({ username, userId }: { username: string; userId: string }) {
-  const [t, tt, locale, progress, badges] = await Promise.all([
+  const [t, tt, tShop, locale, progress, badges] = await Promise.all([
     getTranslations("home"),
     getTranslations("team"),
+    getTranslations("shop"),
     getLocale(),
     ensureCampaignProgress(userId),
     prisma.badge.findMany({
       where: { userId },
-      include: { gym: { select: { order: true, badgeName: true, type: true } } },
+      include: {
+        gym: { select: { order: true, badgeName: true, type: true, isElite: true, regionId: true } },
+      },
     }),
   ]);
 
@@ -235,9 +240,10 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
 
   const bySlot = new Map(pokemon.map((p) => [p.teamSlot, p]));
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => bySlot.get(i + 1) ?? null);
+  const regionBadges = badges.filter((b) => b.gym.regionId === progress.currentRegionId);
   const expedition = buildExpeditionView(
     progress,
-    badges.map((b) => b.gym.order),
+    regionBadges.map((b) => b.gym.order),
   );
   const mapLocations = await loadMapLocations(userId, progress);
   const isDev = process.env.NODE_ENV === "development";
@@ -270,12 +276,17 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
    * directo — si no, el CTA del hero aterriza en una pantalla que se ve
    * terminada y no ofrece a dónde seguir.
    */
-  const KANTO_BADGE_TOTAL = 8;
-  const regularBadgeCount = badges.filter((b) => b.gym.order <= KANTO_BADGE_TOTAL).length;
+  const badgeTotal = regionBadgeTarget(progress.currentRegionId);
+  const regularBadgeCount = regionBadges.filter(
+    (b) => !b.gym.isElite && b.gym.order <= badgeTotal,
+  ).length;
   const eliteGym =
-    milestone && isEliteMilestone(milestone, KANTO_BADGE_TOTAL)
+    milestone && isEliteMilestone(milestone, badgeTotal)
       ? await prisma.gym.findFirst({
-          where: { order: milestone.gymOrder },
+          where: {
+            order: milestone.gymOrder,
+            regionId: progress.currentRegionId,
+          },
           select: { id: true },
         })
       : null;
@@ -283,7 +294,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   const nextStep = getNextStep({
     teamSize: pokemon.length,
     badgeCount: regularBadgeCount,
-    totalBadges: KANTO_BADGE_TOTAL,
+    totalBadges: badgeTotal,
     milestone: milestone ?? null,
     eliteGymHref,
   });
@@ -364,7 +375,12 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         speed: calculateStat(instance.species.baseSpeed, instance.ptSpeed, instance.level),
         evolutionChain: evolutionChains.get(instance.speciesId) ?? [],
         ownedEvolutionItems: ownedEvolutionItemNames,
-        heldItemName: instance.heldItem?.name ?? null,
+        heldItemName: instance.heldItem
+          ? resolveItemDisplayName(instance.heldItem.name, (key) => {
+              const path = `names.${key}`;
+              return tShop.has(path) ? tShop(path) : null;
+            })
+          : null,
         moves,
         labels: {
           hp: tt("stats.hp"),

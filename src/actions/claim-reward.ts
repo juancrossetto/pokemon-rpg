@@ -108,6 +108,10 @@ export async function claimDailyReward(locale: string): Promise<ClaimRewardResul
   // callback de la transacción y el control de flujo no lo sigue hasta acá.
   const settled = outcome as ClaimRewardResult | null;
   if (settled?.ok) {
+    await prisma.notification.updateMany({
+      where: { userId, type: "DAILY_REWARD_READY", readAt: null },
+      data: { readAt: new Date() },
+    });
     revalidatePath(`/${locale}/events`);
     revalidatePath(`/${locale}`, "layout");
   }

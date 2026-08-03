@@ -15,6 +15,7 @@ import { TeamRoster, type TeamMember } from "@/components/team-roster";
 import { TeamHubTabs } from "@/components/team-hub-tabs";
 import { PcTab } from "./pc-tab";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
+import { resolveItemDisplayName } from "@/lib/shop";
 
 const TEAM_SIZE = 6;
 
@@ -40,11 +41,18 @@ export default async function TeamPage({
   const query = await searchParams;
   const { teach: teachParam, member: memberParam } = query;
   const tab: "squad" | "pc" = query.tab === "pc" ? "pc" : "squad";
-  const [t, tMenu, session] = await Promise.all([
+  const [t, tMenu, tShop, session] = await Promise.all([
     getTranslations("team"),
     getTranslations("home.squadMenu"),
+    getTranslations("shop"),
     auth(),
   ]);
+
+  const itemLabel = (canonical: string) =>
+    resolveItemDisplayName(canonical, (key) => {
+      const path = `names.${key}`;
+      return tShop.has(path) ? tShop(path) : null;
+    });
 
   if (!session?.user) {
     redirect({ href: "/login", locale });
@@ -102,6 +110,7 @@ export default async function TeamPage({
   const ownedHeldItems = ownedHeldItemsRows.map((inv) => ({
     itemId: inv.itemId,
     name: inv.item.name,
+    displayName: itemLabel(inv.item.name),
     effectText: inv.item.effectText,
     quantity: inv.quantity,
   }));
@@ -223,7 +232,12 @@ export default async function TeamPage({
       slotLabel: t("slotLabel", { slot: i + 1 }),
       expToNextLabel: t("expToNext", { xp: xpToNextLevel(instance.xp, instance.level) }),
       heldItem: instance.heldItem
-        ? { itemId: instance.heldItem.id, name: instance.heldItem.name, effectText: instance.heldItem.effectText }
+        ? {
+            itemId: instance.heldItem.id,
+            name: instance.heldItem.name,
+            displayName: itemLabel(instance.heldItem.name),
+            effectText: instance.heldItem.effectText,
+          }
         : null,
       ownedHeldItems,
       isFavorite: instance.isFavorite,

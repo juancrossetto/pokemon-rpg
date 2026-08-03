@@ -163,7 +163,7 @@ function ResourcePill({
   const t = TONE[tone];
 
   return (
-    <div className="relative shrink-0 pl-2.5">
+    <div className="relative shrink-0 pl-2.5" data-loot-target={tone}>
       <div
         className={`relative flex h-6 items-center rounded-md border sm:h-7 ${t.track} ${
           compact ? "min-w-[4.25rem] pr-0.5 pl-3.5" : "min-w-[5rem] pr-0.5 pl-4 sm:min-w-[5.5rem]"

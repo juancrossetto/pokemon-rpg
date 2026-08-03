@@ -7,10 +7,25 @@ import { seedHeldItems } from "./held-items";
 import { seedGyms } from "./gyms";
 import { seedMachines, MACHINES } from "./machines";
 
-// Gen 1 por defecto (151) — subí SEED_GEN_LIMIT para sumar más generaciones
-// una vez que el core del juego esté validado.
+/**
+ * Seed por generación. `SEED_GEN_LIMIT` (default 151) corta el tope de dex #.
+ *
+ * Cada gen trae `versionGroups` preferidos para level-up / MT. Si se sube el
+ * límite a 251 sin esto, Johto quedaría con movesets vacíos (PokeAPI no tiene
+ * level-up de Chikorita en "red-blue"). Preferidos en orden; si ninguno
+ * matchea, se usa el earliest version_group presente en la respuesta.
+ *
+ * Para habilitar Gen 2: `SEED_GEN_LIMIT=251 npm run db:seed` (y marcar
+ * `speciesAvailable` en `@/lib/regions`).
+ */
+const GENERATIONS = [
+  { gen: 1, species: [1, 151] as const, versionGroups: ["red-blue", "gold-silver"] },
+  { gen: 2, species: [152, 251] as const, versionGroups: ["gold-silver"] },
+  { gen: 3, species: [252, 386] as const, versionGroups: ["emerald", "ruby-sapphire"] },
+  { gen: 4, species: [387, 493] as const, versionGroups: ["platinum", "diamond-pearl"] },
+] as const;
+
 const SPECIES_LIMIT = Number(process.env.SEED_GEN_LIMIT ?? 151);
-const MOVE_LEARN_VERSION_GROUP = "red-blue";
 const CONCURRENCY = 5;
 
 interface PokeApiPokemon {
@@ -33,6 +48,41 @@ interface PokeApiPokemon {
       version_group: { name: string };
     }[];
   }[];
+}
+
+type VersionDetail = PokeApiPokemon["moves"][number]["version_group_details"][number];
+
+function preferredVersionGroupsForSpecies(speciesId: number): readonly string[] {
+  for (const g of GENERATIONS) {
+    if (speciesId >= g.species[0] && speciesId <= g.species[1]) {
+      return g.versionGroups;
+    }
+  }
+  return GENERATIONS[0].versionGroups;
+}
+
+/** Elige el version_group a usar para level-up / machine de una especie. */
+function resolveVersionGroup(
+  speciesId: number,
+  details: VersionDetail[],
+  method: "level-up" | "machine",
+): string | null {
+  const preferred = preferredVersionGroupsForSpecies(speciesId);
+  const methodDetails = details.filter((d) => d.move_learn_method.name === method);
+  if (methodDetails.length === 0) return null;
+
+  for (const group of preferred) {
+    if (methodDetails.some((d) => d.version_group.name === group)) return group;
+  }
+
+  // Fallback: earliest group presente (orden de aparición en PokeAPI ≈ cronológico).
+  const fallback = methodDetails[0]?.version_group.name ?? null;
+  if (fallback) {
+    console.warn(
+      `  ⚠ species #${speciesId}: sin version group preferido para ${method}; uso "${fallback}"`,
+    );
+  }
+  return fallback;
 }
 
 interface PokeApiSpecies {
@@ -92,11 +142,17 @@ async function seedSpeciesAndMoves() {
       fetchPokeApi<PokeApiSpecies>(`/pokemon-species/${id}`),
     ]);
 
+    const levelUpGroup = resolveVersionGroup(
+      pokemon.id,
+      pokemon.moves.flatMap((m) => m.version_group_details),
+      "level-up",
+    );
     const levelUpMoves = pokemon.moves
       .map((m) => {
+        if (!levelUpGroup) return null;
         const detail = m.version_group_details.find(
           (d) =>
-            d.version_group.name === MOVE_LEARN_VERSION_GROUP &&
+            d.version_group.name === levelUpGroup &&
             d.move_learn_method.name === "level-up",
         );
         return detail ? { name: m.move.name, level: detail.level_learned_at } : null;
@@ -106,13 +162,20 @@ async function seedSpeciesAndMoves() {
     // Compatibilidad real con MT/MO: solo movimientos que además tienen un
     // Item real (ver machines.ts) — evita filas de SpeciesMove sin ítem que
     // las respalde.
+    const machineGroup = resolveVersionGroup(
+      pokemon.id,
+      pokemon.moves.flatMap((m) => m.version_group_details),
+      "machine",
+    );
     const machineMoves = pokemon.moves
       .filter((m) =>
-        m.version_group_details.some(
-          (d) =>
-            d.version_group.name === MOVE_LEARN_VERSION_GROUP &&
-            d.move_learn_method.name === "machine",
-        ),
+        machineGroup
+          ? m.version_group_details.some(
+              (d) =>
+                d.version_group.name === machineGroup &&
+                d.move_learn_method.name === "machine",
+            )
+          : false,
       )
       .map((m) => m.move.name)
       .filter((name) => machineMoveNames.has(name));

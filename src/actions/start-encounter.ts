@@ -10,7 +10,7 @@ import { getMovesetForLevel } from "@/lib/moveset";
 import { getCurrentEnergy, WILD_ENCOUNTER_ENERGY_COST } from "@/lib/energy";
 import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
-import { getKantoStage, isStageUnlocked, resolveSpawn } from "@/lib/campaign";
+import { findStage, isStageUnlocked, resolveSpawn } from "@/lib/campaign";
 import { rollShiny } from "@/lib/shiny";
 import { recordSeenSpecies } from "@/lib/zone-progress";
 import { pickEventItemName, rollExplorationEvent } from "@/lib/campaign/events";
@@ -48,7 +48,7 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
   }
 
   const progress = await ensureCampaignProgress(userId);
-  const stage = getKantoStage(progress.farmingStageId);
+  const stage = findStage(progress.farmingStageId)?.stage;
   if (!stage || stage.isGymMilestone) return { success: false, error: "no_stage" };
   if (!isStageUnlocked(stage, progress)) return { success: false, error: "locked" };
 

@@ -60,7 +60,10 @@ export type TmLearner = {
 
 export type InventoryEntry = {
   itemId: string;
+  /** Nombre canónico del seed (sprites / acciones). */
   name: string;
+  /** Etiqueta localizada para UI. */
+  displayName: string;
   type: InventoryCategory;
   quantity: number;
   effectText: string | null;
@@ -95,7 +98,9 @@ export function filterEntries(
   return entries.filter(
     (e) =>
       (category === "all" || e.type === category) &&
-      (q === "" || e.name.toLowerCase().includes(q)),
+      (q === "" ||
+        e.name.toLowerCase().includes(q) ||
+        e.displayName.toLowerCase().includes(q)),
   );
 }
 

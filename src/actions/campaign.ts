@@ -6,8 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import {
   CAMPAIGN_DEFAULTS,
-  getKantoLocation,
-  getKantoStage,
+  findLocation,
+  findStage,
   isLocationUnlocked,
   isStageUnlocked,
 } from "@/lib/campaign";
@@ -40,7 +40,7 @@ export async function selectLocation(
   const userId = await requireUserId();
   if (!userId) return { success: false, error: "unauthorized" };
 
-  const location = getKantoLocation(locationId);
+  const location = findLocation(locationId)?.location;
   if (!location) return { success: false, error: "invalid" };
 
   const progress = await ensureCampaignProgress(userId);
@@ -82,7 +82,7 @@ export async function setFarmingStage(
   const userId = await requireUserId();
   if (!userId) return { success: false, error: "unauthorized" };
 
-  const stage = getKantoStage(stageId);
+  const stage = findStage(stageId)?.stage;
   if (!stage) return { success: false, error: "invalid" };
 
   if (stage.isGymMilestone) return { success: false, error: "invalid" };
@@ -137,25 +137,25 @@ export async function devSetCampaignProgress(
 
   const data: Record<string, unknown> = {};
   if (patch.highestUnlockedLocationId) {
-    if (!getKantoLocation(patch.highestUnlockedLocationId)) {
+    if (!findLocation(patch.highestUnlockedLocationId)) {
       return { success: false, error: "invalid" };
     }
     data.highestUnlockedLocationId = patch.highestUnlockedLocationId;
   }
   if (patch.selectedLocationId) {
-    if (!getKantoLocation(patch.selectedLocationId)) {
+    if (!findLocation(patch.selectedLocationId)) {
       return { success: false, error: "invalid" };
     }
     data.selectedLocationId = patch.selectedLocationId;
   }
   if (patch.farmingLocationId) {
-    if (!getKantoLocation(patch.farmingLocationId)) {
+    if (!findLocation(patch.farmingLocationId)) {
       return { success: false, error: "invalid" };
     }
     data.farmingLocationId = patch.farmingLocationId;
   }
   if (patch.farmingStageId) {
-    if (!getKantoStage(patch.farmingStageId)) {
+    if (!findStage(patch.farmingStageId)) {
       return { success: false, error: "invalid" };
     }
     data.farmingStageId = patch.farmingStageId;

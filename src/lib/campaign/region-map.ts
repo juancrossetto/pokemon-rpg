@@ -9,6 +9,9 @@
  * mapa: el mapa de gimnasios (`/gyms/map`) y el selector de zona del inicio.
  */
 
+import type { CampaignRegionId } from "./types";
+import { findLocation } from "./content";
+
 export type MapPoint = { x: number; y: number };
 
 /** El arte de región es 1400×933 — mantener el aspecto evita que los pines se desalineen. */
@@ -77,10 +80,48 @@ export const KANTO_GYM_POINTS: Record<number, MapPoint> = {
   8: { x: 20.8, y: 49.0 }, // Viridian City
 };
 
-export function locationPoint(locationId: string): MapPoint | null {
-  return KANTO_LOCATION_POINTS[locationId] ?? null;
+/** Coordenadas anidadas por región — Johto/etc. se suman acá. */
+export const REGION_LOCATION_POINTS: Record<
+  CampaignRegionId,
+  Record<string, MapPoint>
+> = {
+  kanto: KANTO_LOCATION_POINTS,
+  johto: {},
+  hoenn: {},
+  sinnoh: {},
+};
+
+export const REGION_GYM_POINTS: Record<CampaignRegionId, Record<number, MapPoint>> = {
+  kanto: KANTO_GYM_POINTS,
+  johto: {},
+  hoenn: {},
+  sinnoh: {},
+};
+
+/**
+ * Fallback determinístico cuando falta el pin en el arte: grilla 4×N para que
+ * la zona aparezca en el mapa (aunque mal ubicada) en vez de desaparecer.
+ */
+export function fallbackLocationPoint(locationId: string, index: number): MapPoint {
+  const col = index % 4;
+  const row = Math.floor(index / 4);
+  return {
+    x: 18 + col * 20 + ((locationId.length * 3) % 7),
+    y: 18 + row * 16,
+  };
 }
 
-export function gymPoint(order: number): MapPoint | null {
-  return KANTO_GYM_POINTS[order] ?? null;
+export function locationPoint(
+  locationId: string,
+  regionId?: CampaignRegionId,
+): MapPoint | null {
+  const resolved = regionId ?? findLocation(locationId)?.regionId ?? "kanto";
+  return REGION_LOCATION_POINTS[resolved]?.[locationId] ?? null;
+}
+
+export function gymPoint(
+  order: number,
+  regionId: CampaignRegionId = "kanto",
+): MapPoint | null {
+  return REGION_GYM_POINTS[regionId]?.[order] ?? null;
 }

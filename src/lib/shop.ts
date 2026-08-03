@@ -51,7 +51,10 @@ export type ShopCurrency = "coins";
 
 export type ShopProduct = {
   id: string;
+  /** Nombre canónico del seed (`Eviolite`, `Full Restore`) — keys de sprite/lógica. */
   name: string;
+  /** Etiqueta localizada para UI (`Mineral Evolutivo`, …). */
+  displayName: string;
   category: ShopCategory;
   price: number;
   currency: ShopCurrency;
@@ -133,10 +136,24 @@ export function itemKey(name: string): string {
     .join("");
 }
 
-export function toProduct(item: ItemRow, owned: number, description: string | null): ShopProduct {
+/** Nombre visible: `shop.names.<itemKey>` si existe, si no el canónico del seed. */
+export function resolveItemDisplayName(
+  canonicalName: string,
+  lookup: (key: string) => string | null,
+): string {
+  return lookup(itemKey(canonicalName)) ?? canonicalName;
+}
+
+export function toProduct(
+  item: ItemRow,
+  owned: number,
+  description: string | null,
+  displayName?: string,
+): ShopProduct {
   return {
     id: item.id,
     name: item.name,
+    displayName: displayName ?? item.name,
     category: item.type as ShopCategory,
     price: item.buyPrice,
     currency: "coins",

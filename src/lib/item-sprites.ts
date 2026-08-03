@@ -1,5 +1,10 @@
+import { itemHdIconUrl } from "@/lib/item-hd-icons";
+
+export { itemHdIconUrl } from "@/lib/item-hd-icons";
+
 const ITEM_SPRITE_BASE =
   "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items";
+
 
 /**
  * Convierte el nombre del ítem (seed) al slug kebab-case del CDN de PokeAPI.
@@ -73,7 +78,7 @@ const TM_TYPE_BY_CODE: Record<string, string> = {
   TM50: "normal",
 };
 
-/** URL del sprite de ítem en el CDN de PokeAPI/sprites. */
+/** URL del sprite de ítem en el CDN de PokeAPI/sprites (pixel). */
 export function itemSpriteUrl(name: string): string {
   const code = name.trim().toUpperCase();
 
@@ -88,4 +93,18 @@ export function itemSpriteUrl(name: string): string {
   }
 
   return `${ITEM_SPRITE_BASE}/${itemSpriteSlug(name)}.png`;
+}
+
+/**
+ * Icono para UI moderna: HD local si existe, si no cae al pixel de PokeAPI.
+ * Usar en tienda / daily reward / popups — no en combate pixel.
+ */
+export function itemDisplayUrl(
+  name: string,
+  style: "hd" | "pixel" = "hd",
+): string {
+  if (style === "hd") {
+    return itemHdIconUrl(name) ?? itemSpriteUrl(name);
+  }
+  return itemSpriteUrl(name);
 }

@@ -166,6 +166,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: "firstShiny", icon: "auto_awesome", rarity: "rare", goal: 1, metric: "shinies" },
   { id: "shinyHunter", icon: "flare", rarity: "legendary", goal: 10, metric: "shinies" },
   { id: "researcher", icon: "menu_book", rarity: "rare", goal: 50, metric: "species" },
+  // 151 = tope dex Kanto (`REGIONS.kanto.speciesRange`); 13 = 8 medallas + 5 élite.
   { id: "taxonomist", icon: "biotech", rarity: "epic", goal: 151, metric: "species" },
   { id: "gymGoer", icon: "military_tech", rarity: "common", goal: 1, metric: "badges" },
   { id: "champion", icon: "workspace_premium", rarity: "legendary", goal: 13, metric: "badges" },

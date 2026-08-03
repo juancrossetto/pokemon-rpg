@@ -5,11 +5,10 @@ import {
   applyGymBadgeUnlock,
   applyStageCompletion,
   firstFarmableStage,
-  getKantoLocation,
-  getKantoStage,
   resolveFarmingAfterStageComplete,
   type CampaignProgressRow,
 } from "@/lib/campaign";
+import { findLocation, findStage } from "@/lib/campaign/content";
 
 function rowFromDb(row: {
   currentRegionId: string;
@@ -42,7 +41,7 @@ export async function completeFarmingStageOnWildWin(userId: string): Promise<voi
     const progress = rowFromDb(
       await tx.campaignProgress.findUniqueOrThrow({ where: { userId } }),
     );
-    const stage = getKantoStage(progress.farmingStageId);
+    const stage = findStage(progress.farmingStageId)?.stage;
     if (!stage || stage.isGymMilestone) return;
 
     const patch = applyStageCompletion(progress, stage.id);
@@ -81,7 +80,7 @@ export async function syncCampaignAfterGymBadge(
     let selectedLocationId = merged.selectedLocationId;
 
     if (patch.highestUnlockedLocationId) {
-      const unlocked = getKantoLocation(patch.highestUnlockedLocationId);
+      const unlocked = findLocation(patch.highestUnlockedLocationId)?.location;
       const first = unlocked ? firstFarmableStage(unlocked.id) : null;
       if (unlocked && first) {
         farmingLocationId = unlocked.id;

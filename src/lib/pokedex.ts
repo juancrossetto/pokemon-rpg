@@ -1,5 +1,7 @@
 /** Datos y helpers de la Pokédex de investigación — sin Prisma (usable en client). */
 
+import { listRegions, type GameRegionId } from "@/lib/regions";
+
 export type DexStatus = "unseen" | "seen" | "caught";
 
 export type DexRarity =
@@ -28,10 +30,7 @@ export type DexSort = "number" | "name" | "rarity";
 export type DexView = "grid" | "list";
 
 export type PokedexRegionId =
-  | "kanto"
-  | "johto"
-  | "hoenn"
-  | "sinnoh"
+  | GameRegionId
   | "unova"
   | "kalos"
   | "alola"
@@ -45,17 +44,26 @@ export type PokedexRegionDef = {
   available: boolean;
 };
 
-/** Regiones escalables: Kanto–Sinnoh con datos; el resto Coming Soon. */
-export const POKEDEX_REGIONS: PokedexRegionDef[] = [
-  { id: "kanto", generation: 1, available: true },
-  { id: "johto", generation: 2, available: true },
-  { id: "hoenn", generation: 3, available: true },
-  { id: "sinnoh", generation: 4, available: true },
+/** Regiones post-Sinnoh: solo Pokédex, aún no en el registro de ligas. */
+const EXTRA_POKEDEX_REGIONS: PokedexRegionDef[] = [
   { id: "unova", generation: 5, available: false },
   { id: "kalos", generation: 6, available: false },
   { id: "alola", generation: 7, available: false },
   { id: "galar", generation: 8, available: false },
   { id: "paldea", generation: 9, available: false },
+];
+
+/**
+ * Kanto–Sinnoh salen de `@/lib/regions` (`speciesAvailable`) para no discrepar
+ * con campaña/gyms. El resto queda Coming Soon acá.
+ */
+export const POKEDEX_REGIONS: PokedexRegionDef[] = [
+  ...listRegions().map((r) => ({
+    id: r.id as PokedexRegionId,
+    generation: r.generation,
+    available: r.speciesAvailable,
+  })),
+  ...EXTRA_POKEDEX_REGIONS,
 ];
 
 /** Legendarios (no míticos) por dex #. */

@@ -130,7 +130,7 @@ export function HomeGameHub({
                 total={events.daily.length}
                 labels={giftLabels}
                 locale={locale}
-                showChip
+                showChip={false}
               />
             )}
 

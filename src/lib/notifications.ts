@@ -4,6 +4,8 @@ import { proceedsFor } from "@/lib/market-rules";
 import { avatarById } from "@/lib/avatars";
 import { gymBadgeImageUrl, gymLeaderImageUrl } from "@/lib/gym-art";
 import { itemSpriteUrl } from "@/lib/item-sprites";
+import { DAILY_CYCLE, nextDay, slotForDay } from "@/lib/events/daily";
+import { dayKey, serverNow } from "@/lib/events/time";
 
 export type NotificationImageKind = "avatar" | "item" | "pokemon" | "badge" | "leader";
 
@@ -81,6 +83,7 @@ export async function createNotification(input: {
     "CLAN_ACCEPTED",
     "CLAN_KICKED",
     "CLAN_ROLE_CHANGED",
+    "DAILY_REWARD_READY",
   ];
   if (rawEnumTypes.includes(input.type)) {
     const id = newNotificationId();
@@ -159,10 +162,56 @@ async function enrichPersonImages(items: NotificationDTO[]): Promise<Notificatio
   });
 }
 
+/**
+ * Si hay regalo diario sin reclamar, asegura una notificación unread.
+ * Si ya se reclamó hoy, marca como leídas las pendientes de ese tipo.
+ */
+export async function syncDailyRewardNotification(userId: string) {
+  const today = dayKey(serverNow());
+  const [claimedToday, claimedCount] = await Promise.all([
+    prisma.dailyRewardClaim.findFirst({
+      where: { userId, dayKey: today },
+      select: { dayIndex: true },
+    }),
+    prisma.dailyRewardClaim.count({
+      where: { userId, cycleId: DAILY_CYCLE.id },
+    }),
+  ]);
+  const currentDay = nextDay(DAILY_CYCLE, claimedCount);
+  const canClaim =
+    !claimedToday && slotForDay(DAILY_CYCLE, currentDay) !== null;
+
+  if (!canClaim) {
+    await prisma.notification.updateMany({
+      where: { userId, type: "DAILY_REWARD_READY", readAt: null },
+      data: { readAt: new Date() },
+    });
+    return;
+  }
+
+  const existing = await prisma.notification.findFirst({
+    where: { userId, type: "DAILY_REWARD_READY", readAt: null },
+    select: { id: true },
+  });
+  if (existing) return;
+
+  await createNotification({
+    userId,
+    type: "DAILY_REWARD_READY",
+    href: "/?daily=1",
+    payload: {
+      imageUrl: "/items/hd/gift.png",
+      imageKind: "item",
+    },
+  });
+}
+
 export async function listNotifications(userId: string, limit = HISTORY_LIMIT): Promise<{
   items: NotificationDTO[];
   unreadCount: number;
 }> {
+  await syncDailyRewardNotification(userId);
+
   const [rows, unreadCount] = await Promise.all([
     prisma.notification.findMany({
       where: { userId },

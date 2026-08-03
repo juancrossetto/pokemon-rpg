@@ -13,8 +13,8 @@ import type { BattleArenaProps, OpponentPartyMember } from "@/components/battle-
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import {
-  getKantoStage,
-  getKantoLocation,
+  findLocation,
+  findStage,
   regionMapSrc,
   stageEncounterRate,
 } from "@/lib/campaign";
@@ -160,8 +160,8 @@ export default async function BattlePage({
       .filter((i) => i.item.type === "POTION")
       .reduce((sum, i) => sum + i.quantity, 0);
 
-    const stage = getKantoStage(progress.farmingStageId);
-    const location = getKantoLocation(progress.farmingLocationId);
+    const stage = findStage(progress.farmingStageId)?.stage;
+    const location = findLocation(progress.farmingLocationId)?.location;
     const energyCost = stage?.energyCost ?? WILD_ENCOUNTER_ENERGY_COST;
 
     // Las zonas del mapa ya traen sus especies y cuáles capturaste, así que la
@@ -356,7 +356,7 @@ export default async function BattlePage({
         : null;
     const farmingLocationId = progress?.farmingLocationId ?? null;
     const locationKind = farmingLocationId
-      ? (getKantoLocation(farmingLocationId)?.kind ?? null)
+      ? (findLocation(farmingLocationId)?.location.kind ?? null)
       : null;
     const battleBg = resolveBattleBg({
       battleMode,

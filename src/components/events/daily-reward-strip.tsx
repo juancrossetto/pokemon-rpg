@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { RewardList } from "@/components/events/reward-chip";
 import type { CalendarLabels } from "@/components/events/daily-calendar";
 import type { DailyDayState } from "@/lib/events/state";
@@ -36,9 +37,14 @@ function visibleDays(days: DailyDayState[]): DailyDayState[] {
 export function DailyRewardStrip({
   days,
   labels,
+  onClaimToday,
+  claiming = false,
 }: {
   days: DailyDayState[];
   labels: StripLabels;
+  /** Si hay regalo de hoy, tocar la card lo reclama (sin CTA aparte). */
+  onClaimToday?: () => void;
+  claiming?: boolean;
 }) {
   const windowDays = visibleDays(days);
   const reachedCount = windowDays.filter(
@@ -53,7 +59,7 @@ export function DailyRewardStrip({
   return (
     <div className="daily-reward-strip w-full">
       {/* Cards */}
-      <ul className="grid grid-cols-6 gap-1.5 sm:gap-2.5">
+      <ul className="grid grid-cols-6 gap-2 sm:gap-3">
         {windowDays.map((day) => {
           const isToday = day.status === "today";
           const isClaimed = day.status === "claimed";
@@ -67,11 +73,11 @@ export function DailyRewardStrip({
               : labels.statusUpcoming;
 
           return (
-            <li key={day.day} className="relative min-w-0 pt-2">
+            <li key={day.day} className="relative min-w-0 pt-2.5">
               {(isSpecial || isFinal) && (
                 <span
                   className={[
-                    "daily-reward-badge absolute left-1/2 top-0 z-20 -translate-x-1/2 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider sm:px-2 sm:text-[9px]",
+                    "daily-reward-badge absolute left-1/2 top-0 z-20 -translate-x-1/2 px-2 py-0.5 text-[10px] sm:px-2.5 sm:text-[11px]",
                     isFinal ? "is-rare" : "is-special",
                   ].join(" ")}
                 >
@@ -80,70 +86,75 @@ export function DailyRewardStrip({
               )}
 
               <div
+                role={isToday && onClaimToday ? "button" : undefined}
+                tabIndex={isToday && onClaimToday ? 0 : undefined}
+                data-autofocus={isToday && onClaimToday ? true : undefined}
+                aria-label={isToday && onClaimToday ? labels.statusToday : undefined}
+                aria-disabled={isToday && onClaimToday ? claiming : undefined}
+                onClick={
+                  isToday && onClaimToday && !claiming ? onClaimToday : undefined
+                }
+                onKeyDown={
+                  isToday && onClaimToday && !claiming
+                    ? (event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onClaimToday();
+                        }
+                      }
+                    : undefined
+                }
                 className={[
-                  "daily-reward-card relative flex aspect-[3/4] w-full flex-col items-center justify-center px-1 pt-3 pb-2",
-                  isToday
-                    ? "is-today"
-                    : isClaimed
-                      ? "is-claimed"
-                      : isFinal
-                        ? "is-final"
-                        : isSpecial
-                          ? "is-special"
-                          : "is-idle",
+                  "daily-reward-card aspect-square w-full px-0 pt-0.5 pb-0.5 sm:aspect-[5/6]",
+                  // Estado (hoy / reclamado / idle) + rareza (borde/fondo) en capas.
+                  isToday ? "is-today" : isClaimed ? "is-claimed" : "is-idle",
+                  isFinal ? "is-final" : isSpecial ? "is-special" : "is-normal",
+                  isToday && onClaimToday
+                    ? "cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#ffe14a]/70"
+                    : "",
+                  claiming && isToday ? "opacity-70" : "",
                 ].join(" ")}
               >
-                <span
-                  aria-hidden
-                  className={[
-                    "pointer-events-none absolute inset-[16%] rounded-full blur-md",
-                    isFinal
-                      ? "bg-[#ff3b3b]/28"
-                      : isSpecial
-                        ? "bg-lime-400/28"
-                        : isToday
-                          ? "bg-[#ff8a00]/40"
-                          : "bg-[#ff8a00]/14",
-                  ].join(" ")}
-                />
-
-                {isLocked && (
-                  <span
-                    aria-hidden
-                    className="absolute left-2 top-2 z-10 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] sm:left-2.5 sm:top-2.5"
-                  >
-                    <span className="material-symbols-outlined text-[15px]! sm:text-[17px]!">
-                      lock
+                <div className="daily-reward-card-face relative min-h-0 flex-1">
+                  {isLocked && (
+                    <span
+                      aria-hidden
+                      className="absolute left-1 top-1 z-10 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] sm:left-1.5 sm:top-1.5"
+                    >
+                      <span className="material-symbols-outlined text-[13px]! sm:text-[15px]!">
+                        lock
+                      </span>
                     </span>
+                  )}
+
+                  <span className="relative z-[1] flex min-h-0 w-full flex-1 flex-col items-center justify-between">
+                    <RewardList
+                      rewards={day.rewards}
+                      size="lg"
+                      unitLabels={labels.rewards}
+                      layout="strip"
+                      claimedOverlay={
+                        isClaimed ? (
+                          <span
+                            aria-hidden
+                            className="daily-reward-check absolute bottom-[-2%] left-1/2 z-20 w-[38%] max-w-7 -translate-x-1/2 sm:w-[34%] sm:max-w-8"
+                          >
+                            <Image
+                              src="/ui/daily-reward-check.png"
+                              alt=""
+                              width={88}
+                              height={88}
+                              className="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]"
+                              unoptimized
+                            />
+                          </span>
+                        ) : null
+                      }
+                    />
                   </span>
-                )}
 
-                <span
-                  className={[
-                    "relative z-[1] grid scale-[1.15] place-items-center sm:scale-125",
-                    isClaimed ? "opacity-40 grayscale" : isLocked ? "opacity-75" : "",
-                  ].join(" ")}
-                >
-                  <RewardList
-                    rewards={day.rewards}
-                    size="md"
-                    unitLabels={labels.rewards}
-                    layout="calendar"
-                  />
-                </span>
-
-                {isClaimed && (
-                  <span
-                    aria-hidden
-                    className="daily-reward-check absolute inset-x-0 bottom-[16%] z-20 mx-auto grid h-8 w-8 place-items-center sm:h-9 sm:w-9"
-                  >
-                    <span className="material-symbols-outlined text-[20px]! font-bold sm:text-[22px]!">
-                      check
-                    </span>
-                  </span>
-                )}
-
-                <span className="sr-only">{statusLabel}</span>
+                  <span className="sr-only">{statusLabel}</span>
+                </div>
               </div>
             </li>
           );
@@ -154,10 +165,10 @@ export function DailyRewardStrip({
       <div className="relative mt-3">
         <div
           aria-hidden
-          className="daily-reward-timeline absolute top-[5px] right-[8.33%] left-[8.33%] h-[3px] overflow-hidden rounded-full bg-[#1a2448]"
+          className="daily-reward-timeline absolute top-[5px] right-[8.33%] left-[8.33%] h-[5px] rounded-full"
         >
           <div
-            className="h-full rounded-full bg-gradient-to-r from-[#ff8a00] via-[#f2c000] to-[#ff8a00] shadow-[0_0_12px_rgba(255,138,0,0.75)]"
+            className="daily-reward-timeline-fill h-full rounded-full"
             style={{ width: `${progressRatio * 100}%` }}
           />
         </div>
@@ -172,14 +183,14 @@ export function DailyRewardStrip({
               >
                 <span
                   className={[
-                    "relative z-[1] mb-1.5 h-2.5 w-px",
-                    reached ? "bg-[#ff9a1a]" : "bg-[#2a3558]",
+                    "daily-reward-timeline-tick relative z-[1] mb-1.5",
+                    reached ? "is-reached" : "is-upcoming",
                   ].join(" ")}
                 />
                 <span
                   className={[
-                    "text-[9px] font-semibold tracking-wide sm:text-[11px]",
-                    reached ? "text-white" : "text-[#3d4a6e]",
+                    "daily-reward-day-label text-[11px] sm:text-[13px]",
+                    reached ? "is-reached" : "is-upcoming",
                   ].join(" ")}
                 >
                   {labels.dailyDay.replace("{day}", String(day.day))}

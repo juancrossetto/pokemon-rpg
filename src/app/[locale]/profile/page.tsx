@@ -28,7 +28,7 @@ import { TrainerSquadBand } from "@/components/trainer-squad-band";
 import { TrainerVault } from "@/components/trainer-vault";
 import { SectionLabel } from "@/components/trainer-profile-parts";
 import { permissionsFor } from "@/lib/trainer-appearance";
-import { getKantoLocation } from "@/lib/campaign";
+import { findLocation } from "@/lib/campaign";
 import type { StatRow } from "@/components/profile/trainer-stat-rows";
 
 /*
@@ -421,7 +421,7 @@ export default async function ProfilePage({
   */
   const highestFloor = towerAgg._max.highestFloorAllTime ?? 0;
   const reachedLocation = campaign?.highestUnlockedLocationId
-    ? getKantoLocation(campaign.highestUnlockedLocationId)
+    ? findLocation(campaign.highestUnlockedLocationId)?.location
     : null;
 
   /*

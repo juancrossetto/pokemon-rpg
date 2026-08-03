@@ -4,7 +4,7 @@ import {
   isLocationUnlocked,
   type CampaignProgressRow,
 } from "./progress";
-import { allKantoStages, getKantoLocation, KANTO_REGION } from "./kanto";
+import { allStages, findLocation, regionContent, resolveProgressRegionId } from "./content";
 import type { CampaignMilestone } from "./types";
 import type { Chapter } from "./chapters";
 import type { MapLocation } from "./map-selection";
@@ -90,8 +90,9 @@ export function getGymChallengeRequirements(
   completedStageIds: readonly string[],
   teamMaxLevel: number,
   recommendedLevel?: number | null,
+  regionId: string = "kanto",
 ): CampaignRequirement[] {
-  const wild = chapterWildStagesForGym(gymOrder);
+  const wild = chapterWildStagesForGym(gymOrder, regionId);
   const doneSet = new Set(completedStageIds);
   const stagesDone = wild.filter((s) => doneSet.has(s.id)).length;
   const stagesTotal = wild.length;
@@ -128,10 +129,14 @@ export function getGymChallengeRequirements(
 export function canChallengeGym(
   gymOrder: number,
   completedStageIds: readonly string[],
-  opts?: { hasBadge?: boolean },
+  opts?: { hasBadge?: boolean; regionId?: string },
 ): boolean {
   if (opts?.hasBadge) return true;
-  return areChapterStagesCompleteForGym(gymOrder, completedStageIds);
+  return areChapterStagesCompleteForGym(
+    gymOrder,
+    completedStageIds,
+    opts?.regionId ?? "kanto",
+  );
 }
 
 /**
@@ -276,7 +281,10 @@ export function getZoneUnlockRequirements(
 ): CampaignRequirement[] {
   if (isLocationUnlocked(locationId, progress)) return [];
 
-  const target = getKantoLocation(locationId);
+  const regionId = resolveProgressRegionId(progress);
+  const target =
+    findLocation(locationId)?.location ??
+    regionContent(regionId).locations.find((l) => l.id === locationId);
   if (!target) {
     return [
       {
@@ -289,9 +297,11 @@ export function getZoneUnlockRequirements(
     ];
   }
 
-  const unlockStage = allKantoStages().find((s) => s.unlocksLocationId === locationId);
+  const unlockStage = allStages(target.regionId).find(
+    (s) => s.unlocksLocationId === locationId,
+  );
   if (unlockStage) {
-    const from = getKantoLocation(unlockStage.locationId);
+    const from = findLocation(unlockStage.locationId)?.location;
     const done = progress.completedStageIds.includes(unlockStage.id);
     return [
       {
@@ -310,8 +320,8 @@ export function getZoneUnlockRequirements(
     ];
   }
 
-  const prior = KANTO_REGION.locations
-    .filter((l) => l.order < target.order)
+  const prior = regionContent(target.regionId)
+    .locations.filter((l) => l.order < target.order)
     .sort((a, b) => b.order - a.order)[0];
 
   if (prior) {

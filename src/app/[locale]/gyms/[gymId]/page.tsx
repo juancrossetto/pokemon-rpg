@@ -47,7 +47,9 @@ export default async function GymLeaderPage({
   const [badge, previousBadge, activeRun, lastAttempt, user, progress] = await Promise.all([
     prisma.badge.findUnique({ where: { userId_gymId: { userId, gymId } } }),
     gym.order > 1
-      ? prisma.badge.findFirst({ where: { userId, gym: { order: gym.order - 1 } } })
+      ? prisma.badge.findFirst({
+          where: { userId, gym: { order: gym.order - 1, regionId: gym.regionId } },
+        })
       : Promise.resolve(true),
     prisma.gymRun.findFirst({ where: { userId, gymId, status: "ACTIVE" } }),
     prisma.gymAttempt.findFirst({ where: { userId, gymId }, orderBy: { attemptedAt: "desc" } }),
@@ -57,7 +59,12 @@ export default async function GymLeaderPage({
 
   const locked = gym.order > 1 && !previousBadge;
   const stagesIncomplete =
-    !badge && !areChapterStagesCompleteForGym(gym.order, progress.completedStageIds);
+    !badge &&
+    !areChapterStagesCompleteForGym(
+      gym.order,
+      progress.completedStageIds,
+      gym.regionId,
+    );
   const remainingMs =
     !badge && lastAttempt && !lastAttempt.won
       ? gymCooldownRemainingMs({

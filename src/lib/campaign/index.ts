@@ -23,6 +23,20 @@ export {
   getKantoStage,
 } from "./kanto";
 
+export { JOHTO_REGION } from "./johto";
+
+export {
+  REGION_CONTENT,
+  regionContent,
+  getLocation,
+  getStage,
+  allStages,
+  findLocation,
+  findStage,
+  resolveProgressRegionId,
+  regionBadgeTargetFor,
+} from "./content";
+
 export {
   campaignMapPath,
   campaignMapSrc,
@@ -58,8 +72,9 @@ export {
   listPlayableRegions,
 } from "./regions";
 
+export { CAMPAIGN_DEFAULTS } from "./defaults";
+
 export {
-  CAMPAIGN_DEFAULTS,
   type CampaignProgressRow,
   type ExpeditionView,
   getRegion,

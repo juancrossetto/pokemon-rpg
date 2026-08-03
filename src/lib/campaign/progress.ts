@@ -1,14 +1,14 @@
 import {
-  DEFAULT_FARMING_LOCATION_ID,
-  DEFAULT_FARMING_STAGE_ID,
-  DEFAULT_REGION_ID,
-  DEFAULT_SELECTED_LOCATION_ID,
-  DEFAULT_UNLOCKED_LOCATION_ID,
-  KANTO_REGION,
-  allKantoStages,
-  getKantoLocation,
-  getKantoStage,
-} from "./kanto";
+  allStages,
+  findLocation,
+  findStage,
+  getLocation,
+  getStage,
+  regionBadgeTargetFor,
+  regionContent,
+  resolveProgressRegionId,
+} from "./content";
+import { CAMPAIGN_DEFAULTS as REGION_CAMPAIGN_DEFAULTS } from "./defaults";
 import { campaignMapSrc } from "./maps";
 import { regionMapSrc } from "./regions";
 import { pickWeightedSpecies } from "./rarity";
@@ -31,39 +31,34 @@ export type CampaignProgressRow = {
   lastMilestoneId: string | null;
 };
 
-export const CAMPAIGN_DEFAULTS = {
-  currentRegionId: DEFAULT_REGION_ID,
-  highestUnlockedLocationId: DEFAULT_UNLOCKED_LOCATION_ID,
-  selectedLocationId: DEFAULT_SELECTED_LOCATION_ID,
-  farmingLocationId: DEFAULT_FARMING_LOCATION_ID,
-  farmingStageId: DEFAULT_FARMING_STAGE_ID,
-  highestCompletedStageId: null as string | null,
-  completedStageIds: [] as string[],
-  lastMilestoneId: null as string | null,
-} as const;
+export const CAMPAIGN_DEFAULTS = REGION_CAMPAIGN_DEFAULTS;
+
+function regionIdOf(progress: Pick<CampaignProgressRow, "currentRegionId"> &
+  Partial<Pick<CampaignProgressRow, "farmingLocationId" | "selectedLocationId">>): CampaignRegionId {
+  return resolveProgressRegionId(progress);
+}
 
 /**
- * Locations de una región. Hoy solo Kanto tiene contenido; el resto devuelve
- * una región vacía en vez de mentir con las locations de Kanto — cuando se
- * carguen sus stages, se agregan acá.
+ * Locations de una región. Regiones sin pack cargado devuelven locations [].
  */
 export function getRegion(regionId: CampaignRegionId = "kanto"): CampaignRegion {
-  if (regionId === "kanto") return KANTO_REGION;
-  return { id: regionId, nameKey: `regions.${regionId}`, locations: [] };
+  return regionContent(regionId);
 }
 
 export function locationOrderIndex(locationId: string): number {
-  const loc = getKantoLocation(locationId);
-  return loc?.order ?? -1;
+  return findLocation(locationId)?.location.order ?? -1;
 }
 
 export function isLocationUnlocked(
   locationId: string,
-  progress: Pick<CampaignProgressRow, "highestUnlockedLocationId">,
+  progress: Pick<CampaignProgressRow, "highestUnlockedLocationId" | "currentRegionId">,
 ): boolean {
-  const highest = getKantoLocation(progress.highestUnlockedLocationId);
-  const target = getKantoLocation(locationId);
+  const regionId = regionIdOf(progress);
+  const highest = getLocation(regionId, progress.highestUnlockedLocationId)
+    ?? findLocation(progress.highestUnlockedLocationId)?.location;
+  const target = getLocation(regionId, locationId) ?? findLocation(locationId)?.location;
   if (!highest || !target) return false;
+  if (highest.regionId !== target.regionId) return false;
   return target.order <= highest.order;
 }
 
@@ -77,19 +72,25 @@ export function isStageCompleted(
 /** Stage is farmable if its location is unlocked and all prior stages in that location are done (or it is the first). */
 export function isStageUnlocked(
   stage: CampaignStage,
-  progress: Pick<CampaignProgressRow, "highestUnlockedLocationId" | "completedStageIds">,
+  progress: Pick<
+    CampaignProgressRow,
+    "highestUnlockedLocationId" | "completedStageIds" | "currentRegionId"
+  >,
 ): boolean {
   if (!isLocationUnlocked(stage.locationId, progress)) return false;
-  const location = getKantoLocation(stage.locationId);
+  const regionId = regionIdOf(progress);
+  const location =
+    getLocation(regionId, stage.locationId) ?? findLocation(stage.locationId)?.location;
   if (!location) return false;
   const prior = location.stages.filter((s) => s.order < stage.order);
   return prior.every((s) => progress.completedStageIds.includes(s.id));
 }
 
 export function journeyProgressPercent(
-  progress: Pick<CampaignProgressRow, "completedStageIds">,
+  progress: Pick<CampaignProgressRow, "completedStageIds" | "currentRegionId">,
 ): number {
-  const stages = allKantoStages().filter((s) => !s.isGymMilestone);
+  const regionId = regionIdOf(progress);
+  const stages = allStages(regionId).filter((s) => !s.isGymMilestone);
   if (stages.length === 0) return 0;
   const done = stages.filter((s) => progress.completedStageIds.includes(s.id)).length;
   return Math.round((done / stages.length) * 100);
@@ -100,8 +101,9 @@ export function nextMilestone(
   earnedGymOrders: number[],
 ): CampaignMilestone {
   const gymSet = new Set(earnedGymOrders);
+  const region = regionContent(regionIdOf(progress));
 
-  for (const loc of KANTO_REGION.locations) {
+  for (const loc of region.locations) {
     if (!isLocationUnlocked(loc.id, progress)) {
       return {
         kind: "stage",
@@ -166,20 +168,26 @@ export function unlockLocationIdAfter(
   candidateId: string | undefined,
 ): string {
   if (!candidateId) return currentHighestId;
-  const current = getKantoLocation(currentHighestId);
-  const next = getKantoLocation(candidateId);
+  const current = findLocation(currentHighestId)?.location;
+  const next = findLocation(candidateId)?.location;
   if (!current || !next) return currentHighestId;
+  if (current.regionId !== next.regionId) return currentHighestId;
   return next.order > current.order ? candidateId : currentHighestId;
 }
 
 /**
  * Stages salvajes del capítulo que cierra el gimnasio `gymOrder`.
- * Misma partición que `buildChapters`: cada medalla 1–8 corta el tramo;
- * el Alto Mando (orden > 8) no resetea el buffer entre sí.
+ * Misma partición que `buildChapters`: cada medalla 1..badgeTarget corta el tramo;
+ * el Alto Mando (orden > badgeTarget) no resetea el buffer entre sí.
  */
-export function chapterWildStagesForGym(gymOrder: number): CampaignStage[] {
+export function chapterWildStagesForGym(
+  gymOrder: number,
+  regionId: string = "kanto",
+): CampaignStage[] {
+  const badgeTarget = regionBadgeTargetFor(regionId);
+  const region = regionContent(regionId);
   let current: CampaignLocation[] = [];
-  for (const loc of KANTO_REGION.locations) {
+  for (const loc of region.locations) {
     current.push(loc);
     if (loc.kind !== "gym" || loc.requiresGymOrder == null) continue;
     const order = loc.requiresGymOrder;
@@ -188,7 +196,7 @@ export function chapterWildStagesForGym(gymOrder: number): CampaignStage[] {
         .filter((z) => z.id !== loc.id)
         .flatMap((z) => z.stages.filter((s) => !s.isGymMilestone));
     }
-    if (order <= 8) current = [];
+    if (order <= badgeTarget) current = [];
   }
   return [];
 }
@@ -197,8 +205,9 @@ export function chapterWildStagesForGym(gymOrder: number): CampaignStage[] {
 export function areChapterStagesCompleteForGym(
   gymOrder: number,
   completedStageIds: readonly string[],
+  regionId: string = "kanto",
 ): boolean {
-  const stages = chapterWildStagesForGym(gymOrder);
+  const stages = chapterWildStagesForGym(gymOrder, regionId);
   if (stages.length === 0) return true;
   const done = new Set(completedStageIds);
   return stages.every((s) => done.has(s.id));
@@ -208,14 +217,18 @@ export function applyStageCompletion(
   progress: CampaignProgressRow,
   stageId: string,
 ): Partial<CampaignProgressRow> {
-  const stage = getKantoStage(stageId);
+  const regionId = regionIdOf(progress);
+  const stage = getStage(regionId, stageId) ?? findStage(stageId)?.stage;
   if (!stage || progress.completedStageIds.includes(stageId)) {
     return {};
   }
 
   const completedStageIds = [...progress.completedStageIds, stageId];
   let highestCompletedStageId = progress.highestCompletedStageId;
-  const prev = highestCompletedStageId ? getKantoStage(highestCompletedStageId) : null;
+  const prevId = highestCompletedStageId;
+  const prev = prevId
+    ? (getStage(regionId, prevId) ?? findStage(prevId)?.stage)
+    : null;
   if (!prev || stage.order >= prev.order) {
     highestCompletedStageId = stageId;
   }
@@ -235,7 +248,7 @@ export function applyStageCompletion(
 
 /** Primer stage farmeable (no milestone de gym) de una ubicación. */
 export function firstFarmableStage(locationId: string): CampaignStage | null {
-  const loc = getKantoLocation(locationId);
+  const loc = findLocation(locationId)?.location;
   return loc?.stages.find((s) => !s.isGymMilestone) ?? null;
 }
 
@@ -252,8 +265,13 @@ export function resolveFarmingAfterStageComplete(
   "farmingStageId" | "farmingLocationId" | "selectedLocationId"
 > {
   const merged = { ...progress, ...patch };
-  const stage = getKantoStage(completedStageId);
-  const location = stage ? getKantoLocation(merged.farmingLocationId) : null;
+  const regionId = regionIdOf(merged);
+  const stage =
+    getStage(regionId, completedStageId) ?? findStage(completedStageId)?.stage;
+  const location = stage
+    ? (getLocation(regionId, merged.farmingLocationId) ??
+      findLocation(merged.farmingLocationId)?.location)
+    : null;
 
   let farmingStageId = merged.farmingStageId;
   let farmingLocationId = merged.farmingLocationId;
@@ -266,7 +284,9 @@ export function resolveFarmingAfterStageComplete(
     if (nextInLoc) {
       farmingStageId = nextInLoc.id;
     } else if (patch.highestUnlockedLocationId) {
-      const unlocked = getKantoLocation(patch.highestUnlockedLocationId);
+      const unlocked =
+        getLocation(regionId, patch.highestUnlockedLocationId) ??
+        findLocation(patch.highestUnlockedLocationId)?.location;
       const first = unlocked ? firstFarmableStage(unlocked.id) : null;
       if (unlocked && first && unlocked.id !== location.id) {
         farmingLocationId = unlocked.id;
@@ -289,14 +309,20 @@ export function resolveFarmingAfterStageComplete(
 export function repairCampaignProgressPatch(
   progress: CampaignProgressRow,
 ): Partial<CampaignProgressRow> | null {
-  const location = getKantoLocation(progress.farmingLocationId);
-  const stage = getKantoStage(progress.farmingStageId);
+  const regionId = regionIdOf(progress);
+  const location =
+    getLocation(regionId, progress.farmingLocationId) ??
+    findLocation(progress.farmingLocationId)?.location;
+  const stage =
+    getStage(regionId, progress.farmingStageId) ??
+    findStage(progress.farmingStageId)?.stage;
   if (location && stage && stage.locationId === location.id && !stage.isGymMilestone) {
     return null;
   }
 
   for (let i = progress.completedStageIds.length - 1; i >= 0; i--) {
-    const done = getKantoStage(progress.completedStageIds[i]!);
+    const doneId = progress.completedStageIds[i]!;
+    const done = getStage(regionId, doneId) ?? findStage(doneId)?.stage;
     if (done && !done.isGymMilestone) {
       return {
         farmingLocationId: done.locationId,
@@ -306,16 +332,18 @@ export function repairCampaignProgressPatch(
     }
   }
 
+  const defaults = CAMPAIGN_DEFAULTS;
   const fallbackLocation =
     (location?.stages.some((s) => !s.isGymMilestone) ? location : null) ??
-    getKantoLocation(CAMPAIGN_DEFAULTS.farmingLocationId);
+    getLocation(regionId, defaults.farmingLocationId) ??
+    findLocation(defaults.farmingLocationId)?.location;
   const fallbackStage = fallbackLocation?.stages.find((s) => !s.isGymMilestone) ?? null;
 
   if (!fallbackLocation || !fallbackStage) {
     return {
-      farmingLocationId: CAMPAIGN_DEFAULTS.farmingLocationId,
-      farmingStageId: CAMPAIGN_DEFAULTS.farmingStageId,
-      selectedLocationId: CAMPAIGN_DEFAULTS.selectedLocationId,
+      farmingLocationId: defaults.farmingLocationId,
+      farmingStageId: defaults.farmingStageId,
+      selectedLocationId: defaults.selectedLocationId,
     };
   }
 
@@ -331,7 +359,10 @@ export function applyGymBadgeUnlock(
   progress: CampaignProgressRow,
   gymOrder: number,
 ): Partial<CampaignProgressRow> {
-  const stage = allKantoStages().find((s) => s.isGymMilestone && s.gymOrder === gymOrder);
+  const regionId = regionIdOf(progress);
+  const stage = allStages(regionId).find(
+    (s) => s.isGymMilestone && s.gymOrder === gymOrder,
+  );
   if (!stage) return {};
   return applyStageCompletion(progress, stage.id);
 }
@@ -353,17 +384,24 @@ export function buildExpeditionView(
   progress: CampaignProgressRow,
   earnedGymOrders: number[],
 ): ExpeditionView | null {
-  const location = getKantoLocation(progress.farmingLocationId);
-  const stage = getKantoStage(progress.farmingStageId);
-  const selectedLocation = getKantoLocation(progress.selectedLocationId);
+  const regionId = regionIdOf(progress);
+  const location =
+    getLocation(regionId, progress.farmingLocationId) ??
+    findLocation(progress.farmingLocationId)?.location;
+  const stage =
+    getStage(regionId, progress.farmingStageId) ??
+    findStage(progress.farmingStageId)?.stage;
+  const selectedLocation =
+    getLocation(regionId, progress.selectedLocationId) ??
+    findLocation(progress.selectedLocationId)?.location;
   if (!location || !stage || !selectedLocation) return null;
 
   return {
-    regionId: progress.currentRegionId,
+    regionId,
     location,
     stage,
     mapSrc: campaignMapSrc(location.id),
-    regionMapSrc: regionMapSrc(progress.currentRegionId),
+    regionMapSrc: regionMapSrc(regionId),
     journeyPercent: journeyProgressPercent(progress),
     milestone: nextMilestone(progress, earnedGymOrders),
     selectedLocation,
@@ -371,7 +409,8 @@ export function buildExpeditionView(
 }
 
 export function listLocationsForUi(progress: CampaignProgressRow) {
-  return KANTO_REGION.locations.map((loc) => ({
+  const region = regionContent(regionIdOf(progress));
+  return region.locations.map((loc) => ({
     location: loc,
     unlocked: isLocationUnlocked(loc.id, progress),
     completedStages: loc.stages.filter((s) => progress.completedStageIds.includes(s.id)).length,

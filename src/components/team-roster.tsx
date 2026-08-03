@@ -85,8 +85,19 @@ export interface TeamMember {
   levelLabel: string;
   slotLabel: string;
   expToNextLabel: string;
-  heldItem: { itemId: string; name: string; effectText: string | null } | null;
-  ownedHeldItems: { itemId: string; name: string; effectText: string | null; quantity: number }[];
+  heldItem: {
+    itemId: string;
+    name: string;
+    displayName: string;
+    effectText: string | null;
+  } | null;
+  ownedHeldItems: {
+    itemId: string;
+    name: string;
+    displayName: string;
+    effectText: string | null;
+    quantity: number;
+  }[];
   isFavorite: boolean;
   isTradeLocked: boolean;
 }
@@ -391,7 +402,7 @@ function PokemonCard({
           level: member.levelLabel,
           favorite: member.isFavorite ? labels.favoriteBadge : null,
           canEvolve: canEvolve ? labels.canEvolveBadge : null,
-          heldItem: member.heldItem?.name ?? null,
+          heldItem: member.heldItem?.displayName ?? null,
         }}
       >
           <div className="mt-3">

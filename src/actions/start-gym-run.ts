@@ -49,7 +49,9 @@ export async function startGymRun(gymId: string, locale: string): Promise<StartG
   }
 
   if (gym.order > 1) {
-    const previousBadge = await prisma.badge.findFirst({ where: { userId, gym: { order: gym.order - 1 } } });
+    const previousBadge = await prisma.badge.findFirst({
+      where: { userId, gym: { order: gym.order - 1, regionId: gym.regionId } },
+    });
     if (!previousBadge) return { success: false, error: "locked" };
   }
 
@@ -78,7 +80,13 @@ export async function startGymRun(gymId: string, locale: string): Promise<StartG
   // Primera medalla: hay que terminar los stages del capítulo. Revancha libre.
   if (!ownBadge) {
     const progress = await ensureCampaignProgress(userId);
-    if (!areChapterStagesCompleteForGym(gym.order, progress.completedStageIds)) {
+    if (
+      !areChapterStagesCompleteForGym(
+        gym.order,
+        progress.completedStageIds,
+        gym.regionId,
+      )
+    ) {
       return { success: false, error: "stages_incomplete" };
     }
   }

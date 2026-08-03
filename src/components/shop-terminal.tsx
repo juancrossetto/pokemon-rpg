@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { buyItem } from "@/actions/buy-item";
-import { itemSpriteUrl } from "@/lib/item-sprites";
+import { itemDisplayUrl } from "@/lib/item-sprites";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import { showToast } from "@/lib/app-toast";
 import {
@@ -96,6 +96,7 @@ export function ShopTerminal({
       if (!needle) return true;
       return (
         product.name.toLowerCase().includes(needle) ||
+        product.displayName.toLowerCase().includes(needle) ||
         (product.description?.toLowerCase().includes(needle) ?? false)
       );
     });
@@ -119,7 +120,10 @@ export function ShopTerminal({
     setOwned((current) => ({ ...current, [product.id]: after }));
     // Toast visible: antes la confirmación era sólo sr-only y comprar
     // parecía no hacer nada.
-    showToast(fill(labels.purchased, { count: quantity, name: product.name }), "success");
+    showToast(
+      fill(labels.purchased, { count: quantity, name: product.displayName }),
+      "success",
+    );
   }
 
   const hasFilters = query.trim() !== "" || affordableOnly;
@@ -365,8 +369,11 @@ function ShopProductCard({
       <div className="flex min-w-0 items-start gap-3">
         <ShopProductImage name={product.name} pedestal={meta.pedestal} />
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-label-md font-semibold text-white" title={product.name}>
-            {product.name}
+          <h3
+            className="truncate text-label-md font-semibold text-white"
+            title={product.displayName}
+          >
+            {product.displayName}
           </h3>
           {/* Categoría y cantidad poseída comparten renglón: eran dos líneas
               apiladas y el badge con borde propio sumaba una tercera. La
@@ -436,12 +443,12 @@ function ShopProductImage({ name, pedestal }: { name: string; pedestal: string }
       style={{ backgroundColor: pedestal }}
     >
       <Image
-        src={itemSpriteUrl(name)}
+        src={itemDisplayUrl(name)}
         alt=""
         width={64}
         height={64}
         sizes="64px"
-        className="[image-rendering:pixelated]"
+        className="object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]"
         unoptimized
       />
     </div>
@@ -562,7 +569,7 @@ function PurchaseDialog({
           />
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className="text-label-md font-semibold text-white">
-              {fill(labels.buyTitle, { name: product.name })}
+              {fill(labels.buyTitle, { name: product.displayName })}
             </h2>
             {product.description && (
               <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-on-surface-variant">

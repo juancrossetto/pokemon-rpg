@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { nowMs } from "@/lib/time";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { areChapterStagesCompleteForGym } from "@/lib/campaign";
+import { DEFAULT_REGION_ID } from "@/lib/regions";
 
 export interface GymStatus {
   gym: Awaited<ReturnType<typeof fetchGyms>>[number];
@@ -30,28 +31,34 @@ export function isGymOpenAt(opensHour: number, closesHour: number, hour: number)
   return hour >= opensHour || hour < closesHour;
 }
 
-function fetchGyms() {
+function fetchGyms(regionId: string) {
   return prisma.gym.findMany({
+    where: { regionId },
     orderBy: { order: "asc" },
     include: { team: { orderBy: { slot: "asc" }, include: { species: true } }, trainers: true },
   });
 }
 
-// Estado de cada gimnasio para un usuario: medalla obtenida, bloqueado
-// (falta la medalla anterior), o en cooldown tras haber perdido. Compartido
-// entre las vistas lista y mapa de /gyms para no duplicar la lógica.
 /**
- * Estado de los gimnasios. Por defecto solo los 8 de medalla: el Alto Mando se
- * pide aparte (`includeElite`) porque no da medalla y solo se abre con las 8.
+ * Estado de los gimnasios de una liga. Por defecto solo los de medalla: el
+ * Alto Mando se pide aparte (`includeElite`) porque no da medalla y solo se
+ * abre con las N de esa región.
  */
 export async function computeGymStatuses(
   userId: string,
   includeElite = false,
+  regionId: string = DEFAULT_REGION_ID,
 ): Promise<GymStatus[]> {
   const [gyms, badges, attempts, progress] = await Promise.all([
-    fetchGyms(),
-    prisma.badge.findMany({ where: { userId } }),
-    prisma.gymAttempt.findMany({ where: { userId }, orderBy: { attemptedAt: "desc" } }),
+    fetchGyms(regionId),
+    prisma.badge.findMany({
+      where: { userId, gym: { regionId } },
+      select: { gymId: true },
+    }),
+    prisma.gymAttempt.findMany({
+      where: { userId, gym: { regionId } },
+      orderBy: { attemptedAt: "desc" },
+    }),
     ensureCampaignProgress(userId),
   ]);
 
@@ -68,31 +75,37 @@ export async function computeGymStatuses(
   return gyms
     .filter((gym) => includeElite || !gym.isElite)
     .map((gym) => {
-    const badgeEarned = badgedGymIds.has(gym.id);
-    const previousGym = gym.order > 1 ? gymByOrder.get(gym.order - 1) : undefined;
-    const locked = previousGym ? !badgedGymIds.has(previousGym.id) : false;
-    const stagesIncomplete =
-      !badgeEarned && !areChapterStagesCompleteForGym(gym.order, progress.completedStageIds);
-    const lastAttempt = lastAttemptByGym.get(gym.id);
-    const cooldownMs = gym.cooldownHours * 60 * 60 * 1000;
-    const elapsedMs = lastAttempt ? now - lastAttempt.attemptedAt.getTime() : Infinity;
-    const onCooldown = !badgeEarned && !!lastAttempt && !lastAttempt.won && elapsedMs < cooldownMs;
-    const remainingMs = onCooldown ? Math.max(0, cooldownMs - elapsedMs) : 0;
-    const hoursLeft = onCooldown ? Math.ceil(remainingMs / (60 * 60 * 1000)) : 0;
-    const closed =
-      !badgeEarned && !isGymOpenAt(gym.opensHour, gym.closesHour, new Date(now).getHours());
+      const badgeEarned = badgedGymIds.has(gym.id);
+      const previousGym = gym.order > 1 ? gymByOrder.get(gym.order - 1) : undefined;
+      const locked = previousGym ? !badgedGymIds.has(previousGym.id) : false;
+      const stagesIncomplete =
+        !badgeEarned &&
+        !areChapterStagesCompleteForGym(
+          gym.order,
+          progress.completedStageIds,
+          gym.regionId,
+        );
+      const lastAttempt = lastAttemptByGym.get(gym.id);
+      const cooldownMs = gym.cooldownHours * 60 * 60 * 1000;
+      const elapsedMs = lastAttempt ? now - lastAttempt.attemptedAt.getTime() : Infinity;
+      const onCooldown =
+        !badgeEarned && !!lastAttempt && !lastAttempt.won && elapsedMs < cooldownMs;
+      const remainingMs = onCooldown ? Math.max(0, cooldownMs - elapsedMs) : 0;
+      const hoursLeft = onCooldown ? Math.ceil(remainingMs / (60 * 60 * 1000)) : 0;
+      const closed =
+        !badgeEarned && !isGymOpenAt(gym.opensHour, gym.closesHour, new Date(now).getHours());
 
-    return {
-      gym,
-      badgeEarned,
-      locked,
-      stagesIncomplete,
-      onCooldown,
-      hoursLeft,
-      remainingMs,
-      closed,
-      opensHour: gym.opensHour,
-      closesHour: gym.closesHour,
-    };
-  });
+      return {
+        gym,
+        badgeEarned,
+        locked,
+        stagesIncomplete,
+        onCooldown,
+        hoursLeft,
+        remainingMs,
+        closed,
+        opensHour: gym.opensHour,
+        closesHour: gym.closesHour,
+      };
+    });
 }

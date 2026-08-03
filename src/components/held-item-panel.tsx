@@ -8,7 +8,10 @@ import { equipHeldItem, unequipHeldItem } from "@/actions/equip-held-item";
 
 export type HeldItemInfo = {
   itemId: string;
+  /** Nombre canónico del seed. */
   name: string;
+  /** Etiqueta localizada (`Mineral Evolutivo`, …). */
+  displayName: string;
   effectText: string | null;
 };
 
@@ -128,7 +131,9 @@ export function HeldItemPanel({
                   auto_awesome
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-on-surface">{localHeld.name}</p>
+                  <p className="truncate text-sm font-medium text-on-surface">
+                    {localHeld.displayName}
+                  </p>
                   {localHeld.effectText && (
                     <p className="mt-0.5 text-[11px] leading-snug text-on-surface-variant">
                       {localHeld.effectText}
@@ -170,7 +175,7 @@ export function HeldItemPanel({
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[11px] font-medium text-on-surface">
-                          {item.name}
+                          {item.displayName}
                         </p>
                         {item.effectText && (
                           <p className="truncate text-[9px] text-on-surface-variant">

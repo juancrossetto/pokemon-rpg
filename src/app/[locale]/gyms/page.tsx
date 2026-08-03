@@ -25,22 +25,42 @@ export default async function GymsPage({
 
   await redirectIfInBattle(session.user.id, locale);
 
+  const regionId = DEFAULT_GYM_REGION_ID;
+
   // Se pide todo de una y se parte acá: el Alto Mando no va en la grilla de
   // medallas, pero sí decide si aparece el banner de continuidad.
-  const [allStatuses, user] = await Promise.all([
-    computeGymStatuses(session.user.id, true),
+  const [allStatuses, user, badgeCountsByRegion] = await Promise.all([
+    computeGymStatuses(session.user.id, true, regionId),
     prisma.user.findUniqueOrThrow({
       where: { id: session.user.id },
       select: { gems: true },
     }),
+    prisma.badge.groupBy({
+      by: ["gymId"],
+      where: {
+        userId: session.user.id,
+        gym: { isElite: false },
+      },
+      _count: true,
+    }),
   ]);
-  // Hoy todos los gyms sembrados son Kanto. Cuando entren otras ligas,
-  // filtrar acá por región (campo en Gym o por rango de `order`).
+
+  const badgedGymIds = new Set(badgeCountsByRegion.map((b) => b.gymId));
+  const gymsMeta = await prisma.gym.findMany({
+    where: { isElite: false },
+    select: { id: true, regionId: true },
+  });
+  const countByRegion = new Map<string, number>();
+  for (const gym of gymsMeta) {
+    if (!badgedGymIds.has(gym.id)) continue;
+    countByRegion.set(gym.regionId, (countByRegion.get(gym.regionId) ?? 0) + 1);
+  }
+
   const items = toGymMissionItems(allStatuses.filter((status) => !status.gym.isElite));
   const badgeCount = items.filter((s) => s.badgeEarned).length;
 
   /**
-   * Con las 8 medallas el hub queda todo en verde y no dice que la aventura
+   * Con las N medallas el hub queda todo en verde y no dice que la aventura
    * sigue en el Alto Mando. Se ofrece el primer nodo élite sin sello; si ya
    * están todos, no hay banner y la pantalla efectivamente está terminada.
    */
@@ -53,7 +73,7 @@ export default async function GymsPage({
     id: region.id,
     available: region.available,
     badgeTarget: region.badgeTarget,
-    badgeCount: region.id === DEFAULT_GYM_REGION_ID ? badgeCount : 0,
+    badgeCount: countByRegion.get(region.id) ?? 0,
   }));
 
   return (
@@ -63,7 +83,7 @@ export default async function GymsPage({
       gems={user.gems}
       eliteHref={nextElite ? `/gyms/${nextElite.gym.id}` : null}
       regions={regions}
-      initialRegionId={DEFAULT_GYM_REGION_ID}
+      initialRegionId={regionId}
     />
   );
 }

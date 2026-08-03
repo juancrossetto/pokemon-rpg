@@ -1,0 +1,118 @@
+/**
+ * Iconos HD (no pixel) en `/public/items/hd`.
+ *
+ * Para superficies modernas (tienda, daily reward, popups). El sprite pixel
+ * de PokeAPI sigue en `itemSpriteUrl` para inventario/combate retro.
+ *
+ * Claves = nombre canónico del ítem (`Poke Ball`, …).
+ * Valores = filename bajo `public/items/hd/` sin extensión.
+ */
+export const ITEM_HD_ICON_IDS: Record<string, string> = {
+  // Balls
+  "Poke Ball": "poke-ball",
+  "Great Ball": "great-ball",
+  "Ultra Ball": "ultra-ball",
+  "Premier Ball": "premier-ball",
+  "Master Ball": "master-ball",
+  "Safari Ball": "safari-ball",
+  // Curación
+  Potion: "potion",
+  "Super Potion": "super-potion",
+  "Hyper Potion": "hyper-potion",
+  "Full Restore": "full-restore",
+  Revive: "revive",
+  "Max Revive": "max-revive",
+  "Full Heal": "full-heal",
+  Antidote: "antidote",
+  "Burn Heal": "burn-heal",
+  "Ice Heal": "ice-heal",
+  "Paralyze Heal": "paralyze-heal",
+  Awakening: "awakening",
+  // PP
+  Ether: "ether",
+  "Max Ether": "max-ether",
+  Elixir: "elixir",
+  "Max Elixir": "max-elixir",
+  "PP Up": "pp-up",
+  "PP Max": "pp-max",
+  // Vitaminas
+  "HP Up": "hp-up",
+  Iron: "iron",
+  Calcium: "calcium",
+  Zinc: "zinc",
+  Carbos: "carbos",
+  // Piedras
+  "Fire Stone": "fire-stone",
+  "Water Stone": "water-stone",
+  "Thunder Stone": "thunder-stone",
+  "Leaf Stone": "leaf-stone",
+  "Moon Stone": "moon-stone",
+  "Sun Stone": "sun-stone",
+  "Ice Stone": "ice-stone",
+  "Dusk Stone": "dusk-stone",
+  "Dawn Stone": "dawn-stone",
+  // Otros main series
+  "Rare Candy": "rare-candy",
+  "Rare Candy XL": "rare-candy-xl",
+  "Escape Rope": "escape-rope",
+  Repel: "repel",
+  // GO / eventos (catálogo futuro)
+  Egg: "egg",
+  "Super Incubator": "super-incubator",
+  Incense: "incense",
+  "Lure Module": "lure-module",
+  "Magnetic Lure Module": "magnetic-lure-module",
+  "Lucky Egg": "lucky-egg",
+  Gift: "gift",
+  "Bag Upgrade": "bag-upgrade",
+  "Coin Bag": "coin-bag",
+  "Razz Berry": "razz-berry",
+  "Nanab Berry": "nanab-berry",
+  "Pinap Berry": "pinap-berry",
+  "Golden Razz Berry": "golden-razz-berry",
+  "Silver Pinap Berry": "silver-pinap-berry",
+  "Poke Coin": "poke-coin",
+  "Poke Coin Bundle S": "poke-coin-bundle-s",
+  "Poke Coin Bundle XL": "poke-coin-bundle-xl",
+  // Held / type boosters (main series)
+  Charcoal: "charcoal",
+  Magnet: "magnet",
+  "Miracle Seed": "miracle-seed",
+  "Mystic Water": "mystic-water",
+  "Dragon Fang": "dragon-fang",
+  "Soft Sand": "soft-sand",
+  "Black Glasses": "black-glasses",
+  "Silk Scarf": "silk-scarf",
+  "Never Melt Ice": "never-melt-ice",
+  "Never-Melt Ice": "never-melt-ice",
+  "Twisted Spoon": "twisted-spoon",
+  "Sharp Beak": "sharp-beak",
+  "Poison Barb": "poison-barb",
+  "Black Belt": "black-belt",
+  "Spell Tag": "spell-tag",
+  "Silver Powder": "silver-powder",
+  // Held / evolución / orbes
+  "King's Rock": "kings-rock",
+  "Sweet Heart": "sweet-heart",
+  Poffin: "poffin",
+  Leftovers: "leftovers",
+  "Choice Band": "choice-band",
+  "Choice Scarf": "choice-scarf",
+  "Choice Specs": "choice-specs",
+  "Life Orb": "life-orb",
+  "Toxic Orb": "toxic-orb",
+  "Flame Orb": "flame-orb",
+  "Focus Sash": "focus-sash",
+  "Quick Claw": "quick-claw",
+  Eviolite: "eviolite",
+};
+
+export function itemHdIconId(name: string): string | null {
+  return ITEM_HD_ICON_IDS[name.trim()] ?? null;
+}
+
+/** URL pública del icono HD, o `null` si no hay asset. */
+export function itemHdIconUrl(name: string): string | null {
+  const id = itemHdIconId(name);
+  return id ? `/items/hd/${id}.png` : null;
+}

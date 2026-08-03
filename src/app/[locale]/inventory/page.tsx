@@ -6,6 +6,7 @@ import { redirectIfInBattle } from "@/lib/battle-lock";
 import { unclaimedPurchasesWhere } from "@/lib/market-delivery";
 import { INVENTORY_CATEGORIES, type InventoryEntry } from "@/lib/inventory";
 import { InventoryTerminal, type InventoryLabels } from "@/components/inventory-terminal";
+import { resolveItemDisplayName } from "@/lib/shop";
 
 export default async function InventoryPage({
   params,
@@ -13,7 +14,11 @@ export default async function InventoryPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const [t, session] = await Promise.all([getTranslations("inventory"), auth()]);
+  const [t, tShop, session] = await Promise.all([
+    getTranslations("inventory"),
+    getTranslations("shop"),
+    auth(),
+  ]);
 
   if (!session?.user) {
     redirect({ href: "/login", locale });
@@ -122,6 +127,10 @@ export default async function InventoryPage({
     .map((r) => ({
       itemId: r.item.id,
       name: r.item.name,
+      displayName: resolveItemDisplayName(r.item.name, (key) => {
+        const path = `names.${key}`;
+        return tShop.has(path) ? tShop(path) : null;
+      }),
       type: r.item.type as InventoryEntry["type"],
       quantity: r.quantity,
       effectText: r.item.effectText,

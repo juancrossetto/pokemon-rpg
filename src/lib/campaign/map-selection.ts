@@ -1,6 +1,6 @@
 import { locationEncounterRate } from "./encounters";
 import { isStageUnlocked, listLocationsForUi, type CampaignProgressRow } from "./progress";
-import { locationPoint } from "./region-map";
+import { fallbackLocationPoint, locationPoint } from "./region-map";
 import type { EncounterRate } from "./types";
 import type { Rarity } from "./rarity";
 
@@ -67,13 +67,14 @@ export type MapTrainer = {
  *
  * Lo consumen el dashboard y el lobby de batalla: los dos abren el mismo
  * selector, así que la forma de los datos vive acá y no en cada página.
- * Se descartan las locations sin punto en el arte.
+ * Sin coordenadas en el arte → fallback de grilla (nunca se dropea en silencio).
  */
 export function buildMapLocations(progress: CampaignProgressRow): MapLocation[] {
   return listLocationsForUi(progress).flatMap(
-    ({ location, unlocked, completedStages, totalStages }) => {
-      const point = locationPoint(location.id);
-      if (!point) return [];
+    ({ location, unlocked, completedStages, totalStages }, index) => {
+      const point =
+        locationPoint(location.id, location.regionId) ??
+        fallbackLocationPoint(location.id, index);
       const wildStages = location.stages.filter((s) => !s.isGymMilestone);
       const levelSource = wildStages.length > 0 ? wildStages : location.stages;
       return [

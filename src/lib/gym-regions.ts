@@ -1,35 +1,42 @@
 /**
- * Ligas / regiones del hub de gimnasios.
- *
- * Hoy sólo Kanto tiene medallas en DB. El resto queda `available: false` para
- * poder sumar Johto+ sin rehacer el UI: alcanza con cargar gyms y marcar la
- * región como disponible (y filtrar por región cuando el schema lo tenga).
+ * Ligas del hub de gimnasios — reexport del registro unificado.
+ * Fuente de verdad: `@/lib/regions`.
  */
-export type GymRegionId = "kanto" | "johto" | "hoenn" | "sinnoh";
+
+import {
+  DEFAULT_REGION_ID,
+  listRegions,
+  regionDef,
+  type GameRegionId,
+  type RegionDef,
+} from "@/lib/regions";
+
+export type GymRegionId = GameRegionId;
 
 export type GymRegionDef = {
   id: GymRegionId;
-  /** Orden de temporada / generación. */
   order: number;
-  /** Medallas de gimnasio esperadas en esa liga (sin Alto Mando). */
   badgeTarget: number;
-  /** Hay contenido jugable cargado. */
   available: boolean;
 };
 
-export const GYM_REGIONS: GymRegionDef[] = [
-  { id: "kanto", order: 1, badgeTarget: 8, available: true },
-  { id: "johto", order: 2, badgeTarget: 8, available: false },
-  { id: "hoenn", order: 3, badgeTarget: 8, available: false },
-  { id: "sinnoh", order: 4, badgeTarget: 8, available: false },
-];
+export const DEFAULT_GYM_REGION_ID: GymRegionId = DEFAULT_REGION_ID;
 
-export const DEFAULT_GYM_REGION_ID: GymRegionId = "kanto";
+export function toGymRegionDef(region: RegionDef): GymRegionDef {
+  return {
+    id: region.id,
+    order: region.order,
+    badgeTarget: region.badgeTarget,
+    available: region.gymsAvailable,
+  };
+}
+
+export const GYM_REGIONS: GymRegionDef[] = listRegions().map(toGymRegionDef);
 
 export function gymRegionDef(id: string): GymRegionDef {
-  return GYM_REGIONS.find((r) => r.id === id) ?? GYM_REGIONS[0]!;
+  return toGymRegionDef(regionDef(id));
 }
 
 export function listGymRegions(): GymRegionDef[] {
-  return [...GYM_REGIONS].sort((a, b) => a.order - b.order);
+  return listRegions().map(toGymRegionDef);
 }

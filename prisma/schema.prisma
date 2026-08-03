@@ -104,6 +104,7 @@ enum NotificationType {
   CLAN_ACCEPTED
   CLAN_KICKED
   CLAN_ROLE_CHANGED
+  DAILY_REWARD_READY
 }
 
 model Notification {
@@ -337,7 +338,12 @@ model PokemonMove {
 
 model Gym {
   id            String  @id @default(cuid())
-  order         Int     @unique // orden secuencial fijo, 1..N — desbloquea al tener la medalla del anterior
+  /**
+   * Liga a la que pertenece (`kanto`, `johto`, …). El `order` reinicia en 1
+   * por región — desbloqueo y Alto Mando son locales a la liga.
+   */
+  regionId      String  @default("kanto")
+  order         Int // 1..N dentro de la región — desbloquea al tener la medalla del anterior
   name          String
   leaderName    String
   badgeName     String  @default("") // nombre real de la medalla (ej. "Boulder Badge")
@@ -347,7 +353,8 @@ model Gym {
   closesHour    Int     @default(24) // 0/24 = abierto siempre. Si closes <= opens, cruza la medianoche.
   coinReward    Int     @default(100)
   /**
-   * Alto Mando / Campeón: no cuenta como medalla y solo se abre con las 8.
+   * Alto Mando / Campeón: no cuenta como medalla y solo se abre con las N
+   * medallas de la misma región (`badgeTarget`).
    */
   isElite       Boolean @default(false)
 
@@ -358,6 +365,9 @@ model Gym {
   badges         Badge[]
   battleSessions BattleSession[]
   battleLogs     BattleLog[]
+
+  @@unique([regionId, order])
+  @@index([regionId])
 }
 
 // Equipo fijo del líder — no es un PokemonInstance real (no evoluciona, no

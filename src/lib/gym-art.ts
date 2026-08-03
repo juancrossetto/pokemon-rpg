@@ -113,7 +113,8 @@ export function gymTypeTrainerSpriteSlug(gymType: string): string {
   return GYM_TRAINER_SPRITE[gymType] ?? "pokemontrainer";
 }
 
-/** Dificultad visual 1–5 a partir del orden del gimnasio (1..8). */
-export function gymDifficultyStars(order: number): number {
-  return Math.min(5, Math.max(1, Math.ceil((order * 5) / 8)));
+/** Dificultad visual 1–5 a partir del orden del gimnasio (1..badgeTarget). */
+export function gymDifficultyStars(order: number, badgeTarget = 8): number {
+  const denom = Math.max(1, badgeTarget);
+  return Math.min(5, Math.max(1, Math.ceil((order * 5) / denom)));
 }

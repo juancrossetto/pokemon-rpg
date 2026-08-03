@@ -1,5 +1,7 @@
-/** Generaciones en orden. Solo Kanto tiene locations cargadas — ver `regions.ts`. */
-export type CampaignRegionId = "kanto" | "johto" | "hoenn" | "sinnoh";
+/** Generaciones en orden. Fuente de verdad: `@/lib/regions`. */
+import type { GameRegionId } from "@/lib/regions";
+
+export type CampaignRegionId = GameRegionId;
 
 export type CampaignLocationKind =
   | "town"

@@ -1,7 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+  type CSSProperties,
+} from "react";
 import { createPortal } from "react-dom";
 import { claimDailyReward } from "@/actions/claim-reward";
 import { announceCoinDelta } from "@/lib/coin-fx";
@@ -11,9 +18,101 @@ import {
   DailyRewardStrip,
   type StripLabels,
 } from "@/components/events/daily-reward-strip";
-import { RewardList } from "@/components/events/reward-chip";
+import { itemHdIconUrl, itemSpriteUrl } from "@/lib/item-sprites";
 import type { RewardDef } from "@/lib/events/rewards";
 import type { DailyDayState } from "@/lib/events/state";
+import {
+  DAILY_GIFT_OPEN_EVENT,
+  DAILY_GIFT_SEEN_KEY,
+  openDailyRewardModal,
+} from "@/lib/daily-gift-fx";
+
+export { openDailyRewardModal };
+
+const COIN_BUNDLE_HD = "/items/hd/poke-coin-bundle-s.png";
+const ENERGY_HD = "/items/hd/energy.png";
+
+const HOLD_MS = 950;
+const FLY_MS = 620;
+
+type LootVisual = {
+  src: string;
+  amount: string;
+  pixelated: boolean;
+  target: "coins" | "energy" | "gems" | "inventory";
+};
+
+function lootVisual(reward: RewardDef): LootVisual {
+  if (reward.kind === "item") {
+    const hd = itemHdIconUrl(reward.itemName);
+    return {
+      src: hd ?? itemSpriteUrl(reward.itemName),
+      amount: `×${reward.quantity}`,
+      pixelated: !hd,
+      target: "inventory",
+    };
+  }
+  if (reward.kind === "coins") {
+    return {
+      src: COIN_BUNDLE_HD,
+      amount: reward.amount.toLocaleString(),
+      pixelated: false,
+      target: "coins",
+    };
+  }
+  if (reward.kind === "energy") {
+    return {
+      src: ENERGY_HD,
+      amount: reward.amount.toLocaleString(),
+      pixelated: false,
+      target: "energy",
+    };
+  }
+  return {
+    src: COIN_BUNDLE_HD,
+    amount: reward.amount.toLocaleString(),
+    pixelated: false,
+    target: "gems",
+  };
+}
+
+function isVisible(el: Element): boolean {
+  const r = el.getBoundingClientRect();
+  return r.width > 2 && r.height > 2;
+}
+
+/** Destino del vuelo: pastilla de recurso o link de inventario. */
+function resolveLootTarget(kind: LootVisual["target"]): { x: number; y: number } {
+  if (kind === "coins" || kind === "energy" || kind === "gems") {
+    const pill = document.querySelector(`[data-loot-target="${kind}"]`);
+    if (pill && isVisible(pill)) {
+      const r = pill.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+  }
+
+  const inv = [...document.querySelectorAll<HTMLElement>('a[href*="/inventory"]')].find(
+    isVisible,
+  );
+  if (inv) {
+    const r = inv.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+
+  // Mobile: tab Colección (mochila vive ahí) o esquina inferior derecha.
+  const collection = document.querySelector<HTMLElement>(
+    '[data-nav-group="collection"], a[href*="/team"]',
+  );
+  if (collection && isVisible(collection)) {
+    const r = collection.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+
+  return {
+    x: window.innerWidth * 0.82,
+    y: window.innerHeight * 0.92,
+  };
+}
 
 export type GiftModalLabels = CalendarLabels &
   StripLabels & {
@@ -31,7 +130,7 @@ export type GiftModalLabels = CalendarLabels &
     reopen: string;
   };
 
-const SEEN_KEY = "pokerpg:daily-gift-seen";
+const SEEN_KEY = DAILY_GIFT_SEEN_KEY;
 
 /**
  * Estado "ya lo vi en esta sesión", sobre `sessionStorage`.
@@ -94,8 +193,7 @@ function TitleFlourish({ side }: { side: "left" | "right" }) {
  * Modal del regalo diario (popup horizontal tipo Daily Reward).
  *
  * Se abre **una sola vez por sesión** cuando hay un regalo sin reclamar.
- * La grilla clásica (`DailyCalendar` + cabecera Oak) se conserva en Eventos
- * para fusionar más adelante; acá vive el strip nuevo.
+ * Al reclamar se cierra el banner y se muestra un reveal compacto del loot.
  */
 export function DailyGiftModal({
   days,
@@ -114,13 +212,42 @@ export function DailyGiftModal({
 }) {
   const isClient = useSyncExternalStore(subscribeClient, () => true, () => false);
   const seen = useSyncExternalStore(subscribe, wasSeen, () => true);
-  const [claimed, setClaimed] = useState<RewardDef[] | null>(null);
+  const [loot, setLoot] = useState<RewardDef[] | null>(null);
+  const [lootPhase, setLootPhase] = useState<"hold" | "fly">("hold");
+  const [flyStyle, setFlyStyle] = useState<CSSProperties>({});
   const [pending, startTransition] = useTransition();
   const panelRef = useRef<HTMLDivElement>(null);
-  const open = (isClient && !seen) || claimed !== null;
+  const lootOrbRef = useRef<HTMLDivElement>(null);
+  const pendingCoinsRef = useRef(0);
+  const lootDoneRef = useRef(false);
+  const bannerOpen = isClient && !seen && loot === null;
 
   useEffect(() => {
-    if (!open) return;
+    if (!isClient || typeof window === "undefined") return;
+
+    function consumeDailyQuery() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("daily") !== "1") return;
+      reopen();
+      params.delete("daily");
+      const qs = params.toString();
+      const next = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
+      window.history.replaceState({}, "", next);
+    }
+
+    function onOpenEvent() {
+      reopen();
+    }
+
+    consumeDailyQuery();
+    window.addEventListener(DAILY_GIFT_OPEN_EVENT, onOpenEvent);
+    return () => {
+      window.removeEventListener(DAILY_GIFT_OPEN_EVENT, onOpenEvent);
+    };
+  }, [isClient]);
+
+  useEffect(() => {
+    if (!bannerOpen) return;
 
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -152,7 +279,66 @@ export function DailyGiftModal({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previous;
     };
-  }, [open, pending]);
+  }, [bannerOpen, pending]);
+
+  useEffect(() => {
+    if (!loot) return;
+    lootDoneRef.current = false;
+
+    function finish() {
+      if (lootDoneRef.current) return;
+      lootDoneRef.current = true;
+      if (pendingCoinsRef.current !== 0) {
+        announceCoinDelta(pendingCoinsRef.current);
+        pendingCoinsRef.current = 0;
+      }
+      setLoot(null);
+      setLootPhase("hold");
+      setFlyStyle({});
+    }
+
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") finish();
+    }
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let holdTimer = 0;
+    let flyTimer = 0;
+    const raf = requestAnimationFrame(() => {
+      setLootPhase("hold");
+      holdTimer = window.setTimeout(() => {
+        if (reduced) {
+          finish();
+          return;
+        }
+        const orb = lootOrbRef.current?.getBoundingClientRect();
+        const visual = lootVisual(loot[0]);
+        const target = resolveLootTarget(visual.target);
+        if (orb) {
+          const cx = orb.left + orb.width / 2;
+          const cy = orb.top + orb.height / 2;
+          setFlyStyle({
+            ["--loot-dx" as string]: `${target.x - cx}px`,
+            ["--loot-dy" as string]: `${target.y - cy}px`,
+          });
+        }
+        setLootPhase("fly");
+        flyTimer = window.setTimeout(() => finish(), FLY_MS);
+      }, HOLD_MS);
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(holdTimer);
+      window.clearTimeout(flyTimer);
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [loot]);
 
   function claim() {
     if (pending) return;
@@ -163,19 +349,112 @@ export function DailyGiftModal({
         markSeen();
         return;
       }
-      if (result.coinsDelta !== 0) announceCoinDelta(result.coinsDelta);
-      setClaimed(result.granted);
+      markSeen();
+      pendingCoinsRef.current = result.coinsDelta;
+      lootDoneRef.current = false;
+      setLootPhase("hold");
+      setFlyStyle({});
+      setLoot(result.granted);
     });
   }
 
-  function close() {
+  function closeBanner() {
     markSeen();
-    setClaimed(null);
+  }
+
+  function finishLoot() {
+    if (lootDoneRef.current) return;
+    lootDoneRef.current = true;
+    if (pendingCoinsRef.current !== 0) {
+      announceCoinDelta(pendingCoinsRef.current);
+      pendingCoinsRef.current = 0;
+    }
+    setLoot(null);
+    setLootPhase("hold");
+    setFlyStyle({});
   }
 
   if (!isClient) return null;
 
-  if (!open) {
+  if (loot) {
+    const primary = lootVisual(loot[0]);
+    const extras = loot.slice(1).map(lootVisual);
+
+    return createPortal(
+      <div
+        className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+        role="presentation"
+      >
+        <button
+          type="button"
+          aria-label={labels.close}
+          onClick={finishLoot}
+          className="market-sheet-backdrop-in absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="daily-loot-title"
+          className="pointer-events-none relative flex flex-col items-center"
+        >
+          <h2 id="daily-loot-title" className="sr-only">
+            {labels.claimedTitle}
+          </h2>
+          <div
+            ref={lootOrbRef}
+            className={`daily-reward-loot-orb ${
+              lootPhase === "fly" ? "is-flying" : "is-holding"
+            }`}
+            style={flyStyle}
+          >
+            <span aria-hidden className="daily-reward-loot-glow" />
+            <span aria-hidden className="daily-reward-loot-ring" />
+            <div className="relative z-10 flex flex-col items-center gap-2">
+              <Image
+                src={primary.src}
+                alt=""
+                width={160}
+                height={160}
+                className={[
+                  "h-28 w-28 object-contain sm:h-32 sm:w-32",
+                  primary.pixelated ? "[image-rendering:pixelated]" : "",
+                ].join(" ")}
+                unoptimized
+              />
+              <span className="daily-reward-loot-qty font-mono text-[1.35rem] font-bold tabular-nums text-white sm:text-[1.5rem]">
+                {primary.amount}
+              </span>
+              {extras.length > 0 && (
+                <ul className="mt-1 flex items-center justify-center gap-3">
+                  {extras.map((extra, index) => (
+                    <li key={`${extra.src}-${index}`} className="flex flex-col items-center gap-1">
+                      <Image
+                        src={extra.src}
+                        alt=""
+                        width={56}
+                        height={56}
+                        className={[
+                          "h-12 w-12 object-contain",
+                          extra.pixelated ? "[image-rendering:pixelated]" : "",
+                        ].join(" ")}
+                        unoptimized
+                      />
+                      <span className="font-mono text-[12px] font-bold tabular-nums text-white/90">
+                        {extra.amount}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
+  if (!bannerOpen) {
     if (!showChip) return null;
     return (
       <button
@@ -212,7 +491,7 @@ export function DailyGiftModal({
       <button
         type="button"
         aria-label={labels.close}
-        onClick={close}
+        onClick={closeBanner}
         className="market-sheet-backdrop-in absolute inset-0 bg-black/75 backdrop-blur-sm"
       />
 
@@ -221,28 +500,23 @@ export function DailyGiftModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="daily-gift-title"
-        className="gift-modal-in daily-reward-popup relative flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[#ff8a00]/40 shadow-[0_0_48px_rgba(255,138,0,0.22),0_28px_90px_rgba(0,0,0,0.7)]"
+        className="gift-modal-in daily-reward-popup relative flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[#ff8a00]/45 shadow-[0_0_48px_rgba(255,180,0,0.28),0_28px_90px_rgba(0,0,0,0.7)]"
       >
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#1a2744] via-[#101a30] to-[#0a1224]"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(255,138,0,0.22),transparent_50%)]"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#ff9a1a] to-transparent"
+          className="pointer-events-none absolute inset-0 daily-reward-popup-bg"
         />
 
         <button
           type="button"
-          onClick={close}
+          onClick={closeBanner}
           aria-label={labels.close}
-          className="absolute right-2.5 top-2.5 z-30 grid h-10 w-10 place-items-center text-[#f2c000] transition hover:text-[#ffe066] sm:right-3 sm:top-3"
+          className="absolute right-1.5 top-1.5 z-30 grid h-7 w-7 place-items-center text-[#f2c000] transition hover:text-[#ffe066] sm:right-3 sm:top-3 sm:h-10 sm:w-10"
         >
-          <span aria-hidden className="material-symbols-outlined text-[28px]! font-bold drop-shadow-[0_0_8px_rgba(242,192,0,0.65)]">
+          <span
+            aria-hidden
+            className="material-symbols-outlined text-[18px]! font-bold drop-shadow-[0_0_8px_rgba(242,192,0,0.65)] sm:text-[28px]!"
+          >
             close
           </span>
         </button>
@@ -252,13 +526,13 @@ export function DailyGiftModal({
             <TitleFlourish side="left" />
             <h2
               id="daily-gift-title"
-              className="daily-reward-title text-center text-[clamp(1.55rem,4.5vw,2.15rem)] font-black uppercase tracking-[0.04em] text-[#ff9a1a]"
+              className="daily-reward-title text-center text-[clamp(1.55rem,4.5vw,2.15rem)] text-[#ff9a1a]"
             >
               {labels.title}
             </h2>
             <TitleFlourish side="right" />
           </div>
-          <p className="mt-2 text-center text-[13px] text-white/90 sm:text-[15px]">
+          <p className="daily-reward-subtitle mt-2 text-center text-[13px] text-white/90 sm:text-[15px]">
             {labels.subtitle}
           </p>
           <p className="sr-only">
@@ -268,43 +542,13 @@ export function DailyGiftModal({
           </p>
         </div>
 
-        <div className="relative px-3 py-4 sm:px-7 sm:py-5">
-          <DailyRewardStrip days={days} labels={labels} />
-        </div>
-
-        <div className="relative shrink-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-1 sm:px-8">
-          {claimed ? (
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl border border-[#ff8a00]/30 bg-gradient-to-b from-[#ff8a00]/10 to-transparent px-3 py-3">
-                <span
-                  aria-hidden
-                  className="material-symbols-outlined text-[20px]! text-[#ff8a00]"
-                >
-                  check_circle
-                </span>
-                <span className="text-label-sm text-on-surface">{labels.claimedTitle}</span>
-                <RewardList rewards={claimed} size="md" unitLabels={labels.rewards} />
-              </div>
-              <button
-                type="button"
-                data-autofocus
-                onClick={close}
-                className="h-12 w-full rounded-lg bg-pokeball-red text-label-md font-bold text-white transition hover:bg-pokeball-red/85"
-              >
-                {labels.continueLabel}
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              data-autofocus
-              onClick={claim}
-              disabled={pending}
-              className="daily-claim-cta h-12 w-full rounded-lg bg-gradient-to-b from-[#ffb000] to-[#ff7a00] text-label-md font-black uppercase tracking-wide text-[#1a1200] shadow-[0_0_24px_rgba(255,138,0,0.4)] transition hover:brightness-110 disabled:opacity-60"
-            >
-              {pending ? labels.claiming : labels.claim}
-            </button>
-          )}
+        <div className="relative px-3 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-7 sm:py-5">
+          <DailyRewardStrip
+            days={days}
+            labels={labels}
+            onClaimToday={pending ? undefined : claim}
+            claiming={pending}
+          />
         </div>
       </div>
     </div>,
