@@ -43,6 +43,7 @@ function SectionLabel({
       {actionHref && actionLabel ? (
         <Link
           href={actionHref}
+          prefetch={false}
           className="shrink-0 pt-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40 transition hover:text-white/75"
         >
           {actionLabel}
@@ -127,9 +128,16 @@ export function HomeDailyActions({
 
           if (action.href) {
             return (
+              // Seis destinos en la home, todos siempre montados: con el
+              // prefetch por default de Link, cada carga de home dispara un
+              // request RSC a los seis apenas entran en viewport (que es
+              // inmediato, están arriba del fold). Ninguno es el camino
+              // principal —"Salir a explorar" y el equipo activo sí lo son y
+              // mantienen el prefetch normal— así que se desactiva acá.
               <Link
                 key={action.id}
                 href={action.href}
+                prefetch={false}
                 className={className}
                 style={style}
               >

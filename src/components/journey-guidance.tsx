@@ -228,24 +228,24 @@ export function JourneyOnboarding({
 
   const steps = [
     {
-      iconSrc: "/nav/map-icon.png",
+      iconSrc: "/nav/map-icon.png?v=4",
       title: t("onboarding.step1Title"),
       body: t("onboarding.step1Body"),
     },
     {
-      iconSrc: "/nav/battle-wild-icon.png",
+      iconSrc: "/nav/battle-wild-icon.png?v=4",
       title: t("onboarding.step2Title"),
       body: t("onboarding.step2Body"),
     },
     {
-      iconSrc: "/nav/gym-icon.png",
+      iconSrc: "/nav/gym-icon.png?v=4",
       title: t("onboarding.step3Title"),
       body: t("onboarding.step3Body"),
     },
     // La energía se explica acá y no cuando se agota: enterarse del límite
     // recién cuando frena la partida es lo que lo hace sentir un castigo.
     {
-      iconSrc: "/nav/home-icon.png",
+      iconSrc: "/nav/home-icon.png?v=4",
       title: t("onboarding.step4Title"),
       body: t("onboarding.step4Body"),
     },

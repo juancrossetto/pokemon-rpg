@@ -162,8 +162,8 @@ const SECTION_LABEL =
 
 /** Iconos de objetivo: PNG de juego, sin tile de fondo. */
 const OBJECTIVE_ICON_SRC: Record<Exclude<ZoneObjectiveId, "trainers">, string> = {
-  stages: "/nav/beast-icon.png",
-  pokedex: "/nav/collection-icon.png",
+  stages: "/nav/beast-icon.png?v=4",
+  pokedex: "/nav/collection-icon.png?v=4",
 };
 
 function kindOf(zone: MapLocation): CampaignLocationKind {
@@ -1041,18 +1041,18 @@ function ZoneRowBody({
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-label-sm text-white/70 drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)]">
             {zone.totalStages > 0 && (
               <span className="inline-flex items-center gap-1">
-                <Image src="/nav/adventure-icon.png" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
+                <Image src="/nav/adventure-icon.png?v=4" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
                 <span className="text-white">{zone.completedStages}/{zone.totalStages}</span>
               </span>
             )}
             {zone.encounters.length > 0 && (
               <span className="inline-flex items-center gap-1">
-                <Image src="/nav/collection-icon.png" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
+                <Image src="/nav/collection-icon.png?v=4" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
                 <span className="text-white">{caught}/{zone.encounters.length}</span>
               </span>
             )}
             <span className="inline-flex items-center gap-1">
-              <Image src="/nav/battle-wild-icon.png" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
+              <Image src="/nav/battle-wild-icon.png?v=4" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
               {t("wildLevels", { min: zone.levelMin, max: zone.levelMax })}
             </span>
           </div>
@@ -1592,7 +1592,7 @@ function Objective({
   const pct = state.target > 0 ? Math.min(100, (state.current / state.target) * 100) : 0;
   const iconSrc =
     state.id === "trainers"
-      ? (trainerSpriteUrl ?? "/nav/battle-icon.png")
+      ? (trainerSpriteUrl ?? "/nav/battle-icon.png?v=4")
       : OBJECTIVE_ICON_SRC[state.id];
 
   const shell = state.claimable
@@ -1800,9 +1800,9 @@ function JourneySummaryCard({
   const t = useTranslations("campaign");
   // Solo se colorean las medallas y los shinies: lo escaso. El resto es neutro.
   const rows = [
-    { iconSrc: "/nav/gym-icon.png", label: t("badges"), value: `${summary.badges}/${summary.badgesTotal}` },
-    { iconSrc: "/nav/collection-icon.png", label: t("pokedexShort"), value: `${summary.speciesCaught}/${summary.speciesTotal}` },
-    { iconSrc: "/nav/map-icon.png", label: t("zonesUnlocked"), value: `${summary.zonesUnlocked}/${summary.zonesTotal}` },
+    { iconSrc: "/nav/gym-icon.png?v=4", label: t("badges"), value: `${summary.badges}/${summary.badgesTotal}` },
+    { iconSrc: "/nav/collection-icon.png?v=4", label: t("pokedexShort"), value: `${summary.speciesCaught}/${summary.speciesTotal}` },
+    { iconSrc: "/nav/map-icon.png?v=4", label: t("zonesUnlocked"), value: `${summary.zonesUnlocked}/${summary.zonesTotal}` },
     { iconSrc: "/ranking/insignia-gold.png", label: t("shinies"), value: `${summary.shinies}` },
   ];
 

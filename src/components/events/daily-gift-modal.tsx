@@ -483,7 +483,7 @@ export function DailyGiftModal({
         className="gift-chip mb-4 inline-flex max-w-full items-center gap-2 rounded-md border border-pokeball-red/40 bg-pokeball-red/10 py-1.5 pl-1.5 pr-3 text-left transition hover:border-pokeball-red/60 hover:bg-pokeball-red/16"
       >
         <Image
-          src="/nav/event-icon.png"
+          src="/nav/event-icon.png?v=4"
           alt=""
           width={28}
           height={28}
