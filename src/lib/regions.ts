@@ -75,8 +75,10 @@ export const REGIONS: Record<GameRegionId, RegionDef> = {
     badgeTarget: 8,
     speciesRange: [152, 251],
     playable: false,
-    gymsAvailable: false,
-    speciesAvailable: false,
+    // Catálogo sembrado y visible en el hub; playable false → bloqueado.
+    gymsAvailable: true,
+    // Especies en DB para la Pokédex; la liga sigue cerrada (sin campaña).
+    speciesAvailable: true,
     defaults: EMPTY_DEFAULTS,
   },
   hoenn: {

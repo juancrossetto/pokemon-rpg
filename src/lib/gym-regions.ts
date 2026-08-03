@@ -17,7 +17,10 @@ export type GymRegionDef = {
   id: GymRegionId;
   order: number;
   badgeTarget: number;
+  /** Hay gimnasios sembrados / visibles en el hub. */
   available: boolean;
+  /** Se pueden desafiar (liga abierta). */
+  playable: boolean;
 };
 
 export const DEFAULT_GYM_REGION_ID: GymRegionId = DEFAULT_REGION_ID;
@@ -28,6 +31,7 @@ export function toGymRegionDef(region: RegionDef): GymRegionDef {
     order: region.order,
     badgeTarget: region.badgeTarget,
     available: region.gymsAvailable,
+    playable: region.playable && region.gymsAvailable,
   };
 }
 

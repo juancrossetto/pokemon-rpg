@@ -146,7 +146,7 @@ export function ShopTerminal({
             <span className="sr-only">{labels.search}</span>
             <span
               aria-hidden
-              className="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65"
+              className="material-symbols-outlined pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65"
             >
               search
             </span>
@@ -155,10 +155,10 @@ export function ShopTerminal({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={labels.searchPlaceholder}
-              className="h-11 w-full rounded-lg border border-white/12 bg-black/35 pl-9 pr-3 text-label-sm text-on-surface outline-none transition placeholder:text-on-surface-variant/45 focus:border-pokeball-red/55 focus:ring-1 focus:ring-pokeball-red/30 sm:h-9"
+              className="h-10 w-full border-0 border-b border-white/15 bg-transparent pl-8 pr-2 text-label-sm text-on-surface outline-none transition placeholder:text-on-surface-variant/45 focus:border-pokeball-red/55"
             />
           </label>
-          <label className="flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-white/12 bg-black/35 px-3 text-label-sm text-on-surface-variant sm:h-9">
+          <label className="flex h-10 shrink-0 cursor-pointer items-center gap-2 px-1 text-label-sm text-on-surface-variant">
             <input
               type="checkbox"
               checked={affordableOnly}
@@ -184,23 +184,17 @@ export function ShopTerminal({
         sections.map((section) => (
           <section key={section.id}>
             {category === "all" && (
-              <h2 className="mb-2 flex items-center gap-1.5 text-label-sm font-bold uppercase tracking-wider text-on-surface-variant">
-                <span
-                  aria-hidden
-                  className={`material-symbols-outlined text-[16px]! ${SHOP_CATEGORY_META[section.id].accent}`}
-                >
-                  {SHOP_CATEGORY_META[section.id].icon}
-                </span>
+              <h2 className="mb-3 mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/80">
                 {labels.categories[section.id]}
               </h2>
             )}
             {/*
-              `auto-fill` en vez de un número fijo de columnas: la grilla se
-              ajusta al ancho real y no deja cards gigantes en pantallas anchas.
+              Grilla fija estilo GO: 3 columnas en mobile, más aire en desktop.
+              Sin cards — el tile flota sobre el fondo.
             */}
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,270px),1fr))] gap-2.5">
+            <div className="grid grid-cols-3 gap-x-2 gap-y-5 sm:grid-cols-4 sm:gap-x-3 sm:gap-y-6 lg:grid-cols-5 xl:grid-cols-6">
               {section.items.map((product) => (
-                <ShopProductCard
+                <ShopProductTile
                   key={product.id}
                   product={product}
                   owned={owned[product.id] ?? 0}
@@ -294,17 +288,7 @@ function ShopCategoryNav({
   ];
 
   return (
-    /*
-      Riel deslizable alineado al contenido.
-
-      Antes sangraba 16px a cada lado con `-mx-margin-mobile` para que el corte
-      de los chips llegara al borde de la pantalla y se leyera como
-      desplazable. Entre el bloque de saldo y el buscador —los dos alineados a
-      la grilla— esa fila más ancha se leía como un error de maquetado, no como
-      una pista de scroll. Alineado pesa más que la pista: los chips siguen
-      desplazándose igual.
-    */
-    <nav className="no-scrollbar flex snap-x gap-2 overflow-x-auto md:flex-wrap">
+    <nav className="no-scrollbar -mx-1 flex snap-x gap-1 overflow-x-auto px-1 md:flex-wrap md:gap-1.5">
       {chips.map((chip) => {
         const isActive = active === chip.id;
         const total =
@@ -317,23 +301,20 @@ function ShopCategoryNav({
             type="button"
             onClick={() => onPick(chip.id)}
             aria-pressed={isActive}
-            // `rounded-md` y no `rounded-full`: la píldora completa quedaba
-            // demasiado redonda al lado de las cards y los campos, que usan
-            // esquinas suaves pero rectas.
-            className={`flex min-h-11 shrink-0 snap-start items-center gap-1.5 rounded-md border px-3 text-label-sm transition ${
+            className={`flex min-h-9 shrink-0 snap-start items-center gap-1 rounded-full px-2.5 text-[12px] transition sm:min-h-8 sm:text-label-sm ${
               isActive
-                ? "border-pokeball-red/55 bg-pokeball-red/15 text-white"
-                : "border-white/10 bg-white/[0.03] text-on-surface-variant active:bg-white/[0.07] md:hover:border-white/25"
+                ? "bg-white/[0.12] text-white"
+                : "text-on-surface-variant active:bg-white/[0.06] md:hover:text-on-surface"
             }`}
           >
             <span
               aria-hidden
-              className={`material-symbols-outlined text-[17px]! ${isActive ? "text-pokeball-red" : chip.accent}`}
+              className={`material-symbols-outlined text-[16px]! ${isActive ? "text-pokeball-red" : chip.accent}`}
             >
               {chip.icon}
             </span>
             <span className="whitespace-nowrap">{chip.label}</span>
-            <span className="font-mono text-[11px] text-on-surface-variant/70">{total}</span>
+            <span className="font-mono text-[10px] text-on-surface-variant/60">{total}</span>
           </button>
         );
       })}
@@ -341,9 +322,9 @@ function ShopCategoryNav({
   );
 }
 
-/* ── Card de producto ─────────────────────────────────────────────────── */
+/* ── Tile de producto (estilo GO: sin card) ────────────────────────────── */
 
-function ShopProductCard({
+function ShopProductTile({
   product,
   owned,
   coins,
@@ -361,70 +342,57 @@ function ShopProductCard({
   const missing = product.price - coins;
   const soldOut = product.stock !== undefined && product.stock <= 0;
   const blocked = product.requirement;
+  const disabled = Boolean(blocked) || soldOut;
 
   return (
-    <article
-      className={`shop-card flex min-w-0 flex-col gap-1.5 rounded-xl border bg-white/[0.03] p-2.5 sm:gap-2 sm:p-3 ${meta.ring}`}
-    >
-      <div className="flex min-w-0 items-start gap-3">
-        <ShopProductImage name={product.name} pedestal={meta.pedestal} />
-        <div className="min-w-0 flex-1">
-          <h3
-            className="truncate text-label-md font-semibold text-white"
-            title={product.displayName}
-          >
-            {product.displayName}
-          </h3>
-          {/* Categoría y cantidad poseída comparten renglón: eran dos líneas
-              apiladas y el badge con borde propio sumaba una tercera. La
-              cantidad sigue pesando menos que el precio, pero se lee igual. */}
-          <p className="flex flex-wrap items-center gap-x-1.5 text-[10px] uppercase tracking-wide">
-            <span className={meta.accent}>{labels.categories[product.category]}</span>
-            {owned > 0 && (
-              <span className="font-mono normal-case tracking-normal text-on-surface-variant/70">
-                · {fill(labels.owned, { count: owned })}
-              </span>
-            )}
-          </p>
-          {product.description && (
-            <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-on-surface-variant/80">
-              {product.description}
-            </p>
-          )}
-        </div>
-      </div>
+    <article className="shop-tile flex min-w-0 flex-col items-center text-center">
+      <button
+        type="button"
+        onClick={onBuy}
+        disabled={disabled}
+        title={
+          !canAfford && !blocked
+            ? fill(labels.missing, { amount: missing.toLocaleString() })
+            : product.description ?? undefined
+        }
+        className="group flex w-full flex-col items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        <ShopProductImage name={product.name} pedestal={meta.pedestal} size="tile" />
 
-      <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/[0.07] pt-1.5 sm:pt-2">
-        <p className="flex min-w-0 items-center gap-1 font-mono text-[15px] font-semibold text-tertiary">
-          <span aria-hidden className="material-symbols-outlined text-[15px]!">
-            paid
-          </span>
-          <span className="truncate">{product.price.toLocaleString()}</span>
-          <span className="sr-only">{labels.coinsUnit}</span>
-        </p>
+        <h3
+          className="line-clamp-2 min-h-[2.5em] w-full px-0.5 text-[10px] font-semibold uppercase leading-tight tracking-[0.04em] text-white/88 sm:text-[11px]"
+          title={product.displayName}
+        >
+          {product.displayName}
+        </h3>
 
         {blocked ? (
-          <span className="flex h-9 shrink-0 items-center rounded-md border border-white/12 px-2.5 text-[10px] font-semibold uppercase text-on-surface-variant sm:h-10">
+          <span className="shop-price-pill shop-price-pill--muted max-w-full truncate text-[9px] uppercase">
             {blocked.label}
           </span>
         ) : (
-          <button
-            type="button"
-            onClick={onBuy}
-            disabled={!canAfford || soldOut}
-            // El deshabilitado dice el motivo, no solo se apaga: un botón gris
-            // no distingue "no te alcanza" de "agotado".
-            title={!canAfford ? fill(labels.missing, { amount: missing.toLocaleString() }) : undefined}
-            className="h-9 shrink-0 rounded-md bg-pokeball-red px-3.5 text-[11px] font-bold uppercase tracking-[0.1em] text-white transition hover:bg-pokeball-red/85 disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-on-surface-variant sm:h-10"
+          <span
+            className={`shop-price-pill ${canAfford ? "" : "shop-price-pill--muted"}`}
           >
-            {canAfford ? labels.buy : labels.insufficient}
-          </button>
+            <Image
+              src="/items/hd/poke-coin.png"
+              alt=""
+              width={16}
+              height={16}
+              className="h-3.5 w-3.5 object-contain"
+              unoptimized
+            />
+            <span className="font-mono tabular-nums">
+              {product.price.toLocaleString()}
+            </span>
+            <span className="sr-only">{labels.coinsUnit}</span>
+          </span>
         )}
-      </div>
+      </button>
 
-      {!canAfford && !blocked && (
-        <p className="text-[10px] text-error">
-          {fill(labels.missing, { amount: missing.toLocaleString() })}
+      {owned > 0 && (
+        <p className="mt-1 font-mono text-[9px] text-on-surface-variant/55">
+          {fill(labels.owned, { count: owned })}
         </p>
       )}
     </article>
@@ -432,11 +400,40 @@ function ShopProductCard({
 }
 
 /**
- * Marco del sprite: tamaño fijo (56px mobile / 64px desde `sm`) con pedestal
- * teñido por categoría. El pixel art nunca se estira para llenar la card, y
- * todos los productos reservan el mismo espacio aunque falte el sprite.
+ * Sprite del producto.
+ * - `tile`: icono grande centrado, sin marco (catálogo GO).
+ * - `dialog`: marco compacto para el sheet de compra.
  */
-function ShopProductImage({ name, pedestal }: { name: string; pedestal: string }) {
+function ShopProductImage({
+  name,
+  pedestal,
+  size = "dialog",
+}: {
+  name: string;
+  pedestal: string;
+  size?: "tile" | "dialog";
+}) {
+  if (size === "tile") {
+    return (
+      <div
+        className="shop-sprite-frame shop-sprite-frame--tile"
+        style={{
+          background: `radial-gradient(circle at 50% 70%, ${pedestal} 0%, transparent 68%)`,
+        }}
+      >
+        <Image
+          src={itemDisplayUrl(name)}
+          alt=""
+          width={96}
+          height={96}
+          sizes="(max-width: 640px) 72px, 96px"
+          className="object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)] transition duration-200 group-active:scale-[0.97] md:group-hover:scale-[1.04]"
+          unoptimized
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className="shop-sprite-frame shrink-0 rounded-lg border border-white/[0.07]"

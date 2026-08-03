@@ -75,6 +75,10 @@ export async function seedGyms() {
           update: { speciesId: species.id, level: member.level },
         });
       }
+      // Si el roster achica (p. ej. Morty 4→3), borrar slots huérfanos.
+      await prisma.gymPokemon.deleteMany({
+        where: { gymId: gym.id, slot: { gt: gymData.pokemon.length } },
+      });
 
       for (let i = 0; i < gymData.trainers.length; i++) {
         const trainerData = gymData.trainers[i];
@@ -95,7 +99,16 @@ export async function seedGyms() {
             update: { speciesId: species.id, level: member.level },
           });
         }
+        await prisma.gymTrainerPokemon.deleteMany({
+          where: {
+            gymTrainerId: trainer.id,
+            slot: { gt: trainerData.pokemon.length },
+          },
+        });
       }
+      await prisma.gymTrainer.deleteMany({
+        where: { gymId: gym.id, slot: { gt: gymData.trainers.length } },
+      });
     }
   }
 }

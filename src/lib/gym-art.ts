@@ -3,9 +3,11 @@ import { showdownTrainerSpriteUrl } from "@/lib/avatars";
 
 // Medallas: arte local en public/gyms/badges/ (Showdown no tiene gym badges).
 //
-// Líderes — dos resoluciones:
-// - sprites Showdown (pixel) en public/gyms/leaders/ → listas / UI compacta
-// - retratos oficiales (Bulbagarden) en public/gyms/portraits/ → detalle de gym
+// Líderes — dos resoluciones, mismo criterio Kanto/Johto:
+// - `leaders/` → sprites pixel Showdown (listas / UI compacta)
+// - `portraits/` → arte oficial Bulbagarden Archives
+//     Kanto: Lets_Go_Pikachu_Eevee_{Name}.png
+//     Johto: HeartGold_SoulSilver_{Name}.png
 //
 // Slugs no son derivables del display name ("Lt. Surge" → "ltsurge").
 const LEADER_SLUGS: Record<string, string> = {
@@ -23,9 +25,20 @@ const LEADER_SLUGS: Record<string, string> = {
   Agatha: "agatha",
   Lance: "lance",
   Blue: "blue",
+  // Johto
+  Falkner: "falkner",
+  Bugsy: "bugsy",
+  Whitney: "whitney",
+  Morty: "morty",
+  Chuck: "chuck",
+  Jasmine: "jasmine",
+  Pryce: "pryce",
+  Clair: "clair",
+  Will: "will",
+  Karen: "karen",
 };
 
-/** Líderes con PNG local en `public/gyms/leaders/`. El resto usa CDN Showdown. */
+/** Líderes con PNG local en `public/gyms/leaders/` (y portraits cuando aplica). */
 const LOCAL_LEADER_SLUGS = new Set([
   "brock",
   "misty",
@@ -35,6 +48,17 @@ const LOCAL_LEADER_SLUGS = new Set([
   "sabrina",
   "blaine",
   "giovanni",
+  // Johto — portraits HGSS + leaders Showdown (mismo esquema que Kanto)
+  "falkner",
+  "bugsy",
+  "whitney",
+  "morty",
+  "chuck",
+  "jasmine",
+  "pryce",
+  "clair",
+  "will",
+  "karen",
 ]);
 
 /**
@@ -49,8 +73,9 @@ const LEADER_AVATAR_BODY_SLUG: Partial<Record<string, string>> = {
   Blue: "gary",
 };
 
-/** Tipos con PNG local en `public/gyms/badges/`. El resto (Elite / sellos) cae al ícono de tipo. */
+/** Tipos con PNG local en `public/gyms/badges/` (Kanto + Johto). */
 const LOCAL_BADGE_TYPES = new Set([
+  // Kanto
   "rock",
   "water",
   "electric",
@@ -59,6 +84,15 @@ const LOCAL_BADGE_TYPES = new Set([
   "psychic",
   "fire",
   "ground",
+  // Johto
+  "flying",
+  "bug",
+  "normal",
+  "ghost",
+  "fighting",
+  "steel",
+  "ice",
+  "dragon",
 ]);
 
 export function gymBadgeImageUrl(type: string): string {
@@ -92,6 +126,7 @@ export function gymLeaderPortraitUrl(leaderName: string): string | null {
   const slug = LEADER_SLUGS[leaderName];
   if (!slug) return null;
   if (LOCAL_LEADER_SLUGS.has(slug)) {
+    // Retrato HQ Bulbagarden (LGPE Kanto / HGSS Johto).
     return `/gyms/portraits/${slug}.png`;
   }
   return showdownTrainerSpriteUrl(slug);
@@ -107,6 +142,14 @@ const GYM_TRAINER_SPRITE: Record<string, string> = {
   psychic: "psychic",
   fire: "blackbelt",
   ground: "worker",
+  flying: "birdkeeper",
+  bug: "bugcatcher",
+  normal: "lass",
+  ghost: "medium",
+  fighting: "blackbelt",
+  steel: "gentleman",
+  ice: "skier",
+  dragon: "cooltrainer",
 };
 
 export function gymTypeTrainerSpriteSlug(gymType: string): string {

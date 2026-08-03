@@ -6,12 +6,20 @@ import { areChapterStagesCompleteForGym } from "@/lib/campaign";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { regionDef } from "@/lib/regions";
 
 export type StartGymRunResult =
   | { success: true }
   | {
       success: false;
-      error: "no_lead" | "fainted_lead" | "locked" | "on_cooldown" | "closed" | "stages_incomplete";
+      error:
+        | "no_lead"
+        | "fainted_lead"
+        | "locked"
+        | "region_locked"
+        | "on_cooldown"
+        | "closed"
+        | "stages_incomplete";
       hoursLeft?: number;
       opensHour?: number;
       closesHour?: number;
@@ -35,6 +43,10 @@ export async function startGymRun(gymId: string, locale: string): Promise<StartG
   }
 
   const gym = await prisma.gym.findUniqueOrThrow({ where: { id: gymId } });
+  const region = regionDef(gym.regionId);
+  if (!region.playable || !region.gymsAvailable) {
+    return { success: false, error: "region_locked" };
+  }
 
   const lead = await prisma.pokemonInstance.findFirst({
     where: { ownerId: userId, teamSlot: { not: null }, currentHp: { gt: 0 } },

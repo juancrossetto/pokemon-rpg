@@ -13,6 +13,7 @@ import { redirectIfInBattle } from "@/lib/battle-lock";
 import { gymCooldownRemainingMs } from "@/lib/gym-cooldown";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { areChapterStagesCompleteForGym } from "@/lib/campaign";
+import { regionDef } from "@/lib/regions";
 
 export default async function GymLeaderPage({
   params,
@@ -43,6 +44,12 @@ export default async function GymLeaderPage({
   });
   if (!gym) redirect({ href: "/gyms", locale });
   if (!gym) return null;
+
+  const region = regionDef(gym.regionId);
+  if (!region.playable || !region.gymsAvailable) {
+    redirect({ href: "/gyms", locale });
+    return null;
+  }
 
   const [badge, previousBadge, activeRun, lastAttempt, user, progress] = await Promise.all([
     prisma.badge.findUnique({ where: { userId_gymId: { userId, gymId } } }),
@@ -92,6 +99,7 @@ export default async function GymLeaderPage({
     no_lead: tBattle("noLead"),
     fainted_lead: tBattle("faintedLead"),
     locked: t("lockedHint"),
+    region_locked: t("regionLockedBody"),
     on_cooldown: t("cooldownHint", { hours: hoursLeft }),
     closed: t("closedHint"),
     stages_incomplete: t("stagesIncompleteHint"),

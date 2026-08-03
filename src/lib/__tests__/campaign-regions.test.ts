@@ -15,9 +15,10 @@ function row(partial: Partial<CampaignProgressRow> = {}): CampaignProgressRow {
 }
 
 describe("multi-region campaign seams", () => {
-  it("keeps Johto non-playable with empty content pack", () => {
+  it("keeps Johto non-playable with dex and gyms cataloged", () => {
     expect(REGIONS.johto.playable).toBe(false);
-    expect(REGIONS.johto.gymsAvailable).toBe(false);
+    expect(REGIONS.johto.gymsAvailable).toBe(true);
+    expect(REGIONS.johto.speciesAvailable).toBe(true);
     expect(regionContent("johto").locations).toHaveLength(0);
   });
 

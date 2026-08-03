@@ -3,7 +3,8 @@ import {
   gymDifficultyStars,
   gymLeaderPortraitUrl,
 } from "@/lib/gym-art";
-import { GYM_MAP_POINTS, KANTO_MAP_IMAGE } from "@/lib/gym-map";
+import { gymPoint } from "@/lib/campaign/region-map";
+import { regionMapSrc, type GameRegionId } from "@/lib/regions";
 import type { GymStatus } from "@/lib/gym-status";
 import { getWeaknesses } from "@/lib/type-effectiveness";
 
@@ -25,6 +26,7 @@ export type GymMissionTeamMember = {
 
 export type GymMissionItem = {
   id: string;
+  regionId: string;
   order: number;
   name: string;
   leaderName: string;
@@ -70,10 +72,12 @@ export function toGymMissionItems(statuses: GymStatus[]): GymMissionItem[] {
     const levels = gym.team.map((m) => m.level);
     const minLevel = levels.length ? Math.min(...levels) : 1;
     const maxLevel = levels.length ? Math.max(...levels) : 1;
-    const mapPoint = GYM_MAP_POINTS.find((p) => p.order === gym.order);
+    const regionId = gym.regionId as GameRegionId;
+    const mapPoint = gymPoint(gym.order, regionId);
 
     return {
       id: gym.id,
+      regionId: gym.regionId,
       order: gym.order,
       name: gym.name,
       leaderName: gym.leaderName,
@@ -95,7 +99,7 @@ export function toGymMissionItems(statuses: GymStatus[]): GymMissionItem[] {
       difficulty: gymDifficultyStars(gym.order),
       portraitUrl: gymLeaderPortraitUrl(gym.leaderName),
       badgeUrl: gymBadgeImageUrl(gym.type),
-      mapSrc: KANTO_MAP_IMAGE,
+      mapSrc: regionMapSrc(gym.regionId),
       mapFocusX: mapPoint?.x ?? 50,
       mapFocusY: mapPoint?.y ?? 50,
       team: gym.team.map((member) => ({

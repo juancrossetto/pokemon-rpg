@@ -24,6 +24,8 @@ export type PokedexLabels = {
   researchDatabase: string;
   signInHint: string;
   comingSoon: string;
+  locked: string;
+  lockedHint: string;
   noResults: string;
   completion: string;
   searchPlaceholder: string;
@@ -134,6 +136,9 @@ export function PokedexTerminal({
 
   const regionDef = POKEDEX_REGIONS.find((r) => r.id === region)!;
   const regionProg = progress.regions.find((r) => r.id === region);
+  const regionEmpty = !regionDef.available || (regionProg?.total ?? 0) === 0;
+  const regionLocked =
+    !regionEmpty && (!regionDef.playable || regionProg?.playable === false);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -272,7 +277,8 @@ export function PokedexTerminal({
           {POKEDEX_REGIONS.map((r) => {
             const rp = progress.regions.find((x) => x.id === r.id);
             const active = region === r.id;
-            const locked = !r.available || (rp && rp.total === 0);
+            const empty = !r.available || (rp && rp.total === 0);
+            const locked = !empty && !r.playable;
             return (
               <button
                 key={r.id}
@@ -291,14 +297,18 @@ export function PokedexTerminal({
                   {labels.regions[r.id]}
                 </span>
                 <span className="mt-0.5 block font-mono text-[10px] tabular-nums opacity-70">
-                  {locked ? labels.comingSoon : `${rp?.caught ?? 0}/${rp?.total ?? 0}`}
+                  {empty
+                    ? labels.comingSoon
+                    : locked
+                      ? labels.locked
+                      : `${rp?.caught ?? 0}/${rp?.total ?? 0}`}
                 </span>
               </button>
             );
           })}
         </div>
 
-        {regionProg && regionProg.total > 0 && (
+        {regionProg && regionProg.total > 0 && !regionLocked && (
           <div className="space-y-1.5">
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[10px] uppercase tracking-[0.16em] text-on-surface-variant">
@@ -403,7 +413,10 @@ export function PokedexTerminal({
       {/* Colecciones por región (compacto) */}
       <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {progress.regions.slice(0, 4).map((r) => {
-          const pct = r.total === 0 ? 0 : Math.round((r.caught / r.total) * 100);
+          const empty = r.total === 0;
+          const locked = !empty && !r.playable;
+          const pct =
+            empty || locked ? 0 : Math.round((r.caught / r.total) * 100);
           return (
             <button
               key={r.id}
@@ -414,7 +427,7 @@ export function PokedexTerminal({
               <div className="flex items-baseline justify-between gap-2">
                 <span className="text-label-sm text-on-surface">{labels.regions[r.id]}</span>
                 <span className="font-mono text-[10px] text-on-surface-variant">
-                  {r.total === 0 ? labels.comingSoon : `${pct}%`}
+                  {empty ? labels.comingSoon : locked ? labels.locked : `${pct}%`}
                 </span>
               </div>
               <div className="mt-1.5 h-0.5 overflow-hidden rounded-sm bg-white/10">
@@ -429,7 +442,7 @@ export function PokedexTerminal({
       </section>
 
       {/* Grid / list */}
-      {!regionDef.available || (regionProg && regionProg.total === 0) ? (
+      {regionEmpty ? (
         <div className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/10 px-6 py-12 text-center">
           <span className="material-symbols-outlined text-[28px]! text-on-surface-variant/35">
             lock
@@ -443,24 +456,42 @@ export function PokedexTerminal({
         <p className="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-8 text-center text-body-md text-on-surface-variant">
           {labels.noResults}
         </p>
-      ) : view === "grid" ? (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {visible.map((entry) => (
-            <DexCard
-              key={entry.id}
-              entry={entry}
-              labels={labels}
-              regionId={region}
-              regionLabel={labels.regions[region]}
-            />
-          ))}
-        </ul>
       ) : (
-        <ul className="flex flex-col gap-1">
-          {visible.map((entry) => (
-            <DexListRow key={entry.id} entry={entry} labels={labels} />
-          ))}
-        </ul>
+        <>
+          {regionLocked ? (
+            <p className="rounded-md border border-white/8 bg-black/20 px-3 py-2 text-label-sm text-on-surface-variant">
+              <span className="material-symbols-outlined mr-1 align-middle text-[16px]!">
+                lock
+              </span>
+              {labels.lockedHint}
+            </p>
+          ) : null}
+          {view === "grid" ? (
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {visible.map((entry) => (
+                <DexCard
+                  key={entry.id}
+                  entry={entry}
+                  labels={labels}
+                  regionId={region}
+                  regionLabel={labels.regions[region]}
+                  forceLocked={regionLocked}
+                />
+              ))}
+            </ul>
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {visible.map((entry) => (
+                <DexListRow
+                  key={entry.id}
+                  entry={entry}
+                  labels={labels}
+                  forceLocked={regionLocked}
+                />
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );
@@ -546,19 +577,21 @@ function DexCard({
   labels,
   regionId,
   regionLabel,
+  forceLocked = false,
 }: {
   entry: PokedexSpeciesCard;
   labels: PokedexLabels;
   regionId: PokedexRegionId;
   regionLabel: string;
+  forceLocked?: boolean;
 }) {
   const primary = entry.types[0] ?? "normal";
   const glow = neonTypeColor(primary);
-  const unseen = entry.status === "unseen";
-  const seenOnly = entry.status === "seen";
-  const caught = entry.status === "caught";
+  const unseen = forceLocked || entry.status === "unseen";
+  const seenOnly = !forceLocked && entry.status === "seen";
+  const caught = !forceLocked && entry.status === "caught";
 
-  const tip = unseen ? labels.unknown : entry.name;
+  const tip = forceLocked ? labels.locked : unseen ? labels.unknown : entry.name;
   const rarityLabel = labels.rarity[entry.rarity] ?? entry.rarity;
 
   return (
@@ -740,13 +773,15 @@ function DexCard({
 function DexListRow({
   entry,
   labels,
+  forceLocked = false,
 }: {
   entry: PokedexSpeciesCard;
   labels: PokedexLabels;
+  forceLocked?: boolean;
 }) {
   const primary = entry.types[0] ?? "normal";
   const glow = neonTypeColor(primary);
-  const unseen = entry.status === "unseen";
+  const unseen = forceLocked || entry.status === "unseen";
   const rarityStyle = RARITY_STYLES[entry.rarity];
 
   return (

@@ -113,24 +113,37 @@ export default async function PokedexPage({
     };
   });
 
-  const total = species.length;
-  const seen = seenIds.size;
-  const caught = caughtIds.size;
+  const playableGens = new Set(
+    POKEDEX_REGIONS.filter((r) => r.playable).map((r) => r.generation),
+  );
+  const trackedSpecies = species.filter((s) => playableGens.has(s.generation));
+  const trackedIds = new Set(trackedSpecies.map((s) => s.id));
+
+  const total = trackedSpecies.length;
+  const seen = [...seenIds].filter((id) => trackedIds.has(id)).length;
+  const caught = [...caughtIds].filter((id) => trackedIds.has(id)).length;
   const completion = total === 0 ? 0 : Math.round((caught / total) * 1000) / 10;
-  const shinyCount = shinySpecies.size;
+  const shinyCount = [...shinySpecies].filter((id) => trackedIds.has(id)).length;
   const legendaryCaught = [...caughtIds].filter(
-    (id) => LEGENDARY_IDS.has(id) || MYTHICAL_IDS.has(id),
+    (id) =>
+      trackedIds.has(id) && (LEGENDARY_IDS.has(id) || MYTHICAL_IDS.has(id)),
   ).length;
 
   const regions: RegionProgress[] = POKEDEX_REGIONS.map((r) => {
     const inRegion = species.filter((s) => s.generation === r.generation);
     const regionTotal = inRegion.length;
-    const regionSeen = inRegion.filter((s) => seenIds.has(s.id)).length;
-    const regionCaught = inRegion.filter((s) => caughtIds.has(s.id)).length;
+    const regionLocked = r.available && !r.playable && regionTotal > 0;
+    const regionSeen = regionLocked
+      ? 0
+      : inRegion.filter((s) => seenIds.has(s.id)).length;
+    const regionCaught = regionLocked
+      ? 0
+      : inRegion.filter((s) => caughtIds.has(s.id)).length;
     return {
       id: r.id,
       generation: r.generation,
       available: r.available && regionTotal > 0,
+      playable: r.playable,
       total: regionTotal,
       seen: regionSeen,
       caught: regionCaught,
@@ -158,6 +171,8 @@ export default async function PokedexPage({
     researchDatabase: t("researchDatabase"),
     signInHint: t("signInHint"),
     comingSoon: t("comingSoon"),
+    locked: t("locked"),
+    lockedHint: t("lockedHint"),
     noResults: t("noResults"),
     completion: t("progress.completion"),
     searchPlaceholder: t("searchPlaceholder"),

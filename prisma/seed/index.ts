@@ -15,8 +15,9 @@ import { seedMachines, MACHINES } from "./machines";
  * level-up de Chikorita en "red-blue"). Preferidos en orden; si ninguno
  * matchea, se usa el earliest version_group presente en la respuesta.
  *
- * Para habilitar Gen 2: `SEED_GEN_LIMIT=251 npm run db:seed` (y marcar
- * `speciesAvailable` en `@/lib/regions`).
+ * Para importar Gen 2 (Johto) sin habilitar la liga: `SEED_GEN_LIMIT=251 npm
+ * run db:seed` y `speciesAvailable: true` en `@/lib/regions` (playable /
+ * gymsAvailable siguen en false → Pokédex bloqueada, sin capturas).
  */
 const GENERATIONS = [
   { gen: 1, species: [1, 151] as const, versionGroups: ["red-blue", "gold-silver"] },

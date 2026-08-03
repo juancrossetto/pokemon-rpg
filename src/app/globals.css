@@ -3854,8 +3854,7 @@ html.boot-splash-pending .boot-splash {
 
 /* --- Tienda oficial --- */
 
-/* Marco del sprite: mismo espacio reservado para todos los productos, tenga o
-   no asset. El pedestal teñido por categoría lo pone el componente inline. */
+/* Marco del sprite (diálogo / sheet). El catálogo usa `--tile`. */
 .shop-sprite-frame {
   display: grid;
   place-items: center;
@@ -3879,21 +3878,62 @@ html.boot-splash-pending .boot-splash {
   object-fit: contain;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .shop-card {
-    transition:
-      border-color 0.18s ease,
-      background-color 0.18s ease;
-  }
+/* Catálogo estilo GO: icono grande, sin borde ni card. */
+.shop-sprite-frame--tile {
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
 
-  .shop-card:hover {
-    border-color: rgba(255, 255, 255, 0.22);
-    background-color: rgba(255, 255, 255, 0.05);
+@media (min-width: 640px) {
+  .shop-sprite-frame--tile {
+    width: 5.75rem;
+    height: 5.75rem;
   }
 }
 
-.shop-card:active {
-  transform: scale(0.997);
+.shop-sprite-frame--tile > img {
+  max-width: 94%;
+  max-height: 94%;
+}
+
+.shop-price-pill {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  min-height: 1.55rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.shop-price-pill--muted {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shop-tile button:not(:disabled):hover .shop-price-pill:not(.shop-price-pill--muted) {
+    border-color: rgba(255, 203, 5, 0.45);
+    background: rgba(255, 203, 5, 0.12);
+  }
+}
+
+.shop-tile button:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .shop-spinner {
@@ -3912,8 +3952,12 @@ html.boot-splash-pending .boot-splash {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shop-card:active {
+  .shop-tile button:active:not(:disabled) {
     transform: none;
+  }
+
+  .shop-sprite-frame--tile > img {
+    transition: none;
   }
 
   .shop-spinner {

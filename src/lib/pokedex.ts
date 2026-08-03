@@ -42,26 +42,32 @@ export type PokedexRegionDef = {
   generation: number;
   /** Hay especies en la DB para esta generación. */
   available: boolean;
+  /**
+   * La liga está jugable (campaña/capturas). Si hay especies pero no es
+   * jugable, la Pokédex las muestra bloqueadas (siluetas fijas).
+   */
+  playable: boolean;
 };
 
 /** Regiones post-Sinnoh: solo Pokédex, aún no en el registro de ligas. */
 const EXTRA_POKEDEX_REGIONS: PokedexRegionDef[] = [
-  { id: "unova", generation: 5, available: false },
-  { id: "kalos", generation: 6, available: false },
-  { id: "alola", generation: 7, available: false },
-  { id: "galar", generation: 8, available: false },
-  { id: "paldea", generation: 9, available: false },
+  { id: "unova", generation: 5, available: false, playable: false },
+  { id: "kalos", generation: 6, available: false, playable: false },
+  { id: "alola", generation: 7, available: false, playable: false },
+  { id: "galar", generation: 8, available: false, playable: false },
+  { id: "paldea", generation: 9, available: false, playable: false },
 ];
 
 /**
- * Kanto–Sinnoh salen de `@/lib/regions` (`speciesAvailable`) para no discrepar
- * con campaña/gyms. El resto queda Coming Soon acá.
+ * Kanto–Sinnoh salen de `@/lib/regions` (`speciesAvailable` / `playable`) para
+ * no discrepar con campaña/gyms. El resto queda Coming Soon acá.
  */
 export const POKEDEX_REGIONS: PokedexRegionDef[] = [
   ...listRegions().map((r) => ({
     id: r.id as PokedexRegionId,
     generation: r.generation,
     available: r.speciesAvailable,
+    playable: r.playable,
   })),
   ...EXTRA_POKEDEX_REGIONS,
 ];
@@ -172,6 +178,8 @@ export type RegionProgress = {
   id: PokedexRegionId;
   generation: number;
   available: boolean;
+  /** false = especies sembradas pero liga cerrada (siluetas fijas). */
+  playable: boolean;
   total: number;
   seen: number;
   caught: number;

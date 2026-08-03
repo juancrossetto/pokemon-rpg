@@ -71,6 +71,8 @@ export const ITEM_HD_ICON_IDS: Record<string, string> = {
   "Pinap Berry": "pinap-berry",
   "Golden Razz Berry": "golden-razz-berry",
   "Silver Pinap Berry": "silver-pinap-berry",
+  "Oran Berry": "oran-berry",
+  "Leppa Berry": "leppa-berry",
   "Poke Coin": "poke-coin",
   "Poke Coin Bundle S": "poke-coin-bundle-s",
   "Poke Coin Bundle XL": "poke-coin-bundle-xl",

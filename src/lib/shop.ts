@@ -19,8 +19,8 @@ export type ShopCategory = "POKEBALL" | "POTION" | "HELD";
 export const SHOP_CATEGORIES: ShopCategory[] = ["POKEBALL", "POTION", "HELD"];
 
 /**
- * Identidad visual por categoría. El acento es un detalle —ícono, badge y
- * pedestal del sprite—, nunca el fondo de la card entera.
+ * Identidad visual por categoría. El acento es un detalle —ícono del chip y
+ * glow suave del sprite—, nunca un marco/card por producto.
  */
 export const SHOP_CATEGORY_META: Record<
   ShopCategory,

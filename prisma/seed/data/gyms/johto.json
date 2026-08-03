@@ -1,0 +1,309 @@
+[
+  {
+    "order": 1,
+    "gym": "Violet Gym",
+    "leader": "Falkner",
+    "badgeName": "Zephyr Badge",
+    "type": "flying",
+    "coinReward": 100,
+    "trainers": [
+      {
+        "name": "Observador de Aves Nico",
+        "pokemon": [{ "name": "hoothoot", "level": 6 }]
+      },
+      {
+        "name": "Ornitóloga Lara",
+        "pokemon": [
+          { "name": "natu", "level": 7 },
+          { "name": "hoothoot", "level": 8 }
+        ]
+      }
+    ],
+    "pokemon": [
+      { "name": "natu", "level": 8 },
+      { "name": "noctowl", "level": 10 }
+    ],
+    "isElite": false
+  },
+  {
+    "order": 2,
+    "gym": "Azalea Gym",
+    "leader": "Bugsy",
+    "badgeName": "Hive Badge",
+    "type": "bug",
+    "coinReward": 150,
+    "trainers": [
+      {
+        "name": "Cazabichos Toni",
+        "pokemon": [{ "name": "spinarak", "level": 10 }]
+      },
+      {
+        "name": "Cazabichos Vera",
+        "pokemon": [
+          { "name": "ledyba", "level": 11 },
+          { "name": "spinarak", "level": 12 }
+        ]
+      }
+    ],
+    "pokemon": [
+      { "name": "ledyba", "level": 13 },
+      { "name": "ariados", "level": 15 },
+      { "name": "yanma", "level": 16 }
+    ],
+    "isElite": false
+  },
+  {
+    "order": 3,
+    "gym": "Goldenrod Gym",
+    "leader": "Whitney",
+    "badgeName": "Plain Badge",
+    "type": "normal",
+    "coinReward": 200,
+    "trainers": [
+      {
+        "name": "Belleza Carla",
+        "pokemon": [{ "name": "sentret", "level": 15 }]
+      },
+      {
+        "name": "Señorita Rita",
+        "pokemon": [
+          { "name": "clefairy", "level": 16 },
+          { "name": "snubbull", "level": 17 }
+        ]
+      }
+    ],
+    "pokemon": [
+      { "name": "clefairy", "level": 17 },
+      { "name": "furret", "level": 18 },
+      { "name": "miltank", "level": 20 }
+    ],
+    "isElite": false
+  },
+  {
+    "order": 4,
+    "gym": "Ecruteak Gym",
+    "leader": "Morty",
+    "badgeName": "Fog Badge",
+    "type": "ghost",
+    "coinReward": 250,
+    "trainers": [
+      {
+        "name": "Médium Nora",
+        "pokemon": [{ "name": "gastly", "level": 18 }]
+      },
+      {
+        "name": "Médium Hugo",
+        "pokemon": [
+          { "name": "gastly", "level": 19 },
+          { "name": "misdreavus", "level": 20 }
+        ]
+      }
+    ],
+    "pokemon": [
+      { "name": "haunter", "level": 21 },
+      { "name": "misdreavus", "level": 23 },
+      { "name": "gengar", "level": 25 }
+    ],
+    "isElite": false
+  },
+  {
+    "order": 5,
+    "gym": "Cianwood Gym",
+    "leader": "Chuck",
+    "badgeName": "Storm Badge",
+    "type": "fighting",
+    "coinReward": 300,
+    "trainers": [
+      {
+        "name": "Karateka Ken",
+        "pokemon": [{ "name": "machop", "level": 24 }]
+      },
+      {
+        "name": "Karateka Bru",
+        "pokemon": [
+          { "name": "tyrogue", "level": 25 },
+          { "name": "machop", "level": 26 }
+        ]
+      }
+    ],
+    "pokemon": [
+      { "name": "hitmonlee", "level": 26 },
+      { "name": "hitmonchan", "level": 27 },
+      { "name": "hitmontop", "level": 28 },
+      { "name": "heracross", "level": 30 }
+    ],
+    "isElite": false
+  },
+  {
+    "order": 6,
+    "gym": "Olivine Gym",
+    "leader": "Jasmine",
+    "badgeName": "Mineral Badge",
+    "type": "steel",
+    "coinReward": 350,
+    "trainers": [
+      {
+        "name": "Gentilhombre Aldo",
+        "pokemon": [{ "name": "magnemite", "level": 26 }]
+      },
+      {
+        "name": "Dama Elsa",
+        "pokemon": [
+          { "name": "pineco", "level": 27 },
+          { "name": "magnemite", "level": 28 }
+        ]
+      }
+    ],
+    "pokemon": [
+      { "name": "skarmory", "level": 30 },
+      { "name": "forretress", "level": 31 },
+      { "name": "scizor", "level": 33 },
+      { "name": "steelix", "level": 35 }
+    ],
+    "isElite": false
+  },
+  {
+    "order": 7,
+    "gym": "Mahogany Gym",
+    "leader": "Pryce",
+    "badgeName": "Glacier Badge",
+    "type": "ice",
+    "coinReward": 400,
+    "trainers": [
+      {
+        "name": "Esquiador Max",
+        "pokemon": [{ "name": "swinub", "level": 25 }]
+      },
+      {
+        "name": "Esquiadora Inés",
+        "pokemon": [
+          { "name": "swinub", "level": 26 },
+          { "name": "delibird", "level": 27 }
+        ]
+      }
+    ],
+    "pokemon": [
+      { "name": "delibird", "level": 28 },
+      { "name": "jynx", "level": 29 },
+      { "name": "sneasel", "level": 30 },
+      { "name": "dewgong", "level": 31 },
+      { "name": "piloswine", "level": 33 }
+    ],
+    "isElite": false
+  },
+  {
+    "order": 8,
+    "gym": "Blackthorn Gym",
+    "leader": "Clair",
+    "badgeName": "Rising Badge",
+    "type": "dragon",
+    "coinReward": 500,
+    "trainers": [
+      {
+        "name": "Domadragones Rui",
+        "pokemon": [{ "name": "horsea", "level": 32 }]
+      },
+      {
+        "name": "Domadragones Lia",
+        "pokemon": [
+          { "name": "dratini", "level": 33 },
+          { "name": "seadra", "level": 34 }
+        ]
+      }
+    ],
+    "pokemon": [
+      { "name": "dragonair", "level": 36 },
+      { "name": "seadra", "level": 37 },
+      { "name": "dragonair", "level": 37 },
+      { "name": "gyarados", "level": 38 },
+      { "name": "kingdra", "level": 40 }
+    ],
+    "isElite": false
+  },
+  {
+    "order": 9,
+    "gym": "Elite Four Will",
+    "leader": "Will",
+    "badgeName": "Sello Psíquico",
+    "type": "psychic",
+    "coinReward": 1200,
+    "isElite": true,
+    "trainers": [],
+    "pokemon": [
+      { "name": "xatu", "level": 40 },
+      { "name": "jynx", "level": 41 },
+      { "name": "exeggutor", "level": 41 },
+      { "name": "slowbro", "level": 41 },
+      { "name": "xatu", "level": 42 }
+    ]
+  },
+  {
+    "order": 10,
+    "gym": "Elite Four Koga",
+    "leader": "Koga",
+    "badgeName": "Sello Veneno",
+    "type": "poison",
+    "coinReward": 1400,
+    "isElite": true,
+    "trainers": [],
+    "pokemon": [
+      { "name": "ariados", "level": 40 },
+      { "name": "venomoth", "level": 41 },
+      { "name": "forretress", "level": 43 },
+      { "name": "muk", "level": 42 },
+      { "name": "crobat", "level": 44 }
+    ]
+  },
+  {
+    "order": 11,
+    "gym": "Elite Four Bruno",
+    "leader": "Bruno",
+    "badgeName": "Sello de Lucha",
+    "type": "fighting",
+    "coinReward": 1600,
+    "isElite": true,
+    "trainers": [],
+    "pokemon": [
+      { "name": "hitmontop", "level": 42 },
+      { "name": "hitmonlee", "level": 42 },
+      { "name": "hitmonchan", "level": 42 },
+      { "name": "onix", "level": 43 },
+      { "name": "machamp", "level": 46 }
+    ]
+  },
+  {
+    "order": 12,
+    "gym": "Elite Four Karen",
+    "leader": "Karen",
+    "badgeName": "Sello Siniestro",
+    "type": "dark",
+    "coinReward": 1800,
+    "isElite": true,
+    "trainers": [],
+    "pokemon": [
+      { "name": "umbreon", "level": 42 },
+      { "name": "vileplume", "level": 42 },
+      { "name": "murkrow", "level": 44 },
+      { "name": "gengar", "level": 45 },
+      { "name": "houndoom", "level": 47 }
+    ]
+  },
+  {
+    "order": 13,
+    "gym": "Champion Lance",
+    "leader": "Lance",
+    "badgeName": "Título de Campeón",
+    "type": "dragon",
+    "coinReward": 3000,
+    "isElite": true,
+    "trainers": [],
+    "pokemon": [
+      { "name": "gyarados", "level": 44 },
+      { "name": "dragonite", "level": 47 },
+      { "name": "charizard", "level": 46 },
+      { "name": "aerodactyl", "level": 46 },
+      { "name": "dragonite", "level": 47 },
+      { "name": "dragonite", "level": 50 }
+    ]
+  }
+]

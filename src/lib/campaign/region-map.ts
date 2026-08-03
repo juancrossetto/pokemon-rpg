@@ -93,7 +93,17 @@ export const REGION_LOCATION_POINTS: Record<
 
 export const REGION_GYM_POINTS: Record<CampaignRegionId, Record<number, MapPoint>> = {
   kanto: KANTO_GYM_POINTS,
-  johto: {},
+  // Aprox. sobre johto.webp — se afinan cuando la campaña de Johto abra.
+  johto: {
+    1: { x: 48, y: 28 }, // Violet
+    2: { x: 38, y: 62 }, // Azalea
+    3: { x: 32, y: 42 }, // Goldenrod
+    4: { x: 46, y: 22 }, // Ecruteak
+    5: { x: 12, y: 48 }, // Cianwood
+    6: { x: 22, y: 36 }, // Olivine
+    7: { x: 62, y: 30 }, // Mahogany
+    8: { x: 78, y: 34 }, // Blackthorn
+  },
   hoenn: {},
   sinnoh: {},
 };

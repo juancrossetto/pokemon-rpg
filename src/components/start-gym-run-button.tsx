@@ -13,7 +13,13 @@ export function StartGymRunButton({
   locale: string;
   label: string;
   errors: Record<
-    "no_lead" | "fainted_lead" | "locked" | "on_cooldown" | "closed" | "stages_incomplete",
+    | "no_lead"
+    | "fainted_lead"
+    | "locked"
+    | "region_locked"
+    | "on_cooldown"
+    | "closed"
+    | "stages_incomplete",
     string
   >;
 }) {

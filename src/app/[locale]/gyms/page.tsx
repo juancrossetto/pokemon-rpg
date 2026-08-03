@@ -8,6 +8,7 @@ import { GymMissionControl } from "@/components/gym-mission-control";
 import {
   DEFAULT_GYM_REGION_ID,
   listGymRegions,
+  type GymRegionId,
 } from "@/lib/gym-regions";
 
 export default async function GymsPage({
@@ -25,12 +26,10 @@ export default async function GymsPage({
 
   await redirectIfInBattle(session.user.id, locale);
 
-  const regionId = DEFAULT_GYM_REGION_ID;
+  const regionTabs = listGymRegions();
+  const catalogRegions = regionTabs.filter((region) => region.available);
 
-  // Se pide todo de una y se parte acá: el Alto Mando no va en la grilla de
-  // medallas, pero sí decide si aparece el banner de continuidad.
-  const [allStatuses, user, badgeCountsByRegion] = await Promise.all([
-    computeGymStatuses(session.user.id, true, regionId),
+  const [user, badgeCountsByRegion, ...regionStatuses] = await Promise.all([
     prisma.user.findUniqueOrThrow({
       where: { id: session.user.id },
       select: { gems: true },
@@ -43,6 +42,9 @@ export default async function GymsPage({
       },
       _count: true,
     }),
+    ...catalogRegions.map((region) =>
+      computeGymStatuses(session.user.id, true, region.id),
+    ),
   ]);
 
   const badgedGymIds = new Set(badgeCountsByRegion.map((b) => b.gymId));
@@ -56,34 +58,38 @@ export default async function GymsPage({
     countByRegion.set(gym.regionId, (countByRegion.get(gym.regionId) ?? 0) + 1);
   }
 
-  const items = toGymMissionItems(allStatuses.filter((status) => !status.gym.isElite));
-  const badgeCount = items.filter((s) => s.badgeEarned).length;
+  const itemsByRegion: Partial<Record<GymRegionId, ReturnType<typeof toGymMissionItems>>> =
+    {};
+  const eliteHrefByRegion: Partial<Record<GymRegionId, string | null>> = {};
 
-  /**
-   * Con las N medallas el hub queda todo en verde y no dice que la aventura
-   * sigue en el Alto Mando. Se ofrece el primer nodo élite sin sello; si ya
-   * están todos, no hay banner y la pantalla efectivamente está terminada.
-   */
-  const allBadgesEarned = items.length > 0 && badgeCount === items.length;
-  const nextElite = allBadgesEarned
-    ? allStatuses.find((status) => status.gym.isElite && !status.badgeEarned)
-    : undefined;
+  catalogRegions.forEach((region, index) => {
+    const allStatuses = regionStatuses[index] ?? [];
+    const items = toGymMissionItems(allStatuses.filter((status) => !status.gym.isElite));
+    itemsByRegion[region.id] = items;
 
-  const regions = listGymRegions().map((region) => ({
+    const badgeCount = items.filter((s) => s.badgeEarned).length;
+    const allBadgesEarned = items.length > 0 && badgeCount === items.length;
+    const nextElite = allBadgesEarned
+      ? allStatuses.find((status) => status.gym.isElite && !status.badgeEarned)
+      : undefined;
+    eliteHrefByRegion[region.id] = nextElite ? `/gyms/${nextElite.gym.id}` : null;
+  });
+
+  const regions = regionTabs.map((region) => ({
     id: region.id,
     available: region.available,
+    playable: region.playable,
     badgeTarget: region.badgeTarget,
     badgeCount: countByRegion.get(region.id) ?? 0,
   }));
 
   return (
     <GymMissionControl
-      items={items}
-      badgeCount={badgeCount}
+      itemsByRegion={itemsByRegion}
       gems={user.gems}
-      eliteHref={nextElite ? `/gyms/${nextElite.gym.id}` : null}
+      eliteHrefByRegion={eliteHrefByRegion}
       regions={regions}
-      initialRegionId={regionId}
+      initialRegionId={DEFAULT_GYM_REGION_ID}
     />
   );
 }
