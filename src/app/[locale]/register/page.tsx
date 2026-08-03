@@ -75,10 +75,10 @@ export default function RegisterPage() {
   }
 
   const fieldClass =
-    "w-full border border-white/15 bg-black/50 py-2.5 pl-10 pr-3 text-label-md font-mono text-on-surface outline-none transition placeholder:text-on-surface-variant/45 focus:border-pokeball-red/70 focus:ring-1 focus:ring-pokeball-red/40";
+    "w-full rounded-xl border border-white/12 bg-black/45 py-3 pl-11 pr-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-pokeball-red/55 focus:bg-black/55 focus:ring-1 focus:ring-pokeball-red/30";
 
   const preview = (
-    <div className="relative flex items-end justify-center overflow-hidden rounded-xl border border-white/12 bg-linear-to-b from-white/6 to-black/40 px-3 py-3">
+    <div className="relative flex items-end justify-center overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-white/6 to-black/40 px-3 py-3">
       <div className="relative flex h-24 w-full max-w-[7.5rem] items-end justify-center sm:h-28 md:h-44 md:max-w-[11rem]">
         <div
           aria-hidden
@@ -91,7 +91,7 @@ export default function RegisterPage() {
             className="relative z-10 h-full w-auto max-w-full object-contain object-bottom drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
           />
         ) : (
-          <span className="material-symbols-outlined relative z-10 text-[36px]! text-on-surface-variant/40 md:text-[48px]!">
+          <span className="material-symbols-outlined relative z-10 text-[36px]! text-white/30 md:text-[48px]!">
             person
           </span>
         )}
@@ -111,7 +111,7 @@ export default function RegisterPage() {
             sizes="180px"
             className="mx-auto h-auto w-[180px] drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]"
           />
-          <p className="mt-1 text-label-sm uppercase tracking-[0.28em] text-secondary">
+          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
             {tLogin("tagline")}
           </p>
         </div>
@@ -121,31 +121,36 @@ export default function RegisterPage() {
             onSubmit={handleSubmit}
             className="w-full max-w-[420px] lg:max-w-[860px]"
           >
-            <div className="glass-panel relative overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/92 shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pokeball-red/55 to-transparent"
+              />
               <div className="grid lg:grid-cols-[minmax(240px,0.9fr)_minmax(0,1.15fr)]">
                 {/* Preview *2.png: en mobile solo si hay selección; desktop siempre */}
-                <aside className="border-b border-white/10 px-4 py-2.5 lg:border-b-0 lg:border-r lg:p-5">
+                <aside className="border-b border-white/10 px-4 py-2.5 lg:border-b-0 lg:border-r lg:border-white/10 lg:p-5">
                   <div className={selectedAvatar ? "block" : "hidden lg:block"}>{preview}</div>
                 </aside>
 
                 <div className="flex max-h-[min(78dvh,40rem)] flex-col lg:max-h-none">
-                  <div className="shrink-0 border-b border-white/8 px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/15 bg-surface-container-high">
-                        <PokeballIcon className="h-3.5 w-3.5" />
-                      </div>
-                      <div className="min-w-0">
-                        <h1 className="text-label-md text-on-surface">{t("title")}</h1>
-                        <p className="text-label-sm text-on-surface-variant/80">{t("subtitle")}</p>
-                      </div>
-                    </div>
+                  <div className="shrink-0 border-b border-white/8 px-5 py-4 sm:px-6">
+                    <p className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-pokeball-red">
+                      <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
+                      {t("eyebrow")}
+                    </p>
+                    <h1 className="page-title text-[clamp(1.35rem,5vw,1.85rem)] text-white">
+                      {t("title")}
+                    </h1>
+                    <p className="mt-1.5 text-[13px] leading-snug text-white/50">
+                      {t("subtitle")}
+                    </p>
                   </div>
 
-                  <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-5 py-4">
+                  <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4 sm:px-6">
                     <label className="block">
                       <span className="sr-only">{t("username")}</span>
-                      <div className="relative tech-border">
-                        <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65">
+                      <div className="relative">
+                        <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]! text-white/40">
                           badge
                         </span>
                         <input
@@ -163,8 +168,8 @@ export default function RegisterPage() {
 
                     <label className="block">
                       <span className="sr-only">{t("email")}</span>
-                      <div className="relative tech-border">
-                        <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65">
+                      <div className="relative">
+                        <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]! text-white/40">
                           mail
                         </span>
                         <input
@@ -181,8 +186,8 @@ export default function RegisterPage() {
 
                     <label className="block">
                       <span className="sr-only">{t("password")}</span>
-                      <div className="relative tech-border">
-                        <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65">
+                      <div className="relative">
+                        <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]! text-white/40">
                           lock
                         </span>
                         <input
@@ -193,7 +198,7 @@ export default function RegisterPage() {
                           placeholder={t("password")}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className={`${fieldClass} pr-10`}
+                          className={`${fieldClass} pr-11`}
                         />
                         <button
                           type="button"
@@ -201,14 +206,14 @@ export default function RegisterPage() {
                           aria-label={
                             showPassword ? tLogin("hidePassword") : tLogin("showPassword")
                           }
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/65 transition hover:text-on-surface"
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-white/40 transition hover:text-white/80"
                         >
                           <span className="material-symbols-outlined text-[18px]!">
                             {showPassword ? "visibility_off" : "visibility"}
                           </span>
                         </button>
                       </div>
-                      <p className="mt-1 px-0.5 text-[11px] text-on-surface-variant/70">
+                      <p className="mt-1.5 px-0.5 text-[11px] text-white/40">
                         {t("passwordHint")}
                       </p>
                     </label>
@@ -224,7 +229,7 @@ export default function RegisterPage() {
                     />
 
                     <div>
-                      <p className="mb-1.5 px-0.5 text-[11px] uppercase tracking-wide text-on-surface-variant/70">
+                      <p className="mb-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
                         {t("gender")}
                       </p>
                       <div className="grid grid-cols-3 gap-1.5">
@@ -239,10 +244,10 @@ export default function RegisterPage() {
                             title={t(
                               `gender${opt.value[0].toUpperCase()}${opt.value.slice(1)}` as "genderMale",
                             )}
-                            className={`flex items-center justify-center rounded-md border py-2 transition ${
+                            className={`flex items-center justify-center rounded-xl border py-2.5 transition ${
                               gender === opt.value
                                 ? "border-pokeball-red bg-pokeball-red/20 text-pokeball-red"
-                                : "border-white/15 bg-black/45 text-on-surface-variant hover:border-white/30"
+                                : "border-white/12 bg-black/40 text-white/45 hover:border-white/25 hover:text-white/70"
                             }`}
                           >
                             <span className="material-symbols-outlined text-[18px]!">
@@ -254,10 +259,10 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                      <p className="mb-1.5 px-0.5 text-[11px] uppercase tracking-wide text-on-surface-variant/70">
+                      <p className="mb-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
                         {t("avatar")}
                       </p>
-                      <div className="max-h-40 overflow-y-auto overscroll-contain rounded-md border border-white/10 bg-black/20 p-1.5 sm:max-h-48">
+                      <div className="max-h-40 overflow-y-auto overscroll-contain rounded-xl border border-white/10 bg-black/25 p-1.5 sm:max-h-48">
                         <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-7 lg:grid-cols-6">
                           {AVATAR_OPTIONS.map((opt) => (
                             <button
@@ -267,10 +272,10 @@ export default function RegisterPage() {
                               onClick={() =>
                                 setAvatarId(avatarId === opt.id ? null : opt.id)
                               }
-                              className={`aspect-square overflow-hidden rounded-md border-2 bg-black/40 transition ${
+                              className={`aspect-square overflow-hidden rounded-lg border-2 bg-black/40 transition ${
                                 avatarId === opt.id
                                   ? "border-pokeball-red ring-1 ring-pokeball-red/40"
-                                  : "border-white/15 hover:border-white/30"
+                                  : "border-white/12 hover:border-white/30"
                               }`}
                             >
                               <AvatarImage
@@ -285,31 +290,33 @@ export default function RegisterPage() {
                     </div>
 
                     {error && (
-                      <p className="rounded-md border border-error/30 bg-error/10 px-3 py-1.5 text-center text-label-sm text-error">
+                      <p className="rounded-xl border border-error/30 bg-error/10 px-3 py-2 text-center text-[13px] text-error">
                         {t(`errors.${error}`)}
                       </p>
                     )}
                     {status === "success" && (
-                      <p className="rounded-md border border-tertiary/30 bg-tertiary/10 px-3 py-1.5 text-center text-label-sm text-tertiary">
+                      <p className="rounded-xl border border-tertiary/30 bg-tertiary/10 px-3 py-2 text-center text-[13px] text-tertiary">
                         {t("success")}
                       </p>
                     )}
                   </div>
 
-                  <div className="shrink-0 border-t border-white/8 px-5 py-3.5">
+                  <div className="shrink-0 border-t border-white/8 px-5 py-4 sm:px-6">
                     <button
                       type="submit"
                       disabled={status !== "idle"}
-                      className="ui-btn-primary w-full px-4 py-2.5 text-label-md"
+                      className={`game-cta game-cta--red${status !== "idle" ? " game-cta--disabled" : ""}`}
                     >
-                      <PokeballIcon className="h-3.5 w-3.5" />
-                      {status === "submitting" ? t("submitting") : t("submit")}
+                      <PokeballIcon className="h-4 w-4 shrink-0" />
+                      <span className="game-cta__label">
+                        {status === "submitting" ? t("submitting") : t("submit")}
+                      </span>
                     </button>
-                    <p className="mt-3 text-center text-label-sm text-on-surface-variant">
+                    <p className="mt-3 text-center text-[13px] text-white/45">
                       {t("hasAccount")}{" "}
                       <Link
                         href="/login"
-                        className="text-secondary underline-offset-2 hover:text-on-surface hover:underline"
+                        className="font-semibold text-white/80 underline-offset-2 transition hover:text-white hover:underline"
                       >
                         {t("loginLink")}
                       </Link>

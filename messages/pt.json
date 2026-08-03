@@ -502,7 +502,32 @@
   "starter": {
     "title": "Escolha seu Pokémon inicial",
     "subtitle": "Essa escolha é definitiva — não dá pra mudar depois.",
-    "choose": "Escolher"
+    "choose": "Escolher",
+    "eyebrow": "Sua aventura começa aqui",
+    "revealTitle": "{name}, eu te escolho!",
+    "revealSubtitle": "Preparando sua primeira batalha…",
+    "revealReady": "Pronto!",
+    "revealGo": "Vamos lutar!",
+    "tutorial": {
+      "eyebrow": "Passo {step} de {total}",
+      "next": "Próximo",
+      "finish": "Escolher inicial",
+      "waitingEyebrow": "Primeiros passos",
+      "waitingTitle": "Conheça seus recursos",
+      "waitingBody": "Olhe no topo: explicamos pra que serve cada um.",
+      "energy": {
+        "title": "Energia",
+        "body": "Gasta ao explorar, em ginásios e no PvP. Regenera sozinha com o tempo."
+      },
+      "coins": {
+        "title": "Moedas",
+        "body": "A moeda do jogo: compre na loja, negocie no mercado e pague curas rápidas."
+      },
+      "gems": {
+        "title": "Gemas",
+        "body": "Moeda premium de diárias, semanais e PvP. Serve para pular cooldowns."
+      }
+    }
   },
   "team": {
     "title": "Meu time",

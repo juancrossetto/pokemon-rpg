@@ -502,7 +502,32 @@
   "starter": {
     "title": "Elegí tu Pokémon inicial",
     "subtitle": "Esta elección es para siempre — no se puede cambiar después.",
-    "choose": "Elegir"
+    "choose": "Elegir",
+    "eyebrow": "Tu aventura empieza acá",
+    "revealTitle": "¡{name}, yo te elijo!",
+    "revealSubtitle": "Preparando tu primer combate…",
+    "revealReady": "¡Listo!",
+    "revealGo": "¡A pelear!",
+    "tutorial": {
+      "eyebrow": "Paso {step} de {total}",
+      "next": "Siguiente",
+      "finish": "Elegir inicial",
+      "waitingEyebrow": "Primeros pasos",
+      "waitingTitle": "Conocé tus recursos",
+      "waitingBody": "Mirá arriba: te explicamos para qué sirve cada uno.",
+      "energy": {
+        "title": "Energía",
+        "body": "Se gasta al explorar, en gimnasios y en PvP. Se regenera sola con el tiempo."
+      },
+      "coins": {
+        "title": "Monedas",
+        "body": "La moneda del juego: comprá en la tienda, comerciá en el mercado y pagá curas rápidas."
+      },
+      "gems": {
+        "title": "Gemas",
+        "body": "Moneda premium. Se ganan en diarias, semanales y PvP; sirven para saltar cooldowns."
+      }
+    }
   },
   "team": {
     "title": "Mi equipo",

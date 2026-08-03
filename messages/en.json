@@ -502,7 +502,32 @@
   "starter": {
     "title": "Choose your starter Pokémon",
     "subtitle": "This choice is permanent — you can't change it later.",
-    "choose": "Choose"
+    "choose": "Choose",
+    "eyebrow": "Your adventure starts here",
+    "revealTitle": "{name}, I choose you!",
+    "revealSubtitle": "Getting your first battle ready…",
+    "revealReady": "Ready!",
+    "revealGo": "Let's battle!",
+    "tutorial": {
+      "eyebrow": "Step {step} of {total}",
+      "next": "Next",
+      "finish": "Pick a starter",
+      "waitingEyebrow": "First steps",
+      "waitingTitle": "Meet your resources",
+      "waitingBody": "Look up top — we'll explain what each one is for.",
+      "energy": {
+        "title": "Energy",
+        "body": "Spent when you explore, challenge gyms, or play PvP. It refills on its own over time."
+      },
+      "coins": {
+        "title": "Coins",
+        "body": "The soft currency: buy in the shop, trade on the market, and pay for quick heals."
+      },
+      "gems": {
+        "title": "Gems",
+        "body": "Premium currency from dailies, weeklies, and PvP. Use them to skip cooldowns."
+      }
+    }
   },
   "team": {
     "title": "My team",

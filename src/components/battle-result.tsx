@@ -17,6 +17,7 @@ import { LevelUpOffersPanel } from "@/components/level-up-offers";
 import { uiSpriteUrl } from "@/lib/sprites";
 import { playBattleSfx } from "@/lib/battle-sfx";
 import { startResultBgm, stopResultBgm } from "@/lib/battle-bgm";
+import { itemHdIconUrl } from "@/lib/item-hd-icons";
 import type { XpSummaryEntry } from "@/actions/battle-move";
 
 export type ResultMode = "won" | "lost" | "caught" | "fled" | "trainer_cleared";
@@ -31,6 +32,9 @@ export type ResultFighter = {
 type Tag = { label: string; icon: string; tone: "win" | "ko" | "caught" | "neutral" } | null;
 
 const EXIT_MS = 420;
+const COIN_ICON = itemHdIconUrl("Gold Coin") ?? "/items/hd/gold-coin.png";
+const XP_ICON = itemHdIconUrl("Rare Candy") ?? "/items/hd/rare-candy.png";
+const TROPHY_ICON = "/pvp/win-trophy.png";
 
 type LeaveTarget = string | (() => void | Promise<void>);
 
@@ -68,10 +72,10 @@ export function SoftLeaveButton({
 }
 
 const TONE_CLASS: Record<"win" | "ko" | "caught" | "neutral", string> = {
-  win: "border-tertiary/50 bg-tertiary/15 text-tertiary",
-  ko: "border-error/50 bg-error/15 text-error",
-  caught: "border-pokeball-red/50 bg-pokeball-red/15 text-pokeball-red",
-  neutral: "border-white/15 bg-white/5 text-on-surface-variant",
+  win: "text-emerald-400",
+  ko: "text-error",
+  caught: "text-pokeball-red",
+  neutral: "text-on-surface-variant",
 };
 
 function FighterCard({
@@ -89,53 +93,58 @@ function FighterCard({
 
   return (
     <div className="flex min-w-0 flex-col items-center gap-2">
-      <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden md:h-28 md:w-28">
+      <div className="relative flex h-24 w-24 items-center justify-center md:h-28 md:w-28">
         {highlight && (
           <>
-            <span className="absolute inset-0 rounded-full bg-tertiary/15 blur-2xl" />
-            <span className="victory-ring absolute inset-1 rounded-full border border-tertiary/40" />
+            <span className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-400/20 blur-xl" />
+            <span className="victory-ring pointer-events-none absolute inset-1 rounded-full border border-emerald-300/30" />
           </>
         )}
-        {/* Render 3D de HOME, no el GIF pixel de la arena: el resumen es una
-            pieza de vitrina y aguanta el detalle. La flotación es CSS, así que
-            se mantiene aunque la imagen sea estática. */}
         <Image
           src={uiSpriteUrl(fighter.spriteUrl)}
           alt={fighter.name}
           width={128}
           height={128}
           unoptimized
-          className={`relative h-full w-full object-contain drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] ${
-            defeated ? "translate-y-1 opacity-45 grayscale" : "result-float"
+          className={`relative z-10 h-full w-full object-contain drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] ${
+            defeated ? "translate-y-1 opacity-45 grayscale" : ""
           }`}
         />
         {defeated && (
-          <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-error/60 to-transparent" />
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-px bg-linear-to-r from-transparent via-error/60 to-transparent" />
         )}
       </div>
 
       <div className="min-w-0 text-center">
-        <p className="truncate text-label-md font-bold capitalize text-on-surface">{fighter.name}</p>
-        <p className="text-label-sm text-on-surface-variant">
-          {t("level", { level: fighter.level })}
-        </p>
+        <p className="truncate text-[13px] font-semibold capitalize text-white">{fighter.name}</p>
+        <p className="text-[11px] text-white/45">{t("level", { level: fighter.level })}</p>
       </div>
 
-      {tag && (
+      {tag ? (
         <span
-          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-label-sm font-bold uppercase tracking-wider ${TONE_CLASS[tag.tone]}`}
+          className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${TONE_CLASS[tag.tone]}`}
         >
-          <span className="material-symbols-outlined text-[14px]!">{tag.icon}</span>
+          {tag.tone === "win" ? (
+            <Image
+              src={TROPHY_ICON}
+              alt=""
+              width={16}
+              height={16}
+              className="h-4 w-4 object-contain"
+              unoptimized
+            />
+          ) : (
+            <span className="material-symbols-outlined text-[14px]!">{tag.icon}</span>
+          )}
           {tag.label}
         </span>
-      )}
+      ) : null}
     </div>
   );
 }
 
 function LevelUpFanfare({
   entries,
-  player,
 }: {
   entries: XpSummaryEntry[];
   player: ResultFighter;
@@ -152,14 +161,14 @@ function LevelUpFanfare({
 
   return (
     <section
-      className="level-up-fanfare level-up-glow relative mt-3 overflow-hidden rounded-2xl border border-tertiary/35 bg-tertiary/10 px-3 py-3 md:px-4 md:py-4"
+      className="level-up-fanfare level-up-glow relative mt-3 overflow-hidden rounded-2xl border border-emerald-400/25 bg-emerald-400/8 px-3 py-3 md:px-4 md:py-4"
       aria-live="polite"
     >
-      <span className="level-up-burst pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-tertiary/25 blur-2xl" />
+      <span className="level-up-burst pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-400/20 blur-2xl" />
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <span
           key={i}
-          className="level-up-spark pointer-events-none absolute h-1.5 w-1.5 rounded-full bg-tertiary"
+          className="level-up-spark pointer-events-none absolute h-1.5 w-1.5 rounded-full bg-emerald-300"
           style={{
             left: `${12 + i * 14}%`,
             bottom: `${18 + (i % 3) * 10}%`,
@@ -167,7 +176,7 @@ function LevelUpFanfare({
           }}
         />
       ))}
-      <p className="relative text-center text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
+      <p className="relative text-center text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300">
         {t("levelUpFanfare")}
       </p>
       <div className="relative mt-2 flex flex-wrap items-center justify-center gap-3">
@@ -182,9 +191,10 @@ function LevelUpFanfare({
               className="h-10 w-10 object-contain"
             />
             <div className="text-left">
-              <p className="text-label-md font-bold capitalize text-on-surface">{entry.name}</p>
-              <p className="font-mono text-label-sm text-tertiary">
-                {t("level", { level: entry.previousLevel })} → {t("level", { level: entry.leveledUpTo! })}
+              <p className="text-[13px] font-semibold capitalize text-white">{entry.name}</p>
+              <p className="font-mono text-[12px] text-emerald-300">
+                {t("level", { level: entry.previousLevel })} →{" "}
+                {t("level", { level: entry.leveledUpTo! })}
               </p>
             </div>
           </div>
@@ -221,8 +231,9 @@ export function BattleResult({
   const leaveTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    setMounted(true);
+    const raf = requestAnimationFrame(() => setMounted(true));
     return () => {
+      cancelAnimationFrame(raf);
       if (leaveTimer.current !== null) window.clearTimeout(leaveTimer.current);
     };
   }, []);
@@ -288,160 +299,209 @@ export function BattleResult({
           : "trophy";
 
   const accentGlow = playerWon
-    ? "bg-tertiary/25"
+    ? "bg-white/6"
     : mode === "lost"
-      ? "bg-pokeball-red/25"
-      : "bg-white/10";
+      ? "bg-pokeball-red/20"
+      : "bg-white/8";
 
   const cardTopGlow = playerWon
-    ? "bg-tertiary/25"
+    ? "bg-emerald-400/10"
     : mode === "lost"
-      ? "bg-pokeball-red/30"
+      ? "bg-pokeball-red/25"
       : "bg-white/5";
 
-  const cardBorder = playerWon
-    ? "border-tertiary/25"
+  const cardSurface = playerWon
+    ? "border-white/12 bg-[#12141c]/97"
     : mode === "lost"
-      ? "border-pokeball-red/30"
-      : "border-white/12";
+      ? "border-pokeball-red/30 bg-[#140e10]/96"
+      : "border-white/12 bg-[#12141c]/96";
 
   if (!mounted) return null;
 
   return createPortal(
     <BattleResultLeaveContext.Provider value={leave}>
-    <div
-      className={`battle-result-overlay fixed inset-0 z-[80] flex items-center justify-center overflow-hidden px-margin-mobile py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]${
-        leaving ? " is-leaving" : ""
-      }`}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="battle-result-title"
-    >
-      <div className="fixed inset-0 bg-black/78 backdrop-blur-sm" aria-hidden />
-      <div className={`pointer-events-none fixed inset-0 ${accentGlow} blur-3xl opacity-50`} aria-hidden />
-
-      {/* Un solo scroll en la card. max-h resta el padding del overlay para
-          que no quede 1–2px de overflow fantasma cuando el contenido entra. */}
       <div
-        className={`result-in relative z-10 my-auto max-h-[min(calc(100dvh-1.5rem),48rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border bg-[#0c1018] shadow-[0_24px_80px_rgba(0,0,0,0.65)] ${cardBorder}`}
+        className={`battle-result-overlay fixed inset-0 z-80 flex items-center justify-center overflow-hidden px-margin-mobile py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]${
+          leaving ? " is-leaving" : ""
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="battle-result-title"
       >
-        <div className={`pointer-events-none absolute inset-x-0 top-0 h-36 ${cardTopGlow} blur-2xl`} />
+        <div className="fixed inset-0 bg-black/78 backdrop-blur-sm" aria-hidden />
+        <div
+          className={`pointer-events-none fixed inset-0 ${accentGlow} opacity-40 blur-3xl`}
+          aria-hidden
+        />
 
-        <div className="relative px-4 py-5 md:px-6 md:py-6">
-          <div className="flex flex-col items-center gap-2.5">
-            <span className={`result-outcome-pill result-outcome-pill--${headlineTone}`}>
-              <span className="material-symbols-outlined text-[14px]!">{outcomePillIcon}</span>
-              {outcomePillLabel}
-            </span>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">
-              {t("resultEyebrow")}
-            </p>
-            <h1
-              id="battle-result-title"
-              className={`result-title result-title--${headlineTone} text-center`}
-            >
-              {resultText}
-            </h1>
-            {subText && (
-              <p className="mx-auto max-w-md text-center text-[0.95rem] leading-snug text-white/55">
-                {subText}
+        <div
+          className={`result-in relative z-10 my-auto max-h-[min(calc(100dvh-1.5rem),48rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-xl ${cardSurface}`}
+        >
+          <div
+            className={`pointer-events-none absolute inset-x-0 top-0 h-28 ${cardTopGlow} blur-2xl`}
+            aria-hidden
+          />
+          {playerWon ? (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-emerald-300/35 to-transparent"
+            />
+          ) : null}
+
+          <div className="relative px-4 py-5 md:px-6 md:py-6">
+            <div className="flex flex-col items-center gap-2.5">
+              <span
+                className={`result-outcome-mark inline-flex items-center gap-2 result-outcome-mark--${headlineTone}`}
+              >
+                {playerWon ? (
+                  <Image
+                    src={TROPHY_ICON}
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="h-9 w-9 object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="material-symbols-outlined text-[28px]!">
+                    {outcomePillIcon}
+                  </span>
+                )}
+                <span className="page-title text-[0.95rem] leading-none tracking-[0.08em]">
+                  {outcomePillLabel}
+                </span>
+              </span>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">
+                {t("resultEyebrow")}
               </p>
+              <h1
+                id="battle-result-title"
+                className={`page-title result-title result-title--${headlineTone} text-center`}
+              >
+                {resultText}
+              </h1>
+              {subText ? (
+                <p className="mx-auto max-w-md text-center text-[0.95rem] leading-snug text-white/55">
+                  {subText}
+                </p>
+              ) : null}
+            </div>
+
+            <section className="relative mt-5 overflow-hidden rounded-2xl border border-white/8 bg-black/40 p-3 md:mt-6 md:p-4">
+              <div className="relative grid grid-cols-[1fr_auto_1fr] items-start gap-2 md:gap-3">
+                <FighterCard
+                  fighter={player}
+                  tag={playerTag}
+                  defeated={mode === "lost"}
+                  highlight={playerWon}
+                />
+                <div className="flex flex-col items-center gap-1 pt-8 md:pt-9">
+                  <span className="page-title text-[0.7rem] tracking-[0.18em] text-white/40">
+                    VS
+                  </span>
+                  <span className="h-8 w-px bg-linear-to-b from-white/15 to-transparent md:h-10" />
+                </div>
+                <FighterCard
+                  fighter={foe}
+                  tag={foeTag}
+                  defeated={mode !== "lost" && mode !== "fled"}
+                  highlight={mode === "lost"}
+                />
+              </div>
+            </section>
+
+            {xpSummary ? <LevelUpFanfare entries={xpSummary} player={player} /> : null}
+
+            {xpSummary ? (
+              <div className="mt-3">
+                <LevelUpOffersPanel
+                  key={xpSummary
+                    .map(
+                      (e) =>
+                        `${e.instanceId}:${e.leveledUpTo}:${e.evolveOffer?.toSpeciesId ?? 0}`,
+                    )
+                    .join("|")}
+                  entries={xpSummary.map((e) => ({
+                    instanceId: e.instanceId,
+                    name: e.name,
+                    leveledUpTo: e.leveledUpTo,
+                    fromSpriteUrl: e.fromSpriteUrl,
+                    autoTaught: e.autoTaught ?? [],
+                    pendingMoves: e.pendingMoves ?? [],
+                    evolveOffer: e.evolveOffer ?? null,
+                    knownMoves: e.knownMoves ?? [],
+                  }))}
+                />
+              </div>
+            ) : null}
+
+            {(coinsGained > 0 || (xpSummary && xpSummary.length > 0)) && (
+              <section className="mt-3 rounded-2xl border border-white/8 bg-black/40 p-3 md:p-4">
+                <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                  {t("rewardsTitle")}
+                </p>
+
+                <div className="flex flex-col gap-2.5">
+                  {coinsGained > 0 ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[13px] font-medium text-white/70">{t("coins")}</span>
+                      <span className="inline-flex items-center gap-1.5 font-mono text-[15px] font-bold tabular-nums text-white">
+                        <Image
+                          src={COIN_ICON}
+                          alt=""
+                          width={28}
+                          height={28}
+                          className="h-7 w-7 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]"
+                          unoptimized
+                        />
+                        +{coinsGained}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {xpSummary?.map((entry) => (
+                    <div
+                      key={entry.instanceId}
+                      className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium capitalize text-white/85">
+                        {entry.name}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 font-mono text-[15px] font-bold tabular-nums text-emerald-400">
+                          <Image
+                            src={XP_ICON}
+                            alt=""
+                            width={24}
+                            height={24}
+                            className="h-6 w-6 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]"
+                            unoptimized
+                          />
+                          +{entry.xpGained} XP
+                        </span>
+                        {entry.leveledUpTo ? (
+                          <span className="level-up-chip inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300">
+                            <span className="material-symbols-outlined text-[14px]!">
+                              arrow_upward
+                            </span>
+                            {t("leveledUp", { level: entry.leveledUpTo })}
+                          </span>
+                        ) : null}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
             )}
           </div>
 
-          <section className="relative mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/35 p-3 md:mt-6 md:p-4">
-            <div className="relative grid grid-cols-[1fr_auto_1fr] items-start gap-2 md:gap-3">
-              <FighterCard
-                fighter={player}
-                tag={playerTag}
-                defeated={mode === "lost"}
-                highlight={playerWon}
-              />
-              <div className="flex flex-col items-center gap-1 pt-8 md:pt-9">
-                <span className="text-label-sm font-bold tracking-[0.2em] text-on-surface-variant/60">
-                  VS
-                </span>
-                <span className="h-8 w-px bg-gradient-to-b from-white/15 to-transparent md:h-10" />
-              </div>
-              <FighterCard
-                fighter={foe}
-                tag={foeTag}
-                defeated={mode !== "lost" && mode !== "fled"}
-                highlight={mode === "lost"}
-              />
+          <div className="relative shrink-0 border-t border-white/8 px-4 py-3 md:px-6 md:py-4">
+            <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-2">
+              {children}
             </div>
-          </section>
-
-          {xpSummary ? <LevelUpFanfare entries={xpSummary} player={player} /> : null}
-
-          {xpSummary ? (
-            <div className="mt-3">
-              <LevelUpOffersPanel
-                key={xpSummary
-                  .map(
-                    (e) =>
-                      `${e.instanceId}:${e.leveledUpTo}:${e.evolveOffer?.toSpeciesId ?? 0}`,
-                  )
-                  .join("|")}
-                entries={xpSummary.map((e) => ({
-                  instanceId: e.instanceId,
-                  name: e.name,
-                  leveledUpTo: e.leveledUpTo,
-                  fromSpriteUrl: e.fromSpriteUrl,
-                  autoTaught: e.autoTaught ?? [],
-                  pendingMoves: e.pendingMoves ?? [],
-                  evolveOffer: e.evolveOffer ?? null,
-                  knownMoves: e.knownMoves ?? [],
-                }))}
-              />
-            </div>
-          ) : null}
-
-          {(coinsGained > 0 || (xpSummary && xpSummary.length > 0)) && (
-            <section className="mt-3 rounded-2xl border border-white/10 bg-black/30 p-3 md:p-4">
-              <div className="mb-2 flex items-center justify-between gap-2 border-b border-white/10 pb-2">
-                <p className="text-label-sm uppercase tracking-wider text-on-surface-variant">
-                  {t("rewardsTitle")}
-                </p>
-                {coinsGained > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-0.5 font-mono text-label-sm text-electric-yellow">
-                    <span className="material-symbols-outlined text-[16px]!">paid</span>+{coinsGained}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                {xpSummary?.map((entry) => (
-                  <div
-                    key={entry.instanceId}
-                    className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
-                  >
-                    <span className="min-w-0 flex-1 truncate text-label-md capitalize text-on-surface">
-                      {entry.name}
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2">
-                      <span className="font-mono text-label-md text-tertiary">
-                        +{entry.xpGained} XP
-                      </span>
-                      {entry.leveledUpTo && (
-                        <span className="level-up-chip inline-flex items-center gap-1 rounded-full border border-tertiary/40 bg-tertiary/10 px-2 py-0.5 text-label-sm text-tertiary">
-                          <span className="material-symbols-outlined text-[14px]!">arrow_upward</span>
-                          {t("leveledUp", { level: entry.leveledUpTo })}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-
-        <div className="relative shrink-0 border-t border-white/10 bg-black/40 px-4 py-3 md:px-6 md:py-4">
-          <div className="flex flex-col items-center gap-2">{children}</div>
+          </div>
         </div>
       </div>
-    </div>
     </BattleResultLeaveContext.Provider>,
     document.body,
   );

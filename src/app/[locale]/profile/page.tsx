@@ -404,9 +404,8 @@ export default async function ProfilePage({
     : null;
 
   /*
-    Un solo acento en toda la ficha (ver TRAINER_FACT_ACCENT). Los PNG de nav
-    traían su propia paleta y rompían esa unidad — salvo el Pokédex outline,
-    que ya viene en la misma tinta dorada.
+    Los PNG de nav traen su propia tinta; los valores de la ficha van en blanco
+    para no pelear con el acento del tema.
   */
   const trainerFacts: StatRow[] = [
     {
@@ -414,7 +413,7 @@ export default async function ProfilePage({
       icon: "bolt",
       iconSrc: "/nav/cp-profile.png",
       label: t("cp"),
-      value: stats.power.toLocaleString(),
+      value: String(stats.power),
     },
     /*
       Rango y título salieron del banner. El rango absorbe además la barra de

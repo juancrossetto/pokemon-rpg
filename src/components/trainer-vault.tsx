@@ -42,16 +42,25 @@ export type VaultLabels = {
 
 type VaultTab = "badges" | "achievements" | "collections";
 
-/** Acento del vault — naranja flúor, alineado con las barras del perfil. */
-const VAULT_ORANGE = "#ff6a00";
-const VAULT_YELLOW = "#ffe566";
+/** Acento del vault — pokeball-red del tema (parametrizable). */
+const VAULT_ACCENT = "var(--color-pokeball-red)";
+const VAULT_ACCENT_BRIGHT = "var(--theme-primary-bright)";
 
-/** Rarezas en la misma familia ámbar/pizarra — sin arcoíris por rareza. */
+/** Rarezas en la familia del acento del tema — sin naranja hardcodeado. */
 const ACH_RARITY_TONE: Record<AchievementRarity, { ring: string; text: string }> = {
   common: { ring: "rgba(168,174,186,0.45)", text: "text-white/55" },
-  rare: { ring: "rgba(255,140,40,0.5)", text: "text-orange-300/90" },
-  epic: { ring: "rgba(255,106,0,0.55)", text: "text-orange-200" },
-  legendary: { ring: "rgba(255,229,102,0.6)", text: "text-yellow-200" },
+  rare: {
+    ring: "color-mix(in srgb, var(--color-pokeball-red) 55%, transparent)",
+    text: "text-pokeball-red/90",
+  },
+  epic: {
+    ring: "color-mix(in srgb, var(--color-pokeball-red) 70%, transparent)",
+    text: "text-pokeball-red",
+  },
+  legendary: {
+    ring: "color-mix(in srgb, var(--theme-primary-bright) 75%, transparent)",
+    text: "text-white",
+  },
 };
 
 /**
@@ -153,8 +162,8 @@ export function TrainerVault({
                 <span
                   className="absolute inset-x-3 bottom-0 h-0.5 rounded-full"
                   style={{
-                    background: `linear-gradient(90deg, ${VAULT_ORANGE}, ${VAULT_YELLOW})`,
-                    boxShadow: `0 0 8px ${VAULT_ORANGE}99`,
+                    background: `linear-gradient(90deg, ${VAULT_ACCENT}, ${VAULT_ACCENT_BRIGHT})`,
+                    boxShadow: `0 0 8px color-mix(in srgb, ${VAULT_ACCENT} 60%, transparent)`,
                   }}
                 />
               )}
@@ -247,7 +256,7 @@ function AchievementList({
           type="button"
           disabled={pending}
           onClick={() => onClaim("all")}
-          className="self-end rounded-lg border border-[#ff6a00]/40 bg-[#ff6a00]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white transition hover:bg-[#ff6a00]/25 disabled:opacity-50"
+          className="self-end rounded-lg border border-pokeball-red/40 bg-pokeball-red/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white transition hover:bg-pokeball-red/25 disabled:opacity-50"
         >
           {pending
             ? labels.claiming
@@ -283,7 +292,7 @@ function AchievementList({
               key={ach.id}
               className={`tp-tap flex items-center gap-2.5 rounded-xl border p-2 transition ${
                 ach.claimable
-                  ? "border-[#ff6a00]/35 bg-[#ff6a00]/[0.08]"
+                  ? "border-pokeball-red/35 bg-pokeball-red/[0.08]"
                   : ach.unlocked
                     ? "border-white/[0.1] bg-white/[0.04]"
                     : "border-white/[0.04] bg-white/[0.012]"
@@ -323,8 +332,8 @@ function AchievementList({
                 </p>
                 <ProgressRail
                   pct={ach.pct}
-                  color={ach.unlocked ? VAULT_ORANGE : "rgba(255,255,255,0.25)"}
-                  toColor={ach.unlocked ? VAULT_YELLOW : undefined}
+                  color={ach.unlocked ? VAULT_ACCENT : "rgba(255,255,255,0.25)"}
+                  toColor={ach.unlocked ? VAULT_ACCENT_BRIGHT : undefined}
                   height={3}
                   delayMs={i * 45}
                 />
@@ -335,7 +344,7 @@ function AchievementList({
                   type="button"
                   disabled={pending}
                   onClick={() => onClaim(ach.id)}
-                  className="shrink-0 rounded-md border border-[#ff6a00]/50 bg-[#ff6a00]/20 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white disabled:opacity-50"
+                  className="shrink-0 rounded-md border border-pokeball-red/50 bg-pokeball-red/20 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white disabled:opacity-50"
                 >
                   {pending ? labels.claiming : labels.claim}
                 </button>
@@ -369,7 +378,7 @@ function CollectionGrid({
           <span
             aria-hidden
             className="absolute -right-4 -top-4 h-14 w-14 rounded-full opacity-25 blur-xl"
-            style={{ background: VAULT_ORANGE }}
+            style={{ background: VAULT_ACCENT }}
           />
           <div className="mb-1.5 flex items-baseline justify-between gap-2">
             <p className="truncate text-[10px] font-bold uppercase tracking-[0.12em] text-white/85">
@@ -377,15 +386,15 @@ function CollectionGrid({
             </p>
             <span
               className="shrink-0 font-mono text-[13px] font-bold tabular-nums"
-              style={{ color: VAULT_YELLOW }}
+              style={{ color: VAULT_ACCENT_BRIGHT }}
             >
               {Math.round(col.pct * 100)}%
             </span>
           </div>
           <ProgressRail
             pct={col.pct}
-            color={VAULT_ORANGE}
-            toColor={VAULT_YELLOW}
+            color={VAULT_ACCENT}
+            toColor={VAULT_ACCENT_BRIGHT}
             height={5}
             delayMs={i * 70}
           />

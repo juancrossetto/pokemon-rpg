@@ -95,7 +95,10 @@ export function BattleOutcomeScreen({
         ? t("resultLostTower")
         : t("resultLost")
       : null;
-  const ctaClass = "game-cta game-cta--red !mb-0 max-w-sm";
+  const ctaPrimary =
+    "ui-btn-primary w-full max-w-sm px-4 py-2.5 text-[14px] font-semibold";
+  const ctaSecondary =
+    "inline-flex w-full max-w-sm items-center justify-center rounded-lg border border-white/18 bg-transparent px-4 py-2.5 text-[14px] font-semibold text-white/85 transition hover:border-white/35 hover:bg-white/6 hover:text-white";
 
   return (
     <BattleResult
@@ -119,16 +122,16 @@ export function BattleOutcomeScreen({
       coinsGained={coinsGained}
     >
       {isPvpBattle && pvpResult && (
-        <div className="w-full max-w-sm rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center mb-1">
-          <p className="text-label-sm uppercase tracking-wide text-on-surface-variant">
+        <div className="mb-1 w-full max-w-sm rounded-xl border border-white/12 bg-white/4 px-4 py-3 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
             {t("pvpRating")}
           </p>
-          <p className="text-headline-md font-mono text-electric-yellow">
+          <p className="font-mono text-headline-md text-electric-yellow">
             {pvpResult.ratingAfter}{" "}
             <span
               className={
                 pvpResult.ratingAfter - pvpResult.ratingBefore >= 0
-                  ? "text-tertiary"
+                  ? "text-emerald-400"
                   : "text-error"
               }
             >
@@ -137,7 +140,7 @@ export function BattleOutcomeScreen({
             </span>
           </p>
           {pvpResult.coinsAwarded > 0 && (
-            <p className="text-label-md text-tertiary mt-1">
+            <p className="mt-1 text-[13px] text-white">
               +{pvpResult.coinsAwarded} {t("coins")}
             </p>
           )}
@@ -159,68 +162,64 @@ export function BattleOutcomeScreen({
         />
       )}
       {outcome === "lost" && isTowerBattle ? (
-        <SoftLeaveButton href="/tower" className={ctaClass}>
+        <SoftLeaveButton href="/tower" className={ctaPrimary}>
           {t("backToTower")}
         </SoftLeaveButton>
       ) : outcome === "lost" && isPvpBattle ? (
         <SoftLeaveButton
           href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}
-          className={ctaClass}
+          className={ctaPrimary}
         >
           {t("backToPvp")}
         </SoftLeaveButton>
       ) : outcome === "lost" ? (
-        <div className="w-full max-w-sm flex flex-col gap-2">
-          <SoftLeaveButton href="/team" className={ctaClass}>
+        <div className="flex w-full max-w-sm flex-col items-center gap-2">
+          <SoftLeaveButton href="/team" className={ctaPrimary}>
             {t("goHeal")}
           </SoftLeaveButton>
-          <p className="text-center text-label-sm text-on-surface-variant">{tUx("postBattleHeal")}</p>
+          <p className="text-center text-[12px] text-white/45">{tUx("postBattleHeal")}</p>
         </div>
       ) : outcome === "won" && isTowerBattle ? (
-        <SoftLeaveButton href="/tower" className={ctaClass}>
+        <SoftLeaveButton href="/tower" className={ctaPrimary}>
           {t("backToTower")}
         </SoftLeaveButton>
       ) : outcome === "won" && isPvpBattle ? (
         <SoftLeaveButton
           href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}
-          className={ctaClass}
+          className={ctaPrimary}
         >
           {t("backToPvp")}
         </SoftLeaveButton>
       ) : outcome === "trainer_cleared" && gymId && gymRunId ? (
-        <div className="w-full max-w-sm flex flex-col gap-3">
-          <p className="text-label-md text-on-surface-variant">{t("advancePrompt")}</p>
+        <div className="flex w-full max-w-sm flex-col items-center gap-2">
+          <p className="text-center text-[13px] text-white/55">{t("advancePrompt")}</p>
           {!confirmLeaveGym ? (
             <>
-              <SoftLeaveButton
-                href={`/gyms/${gymId}/run`}
-                className="game-cta game-cta--red"
-              >
-                <span className="material-symbols-outlined game-cta__icon">arrow_forward</span>
-                <span className="game-cta__label">{t("continueChallenge")}</span>
+              <SoftLeaveButton href={`/gyms/${gymId}/run`} className={ctaPrimary}>
+                {t("continueChallenge")}
               </SoftLeaveButton>
               <button
                 type="button"
                 onClick={() => setConfirmLeaveGym(true)}
-                className="w-full rounded-lg border border-white/20 px-6 py-2.5 text-label-md text-on-surface-variant hover:text-error hover:border-error/40 transition-colors"
+                className={ctaSecondary}
               >
                 {t("leaveGym")}
               </button>
             </>
           ) : (
-            <div className="glass-panel border-error/40 p-4 text-left flex flex-col gap-3">
-              <p className="text-label-md text-error font-bold">{t("leaveGymTitle")}</p>
-              <p className="text-label-sm text-on-surface-variant">{t("leaveGymBody")}</p>
+            <div className="flex w-full flex-col gap-2 rounded-2xl border border-error/35 bg-error/8 p-4 text-left">
+              <p className="text-[13px] font-bold text-error">{t("leaveGymTitle")}</p>
+              <p className="text-[12px] text-white/55">{t("leaveGymBody")}</p>
               <div className="flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={() => setConfirmLeaveGym(false)}
-                  className="ui-btn-primary w-full px-4 py-2 text-label-md"
+                  className={ctaPrimary}
                 >
                   {t("continueChallenge")}
                 </button>
                 <SoftLeaveButton
-                  className="w-full rounded-lg border border-error/40 px-4 py-2 text-label-md text-error hover:bg-error/10 transition-colors"
+                  className={ctaSecondary}
                   onAction={() => abandonGymRun(gymRunId, locale)}
                 >
                   {t("confirmLeaveGym")}
@@ -230,13 +229,13 @@ export function BattleOutcomeScreen({
           )}
         </div>
       ) : isGymBattle ? (
-        <SoftLeaveButton href="/gyms" className={ctaClass}>
+        <SoftLeaveButton href="/gyms" className={ctaPrimary}>
           {t("backToGyms")}
         </SoftLeaveButton>
       ) : (
-        <div className="w-full max-w-sm flex flex-col gap-2">
+        <div className="flex w-full max-w-sm flex-col items-center gap-2">
           <SoftLeaveButton
-            className={ctaClass}
+            className={ctaPrimary}
             onAction={async () => {
               await startEncounter(locale);
               router.refresh();
@@ -244,27 +243,15 @@ export function BattleOutcomeScreen({
           >
             {tUx("postBattleContinue")}
           </SoftLeaveButton>
-          <SoftLeaveButton
-            href="/campaign"
-            className="w-full rounded-lg border border-white/20 px-6 py-2.5 text-center text-label-md text-on-surface transition-colors hover:bg-white/5"
-          >
+          <SoftLeaveButton href="/campaign" className={ctaSecondary}>
             {tUx("postBattleJourney")}
           </SoftLeaveButton>
-          {/* Antes se mostraba siempre y mentía: el copy dice que alguien puede
-              evolucionar aunque nadie tenga oferta. Solo si el resumen de XP
-              trae un evolveOffer (participantes de esta pelea). */}
           {xpSummary?.some((e) => e.evolveOffer) ? (
-            <SoftLeaveButton
-              href="/team"
-              className="w-full text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
-            >
+            <SoftLeaveButton href="/team" className={ctaSecondary}>
               {tUx("postBattleEvolve")}
             </SoftLeaveButton>
           ) : null}
-          <SoftLeaveButton
-            href="/"
-            className="mt-1 block w-full text-center text-label-sm text-on-surface-variant transition-colors hover:text-white"
-          >
+          <SoftLeaveButton href="/" className={ctaSecondary}>
             {t("backHome")}
           </SoftLeaveButton>
         </div>

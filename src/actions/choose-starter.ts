@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateMaxHp, unspentPointsForLevel, xpForLevel } from "@/lib/stats";
@@ -16,34 +15,47 @@ const STARTER_BERRY_COUNT = 2;
 const STARTER_COINS = 500;
 const TUTORIAL_RIVAL_LEVEL = 4;
 
-export async function chooseStarter(speciesId: number, locale: string) {
+export type ChooseStarterResult =
+  | { ok: true; href: "/battle" | "/team" | "/login" }
+  | { ok: false; error: "auth" | "invalid" | "unknown" };
+
+/**
+ * Crea el inicial + combate tutorial. No usa `redirect()`: el cliente controla
+ * la transición visual y navega al terminar (un redirect desde la action
+ * dejaba el overlay de reveal trabado).
+ */
+export async function chooseStarter(
+  speciesId: number,
+  _locale: string,
+): Promise<ChooseStarterResult> {
   const session = await auth();
   if (!session?.user) {
-    redirect({ href: "/login", locale });
-    return;
+    return { ok: false, error: "auth" };
   }
   const userId = session.user.id;
 
-  // Sesión JWT vieja (p. ej. post-migración de DB): el id ya no existe.
   const account = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true },
   });
   if (!account) {
-    redirect({ href: "/login", locale });
-    return;
+    return { ok: false, error: "auth" };
   }
 
   if (!STARTER_SPECIES_IDS.includes(speciesId as (typeof STARTER_SPECIES_IDS)[number])) {
-    throw new Error("Especie inicial inválida");
+    return { ok: false, error: "invalid" };
   }
 
   const alreadyHasTeam = await prisma.pokemonInstance.findFirst({
     where: { ownerId: userId },
+    select: { id: true },
   });
   if (alreadyHasTeam) {
-    redirect({ href: "/team", locale });
-    return;
+    const active = await prisma.battleSession.findFirst({
+      where: { userId, status: "ACTIVE" },
+      select: { id: true },
+    });
+    return { ok: true, href: active ? "/battle" : "/team" };
   }
 
   const species = await prisma.species.findUniqueOrThrow({ where: { id: speciesId } });
@@ -112,9 +124,6 @@ export async function chooseStarter(speciesId: number, locale: string) {
 
   await markSpeciesSeen(userId, speciesId);
 
-  // Combate tutorial (dossier: "3 iniciales + combate tutorial contra un
-  // rival"). Reusa el motor de batalla tal cual: es una sesión normal, con el
-  // inicial que te gana por tipo y un nivel por debajo para que sea ganable.
   const starterInstance = await prisma.pokemonInstance.findFirst({
     where: { ownerId: userId, teamSlot: 1 },
     select: { id: true },
@@ -148,10 +157,9 @@ export async function chooseStarter(speciesId: number, locale: string) {
 
       await markSpeciesSeen(userId, rivalSpeciesId);
 
-      redirect({ href: "/battle", locale });
-      return;
+      return { ok: true, href: "/battle" };
     }
   }
 
-  redirect({ href: "/team", locale });
+  return { ok: true, href: "/team" };
 }
