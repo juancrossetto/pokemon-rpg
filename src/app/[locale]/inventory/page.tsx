@@ -197,7 +197,7 @@ export default async function InventoryPage({
               <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
               {t("eyebrow")}
             </p>
-            <h1 className="text-headline-lg tracking-tight text-white">{t("title")}</h1>
+            <h1 className="page-title text-headline-lg text-white">{t("title")}</h1>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link

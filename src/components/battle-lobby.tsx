@@ -7,12 +7,11 @@ import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
-import { itemSpriteUrl } from "@/lib/item-sprites";
+import { itemDisplayUrl } from "@/lib/item-sprites";
 import { BattleLobbyMobile } from "@/components/battle-lobby-mobile";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 import { useTypeLabel } from "@/hooks/use-type-label";
-import { HubHelpPanel } from "@/components/journey-guidance";
-import { HandbookLink } from "@/components/handbook/handbook-trigger";
+import { HubHelpButton } from "@/components/journey-guidance";
 
 /** Color del chip según la densidad de encuentros de la zona. */
 const RATE_STYLE: Record<"low" | "medium" | "high", string> = {
@@ -71,22 +70,13 @@ export function BattleLobby({
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
             {t("lobby.liveSync")}
           </p>
-          <h1 className="text-headline-lg tracking-tight text-white md:text-display-lg">
+          <h1 className="page-title text-headline-lg text-white md:text-display-lg">
             {t("title")}
           </h1>
           <p className="mt-1 max-w-lg text-label-md text-on-surface-variant">
             {t("subtitle")}
           </p>
-          <div className="mt-2">
-            <HandbookLink chapter="battle" />
-          </div>
         </header>
-
-        <HubHelpPanel
-          storageKey="hub-help-battle"
-          bullets={tUx.raw("help.battle") as string[]}
-          handbookChapter="battle"
-        />
 
         <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
           <section className="glass-panel relative flex flex-col overflow-hidden rounded-xl border border-white/10 p-4">
@@ -134,6 +124,13 @@ export function BattleLobby({
                     triggerLabel={tc("openMap")}
                   />
                 )}
+                <div className="absolute right-2 top-2 z-20">
+                  <HubHelpButton
+                    bullets={tUx.raw("help.battle") as string[]}
+                    handbookChapter="battle"
+                    roleKey="battle"
+                  />
+                </div>
               </div>
 
               <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
@@ -183,12 +180,11 @@ export function BattleLobby({
                 <LoadoutChip
                   icon={
                     <Image
-                      src={itemSpriteUrl("Poke Ball")}
+                      src={itemDisplayUrl("Poke Ball")}
                       alt=""
                       width={28}
                       height={28}
                       className="h-7 w-7 object-contain"
-                      unoptimized
                     />
                   }
                   label={t("pokeballsLabel")}
@@ -197,12 +193,11 @@ export function BattleLobby({
                 <LoadoutChip
                   icon={
                     <Image
-                      src={itemSpriteUrl("Potion")}
+                      src={itemDisplayUrl("Potion")}
                       alt=""
                       width={28}
                       height={28}
                       className="h-7 w-7 object-contain"
-                      unoptimized
                     />
                   }
                   label={t("potionsLabel")}
@@ -212,13 +207,13 @@ export function BattleLobby({
               {lobby.unspentTotal > 0 && (
                 <Link
                   href="/team"
-                  className="mt-2 flex items-center gap-1.5 rounded-lg border border-tertiary/25 bg-tertiary/10 px-2.5 py-2 text-[11px] text-tertiary transition hover:border-tertiary/40"
+                  className="mt-2 flex items-center gap-1 px-0.5 text-[11px] text-tertiary/90 transition hover:text-tertiary"
                 >
                   <span className="material-symbols-outlined text-[14px]!">bolt</span>
-                  {t("lobby.unspentPoints", { count: lobby.unspentTotal })}
-                  <span className="material-symbols-outlined ml-auto text-[14px]!">
-                    chevron_right
+                  <span className="min-w-0 flex-1 truncate">
+                    {t("lobby.unspentPoints", { count: lobby.unspentTotal })}
                   </span>
+                  <span className="material-symbols-outlined text-[14px]!">chevron_right</span>
                 </Link>
               )}
             </section>
@@ -237,48 +232,38 @@ export function BattleLobby({
               hay nada que decidir y el bloque no se dibuja.
             */}
             {lobby.heal.hurtCount > 0 && (
-              <section className="glass-panel rounded-xl border border-white/10 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <span
-                    aria-hidden
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-error/25 bg-error/10"
-                  >
-                    <span className="material-symbols-outlined text-[18px]! text-error">
-                      healing
-                    </span>
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-label-sm font-semibold text-on-surface">
-                      {t("lobby.squadStatus")}
-                    </p>
-                    <p className="text-[11px] text-on-surface-variant">
-                      {t("lobby.hurtCount", { count: lobby.heal.hurtCount })}
-                    </p>
-                  </div>
+              <section className="flex items-center gap-3 rounded-2xl border border-white/10 bg-surface-container-high/70 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                <div className="min-w-0 flex-1 self-center">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface-variant">
+                    {t("lobby.squadStatus")}
+                  </p>
+                  <p className="mt-0.5 truncate text-label-md font-semibold leading-tight text-white">
+                    {t("lobby.hurtCount", { count: lobby.heal.hurtCount })}
+                  </p>
                 </div>
-                <HealButton
-                  locale={locale}
-                  needsHealing
-                  cooldownMsLeft={lobby.heal.cooldownMsLeft}
-                  rushCost={lobby.heal.rushCost}
-                  coins={lobby.heal.coins}
-                  teamMaxLevel={lobby.heal.teamMaxLevel}
-                />
+                <div className="shrink-0 self-center">
+                  <HealButton
+                    locale={locale}
+                    needsHealing
+                    cooldownMsLeft={lobby.heal.cooldownMsLeft}
+                    rushCost={lobby.heal.rushCost}
+                    coins={lobby.heal.coins}
+                    teamMaxLevel={lobby.heal.teamMaxLevel}
+                    compact
+                  />
+                </div>
               </section>
             )}
 
             {lobby.recent.length > 0 && (
-              <section className="glass-panel rounded-xl border border-white/10 p-4">
-                <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+              <section>
+                <h2 className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                   {t("lobby.recent")}
                 </h2>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   {lobby.recent.slice(0, 4).map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="flex items-center gap-2.5 rounded-lg border border-white/[0.06] bg-black/20 px-2 py-1.5"
-                    >
-                      <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/40">
+                    <div key={entry.id} className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-black/30">
                         {entry.spriteUrl && (
                           <Image
                             src={entry.spriteUrl}
@@ -298,12 +283,12 @@ export function BattleLobby({
                         </p>
                       </div>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+                        className={`text-[9px] font-bold uppercase tracking-wide ${
                           entry.status === "WON" || entry.status === "CAUGHT"
-                            ? "bg-emerald-400/15 text-emerald-300"
+                            ? "text-emerald-300"
                             : entry.status === "LOST"
-                              ? "bg-error/15 text-error"
-                              : "bg-white/10 text-on-surface-variant"
+                              ? "text-error"
+                              : "text-on-surface-variant"
                         }`}
                       >
                         {t(`lobby.status.${entry.status}`)}
@@ -318,12 +303,9 @@ export function BattleLobby({
 
         {/* En vez de repetir el escuadrón (ya está en Inicio y en /team), acá
             va lo que sí importa antes de explorar: qué podés cruzarte. */}
-        <section className="glass-panel rounded-xl border border-white/10 p-4 shadow-lg">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-pokeball-red text-[20px]!">
-                pets
-              </span>
+        <section className="mt-2">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
               <h2 className="text-headline-md text-white">{t("lobby.zoneEncounters")}</h2>
               <span className="text-label-sm text-on-surface-variant">
                 {locationLabel}
@@ -347,26 +329,26 @@ export function BattleLobby({
               {t("lobby.noEncounters")}
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6">
               {lobby.encounters.map((mon) => (
                 <div
                   key={mon.speciesId}
-                  className="group relative rounded-lg border border-white/10 bg-surface-container-high/40 p-2 shadow-sm transition hover:bg-white/10"
+                  className="group relative flex flex-col items-center"
                 >
-                  <span className="absolute left-2 top-2 text-[10px] font-mono text-on-surface-variant/60">
+                  <span className="absolute left-0 top-0 text-[10px] font-mono text-on-surface-variant/60">
                     #{String(mon.speciesId).padStart(3, "0")}
                   </span>
                   {mon.caught && (
                     <span
                       title={t("lobby.caught")}
-                      className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-400 text-surface"
+                      className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-400 text-surface"
                     >
                       <span className="material-symbols-outlined text-[11px]! leading-none">
                         check
                       </span>
                     </span>
                   )}
-                  <div className="mx-auto mb-1 flex h-16 w-16 items-center justify-center">
+                  <div className="mb-1 flex h-16 w-16 items-center justify-center">
                     {mon.spriteUrl && (
                       <Image
                         src={mon.spriteUrl}
@@ -379,7 +361,7 @@ export function BattleLobby({
                       />
                     )}
                   </div>
-                  <p className="truncate text-center text-label-md font-bold capitalize text-on-surface">
+                  <p className="w-full truncate text-center text-label-md font-bold capitalize text-on-surface">
                     {mon.name}
                   </p>
                   <div className="mt-1 flex flex-wrap justify-center gap-1">

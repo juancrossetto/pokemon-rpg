@@ -133,7 +133,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         <p className="text-label-md text-pokeball-red uppercase tracking-widest">
           {t("greeting", { username })}
         </p>
-        <h1 className="max-w-xl text-headline-lg md:text-display-lg text-white">
+        <h1 className="page-title max-w-xl text-headline-lg text-white md:text-display-lg">
           {t("noTeamTitle")}
         </h1>
         <p className="max-w-md text-body-lg text-on-surface-variant">{t("noTeamSubtitle")}</p>

@@ -48,7 +48,7 @@ export default async function StarterPage({
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-8">
       <div className="mx-auto max-w-3xl text-center">
-        <h1 className="text-headline-lg md:text-display-lg text-white">{t("title")}</h1>
+        <h1 className="page-title text-headline-lg text-white md:text-display-lg">{t("title")}</h1>
         <p className="mt-1 text-body-lg text-on-surface-variant">{t("subtitle")}</p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">

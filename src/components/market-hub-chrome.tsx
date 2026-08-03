@@ -57,7 +57,7 @@ export async function MarketHubHero({
               </span>
             </span>
           </div>
-          <h1 className="text-[clamp(1.25rem,5.5vw,2.25rem)] font-semibold leading-tight tracking-tight text-white">
+          <h1 className="page-title text-[clamp(1.25rem,5.5vw,2.25rem)] text-white">
             {t("hub.title")}
           </h1>
           <p className="mt-1.5 hidden max-w-xl text-label-md leading-snug text-white/80 sm:block">

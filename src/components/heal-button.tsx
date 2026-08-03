@@ -36,6 +36,7 @@ export function HealButton({
   coins,
   teamMaxLevel,
   stretch = false,
+  compact = false,
 }: {
   locale: string;
   needsHealing: boolean;
@@ -46,6 +47,8 @@ export function HealButton({
   teamMaxLevel: number;
   /** Ancho completo (toolbar mobile del hub Equipo). */
   stretch?: boolean;
+  /** Lobby / fila embebida: sin hint inferior, botón más contenido. */
+  compact?: boolean;
 }) {
   const t = useTranslations("team");
   const [error, setError] = useState<string | null>(null);
@@ -58,13 +61,21 @@ export function HealButton({
   const noviceFree = teamMaxLevel <= HEAL_FREE_UNTIL_LEVEL;
   const onCooldown = !noviceFree && cooldownMsLeft > 0;
   const canPay = coins >= rushCost;
+  const freeReady = needsHealing && !onCooldown;
+
   const shell = stretch
     ? "flex w-full min-w-0 flex-col items-stretch gap-1 sm:w-auto sm:items-end"
-    : "flex flex-col items-end gap-1";
-  const btnBase = stretch
-    ? "inline-flex w-full min-h-10 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-[13px] font-semibold sm:w-auto sm:justify-start sm:px-4 sm:text-label-sm"
-    : "inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-label-sm font-semibold";
-  const hintAlign = stretch ? "text-center sm:text-right" : "text-right";
+    : compact
+      ? "flex flex-col items-stretch gap-0.5"
+      : "flex flex-col items-end gap-1";
+
+  const btnSize = compact
+    ? "game-cta !mb-0 !min-h-10 !w-auto !min-w-[9.75rem] !px-3 !py-2 !text-[0.78rem]"
+    : stretch
+      ? "game-cta !mb-0 !min-h-10 w-full sm:!w-auto sm:!min-w-[11rem]"
+      : "game-cta !mb-0 !w-auto !min-w-[11rem]";
+
+  const hintAlign = stretch || compact ? "text-center sm:text-right" : "text-right";
 
   function run(rush: boolean) {
     setError(null);
@@ -87,12 +98,12 @@ export function HealButton({
           type="button"
           disabled
           title={noviceFree ? t("healNoviceFreeHint", { level: HEAL_FREE_UNTIL_LEVEL }) : undefined}
-          className={`${btnBase} cursor-not-allowed bg-surface-container-high text-on-surface-variant`}
+          className={`${btnSize} game-cta--red game-cta--disabled`}
         >
-          <ChanseyIcon className="h-5 w-5 opacity-80" />
-          {t("autoHeal")}
+          <ChanseyIcon className="game-cta__icon h-5 w-5 opacity-70" />
+          <span className="game-cta__label">{t("autoHeal")}</span>
         </button>
-        {noviceFree ? (
+        {!compact && noviceFree ? (
           <span className={`whitespace-nowrap text-[10px] font-medium text-emerald-400/90 ${hintAlign}`}>
             {t("healNoviceFree", { level: HEAL_FREE_UNTIL_LEVEL })}
           </span>
@@ -109,11 +120,11 @@ export function HealButton({
           disabled={pending || !canPay}
           onClick={() => run(true)}
           title={t("healRushHint", { minutes: minutesLeft(cooldownMsLeft) })}
-          className={`${btnBase} border border-electric-yellow/40 bg-electric-yellow/15 text-electric-yellow transition hover:bg-electric-yellow/25 disabled:cursor-not-allowed disabled:opacity-50`}
+          className={`${btnSize} ${pending || !canPay ? "game-cta--disabled" : ""}`}
         >
-          <span className="material-symbols-outlined text-[16px]!">bolt</span>
-          {t("healRush")}
-          <span className="inline-flex items-center gap-0.5 font-mono">
+          <span className="game-cta__icon material-symbols-outlined">bolt</span>
+          <span className="game-cta__label">{t("healRush")}</span>
+          <span className="game-cta__label inline-flex items-center gap-0.5 font-mono text-[0.85em] opacity-90">
             <span className="material-symbols-outlined text-[14px]!">paid</span>
             {rushCost}
           </span>
@@ -121,29 +132,36 @@ export function HealButton({
       ) : (
         <button
           type="button"
-          disabled={pending}
+          disabled={pending || !freeReady}
           onClick={() => run(false)}
           title={noviceFree ? t("healNoviceFreeHint", { level: HEAL_FREE_UNTIL_LEVEL }) : undefined}
-          className={`${btnBase} bg-pokeball-red text-white shadow-[0_6px_18px_rgba(238,21,21,0.25)] transition hover:bg-pokeball-red/90 active:scale-[0.98] disabled:opacity-60`}
+          className={`${btnSize} game-cta--red ${pending || !freeReady ? "game-cta--disabled" : ""}`}
         >
-          <ChanseyIcon className="h-6 w-6" />
-          {t("autoHeal")}
+          <ChanseyIcon className="game-cta__icon h-6 w-6" />
+          <span className="game-cta__label">{t("autoHeal")}</span>
         </button>
       )}
 
-      {noviceFree ? (
-        <span className={`whitespace-nowrap text-[10px] font-medium text-emerald-400/90 ${hintAlign}`}>
-          {t("healNoviceFree", { level: HEAL_FREE_UNTIL_LEVEL })}
-        </span>
-      ) : onCooldown ? (
-        <span className={`whitespace-nowrap text-[10px] text-on-surface-variant ${hintAlign}`}>
+      {!compact &&
+        (noviceFree ? (
+          <span className={`whitespace-nowrap text-[10px] font-medium text-emerald-400/90 ${hintAlign}`}>
+            {t("healNoviceFree", { level: HEAL_FREE_UNTIL_LEVEL })}
+          </span>
+        ) : onCooldown ? (
+          <span className={`whitespace-nowrap text-[10px] text-on-surface-variant ${hintAlign}`}>
+            {t("healCooldown", { minutes: minutesLeft(cooldownMsLeft) })}
+          </span>
+        ) : (
+          <span className={`whitespace-nowrap text-[10px] text-on-surface-variant ${hintAlign}`}>
+            {t("healFree")}
+          </span>
+        ))}
+
+      {compact && onCooldown ? (
+        <span className="text-center text-[9px] text-on-surface-variant">
           {t("healCooldown", { minutes: minutesLeft(cooldownMsLeft) })}
         </span>
-      ) : (
-        <span className={`whitespace-nowrap text-[10px] text-on-surface-variant ${hintAlign}`}>
-          {t("healFree")}
-        </span>
-      )}
+      ) : null}
 
       {error && (
         <span className={`text-[10px] text-error ${hintAlign}`}>{t(`healErrors.${error}`)}</span>

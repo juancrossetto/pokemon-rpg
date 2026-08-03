@@ -110,7 +110,7 @@ export function CampaignPrimaryObjective({
                 </>
               ) : null}
             </p>
-            <h1 className="mt-0.5 truncate text-[1.05rem] font-bold leading-tight tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-[1.35rem] lg:text-[1.45rem]">
+            <h1 className="page-title mt-0.5 truncate text-[1.05rem] leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-[1.35rem] lg:text-[1.45rem]">
               {locationName}
             </h1>
             {stagesTotal > 0 ? (

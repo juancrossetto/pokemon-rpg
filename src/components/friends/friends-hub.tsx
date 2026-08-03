@@ -406,7 +406,7 @@ export function FriendsHub({
               <span className="material-symbols-outlined text-[16px]!">handshake</span>
               {labels.eyebrow}
             </p>
-            <h1 className="text-headline-md tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] sm:text-headline-lg md:text-display-lg">
+            <h1 className="page-title text-headline-md text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] sm:text-headline-lg md:text-display-lg">
               {labels.title}
             </h1>
             <p className="mt-2 hidden max-w-xl text-body-md text-white/75 sm:block">

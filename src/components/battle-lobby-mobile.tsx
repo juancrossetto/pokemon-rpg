@@ -3,15 +3,13 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useTypeLabel } from "@/hooks/use-type-label";
-import { HandbookLink } from "@/components/handbook/handbook-trigger";
-import { HubHelpPanel } from "@/components/journey-guidance";
+import { HubHelpButton } from "@/components/journey-guidance";
 import { HealButton } from "@/components/heal-button";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
-import { PokeballIcon } from "@/components/pokeball-icon";
-import { itemSpriteUrl } from "@/lib/item-sprites";
+import { itemDisplayUrl } from "@/lib/item-sprites";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 
 /**
@@ -70,14 +68,6 @@ export function BattleLobbyMobile({
 
   return (
     <div className="flex flex-col gap-3 px-margin-mobile py-3">
-      <div className="flex items-center justify-between gap-2 px-0.5">
-        <HandbookLink chapter="battle" />
-      </div>
-      <HubHelpPanel
-        storageKey="hub-help-battle"
-        bullets={tUx.raw("help.battle") as string[]}
-        handbookChapter="battle"
-      />
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className="lobby-rise relative overflow-hidden rounded-2xl border border-white/12 bg-surface-container-low shadow-[0_18px_44px_rgba(0,0,0,0.5)]">
         {/* Mapa protagonista: toda la imagen abre el mapa completo (el trigger
@@ -107,6 +97,14 @@ export function BattleLobbyMobile({
               triggerLabel={tc("openMap")}
             />
           )}
+
+          <div className="absolute right-2 top-2 z-20">
+            <HubHelpButton
+              bullets={tUx.raw("help.battle") as string[]}
+              handbookChapter="battle"
+              roleKey="battle"
+            />
+          </div>
 
           {/* Datos de la zona encima del mapa: no cuestan altura propia. */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-col gap-1.5 p-3">
@@ -175,26 +173,52 @@ export function BattleLobbyMobile({
         </div>
       </section>
 
-      {/* ── Tira de recursos + accesos: 5 tiles en dos filas, no 2 cards ── */}
-      <section className="lobby-rise flex items-stretch divide-x divide-white/10 overflow-hidden rounded-xl border border-white/[0.08] bg-black/25" style={{ animationDelay: "60ms" }}>
-        <ResourceTile
-          icon={<PokeballIcon className="h-5 w-5" />}
-          label={t("pokeballsLabel")}
-          value={lobby.balls}
-        />
-        <ResourceTile
-          icon={
-            <Image
-              src={itemSpriteUrl("Potion")}
-              alt=""
-              width={20}
-              height={20}
-              className="h-5 w-5 object-contain"
-            />
-          }
-          label={t("potionsLabel")}
-          value={lobby.potions}
-        />
+      {/* ── Loadout: balls/pociones (íconos HD como en tienda) ── */}
+      <section className="lobby-rise" style={{ animationDelay: "60ms" }}>
+        <div className="flex items-stretch divide-x divide-white/10 overflow-hidden rounded-xl border border-white/[0.08] bg-black/25">
+          <ResourceTile
+            icon={
+              <Image
+                src={itemDisplayUrl("Poke Ball")}
+                alt=""
+                width={28}
+                height={28}
+                className="h-7 w-7 object-contain"
+              />
+            }
+            label={t("pokeballsLabel")}
+            value={lobby.balls}
+          />
+          <ResourceTile
+            icon={
+              <Image
+                src={itemDisplayUrl("Potion")}
+                alt=""
+                width={28}
+                height={28}
+                className="h-7 w-7 object-contain"
+              />
+            }
+            label={t("potionsLabel")}
+            value={lobby.potions}
+          />
+        </div>
+        {/*
+          Los puntos viven en Equipo; acá sólo un hint liviano tras farmear XP,
+          sin competir con Explorar / Centro Pokémon.
+        */}
+        {lobby.unspentTotal > 0 && (
+          <Link
+            href="/team"
+            className="mt-1.5 flex items-center gap-1 px-1 py-0.5 text-[11px] text-tertiary/90 active:opacity-80"
+          >
+            <span className="material-symbols-outlined text-[14px]!">bolt</span>
+            <span className="min-w-0 flex-1 truncate">
+              {t("lobby.unspentPoints", { count: lobby.unspentTotal })}
+            </span>
+            <span className="material-symbols-outlined text-[14px]!">chevron_right</span>
+          </Link>
+        )}
       </section>
 
       {/*
@@ -208,24 +232,18 @@ export function BattleLobbyMobile({
       */}
       {lobby.heal.hurtCount > 0 && (
         <section
-          className="lobby-rise flex items-center gap-2.5 rounded-xl border border-error/20 bg-error/[0.06] p-3"
+          className="lobby-rise flex items-center gap-3 rounded-2xl border border-white/10 bg-surface-container-high/70 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
           style={{ animationDelay: "90ms" }}
         >
-          <span
-            aria-hidden
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-error/25 bg-error/10"
-          >
-            <span className="material-symbols-outlined text-[20px]! text-error">healing</span>
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-label-sm font-semibold text-on-surface">
+          <div className="min-w-0 flex-1 self-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface-variant">
               {t("lobby.squadStatus")}
             </p>
-            <p className="text-[11px] text-on-surface-variant">
+            <p className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-white">
               {t("lobby.hurtCount", { count: lobby.heal.hurtCount })}
             </p>
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 self-center">
             <HealButton
               locale={locale}
               needsHealing
@@ -233,33 +251,23 @@ export function BattleLobbyMobile({
               rushCost={lobby.heal.rushCost}
               coins={lobby.heal.coins}
               teamMaxLevel={lobby.heal.teamMaxLevel}
+              compact
             />
           </div>
         </section>
-      )}
-
-      {lobby.unspentTotal > 0 && (
-        <Link
-          href="/team"
-          className="flex items-center gap-1.5 rounded-xl border border-tertiary/25 bg-tertiary/10 px-3 py-2 text-[11px] text-tertiary active:scale-[0.99]"
-        >
-          <span className="material-symbols-outlined text-[14px]!">bolt</span>
-          {t("lobby.unspentPoints", { count: lobby.unspentTotal })}
-          <span className="material-symbols-outlined ml-auto text-[14px]!">chevron_right</span>
-        </Link>
       )}
 
       {/* ── Últimos encuentros: carrusel horizontal en vez de lista vertical ── */}
       {lobby.recent.length > 0 && (
         <section className="lobby-rise" style={{ animationDelay: "120ms" }}>
           <SectionTitle>{t("lobby.recent")}</SectionTitle>
-          <div className="-mx-margin-mobile flex gap-2 overflow-x-auto px-margin-mobile pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-margin-mobile flex gap-3 overflow-x-auto px-margin-mobile pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {lobby.recent.slice(0, 8).map((entry) => (
               <div
                 key={entry.id}
-                className="flex w-[84px] shrink-0 flex-col items-center gap-1 rounded-xl border border-white/[0.08] bg-black/25 px-2 py-2"
+                className="flex w-[72px] shrink-0 flex-col items-center gap-0.5"
               >
-                <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/40">
+                <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-black/30">
                   {entry.spriteUrl && (
                     <Image
                       src={entry.spriteUrl}
@@ -277,12 +285,12 @@ export function BattleLobbyMobile({
                   {t("level", { level: entry.level })}
                 </p>
                 <span
-                  className={`w-full rounded-full py-0.5 text-center text-[8px] font-bold uppercase tracking-wide ${
+                  className={`text-center text-[8px] font-bold uppercase tracking-wide ${
                     entry.status === "WON" || entry.status === "CAUGHT"
-                      ? "bg-emerald-400/15 text-emerald-300"
+                      ? "text-emerald-300"
                       : entry.status === "LOST"
-                        ? "bg-error/15 text-error"
-                        : "bg-white/10 text-on-surface-variant"
+                        ? "text-error"
+                        : "text-on-surface-variant"
                   }`}
                 >
                   {t(`lobby.status.${entry.status}`)}
@@ -293,7 +301,7 @@ export function BattleLobbyMobile({
         </section>
       )}
 
-      {/* ── Pokémon de la zona: cards más bajas y sprite más grande ── */}
+      {/* ── Pokémon de la zona ── */}
       <section className="lobby-rise" style={{ animationDelay: "150ms" }}>
         <SectionTitle
           trailing={t("lobby.caughtCount", { caught, total: lobby.encounters.length })}
@@ -302,30 +310,27 @@ export function BattleLobbyMobile({
         </SectionTitle>
 
         {lobby.encounters.length === 0 ? (
-          <p className="rounded-xl border border-white/8 bg-black/20 py-6 text-center text-label-sm text-on-surface-variant">
+          <p className="py-6 text-center text-label-sm text-on-surface-variant">
             {t("lobby.noEncounters")}
           </p>
         ) : (
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-4 gap-2">
             {lobby.encounters.map((mon) => (
               <div
                 key={mon.speciesId}
-                className="relative rounded-lg border border-white/[0.08] bg-surface-container-high/40 px-1 pb-1.5 pt-1 active:scale-[0.98]"
+                className="relative flex flex-col items-center gap-0.5 active:scale-[0.98]"
               >
                 {mon.caught && (
                   <span
                     title={t("lobby.caught")}
-                    className="absolute right-1 top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-400 text-surface"
+                    className="absolute right-0 top-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-400 text-surface"
                   >
                     <span className="material-symbols-outlined text-[10px]! leading-none">
                       check
                     </span>
                   </span>
                 )}
-                {/* Sprite más grande dentro de una card más baja: el número de
-                    Pokédex y los chips de tipo se sacaron porque el nombre y el
-                    sprite ya identifican, y costaban ~34px por card. */}
-                <div className="mx-auto flex h-14 w-14 items-center justify-center">
+                <div className="flex h-14 w-14 items-center justify-center">
                   {mon.spriteUrl && (
                     <Image
                       src={mon.spriteUrl}
@@ -336,7 +341,7 @@ export function BattleLobbyMobile({
                     />
                   )}
                 </div>
-                <p className="truncate text-center text-[10px] font-bold capitalize text-on-surface">
+                <p className="w-full truncate text-center text-[10px] font-bold capitalize text-on-surface">
                   {mon.name}
                 </p>
               </div>
@@ -376,7 +381,7 @@ function ResourceTile({
 }) {
   return (
     <div className="flex flex-1 items-center gap-2 px-3 py-2">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06]">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center">
         {icon}
       </span>
       <span className="min-w-0 flex-1">

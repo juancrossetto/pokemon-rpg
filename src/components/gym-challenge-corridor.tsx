@@ -387,7 +387,7 @@ export function GymChallengeCorridor({
                 <p className="text-label-sm tracking-[0.12em] uppercase text-on-surface-variant">
                   {labels.title}
                 </p>
-                <h1 className="text-headline-lg text-white truncate">{gymName}</h1>
+                <h1 className="page-title truncate text-headline-lg text-white">{gymName}</h1>
               </div>
               <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/40">
                 <Image src={badgeUrl} alt={badgeName} width={44} height={44} className="object-contain p-1" />

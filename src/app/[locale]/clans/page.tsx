@@ -264,7 +264,7 @@ export default async function ClansPage({
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 pb-[calc(var(--bottom-nav-h,3.5rem)+env(safe-area-inset-bottom)+1rem)]">
       <div className="mx-auto max-w-5xl">
         <div className="mb-4">
-          <h1 className="text-headline-lg md:text-display-lg text-white">{t("title")}</h1>
+          <h1 className="page-title text-headline-lg text-white md:text-display-lg">{t("title")}</h1>
           <p className="text-label-md text-on-surface-variant mt-1">{t("subtitle")}</p>
         </div>
 

@@ -275,7 +275,7 @@ export default async function TowerPage({
             {t("eyebrow")}
           </p>
           <div className="flex flex-wrap items-end justify-between gap-2">
-            <h1 className="text-headline-sm font-bold tracking-tight text-white drop-shadow-sm sm:text-headline-md">
+            <h1 className="page-title text-headline-sm text-white drop-shadow-sm sm:text-headline-md">
               {t(COMBAT_TOWER_CONFIG.nameKey)}
             </h1>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">

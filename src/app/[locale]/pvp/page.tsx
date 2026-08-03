@@ -141,7 +141,7 @@ export default async function PvpPage({
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#ff8a00]">
             {t("eyebrow")}
           </p>
-          <h1 className="text-headline-lg tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] md:text-display-lg">
+          <h1 className="page-title text-headline-lg text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] md:text-display-lg">
             {t("title")}
           </h1>
           <p className="mt-1.5 max-w-xl text-[13px] text-white/60">{t("subtitle")}</p>

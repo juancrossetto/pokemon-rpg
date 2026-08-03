@@ -229,7 +229,7 @@ export default async function ClanDetailPage({
                   <ClanEmblemBadge emblem={clan.emblem} size={88} title={clan.name} />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-headline-lg text-white">
+                  <h1 className="page-title text-headline-lg text-white">
                     <span className="font-mono text-pokeball-red">[{clan.tag}]</span> {clan.name}
                   </h1>
                   {clan.motto ? (

@@ -96,7 +96,7 @@ export async function PcTab({
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-headline-lg md:text-display-lg text-white">{t("title")}</h1>
+        <h1 className="page-title text-headline-lg text-white md:text-display-lg">{t("title")}</h1>
         <p className="text-label-md text-on-surface-variant mt-1">{t("subtitle")}</p>
       </div>
 

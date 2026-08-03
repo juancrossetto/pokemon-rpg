@@ -252,7 +252,7 @@ function ShopHeader({
         <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
         {eyebrow}
       </p>
-      <h1 className="text-[clamp(1.5rem,6vw,2rem)] font-semibold leading-tight tracking-tight text-white">
+      <h1 className="page-title text-[clamp(1.5rem,6vw,2rem)] text-white">
         {title}
       </h1>
       <p className="mt-0.5 text-[12px] leading-snug text-on-surface-variant sm:text-label-md">

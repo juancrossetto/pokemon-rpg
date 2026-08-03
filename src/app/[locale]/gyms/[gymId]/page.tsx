@@ -109,7 +109,7 @@ export default async function GymLeaderPage({
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
       <div className="mx-auto max-w-3xl">
         <p className="text-label-sm uppercase text-on-surface-variant mb-1">{t("leaderAnalysis")}</p>
-        <h1 className="text-headline-lg md:text-display-lg text-white mb-4 md:mb-6">{gymNameLabel}</h1>
+        <h1 className="page-title mb-4 text-headline-lg text-white md:mb-6 md:text-display-lg">{gymNameLabel}</h1>
 
         {/* Horizontal también en mobile: apilado, el retrato empujaba el nombre
             y el nivel de amenaza fuera de la primera pantalla. */}

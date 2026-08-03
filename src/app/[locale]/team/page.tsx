@@ -273,7 +273,7 @@ export default async function TeamPage({
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               {t("activeSquad")}
             </p>
-            <h1 className="text-[1.35rem] font-semibold tracking-tight text-white md:text-headline-lg">
+            <h1 className="page-title text-[1.35rem] text-white md:text-headline-lg">
               {t("title")}
             </h1>
             <p className="mt-0.5 text-[12px] leading-snug text-on-surface-variant md:text-label-md">

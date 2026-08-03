@@ -68,7 +68,7 @@ export default async function RankingPage({
     <div className="flex-1 px-margin-mobile py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:px-margin-desktop md:py-8">
       <div className="mx-auto max-w-5xl">
         <header className="mb-3 md:mb-4">
-          <h1 className="text-headline-lg tracking-tight text-white md:text-display-sm">
+          <h1 className="page-title text-headline-lg text-white md:text-display-sm">
             {t("title")}
           </h1>
           <p className="mt-1 hidden max-w-xl text-label-md text-on-surface-variant sm:block">

@@ -223,7 +223,7 @@ export function PokedexTerminal({
       {/* Header progreso */}
       <header className="space-y-4">
         <div>
-          <h1 className="text-headline-lg tracking-tight text-white md:text-display-sm">
+          <h1 className="page-title text-headline-lg text-white md:text-display-sm">
             {labels.title}
           </h1>
           <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant">

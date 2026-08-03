@@ -424,6 +424,18 @@ body {
   font-weight: 500;
 }
 
+/**
+ * Título de pantalla (hubs). Grobold + uppercase — misma temática en todas.
+ * Combinar con un tamaño (`text-headline-lg`, clamp, …); el weight lo fija acá.
+ */
+@utility page-title {
+  font-family: "Grobold", var(--font-lilita), var(--font-game), sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+}
+
 @keyframes pokeball-spin {
   from {
     transform: rotate(0deg);
@@ -2838,7 +2850,7 @@ body {
   transform: scale(0.99);
 }
 
-/* Hero de /gyms: en mobile evita altura forzada y el portrait “flotando” abajo. */
+/* Hero de /gyms: chato en mobile; en desktop altura moderada (no 420px). */
 .gym-mission-hero {
   min-height: 0;
 }
@@ -2846,7 +2858,7 @@ body {
 @media (min-width: 768px) {
   .gym-mission-hero,
   .gym-mission-hero__body {
-    min-height: 420px;
+    min-height: 300px;
   }
 
   .gym-mission-hero__body {
