@@ -17,10 +17,18 @@
           { "name": "natu", "level": 7 },
           { "name": "hoothoot", "level": 8 }
         ]
+      },
+      {
+        "name": "Pajarero Gus",
+        "pokemon": [
+          { "name": "pidgey", "level": 8 },
+          { "name": "spearow", "level": 9 }
+        ]
       }
     ],
     "pokemon": [
       { "name": "natu", "level": 8 },
+      { "name": "pidgeotto", "level": 9 },
       { "name": "noctowl", "level": 10 }
     ],
     "isElite": false
@@ -43,11 +51,19 @@
           { "name": "ledyba", "level": 11 },
           { "name": "spinarak", "level": 12 }
         ]
+      },
+      {
+        "name": "Cazabichos Milo",
+        "pokemon": [
+          { "name": "paras", "level": 12 },
+          { "name": "pineco", "level": 13 }
+        ]
       }
     ],
     "pokemon": [
       { "name": "ledyba", "level": 13 },
       { "name": "ariados", "level": 15 },
+      { "name": "scyther", "level": 15 },
       { "name": "yanma", "level": 16 }
     ],
     "isElite": false
@@ -70,11 +86,19 @@
           { "name": "clefairy", "level": 16 },
           { "name": "snubbull", "level": 17 }
         ]
+      },
+      {
+        "name": "Belleza Nina",
+        "pokemon": [
+          { "name": "jigglypuff", "level": 17 },
+          { "name": "aipom", "level": 18 }
+        ]
       }
     ],
     "pokemon": [
       { "name": "clefairy", "level": 17 },
       { "name": "furret", "level": 18 },
+      { "name": "wigglytuff", "level": 19 },
       { "name": "miltank", "level": 20 }
     ],
     "isElite": false
@@ -97,11 +121,19 @@
           { "name": "gastly", "level": 19 },
           { "name": "misdreavus", "level": 20 }
         ]
+      },
+      {
+        "name": "Médium Silas",
+        "pokemon": [
+          { "name": "haunter", "level": 21 },
+          { "name": "gastly", "level": 22 }
+        ]
       }
     ],
     "pokemon": [
       { "name": "haunter", "level": 21 },
       { "name": "misdreavus", "level": 23 },
+      { "name": "haunter", "level": 24 },
       { "name": "gengar", "level": 25 }
     ],
     "isElite": false
@@ -124,12 +156,21 @@
           { "name": "tyrogue", "level": 25 },
           { "name": "machop", "level": 26 }
         ]
+      },
+      {
+        "name": "Karateka Ryo",
+        "pokemon": [
+          { "name": "machoke", "level": 27 },
+          { "name": "primeape", "level": 28 },
+          { "name": "poliwrath", "level": 29 }
+        ]
       }
     ],
     "pokemon": [
       { "name": "hitmonlee", "level": 26 },
       { "name": "hitmonchan", "level": 27 },
       { "name": "hitmontop", "level": 28 },
+      { "name": "primeape", "level": 29 },
       { "name": "heracross", "level": 30 }
     ],
     "isElite": false
@@ -152,11 +193,20 @@
           { "name": "pineco", "level": 27 },
           { "name": "magnemite", "level": 28 }
         ]
+      },
+      {
+        "name": "Marinero Steel",
+        "pokemon": [
+          { "name": "magneton", "level": 29 },
+          { "name": "forretress", "level": 30 },
+          { "name": "skarmory", "level": 31 }
+        ]
       }
     ],
     "pokemon": [
       { "name": "skarmory", "level": 30 },
       { "name": "forretress", "level": 31 },
+      { "name": "magneton", "level": 32 },
       { "name": "scizor", "level": 33 },
       { "name": "steelix", "level": 35 }
     ],
@@ -180,6 +230,14 @@
           { "name": "swinub", "level": 26 },
           { "name": "delibird", "level": 27 }
         ]
+      },
+      {
+        "name": "Esquiador Frost",
+        "pokemon": [
+          { "name": "seel", "level": 28 },
+          { "name": "sneasel", "level": 29 },
+          { "name": "jynx", "level": 30 }
+        ]
       }
     ],
     "pokemon": [
@@ -187,6 +245,7 @@
       { "name": "jynx", "level": 29 },
       { "name": "sneasel", "level": 30 },
       { "name": "dewgong", "level": 31 },
+      { "name": "cloyster", "level": 32 },
       { "name": "piloswine", "level": 33 }
     ],
     "isElite": false
@@ -209,6 +268,14 @@
           { "name": "dratini", "level": 33 },
           { "name": "seadra", "level": 34 }
         ]
+      },
+      {
+        "name": "Domadragones Kai",
+        "pokemon": [
+          { "name": "dragonair", "level": 35 },
+          { "name": "gyarados", "level": 36 },
+          { "name": "seadra", "level": 37 }
+        ]
       }
     ],
     "pokemon": [
@@ -216,6 +283,7 @@
       { "name": "seadra", "level": 37 },
       { "name": "dragonair", "level": 37 },
       { "name": "gyarados", "level": 38 },
+      { "name": "ampharos", "level": 39 },
       { "name": "kingdra", "level": 40 }
     ],
     "isElite": false

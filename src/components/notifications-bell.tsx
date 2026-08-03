@@ -91,6 +91,8 @@ function headlineFor(
       return t("clanRoleChangedTitle");
     case "DAILY_REWARD_READY":
       return t("dailyRewardReadyTitle");
+    case "ENERGY_FULL":
+      return t("energyFullTitle");
     default:
       return t("unknown");
   }
@@ -157,6 +159,8 @@ function detailFor(
       });
     case "DAILY_REWARD_READY":
       return t("dailyRewardReadyDetail");
+    case "ENERGY_FULL":
+      return t("energyFullDetail");
     default:
       return "";
   }

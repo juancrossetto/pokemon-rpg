@@ -6,6 +6,10 @@ import { gymBadgeImageUrl, gymLeaderImageUrl } from "@/lib/gym-art";
 import { itemSpriteUrl } from "@/lib/item-sprites";
 import { DAILY_CYCLE, nextDay, slotForDay } from "@/lib/events/daily";
 import { dayKey, serverNow } from "@/lib/events/time";
+import {
+  ENERGY_FULL_NOTIFY_COOLDOWN_MS,
+  getCurrentEnergy,
+} from "@/lib/energy";
 
 export type NotificationImageKind = "avatar" | "item" | "pokemon" | "badge" | "leader";
 
@@ -84,6 +88,7 @@ export async function createNotification(input: {
     "CLAN_KICKED",
     "CLAN_ROLE_CHANGED",
     "DAILY_REWARD_READY",
+    "ENERGY_FULL",
   ];
   if (rawEnumTypes.includes(input.type)) {
     const id = newNotificationId();
@@ -206,11 +211,72 @@ export async function syncDailyRewardNotification(userId: string) {
   });
 }
 
+/**
+ * Si la energía está al tope, asegura un aviso unread (con cooldown 6h).
+ * Si no está llena, marca como leídas las ENERGY_FULL pendientes.
+ * Usa SQL crudo: el enum nuevo puede no estar en el Prisma Client del HMR.
+ */
+export async function syncEnergyFullNotification(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { energy: true, energyMax: true, energyUpdatedAt: true },
+  });
+  if (!user) return;
+
+  const current = getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt);
+  if (current < user.energyMax) {
+    await prisma.$executeRaw`
+      UPDATE "Notification"
+      SET "readAt" = NOW()
+      WHERE "userId" = ${userId}
+        AND "type" = CAST('ENERGY_FULL' AS "NotificationType")
+        AND "readAt" IS NULL
+    `;
+    return;
+  }
+
+  const unread = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "Notification"
+    WHERE "userId" = ${userId}
+      AND "type" = CAST('ENERGY_FULL' AS "NotificationType")
+      AND "readAt" IS NULL
+    LIMIT 1
+  `;
+  if (unread[0]) return;
+
+  const recent = await prisma.$queryRaw<{ createdAt: Date }[]>`
+    SELECT "createdAt" FROM "Notification"
+    WHERE "userId" = ${userId}
+      AND "type" = CAST('ENERGY_FULL' AS "NotificationType")
+    ORDER BY "createdAt" DESC
+    LIMIT 1
+  `;
+  if (
+    recent[0] &&
+    Date.now() - new Date(recent[0].createdAt).getTime() < ENERGY_FULL_NOTIFY_COOLDOWN_MS
+  ) {
+    return;
+  }
+
+  await createNotification({
+    userId,
+    type: "ENERGY_FULL",
+    href: "/",
+    payload: {
+      imageUrl: "/items/hd/energy.png",
+      imageKind: "item",
+    },
+  });
+}
+
 export async function listNotifications(userId: string, limit = HISTORY_LIMIT): Promise<{
   items: NotificationDTO[];
   unreadCount: number;
 }> {
-  await syncDailyRewardNotification(userId);
+  await Promise.all([
+    syncDailyRewardNotification(userId),
+    syncEnergyFullNotification(userId),
+  ]);
 
   const [rows, unreadCount] = await Promise.all([
     prisma.notification.findMany({

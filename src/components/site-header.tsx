@@ -44,6 +44,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   const resourceLabels: ResourceBarLabels = {
     energy: t("energy"),
     energyFull: t("energyFull"),
+    energyFullToast: t("energyFullToast"),
     // Estas dos viajan como plantilla, no como texto final: `ResourceBar` es
     // un componente de cliente y reemplaza `{minutes}` y `{time}` con el
     // contador que calcula cada segundo. Pasarle el propio marcador como valor

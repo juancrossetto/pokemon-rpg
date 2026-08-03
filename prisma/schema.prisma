@@ -107,6 +107,7 @@ enum NotificationType {
   CLAN_KICKED
   CLAN_ROLE_CHANGED
   DAILY_REWARD_READY
+  ENERGY_FULL
 }
 
 model Notification {
