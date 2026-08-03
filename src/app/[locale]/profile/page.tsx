@@ -494,8 +494,6 @@ export default async function ProfilePage({
           gradientFrom: heroGradientFrom,
           gradientTo: heroGradientTo,
           topLevel: stats.topLevel,
-          badges: stats.badges,
-          totalGyms: stats.totalGyms,
           power: stats.power,
           trainerSpriteUrl: trainerSprite,
           companionSpriteUrl: favorite
@@ -510,7 +508,6 @@ export default async function ProfilePage({
           labels: {
             power: t("cp"),
             level: t("levelShort"),
-            badges: t("badgesShort"),
           },
         }}
         hubLabels={{
