@@ -6893,8 +6893,8 @@ html.boot-splash-pending .boot-splash {
   width: 14px;
   height: 2px;
   border-radius: 999px;
-  background: linear-gradient(90deg, transparent, #f2c000, #fff8c8, transparent);
-  box-shadow: 0 0 8px #f2c000aa;
+  background: linear-gradient(90deg, transparent, var(--color-pokeball-red), color-mix(in srgb, var(--color-pokeball-red) 40%, white), transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-pokeball-red) 65%, transparent);
   offset-path: inset(0 round 1rem);
   offset-rotate: auto;
   animation: tp-electric-crawl 5.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -9080,7 +9080,6 @@ html.is-standalone body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
   margin: 0;
   font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
   font-weight: 400;
@@ -9089,6 +9088,26 @@ html.is-standalone body {
   line-height: 1;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* Solo el texto cuenta para el centro — bandera/insignia van al costado
+   sin empujar el nombre (mismo eje que el CP debajo). */
+.tp-id__name-core {
+  position: relative;
+  display: inline-flex;
+  max-width: min(100%, 18rem);
+  align-items: center;
+  justify-content: center;
+}
+
+.tp-id__name-trail {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  translate: 0 -50%;
 }
 
 .tp-id__name-text {

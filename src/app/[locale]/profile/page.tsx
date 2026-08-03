@@ -258,11 +258,11 @@ export default async function ProfilePage({
     : neonTypeColor(heroTypes[0] ?? "normal", 42);
 
   const collections: CollectionSlice[] = [
-    buildCollection("legendary", stats.legendaries, legendaryTotal, "#f5cb46"),
+    buildCollection("legendary", stats.legendaries, legendaryTotal, "#a78bfa"),
     buildCollection("mythical", stats.mythicals, mythicalTotal, "#f072c0"),
-    buildCollection("shiny", shinies, Math.max(shinies, dexTotal), "#f2c000"),
+    buildCollection("shiny", shinies, Math.max(shinies, dexTotal), "#5ef0ff"),
     buildCollection("starter", countOwnedIn(STARTER_IDS), starterTotal, "#4ade80"),
-    buildCollection("pseudo", countOwnedIn(PSEUDO_IDS), pseudoTotal, "#a78bfa"),
+    buildCollection("pseudo", countOwnedIn(PSEUDO_IDS), pseudoTotal, "#38bdf8"),
   ];
 
   const dateFmt = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" });
@@ -306,7 +306,7 @@ export default async function ProfilePage({
 
   const vaultNode = (
     <>
-      <SectionLabel color="#ff6a00">{t("vault")}</SectionLabel>
+      <SectionLabel color="var(--color-pokeball-red)">{t("vault")}</SectionLabel>
       <TrainerVault
         badges={badges.map((b) => ({
           id: b.id,

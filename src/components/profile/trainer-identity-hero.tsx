@@ -14,7 +14,6 @@ import type { PvpDivision, PvpTier } from "@/lib/pvp/tiers";
 export type IdentityHeroLabels = {
   power: string;
   level: string;
-  badges: string;
 };
 
 /**
@@ -40,8 +39,6 @@ export function TrainerIdentityHero({
   gradientFrom,
   gradientTo,
   topLevel,
-  badges,
-  totalGyms,
   power,
   trainerSpriteUrl,
   companionSpriteUrl,
@@ -70,8 +67,6 @@ export function TrainerIdentityHero({
   gradientFrom: string;
   gradientTo: string;
   topLevel: number;
-  badges: number;
-  totalGyms: number;
   power: number;
   trainerSpriteUrl: string | null;
   companionSpriteUrl: string | null;
@@ -119,25 +114,29 @@ export function TrainerIdentityHero({
         {/* Cabecera editorial: nombre → liga PvP → metadatos. Ver `.tp-id__*`. */}
         <div className="tp-id mb-1 text-center">
           <h1 className="tp-id__name">
-            <span className="tp-id__name-text truncate">{username}</span>
-            <FlagIcon code={country} className="tp-id__flag" />
-            <span
-              className="tp-id__badge group relative inline-flex shrink-0 outline-none"
-              tabIndex={0}
-              aria-label={rankLabel}
-            >
-              <PvpRankBadge
-                tier={pvpTier}
-                division={pvpDivision}
-                label={pvpTierLabel}
-                size="sm"
-                className="shrink-0"
-              />
-              <span
-                role="tooltip"
-                className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/15 bg-black/90 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus:opacity-100"
-              >
-                {rankLabel}
+            <span className="tp-id__name-core">
+              <span className="tp-id__name-text truncate">{username}</span>
+              <span className="tp-id__name-trail">
+                <FlagIcon code={country} className="tp-id__flag" />
+                <span
+                  className="tp-id__badge group relative inline-flex shrink-0 outline-none"
+                  tabIndex={0}
+                  aria-label={rankLabel}
+                >
+                  <PvpRankBadge
+                    tier={pvpTier}
+                    division={pvpDivision}
+                    label={pvpTierLabel}
+                    size="sm"
+                    className="shrink-0"
+                  />
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/15 bg-black/90 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus:opacity-100"
+                  >
+                    {rankLabel}
+                  </span>
+                </span>
               </span>
             </span>
           </h1>
@@ -146,13 +145,6 @@ export function TrainerIdentityHero({
             <span className="tp-id__meta-item">
               <span className="tp-id__meta-key">{labels.level}</span>
               <span className="tp-id__meta-num">{topLevel}</span>
-            </span>
-            <span aria-hidden className="tp-id__meta-sep" />
-            <span className="tp-id__meta-item">
-              <span className="tp-id__meta-num">
-                {badges}/{totalGyms}
-              </span>
-              <span className="tp-id__meta-key">{labels.badges}</span>
             </span>
             {companionLine ? (
               <>

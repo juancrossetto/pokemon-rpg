@@ -86,8 +86,8 @@ export function TrainerStatRows({ rows }: { rows: StatRow[] }) {
             <div className="px-3.5 pb-2.5">
               <ProgressRail
                 pct={row.pct}
-                color="#ff4d00"
-                toColor="#ffe566"
+                color="var(--color-pokeball-red)"
+                toColor="var(--theme-primary-bright)"
                 height={3}
               />
             </div>

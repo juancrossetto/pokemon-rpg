@@ -1,20 +1,13 @@
 "use client";
 
-const ARC_ORANGE = "#ff4d00";
-const ARC_MID = "#ff9f0a";
-const ARC_YELLOW = "#ffe566";
+const ARC_FROM = "#1a6dff";
+const ARC_MID = "#2eb8ff";
+const ARC_TO = "#5ef0ff";
 
 /**
  * PC centrado sobre el Pokémon, con el arco de progreso alrededor.
  *
- * El arco no es decorativo: lleva el mismo progreso de rango que la barra de
- * abajo, dibujado con `pathLength="100"` para que el `stroke-dasharray` se pueda
- * expresar directamente en porcentaje sin calcular la longitud real de la curva.
- *
- * El SVG conserva su relación de aspecto (nada de `preserveAspectRatio="none"`):
- * estirado, el trazo engorda de un lado y adelgaza del otro.
- *
- * Glow flúor contenido — halo corto, sin mancha naranja que robe la escena.
+ * Glow fluor celeste (hub PvP), sin naranja hardcodeado.
  */
 export function TrainerCpArc({
   label,
@@ -25,7 +18,7 @@ export function TrainerCpArc({
   value: number;
   /** 0–1. */
   pct: number;
-  /** @deprecated El arco usa naranja flúor fijo. Se ignora. */
+  /** @deprecated Se ignora. */
   color?: string;
 }) {
   const filled = Math.round(Math.max(0, Math.min(1, pct)) * 100);
@@ -33,21 +26,15 @@ export function TrainerCpArc({
 
   return (
     <>
-      {/* PC + número: sin fondo — el arco pasa detrás del texto. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] flex items-baseline justify-center gap-2 pt-0.5">
-        <p className="tp-id__cp-label text-[0.95rem] uppercase leading-none tracking-[0.22em] text-white/45 sm:text-[1.05rem]">
+        <p className="tp-id__cp-label text-[1.45rem] uppercase leading-none tracking-[0.16em] text-white/60 sm:text-[1.65rem]">
           {label}
         </p>
         <p className="tp-id__cp-value text-[2.45rem] leading-none tracking-[-0.02em] text-white tabular-nums drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-[2.9rem]">
-          {value.toLocaleString()}
+          {value}
         </p>
       </div>
 
-      {/*
-        Arco de piso a piso. El pico queda DENTRO del viewBox (antes salía por
-        arriba y el borde superior del SVG cortaba el trazo como si hubiera un
-        rectángulo negro sobre el CP).
-      */}
       <svg
         viewBox="0 0 320 168"
         preserveAspectRatio="xMidYMax meet"
@@ -57,13 +44,12 @@ export function TrainerCpArc({
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%" stopColor={ARC_ORANGE} />
+            <stop offset="0%" stopColor={ARC_FROM} />
             <stop offset="55%" stopColor={ARC_MID} />
-            <stop offset="100%" stopColor={ARC_YELLOW} />
+            <stop offset="100%" stopColor={ARC_TO} />
           </linearGradient>
         </defs>
 
-        {/* Pico en y≈18 — debajo del rótulo PC, sin clip. */}
         <path
           d="M16 158 A 142 142 0 0 1 304 158"
           stroke="rgba(255,255,255,0.10)"
@@ -72,7 +58,7 @@ export function TrainerCpArc({
         />
         <path
           d="M16 158 A 142 142 0 0 1 304 158"
-          stroke={ARC_ORANGE}
+          stroke={ARC_MID}
           strokeWidth="3.5"
           strokeLinecap="round"
           pathLength={100}
@@ -88,7 +74,7 @@ export function TrainerCpArc({
           pathLength={100}
           strokeDasharray={`${filled} 100`}
           style={{
-            filter: `drop-shadow(0 0 3px ${ARC_ORANGE}66)`,
+            filter: `drop-shadow(0 0 3px ${ARC_MID}66)`,
           }}
         />
       </svg>

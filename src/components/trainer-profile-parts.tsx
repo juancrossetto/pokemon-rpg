@@ -148,7 +148,7 @@ export function ProgressRail({
   delayMs?: number;
 }) {
   const fill = toColor
-    ? `linear-gradient(90deg, ${color}, #ff9f0a 55%, ${toColor})`
+    ? `linear-gradient(90deg, ${color}, ${toColor})`
     : `linear-gradient(90deg,${color}99,${color})`;
 
   return (
