@@ -34,6 +34,7 @@
     "campaign": "Journey",
     "energy": "Energy",
     "energyFull": "Energy full",
+    "energyFullToast": "Energy full! Good time to battle or explore.",
     "energyRegen": "Regenerates 1 point every {minutes} min.",
     "energyNext": "Next point in {time}.",
     "coins": "Coins",
@@ -149,7 +150,9 @@
     "clanRoleChangedTitle": "Role updated",
     "clanRoleChangedDetail": "[{clanTag}] {clanName}",
     "dailyRewardReadyTitle": "Daily reward",
-    "dailyRewardReadyDetail": "Still unclaimed. Tap to open it."
+    "dailyRewardReadyDetail": "Still unclaimed. Tap to open it.",
+    "energyFullTitle": "Energy full",
+    "energyFullDetail": "Your bar is full. Good time to battle or explore."
   },
   "home": {
     "eyebrow": "Season 1",

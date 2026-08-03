@@ -13,24 +13,23 @@ export function seasonWindow(now = new Date()): { startsAt: Date; endsAt: Date }
 /**
  * Asegura la temporada de guerra del mes. Idempotente.
  * Status ACTIVE: registro y combates abiertos durante todo el mes.
+ * Usa upsert para no romper si dos requests crean la misma seasonKey.
  */
 export async function ensureClanWarSeason(
   tx: Prisma.TransactionClient,
   now = new Date(),
 ): Promise<{ id: string; seasonKey: string }> {
   const seasonKey = currentSeasonKey(now);
-  const existing = await tx.clanWarSeason.findUnique({ where: { seasonKey } });
-  if (existing) return { id: existing.id, seasonKey };
-
   const { startsAt, endsAt } = seasonWindow(now);
-  const created = await tx.clanWarSeason.create({
-    data: {
+  return tx.clanWarSeason.upsert({
+    where: { seasonKey },
+    create: {
       seasonKey,
       status: "ACTIVE",
       startsAt,
       endsAt,
     },
+    update: {},
     select: { id: true, seasonKey: true },
   });
-  return created;
 }

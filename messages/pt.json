@@ -34,6 +34,7 @@
     "campaign": "Jornada",
     "energy": "Energia",
     "energyFull": "Energia cheia",
+    "energyFullToast": "Energia no máximo! Boa hora para batalhar ou explorar.",
     "energyRegen": "Regenera 1 ponto a cada {minutes} min.",
     "energyNext": "Próximo ponto em {time}.",
     "coins": "Moedas",
@@ -149,7 +150,9 @@
     "clanRoleChangedTitle": "Cargo atualizado",
     "clanRoleChangedDetail": "[{clanTag}] {clanName}",
     "dailyRewardReadyTitle": "Recompensa diária",
-    "dailyRewardReadyDetail": "Ainda não resgatada. Toque para abrir."
+    "dailyRewardReadyDetail": "Ainda não resgatada. Toque para abrir.",
+    "energyFullTitle": "Energia no máximo",
+    "energyFullDetail": "Sua barra está cheia. Boa hora para batalhar ou explorar."
   },
   "home": {
     "eyebrow": "Temporada 1",

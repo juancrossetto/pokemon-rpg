@@ -4,6 +4,8 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { CoinsBadge } from "@/components/coins-badge";
+import { reportEnergyFullAction } from "@/actions/notifications";
+import { showToast } from "@/lib/app-toast";
 import {
   formatCountdown,
   GYM_BATTLE_ENERGY_COST,
@@ -22,6 +24,8 @@ const RESOURCE_ICON = {
 export type ResourceBarLabels = {
   energy: string;
   energyFull: string;
+  /** Toast al llegar a tope con la app abierta. */
+  energyFullToast: string;
   energyRegen: string;
   energyNext: string;
   energyEmptyTitle?: string;
@@ -281,6 +285,18 @@ export function ResourceBar({
   const isFull = remaining === null;
   const countdown = typeof remaining === "number" ? formatCountdown(remaining) : null;
   const isMobile = variant === "mobile";
+  const wasFullRef = useRef<boolean | null>(null);
+
+  // Toast + campanita cuando la barra se llena en vivo (no al montar ya llena).
+  useEffect(() => {
+    if (remaining === undefined) return;
+    const nowFull = remaining === null;
+    if (wasFullRef.current === false && nowFull) {
+      showToast(labels.energyFullToast, "success");
+      void reportEnergyFullAction();
+    }
+    wasFullRef.current = nowFull;
+  }, [remaining, labels.energyFullToast]);
 
   useEffect(() => {
     if (!open) return;

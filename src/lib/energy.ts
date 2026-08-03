@@ -25,6 +25,9 @@ export const GYM_BATTLE_ENERGY_COST = 2;
 /** Costo por combate de PvP. */
 export const PVP_BATTLE_ENERGY_COST = 1;
 
+/** Cooldown entre avisos in-app de "energía llena" (anti-spam). */
+export const ENERGY_FULL_NOTIFY_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+
 export function getCurrentEnergy(energy: number, energyMax: number, energyUpdatedAt: Date): number {
   const elapsedMs = Date.now() - energyUpdatedAt.getTime();
   const regenerated = Math.floor(elapsedMs / REGEN_MS_PER_POINT);
@@ -48,6 +51,24 @@ export function msUntilNextEnergyPoint(
   const elapsedMs = now - energyUpdatedAt.getTime();
   const remainder = elapsedMs % REGEN_MS_PER_POINT;
   return REGEN_MS_PER_POINT - remainder;
+}
+
+/**
+ * Ms hasta que la barra esté llena, o `null` si ya lo está.
+ * Suma los ticks restantes al mismo ritmo que `getCurrentEnergy`.
+ */
+export function msUntilEnergyFull(
+  energy: number,
+  energyMax: number,
+  energyUpdatedAt: Date,
+  now: number = Date.now(),
+): number | null {
+  const current = getCurrentEnergy(energy, energyMax, energyUpdatedAt);
+  if (current >= energyMax) return null;
+  const pointsNeeded = energyMax - current;
+  const toNext = msUntilNextEnergyPoint(energy, energyMax, energyUpdatedAt, now);
+  if (toNext == null) return null;
+  return toNext + (pointsNeeded - 1) * REGEN_MS_PER_POINT;
 }
 
 /** `mm:ss` para el contador del header. */

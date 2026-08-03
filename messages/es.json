@@ -34,6 +34,7 @@
     "campaign": "Viaje",
     "energy": "Energía",
     "energyFull": "Energía al máximo",
+    "energyFullToast": "¡Energía al máximo! Buen momento para pelear o explorar.",
     "energyRegen": "Se regenera 1 punto cada {minutes} min.",
     "energyNext": "Próximo punto en {time}.",
     "coins": "Monedas",
@@ -149,7 +150,9 @@
     "clanRoleChangedTitle": "Rol actualizado",
     "clanRoleChangedDetail": "[{clanTag}] {clanName}",
     "dailyRewardReadyTitle": "Recompensa diaria",
-    "dailyRewardReadyDetail": "Todavía no la reclamaste. Tocá para abrirla."
+    "dailyRewardReadyDetail": "Todavía no la reclamaste. Tocá para abrirla.",
+    "energyFullTitle": "Energía al máximo",
+    "energyFullDetail": "Tenés la barra llena. Es buen momento para pelear o explorar."
   },
   "home": {
     "eyebrow": "Temporada 1",
