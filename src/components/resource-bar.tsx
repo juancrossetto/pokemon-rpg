@@ -495,40 +495,44 @@ export function ResourceBar({
               open === "all" ? "bg-white/[0.06]" : ""
             }`}
           >
-            <Image
-              src={RESOURCE_ICON.energy}
-              alt=""
-              width={22}
-              height={22}
-              className="h-[22px] w-[22px] object-contain"
-              unoptimized
-            />
-            <span className="font-mono text-[11px] font-semibold tabular-nums text-sky-100">
-              {energy}
+            <span data-loot-target="energy" className="inline-flex items-center gap-1">
+              <Image
+                src={RESOURCE_ICON.energy}
+                alt=""
+                width={22}
+                height={22}
+                className="h-[22px] w-[22px] object-contain"
+                unoptimized
+              />
+              <span className="font-mono text-[11px] font-semibold tabular-nums text-sky-100">
+                {energy}
+              </span>
             </span>
             <span className="mx-0.5 h-3 w-px bg-white/15" aria-hidden />
-            <Image
-              src={RESOURCE_ICON.coins}
-              alt=""
-              width={18}
-              height={18}
-              className="h-[18px] w-[18px] object-contain"
-              unoptimized
-            />
-            <span data-loot-target="coins" className="inline-flex">
+            <span data-loot-target="coins" className="inline-flex items-center gap-1">
+              <Image
+                src={RESOURCE_ICON.coins}
+                alt=""
+                width={18}
+                height={18}
+                className="h-[18px] w-[18px] object-contain"
+                unoptimized
+              />
               <CoinsBadge coins={coins} size="bar" showIcon={false} />
             </span>
             <span className="mx-0.5 h-3 w-px bg-white/15" aria-hidden />
-            <Image
-              src={RESOURCE_ICON.gems}
-              alt=""
-              width={22}
-              height={22}
-              className="h-[22px] w-[22px] object-contain"
-              unoptimized
-            />
-            <span className="font-mono text-[11px] font-semibold tabular-nums text-gem">
-              {gems}
+            <span data-loot-target="gems" className="inline-flex items-center gap-1">
+              <Image
+                src={RESOURCE_ICON.gems}
+                alt=""
+                width={22}
+                height={22}
+                className="h-[22px] w-[22px] object-contain"
+                unoptimized
+              />
+              <span className="font-mono text-[11px] font-semibold tabular-nums text-gem">
+                {gems}
+              </span>
             </span>
           </button>
           {open === "all" && (

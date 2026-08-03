@@ -43,7 +43,7 @@ export default function LoginPage() {
   }
 
   const fieldClass =
-    "w-full border border-white/15 bg-black/50 py-2.5 pl-10 pr-3 text-label-md font-mono text-on-surface outline-none transition placeholder:text-on-surface-variant/45 focus:border-pokeball-red/70 focus:ring-1 focus:ring-pokeball-red/40";
+    "w-full rounded-xl border border-white/12 bg-black/45 py-3 pl-11 pr-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-pokeball-red/55 focus:bg-black/55 focus:ring-1 focus:ring-pokeball-red/30";
 
   return (
     <div className="relative isolate flex min-h-[calc(100dvh-3rem)] flex-1 flex-col md:min-h-[calc(100dvh-4rem)]">
@@ -57,31 +57,41 @@ export default function LoginPage() {
             sizes="180px"
             className="mx-auto h-auto w-[180px] drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]"
           />
-          <p className="mt-1 text-label-sm uppercase tracking-[0.28em] text-secondary">
+          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
             {t("tagline")}
           </p>
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center py-4 md:py-6">
           <form onSubmit={handleSubmit} className="w-full max-w-[380px] md:max-w-[420px]">
-            <div className="glass-panel relative px-5 py-4 shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
-              <div className="mb-3.5 flex items-center gap-2.5">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/15 bg-surface-container-high">
-                  <PokeballIcon className="h-3.5 w-3.5" />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="truncate text-label-md text-on-surface">{t("welcomeTitle")}</h1>
-                  <p className="truncate text-label-sm text-on-surface-variant/80">
-                    {t("welcomeSubtitle")}
-                  </p>
-                </div>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/92 shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pokeball-red/55 to-transparent"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-pokeball-red/10 blur-3xl"
+              />
+
+              <div className="relative px-5 pb-1 pt-5 sm:px-6 sm:pt-6">
+                <p className="mb-2.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-pokeball-red">
+                  <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
+                  {t("title")}
+                </p>
+                <h1 className="page-title text-[clamp(1.35rem,5vw,1.85rem)] text-white">
+                  {t("welcomeTitle")}
+                </h1>
+                <p className="mt-1.5 text-[13px] leading-snug text-white/50">
+                  {t("welcomeSubtitle")}
+                </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="relative space-y-3 px-5 py-5 sm:px-6">
                 <label className="block">
                   <span className="sr-only">{t("email")}</span>
-                  <div className="relative tech-border">
-                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65">
+                  <div className="relative">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]! text-white/40">
                       mail
                     </span>
                     <input
@@ -98,8 +108,8 @@ export default function LoginPage() {
 
                 <label className="block">
                   <span className="sr-only">{t("password")}</span>
-                  <div className="relative tech-border">
-                    <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant/65">
+                  <div className="relative">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]! text-white/40">
                       lock
                     </span>
                     <input
@@ -109,13 +119,13 @@ export default function LoginPage() {
                       placeholder={t("password")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className={`${fieldClass} pr-10`}
+                      className={`${fieldClass} pr-11`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
                       aria-label={showPassword ? t("hidePassword") : t("showPassword")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/65 transition hover:text-on-surface"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-white/40 transition hover:text-white/80"
                     >
                       <span className="material-symbols-outlined text-[18px]!">
                         {showPassword ? "visibility_off" : "visibility"}
@@ -124,38 +134,38 @@ export default function LoginPage() {
                   </div>
                 </label>
 
-                <label className="flex cursor-pointer items-center gap-2 px-0.5 py-0.5 text-label-sm text-on-surface-variant">
+                <label className="flex cursor-pointer items-center gap-2.5 px-0.5 py-0.5 text-[13px] text-white/55">
                   <input
                     type="checkbox"
                     checked={remember}
                     onChange={(e) => setRemember(e.target.checked)}
-                    className="h-3.5 w-3.5 rounded-sm border-white/25 bg-black/50 text-pokeball-red focus:ring-pokeball-red/40"
+                    className="h-3.5 w-3.5 rounded border-white/25 bg-black/50 text-pokeball-red focus:ring-pokeball-red/40"
                   />
                   {t("rememberMe")}
                 </label>
 
-                {error && (
-                  <p className="rounded-lg border border-error/30 bg-error/10 px-3 py-1.5 text-center text-label-sm text-error">
+                {error ? (
+                  <p className="rounded-xl border border-error/30 bg-error/10 px-3 py-2 text-center text-[13px] text-error">
                     {t("error")}
                   </p>
-                )}
+                ) : null}
 
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="ui-btn-primary w-full px-4 py-2.5 text-label-md"
+                  className={`game-cta game-cta--red mt-1${submitting ? " game-cta--disabled" : ""}`}
                 >
-                  <PokeballIcon className="h-3.5 w-3.5" />
-                  {submitting ? t("submitting") : t("submit")}
+                  <PokeballIcon className="h-4 w-4 shrink-0" />
+                  <span className="game-cta__label">
+                    {submitting ? t("submitting") : t("submit")}
+                  </span>
                 </button>
-              </div>
 
-              <div className="mt-3 text-label-sm text-on-surface-variant">
-                <p>
+                <p className="pt-1 text-center text-[13px] text-white/45">
                   {t("noAccount")}{" "}
                   <Link
                     href="/register"
-                    className="text-secondary underline-offset-2 hover:text-on-surface hover:underline"
+                    className="font-semibold text-white/80 underline-offset-2 transition hover:text-white hover:underline"
                   >
                     {t("registerLinkHere")}
                   </Link>

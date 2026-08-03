@@ -29,6 +29,7 @@ export function milestoneCtaKey(
 
 export type FirstVisitKey =
   | "journey-onboarding"
+  | "starter-resources"
   | "coach-explore"
   | "coach-gym"
   | "coach-team-slot"

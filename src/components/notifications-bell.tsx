@@ -23,7 +23,7 @@ import { itemSpriteUrl } from "@/lib/item-sprites";
 import type { NotificationDTO, NotificationImageKind } from "@/lib/notifications";
 
 const ACTION_BTN =
-  "grid h-6 w-6 place-items-center rounded-md bg-gradient-to-br from-[#ff8a00] to-[#f2c000] text-[#1a1200] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition hover:brightness-110 active:brightness-95";
+  "grid h-6 w-6 place-items-center rounded-md bg-gradient-to-br from-pokeball-red to-[color-mix(in_srgb,var(--color-pokeball-red)_55%,white)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition hover:brightness-110 active:brightness-95";
 
 type PanelPhase = "closed" | "open" | "closing";
 type Section = "unread" | "read";
@@ -193,7 +193,7 @@ function NotificationThumb({ item, unread }: { item: NotificationDTO; unread: bo
         name={person}
         src={media?.kind === "avatar" ? media.src : (p.imageUrl ?? null)}
         size="xs"
-        className={unread ? "ring-1 ring-[#ff8a00]/50 rounded-[28%]" : undefined}
+        className={unread ? "ring-1 ring-pokeball-red/50 rounded-[28%]" : undefined}
       />
     );
   }
@@ -204,7 +204,7 @@ function NotificationThumb({ item, unread }: { item: NotificationDTO; unread: bo
       <span
         className={[
           "relative flex h-9 w-9 shrink-0 overflow-hidden rounded-md bg-[#151820]",
-          unread ? "ring-1 ring-[#ff8a00]/50" : "ring-1 ring-white/10",
+          unread ? "ring-1 ring-pokeball-red/50" : "ring-1 ring-white/10",
         ].join(" ")}
       >
         <Image
@@ -225,7 +225,7 @@ function NotificationThumb({ item, unread }: { item: NotificationDTO; unread: bo
         className={[
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-bold",
           unread
-            ? "bg-[#ff8a00]/15 text-[#f2c000] ring-1 ring-[#ff8a00]/40"
+            ? "bg-pokeball-red/15 text-white ring-1 ring-pokeball-red/40"
             : "bg-white/4 text-white/45 ring-1 ring-white/10",
         ].join(" ")}
       >
@@ -239,7 +239,7 @@ function NotificationThumb({ item, unread }: { item: NotificationDTO; unread: bo
       className={[
         "flex h-9 w-9 shrink-0 rounded-md",
         unread
-          ? "bg-[#ff8a00]/15 ring-1 ring-[#ff8a00]/35"
+          ? "bg-pokeball-red/15 ring-1 ring-pokeball-red/35"
           : "bg-white/4 ring-1 ring-white/10",
       ].join(" ")}
     />
@@ -376,13 +376,13 @@ export function NotificationsBell({
           open || phase === "closing"
             ? "border-white/18 bg-[#0b0d13] text-on-surface shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset]"
             : hasUnreadSale
-              ? "border-[#ff8a00]/55 bg-[#ff8a00]/10 text-[#f2c000]"
+              ? "border-pokeball-red/55 bg-pokeball-red/10 text-white"
               : "border-white/10 bg-white/5 text-on-surface-variant hover:bg-white/10 hover:text-on-surface"
         }`}
       >
         <span className="material-symbols-outlined text-[18px]!">notifications</span>
         {unread > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-md bg-gradient-to-r from-[#ff8a00] to-[#f2c000] px-1 text-[10px] font-bold text-[#1a1200]">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-md bg-gradient-to-r from-pokeball-red to-[color-mix(in_srgb,var(--color-pokeball-red)_55%,white)] px-1 text-[10px] font-bold text-white">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
@@ -432,7 +432,7 @@ export function NotificationsBell({
                   <button
                     type="button"
                     onClick={markAllRead}
-                    className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-[#f2c000] transition hover:bg-[#ff8a00]/15"
+                    className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-pokeball-red transition hover:bg-pokeball-red/15"
                   >
                     {t("markAllRead")}
                   </button>
@@ -470,7 +470,7 @@ export function NotificationsBell({
                     className={[
                       "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-semibold transition",
                       active
-                        ? "bg-[#ff8a00]/18 text-[#f2c000] ring-1 ring-[#ff8a00]/35"
+                        ? "bg-pokeball-red/18 text-white ring-1 ring-pokeball-red/35"
                         : "text-white/45 hover:bg-white/5 hover:text-white/70",
                     ].join(" ")}
                   >
@@ -478,7 +478,7 @@ export function NotificationsBell({
                     <span
                       className={[
                         "min-w-4 rounded px-1 text-[10px] tabular-nums",
-                        active ? "bg-[#ff8a00]/25 text-[#f2c000]" : "bg-white/6 text-white/35",
+                        active ? "bg-pokeball-red/25 text-white" : "bg-white/6 text-white/35",
                       ].join(" ")}
                     >
                       {tab.count}
@@ -514,7 +514,7 @@ export function NotificationsBell({
                         className={[
                           "flex items-center gap-2 overflow-hidden rounded-lg border px-2 py-1.5 transition",
                           unreadItem
-                            ? "border-[#ff8a00]/28 bg-gradient-to-r from-[#ff8a00]/12 via-[#f2c000]/05 to-[#141820]"
+                            ? "border-pokeball-red/28 bg-gradient-to-r from-pokeball-red/12 via-pokeball-red/5 to-[#141820]"
                             : "border-white/6 bg-[#141820]/80 hover:border-white/12",
                         ].join(" ")}
                       >
@@ -545,7 +545,7 @@ export function NotificationsBell({
                                 </p>
                               )}
                               {coins !== null && (
-                                <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-[#f2c000]">
+                                <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-tertiary">
                                   +{coins.toLocaleString()}
                                 </p>
                               )}
@@ -574,7 +574,7 @@ export function NotificationsBell({
                                 </p>
                               )}
                               {coins !== null && (
-                                <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-[#f2c000]">
+                                <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-tertiary">
                                   +{coins.toLocaleString()}
                                 </p>
                               )}
