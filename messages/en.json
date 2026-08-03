@@ -310,13 +310,13 @@
       },
       "dailyActions": {
         "title": "Daily actions",
-        "statusAvailable": "Available",
+        "statusAvailable": "New",
         "statusDone": "Done",
         "statusReady": "Ready",
         "statusBadges": "{count}/{total}",
         "statusStreakDay": "Day {n}",
         "items": {
-          "daily": "Daily gift",
+          "daily": "Gift",
           "pvp": "PvP",
           "gyms": "Gym",
           "streak": "Streak",
