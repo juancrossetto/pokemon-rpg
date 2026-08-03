@@ -29,7 +29,7 @@ export async function fleeBattle(sessionId: string, locale: string): Promise<Fle
   const userId = session.user.id;
 
   const battle = await prisma.battleSession.findFirst({
-    where: { id: sessionId, userId, status: "ACTIVE", gymId: null, pvpMatchId: null, towerRunId: null },
+    where: { id: sessionId, userId, status: "ACTIVE", gymId: null, pvpMatchId: null, clanWarBattleId: null, towerRunId: null },
     include: {
       pokemonInstance: {
         include: {

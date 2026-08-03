@@ -42,6 +42,7 @@ import type { EvolveOffer, LevelUpMoveInfo } from "@/lib/level-up";
 import { resolveLevelUpEffects } from "@/lib/level-up";
 import { lockUsers } from "@/lib/db-locks";
 import { notifySettledPvp, settlePvpMatch } from "@/lib/pvp/settle";
+import { settleClanWarSlot } from "@/lib/clan-war/settle-slot";
 import { parseTeamSnap, type PvpTeamMemberSnap } from "@/lib/pvp/team";
 import { twoTurnSpec } from "@/lib/two-turn";
 
@@ -160,13 +161,14 @@ export async function submitBattleMove(
       pokemonInstance: {
         include: {
           species: { include: { evolvesTo: { select: { id: true } } } },
-          moves: { include: { move: true } },
+          moves: { include: { move: true }, orderBy: { slot: "asc" } },
           heldItem: true,
         },
       },
       wildSpecies: true,
       wildHeldItem: true,
       pvpMatch: true,
+      clanWarBattle: { include: { war: true } },
     },
   });
   if (!battle) return null;
@@ -205,7 +207,12 @@ export async function submitBattleMove(
   );
   const playerBase = playerCombatantStats(instance.species, instance.level, instance);
 
-  const pvpOppTeam = battle.pvpMatchId ? parseTeamSnap(battle.pvpMatch?.opponentTeam) : [];
+  const snapOppTeam = battle.pvpMatchId
+    ? parseTeamSnap(battle.pvpMatch?.opponentTeam)
+    : battle.clanWarBattleId
+      ? parseTeamSnap(battle.clanWarBattle?.opponentTeam)
+      : [];
+  const pvpOppTeam = snapOppTeam;
   const pvpActive: PvpTeamMemberSnap | null =
     pvpOppTeam.find((m) => m.slot === battle.opponentSlot) ?? pvpOppTeam[0] ?? null;
 
@@ -492,7 +499,7 @@ export async function submitBattleMove(
   let coinsAwarded = 0;
   let nextOpponent: UseMoveResult["nextOpponent"] = null;
   let pvpResult: UseMoveResult["pvpResult"] = null;
-  const battleKind = battle.pvpMatchId
+  const battleKind = battle.pvpMatchId || battle.clanWarBattleId
     ? ("PVP" as const)
     : battle.towerRunId
       ? ("PVE_TOWER" as const)
@@ -529,15 +536,18 @@ export async function submitBattleMove(
     log.push(`fainted:${pvpActive?.name ?? battle.wildSpecies.name}`);
     // Mastery: en gimnasios / PvP no aplica (no es farmeo de zona).
     const zone =
-      battle.gymId || battle.routeTrainerId || battle.pvpMatchId || battle.towerRunId
+      battle.gymId || battle.routeTrainerId || battle.pvpMatchId || battle.clanWarBattleId || battle.towerRunId
         ? null
         : await getZoneContext(userId);
     const koXp = zone
       ? applyBonus(xpForVictory(battle.wildLevel), zone.bonuses.xp)
       : xpForVictory(battle.wildLevel);
 
-    // --- PvP: siguiente mon del snapshot ---
-    if (battle.pvpMatchId && battle.pvpMatch) {
+    // --- PvP / guerra de clan: siguiente mon del snapshot ---
+    if (
+      (battle.pvpMatchId && battle.pvpMatch) ||
+      (battle.clanWarBattleId && battle.clanWarBattle)
+    ) {
       // Buscar el siguiente por orden de slot mayor al actual.
       const remaining = pvpOppTeam
         .filter((m) => m.slot > (battle.opponentSlot ?? 0))
@@ -585,16 +595,20 @@ export async function submitBattleMove(
               log: finalLog,
             },
           }),
-          prisma.pvpMatch.update({
-            where: { id: battle.pvpMatchId },
-            data: {
-              turnLog: { push: finalLog.slice(-3) },
-              turns: { increment: 1 },
-              koLog: {
-                push: `a:${playerState.name}>b:${pvpActive?.name ?? battle.wildSpecies.name}`,
-              },
-            },
-          }),
+          ...(battle.pvpMatchId
+            ? [
+                prisma.pvpMatch.update({
+                  where: { id: battle.pvpMatchId },
+                  data: {
+                    turnLog: { push: finalLog.slice(-3) },
+                    turns: { increment: 1 },
+                    koLog: {
+                      push: `a:${playerState.name}>b:${pvpActive?.name ?? battle.wildSpecies.name}`,
+                    },
+                  },
+                }),
+              ]
+            : []),
         ]);
         revalidatePath(`/${locale}/team`);
         return {
@@ -619,7 +633,8 @@ export async function submitBattleMove(
         };
       }
 
-      // Equipo rival vaciado — victoria PvP.
+      // Equipo rival vaciado — victoria.
+      if (battle.pvpMatchId && battle.pvpMatch) {
       const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
       const match = battle.pvpMatch;
       await prisma.$transaction(
@@ -707,6 +722,66 @@ export async function submitBattleMove(
         pvpResult,
         nextOpponent: null,
       };
+      }
+
+      if (battle.clanWarBattleId && battle.clanWarBattle) {
+        const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
+        const slot = battle.clanWarBattle;
+        const war = slot.war;
+        const membership = await prisma.clanMember.findUnique({ where: { userId } });
+        const myClanId = membership?.clanId;
+        if (!myClanId || !battle.opponentUserId) return null;
+        const foeUserId = battle.opponentUserId;
+
+        await prisma.$transaction(
+          async (tx) => {
+            await lockUsers(tx, userId, foeUserId);
+            await tx.pokemonInstance.update({
+              where: { id: instance.id },
+              data: { currentHp: playerHp },
+            });
+            await tx.battleSession.update({
+              where: { id: battle.id },
+              data: { ...battleStateData, status: "WON", wildCurrentHp: 0, log: finalLog },
+            });
+            await settleClanWarSlot(tx, {
+              battleId: slot.id,
+              winnerClanId: myClanId,
+              winnerUserId: userId,
+              koLog: [
+                ...(Array.isArray(slot.koLog) ? slot.koLog : []),
+                `a:${playerState.name}>b:${pvpActive?.name ?? battle.wildSpecies.name}`,
+              ],
+              restoreChallengerTeam: slot.challengerTeam,
+            });
+          },
+          { timeout: 20_000 },
+        );
+
+        revalidatePath(`/${locale}/team`);
+        revalidatePath(`/${locale}/clans/${myClanId}`);
+        revalidateCombatUi(locale);
+        return {
+          events,
+          playerMaxHp,
+          wildMaxHp: battle.wildMaxHp,
+          outcome: "won",
+          leveledUpTo: null,
+          xpGained: null,
+          xpSummary: null,
+          coinsGained: 0,
+          badgeEarned: false,
+          tmRewardName: null,
+          rematch: false,
+          playerMovesPp,
+          playerChoiceLockMoveId: newChoiceLockMoveId,
+          playerChargeMoveId: newPlayerChargeMoveId,
+          playerStatus: playerState.status,
+          wildStatus: wildState.status,
+          pvpResult: null,
+          nextOpponent: null,
+        };
+      }
     }
 
     const nextSlot = (battle.gymPokemonSlot ?? 1) + 1;
@@ -1174,6 +1249,46 @@ export async function submitBattleMove(
       });
       revalidatePath(`/${locale}/pvp`);
       revalidatePath(`/${locale}/ranking`);
+    } else if (battle.clanWarBattleId && battle.clanWarBattle) {
+      const slot = battle.clanWarBattle;
+      const war = slot.war;
+      const membership = await prisma.clanMember.findUnique({ where: { userId } });
+      const myClanId = membership?.clanId;
+      const foeUserId = battle.opponentUserId;
+      const foeClanId =
+        myClanId === war.clanAId
+          ? war.clanBId
+          : myClanId === war.clanBId
+            ? war.clanAId
+            : null;
+      if (myClanId && foeUserId && foeClanId) {
+        await prisma.$transaction(
+          async (tx) => {
+            await lockUsers(tx, userId, foeUserId);
+            await tx.pokemonInstance.update({
+              where: { id: instance.id },
+              data: { currentHp: 0 },
+            });
+            await tx.battleSession.update({
+              where: { id: battle.id },
+              data: { status: "LOST", log: finalLog, ...battleStateData },
+            });
+            await settleClanWarSlot(tx, {
+              battleId: slot.id,
+              winnerClanId: foeClanId,
+              winnerUserId: foeUserId,
+              koLog: [
+                ...(Array.isArray(slot.koLog) ? slot.koLog : []),
+                `b:${pvpActive?.name ?? battle.wildSpecies.name}>a:${playerState.name}`,
+              ],
+              restoreChallengerTeam: slot.challengerTeam,
+            });
+          },
+          { timeout: 20_000 },
+        );
+        revalidatePath(`/${locale}/clans/${myClanId}`);
+        revalidateCombatUi(locale);
+      }
     } else if (battle.towerRunId) {
       const { settleTowerFloorLoss } = await import("@/lib/tower/settle");
       const { parseTowerTeamSnapshot } = await import("@/lib/tower/team");

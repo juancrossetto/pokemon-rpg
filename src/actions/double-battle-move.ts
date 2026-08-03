@@ -180,14 +180,14 @@ export async function submitDoubleBattleMoves(
       pokemonInstance: {
         include: {
           species: { include: { evolvesTo: { select: { id: true } } } },
-          moves: { include: { move: true } },
+          moves: { include: { move: true }, orderBy: { slot: "asc" } },
           heldItem: true,
         },
       },
       pokemonInstanceB: {
         include: {
           species: { include: { evolvesTo: { select: { id: true } } } },
-          moves: { include: { move: true } },
+          moves: { include: { move: true }, orderBy: { slot: "asc" } },
           heldItem: true,
         },
       },

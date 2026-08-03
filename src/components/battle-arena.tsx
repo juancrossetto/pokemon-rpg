@@ -10,6 +10,7 @@ import { switchPokemon } from "@/actions/switch-pokemon";
 import { applyBattleItem } from "@/actions/use-item";
 import { setPokemonNickname } from "@/actions/rename-pokemon";
 import { forfeitPvpBattle } from "@/actions/forfeit-pvp-battle";
+import { forfeitClanWarBattle } from "@/actions/forfeit-clan-war-battle";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BattleSprite } from "@/components/battle-sprite";
@@ -145,6 +146,7 @@ export function BattleArena({
   movesB,
   playerBStatus: initialPlayerBStatus = null,
   wildBStatus: initialWildBStatus = null,
+  pvpMatchId = null,
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tLog = useTranslations("battle.log");
@@ -1684,7 +1686,11 @@ export function BattleArena({
 
     try {
       if (isPvpBattle) {
-        await forfeitPvpBattle(locale);
+        if (pvpMatchId) {
+          await forfeitPvpBattle(locale);
+        } else {
+          await forfeitClanWarBattle(locale);
+        }
         return;
       }
       const result = await fleeBattle(battleId, locale);

@@ -226,7 +226,11 @@ export function HomeDesktopRail({
           </h3>
           <span className="inline-flex items-center gap-1 rounded-md bg-[#ff7a28]/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#ffb56e]">
             <span className="h-1.5 w-1.5 rounded-full bg-electric-yellow/70" />
-            {t("statusSoon")}
+            {clanWars.status === "active"
+              ? t("statusLive")
+              : clanWars.status === "completed"
+                ? t("statusDone")
+                : t("statusSoon")}
           </span>
         </div>
         <p className="mt-1 text-[10px] leading-snug text-white/45">{t("clanSubtitle")}</p>
@@ -256,29 +260,47 @@ export function HomeDesktopRail({
           </div>
 
           <div className="flex flex-col items-center px-0.5 text-center">
-            <p className="text-[1.05rem] font-bold tabular-nums leading-none text-white/35">
-              — : —
+            <p
+              className={`text-[1.05rem] font-bold tabular-nums leading-none ${
+                clanWars.scoreSelf != null ? "text-white" : "text-white/35"
+              }`}
+            >
+              {clanWars.scoreSelf != null && clanWars.scoreRival != null
+                ? `${clanWars.scoreSelf} : ${clanWars.scoreRival}`
+                : "— : —"}
             </p>
             <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.14em] text-white/35">
               {t("scoreLabel")}
             </p>
             <p className="mt-0.5 font-mono text-[10px] tabular-nums text-white/40">
-              {t("statusSoon")}
+              {clanWars.status === "active"
+                ? t("statusLive")
+                : clanWars.status === "completed"
+                  ? t("statusDone")
+                  : t("statusSoon")}
             </p>
           </div>
 
           <div className="flex min-w-0 flex-col items-center gap-0.5 text-center">
             <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-[#1a1c24] ring-1 ring-white/10">
-              <span className="material-symbols-outlined text-[20px]! text-white/30">
-                help
-              </span>
+              {clanWars.rivalEmblem != null ? (
+                <ClanEmblemBadge
+                  emblem={clanWars.rivalEmblem}
+                  size={34}
+                  title={clanWars.rivalName ?? undefined}
+                />
+              ) : (
+                <span className="material-symbols-outlined text-[20px]! text-white/30">
+                  help
+                </span>
+              )}
             </div>
             <p className="w-full truncate text-[10px] font-semibold text-white/45">
-              {t("clanRivalSoon")}
+              {clanWars.rivalName ?? t("clanRivalSoon")}
             </p>
             <p className="inline-flex items-center gap-0.5 text-[9px] text-white/30">
               <span className="material-symbols-outlined text-[11px]!">star</span>
-              —
+              {clanWars.rivalTag ? `#${clanWars.rivalTag}` : "—"}
             </p>
           </div>
         </div>

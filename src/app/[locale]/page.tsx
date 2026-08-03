@@ -544,6 +544,51 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     companionTypes: companion?.types ?? [],
   };
 
+  const myClanId = userRow.clanMembership?.clan.id ?? null;
+  const activeClanWar = myClanId
+    ? await prisma.clanWar.findFirst({
+        where: {
+          status: { in: ["ACTIVE", "COMPLETED"] },
+          OR: [{ clanAId: myClanId }, { clanBId: myClanId }],
+        },
+        orderBy: { matchedAt: "desc" },
+        include: {
+          clanA: { select: { id: true, name: true, tag: true, emblem: true } },
+          clanB: { select: { id: true, name: true, tag: true, emblem: true } },
+        },
+      })
+    : null;
+  const warIsSelfA = activeClanWar?.clanAId === myClanId;
+  const warRival = activeClanWar
+    ? warIsSelfA
+      ? activeClanWar.clanB
+      : activeClanWar.clanA
+    : null;
+  const clanWarsRail = {
+    clanId: myClanId,
+    clanName: userRow.clanMembership?.clan.name ?? null,
+    clanTag: userRow.clanMembership?.clan.tag ?? null,
+    clanEmblem: userRow.clanMembership?.clan.emblem ?? null,
+    scoreSelf: activeClanWar
+      ? warIsSelfA
+        ? activeClanWar.scoreA
+        : activeClanWar.scoreB
+      : null,
+    scoreRival: activeClanWar
+      ? warIsSelfA
+        ? activeClanWar.scoreB
+        : activeClanWar.scoreA
+      : null,
+    rivalName: warRival?.name ?? null,
+    rivalTag: warRival?.tag ?? null,
+    rivalEmblem: warRival?.emblem ?? null,
+    status: (activeClanWar?.status === "COMPLETED"
+      ? "completed"
+      : activeClanWar
+        ? "active"
+        : "none") as "none" | "active" | "completed",
+  };
+
   const farmingZone =
     mapLocations.find((l) => l.id === progress.farmingLocationId) ??
     mapLocations.find((l) => l.id === expedition?.location.id) ??
@@ -658,12 +703,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       }}
       rail={{
         pvp: railPvp,
-        clanWars: {
-          clanId: userRow.clanMembership?.clan.id ?? null,
-          clanName: userRow.clanMembership?.clan.name ?? null,
-          clanTag: userRow.clanMembership?.clan.tag ?? null,
-          clanEmblem: userRow.clanMembership?.clan.emblem ?? null,
-        },
+        clanWars: clanWarsRail,
         top: railTop,
       }}
       identity={identity}

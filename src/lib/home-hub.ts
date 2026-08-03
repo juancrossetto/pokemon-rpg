@@ -90,10 +90,16 @@ export type HomeRailPvp = {
   recent: HomeRailPvpMatch[];
 };
 
-/** Guerras de clan todavía no existen — stub con identidad del clan. */
+/** Guerras de clan: identidad + marcador si hay guerra activa. */
 export type HomeRailClanWars = {
   clanId: string | null;
   clanName: string | null;
   clanTag: string | null;
   clanEmblem: unknown | null;
+  scoreSelf: number | null;
+  scoreRival: number | null;
+  rivalName: string | null;
+  rivalTag: string | null;
+  rivalEmblem: unknown | null;
+  status: "none" | "active" | "completed";
 };

@@ -169,6 +169,14 @@ Los costos de energía viven todos en `src/lib/energy.ts`
 cuatro archivos y no había dónde leer "cuánto cuesta jugar" ni para recalibrar
 el ritmo ni para mostrárselo al jugador.
 
+### Guerras de clan
+
+v1 en `src/lib/clan-war/*` + `src/actions/clan-war.ts`: temporada mensual
+(misma clave `YYYY-MM` que PvP), registro (líder/oficial, ≥10 miembros y nivel
+de clan ≥5), match por Elo de clan, 5 slots de combate rápido
+(`simulatePvpBattle`). Persistencia: `ClanWarSeason` / `ClanWarRegistration` /
+`ClanWar` / `ClanWarBattle`.
+
 ### Navegación
 
 `src/lib/navigation.ts` (`NAV_GROUPS`) es la única fuente de verdad para el

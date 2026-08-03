@@ -29,6 +29,8 @@ import {
   transferLeadership,
   updateClanSettings,
 } from "@/actions/clan";
+import { getClanWarHubState } from "@/actions/clan-war";
+import { ClanWarPanel } from "@/components/clans/clan-war-panel";
 
 const SPECIES_STATS_SELECT = {
   baseHp: true,
@@ -181,6 +183,8 @@ export default async function ClanDetailPage({
   const emblem = parseClanEmblem(clan.emblem);
   const headerPrimary = isPresetEmblem(emblem) ? "var(--color-pokeball-red)" : emblem.primaryColor;
   const headerSecondary = isPresetEmblem(emblem) ? "#0a0a0a" : emblem.secondaryColor;
+
+  const warHub = await getClanWarHubState(clanId);
 
   const activeTab: ClanHubTab = myRole === null ? "overview" : tab;
 
@@ -501,18 +505,55 @@ export default async function ClanDetailPage({
         )}
 
         {(myRole === null || activeTab === "war") && (
-          <section className="mb-4 rounded-xl border border-white/10 bg-glass-surface p-4">
-            <h2 className="text-headline-md text-on-surface">{t("hub.warTitle")}</h2>
-            <p className="mt-1 text-label-md text-on-surface-variant">{t("hub.warSubtitle")}</p>
-            <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3">
-              <p className="text-label-sm text-on-surface">{t("hub.warStateLocked", { level: 5 })}</p>
-              <ul className="mt-1 text-label-sm text-on-surface-variant">
-                <li>• {t("hub.warReqMembers", { count: 10 })}</li>
-                <li>• {t("hub.warReqLevel", { level: 5 })}</li>
-                <li>• {t("hub.warReqRegister")}</li>
-              </ul>
-            </div>
-          </section>
+          <ClanWarPanel
+            clanId={clanId}
+            canManage={isLeader || isOfficer}
+            registered={warHub.registered}
+            seasonKey={warHub.seasonKey}
+            rating={warHub.rating}
+            gateOk={warHub.gate.ok}
+            gateReason={warHub.gate.ok ? null : warHub.gate.reason}
+            memberCount={warHub.memberCount}
+            level={warHub.level}
+            war={
+              warHub.war
+                ? {
+                    id: warHub.war.id,
+                    status: warHub.war.status,
+                    scoreA: warHub.war.scoreA,
+                    scoreB: warHub.war.scoreB,
+                    clanA: warHub.war.clanA,
+                    clanB: warHub.war.clanB,
+                    battles: warHub.war.battles.map((b) => ({
+                      id: b.id,
+                      slot: b.slot,
+                      status: b.status,
+                      winnerClanId: b.winnerClanId,
+                      fighterA: b.fighterA,
+                      fighterB: b.fighterB,
+                    })),
+                  }
+                : null
+            }
+            history={warHub.history.map((h) => ({
+              id: h.id,
+              status: h.status,
+              scoreA: h.scoreA,
+              scoreB: h.scoreB,
+              seasonKey: h.season.seasonKey,
+              completedAt: h.completedAt?.toISOString() ?? null,
+              clanA: h.clanA,
+              clanB: h.clanB,
+              battles: h.battles.map((b) => ({
+                id: b.id,
+                slot: b.slot,
+                status: b.status,
+                winnerClanId: b.winnerClanId,
+                fighterA: b.fighterA,
+                fighterB: b.fighterB,
+              })),
+            }))}
+          />
         )}
 
         {myRole !== null && activeTab === "chat" && (

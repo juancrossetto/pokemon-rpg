@@ -59,8 +59,18 @@ export default async function BattlePage({
     where: { userId, status: "ACTIVE" },
     orderBy: { updatedAt: "desc" },
     include: {
-      pokemonInstance: { include: { species: true, moves: { include: { move: true } } } },
-      pokemonInstanceB: { include: { species: true, moves: { include: { move: true } } } },
+      pokemonInstance: {
+        include: {
+          species: true,
+          moves: { include: { move: true }, orderBy: { slot: "asc" } },
+        },
+      },
+      pokemonInstanceB: {
+        include: {
+          species: true,
+          moves: { include: { move: true }, orderBy: { slot: "asc" } },
+        },
+      },
       wildSpecies: true,
       gym: { select: { type: true, name: true, leaderName: true, badgeName: true, order: true } },
       gymTrainer: { select: { name: true } },
@@ -70,6 +80,13 @@ export default async function BattlePage({
           opponentTeam: true,
           opponentId: true,
           opponent: { select: { username: true, avatarId: true } },
+        },
+      },
+      clanWarBattle: {
+        select: {
+          id: true,
+          opponentTeam: true,
+          war: { select: { clanAId: true, clanBId: true } },
         },
       },
       opponentUser: { select: { username: true, avatarId: true } },
@@ -241,7 +258,11 @@ export default async function BattlePage({
       instance.ptConstitution,
     );
     const currentSlot = battle.gymPokemonSlot ?? battle.opponentSlot ?? 1;
-    const pvpTeam = battle.pvpMatchId ? parseTeamSnap(battle.pvpMatch?.opponentTeam) : [];
+    const pvpTeam = battle.pvpMatchId
+      ? parseTeamSnap(battle.pvpMatch?.opponentTeam)
+      : battle.clanWarBattleId
+        ? parseTeamSnap(battle.clanWarBattle?.opponentTeam)
+        : [];
 
     const [pokeballs, potions, partyRows, opponentTeam, userRow] = await Promise.all([
       prisma.inventoryItem.findMany({
@@ -259,7 +280,7 @@ export default async function BattlePage({
         include: { species: true },
         orderBy: { teamSlot: "asc" },
       }),
-      battle.pvpMatchId
+      battle.pvpMatchId || battle.clanWarBattleId
         ? Promise.resolve([])
         : battle.gymTrainerId
           ? prisma.gymTrainerPokemon.findMany({
@@ -323,15 +344,16 @@ export default async function BattlePage({
         : (battle.gym?.name ?? null);
     const pvpOpponentName =
       battle.opponentUser?.username ?? battle.pvpMatch?.opponent.username ?? null;
-    const opponentName = battle.pvpMatchId
-      ? pvpOpponentName
-      : routeTrainer
-        ? tCampaign(routeTrainer.nameKey)
-        : (battle.gymTrainer?.name ?? battle.gym?.leaderName ?? null);
+    const opponentName =
+      battle.pvpMatchId || battle.clanWarBattleId
+        ? pvpOpponentName
+        : routeTrainer
+          ? tCampaign(routeTrainer.nameKey)
+          : (battle.gymTrainer?.name ?? battle.gym?.leaderName ?? null);
 
     const trainerPortraitUrl = avatarById(userRow?.avatarId)?.src ?? null;
     let opponentPortraitUrl: string | null = null;
-    if (battle.pvpMatchId) {
+    if (battle.pvpMatchId || battle.clanWarBattleId) {
       const avId = battle.opponentUser?.avatarId ?? battle.pvpMatch?.opponent.avatarId ?? null;
       opponentPortraitUrl = avatarById(avId)?.src ?? null;
     } else if (routeTrainer) {
@@ -342,13 +364,14 @@ export default async function BattlePage({
       opponentPortraitUrl = gymLeaderPortraitUrl(battle.gym.leaderName);
     }
 
-    const battleMode: BattleArenaProps["battleMode"] = battle.pvpMatchId
-      ? "pvp"
-      : battle.towerRunId
-        ? "tower"
-        : battle.gymId
-          ? "gym"
-          : "wild";
+    const battleMode: BattleArenaProps["battleMode"] =
+      battle.pvpMatchId || battle.clanWarBattleId
+        ? "pvp"
+        : battle.towerRunId
+          ? "tower"
+          : battle.gymId
+            ? "gym"
+            : "wild";
 
     const progress =
       battleMode === "wild"

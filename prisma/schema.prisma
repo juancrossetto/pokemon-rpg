@@ -83,6 +83,8 @@ model User {
   towerProgress      TowerProgress[]
   towerRuns          TowerRun[]
   towerAttemptDays   TowerAttemptDay[]
+  clanWarBattlesA    ClanWarBattle[]     @relation("ClanWarFighterA")
+  clanWarBattlesB    ClanWarBattle[]     @relation("ClanWarFighterB")
 }
 
 // ---------- Notificaciones in-app ----------
@@ -724,6 +726,9 @@ model Clan {
   messages     ClanMessage[]
   applications ClanApplication[]
   invites      ClanInvite[]
+  warRegistrations ClanWarRegistration[]
+  warsAsA          ClanWar[] @relation("ClanWarA")
+  warsAsB          ClanWar[] @relation("ClanWarB")
 }
 
 model ClanMember {
@@ -959,6 +964,8 @@ model BattleSession {
   pvpMatchId             String?
   opponentUserId         String?
   opponentSlot           Int? // slot 1-6 del snapshot del rival que está en campo
+  /// Guerra de clan: sesión ligada a un ClanWarBattle IN_PROGRESS.
+  clanWarBattleId        String?             @unique
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
 
@@ -973,10 +980,12 @@ model BattleSession {
   pvpMatch         PvpMatch?        @relation(fields: [pvpMatchId], references: [id], onDelete: SetNull)
   opponentUser     User?            @relation("PvpOpponentUser", fields: [opponentUserId], references: [id], onDelete: SetNull)
   wildHeldItem     Item?            @relation("BattleWildHeldItem", fields: [wildHeldItemId], references: [id], onDelete: SetNull)
+  clanWarBattle    ClanWarBattle?   @relation(fields: [clanWarBattleId], references: [id], onDelete: SetNull)
 
   @@index([userId, status])
   @@index([pvpMatchId])
   @@index([towerRunId])
+  @@index([clanWarBattleId])
 }
 
 // ---------- PvP ----------
@@ -1197,4 +1206,108 @@ model TowerAttemptDay {
 
   @@unique([userId, dayKey])
   @@index([userId])
+}
+
+// ---------- Guerras de clan (v1) ----------
+// Temporada mensual (misma clave YYYY-MM que PvP). Registro → empareje →
+// N slots de combate rápido (simulación) → score y Elo de clan.
+
+enum ClanWarSeasonStatus {
+  REGISTRATION
+  ACTIVE
+  SETTLED
+}
+
+enum ClanWarStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ClanWarBattleStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  FORFEIT
+}
+
+model ClanWarSeason {
+  id        String              @id @default(cuid())
+  seasonKey String              @unique
+  status    ClanWarSeasonStatus @default(ACTIVE)
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime            @default(now())
+
+  registrations ClanWarRegistration[]
+  wars          ClanWar[]
+}
+
+model ClanWarRegistration {
+  id        String   @id @default(cuid())
+  seasonId  String
+  clanId    String
+  rating    Int      @default(1000)
+  /// Snapshot de userIds al registrarse (roster elegible).
+  roster    Json
+  createdAt DateTime @default(now())
+
+  season ClanWarSeason @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  clan   Clan          @relation(fields: [clanId], references: [id], onDelete: Cascade)
+
+  @@unique([seasonId, clanId])
+  @@index([seasonId])
+}
+
+model ClanWar {
+  id            String        @id @default(cuid())
+  seasonId      String
+  clanAId       String
+  clanBId       String
+  status        ClanWarStatus @default(ACTIVE)
+  scoreA        Int           @default(0)
+  scoreB        Int           @default(0)
+  ratingABefore Int
+  ratingBBefore Int
+  ratingAAfter  Int?
+  ratingBAfter  Int?
+  matchedAt     DateTime      @default(now())
+  completedAt   DateTime?
+
+  season  ClanWarSeason   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  clanA   Clan            @relation("ClanWarA", fields: [clanAId], references: [id], onDelete: Cascade)
+  clanB   Clan            @relation("ClanWarB", fields: [clanBId], references: [id], onDelete: Cascade)
+  battles ClanWarBattle[]
+
+  @@index([seasonId, status])
+  @@index([clanAId, status])
+  @@index([clanBId, status])
+}
+
+model ClanWarBattle {
+  id              String              @id @default(cuid())
+  warId           String
+  slot            Int
+  fighterAId      String?
+  fighterBId      String?
+  status          ClanWarBattleStatus @default(OPEN)
+  /// Clan ganador del slot (clanAId o clanBId del war).
+  winnerClanId    String?
+  winnerUserId    String?
+  /// Snapshots PvP (misma forma que PvpMatch) para pelea interactiva / sim.
+  challengerTeam  Json                @default("[]")
+  opponentTeam    Json                @default("[]")
+  /// Quién inició el combate (humano en /battle); null si fue sim bot.
+  startedById     String?
+  koLog           Json                @default("[]")
+  completedAt     DateTime?
+
+  war           ClanWar        @relation(fields: [warId], references: [id], onDelete: Cascade)
+  fighterA      User?          @relation("ClanWarFighterA", fields: [fighterAId], references: [id], onDelete: SetNull)
+  fighterB      User?          @relation("ClanWarFighterB", fields: [fighterBId], references: [id], onDelete: SetNull)
+  battleSession BattleSession?
+
+  @@unique([warId, slot])
+  @@index([warId, status])
 }
