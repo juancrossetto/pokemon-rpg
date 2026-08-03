@@ -79,7 +79,12 @@ export function HeldItemPanel({
       }
       const next = ownedHeldItems.find((i) => i.itemId === itemId) ?? null;
       const held = next
-        ? { itemId: next.itemId, name: next.name, effectText: next.effectText }
+        ? {
+            itemId: next.itemId,
+            name: next.name,
+            displayName: next.displayName,
+            effectText: next.effectText,
+          }
         : null;
       setLocalHeld(held);
       setPicking(false);
