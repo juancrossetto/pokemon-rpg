@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { CoinsBadge } from "@/components/coins-badge";
 import {
@@ -8,9 +9,15 @@ import {
   GYM_BATTLE_ENERGY_COST,
   msUntilNextEnergyPoint,
   PVP_BATTLE_ENERGY_COST,
-  REGEN_MS_PER_POINT,
   WILD_ENCOUNTER_ENERGY_COST,
 } from "@/lib/energy";
+import { itemHdIconUrl } from "@/lib/item-hd-icons";
+
+const RESOURCE_ICON = {
+  energy: itemHdIconUrl("Energy") ?? "/items/hd/energy.png",
+  coins: itemHdIconUrl("Gold Coin") ?? "/items/hd/gold-coin.png",
+  gems: itemHdIconUrl("Gem") ?? "/items/hd/gem.png",
+} as const;
 
 export type ResourceBarLabels = {
   energy: string;
@@ -74,12 +81,14 @@ function useEnergyCountdown(energy: number, energyMax: number, energyUpdatedAt: 
 function PopoverPanel({
   id,
   title,
+  iconSrc,
   children,
   onClose,
   closeLabel,
 }: {
   id: string;
   title: string;
+  iconSrc?: string;
   children: ReactNode;
   onClose: () => void;
   closeLabel: string;
@@ -89,55 +98,91 @@ function PopoverPanel({
       id={id}
       role="dialog"
       aria-label={title}
-      className="absolute right-0 top-full z-[80] mt-2 w-[min(92vw,280px)] overflow-hidden rounded-xl border border-white/12 bg-[#070a10]/96 shadow-[0_20px_48px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+      className="absolute right-0 top-full z-[80] mt-2 w-[min(92vw,260px)] overflow-hidden rounded-xl border border-white/12 bg-[#0c0e14]/97 shadow-[0_20px_48px_rgba(0,0,0,0.55)] backdrop-blur-xl"
     >
-      <div className="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
-        <p className="text-[12px] font-semibold text-white">{title}</p>
+      <div className="flex items-center justify-between gap-2 px-3 pt-2.5 pb-1">
+        <div className="flex min-w-0 items-center gap-2">
+          {iconSrc ? (
+            <Image
+              src={iconSrc}
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 shrink-0 object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.55)]"
+              unoptimized
+            />
+          ) : null}
+          <p className="truncate text-[13px] font-semibold tracking-wide text-white">
+            {title}
+          </p>
+        </div>
         <button
           type="button"
           onClick={onClose}
           aria-label={closeLabel}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-variant transition hover:bg-white/8 hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pokeball-red/60"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-on-surface-variant transition hover:bg-white/8 hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pokeball-red/60"
         >
           <span className="material-symbols-outlined text-[18px]!">close</span>
         </button>
       </div>
-      <div className="space-y-2.5 px-3 py-3 text-[12px] text-on-surface-variant">{children}</div>
+      <div className="space-y-3 px-3 pb-3 pt-1">{children}</div>
     </div>
+  );
+}
+
+function ResourceAction({
+  href,
+  label,
+  icon,
+  onNavigate,
+  tone = "neutral",
+}: {
+  href: string;
+  label: string;
+  icon: string;
+  onNavigate: () => void;
+  tone?: "neutral" | "gem";
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={[
+        "inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium transition focus-visible:outline-none focus-visible:ring-2",
+        tone === "gem"
+          ? "border border-gem/40 bg-gem/12 text-gem hover:bg-gem/20 focus-visible:ring-gem/50"
+          : "border border-white/12 bg-white/[0.04] text-on-surface hover:bg-white/[0.08] focus-visible:ring-white/30",
+      ].join(" ")}
+    >
+      <span className="material-symbols-outlined text-[16px]!">{icon}</span>
+      {label}
+    </Link>
   );
 }
 
 const TONE = {
   energy: {
-    // Fondo opaco: el borde de la barra no se ve a través del ícono.
-    iconBg: "bg-[#0f1724] border-sky-400/55 text-sky-300",
     value: "text-white",
     plus: "text-white/55 hover:text-sky-200 hover:bg-white/8",
-    iconName: "bolt",
     ring: "focus-visible:ring-sky-400/50",
     track: "border-white/12 bg-[#12161f]",
   },
   coins: {
-    iconBg: "bg-[#17140a] border-electric-yellow/55 text-electric-yellow",
     value: "text-white",
     plus: "text-white/55 hover:text-electric-yellow hover:bg-white/8",
-    iconName: "paid",
     ring: "focus-visible:ring-electric-yellow/50",
     track: "border-white/12 bg-[#12161f]",
   },
   gems: {
-    iconBg: "bg-gem-container border-gem/55 text-gem",
     value: "text-white",
     plus: "text-white/55 hover:text-gem hover:bg-white/8",
-    iconName: "diamond",
     ring: "focus-visible:ring-gem/50",
     track: "border-white/12 bg-[#12161f]",
   },
 } as const;
 
 /**
- * Como la referencia mobile: ícono a la izquierda solapando la barra,
- * valor adentro, + chico a la derecha — barra rectangular, no pastilla.
+ * Barra integrada: [ícono PNG | valor | +] — misma altura, sin solape.
  */
 function ResourcePill({
   tone,
@@ -161,20 +206,31 @@ function ResourcePill({
   compact?: boolean;
 }) {
   const t = TONE[tone];
+  const iconSrc = RESOURCE_ICON[tone];
+  const iconClass =
+    tone === "energy" || tone === "gems"
+      ? "h-[26px] w-[26px] object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-[28px] sm:w-[28px]"
+      : "h-[22px] w-[22px] object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-[24px] sm:w-[24px]";
 
   return (
-    <div className="relative shrink-0 pl-2.5" data-loot-target={tone}>
+    <div className="relative shrink-0" data-loot-target={tone}>
       <div
-        className={`relative flex h-6 items-center rounded-md border sm:h-7 ${t.track} ${
-          compact ? "min-w-[4.25rem] pr-0.5 pl-3.5" : "min-w-[5rem] pr-0.5 pl-4 sm:min-w-[5.5rem]"
+        className={`relative flex h-7 items-stretch overflow-visible rounded-md border sm:h-8 ${t.track} ${
+          compact ? "min-w-[4.75rem]" : "min-w-[5.5rem] sm:min-w-[6rem]"
         } ${open ? "border-white/20 bg-[#181d28]" : ""}`}
       >
-        {/* Ícono solapado a la izquierda — chico, no disco enorme */}
         <span
           aria-hidden
-          className={`pointer-events-none absolute -left-2.5 top-1/2 z-10 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-md border sm:h-6 sm:w-6 ${t.iconBg}`}
+          className="flex aspect-square h-full shrink-0 items-center justify-center bg-transparent"
         >
-          <span className="material-symbols-outlined text-[13px]! sm:text-[14px]!">{t.iconName}</span>
+          <Image
+            src={iconSrc}
+            alt=""
+            width={tone === "energy" || tone === "gems" ? 32 : 28}
+            height={tone === "energy" || tone === "gems" ? 32 : 28}
+            className={iconClass}
+            unoptimized
+          />
         </span>
 
         <button
@@ -183,7 +239,7 @@ function ResourcePill({
           aria-expanded={open}
           aria-controls={controlsId}
           onClick={onOpen}
-          className={`flex min-h-6 min-w-0 flex-1 items-center justify-center px-1 font-mono text-[11px] font-semibold tabular-nums leading-none tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:min-h-7 sm:text-[12px] ${t.value} ${t.ring}`}
+          className={`flex min-w-0 flex-1 items-center justify-center px-1.5 font-mono text-[11px] font-semibold tabular-nums leading-none tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:text-[12px] ${t.value} ${t.ring}`}
         >
           <span className="truncate">{value}</span>
         </button>
@@ -194,9 +250,9 @@ function ResourcePill({
           aria-expanded={open}
           aria-controls={controlsId}
           onClick={onOpen}
-          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-sm transition focus-visible:outline-none focus-visible:ring-2 ${t.plus} ${t.ring}`}
+          className={`flex aspect-square h-full shrink-0 items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset ${t.plus} ${t.ring}`}
         >
-          <span className="material-symbols-outlined text-[12px]! leading-none">add</span>
+          <span className="material-symbols-outlined text-[13px]! leading-none">add</span>
         </button>
       </div>
       {open && popover}
@@ -224,7 +280,6 @@ export function ResourceBar({
   const pct = energyMax > 0 ? Math.max(0, Math.min(100, (energy / energyMax) * 100)) : 0;
   const isFull = remaining === null;
   const countdown = typeof remaining === "number" ? formatCountdown(remaining) : null;
-  const regenMinutes = Math.round(REGEN_MS_PER_POINT / 60_000);
   const isMobile = variant === "mobile";
 
   useEffect(() => {
@@ -262,93 +317,69 @@ export function ResourceBar({
     <PopoverPanel
       id={energyPanelId}
       title={labels.energy}
+      iconSrc={RESOURCE_ICON.energy}
       closeLabel={labels.close}
       onClose={() => setOpen(null)}
     >
-      <p className="font-mono text-[15px] font-semibold tabular-nums text-sky-300">
-        {energy}
-        <span className="text-on-surface-variant/70"> / {energyMax}</span>
-      </p>
-      <div className="h-1.5 overflow-hidden rounded-full bg-sky-400/15">
+      <div className="flex items-end justify-between gap-2">
+        <p className="font-mono text-[22px] font-semibold leading-none tabular-nums text-white">
+          {energy}
+          <span className="text-[14px] text-white/40">/{energyMax}</span>
+        </p>
+        <p className="text-[11px] text-white/50">
+          {isFull
+            ? labels.energyFull
+            : labels.energyNext.replace("{time}", countdown ?? "--:--")}
+        </p>
+      </div>
+      <div className="h-1 overflow-hidden rounded-full bg-white/10">
         <div
-          className="h-full rounded-full bg-sky-400/80 transition-all duration-500"
+          className="h-full rounded-full bg-sky-400/85 transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p>{labels.energyRegen.replace("{minutes}", String(regenMinutes))}</p>
-      <p>
-        {isFull
-          ? labels.energyFull
-          : labels.energyNext.replace("{time}", countdown ?? "--:--")}
-      </p>
-
-      {/*
-        En qué se gasta. Sin esta lista la barra baja sola y el jugador no
-        tiene forma de saber que un gimnasio cuesta el doble que explorar,
-        que es la decisión que la energía le está pidiendo que tome.
-      */}
-      <div className="rounded-lg border border-white/8 bg-white/[0.03] p-2.5">
-        <p className="mb-1.5 text-[10px] uppercase tracking-[0.14em] text-on-surface-variant/70">
-          {labels.energyCostsTitle}
-        </p>
-        <ul className="space-y-1">
-          {[
-            { label: labels.energyCostExplore, cost: WILD_ENCOUNTER_ENERGY_COST },
-            { label: labels.energyCostGym, cost: GYM_BATTLE_ENERGY_COST },
-            { label: labels.energyCostPvp, cost: PVP_BATTLE_ENERGY_COST },
-          ].map((row) => (
-            <li key={row.label} className="flex items-center justify-between gap-2">
-              <span>{row.label}</span>
-              <span className="flex shrink-0 items-center gap-0.5 font-mono text-[11px] tabular-nums text-sky-300">
-                <span aria-hidden className="material-symbols-outlined text-[13px]!">
-                  bolt
-                </span>
-                {row.cost}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-2 text-[11px] leading-snug text-on-surface-variant/70">
-          {labels.energyPacing}
-        </p>
+      <div className="flex items-center justify-between gap-1.5 text-[11px] text-white/55">
+        {[
+          { icon: "explore", cost: WILD_ENCOUNTER_ENERGY_COST, label: labels.energyCostExplore },
+          { icon: "stadium", cost: GYM_BATTLE_ENERGY_COST, label: labels.energyCostGym },
+          { icon: "swords", cost: PVP_BATTLE_ENERGY_COST, label: labels.energyCostPvp },
+        ].map((row) => (
+          <span
+            key={row.label}
+            title={row.label}
+            className="inline-flex flex-1 items-center justify-center gap-0.5 rounded-md bg-white/[0.04] py-1.5 font-mono tabular-nums"
+          >
+            <span className="material-symbols-outlined text-[14px]! text-white/45">
+              {row.icon}
+            </span>
+            <Image
+              src={RESOURCE_ICON.energy}
+              alt=""
+              width={12}
+              height={12}
+              className="h-3 w-3 object-contain"
+              unoptimized
+            />
+            {row.cost}
+          </span>
+        ))}
       </div>
-      {energy <= 0 && (
-        <div className="space-y-2 rounded-lg border border-sky-400/25 bg-sky-500/10 p-2.5">
-          <p className="font-semibold text-sky-200">
-            {labels.energyEmptyTitle ?? labels.energy}
-          </p>
-          <p>{labels.energyEmptyBody ?? labels.energyRegen.replace("{minutes}", String(regenMinutes))}</p>
-          <div className="flex flex-col gap-1.5 pt-0.5">
-            <p className="text-[11px] text-sky-200/80">
-              {labels.energyEmptyWait ?? labels.energyNext.replace("{time}", countdown ?? "--:--")}
-            </p>
-            <Link
-              href="/shop"
-              onClick={() => setOpen(null)}
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 text-[12px] font-medium text-on-surface transition hover:bg-white/[0.08]"
-            >
-              <span className="material-symbols-outlined text-[16px]!">storefront</span>
-              {labels.energyEmptyShop ?? labels.coinsShop}
-            </Link>
-            <Link
-              href="/"
-              onClick={() => setOpen(null)}
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 text-[12px] font-medium text-on-surface transition hover:bg-white/[0.08]"
-            >
-              <span className="material-symbols-outlined text-[16px]!">redeem</span>
-              {labels.energyEmptyRewards ?? "Rewards"}
-            </Link>
-            <Link
-              href="/team"
-              onClick={() => setOpen(null)}
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 text-[12px] font-medium text-on-surface transition hover:bg-white/[0.08]"
-            >
-              <span className="material-symbols-outlined text-[16px]!">healing</span>
-              {labels.energyEmptyTeam ?? "Team"}
-            </Link>
-          </div>
+      {energy <= 0 ? (
+        <div className="flex gap-1.5">
+          <ResourceAction
+            href="/shop"
+            icon="storefront"
+            label={labels.energyEmptyShop ?? labels.coinsShop}
+            onNavigate={() => setOpen(null)}
+          />
+          <ResourceAction
+            href="/"
+            icon="redeem"
+            label={labels.energyEmptyRewards ?? "Rewards"}
+            onNavigate={() => setOpen(null)}
+          />
         </div>
-      )}
+      ) : null}
     </PopoverPanel>
   );
 
@@ -356,30 +387,26 @@ export function ResourceBar({
     <PopoverPanel
       id={coinsPanelId}
       title={labels.coins}
+      iconSrc={RESOURCE_ICON.coins}
       closeLabel={labels.close}
       onClose={() => setOpen(null)}
     >
-      <p className="font-mono text-[15px] font-semibold tabular-nums text-electric-yellow">
+      <p className="font-mono text-[22px] font-semibold leading-none tabular-nums text-electric-yellow">
         {coins.toLocaleString()}
       </p>
-      <p>{labels.coinsBalance}</p>
-      <div className="flex flex-col gap-1.5 pt-1">
-        <Link
+      <div className="flex gap-1.5">
+        <ResourceAction
           href="/market?tab=shop"
-          onClick={() => setOpen(null)}
-          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 text-[12px] font-medium text-on-surface transition hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-yellow/50"
-        >
-          <span className="material-symbols-outlined text-[16px]!">storefront</span>
-          {labels.coinsShop}
-        </Link>
-        <Link
+          icon="storefront"
+          label={labels.coinsShop}
+          onNavigate={() => setOpen(null)}
+        />
+        <ResourceAction
           href="/market?tab=browse"
-          onClick={() => setOpen(null)}
-          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 text-[12px] font-medium text-on-surface transition hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-yellow/50"
-        >
-          <span className="material-symbols-outlined text-[16px]!">store</span>
-          {labels.coinsMarket}
-        </Link>
+          icon="store"
+          label={labels.coinsMarket}
+          onNavigate={() => setOpen(null)}
+        />
       </div>
     </PopoverPanel>
   );
@@ -388,22 +415,20 @@ export function ResourceBar({
     <PopoverPanel
       id={gemsPanelId}
       title={labels.gems}
+      iconSrc={RESOURCE_ICON.gems}
       closeLabel={labels.close}
       onClose={() => setOpen(null)}
     >
-      <p className="font-mono text-[15px] font-semibold tabular-nums text-gem">
+      <p className="font-mono text-[22px] font-semibold leading-none tabular-nums text-gem">
         {gems.toLocaleString()}
       </p>
-      <p>{labels.gemsBalance}</p>
-      <p>{labels.gemsHint}</p>
-      <Link
+      <ResourceAction
         href="/pc"
-        onClick={() => setOpen(null)}
-        className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-gem/40 bg-gem/15 px-3 text-[12px] font-medium text-gem transition hover:bg-gem/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gem/50"
-      >
-        <span className="material-symbols-outlined text-[16px]!">storage</span>
-        {labels.gemsPc}
-      </Link>
+        icon="storage"
+        label={labels.gemsPc}
+        tone="gem"
+        onNavigate={() => setOpen(null)}
+      />
     </PopoverPanel>
   );
 
@@ -470,17 +495,38 @@ export function ResourceBar({
               open === "all" ? "bg-white/[0.06]" : ""
             }`}
           >
-            <span className="material-symbols-outlined text-[14px]! text-sky-300">bolt</span>
+            <Image
+              src={RESOURCE_ICON.energy}
+              alt=""
+              width={22}
+              height={22}
+              className="h-[22px] w-[22px] object-contain"
+              unoptimized
+            />
             <span className="font-mono text-[11px] font-semibold tabular-nums text-sky-100">
               {energy}
             </span>
             <span className="mx-0.5 h-3 w-px bg-white/15" aria-hidden />
-            <span className="material-symbols-outlined text-[14px]! text-electric-yellow">paid</span>
+            <Image
+              src={RESOURCE_ICON.coins}
+              alt=""
+              width={18}
+              height={18}
+              className="h-[18px] w-[18px] object-contain"
+              unoptimized
+            />
             <span className="font-mono text-[11px] font-semibold tabular-nums text-electric-yellow">
               {coins}
             </span>
             <span className="mx-0.5 h-3 w-px bg-white/15" aria-hidden />
-            <span className="material-symbols-outlined text-[14px]! text-gem">diamond</span>
+            <Image
+              src={RESOURCE_ICON.gems}
+              alt=""
+              width={22}
+              height={22}
+              className="h-[22px] w-[22px] object-contain"
+              unoptimized
+            />
             <span className="font-mono text-[11px] font-semibold tabular-nums text-gem">
               {gems}
             </span>
@@ -492,59 +538,72 @@ export function ResourceBar({
               closeLabel={labels.close}
               onClose={() => setOpen(null)}
             >
-              <div className="space-y-3">
-                <div>
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.14em] text-sky-300/80">
-                    {labels.energy}
-                  </p>
-                  <p className="font-mono text-[14px] font-semibold text-sky-200">
-                    {energy}/{energyMax}
-                  </p>
-                  <p className="mt-1">
-                    {isFull
-                      ? labels.energyFull
-                      : labels.energyNext.replace("{time}", countdown ?? "--:--")}
-                  </p>
-                </div>
-                <div className="border-t border-white/8 pt-3">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.14em] text-electric-yellow/80">
-                    {labels.coins}
-                  </p>
-                  <p className="font-mono text-[14px] font-semibold text-electric-yellow">
-                    {coins.toLocaleString()}
-                  </p>
-                  <div className="mt-2 flex gap-1.5">
-                    <Link
-                      href="/market?tab=shop"
-                      onClick={() => setOpen(null)}
-                      className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/12 px-2 text-[11px]"
-                    >
-                      {labels.coinsShop}
-                    </Link>
-                    <Link
-                      href="/market?tab=browse"
-                      onClick={() => setOpen(null)}
-                      className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/12 px-2 text-[11px]"
-                    >
-                      {labels.coinsMarket}
-                    </Link>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2.5">
+                  <Image
+                    src={RESOURCE_ICON.energy}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 object-contain"
+                    unoptimized
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono text-[16px] font-semibold tabular-nums text-white">
+                      {energy}
+                      <span className="text-white/40">/{energyMax}</span>
+                    </p>
+                    <p className="text-[10px] text-white/45">
+                      {isFull
+                        ? labels.energyFull
+                        : labels.energyNext.replace("{time}", countdown ?? "--:--")}
+                    </p>
                   </div>
                 </div>
-                <div className="border-t border-white/8 pt-3">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.14em] text-gem/80">
-                    {labels.gems}
+
+                <div className="flex items-center gap-2.5">
+                  <Image
+                    src={RESOURCE_ICON.coins}
+                    alt=""
+                    width={26}
+                    height={26}
+                    className="h-[26px] w-[26px] object-contain"
+                    unoptimized
+                  />
+                  <p className="min-w-0 flex-1 font-mono text-[16px] font-semibold tabular-nums text-electric-yellow">
+                    {coins.toLocaleString()}
                   </p>
-                  <p className="font-mono text-[14px] font-semibold text-gem">
+                  <div className="flex shrink-0 gap-1">
+                    <ResourceAction
+                      href="/market?tab=shop"
+                      icon="storefront"
+                      label={labels.coinsShop}
+                      onNavigate={() => setOpen(null)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <Image
+                    src={RESOURCE_ICON.gems}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 object-contain"
+                    unoptimized
+                  />
+                  <p className="min-w-0 flex-1 font-mono text-[16px] font-semibold tabular-nums text-gem">
                     {gems.toLocaleString()}
                   </p>
-                  <p className="mt-1">{labels.gemsHint}</p>
-                  <Link
-                    href="/pc"
-                    onClick={() => setOpen(null)}
-                    className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-gem/40 bg-gem/15 px-2 text-[11px] text-gem"
-                  >
-                    {labels.gemsPc}
-                  </Link>
+                  <div className="flex shrink-0 gap-1">
+                    <ResourceAction
+                      href="/pc"
+                      icon="storage"
+                      label={labels.gemsPc}
+                      tone="gem"
+                      onNavigate={() => setOpen(null)}
+                    />
+                  </div>
                 </div>
               </div>
             </PopoverPanel>

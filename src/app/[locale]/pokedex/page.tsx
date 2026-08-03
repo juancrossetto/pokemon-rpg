@@ -267,7 +267,7 @@ export default async function PokedexPage({
     (regions.find((r) => r.available)?.id as PokedexRegionId | undefined) ?? "kanto";
 
   return (
-    <div className="flex-1 px-margin-mobile py-6 md:px-margin-desktop md:py-8">
+    <div className="flex-1 px-margin-mobile py-3 md:px-margin-desktop md:py-8">
       <div className="mx-auto max-w-7xl">
         <PokedexTerminal
           entries={entries}

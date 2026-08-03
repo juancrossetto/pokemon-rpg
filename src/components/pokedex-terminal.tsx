@@ -3,9 +3,8 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { neonTypeColor } from "@/lib/type-colors";
-import { showdownTypeSymbolUrl } from "@/lib/type-icons";
 import { spriteFor } from "@/lib/shiny";
-import { PokeballIcon } from "@/components/pokeball-icon";
+import { itemHdIconUrl } from "@/lib/item-hd-icons";
 import {
   POKEDEX_REGIONS,
   RARITY_ORDER,
@@ -133,6 +132,7 @@ export function PokedexTerminal({
   const [sort, setSort] = useState<DexSort>("number");
   const [view, setView] = useState<DexView>("grid");
   const [query, setQuery] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const regionDef = POKEDEX_REGIONS.find((r) => r.id === region)!;
   const regionProg = progress.regions.find((r) => r.id === region);
@@ -218,21 +218,33 @@ export function PokedexTerminal({
       : Math.round((regionProg.caught / regionProg.total) * 1000) / 10
     : 0;
 
+  const filtersActive = quick !== "all" || Boolean(type) || sort !== "number";
+  const primaryQuick: DexQuickFilter[] = ["all", "seen", "caught", "missing"];
+  const extraQuick = QUICK_FILTERS.filter((f) => !primaryQuick.includes(f));
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header progreso */}
-      <header className="space-y-4">
-        <div>
-          <h1 className="page-title text-headline-lg text-white md:text-display-sm">
-            {labels.title}
-          </h1>
-          <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant">
-            {labels.researchDatabase}
-          </p>
+    <div className="flex flex-col gap-3 md:gap-6">
+      {/* Header: compacto en mobile, completo en desktop */}
+      <header className="space-y-3 md:space-y-4">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="page-title text-headline-md text-white md:text-display-sm">
+              {labels.title}
+            </h1>
+            <p className="mt-0.5 hidden font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant md:block">
+              {labels.researchDatabase}
+            </p>
+          </div>
+          {signedIn ? (
+            <p className="shrink-0 pb-0.5 font-mono text-[12px] tabular-nums text-white/70 md:hidden">
+              <span className="font-semibold text-pokeball-red">{progress.caught}</span>
+              <span className="text-white/35">/{progress.total}</span>
+            </p>
+          ) : null}
         </div>
 
         {signedIn ? (
-          <div className="flex flex-wrap items-end gap-x-6 gap-y-3 border-y border-white/8 py-3">
+          <div className="hidden flex-wrap items-end gap-x-6 gap-y-3 border-y border-white/8 py-3 md:flex">
             <ProgressStat
               label={labels.progress.seen}
               value={`${progress.seen}`}
@@ -271,9 +283,9 @@ export function PokedexTerminal({
         )}
       </header>
 
-      {/* Regiones */}
-      <section className="space-y-3">
-        <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Regiones: chips compactos */}
+      <section>
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-2">
           {POKEDEX_REGIONS.map((r) => {
             const rp = progress.regions.find((x) => x.id === r.id);
             const active = region === r.id;
@@ -283,20 +295,18 @@ export function PokedexTerminal({
               <button
                 key={r.id}
                 type="button"
-                onClick={() => {
-                  setRegion(r.id);
-                }}
+                onClick={() => setRegion(r.id)}
                 className={[
-                  "shrink-0 min-w-[5.5rem] rounded-md border px-3.5 py-2 text-left transition-all",
+                  "shrink-0 rounded-full border px-3 py-1.5 text-left transition-all md:min-w-[5.5rem] md:rounded-md md:px-3.5 md:py-2",
                   active
-                    ? "border-pokeball-red/55 bg-pokeball-red/12 text-white shadow-[inset_0_-1px_0_rgba(220,38,38,0.35)]"
+                    ? "border-pokeball-red/55 bg-pokeball-red/12 text-white"
                     : "border-white/10 bg-black/25 text-on-surface-variant hover:border-white/22 hover:text-on-surface",
                 ].join(" ")}
               >
-                <span className="block text-label-sm font-medium tracking-wide">
+                <span className="block text-[12px] font-medium tracking-wide md:text-label-sm">
                   {labels.regions[r.id]}
                 </span>
-                <span className="mt-0.5 block font-mono text-[10px] tabular-nums opacity-70">
+                <span className="mt-0.5 hidden font-mono text-[10px] tabular-nums opacity-70 md:block">
                   {empty
                     ? labels.comingSoon
                     : locked
@@ -308,8 +318,8 @@ export function PokedexTerminal({
           })}
         </div>
 
-        {regionProg && regionProg.total > 0 && !regionLocked && (
-          <div className="space-y-1.5">
+        {regionProg && regionProg.total > 0 && !regionLocked ? (
+          <div className="mt-2 hidden space-y-1.5 md:block">
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[10px] uppercase tracking-[0.16em] text-on-surface-variant">
                 {labels.completion}
@@ -325,13 +335,13 @@ export function PokedexTerminal({
               />
             </div>
           </div>
-        )}
+        ) : null}
       </section>
 
-      {/* Controles */}
-      <section className="space-y-3">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative max-w-md flex-1">
+      {/* Controles: search + filtros colapsables en mobile */}
+      <section className="space-y-2 md:space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
             <span className="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px]! text-on-surface-variant">
               search
             </span>
@@ -343,7 +353,78 @@ export function PokedexTerminal({
               className="w-full rounded-md border border-white/10 bg-black/30 py-2 pl-9 pr-3 text-label-sm text-on-surface outline-none transition placeholder:text-on-surface-variant/50 focus:border-pokeball-red/50"
             />
           </div>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((v) => !v)}
+            aria-expanded={filtersOpen}
+            className={[
+              "inline-flex h-10 shrink-0 items-center gap-1 rounded-md border px-2.5 text-[12px] font-medium transition md:hidden",
+              filtersOpen || filtersActive
+                ? "border-electric-yellow/45 bg-electric-yellow/10 text-electric-yellow"
+                : "border-white/10 bg-black/30 text-on-surface-variant",
+            ].join(" ")}
+          >
+            <span className="material-symbols-outlined text-[18px]!">tune</span>
+          </button>
+          <div className="hidden rounded-md border border-white/10 p-0.5 md:flex">
+            <ViewToggle
+              active={view === "grid"}
+              icon="grid_view"
+              label={labels.view.grid}
+              onClick={() => setView("grid")}
+            />
+            <ViewToggle
+              active={view === "list"}
+              icon="view_list"
+              label={labels.view.list}
+              onClick={() => setView("list")}
+            />
+          </div>
+        </div>
 
+        {/* Quick filters principales siempre visibles */}
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {primaryQuick.map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setQuick(f)}
+              className={[
+                "shrink-0 rounded-full border px-2.5 py-1 text-[11px] transition-colors md:rounded-md md:px-3 md:py-1.5 md:text-label-sm",
+                quick === f
+                  ? "border-electric-yellow/45 bg-electric-yellow/10 text-electric-yellow"
+                  : "border-white/10 bg-black/20 text-on-surface-variant hover:border-white/20 hover:text-on-surface",
+              ].join(" ")}
+            >
+              {labels.filters[f]}
+            </button>
+          ))}
+          {/* En desktop el resto de quick filters va en la misma fila */}
+          {extraQuick.map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setQuick(f)}
+              className={[
+                "hidden shrink-0 rounded-md border px-3 py-1.5 text-label-sm transition-colors md:inline-flex",
+                quick === f
+                  ? "border-electric-yellow/45 bg-electric-yellow/10 text-electric-yellow"
+                  : "border-white/10 bg-black/20 text-on-surface-variant hover:border-white/20 hover:text-on-surface",
+              ].join(" ")}
+            >
+              {labels.filters[f]}
+            </button>
+          ))}
+        </div>
+
+        {/* Panel filtros: abierto en mobile con tune; siempre en desktop (sort/type) */}
+        <div
+          className={[
+            "flex-col gap-2 rounded-lg border border-white/8 bg-black/25 p-2.5",
+            filtersOpen ? "flex" : "hidden",
+            "md:flex md:flex-row md:items-center md:justify-between md:border-0 md:bg-transparent md:p-0",
+          ].join(" ")}
+        >
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-on-surface-variant">
               {labels.sort.label}
@@ -374,7 +455,7 @@ export function PokedexTerminal({
               </select>
             </label>
 
-            <div className="flex rounded-md border border-white/10 p-0.5">
+            <div className="flex rounded-md border border-white/10 p-0.5 md:hidden">
               <ViewToggle
                 active={view === "grid"}
                 icon="grid_view"
@@ -389,29 +470,29 @@ export function PokedexTerminal({
               />
             </div>
           </div>
-        </div>
 
-        <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {QUICK_FILTERS.map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setQuick(f)}
-              className={[
-                "shrink-0 rounded-md border px-3 py-1.5 text-label-sm transition-colors",
-                quick === f
-                  ? "border-electric-yellow/45 bg-electric-yellow/10 text-electric-yellow"
-                  : "border-white/10 bg-black/20 text-on-surface-variant hover:border-white/20 hover:text-on-surface",
-              ].join(" ")}
-            >
-              {labels.filters[f]}
-            </button>
-          ))}
+          <div className="flex gap-1.5 overflow-x-auto md:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {extraQuick.map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setQuick(f)}
+                className={[
+                  "shrink-0 rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+                  quick === f
+                    ? "border-electric-yellow/45 bg-electric-yellow/10 text-electric-yellow"
+                    : "border-white/10 bg-black/20 text-on-surface-variant",
+                ].join(" ")}
+              >
+                {labels.filters[f]}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Colecciones por región (compacto) */}
-      <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Colecciones por región — solo desktop (redundante en mobile) */}
+      <section className="hidden gap-2 sm:grid-cols-2 md:grid lg:grid-cols-4">
         {progress.regions.slice(0, 4).map((r) => {
           const empty = r.total === 0;
           const locked = !empty && !r.playable;
@@ -467,14 +548,12 @@ export function PokedexTerminal({
             </p>
           ) : null}
           {view === "grid" ? (
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <ul className="grid grid-cols-3 gap-x-1 gap-y-4 sm:grid-cols-4 sm:gap-x-2 sm:gap-y-5 md:grid-cols-5 lg:grid-cols-6">
               {visible.map((entry) => (
                 <DexCard
                   key={entry.id}
                   entry={entry}
                   labels={labels}
-                  regionId={region}
-                  regionLabel={labels.regions[region]}
                   forceLocked={regionLocked}
                 />
               ))}
@@ -572,199 +651,113 @@ function typeBannerWash(types: string[]): string {
   ].join(" ");
 }
 
+/**
+ * Celda de grilla sin card (estilo GO): Nº + estrella, sprite suelto, nombre.
+ */
 function DexCard({
   entry,
   labels,
-  regionId,
-  regionLabel,
   forceLocked = false,
 }: {
   entry: PokedexSpeciesCard;
   labels: PokedexLabels;
-  regionId: PokedexRegionId;
-  regionLabel: string;
   forceLocked?: boolean;
 }) {
-  const primary = entry.types[0] ?? "normal";
-  const glow = neonTypeColor(primary);
   const unseen = forceLocked || entry.status === "unseen";
   const seenOnly = !forceLocked && entry.status === "seen";
   const caught = !forceLocked && entry.status === "caught";
-
   const tip = forceLocked ? labels.locked : unseen ? labels.unknown : entry.name;
-  const rarityLabel = labels.rarity[entry.rarity] ?? entry.rarity;
+  const dexNum = String(entry.id).padStart(3, "0");
 
   return (
-    <li className="h-full">
+    <li>
       <article
         title={tip}
         className={[
-          "group relative flex h-full min-h-[22rem] w-full flex-col overflow-hidden border text-center transition-all duration-300",
-          "hover:-translate-y-0.5",
-          "dex-card dex-card--cut border-white/12 hover:border-white/22",
+          "group relative flex flex-col items-center gap-0.5 px-0.5 py-1 transition",
           caught ? "dex-caught-pulse" : "",
         ].join(" ")}
       >
-        <span
-          aria-hidden
-          className={unseen ? "dex-card__mesh dex-card__mesh--dim" : "dex-card__mesh"}
-        />
-
-        {/* Gris arriba intacto; color de tipo solo en la franja inferior → fade up */}
-        {!unseen ? (
+        {/* Fila superior: Nº + favorito (estilo GO, sin card) */}
+        <div className="flex w-full items-center justify-between gap-1 px-0.5">
           <span
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[40%]"
-            style={{ background: typeBannerWash(entry.types) }}
-          />
-        ) : null}
-
-        {/* Header: solo iconos de estado */}
-        <div className="relative z-20 flex min-h-[1.5rem] items-center justify-end gap-0.5 px-3 pt-2.5">
+            className={[
+              "font-mono text-[10px] tabular-nums leading-none tracking-wide sm:text-[11px]",
+              unseen ? "text-white/30" : "text-white/70",
+            ].join(" ")}
+          >
+            {unseen ? "—" : `#${dexNum}`}
+          </span>
           {entry.isFavorite ? (
             <span
-              className="material-symbols-outlined text-[14px]! text-electric-yellow"
+              className="material-symbols-outlined ms-fill text-[14px]! text-electric-yellow sm:text-[15px]!"
               title={labels.icons.favorite}
             >
               star
             </span>
-          ) : null}
-          {entry.hasShiny ? (
-            <span
-              className="material-symbols-outlined text-[14px]! text-pink-300"
-              title={labels.icons.shiny}
-            >
-              auto_awesome
-            </span>
-          ) : null}
-          {entry.isLegendary || entry.isMythical ? (
-            <span
-              className="material-symbols-outlined text-[14px]! text-violet-300"
-              title={
-                entry.isMythical ? labels.icons.mythical : labels.icons.legendary
-              }
-            >
-              workspace_premium
-            </span>
-          ) : null}
+          ) : (
+            <span className="h-[14px] w-[14px] shrink-0" aria-hidden />
+          )}
         </div>
 
-        {/* Artwork */}
-        <div className="relative z-10 flex min-h-[13.5rem] flex-[1.35] items-center justify-center px-2 pb-2">
+        {/* Sprite suelto sobre el fondo */}
+        <div className="relative flex aspect-square w-full max-w-[7.5rem] items-center justify-center self-center">
           {entry.spriteUrl ? (
             <Image
               src={spriteFor(entry.spriteUrl, entry.hasShiny)}
               alt={unseen ? labels.unknown : entry.name}
-              width={176}
-              height={176}
+              width={128}
+              height={128}
               className={[
-                "relative z-10 h-36 w-36 object-contain transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-[1.05] sm:h-40 sm:w-40",
+                "h-[78%] w-[78%] object-contain transition duration-200 group-hover:scale-[1.06] group-active:scale-[0.98]",
                 unseen
-                  ? "brightness-0 invert opacity-[0.42] drop-shadow-[0_0_6px_rgba(255,255,255,0.12)]"
-                  : "drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]",
-                seenOnly && !unseen ? "opacity-90" : "",
+                  ? "brightness-0 invert opacity-[0.38]"
+                  : "drop-shadow-[0_6px_12px_rgba(0,0,0,0.45)]",
+                seenOnly ? "opacity-85" : "",
               ].join(" ")}
             />
           ) : null}
-        </div>
 
-        {/* Footer: tipos alineados al bloque de rareza/nombre + badges unificados */}
-        <div className="dex-card__banner relative z-20 mt-auto px-3 pb-3 pt-1">
-          <div className="flex min-w-0 items-end gap-1.5">
-            <div className="flex min-w-0 flex-1 items-stretch gap-1.5 text-left">
-              {!unseen ? (
-                <span
-                  aria-hidden
-                  className="dex-card__banner-bar w-[3px] shrink-0 self-stretch rounded-full"
-                  style={{
-                    background: glow,
-                    boxShadow: `0 0 10px ${glow}aa`,
-                  }}
-                />
-              ) : null}
-
-              <div className="min-w-0 flex-1 space-y-1.5">
-                {!unseen ? (
-                  <div className="flex items-center gap-1">
-                    {entry.types.map((t) => {
-                      const c = neonTypeColor(t);
-                      const label = labels.pokemonTypes[t.toLowerCase()] ?? t;
-                      return (
-                        <span
-                          key={t}
-                          title={label}
-                          className="dex-card__type-flag"
-                          style={{
-                            background: `linear-gradient(135deg, ${c}dd 0%, ${c}88 100%)`,
-                            boxShadow: `0 2px 8px ${c}40`,
-                          }}
-                        >
-                          <Image
-                            src={showdownTypeSymbolUrl(t)}
-                            alt=""
-                            width={14}
-                            height={14}
-                            unoptimized
-                            className="h-3.5 w-3.5 object-contain brightness-110 drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]"
-                          />
-                        </span>
-                      );
-                    })}
-                  </div>
-                ) : null}
-
-                {!unseen ? (
-                  <p className="dex-card__rarity truncate text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-white/88">
-                    {rarityLabel}
-                  </p>
-                ) : null}
-
-                <p
-                  className={[
-                    "dex-card__name min-w-0 uppercase leading-none",
-                    unseen ? "text-white/50" : "text-white",
-                  ].join(" ")}
-                >
-                  {unseen ? labels.unknown : entry.name}
-                </p>
-              </div>
-            </div>
-
-            <div className="dex-card__chips flex shrink-0 items-center gap-1.5">
-              {!unseen ? (
-                <span className="dex-card__chip" aria-label={regionLabel}>
-                  <span className="dex-card__chip-inner dex-card__chip-letter">
-                    {regionId.slice(0, 1).toUpperCase()}
-                  </span>
-                </span>
-              ) : null}
+          {/* Badges mínimos sobre el sprite */}
+          <div className="pointer-events-none absolute bottom-0.5 left-0.5 flex items-center gap-0.5">
+            {entry.hasShiny ? (
               <span
-                className="dex-card__chip"
-                aria-label={`#${String(entry.id).padStart(3, "0")}`}
+                className="material-symbols-outlined text-[12px]! text-pink-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                title={labels.icons.shiny}
               >
-                <span className="dex-card__chip-inner dex-card__chip-num">
-                  {String(entry.id).padStart(3, "0")}
-                </span>
+                auto_awesome
               </span>
-              {!unseen ? (
-                <span
-                  className="dex-card__chip"
-                  aria-label={caught ? labels.statusCaught : labels.statusSeen}
-                >
-                  <span className="dex-card__chip-inner">
-                    {caught ? (
-                      <PokeballIcon className="h-3 w-3" />
-                    ) : (
-                      <span className="material-symbols-outlined text-[13px]! text-white/90">
-                        visibility
-                      </span>
-                    )}
-                  </span>
-                </span>
-              ) : null}
-            </div>
+            ) : null}
+            {caught ? (
+              <span title={labels.statusCaught} className="drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)]">
+                <Image
+                  src={itemHdIconUrl("Poke Ball") ?? "/items/hd/poke-ball.png"}
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="h-3.5 w-3.5 object-contain sm:h-4 sm:w-4"
+                  unoptimized
+                />
+              </span>
+            ) : seenOnly ? (
+              <span
+                className="material-symbols-outlined text-[12px]! text-white/55"
+                title={labels.statusSeen}
+              >
+                visibility
+              </span>
+            ) : null}
           </div>
         </div>
+
+        <p
+          className={[
+            "w-full truncate px-0.5 text-center text-[11px] capitalize leading-tight sm:text-[12px]",
+            unseen ? "text-white/40" : "text-white/85",
+          ].join(" ")}
+        >
+          {unseen ? labels.unknown : entry.name}
+        </p>
       </article>
     </li>
   );
@@ -788,15 +781,15 @@ function DexListRow({
     <li className="relative">
       <div
         className={[
-          "group relative flex w-full items-center gap-3 overflow-hidden rounded-md border px-3 py-2.5 text-left transition",
-          "dex-card border-white/10 hover:border-white/22",
+          "group relative flex w-full items-center gap-3 overflow-hidden px-2 py-2 text-left transition",
+          "hover:bg-white/[0.04] active:bg-white/[0.06]",
+          unseen ? "opacity-70" : "",
         ].join(" ")}
         style={
           unseen
             ? undefined
             : {
-                boxShadow: `inset 3px 0 0 ${glow}`,
-                borderColor: `${glow}33`,
+                boxShadow: `inset 2px 0 0 ${glow}`,
               }
         }
       >

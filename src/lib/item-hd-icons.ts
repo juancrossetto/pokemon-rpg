@@ -73,9 +73,12 @@ export const ITEM_HD_ICON_IDS: Record<string, string> = {
   "Silver Pinap Berry": "silver-pinap-berry",
   "Oran Berry": "oran-berry",
   "Leppa Berry": "leppa-berry",
-  "Poke Coin": "poke-coin",
+  "Poke Coin": "gold-coin",
+  "Gold Coin": "gold-coin",
   "Poke Coin Bundle S": "poke-coin-bundle-s",
   "Poke Coin Bundle XL": "poke-coin-bundle-xl",
+  Gem: "gem",
+  Energy: "energy",
   // Held / type boosters (main series)
   Charcoal: "charcoal",
   Magnet: "magnet",
