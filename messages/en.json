@@ -487,7 +487,15 @@
     "unspentPoints": "{count} unspent points",
     "allocateShow": "Allocate",
     "allocateHide": "Close",
-    "allocateHint": "Spend points earned on level-up. Each attribute caps at 99.",
+    "allocateHint": "Each point raises a battle stat. Cap is 99 per attribute.",
+    "allocateAffects": {
+      "hp": "HP",
+      "atk": "Attack",
+      "def": "Defense",
+      "spAtk": "Special Attack",
+      "spDef": "Special Defense",
+      "speed": "Speed"
+    },
     "allocateRemaining": "Available",
     "allocateReset": "Reset",
     "allocateConfirm": "Confirm (+{count})",

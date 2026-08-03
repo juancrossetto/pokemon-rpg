@@ -298,9 +298,10 @@ export function useSquadActions({
   }
 
   /**
-   * Un caramelo a la vez. El nivel se pinta al toque, pero no se puede tirar
-   * otro hasta que el server confirme y (si hay) se resuelvan movimientos/evo.
-   * Encadenar en background dejaba los modales llegando tarde y desordenados.
+   * Un caramelo a la vez. El menú **no** se cierra al usarlo: si querés subir
+   * varios niveles seguidos, volver a abrir el ⋮ cada vez era un peaje. Sólo
+   * se cierra cuando aparece el modal de movimientos/evolución, que necesita
+   * la pantalla entera.
    */
   function giveRareCandy() {
     if (busy || levelOffers || candyPending) return;
@@ -324,7 +325,6 @@ export function useSquadActions({
     const maxBefore = maxHp;
     const optimisticLevel = levelBefore != null ? levelBefore + 1 : null;
 
-    onBeforeAction?.();
     setBusy(true);
     setCandyPending(true);
     bump("rareCandy");
@@ -365,6 +365,8 @@ export function useSquadActions({
           result.evolveOffer != null;
         setCandyPending(false);
         if (hasOffers) {
+          // Modal de ofertas: ahí sí cerramos el menú contextual.
+          onBeforeAction?.();
           // Se mantiene `busy` hasta dismissLevelOffers.
           setLevelOffers([
             {

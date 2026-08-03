@@ -364,10 +364,14 @@ export function BattleArena({
     player.currentHp <= 0 &&
     initialParty.some((m) => m.instanceId !== player.instanceId && m.currentHp > 0);
   const [view, setView] = useState<View>(needsForcedSwitch ? "team" : "menu");
-  // Una vez que el jugador elige Luchar por primera vez, los turnos
-  // siguientes abren directo en el menú de poderes (en vez de volver
-  // siempre al menú raíz) — "volver" desde ahí sigue llevando al menú raíz.
-  const [defaultView, setDefaultView] = useState<View>("menu");
+  /**
+   * A dónde vuelve el comando al terminar un turno.
+   *
+   * Sólo es `"moves"` si el turno anterior fue un poder: así pelear → pelear
+   * salta el menú raíz, pero mochila/cambio vuelven a Luchar/Pokémon/Mochila.
+   * Antes se seteaba a `"moves"` la primera vez que tocaban Luchar y se
+   * quedaba pegado — por eso después de una poción abría poderes de nuevo.
+   */
   const [ballStacks, setBallStacks] = useState(pokeballs);
   const [potionStacks, setPotionStacks] = useState(potions);
   const [party, setParty] = useState(initialParty);
@@ -1442,15 +1446,12 @@ export function BattleArena({
     } else if (result.outcome === "lost" || bothPlayersDown) {
       await playFaintAndFinish("player", "lost", { skipFaintBeat: true });
     } else {
+      // Última acción fue un poder → el próximo turno abre pelear directo.
       setIsAnimating(false);
-      if (defaultView === "moves") {
-        await enterDoubleFight({
-          lockA: result.playerChargeMoveId,
-          lockB: result.playerChargeMoveIdB ?? null,
-        });
-      } else {
-        setView(defaultView);
-      }
+      await enterDoubleFight({
+        lockA: result.playerChargeMoveId,
+        lockB: result.playerChargeMoveIdB ?? null,
+      });
     }
   }
 
@@ -1612,7 +1613,7 @@ export function BattleArena({
     } else if (result.outcome === "gym_continues" && result.nextOpponent) {
       await playWildFaintThenReveal(result.nextOpponent);
       clearVanishSide("wild");
-      setView(defaultView);
+      setView("moves");
     } else if (result.playerChargeMoveId != null) {
       // 2º turno automático (como en los juegos): no pedimos otro click.
       setView("menu");
@@ -1661,15 +1662,15 @@ export function BattleArena({
         } else if (finish.outcome === "gym_continues" && finish.nextOpponent) {
           await playWildFaintThenReveal(finish.nextOpponent);
           clearVanishSide("wild");
-          setView(defaultView);
+          setView("moves");
         } else {
-          setView(defaultView);
+          setView("moves");
         }
       } else {
-        setView(defaultView);
+        setView("menu");
       }
     } else {
-      setView(defaultView);
+      setView("moves");
     }
 
     setIsAnimating(false);
@@ -1689,7 +1690,7 @@ export function BattleArena({
       const result = await fleeBattle(battleId, locale);
       if (!result) {
         appendLog(tLog("fleeFailed"), "system");
-        setView(defaultView);
+        setView("menu");
         return;
       }
 
@@ -1708,11 +1709,11 @@ export function BattleArena({
       } else if (result.outcome === "fainted") {
         await playFaintThenForceSwitch();
       } else {
-        setView(defaultView);
+        setView("menu");
       }
     } catch {
       appendLog(tLog("fleeFailed"), "system");
-      setView(defaultView);
+      setView("menu");
     } finally {
       setIsAnimating(false);
     }
@@ -1745,7 +1746,7 @@ export function BattleArena({
       setCaptureBall(null);
       setCaptureBallName(null);
       setIsAnimating(false);
-      setView(defaultView);
+      setView("menu");
       return;
     }
 
@@ -1793,7 +1794,7 @@ export function BattleArena({
     } else if (result.outcome === "fainted") {
       await playFaintThenForceSwitch();
     } else {
-      setView(defaultView);
+      setView("menu");
     }
     setIsAnimating(false);
   }
@@ -1830,7 +1831,7 @@ export function BattleArena({
     if (!result) {
       setPotionStacks(prevPotions);
       setIsAnimating(false);
-      setView(defaultView);
+      setView("menu");
       return;
     }
 
@@ -1852,7 +1853,7 @@ export function BattleArena({
     } else if (result.outcome === "fainted") {
       await playFaintThenForceSwitch();
     } else {
-      setView(defaultView);
+      setView("menu");
     }
 
     setIsAnimating(false);
@@ -1952,9 +1953,7 @@ export function BattleArena({
     } else if (result.outcome === "fainted") {
       await playFaintThenForceSwitch();
     } else {
-      // Después de cambiar de Pokémon el turno vuelve al menú raíz (Luchar/
-      // Pokémon/Mochila/Huir), no directo a los poderes del que acaba de
-      // entrar — recién si volvés a elegir Luchar se recupera el atajo.
+      // Mochila / cambio: el próximo turno arranca en el menú raíz, no en poderes.
       setView("menu");
     }
 
@@ -2656,7 +2655,6 @@ export function BattleArena({
                   onClick={() => {
                     unlockBattleAudio();
                     resumeBattleBgm();
-                    setDefaultView("moves");
                     if (isDouble) {
                       void enterDoubleFight();
                     } else {

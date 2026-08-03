@@ -487,7 +487,15 @@
     "unspentPoints": "{count} pontos não usados",
     "allocateShow": "Distribuir",
     "allocateHide": "Fechar",
-    "allocateHint": "Gaste pontos ganhos ao subir de nível. Cada atributo tem teto 99.",
+    "allocateHint": "Cada ponto sobe uma estatística de combate. Teto 99 por atributo.",
+    "allocateAffects": {
+      "hp": "PS",
+      "atk": "Ataque",
+      "def": "Defesa",
+      "spAtk": "Ataque especial",
+      "spDef": "Defesa especial",
+      "speed": "Velocidade"
+    },
     "allocateRemaining": "Disponíveis",
     "allocateReset": "Reiniciar",
     "allocateConfirm": "Confirmar (+{count})",

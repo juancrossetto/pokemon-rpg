@@ -487,7 +487,15 @@
     "unspentPoints": "{count} puntos sin asignar",
     "allocateShow": "Asignar",
     "allocateHide": "Cerrar",
-    "allocateHint": "Distribuí puntos al subir de nivel. Cada atributo tiene tope 99.",
+    "allocateHint": "Cada punto sube una estadística de combate. Tope 99 por atributo.",
+    "allocateAffects": {
+      "hp": "PS",
+      "atk": "Ataque",
+      "def": "Defensa",
+      "spAtk": "Ataque especial",
+      "spDef": "Defensa especial",
+      "speed": "Velocidad"
+    },
     "allocateRemaining": "Disponibles",
     "allocateReset": "Reiniciar",
     "allocateConfirm": "Confirmar (+{count})",

@@ -220,17 +220,28 @@ export function AllocatePointsPanel({
                 >
                   <div className="mb-1 flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[10px] font-semibold text-white">
-                        {t(`attrs.${labelKey}`)}
+                      {/*
+                        La estadística de combate va primero: "Destreza" no le
+                        dice nada a alguien que viene de los juegos. El nombre
+                        RPG queda como etiqueta secundaria del sistema.
+                      */}
+                      <p className="truncate text-[11px] font-semibold text-white">
+                        {t(`allocateAffects.${affectsKey}`)}
+                        {key === "ptIntelligence"
+                          ? ` / ${t("allocateAffects.spDef")}`
+                          : ""}
+                        <span className="ml-1.5 font-mono text-[11px] font-bold text-tertiary">
+                          {projected}
+                        </span>
                       </p>
-                      <p className="truncate text-[8px] text-on-surface-variant">
-                        {t(`stats.${affectsKey}`)}
-                        {key === "ptIntelligence" ? ` / ${t("stats.spDef")}` : ""}
+                      <p className="truncate text-[9px] text-on-surface-variant">
+                        {t(`attrs.${labelKey}`)}
                         {" · "}
                         {invested}
-                        {adding > 0 ? `+${adding}` : ""}/{MAX_POINTS_PER_STAT}
-                        {" → "}
-                        <span className="font-mono text-on-surface">{projected}</span>
+                        {adding > 0 ? (
+                          <span className="text-tertiary">+{adding}</span>
+                        ) : null}
+                        /{MAX_POINTS_PER_STAT}
                       </p>
                     </div>
                     {!canAllocate ? (
