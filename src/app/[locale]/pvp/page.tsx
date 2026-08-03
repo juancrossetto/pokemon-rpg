@@ -166,7 +166,7 @@ export default async function PvpPage({
             <div className="flex min-w-0 flex-wrap items-end gap-x-8 gap-y-3">
               <div>
                 <p className={SECTION_LABEL}>{t("rating")}</p>
-                <p className="pvp-rating-num mt-0.5 font-[family-name:var(--font-lilita)] text-[3.35rem] leading-none tracking-wide sm:text-[3.85rem]">
+                <p className="page-title pvp-rating-num mt-0.5 text-[3.35rem] leading-none tracking-wide sm:text-[3.85rem]">
                   {me.pvpRating}
                 </p>
                 <span
@@ -221,7 +221,7 @@ export default async function PvpPage({
 
             <Link
               href="/ranking?view=ladder"
-              className="inline-flex items-center gap-1.5 pb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/45 transition hover:text-[#ffcb05]"
+              className="inline-flex items-center gap-1.5 pb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/45 transition hover:text-electric-yellow"
             >
               <Image
                 src="/pvp/win-trophy.png"
@@ -241,7 +241,7 @@ export default async function PvpPage({
           <p className={`mb-2 px-0.5 ${SECTION_LABEL}`}>{t("modesTitle")}</p>
           <div className="grid gap-3 sm:grid-cols-2 sm:items-stretch">
             <div className="game-float-card flex h-full flex-col gap-3 rounded-2xl p-4">
-              <span className="w-fit rounded-md bg-pokeball-red px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-white">
+              <span className="w-fit ui-chip ui-chip--accent text-[8px]">
                 {t("modeRanked")}
               </span>
               <p className="flex-1 text-[12px] leading-relaxed text-white/55">
@@ -379,7 +379,7 @@ export default async function PvpPage({
                           </div>
                           <span
                             className={`shrink-0 font-mono text-[13px] font-bold ${
-                              delta >= 0 ? "text-[#ffcb05]" : "text-[#ff6b6b]"
+                              delta >= 0 ? "text-electric-yellow" : "text-[#ff6b6b]"
                             }`}
                           >
                             {delta >= 0 ? "+" : ""}

@@ -44,6 +44,6 @@ export function tierAccentClass(tier: PvpTier): string {
     case "diamond":
       return "border-sky-300/50 bg-sky-800/30 text-sky-200";
     case "master":
-      return "border-fuchsia-400/50 bg-fuchsia-900/30 text-fuchsia-200";
+      return "border-gem/50 bg-gem-container/80 text-gem";
   }
 }

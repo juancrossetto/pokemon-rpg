@@ -59,7 +59,7 @@ export function CaptureSummary({
           })}
         </div>
 
-        <div className="glass-panel rounded-xl border border-white/10 p-4 w-full grid grid-cols-3 gap-3 text-left">
+        <div className="glass-panel p-4 w-full grid grid-cols-3 gap-3 text-left">
           <StatCell label={tTeam("stats.hp")} value={info.maxHp} />
           <StatCell label={tTeam("stats.atk")} value={info.stats.attack} />
           <StatCell label={tTeam("stats.def")} value={info.stats.defense} />
@@ -68,7 +68,7 @@ export function CaptureSummary({
           <StatCell label={tTeam("stats.speed")} value={info.stats.speed} />
         </div>
 
-        <div className="glass-panel rounded-xl border border-white/10 p-4 w-full text-left">
+        <div className="glass-panel p-4 w-full text-left">
           <p className="text-label-sm uppercase text-on-surface-variant mb-2">{tTeam("moves")}</p>
           <div className="flex flex-col gap-1">
             {info.moves.map((m) => {
@@ -93,7 +93,7 @@ export function CaptureSummary({
             onChange={(e) => onNicknameChange(e.target.value)}
             placeholder={info.name}
             maxLength={20}
-            className="w-full glass-panel border border-white/10 rounded-lg px-3 py-2 text-label-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-pokeball-red/50"
+            className="w-full glass-panel px-3 py-2 text-label-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-pokeball-red/50"
           />
         </div>
 
@@ -101,7 +101,7 @@ export function CaptureSummary({
           type="button"
           disabled={saving}
           onClick={onConfirm}
-          className="w-full rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white font-bold hover:bg-pokeball-red/80 active:scale-[0.98] transition-all disabled:opacity-60"
+          className="game-cta game-cta--red w-full"
         >
           {t("confirmCapture")}
         </button>

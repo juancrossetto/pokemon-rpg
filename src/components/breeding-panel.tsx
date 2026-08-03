@@ -65,7 +65,7 @@ export function BreedingPanel({
   }
 
   return (
-    <section className="glass-panel mt-8 rounded-xl border border-white/10 p-4">
+    <section className="glass-panel mt-8 p-4">
       <h2 className="mb-1 flex items-center gap-2 text-headline-md text-on-surface">
         <Image
           src="/eggs.png"
@@ -151,7 +151,7 @@ export function BreedingPanel({
             type="button"
             disabled={picked.length !== 2 || pending}
             onClick={breed}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-pokeball-red px-4 py-2 text-label-sm font-semibold text-white transition hover:bg-pokeball-red/85 disabled:opacity-40"
+            className="ui-btn-primary mt-3 px-4 py-2 text-label-sm"
           >
             <span className="material-symbols-outlined text-[16px]!">egg_alt</span>
             {t("breed")}

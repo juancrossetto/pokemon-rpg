@@ -84,7 +84,7 @@ export default async function StarterPage({
                     );
                   })}
                 </div>
-                <span className="mt-4 rounded-lg bg-pokeball-red px-4 py-1 text-label-md text-white">
+                <span className="ui-chip ui-chip--accent mt-4 px-4 py-1 text-label-md">
                   {t("choose")}
                 </span>
               </button>

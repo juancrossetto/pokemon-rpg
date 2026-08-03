@@ -55,7 +55,7 @@ export function ClanLanding({
             <button
               type="button"
               onClick={() => setOverlay("discover")}
-              className="min-h-11 rounded-xl bg-pokeball-red px-4 text-label-md text-white hover:bg-pokeball-red/85"
+              className="ui-btn-primary min-h-11 rounded-xl px-4 text-label-md"
             >
               {labels.searchClan}
             </button>

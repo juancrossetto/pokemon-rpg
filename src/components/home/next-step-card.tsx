@@ -48,7 +48,7 @@ export async function NextStepCard({ step }: { step: NextStep }) {
       <div className="mt-3 flex items-stretch gap-2">
         <Link
           href={step.href}
-          className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-pokeball-red px-4 text-[13px] font-bold uppercase tracking-wide text-white transition hover:bg-pokeball-red/85 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-h-12"
+          className="game-cta game-cta--red inline-flex min-h-11 flex-1 sm:min-h-12"
         >
           {t(step.ctaKey)}
         </Link>

@@ -381,7 +381,7 @@ export function TowerLockedState({ minBadges }: { minBadges: number }) {
       </p>
       <Link
         href="/gyms"
-        className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg bg-pokeball-red px-5 text-label-md font-bold text-white"
+        className="ui-btn-primary mt-4 min-h-11 px-5 text-label-md font-bold"
       >
         {t("locked.cta")}
       </Link>

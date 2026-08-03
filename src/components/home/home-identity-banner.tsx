@@ -107,7 +107,7 @@ export function HomeIdentityBanner({
         className="relative z-[1] flex h-full min-h-[7.5rem] flex-col justify-center gap-2 p-3.5 pr-[40%] sm:min-h-[8.25rem] sm:gap-1.5 sm:p-4 sm:pr-[36%] md:pr-[32%]"
       >
         <p
-          className="font-[family-name:var(--font-identity)] text-[10px] font-semibold uppercase tracking-[0.14em]"
+          className="text-[10px] font-semibold uppercase tracking-[0.14em]"
           style={{ color: `color-mix(in srgb, ${fluorFrom} 72%, white)` }}
         >
           {rank}
@@ -116,7 +116,7 @@ export function HomeIdentityBanner({
         </p>
 
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <h2 className="truncate font-[family-name:var(--font-identity)] text-xl font-semibold tracking-tight text-white sm:text-2xl">
+          <h2 className="page-title truncate text-xl tracking-tight text-white sm:text-2xl">
             {identity.username}
           </h2>
           {identity.country ? (
@@ -150,7 +150,7 @@ export function HomeIdentityBanner({
           </div>
 
           <span
-            className="inline-flex shrink-0 items-center gap-1 font-[family-name:var(--font-identity)] text-[13px] font-bold tabular-nums tracking-tight sm:text-[13px]"
+            className="inline-flex shrink-0 items-center gap-1 text-[13px] font-bold tabular-nums tracking-tight sm:text-[13px]"
             style={{ color: `color-mix(in srgb, ${fluorFrom} 58%, white)` }}
           >
             <span className="opacity-75">{labels.combatPower}</span>

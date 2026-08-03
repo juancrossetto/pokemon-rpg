@@ -20,7 +20,7 @@ const KIND_ICON: Record<TimelineKind, string> = {
 
 const KIND_COLOR: Record<TimelineKind, string> = {
   catch: "#4ade80",
-  badge: "#ee1515",
+  badge: "var(--color-pokeball-red)",
   trainer: "#60a5fa",
   shiny: "#f2c000",
 };

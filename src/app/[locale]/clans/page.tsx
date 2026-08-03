@@ -306,7 +306,7 @@ export default async function ClansPage({
                         <SubmitButton
                           label={t("acceptInvite")}
                           pendingLabel={t("saving")}
-                          className="min-h-11 px-3 rounded-lg bg-pokeball-red text-white text-label-sm"
+                          className="ui-btn-primary min-h-11 px-3 text-label-sm"
                         />
                       </form>
                       <form action={respondInvite.bind(null, locale)}>

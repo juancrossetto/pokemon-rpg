@@ -34,7 +34,7 @@ import { floorNodeVisual, pokeApiSpriteUrl } from "@/lib/tower/icons";
 const FLOOR_TONE: Record<string, { accent: string; icon: string }> = {
   normal: { accent: "#7c8899", icon: "swords" },
   elite: { accent: "#a78bfa", icon: "local_fire_department" },
-  boss: { accent: "#ee1515", icon: "skull" },
+  boss: { accent: "var(--color-pokeball-red)", icon: "skull" },
   rest: { accent: "#4ade80", icon: "local_hotel" },
 };
 
@@ -316,7 +316,7 @@ export function TowerClimbRail({
                   {t(`floorTypes.${floor.type}`)}
                 </span>
                 {isCurrent && (
-                  <span className="rounded bg-pokeball-red px-1.5 py-px text-[9px] font-black uppercase tracking-wider text-white">
+                  <span className="ui-chip ui-chip--accent text-[9px]">
                     {t("path.current")}
                   </span>
                 )}
@@ -706,7 +706,7 @@ export function TowerEndedSummary({
   const t = useTranslations("tower");
   const [pending, start] = useTransition();
   const accent =
-    kind === "COMPLETED" ? "#4ade80" : kind === "ABANDONED" ? "#94a3b8" : "#ee1515";
+    kind === "COMPLETED" ? "#4ade80" : kind === "ABANDONED" ? "#94a3b8" : "var(--color-pokeball-red)";
   const titleKey =
     kind === "COMPLETED"
       ? "result.completedTitle"

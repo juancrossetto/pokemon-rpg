@@ -1,0 +1,101 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * THEME COLORS — única fuente de verdad de color de la app
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Para cambiar la marca, editá solo el bloque 「KNOBS」 abajo.
+ * El resto son aliases / derivados que consumen Tailwind (`bg-primary`,
+ * `text-tertiary`, `bg-pokeball-red`, `bg-gem`, …) y los CTAs en globals.css.
+ *
+ *   primary   → acción / CTAs rojos / chips accent
+ *   secondary → azul (agua, énfasis frío)
+ *   tertiary  → oro / energía / CTAs dorados
+ *   gem       → premium (diamantes)
+ *
+ * Importado desde `src/app/globals.css`. No dupliques hexes de marca en
+ * componentes: usá las clases Tailwind o `var(--color-*)`.
+ */
+
+:root {
+  /* ── KNOBS (editá acá) ─────────────────────────────────────────────────── */
+  --theme-primary: #ee1515;
+  --theme-secondary: #3b4cca;
+  --theme-tertiary: #ffcb05;
+  --theme-gem: #c026d3;
+
+  /* Superficies oscuras (Rotom-OS). Cambiá estos si querés otro “fondo”. */
+  --theme-surface: #131313;
+  --theme-surface-low: #1b1c1c;
+  --theme-surface-high: #2a2a2a;
+  --theme-on-surface: #e5e2e1;
+
+  /* ── Brand aliases (compat con clases existentes) ──────────────────────── */
+  --color-pokeball-red: var(--theme-primary);
+  --color-water-blue: var(--theme-secondary);
+  --color-electric-yellow: var(--theme-tertiary);
+  --color-gem: var(--theme-gem);
+  --color-on-gem: #ffffff;
+  --color-gem-container: color-mix(in srgb, var(--theme-gem) 35%, #0a0610);
+
+  /* Tonos de apoyo para degradés de CTAs (siguen a los knobs). */
+  --theme-primary-bright: color-mix(in srgb, var(--theme-primary) 72%, white);
+  --theme-primary-deep: color-mix(in srgb, var(--theme-primary) 65%, black);
+  --theme-tertiary-bright: color-mix(in srgb, var(--theme-tertiary) 82%, white);
+  --theme-tertiary-deep: color-mix(in srgb, var(--theme-tertiary) 55%, #8c4600);
+
+  /* ── Material / Tailwind semantic (primary · secondary · tertiary) ─────── */
+  --color-primary: color-mix(in srgb, var(--theme-primary) 52%, white);
+  --color-on-primary: color-mix(in srgb, var(--theme-primary) 55%, black);
+  --color-primary-container: color-mix(in srgb, var(--theme-primary) 70%, #ff6a4a);
+  --color-on-primary-container: color-mix(in srgb, var(--theme-primary) 60%, black);
+  --color-inverse-primary: color-mix(in srgb, var(--theme-primary) 78%, black);
+  --color-surface-tint: var(--color-primary);
+  --color-primary-fixed: color-mix(in srgb, var(--theme-primary) 35%, white);
+  --color-primary-fixed-dim: var(--color-primary);
+  --color-on-primary-fixed: color-mix(in srgb, var(--theme-primary) 70%, black);
+  --color-on-primary-fixed-variant: color-mix(in srgb, var(--theme-primary) 75%, black);
+
+  --color-secondary: color-mix(in srgb, var(--theme-secondary) 55%, white);
+  --color-on-secondary: color-mix(in srgb, var(--theme-secondary) 45%, black);
+  --color-secondary-container: color-mix(in srgb, var(--theme-secondary) 78%, black);
+  --color-on-secondary-container: color-mix(in srgb, var(--theme-secondary) 50%, white);
+  --color-secondary-fixed: color-mix(in srgb, var(--theme-secondary) 30%, white);
+  --color-secondary-fixed-dim: var(--color-secondary);
+  --color-on-secondary-fixed: color-mix(in srgb, var(--theme-secondary) 55%, black);
+  --color-on-secondary-fixed-variant: color-mix(in srgb, var(--theme-secondary) 72%, black);
+
+  --color-tertiary: color-mix(in srgb, var(--theme-tertiary) 90%, #c48900);
+  --color-on-tertiary: #3d2f00;
+  --color-tertiary-container: color-mix(in srgb, var(--theme-tertiary) 75%, #a87a00);
+  --color-on-tertiary-container: #4f3d00;
+  --color-tertiary-fixed: color-mix(in srgb, var(--theme-tertiary) 40%, white);
+  --color-tertiary-fixed-dim: var(--color-tertiary);
+  --color-on-tertiary-fixed: #241a00;
+  --color-on-tertiary-fixed-variant: #584400;
+
+  /* ── Superficies / fondo / outline ─────────────────────────────────────── */
+  --color-surface: var(--theme-surface);
+  --color-surface-dim: var(--theme-surface);
+  --color-surface-bright: #393939;
+  --color-surface-container-lowest: #0e0e0e;
+  --color-surface-container-low: var(--theme-surface-low);
+  --color-surface-container: #202020;
+  --color-surface-container-high: var(--theme-surface-high);
+  --color-surface-container-highest: #353535;
+  --color-surface-variant: #353535;
+  --color-background: var(--theme-surface);
+  --color-on-background: var(--theme-on-surface);
+  --color-on-surface: var(--theme-on-surface);
+  --color-on-surface-variant: color-mix(in srgb, var(--theme-primary) 28%, #e5e2e1);
+  --color-inverse-surface: var(--theme-on-surface);
+  --color-inverse-on-surface: #303030;
+  --color-outline: color-mix(in srgb, var(--theme-primary) 22%, #af8782);
+  --color-outline-variant: #5e3f3a;
+  --color-glass-surface: #212121;
+
+  /* ── Semánticos fijos (error) ──────────────────────────────────────────── */
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+}

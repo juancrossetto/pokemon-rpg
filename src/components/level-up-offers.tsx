@@ -343,7 +343,7 @@ export function LevelUpOffersPanel({
                           type="button"
                           disabled={pending}
                           onClick={() => learn(entry.instanceId, current.moveId, null)}
-                          className="flex-1 rounded-xl bg-pokeball-red px-4 py-3 text-[13px] font-bold tracking-wide text-white shadow-[0_8px_24px_rgba(238,21,21,0.28)] transition hover:brightness-110 disabled:opacity-50"
+                          className="ui-btn-primary flex-1 rounded-xl px-4 py-3 text-[13px] font-bold tracking-wide"
                         >
                           {t("learn")}
                         </button>
@@ -354,7 +354,7 @@ export function LevelUpOffersPanel({
                           onClick={() =>
                             setPicking({ instanceId: entry.instanceId, move: current })
                           }
-                          className="flex-1 rounded-xl bg-pokeball-red px-4 py-3 text-[13px] font-bold tracking-wide text-white shadow-[0_8px_24px_rgba(238,21,21,0.28)] transition hover:brightness-110 disabled:opacity-50"
+                          className="ui-btn-primary flex-1 rounded-xl px-4 py-3 text-[13px] font-bold tracking-wide"
                         >
                           {t("replace")}
                         </button>

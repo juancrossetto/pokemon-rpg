@@ -121,7 +121,7 @@ export default function RegisterPage() {
             onSubmit={handleSubmit}
             className="w-full max-w-[420px] lg:max-w-[860px]"
           >
-            <div className="glass-panel relative overflow-hidden rounded-xl border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+            <div className="glass-panel relative overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
               <div className="grid lg:grid-cols-[minmax(240px,0.9fr)_minmax(0,1.15fr)]">
                 {/* Preview *2.png: en mobile solo si hay selección; desktop siempre */}
                 <aside className="border-b border-white/10 px-4 py-2.5 lg:border-b-0 lg:border-r lg:p-5">
@@ -300,7 +300,7 @@ export default function RegisterPage() {
                     <button
                       type="submit"
                       disabled={status !== "idle"}
-                      className="flex w-full items-center justify-center gap-2 rounded-md bg-pokeball-red px-4 py-2.5 text-label-md text-white transition hover:bg-pokeball-red/80 active:scale-[0.99] disabled:opacity-50"
+                      className="ui-btn-primary w-full px-4 py-2.5 text-label-md"
                     >
                       <PokeballIcon className="h-3.5 w-3.5" />
                       {status === "submitting" ? t("submitting") : t("submit")}

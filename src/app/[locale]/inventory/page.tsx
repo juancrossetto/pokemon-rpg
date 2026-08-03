@@ -207,7 +207,7 @@ export default async function InventoryPage({
               <span className="material-symbols-outlined text-[16px]!">local_shipping</span>
               {t("marketBag")}
               {pendingClaims > 0 && (
-                <span className="rounded bg-pokeball-red px-1.5 text-[10px] font-bold text-white">
+                <span className="ui-chip ui-chip--accent text-[10px] normal-case tracking-normal">
                   {pendingClaims}
                 </span>
               )}
@@ -233,7 +233,7 @@ export default async function InventoryPage({
                 de jugadores que confunde a los nuevos. */}
             <Link
               href="/shop"
-              className="mt-2 rounded-md bg-pokeball-red px-4 py-2 text-label-sm font-semibold text-white transition hover:bg-pokeball-red/85"
+              className="ui-btn-primary mt-2 px-4 py-2 text-label-sm"
             >
               {t("goShop")}
             </Link>

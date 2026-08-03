@@ -25,9 +25,9 @@ type AsButton = SharedProps & {
 export type GameCtaButtonProps = AsLink | AsButton;
 
 /**
- * CTA principal estilo "juego nativo" (Clash-like):
- * degradé amarillo→naranja, labio 3D y tipografía cartoon.
- * Usar en acciones primarias; no para chips ni links secundarios.
+ * CTA principal de juego (Explorar / recompensa):
+ * dorado o rojo, tipografía Grobold uppercase.
+ * No usar para chips ni links secundarios de información.
  */
 export function GameCtaButton(props: GameCtaButtonProps) {
   const { children, icon, className = "", disabled, variant = "gold" } = props;

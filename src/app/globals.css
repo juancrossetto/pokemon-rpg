@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../styles/theme-colors.css";
 
 /* Material Symbols — base + anti-FOUC.
    Mientras data-icons=pending (script early-in-head) las ligaduras no se ven
@@ -31,61 +32,6 @@ html[data-icons="pending"] .material-symbols-outlined {
 
 html[data-icons="ready"] .material-symbols-outlined {
   visibility: visible;
-}
-
-:root {
-  /* Rotom-OS design system — ver design-import/stitch_pok_mon_explorer_hub */
-  --color-surface: #131313;
-  --color-surface-dim: #131313;
-  --color-surface-bright: #393939;
-  --color-surface-container-lowest: #0e0e0e;
-  --color-surface-container-low: #1b1c1c;
-  --color-surface-container: #202020;
-  --color-surface-container-high: #2a2a2a;
-  --color-surface-container-highest: #353535;
-  --color-on-surface: #e5e2e1;
-  --color-on-surface-variant: #e9bcb6;
-  --color-inverse-surface: #e5e2e1;
-  --color-inverse-on-surface: #303030;
-  --color-outline: #af8782;
-  --color-outline-variant: #5e3f3a;
-  --color-surface-tint: #ffb4a9;
-  --color-primary: #ffb4a9;
-  --color-on-primary: #690002;
-  --color-primary-container: #ff5544;
-  --color-on-primary-container: #5c0001;
-  --color-inverse-primary: #c00008;
-  --color-secondary: #bcc2ff;
-  --color-on-secondary: #00189a;
-  --color-secondary-container: #2638b8;
-  --color-on-secondary-container: #aab3ff;
-  --color-tertiary: #f2c000;
-  --color-on-tertiary: #3d2f00;
-  --color-tertiary-container: #d1a600;
-  --color-on-tertiary-container: #4f3d00;
-  --color-error: #ffb4ab;
-  --color-on-error: #690005;
-  --color-error-container: #93000a;
-  --color-on-error-container: #ffdad6;
-  --color-primary-fixed: #ffdad5;
-  --color-primary-fixed-dim: #ffb4a9;
-  --color-on-primary-fixed: #410001;
-  --color-on-primary-fixed-variant: #930004;
-  --color-secondary-fixed: #dfe0ff;
-  --color-secondary-fixed-dim: #bcc2ff;
-  --color-on-secondary-fixed: #000b62;
-  --color-on-secondary-fixed-variant: #2335b5;
-  --color-tertiary-fixed: #ffe08d;
-  --color-tertiary-fixed-dim: #f2c000;
-  --color-on-tertiary-fixed: #241a00;
-  --color-on-tertiary-fixed-variant: #584400;
-  --color-background: #131313;
-  --color-on-background: #e5e2e1;
-  --color-surface-variant: #353535;
-  --color-electric-yellow: #ffcb05;
-  --color-water-blue: #3b4cca;
-  --color-pokeball-red: #ee1515;
-  --color-glass-surface: rgba(33, 33, 33, 0.7);
 }
 
 @theme inline {
@@ -128,12 +74,16 @@ html[data-icons="ready"] .material-symbols-outlined {
   --color-water-blue: var(--color-water-blue);
   --color-pokeball-red: var(--color-pokeball-red);
   --color-glass-surface: var(--color-glass-surface);
+  --color-gem: var(--color-gem);
+  --color-on-gem: var(--color-on-gem);
+  --color-gem-container: var(--color-gem-container);
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
-  --font-game: var(--font-lilita), "Lilita One", ui-rounded, system-ui, sans-serif;
-  --font-display: var(--font-anton), "Anton", "Arial Narrow", system-ui, sans-serif;
-  --font-identity: var(--font-unbounded), "Unbounded", system-ui, sans-serif;
+  /* CTAs uppercase y nombres display → Grobold; identidad UI → Inter. */
+  --font-game: "Grobold", var(--font-inter), system-ui, sans-serif;
+  --font-display: "Grobold", var(--font-inter), system-ui, sans-serif;
+  --font-identity: var(--font-inter), system-ui, sans-serif;
 
   /* xs/sm/md/lg/xl NO se agregan acá: Tailwind v4 resuelve max-w-*, w-*, etc.
      contra la misma escala de --spacing, y esos nombres pisarían max-w-md,
@@ -194,7 +144,8 @@ body {
 @layer utilities {
   .glass-panel {
     background: var(--color-surface-container-low);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
   }
 
   .team-card {
@@ -210,7 +161,7 @@ body {
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.07),
       0 28px 56px rgba(0, 0, 0, 0.5),
-      0 0 0 1px color-mix(in srgb, var(--type-accent, #ee1515) 28%, transparent);
+      0 0 0 1px color-mix(in srgb, var(--type-accent, var(--color-pokeball-red)) 28%, transparent);
   }
 
   /* CTA primario de juego: dorado contenido, legible sin dominar la pantalla. */
@@ -227,17 +178,21 @@ body {
     overflow: hidden;
     margin-bottom: 0;
     padding: 0.55rem 1.1rem;
-    border: 1px solid rgba(255, 203, 5, 0.35);
+    border: 1px solid color-mix(in srgb, var(--color-electric-yellow) 35%, transparent);
     border-radius: 0.75rem;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 50%),
-      linear-gradient(90deg, #e6b800 0%, #d98a00 100%);
+      linear-gradient(
+        90deg,
+        var(--theme-tertiary-bright) 0%,
+        var(--theme-tertiary-deep) 100%
+      );
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.15) inset,
-      0 4px 12px rgba(255, 160, 20, 0.14),
-      0 1px 0 rgba(140, 70, 0, 0.25);
+      0 4px 12px color-mix(in srgb, var(--color-electric-yellow) 22%, transparent),
+      0 1px 0 color-mix(in srgb, var(--theme-tertiary-deep) 40%, transparent);
     color: var(--game-cta-ink);
-    font-family: var(--font-lilita), var(--font-game), "Lilita One", sans-serif;
+    font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
     font-size: 0.95rem;
     font-weight: 400;
     letter-spacing: 0.04em;
@@ -281,7 +236,7 @@ body {
   }
 
   .game-cta:focus-visible {
-    outline: 2px solid #ffcb05;
+    outline: 2px solid var(--color-electric-yellow);
     outline-offset: 3px;
   }
 
@@ -309,34 +264,150 @@ body {
 
   .game-cta--red {
     --game-cta-ink: #ffffff;
-    border-color: rgba(238, 21, 21, 0.45);
+    border-color: color-mix(in srgb, var(--color-pokeball-red) 45%, transparent);
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 48%),
-      linear-gradient(90deg, #ff3b3b 0%, #ee1515 42%, #b01028 100%);
+      linear-gradient(
+        90deg,
+        var(--theme-primary-bright) 0%,
+        var(--color-pokeball-red) 42%,
+        var(--theme-primary-deep) 100%
+      );
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.22) inset,
-      0 4px 14px rgba(238, 21, 21, 0.28),
-      0 1px 0 rgba(90, 8, 16, 0.35);
+      0 4px 14px color-mix(in srgb, var(--color-pokeball-red) 28%, transparent),
+      0 1px 0 color-mix(in srgb, var(--theme-primary-deep) 40%, transparent);
   }
 
   .game-cta--red:hover:not(.game-cta--disabled):not(:disabled) {
     filter: brightness(1.08);
-    border-color: rgba(255, 80, 80, 0.65);
+    border-color: color-mix(in srgb, var(--color-pokeball-red) 65%, white);
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.28) inset,
-      0 6px 18px rgba(238, 21, 21, 0.34),
-      0 1px 0 rgba(90, 8, 16, 0.4);
+      0 6px 18px color-mix(in srgb, var(--color-pokeball-red) 34%, transparent),
+      0 1px 0 color-mix(in srgb, var(--theme-primary-deep) 45%, transparent);
   }
 
   .game-cta--red:active:not(.game-cta--disabled):not(:disabled) {
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.2) inset,
-      0 4px 12px rgba(238, 21, 21, 0.28),
-      0 1px 0 rgba(110, 10, 20, 0.4);
+      0 4px 12px color-mix(in srgb, var(--color-pokeball-red) 28%, transparent),
+      0 1px 0 color-mix(in srgb, var(--theme-primary-deep) 45%, transparent);
   }
 
   .game-cta--red:focus-visible {
-    outline-color: #ee1515;
+    outline-color: var(--color-pokeball-red);
+  }
+
+  /* CTA secundario (info / gestionar): mismo cuerpo Grobold, superficie sólida. */
+  .game-cta--secondary {
+    --game-cta-ink: #ffffff;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--color-surface-container-high);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.08) inset,
+      0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .game-cta--secondary:hover:not(.game-cta--disabled):not(:disabled) {
+    filter: brightness(1.1);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+
+  .game-cta--secondary:focus-visible {
+    outline-color: rgba(255, 255, 255, 0.55);
+  }
+
+  /* Botón UI de confirmación (login, comprar, reclamar, aplicar…):
+     rojo sólido, tipografía Inter — distinto del CTA de juego Grobold. */
+  .ui-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: var(--color-pokeball-red);
+    color: #ffffff;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    line-height: 1.2;
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--color-pokeball-red) 28%, transparent);
+    transition:
+      filter 120ms ease,
+      opacity 120ms ease,
+      transform 120ms ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ui-btn-primary:hover:not(:disabled) {
+    filter: brightness(0.92);
+  }
+
+  .ui-btn-primary:active:not(:disabled) {
+    transform: scale(0.99);
+  }
+
+  .ui-btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    box-shadow: none;
+  }
+
+  /* Chip / badge sólido (LEAD, contadores, filtros activos). */
+  .ui-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    border-radius: 0.375rem;
+    padding: 0.125rem 0.375rem;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--color-surface-container-high);
+    color: var(--color-on-surface);
+  }
+
+  .ui-chip--accent {
+    background: var(--color-pokeball-red);
+    color: #ffffff;
+  }
+
+  .ui-chip--soft {
+    background: color-mix(in srgb, var(--color-pokeball-red) 14%, transparent);
+    color: var(--color-pokeball-red);
+    border: 1px solid color-mix(in srgb, var(--color-pokeball-red) 40%, transparent);
+  }
+
+  /* Acción premium con gemas — sólido, no fuchsia suelta. */
+  .ui-btn-gem {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border: 1px solid color-mix(in srgb, var(--color-gem) 55%, white);
+    border-radius: 0.5rem;
+    background: var(--color-gem);
+    color: var(--color-on-gem);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--color-gem) 35%, transparent);
+    transition:
+      filter 120ms ease,
+      opacity 120ms ease;
+  }
+
+  .ui-btn-gem:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  .ui-btn-gem:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 
   .glow-active {
@@ -392,6 +463,11 @@ body {
   line-height: 32px;
   font-weight: 600;
 }
+@utility text-headline-sm {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
 @utility text-body-lg {
   font-size: 18px;
   line-height: 28px;
@@ -400,6 +476,11 @@ body {
 @utility text-body-md {
   font-size: 16px;
   line-height: 24px;
+  font-weight: 400;
+}
+@utility text-body-sm {
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 400;
 }
 @utility text-label-lg {
@@ -425,11 +506,11 @@ body {
 }
 
 /**
- * Título de pantalla (hubs). Grobold + uppercase — misma temática en todas.
- * Combinar con un tamaño (`text-headline-lg`, clamp, …); el weight lo fija acá.
+ * Título de pantalla / h1 de hubs. Grobold + uppercase.
+ * El tamaño lo aporta el caller (`text-headline-lg`, clamp, …).
  */
 @utility page-title {
-  font-family: "Grobold", var(--font-lilita), var(--font-game), sans-serif;
+  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -535,7 +616,7 @@ body {
   }
 }
 .battle-cmd-btn:hover:not(:disabled) {
-  border-color: rgba(238, 21, 21, 0.55);
+  border-color: color-mix(in srgb, var(--color-pokeball-red) 55%, transparent);
   background: rgba(30, 30, 30, 0.85);
 }
 .battle-cmd-btn:active:not(:disabled) {
@@ -546,13 +627,13 @@ body {
   cursor: not-allowed;
 }
 .battle-cmd-fight {
-  background: color-mix(in srgb, #ee1515 82%, #000);
-  border-color: color-mix(in srgb, #ee1515 70%, #fff);
+  background: color-mix(in srgb, var(--color-pokeball-red) 82%, #000);
+  border-color: color-mix(in srgb, var(--color-pokeball-red) 70%, #fff);
   color: #fff;
-  box-shadow: 0 0 18px rgba(238, 21, 21, 0.28);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-pokeball-red) 28%, transparent);
 }
 .battle-cmd-fight:hover:not(:disabled) {
-  background: color-mix(in srgb, #ee1515 92%, #000);
+  background: color-mix(in srgb, var(--color-pokeball-red) 92%, #000);
   border-color: #ff6b6b;
 }
 
@@ -606,7 +687,7 @@ body {
   transition: border-color 0.15s ease, transform 0.1s ease;
 }
 .battle-bag-card:hover:not(:disabled) {
-  border-color: rgba(238, 21, 21, 0.45);
+  border-color: color-mix(in srgb, var(--color-pokeball-red) 45%, transparent);
 }
 .battle-bag-card:active:not(:disabled) {
   transform: scale(0.99);
@@ -1120,7 +1201,7 @@ body {
   background: radial-gradient(
     circle,
     rgba(255, 255, 255, 0.55) 0%,
-    rgba(238, 21, 21, 0.25) 40%,
+    color-mix(in srgb, var(--color-pokeball-red) 25%, transparent) 40%,
     transparent 70%
   );
   animation: ball-break-burst 0.52s ease-out forwards;
@@ -1604,7 +1685,7 @@ body {
   background: rgba(0, 0, 0, 0.4);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(238, 21, 21, 0.4);
+  background: color-mix(in srgb, var(--color-pokeball-red) 40%, transparent);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -1763,11 +1844,11 @@ body {
 }
 
 .result-title--lose {
-  background: linear-gradient(180deg, #ff8a80 0%, #ee1515 48%, #a00c0c 100%);
+  background: linear-gradient(180deg, #ff8a80 0%, var(--color-pokeball-red) 48%, #a00c0c 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 16px rgba(238, 21, 21, 0.4)) drop-shadow(0 2px 0 rgba(80, 0, 0, 0.35));
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-pokeball-red) 40%, transparent)) drop-shadow(0 2px 0 rgba(80, 0, 0, 0.35));
 }
 
 .result-title--neutral {
@@ -1795,10 +1876,10 @@ body {
 }
 
 .result-outcome-pill--lose {
-  border: 1px solid rgba(238, 21, 21, 0.5);
-  background: rgba(238, 21, 21, 0.16);
+  border: 1px solid color-mix(in srgb, var(--color-pokeball-red) 50%, transparent);
+  background: color-mix(in srgb, var(--color-pokeball-red) 16%, transparent);
   color: #ff6b6b;
-  box-shadow: 0 0 20px rgba(238, 21, 21, 0.18);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-pokeball-red) 18%, transparent);
 }
 
 .result-outcome-pill--neutral {
@@ -2277,14 +2358,14 @@ body {
 @keyframes center-heal-wash {
   0% {
     opacity: 0;
-    background: radial-gradient(ellipse at 50% 40%, rgba(238, 21, 21, 0.45), transparent 55%);
+    background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--color-pokeball-red) 45%, transparent), transparent 55%);
   }
   25% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    background: radial-gradient(ellipse at 50% 40%, rgba(238, 21, 21, 0.15), transparent 70%);
+    background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--color-pokeball-red) 15%, transparent), transparent 70%);
   }
 }
 .center-heal-wash {
@@ -2300,7 +2381,7 @@ body {
   100% {
     transform: scale(1.5);
     opacity: 0;
-    background: radial-gradient(circle, rgba(238, 21, 21, 0.2), transparent 70%);
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-pokeball-red) 20%, transparent), transparent 70%);
   }
 }
 .center-heal-burst {
@@ -2470,7 +2551,7 @@ body {
   background-image: linear-gradient(
     180deg,
     #fff3a8 0%,
-    #ffcb05 22%,
+    var(--color-electric-yellow) 22%,
     #ff9a00 58%,
     #ff5c00 100%
   );
@@ -2482,7 +2563,7 @@ body {
 
 /* Campaign adventure — barra de progreso cálida (rojo → naranja → oro). */
 .campaign-warm-bar {
-  background: linear-gradient(90deg, #ee1515 0%, #ff8a00 52%, #ffcb05 100%);
+  background: linear-gradient(90deg, var(--color-pokeball-red) 0%, #ff8a00 52%, var(--color-electric-yellow) 100%);
   box-shadow: 0 0 14px rgba(255, 140, 20, 0.45);
 }
 
@@ -2544,10 +2625,10 @@ body {
 .home-obj-cta--red {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 48%),
-    linear-gradient(90deg, #ff3b3b 0%, #ee1515 42%, #b01028 100%);
+    linear-gradient(90deg, var(--theme-primary-bright) 0%, var(--color-pokeball-red) 42%, var(--theme-primary-deep) 100%);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.22) inset,
-    0 3px 10px rgba(238, 21, 21, 0.28),
+    0 3px 10px color-mix(in srgb, var(--color-pokeball-red) 28%, transparent),
     0 1px 0 rgba(90, 8, 16, 0.35);
 }
 
@@ -2834,15 +2915,15 @@ body {
 }
 
 .gym-challenge-btn {
-  box-shadow: 0 10px 28px rgba(238, 21, 21, 0.28);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--color-pokeball-red) 28%, transparent);
 }
 
 .gym-challenge-btn:hover {
-  background-color: rgb(238 21 21 / 0.88);
+  background-color: color-mix(in srgb, var(--color-pokeball-red) 88%, transparent);
   box-shadow:
-    0 0 0 1px rgba(238, 21, 21, 0.55),
-    0 0 28px rgba(238, 21, 21, 0.45),
-    0 12px 32px rgba(238, 21, 21, 0.35);
+    0 0 0 1px color-mix(in srgb, var(--color-pokeball-red) 55%, transparent),
+    0 0 28px color-mix(in srgb, var(--color-pokeball-red) 45%, transparent),
+    0 12px 32px color-mix(in srgb, var(--color-pokeball-red) 35%, transparent);
   transform: translateY(-1px) scale(1.01);
 }
 
@@ -2918,7 +2999,7 @@ body {
 
 /* Título del popup Daily Reward: Grobold + brillo flúor naranja/amarillo. */
 .daily-reward-title {
-  font-family: "Grobold", var(--font-lilita), var(--font-game), sans-serif;
+  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0.02em;
@@ -2935,14 +3016,14 @@ body {
 }
 
 .daily-reward-day-label {
-  font-family: "Grobold", var(--font-lilita), var(--font-game), sans-serif;
+  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
   font-weight: 400;
   letter-spacing: 0.03em;
   line-height: 1.1;
 }
 
 .daily-reward-qty {
-  font-family: "Grobold", var(--font-lilita), var(--font-game), sans-serif;
+  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
@@ -3109,7 +3190,7 @@ body {
 }
 
 .daily-reward-card.is-final {
-  --dr-fluor: #ff3b3b;
+  --dr-fluor: var(--theme-primary-bright);
   /* Rojo oscuro → violeta muy oscuro */
   background: linear-gradient(
     180deg,
@@ -3165,7 +3246,7 @@ body {
 
 /* Pestaña Special/Rare: Grobold + inclinación como las cards. */
 .daily-reward-badge {
-  font-family: "Grobold", var(--font-lilita), var(--font-game), sans-serif;
+  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
   font-weight: 400;
   line-height: 1.15;
   border-radius: 4px;
@@ -3187,7 +3268,7 @@ body {
 
 .daily-reward-badge.is-rare {
   color: #fff8e8;
-  background: linear-gradient(180deg, #ffb060 0%, #ff3b3b 55%, #a01030 100%);
+  background: linear-gradient(180deg, #ffb060 0%, var(--theme-primary-bright) 55%, #a01030 100%);
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
   box-shadow:
     0 2px 0 #3a0800,
@@ -3326,7 +3407,7 @@ body {
 }
 
 .daily-reward-claim-title {
-  font-family: "Grobold", var(--font-lilita), var(--font-game), sans-serif;
+  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
   font-weight: 400;
   letter-spacing: 0.02em;
   text-shadow:
@@ -3689,7 +3770,7 @@ html.boot-splash-pending .boot-splash {
    Sin `--animate` no hay transition: el primer paint (refresh / PWA) no debe
    “tirar” los iconos desde 0,0 con el overshoot del cubic-bezier. */
 .mobile-nav-active-bg {
-  background: rgba(238, 21, 21, 0.08);
+  background: color-mix(in srgb, var(--color-pokeball-red) 8%, transparent);
 }
 
 .mobile-nav-active-bg--animate {
@@ -3993,18 +4074,18 @@ html.boot-splash-pending .boot-splash {
 
   .market-listing-card:hover {
     transform: translateY(-3px);
-    border-color: rgba(238, 21, 21, 0.65);
+    border-color: color-mix(in srgb, var(--color-pokeball-red) 65%, transparent);
     box-shadow:
-      0 0 0 1px rgba(238, 21, 21, 0.35),
-      0 12px 32px rgba(238, 21, 21, 0.22),
+      0 0 0 1px color-mix(in srgb, var(--color-pokeball-red) 35%, transparent),
+      0 12px 32px color-mix(in srgb, var(--color-pokeball-red) 22%, transparent),
       0 8px 24px rgba(0, 0, 0, 0.35);
   }
 
   .market-buy-btn:hover:not(:disabled) {
-    background-color: rgb(238 21 21 / 0.88);
+    background-color: color-mix(in srgb, var(--color-pokeball-red) 88%, transparent);
     box-shadow:
-      0 0 0 1px rgba(238, 21, 21, 0.5),
-      0 0 24px rgba(238, 21, 21, 0.4);
+      0 0 0 1px color-mix(in srgb, var(--color-pokeball-red) 50%, transparent),
+      0 0 24px color-mix(in srgb, var(--color-pokeball-red) 40%, transparent);
     transform: translateY(-1px);
   }
 }
@@ -4406,9 +4487,10 @@ html.boot-splash-pending .boot-splash {
   animation: dex-caught-pulse 1.2s ease-out 1;
 }
 
-/* Fondo card: gris oscuro arriba + tipografía display (Anton). */
+/* Fondo card Pokédex. */
 .dex-card {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
+  font-weight: 700;
   background:
     radial-gradient(
       ellipse 120% 70% at 50% 18%,
@@ -4466,6 +4548,7 @@ html.boot-splash-pending .boot-splash {
   font-size: 0.88rem;
   font-weight: 400;
   letter-spacing: 0.03em;
+  text-transform: uppercase;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
   overflow: hidden;
   display: -webkit-box;
@@ -5801,7 +5884,7 @@ html.boot-splash-pending .boot-splash {
   background: radial-gradient(circle, rgba(129,140,248,0.18), transparent 70%);
 }
 .expedition-ambient--gym .expedition-ambient__glow {
-  background: radial-gradient(circle, rgba(238,21,21,0.2), transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-pokeball-red) 20%, transparent), transparent 70%);
 }
 .expedition-ambient--town .expedition-ambient__glow {
   background: radial-gradient(circle, rgba(242,192,0,0.14), transparent 70%);
@@ -5826,8 +5909,8 @@ html.boot-splash-pending .boot-splash {
   width: 10px;
   height: 10px;
   border-radius: 9999px;
-  background: rgba(238, 21, 21, 0.85);
-  box-shadow: 0 0 12px rgba(238, 21, 21, 0.65);
+  background: color-mix(in srgb, var(--color-pokeball-red) 85%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-pokeball-red) 65%, transparent);
   animation: expedition-beacon-pulse 2.4s ease-in-out infinite;
 }
 
@@ -5853,7 +5936,7 @@ html.boot-splash-pending .boot-splash {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 18px 36px rgba(0, 0, 0, 0.5),
-    0 0 0 1px color-mix(in srgb, var(--type-accent, #ee1515) 32%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--type-accent, var(--color-pokeball-red)) 32%, transparent);
 }
 
 /* Detalle del Pokémon en Home: entrada más jugable que el sheet genérico. */
@@ -6476,10 +6559,10 @@ html.boot-splash-pending .boot-splash {
   margin: 0;
   max-width: 100%;
   font-family: var(--font-display);
-  /* Anton trae un solo peso: pedir 700 dispara negrita sintética y se embarra. */
   font-weight: 400;
   font-size: 1.05rem;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: #fff;
   line-height: 1.15;
 }
@@ -6687,7 +6770,8 @@ html.boot-splash-pending .boot-splash {
   font-size: 1.15rem;
   color: #fff;
   line-height: 1.15;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .lb-row__metric {
@@ -7446,8 +7530,8 @@ html.is-standalone body {
 }
 
 /* ── Identidad del banner de /profile ─────────────────────────────────────
-   Tipografías declaradas en `app/[locale]/profile/page.tsx` (sólo esa ruta las
-   carga). Todo cuelga de `.tp-id`, así que nada de esto escapa al banner. */
+   Misma familia tipográfica que el resto de la app: Grobold (nombre) +
+   Inter (meta) + mono (cifras). */
 
 .tp-id__name {
   display: flex;
@@ -7455,15 +7539,12 @@ html.is-standalone body {
   justify-content: center;
   gap: 0.55rem;
   margin: 0;
-  font-family: var(--font-chakra), "Arial Narrow", sans-serif;
-  font-weight: 700;
-  /* La inclinación se reserva al nombre; nada más del banner va en itálica. */
-  font-style: italic;
-  /* Chakra Petch es bastante más ancha que una condensada: el tope baja para
-     que un nombre largo no desborde en mobile. */
+  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-weight: 400;
+  font-style: normal;
   font-size: clamp(1.7rem, 9.2vw, 2.6rem);
   line-height: 1;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -7498,13 +7579,12 @@ html.is-standalone body {
   flex-shrink: 0;
   border-radius: 2px;
   opacity: 0.9;
-  /* Fuera de la itálica: una bandera inclinada se lee como un glitch. */
   font-style: normal;
 }
 
 .tp-id__title {
   margin: 0.5rem 0 0;
-  font-family: var(--font-barlow), var(--font-sans), sans-serif;
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: 0.66rem;
   letter-spacing: 0.42em;
@@ -7521,7 +7601,7 @@ html.is-standalone body {
   justify-content: center;
   gap: 0.3rem 0.5rem;
   margin: 0.45rem 0 0;
-  font-family: var(--font-barlow), var(--font-sans), sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.66rem;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -7544,9 +7624,8 @@ html.is-standalone body {
   font-weight: 500;
 }
 
-/* Oxanium queda reservada a las cifras. */
 .tp-id__meta-num {
-  font-family: var(--font-oxanium), var(--font-mono), monospace;
+  font-family: var(--font-mono);
   font-weight: 600;
   font-size: 0.72rem;
   letter-spacing: 0.02em;
@@ -7561,12 +7640,12 @@ html.is-standalone body {
 }
 
 .tp-id__cp-label {
-  font-family: var(--font-barlow), var(--font-sans), sans-serif;
+  font-family: var(--font-sans);
   font-weight: 500;
 }
 
 .tp-id__cp-value {
-  font-family: var(--font-oxanium), var(--font-mono), monospace;
+  font-family: var(--font-mono);
   font-weight: 700;
 }
 

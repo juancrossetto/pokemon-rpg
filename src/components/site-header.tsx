@@ -238,7 +238,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
               </Link>
               <Link
                 href="/register"
-                className="text-label-md rounded-md bg-pokeball-red px-3 py-1.5 text-white hover:bg-pokeball-red/80 transition-colors"
+                className="ui-btn-primary px-3 py-1.5 text-label-md"
               >
                 {t("register")}
               </Link>

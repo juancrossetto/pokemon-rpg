@@ -239,7 +239,7 @@ export function RegionMapDialog({
                     close();
                   })
                 }
-                className="rounded-xl bg-pokeball-red px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-pokeball-red/85 disabled:opacity-40"
+                className="ui-btn-primary rounded-xl px-4 py-2.5 text-[13px]"
               >
                 {active.id === farmingLocationId ? t("youAreHere") : t("moveHere")}
               </button>

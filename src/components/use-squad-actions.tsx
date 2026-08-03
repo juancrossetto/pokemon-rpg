@@ -30,8 +30,8 @@ export const SQUAD_FX_META: Record<
   { glow: string; ring: string; burst: string; labelClass: string }
 > = {
   heal: {
-    glow: "rgba(238, 21, 21, 0.55)",
-    ring: "rgba(238, 21, 21, 0.7)",
+    glow: "color-mix(in srgb, var(--color-pokeball-red) 55%, transparent)",
+    ring: "color-mix(in srgb, var(--color-pokeball-red) 70%, transparent)",
     burst: "rgba(248, 113, 113, 0.4)",
     labelClass: "text-pokeball-red",
   },

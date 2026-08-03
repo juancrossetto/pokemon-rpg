@@ -195,7 +195,7 @@ export default async function MarketPage({
               {tabId === "bought" && pendingClaims > 0 && (
                 <span
                   title={t("pendingClaimsTitle", { count: pendingClaims })}
-                  className="flex h-4.5 min-w-4.5 items-center justify-center rounded-md bg-pokeball-red px-1 text-[10px] font-bold text-white"
+                  className="ui-chip ui-chip--accent h-4.5 min-w-4.5 text-[10px] normal-case tracking-normal"
                 >
                   {pendingClaims}
                 </span>
@@ -622,7 +622,7 @@ async function BoughtTab({ locale, userId }: { locale: string; userId: string })
                     <MarketSubmitButton
                       label={t("bagReceive")}
                       pendingLabel={t("bagReceiving")}
-                      className="h-10 w-full rounded-md bg-pokeball-red px-4 text-label-md font-semibold text-white transition hover:bg-pokeball-red/85 sm:h-auto sm:w-auto sm:py-1.5"
+                      className="ui-btn-primary h-10 w-full px-4 text-label-md sm:h-auto sm:w-auto sm:py-1.5"
                     />
                   </form>
                 </div>

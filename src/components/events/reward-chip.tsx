@@ -61,7 +61,7 @@ export function RewardChip({
   const tone = isCoins
     ? "text-tertiary"
     : isGems
-      ? "text-fuchsia-400"
+      ? "text-gem"
       : "text-sky-300";
 
   return (
@@ -110,7 +110,7 @@ function compactAmount(reward: RewardDef): string {
 
 function rewardTone(reward: RewardDef): string {
   if (reward.kind === "coins") return "text-tertiary";
-  if (reward.kind === "gems") return "text-fuchsia-400";
+  if (reward.kind === "gems") return "text-gem";
   if (reward.kind === "energy") return "text-sky-300";
   return "text-on-surface";
 }

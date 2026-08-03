@@ -54,9 +54,9 @@ export function CampaignUnlockFeedback({
   return (
     <div
       role="status"
-      className="game-float-card mb-3 overflow-hidden rounded-2xl px-3.5 py-2.5 ring-1 ring-[#ffcb05]/40 motion-safe:animate-[app-toast-in_0.35s_ease-out]"
+      className="game-float-card mb-3 overflow-hidden rounded-2xl px-3.5 py-2.5 ring-1 ring-electric-yellow/40 motion-safe:animate-[app-toast-in_0.35s_ease-out]"
     >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#ffcb05]">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-electric-yellow">
         {t("feedbackUnlockEyebrow")}
       </p>
       <p className="mt-0.5 text-label-md text-white">{banner}</p>

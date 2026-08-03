@@ -63,9 +63,9 @@ export function SkipGymCooldownButton({
         disabled={pending || !canPay}
         onClick={onClick}
         title={t("skipCooldownHint", { cost })}
-        className={`inline-flex items-center justify-center gap-1.5 border border-fuchsia-400/35 bg-fuchsia-500/15 font-semibold text-fuchsia-200 transition hover:bg-fuchsia-500/25 disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`ui-btn-gem ${
           compact
-            ? "rounded-md px-4 py-2.5 text-label-sm"
+            ? "px-4 py-2.5 text-label-sm"
             : "rounded-lg px-5 py-3 text-label-md"
         }`}
       >

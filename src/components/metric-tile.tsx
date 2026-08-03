@@ -14,7 +14,7 @@ export function MetricTile({
   suffix,
   barPct,
   hint,
-  accent = "#ee1515",
+  accent = "var(--color-pokeball-red)",
   delayMs = 0,
 }: {
   icon: string;

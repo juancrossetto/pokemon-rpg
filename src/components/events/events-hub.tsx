@@ -380,7 +380,7 @@ function DailyPanel({
   }
 
   return (
-    <section className="glass-panel rounded-xl border border-white/10 p-3 sm:p-4">
+    <section className="glass-panel p-3 sm:p-4">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-0">
           <h2 className="text-label-md font-semibold text-white">{labels.dailyTitle}</h2>
@@ -410,7 +410,7 @@ function DailyPanel({
             type="button"
             onClick={claim}
             disabled={pending}
-            className="daily-claim-cta h-11 w-full rounded-md bg-pokeball-red text-label-sm font-bold uppercase tracking-wide text-white transition hover:bg-pokeball-red/85 disabled:opacity-60"
+            className="ui-btn-primary daily-claim-cta h-11 w-full text-label-sm font-bold uppercase tracking-wide"
           >
             {pending ? "…" : labels.dailyClaim}
           </button>
@@ -470,7 +470,7 @@ function WeeklyPanel({
   }
 
   return (
-    <section className="glass-panel rounded-xl border border-white/10 p-3 sm:p-4">
+    <section className="glass-panel p-3 sm:p-4">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-0">
           <h2 className="text-label-md font-semibold text-white">{labels.weeklyTitle}</h2>
@@ -685,7 +685,7 @@ function RewardReveal({
             type="button"
             data-autofocus
             onClick={onClose}
-            className="h-11 flex-1 rounded-md bg-pokeball-red text-label-sm font-bold text-white transition hover:bg-pokeball-red/85"
+            className="ui-btn-primary h-11 flex-1 text-label-sm font-bold"
           >
             {labels.revealClose}
           </button>

@@ -95,8 +95,7 @@ export function BattleOutcomeScreen({
         ? t("resultLostTower")
         : t("resultLost")
       : null;
-  const ctaClass =
-    "w-full max-w-sm rounded-lg bg-pokeball-red px-6 py-3 text-center text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors";
+  const ctaClass = "game-cta game-cta--red !mb-0 max-w-sm";
 
   return (
     <BattleResult
@@ -195,10 +194,10 @@ export function BattleOutcomeScreen({
             <>
               <SoftLeaveButton
                 href={`/gyms/${gymId}/run`}
-                className="w-full flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white font-bold hover:bg-pokeball-red/80 transition-colors"
+                className="game-cta game-cta--red"
               >
-                <span className="material-symbols-outlined text-[18px]!">arrow_forward</span>
-                {t("continueChallenge")}
+                <span className="material-symbols-outlined game-cta__icon">arrow_forward</span>
+                <span className="game-cta__label">{t("continueChallenge")}</span>
               </SoftLeaveButton>
               <button
                 type="button"
@@ -209,14 +208,14 @@ export function BattleOutcomeScreen({
               </button>
             </>
           ) : (
-            <div className="glass-panel rounded-xl border border-error/40 p-4 text-left flex flex-col gap-3">
+            <div className="glass-panel border-error/40 p-4 text-left flex flex-col gap-3">
               <p className="text-label-md text-error font-bold">{t("leaveGymTitle")}</p>
               <p className="text-label-sm text-on-surface-variant">{t("leaveGymBody")}</p>
               <div className="flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={() => setConfirmLeaveGym(false)}
-                  className="w-full rounded-lg bg-pokeball-red px-4 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
+                  className="ui-btn-primary w-full px-4 py-2 text-label-md"
                 >
                   {t("continueChallenge")}
                 </button>

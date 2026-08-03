@@ -317,10 +317,10 @@ export default async function TeamPage({
             />
             <Link
               href="/team?tab=pc"
-              className="hidden min-h-[2.75rem] items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-white/[0.06] px-4 font-[family-name:var(--font-lilita)] text-[0.95rem] uppercase tracking-[0.04em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:border-white/35 hover:bg-white/[0.1] active:scale-[0.985] sm:inline-flex sm:w-auto sm:min-w-[11rem]"
+              className="game-cta game-cta--secondary hidden !mb-0 min-h-[2.75rem] !w-auto !min-w-[11rem] sm:inline-flex"
             >
-              <span className="material-symbols-outlined text-[18px]!">inventory_2</span>
-              {t("manage")}
+              <span className="material-symbols-outlined game-cta__icon">inventory_2</span>
+              <span className="game-cta__label">{t("manage")}</span>
             </Link>
           </div>
         </header>

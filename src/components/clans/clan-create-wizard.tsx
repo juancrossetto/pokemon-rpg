@@ -402,7 +402,7 @@ export function ClanCreateWizard({
           <button
             type="button"
             onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-            className="min-h-11 px-4 rounded-lg bg-pokeball-red text-white text-label-md"
+            className="ui-btn-primary min-h-11 px-4 text-label-md"
           >
             {labels.next}
           </button>
@@ -411,7 +411,7 @@ export function ClanCreateWizard({
             label={canAfford ? labels.createButton : labels.noFunds}
             pendingLabel={labels.creating}
             disabled={!canAfford || name.length < CLAN_NAME_MIN || tag.length < CLAN_TAG_MIN}
-            className="min-h-11 text-label-md px-4 rounded-lg bg-pokeball-red text-white hover:bg-pokeball-red/80 transition-colors"
+            className="ui-btn-primary min-h-11 px-4 text-label-md hover:bg-pokeball-red/80 transition-colors"
           />
         )}
       </div>

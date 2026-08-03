@@ -113,7 +113,7 @@ function DifficultyPips({ value, accent }: { value: number; accent?: string }) {
           key={i}
           className="h-1 w-1 rounded-full"
           style={{
-            background: i < value ? (accent ?? "#ee1515") : "rgba(255,255,255,0.15)",
+            background: i < value ? (accent ?? "var(--color-pokeball-red)") : "rgba(255,255,255,0.15)",
             boxShadow: i < value && accent ? `0 0 4px ${accent}` : undefined,
           }}
         />
@@ -209,7 +209,7 @@ function ProgressBar({ pct, accent }: { pct: number; accent: string }) {
           className="absolute inset-y-0 left-0 rounded-full gym-corridor-progress-fill"
           style={{
             width: `${display}%`,
-            background: `linear-gradient(90deg, ${accent}, #ee1515)`,
+            background: `linear-gradient(90deg, ${accent}, var(--color-pokeball-red))`,
             boxShadow: `0 0 10px ${accent}66`,
           }}
         />
@@ -235,7 +235,7 @@ function CombatButton({
       <button
         type="submit"
         disabled={disabled}
-        className="gym-corridor-combat-btn group relative w-full overflow-hidden rounded-lg bg-pokeball-red px-4 py-2.5 text-label-md text-white shadow-[0_0_20px_rgba(238,21,21,0.35)] disabled:opacity-40 disabled:shadow-none disabled:pointer-events-none"
+        className="gym-corridor-combat-btn game-cta game-cta--red group relative !mb-0 w-full overflow-hidden disabled:pointer-events-none"
       >
         <span className="absolute inset-0 gym-corridor-combat-sheen opacity-0 group-hover:opacity-100 transition-opacity" />
         <span className="relative z-10 flex items-center justify-center gap-2">

@@ -522,7 +522,7 @@ export function FriendsHub({
               <span className="inline-flex items-center gap-1.5">
                 {labels.filters[id]}
                 {badge && badge > 0 ? (
-                  <span className="rounded-md bg-pokeball-red/90 px-1.5 py-px text-[9px] font-bold normal-case tracking-normal tabular-nums text-white">
+                  <span className="ui-chip ui-chip--accent text-[9px] normal-case tracking-normal tabular-nums">
                     {badge}
                   </span>
                 ) : null}
@@ -648,7 +648,7 @@ export function FriendsHub({
             onClick={(e) => e.stopPropagation()}
             className={`friend-toast relative z-[1] flex w-full max-w-[min(92vw,380px)] flex-col items-center gap-3 rounded-[1.35rem] border px-5 pb-5 pt-4 text-center shadow-[0_24px_64px_rgba(0,0,0,0.55)] ${
               toast.kind === "success"
-                ? "border-fuchsia-400/30 bg-[#0c0a14]/96"
+                ? "border-gem/35 bg-gem-container/95"
                 : "border-pokeball-red/40 bg-[#12080a]/96"
             }`}
           >
@@ -665,7 +665,7 @@ export function FriendsHub({
               <div className="relative mt-1">
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fuchsia-400/25 blur-2xl"
+                  className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gem/25 blur-2xl"
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -789,7 +789,7 @@ function SearchRow({
           type="button"
           disabled={pending}
           onClick={onAdd}
-          className="rounded-lg bg-pokeball-red px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white disabled:opacity-50"
+          className="ui-btn-primary px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider"
         >
           {labels.addFriend}
         </button>
@@ -1606,9 +1606,9 @@ function ModalBtn({
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] transition disabled:cursor-not-allowed disabled:opacity-40 ${
         primary
-          ? "border-pokeball-red/50 bg-pokeball-red text-white"
+          ? "ui-btn-primary border-transparent"
           : danger
-            ? "border-pokeball-red/30 text-pokeball-red hover:bg-pokeball-red/10"
+            ? "border-pokeball-red/35 text-pokeball-red hover:bg-pokeball-red/10"
             : "border-white/12 text-white/85 hover:bg-white/8"
       }`}
     >

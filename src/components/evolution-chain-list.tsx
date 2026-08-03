@@ -80,13 +80,13 @@ function RequirementPrice({ requirement }: { requirement: EvolutionRequirement }
     <span
       className={[
         "inline-flex items-center gap-0.5 font-semibold tabular-nums",
-        premium ? "text-fuchsia-300" : "text-electric-yellow",
+        premium ? "text-gem" : "text-electric-yellow",
       ].join(" ")}
     >
       <span
         className={[
           "material-symbols-outlined text-[10px]! leading-none",
-          premium ? "text-fuchsia-400" : "text-electric-yellow",
+          premium ? "text-gem" : "text-electric-yellow",
         ].join(" ")}
         aria-hidden
       >
@@ -512,7 +512,7 @@ function EvolveActionButton({
             itemName: req.itemName,
           })
         }
-        className="inline-flex min-h-8 items-center gap-1 rounded-md border border-fuchsia-400/35 bg-fuchsia-500/15 px-2 text-[10px] font-semibold text-fuchsia-300 transition hover:bg-fuchsia-500/25 disabled:opacity-60"
+        className="inline-flex min-h-8 items-center gap-1 rounded-md border border-gem/40 bg-gem px-2 text-[10px] font-semibold text-on-gem transition hover:brightness-110 disabled:opacity-60"
       >
         <Image
           src={itemSpriteUrl(req.itemName)}

@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import { Barlow, Chakra_Petch, Oxanium } from "next/font/google";
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -30,32 +29,6 @@ import { SectionLabel } from "@/components/trainer-profile-parts";
 import { permissionsFor } from "@/lib/trainer-appearance";
 import { findLocation } from "@/lib/campaign";
 import type { StatRow } from "@/components/profile/trainer-stat-rows";
-
-/*
-  Tipografías del banner de identidad. Se declaran acá —y no en el layout— para
-  que el payload viaje sólo en la ruta /profile: el resto de la app no las carga.
-  Las variables se aplican a un contenedor de esta página y el CSS las consume
-  únicamente bajo `.tp-hero`, así el sistema tipográfico global queda intacto.
-*/
-const chakraPetch = Chakra_Petch({
-  variable: "--font-chakra",
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  // Italic real: inclinar por CSS produce una cursiva sintética deformada.
-  style: ["normal", "italic"],
-});
-
-const barlow = Barlow({
-  variable: "--font-barlow",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const oxanium = Oxanium({
-  variable: "--font-oxanium",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
 
 const SPECIES_SELECT = {
   id: true,
@@ -264,7 +237,7 @@ export default async function ProfilePage({
 
   // Favorito: el marcado por el jugador (aunque esté en el PC); si no hay, el líder.
   const favorite = favoriteRow ?? team[0] ?? null;
-  const favoriteAccent = favorite ? typeColor(favorite.species.types[0] ?? "normal") : "#ee1515";
+  const favoriteAccent = favorite ? typeColor(favorite.species.types[0] ?? "normal") : "var(--color-pokeball-red)";
 
   /*
     Degradé del nombre según los tipos del compañero: cada perfil termina con su
@@ -498,7 +471,7 @@ export default async function ProfilePage({
 
   return (
     <div
-      className={`${chakraPetch.variable} ${barlow.variable} ${oxanium.variable} flex-1 px-margin-mobile py-5 pb-bottom-nav md:px-margin-desktop md:py-8`}
+      className="flex-1 px-margin-mobile py-5 pb-bottom-nav md:px-margin-desktop md:py-8"
     >
       <TrainerProfileClient
         hero={{

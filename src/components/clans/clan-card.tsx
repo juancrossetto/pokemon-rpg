@@ -121,7 +121,7 @@ export function ClanCard({
           className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-lg px-3 text-label-sm ${
             full || clan.joinPolicy === "INVITE"
               ? "border border-white/10 text-on-surface-variant"
-              : "bg-pokeball-red text-white hover:bg-pokeball-red/85"
+              : "ui-btn-primary"
           }`}
         >
           {joinLabel}

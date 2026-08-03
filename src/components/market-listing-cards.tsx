@@ -197,7 +197,7 @@ async function BuyButton({
       label={canAfford ? t("hub.buyNow") : t("needFunds", { missing })}
       pendingLabel={t("buying")}
       disabled={!canAfford}
-      className="market-buy-btn h-10 w-full rounded-md bg-pokeball-red px-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-on-surface-variant disabled:opacity-100"
+      className="ui-btn-primary market-buy-btn h-10 w-full px-3 text-[11px] font-bold uppercase tracking-[0.12em] disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-on-surface-variant disabled:opacity-100"
       confirmMessage={
         price >= CONFIRM_PRICE_THRESHOLD ? t("confirmBuy", { name: displayName, price }) : undefined
       }

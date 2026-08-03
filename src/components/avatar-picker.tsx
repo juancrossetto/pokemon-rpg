@@ -208,7 +208,7 @@ export function AvatarPicker({
                   type="button"
                   onClick={save}
                   disabled={pending || !selected || selected === currentAvatarId}
-                  className="min-h-11 flex-1 rounded-xl bg-pokeball-red text-label-md font-bold text-white transition hover:brightness-110 disabled:opacity-40"
+                  className="ui-btn-primary min-h-11 flex-1 rounded-xl text-label-md font-bold"
                 >
                   {pending ? labels.saving : labels.save}
                 </button>

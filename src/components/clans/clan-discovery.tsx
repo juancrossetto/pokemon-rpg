@@ -355,7 +355,7 @@ function FilterPanel({
           </button>
         )}
         {onApply && (
-          <button type="button" onClick={onApply} className="min-h-11 rounded-lg bg-pokeball-red px-4 text-label-sm text-white">
+          <button type="button" onClick={onApply} className="ui-btn-primary min-h-11 px-4 text-label-sm">
             {labels.applyFilters}
           </button>
         )}
@@ -442,7 +442,7 @@ function ClanFilterSheet({
           <button
             type="button"
             onClick={onClose}
-            className="min-h-11 w-full rounded-lg bg-pokeball-red text-label-sm font-semibold text-white"
+            className="ui-btn-primary min-h-11 w-full text-label-sm font-semibold"
           >
             {labels.applyFilters}
           </button>

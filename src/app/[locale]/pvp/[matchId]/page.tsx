@@ -194,7 +194,7 @@ export default async function PvpMatchPage({
             <SubmitButton
               label={t("rematch")}
               pendingLabel={t("starting")}
-              className="w-full rounded-lg bg-pokeball-red px-4 py-2.5 text-label-md text-white font-bold hover:bg-pokeball-red/80"
+              className="w-full ui-btn-primary px-4 py-2.5 text-label-md font-bold"
             />
           </form>
         )}

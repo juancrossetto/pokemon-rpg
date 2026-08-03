@@ -642,7 +642,7 @@ function PurchaseDialog({
             data-autofocus
             onClick={confirm}
             disabled={pending || balanceAfter < 0}
-            className="h-11 flex-1 rounded-md bg-pokeball-red text-label-sm font-bold text-white transition hover:bg-pokeball-red/85 disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-on-surface-variant"
+            className="ui-btn-primary h-11 flex-1 text-label-sm font-bold disabled:bg-white/[0.06] disabled:text-on-surface-variant"
           >
             {pending ? (
               <span className="inline-flex items-center justify-center gap-1.5">

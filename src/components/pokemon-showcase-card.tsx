@@ -122,7 +122,7 @@ export function PokemonShowcaseCard({
             </span>
           ) : null}
           {badges.lead ? (
-            <span className="rounded-full bg-pokeball-red px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+            <span className="ui-chip ui-chip--accent rounded-full text-[9px]">
               {badges.lead}
             </span>
           ) : null}

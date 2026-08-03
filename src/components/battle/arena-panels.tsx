@@ -34,7 +34,7 @@ export function PartySidebar({
 
   if (compact) {
     return (
-      <div className="glass-panel rounded-lg border border-white/10 px-3 py-2 flex items-center gap-3">
+      <div className="glass-panel px-3 py-2 flex items-center gap-3">
         {portraitUrl && (
           <div className="w-10 h-12 rounded overflow-hidden border border-white/15 shrink-0 bg-surface-container-high">
             <Image
@@ -63,7 +63,7 @@ export function PartySidebar({
   }
 
   return (
-    <div className="glass-panel rounded-xl border border-white/10 p-2.5 h-full flex flex-col gap-2 min-w-0">
+    <div className="glass-panel p-2.5 h-full flex flex-col gap-2 min-w-0">
       <p
         title={name}
         className={`text-label-sm text-on-surface font-bold leading-tight px-0.5 line-clamp-2 ${

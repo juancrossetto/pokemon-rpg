@@ -108,7 +108,7 @@ export function HomeDesktopRail({
         </div>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <h3 className="font-[family-name:var(--font-identity)] text-[0.98rem] font-bold leading-none text-white">
+          <h3 className="page-title text-[0.98rem] leading-none text-white">
             {t("pvpTitle")}
           </h3>
           {featured ? (
@@ -221,7 +221,7 @@ export function HomeDesktopRail({
         </div>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <h3 className="font-[family-name:var(--font-identity)] text-[0.98rem] font-bold leading-none text-white">
+          <h3 className="page-title text-[0.98rem] leading-none text-white">
             {t("clanTitle")}
           </h3>
           <span className="inline-flex items-center gap-1 rounded-md bg-[#ff7a28]/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#ffb56e]">
@@ -256,7 +256,7 @@ export function HomeDesktopRail({
           </div>
 
           <div className="flex flex-col items-center px-0.5 text-center">
-            <p className="font-[family-name:var(--font-identity)] text-[1.05rem] font-bold tabular-nums leading-none text-white/35">
+            <p className="text-[1.05rem] font-bold tabular-nums leading-none text-white/35">
               — : —
             </p>
             <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.14em] text-white/35">
@@ -398,7 +398,7 @@ function PvpVersus({
       </div>
 
       <div className="flex flex-col items-center px-0.5 text-center">
-        <p className="font-[family-name:var(--font-identity)] text-[1.15rem] font-bold tabular-nums leading-none text-white">
+        <p className="text-[1.15rem] font-bold tabular-nums leading-none text-white">
           {selfScore}
           <span className="mx-0.5 text-white/35">:</span>
           {foeScore}

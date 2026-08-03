@@ -1199,7 +1199,7 @@ export function GymMissionControl({
           </div>
 
           {view === "map" ? (
-            <div className="glass-panel rounded-xl border border-white/10 p-2 sm:p-3">
+            <div className="glass-panel p-2 sm:p-3">
               <div
                 className="relative w-full overflow-hidden rounded-lg bg-[#0b1424]"
                 style={{ aspectRatio: KANTO_MAP_ASPECT }}

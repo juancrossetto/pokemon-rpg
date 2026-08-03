@@ -216,7 +216,7 @@ export function MetricTile({
   label,
   value,
   hint,
-  accent = "#ee1515",
+  accent = "var(--color-pokeball-red)",
   delayMs = 0,
 }: {
   icon: string;
@@ -248,7 +248,7 @@ export function MetricTile({
 /** Etiqueta pequeña de sección, con la línea de acento del juego. */
 export function SectionLabel({
   children,
-  color = "#ee1515",
+  color = "var(--color-pokeball-red)",
 }: {
   children: React.ReactNode;
   /** Color del punto y del texto. Por defecto rojo Pokéball. */

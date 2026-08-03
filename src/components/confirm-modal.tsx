@@ -54,8 +54,8 @@ export function ConfirmModal({
 
   const confirmClass =
     tone === "danger"
-      ? "bg-error/90 text-white hover:bg-error"
-      : "bg-pokeball-red text-white hover:bg-pokeball-red/85";
+      ? "ui-btn-primary !bg-error hover:!brightness-110"
+      : "ui-btn-primary";
 
   return createPortal(
     <div

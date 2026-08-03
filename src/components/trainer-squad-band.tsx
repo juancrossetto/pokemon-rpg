@@ -84,7 +84,7 @@ export function TrainerSquadBand({
 
             <div className="absolute inset-x-0 top-0 z-[2] flex items-start justify-between p-2">
               {isLead ? (
-                <span className="rounded-md bg-pokeball-red px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-white">
+                <span className="ui-chip ui-chip--accent text-[8px]">
                   {labels.lead}
                 </span>
               ) : (

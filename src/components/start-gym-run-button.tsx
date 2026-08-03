@@ -33,10 +33,10 @@ export function StartGymRunButton({
       <button
         type="submit"
         disabled={pending}
-        className="flex items-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white hover:bg-pokeball-red/80 transition-colors disabled:opacity-50"
+        className="game-cta game-cta--red disabled:opacity-50"
       >
-        <span className="material-symbols-outlined text-[18px]!">swords</span>
-        {label}
+        <span className="material-symbols-outlined game-cta__icon">swords</span>
+        <span className="game-cta__label">{label}</span>
       </button>
       {state && !state.success && (
         <p className="text-label-sm text-error">

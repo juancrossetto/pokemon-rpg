@@ -77,7 +77,7 @@ export function ClanChat({
   }
 
   return (
-    <section className="glass-panel rounded-xl border border-white/10 p-4">
+    <section className="glass-panel p-4">
       <h2 className="mb-3 flex items-center gap-2 border-b border-white/10 pb-2 text-headline-md text-white">
         <span className="material-symbols-outlined text-[20px]! text-pokeball-red">forum</span>
         {t("chatTitle")}
@@ -133,7 +133,7 @@ export function ClanChat({
           type="button"
           onClick={send}
           disabled={pending || !draft.trim()}
-          className="flex h-10 w-10 items-center justify-center rounded-lg bg-pokeball-red text-white transition hover:bg-pokeball-red/85 disabled:opacity-40"
+          className="ui-btn-primary h-10 w-10"
           aria-label={t("chatSend")}
         >
           <span className="material-symbols-outlined text-[18px]!">send</span>

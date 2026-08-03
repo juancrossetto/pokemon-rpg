@@ -79,7 +79,7 @@ export function BattleLobby({
         </header>
 
         <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="glass-panel relative flex flex-col overflow-hidden rounded-xl border border-white/10 p-4">
+          <section className="glass-panel relative flex flex-col overflow-hidden p-4">
             <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-sky-500/15 blur-3xl" />
             <div className="relative flex flex-1 flex-col">
               <div className="mb-3 flex items-start justify-between gap-2">
@@ -160,10 +160,10 @@ export function BattleLobby({
                   <p className="text-label-md text-error">{t("errors.faintedLead")}</p>
                   <Link
                     href="/team"
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-pokeball-red px-6 py-3 text-label-md font-semibold text-white hover:bg-pokeball-red/90"
+                    className="game-cta game-cta--red"
                   >
-                    <span className="material-symbols-outlined text-[18px]!">healing</span>
-                    {t("goHeal")}
+                    <span className="material-symbols-outlined game-cta__icon">healing</span>
+                    <span className="game-cta__label">{t("goHeal")}</span>
                   </Link>
                 </div>
               )}
@@ -175,7 +175,7 @@ export function BattleLobby({
           </section>
 
           <div className="flex flex-col gap-4">
-            <section className="glass-panel rounded-xl border border-white/10 p-3">
+            <section className="glass-panel p-3">
               <div className="flex items-stretch gap-2">
                 <LoadoutChip
                   icon={

@@ -149,8 +149,8 @@ const KIND_STYLE: Record<
   },
   gym: {
     icon: "gym",
-    text: "text-[#ffcb05]",
-    ring: "border-[#ffcb05]/45 bg-[#1a1c24]",
+    text: "text-electric-yellow",
+    ring: "border-electric-yellow/45 bg-[#1a1c24]",
     glow: "rgba(255,203,5,0.45)",
   },
 };
@@ -437,7 +437,7 @@ export function CampaignJourney({
                   <span
                     className={`material-symbols-outlined text-[16px]! ${
                       c.completed
-                        ? "text-[#ffcb05]"
+                        ? "text-electric-yellow"
                         : active
                           ? "text-[#ff8a00]"
                           : ""
@@ -821,11 +821,11 @@ function ZoneRow({
           !zone.unlocked
             ? "opacity-45"
             : selected
-              ? "ring-2 ring-[#ffcb05]/80 shadow-[0_0_28px_rgba(255,203,5,0.42),0_0_0_1px_rgba(255,203,5,0.25)]"
+              ? "ring-2 ring-electric-yellow/80 shadow-[0_0_28px_rgba(255,203,5,0.42),0_0_0_1px_rgba(255,203,5,0.25)]"
               : isFarming || nodeStatus === "current"
                 ? "ring-1 ring-[#ff8a00]/55 shadow-[0_0_20px_rgba(255,138,0,0.18)]"
                 : isGym && !done
-                  ? "ring-1 ring-[#ffcb05]/40"
+                  ? "ring-1 ring-electric-yellow/40"
                   : ""
         }`}
       >
@@ -1192,7 +1192,7 @@ function ZonePanel({
 
       {zone.unlocked && zone.trainers.length > 0 && (
         <p className="game-float-tile mt-3 hidden rounded-xl px-3 py-2 text-label-sm text-white/80 lg:block">
-          <span className="font-bold text-[#ffcb05]">
+          <span className="font-bold text-electric-yellow">
             {trainersDone}/{zone.trainers.length}
           </span>{" "}
           <span className="text-white/45">{t("obj_trainers")}</span>
@@ -1275,7 +1275,7 @@ function ZonePanel({
             })}
             {isGym && gymRequirement && (
               gymWon ? (
-                <li className="game-float-tile flex items-center gap-2.5 rounded-xl px-2.5 py-2 ring-1 ring-[#ffcb05]/35">
+                <li className="game-float-tile flex items-center gap-2.5 rounded-xl px-2.5 py-2 ring-1 ring-electric-yellow/35">
                   <span className="relative grid h-11 w-11 shrink-0 place-items-center" aria-hidden>
                     <Image
                       src={gymBadgeImageUrl(gymRequirement.badgeType)}
@@ -1284,21 +1284,21 @@ function ZonePanel({
                       height={44}
                       className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(255,203,5,0.35)]"
                     />
-                    <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-[#ffcb05] text-[#1a1208]">
+                    <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-electric-yellow text-[#1a1208]">
                       <span className="material-symbols-outlined text-[11px]! leading-none">
                         check
                       </span>
                     </span>
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#ffcb05]">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-electric-yellow">
                       {t("nodeWon")}
                     </p>
                     <p className="truncate text-label-sm text-white">
                       {gymRequirement.badgeName || t("objBadge")}
                     </p>
                   </div>
-                  <span className="material-symbols-outlined text-[20px]! text-[#ffcb05]">
+                  <span className="material-symbols-outlined text-[20px]! text-electric-yellow">
                     task_alt
                   </span>
                 </li>
@@ -1321,7 +1321,7 @@ function ZonePanel({
                       {gymRequirement.badgeName || t("objBadge")}
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-md bg-[#12141c] px-2 py-1 font-mono text-[11px] text-[#ffcb05]">
+                  <span className="shrink-0 rounded-md bg-[#12141c] px-2 py-1 font-mono text-[11px] text-electric-yellow">
                     {`Lv. ${gymRequirement.recommendedLevel}`}
                   </span>
                 </li>
@@ -1442,7 +1442,7 @@ function ZonePanel({
                         type="button"
                         disabled={pending}
                         onClick={() => onChallengeTrainer(tr.id)}
-                        className="shrink-0 rounded-md bg-pokeball-red px-2 py-1 text-[10px] font-bold uppercase text-white transition hover:brightness-110 disabled:opacity-40"
+                        className="ui-btn-primary shrink-0 px-2 py-1 text-[10px] font-bold uppercase"
                       >
                         {t("trainerFight")}
                       </button>
@@ -1528,7 +1528,7 @@ function ZonePanel({
                             onClick={() => onFarmStage(stage.id)}
                             className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-label-sm transition ${
                               current
-                                ? "bg-[#1a1c24] text-white ring-1 ring-[#ffcb05]/65 shadow-[0_0_16px_rgba(255,203,5,0.28)]"
+                                ? "bg-[#1a1c24] text-white ring-1 ring-electric-yellow/65 shadow-[0_0_16px_rgba(255,203,5,0.28)]"
                                 : stage.unlocked && !stage.isGym
                                   ? "game-float-tile text-white/80 hover:brightness-110"
                                   : "bg-[#12141c] text-white/30"
@@ -1536,7 +1536,7 @@ function ZonePanel({
                           >
                             <span
                               className={`material-symbols-outlined text-[15px]! ${
-                                current || stage.done ? "text-[#ffcb05]" : ""
+                                current || stage.done ? "text-electric-yellow" : ""
                               }`}
                             >
                               {stage.isGym
@@ -1597,7 +1597,7 @@ function Objective({
       : OBJECTIVE_ICON_SRC[state.id];
 
   const shell = state.claimable
-    ? "rounded-lg bg-[#ffcb05]/[0.07]"
+    ? "rounded-lg bg-electric-yellow/[0.07]"
     : "";
 
   return (
@@ -1606,7 +1606,7 @@ function Objective({
         <span
           className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold tabular-nums ${
             state.done
-              ? "bg-[#ffcb05]/20 text-[#ffcb05]"
+              ? "bg-electric-yellow/20 text-electric-yellow"
               : isMain
                 ? "bg-[#ff8a00]/20 text-[#ff9a4a]"
                 : "bg-white/8 text-white/55"
@@ -1743,7 +1743,7 @@ function ObjectiveRewardBits({
         </span>
       </span>
       <span
-        className={`inline-flex items-center gap-0.5 font-mono font-semibold tabular-nums text-[#ffcb05] ${
+        className={`inline-flex items-center gap-0.5 font-mono font-semibold tabular-nums text-electric-yellow ${
           compact ? "text-[10px] sm:text-[11px]" : "text-[11px]"
         }`}
       >
@@ -1775,7 +1775,7 @@ function ObjectiveClaimControl({
         type="button"
         disabled={pending}
         onClick={onClaim}
-        className="shrink-0 rounded-md bg-[#ffcb05] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#1a1208] shadow-[0_4px_14px_rgba(255,203,5,0.28)] transition hover:brightness-110 disabled:opacity-40 sm:px-2.5"
+        className="shrink-0 rounded-md bg-electric-yellow px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#1a1208] shadow-[0_4px_14px_rgba(255,203,5,0.28)] transition hover:brightness-110 disabled:opacity-40 sm:px-2.5"
       >
         {claimLabel}
       </button>

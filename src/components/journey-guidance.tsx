@@ -125,7 +125,7 @@ export function HubHelpButton({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="mt-4 w-full rounded-xl bg-pokeball-red px-4 py-2.5 text-[13px] font-bold text-white transition hover:bg-pokeball-red/90"
+                className="ui-btn-primary mt-4 w-full px-4 py-2.5 text-[13px] font-bold"
               >
                 {t("coachGotIt")}
               </button>
@@ -316,7 +316,7 @@ export function JourneyOnboarding({
         <button
           type="button"
           onClick={dismiss}
-          className="mt-4 w-full rounded-xl bg-pokeball-red px-4 py-2.5 text-[13px] font-bold text-white transition hover:bg-pokeball-red/90"
+          className="ui-btn-primary mt-4 w-full px-4 py-2.5 text-[13px] font-bold"
         >
           {t("onboarding.cta")}
         </button>

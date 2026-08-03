@@ -95,7 +95,7 @@ export function PvpChallengeSearch({
 
         <div className="relative min-w-48 flex-1">
           {selected ? (
-            <div className="flex items-center gap-2.5 border-b border-[#ffcb05]/35 px-1 py-1.5">
+            <div className="flex items-center gap-2.5 border-b border-electric-yellow/35 px-1 py-1.5">
               <TrainerAvatar
                 name={selected.username}
                 src={avatarSrc(selected.avatarId)}

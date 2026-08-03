@@ -64,7 +64,7 @@ export default function LoginPage() {
 
         <div className="flex flex-1 flex-col items-center justify-center py-4 md:py-6">
           <form onSubmit={handleSubmit} className="w-full max-w-[380px] md:max-w-[420px]">
-            <div className="glass-panel relative rounded-xl border border-white/10 px-5 py-4 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+            <div className="glass-panel relative px-5 py-4 shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
               <div className="mb-3.5 flex items-center gap-2.5">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/15 bg-surface-container-high">
                   <PokeballIcon className="h-3.5 w-3.5" />
@@ -143,7 +143,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex w-full items-center justify-center gap-2 rounded-md bg-pokeball-red px-4 py-2.5 text-label-md text-white transition hover:bg-pokeball-red/80 active:scale-[0.99] disabled:opacity-50"
+                  className="ui-btn-primary w-full px-4 py-2.5 text-label-md"
                 >
                   <PokeballIcon className="h-3.5 w-3.5" />
                   {submitting ? t("submitting") : t("submit")}

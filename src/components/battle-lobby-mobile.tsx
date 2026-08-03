@@ -158,10 +158,10 @@ export function BattleLobbyMobile({
               <p className="text-label-sm text-error">{t("errors.faintedLead")}</p>
               <Link
                 href="/team"
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-pokeball-red py-4 text-label-md font-bold uppercase tracking-wide text-white"
+                className="game-cta game-cta--red"
               >
-                <span className="material-symbols-outlined text-[18px]!">healing</span>
-                {t("goHeal")}
+                <span className="material-symbols-outlined game-cta__icon">healing</span>
+                <span className="game-cta__label">{t("goHeal")}</span>
               </Link>
             </div>
           )}

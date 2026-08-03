@@ -91,7 +91,7 @@ export function PvpTeamEditor({
           <p className={SECTION_LABEL}>{t("teamTitle")}</p>
           <p className="mt-1 text-[12px] text-white/50">{t("teamBlurb")}</p>
           {usingAdventure ? (
-            <p className="mt-1.5 text-[11px] font-semibold text-[#ffcb05]">
+            <p className="mt-1.5 text-[11px] font-semibold text-electric-yellow">
               {t("teamUsingAdventure")}
             </p>
           ) : null}

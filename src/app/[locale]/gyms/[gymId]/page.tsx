@@ -113,7 +113,7 @@ export default async function GymLeaderPage({
 
         {/* Horizontal también en mobile: apilado, el retrato empujaba el nombre
             y el nivel de amenaza fuera de la primera pantalla. */}
-        <div className="glass-panel rounded-xl border border-white/10 p-3 sm:p-4 mb-4 flex items-center gap-3 sm:gap-4">
+        <div className="glass-panel p-3 sm:p-4 mb-4 flex items-center gap-3 sm:gap-4">
           {leaderPortrait ? (
             <div
               className="w-20 h-[104px] sm:w-32 sm:h-40 rounded-xl overflow-hidden shrink-0 border-2 bg-surface-container-high"
@@ -147,7 +147,7 @@ export default async function GymLeaderPage({
           </div>
         </div>
 
-        <div className="glass-panel rounded-xl border border-white/10 p-3 sm:p-4 mb-4">
+        <div className="glass-panel p-3 sm:p-4 mb-4">
           <p className="text-label-sm uppercase text-on-surface-variant mb-2 sm:mb-3">{t("detectedSquad")}</p>
           <div className="flex flex-col gap-1.5 sm:gap-2">
             {gym.team.map((member) => (
@@ -164,7 +164,7 @@ export default async function GymLeaderPage({
           </div>
         </div>
 
-        <div className="glass-panel rounded-xl border border-white/10 p-3 sm:p-4 mb-4 sm:mb-6 flex items-center gap-2.5">
+        <div className="glass-panel p-3 sm:p-4 mb-4 sm:mb-6 flex items-center gap-2.5">
           <span className="material-symbols-outlined text-[20px]! sm:text-[24px]! text-on-surface-variant shrink-0">
             groups
           </span>
@@ -175,7 +175,7 @@ export default async function GymLeaderPage({
           </p>
         </div>
 
-        <div className="glass-panel rounded-xl border border-tertiary/40 p-3 sm:p-6 flex flex-col gap-3 sm:gap-4">
+        <div className="glass-panel border-tertiary/40 p-3 sm:p-6 flex flex-col gap-3 sm:gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <Image src={gymBadgeImageUrl(gym.type)} alt={badgeLabel} width={40} height={40} className="shrink-0" />
             <div className="min-w-0">
@@ -200,10 +200,15 @@ export default async function GymLeaderPage({
               {activeRun && (
                 <Link
                   href={`/gyms/${gymId}/run`}
-                  className="flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white hover:bg-pokeball-red/80 transition-colors w-full sm:w-auto"
+                  className="game-cta game-cta--red w-full sm:w-auto"
                 >
-                  <span className="material-symbols-outlined text-[18px]!">play_arrow</span>
-                  {t("continueRun", { cleared: activeRun.clearedTrainerSlots, total: gym.trainers.length })}
+                  <span className="material-symbols-outlined game-cta__icon">play_arrow</span>
+                  <span className="game-cta__label">
+                    {t("continueRun", {
+                      cleared: activeRun.clearedTrainerSlots,
+                      total: gym.trainers.length,
+                    })}
+                  </span>
                 </Link>
               )}
             </>
@@ -232,10 +237,12 @@ export default async function GymLeaderPage({
           ) : activeRun ? (
             <Link
               href={`/gyms/${gymId}/run`}
-              className="flex items-center justify-center gap-2 rounded-lg bg-pokeball-red px-6 py-3 text-label-md text-white hover:bg-pokeball-red/80 transition-colors w-full sm:w-auto"
+              className="game-cta game-cta--red w-full sm:w-auto"
             >
-              <span className="material-symbols-outlined text-[18px]!">play_arrow</span>
-              {t("continueRun", { cleared: activeRun.clearedTrainerSlots, total: gym.trainers.length })}
+              <span className="material-symbols-outlined game-cta__icon">play_arrow</span>
+              <span className="game-cta__label">
+                {t("continueRun", { cleared: activeRun.clearedTrainerSlots, total: gym.trainers.length })}
+              </span>
             </Link>
           ) : onCooldown ? (
             <SkipGymCooldownButton

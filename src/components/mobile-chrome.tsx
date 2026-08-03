@@ -793,7 +793,7 @@ export function MobileChrome({
               </Link>
               <Link
                 href="/register"
-                className="rounded-md bg-pokeball-red px-2 py-1 text-[11px] text-white"
+                className="ui-chip ui-chip--accent px-2 py-1 text-[11px] normal-case tracking-normal"
               >
                 {registerLabel}
               </Link>
@@ -1090,7 +1090,7 @@ export function MobileChrome({
                   <Link
                     href="/login"
                     onClick={closeMore}
-                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-pokeball-red px-4 text-sm font-semibold text-white"
+                    className="ui-btn-primary min-h-11 rounded-xl px-4 text-sm"
                   >
                     {loginLabel}
                   </Link>

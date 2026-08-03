@@ -13,7 +13,7 @@ import { MarketSubmitButton } from "@/components/market-submit-button";
 const INPUT_CLASS =
   "bg-surface-container border border-white/10 rounded-lg px-2 py-1.5 text-label-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-pokeball-red/50";
 const PRIMARY_BUTTON_CLASS =
-  "text-label-md px-4 py-1.5 rounded-lg bg-pokeball-red text-white hover:bg-pokeball-red/80 transition-colors";
+  "ui-btn-primary px-4 py-1.5 text-label-md";
 
 type Mode = "pokemon" | "item";
 

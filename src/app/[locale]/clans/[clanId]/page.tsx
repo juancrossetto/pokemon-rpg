@@ -179,7 +179,7 @@ export default async function ClanDetailPage({
   const totalBadges = members.reduce((s, m) => s + m.badges, 0);
   const totalPower = members.reduce((s, m) => s + m.power, 0);
   const emblem = parseClanEmblem(clan.emblem);
-  const headerPrimary = isPresetEmblem(emblem) ? "#ee1515" : emblem.primaryColor;
+  const headerPrimary = isPresetEmblem(emblem) ? "var(--color-pokeball-red)" : emblem.primaryColor;
   const headerSecondary = isPresetEmblem(emblem) ? "#0a0a0a" : emblem.secondaryColor;
 
   const activeTab: ClanHubTab = myRole === null ? "overview" : tab;
@@ -279,7 +279,7 @@ export default async function ClanDetailPage({
                     label={isFull ? t("full") : t("join")}
                     pendingLabel={t("joining")}
                     disabled={isFull}
-                    className="min-h-11 text-label-md px-4 rounded-lg bg-pokeball-red text-white"
+                    className="ui-btn-primary min-h-11 px-4 text-label-md"
                   />
                 </form>
               )}
@@ -296,7 +296,7 @@ export default async function ClanDetailPage({
                     label={isFull ? t("full") : t("apply")}
                     pendingLabel={t("applying")}
                     disabled={isFull}
-                    className="min-h-11 text-label-md px-4 rounded-lg bg-pokeball-red text-white"
+                    className="ui-btn-primary min-h-11 px-4 text-label-md"
                   />
                 </form>
               )}
@@ -562,7 +562,7 @@ export default async function ClanDetailPage({
                         <SubmitButton
                           label={t("acceptApplication")}
                           pendingLabel={t("saving")}
-                          className="min-h-11 px-3 rounded-lg bg-pokeball-red text-white text-label-sm"
+                          className="ui-btn-primary min-h-11 px-3 text-label-sm"
                         />
                       </form>
                       <form action={respondApplication.bind(null, locale)}>
@@ -596,7 +596,7 @@ export default async function ClanDetailPage({
                 <SubmitButton
                   label={t("sendInvite")}
                   pendingLabel={t("saving")}
-                  className="min-h-11 px-4 rounded-lg bg-pokeball-red text-white text-label-sm"
+                  className="ui-btn-primary min-h-11 px-4 text-label-sm"
                 />
               </form>
               </section>
@@ -717,7 +717,7 @@ export default async function ClanDetailPage({
                   <SubmitButton
                     label={t("saveSettings")}
                     pendingLabel={t("saving")}
-                    className="min-h-11 self-start px-4 rounded-lg bg-pokeball-red text-white text-label-md"
+                    className="ui-btn-primary min-h-11 self-start px-4 text-label-md"
                   />
                 </form>
               </section>

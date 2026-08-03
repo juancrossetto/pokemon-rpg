@@ -126,11 +126,11 @@ const TONE = {
     track: "border-white/12 bg-[#12161f]",
   },
   gems: {
-    iconBg: "bg-[#1a0a16] border-fuchsia-400/55 text-fuchsia-400",
+    iconBg: "bg-gem-container border-gem/55 text-gem",
     value: "text-white",
-    plus: "text-white/55 hover:text-fuchsia-300 hover:bg-white/8",
+    plus: "text-white/55 hover:text-gem hover:bg-white/8",
     iconName: "diamond",
-    ring: "focus-visible:ring-fuchsia-400/50",
+    ring: "focus-visible:ring-gem/50",
     track: "border-white/12 bg-[#12161f]",
   },
 } as const;
@@ -391,7 +391,7 @@ export function ResourceBar({
       closeLabel={labels.close}
       onClose={() => setOpen(null)}
     >
-      <p className="font-mono text-[15px] font-semibold tabular-nums text-fuchsia-400">
+      <p className="font-mono text-[15px] font-semibold tabular-nums text-gem">
         {gems.toLocaleString()}
       </p>
       <p>{labels.gemsBalance}</p>
@@ -399,7 +399,7 @@ export function ResourceBar({
       <Link
         href="/pc"
         onClick={() => setOpen(null)}
-        className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 text-[12px] font-medium text-fuchsia-300 transition hover:bg-fuchsia-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50"
+        className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-gem/40 bg-gem/15 px-3 text-[12px] font-medium text-gem transition hover:bg-gem/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gem/50"
       >
         <span className="material-symbols-outlined text-[16px]!">storage</span>
         {labels.gemsPc}
@@ -480,8 +480,8 @@ export function ResourceBar({
               {coins}
             </span>
             <span className="mx-0.5 h-3 w-px bg-white/15" aria-hidden />
-            <span className="material-symbols-outlined text-[14px]! text-fuchsia-400">diamond</span>
-            <span className="font-mono text-[11px] font-semibold tabular-nums text-fuchsia-300">
+            <span className="material-symbols-outlined text-[14px]! text-gem">diamond</span>
+            <span className="font-mono text-[11px] font-semibold tabular-nums text-gem">
               {gems}
             </span>
           </button>
@@ -531,17 +531,17 @@ export function ResourceBar({
                   </div>
                 </div>
                 <div className="border-t border-white/8 pt-3">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.14em] text-fuchsia-400/80">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.14em] text-gem/80">
                     {labels.gems}
                   </p>
-                  <p className="font-mono text-[14px] font-semibold text-fuchsia-400">
+                  <p className="font-mono text-[14px] font-semibold text-gem">
                     {gems.toLocaleString()}
                   </p>
                   <p className="mt-1">{labels.gemsHint}</p>
                   <Link
                     href="/pc"
                     onClick={() => setOpen(null)}
-                    className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/10 px-2 text-[11px] text-fuchsia-300"
+                    className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-gem/40 bg-gem/15 px-2 text-[11px] text-gem"
                   >
                     {labels.gemsPc}
                   </Link>

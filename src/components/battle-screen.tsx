@@ -62,7 +62,7 @@ export function BattleScreen({
           </p>
           <Link
             href={`/gyms/${gymContinueId}/run`}
-            className="rounded-lg bg-pokeball-red px-6 py-3 text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors"
+            className="game-cta game-cta--red"
           >
             {t("continueChallenge")}
           </Link>
@@ -77,7 +77,7 @@ export function BattleScreen({
           </p>
           <Link
             href="/tower"
-            className="rounded-lg bg-pokeball-red px-6 py-3 text-label-md font-bold text-white hover:bg-pokeball-red/80 transition-colors"
+            className="game-cta game-cta--red"
           >
             {t("backToTower")}
           </Link>

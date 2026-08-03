@@ -139,7 +139,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         <p className="max-w-md text-body-lg text-on-surface-variant">{t("noTeamSubtitle")}</p>
         <Link
           href="/starter"
-          className="mt-2 rounded-md bg-pokeball-red px-6 py-2 text-label-md text-white transition-colors hover:bg-pokeball-red/80"
+          className="ui-btn-primary mt-2 px-6 py-2 text-label-md"
         >
           {t("chooseStarterLink")}
         </Link>

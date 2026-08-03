@@ -124,7 +124,7 @@ export function TrainerHero({
             </span>
           </div>
 
-          <h1 className="truncate text-display-sm font-black leading-none tracking-tight text-white">
+          <h1 className="page-title truncate text-display-sm leading-none tracking-tight text-white">
             {username}
           </h1>
 

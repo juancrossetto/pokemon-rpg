@@ -116,7 +116,7 @@ export function HandbookModal() {
               </p>
               <h2
                 id={titleId}
-                className="mt-1 font-[family-name:var(--font-lilita)] text-[1.75rem] leading-none tracking-wide text-on-surface sm:text-[2rem]"
+                className="page-title mt-1 text-[1.75rem] leading-none tracking-wide text-on-surface sm:text-[2rem]"
               >
                 {t("title")}
               </h2>
@@ -162,7 +162,7 @@ export function HandbookModal() {
 
         <div className="relative min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           <article className="mx-auto max-w-prose">
-            <h3 className="font-[family-name:var(--font-lilita)] text-[1.45rem] leading-tight text-on-surface">
+            <h3 className="page-title text-[1.45rem] leading-tight text-on-surface">
               {content?.title}
             </h3>
             <p className="mt-2 text-[0.95rem] leading-relaxed text-on-surface-variant">

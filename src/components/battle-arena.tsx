@@ -2607,7 +2607,7 @@ export function BattleArena({
           <div
             aria-live="polite"
             aria-label={t("battleLogLabel")}
-            className={`glass-panel rounded-xl border border-white/10 px-2 py-1.5 md:px-4 md:py-3 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 bg-black/35 h-full min-h-0 min-w-0 ${
+            className={`glass-panel px-2 py-1.5 md:px-4 md:py-3 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 h-full min-h-0 min-w-0 ${
               commandExpanded ? "hidden md:flex" : ""
             }`}
           >

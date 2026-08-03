@@ -177,7 +177,7 @@ export function MarketFilterForm(props: FilterProps) {
         <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
           <button
             type="submit"
-            className="market-buy-btn h-9 flex-1 rounded-md bg-pokeball-red px-4 text-label-sm font-semibold uppercase tracking-wide text-white transition sm:flex-none"
+            className="ui-btn-primary market-buy-btn h-9 flex-1 px-4 text-label-sm uppercase tracking-wide sm:flex-none"
           >
             {labels.apply}
           </button>
@@ -303,7 +303,7 @@ function MarketFilterSheet(props: FilterProps & { count: number }) {
               )}
               <button
                 type="submit"
-                className="h-11 flex-1 rounded-md bg-pokeball-red px-4 text-label-sm font-bold uppercase tracking-wide text-white"
+                className="ui-btn-primary h-11 flex-1 px-4 text-label-sm font-bold uppercase tracking-wide"
               >
                 {labels.apply}
               </button>
@@ -327,7 +327,7 @@ function MarketFilterSheet(props: FilterProps & { count: number }) {
         <span className="material-symbols-outlined text-[18px]!">tune</span>
         {labels.openFilters}
         {count > 0 && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-pokeball-red px-1.5 text-[11px] font-bold text-white">
+          <span className="ui-chip ui-chip--accent h-5 min-w-5 rounded-full text-[11px] normal-case tracking-normal">
             {count}
           </span>
         )}

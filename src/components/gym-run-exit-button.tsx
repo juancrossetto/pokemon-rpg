@@ -33,7 +33,7 @@ export function GymRunExitButton({
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-margin-mobile">
-          <div className="glass-panel border border-error/50 rounded-xl p-6 max-w-sm w-full text-center">
+          <div className="glass-panel border-error/50 p-6 max-w-sm w-full text-center">
             <span className="material-symbols-outlined text-[40px]! text-error">warning</span>
             <h3 className="text-headline-md text-error mt-2">{labels.warningTitle}</h3>
             <p className="text-label-md text-on-surface-variant mt-2">{labels.warningBody}</p>
@@ -41,7 +41,7 @@ export function GymRunExitButton({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="w-full rounded-lg bg-pokeball-red px-4 py-2 text-label-md text-white hover:bg-pokeball-red/80 transition-colors"
+                className="w-full ui-btn-primary px-4 py-2 text-label-md"
               >
                 {labels.returnToChallenge}
               </button>

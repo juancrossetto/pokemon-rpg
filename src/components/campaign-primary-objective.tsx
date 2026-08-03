@@ -115,7 +115,7 @@ export function CampaignPrimaryObjective({
             </h1>
             {stagesTotal > 0 ? (
               <p className="mt-0.5 flex items-center gap-1 text-[10px] text-white/70 sm:mt-1 sm:gap-1.5 sm:text-[12px]">
-                <span className="font-mono text-[#ffcb05]">
+                <span className="font-mono text-electric-yellow">
                   {stagesDone}/{stagesTotal}
                 </span>
                 <span className="hidden sm:inline">{t("objectivesCompleted")}</span>
@@ -130,14 +130,14 @@ export function CampaignPrimaryObjective({
       {/* Próximo objetivo: desktop only — en mobile el panel de zona ya lo cubre. */}
       <section
         className={`game-float-card hidden rounded-2xl p-3 sm:p-3.5 lg:block ${
-          gymReady ? "ring-1 ring-[#ffcb05]/40" : "ring-1 ring-[#ff8a00]/28"
+          gymReady ? "ring-1 ring-electric-yellow/40" : "ring-1 ring-[#ff8a00]/28"
         }`}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0 flex-1">
             <p
               className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                gymReady ? "text-[#ffcb05]" : "text-[#ff8a00]"
+                gymReady ? "text-electric-yellow" : "text-[#ff8a00]"
               }`}
             >
               {t("nextObjective")}
@@ -150,7 +150,7 @@ export function CampaignPrimaryObjective({
               <div className="mt-2.5">
                 <div className="mb-1 flex items-center justify-between gap-2 text-[11px] text-white/50">
                   <span>{t("objectiveProgress")}</span>
-                  <span className="font-mono text-[#ffcb05]">
+                  <span className="font-mono text-electric-yellow">
                     {progressCurrent}/{progressTarget}
                   </span>
                 </div>
@@ -175,7 +175,7 @@ export function CampaignPrimaryObjective({
                   <li
                     key={req.id}
                     className={`flex items-start gap-1.5 text-[12px] ${
-                      req.completed ? "text-[#ffcb05]" : "text-white/50"
+                      req.completed ? "text-electric-yellow" : "text-white/50"
                     }`}
                   >
                     <span className="material-symbols-outlined mt-0.5 text-[15px]!">

@@ -22,7 +22,7 @@ export async function TradeTabs({ active }: { active: "shop" | "market" }) {
           aria-current={active === entry.id ? "page" : undefined}
           className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-label-sm font-semibold transition ${
             active === entry.id
-              ? "bg-pokeball-red text-white shadow-[0_4px_14px_rgba(238,21,21,0.3)]"
+              ? "bg-white/12 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16)]"
               : "text-on-surface-variant hover:bg-white/[0.05] hover:text-on-surface"
           }`}
         >

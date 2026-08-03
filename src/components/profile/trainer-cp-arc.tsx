@@ -33,7 +33,7 @@ export function TrainerCpArc({
 
   return (
     <>
-      {/* PC + número: rótulo en Barlow, cifra en Oxanium (ver `.tp-id__cp-*`). */}
+      {/* PC + número: rótulo Inter, cifra mono (ver `.tp-id__cp-*`). */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] flex items-baseline justify-center gap-2 pt-0.5">
         <p className="tp-id__cp-label text-[0.95rem] uppercase leading-none tracking-[0.22em] text-white/45 sm:text-[1.05rem]">
           {label}
