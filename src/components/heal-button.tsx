@@ -72,7 +72,7 @@ export function HealButton({
   const btnSize = compact
     ? "game-cta !mb-0 !min-h-10 !w-auto !min-w-[9.75rem] !px-3 !py-2 !text-[0.78rem]"
     : stretch
-      ? "game-cta !mb-0 !min-h-10 w-full sm:!w-auto sm:!min-w-[11rem]"
+      ? "game-cta !mb-0 !min-h-10 w-full !px-3 !py-2 !text-[0.85rem] sm:!w-auto sm:!min-w-[11rem] sm:!px-[1.1rem] sm:!py-[0.55rem] sm:!text-[0.95rem]"
       : "game-cta !mb-0 !w-auto !min-w-[11rem]";
 
   const hintAlign = stretch || compact ? "text-center sm:text-right" : "text-right";
@@ -103,7 +103,7 @@ export function HealButton({
           <ChanseyIcon className="game-cta__icon h-5 w-5 opacity-70" />
           <span className="game-cta__label">{t("autoHeal")}</span>
         </button>
-        {!compact && noviceFree ? (
+        {!compact && !stretch && noviceFree ? (
           <span className={`whitespace-nowrap text-[10px] font-medium text-emerald-400/90 ${hintAlign}`}>
             {t("healNoviceFree", { level: HEAL_FREE_UNTIL_LEVEL })}
           </span>
@@ -142,7 +142,9 @@ export function HealButton({
         </button>
       )}
 
-      {!compact &&
+      {/* En stretch (hub Equipo) y compact (lobby) no mostramos "cura gratis":
+          el botón ya lo comunica y el hint desalineaba Manage / CTAs vecinos. */}
+      {!compact && !stretch &&
         (noviceFree ? (
           <span className={`whitespace-nowrap text-[10px] font-medium text-emerald-400/90 ${hintAlign}`}>
             {t("healNoviceFree", { level: HEAL_FREE_UNTIL_LEVEL })}
@@ -157,8 +159,8 @@ export function HealButton({
           </span>
         ))}
 
-      {compact && onCooldown ? (
-        <span className="text-center text-[9px] text-on-surface-variant">
+      {(compact || stretch) && onCooldown ? (
+        <span className={`text-[9px] text-on-surface-variant ${compact ? "text-center" : hintAlign}`}>
           {t("healCooldown", { minutes: minutesLeft(cooldownMsLeft) })}
         </span>
       ) : null}

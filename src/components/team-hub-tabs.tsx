@@ -131,7 +131,7 @@ export function TeamHubTabs({
   return (
     <div
       ref={rootRef}
-      className="relative mb-3 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1 md:mb-5"
+      className="relative mb-2 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1 md:mb-5"
     >
       {indicator ? (
         <span

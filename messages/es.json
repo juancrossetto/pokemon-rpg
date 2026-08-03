@@ -2688,6 +2688,11 @@
         "La Tienda vende al sistema con monedas.",
         "El Mercado es entre jugadores (publicaciones y comisión).",
         "Usá las pestañas para saltar entre ambos."
+      ],
+      "team": [
+        "Curá el escuadrón en el Centro Pokémon (gratis con cooldown, o pagá para saltearlo).",
+        "Asigná los puntos de cada miembro para subir sus estadísticas.",
+        "Gestioná el PC y la guardería desde la otra pestaña."
       ]
     },
     "energyEmptyTitle": "Sin energía",

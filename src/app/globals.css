@@ -3743,10 +3743,12 @@ html.boot-splash-pending .boot-splash {
   }
 }
 
-/* Tabs Equipo | PC: pastilla roja sólida con rebote pegajoso. */
+/* Tabs Equipo | PC: pastilla neutra elevada (selección sin rojo). */
 .team-hub-tab-active-bg {
-  background: var(--color-pokeball-red, #ee1515);
-  box-shadow: 0 4px 14px rgba(238, 21, 21, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
 .team-hub-tab-active-bg--animate {

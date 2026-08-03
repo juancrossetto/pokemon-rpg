@@ -14,7 +14,7 @@ import { RENAME_COST } from "@/lib/nickname";
 import { TeamRoster, type TeamMember } from "@/components/team-roster";
 import { TeamHubTabs } from "@/components/team-hub-tabs";
 import { PcTab } from "./pc-tab";
-import { HandbookLink } from "@/components/handbook/handbook-trigger";
+import { HubHelpButton } from "@/components/journey-guidance";
 import { resolveItemDisplayName } from "@/lib/shop";
 
 const TEAM_SIZE = 6;
@@ -41,10 +41,11 @@ export default async function TeamPage({
   const query = await searchParams;
   const { teach: teachParam, member: memberParam } = query;
   const tab: "squad" | "pc" = query.tab === "pc" ? "pc" : "squad";
-  const [t, tMenu, tShop, session] = await Promise.all([
+  const [t, tMenu, tShop, tUx, session] = await Promise.all([
     getTranslations("team"),
     getTranslations("home.squadMenu"),
     getTranslations("shop"),
+    getTranslations("ux"),
     auth(),
   ]);
 
@@ -267,29 +268,44 @@ export default async function TeamPage({
     <div className="flex-1 px-margin-mobile py-3 md:px-margin-desktop md:py-8">
       <div className="mx-auto max-w-6xl">
         {tabBar}
-        <header className="mb-3 flex flex-col gap-2.5 md:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+        <header className="mb-2 flex flex-col gap-1.5 md:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
           <div className="min-w-0">
             <p className="mb-0.5 hidden items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90 sm:flex">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               {t("activeSquad")}
             </p>
-            <h1 className="page-title text-[1.35rem] text-white md:text-headline-lg">
-              {t("title")}
-            </h1>
-            <p className="mt-0.5 text-[12px] leading-snug text-on-surface-variant md:text-label-md">
-              {t("rosterSummary", { ready: healthyCount, total: pokemon.length })}
-              {totalUnspent > 0 && (
-                <span className="ml-1.5 text-tertiary md:ml-2">
-                  · {t("unspentPoints", { count: totalUnspent })}
-                </span>
-              )}
-            </p>
-            <div className="mt-1.5">
-              <HandbookLink chapter="battle" />
+            <div className="flex items-center justify-between gap-2">
+              <h1 className="page-title text-[1.25rem] leading-none text-white md:text-headline-lg">
+                {t("title")}
+              </h1>
+              <HubHelpButton
+                bullets={tUx.raw("help.team") as string[]}
+                handbookChapter="journey"
+                roleKey="team"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white/85 backdrop-blur-md transition hover:border-white/35 hover:bg-black/60 hover:text-white sm:h-8 sm:w-8"
+              />
             </div>
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-snug text-on-surface-variant md:text-label-md">
+              <span>{t("rosterSummary", { ready: healthyCount, total: pokemon.length })}</span>
+              {totalUnspent > 0 ? (
+                <span className="inline-flex items-center gap-0.5 text-tertiary">
+                  <span className="text-on-surface-variant/40" aria-hidden>
+                    ·
+                  </span>
+                  <span className="material-symbols-outlined text-[13px]!">bolt</span>
+                  <span className="font-medium tabular-nums">
+                    {t("unspentPoints", { count: totalUnspent })}
+                  </span>
+                </span>
+              ) : null}
+            </p>
           </div>
 
-          <div className="grid w-full grid-cols-2 items-start gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          {/*
+            En mobile, Gestionar duplica la tab "PC y Guardería": se oculta y el
+            Centro Pokémon ocupa el ancho. En sm+ conviven como par de CTAs.
+          */}
+          <div className="grid w-full grid-cols-1 items-stretch gap-2 sm:flex sm:w-auto sm:grid-cols-none">
             <HealButton
               locale={locale}
               needsHealing={needsHealing}
@@ -301,9 +317,9 @@ export default async function TeamPage({
             />
             <Link
               href="/team?tab=pc"
-              className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-md border border-white/12 bg-white/[0.03] px-3 py-2 text-[13px] text-on-surface transition hover:border-white/25 hover:bg-white/[0.06] sm:w-auto sm:px-4 sm:text-label-sm"
+              className="hidden min-h-[2.75rem] items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-white/[0.06] px-4 font-[family-name:var(--font-lilita)] text-[0.95rem] uppercase tracking-[0.04em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:border-white/35 hover:bg-white/[0.1] active:scale-[0.985] sm:inline-flex sm:w-auto sm:min-w-[11rem]"
             >
-              <span className="material-symbols-outlined text-[16px]!">storage</span>
+              <span className="material-symbols-outlined text-[18px]!">inventory_2</span>
               {t("manage")}
             </Link>
           </div>

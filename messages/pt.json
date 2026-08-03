@@ -2688,6 +2688,11 @@
         "A Loja vende do sistema com moedas.",
         "O Mercado é entre jogadores (anúncios e taxa).",
         "Use as abas para pular entre os dois."
+      ],
+      "team": [
+        "Cure o esquadrão no Centro Pokémon (grátis com cooldown, ou pague para pular).",
+        "Distribua os pontos de cada membro para subir as estatísticas.",
+        "Gerencie o PC e a Creche na outra aba."
       ]
     },
     "energyEmptyTitle": "Sem energia",

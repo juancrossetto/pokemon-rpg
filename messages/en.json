@@ -2688,6 +2688,11 @@
         "The Shop sells from the system for coins.",
         "The Market is player-to-player (listings and fees).",
         "Use the tabs to jump between both."
+      ],
+      "team": [
+        "Heal the squad at the Pokémon Center (free with a cooldown, or pay to skip it).",
+        "Spend each member's points to raise their battle stats.",
+        "Manage the PC and Daycare from the other tab."
       ]
     },
     "energyEmptyTitle": "Out of energy",
