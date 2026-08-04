@@ -310,13 +310,13 @@
       },
       "dailyActions": {
         "title": "Acciones diarias",
-        "statusAvailable": "Disponible",
+        "statusAvailable": "Nuevo",
         "statusDone": "Hecho",
         "statusReady": "Listo",
         "statusBadges": "{count}/{total}",
         "statusStreakDay": "Día {n}",
         "items": {
-          "daily": "Regalo diario",
+          "daily": "Regalo",
           "pvp": "PvP",
           "gyms": "Gimnasio",
           "streak": "Racha",
