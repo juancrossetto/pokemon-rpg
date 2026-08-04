@@ -9,6 +9,7 @@ import { BootSplashMarkup } from "@/components/boot-splash-markup";
 import { InlineScript } from "@/components/inline-script";
 import { bootSplashEarlyScript } from "@/lib/boot-splash";
 import { iconsReadyEarlyScript } from "@/lib/icons-ready";
+import { standaloneEarlyScript } from "@/lib/standalone-early";
 import { AppShell } from "@/components/app-shell";
 import { AppToastViewport } from "@/components/app-toast-viewport";
 import "../globals.css";
@@ -89,12 +90,19 @@ export default async function LocaleLayout({
           rel="stylesheet"
         />
         <link rel="preload" href="/splash/boot.webp" as="image" />
+        {/* standalone ANTES que el splash: la nav fija necesita la clase en el
+            primer paint o en iOS queda el hueco y después salta. */}
+        <InlineScript id="standalone-early" html={standaloneEarlyScript()} />
         <InlineScript
           id="boot-splash-early"
           html={`${bootSplashEarlyScript()}(${iconsReadyEarlyScript()})();`}
         />
       </head>
-      <body className="relative flex min-h-full flex-col overflow-x-clip">
+      <body
+        className="relative flex min-h-full flex-col overflow-x-clip"
+        // standalone-early puede agregar `is-standalone` antes de hidratar.
+        suppressHydrationWarning
+      >
         <BootSplashMarkup />
         <BootSplashController />
 

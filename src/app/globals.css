@@ -9882,7 +9882,8 @@ html.boot-splash-pending .boot-splash {
      físico con margen negativo + padding de safe-area, y el dock ya no
      vuelve a sumar ese inset (evitar doble hueco).
 
-  `.is-standalone` lo pone MobileChrome en <html> y <body>.
+  `.is-standalone` lo pone el script early-in-head (`standalone-early`) y
+  MobileChrome lo refuerza sin removerlo al desmontar (evita el flash del hueco).
 */
 @media all and (display-mode: standalone) {
   html {
@@ -9940,7 +9941,7 @@ html.is-standalone {
   background-color: var(--color-background);
 }
 
-body.is-standalone {
+html.is-standalone body {
   min-height: 100%;
   min-height: -webkit-fill-available;
   height: 100%;
@@ -9949,7 +9950,7 @@ body.is-standalone {
   overscroll-behavior-y: none;
 }
 
-body.is-standalone .app-main {
+html.is-standalone .app-main {
   min-height: 0;
   overflow-x: clip;
   overflow-y: auto;
@@ -9957,14 +9958,12 @@ body.is-standalone .app-main {
   -webkit-overflow-scrolling: touch;
 }
 
-html.is-standalone .mobile-top-chrome,
-body.is-standalone .mobile-top-chrome {
+html.is-standalone .mobile-top-chrome {
   transform: translateZ(0);
   backface-visibility: hidden;
 }
 
-html.is-standalone .mobile-bottom-nav,
-body.is-standalone .mobile-bottom-nav {
+html.is-standalone .mobile-bottom-nav {
   bottom: 0;
   margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -9973,8 +9972,7 @@ body.is-standalone .mobile-bottom-nav {
   backface-visibility: hidden;
 }
 
-html.is-standalone .mobile-bottom-nav__dock,
-body.is-standalone .mobile-bottom-nav__dock {
+html.is-standalone .mobile-bottom-nav__dock {
   padding-bottom: 0.4rem;
 }
 

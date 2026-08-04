@@ -385,17 +385,13 @@ export function MobileChrome({
     }
   }, [primary]);
 
-  // Clase en <html>/<body> para CSS de standalone también cuando sólo hay
-  // navigator.standalone (Safari iOS viejo sin display-mode). En body hace
-  // falta para ganar a `overflow-x-clip` de Tailwind y bloquear el rubber-band.
+  // Clase en <html>/<body> por si el early script no corrió (soft-nav) o sólo
+  // hay navigator.standalone. NO removemos al cleanup: en remount (Strict /
+  // refresh) el remove→add dejaba un frame con hueco bajo la nav.
   useEffect(() => {
     if (!isStandalone()) return;
     document.documentElement.classList.add("is-standalone");
     document.body.classList.add("is-standalone");
-    return () => {
-      document.documentElement.classList.remove("is-standalone");
-      document.body.classList.remove("is-standalone");
-    };
   }, []);
 
   // Habilita transitions de tabs tras asentar el layout (más lento en PWA
