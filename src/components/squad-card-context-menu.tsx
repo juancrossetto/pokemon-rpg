@@ -175,14 +175,21 @@ export function SquadCardContextMenu({
     onPpRestored,
     onFlagsChange,
   });
-  const { counts, busy, feedback, toast, fx, fxMeta } = actions;
+  const { counts, busy, candyPending, feedback, toast, fx, fxMeta, levelOffers } =
+    actions;
 
   useEffect(() => {
     if (!menu) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenu(null);
+      if (e.key === "Escape") {
+        if (levelOffers) return;
+        setMenu(null);
+      }
     };
     const onPointer = (e: MouseEvent | PointerEvent) => {
+      // Mientras el modal de level-up está arriba, un click en "Continuar"
+      // no debe cerrar el ⋮ — hace falta para encadenar carameloraros.
+      if (levelOffers) return;
       if (menuRef.current?.contains(e.target as Node)) return;
       if (rootRef.current?.contains(e.target as Node) && (e as MouseEvent).button === 2) return;
       setMenu(null);
@@ -193,7 +200,7 @@ export function SquadCardContextMenu({
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("mousedown", onPointer);
     };
-  }, [menu]);
+  }, [menu, levelOffers]);
 
   function openAt(clientX: number, clientY: number) {
     const pad = 8;
@@ -277,21 +284,21 @@ export function SquadCardContextMenu({
             itemName={counts.healItemName}
             label={labels.heal}
             count={counts.heal}
-            disabled={busy}
+            disabled={busy || Boolean(levelOffers)}
             onSelect={actions.heal}
           />
           <ConsumableMenuItem
             itemName={counts.ppItemName}
             label={labels.restorePp}
             count={counts.leppa}
-            disabled={busy}
+            disabled={busy || Boolean(levelOffers)}
             onSelect={actions.restorePp}
           />
           <ConsumableMenuItem
             itemName="Rare Candy"
             label={labels.rareCandy}
             count={counts.rareCandy}
-            disabled={busy}
+            disabled={busy || candyPending || Boolean(levelOffers)}
             onSelect={actions.giveRareCandy}
           />
           {canTeach || canHold || canRename ? (

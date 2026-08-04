@@ -82,19 +82,21 @@ export function BattleOutcomeScreen({
       : outcome === "lost"
         ? t("resultLostTitle")
         : outcome === "caught"
-          ? caughtSentToPc
-            ? t("resultCaughtPc")
-            : t("resultCaught")
+          ? t("caughtTitle")
           : outcome === "trainer_cleared"
             ? t("resultTrainerCleared")
             : t("resultFled");
-  // El texto largo de derrota explica el próximo paso — va como bajada.
+  // Bajada en tipografía UI (no Grobold): detalles largos fuera del título display.
   const resultSubText =
     outcome === "lost"
       ? isTowerBattle
         ? t("resultLostTower")
         : t("resultLost")
-      : null;
+      : outcome === "caught"
+        ? caughtSentToPc
+          ? t("resultCaughtPcDetail")
+          : t("resultCaughtDetail")
+        : null;
   const ctaPrimary =
     "ui-btn-primary w-full max-w-sm px-4 py-2.5 text-[14px] font-semibold";
   const ctaSecondary =

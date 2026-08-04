@@ -1278,7 +1278,7 @@ body {
 }
 
 /* Cambio de Pokémon: recall (absorbido por la ball) + throw (ball
-   tirada, pulsando mientras "viaja") antes de que entre el reemplazo. */
+   tirada girando en arco) antes de que entre el reemplazo. */
 @keyframes sprite-recall {
   0% {
     transform: scale(1) translateY(0);
@@ -1310,98 +1310,258 @@ body {
   animation: pokeball-appear 0.25s ease-out, pokeball-pulse 0.7s ease-in-out 0.25s infinite;
 }
 
-/* Captura: throw en arco → aterriza en el piso del rival → N temblores →
-   click dorado (atrapado) o rotura (escapó).
-   En reposo usamos translate(-50%, -100%) para apoyar la base en el suelo. */
-@keyframes ball-throw-travel {
+/*
+  Enviar Pokémon — anclado a la plate del jugador (sombra = bottom center).
+  Viaja → apoya en el piso → pausa → se abre → sale el Pokémon.
+*/
+@keyframes ball-sendout-travel {
   0% {
-    left: 22%;
-    top: 82%;
+    left: -35%;
+    bottom: -45%;
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.55) rotate(0deg);
+    transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
   }
   10% {
     opacity: 1;
   }
-  55% {
-    left: 62%;
-    top: 22%;
-    transform: translate(-50%, -50%) scale(1.05) rotate(420deg);
+  40% {
+    left: 20%;
+    bottom: 55%;
+    transform: translate(-50%, -50%) scale(0.9) rotate(280deg);
+    filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.25));
+  }
+  70% {
+    left: 45%;
+    bottom: 22%;
+    transform: translate(-50%, -50%) scale(0.88) rotate(520deg);
+    filter: drop-shadow(0 6px 5px rgba(0, 0, 0, 0.35));
+  }
+  88% {
+    left: 50%;
+    bottom: 2%;
+    transform: translate(-50%, -100%) scale(0.9) rotate(680deg);
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
   }
   100% {
-    left: 76%;
-    top: 52%;
+    left: 50%;
+    bottom: 0;
     opacity: 1;
-    transform: translate(-50%, -100%) scale(1) rotate(720deg);
+    transform: translate(-50%, -100%) scale(0.84) rotate(720deg);
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5));
+  }
+}
+.ball-sendout-travel {
+  animation: ball-sendout-travel 0.68s cubic-bezier(0.2, 0.68, 0.18, 1) forwards;
+}
+
+.ball-sendout-land {
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, -100%) scale(0.84);
+  transform-origin: center bottom;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5));
+  animation: ball-sendout-land-bounce 0.28s ease-out both;
+}
+
+@keyframes ball-sendout-land-bounce {
+  0% {
+    transform: translate(-50%, -100%) scale(0.92) translateY(-10px);
+  }
+  55% {
+    transform: translate(-50%, -100%) scale(0.8) translateY(0);
+  }
+  78% {
+    transform: translate(-50%, -100%) scale(0.87) translateY(-3px);
+  }
+  100% {
+    transform: translate(-50%, -100%) scale(0.84) translateY(0);
+  }
+}
+
+.ball-sendout-land.is-opening {
+  animation: ball-sendout-open 0.3s ease-out forwards;
+}
+
+@keyframes ball-sendout-open {
+  0% {
+    transform: translate(-50%, -100%) scale(0.84);
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5)) brightness(1);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(-50%, -100%) scale(1.08);
+    filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.9)) brightness(1.85);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -100%) scale(1.4);
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.35)) brightness(2.2);
+    opacity: 0;
+  }
+}
+
+.ball-sendout-ground-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 48px;
+  height: 16px;
+  border-radius: 999px;
+  pointer-events: none;
+  transform: translate(-50%, 35%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 214, 120, 0.4) 45%,
+    transparent 72%
+  );
+  animation: ball-sendout-ground-glow 0.4s ease-out forwards;
+}
+
+@keyframes ball-sendout-ground-glow {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 35%) scale(0.35);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(-50%, 35%) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 35%) scale(1.7);
+  }
+}
+
+/* Destello blanco al abrir la ball (sacar Pokémon / absorber). */
+@keyframes ball-open-burst {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.35);
+  }
+  55% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.6);
+  }
+}
+.ball-open-burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 214, 120, 0.55) 35%,
+    transparent 70%
+  );
+  animation: ball-open-burst 0.32s ease-out forwards;
+}
+
+/* Captura — anclada a la plate del rival; aterriza sobre su sombra. */
+@keyframes ball-throw-travel {
+  0% {
+    left: -240%;
+    bottom: -120%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+  }
+  8% {
+    opacity: 1;
+  }
+  40% {
+    left: -80%;
+    bottom: 90%;
+    transform: translate(-50%, -50%) scale(0.95) rotate(320deg);
+  }
+  70% {
+    left: 15%;
+    bottom: 35%;
+    transform: translate(-50%, -50%) scale(0.9) rotate(560deg);
+  }
+  100% {
+    left: 50%;
+    bottom: 0;
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(0.88) rotate(720deg);
   }
 }
 .ball-throw-travel {
-  animation: ball-throw-travel 0.62s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: ball-throw-travel 0.52s cubic-bezier(0.2, 0.78, 0.22, 1) forwards;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.45));
 }
 
 .ball-capture-idle {
-  left: 76%;
-  top: 52%;
-  transform: translate(-50%, -100%);
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, -100%) scale(0.88);
   transform-origin: center bottom;
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
 }
 
 @keyframes ball-shake-once {
   0% {
-    transform: translate(-50%, -100%) rotate(0deg);
+    transform: translate(-50%, -100%) scale(0.88) rotate(0deg);
   }
-  18% {
-    transform: translate(-50%, -100%) rotate(-26deg);
+  20% {
+    transform: translate(-50%, -100%) scale(0.88) rotate(-22deg);
   }
-  36% {
-    transform: translate(-50%, -100%) rotate(22deg);
+  40% {
+    transform: translate(-50%, -100%) scale(0.88) rotate(18deg);
   }
-  54% {
-    transform: translate(-50%, -100%) rotate(-14deg);
+  60% {
+    transform: translate(-50%, -100%) scale(0.88) rotate(-12deg);
   }
-  72% {
-    transform: translate(-50%, -100%) rotate(8deg);
-  }
-  88% {
-    transform: translate(-50%, -100%) rotate(-3deg);
+  80% {
+    transform: translate(-50%, -100%) scale(0.88) rotate(6deg);
   }
   100% {
-    transform: translate(-50%, -100%) rotate(0deg);
+    transform: translate(-50%, -100%) scale(0.88) rotate(0deg);
   }
 }
 .ball-shake-once {
-  left: 76%;
-  top: 52%;
+  left: 50%;
+  bottom: 0;
   transform-origin: center bottom;
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
-  animation: ball-shake-once 0.72s ease-in-out;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+  animation: ball-shake-once 0.42s ease-in-out;
 }
 
 @keyframes ball-catch-flash {
   0% {
-    transform: translate(-50%, -100%) scale(1);
-    filter: drop-shadow(0 0 0 rgba(255, 214, 74, 0));
+    transform: translate(-50%, -100%) scale(0.88);
+    filter: drop-shadow(0 0 0 rgba(255, 214, 74, 0)) brightness(1);
   }
-  35% {
-    transform: translate(-50%, -100%) scale(1.35);
-    filter: drop-shadow(0 0 18px rgba(255, 214, 74, 0.95));
+  18% {
+    transform: translate(-50%, -100%) scale(1.22);
+    filter: drop-shadow(0 0 22px rgba(255, 230, 120, 1)) brightness(1.85);
+  }
+  42% {
+    transform: translate(-50%, -100%) scale(1.08);
+    filter: drop-shadow(0 0 28px rgba(255, 214, 74, 0.95)) brightness(1.55);
   }
   70% {
-    transform: translate(-50%, -100%) scale(1.12);
-    filter: drop-shadow(0 0 10px rgba(255, 214, 74, 0.7));
+    transform: translate(-50%, -100%) scale(1);
+    filter: drop-shadow(0 0 14px rgba(255, 214, 74, 0.75)) brightness(1.25);
   }
   100% {
-    transform: translate(-50%, -100%) scale(1.05);
-    opacity: 0.15;
-    filter: drop-shadow(0 0 4px rgba(255, 214, 74, 0.35));
+    transform: translate(-50%, -100%) scale(0.95);
+    opacity: 0.2;
+    filter: drop-shadow(0 0 6px rgba(255, 214, 74, 0.4)) brightness(1.1);
   }
 }
 .ball-catch-flash {
-  left: 76%;
-  top: 52%;
+  left: 50%;
+  bottom: 0;
   transform-origin: center bottom;
-  animation: ball-catch-flash 0.9s ease-out forwards;
+  animation: ball-catch-flash 0.68s ease-out forwards;
 }
 
 .ball-catch-ring {
@@ -1410,15 +1570,16 @@ body {
   top: 50%;
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(255, 214, 74, 0.9);
+  border: 2px solid rgba(255, 214, 74, 0.95);
   border-radius: 9999px;
   transform: translate(-50%, -50%) scale(0.4);
-  animation: ball-catch-ring 0.9s ease-out forwards;
+  animation: ball-catch-ring 0.68s ease-out forwards;
   pointer-events: none;
+  box-shadow: 0 0 12px rgba(255, 214, 74, 0.65);
 }
 .ball-catch-ring-delay {
-  animation-delay: 0.12s;
-  border-color: rgba(255, 255, 255, 0.7);
+  animation-delay: 0.08s;
+  border-color: rgba(255, 255, 255, 0.85);
 }
 @keyframes ball-catch-ring {
   0% {
@@ -1427,29 +1588,29 @@ body {
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(3.2);
+    transform: translate(-50%, -50%) scale(3.6);
   }
 }
 
 @keyframes ball-break {
   0% {
-    transform: translate(-50%, -100%) scale(1) rotate(0deg);
+    transform: translate(-50%, -100%) scale(0.88) rotate(0deg);
     opacity: 1;
   }
   35% {
-    transform: translate(-50%, -100%) scale(1.3) rotate(-12deg);
+    transform: translate(-50%, -100%) scale(1.1) rotate(-12deg);
     opacity: 1;
   }
   100% {
-    transform: translate(-50%, -100%) scale(0.35) rotate(18deg);
+    transform: translate(-50%, -100%) scale(0.3) rotate(18deg);
     opacity: 0;
   }
 }
 .ball-break {
-  left: 76%;
-  top: 52%;
+  left: 50%;
+  bottom: 0;
   transform-origin: center bottom;
-  animation: ball-break 0.52s ease-in forwards;
+  animation: ball-break 0.38s ease-in forwards;
 }
 
 .ball-break-burst {
@@ -1495,6 +1656,37 @@ body {
 }
 .sprite-absorb-ball {
   animation: sprite-absorb-ball 0.28s ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ball-throw-travel,
+  .ball-sendout-travel,
+  .ball-sendout-land-bounce,
+  .ball-sendout-open,
+  .ball-sendout-ground-glow,
+  .ball-open-burst,
+  .ball-shake-once,
+  .ball-catch-flash,
+  .ball-break,
+  .sprite-absorb-ball {
+    animation: none;
+  }
+
+  .ball-sendout-travel,
+  .ball-sendout-land {
+    left: 50%;
+    bottom: 0;
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(0.84);
+  }
+
+  .ball-throw-travel,
+  .ball-capture-idle {
+    left: 50%;
+    bottom: 0;
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(0.88);
+  }
 }
 
 @keyframes heal-glow {
@@ -2061,8 +2253,8 @@ body {
 }
 [data-battle-speed="2"] :is(.damage-popup, .eff-popup, .sprite-faint,
     .sprite-enter, .sprite-recall,
-    .ball-throw-travel, .ball-shake-once, .ball-catch-flash, .ball-break,
-    .sprite-absorb-ball, .sprite-heal) {
+    .ball-throw-travel, .ball-sendout-travel, .ball-sendout-land-bounce, .ball-sendout-open, .ball-shake-once, .ball-catch-flash, .ball-break,
+    .ball-open-burst, .ball-sendout-ground-glow, .sprite-absorb-ball, .sprite-heal) {
   animation-duration: 0.5s;
 }
 [data-battle-speed="2"] .move-banner {
@@ -2080,8 +2272,8 @@ body {
 }
 [data-battle-speed="3"] :is(.damage-popup, .eff-popup, .sprite-faint,
     .sprite-enter, .sprite-recall,
-    .ball-throw-travel, .ball-shake-once, .ball-catch-flash, .ball-break,
-    .sprite-absorb-ball, .sprite-heal) {
+    .ball-throw-travel, .ball-sendout-travel, .ball-sendout-land-bounce, .ball-sendout-open, .ball-shake-once, .ball-catch-flash, .ball-break,
+    .ball-open-burst, .ball-sendout-ground-glow, .sprite-absorb-ball, .sprite-heal) {
   animation-duration: 0.34s;
 }
 [data-battle-speed="3"] .move-banner {
@@ -2242,12 +2434,27 @@ body {
 .result-title {
   animation: result-title-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
   font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
-  font-size: clamp(1.55rem, 4.5vw, 2.15rem);
-  line-height: 1.05;
+  font-size: clamp(1.35rem, 5vw, 2.15rem);
+  line-height: 1.1;
   font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-wrap: balance;
+  max-width: 18ch;
+  margin-inline: auto;
+}
+
+@media (max-width: 639px) {
+  .result-title {
+    font-size: clamp(1.2rem, 6.2vw, 1.45rem);
+    max-width: 14ch;
+  }
+}
+
+.result-lede {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  text-transform: none;
+  letter-spacing: 0.01em;
 }
 
 .result-title--win {

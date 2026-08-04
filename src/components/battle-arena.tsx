@@ -19,7 +19,7 @@ import { getTypeEffectiveness } from "@/lib/type-effectiveness";
 import { typeColor } from "@/lib/type-colors";
 import { formatMoveName } from "@/lib/format-move-name";
 import { gymLeaderPortraitUrl } from "@/lib/gym-art";
-import { itemSpriteUrl } from "@/lib/item-sprites";
+import { itemDisplayUrl } from "@/lib/item-sprites";
 import {
   battleSfxForMove,
   playBattleSfx,
@@ -93,20 +93,28 @@ const STATUS_MS = 620;
 const MISS_MS = 500;
 /** Beat aparte para burn/poison: que no se confunda con el daño del golpe. */
 const RESIDUAL_MS = 720;
-const BALL_TRAVEL_MS = 620;
+const BALL_TRAVEL_MS = 520;
 /** Un temblor individual (izquierda-derecha-asienta). */
-const BALL_SHAKE_MS = 720;
+const BALL_SHAKE_MS = 420;
 /** Pausa entre temblores — genera tensión. */
-const BALL_SHAKE_GAP_MS = 320;
-const BALL_ABSORB_MS = 280;
-const BALL_CATCH_MS = 900;
-const BALL_BREAK_MS = 520;
+const BALL_SHAKE_GAP_MS = 140;
+/** Absorción mínima; corre en paralelo al resultado del server. */
+const BALL_ABSORB_MS = 90;
+const BALL_CATCH_MS = 680;
+const BALL_BREAK_MS = 380;
 const FAINT_MS = 1100;
 const RECALL_MS = 450;
 const ITEM_USE_MS = 550;
 /** Brillo verde de curación (Recover, drenaje, Rest). */
 const HEAL_PULSE_MS = 560;
-const SEND_OUT_BALL_MS = 700; // cuánto se ve solo la pokeball, antes de revelar al Pokémon inicial
+/** Viaje de la ball al enviar Pokémon. */
+const SEND_OUT_TRAVEL_MS = 680;
+/** La ball queda apoyada en el piso antes de abrirse. */
+const SEND_OUT_LAND_MS = 280;
+/** Destello de apertura antes de revelar el sprite. */
+const SEND_OUT_OPEN_MS = 300;
+const SEND_OUT_BALL_MS = SEND_OUT_TRAVEL_MS + SEND_OUT_LAND_MS + SEND_OUT_OPEN_MS;
+const SEND_OUT_BALL_SRC = itemDisplayUrl("Poke Ball", "hd");
 /** Banner del poder: más largo que el golpe para que el slide se lea. */
 const MOVE_BANNER_MS = 2400;
 
@@ -341,7 +349,7 @@ export function BattleArena({
   const [badgeEarned, setBadgeEarned] = useState(false);
   const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [tmRewardName, setTmRewardName] = useState<string | null>(null);
-  const [ballAnim, setBallAnim] = useState<"recall" | "throw" | null>("throw");
+  const [ballAnim, setBallAnim] = useState<"recall" | "throw" | "land" | "open" | null>("throw");
   // Quién está brillando de curación: objeto del jugador, Recover o drenaje.
   const [healingTarget, setHealingTarget] = useState<{
     side: "player" | "wild";
@@ -472,17 +480,24 @@ export function BattleArena({
     return () => observer.disconnect();
   }, []);
 
-  // Al iniciar la batalla: el rival aparece primero, y un instante después
-  // se tira la ball del jugador — se ve SOLO la ball viajando durante
-  // SEND_OUT_BALL_MS antes de revelar al Pokémon, en vez de mostrar ambos
-  // sprites a la vez. Solo pasa una vez, al montar.
+  // Al iniciar: rival entra → ball viaja → apoya en el piso → se abre → sale el Pokémon.
   useEffect(() => {
     const wildTimer = setTimeout(() => setWildEntering(false), 400);
+    playBattleSfx("ball");
+    const landTimer = setTimeout(() => {
+      setBallAnim("land");
+    }, SEND_OUT_TRAVEL_MS);
+    const openTimer = setTimeout(() => {
+      setBallAnim("open");
+      playBattleSfx("ball");
+    }, SEND_OUT_TRAVEL_MS + SEND_OUT_LAND_MS);
     const revealTimer = setTimeout(() => setPlayerHidden(false), SEND_OUT_BALL_MS);
     const enterClearTimer = setTimeout(() => setPlayerEntering(false), SEND_OUT_BALL_MS + 400);
-    const ballTimer = setTimeout(() => setBallAnim(null), SEND_OUT_BALL_MS + 150);
+    const ballTimer = setTimeout(() => setBallAnim(null), SEND_OUT_BALL_MS + 120);
     return () => {
       clearTimeout(wildTimer);
+      clearTimeout(landTimer);
+      clearTimeout(openTimer);
       clearTimeout(revealTimer);
       clearTimeout(enterClearTimer);
       clearTimeout(ballTimer);
@@ -1917,9 +1932,11 @@ export function BattleArena({
     setCaptureBall("throw");
     await delay(BALL_TRAVEL_MS);
     setCaptureBall("idle");
-    await delay(BALL_ABSORB_MS);
+    playBattleSfx("ball");
 
-    const result = await resultPromise;
+    // Absorber + server en paralelo: los temblores arrancan apenas la ball
+    // cerró y ya tenemos el roll (sin cola serial absorb → await result).
+    const [result] = await Promise.all([resultPromise, delay(BALL_ABSORB_MS)]);
     if (!result) {
       setBallStacks(prevBalls);
       setCaptureBall(null);
@@ -2056,7 +2073,13 @@ export function BattleArena({
     // pierde la clase sprite-recall y el Pokémon viejo reaparece un frame.
     setPlayerHidden(true);
     setBallAnim("throw");
-    await delay(SEND_OUT_BALL_MS * 0.45);
+    playBattleSfx("ball");
+    await delay(SEND_OUT_TRAVEL_MS);
+    setBallAnim("land");
+    await delay(SEND_OUT_LAND_MS);
+    setBallAnim("open");
+    playBattleSfx("ball");
+    await delay(SEND_OUT_OPEN_MS);
 
     const result = await switchPokemon(battleId, member.instanceId, locale, forced);
     if (!result) {
@@ -2499,38 +2522,6 @@ export function BattleArena({
               />
             )}
 
-            {captureBall && captureBallName && (
-              <div
-                key={`${captureBall}-${captureShakeKey}`}
-                className={`absolute pointer-events-none z-20 ${
-                  captureBall === "throw"
-                    ? "ball-throw-travel w-10 h-10"
-                    : captureBall === "idle"
-                      ? "ball-capture-idle w-9 h-9"
-                      : captureBall === "wobble"
-                        ? "ball-shake-once w-9 h-9"
-                        : captureBall === "success"
-                          ? "ball-catch-flash w-11 h-11"
-                          : "ball-break w-10 h-10"
-                }`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element -- item sprite CDN */}
-                <img
-                  src={itemSpriteUrl(captureBallName)}
-                  alt=""
-                  aria-hidden
-                  className="w-full h-full object-contain [image-rendering:pixelated] drop-shadow-[0_4px_8px_rgba(0,0,0,0.45)]"
-                />
-                {captureBall === "success" && (
-                  <>
-                    <span className="ball-catch-ring" aria-hidden />
-                    <span className="ball-catch-ring ball-catch-ring-delay" aria-hidden />
-                  </>
-                )}
-                {captureBall === "fail" && <span className="ball-break-burst" aria-hidden />}
-              </div>
-            )}
-
             {effPopup && (
               <span
                 key={`eff-${effPopup.key}`}
@@ -2563,7 +2554,48 @@ export function BattleArena({
               role={view === "targets" ? "button" : undefined}
               tabIndex={view === "targets" && wildHp > 0 ? 0 : undefined}
             >
-              <span className="sprite-ground-shadow sprite-ground-shadow-wild absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
+              {/* Sombra solo mientras el salvaje está en el campo. */}
+              {!wildAbsorbedByBall ? (
+                <span
+                  className="sprite-ground-shadow sprite-ground-shadow-wild absolute left-1/2 bottom-0 -translate-x-1/2"
+                  aria-hidden
+                />
+              ) : null}
+              {/* Ball de captura: viaje + reposo sobre la sombra del rival. */}
+              {captureBall && captureBallName && (
+                  <div
+                    key={`${captureBall}-${captureShakeKey}`}
+                    className={`absolute z-20 w-6 h-6 pointer-events-none md:w-7 md:h-7 ${
+                      captureBall === "throw"
+                        ? "ball-throw-travel"
+                        : captureBall === "idle"
+                          ? "ball-capture-idle"
+                          : captureBall === "wobble"
+                            ? "ball-shake-once"
+                            : captureBall === "success"
+                              ? "ball-catch-flash"
+                              : "ball-break"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={itemDisplayUrl(captureBallName, "hd")}
+                      alt=""
+                      aria-hidden
+                      className="h-full w-full object-contain drop-shadow-[0_3px_6px_rgba(0,0,0,0.5)]"
+                    />
+                    {captureBall === "idle" && captureShakeKey === 0 ? (
+                      <span className="ball-open-burst" aria-hidden />
+                    ) : null}
+                    {captureBall === "success" && (
+                      <>
+                        <span className="ball-catch-ring" aria-hidden />
+                        <span className="ball-catch-ring ball-catch-ring-delay" aria-hidden />
+                      </>
+                    )}
+                    {captureBall === "fail" && <span className="ball-break-burst" aria-hidden />}
+                  </div>
+                )}
               {damagePopup?.side === "wild" && damagePopup.lane === "A" && (
                 <span
                   key={damagePopup.key}
@@ -2684,7 +2716,38 @@ export function BattleArena({
                 opacity: playerHp <= 0 ? 0.35 : 1,
               }}
             >
-              <span className="sprite-ground-shadow sprite-ground-shadow-player absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
+              {/* Sombra del jugador: con el Pokémon en campo, o bajo la ball apoyada. */}
+              {(!playerHidden || ballAnim === "land" || ballAnim === "open") && (
+                <span
+                  className="sprite-ground-shadow sprite-ground-shadow-player absolute left-1/2 bottom-0 -translate-x-1/2"
+                  aria-hidden
+                />
+              )}
+              {(ballAnim === "throw" || ballAnim === "land" || ballAnim === "open") && (
+                <div
+                  className={`absolute z-20 h-7 w-7 pointer-events-none md:h-8 md:w-8 ${
+                    ballAnim === "throw"
+                      ? "ball-sendout-travel"
+                      : ballAnim === "land"
+                        ? "ball-sendout-land"
+                        : "ball-sendout-land is-opening"
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={SEND_OUT_BALL_SRC}
+                    alt=""
+                    aria-hidden
+                    className="h-full w-full object-contain"
+                  />
+                  {ballAnim === "open" ? (
+                    <>
+                      <span className="ball-open-burst" aria-hidden />
+                      <span className="ball-sendout-ground-glow" aria-hidden />
+                    </>
+                  ) : null}
+                </div>
+              )}
               {damagePopup?.side === "player" && damagePopup.lane === "A" && (
                 <span
                   key={damagePopup.key}
@@ -2723,15 +2786,6 @@ export function BattleArena({
                   className={playerSpriteClass}
                   style={shakeStyle("player", "A")}
                 />
-              )}
-              {ballAnim && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <PokeballIcon
-                    className={`w-10 h-10 drop-shadow-[0_0_8px_rgba(238,21,21,0.6)] ${
-                      ballAnim === "throw" ? "pokeball-throw-icon" : "pokeball-appear-icon"
-                    }`}
-                  />
-                </div>
               )}
             </div>
 

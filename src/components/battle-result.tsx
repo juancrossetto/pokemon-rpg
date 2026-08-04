@@ -321,7 +321,7 @@ export function BattleResult({
   return createPortal(
     <BattleResultLeaveContext.Provider value={leave}>
       <div
-        className={`battle-result-overlay fixed inset-0 z-80 flex items-center justify-center overflow-hidden px-margin-mobile py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]${
+        className={`battle-result-overlay fixed inset-0 z-[90] flex items-center justify-center overflow-hidden px-margin-mobile py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]${
           leaving ? " is-leaving" : ""
         }`}
         role="dialog"
@@ -335,7 +335,7 @@ export function BattleResult({
         />
 
         <div
-          className={`result-in relative z-10 my-auto max-h-[min(calc(100dvh-1.5rem),48rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-xl ${cardSurface}`}
+          className={`result-in relative z-10 my-auto flex max-h-[min(calc(100dvh-1.5rem),48rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-xl ${cardSurface}`}
         >
           <div
             className={`pointer-events-none absolute inset-x-0 top-0 h-28 ${cardTopGlow} blur-2xl`}
@@ -348,7 +348,7 @@ export function BattleResult({
             />
           ) : null}
 
-          <div className="relative px-4 py-5 md:px-6 md:py-6">
+          <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 md:px-6 md:py-6">
             <div className="flex flex-col items-center gap-2.5">
               <span
                 className={`result-outcome-mark inline-flex items-center gap-2 result-outcome-mark--${headlineTone}`}
@@ -376,12 +376,12 @@ export function BattleResult({
               </p>
               <h1
                 id="battle-result-title"
-                className={`page-title result-title result-title--${headlineTone} text-center`}
+                className={`result-title result-title--${headlineTone} text-center`}
               >
                 {resultText}
               </h1>
               {subText ? (
-                <p className="mx-auto max-w-md text-center text-[0.95rem] leading-snug text-white/55">
+                <p className="result-lede mx-auto max-w-sm text-center text-[13px] leading-relaxed text-white/60 md:max-w-md md:text-[0.95rem]">
                   {subText}
                 </p>
               ) : null}

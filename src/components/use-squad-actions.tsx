@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -128,15 +129,29 @@ export function useSquadActions({
   const [fx, setFx] = useState<SquadItemFxState | null>(null);
   const [levelOffers, setLevelOffers] = useState<LevelUpOfferEntry[] | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Lock corto anti doble-tap del caramelo (no espera al server). */
   const [candyPending, setCandyPending] = useState(false);
   const counts = bagCounts;
   /** Nivel optimista local para encadenar carameloraros sin esperar al server. */
   const levelRef = useRef(level);
+  /** Mochila optimista: clicks seguidos no deben leer `counts` stale del render. */
+  const bagRef = useRef(bagCounts);
+  /** Cola serial del server action — evita carreras de nivel en paralelo. */
+  const candyChainRef = useRef(Promise.resolve());
+  const levelOffersRef = useRef<LevelUpOfferEntry[] | null>(null);
   const inFlightRef = useRef(0);
 
   useEffect(() => {
     levelRef.current = level;
   }, [level]);
+
+  useEffect(() => {
+    bagRef.current = bagCounts;
+  }, [bagCounts]);
+
+  useEffect(() => {
+    levelOffersRef.current = levelOffers;
+  }, [levelOffers]);
 
   useEffect(() => {
     if (!fx) return;
@@ -301,13 +316,12 @@ export function useSquadActions({
   }
 
   /**
-   * Un caramelo a la vez. El menú **no** se cierra al usarlo: si querés subir
-   * varios niveles seguidos, volver a abrir el ⋮ cada vez era un peaje. Sólo
-   * se cierra cuando aparece el modal de movimientos/evolución, que necesita
-   * la pantalla entera.
+   * Carameloraro optimista: la UI sube al toque. El server va en cola serial
+   * (sin carreras de nivel). El ítem del menú sólo se bloquea ~280ms anti
+   * doble-tap — no espera el round-trip de segundos.
    */
   function giveRareCandy() {
-    if (busy || levelOffers || candyPending) return;
+    if (levelOffersRef.current || candyPending) return;
     setFeedback(null);
     const levelBefore = levelRef.current ?? level;
     if (levelBefore != null && levelBefore >= 100) {
@@ -318,19 +332,26 @@ export function useSquadActions({
       setFeedback({ kind: "error", text: tMenu("maxLevel") });
       return;
     }
-    if (counts.rareCandy <= 0) {
+    const bagSnapshot = bagRef.current;
+    if (bagSnapshot.rareCandy <= 0) {
       setFeedback({ kind: "error", text: tMenu("noCandy") });
       return;
     }
 
-    const bagBefore = counts;
     const hpBefore = currentHp;
     const maxBefore = maxHp;
     const optimisticLevel = levelBefore != null ? levelBefore + 1 : null;
 
-    setBusy(true);
     setCandyPending(true);
-    bump("rareCandy");
+    window.setTimeout(() => setCandyPending(false), 280);
+
+    const nextBag = {
+      ...bagSnapshot,
+      rareCandy: Math.max(0, bagSnapshot.rareCandy - 1),
+    };
+    bagRef.current = nextBag;
+    onBagChange?.(nextBag);
+
     if (optimisticLevel != null) {
       levelRef.current = optimisticLevel;
       if (hpBefore != null && maxBefore != null) {
@@ -339,62 +360,79 @@ export function useSquadActions({
     }
     playItemFx("candy", optimisticLevel != null ? `Lv. ${optimisticLevel}` : "+1 Lv");
 
-    void consumeRareCandy(instanceId, locale)
-      .then((result) => {
+    candyChainRef.current = candyChainRef.current
+      .then(async () => {
+        const result = await consumeRareCandy(instanceId, locale);
         if (!result.ok) {
-          onBagChange?.(bagBefore);
-          if (levelBefore != null && hpBefore != null && maxBefore != null) {
-            levelRef.current = levelBefore;
-            onLeveledUp?.({ level: levelBefore, currentHp: hpBefore, maxHp: maxBefore });
-          }
+          const restored = {
+            ...bagRef.current,
+            rareCandy: bagRef.current.rareCandy + 1,
+          };
+          bagRef.current = restored;
+          onBagChange?.(restored);
+          softRefresh();
           setFx(null);
           setToast({
             kind: "error",
             text: result.error === "max_level" ? tMenu("maxLevel") : tMenu("noCandy"),
           });
-          setCandyPending(false);
-          setBusy(false);
           return;
         }
-        levelRef.current = result.newLevel;
+
+        const syncedLevel = Math.max(levelRef.current ?? 0, result.newLevel);
+        levelRef.current = syncedLevel;
         onLeveledUp?.({
-          level: result.newLevel,
+          level: syncedLevel,
           currentHp: result.currentHp,
           maxHp: result.maxHp,
         });
+
         const hasOffers =
           result.autoTaught.length > 0 ||
           result.pendingMoves.length > 0 ||
           result.evolveOffer != null;
-        setCandyPending(false);
-        if (hasOffers) {
-          // Modal de ofertas: ahí sí cerramos el menú contextual.
-          onBeforeAction?.();
-          // Se mantiene `busy` hasta dismissLevelOffers.
-          setLevelOffers([
-            {
-              instanceId,
-              name: result.pokemonName || pokemonName || "Pokémon",
-              leveledUpTo: result.newLevel,
-              fromSpriteUrl: result.fromSpriteUrl,
-              autoTaught: result.autoTaught,
-              pendingMoves: result.pendingMoves,
-              evolveOffer: result.evolveOffer,
-              knownMoves: result.knownMoves,
-            },
-          ]);
+        if (!hasOffers) return;
+
+        const entry: LevelUpOfferEntry = {
+          instanceId,
+          name: result.pokemonName || pokemonName || "Pokémon",
+          leveledUpTo: result.newLevel,
+          fromSpriteUrl: result.fromSpriteUrl,
+          autoTaught: result.autoTaught,
+          pendingMoves: result.pendingMoves,
+          evolveOffer: result.evolveOffer,
+          knownMoves: result.knownMoves,
+        };
+
+        const prev = levelOffersRef.current;
+        let next: LevelUpOfferEntry[];
+        if (!prev) {
+          next = [entry];
         } else {
-          setBusy(false);
+          const existing = prev.find((e) => e.instanceId === instanceId);
+          if (!existing) {
+            next = [...prev, entry];
+          } else {
+            next = prev.map((e) =>
+              e.instanceId !== instanceId
+                ? e
+                : {
+                    ...e,
+                    leveledUpTo: entry.leveledUpTo,
+                    fromSpriteUrl: entry.fromSpriteUrl,
+                    autoTaught: [...e.autoTaught, ...entry.autoTaught],
+                    pendingMoves: [...e.pendingMoves, ...entry.pendingMoves],
+                    evolveOffer: entry.evolveOffer ?? e.evolveOffer,
+                    knownMoves: entry.knownMoves,
+                  },
+            );
+          }
         }
+        levelOffersRef.current = next;
+        setLevelOffers(next);
       })
       .catch(() => {
-        onBagChange?.(bagBefore);
-        if (levelBefore != null && hpBefore != null && maxBefore != null) {
-          levelRef.current = levelBefore;
-          onLeveledUp?.({ level: levelBefore, currentHp: hpBefore, maxHp: maxBefore });
-        }
-        setCandyPending(false);
-        setBusy(false);
+        softRefresh();
       });
   }
 
@@ -414,10 +452,13 @@ export function useSquadActions({
     toggleTradeLock,
     clearFeedback: () => setFeedback(null),
     dismissLevelOffers: () => {
+      levelOffersRef.current = null;
       setLevelOffers(null);
       setCandyPending(false);
       setBusy(false);
-      softRefresh();
+      // Diferir el refresh: si corre síncrono, el click de "Continuar" puede
+      // caer sobre el menú recién liberado o remontar y cerrarlo.
+      window.setTimeout(() => softRefresh(), 0);
     },
   };
 }
@@ -496,9 +537,10 @@ export function SquadLevelOffers({
   entries: LevelUpOfferEntry[];
   onSettled: () => void;
 }) {
-  return (
-    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/65 p-4 backdrop-blur-md sm:items-center">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-tertiary/25 bg-[#0a0e16]/96 shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/65 px-4 pt-4 pb-[calc(var(--bottom-nav-h,5.25rem)+env(safe-area-inset-bottom,0px)+0.75rem)] backdrop-blur-md sm:items-center sm:p-4 xl:pb-4">
+      <div className="max-h-[min(72dvh,36rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-tertiary/25 bg-[#0a0e16]/96 shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
         <LevelUpOffersPanel
           key={entries
             .map((e) => `${e.instanceId}:${e.leveledUpTo}:${e.evolveOffer?.toSpeciesId ?? 0}`)
@@ -507,6 +549,7 @@ export function SquadLevelOffers({
           onSettled={onSettled}
         />
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

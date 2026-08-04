@@ -337,37 +337,42 @@ export function LevelUpOffersPanel({
                       </button>
                     </div>
                   ) : (
-                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                      {hasEmptySlot ? (
+                    <>
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                        {hasEmptySlot ? (
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() => learn(entry.instanceId, current.moveId, null)}
+                            className="ui-btn-primary flex-1 rounded-xl px-4 py-3 text-[13px] font-bold tracking-wide"
+                          >
+                            {t("learn")}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() =>
+                              setPicking({ instanceId: entry.instanceId, move: current })
+                            }
+                            className="ui-btn-primary flex-1 rounded-xl px-4 py-3 text-[13px] font-bold tracking-wide"
+                          >
+                            {t("replace")}
+                          </button>
+                        )}
                         <button
                           type="button"
                           disabled={pending}
-                          onClick={() => learn(entry.instanceId, current.moveId, null)}
-                          className="ui-btn-primary flex-1 rounded-xl px-4 py-3 text-[13px] font-bold tracking-wide"
+                          onClick={() => skipMove(entry.instanceId, current.moveId)}
+                          className="rounded-xl border border-white/12 bg-white/[0.03] px-4 py-3 text-[13px] font-medium text-white/60 transition hover:border-white/25 hover:text-white disabled:opacity-50 sm:min-w-28"
                         >
-                          {t("learn")}
+                          {t("skipMove")}
                         </button>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={pending}
-                          onClick={() =>
-                            setPicking({ instanceId: entry.instanceId, move: current })
-                          }
-                          className="ui-btn-primary flex-1 rounded-xl px-4 py-3 text-[13px] font-bold tracking-wide"
-                        >
-                          {t("replace")}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        disabled={pending}
-                        onClick={() => skipMove(entry.instanceId, current.moveId)}
-                        className="rounded-xl border border-white/12 bg-white/[0.03] px-4 py-3 text-[13px] font-medium text-white/60 transition hover:border-white/25 hover:text-white disabled:opacity-50 sm:min-w-28"
-                      >
-                        {t("skipMove")}
-                      </button>
-                    </div>
+                      </div>
+                      <p className="mt-2 text-center text-[11px] leading-snug text-white/35">
+                        {t("skipMoveHint")}
+                      </p>
+                    </>
                   )}
                 </div>
               </div>

@@ -26,7 +26,7 @@ export type LevelUpEffects = {
   evolveOffer: EvolveOffer | null;
 };
 
-/** Movimientos LEVEL_UP aprendidos entre (fromLevel, toLevel]. */
+/** Movimientos LEVEL_UP con learnLevel en (fromLevel, toLevel]. */
 export async function getMovesLearnedInRange(
   speciesId: number,
   fromLevel: number,
@@ -170,11 +170,16 @@ export async function applyAutoTeachMoves(
   return { autoTaught, pendingMoves: needsChoice };
 }
 
-/** Tras subir de nivel: lista movimientos a ofrecer (sin auto-escribir) + evo. */
+/**
+ * Tras subir de nivel: movimientos a ofrecer (sin auto-escribir) + evo.
+ * Re-ofrece cualquier LEVEL_UP aún no conocido con learnLevel <= nivel
+ * actual — si se ignoró antes, vuelve a preguntar en el próximo level-up
+ * (mismo criterio que diferir la evolución).
+ */
 export async function resolveLevelUpEffects(
   instanceId: string,
   speciesId: number,
-  fromLevel: number,
+  _fromLevel: number,
   toLevel: number,
 ): Promise<LevelUpEffects> {
   // Leer especie/nivel reales post level-up (por si el caller trae datos viejos).
@@ -185,9 +190,11 @@ export async function resolveLevelUpEffects(
   const effectiveSpeciesId = live?.speciesId ?? speciesId;
   const effectiveLevel = live?.level ?? toLevel;
 
+  // fromLevel 0: incluye omitidos de subidas anteriores, no sólo el rango nuevo.
+  // `_fromLevel` se conserva en la firma por compatibilidad con callers.
   const candidates = await getMovesLearnedInRange(
     effectiveSpeciesId,
-    fromLevel,
+    0,
     effectiveLevel,
   );
   const known = await prisma.pokemonMove.findMany({
