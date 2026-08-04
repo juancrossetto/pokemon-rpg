@@ -79,6 +79,8 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Primero: PWA iOS — clase + inset + CSS crítico antes de cualquier paint. */}
+        <InlineScript id="standalone-early" html={standaloneEarlyScript()} />
         {/* Icon font: display=block evita el flash de ligaduras como texto
             ("home", "bolt"…) que display=swap deja ver. preconnect + subset
             estático (400) acelera el download vs. el variable 100..700. */}
@@ -90,9 +92,6 @@ export default async function LocaleLayout({
           rel="stylesheet"
         />
         <link rel="preload" href="/splash/boot.webp" as="image" />
-        {/* standalone ANTES que el splash: la nav fija necesita la clase en el
-            primer paint o en iOS queda el hueco y después salta. */}
-        <InlineScript id="standalone-early" html={standaloneEarlyScript()} />
         <InlineScript
           id="boot-splash-early"
           html={`${bootSplashEarlyScript()}(${iconsReadyEarlyScript()})();`}

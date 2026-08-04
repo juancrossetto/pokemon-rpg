@@ -23,9 +23,9 @@ import { useTypeLabel } from "@/hooks/use-type-label";
 import type { HomeSquadFilter } from "@/components/home/home-desktop-rail";
 
 const TEAM_SIZE = 6;
-/** Mobile compacto · md+ fila de 6. */
+/** Mobile 3×2 con HP · md+ fila de 6. */
 const SLOT_BOX =
-  "h-full min-h-[6.75rem] w-full md:h-[230px] md:min-h-0";
+  "h-full min-h-[7.25rem] w-full md:h-[230px] md:min-h-0";
 
 function TeamSlot({
   member,
@@ -235,7 +235,7 @@ function TeamSlot({
           } ${fainted ? "opacity-80" : ""}`}
           style={{ "--type-accent": accent } as CSSProperties}
         >
-        <div className="relative flex min-h-0 flex-[1.15] flex-col items-center justify-end px-1 pb-0 pt-3.5 md:flex-[1.4] md:px-2 md:pt-6">
+        <div className="relative flex min-h-0 flex-[1.15] flex-col items-center justify-end px-1 pb-0 pt-2.5 md:flex-[1.4] md:px-2 md:pt-6">
           <div
             className="pointer-events-none absolute inset-0"
             style={{
@@ -297,7 +297,7 @@ function TeamSlot({
             )}
           </div>
 
-          <div className="relative z-[1] flex h-full min-h-[2.75rem] w-full max-h-[4.25rem] items-end justify-center md:h-[90px] md:max-h-none md:min-h-0">
+          <div className="relative z-[1] flex h-full min-h-[2.75rem] w-full max-h-[4.5rem] items-end justify-center md:h-[90px] md:max-h-none md:min-h-0">
             <div
               className="absolute bottom-0 h-4 w-10 rounded-[100%] opacity-55 blur-md transition group-hover:opacity-75 md:h-6 md:w-14"
               style={{ background: accent }}
@@ -308,7 +308,7 @@ function TeamSlot({
                 alt=""
                 width={120}
                 height={120}
-                className={`relative z-[1] h-[88%] w-auto max-h-[68px] max-w-[68px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105 md:h-[90px] md:w-[90px] md:max-h-none md:max-w-none ${
+                className={`relative z-[1] h-[88%] w-auto max-h-[72px] max-w-[72px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105 md:h-[90px] md:w-[90px] md:max-h-none md:max-w-none ${
                   fainted ? "grayscale" : ""
                 }`}
               />
@@ -320,7 +320,7 @@ function TeamSlot({
           </div>
         </div>
 
-        <div className="relative z-[1] flex shrink-0 flex-col bg-gradient-to-b from-transparent to-black/35 px-1.5 pb-1.5 pt-0 md:px-2 md:pb-2 md:pt-0.5">
+        <div className="relative z-[1] flex shrink-0 flex-col bg-gradient-to-b from-transparent to-black/35 px-1 pb-1 pt-0 md:px-2 md:pb-2 md:pt-0.5">
           <p className="truncate text-center text-[11px] font-bold capitalize tracking-tight text-white md:text-[13px]">
             {displayName}
           </p>
@@ -345,41 +345,25 @@ function TeamSlot({
           </div>
 
           <div className="mt-1 space-y-1 md:mt-1.5">
-            {/* Mobile: barras rectangulares HP + EXP. Desktop: segmentadas. */}
-            <div className="space-y-1 md:hidden">
-              <div
-                className="grid grid-cols-[1.4rem_minmax(0,1fr)] items-center gap-1"
-                title={`${member.labels.hp} ${member.currentHp}/${member.maxHp}`}
-              >
-                <span className="text-[7px] font-bold uppercase tracking-wider text-white/45">
-                  {member.labels.hp}
-                </span>
-                <div className="h-1.5 overflow-hidden rounded-[2px] bg-white/12">
-                  <div
-                    className={`h-full rounded-[2px] transition-[width] duration-300 ${
-                      fainted
-                        ? "bg-error"
-                        : hpPct <= 25
-                          ? "bg-gradient-to-r from-orange-500 to-amber-300"
-                          : "bg-gradient-to-r from-emerald-500 to-lime-400"
-                    }`}
-                    style={{ width: `${hpPct}%` }}
-                  />
-                </div>
-              </div>
-              <div
-                className="grid grid-cols-[1.4rem_minmax(0,1fr)] items-center gap-1"
-                title={`${member.labels.exp} ${Math.round(member.xpPct)}%`}
-              >
-                <span className="text-[7px] font-bold uppercase tracking-wider text-white/45">
-                  {member.labels.exp}
-                </span>
-                <div className="h-1.5 overflow-hidden rounded-[2px] bg-white/12">
-                  <div
-                    className="h-full rounded-[2px] bg-gradient-to-r from-orange-500 to-amber-300 transition-[width] duration-300"
-                    style={{ width: `${Math.max(0, Math.min(100, member.xpPct))}%` }}
-                  />
-                </div>
+            {/* Mobile: sólo HP. Desktop: HP + EXP segmentados. */}
+            <div
+              className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-1 md:hidden"
+              title={`${member.labels.hp} ${member.currentHp}/${member.maxHp}`}
+            >
+              <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
+                {member.labels.hp}
+              </span>
+              <div className="h-1.5 overflow-hidden rounded-[2px] bg-white/12">
+                <div
+                  className={`h-full rounded-[2px] transition-[width] duration-300 ${
+                    fainted
+                      ? "bg-error"
+                      : hpPct <= 25
+                        ? "bg-gradient-to-r from-orange-500 to-amber-300"
+                        : "bg-gradient-to-r from-emerald-500 to-lime-400"
+                  }`}
+                  style={{ width: `${hpPct}%` }}
+                />
               </div>
             </div>
 
@@ -667,7 +651,7 @@ export function ActiveTeamStrip({
         </div>
       ) : null}
 
-      {/* Mobile 3×2 · md+ los 6 en una fila. */}
+      {/* Mobile 3×2 (foco en el equipo) · md+: fila de 6. */}
       <div className="min-w-0">
         <div className="grid min-w-0 grid-cols-3 gap-1.5 md:grid-cols-6 md:gap-2">
           {slots.map((member, i) => {

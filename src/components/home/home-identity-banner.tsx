@@ -45,7 +45,7 @@ export function HomeIdentityBanner({
 
   return (
     <section
-      className="home-identity relative isolate min-h-[7.5rem] overflow-hidden rounded-2xl sm:min-h-[8.25rem] xl:min-h-[9rem]"
+      className="home-identity relative isolate min-h-[5.5rem] overflow-hidden rounded-2xl sm:min-h-[8.25rem] xl:min-h-[9rem]"
       style={
         {
           "--hi-fluor-from": fluorFrom,
@@ -71,11 +71,11 @@ export function HomeIdentityBanner({
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 rotate-12 bg-linear-to-r from-transparent via-white/4 to-transparent"
+        className="pointer-events-none absolute -left-1/4 top-0 hidden h-full w-1/2 rotate-12 bg-linear-to-r from-transparent via-white/4 to-transparent sm:block"
       />
       <div
         aria-hidden
-        className="absolute inset-y-0 right-0 w-[48%] sm:w-[42%]"
+        className="absolute inset-y-0 right-0 w-[36%] sm:w-[42%] md:w-[30%]"
         style={{
           background: `
             radial-gradient(ellipse 70% 85% at 70% 55%, color-mix(in srgb, var(--hi-fluor-from) 28%, transparent) 0%, transparent 70%),
@@ -85,26 +85,88 @@ export function HomeIdentityBanner({
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute bottom-[12%] right-[8%] h-3 w-[28%] rounded-[100%] bg-black/50 blur-md sm:right-[10%] sm:w-[24%]"
+        className="pointer-events-none absolute bottom-[12%] right-[6%] hidden h-3 w-[24%] rounded-[100%] bg-black/50 blur-md sm:block sm:right-[10%]"
       />
 
       {profileArt ? (
-        <div className="pointer-events-none absolute inset-y-1.5 right-2 flex w-[38%] items-end justify-center sm:right-3 sm:w-[34%] md:w-[30%]">
+        <div className="pointer-events-none absolute inset-y-1 right-1 flex w-[38%] items-end justify-center sm:inset-y-1.5 sm:right-3 sm:w-[34%] md:w-[30%]">
           <Image
             src={profileArt}
             alt=""
             width={280}
             height={360}
             priority
-            className="h-full w-auto max-w-full object-contain object-bottom drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)]"
+            className="h-full w-auto max-w-full object-contain object-bottom drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)]"
             unoptimized
           />
         </div>
       ) : null}
 
+      {/* Mobile: compacto pero con región + clan */}
       <Link
         href="/profile"
-        className="relative z-[1] flex h-full min-h-[7.5rem] flex-col justify-center gap-2 p-3.5 pr-[40%] sm:min-h-[8.25rem] sm:gap-1.5 sm:p-4 sm:pr-[36%] md:pr-[32%]"
+        className="relative z-[1] flex h-full min-h-[5.5rem] items-center gap-2 p-3 pr-[36%] sm:hidden"
+        aria-label={labels.viewProfile}
+      >
+        <div className="min-w-0 flex-1 space-y-1">
+          <p
+            className="text-[9px] font-semibold uppercase tracking-[0.16em]"
+            style={{ color: `color-mix(in srgb, ${fluorFrom} 72%, white)` }}
+          >
+            {identity.regionLabel}
+          </p>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <h2 className="page-title truncate text-[19px] leading-none tracking-tight text-white">
+              {identity.username}
+            </h2>
+            {identity.country ? (
+              <FlagIcon code={identity.country} className="h-3.5 w-[1.1rem] shrink-0" />
+            ) : null}
+            <span className="shrink-0" title={`${standingLabel} · ${identity.pvpRating}`}>
+              <PvpRankBadge
+                tier={pvpTier}
+                division={identity.pvpDivision as PvpDivision}
+                label={pvpTierLabel}
+                size="sm"
+              />
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] tabular-nums text-white/55">
+            <span>
+              {labels.level} {identity.level}
+            </span>
+            <span className="h-2.5 w-px bg-white/15" aria-hidden />
+            <span
+              className="font-bold"
+              style={{ color: `color-mix(in srgb, ${fluorFrom} 58%, white)` }}
+            >
+              <span className="font-semibold opacity-70">{labels.combatPower}</span>{" "}
+              {cpFormatted}
+            </span>
+            {identity.clanName ? (
+              <>
+                <span className="h-2.5 w-px bg-white/15" aria-hidden />
+                <span className="inline-flex min-w-0 items-center gap-1 truncate text-white/65">
+                  {identity.clanEmblem != null ? (
+                    <ClanEmblemBadge
+                      emblem={identity.clanEmblem}
+                      size={12}
+                      title={identity.clanName}
+                      className="shrink-0"
+                    />
+                  ) : null}
+                  <span className="truncate">{identity.clanName}</span>
+                </span>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </Link>
+
+      {/* sm+: banner completo */}
+      <Link
+        href="/profile"
+        className="relative z-[1] hidden h-full min-h-[8.25rem] flex-col justify-center gap-2 p-4 pr-[36%] sm:flex md:pr-[32%] xl:min-h-[9rem]"
       >
         <p
           className="text-[10px] font-semibold uppercase tracking-[0.14em]"
@@ -115,7 +177,7 @@ export function HomeIdentityBanner({
 
         <div className="min-w-0">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h2 className="page-title truncate text-xl tracking-tight text-white sm:text-2xl">
+            <h2 className="page-title truncate text-2xl tracking-tight text-white">
               {identity.username}
             </h2>
             {identity.country ? (
@@ -148,33 +210,28 @@ export function HomeIdentityBanner({
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-1.5 text-[12px] leading-snug text-white/60 sm:h-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-1 sm:text-[13px] sm:leading-none">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2">
-            <span className="shrink-0 tabular-nums">
-              {labels.level} {identity.level}
+        <div className="flex min-w-0 flex-row flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-none text-white/60">
+          <span className="shrink-0 tabular-nums">
+            {labels.level} {identity.level}
+          </span>
+          <span className="h-3 w-px shrink-0 bg-white/15" aria-hidden />
+          {identity.clanName ? (
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              {identity.clanEmblem != null ? (
+                <ClanEmblemBadge
+                  emblem={identity.clanEmblem}
+                  size={14}
+                  title={identity.clanName}
+                  className="translate-y-px shrink-0"
+                />
+              ) : null}
+              <span className="text-white/75">{identity.clanName}</span>
             </span>
-
-            <span className="h-3 w-px shrink-0 bg-white/15" aria-hidden />
-
-            {identity.clanName ? (
-              <span className="inline-flex min-w-0 items-center gap-1.5">
-                {identity.clanEmblem != null ? (
-                  <ClanEmblemBadge
-                    emblem={identity.clanEmblem}
-                    size={14}
-                    title={identity.clanName}
-                    className="translate-y-px shrink-0"
-                  />
-                ) : null}
-                <span className="text-white/75">{identity.clanName}</span>
-              </span>
-            ) : (
-              <span className="shrink-0">{labels.noClan}</span>
-            )}
-          </div>
-
+          ) : (
+            <span className="shrink-0">{labels.noClan}</span>
+          )}
           <span
-            className="inline-flex shrink-0 items-center gap-1 text-[13px] font-bold tabular-nums tracking-tight sm:text-[13px]"
+            className="inline-flex shrink-0 items-center gap-1 text-[13px] font-bold tabular-nums tracking-tight"
             style={{ color: `color-mix(in srgb, ${fluorFrom} 58%, white)` }}
           >
             <span className="opacity-75">{labels.combatPower}</span>

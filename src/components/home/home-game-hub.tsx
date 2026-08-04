@@ -133,14 +133,8 @@ export function HomeGameHub({
             expedition={expedition}
           />
 
-          <div className="mx-auto flex min-w-0 flex-1 flex-col gap-3 md:gap-6 xl:gap-5">
-            <div className="flex flex-col gap-2.5 xl:min-h-[12.25rem] xl:gap-4">
-              <HomeIdentityBanner identity={bannerIdentity} labels={hubLabels.identity} />
-              <HomeDailyActions
-                actions={dailyActions}
-                labels={hubLabels.dailyActions}
-              />
-            </div>
+          <div className="mx-auto flex min-w-0 flex-1 flex-col gap-2.5 md:gap-6 xl:gap-5">
+            <HomeIdentityBanner identity={bannerIdentity} labels={hubLabels.identity} />
 
             {events.showDailyModal && (
               <DailyGiftModal
@@ -153,13 +147,18 @@ export function HomeGameHub({
               />
             )}
 
-            {nextStep && <div className="shrink-0">{nextStep}</div>}
-
             {expedition ? (
               <div className="xl:hidden">
                 <CurrentExpedition {...expedition} />
               </div>
             ) : null}
+
+            {nextStep && <div className="shrink-0">{nextStep}</div>}
+
+            <HomeDailyActions
+              actions={dailyActions}
+              labels={hubLabels.dailyActions}
+            />
 
             <ActiveTeamStrip
               key={squad.layoutKey}

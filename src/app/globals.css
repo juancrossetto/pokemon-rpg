@@ -9884,6 +9884,10 @@ html.boot-splash-pending .boot-splash {
 
   `.is-standalone` lo pone el script early-in-head (`standalone-early`) y
   MobileChrome lo refuerza sin removerlo al desmontar (evita el flash del hueco).
+
+  El inset NO usa env() directo: en iOS al refrescar env() arranca en 0 y
+  después salta a ~34px (hueco → anclado). Usamos `--standalone-sat-bottom`
+  (seteado por el early script, fallback 34px).
 */
 @media all and (display-mode: standalone) {
   html {
@@ -9915,21 +9919,14 @@ html.boot-splash-pending .boot-splash {
     backface-visibility: hidden;
   }
 
-  /*
-    Hueco negro bajo el dock: iOS coloca bottom:0 en el borde safe.
-    Bajamos la barra al borde físico y pintamos la franja del home indicator.
-  */
   .mobile-bottom-nav {
-    bottom: 0;
-    margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    bottom: calc(-1 * var(--standalone-sat-bottom, 34px));
+    margin-bottom: 0;
+    padding-bottom: var(--standalone-sat-bottom, 34px);
     background-color: #0a0b11;
-    transform: translateZ(0);
-    backface-visibility: hidden;
   }
 
   .mobile-bottom-nav__dock {
-    /* El safe-area ya lo aporta el shell de la nav. */
     padding-bottom: 0.4rem;
   }
 }
@@ -9964,12 +9961,10 @@ html.is-standalone .mobile-top-chrome {
 }
 
 html.is-standalone .mobile-bottom-nav {
-  bottom: 0;
-  margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  bottom: calc(-1 * var(--standalone-sat-bottom, 34px));
+  margin-bottom: 0;
+  padding-bottom: var(--standalone-sat-bottom, 34px);
   background-color: #0a0b11;
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
 
 html.is-standalone .mobile-bottom-nav__dock {

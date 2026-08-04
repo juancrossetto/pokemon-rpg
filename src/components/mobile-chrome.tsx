@@ -385,13 +385,38 @@ export function MobileChrome({
     }
   }, [primary]);
 
-  // Clase en <html>/<body> por si el early script no corrió (soft-nav) o sólo
-  // hay navigator.standalone. NO removemos al cleanup: en remount (Strict /
-  // refresh) el remove→add dejaba un frame con hueco bajo la nav.
+  // Clase + inset del home indicator. NO removemos al cleanup (flash del hueco).
+  // Re-medimos en pageshow: al refrescar iOS a veces reporta env()=0 un frame.
   useEffect(() => {
     if (!isStandalone()) return;
-    document.documentElement.classList.add("is-standalone");
+    const html = document.documentElement;
+    html.classList.add("is-standalone");
     document.body.classList.add("is-standalone");
+
+    function measureSat() {
+      const probe = document.createElement("div");
+      probe.setAttribute("aria-hidden", "true");
+      probe.style.cssText =
+        "position:absolute;left:0;bottom:0;width:0;height:0;visibility:hidden;padding:0;padding-bottom:env(safe-area-inset-bottom);margin:0;border:0;pointer-events:none;";
+      html.appendChild(probe);
+      const v = Number.parseFloat(getComputedStyle(probe).paddingBottom) || 0;
+      probe.remove();
+      if (v > 0) {
+        html.style.setProperty("--standalone-sat-bottom", `${Math.ceil(v)}px`);
+      } else if (!html.style.getPropertyValue("--standalone-sat-bottom")) {
+        const phone = Math.min(screen.width || 0, screen.height || 0) <= 500;
+        html.style.setProperty("--standalone-sat-bottom", phone ? "34px" : "0px");
+      }
+    }
+
+    measureSat();
+    const onPageShow = () => {
+      html.classList.add("is-standalone");
+      document.body.classList.add("is-standalone");
+      measureSat();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
   }, []);
 
   // Habilita transitions de tabs tras asentar el layout (más lento en PWA

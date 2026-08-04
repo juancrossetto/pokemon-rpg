@@ -262,7 +262,7 @@ export function SquadCardContextMenu({
             triggerVariant === "ghost" ? "text-[15px]!" : "text-[17px]!"
           }`}
         >
-          more_horiz
+          more_vert
         </span>
       </button>
 

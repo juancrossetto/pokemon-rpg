@@ -65,13 +65,16 @@ export function HomeDailyActions({
 }) {
   return (
     <section className="min-w-0" aria-label={labels.title}>
-      <SectionLabel title={labels.title} />
-      <div className="grid grid-cols-6 gap-1.5 sm:gap-2.5">
+      <div className="hidden sm:block">
+        <SectionLabel title={labels.title} />
+      </div>
+      {/* Grid fijo (no scroll): el overflow-x del home recortaba la 1ª tile y el glow. */}
+      <div className="grid grid-cols-6 gap-1.5 px-0.5 py-1 sm:gap-2.5 sm:px-0 sm:py-0">
         {actions.map((action) => {
           const accent = ACCENT[action.id] ?? "var(--color-electric-yellow)";
           const label = labels.items[action.labelKey] ?? action.labelKey;
           const className = [
-            "home-daily-tile group relative flex flex-col items-center gap-1 overflow-hidden rounded-xl px-0.5 py-2 text-center transition sm:gap-1.5 sm:rounded-2xl sm:px-1.5 sm:py-3",
+            "home-daily-tile group relative flex aspect-square w-full flex-col items-center justify-center overflow-visible rounded-xl text-center transition sm:aspect-auto sm:gap-1.5 sm:overflow-hidden sm:rounded-2xl sm:px-1.5 sm:py-3",
             "active:scale-[0.96]",
             action.hot ? "home-daily-tile--hot" : "",
           ].join(" ");
@@ -81,9 +84,9 @@ export function HomeDailyActions({
             <>
               <span
                 aria-hidden
-                className="home-daily-tile__glow pointer-events-none absolute inset-0"
+                className="home-daily-tile__glow pointer-events-none absolute inset-0 rounded-[inherit]"
               />
-              <span className="relative z-[1] flex h-9 w-9 items-center justify-center sm:h-14 sm:w-14">
+              <span className="relative z-[1] flex h-[70%] w-[70%] max-h-10 max-w-10 items-center justify-center sm:h-14 sm:w-14 sm:max-h-none sm:max-w-none">
                 <Image
                   src={action.iconSrc}
                   alt=""
@@ -93,22 +96,23 @@ export function HomeDailyActions({
                   unoptimized
                 />
               </span>
-              <span className="relative z-[1] max-w-full truncate px-0.5 text-[8px] font-bold uppercase tracking-[0.04em] text-white/85 group-hover:text-white sm:text-[11px] sm:tracking-[0.06em]">
-                {label}
-              </span>
               {action.status ? (
                 <span
-                  className={`relative z-[1] max-w-[95%] truncate rounded-md px-1 py-0.5 font-mono text-[8px] font-bold tabular-nums leading-none sm:px-1.5 sm:text-[10px] ${
+                  className={`absolute right-0 top-0 z-[2] max-w-[2.75rem] truncate rounded-md px-0.5 py-px font-mono text-[7px] font-bold tabular-nums leading-none sm:static sm:mt-0 sm:max-w-[95%] sm:px-1.5 sm:py-0.5 sm:text-[10px] ${
                     action.hot
                       ? "bg-[color-mix(in_srgb,var(--daily-accent)_28%,transparent)] text-white ring-1 ring-[color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
-                      : "bg-black/35 text-white/60"
+                      : "bg-black/55 text-white/70 sm:bg-black/35 sm:text-white/60"
                   }`}
                 >
                   {action.status}
                 </span>
-              ) : (
-                <span className="h-[12px] sm:h-[14px]" aria-hidden />
-              )}
+              ) : null}
+              <span className="relative z-[1] hidden max-w-full truncate px-0.5 text-[11px] font-bold uppercase tracking-[0.06em] text-white/85 group-hover:text-white sm:block">
+                {label}
+              </span>
+              {!action.status ? (
+                <span className="hidden h-[14px] sm:block" aria-hidden />
+              ) : null}
             </>
           );
 
@@ -120,6 +124,7 @@ export function HomeDailyActions({
                 onClick={() => openDailyRewardModal()}
                 className={className}
                 style={style}
+                aria-label={label}
               >
                 {inner}
               </button>
@@ -128,18 +133,13 @@ export function HomeDailyActions({
 
           if (action.href) {
             return (
-              // Seis destinos en la home, todos siempre montados: con el
-              // prefetch por default de Link, cada carga de home dispara un
-              // request RSC a los seis apenas entran en viewport (que es
-              // inmediato, están arriba del fold). Ninguno es el camino
-              // principal —"Salir a explorar" y el equipo activo sí lo son y
-              // mantienen el prefetch normal— así que se desactiva acá.
               <Link
                 key={action.id}
                 href={action.href}
                 prefetch={false}
                 className={className}
                 style={style}
+                aria-label={label}
               >
                 {inner}
               </Link>
@@ -147,7 +147,12 @@ export function HomeDailyActions({
           }
 
           return (
-            <div key={action.id} className={className} style={style}>
+            <div
+              key={action.id}
+              className={className}
+              style={style}
+              aria-label={label}
+            >
               {inner}
             </div>
           );
@@ -300,8 +305,45 @@ export function HomeEventsProgress({
         ? limited.name
         : null;
 
+  const claimableCount =
+    adventure.objectives.filter((o) => o.claimable).length +
+    weekly.claimableMilestones +
+    limited.missions.filter((m) => m.claimable).length;
+
   return (
     <section className="min-w-0">
+      {/* Mobile: resumen chico — el detalle vive en Viaje / Eventos */}
+      <div className="sm:hidden">
+        <Link
+          href={claimableCount > 0 && weekly.claimableMilestones > 0 ? "/events" : "/campaign"}
+          className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#12141c]/90 px-3 py-2.5 transition active:scale-[0.99] hover:border-white/18"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-secondary">
+            <span className="material-symbols-outlined text-[20px]!">flag</span>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
+              {labels.progressTitle}
+            </span>
+            <span className="mt-0.5 flex items-center gap-1.5 truncate text-[13px] font-medium text-white/85">
+              {adventure.zoneName ?? labels.tabAdventure}
+              <span className="font-mono text-[12px] tabular-nums text-white/45">
+                {adventureDone}/{adventure.objectives.length || 0}
+              </span>
+            </span>
+          </span>
+          {claimableCount > 0 ? (
+            <span className="shrink-0 rounded-md bg-pokeball-red/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-pokeball-red">
+              {labels.claimable}
+            </span>
+          ) : null}
+          <span className="material-symbols-outlined shrink-0 text-[18px]! text-white/35">
+            chevron_right
+          </span>
+        </Link>
+      </div>
+
+      <div className="hidden sm:block">
       <SectionLabel
         title={labels.progressTitle}
         subtitle={subtitle}
@@ -474,6 +516,7 @@ export function HomeEventsProgress({
             {footer.cta}
           </Link>
         </div>
+      </div>
       </div>
     </section>
   );
