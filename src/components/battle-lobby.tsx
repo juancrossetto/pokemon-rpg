@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { HealButton } from "@/components/heal-button";
 import { Link } from "@/i18n/navigation";
@@ -34,6 +35,8 @@ export function BattleLobby({
   const tUx = useTranslations("ux");
   const typeLabel = useTypeLabel();
   const canExplore = hasHealthyTeam && lobby.energy >= lobby.energyCost;
+  const [squadHealed, setSquadHealed] = useState(false);
+  const showSquadStatus = lobby.heal.hurtCount > 0 && !squadHealed;
 
   const startErrors = {
     no_lead: t("errors.noLead"),
@@ -231,7 +234,7 @@ export function BattleLobby({
               Aparece únicamente si hay alguien herido: con el equipo entero no
               hay nada que decidir y el bloque no se dibuja.
             */}
-            {lobby.heal.hurtCount > 0 && (
+            {showSquadStatus && (
               <section className="flex items-center gap-3 rounded-2xl border border-white/10 bg-surface-container-high/70 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                 <div className="min-w-0 flex-1 self-center">
                   <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface-variant">
@@ -250,6 +253,8 @@ export function BattleLobby({
                     coins={lobby.heal.coins}
                     teamMaxLevel={lobby.heal.teamMaxLevel}
                     compact
+                    onHealed={() => setSquadHealed(true)}
+                    onHealFailed={() => setSquadHealed(false)}
                   />
                 </div>
               </section>

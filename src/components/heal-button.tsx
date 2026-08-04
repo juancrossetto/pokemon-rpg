@@ -1,13 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useTransition, type CSSProperties } from "react";
-import { createPortal } from "react-dom";
+import { useState, useTransition, type CSSProperties } from "react";
+import { createRoot } from "react-dom/client";
 import { useTranslations } from "next-intl";
 import { healTeam } from "@/actions/heal-team";
 import { HEAL_FREE_UNTIL_LEVEL, minutesLeft } from "@/lib/healing";
 import { playBattleSfx } from "@/lib/battle-sfx";
 import { announceCoinDelta } from "@/lib/coin-fx";
+
+const HEAL_FX_MS = 1400;
 
 function ChanseyIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -20,6 +22,19 @@ function ChanseyIcon({ className = "h-5 w-5" }: { className?: string }) {
       aria-hidden
     />
   );
+}
+
+/** Destello en `document.body` — sobrevive si el botón se desmonta al curar. */
+function playCenterHealFx() {
+  if (typeof document === "undefined") return;
+  const host = document.createElement("div");
+  document.body.appendChild(host);
+  const root = createRoot(host);
+  root.render(<CenterHealFx />);
+  window.setTimeout(() => {
+    root.unmount();
+    host.remove();
+  }, HEAL_FX_MS);
 }
 
 /**
@@ -37,6 +52,8 @@ export function HealButton({
   teamMaxLevel,
   stretch = false,
   compact = false,
+  onHealed,
+  onHealFailed,
 }: {
   locale: string;
   needsHealing: boolean;
@@ -49,14 +66,14 @@ export function HealButton({
   stretch?: boolean;
   /** Lobby / fila embebida: sin hint inferior, botón más contenido. */
   compact?: boolean;
+  /** Al iniciar la cura (p. ej. ocultar el card de heridos en /battle). */
+  onHealed?: () => void;
+  /** Si la cura falló tras un hide optimista. */
+  onHealFailed?: () => void;
 }) {
   const t = useTranslations("team");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [fxKey, setFxKey] = useState(0);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
 
   const noviceFree = teamMaxLevel <= HEAL_FREE_UNTIL_LEVEL;
   const onCooldown = !noviceFree && cooldownMsLeft > 0;
@@ -79,12 +96,14 @@ export function HealButton({
 
   function run(rush: boolean) {
     setError(null);
-    setFxKey((k) => k + 1);
     playBattleSfx("heal");
+    playCenterHealFx();
+    onHealed?.();
     startTransition(async () => {
       const result = await healTeam(locale, rush);
       if (!result.ok) {
         setError(result.error);
+        onHealFailed?.();
         return;
       }
       if (rush) announceCoinDelta(-rushCost);
@@ -168,10 +187,6 @@ export function HealButton({
       {error && (
         <span className={`text-[10px] text-error ${hintAlign}`}>{t(`healErrors.${error}`)}</span>
       )}
-
-      {mounted && fxKey > 0
-        ? createPortal(<CenterHealFx key={fxKey} />, document.body)
-        : null}
     </div>
   );
 }

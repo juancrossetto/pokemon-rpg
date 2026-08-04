@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useTypeLabel } from "@/hooks/use-type-label";
 import { HubHelpButton } from "@/components/journey-guidance";
@@ -41,6 +42,8 @@ export function BattleLobbyMobile({
   const typeLabel = useTypeLabel();
 
   const canExplore = hasHealthyTeam && lobby.energy >= lobby.energyCost;
+  const [squadHealed, setSquadHealed] = useState(false);
+  const showSquadStatus = lobby.heal.hurtCount > 0 && !squadHealed;
 
   const startErrors = {
     no_lead: t("errors.noLead"),
@@ -230,7 +233,7 @@ export function BattleLobbyMobile({
         siguiente exploración, no había aviso. Este bloque aparece apenas hay
         alguien lastimado y evita el viaje de ida y vuelta a Equipo.
       */}
-      {lobby.heal.hurtCount > 0 && (
+      {showSquadStatus && (
         <section
           className="lobby-rise flex items-center gap-3 rounded-2xl border border-white/10 bg-surface-container-high/70 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
           style={{ animationDelay: "90ms" }}
@@ -252,6 +255,8 @@ export function BattleLobbyMobile({
               coins={lobby.heal.coins}
               teamMaxLevel={lobby.heal.teamMaxLevel}
               compact
+              onHealed={() => setSquadHealed(true)}
+              onHealFailed={() => setSquadHealed(false)}
             />
           </div>
         </section>
