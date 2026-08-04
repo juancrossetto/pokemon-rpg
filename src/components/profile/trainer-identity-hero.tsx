@@ -110,7 +110,7 @@ export function TrainerIdentityHero({
       <span aria-hidden className="tp-hero__scanline" />
       <span aria-hidden className="tp-hero__vignette" />
 
-      <div className="relative px-3 pb-6 pt-5 sm:px-5">
+      <div className="relative px-3 pb-6 pt-6 sm:px-5 sm:pt-7">
         {/* Cabecera editorial: nombre → liga PvP → metadatos. Ver `.tp-id__*`. */}
         <div className="tp-id mb-1 text-center">
           <h1 className="tp-id__name">

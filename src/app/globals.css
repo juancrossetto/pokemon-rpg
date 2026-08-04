@@ -9458,11 +9458,14 @@ html.is-standalone body {
   align-items: center;
   justify-content: center;
   margin: 0;
+  overflow: visible;
   font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
   font-weight: 400;
   font-style: normal;
   font-size: clamp(1.7rem, 9.2vw, 2.6rem);
-  line-height: 1;
+  /* Grobold + background-clip recorta con line-height:1; un poco de aire
+     deja ver el trazo superior (la C/R/S de CROSSETTO). */
+  line-height: 1.18;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -9475,6 +9478,7 @@ html.is-standalone body {
   max-width: min(100%, 18rem);
   align-items: center;
   justify-content: center;
+  overflow: visible;
 }
 
 .tp-id__name-trail {
@@ -9488,6 +9492,7 @@ html.is-standalone body {
 }
 
 .tp-id__name-text {
+  display: inline-block;
   /* Degradé flúor recortado sobre el texto. `color: transparent` sólo pinta si
      el clip aplica; si no, el navegador cae al blanco del `background-color`. */
   /* Los extremos los fija el banner según los tipos del compañero; el fallback
@@ -9503,6 +9508,7 @@ html.is-standalone body {
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.55));
   padding-inline: 0.06em;
+  padding-block: 0.12em 0.08em;
 }
 
 @supports not ((background-clip: text) or (-webkit-background-clip: text)) {
@@ -9574,11 +9580,49 @@ html.is-standalone body {
 .tp-id__cp-label {
   font-family: var(--font-sans);
   font-weight: 500;
+  animation: tp-cp-fade-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .tp-id__cp-value {
   font-family: var(--font-mono);
   font-weight: 700;
+  animation: tp-cp-fade-in 0.65s 0.06s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Arco PC: dibuja desde vacío hasta el progreso real (dashoffset final inline). */
+.tp-cp-arc__track {
+  opacity: 0;
+  animation: tp-cp-fade-in 0.4s ease-out both;
+}
+
+.tp-cp-arc__glow,
+.tp-cp-arc__fill {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: tp-cp-arc-draw 1.15s 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.tp-cp-arc__glow {
+  animation-duration: 1.25s;
+}
+
+/* Escena 2D: figuras suben con fade en vez de aparecer de golpe. */
+.tp-scene__figure {
+  transform-origin: 50% 100%;
+  animation: tp-scene-enter 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tp-scene__figure--companion {
+  animation-delay: 0.1s;
+}
+
+.tp-scene__figure--trainer {
+  animation-delay: 0.22s;
+}
+
+.tp-scene__floor {
+  opacity: 0;
+  animation: tp-cp-fade-in 0.7s 0.15s ease-out both;
 }
 
 @keyframes tp-hero-breathe {
@@ -9591,10 +9635,51 @@ html.is-standalone body {
   }
 }
 
+@keyframes tp-cp-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tp-cp-arc-draw {
+  from {
+    stroke-dashoffset: 100;
+  }
+}
+
+@keyframes tp-scene-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tp-hero__scanline {
     animation: none;
     opacity: 0.55;
+  }
+
+  .tp-id__cp-label,
+  .tp-id__cp-value,
+  .tp-cp-arc__track,
+  .tp-cp-arc__glow,
+  .tp-cp-arc__fill,
+  .tp-scene__figure,
+  .tp-scene__floor {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    stroke-dashoffset: var(--arc-offset, 0);
   }
 }
 

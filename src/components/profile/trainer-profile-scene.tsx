@@ -122,7 +122,7 @@ function TrainerScene2D({
       {/* Luz de piso: ancla la escena y separa las figuras del fondo. */}
       <div
         aria-hidden
-        className="absolute inset-x-0 bottom-0 h-24"
+        className="tp-scene__floor absolute inset-x-0 bottom-0 h-24"
         style={{
           background: `radial-gradient(60% 100% at 50% 100%, ${accent}22 0%, transparent 72%)`,
         }}
@@ -130,7 +130,7 @@ function TrainerScene2D({
 
       <div className="flex min-h-[150px] items-end justify-center sm:min-h-[180px] lg:min-h-[205px]">
         {companionSpriteUrl ? (
-          <figure className="relative -mr-8 flex shrink-0 items-end sm:-mr-10">
+          <figure className="tp-scene__figure tp-scene__figure--companion relative -mr-8 flex shrink-0 items-end sm:-mr-10">
             <span
               aria-hidden
               className="absolute inset-x-0 bottom-0 mx-auto h-3 w-[70%] rounded-[100%] bg-black/55 blur-[3px]"
@@ -149,7 +149,7 @@ function TrainerScene2D({
           </figure>
         ) : null}
 
-        <figure className="relative z-[1] flex shrink-0 items-end">
+        <figure className="tp-scene__figure tp-scene__figure--trainer relative z-[1] flex shrink-0 items-end">
           <span
             aria-hidden
             className="absolute inset-x-0 bottom-0 mx-auto h-2.5 w-[62%] rounded-[100%] bg-black/55 blur-[3px]"
