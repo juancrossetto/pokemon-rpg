@@ -149,6 +149,7 @@ export function BattleArena({
   gymBadgeName,
   battleMode = gymId ? "gym" : towerRunId ? "tower" : "wild",
   battleBg = "meadow",
+  encounterPlace = null,
   format = "SINGLE",
   playerB = null,
   wildB = null,
@@ -2281,6 +2282,9 @@ export function BattleArena({
   // Torre / salvaje no tienen entrenador: sidebar de “encuentro”, no grilla de 6.
   const foeSidebarWild =
     isWildEncounter || isTowerBattle || (!opponentPortraitUrl && !opponentName);
+  /** Strip mobile: nombre real + lugar (no entrenador de ruta). */
+  const wildEncounterHeader =
+    ((isWildEncounter && !opponentName) || isTowerBattle);
   const emptyOpponentSlots = foeSidebarWild
     ? 0
     : Math.max(0, 6 - opponentParty.length);
@@ -2318,12 +2322,14 @@ export function BattleArena({
         {/* Mobile: rival — avatar + party (o sprite único si es salvaje/torre) */}
         <div className="lg:hidden shrink-0">
           <PartySidebar
-            name={foeLabel}
+            name={wildEncounterHeader ? activeWild.name : foeLabel}
             portraitUrl={opponentPortraitUrl}
             align="right"
             compact
             variant={foeSidebarWild ? "wild" : "party"}
             featuredSpriteUrl={wildFeaturedSprite}
+            featuredLevel={wildEncounterHeader ? activeWild.level : null}
+            encounterPlace={wildEncounterHeader ? encounterPlace : null}
           >
             {foeSidebarWild
               ? opponentParty.length > 1
@@ -2373,10 +2379,10 @@ export function BattleArena({
             }
           >
             {/* Placa rival + banner de poder al costado; HUD debajo. */}
-            <div className="absolute top-2 right-1 left-2 z-30 flex flex-col items-start gap-3.5 md:top-3 md:right-1.5 md:left-3 md:gap-4">
+            <div className="absolute top-2.5 right-2 left-2.5 z-30 flex flex-col items-start gap-3.5 md:top-3 md:right-1.5 md:left-3 md:gap-4">
               <div className="flex w-full items-stretch gap-1.5 md:gap-2">
                 <HpPlate
-                  className="relative z-20 w-[min(42vw,148px)] shrink-0 sm:w-[min(40vw,160px)] md:w-[min(100%,200px)]"
+                  className="relative z-20 w-[min(52vw,11.5rem)] shrink-0 sm:w-[min(46vw,12.5rem)] md:w-[min(100%,13.5rem)]"
                   name={activeWild.name}
                   levelLabel={t("level", { level: activeWild.level })}
                   currentHp={wildHp}
@@ -2388,7 +2394,7 @@ export function BattleArena({
                 {moveBanner ? (
                   <div
                     key={`banner-${moveBanner.key}`}
-                    className="move-banner pointer-events-none min-w-0 flex-1 self-center"
+                    className="move-banner pointer-events-none min-w-0 flex-1 self-center md:flex-none"
                     style={
                       {
                         "--move-banner-accent": typeColor(moveBanner.moveType),
@@ -2417,7 +2423,7 @@ export function BattleArena({
             </div>
             {isDouble && wildB && (
               <HpPlate
-                className="absolute top-2 left-[calc(min(42vw,160px)+0.75rem)] z-20 w-[min(100%,140px)] md:top-3 md:left-[calc(min(100%,220px)+0.85rem)] md:w-[min(100%,190px)]"
+                className="absolute top-2 left-[calc(min(52vw,11.5rem)+0.65rem)] z-20 w-[min(42vw,9.5rem)] md:top-3 md:left-[calc(min(100%,13.5rem)+0.85rem)] md:w-[min(100%,12rem)]"
                 name={wildB.name}
                 levelLabel={t("level", { level: wildB.level })}
                 currentHp={wildBHp}
@@ -2432,7 +2438,7 @@ export function BattleArena({
                 player sprite bottom-left. Same-corner plates were covering the
                 sprites, which is why the player looked cropped and small. */}
             <HpPlate
-              className="absolute bottom-2 right-2 z-20 w-[min(100%,160px)] md:bottom-3 md:right-3 md:w-[min(100%,220px)]"
+              className="absolute bottom-2.5 right-2.5 z-30 w-[min(52vw,11.5rem)] sm:w-[min(46vw,12.5rem)] md:bottom-3 md:right-3 md:w-[min(100%,14rem)]"
               name={activePlayer.name}
               levelLabel={t("level", { level: activePlayer.level })}
               currentHp={playerHp}
@@ -2443,7 +2449,7 @@ export function BattleArena({
             />
             {isDouble && playerB && (
               <HpPlate
-                className="absolute bottom-2 right-[calc(min(100%,160px)+0.75rem)] z-20 w-[min(100%,140px)] md:bottom-3 md:right-[calc(min(100%,220px)+0.85rem)] md:w-[min(100%,190px)]"
+                className="absolute bottom-2 right-[calc(min(52vw,11.5rem)+0.65rem)] z-30 w-[min(42vw,9.5rem)] md:bottom-3 md:right-[calc(min(100%,14rem)+0.85rem)] md:w-[min(100%,12rem)]"
                 name={playerB.name}
                 levelLabel={t("level", { level: playerB.level })}
                 currentHp={playerBHp}
@@ -2766,7 +2772,7 @@ export function BattleArena({
           {/* Opponent sidebar (desktop) */}
           <div className="hidden lg:block">
             <PartySidebar
-              name={foeLabel}
+              name={foeSidebarWild ? activeWild.name : foeLabel}
               portraitUrl={opponentPortraitUrl}
               align="right"
               variant={foeSidebarWild ? "wild" : "party"}

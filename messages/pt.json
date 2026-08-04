@@ -792,7 +792,6 @@
     "animationSpeed": "Velocidade da animação: {speed}x",
     "autoBattleOn": "Batalha automática: ligada",
     "autoBattleOff": "Batalha automática: desligada",
-
     "youMoveFirst": "Você ataca primeiro",
     "foeMovesFirst": "O rival ataca primeiro",
     "turnOrderHint": "Pela Velocidade. Golpes com prioridade podem passar na frente.",
@@ -917,7 +916,10 @@
     "towerContinuePrompt": "Sua subida na Torre ainda está ativa. Volte para continuar.",
     "forecastHitsFixed": "(×{hits})",
     "forecastHitsRange": "(×{min}-{max})",
-    "forecastTwoTurn": "2 turnos"
+    "forecastTwoTurn": "2 turnos",
+    "wildTag": "Selvagem",
+    "towerFloorLabel": "Andar {floor}",
+    "towerTitle": "Torre"
   },
   "gyms": {
     "title": "Ginásios",

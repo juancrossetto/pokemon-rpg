@@ -43,6 +43,8 @@ export function PartySidebar({
   compact,
   variant = "party",
   featuredSpriteUrl = null,
+  featuredLevel = null,
+  encounterPlace = null,
   children,
 }: {
   name: string;
@@ -53,11 +55,112 @@ export function PartySidebar({
   variant?: "party" | "wild";
   /** Sprite del mon activo. */
   featuredSpriteUrl?: string | null;
+  /** Nivel del mon activo (strip mobile salvaje). */
+  featuredLevel?: number | null;
+  /** Lugar del encuentro (ruta/piso) — punta opuesta al mon en mobile. */
+  encounterPlace?: {
+    title: string;
+    subtitle: string | null;
+    iconUrl?: string | null;
+  } | null;
   children: ReactNode;
 }) {
+  const t = useTranslations("battle");
   const pixelPortrait = Boolean(portraitUrl?.startsWith("http"));
   const isWild = variant === "wild";
   const hasChildren = Boolean(children);
+  const placeIconUrl = encounterPlace?.iconUrl ?? null;
+
+  if (compact && isWild && (encounterPlace || featuredLevel != null)) {
+    return (
+      <div className="flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-black/30 px-2.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+        {encounterPlace ? (
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span
+              aria-hidden
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-secondary/40 bg-secondary/20 shadow-[0_0_12px_color-mix(in_srgb,var(--theme-secondary)_40%,transparent)]"
+            >
+              <span className="absolute inset-0 rounded-full bg-secondary/25 blur-md" />
+              {placeIconUrl ? (
+                <Image
+                  src={placeIconUrl}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="relative h-full w-full object-cover"
+                  sizes="32px"
+                />
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="relative h-3.5 w-3.5 text-secondary"
+                  fill="currentColor"
+                  aria-hidden
+                >
+                  <path d="M12 2.5c.4 2.8 2.2 5 4.8 6.2-1.6.7-2.8 2-3.4 3.6-.6-1.6-1.8-2.9-3.4-3.6C12.6 7.5 14.4 5.3 12 2.5Zm0 10.2c1.7 1.4 2.8 3.5 2.8 5.8 0 1.8-1.3 3.5-2.8 3.5s-2.8-1.7-2.8-3.5c0-2.3 1.1-4.4 2.8-5.8Z" />
+                </svg>
+              )}
+            </span>
+            <div className="min-w-0">
+              <p
+                title={encounterPlace.title}
+                className="truncate text-[11px] font-bold leading-tight text-white/92"
+              >
+                {encounterPlace.title}
+              </p>
+              {encounterPlace.subtitle ? (
+                <p
+                  title={encounterPlace.subtitle}
+                  className="truncate text-[10px] font-medium leading-tight text-secondary"
+                >
+                  {encounterPlace.subtitle}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <div className="min-w-0 flex-1" />
+        )}
+        {hasChildren ? (
+          <div className="flex shrink-0 items-stretch gap-1">{children}</div>
+        ) : null}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {featuredSpriteUrl ? (
+            <span className="relative flex h-10 w-10 items-center justify-center">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-full bg-secondary/25 blur-md"
+              />
+              <Image
+                src={featuredSpriteUrl}
+                alt=""
+                width={40}
+                height={40}
+                className="relative h-9 w-9 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
+                unoptimized
+              />
+            </span>
+          ) : null}
+          <div className="min-w-0 text-left">
+            <p className="text-[8px] font-bold uppercase tracking-[0.14em] text-secondary">
+              {t("wildTag")}
+            </p>
+            <p
+              title={name}
+              className="max-w-[6.5rem] truncate text-[11px] font-bold uppercase leading-tight text-white"
+            >
+              {name}
+            </p>
+            {featuredLevel != null ? (
+              <p className="text-[9px] leading-tight text-white/55">
+                {t("level", { level: featuredLevel })}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (compact) {
     return (
@@ -378,35 +481,50 @@ export function HpPlate({
 
   return (
     <div
-      className={`rounded-xl border bg-[#0c0e14]/78 px-2.5 py-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md md:px-3 md:py-2 ${
-        critical ? "border-error/70 hp-plate-critical" : "border-white/12"
+      className={`hp-plate${align === "right" ? " hp-plate--mirror" : ""}${
+        critical ? " hp-plate--critical" : ""
       } ${className}`}
     >
-      <div
-        className={`flex items-center gap-1.5 md:gap-2 ${
-          align === "right" ? "flex-row-reverse" : ""
-        }`}
-      >
-        <span className="min-w-0 truncate text-[11px] font-semibold capitalize text-white md:text-label-md">
-          {name}
-        </span>
-        <span className="shrink-0 text-[10px] text-white/55 md:text-label-sm">{levelLabel}</span>
-        {status ? <StatusBadge status={status} /> : null}
+      <div className="hp-plate__shell">
+        <div className="hp-plate__panel">
+          <div className="hp-plate__content">
+            <div
+              className={`flex items-center gap-1.5 md:gap-2 ${
+                align === "right" ? "flex-row-reverse" : ""
+              }`}
+            >
+              <span className="min-w-0 truncate text-[11px] font-bold capitalize tracking-tight text-white md:text-[13px]">
+                {name}
+              </span>
+              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/50 md:text-[11px]">
+                {levelLabel}
+              </span>
+              {status ? <StatusBadge status={status} /> : null}
+            </div>
+
+            <div className="hp-plate__bar">
+              <div className="hp-plate__bar-track">
+                <div
+                  className={`hp-plate__bar-fill health-bar-fill ${hpClass}${
+                    critical ? " hp-bar-critical" : ""
+                  }`}
+                  style={{ width: `${hpPct}%` }}
+                />
+                <span className="hp-plate__bar-sheen" aria-hidden />
+              </div>
+            </div>
+
+            <p
+              className={`mt-0.5 text-[9px] font-semibold tabular-nums tracking-wide md:text-[10px] ${
+                align === "right" ? "text-right" : ""
+              } ${critical ? "text-error" : "text-white/55"}`}
+            >
+              {Math.round(hpPct)}% · {currentHp}/{maxHp}
+            </p>
+            {stages ? <StageBadges stages={stages} align={align} /> : null}
+          </div>
+        </div>
       </div>
-      <div className="mt-1 h-2 overflow-hidden rounded-[3px] bg-white/12 md:mt-1.5 md:h-2.5">
-        <div
-          className={`h-full health-bar-fill rounded-[3px] ${hpClass}${critical ? " hp-bar-critical" : ""}`}
-          style={{ width: `${hpPct}%` }}
-        />
-      </div>
-      <p
-        className={`mt-0.5 text-[9px] tabular-nums md:text-[10px] ${
-          align === "right" ? "text-right" : ""
-        } ${critical ? "font-bold text-error" : "text-white/55"}`}
-      >
-        {Math.round(hpPct)}% · {currentHp}/{maxHp}
-      </p>
-      {stages ? <StageBadges stages={stages} align={align} /> : null}
     </div>
   );
 }

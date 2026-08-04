@@ -13,6 +13,7 @@ import type { BattleArenaProps, OpponentPartyMember } from "@/components/battle-
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import {
+  campaignMapSrc,
   findLocation,
   findStage,
   regionMapSrc,
@@ -397,6 +398,41 @@ export default async function BattlePage({
       isRouteTrainer: Boolean(routeTrainer),
     });
 
+    const tBattle = await getTranslations("battle");
+    let encounterPlace: BattleArenaProps["encounterPlace"] = null;
+    if (battleMode === "wild" && progress) {
+      const loc = findLocation(progress.farmingLocationId)?.location;
+      const stage = findStage(progress.farmingStageId)?.stage;
+      if (loc) {
+        encounterPlace = {
+          title: tCampaign(loc.nameKey),
+          subtitle: stage ? tCampaign(stage.nameKey) : null,
+          iconUrl: campaignMapSrc(loc.id),
+        };
+      }
+    } else if (battleMode === "tower" && battle.towerRunId) {
+      const floorFromLog = [...battle.log]
+        .reverse()
+        .find((line) => line.startsWith("towerFloor:"));
+      let floorNumber: number | null = floorFromLog
+        ? Number(floorFromLog.slice("towerFloor:".length))
+        : null;
+      if (floorNumber == null || Number.isNaN(floorNumber)) {
+        const run = await prisma.towerRun.findUnique({
+          where: { id: battle.towerRunId },
+          select: { currentFloor: true },
+        });
+        floorNumber = run?.currentFloor ?? null;
+      }
+      if (floorNumber != null) {
+        encounterPlace = {
+          title: tBattle("towerFloorLabel", { floor: floorNumber }),
+          subtitle: tBattle("towerTitle"),
+          iconUrl: "/nav/tower-icon.png",
+        };
+      }
+    }
+
     const isDouble = battle.format === "DOUBLE";
     const fieldB = isDouble ? parseDoublesFieldB(battle.fieldB) : null;
     const instB = battle.pokemonInstanceB;
@@ -589,6 +625,7 @@ export default async function BattlePage({
       gymBadgeName,
       battleMode,
       battleBg,
+      encounterPlace,
       pvpMatchId: battle.pvpMatchId,
     };
   }

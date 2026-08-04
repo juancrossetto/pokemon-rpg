@@ -415,39 +415,33 @@ body {
     box-shadow: 0 0 15px var(--color-pokeball-red);
   }
 
+  /* Misma paleta que home squad (emerald→lime / orange→amber / red sólido),
+     en un solo fill continuo — no segmentos. */
   .health-bar-fill {
     background: linear-gradient(
       90deg,
-      var(--color-hp-high-deep) 0%,
-      var(--color-hp-high) 42%,
+      var(--color-hp-high) 0%,
       var(--color-hp-high-fluor) 100%
     );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      0 0 10px color-mix(in srgb, var(--color-hp-high-fluor) 55%, transparent);
+    box-shadow: none;
     transition: width 0.3s ease;
   }
   .health-bar-fill.yellow {
     background: linear-gradient(
       90deg,
-      var(--color-hp-mid-deep) 0%,
-      var(--color-hp-mid) 50%,
-      color-mix(in srgb, var(--color-hp-mid) 35%, white) 100%
+      var(--color-hp-mid) 0%,
+      var(--color-hp-mid-bright) 100%
     );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.3),
-      0 0 8px color-mix(in srgb, var(--color-hp-mid) 40%, transparent);
+    box-shadow: none;
   }
   .health-bar-fill.red {
     background: linear-gradient(
       90deg,
       var(--color-hp-low-deep) 0%,
-      var(--color-hp-low) 50%,
-      color-mix(in srgb, var(--color-hp-low) 35%, white) 100%
+      var(--color-hp-low) 55%,
+      var(--color-hp-low-bright) 100%
     );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.25),
-      0 0 8px color-mix(in srgb, var(--color-hp-low) 40%, transparent);
+    box-shadow: none;
   }
 
 }
@@ -791,16 +785,13 @@ body {
 @keyframes hp-plate-critical {
   0%,
   100% {
-    transform: translateX(0);
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    filter: drop-shadow(0 0 0 transparent);
   }
-  30% {
-    transform: translateX(-1.5px);
-    box-shadow: 0 0 12px 1px rgba(239, 68, 68, 0.35);
+  40% {
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.55));
   }
-  60% {
-    transform: translateX(1.5px);
-    box-shadow: 0 0 10px 0 rgba(239, 68, 68, 0.25);
+  70% {
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.3));
   }
 }
 @keyframes hp-bar-blink {
@@ -814,14 +805,192 @@ body {
     filter: brightness(1.35);
   }
 }
-.hp-plate-critical {
+
+/*
+  Placa de HP: skew suave + border-radius (laterales curvos), glass translúcido.
+  La barra se re-inclina para compartir el ángulo de la card.
+  No poner `position` en `.hp-plate`: pisa el `absolute` de Tailwind.
+*/
+.hp-plate {
+  --hp-plate-skew: -9deg;
+  --hp-plate-accent: color-mix(in srgb, var(--color-electric-yellow) 40%, #94a3b8);
+  display: block;
+  isolation: isolate;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+}
+.hp-plate--mirror {
+  --hp-plate-skew: 9deg;
+}
+.hp-plate__shell {
+  position: relative;
+  display: block;
+  padding: 1.5px;
+  border-radius: 1rem;
+  transform: skewX(var(--hp-plate-skew));
+  transform-origin: center;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--hp-plate-accent) 45%, rgba(255, 255, 255, 0.55)) 0%,
+    rgba(148, 163, 184, 0.55) 40%,
+    rgba(71, 85, 105, 0.65) 100%
+  );
+}
+.hp-plate__shell::after {
+  content: "";
+  position: absolute;
+  right: 0.85rem;
+  bottom: -2px;
+  width: 0.9rem;
+  height: 3px;
+  border-radius: 999px;
+  opacity: 0.75;
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.5) 0%,
+    rgba(226, 232, 240, 0.9) 50%,
+    rgba(100, 116, 139, 0.55) 100%
+  );
+}
+.hp-plate--mirror .hp-plate__shell::after {
+  right: auto;
+  left: 0.85rem;
+}
+.hp-plate__panel {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: calc(1rem - 1.5px);
+  background:
+    radial-gradient(
+      ellipse 90% 130% at 8% 30%,
+      color-mix(in srgb, var(--hp-plate-accent) 22%, transparent) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      115deg,
+      rgba(22, 26, 36, 0.72) 0%,
+      rgba(12, 15, 22, 0.62) 55%,
+      rgba(8, 10, 16, 0.68) 100%
+    );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.hp-plate__content {
+  position: relative;
+  z-index: 1;
+  padding: 0.48rem 0.9rem 0.45rem;
+  /* Texto derecho; la barra se re-inclina aparte. */
+  transform: skewX(calc(0deg - var(--hp-plate-skew)));
+}
+@media (min-width: 768px) {
+  .hp-plate {
+    --hp-plate-skew: -10deg;
+  }
+  .hp-plate--mirror {
+    --hp-plate-skew: 10deg;
+  }
+  .hp-plate__shell,
+  .hp-plate__panel {
+    border-radius: 1.15rem;
+  }
+  .hp-plate__panel {
+    border-radius: calc(1.15rem - 1.5px);
+  }
+  .hp-plate__content {
+    padding: 0.55rem 1.05rem 0.5rem;
+  }
+}
+
+/* Barra rectangular inclinada: mismo lenguaje que la card (skew + radio suave). */
+.hp-plate__bar {
+  margin-top: 0.4rem;
+  transform: skewX(var(--hp-plate-skew));
+  transform-origin: center;
+}
+.hp-plate__bar-track {
+  position: relative;
+  height: 0.62rem;
+  overflow: hidden;
+  border-radius: 0.28rem;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--hp-plate-accent) 40%, rgba(255, 255, 255, 0.45)) 0%,
+    rgba(148, 163, 184, 0.45) 45%,
+    rgba(71, 85, 105, 0.55) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.hp-plate__bar-track::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: 0.22rem;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(255, 255, 255, 0.05) 100%),
+    rgba(8, 10, 16, 0.55);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+@media (min-width: 768px) {
+  .hp-plate__bar-track {
+    height: 0.72rem;
+    border-radius: 0.32rem;
+  }
+  .hp-plate__bar-track::before {
+    border-radius: 0.26rem;
+  }
+}
+.hp-plate__bar-fill {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  border-radius: 0.2rem;
+  transition: width 0.3s ease;
+}
+.hp-plate__bar-fill.health-bar-fill {
+  box-shadow: none;
+}
+.hp-plate__bar-fill.health-bar-fill.yellow {
+  box-shadow: none;
+}
+.hp-plate__bar-fill.health-bar-fill.red {
+  box-shadow: none;
+}
+.hp-plate__bar-sheen {
+  display: none;
+}
+.hp-plate--critical {
   animation: hp-plate-critical 0.65s ease-in-out infinite;
+}
+.hp-plate--critical .hp-plate__shell {
+  background: linear-gradient(
+    135deg,
+    rgba(254, 202, 202, 0.65) 0%,
+    rgba(248, 113, 113, 0.45) 40%,
+    rgba(127, 29, 29, 0.55) 100%
+  );
+}
+.hp-plate--critical .hp-plate__panel {
+  background:
+    radial-gradient(
+      ellipse 90% 130% at 8% 30%,
+      rgba(248, 113, 113, 0.22) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      115deg,
+      rgba(40, 16, 18, 0.72) 0%,
+      rgba(18, 10, 12, 0.62) 100%
+    );
 }
 .health-bar-fill.hp-bar-critical {
   animation: hp-bar-blink 0.5s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .hp-plate--critical,
   .hp-plate-critical,
   .health-bar-fill.hp-bar-critical {
     animation: none;
@@ -1355,7 +1524,7 @@ body {
   animation: panel-swap 0.18s ease-out;
 }
 
-/* Banner de poder: card glass redondeada, acento del tipo. */
+/* Banner de poder: placa diagonal (parallelogram) con borde metálico del tipo. */
 @keyframes move-banner-in {
   0% {
     opacity: 0;
@@ -1379,6 +1548,7 @@ body {
 }
 .move-banner {
   --move-banner-accent: #60a5fa;
+  --move-banner-skew: -14deg;
   position: relative;
   display: block;
   width: 100%;
@@ -1387,18 +1557,41 @@ body {
   animation: move-banner-in 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .move-banner__shell {
+  position: relative;
   display: block;
-  border-radius: 0.9rem;
-  padding: 1px;
+  padding: 1.5px;
+  border-radius: 0.35rem;
+  transform: skewX(var(--move-banner-skew));
+  transform-origin: center;
   background: linear-gradient(
-    125deg,
-    color-mix(in srgb, var(--move-banner-accent) 85%, white) 0%,
-    color-mix(in srgb, var(--move-banner-accent) 45%, #94a3b8) 42%,
+    145deg,
+    color-mix(in srgb, var(--move-banner-accent) 55%, #f8fafc) 0%,
+    color-mix(in srgb, var(--move-banner-accent) 35%, #94a3b8) 28%,
+    #64748b 52%,
+    color-mix(in srgb, var(--move-banner-accent) 40%, #1e293b) 78%,
     color-mix(in srgb, var(--move-banner-accent) 70%, #0f172a) 100%
   );
   box-shadow:
-    0 8px 24px color-mix(in srgb, var(--move-banner-accent) 28%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--move-banner-accent) 18%, transparent);
+    0 10px 28px color-mix(in srgb, var(--move-banner-accent) 32%, transparent),
+    0 0 18px color-mix(in srgb, var(--move-banner-accent) 22%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 55%, transparent);
+}
+/* Pestaña metálica inferior derecha, como el frame de referencia. */
+.move-banner__shell::after {
+  content: "";
+  position: absolute;
+  right: 0.55rem;
+  bottom: -3px;
+  width: 1.15rem;
+  height: 4px;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    #94a3b8 0%,
+    #e2e8f0 45%,
+    #64748b 100%
+  );
+  box-shadow: 0 0 8px color-mix(in srgb, var(--move-banner-accent) 35%, transparent);
 }
 .move-banner__panel {
   position: relative;
@@ -1406,26 +1599,31 @@ body {
   width: 100%;
   min-height: 2.9rem;
   overflow: hidden;
-  border-radius: calc(0.9rem - 1px);
+  border-radius: 0.28rem;
   background:
     radial-gradient(
-      ellipse 80% 120% at 0% 50%,
-      color-mix(in srgb, var(--move-banner-accent) 38%, transparent) 0%,
+      ellipse 90% 140% at 8% 50%,
+      color-mix(in srgb, var(--move-banner-accent) 42%, transparent) 0%,
       transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 100% at 100% 100%,
+      color-mix(in srgb, var(--move-banner-accent) 22%, transparent) 0%,
+      transparent 55%
     ),
     linear-gradient(
       105deg,
-      color-mix(in srgb, var(--move-banner-accent) 32%, #10131c) 0%,
+      color-mix(in srgb, var(--move-banner-accent) 28%, #10131c) 0%,
       color-mix(in srgb, var(--move-banner-accent) 10%, #0c0f16) 42%,
-      #0a0c12 100%
+      #07090f 100%
     );
 }
 .move-banner__accent {
   pointer-events: none;
   position: absolute;
   left: 0;
-  top: 18%;
-  bottom: 18%;
+  top: 16%;
+  bottom: 16%;
   width: 3px;
   border-radius: 999px;
   background: linear-gradient(
@@ -1448,9 +1646,11 @@ body {
   gap: 0.35rem;
   width: 100%;
   min-height: 2.9rem;
-  padding: 0.45rem 0.9rem 0.5rem 0.95rem;
+  padding: 0.45rem 1.05rem 0.5rem 1.1rem;
   color: #fff;
   -webkit-font-smoothing: antialiased;
+  /* Contra-skew para que el texto quede legible. */
+  transform: skewX(calc(0deg - var(--move-banner-skew)));
 }
 .move-banner__type {
   display: inline-flex;
@@ -1480,11 +1680,11 @@ body {
   text-shadow: 0 1px 8px color-mix(in srgb, var(--move-banner-accent) 35%, transparent);
 }
 @media (min-width: 768px) {
-  .move-banner__shell {
-    border-radius: 1rem;
-  }
-  .move-banner__panel {
-    border-radius: calc(1rem - 1px);
+  .move-banner {
+    --move-banner-skew: -16deg;
+    width: min(38%, 24rem);
+    min-width: 18rem;
+    max-width: 26rem;
   }
   .move-banner__panel,
   .move-banner__content {
@@ -9673,27 +9873,72 @@ html.boot-splash-pending .boot-splash {
   scroll, y durante ese rebote los elementos `position: fixed` se despegan y
   acompañan el movimiento: la bottom nav se ve flotando en vez de anclada.
 
-  `overscroll-behavior-y: none` cancela el rebote del documento sin tocar el
-  scroll interno de carruseles y hojas, que siguen teniendo el suyo.
+  Estrategia:
+  1. Bloquear el scroll del documento (`html`/`body` overflow:hidden).
+  2. Mover el scroll a `.app-main` con `overscroll-behavior-y: contain`
+     para que el rebote no salga al viewport.
+  3. Forzar capa propia en header/nav (`translateZ(0)`) para que iOS no las
+     recomponga con el rubber-band.
 
-  Va acotado a standalone a propósito: en el navegador el rebote es parte del
-  comportamiento esperado y quitarlo se siente raro.
-
-  `.is-standalone` lo pone MobileChrome cuando `navigator.standalone` es true
-  pero el media query aún no aplica (Safari iOS antiguo).
+  `.is-standalone` lo pone MobileChrome en <html> y <body> cuando
+  `navigator.standalone` es true (Safari iOS) o display-mode:standalone.
 */
 @media all and (display-mode: standalone) {
-  html,
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
+    height: 100%;
+    max-height: 100dvh;
+    overflow: hidden;
     overscroll-behavior: none;
     overscroll-behavior-y: none;
   }
+
+  .app-main {
+    min-height: 0;
+    overflow-x: clip;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-top-chrome,
+  .mobile-bottom-nav {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
 }
 
-html.is-standalone,
-html.is-standalone body {
+html.is-standalone {
+  height: 100%;
+  overflow: hidden;
+}
+
+body.is-standalone {
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
   overscroll-behavior: none;
   overscroll-behavior-y: none;
+}
+
+body.is-standalone .app-main {
+  min-height: 0;
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.is-standalone .mobile-top-chrome,
+html.is-standalone .mobile-bottom-nav,
+body.is-standalone .mobile-top-chrome,
+body.is-standalone .mobile-bottom-nav {
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Indicador del selector de secciones del perfil. Mismo rebote elástico que el

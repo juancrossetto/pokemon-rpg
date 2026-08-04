@@ -114,6 +114,16 @@ export interface BattleArenaProps {
   gymBadgeName: string | null;
   /** Modo de batalla: wild | gym | pvp | tower */
   battleMode: "wild" | "gym" | "pvp" | "tower";
+  /**
+   * Lugar del encuentro (mobile strip). Salvaje = ruta/ciudad + tramo;
+   * torre = piso. Null en gym/PvP con entrenador.
+   */
+  encounterPlace?: {
+    title: string;
+    subtitle: string | null;
+    /** Miniatura de zona (mapa) o torre — next/image a 32px. */
+    iconUrl?: string | null;
+  } | null;
   /** Fondo Showdown según bioma, location o tipo de gimnasio. */
   battleBg: BattleBgId;
   pvpMatchId: string | null;

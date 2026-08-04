@@ -792,7 +792,6 @@
     "animationSpeed": "Animation speed: {speed}x",
     "autoBattleOn": "Auto battle: on",
     "autoBattleOff": "Auto battle: off",
-
     "youMoveFirst": "You move first",
     "foeMovesFirst": "Foe moves first",
     "turnOrderHint": "Based on Speed. Priority moves can go first anyway.",
@@ -917,7 +916,10 @@
     "towerContinuePrompt": "Your Tower climb is still active. Head back to continue.",
     "forecastHitsFixed": "(x{hits})",
     "forecastHitsRange": "(x{min}-{max})",
-    "forecastTwoTurn": "2 turns"
+    "forecastTwoTurn": "2 turns",
+    "wildTag": "Wild",
+    "towerFloorLabel": "Floor {floor}",
+    "towerTitle": "Tower"
   },
   "gyms": {
     "title": "Gyms",

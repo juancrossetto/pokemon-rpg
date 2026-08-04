@@ -792,7 +792,6 @@
     "animationSpeed": "Velocidad de animación: {speed}x",
     "autoBattleOn": "Auto batalla: activada",
     "autoBattleOff": "Auto batalla: desactivada",
-
     "youMoveFirst": "Pegás primero",
     "foeMovesFirst": "El rival pega primero",
     "turnOrderHint": "Según velocidad. Los movimientos con prioridad pueden adelantarse.",
@@ -917,7 +916,10 @@
     "towerContinuePrompt": "Tu ascenso en la Torre sigue activo. Volvé para continuar.",
     "forecastHitsFixed": "(×{hits})",
     "forecastHitsRange": "(×{min}-{max})",
-    "forecastTwoTurn": "2 turnos"
+    "forecastTwoTurn": "2 turnos",
+    "wildTag": "Salvaje",
+    "towerFloorLabel": "Piso {floor}",
+    "towerTitle": "Torre"
   },
   "gyms": {
     "title": "Gimnasios",

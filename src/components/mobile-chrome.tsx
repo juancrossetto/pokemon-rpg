@@ -385,12 +385,17 @@ export function MobileChrome({
     }
   }, [primary]);
 
-  // Clase en <html> para CSS de standalone también cuando sólo hay
-  // navigator.standalone (Safari iOS viejo sin display-mode).
+  // Clase en <html>/<body> para CSS de standalone también cuando sólo hay
+  // navigator.standalone (Safari iOS viejo sin display-mode). En body hace
+  // falta para ganar a `overflow-x-clip` de Tailwind y bloquear el rubber-band.
   useEffect(() => {
     if (!isStandalone()) return;
     document.documentElement.classList.add("is-standalone");
-    return () => document.documentElement.classList.remove("is-standalone");
+    document.body.classList.add("is-standalone");
+    return () => {
+      document.documentElement.classList.remove("is-standalone");
+      document.body.classList.remove("is-standalone");
+    };
   }, []);
 
   // Habilita transitions de tabs tras asentar el layout (más lento en PWA
@@ -407,6 +412,15 @@ export function MobileChrome({
   // compara directo contra los href de los links.
   const pathname = usePathname();
   const prevPathname = useRef(pathname);
+
+  // En standalone el scroll vive en `.app-main` (body overflow:hidden).
+  // Next scrollea el window; acá reseteamos el contenedor real al navegar.
+  useEffect(() => {
+    if (!isStandalone()) return;
+    const main = document.querySelector<HTMLElement>(".app-main");
+    main?.scrollTo({ top: 0, left: 0 });
+  }, [pathname]);
+
   const groupMode = Boolean(drawerFocusGroupId);
   const focusedGroup = drawerFocusGroupId
     ? groups.find((g) => g.id === drawerFocusGroupId)
@@ -814,8 +828,10 @@ export function MobileChrome({
 
   return (
     <>
-      {/* Top bar mobile: brand + resources chip + account — ~56–64px + safe-area */}
-      <header className="fixed top-0 inset-x-0 z-50 flex min-h-14 items-center justify-between gap-2 border-b border-white/10 bg-background/95 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-xl xl:hidden">
+      {/* Top bar mobile: brand + resources + account.
+          min-h incluye safe-area: con border-box, `min-h-14` + pt-safe
+          comía el alto útil y en PWA iOS los iconos quedaban sin aire abajo. */}
+      <header className="mobile-top-chrome fixed top-0 inset-x-0 z-50 flex min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center justify-between gap-2 border-b border-white/10 bg-background/95 px-3 pt-[env(safe-area-inset-top,0px)] pb-2.5 backdrop-blur-xl xl:hidden">
         <Link
           href={lockedHref ?? brandHref}
           className="flex h-8 shrink-0 items-center justify-center"
