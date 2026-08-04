@@ -811,6 +811,7 @@
     "confirmCapture": "Confirmar",
     "xpSummaryTitle": "Experiencia ganada",
     "wildFoe": "Pokémon salvaje",
+    "towerFoe": "Torre",
     "criticalHit": "¡Golpe crítico!",
     "statusBurn": "quemado",
     "statusParalysis": "paralizado",
@@ -3165,6 +3166,8 @@
       "title": "Camino",
       "reviewTitle": "Tu recorrido",
       "current": "Actual",
+      "cleared": "Superado",
+      "climbedTo": "Subiste al piso {n}",
       "recommendedPc": "PC rec. {pc}"
     },
     "team": {
@@ -3174,7 +3177,9 @@
       "pickTitle": "Elegí tu próximo beneficio",
       "pickHint": "Solo vale para este ascenso.",
       "pickCta": "Elegir",
+      "pickTap": "Tocá una carta para elegir",
       "active": "Bendiciones activas",
+      "applied": "Bendición aplicada: {name}",
       "rarity": {
         "common": "Común",
         "rare": "Rara",

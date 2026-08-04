@@ -811,6 +811,7 @@
     "confirmCapture": "Confirm",
     "xpSummaryTitle": "Experience gained",
     "wildFoe": "Wild Pokémon",
+    "towerFoe": "Tower",
     "criticalHit": "A critical hit!",
     "statusBurn": "burned",
     "statusParalysis": "paralyzed",
@@ -3165,6 +3166,8 @@
       "title": "Path",
       "reviewTitle": "Your climb",
       "current": "Current",
+      "cleared": "Cleared",
+      "climbedTo": "Reached floor {n}",
       "recommendedPc": "Rec. CP {pc}"
     },
     "team": {
@@ -3174,7 +3177,9 @@
       "pickTitle": "Choose your next benefit",
       "pickHint": "Only lasts for this climb.",
       "pickCta": "Choose",
+      "pickTap": "Tap a card to choose",
       "active": "Active blessings",
+      "applied": "Blessing applied: {name}",
       "rarity": {
         "common": "Common",
         "rare": "Rare",

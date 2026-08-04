@@ -227,7 +227,7 @@ export function TowerParkButton({
         type="button"
         disabled={pending}
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/35 bg-black/40 px-2.5 py-0.5 text-[10px] font-semibold text-white/90 backdrop-blur-sm transition-colors hover:bg-white/10 disabled:opacity-40 sm:min-h-9 sm:px-3 sm:text-label-sm"
+        className="inline-flex min-h-8 items-center gap-1 text-[10px] font-semibold text-white/90 drop-shadow-sm transition-colors hover:text-white disabled:opacity-40 sm:min-h-9 sm:text-label-sm"
       >
         <span className="material-symbols-outlined text-[14px]! sm:text-[16px]!">home</span>
         {t("park.cta")}
@@ -237,7 +237,7 @@ export function TowerParkButton({
         type="button"
         disabled={pending}
         onClick={() => setOpen(true)}
-        className="mt-1.5 w-full min-h-9 text-center text-[11px] font-medium text-white/70 underline-offset-2 transition-colors hover:text-white hover:underline disabled:opacity-40"
+        className="min-h-8 text-[10px] font-medium text-white/70 underline-offset-2 transition-colors hover:text-white hover:underline disabled:opacity-40"
       >
         {t("park.cta")}
       </button>
@@ -302,7 +302,7 @@ export function TowerAbandonButton({
         type="button"
         disabled={pending}
         onClick={() => setOpen(true)}
-        className="mt-1 w-full min-h-8 text-center text-[10px] font-medium text-error/70 underline-offset-2 transition-colors hover:text-error hover:underline disabled:opacity-40"
+        className="min-h-8 text-[10px] font-medium text-error/70 underline-offset-2 transition-colors hover:text-error hover:underline disabled:opacity-40"
       >
         {t("abandon.cta")}
       </button>

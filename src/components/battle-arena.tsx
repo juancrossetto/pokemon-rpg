@@ -160,7 +160,8 @@ export function BattleArena({
   // Gym, PvP, Torre o entrenador de ruta: no captura / no huida “salvaje”.
   const isTrainerStyle = isGymBattle || isPvpBattle || isTowerBattle || Boolean(opponentName);
   const leaderPortrait = gymLeaderName ? gymLeaderPortraitUrl(gymLeaderName) : null;
-  const foeLabel = opponentName ?? t("wildFoe");
+  const foeLabel =
+    opponentName ?? (isTowerBattle ? t("towerFoe") : t("wildFoe"));
 
   function translateBootLog(raw: string): string | null {
     // Metadata interna (stage de farming) — no mostrar al jugador.
@@ -2106,13 +2107,35 @@ export function BattleArena({
 
   const emptyPlayerSlots = Math.max(0, 6 - party.length);
   const isWildEncounter = battleMode === "wild";
-  const emptyOpponentSlots = isWildEncounter
+  // Torre / salvaje no tienen entrenador: sidebar de “encuentro”, no grilla de 6.
+  const foeSidebarWild =
+    isWildEncounter || isTowerBattle || (!opponentPortraitUrl && !opponentName);
+  const emptyOpponentSlots = foeSidebarWild
     ? 0
     : Math.max(0, 6 - opponentParty.length);
   const wildFeaturedSprite =
     opponentParty.find((m) => m.active)?.spriteUrl ??
     opponentParty[0]?.spriteUrl ??
     activeWild.spriteUrl;
+  const foePartyIcons = opponentParty.map((m) => (
+    <PartyIcon
+      key={`o-${m.slot}`}
+      spriteUrl={m.spriteUrl}
+      name={m.name}
+      fainted={m.fainted}
+      active={m.active}
+    />
+  ));
+  const foePartyIconsCompact = opponentParty.map((m) => (
+    <PartyIcon
+      key={`o-${m.slot}`}
+      spriteUrl={m.spriteUrl}
+      name={m.name}
+      fainted={m.fainted}
+      active={m.active}
+      compact
+    />
+  ));
   const commandExpanded = view !== "menu";
   const lastLogEntry = log[log.length - 1];
 
@@ -2121,37 +2144,30 @@ export function BattleArena({
       <div className="mx-auto w-full max-w-6xl flex flex-col gap-1 md:gap-2 flex-1 min-h-0 overflow-hidden">
         {/* Top — mayor parte del alto en mobile */}
         <div className="flex min-h-0 flex-col gap-1 md:gap-2 flex-1">
-        {/* Mobile: rival — avatar + party (o sprite único si es salvaje) */}
+        {/* Mobile: rival — avatar + party (o sprite único si es salvaje/torre) */}
         <div className="lg:hidden shrink-0">
           <PartySidebar
             name={foeLabel}
             portraitUrl={opponentPortraitUrl}
             align="right"
             compact
-            variant={isWildEncounter ? "wild" : "party"}
-            featuredSpriteUrl={isWildEncounter ? wildFeaturedSprite : null}
+            variant={foeSidebarWild ? "wild" : "party"}
+            featuredSpriteUrl={wildFeaturedSprite}
           >
-            {!isWildEncounter
-              ? opponentParty.map((m) => (
-                  <PartyIcon
-                    key={`o-${m.slot}`}
-                    spriteUrl={m.spriteUrl}
-                    name={m.name}
-                    fainted={m.fainted}
-                    active={m.active}
-                    compact
-                  />
-                ))
-              : null}
-            {!isWildEncounter
-              ? Array.from({ length: emptyOpponentSlots }).map((_, i) => (
-                  <EmptyPartySlot key={`oe-${i}`} compact />
-                ))
-              : null}
+            {foeSidebarWild
+              ? opponentParty.length > 1
+                ? foePartyIconsCompact
+                : null
+              : [
+                  ...foePartyIconsCompact,
+                  ...Array.from({ length: emptyOpponentSlots }).map((_, i) => (
+                    <EmptyPartySlot key={`oe-${i}`} compact />
+                  )),
+                ]}
           </PartySidebar>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[168px_minmax(0,1fr)_168px] gap-1.5 md:gap-2.5 items-stretch flex-1 min-h-0 min-w-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[176px_minmax(0,1fr)_176px] gap-1.5 md:gap-2.5 items-stretch flex-1 min-h-0 min-w-0">
           {/* Player sidebar (desktop) */}
           <div className="hidden lg:block">
             <PartySidebar name={trainerName} portraitUrl={trainerPortraitUrl} align="left">
@@ -2569,35 +2585,19 @@ export function BattleArena({
               name={foeLabel}
               portraitUrl={opponentPortraitUrl}
               align="right"
-              variant={isWildEncounter ? "wild" : "party"}
-              featuredSpriteUrl={isWildEncounter ? wildFeaturedSprite : null}
+              variant={foeSidebarWild ? "wild" : "party"}
+              featuredSpriteUrl={wildFeaturedSprite}
             >
-              {isWildEncounter
+              {foeSidebarWild
                 ? opponentParty.length > 1
-                  ? opponentParty.map((m) => (
-                      <PartyIcon
-                        key={`o-${m.slot}`}
-                        spriteUrl={m.spriteUrl}
-                        name={m.name}
-                        fainted={m.fainted}
-                        active={m.active}
-                      />
-                    ))
+                  ? foePartyIcons
                   : null
-                : opponentParty.map((m) => (
-                    <PartyIcon
-                      key={`o-${m.slot}`}
-                      spriteUrl={m.spriteUrl}
-                      name={m.name}
-                      fainted={m.fainted}
-                      active={m.active}
-                    />
-                  ))}
-              {!isWildEncounter
-                ? Array.from({ length: emptyOpponentSlots }).map((_, i) => (
-                    <EmptyPartySlot key={`oe-${i}`} />
-                  ))
-                : null}
+                : [
+                    ...foePartyIcons,
+                    ...Array.from({ length: emptyOpponentSlots }).map((_, i) => (
+                      <EmptyPartySlot key={`oe-${i}`} />
+                    )),
+                  ]}
             </PartySidebar>
           </div>
         </div>
@@ -2704,37 +2704,47 @@ export function BattleArena({
                   }}
                   className="battle-cmd-btn battle-cmd-fight"
                 >
-                  <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">bolt</span>
-                  {t("fight")}
-                </button>
-                <button
-                  type="button"
-                  disabled={isAnimating || isDouble || (!hasBalls && !hasPotions)}
-                  onClick={() => setView("bag")}
-                  className="battle-cmd-btn"
-                >
-                  <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">backpack</span>
-                  {t("bag")}
+                  <span className="battle-cmd-btn__icon" aria-hidden>
+                    <span className="material-symbols-outlined">swords</span>
+                  </span>
+                  <span className="battle-cmd-btn__label">{t("fight")}</span>
                 </button>
                 <button
                   type="button"
                   disabled={isAnimating || isDouble || !hasHealthyBackup}
                   onClick={() => setView("team")}
-                  className="battle-cmd-btn"
+                  className="battle-cmd-btn battle-cmd-pokemon"
                 >
-                  <PokeballIcon className="h-5 w-5 md:h-6 md:w-6" />
-                  {t("pokemonMenu")}
+                  <span className="battle-cmd-btn__icon" aria-hidden>
+                    <PokeballIcon className="h-5 w-5 md:h-6 md:w-6" />
+                  </span>
+                  <span className="battle-cmd-btn__label">{t("pokemonMenu")}</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isAnimating || isDouble || (!hasBalls && !hasPotions)}
+                  onClick={() => setView("bag")}
+                  className="battle-cmd-btn battle-cmd-bag"
+                >
+                  <span className="battle-cmd-btn__icon" aria-hidden>
+                    <span className="material-symbols-outlined">backpack</span>
+                  </span>
+                  <span className="battle-cmd-btn__label">{t("bag")}</span>
                 </button>
                 <button
                   type="button"
                   disabled={isAnimating || isGymBattle || (Boolean(opponentName) && !isPvpBattle)}
                   onClick={handleFlee}
-                  className="battle-cmd-btn"
+                  className="battle-cmd-btn battle-cmd-run"
                 >
-                  <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">
-                    {isPvpBattle ? "flag" : "directions_run"}
+                  <span className="battle-cmd-btn__icon" aria-hidden>
+                    <span className="material-symbols-outlined">
+                      {isPvpBattle ? "flag" : "directions_run"}
+                    </span>
                   </span>
-                  {isPvpBattle ? t("forfeit") : t("run")}
+                  <span className="battle-cmd-btn__label">
+                    {isPvpBattle ? t("forfeit") : t("run")}
+                  </span>
                 </button>
               </div>
             )}

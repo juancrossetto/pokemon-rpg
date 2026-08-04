@@ -415,15 +415,38 @@ body {
   }
 
   .health-bar-fill {
-    background: linear-gradient(90deg, #4ade80, #22c55e);
-    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
+    background: linear-gradient(
+      90deg,
+      var(--color-hp-high-deep) 0%,
+      var(--color-hp-high) 42%,
+      var(--color-hp-high-fluor) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      0 0 10px color-mix(in srgb, var(--color-hp-high-fluor) 55%, transparent);
     transition: width 0.3s ease;
   }
   .health-bar-fill.yellow {
-    background: linear-gradient(90deg, #facc15, #eab308);
+    background: linear-gradient(
+      90deg,
+      var(--color-hp-mid-deep) 0%,
+      var(--color-hp-mid) 50%,
+      color-mix(in srgb, var(--color-hp-mid) 35%, white) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      0 0 8px color-mix(in srgb, var(--color-hp-mid) 40%, transparent);
   }
   .health-bar-fill.red {
-    background: linear-gradient(90deg, #f87171, #ef4444);
+    background: linear-gradient(
+      90deg,
+      var(--color-hp-low-deep) 0%,
+      var(--color-hp-low) 50%,
+      color-mix(in srgb, var(--color-hp-low) 35%, white) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 0 8px color-mix(in srgb, var(--color-hp-low) 40%, transparent);
   }
 
 }
@@ -581,55 +604,94 @@ body {
 }
 
 .battle-cmd-btn {
+  --cmd-accent: rgba(255, 255, 255, 0.28);
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
+  gap: 0.35rem;
   width: 100%;
   min-height: 0;
   height: 100%;
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1.5px solid color-mix(in srgb, var(--cmd-accent) 55%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 42%),
-    rgba(14, 16, 22, 0.88);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.88);
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--cmd-accent) 14%, transparent) 0%, transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
+    rgba(14, 16, 22, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 14px color-mix(in srgb, var(--cmd-accent) 18%, transparent);
+  color: rgba(255, 255, 255, 0.92);
   font-size: 10px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   font-weight: 700;
   text-transform: uppercase;
   transition:
     border-color 0.15s ease,
     background 0.15s ease,
-    transform 0.1s ease,
-    box-shadow 0.15s ease;
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+.battle-cmd-btn__icon {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in srgb, var(--cmd-accent) 85%, white);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--cmd-accent) 45%, transparent));
+}
+.battle-cmd-btn__label {
+  position: relative;
+  z-index: 1;
+  line-height: 1.1;
+  text-align: center;
+}
+.battle-cmd-pokemon {
+  --cmd-accent: #4ade80;
+}
+.battle-cmd-bag {
+  --cmd-accent: #fb923c;
+}
+.battle-cmd-run {
+  --cmd-accent: #a78bfa;
 }
 @media (max-width: 767px) {
   .battle-cmd-btn {
-    height: 3.5rem;
-    min-height: 3.5rem;
-    max-height: 3.5rem;
+    height: 3.65rem;
+    min-height: 3.65rem;
+    max-height: 3.65rem;
+    gap: 0.2rem;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    border-radius: 0.65rem;
+  }
+  .battle-cmd-btn__icon .material-symbols-outlined {
+    font-size: 20px !important;
   }
 }
 @media (min-width: 768px) {
   .battle-cmd-btn {
+    min-height: 4.85rem;
     gap: 0.4rem;
-    min-height: 4.75rem;
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    border-radius: 1.15rem;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    border-radius: 0.85rem;
+  }
+  .battle-cmd-btn__icon .material-symbols-outlined {
+    font-size: 26px !important;
   }
 }
 .battle-cmd-btn:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--color-pokeball-red) 45%, transparent);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, transparent 42%),
-    rgba(22, 24, 32, 0.95);
+  border-color: color-mix(in srgb, var(--cmd-accent) 80%, white);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 0 16px color-mix(in srgb, var(--color-pokeball-red) 12%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.3),
+    0 0 20px color-mix(in srgb, var(--cmd-accent) 32%, transparent);
 }
 .battle-cmd-btn:active:not(:disabled) {
   transform: scale(0.98);
@@ -638,32 +700,28 @@ body {
   opacity: 0.4;
   cursor: not-allowed;
 }
+/* Seleccionado: borde + glow violeta (secondary), como el ejemplo. */
 .battle-cmd-fight {
+  --cmd-accent: var(--theme-secondary);
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--theme-secondary) 75%, white);
   background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--theme-primary-bright) 55%, transparent) 0%,
-      color-mix(in srgb, var(--color-pokeball-red) 88%, #000) 48%,
-      color-mix(in srgb, var(--theme-primary-deep) 90%, #000) 100%
-    );
-  border-color: color-mix(in srgb, var(--color-pokeball-red) 55%, white);
-  color: #fff;
+    radial-gradient(ellipse at 50% 20%, color-mix(in srgb, var(--theme-secondary) 28%, transparent) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
+    rgba(12, 10, 20, 0.96);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 6px 20px color-mix(in srgb, var(--color-pokeball-red) 28%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px color-mix(in srgb, var(--theme-secondary) 35%, transparent),
+    0 0 22px color-mix(in srgb, var(--theme-secondary) 45%, transparent),
+    0 0 40px color-mix(in srgb, var(--theme-secondary) 22%, transparent);
 }
 .battle-cmd-fight:hover:not(:disabled) {
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--theme-primary-bright) 70%, transparent) 0%,
-      color-mix(in srgb, var(--color-pokeball-red) 95%, #000) 50%,
-      color-mix(in srgb, var(--theme-primary-deep) 85%, #000) 100%
-    );
-  border-color: color-mix(in srgb, var(--color-pokeball-red) 40%, white);
+  border-color: color-mix(in srgb, var(--theme-secondary) 55%, white);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 8px 24px color-mix(in srgb, var(--color-pokeball-red) 36%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px color-mix(in srgb, var(--theme-secondary) 45%, transparent),
+    0 0 26px color-mix(in srgb, var(--theme-secondary) 55%, transparent),
+    0 0 48px color-mix(in srgb, var(--theme-secondary) 28%, transparent);
 }
 
 .battle-move-card {
@@ -9014,6 +9072,104 @@ html.boot-splash-pending .boot-splash {
   animation: tower-node-reached 620ms ease-out 740ms both;
 }
 
+@keyframes tower-climb-toast-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+
+.tower-climb-toast {
+  animation: tower-climb-toast-in 4.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes tower-floor-ticket-climbed {
+  0% {
+    opacity: 0.35;
+    transform: translateY(12px);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tower-floor-ticket--climbed {
+  animation: tower-floor-ticket-climbed 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes tower-blessing-arrival-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tower-blessing-arrival-pop {
+  animation: tower-blessing-arrival-pop 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes tower-blessing-arrival-wash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+
+.tower-blessing-arrival-wash {
+  background:
+    radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--theme-primary) 28%, transparent), transparent 55%),
+    rgba(0, 0, 0, 0.55);
+  animation: tower-blessing-arrival-wash 1.1s ease-out both;
+}
+
+@keyframes tower-blessing-arrival-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+.tower-blessing-arrival-ring {
+  animation: tower-blessing-arrival-ring 900ms ease-out both;
+}
+
 .tower-blessing-card {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
   transition:
@@ -9030,11 +9186,63 @@ html.boot-splash-pending .boot-splash {
     0 0 32px var(--blessing-glow, rgba(167, 139, 250, 0.35));
 }
 
+/* Pulso suave en mobile (via ::after para no pisar tp-rise). */
+@keyframes tower-blessing-invite {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes tower-blessing-pick-hint {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 639px) {
+  .tower-blessing-card--invite:not(:disabled)::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 0 26px var(--blessing-glow, rgba(167, 139, 250, 0.5));
+    animation: tower-blessing-invite 2.4s ease-in-out infinite;
+    animation-delay: inherit;
+  }
+
+  .tower-blessing-pick-hint {
+    animation: tower-blessing-pick-hint 2.4s ease-in-out infinite;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tower-climb-fill,
   .tower-climb-spark,
-  .tower-node-reached {
+  .tower-node-reached,
+  .tower-climb-toast,
+  .tower-floor-ticket--climbed,
+  .tower-blessing-arrival-pop,
+  .tower-blessing-arrival-wash,
+  .tower-blessing-arrival-ring,
+  .tower-blessing-pick-hint {
     animation: none;
+  }
+
+  .tower-blessing-card--invite:not(:disabled)::after {
+    animation: none;
+    opacity: 0.55;
   }
 
   .tower-blessing-card {

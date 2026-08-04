@@ -23,6 +23,8 @@ import { parsePendingLoot } from "@/lib/tower/settle";
 import { TowerAbandonButton, TowerParkButton, TowerLockedState } from "@/components/tower/tower-ui";
 import {
   TowerActionBar,
+  TowerAttemptsChip,
+  TowerBlessingArrival,
   TowerBlessingDraft,
   TowerClimbRail,
   TowerEndedSummary,
@@ -168,8 +170,11 @@ export default async function TowerPage({
 
   const teamHpPct = team ? averageHpRatio(team) : 0;
   const canAttune = activeRun ? pickBlessingOffers(activeRun.blessingIds).length > 0 : false;
-  const activeBlessingNames = activeRun
-    ? resolveBlessings(activeRun.blessingIds).map((b) => t(b.nameKey))
+  const activeBlessings = activeRun
+    ? resolveBlessings(activeRun.blessingIds).map((b) => ({
+        id: b.id,
+        name: t(b.nameKey),
+      }))
     : [];
 
   const earnedLoot = activeRun
@@ -242,7 +247,7 @@ export default async function TowerPage({
     tapadas hasta scrollear “de más”.
   */
   const mainPadClass = showActionBar
-    ? "pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+9.75rem+var(--vv-gap,0px))] xl:pb-36"
+    ? "pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+7.25rem+var(--vv-gap,0px))] xl:pb-28"
     : "pb-bottom-nav";
 
   return (
@@ -255,53 +260,54 @@ export default async function TowerPage({
             fill
             priority
             sizes="(max-width: 1280px) 100vw, 1152px"
-            className="object-cover object-[center_35%]"
+            className="object-cover object-[center_22%] sm:object-[center_30%]"
           />
           <div
-            className="absolute inset-0 bg-gradient-to-t from-[#0b0d13] via-[#0b0d13]/75 to-[#0b0d13]/25"
+            className="absolute inset-0 bg-gradient-to-t from-[#0b0d13] via-[#0b0d13]/55 to-[#0b0d13]/15"
             aria-hidden
           />
         </div>
 
         {unlocked ? (
-          <details className="absolute right-2.5 top-2.5 z-20 sm:right-3.5 sm:top-3.5">
-            <summary
-              className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full border border-white/20 bg-black/45 text-white/80 backdrop-blur-sm transition hover:border-white/35 hover:bg-black/60 hover:text-white marker:content-none [&::-webkit-details-marker]:hidden"
-              aria-label={t("rules.title")}
-              title={t("rules.title")}
-            >
-              <span className="material-symbols-outlined text-[18px]!">info</span>
-            </summary>
-            <div className="absolute right-0 top-[calc(100%+0.4rem)] w-[min(18.5rem,calc(100vw-2rem))] rounded-xl border border-white/12 bg-[#12141c]/96 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">
-                {t("rules.title")}
-              </p>
-              <ul className="space-y-1.5 text-[12px] leading-snug text-white/65">
-                <li>{t("rules.hp")}</li>
-                <li>{t("rules.attempts", { n: attemptsMax })}</li>
-                <li>{t("rules.boss")}</li>
-                <li>{t("rules.blessings")}</li>
-                <li>{t("rules.rest")}</li>
-              </ul>
-            </div>
-          </details>
+          <div className="absolute right-2.5 top-2.5 z-20 flex items-center gap-2 sm:right-3.5 sm:top-3.5">
+            <TowerAttemptsChip
+              remaining={attemptsRemaining}
+              max={attemptsMax}
+              inProgress={Boolean(activeRun)}
+            />
+            <details className="relative">
+              <summary
+                className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full border border-white/20 bg-black/45 text-white/80 backdrop-blur-sm transition hover:border-white/35 hover:bg-black/60 hover:text-white marker:content-none [&::-webkit-details-marker]:hidden"
+                aria-label={t("rules.title")}
+                title={t("rules.title")}
+              >
+                <span className="material-symbols-outlined text-[18px]!">info</span>
+              </summary>
+              <div className="absolute right-0 top-[calc(100%+0.4rem)] w-[min(18.5rem,calc(100vw-2rem))] rounded-xl border border-white/12 bg-[#12141c]/96 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">
+                  {t("rules.title")}
+                </p>
+                <ul className="space-y-1.5 text-[12px] leading-snug text-white/65">
+                  <li>{t("rules.hp")}</li>
+                  <li>{t("rules.attempts", { n: attemptsMax })}</li>
+                  <li>{t("rules.boss")}</li>
+                  <li>{t("rules.blessings")}</li>
+                  <li>{t("rules.rest")}</li>
+                </ul>
+              </div>
+            </details>
+          </div>
         ) : null}
 
-        <div className="relative z-10 flex min-h-[8.5rem] flex-col justify-end gap-1 px-3.5 py-3 sm:min-h-[10rem] sm:px-5 sm:py-4">
+        <div className="relative z-10 flex min-h-[11.5rem] flex-col justify-end gap-0.5 px-3.5 pb-3 pt-10 sm:min-h-[10rem] sm:gap-1 sm:px-5 sm:py-4 sm:pt-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
             {t("eyebrow")}
+            <span className="text-white/35"> · </span>
+            <span className="text-white/55">{t("difficulties.normal")}</span>
           </p>
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            <h1 className="page-title text-headline-sm text-white drop-shadow-sm sm:text-headline-md">
-              {t(COMBAT_TOWER_CONFIG.nameKey)}
-            </h1>
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span className="rounded-full border border-white/25 bg-black/35 px-2.5 py-0.5 text-[10px] text-white/85 backdrop-blur-sm sm:px-3 sm:py-1 sm:text-label-sm">
-                {t("difficulties.normal")}
-              </span>
-              {activeRun ? <TowerParkButton locale={locale} variant="header" /> : null}
-            </div>
-          </div>
+          <h1 className="page-title text-headline-sm text-white drop-shadow-sm sm:text-headline-md">
+            {t(COMBAT_TOWER_CONFIG.nameKey)}
+          </h1>
           <p className="hidden max-w-xl text-label-md text-white/75 sm:block">{t("tagline")}</p>
         </div>
       </header>
@@ -315,22 +321,72 @@ export default async function TowerPage({
       {!unlocked ? (
         <TowerLockedState minBadges={COMBAT_TOWER_CONFIG.unlock.minBadges} />
       ) : (
-        <div className="grid gap-2 sm:gap-3 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-4">
+        <div className="grid gap-2 sm:gap-3 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-4">
           {/*
-            Mobile: resumen compacto → camino (protagonista) → stats.
-            Desktop: torre izquierda, panel derecho.
+            Mobile: resumen → camino → squad/stats/acciones (+ descanso al final).
+            Desktop: columna derecha única (status + panel) para no dejar hueco
+            cuando no hay piso de descanso. `contents` aplana los hijos en el
+            grid padre en mobile; en lg vuelve a ser un flex column.
           */}
-          {activeRun ? (
-            <div className="order-1 flex flex-col gap-2 sm:gap-3 lg:col-start-2 lg:row-start-1">
-              <TowerRunStatus
-                earned={earnedLoot}
-                next={payout.bundle}
-                hasFirstClear={payout.hasFirstClear}
-                unitLabels={rewardUnitLabels}
-                attemptsRemaining={attemptsRemaining}
-                attemptsMax={attemptsMax}
-              />
-              {activeRun.status === "RESTING" ? (
+          <div className="contents lg:col-start-2 lg:row-start-1 lg:flex lg:flex-col lg:gap-3">
+            {activeRun ? (
+              <div className="order-1">
+                <TowerRunStatus
+                  earned={earnedLoot}
+                  next={payout.bundle}
+                  hasFirstClear={payout.hasFirstClear}
+                  unitLabels={rewardUnitLabels}
+                />
+              </div>
+            ) : endedSummary ? (
+              <div className="order-1">
+                <TowerEndedSummary
+                  kind={endedSummary.kind}
+                  runId={endedSummary.runId}
+                  locale={locale}
+                  floorReached={endedSummary.floorReached}
+                  loot={endedSummary.loot}
+                  canClaim={endedSummary.canClaim}
+                  lootClaimed={endedSummary.lootClaimed}
+                  alreadyGranted={endedSummary.alreadyGranted}
+                  team={endedSummary.team}
+                  unitLabels={rewardUnitLabels}
+                />
+              </div>
+            ) : null}
+
+            <aside className="order-3 flex flex-col gap-2 sm:gap-3">
+              {team ? <TowerSquad team={team} blessings={activeBlessings} /> : null}
+
+              <dl className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent px-3 py-2.5">
+                  <dt className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
+                    {t("summary.best")}
+                  </dt>
+                  <dd className="page-title mt-1 text-[1.35rem] leading-none tracking-[0.04em] text-electric-yellow sm:text-[1.5rem]">
+                    {progress?.highestFloorAllTime ?? 0}
+                  </dd>
+                </div>
+                <div className="rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent px-3 py-2.5">
+                  <dt className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
+                    {t("summary.nextBoss")}
+                  </dt>
+                  <dd className="page-title mt-1 text-[1.35rem] leading-none tracking-[0.04em] text-pokeball-red sm:text-[1.5rem]">
+                    {nextGuardian ?? "—"}
+                  </dd>
+                </div>
+              </dl>
+
+              {activeRun ? (
+                <div
+                  className={`flex flex-col gap-2 ${showActionBar ? "hidden lg:flex" : ""}`}
+                >
+                  <TowerParkButton locale={locale} variant="panel" />
+                  <TowerAbandonButton locale={locale} variant="panel" />
+                </div>
+              ) : null}
+
+              {activeRun?.status === "RESTING" ? (
                 <TowerRestFork
                   locale={locale}
                   recoveryPct={COMBAT_TOWER_CONFIG.rules.recoveryPercentage}
@@ -338,29 +394,10 @@ export default async function TowerPage({
                   teamHpPct={teamHpPct}
                 />
               ) : null}
-            </div>
-          ) : endedSummary ? (
-            <div className="order-1 lg:col-start-2 lg:row-start-1">
-              <TowerEndedSummary
-                kind={endedSummary.kind}
-                runId={endedSummary.runId}
-                locale={locale}
-                floorReached={endedSummary.floorReached}
-                loot={endedSummary.loot}
-                canClaim={endedSummary.canClaim}
-                lootClaimed={endedSummary.lootClaimed}
-                alreadyGranted={endedSummary.alreadyGranted}
-                team={endedSummary.team}
-                unitLabels={rewardUnitLabels}
-              />
-            </div>
-          ) : null}
+            </aside>
+          </div>
 
-          <section
-            className={`relative order-2 isolate flex h-[min(46vh,22rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#0e1016] p-2 sm:h-[min(52vh,26rem)] sm:p-3 lg:col-start-1 lg:row-start-1 lg:h-auto lg:min-h-[min(68vh,34rem)] lg:max-h-[calc(100dvh-11rem)] ${
-              activeRun || endedSummary ? "lg:row-span-2" : ""
-            }`}
-          >
+          <section className="relative order-2 isolate flex h-[min(46vh,22rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#0e1016] p-2 sm:h-[min(52vh,26rem)] sm:p-3 lg:col-start-1 lg:row-start-1 lg:h-auto lg:min-h-[min(68vh,34rem)] lg:max-h-[calc(100dvh-11rem)]">
             <Image
               src="/tower/torre-prisma.jpg"
               alt=""
@@ -395,40 +432,6 @@ export default async function TowerPage({
               />
             </div>
           </section>
-
-          <aside
-            className={`order-3 flex flex-col gap-2 sm:gap-3 lg:col-start-2 ${
-              activeRun || endedSummary ? "lg:row-start-2" : "lg:row-start-1"
-            }`}
-          >
-            {team ? <TowerSquad team={team} /> : null}
-
-            <dl className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent px-3 py-2.5">
-                <dt className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
-                  {t("summary.best")}
-                </dt>
-                <dd className="page-title mt-1 text-[1.35rem] leading-none tracking-[0.04em] text-electric-yellow sm:text-[1.5rem]">
-                  {progress?.highestFloorAllTime ?? 0}
-                </dd>
-              </div>
-              <div className="rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent px-3 py-2.5">
-                <dt className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
-                  {t("summary.nextBoss")}
-                </dt>
-                <dd className="page-title mt-1 text-[1.35rem] leading-none tracking-[0.04em] text-pokeball-red sm:text-[1.5rem]">
-                  {nextGuardian ?? "—"}
-                </dd>
-              </div>
-            </dl>
-
-            {activeRun ? (
-              <div className="flex flex-col gap-2">
-                <TowerParkButton locale={locale} variant="panel" />
-                <TowerAbandonButton locale={locale} variant="panel" />
-              </div>
-            ) : null}
-          </aside>
         </div>
       )}
 
@@ -436,11 +439,14 @@ export default async function TowerPage({
         <TowerBlessingDraft blessings={offered} locale={locale} />
       ) : null}
 
+      {activeRun && activeBlessings.length > 0 ? (
+        <TowerBlessingArrival blessingIds={activeBlessings.map((b) => b.id)} />
+      ) : null}
+
       {showActionBar ? (
         <TowerActionBar
           action={primary}
           locale={locale}
-          activeBlessings={activeBlessingNames}
           resetAtMs={showResetTimer ? resetAt.getTime() : null}
           canAbandon={Boolean(activeRun)}
           canPark={Boolean(activeRun)}

@@ -43,7 +43,7 @@ const THEME = {
   hpWarn: "#facc15",
 } as const;
 
-const CLEARED_ACCENT = THEME.tertiary;
+const CLEARED_ACCENT = THEME.secondary;
 
 const FLOOR_TONE: Record<string, { accent: string; icon: string }> = {
   normal: { accent: THEME.muted, icon: "swords" },
@@ -85,22 +85,51 @@ const RARITY_FOIL: Record<
   },
 };
 
-/** Ícono + acento por bendición: la rareza pinta el marco, esto pinta el efecto. */
-const BLESSING_VISUAL: Record<string, { icon: string; accent: string }> = {
-  vitality: { icon: "favorite", accent: "#fb7185" },
-  swift: { icon: "speed", accent: "#fbbf24" },
-  mend: { icon: "healing", accent: THEME.tertiary },
-  second_wind: { icon: "ecg_heart", accent: "#fb923c" },
-  tide: { icon: "water_drop", accent: THEME.secondary },
-  blaze: { icon: "local_fire_department", accent: "#f97316" },
-  grove: { icon: "eco", accent: THEME.tertiary },
-  fortune: { icon: "monetization_on", accent: "#f2c000" },
-  aegis: { icon: "shield", accent: THEME.secondary },
-  rally: { icon: "groups", accent: THEME.primary },
+/** Arte circular en `/public/tower/skills` — skill1…skill13. */
+function towerSkillSrc(n: number): string {
+  // ?v=2 fuerza refresh tras regenerar PNGs con alpha.
+  return `/tower/skills/skill${n}.png?v=2`;
+}
+
+/** Ícono/arte + acento por bendición (el % usa este color). */
+const BLESSING_VISUAL: Record<string, { icon: string; accent: string; src: string }> = {
+  vitality: { icon: "favorite", accent: "#fb7185", src: towerSkillSrc(8) },
+  swift: { icon: "speed", accent: "#fbbf24", src: towerSkillSrc(2) },
+  mend: { icon: "healing", accent: "#4ade80", src: towerSkillSrc(3) },
+  second_wind: { icon: "ecg_heart", accent: "#fb923c", src: towerSkillSrc(4) },
+  tide: { icon: "water_drop", accent: "#38bdf8", src: towerSkillSrc(5) },
+  blaze: { icon: "local_fire_department", accent: "#38bdf8", src: towerSkillSrc(6) },
+  grove: { icon: "eco", accent: "#4ade80", src: towerSkillSrc(7) },
+  fortune: { icon: "monetization_on", accent: "#c084fc", src: towerSkillSrc(1) },
+  aegis: { icon: "shield", accent: "#a78bfa", src: towerSkillSrc(9) },
+  rally: { icon: "groups", accent: "#e879f9", src: towerSkillSrc(10) },
 };
 
 function blessingVisual(id: string) {
-  return BLESSING_VISUAL[id] ?? { icon: "auto_awesome", accent: "#a78bfa" };
+  return (
+    BLESSING_VISUAL[id] ?? {
+      icon: "auto_awesome",
+      accent: "#a78bfa",
+      src: towerSkillSrc(1),
+    }
+  );
+}
+
+/** Arte / ícono por modificador de piso. */
+const MODIFIER_VISUAL: Record<
+  string,
+  { icon: string; accent: string; src?: string }
+> = {
+  sun_field: { icon: "wb_sunny", accent: "#fbbf24", src: towerSkillSrc(11) },
+  rain_field: { icon: "water_drop", accent: THEME.secondary, src: towerSkillSrc(12) },
+  fire_boost: { icon: "local_fire_department", accent: "#f97316", src: towerSkillSrc(13) },
+  heal_cut: { icon: "heart_minus", accent: "#fb7185" },
+  speed_surge: { icon: "speed", accent: "#fbbf24" },
+  no_items: { icon: "block", accent: "#94a3b8" },
+};
+
+function modifierVisual(id: string) {
+  return MODIFIER_VISUAL[id] ?? { icon: "tune", accent: "#a78bfa" };
 }
 
 /** Número grande que el jugador lee antes del texto. */
@@ -115,6 +144,141 @@ function toneFor(type: string) {
   return FLOOR_TONE[type] ?? FLOOR_TONE.normal;
 }
 
+const TOWER_JUST_BLESSING_KEY = "tower:just-blessing";
+
+type JustBlessingPayload = {
+  id: string;
+  name: string;
+  src: string;
+  accent: string;
+};
+
+/**
+ * Tras elegir una bendición, el redirect remonta /tower. Leemos el payload
+ * de sessionStorage, mostramos el arte al centro y lo “aplicamos” volando
+ * hasta el chip junto a Equipo del intento.
+ */
+export function TowerBlessingArrival({
+  blessingIds,
+}: {
+  blessingIds: string[];
+}) {
+  const t = useTranslations("tower");
+  const [payload, setPayload] = useState<JustBlessingPayload | null>(null);
+  const [phase, setPhase] = useState<"idle" | "center" | "fly" | "done">("idle");
+  const flyerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let raw: string | null = null;
+    try {
+      raw = window.sessionStorage.getItem(TOWER_JUST_BLESSING_KEY);
+      if (raw) window.sessionStorage.removeItem(TOWER_JUST_BLESSING_KEY);
+    } catch {
+      return;
+    }
+    if (!raw) return;
+    let data: JustBlessingPayload;
+    try {
+      data = JSON.parse(raw) as JustBlessingPayload;
+    } catch {
+      return;
+    }
+    if (!data?.id || !blessingIds.includes(data.id)) return;
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setPayload(data);
+    if (reduced) {
+      setPhase("done");
+      return;
+    }
+    const id = window.requestAnimationFrame(() => setPhase("center"));
+    return () => window.cancelAnimationFrame(id);
+  }, [blessingIds]);
+
+  useEffect(() => {
+    if (phase !== "center" || !payload) return;
+    const target = document.querySelector<HTMLElement>(
+      `[data-tower-blessing="${payload.id}"]`,
+    );
+    target?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const id = window.setTimeout(() => setPhase("fly"), 1100);
+    return () => window.clearTimeout(id);
+  }, [phase, payload]);
+
+  useEffect(() => {
+    if (phase !== "fly" || !payload) return;
+    const flyer = flyerRef.current;
+    const target = document.querySelector<HTMLElement>(
+      `[data-tower-blessing="${payload.id}"]`,
+    );
+    if (!flyer || !target) {
+      setPhase("done");
+      return;
+    }
+
+    const from = flyer.getBoundingClientRect();
+    const to = target.getBoundingClientRect();
+    const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+    const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+    const scale = Math.max(0.22, to.width / from.width);
+
+    flyer.style.transition =
+      "transform 780ms cubic-bezier(0.22, 1, 0.36, 1), opacity 780ms ease";
+    flyer.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+    flyer.style.opacity = "0.2";
+
+    const id = window.setTimeout(() => setPhase("done"), 820);
+    return () => window.clearTimeout(id);
+  }, [phase, payload]);
+
+  if (!payload || phase === "idle" || phase === "done") return null;
+
+  return (
+    <div
+      className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center"
+      aria-live="polite"
+      aria-label={t("blessing.applied", { name: payload.name })}
+    >
+      {phase === "center" ? (
+        <div aria-hidden className="tower-blessing-arrival-wash absolute inset-0" />
+      ) : null}
+      <div
+        ref={flyerRef}
+        className={`relative flex flex-col items-center ${
+          phase === "center" ? "tower-blessing-arrival-pop" : ""
+        }`}
+        style={{ willChange: "transform, opacity" }}
+      >
+        <div className="relative h-28 w-28 sm:h-32 sm:w-32">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-[8%] rounded-full opacity-60 blur-xl"
+            style={{ background: payload.accent }}
+          />
+          <span
+            aria-hidden
+            className="tower-blessing-arrival-ring absolute inset-[-18%] rounded-full border-2"
+            style={{ borderColor: `${payload.accent}66` }}
+          />
+          <Image
+            src={payload.src}
+            alt=""
+            width={128}
+            height={128}
+            unoptimized
+            className="relative h-full w-full object-contain"
+          />
+        </div>
+        {phase === "center" ? (
+          <p className="mt-3 text-center text-[12px] font-bold uppercase tracking-[0.16em] text-white drop-shadow-md">
+            {payload.name}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ *
  * Riel de ascenso
  * ------------------------------------------------------------------ */
@@ -122,18 +286,12 @@ function toneFor(type: string) {
 /**
  * ¿El jugador acaba de subir un piso, y lo está viendo?
  *
- * Dos condiciones, y las dos hicieron falta:
+ * Tras una batalla mobile la página abre arriba (banner/botín) y el riel
+ * queda fuera de vista: hay que (1) traer el camino al viewport, (2) centrar
+ * el nodo en el scroller interno y (3) disparar la animación de subida.
  *
- * 1. Que haya avanzado de verdad. El piso visto se guarda en `sessionStorage`
- *    —estado de presentación, no de partida— y el efecto corre sólo cuando el
- *    número creció. Sin esto, recargar la pantalla parecía una victoria.
- * 2. Que el riel esté en pantalla. Al volver de la arena la vista aparece
- *    arriba de todo y el riel vive debajo del hero y de las métricas, así que
- *    la animación terminaba antes de que el jugador llegara scrolleando.
- *
- * Devuelve `false` en el primer render a propósito: en SSR no hay
- * `sessionStorage` ni `IntersectionObserver`, y devolver otra cosa daría un
- * HTML distinto al del cliente y rompería la hidratación.
+ * El piso visto vive en `sessionStorage` para no celebrar un refresh.
+ * Devuelve `false` en el primer render a propósito (hidratación).
  */
 function useJustClimbed(currentFloor: number) {
   const [justClimbed, setJustClimbed] = useState(false);
@@ -152,17 +310,14 @@ function useJustClimbed(currentFloor: number) {
     const climbed = previous != null && Number(previous) < currentFloor;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scroller = node.closest<HTMLElement>("[data-tower-rail-scroll]");
+    const railSection =
+      scroller?.closest<HTMLElement>("section") ?? scroller ?? node;
 
-    /*
-      Centramos el piso actual dentro del riel (no de la página): si no, al
-      abrir en un piso alto la lista arranca arriba y los primeros niveles
-      quedan fuera de vista.
-    */
-    /*
-      Centramos el piso actual dentro del riel (no de la página). El `py-3`
-      del `<ol>` evita que nodo/ficha se corten contra el borde del overflow.
-    */
-    if (scroller) {
+    const centerInScroller = (behavior: ScrollBehavior) => {
+      if (!scroller) {
+        node.scrollIntoView({ block: "center", behavior });
+        return;
+      }
       const nodeRect = node.getBoundingClientRect();
       const scrollerRect = scroller.getBoundingClientRect();
       const delta =
@@ -173,35 +328,61 @@ function useJustClimbed(currentFloor: number) {
       const maxScroll = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
       scroller.scrollTo({
         top: Math.min(maxScroll, Math.max(0, scroller.scrollTop + delta)),
-        behavior: climbed && !reduced ? "smooth" : "auto",
+        behavior,
       });
-    } else {
-      node.scrollIntoView({
-        block: "center",
-        behavior: climbed && !reduced ? "smooth" : "instant",
+    };
+
+    const bringRailIntoView = (behavior: ScrollBehavior) => {
+      railSection.scrollIntoView({
+        block: climbed ? "center" : "nearest",
+        behavior,
       });
+    };
+
+    const behavior: ScrollBehavior = climbed && !reduced ? "smooth" : "auto";
+
+    // Doble rAF: espera layout (imágenes/nodos) antes de medir.
+    let cancel = false;
+    const timers: number[] = [];
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (cancel) return;
+        bringRailIntoView(behavior);
+        timers.push(
+          window.setTimeout(
+            () => {
+              if (cancel) return;
+              centerInScroller(behavior);
+            },
+            climbed && !reduced ? 280 : 0,
+          ),
+        );
+      });
+    });
+
+    if (!climbed) {
+      return () => {
+        cancel = true;
+        timers.forEach((id) => window.clearTimeout(id));
+      };
     }
 
-    if (!climbed) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        setJustClimbed(true);
-        observer.disconnect();
-      },
-      { root: scroller, threshold: 0.6 },
+    // No dependemos de IntersectionObserver: en mobile el nodo puede
+    // seguir midiendo "fuera" mientras el smooth scroll termina.
+    timers.push(
+      window.setTimeout(() => {
+        if (!cancel) setJustClimbed(true);
+      }, reduced ? 0 : 420),
     );
-    observer.observe(node);
-
-    const timer = window.setTimeout(() => {
-      observer.disconnect();
-      setJustClimbed(false);
-    }, 6000);
+    timers.push(
+      window.setTimeout(() => {
+        if (!cancel) setJustClimbed(false);
+      }, reduced ? 1200 : 5200),
+    );
 
     return () => {
-      observer.disconnect();
-      window.clearTimeout(timer);
+      cancel = true;
+      timers.forEach((id) => window.clearTimeout(id));
     };
   }, [currentFloor]);
 
@@ -233,9 +414,34 @@ export function TowerClimbRail({
   const { justClimbed, currentNodeRef } = useJustClimbed(autoScroll ? currentFloor : -1);
   const ascending = [...floors].sort((a, b) => b.floorNumber - a.floorNumber);
   const stagger = ascending.length <= 14;
+  const currentTone = toneFor(
+    floors.find((f) => f.floorNumber === currentFloor)?.type ?? "normal",
+  );
 
   return (
-    <ol className="relative flex w-full min-w-0 flex-col py-2 sm:py-3">
+    <div className="relative">
+      {justClimbed ? (
+        <div
+          aria-live="polite"
+          className="tower-climb-toast pointer-events-none absolute inset-x-0 top-1 z-30 flex justify-center px-2 sm:top-2"
+        >
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-[#0b0d13]/92 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur-md"
+            style={{
+              boxShadow: `0 8px 28px rgba(0,0,0,0.45), 0 0 24px color-mix(in srgb, ${currentTone.accent} 35%, transparent)`,
+            }}
+          >
+            <span
+              className="material-symbols-outlined text-[16px]!"
+              style={{ color: THEME.primary }}
+            >
+              arrow_upward
+            </span>
+            {t("path.climbedTo", { n: currentFloor })}
+          </span>
+        </div>
+      ) : null}
+      <ol className="relative flex w-full min-w-0 flex-col py-2 sm:py-3">
       {ascending.map((floor, i) => {
         const cleared = floor.floorNumber <= highestCleared || floor.floorNumber < currentFloor;
         const isCurrent = floor.floorNumber === currentFloor;
@@ -254,7 +460,7 @@ export function TowerClimbRail({
           <li
             key={floor.id}
             ref={isCurrent ? currentNodeRef : undefined}
-            className={`relative flex w-full min-w-0 items-start gap-2.5 py-0.5 sm:gap-3 sm:py-1 ${
+            className={`relative flex w-full min-w-0 items-start gap-2.5 py-1 sm:gap-3 sm:py-1.5 ${
               stagger ? "tp-rise" : ""
             }`}
             style={
@@ -298,7 +504,7 @@ export function TowerClimbRail({
                   isCurrent
                     ? "text-white"
                     : cleared
-                      ? "text-electric-yellow/70"
+                      ? "text-water-blue/75"
                       : "text-white/30"
                 }`}
               >
@@ -315,77 +521,109 @@ export function TowerClimbRail({
             </div>
 
             <div
-              className={`relative min-w-0 flex-1 self-start rounded-xl border px-2.5 py-1.5 transition sm:rounded-2xl sm:px-3 sm:py-2 ${
-                isCurrent
-                  ? "border-white/18 bg-white/[0.06]"
-                  : locked
-                    ? "border-white/[0.05] bg-white/[0.015] opacity-50"
-                    : "border-white/[0.07] bg-black/20"
-              }`}
-              style={
-                isCurrent
-                  ? {
-                      boxShadow: `inset 0 0 28px color-mix(in srgb, ${tone.accent} 12%, transparent)`,
-                    }
-                  : undefined
-              }
+              className={`relative flex min-w-0 flex-1 items-stretch gap-2.5 self-start pt-0.5 sm:gap-3 ${
+                locked ? "opacity-40" : cleared && !isCurrent ? "opacity-70" : ""
+              } ${isCurrent && justClimbed ? "tower-floor-ticket--climbed" : ""}`}
             >
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span
-                  className="rounded-md px-1.5 py-px text-[9px] font-bold uppercase tracking-[0.12em]"
-                  style={{
-                    background: `color-mix(in srgb, ${tone.accent} 16%, transparent)`,
-                    color: tone.accent,
-                  }}
-                >
-                  {t(`floorTypes.${floor.type}`)}
-                </span>
-                {isDuo ? (
-                  <span className="rounded-md border border-white/15 bg-white/8 px-1.5 py-px text-[9px] font-bold uppercase tracking-[0.14em] text-white/80">
-                    2v2
-                  </span>
-                ) : null}
-                {isCurrent ? (
-                  <span className="rounded-full bg-pokeball-red/90 px-2 py-px text-[9px] font-black uppercase tracking-wider text-white">
-                    {t("path.current")}
-                  </span>
-                ) : null}
-                {cleared && !isCurrent ? (
-                  <span className="text-[9px] font-semibold uppercase tracking-wider text-electric-yellow/55">
-                    ✓
-                  </span>
-                ) : null}
-              </div>
+              <span
+                aria-hidden
+                className="w-0.5 shrink-0 self-stretch rounded-full"
+                style={{
+                  background: isCurrent
+                    ? tone.accent
+                    : cleared
+                      ? `color-mix(in srgb, ${CLEARED_ACCENT} 55%, transparent)`
+                      : `color-mix(in srgb, ${tone.accent} 35%, transparent)`,
+                  boxShadow: isCurrent ? `0 0 10px ${tone.accent}66` : undefined,
+                  opacity: locked ? 0.45 : 1,
+                }}
+              />
 
-              {isCurrent ? (
-                <>
-                  <p className="mt-1 font-mono text-[11px] tabular-nums text-white/70">
-                    {t("path.recommendedPc", { pc: floor.recommendedCombatPower })}
-                  </p>
-                  {floor.modifiers.length > 0 ? (
-                    <ul className="mt-1.5 flex flex-wrap gap-1">
-                      {floor.modifiers.map((m) => (
-                        <li
-                          key={m.id}
-                          title={t(m.descriptionKey)}
-                          className="rounded-md border border-secondary/30 bg-secondary/15 px-1.5 py-0.5 text-[9px] font-semibold text-secondary"
-                        >
-                          {t(m.nameKey)}
-                        </li>
-                      ))}
-                    </ul>
+              <div className="min-w-0 flex-1 py-0.5">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-[0.18em] sm:text-[11px]"
+                    style={{
+                      color: isCurrent
+                        ? tone.accent
+                        : locked
+                          ? "rgba(255,255,255,0.35)"
+                          : `color-mix(in srgb, ${tone.accent} 85%, white)`,
+                    }}
+                  >
+                    {t(`floorTypes.${floor.type}`)}
+                  </span>
+                  {isDuo ? (
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">
+                      · 2v2
+                    </span>
                   ) : null}
-                </>
-              ) : (
-                <p className="mt-0.5 font-mono text-[10px] tabular-nums text-white/35">
+                  {isCurrent ? (
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] text-white/85">
+                      <span
+                        className="h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{
+                          background: THEME.primary,
+                          boxShadow: `0 0 8px ${THEME.primary}`,
+                        }}
+                      />
+                      {t("path.current")}
+                    </span>
+                  ) : null}
+                  {cleared && !isCurrent ? (
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-water-blue/60">
+                      {t("path.cleared")}
+                    </span>
+                  ) : null}
+                </div>
+
+                <p
+                  className={`mt-0.5 font-mono tabular-nums tracking-tight ${
+                    isCurrent
+                      ? "text-[13px] font-bold text-white/90 sm:text-[14px]"
+                      : "text-[11px] text-white/40"
+                  }`}
+                >
                   {t("path.recommendedPc", { pc: floor.recommendedCombatPower })}
                 </p>
-              )}
+
+                {isCurrent && floor.modifiers.length > 0 ? (
+                  <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] leading-snug text-white/65">
+                    {floor.modifiers.map((m, idx) => {
+                      const mod = modifierVisual(m.id);
+                      return (
+                        <span key={m.id} className="inline-flex items-center gap-1" title={t(m.descriptionKey)}>
+                          {idx > 0 ? <span className="mr-0.5 text-white/25">·</span> : null}
+                          {mod.src ? (
+                            <Image
+                              src={mod.src}
+                              alt=""
+                              width={20}
+                              height={20}
+                              unoptimized
+                              className="h-5 w-5 shrink-0 object-contain"
+                            />
+                          ) : (
+                            <span
+                              className="material-symbols-outlined text-[14px]!"
+                              style={{ color: mod.accent }}
+                            >
+                              {mod.icon}
+                            </span>
+                          )}
+                          {t(m.nameKey)}
+                        </span>
+                      );
+                    })}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </li>
         );
       })}
     </ol>
+    </div>
   );
 }
 
@@ -403,7 +641,7 @@ function FloorNodeFace({
   const dim = cleared ? "opacity-80 grayscale-[0.35]" : locked ? "opacity-45" : "";
 
   const checkBadge = cleared ? (
-    <span className="material-symbols-outlined absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#0c0e14] text-[12px]! font-bold text-electric-yellow ring-1 ring-electric-yellow/40">
+    <span className="material-symbols-outlined absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#0c0e14] text-[12px]! font-bold text-water-blue ring-1 ring-water-blue/45">
       check
     </span>
   ) : null;
@@ -511,7 +749,8 @@ function RailSegment({
   animate: boolean;
   accent: string;
 }) {
-  const glow = filled ? CLEARED_ACCENT : accent;
+  // Tramos superados: primary flúor. El resto usa el acento del piso de abajo.
+  const glow = filled ? THEME.primary : accent;
 
   return (
     /*
@@ -556,29 +795,26 @@ function RailSegment({
  * ------------------------------------------------------------------ */
 
 /**
- * Franja compacta del ascenso: acumulado | este piso | vidas.
- * Una sola pieza, sin cards sueltas que dejen aire muerto.
+ * Botín del ascenso + pago del próximo piso.
+ * Los intentos van aparte (`TowerAttemptsChip`) para no robarle ancho a las
+ * recompensas en desktop.
  */
 export function TowerRunStatus({
   earned,
   next,
   hasFirstClear,
   unitLabels,
-  attemptsRemaining,
-  attemptsMax,
 }: {
   earned: RewardDef[];
   next: RewardDef[];
   hasFirstClear: boolean;
   unitLabels: { coins: string; energy: string };
-  attemptsRemaining: number;
-  attemptsMax: number;
 }) {
   const t = useTranslations("tower");
 
   return (
     <div
-      className="grid grid-cols-1 overflow-hidden rounded-xl border border-white/[0.1] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+      className="grid grid-cols-2 overflow-hidden rounded-xl border border-white/[0.1]"
       style={{
         background:
           "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 45%, rgba(0,0,0,0.22) 100%)",
@@ -599,7 +835,7 @@ export function TowerRunStatus({
         label={t("loot.nextTitle")}
         accent="#a78bfa"
         badge={hasFirstClear ? t("loot.firstClear") : null}
-        className="border-t border-white/[0.07] sm:border-l sm:border-t-0"
+        className="border-l border-white/[0.07]"
       >
         {next.length > 0 ? (
           <RewardList rewards={next} size="sm" unitLabels={unitLabels} />
@@ -607,47 +843,60 @@ export function TowerRunStatus({
           <p className="text-[10px] text-on-surface-variant/45">—</p>
         )}
       </LootLane>
+    </div>
+  );
+}
 
-      <div className="flex items-center gap-2.5 border-t border-white/[0.07] px-3 py-2.5 sm:border-l sm:border-t-0 sm:px-3.5">
-        <div className="min-w-0">
-          <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-on-surface-variant/65">
-            {t("status.attempts")}
-          </p>
-          <p className="mt-0.5 font-mono text-[11px] font-bold tabular-nums text-white/70">
-            {attemptsRemaining}
-            <span className="text-white/35">/{attemptsMax}</span>
-            <span className="ml-1 text-[9px] font-semibold uppercase tracking-wider text-on-surface-variant/45">
-              {t("status.attemptsHint")}
+/**
+ * Intentos semanales en chip compacto.
+ * Con un ascenso activo el cupo ya se descontó (`remaining === 0`), pero el
+ * ícono tiene que verse vivo: ese intento se está usando ahora.
+ */
+export function TowerAttemptsChip({
+  remaining,
+  max,
+  inProgress = false,
+}: {
+  remaining: number;
+  max: number;
+  inProgress?: boolean;
+}) {
+  const t = useTranslations("tower");
+  const lit = Math.min(max, remaining + (inProgress ? 1 : 0));
+  const label = `${remaining}/${max}`;
+
+  return (
+    <div
+      className="inline-flex items-center gap-0.5 rounded-full border border-white/15 bg-black/40 py-0.5 pl-0.5 pr-2 backdrop-blur-sm"
+      title={`${t("status.attempts")} · ${t("status.attemptsHint")}`}
+      role="img"
+      aria-label={`${t("status.attempts")}: ${label}${inProgress ? ` (${t("status.active")})` : ""}`}
+    >
+      <span className="flex items-center">
+        {Array.from({ length: max }, (_, i) => {
+          const alive = i < lit;
+          return (
+            <span
+              key={i}
+              className={`relative inline-flex h-6 w-6 shrink-0 items-center justify-center ${
+                alive ? "" : "opacity-30 grayscale"
+              }`}
+            >
+              <Image
+                src="/tower/poke-health-icon.png"
+                alt=""
+                width={24}
+                height={24}
+                className="h-6 w-6 object-contain mix-blend-screen"
+                unoptimized
+              />
             </span>
-          </p>
-        </div>
-        <div
-          className="flex items-center gap-0.5"
-          role="img"
-          aria-label={`${attemptsRemaining}/${attemptsMax}`}
-        >
-          {Array.from({ length: attemptsMax }, (_, i) => {
-            const alive = i < attemptsRemaining;
-            return (
-              <span
-                key={i}
-                className={`relative inline-flex h-7 w-7 shrink-0 items-center justify-center ${
-                  alive ? "" : "opacity-25 grayscale"
-                }`}
-              >
-                <Image
-                  src="/tower/poke-health-icon.png"
-                  alt=""
-                  width={28}
-                  height={28}
-                  className="h-7 w-7 object-contain mix-blend-screen"
-                  unoptimized
-                />
-              </span>
-            );
-          })}
-        </div>
-      </div>
+          );
+        })}
+      </span>
+      <span className="font-mono text-[10px] font-bold tabular-nums text-white/80">
+        {label}
+      </span>
     </div>
   );
 }
@@ -668,20 +917,20 @@ function LootLane({
   className?: string;
 }) {
   return (
-    <div className={`relative min-w-0 px-3 py-2.5 ${className}`}>
+    <div className={`relative min-w-0 px-2.5 py-2 sm:px-3 sm:py-2.5 ${className}`}>
       <span
         aria-hidden
-        className="absolute inset-x-3 top-0 h-[2px] sm:inset-x-0"
+        className="absolute inset-x-2.5 top-0 h-[2px] sm:inset-x-0"
         style={{
           background: `linear-gradient(90deg, transparent 0%, ${accent}99 40%, ${accent}66 70%, transparent 100%)`,
         }}
       />
-      <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-        <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-on-surface-variant/65">
+      <div className="mb-1 flex flex-wrap items-center gap-1 sm:mb-1.5 sm:gap-1.5">
+        <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-on-surface-variant/65 sm:text-[8px] sm:tracking-[0.16em]">
           {label}
         </p>
         {badge ? (
-          <span className="rounded bg-violet-500/25 px-1.5 py-px text-[7px] font-black uppercase tracking-wider text-violet-200">
+          <span className="rounded bg-violet-500/25 px-1 py-px text-[6px] font-black uppercase tracking-wider text-violet-200 sm:px-1.5 sm:text-[7px]">
             {badge}
           </span>
         ) : null}
@@ -889,13 +1138,46 @@ export function TowerEndedSummary({
  * Equipo del ascenso
  * ------------------------------------------------------------------ */
 
-export function TowerSquad({ team }: { team: TowerRunCreature[] }) {
+export function TowerSquad({
+  team,
+  blessings = [],
+}: {
+  team: TowerRunCreature[];
+  blessings?: { id: string; name: string }[];
+}) {
   const t = useTranslations("tower");
   return (
     <div>
-      <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-on-surface-variant/70">
-        {t("team.title")}
-      </p>
+      <div className="mb-1.5 flex items-center gap-2">
+        <p className="shrink-0 text-[9px] font-bold uppercase tracking-[0.18em] text-on-surface-variant/70">
+          {t("team.title")}
+        </p>
+        {blessings.length > 0 ? (
+          <ul
+            className="flex min-w-0 flex-1 items-center justify-end gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label={t("blessing.active")}
+          >
+            {blessings.map((b) => {
+              const visual = blessingVisual(b.id);
+              return (
+                <li key={b.id} title={b.name} data-tower-blessing={b.id}>
+                  <span className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full sm:h-10 sm:w-10">
+                    <Image
+                      src={visual.src}
+                      alt=""
+                      width={40}
+                      height={40}
+                      unoptimized
+                      className="h-full w-full object-contain"
+                    />
+                    <span className="sr-only">{b.name}</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+      </div>
       <ul className="grid grid-cols-6 gap-1.5">
         {team.map((m) => {
           const pct = m.maxHp > 0 ? m.currentHp / m.maxHp : 0;
@@ -961,54 +1243,71 @@ export function TowerBlessingDraft({
   const [pending, start] = useTransition();
   const [picked, setPicked] = useState<string | null>(null);
 
+  const pick = (b: TowerBlessing) => {
+    const visual = blessingVisual(b.id);
+    try {
+      window.sessionStorage.setItem(
+        TOWER_JUST_BLESSING_KEY,
+        JSON.stringify({
+          id: b.id,
+          name: t(b.nameKey),
+          src: visual.src,
+          accent: visual.accent,
+        }),
+      );
+    } catch {
+      /* private mode / quota */
+    }
+    setPicked(b.id);
+    start(async () => chooseTowerBlessing(b.id, locale));
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/85 px-2 pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.75rem)] pt-4 backdrop-blur-md sm:items-center sm:p-4 sm:pb-4">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,rgba(124,58,237,0.18),transparent_55%)]"
       />
 
-      <div className="tp-rise relative w-full max-w-3xl">
-        <div className="mb-5 text-center">
+      <div className="tp-rise relative my-auto w-full max-w-3xl">
+        <div className="mb-3.5 text-center sm:mb-5">
           <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-violet-300/90">
             {t("blessing.pickTitle")}
           </p>
-          <p className="mt-1.5 text-label-sm text-on-surface-variant/80">
+          <p className="mt-1 text-[11px] text-on-surface-variant/80 sm:mt-1.5 sm:text-label-sm">
             {t("blessing.pickHint")}
           </p>
         </div>
 
-        <ul className="grid gap-3 sm:grid-cols-3">
+        <ul className="grid gap-2.5 sm:grid-cols-3 sm:gap-3">
           {blessings.map((b, i) => {
             const foil = RARITY_FOIL[b.rarity];
             const visual = blessingVisual(b.id);
             const stat = blessingStatLabel(b);
             const isPicked = picked === b.id;
             const dimmed = pending && !isPicked;
+            const inviting = !pending;
 
             return (
               <li key={b.id}>
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => {
-                    setPicked(b.id);
-                    start(async () => chooseTowerBlessing(b.id, locale));
-                  }}
+                  onClick={() => pick(b)}
                   style={
                     {
                       background: foil.foil,
-                      animationDelay: `${i * 80}ms`,
+                      animationDelay: inviting ? `${i * 280}ms` : `${i * 80}ms`,
                       "--blessing-glow": foil.glow,
                     } as CSSProperties
                   }
-                  className={`tower-blessing-card tp-rise group relative block w-full rounded-2xl p-[2px] text-left transition duration-200 disabled:cursor-wait ${
-                    dimmed ? "scale-[0.98] opacity-35" : "hover:-translate-y-1 hover:scale-[1.02]"
-                  } ${isPicked ? "scale-[1.02]" : ""}`}
+                  className={`tower-blessing-card tp-rise group relative block w-full rounded-2xl p-[2px] text-left transition duration-200 disabled:cursor-wait active:scale-[0.985] ${
+                    inviting ? "tower-blessing-card--invite" : ""
+                  } ${
+                    dimmed ? "scale-[0.98] opacity-35" : "hover:-translate-y-0.5 hover:scale-[1.01] sm:hover:-translate-y-1 sm:hover:scale-[1.02]"
+                  } ${isPicked ? "scale-[1.01] sm:scale-[1.02]" : ""}`}
                 >
-                  <span
-                    className="relative flex h-full min-h-[13.5rem] flex-col overflow-hidden rounded-[0.95rem] bg-[#0a0c12] p-3.5 sm:min-h-[15rem]"
-                  >
+                  <span className="relative flex overflow-hidden rounded-[0.95rem] bg-[#0a0c12]">
                     <span
                       aria-hidden
                       className="pointer-events-none absolute inset-0"
@@ -1016,63 +1315,61 @@ export function TowerBlessingDraft({
                     />
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full opacity-40 blur-2xl transition group-hover:opacity-70"
+                      className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full opacity-35 blur-2xl transition group-hover:opacity-60"
                       style={{ background: visual.accent }}
                     />
 
-                    <span
-                      className={`relative z-10 inline-flex w-fit items-center rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] ${foil.chip}`}
-                    >
-                      {t(`blessing.rarity.${b.rarity}`)}
-                    </span>
-
-                    <span className="relative z-10 mt-4 flex flex-1 flex-col items-center text-center">
-                      <span
-                        className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-black/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-                        style={{
-                          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 28px ${visual.accent}33`,
-                        }}
-                      >
+                    {/* Mobile: fila un poco más generosa. Desktop: card vertical. */}
+                    <span className="relative z-10 flex w-full items-center gap-3.5 px-3.5 py-3.5 sm:flex-col sm:items-center sm:gap-0 sm:px-3.5 sm:pb-3.5 sm:pt-3 sm:text-center">
+                      <span className="relative flex h-16 w-16 shrink-0 items-center justify-center sm:mt-2 sm:h-[4.5rem] sm:w-[4.5rem]">
                         <span
-                          className="material-symbols-outlined text-[30px]! leading-none"
-                          style={{ color: visual.accent }}
-                        >
-                          {visual.icon}
+                          aria-hidden
+                          className="pointer-events-none absolute inset-[12%] rounded-full opacity-50 blur-md"
+                          style={{ background: visual.accent }}
+                        />
+                        {/* overflow+rounded clips residual square corners; no CSS filter on the PNG (drop-shadow paints a box). */}
+                        <span className="relative h-16 w-16 overflow-hidden rounded-full sm:h-[4.5rem] sm:w-[4.5rem]">
+                          <Image
+                            src={visual.src}
+                            alt=""
+                            width={72}
+                            height={72}
+                            unoptimized
+                            className="h-full w-full object-contain"
+                          />
                         </span>
+                        {isPicked ? (
+                          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45">
+                            <span className="material-symbols-outlined animate-spin text-[22px]! text-white">
+                              progress_activity
+                            </span>
+                          </span>
+                        ) : null}
                       </span>
 
-                      {stat ? (
-                        <span
-                          className="mt-2.5 font-mono text-[26px] font-black leading-none tracking-tight tabular-nums"
-                          style={{ color: visual.accent }}
-                        >
-                          {stat}
+                      <span className="min-w-0 flex-1 sm:mt-2.5 sm:flex sm:w-full sm:flex-col sm:items-center">
+                        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 sm:flex-col sm:gap-1">
+                          <span
+                            className={`inline-flex w-fit items-center rounded border px-1.5 py-px text-[8px] font-black uppercase tracking-[0.14em] sm:text-[9px] sm:tracking-[0.16em] ${foil.chip}`}
+                          >
+                            {t(`blessing.rarity.${b.rarity}`)}
+                          </span>
+                          {stat ? (
+                            <span
+                              className="font-mono text-[22px] font-black leading-none tracking-tight tabular-nums sm:text-[24px]"
+                              style={{ color: visual.accent }}
+                            >
+                              {stat}
+                            </span>
+                          ) : null}
                         </span>
-                      ) : null}
-
-                      <span className="mt-3 text-[15px] font-bold leading-tight text-white">
-                        {t(b.nameKey)}
-                      </span>
-                      <span className="mt-1.5 text-[11px] leading-snug text-white/55">
-                        {t(b.descriptionKey)}
-                      </span>
-                    </span>
-
-                    <span
-                      className={`relative z-10 mt-3 flex items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70 transition group-hover:border-white/20 group-hover:text-white ${
-                        isPicked ? "border-white/25 text-white" : ""
-                      }`}
-                    >
-                      {isPicked ? (
-                        <span className="material-symbols-outlined animate-spin text-[14px]!">
-                          progress_activity
+                        <span className="mt-1 block text-[15px] font-bold leading-tight text-white sm:mt-2 sm:text-[15px]">
+                          {t(b.nameKey)}
                         </span>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined text-[14px]!">ads_click</span>
-                          {t("blessing.pickCta")}
-                        </>
-                      )}
+                        <span className="mt-0.5 block text-[12px] leading-snug text-white/55 sm:mt-1 sm:text-[11px]">
+                          {t(b.descriptionKey)}
+                        </span>
+                      </span>
                     </span>
                   </span>
                 </button>
@@ -1082,10 +1379,14 @@ export function TowerBlessingDraft({
         </ul>
 
         {pending ? (
-          <p className="mt-4 text-center text-label-sm text-on-surface-variant">
+          <p className="mt-3 text-center text-[11px] text-on-surface-variant sm:mt-4 sm:text-label-sm">
             {t("actions.working")}
           </p>
-        ) : null}
+        ) : (
+          <p className="tower-blessing-pick-hint mt-3 text-center text-[11px] text-white/55 sm:mt-3 sm:text-[10px] sm:text-white/40">
+            {t("blessing.pickTap")}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -1292,14 +1593,12 @@ function RestOption({
 export function TowerActionBar({
   action,
   locale,
-  activeBlessings,
   resetAtMs,
   canAbandon = false,
   canPark = false,
 }: {
   action: TowerPrimaryAction;
   locale: string;
-  activeBlessings: string[];
   /** Epoch ms del próximo domingo 21hs ART; muestra countdown si el CTA está bloqueado. */
   resetAtMs?: number | null;
   /** Muestra “Abandonar intento” bajo el CTA cuando hay corrida activa. */
@@ -1344,53 +1643,45 @@ export function TowerActionBar({
     : null;
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] z-30 border-t border-white/10 bg-[#0b0d13]/95 px-margin-mobile pt-2 pb-2.5 backdrop-blur-xl sm:pt-2.5 sm:pb-3 md:px-margin-desktop xl:bottom-0">
+    <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] z-30 border-t border-white/10 bg-[#0b0d13]/95 px-margin-mobile pt-2 pb-2 backdrop-blur-xl sm:pt-2.5 sm:pb-2.5 md:px-margin-desktop xl:bottom-0">
       <div className="mx-auto w-full max-w-6xl">
-      {activeBlessings.length > 0 && (
-        <ul className="mb-1.5 flex gap-1 overflow-x-auto [scrollbar-width:none] sm:mb-2 [&::-webkit-scrollbar]:hidden">
-          {activeBlessings.map((name, i) => (
-            <li
-              key={`${name}-${i}`}
-              className="shrink-0 rounded-full border border-violet-400/30 bg-violet-500/10 px-2 py-0.5 text-[9px] font-semibold text-violet-200"
-            >
-              {name}
-            </li>
-          ))}
-        </ul>
-      )}
-      {timerLabel ? (
-        <div className="mb-1.5 flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 sm:mb-2 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2">
-          <span className="material-symbols-outlined text-[15px]! text-on-surface-variant sm:text-[16px]!">
-            schedule
-          </span>
-          <p className="text-[10px] text-on-surface-variant sm:text-[11px]">
-            {t("reset.nextIn")}{" "}
-            <span className="font-mono font-bold tabular-nums text-white">{timerLabel}</span>
+        {timerLabel ? (
+          <div className="mb-1.5 flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 sm:mb-2 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2">
+            <span className="material-symbols-outlined text-[15px]! text-on-surface-variant sm:text-[16px]!">
+              schedule
+            </span>
+            <p className="text-[10px] text-on-surface-variant sm:text-[11px]">
+              {t("reset.nextIn")}{" "}
+              <span className="font-mono font-bold tabular-nums text-white">{timerLabel}</span>
+            </p>
+          </div>
+        ) : null}
+        {action.destination ? (
+          <GameCtaButton href={action.destination} variant="red" disabled={!action.enabled}>
+            {t(action.labelKey)}
+          </GameCtaButton>
+        ) : (
+          <GameCtaButton
+            type="button"
+            variant="red"
+            icon="swords"
+            disabled={!action.enabled || pending}
+            onClick={run}
+          >
+            {pending ? t("actions.working") : t(action.labelKey)}
+          </GameCtaButton>
+        )}
+        {action.reasonKey && (
+          <p className="mt-1.5 pb-0.5 text-center text-[10px] leading-snug text-on-surface-variant">
+            {t(action.reasonKey)}
           </p>
-        </div>
-      ) : null}
-      {action.destination ? (
-        <GameCtaButton href={action.destination} variant="red" disabled={!action.enabled}>
-          {t(action.labelKey)}
-        </GameCtaButton>
-      ) : (
-        <GameCtaButton
-          type="button"
-          variant="red"
-          icon="swords"
-          disabled={!action.enabled || pending}
-          onClick={run}
-        >
-          {pending ? t("actions.working") : t(action.labelKey)}
-        </GameCtaButton>
-      )}
-      {action.reasonKey && (
-        <p className="mt-1.5 pb-0.5 text-center text-[10px] leading-snug text-on-surface-variant">
-          {t(action.reasonKey)}
-        </p>
-      )}
-      {canPark ? <TowerParkButton locale={locale} variant="bar" /> : null}
-      {canAbandon ? <TowerAbandonButton locale={locale} variant="bar" /> : null}
+        )}
+        {canPark || canAbandon ? (
+          <div className="mt-1.5 flex items-center justify-center gap-4 sm:gap-5">
+            {canPark ? <TowerParkButton locale={locale} variant="bar" /> : null}
+            {canAbandon ? <TowerAbandonButton locale={locale} variant="bar" /> : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );
