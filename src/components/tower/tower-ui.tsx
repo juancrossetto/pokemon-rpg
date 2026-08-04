@@ -107,7 +107,7 @@ export function TowerVerticalPath({
                   : isCurrent
                     ? "border-pokeball-red bg-pokeball-red"
                     : cleared
-                      ? "border-emerald-400/80 bg-emerald-500/50"
+                      ? "border-electric-yellow/80 bg-electric-yellow/50"
                       : "border-white/25 bg-[#1a1a1a]"
               }`}
             />
@@ -165,7 +165,7 @@ export function TowerCurrentTeam({ team }: { team: TowerRunCreature[] }) {
               </span>
               <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
                 <div
-                  className={`h-full ${pct > 40 ? "bg-emerald-400" : pct > 15 ? "bg-amber-400" : "bg-error"}`}
+                  className={`h-full ${pct > 40 ? "bg-electric-yellow" : pct > 15 ? "bg-amber-400" : "bg-error"}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>

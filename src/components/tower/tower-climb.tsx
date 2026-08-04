@@ -13,6 +13,7 @@ import {
 } from "@/actions/tower";
 import { GameCtaButton } from "@/components/game-cta-button";
 import { RewardList } from "@/components/events/reward-chip";
+import { PokeSparks } from "@/components/poke-sparks";
 import { TowerAbandonButton, TowerParkButton } from "@/components/tower/tower-ui";
 import type { RewardDef } from "@/lib/events/rewards";
 import type {
@@ -30,12 +31,25 @@ import { floorNodeVisual, pokeApiSpriteUrl } from "@/lib/tower/icons";
  * El color es la única señal que el jugador lee de un vistazo mientras
  * sube, así que cada tipo tiene el suyo y se usa igual en el riel, en la
  * ficha del piso y en el botón. Un elite y un jefe no pueden verse igual.
+ *
+ * Acentos de marca vía CSS vars (`theme-colors.css`) — no hex sueltos.
  * ------------------------------------------------------------------ */
+const THEME = {
+  primary: "var(--color-pokeball-red)",
+  secondary: "var(--color-water-blue)",
+  tertiary: "var(--color-electric-yellow)",
+  muted: "#7c8899",
+  abandoned: "#94a3b8",
+  hpWarn: "#facc15",
+} as const;
+
+const CLEARED_ACCENT = THEME.tertiary;
+
 const FLOOR_TONE: Record<string, { accent: string; icon: string }> = {
-  normal: { accent: "#7c8899", icon: "swords" },
-  elite: { accent: "#a78bfa", icon: "local_fire_department" },
-  boss: { accent: "var(--color-pokeball-red)", icon: "skull" },
-  rest: { accent: "#4ade80", icon: "local_hotel" },
+  normal: { accent: THEME.muted, icon: "swords" },
+  elite: { accent: THEME.secondary, icon: "local_fire_department" },
+  boss: { accent: THEME.primary, icon: "skull" },
+  rest: { accent: THEME.tertiary, icon: "auto_awesome" },
 };
 
 const RARITY_FOIL: Record<
@@ -75,14 +89,14 @@ const RARITY_FOIL: Record<
 const BLESSING_VISUAL: Record<string, { icon: string; accent: string }> = {
   vitality: { icon: "favorite", accent: "#fb7185" },
   swift: { icon: "speed", accent: "#fbbf24" },
-  mend: { icon: "healing", accent: "#4ade80" },
+  mend: { icon: "healing", accent: THEME.tertiary },
   second_wind: { icon: "ecg_heart", accent: "#fb923c" },
-  tide: { icon: "water_drop", accent: "#38bdf8" },
+  tide: { icon: "water_drop", accent: THEME.secondary },
   blaze: { icon: "local_fire_department", accent: "#f97316" },
-  grove: { icon: "eco", accent: "#4ade80" },
+  grove: { icon: "eco", accent: THEME.tertiary },
   fortune: { icon: "monetization_on", accent: "#f2c000" },
-  aegis: { icon: "shield", accent: "#c4b5fd" },
-  rally: { icon: "groups", accent: "#f0abfc" },
+  aegis: { icon: "shield", accent: THEME.secondary },
+  rally: { icon: "groups", accent: THEME.primary },
 };
 
 function blessingVisual(id: string) {
@@ -218,52 +232,55 @@ export function TowerClimbRail({
   const t = useTranslations("tower");
   const { justClimbed, currentNodeRef } = useJustClimbed(autoScroll ? currentFloor : -1);
   const ascending = [...floors].sort((a, b) => b.floorNumber - a.floorNumber);
+  const stagger = ascending.length <= 14;
 
   return (
-    <ol className="relative flex w-full min-w-0 flex-col py-3">
+    <ol className="relative flex w-full min-w-0 flex-col py-2 sm:py-3">
       {ascending.map((floor, i) => {
         const cleared = floor.floorNumber <= highestCleared || floor.floorNumber < currentFloor;
         const isCurrent = floor.floorNumber === currentFloor;
         const tone = toneFor(floor.type);
         const locked = !cleared && !isCurrent;
 
-        /*
-          El riel dejó de ser una línea absoluta única: ahora cada piso dibuja
-          el tramo que baja hacia el piso anterior. Hacía falta para poder
-          animar UN tramo —el recién superado— sin tocar los demás, y además
-          se adapta solo a que cada item mida distinto según cuánto detalle
-          muestre.
-
-          `isLast` es el piso más bajo de la ventana: debajo no hay nada que
-          conectar.
-        */
         const isLast = i === ascending.length - 1;
         const below = floor.floorNumber - 1;
         const segmentFilled = below <= highestCleared || below < currentFloor;
-        // El tramo que se acaba de subir es el que entra al piso actual.
         const segmentJustClimbed = isCurrent && segmentFilled && justClimbed;
+
+        const isDuo =
+          floor.enemies.length >= 2 && floor.type !== "boss" && floor.type !== "rest";
 
         return (
           <li
             key={floor.id}
             ref={isCurrent ? currentNodeRef : undefined}
-            className="tp-rise relative flex w-full min-w-0 items-start gap-2.5 py-1"
-            style={{ animationDelay: `${i * 50}ms` } as CSSProperties}
+            className={`relative flex w-full min-w-0 items-start gap-2.5 py-0.5 sm:gap-3 sm:py-1 ${
+              stagger ? "tp-rise" : ""
+            }`}
+            style={
+              (stagger ? { animationDelay: `${i * 40}ms` } : undefined) as CSSProperties
+            }
           >
-            {/* Nodo + tramo hacia el piso de abajo */}
-            <div className="relative z-[1] flex w-14 shrink-0 flex-col items-center self-stretch sm:w-16">
+            <div className="relative z-[1] flex w-12 shrink-0 flex-col items-center self-stretch sm:w-14">
               <span
-                className={`relative flex h-14 w-14 shrink-0 items-center justify-center overflow-visible rounded-2xl border-2 transition sm:h-16 sm:w-16 ${
+                className={`relative flex h-12 w-12 shrink-0 items-center justify-center overflow-visible rounded-full border transition sm:h-14 sm:w-14 ${
                   segmentJustClimbed ? "tower-node-reached" : ""
                 }`}
                 style={
                   {
-                    borderColor: isCurrent ? tone.accent : cleared ? "#34d39988" : "#ffffff1f",
+                    borderColor: isCurrent
+                      ? tone.accent
+                      : cleared
+                        ? `color-mix(in srgb, ${CLEARED_ACCENT} 45%, transparent)`
+                        : "rgba(255,255,255,0.12)",
+                    borderWidth: isCurrent ? 2 : 1.5,
                     background: isCurrent
-                      ? `radial-gradient(circle at 50% 30%, ${tone.accent}44, #0b0e14)`
-                      : "#0b0e14",
+                      ? `radial-gradient(circle at 50% 35%, color-mix(in srgb, ${tone.accent} 28%, transparent), #0c0e14 70%)`
+                      : cleared
+                        ? "rgba(255,255,255,0.03)"
+                        : "rgba(8,10,14,0.92)",
                     boxShadow: isCurrent
-                      ? `0 0 0 1px ${tone.accent}66, 0 0 18px ${tone.accent}44`
+                      ? `0 0 0 1px color-mix(in srgb, ${tone.accent} 40%, transparent), 0 0 20px color-mix(in srgb, ${tone.accent} 28%, transparent)`
                       : undefined,
                     "--tower-node-glow": `${tone.accent}99`,
                   } as CSSProperties
@@ -278,7 +295,11 @@ export function TowerClimbRail({
               </span>
               <span
                 className={`mt-0.5 shrink-0 font-mono text-[10px] font-bold tabular-nums ${
-                  isCurrent ? "text-white" : "text-white/35"
+                  isCurrent
+                    ? "text-white"
+                    : cleared
+                      ? "text-electric-yellow/70"
+                      : "text-white/30"
                 }`}
               >
                 {floor.floorNumber}
@@ -293,57 +314,70 @@ export function TowerClimbRail({
               )}
             </div>
 
-            {/*
-              `self-start`: la ficha no se estira con el tramo del riel. Antes
-              `items-stretch` dejaba el card del piso actual (guardián) con un
-              hueco vacío abajo, como si estuviera incompleto.
-            */}
             <div
-              className={`relative min-w-0 flex-1 self-start rounded-xl border px-2.5 py-2 transition sm:px-3 sm:py-2.5 ${
+              className={`relative min-w-0 flex-1 self-start rounded-xl border px-2.5 py-1.5 transition sm:rounded-2xl sm:px-3 sm:py-2 ${
                 isCurrent
-                  ? "border-white/20 bg-white/[0.05]"
+                  ? "border-white/18 bg-white/[0.06]"
                   : locked
-                    ? "border-white/[0.05] bg-white/[0.012] opacity-55"
-                    : "border-white/[0.07] bg-white/[0.025]"
+                    ? "border-white/[0.05] bg-white/[0.015] opacity-50"
+                    : "border-white/[0.07] bg-black/20"
               }`}
-              style={isCurrent ? { boxShadow: `inset 0 0 24px ${tone.accent}1f` } : undefined}
+              style={
+                isCurrent
+                  ? {
+                      boxShadow: `inset 0 0 28px color-mix(in srgb, ${tone.accent} 12%, transparent)`,
+                    }
+                  : undefined
+              }
             >
               <div className="flex flex-wrap items-center gap-1.5">
                 <span
-                  className="rounded px-1.5 py-px text-[9px] font-black uppercase tracking-wider"
-                  style={{ background: `${tone.accent}22`, color: tone.accent }}
+                  className="rounded-md px-1.5 py-px text-[9px] font-bold uppercase tracking-[0.12em]"
+                  style={{
+                    background: `color-mix(in srgb, ${tone.accent} 16%, transparent)`,
+                    color: tone.accent,
+                  }}
                 >
                   {t(`floorTypes.${floor.type}`)}
                 </span>
-                {isCurrent && (
-                  <span className="ui-chip ui-chip--accent text-[9px]">
+                {isDuo ? (
+                  <span className="rounded-md border border-white/15 bg-white/8 px-1.5 py-px text-[9px] font-bold uppercase tracking-[0.14em] text-white/80">
+                    2v2
+                  </span>
+                ) : null}
+                {isCurrent ? (
+                  <span className="rounded-full bg-pokeball-red/90 px-2 py-px text-[9px] font-black uppercase tracking-wider text-white">
                     {t("path.current")}
                   </span>
-                )}
+                ) : null}
+                {cleared && !isCurrent ? (
+                  <span className="text-[9px] font-semibold uppercase tracking-wider text-electric-yellow/55">
+                    ✓
+                  </span>
+                ) : null}
               </div>
 
-              {/* El detalle sólo en el piso actual: en los demás sería ruido */}
               {isCurrent ? (
                 <>
-                  <p className="mt-1 font-mono text-[11px] tabular-nums text-on-surface-variant">
+                  <p className="mt-1 font-mono text-[11px] tabular-nums text-white/70">
                     {t("path.recommendedPc", { pc: floor.recommendedCombatPower })}
                   </p>
-                  {floor.modifiers.length > 0 && (
+                  {floor.modifiers.length > 0 ? (
                     <ul className="mt-1.5 flex flex-wrap gap-1">
                       {floor.modifiers.map((m) => (
                         <li
                           key={m.id}
                           title={t(m.descriptionKey)}
-                          className="rounded border border-violet-400/25 bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-violet-200"
+                          className="rounded-md border border-secondary/30 bg-secondary/15 px-1.5 py-0.5 text-[9px] font-semibold text-secondary"
                         >
                           {t(m.nameKey)}
                         </li>
                       ))}
                     </ul>
-                  )}
+                  ) : null}
                 </>
               ) : (
-                <p className="mt-0.5 font-mono text-[10px] tabular-nums text-white/30">
+                <p className="mt-0.5 font-mono text-[10px] tabular-nums text-white/35">
                   {t("path.recommendedPc", { pc: floor.recommendedCombatPower })}
                 </p>
               )}
@@ -366,23 +400,33 @@ function FloorNodeFace({
   locked: boolean;
   accent: string;
 }) {
+  const dim = cleared ? "opacity-80 grayscale-[0.35]" : locked ? "opacity-45" : "";
+
+  const checkBadge = cleared ? (
+    <span className="material-symbols-outlined absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#0c0e14] text-[12px]! font-bold text-electric-yellow ring-1 ring-electric-yellow/40">
+      check
+    </span>
+  ) : null;
+
+  const lockBadge = locked ? (
+    <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[14px]! text-white/35 drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
+      lock
+    </span>
+  ) : null;
+
   // Dobles / elite con 2 enemigos: mostrar ambos sprites en el nodo.
   if (floor.enemies.length >= 2 && floor.type !== "boss" && floor.type !== "rest") {
     const [a, b] = floor.enemies;
     return (
       <>
-        <div
-          className={`relative flex h-full w-full items-center justify-center ${
-            cleared ? "opacity-40" : ""
-          } ${locked ? "opacity-45" : ""}`}
-        >
+        <div className={`relative flex h-full w-full items-center justify-center ${dim}`}>
           <Image
             src={pokeApiSpriteUrl(a!.speciesId, "icon")}
             alt=""
             width={40}
             height={40}
             unoptimized
-            className="absolute left-0.5 top-1 h-9 w-9 object-contain object-center sm:h-10 sm:w-10"
+            className="absolute left-0.5 top-1 h-8 w-8 object-contain object-center sm:h-9 sm:w-9"
           />
           <Image
             src={pokeApiSpriteUrl(b!.speciesId, "icon")}
@@ -390,25 +434,11 @@ function FloorNodeFace({
             width={40}
             height={40}
             unoptimized
-            className="absolute bottom-0.5 right-0.5 h-9 w-9 object-contain object-center sm:h-10 sm:w-10"
+            className="absolute bottom-0.5 right-0.5 h-8 w-8 object-contain object-center sm:h-9 sm:w-9"
           />
-          <span
-            className="absolute bottom-0 left-0 rounded bg-black/55 px-0.5 text-[8px] font-black uppercase tracking-wide"
-            style={{ color: accent }}
-          >
-            2v2
-          </span>
         </div>
-        {cleared ? (
-          <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[22px]! font-bold text-emerald-400 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-            check
-          </span>
-        ) : null}
-        {locked ? (
-          <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[16px]! text-white/40 drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
-            lock
-          </span>
-        ) : null}
+        {checkBadge}
+        {lockBadge}
       </>
     );
   }
@@ -419,52 +449,44 @@ function FloorNodeFace({
     return (
       <>
         <span
-          className="material-symbols-outlined text-[26px]!"
+          className="material-symbols-outlined text-[22px]! sm:text-[24px]!"
           style={{
-            color: locked ? "#ffffff40" : cleared ? "#34d39955" : accent,
-            opacity: cleared ? 0.4 : 1,
+            color: locked ? "#ffffff40" : accent,
+            opacity: cleared ? 0.75 : 1,
           }}
         >
           {visual.icon}
         </span>
-        {cleared ? (
-          <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[22px]! font-bold text-emerald-400 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-            check
-          </span>
-        ) : null}
-        {locked ? (
-          <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[16px]! text-white/40">
-            lock
-          </span>
-        ) : null}
+        {checkBadge}
+        {lockBadge}
       </>
     );
   }
 
   return (
     <>
+      {floor.type === "rest" ? (
+        <span aria-hidden className="tower-rest-sparkles pointer-events-none absolute inset-0">
+          <span className="tower-rest-spark tower-rest-spark--a" />
+          <span className="tower-rest-spark tower-rest-spark--b" />
+          <span className="tower-rest-spark tower-rest-spark--c" />
+          <span className="tower-rest-spark tower-rest-spark--d" />
+        </span>
+      ) : null}
       <Image
         src={visual.src}
         alt=""
         width={visual.kind === "pokemon" ? 64 : 56}
         height={visual.kind === "pokemon" ? 64 : 56}
         unoptimized
-        className={`object-contain object-center ${
+        className={`relative z-[1] object-contain object-center ${
           visual.kind === "pokemon"
-            ? "h-[58px] w-[58px] max-w-none scale-[1.15]"
-            : "h-[52px] w-[52px] scale-110"
-        } ${cleared ? "opacity-40" : ""} ${locked ? "opacity-45" : ""}`}
+            ? "h-[44px] w-[44px] max-w-none scale-[1.1] sm:h-[50px] sm:w-[50px]"
+            : "h-[42px] w-[42px] scale-105 sm:h-[46px] sm:w-[46px]"
+        } ${dim} ${floor.type === "rest" ? "drop-shadow-[0_0_10px_rgba(240,171,252,0.45)]" : ""}`}
       />
-      {cleared ? (
-        <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[22px]! font-bold text-emerald-400 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-          check
-        </span>
-      ) : null}
-      {locked ? (
-        <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[16px]! text-white/40 drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
-          lock
-        </span>
-      ) : null}
+      {checkBadge}
+      {lockBadge}
     </>
   );
 }
@@ -489,7 +511,7 @@ function RailSegment({
   animate: boolean;
   accent: string;
 }) {
-  const glow = filled ? "#34d399" : accent;
+  const glow = filled ? CLEARED_ACCENT : accent;
 
   return (
     /*
@@ -676,8 +698,8 @@ function LootLane({
 /**
  * Resumen al cerrar un intento: derrota, victoria o abandono.
  *
+ * Layout: header + squad (protagonista) + loot en franja baja alargada.
  * El botín queda en `pendingLoot` hasta que el jugador lo reclame acá.
- * También muestra el estado final del equipo del intento.
  */
 export function TowerEndedSummary({
   kind,
@@ -706,7 +728,11 @@ export function TowerEndedSummary({
   const t = useTranslations("tower");
   const [pending, start] = useTransition();
   const accent =
-    kind === "COMPLETED" ? "#4ade80" : kind === "ABANDONED" ? "#94a3b8" : "var(--color-pokeball-red)";
+    kind === "COMPLETED"
+      ? THEME.tertiary
+      : kind === "ABANDONED"
+        ? THEME.abandoned
+        : THEME.primary;
   const titleKey =
     kind === "COMPLETED"
       ? "result.completedTitle"
@@ -720,110 +746,92 @@ export function TowerEndedSummary({
         ? "result.abandonedBody"
         : "result.failedBody";
 
+  const lootStatus = lootClaimed
+    ? t("result.lootClaimed")
+    : alreadyGranted
+      ? t("result.lootAlreadyGranted")
+      : t("result.lootHint");
+
   return (
     <section
-      className="relative overflow-hidden rounded-xl border px-2.5 py-2 sm:rounded-2xl sm:px-4 sm:py-3"
+      className="relative overflow-hidden rounded-2xl border"
       style={{
-        borderColor: `${accent}44`,
-        background: `linear-gradient(180deg, ${accent}14 0%, rgba(10,12,18,0.92) 55%)`,
+        borderColor: `color-mix(in srgb, ${accent} 28%, transparent)`,
+        background: `linear-gradient(165deg, color-mix(in srgb, ${accent} 12%, transparent) 0%, rgba(12,14,20,0.96) 42%, rgba(10,12,18,0.98) 100%)`,
       }}
     >
-      <div className="flex items-start justify-between gap-2">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full blur-3xl"
+        style={{ background: `color-mix(in srgb, ${accent} 22%, transparent)` }}
+      />
+
+      {/* Header */}
+      <div className="relative flex items-start justify-between gap-3 px-3.5 pt-3.5 sm:px-4 sm:pt-4">
         <div className="min-w-0 flex-1">
           <p
-            className="text-[9px] font-black uppercase tracking-[0.2em] sm:text-[10px] sm:tracking-[0.22em]"
+            className="text-[10px] font-black uppercase tracking-[0.22em]"
             style={{ color: accent }}
           >
             {t(titleKey)}
           </p>
-          <p className="mt-0.5 line-clamp-1 text-[11px] leading-snug text-white/65 sm:mt-1 sm:line-clamp-none sm:text-[12px] sm:text-white/70">
+          <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-white/60 sm:text-[13px]">
             {t(bodyKey)}
           </p>
         </div>
-        <div className="shrink-0 rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-right sm:rounded-xl sm:px-3 sm:py-1.5">
-          <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-on-surface-variant/65 sm:text-[8px] sm:tracking-[0.16em]">
+        <div className="shrink-0 rounded-xl border border-white/10 bg-black/35 px-3 py-1.5 text-right backdrop-blur-sm">
+          <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
             {t("result.floorReached")}
           </p>
-          <p className="font-mono text-[20px] font-black leading-none tabular-nums text-white sm:text-[22px]">
+          <p className="mt-0.5 font-mono text-[22px] font-black leading-none tabular-nums text-white sm:text-[24px]">
             {floorReached}
           </p>
         </div>
       </div>
 
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3">
-        <div className="rounded-lg border border-white/[0.08] bg-black/25 px-2 py-1.5 sm:rounded-xl sm:px-3 sm:py-2.5">
-          <p className="mb-1 text-[7px] font-bold uppercase tracking-[0.14em] text-electric-yellow/80 sm:mb-1.5 sm:text-[8px] sm:tracking-[0.16em]">
-            {t("result.lootKept")}
-          </p>
-          {loot.length > 0 ? (
-            <RewardList rewards={loot} size="sm" unitLabels={unitLabels} />
-          ) : (
-            <p className="text-[10px] text-on-surface-variant/55 sm:text-[11px]">{t("result.lootEmpty")}</p>
-          )}
-          {lootClaimed ? (
-            <p className="mt-1 text-[9px] font-semibold text-emerald-300/90 sm:mt-2 sm:text-[10px]">
-              {t("result.lootClaimed")}
-            </p>
-          ) : alreadyGranted ? (
-            <p className="mt-1 line-clamp-2 text-[9px] leading-snug text-on-surface-variant/55 sm:mt-2 sm:text-[10px]">
-              {t("result.lootAlreadyGranted")}
-            </p>
-          ) : (
-            <p className="mt-1 line-clamp-2 text-[9px] leading-snug text-on-surface-variant/55 sm:mt-2 sm:text-[10px]">
-              {t("result.lootHint")}
-            </p>
-          )}
-          {canClaim && !lootClaimed ? (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => start(async () => claimTowerLoot(locale, runId))}
-              className="mt-1.5 flex w-full min-h-9 items-center justify-center gap-1 rounded-lg bg-electric-yellow px-2 py-1.5 text-[11px] font-black uppercase tracking-wider text-surface transition hover:bg-electric-yellow/90 disabled:opacity-50 sm:mt-2.5 sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2 sm:text-[12px]"
-            >
-              <span className="material-symbols-outlined text-[16px]! sm:text-[18px]!">redeem</span>
-              {pending ? t("actions.working") : t("result.claimCta")}
-            </button>
-          ) : null}
-        </div>
-
-        <div className="rounded-lg border border-white/[0.08] bg-black/25 px-2 py-1.5 sm:rounded-xl sm:px-3 sm:py-2.5">
-          <p className="mb-1 text-[7px] font-bold uppercase tracking-[0.14em] text-on-surface-variant/65 sm:mb-1.5 sm:text-[8px] sm:tracking-[0.16em]">
+      {/* Squad — protagonista, ancho completo */}
+      <div className="relative mt-3 px-3.5 sm:mt-3.5 sm:px-4">
+        <div className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2.5 sm:px-3.5 sm:py-3">
+          <p className="mb-2 text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
             {t("result.finalTeam")}
           </p>
-          <ul className="grid grid-cols-3 gap-0.5 sm:grid-cols-6 sm:gap-1">
+          <ul className="grid grid-cols-6 gap-1.5 sm:gap-2">
             {team.map((m) => {
               const down = m.defeated || m.currentHp <= 0;
               const pct = m.maxHp > 0 ? m.currentHp / m.maxHp : 0;
-              const hpColor = pct > 0.5 ? "#4ade80" : pct > 0.2 ? "#facc15" : "#ef4444";
+              const hpColor =
+                pct > 0.5 ? THEME.tertiary : pct > 0.2 ? THEME.hpWarn : "var(--color-error)";
               return (
                 <li
                   key={m.instanceId}
                   title={`${m.nickname ?? m.speciesName} · ${m.currentHp}/${m.maxHp}`}
-                  className={`relative flex flex-col items-center rounded-md border px-0.5 pb-0.5 pt-0.5 sm:rounded-lg sm:pb-1 sm:pt-1 ${
+                  className={`relative flex flex-col items-center rounded-lg border px-1 pb-1 pt-1.5 ${
                     down
-                      ? "border-error/25 bg-error/10"
-                      : "border-white/[0.08] bg-white/[0.03]"
+                      ? "border-error/30 bg-error/10"
+                      : "border-white/[0.1] bg-white/[0.04]"
                   }`}
                 >
                   <Image
                     src={m.spriteUrl}
                     alt={m.nickname ?? m.speciesName}
-                    width={36}
-                    height={36}
+                    width={48}
+                    height={48}
                     unoptimized
-                    className={`h-6 w-6 object-contain sm:h-8 sm:w-8 ${down ? "grayscale opacity-70" : ""}`}
+                    className={`h-9 w-9 object-contain sm:h-10 sm:w-10 ${
+                      down ? "opacity-85 grayscale-[0.4]" : ""
+                    }`}
                   />
                   {down ? (
-                    <span className="material-symbols-outlined absolute inset-0 m-auto h-fit w-fit text-[11px]! text-error sm:text-[14px]!">
+                    <span className="material-symbols-outlined absolute right-0 top-0 text-[11px]! text-error drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)] sm:text-[12px]!">
                       skull
                     </span>
                   ) : null}
-                  <div className="mt-0.5 h-[2px] w-full overflow-hidden rounded-full bg-white/10 sm:h-[3px]">
+                  <div className="mt-1 h-[3px] w-full overflow-hidden rounded-full bg-white/10">
                     <div
                       className="h-full rounded-full"
                       style={{
                         width: `${Math.round(Math.max(0, pct) * 100)}%`,
-                        background: down ? "#ef4444" : hpColor,
+                        background: down ? "var(--color-error)" : hpColor,
                       }}
                     />
                   </div>
@@ -831,9 +839,46 @@ export function TowerEndedSummary({
               );
             })}
           </ul>
-          <p className="mt-1 hidden text-[10px] leading-snug text-on-surface-variant/55 sm:mt-2 sm:block">
+          <p className="mt-2 text-[10px] leading-snug text-white/40 sm:text-[11px]">
             {t("result.teamRestored")}
           </p>
+        </div>
+      </div>
+
+      {/* Loot — franja baja alargada y chata */}
+      <div className="relative mt-2.5 px-3.5 pb-3.5 sm:mt-3 sm:px-4 sm:pb-4">
+        <div className="flex min-h-[3.25rem] items-center gap-3 rounded-xl border border-white/[0.08] bg-black/25 px-3 py-2 sm:min-h-[3.5rem] sm:gap-3.5 sm:px-3.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-electric-yellow/75">
+              {t("result.lootKept")}
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 [&_.font-mono]:text-white!">
+              {loot.length > 0 ? (
+                <RewardList rewards={loot} size="sm" unitLabels={unitLabels} />
+              ) : (
+                <p className="text-[11px] text-white/40">{t("result.lootEmpty")}</p>
+              )}
+              {!canClaim || lootClaimed || alreadyGranted ? (
+                <p className="text-[10px] font-medium text-white/45 sm:text-[11px]">{lootStatus}</p>
+              ) : null}
+            </div>
+          </div>
+
+          {canClaim && !lootClaimed ? (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => start(async () => claimTowerLoot(locale, runId))}
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-lg bg-pokeball-red px-3 text-[11px] font-bold uppercase tracking-wider text-white transition hover:brightness-110 disabled:opacity-50 sm:h-10 sm:px-3.5 sm:text-[12px]"
+            >
+              <span className="material-symbols-outlined text-[16px]! sm:text-[18px]!">redeem</span>
+              {pending ? t("actions.working") : t("result.claimCta")}
+            </button>
+          ) : lootClaimed ? (
+            <span className="material-symbols-outlined shrink-0 text-[20px]! text-electric-yellow/80">
+              check_circle
+            </span>
+          ) : null}
         </div>
       </div>
     </section>
@@ -855,7 +900,8 @@ export function TowerSquad({ team }: { team: TowerRunCreature[] }) {
         {team.map((m) => {
           const pct = m.maxHp > 0 ? m.currentHp / m.maxHp : 0;
           const down = m.defeated || m.currentHp <= 0;
-          const hpColor = pct > 0.5 ? "#4ade80" : pct > 0.2 ? "#facc15" : "#ef4444";
+          const hpColor =
+            pct > 0.5 ? THEME.tertiary : pct > 0.2 ? THEME.hpWarn : "var(--color-error)";
           return (
             <li
               key={m.instanceId}
@@ -1078,45 +1124,49 @@ export function TowerRestFork({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-emerald-400/20 bg-[#0a0c12] p-3 sm:p-4">
+    <div className="relative overflow-hidden rounded-2xl border border-electric-yellow/20 bg-[#0a0c12] p-3 sm:p-4">
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(74,222,128,0.14),transparent_55%)]"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-electric-yellow) 14%, transparent), transparent 55%)",
+        }}
       />
 
       <div className="relative z-10 text-center">
-        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-300/90">
+        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-electric-yellow/90">
           {t("rest.title")}
         </p>
         <p className="mt-1 text-[11px] text-on-surface-variant/80">{t("rest.hint")}</p>
       </div>
 
-      <div className="relative z-10 mt-3 grid gap-2.5 sm:grid-cols-2">
+      <div className="relative z-10 mt-3 grid grid-cols-2 gap-2 sm:gap-2.5">
         <RestOption
-          icon="local_hotel"
-          accent="#4ade80"
-          foil="linear-gradient(145deg,#166534 0%,#86efac 45%,#14532d 100%)"
-          wash="radial-gradient(ellipse at 50% 0%, rgba(74,222,128,0.28) 0%, transparent 62%)"
+          seed="tower-rest-recover"
+          imageSrc="/tower/rest-snorlax.png"
+          accent={THEME.tertiary}
+          foil="linear-gradient(145deg, color-mix(in srgb, var(--theme-tertiary) 65%, black) 0%, color-mix(in srgb, var(--theme-tertiary) 70%, white) 45%, color-mix(in srgb, var(--theme-tertiary) 55%, black) 100%)"
+          wash="radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-electric-yellow) 28%, transparent) 0%, transparent 62%)"
           stat={`+${recoveryPct}%`}
           title={t("rest.recoverTitle")}
           body={t("rest.recoverBody", { pct: recoveryPct })}
-          cta={t("rest.recoverCta")}
           pending={pending}
           active={picked === "recover"}
           dimmed={pending && picked !== "recover"}
           onClick={() => choose("recover")}
         />
         <RestOption
-          icon="auto_awesome"
-          accent="#c79bf0"
-          foil="linear-gradient(145deg,#5b21b6 0%,#e9d5ff 45%,#4c1d95 100%)"
-          wash="radial-gradient(ellipse at 50% 0%, rgba(196,181,253,0.28) 0%, transparent 62%)"
+          seed="tower-rest-attune"
+          imageSrc="/tower/rest-alakazam.png"
+          accent={THEME.secondary}
+          foil="linear-gradient(145deg, color-mix(in srgb, var(--theme-secondary) 65%, black) 0%, color-mix(in srgb, var(--theme-secondary) 55%, white) 45%, color-mix(in srgb, var(--theme-secondary) 55%, black) 100%)"
+          wash="radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-water-blue) 28%, transparent) 0%, transparent 62%)"
           stat="✦"
           title={t("rest.attuneTitle")}
           body={
             canAttune ? t("rest.attuneBody") : t("rest.attuneUnavailable")
           }
-          cta={t("rest.attuneCta")}
           pending={pending}
           active={picked === "attune"}
           dimmed={pending && picked !== "attune"}
@@ -1140,28 +1190,28 @@ export function TowerRestFork({
 }
 
 function RestOption({
-  icon,
+  seed,
+  imageSrc,
   accent,
   foil,
   wash,
   stat,
   title,
   body,
-  cta,
   pending,
   active,
   dimmed,
   disabled,
   onClick,
 }: {
-  icon: string;
+  seed: string;
+  imageSrc: string;
   accent: string;
   foil: string;
   wash: string;
   stat: string;
   title: string;
   body: string;
-  cta: string;
   pending: boolean;
   active: boolean;
   dimmed: boolean;
@@ -1178,54 +1228,49 @@ function RestOption({
         dimmed || disabled ? "opacity-40" : "hover:-translate-y-0.5 hover:scale-[1.015]"
       } ${active ? "scale-[1.015]" : ""}`}
     >
-      <span className="relative flex h-full min-h-[11.5rem] flex-col overflow-hidden rounded-[0.95rem] bg-[#0a0c12] p-3.5">
+      <span className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[0.95rem] bg-[#0a0c12] px-2 pb-3 pt-2.5 sm:px-3.5 sm:pb-4 sm:pt-3">
         <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: wash }} />
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-5 -top-6 h-24 w-24 rounded-full opacity-35 blur-2xl transition group-hover:opacity-60"
+          className="pointer-events-none absolute -right-5 -top-6 h-28 w-28 rounded-full opacity-35 blur-2xl transition group-hover:opacity-60"
           style={{ background: accent }}
         />
+        <PokeSparks seed={seed} accent={accent} />
 
         <span className="relative z-10 flex flex-1 flex-col items-center text-center">
           <span
-            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-black/35"
+            className="relative flex h-[4.75rem] w-[4.75rem] items-center justify-center sm:h-28 sm:w-28"
             style={{
-              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 24px ${accent}33`,
+              filter: `drop-shadow(0 0 16px ${accent}55)`,
             }}
           >
-            <span
-              className="material-symbols-outlined text-[26px]! leading-none"
-              style={{ color: accent }}
-            >
-              {icon}
-            </span>
+            <Image
+              src={imageSrc}
+              alt=""
+              width={128}
+              height={128}
+              unoptimized
+              className="h-[4.75rem] w-[4.75rem] object-contain drop-shadow-[0_6px_12px_rgba(0,0,0,0.45)] sm:h-28 sm:w-28"
+            />
+            {active ? (
+              <span className="absolute inset-0 flex items-center justify-center bg-[#0a0c12]/45">
+                <span className="material-symbols-outlined animate-spin text-[22px]! text-white sm:text-[28px]!">
+                  progress_activity
+                </span>
+              </span>
+            ) : null}
           </span>
 
           <span
-            className="mt-2.5 font-mono text-[22px] font-black leading-none tracking-tight"
+            className="mt-1.5 font-mono text-[18px] font-black leading-none tracking-tight sm:mt-2 sm:text-[22px]"
             style={{ color: accent }}
           >
             {stat}
           </span>
-          <span className="mt-2 text-[15px] font-bold leading-tight text-white">{title}</span>
-          <span className="mt-1 text-[11px] leading-snug text-white/55">{body}</span>
-        </span>
-
-        <span
-          className={`relative z-10 mt-3 flex items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70 transition group-hover:border-white/20 group-hover:text-white ${
-            active ? "border-white/25 text-white" : ""
-          }`}
-        >
-          {active ? (
-            <span className="material-symbols-outlined animate-spin text-[14px]!">
-              progress_activity
-            </span>
-          ) : (
-            <>
-              <span className="material-symbols-outlined text-[14px]!">ads_click</span>
-              {cta}
-            </>
-          )}
+          <span className="mt-1.5 text-[12px] font-bold uppercase leading-tight tracking-[0.06em] text-white sm:mt-2 sm:text-[15px]">
+            {title}
+          </span>
+          <span className="mt-1 text-[10px] leading-snug text-white/55 sm:text-[11px]">{body}</span>
         </span>
       </span>
     </button>

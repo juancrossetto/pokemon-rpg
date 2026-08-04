@@ -8,6 +8,7 @@ import Image from "next/image";
 import { type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { PokeballIcon } from "@/components/pokeball-icon";
+import { TrainerAvatar } from "@/components/trainer-avatar";
 import {
   BATTLE_STATS,
   isStatusCondition,
@@ -22,69 +23,131 @@ export function PartySidebar({
   portraitUrl,
   align,
   compact,
+  variant = "party",
+  featuredSpriteUrl = null,
   children,
 }: {
   name: string;
   portraitUrl: string | null;
   align: "left" | "right";
   compact?: boolean;
+  /** Encuentro salvaje: un solo sprite, sin grilla de 6. */
+  variant?: "party" | "wild";
+  featuredSpriteUrl?: string | null;
   children: ReactNode;
 }) {
-  const portraitIsRemote = portraitUrl?.startsWith("http") ?? false;
+  const pixelPortrait = Boolean(portraitUrl?.startsWith("http"));
+  const isWild = variant === "wild";
 
   if (compact) {
     return (
-      <div className="glass-panel px-3 py-2 flex items-center gap-3">
-        {portraitUrl && (
-          <div className="w-10 h-12 rounded overflow-hidden border border-white/15 shrink-0 bg-surface-container-high">
+      <div
+        className={`flex items-center gap-2 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-black/25 px-2 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ${
+          align === "right" ? "flex-row-reverse" : ""
+        }`}
+      >
+        {isWild && featuredSpriteUrl ? (
+          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-pokeball-red/45 bg-[#16181f] shadow-[0_0_12px_color-mix(in_srgb,var(--color-pokeball-red)_22%,transparent)]">
             <Image
-              src={portraitUrl}
-              alt={name}
-              width={40}
-              height={48}
-              unoptimized={portraitIsRemote}
-              className="w-full h-full object-cover object-top"
+              src={featuredSpriteUrl}
+              alt=""
+              width={36}
+              height={36}
+              className="h-8 w-8 object-contain"
+              unoptimized
             />
-          </div>
+          </span>
+        ) : (
+          <TrainerAvatar
+            name={name}
+            src={portraitUrl}
+            size="xs"
+            pixel={pixelPortrait}
+            className="shrink-0"
+          />
         )}
         <div className="min-w-0 flex-1">
           <p
             title={name}
-            className={`text-label-sm text-on-surface font-bold leading-tight line-clamp-2 ${
+            className={`truncate text-[11px] font-semibold leading-tight text-white/85 ${
               align === "right" ? "text-right" : ""
             }`}
           >
             {name}
           </p>
-          <div className={`mt-1 flex gap-1.5 ${align === "right" ? "justify-end" : ""}`}>{children}</div>
+          {!isWild ? (
+            <div className={`mt-1 flex flex-wrap gap-1 ${align === "right" ? "justify-end" : ""}`}>
+              {children}
+            </div>
+          ) : null}
         </div>
       </div>
     );
   }
 
+  if (isWild) {
+    return (
+      <div className="flex h-full min-w-0 flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.055] via-[#12141a]/92 to-black/40 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_32px_rgba(0,0,0,0.35)]">
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">
+          {name}
+        </p>
+        <div className="relative flex h-[5.5rem] w-[5.5rem] items-center justify-center">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-full bg-pokeball-red/12 blur-xl"
+          />
+          <span className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-2xl border border-white/12 bg-[#0c0e14]/85">
+            {featuredSpriteUrl ? (
+              <Image
+                src={featuredSpriteUrl}
+                alt=""
+                width={96}
+                height={96}
+                className="h-[88%] w-[88%] object-contain drop-shadow-[0_6px_12px_rgba(0,0,0,0.5)]"
+                unoptimized
+              />
+            ) : (
+              <PokeballIcon className="h-8 w-8 opacity-35" />
+            )}
+          </span>
+        </div>
+        {/* Doubles salvajes: hasta 2 íconos chicos debajo, sin pads vacíos. */}
+        {children ? <div className="flex justify-center gap-1.5">{children}</div> : null}
+      </div>
+    );
+  }
+
   return (
-    <div className="glass-panel p-2.5 h-full flex flex-col gap-2 min-w-0">
-      <p
-        title={name}
-        className={`text-label-sm text-on-surface font-bold leading-tight px-0.5 line-clamp-2 ${
-          align === "right" ? "text-right" : ""
+    <div className="flex h-full min-w-0 flex-col gap-2.5 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.055] via-[#12141a]/92 to-black/40 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_32px_rgba(0,0,0,0.35)]">
+      <div
+        className={`flex items-center gap-2.5 ${
+          align === "right" ? "flex-row-reverse text-right" : ""
         }`}
       >
-        {name}
-      </p>
-      {portraitUrl && (
-        <div className="mx-auto w-20 h-24 shrink-0 rounded-lg overflow-hidden border border-white/15 bg-surface-container-high">
-          <Image
-            src={portraitUrl}
-            alt={name}
-            width={80}
-            height={96}
-            unoptimized={portraitIsRemote}
-            className="w-full h-full object-cover object-top"
+        <span className="relative shrink-0">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -inset-1 rounded-[32%] bg-pokeball-red/15 blur-md"
           />
+          <TrainerAvatar
+            name={name}
+            src={portraitUrl}
+            size="lg"
+            pixel={pixelPortrait}
+            className="relative"
+          />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p
+            title={name}
+            className="line-clamp-2 text-[13px] font-semibold leading-snug text-white"
+          >
+            {name}
+          </p>
         </div>
-      )}
-      <div className="grid grid-cols-2 gap-1.5 mt-auto">{children}</div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5">{children}</div>
     </div>
   );
 }
@@ -107,11 +170,13 @@ export function PartyIcon({
   return (
     <div
       title={name}
-      className={`relative rounded-md border bg-surface-container-high/80 flex items-center justify-center overflow-hidden ${
-        compact ? "h-7 w-7 shrink-0" : "aspect-square"
+      className={`relative flex items-center justify-center overflow-hidden rounded-xl border bg-[#16181f]/90 ${
+        compact ? "h-8 w-8 shrink-0" : "aspect-square"
       } ${
-        active ? "border-pokeball-red/70 ring-1 ring-pokeball-red/40" : "border-white/10"
-      } ${fainted ? "opacity-35 grayscale" : ""}`}
+        active
+          ? "border-pokeball-red/80 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-pokeball-red)_35%,transparent),0_0_12px_color-mix(in_srgb,var(--color-pokeball-red)_25%,transparent)]"
+          : "border-white/10"
+      } ${fainted ? "opacity-70 grayscale-[0.45]" : ""}`}
     >
       {spriteUrl ? (
         <Image
@@ -119,19 +184,32 @@ export function PartyIcon({
           alt={name}
           width={compact ? 28 : 40}
           height={compact ? 28 : 40}
-          className={compact ? "w-6 h-6 object-contain" : "w-9 h-9 object-contain"}
+          className={
+            compact
+              ? "h-6 w-6 object-contain"
+              : "h-[85%] w-[85%] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
+          }
         />
       ) : (
-        <PokeballIcon className={compact ? "w-3.5 h-3.5 opacity-40" : "w-5 h-5 opacity-40"} />
+        <PokeballIcon className={compact ? "h-3.5 w-3.5 opacity-40" : "h-5 w-5 opacity-40"} />
       )}
-      {typeof hpPct === "number" && !fainted && (
-        <div className={`absolute bottom-0 left-0 right-0 bg-black/50 ${compact ? "h-0.5" : "h-1"}`}>
+      {fainted ? (
+        <span className="material-symbols-outlined absolute right-0 top-0 text-[10px]! text-error drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+          skull
+        </span>
+      ) : null}
+      {typeof hpPct === "number" && !fainted ? (
+        <div
+          className={`absolute bottom-0 left-0 right-0 bg-black/55 ${compact ? "h-0.5" : "h-[3px]"}`}
+        >
           <div
-            className={`h-full ${hpPct > 50 ? "bg-emerald-400" : hpPct > 20 ? "bg-amber-400" : "bg-red-500"}`}
+            className={`h-full ${
+              hpPct > 50 ? "bg-electric-yellow" : hpPct > 20 ? "bg-amber-400" : "bg-error"
+            }`}
             style={{ width: `${Math.max(0, Math.min(100, hpPct))}%` }}
           />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -139,11 +217,11 @@ export function PartyIcon({
 export function EmptyPartySlot({ compact = false }: { compact?: boolean }) {
   return (
     <div
-      className={`rounded-md border border-dashed border-white/10 bg-black/20 flex items-center justify-center ${
-        compact ? "h-7 w-7 shrink-0" : "aspect-square"
+      className={`flex items-center justify-center rounded-xl border border-dashed border-white/[0.08] bg-black/25 ${
+        compact ? "h-8 w-8 shrink-0" : "aspect-square"
       }`}
     >
-      <PokeballIcon className={compact ? "w-3 h-3 opacity-25" : "w-4 h-4 opacity-25"} />
+      <PokeballIcon className={compact ? "h-3 w-3 opacity-20" : "h-4 w-4 opacity-25"} />
     </div>
   );
 }
@@ -190,8 +268,10 @@ function StageBadges({ stages, align }: { stages: StatStages; align: "left" | "r
         return (
           <span
             key={stat}
-            className={`rounded px-1 text-[8px] md:text-[9px] font-bold uppercase leading-tight tabular-nums ${
-              up ? "bg-emerald-500/25 text-emerald-200" : "bg-red-500/25 text-red-200"
+            className={`rounded-md px-1 text-[8px] font-bold uppercase leading-tight tabular-nums md:text-[9px] ${
+              up
+                ? "bg-electric-yellow/20 text-electric-yellow"
+                : "bg-error/20 text-error"
             }`}
             title={`${label} ${up ? "+" : ""}${value}`}
           >
@@ -229,27 +309,31 @@ export function HpPlate({
 
   return (
     <div
-      className={`rounded-lg border bg-black/55 backdrop-blur-sm px-2 py-1 md:px-2.5 md:py-1.5 shadow-lg ${
-        critical ? "border-red-500/70 hp-plate-critical" : "border-white/15"
+      className={`rounded-xl border bg-[#0c0e14]/78 px-2.5 py-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md md:px-3 md:py-2 ${
+        critical ? "border-error/70 hp-plate-critical" : "border-white/12"
       } ${className}`}
     >
-      <div className={`flex items-center gap-1.5 md:gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
-        <span className="text-[11px] md:text-label-md text-white font-bold capitalize truncate min-w-0">
+      <div
+        className={`flex items-center gap-1.5 md:gap-2 ${
+          align === "right" ? "flex-row-reverse" : ""
+        }`}
+      >
+        <span className="min-w-0 truncate text-[11px] font-semibold capitalize text-white md:text-label-md">
           {name}
         </span>
-        <span className="text-[10px] md:text-label-sm text-white/70 shrink-0">{levelLabel}</span>
+        <span className="shrink-0 text-[10px] text-white/55 md:text-label-sm">{levelLabel}</span>
         {status ? <StatusBadge status={status} /> : null}
       </div>
-      <div className="h-1.5 md:h-2 bg-white/15 rounded-full overflow-hidden mt-0.5 md:mt-1">
+      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/12 md:mt-1.5 md:h-2">
         <div
           className={`h-full health-bar-fill ${hpClass}${critical ? " hp-bar-critical" : ""}`}
           style={{ width: `${hpPct}%` }}
         />
       </div>
       <p
-        className={`text-[9px] md:text-[10px] mt-0.5 ${align === "right" ? "text-right" : ""} ${
-          critical ? "text-red-300 font-bold" : "text-white/70"
-        }`}
+        className={`mt-0.5 text-[9px] tabular-nums md:text-[10px] ${
+          align === "right" ? "text-right" : ""
+        } ${critical ? "font-bold text-error" : "text-white/55"}`}
       >
         {Math.round(hpPct)}% · {currentHp}/{maxHp}
       </p>
@@ -262,7 +346,7 @@ export function StatCell({ label, value }: { label: string; value: number }) {
   return (
     <div>
       <p className="text-label-sm text-on-surface-variant">{label}</p>
-      <p className="text-label-md text-on-surface font-bold">{value}</p>
+      <p className="text-label-md font-bold text-on-surface">{value}</p>
     </div>
   );
 }

@@ -33,6 +33,8 @@ export function TrainerAvatar({
   size = "md",
   active = false,
   framed = true,
+  /** Sprites pixel (Showdown): contain + pixelated en vez del crop HD. */
+  pixel = false,
   presenceClassName,
   className = "",
 }: {
@@ -43,21 +45,24 @@ export function TrainerAvatar({
   active?: boolean;
   /** Si false, sin fondo ni caja — sólo el sprite. */
   framed?: boolean;
+  pixel?: boolean;
   /** Clase del punto de presencia (absolute, esquina). */
   presenceClassName?: string;
   className?: string;
 }) {
+  const imgClass = pixel
+    ? "relative h-full w-full object-contain p-[12%] [image-rendering:pixelated]"
+    : framed
+      ? "trainer-sprite-fill relative h-full w-full"
+      : "trainer-sprite-thumb relative h-full w-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]";
+
   if (!framed) {
     return (
       <span
         className={`relative inline-flex shrink-0 items-center justify-center ${SIZE_CLASS[size]} ${className}`}
       >
         {src ? (
-          <AvatarImage
-            src={src}
-            alt={name}
-            className="trainer-sprite-thumb relative h-full w-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
-          />
+          <AvatarImage src={src} alt={name} className={imgClass} />
         ) : (
           <span
             className={`flex h-full w-full items-center justify-center font-bold tracking-wide text-white/50 ${INITIALS_CLASS[size]}`}
@@ -100,11 +105,7 @@ export function TrainerAvatar({
           }}
         />
         {src ? (
-          <AvatarImage
-            src={src}
-            alt={name}
-            className="trainer-sprite-fill relative h-full w-full"
-          />
+          <AvatarImage src={src} alt={name} className={imgClass} />
         ) : (
           <span
             className={`relative flex h-full w-full items-center justify-center font-bold tracking-wide ${INITIALS_CLASS[size]}`}

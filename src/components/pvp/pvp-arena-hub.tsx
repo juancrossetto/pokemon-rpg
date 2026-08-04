@@ -11,6 +11,7 @@ import {
 } from "@/components/pvp/pvp-rivals-history";
 import { findMatch } from "@/actions/pvp";
 import { startPvpRanked } from "@/actions/start-pvp-battle";
+import { PvpQuickMatchSubmit } from "@/components/pvp/pvp-quick-match-submit";
 import { type PvpDivision, type PvpTier } from "@/lib/pvp/tiers";
 import type { SeasonTrackNode } from "@/lib/pvp/hub";
 import type { RewardBundle } from "@/lib/events/rewards";
@@ -417,7 +418,7 @@ function ModesPanel({
           />
         </form>
         <form action={findMatch.bind(null, locale)}>
-          <SubmitButton
+          <PvpQuickMatchSubmit
             label={quickLabel}
             pendingLabel={searching}
             disabled={!canFight}

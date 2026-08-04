@@ -14,7 +14,6 @@ import {
   isTowerUnlocked,
   parseTowerTeamSnapshot,
   resolveBlessings,
-  visibleFloorWindow,
   getTowerFloors,
   resumeTowerRunInTx,
 } from "@/lib/tower";
@@ -153,21 +152,12 @@ export default async function TowerPage({
     team,
   });
 
-  const windowNums = visibleFloorWindow({
-    currentFloor: pathFocusFloor,
-    totalFloors: COMBAT_TOWER_CONFIG.totalFloors,
-    /*
-      Ventana corta: si listamos desde el piso 1 el riel mide metros y en
-      mobile el marco se ve “vacío” (poca densidad). 5–6 pisos atrás bastan
-      para leer el recorrido alrededor del piso actual.
-    */
-    behind: activeRun ? 5 : 6,
-    ahead: activeRun ? 3 : 1,
-  });
   const allFloors = getTowerFloors();
-  const pathFloors = windowNums
-    .map((n) => allFloors.find((f) => f.floorNumber === n))
-    .filter((f): f is NonNullable<typeof f> => Boolean(f));
+  /*
+    Riel completo (piso 1 → total): el marco scrollea y auto-centra el actual.
+    Una ventana corta impedía bajar al inicio o ver el tramo alto.
+  */
+  const pathFloors = allFloors;
 
   const err =
     query.err && (TOWER_ERRORS as readonly string[]).includes(query.err) ? query.err : null;
@@ -257,19 +247,46 @@ export default async function TowerPage({
 
   return (
     <main className={`mx-auto flex w-full max-w-6xl flex-col gap-2.5 px-3 py-3 sm:gap-4 sm:py-4 xl:px-6 ${mainPadClass}`}>
-      <header className="relative isolate overflow-hidden rounded-xl border border-white/10 sm:rounded-2xl">
-        <Image
-          src="/tower/torre-prisma.jpg"
-          alt=""
-          fill
-          priority
-          sizes="(max-width: 1280px) 100vw, 1152px"
-          className="object-cover object-[center_35%]"
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-[#0b0d13] via-[#0b0d13]/75 to-[#0b0d13]/25"
-          aria-hidden
-        />
+      <header className="relative isolate rounded-xl border border-white/10 sm:rounded-2xl">
+        <div className="absolute inset-0 overflow-hidden rounded-xl sm:rounded-2xl">
+          <Image
+            src="/tower/torre-prisma.jpg"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 1280px) 100vw, 1152px"
+            className="object-cover object-[center_35%]"
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-t from-[#0b0d13] via-[#0b0d13]/75 to-[#0b0d13]/25"
+            aria-hidden
+          />
+        </div>
+
+        {unlocked ? (
+          <details className="absolute right-2.5 top-2.5 z-20 sm:right-3.5 sm:top-3.5">
+            <summary
+              className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full border border-white/20 bg-black/45 text-white/80 backdrop-blur-sm transition hover:border-white/35 hover:bg-black/60 hover:text-white marker:content-none [&::-webkit-details-marker]:hidden"
+              aria-label={t("rules.title")}
+              title={t("rules.title")}
+            >
+              <span className="material-symbols-outlined text-[18px]!">info</span>
+            </summary>
+            <div className="absolute right-0 top-[calc(100%+0.4rem)] w-[min(18.5rem,calc(100vw-2rem))] rounded-xl border border-white/12 bg-[#12141c]/96 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">
+                {t("rules.title")}
+              </p>
+              <ul className="space-y-1.5 text-[12px] leading-snug text-white/65">
+                <li>{t("rules.hp")}</li>
+                <li>{t("rules.attempts", { n: attemptsMax })}</li>
+                <li>{t("rules.boss")}</li>
+                <li>{t("rules.blessings")}</li>
+                <li>{t("rules.rest")}</li>
+              </ul>
+            </div>
+          </details>
+        ) : null}
+
         <div className="relative z-10 flex min-h-[8.5rem] flex-col justify-end gap-1 px-3.5 py-3 sm:min-h-[10rem] sm:px-5 sm:py-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
             {t("eyebrow")}
@@ -340,7 +357,7 @@ export default async function TowerPage({
           ) : null}
 
           <section
-            className={`relative order-2 isolate flex h-[min(38vh,17rem)] flex-col overflow-hidden rounded-xl border border-white/15 bg-[#12141a] p-2 sm:h-[min(48vh,22rem)] sm:rounded-2xl sm:p-3 lg:col-start-1 lg:row-start-1 lg:h-auto lg:min-h-[min(62vh,30rem)] lg:max-h-[calc(100dvh-11rem)] ${
+            className={`relative order-2 isolate flex h-[min(46vh,22rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#0e1016] p-2 sm:h-[min(52vh,26rem)] sm:p-3 lg:col-start-1 lg:row-start-1 lg:h-auto lg:min-h-[min(68vh,34rem)] lg:max-h-[calc(100dvh-11rem)] ${
               activeRun || endedSummary ? "lg:row-span-2" : ""
             }`}
           >
@@ -349,21 +366,21 @@ export default async function TowerPage({
               alt=""
               fill
               sizes="(max-width: 1024px) 100vw, 55vw"
-              className="object-cover object-top opacity-[0.14]"
+              className="object-cover object-top opacity-[0.12]"
             />
             <div
-              className="absolute inset-0 bg-gradient-to-b from-[#12141a]/20 via-[#12141a]/80 to-[#12141a]"
+              className="absolute inset-0 bg-gradient-to-b from-[#0e1016]/30 via-[#0e1016]/85 to-[#0e1016]"
               aria-hidden
             />
             <p className="relative z-10 mb-1 shrink-0 px-0.5 text-[8px] font-bold uppercase tracking-[0.16em] text-white/45 sm:mb-1.5 sm:text-[9px]">
               {endedSummary ? t("path.reviewTitle") : t("path.title")}
             </p>
             <div
-              className="pointer-events-none absolute inset-x-2 top-7 z-20 h-4 bg-gradient-to-b from-[#12141a] to-transparent sm:inset-x-3 sm:top-9 sm:h-5"
+              className="pointer-events-none absolute inset-x-2 top-7 z-20 h-4 bg-gradient-to-b from-[#0e1016] to-transparent sm:inset-x-3 sm:top-9 sm:h-5"
               aria-hidden
             />
             <div
-              className="pointer-events-none absolute inset-x-2 bottom-2 z-20 h-5 rounded-b-lg bg-gradient-to-t from-[#12141a] to-transparent sm:inset-x-3 sm:bottom-3 sm:h-7 sm:rounded-b-xl"
+              className="pointer-events-none absolute inset-x-2 bottom-2 z-20 h-5 rounded-b-xl bg-gradient-to-t from-[#0e1016] to-transparent sm:inset-x-3 sm:bottom-3 sm:h-7"
               aria-hidden
             />
             <div
@@ -386,37 +403,24 @@ export default async function TowerPage({
           >
             {team ? <TowerSquad team={team} /> : null}
 
-            <dl className="grid grid-cols-2 gap-1.5 sm:gap-2">
-              <div className="rounded-lg border border-white/[0.07] bg-white/[0.025] px-2.5 py-1.5 sm:rounded-xl sm:px-3 sm:py-2">
-                <dt className="text-[7px] uppercase tracking-[0.14em] text-on-surface-variant/65 sm:text-[8px] sm:tracking-[0.16em]">
+            <dl className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent px-3 py-2.5">
+                <dt className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
                   {t("summary.best")}
                 </dt>
-                <dd className="font-mono text-[17px] font-bold leading-none text-tertiary sm:text-[19px]">
+                <dd className="page-title mt-1 text-[1.35rem] leading-none tracking-[0.04em] text-electric-yellow sm:text-[1.5rem]">
                   {progress?.highestFloorAllTime ?? 0}
                 </dd>
               </div>
-              <div className="rounded-lg border border-white/[0.07] bg-white/[0.025] px-2.5 py-1.5 sm:rounded-xl sm:px-3 sm:py-2">
-                <dt className="text-[7px] uppercase tracking-[0.14em] text-on-surface-variant/65 sm:text-[8px] sm:tracking-[0.16em]">
+              <div className="rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent px-3 py-2.5">
+                <dt className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
                   {t("summary.nextBoss")}
                 </dt>
-                <dd className="font-mono text-[17px] font-bold leading-none text-pokeball-red sm:text-[19px]">
+                <dd className="page-title mt-1 text-[1.35rem] leading-none tracking-[0.04em] text-pokeball-red sm:text-[1.5rem]">
                   {nextGuardian ?? "—"}
                 </dd>
               </div>
             </dl>
-
-            <details className="rounded-lg border border-white/[0.07] bg-white/[0.02] open:pb-2 sm:rounded-xl sm:open:pb-3">
-              <summary className="min-h-9 cursor-pointer list-none px-2.5 py-2 text-[12px] text-on-surface-variant marker:content-none sm:min-h-11 sm:px-3 sm:py-2.5 sm:text-label-sm [&::-webkit-details-marker]:hidden">
-                {t("rules.title")}
-              </summary>
-              <ul className="space-y-1 border-t border-white/10 px-2.5 pt-2 text-[12px] text-on-surface-variant sm:px-3 sm:text-label-sm">
-                <li>{t("rules.hp")}</li>
-                <li>{t("rules.attempts", { n: attemptsMax })}</li>
-                <li>{t("rules.boss")}</li>
-                <li>{t("rules.blessings")}</li>
-                <li>{t("rules.rest")}</li>
-              </ul>
-            </details>
 
             {activeRun ? (
               <div className="flex flex-col gap-2">

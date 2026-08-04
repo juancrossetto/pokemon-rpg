@@ -32,7 +32,12 @@ export type TowerFloorNodeVisual =
 /** Qué mostrar en el nodo del riel según tipo de piso. */
 export function floorNodeVisual(floor: TowerFloor): TowerFloorNodeVisual {
   if (floor.type === "rest") {
-    return { kind: "glyph", icon: "local_hotel" };
+    // Jigglypuff (#39): descanso = canción / brillos, no cama genérica.
+    return {
+      kind: "pokemon",
+      src: pokeApiSpriteUrl(39, "icon"),
+      speciesId: 39,
+    };
   }
   if (floor.type === "boss") {
     return { kind: "trainer", src: towerGuardianTrainerUrl(floor.floorNumber) };
@@ -49,7 +54,7 @@ export function floorNodeVisual(floor: TowerFloor): TowerFloorNodeVisual {
     normal: "swords",
     elite: "local_fire_department",
     boss: "skull",
-    rest: "local_hotel",
+    rest: "auto_awesome",
   };
   return { kind: "glyph", icon: glyphByType[floor.type] };
 }

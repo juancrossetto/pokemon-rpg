@@ -2105,7 +2105,14 @@ export function BattleArena({
     .join(" ");
 
   const emptyPlayerSlots = Math.max(0, 6 - party.length);
-  const emptyOpponentSlots = Math.max(0, 6 - opponentParty.length);
+  const isWildEncounter = battleMode === "wild";
+  const emptyOpponentSlots = isWildEncounter
+    ? 0
+    : Math.max(0, 6 - opponentParty.length);
+  const wildFeaturedSprite =
+    opponentParty.find((m) => m.active)?.spriteUrl ??
+    opponentParty[0]?.spriteUrl ??
+    activeWild.spriteUrl;
   const commandExpanded = view !== "menu";
   const lastLogEntry = log[log.length - 1];
 
@@ -2114,30 +2121,37 @@ export function BattleArena({
       <div className="mx-auto w-full max-w-6xl flex flex-col gap-1 md:gap-2 flex-1 min-h-0 overflow-hidden">
         {/* Top — mayor parte del alto en mobile */}
         <div className="flex min-h-0 flex-col gap-1 md:gap-2 flex-1">
-        {/* Mobile: opponent balls — solo íconos, sin título largo */}
+        {/* Mobile: rival — avatar + party (o sprite único si es salvaje) */}
         <div className="lg:hidden shrink-0">
-          <div
-            className="flex items-center justify-end gap-1 px-1"
-            title={foeLabel}
-            aria-label={foeLabel}
+          <PartySidebar
+            name={foeLabel}
+            portraitUrl={opponentPortraitUrl}
+            align="right"
+            compact
+            variant={isWildEncounter ? "wild" : "party"}
+            featuredSpriteUrl={isWildEncounter ? wildFeaturedSprite : null}
           >
-            {opponentParty.map((m) => (
-              <PartyIcon
-                key={`o-${m.slot}`}
-                spriteUrl={m.spriteUrl}
-                name={m.name}
-                fainted={m.fainted}
-                active={m.active}
-                compact
-              />
-            ))}
-            {Array.from({ length: emptyOpponentSlots }).map((_, i) => (
-              <EmptyPartySlot key={`oe-${i}`} compact />
-            ))}
-          </div>
+            {!isWildEncounter
+              ? opponentParty.map((m) => (
+                  <PartyIcon
+                    key={`o-${m.slot}`}
+                    spriteUrl={m.spriteUrl}
+                    name={m.name}
+                    fainted={m.fainted}
+                    active={m.active}
+                    compact
+                  />
+                ))
+              : null}
+            {!isWildEncounter
+              ? Array.from({ length: emptyOpponentSlots }).map((_, i) => (
+                  <EmptyPartySlot key={`oe-${i}`} compact />
+                ))
+              : null}
+          </PartySidebar>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[148px_minmax(0,1fr)_148px] gap-1 md:gap-2 items-stretch flex-1 min-h-0 min-w-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[168px_minmax(0,1fr)_168px] gap-1.5 md:gap-2.5 items-stretch flex-1 min-h-0 min-w-0">
           {/* Player sidebar (desktop) */}
           <div className="hidden lg:block">
             <PartySidebar name={trainerName} portraitUrl={trainerPortraitUrl} align="left">
@@ -2551,29 +2565,50 @@ export function BattleArena({
 
           {/* Opponent sidebar (desktop) */}
           <div className="hidden lg:block">
-            <PartySidebar name={foeLabel} portraitUrl={opponentPortraitUrl} align="right">
-              {opponentParty.map((m) => (
-                <PartyIcon
-                  key={`o-${m.slot}`}
-                  spriteUrl={m.spriteUrl}
-                  name={m.name}
-                  fainted={m.fainted}
-                  active={m.active}
-                />
-              ))}
-              {Array.from({ length: emptyOpponentSlots }).map((_, i) => (
-                <EmptyPartySlot key={`oe-${i}`} />
-              ))}
+            <PartySidebar
+              name={foeLabel}
+              portraitUrl={opponentPortraitUrl}
+              align="right"
+              variant={isWildEncounter ? "wild" : "party"}
+              featuredSpriteUrl={isWildEncounter ? wildFeaturedSprite : null}
+            >
+              {isWildEncounter
+                ? opponentParty.length > 1
+                  ? opponentParty.map((m) => (
+                      <PartyIcon
+                        key={`o-${m.slot}`}
+                        spriteUrl={m.spriteUrl}
+                        name={m.name}
+                        fainted={m.fainted}
+                        active={m.active}
+                      />
+                    ))
+                  : null
+                : opponentParty.map((m) => (
+                    <PartyIcon
+                      key={`o-${m.slot}`}
+                      spriteUrl={m.spriteUrl}
+                      name={m.name}
+                      fainted={m.fainted}
+                      active={m.active}
+                    />
+                  ))}
+              {!isWildEncounter
+                ? Array.from({ length: emptyOpponentSlots }).map((_, i) => (
+                    <EmptyPartySlot key={`oe-${i}`} />
+                  ))
+                : null}
             </PartySidebar>
           </div>
         </div>
 
-        {/* Mobile: player balls */}
+        {/* Mobile: jugador — avatar + party */}
         <div className="lg:hidden shrink-0">
-          <div
-            className="flex items-center justify-start gap-1 px-1"
-            title={trainerName}
-            aria-label={trainerName}
+          <PartySidebar
+            name={trainerName}
+            portraitUrl={trainerPortraitUrl}
+            align="left"
+            compact
           >
             {party.map((m) => (
               <PartyIcon
@@ -2589,7 +2624,7 @@ export function BattleArena({
             {Array.from({ length: emptyPlayerSlots }).map((_, i) => (
               <EmptyPartySlot key={`pe-${i}`} compact />
             ))}
-          </div>
+          </PartySidebar>
         </div>
         </div>
 
@@ -2654,7 +2689,7 @@ export function BattleArena({
           {/* Comandos */}
           <div key={view} className="panel-swap min-h-0 min-w-0 flex-1 overflow-hidden flex flex-col">
             {view === "menu" && (
-              <div className="grid grid-cols-2 gap-1 md:gap-2 h-full min-h-0 max-md:auto-rows-fr">
+              <div className="grid h-full min-h-0 grid-cols-2 gap-1.5 max-md:auto-rows-fr md:gap-2">
                 <button
                   type="button"
                   disabled={isAnimating}
@@ -2674,21 +2709,21 @@ export function BattleArena({
                 </button>
                 <button
                   type="button"
-                  disabled={isAnimating || isDouble || !hasHealthyBackup}
-                  onClick={() => setView("team")}
-                  className="battle-cmd-btn"
-                >
-                  <PokeballIcon className="w-5 h-5 md:w-6 md:h-6" />
-                  {t("pokemonMenu")}
-                </button>
-                <button
-                  type="button"
                   disabled={isAnimating || isDouble || (!hasBalls && !hasPotions)}
                   onClick={() => setView("bag")}
                   className="battle-cmd-btn"
                 >
                   <span className="material-symbols-outlined text-[18px]! md:text-[22px]!">backpack</span>
                   {t("bag")}
+                </button>
+                <button
+                  type="button"
+                  disabled={isAnimating || isDouble || !hasHealthyBackup}
+                  onClick={() => setView("team")}
+                  className="battle-cmd-btn"
+                >
+                  <PokeballIcon className="h-5 w-5 md:h-6 md:w-6" />
+                  {t("pokemonMenu")}
                 </button>
                 <button
                   type="button"
