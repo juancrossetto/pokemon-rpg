@@ -108,18 +108,20 @@ export function MovesView({
   const t = useTranslations("battle");
 
   return (
-    <div className="flex flex-col gap-1 h-full min-h-0">
-      <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
-        <div className="min-w-0 flex items-center gap-2">
-          <p className="text-xs md:text-sm font-bold text-primary capitalize truncate">{activePlayerName}</p>
+    <div className="flex h-full min-h-0 flex-col gap-0.5 md:gap-1">
+      <div className="flex shrink-0 items-center justify-between gap-2 px-0.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="truncate text-xs font-bold capitalize text-primary md:text-sm">{activePlayerName}</p>
           <TurnOrderChip playerFirst={playerFirst} />
         </div>
         <BackButton disabled={isAnimating} onBack={onBack} label={t("back")} small />
       </div>
-      <p className="text-[10px] uppercase text-on-surface-variant tracking-wider px-0.5 shrink-0">
+      <p className="shrink-0 truncate px-0.5 text-[10px] uppercase tracking-wider text-on-surface-variant">
         {t("selectCommand")}
       </p>
-      <div className="grid grid-cols-2 grid-rows-2 gap-1 md:gap-1.5 flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto md:overflow-hidden content-stretch">
+      {/* overflow-hidden siempre: overflow-y-auto + md:overflow-hidden pelean
+          (el longhand gana al shorthand) y dejan scrollbar fantasma. */}
+      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-2 content-stretch gap-1 overflow-hidden md:gap-1.5">
         {moves.every((m) => m.pp <= 0) && (
           <button
             type="button"
@@ -128,7 +130,7 @@ export function MovesView({
             className="col-span-2 battle-move-card border-error/40"
           >
             <p className="text-base font-bold text-error">{t("struggleName")}</p>
-            <p className="text-label-sm text-on-surface-variant mt-1">{t("struggleHint")}</p>
+            <p className="mt-1 text-label-sm text-on-surface-variant">{t("struggleHint")}</p>
           </button>
         )}
         {moves.map((m) => {
@@ -146,10 +148,10 @@ export function MovesView({
               type="button"
               disabled={isAnimating || m.pp <= 0 || lockedOut}
               onClick={() => onSelect(m.moveId)}
-              className="battle-move-card battle-move-card-compact battle-move-card-dense text-left disabled:opacity-40 disabled:cursor-not-allowed"
+              className="battle-move-card battle-move-card-compact battle-move-card-dense text-left disabled:cursor-not-allowed disabled:opacity-40"
               style={{ borderColor: `${color}55` }}
             >
-              <div className="flex justify-between items-start gap-1 min-w-0 shrink-0">
+              <div className="flex min-w-0 shrink-0 items-start justify-between gap-1">
                 <span className="flex min-w-0 items-center gap-1">
                   <span
                     className={`material-symbols-outlined text-[13px]! shrink-0 ${CATEGORY_TONE[category]}`}
@@ -158,7 +160,7 @@ export function MovesView({
                   >
                     {CATEGORY_ICON[category]}
                   </span>
-                  <span className="text-xs md:text-sm font-bold text-white leading-tight truncate">
+                  <span className="truncate text-xs font-bold leading-tight text-white md:text-sm">
                     {formatMoveName(m.name)}
                     {isSpreadMove(m.target, m.name) ? (
                       <span className="ml-1 text-[9px] font-bold uppercase text-amber-200/90">
@@ -168,7 +170,7 @@ export function MovesView({
                   </span>
                 </span>
                 <span
-                  className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] md:text-[10px] uppercase font-bold tracking-wide border"
+                  className="shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide md:text-[10px]"
                   style={{ backgroundColor: `${color}33`, color, borderColor: `${color}66` }}
                 >
                   {m.type}
@@ -176,32 +178,32 @@ export function MovesView({
               </div>
               {/* Stats en una sola línea: antes eran 2 renglones (label+valor) y
                   empujaban la efectividad contra el borde con overflow:hidden. */}
-              <div className="mt-auto flex items-baseline justify-between gap-1 shrink-0 text-[10px] md:text-[11px] tabular-nums">
+              <div className="mt-auto flex shrink-0 items-baseline justify-between gap-1 text-[10px] tabular-nums md:text-[11px]">
                 <span className="text-white/90">
-                  <span className="text-white/40 uppercase tracking-wider mr-0.5">{t("powerLabel")}</span>
+                  <span className="mr-0.5 uppercase tracking-wider text-white/40">{t("powerLabel")}</span>
                   <span className="font-bold text-white">{m.power ?? "—"}</span>
                 </span>
                 <span className="text-white/90">
-                  <span className="text-white/40 uppercase tracking-wider mr-0.5">{t("accuracyLabel")}</span>
+                  <span className="mr-0.5 uppercase tracking-wider text-white/40">{t("accuracyLabel")}</span>
                   <span className="font-bold">{accuracyLabel}</span>
                 </span>
-                <span className="text-white/90 flex items-center gap-0.5">
+                <span className="flex items-center gap-0.5 text-white/90">
                   {lockedOut && (
                     <span className="material-symbols-outlined text-[12px]! text-amber-300">lock</span>
                   )}
-                  <span className="text-white/40 uppercase tracking-wider mr-0.5">{t("ppLabel")}</span>
+                  <span className="mr-0.5 uppercase tracking-wider text-white/40">{t("ppLabel")}</span>
                   <span className="font-bold">
                     {m.pp}/{m.maxPp ?? m.pp}
                   </span>
                 </span>
               </div>
               {damage?.guaranteedKo ? (
-                <p className="text-[9px] md:text-[10px] leading-snug truncate shrink-0 font-bold text-tertiary">
+                <p className="shrink-0 truncate text-[9px] font-bold leading-snug text-tertiary md:text-[10px]">
                   {t("forecastKo")}
                 </p>
               ) : (
                 <p
-                  className={`text-[9px] md:text-[10px] leading-snug truncate shrink-0 ${
+                  className={`shrink-0 truncate text-[9px] leading-snug md:text-[10px] ${
                     isStatus ? "text-white/45" : eff.className
                   }`}
                 >

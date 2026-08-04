@@ -2140,10 +2140,10 @@ export function BattleArena({
   const lastLogEntry = log[log.length - 1];
 
   return (
-    <div className="flex flex-1 flex-col min-h-0 overflow-hidden px-2 py-1 sm:px-margin-mobile md:px-margin-desktop md:py-4 h-full max-h-full">
-      <div className="mx-auto w-full max-w-6xl flex flex-col gap-1 md:gap-2 flex-1 min-h-0 overflow-hidden">
+    <div className="flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden px-2 py-1 sm:px-margin-mobile md:px-margin-desktop md:py-2">
+      <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col gap-1 overflow-hidden md:gap-2">
         {/* Top — mayor parte del alto en mobile */}
-        <div className="flex min-h-0 flex-col gap-1 md:gap-2 flex-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-1 md:gap-2">
         {/* Mobile: rival — avatar + party (o sprite único si es salvaje/torre) */}
         <div className="lg:hidden shrink-0">
           <PartySidebar
@@ -2191,7 +2191,7 @@ export function BattleArena({
           <div
             ref={arenaFieldRef}
             data-battle-speed={battleSpeed}
-            className={`battle-arena-field relative mx-auto w-full max-w-[44rem] overflow-hidden rounded-xl border border-white/10 flex-1 min-h-0 md:min-h-[380px] ${
+            className={`battle-arena-field relative mx-auto w-full max-w-[44rem] min-h-0 flex-1 overflow-hidden rounded-xl border border-white/10 ${
               arenaFlash ? "arena-type-flash" : ""
             }`}
             style={
@@ -2638,9 +2638,9 @@ export function BattleArena({
         )}
 
         <div
-          className={`grid min-w-0 gap-1 md:gap-2 min-h-0 shrink-0 items-stretch md:h-[13rem] md:max-h-[13rem] ${
+          className={`grid min-h-0 min-w-0 shrink-0 items-stretch gap-1 md:gap-2 md:h-[min(14rem,32dvh)] md:max-h-[14rem] ${
             commandExpanded
-              ? "max-md:h-[12rem] max-md:max-h-[12rem]"
+              ? "max-md:h-[12.5rem] max-md:max-h-[12.5rem]"
               : "max-md:h-[7.5rem] max-md:max-h-[7.5rem]"
           } ${commandExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2"}`}
         >

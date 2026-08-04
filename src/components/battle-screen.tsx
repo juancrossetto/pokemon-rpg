@@ -48,6 +48,16 @@ export function BattleScreen({
     });
   }, [initialBattle]);
 
+  // La batalla es viewport-locked: sin scroll de documento detrás.
+  useEffect(() => {
+    if (!battle) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [battle]);
+
   if (!battle) {
     if (lobby) {
       return (
@@ -87,8 +97,11 @@ export function BattleScreen({
     return null;
   }
 
+  // Altura = viewport menos header + bottom nav (mismo cálculo que
+  // `.pb-bottom-nav`). Sin esto el body crece con el min-height del
+  // arena y aparece scroll de página innecesario.
   return (
-    <div className="flex flex-1 flex-col min-h-0">
+    <div className="flex min-h-0 flex-col overflow-hidden h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px)-var(--bottom-nav-h,3.75rem)-env(safe-area-inset-bottom,0px)-1.75rem-var(--vv-gap,0px))] xl:h-[calc(100dvh-3.5rem)]">
       <BattleArena key={battle.battleId} {...battle} />
     </div>
   );
