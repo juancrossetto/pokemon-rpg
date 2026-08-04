@@ -385,35 +385,21 @@ export function MobileChrome({
     }
   }, [primary]);
 
-  // Clase + inset del home indicator. NO removemos al cleanup (flash del hueco).
-  // Re-medimos en pageshow: al refrescar iOS a veces reporta env()=0 un frame.
-  useEffect(() => {
+  // Clase + anclaje standalone. useLayoutEffect: corre antes del paint post-
+  // hidratar, así React no deja un frame sin `is-standalone` (pisaba className
+  // del <html> y la nav saltaba). NO medimos env(): al refrescar parpadea y
+  // re-escribir --standalone-sat-bottom era el salto. Offset fijo en CSS.
+  useLayoutEffect(() => {
     if (!isStandalone()) return;
     const html = document.documentElement;
     html.classList.add("is-standalone");
     document.body.classList.add("is-standalone");
+    html.style.setProperty("--standalone-sat-bottom", "34px");
 
-    function measureSat() {
-      const probe = document.createElement("div");
-      probe.setAttribute("aria-hidden", "true");
-      probe.style.cssText =
-        "position:absolute;left:0;bottom:0;width:0;height:0;visibility:hidden;padding:0;padding-bottom:env(safe-area-inset-bottom);margin:0;border:0;pointer-events:none;";
-      html.appendChild(probe);
-      const v = Number.parseFloat(getComputedStyle(probe).paddingBottom) || 0;
-      probe.remove();
-      if (v > 0) {
-        html.style.setProperty("--standalone-sat-bottom", `${Math.ceil(v)}px`);
-      } else if (!html.style.getPropertyValue("--standalone-sat-bottom")) {
-        const phone = Math.min(screen.width || 0, screen.height || 0) <= 500;
-        html.style.setProperty("--standalone-sat-bottom", phone ? "34px" : "0px");
-      }
-    }
-
-    measureSat();
     const onPageShow = () => {
       html.classList.add("is-standalone");
       document.body.classList.add("is-standalone");
-      measureSat();
+      html.style.setProperty("--standalone-sat-bottom", "34px");
     };
     window.addEventListener("pageshow", onPageShow);
     return () => window.removeEventListener("pageshow", onPageShow);

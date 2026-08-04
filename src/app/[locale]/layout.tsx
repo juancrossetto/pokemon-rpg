@@ -9,7 +9,7 @@ import { BootSplashMarkup } from "@/components/boot-splash-markup";
 import { InlineScript } from "@/components/inline-script";
 import { bootSplashEarlyScript } from "@/lib/boot-splash";
 import { iconsReadyEarlyScript } from "@/lib/icons-ready";
-import { standaloneEarlyScript } from "@/lib/standalone-early";
+import { standaloneEarlyScript, standaloneNavCriticalCss } from "@/lib/standalone-early";
 import { AppShell } from "@/components/app-shell";
 import { AppToastViewport } from "@/components/app-toast-viewport";
 import "../globals.css";
@@ -81,6 +81,13 @@ export default async function LocaleLayout({
       <head>
         {/* Primero: PWA iOS — clase + inset + CSS crítico antes de cualquier paint. */}
         <InlineScript id="standalone-early" html={standaloneEarlyScript()} />
+        {/* Mismo CSS en el árbol de React: el early script lo inyecta en head,
+            pero al hidratar hay que poseerlo acá para que no dependa de un nodo
+            huérfano que React pueda descartar. */}
+        <style
+          id="standalone-nav-critical"
+          dangerouslySetInnerHTML={{ __html: standaloneNavCriticalCss() }}
+        />
         {/* Icon font: display=block evita el flash de ligaduras como texto
             ("home", "bolt"…) que display=swap deja ver. preconnect + subset
             estático (400) acelera el download vs. el variable 100..700. */}

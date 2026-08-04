@@ -9882,12 +9882,9 @@ html.boot-splash-pending .boot-splash {
      físico con margen negativo + padding de safe-area, y el dock ya no
      vuelve a sumar ese inset (evitar doble hueco).
 
-  `.is-standalone` lo pone el script early-in-head (`standalone-early`) y
-  MobileChrome lo refuerza sin removerlo al desmontar (evita el flash del hueco).
-
-  El inset NO usa env() directo: en iOS al refrescar env() arranca en 0 y
-  después salta a ~34px (hueco → anclado). Usamos `--standalone-sat-bottom`
-  (seteado por el early script, fallback 34px).
+  Offset FIJO 34px (home indicator iPhone X+). No usamos env() ni re-medición
+  JS: al refrescar env() parpadea 0→34 y la barra subía/bajaba. El early
+  script + <style> del layout clavan el mismo valor con !important.
 */
 @media all and (display-mode: standalone) {
   html {
@@ -9920,14 +9917,16 @@ html.boot-splash-pending .boot-splash {
   }
 
   .mobile-bottom-nav {
-    bottom: calc(-1 * var(--standalone-sat-bottom, 34px));
-    margin-bottom: 0;
-    padding-bottom: var(--standalone-sat-bottom, 34px);
+    bottom: -34px !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 34px !important;
     background-color: #0a0b11;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .mobile-bottom-nav__dock {
-    padding-bottom: 0.4rem;
+    padding-bottom: 0.4rem !important;
   }
 }
 
@@ -9961,14 +9960,16 @@ html.is-standalone .mobile-top-chrome {
 }
 
 html.is-standalone .mobile-bottom-nav {
-  bottom: calc(-1 * var(--standalone-sat-bottom, 34px));
-  margin-bottom: 0;
-  padding-bottom: var(--standalone-sat-bottom, 34px);
+  bottom: -34px !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 34px !important;
   background-color: #0a0b11;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 html.is-standalone .mobile-bottom-nav__dock {
-  padding-bottom: 0.4rem;
+  padding-bottom: 0.4rem !important;
 }
 
 /* Indicador del selector de secciones del perfil. Mismo rebote elástico que el
