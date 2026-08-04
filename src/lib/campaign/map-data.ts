@@ -76,8 +76,9 @@ export async function loadMapLocations(
         if (!s) return [];
         const seenInZone = seen.has(`${location.id}:${s.id}`);
         const owned = ownedIds.has(s.id);
-        // Objetivo Pokédex de zona: tenés la especie y la encontraste acá.
-        const caught = owned && seenInZone;
+        // Objetivo de zona: alcanza con cruzártela explorando acá (huir vale).
+        const caught = seenInZone;
+        const forObjective = location.objectiveSpeciesIds.includes(s.id);
         return [
           {
             speciesId: s.id,
@@ -85,8 +86,9 @@ export async function loadMapLocations(
             spriteUrl: s.spriteUrl,
             types: s.types,
             caught,
-            // Poseerla revela el sprite aunque aún no la hayas visto en esta zona.
+            owned,
             seen: owned || seenInZone,
+            forObjective,
             rarity: speciesRarity(s.id),
           },
         ];

@@ -86,7 +86,7 @@ export function BattleAudioControls({ bgmKind }: { bgmKind: BattleBgmKind }) {
 
   return (
     <div
-      className="battle-audio-control group relative flex items-center"
+      className="battle-audio-control group relative shrink-0"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
       onFocusCapture={() => setOpen(true)}
@@ -97,27 +97,31 @@ export function BattleAudioControls({ bgmKind }: { bgmKind: BattleBgmKind }) {
       <button
         type="button"
         onClick={onToggleMute}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/90 backdrop-blur-sm hover:bg-black/70 hover:border-white/30 transition-colors"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/40 bg-[#141414]/95 text-white shadow-[0_2px_8px_rgba(0,0,0,0.45)] transition-colors hover:border-white/55 hover:bg-[#1a1a1a] md:h-10 md:w-10"
         title={effectiveMusicMuted ? t("unmuteMusic") : t("muteMusic")}
         aria-label={effectiveMusicMuted ? t("unmuteMusic") : t("muteMusic")}
         aria-pressed={effectiveMusicMuted}
       >
-        <span className="material-symbols-outlined text-[20px]!">
+        <span className="material-symbols-outlined text-[20px]! md:text-[22px]!">
           {effectiveMusicMuted ? "volume_off" : musicVolume < 0.35 ? "volume_down" : "volume_up"}
         </span>
       </button>
 
+      {/* Absolute: si vive en el flex, el panel colapsado igual estira el alto
+          y abre un hueco enorme entre AUTO y mute. */}
       <div
-        className={`overflow-hidden transition-all duration-200 ease-out ${
-          open ? "ml-2 max-w-[13rem] opacity-100" : "max-w-0 opacity-0 pointer-events-none"
+        className={`absolute left-full top-0 z-40 ml-1.5 transition-all duration-200 ease-out ${
+          open
+            ? "pointer-events-auto translate-x-0 opacity-100"
+            : "pointer-events-none -translate-x-1 opacity-0"
         }`}
       >
-        <div className="flex flex-col gap-2 rounded-2xl border border-white/15 bg-black/55 p-2 backdrop-blur-sm">
+        <div className="flex flex-col gap-2 rounded-2xl border border-white/40 bg-[#141414]/95 p-2 shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onToggleMute}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/90 hover:bg-black/65 hover:border-white/30 transition-colors"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/40 bg-[#1a1a1a] text-white hover:border-white/55 hover:bg-[#222] transition-colors"
               title={effectiveMusicMuted ? t("unmuteMusic") : t("muteMusic")}
               aria-label={effectiveMusicMuted ? t("unmuteMusic") : t("muteMusic")}
               aria-pressed={effectiveMusicMuted}
@@ -147,7 +151,7 @@ export function BattleAudioControls({ bgmKind }: { bgmKind: BattleBgmKind }) {
             <button
               type="button"
               onClick={onToggleSfxMute}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/90 hover:bg-black/65 hover:border-white/30 transition-colors"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/40 bg-[#1a1a1a] text-white hover:border-white/55 hover:bg-[#222] transition-colors"
               title={effectiveSfxMuted ? t("unmuteSfx") : t("muteSfx")}
               aria-label={effectiveSfxMuted ? t("unmuteSfx") : t("muteSfx")}
               aria-pressed={effectiveSfxMuted}

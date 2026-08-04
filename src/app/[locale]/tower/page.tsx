@@ -385,15 +385,6 @@ export default async function TowerPage({
                   <TowerAbandonButton locale={locale} variant="panel" />
                 </div>
               ) : null}
-
-              {activeRun?.status === "RESTING" ? (
-                <TowerRestFork
-                  locale={locale}
-                  recoveryPct={COMBAT_TOWER_CONFIG.rules.recoveryPercentage}
-                  canAttune={canAttune}
-                  teamHpPct={teamHpPct}
-                />
-              ) : null}
             </aside>
           </div>
 
@@ -434,6 +425,15 @@ export default async function TowerPage({
           </section>
         </div>
       )}
+
+      {unlocked && activeRun?.status === "RESTING" ? (
+        <TowerRestFork
+          locale={locale}
+          recoveryPct={COMBAT_TOWER_CONFIG.rules.recoveryPercentage}
+          canAttune={canAttune}
+          teamHpPct={teamHpPct}
+        />
+      ) : null}
 
       {unlocked && activeRun?.status === "AWAITING_BLESSING" && offered.length > 0 ? (
         <TowerBlessingDraft blessings={offered} locale={locale} />

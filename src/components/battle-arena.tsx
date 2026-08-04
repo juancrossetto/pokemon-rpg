@@ -33,13 +33,20 @@ import {
   stopBattleBgm,
 } from "@/lib/battle-bgm";
 import { BattleAudioControls } from "@/components/battle-audio-controls";
+import { BattleAutoControl } from "@/components/battle/battle-auto-control";
 import { BattleSpeedControl } from "@/components/battle/battle-speed-control";
+import {
+  getBattleAuto,
+  getServerBattleAuto,
+  subscribeBattleAuto,
+} from "@/lib/battle-auto";
 import {
   getBattleSpeed,
   getServerBattleSpeed,
   scaledDelay,
   subscribeBattleSpeed,
 } from "@/lib/battle-speed";
+import { pickAutoPlayerMoveId } from "@/lib/battle-ai";
 import { impactFxUrl, resolveMoveProjectile, showdownBattleBgUrl, showdownFxUrl } from "@/lib/showdown-fx";
 import {
   applyStagesToStats,
@@ -100,6 +107,8 @@ const ITEM_USE_MS = 550;
 /** Brillo verde de curación (Recover, drenaje, Rest). */
 const HEAL_PULSE_MS = 560;
 const SEND_OUT_BALL_MS = 700; // cuánto se ve solo la pokeball, antes de revelar al Pokémon inicial
+/** Banner del poder: más largo que el golpe para que el slide se lea. */
+const MOVE_BANNER_MS = 2400;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, scaledDelay(ms)));
@@ -304,6 +313,11 @@ export function BattleArena({
     getBattleSpeed,
     getServerBattleSpeed,
   );
+  const autoBattle = useSyncExternalStore(
+    subscribeBattleAuto,
+    getBattleAuto,
+    getServerBattleAuto,
+  );
   const [log, setLog] = useState<LogEntry[]>(() => {
     const entries: LogEntry[] = [];
     for (const text of initialLog) {
@@ -350,6 +364,12 @@ export function BattleArena({
     category?: TurnEvent["category"];
     fxFile?: string;
     fxStyle?: "projectile" | "contact" | "bolt";
+  } | null>(null);
+  /** Vive más que moveFx: el golpe puede terminar antes de que el slide salga. */
+  const [moveBanner, setMoveBanner] = useState<{
+    key: number;
+    moveName: string;
+    moveType: string;
   } | null>(null);
   const [arenaFlash, setArenaFlash] = useState<string | null>(null);
   const [effPopup, setEffPopup] = useState<{ text: string; key: number } | null>(null);
@@ -419,6 +439,20 @@ export function BattleArena({
     preloadBattleSfx();
     return () => stopBattleBgm();
   }, [bgmKind]);
+
+  // El banner del poder dura más que el FX del golpe: si lo desmontamos con
+  // moveFx, el slide de salida no se llega a ver.
+  useEffect(() => {
+    if (!moveBanner) return;
+    let cancelled = false;
+    void (async () => {
+      await delay(MOVE_BANNER_MS);
+      if (!cancelled) setMoveBanner(null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [moveBanner?.key]);
 
 
   useEffect(() => {
@@ -926,6 +960,11 @@ export function BattleArena({
         category: event.category,
         fxFile: projectile?.file,
         fxStyle: projectile?.style,
+      });
+      setMoveBanner({
+        key: fxKey,
+        moveName: event.moveName,
+        moveType: event.moveType,
       });
 
       if (event.skipped) {
@@ -1679,6 +1718,138 @@ export function BattleArena({
     setIsAnimating(false);
   }
 
+  function pickAutoMoveId(forB: boolean): number {
+    const pool = forB ? activeMovesB : activeMoves;
+    if (!forB && chargeMoveId != null) return chargeMoveId;
+    if (forB && chargeMoveIdB != null) return chargeMoveIdB;
+
+    const attackerTypes = forB
+      ? (party.find((m) => m.instanceId === playerB?.instanceId)?.types ?? [])
+      : activePlayerTypes;
+    const attackerLevel = forB ? (playerB?.level ?? activePlayer.level) : activePlayer.level;
+    const atk = forB ? (initialPlayerBStats?.atk ?? playerStats.atk) : stagedPlayer.atk;
+    const spAtk = forB
+      ? (initialPlayerBStats?.spAtk ?? playerStats.spAtk)
+      : stagedPlayer.spAtk;
+    const speed = forB
+      ? (initialPlayerBStats?.speed ?? playerStats.speed)
+      : stagedPlayer.speed;
+
+    // Si solo B del rival sigue en pie, puntuar contra ese.
+    const foeIsB = isDouble && wildHp <= 0 && (wildBHp > 0);
+    const defender = foeIsB
+      ? {
+          level: wildB?.level ?? activeWild.level,
+          types: wildB?.types ?? [],
+          atk: 1,
+          def: initialWildBStats?.def ?? stagedWild.def,
+          spAtk: 1,
+          spDef: initialWildBStats?.spDef ?? stagedWild.spDef,
+          speed: initialWildBStats?.speed ?? stagedWild.speed,
+        }
+      : {
+          level: activeWild.level,
+          types: activeWild.types,
+          atk: 1,
+          def: stagedWild.def,
+          spAtk: 1,
+          spDef: stagedWild.spDef,
+          speed: stagedWild.speed,
+        };
+    const defenderHp = foeIsB ? wildBHp : wildHp;
+
+    return pickAutoPlayerMoveId(
+      pool,
+      {
+        level: attackerLevel,
+        types: attackerTypes,
+        atk,
+        def: 1,
+        spAtk,
+        spDef: 1,
+        speed,
+      },
+      defender,
+      defenderHp,
+      forB ? null : choiceLockMoveId,
+    );
+  }
+
+  function pickAutoTargetLane(): "A" | "B" {
+    const { foes } = doubleTargetFoes();
+    const living = foes.filter((f) => !f.fainted);
+    if (living.length === 0) return livingFoeLanes()[0] ?? "A";
+    let best = living[0]!;
+    let bestScore = -Infinity;
+    for (const f of living) {
+      let score = Math.random() * 4;
+      if (f.forecast?.guaranteedKo) score += 1000;
+      if (f.forecast) score += f.forecast.maxPct;
+      if (score > bestScore) {
+        bestScore = score;
+        best = f;
+      }
+    }
+    return best.lane;
+  }
+
+  const autoActionsRef = useRef({
+    handleMove,
+    handleDoubleTarget,
+    enterDoubleFight,
+    pickAutoMoveId,
+    pickAutoTargetLane,
+  });
+  autoActionsRef.current = {
+    handleMove,
+    handleDoubleTarget,
+    enterDoubleFight,
+    pickAutoMoveId,
+    pickAutoTargetLane,
+  };
+
+  // AUTO: elige pelea → move (→ target en dobles) sin tocar el menú.
+  // Pausa en mochila/equipo y en cambio forzado.
+  useEffect(() => {
+    if (!autoBattle || isAnimating || outcome !== "ongoing" || mustSwitch) return;
+    if (view === "bag" || view === "team") return;
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      const actions = autoActionsRef.current;
+      if (view === "menu") {
+        if (isDouble) {
+          void actions.enterDoubleFight();
+        } else {
+          void actions.handleMove(actions.pickAutoMoveId(false));
+        }
+        return;
+      }
+      if (view === "moves") {
+        const forB = isDouble && pendingDoubleMoveA != null;
+        void actions.handleMove(actions.pickAutoMoveId(forB));
+        return;
+      }
+      if (view === "targets" && isDouble) {
+        void actions.handleDoubleTarget(actions.pickAutoTargetLane());
+      }
+    }, 320);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    autoBattle,
+    isAnimating,
+    outcome,
+    mustSwitch,
+    view,
+    isDouble,
+    pendingDoubleMoveA,
+  ]);
+
   async function handleFlee() {
     if (isAnimating || mustSwitch || outcome !== "ongoing") return;
     if (isGymBattle) return;
@@ -2201,29 +2372,52 @@ export function BattleArena({
               } as CSSProperties
             }
           >
-            {/* Mute + velocidad en una sola pastilla horizontal: ocupan menos
-                alto bajo la placa del rival y no se pelean por la misma columna. */}
-            <div className="absolute top-16 left-2 z-30 flex items-center gap-1 md:top-[4.5rem] md:left-3">
-              <BattleAudioControls bgmKind={bgmKind} />
-              <BattleSpeedControl />
+            {/* Placa rival + banner de poder al costado; HUD debajo. */}
+            <div className="absolute top-2 right-1 left-2 z-30 flex flex-col items-start gap-3.5 md:top-3 md:right-1.5 md:left-3 md:gap-4">
+              <div className="flex w-full items-stretch gap-1.5 md:gap-2">
+                <HpPlate
+                  className="relative z-20 w-[min(42vw,148px)] shrink-0 sm:w-[min(40vw,160px)] md:w-[min(100%,200px)]"
+                  name={activeWild.name}
+                  levelLabel={t("level", { level: activeWild.level })}
+                  currentHp={wildHp}
+                  maxHp={wildMaxHp}
+                  status={wildStatus}
+                  stages={wildStages}
+                  align="left"
+                />
+                {moveBanner ? (
+                  <div
+                    key={`banner-${moveBanner.key}`}
+                    className="move-banner pointer-events-none min-w-0 flex-1 self-center"
+                    style={
+                      {
+                        "--move-banner-accent": typeColor(moveBanner.moveType),
+                      } as CSSProperties
+                    }
+                  >
+                    <span className="move-banner__shell">
+                      <span className="move-banner__panel">
+                        <span className="move-banner__accent" aria-hidden />
+                        <span className="move-banner__content">
+                          <span className="move-banner__type">{moveBanner.moveType}</span>
+                          <span className="move-banner__name">
+                            {formatMoveName(moveBanner.moveName)}
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+              <div className="mt-1 flex flex-col items-start gap-1.5 md:mt-1.5 md:gap-2">
+                <BattleSpeedControl />
+                <BattleAutoControl />
+                <BattleAudioControls bgmKind={bgmKind} />
+              </div>
             </div>
-            {/* Plates sit opposite their sprite (FireRed layout): foe plate
-                top-left vs foe sprite top-right, player plate bottom-right vs
-                player sprite bottom-left. Same-corner plates were covering the
-                sprites, which is why the player looked cropped and small. */}
-            <HpPlate
-              className="absolute top-2 left-2 z-20 w-[min(100%,160px)] md:top-3 md:left-3 md:w-[min(100%,220px)]"
-              name={activeWild.name}
-              levelLabel={t("level", { level: activeWild.level })}
-              currentHp={wildHp}
-              maxHp={wildMaxHp}
-              status={wildStatus}
-              stages={wildStages}
-              align="left"
-            />
             {isDouble && wildB && (
               <HpPlate
-                className="absolute top-2 left-[calc(min(100%,160px)+0.75rem)] z-20 w-[min(100%,140px)] md:top-3 md:left-[calc(min(100%,220px)+0.85rem)] md:w-[min(100%,190px)]"
+                className="absolute top-2 left-[calc(min(42vw,160px)+0.75rem)] z-20 w-[min(100%,140px)] md:top-3 md:left-[calc(min(100%,220px)+0.85rem)] md:w-[min(100%,190px)]"
                 name={wildB.name}
                 levelLabel={t("level", { level: wildB.level })}
                 currentHp={wildBHp}
@@ -2233,6 +2427,10 @@ export function BattleArena({
                 align="left"
               />
             )}
+            {/* Plates sit opposite their sprite (FireRed layout): foe plate
+                top-left vs foe sprite top-right, player plate bottom-right vs
+                player sprite bottom-left. Same-corner plates were covering the
+                sprites, which is why the player looked cropped and small. */}
             <HpPlate
               className="absolute bottom-2 right-2 z-20 w-[min(100%,160px)] md:bottom-3 md:right-3 md:w-[min(100%,220px)]"
               name={activePlayer.name}
@@ -2254,20 +2452,6 @@ export function BattleArena({
                 stages={NO_STAGES}
                 align="right"
               />
-            )}
-
-            {moveFx && (
-              <div
-                key={`banner-${moveFx.key}`}
-                className="move-banner absolute top-14 left-1/2 z-30 pointer-events-none"
-                style={{
-                  backgroundColor: `${typeColor(moveFx.moveType)}ee`,
-                  boxShadow: `0 0 18px ${typeColor(moveFx.moveType)}88`,
-                }}
-              >
-                <span className="uppercase text-[10px] tracking-wider opacity-90">{moveFx.moveType}</span>
-                <span className="font-black text-sm md:text-base">{formatMoveName(moveFx.moveName)}</span>
-              </div>
             )}
 
             {moveFx?.mode === "hit" && moveFx.fxFile && moveFx.fxStyle === "projectile" && (

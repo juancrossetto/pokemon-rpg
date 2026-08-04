@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { usePathname, useRouter } from "@/i18n/navigation";
-import { Link } from "@/i18n/navigation";
+import { useEffect, useRef, useState } from "react";
 import { routing } from "@/i18n/routing";
 import { FlagIcon } from "@/components/flag-icon";
 import { LOCALE_FLAG } from "@/lib/countries";
-import { markMobileNavDrawerOpen } from "@/lib/nav-drawer-persist";
+import { useLocaleSwitch } from "@/components/i18n-client-provider";
 
 const LOCALE_LABEL: Record<(typeof routing.locales)[number], string> = {
   es: "Español",
@@ -24,7 +22,7 @@ export function LocaleSwitcher({
   currentLocale,
   label,
   variant = "dropdown",
-  /** Si true, el drawer mobile se reabre tras el cambio de idioma. */
+  /** Si true, el drawer mobile se reabre tras el soft-nav de locale. */
   keepMobileDrawer = false,
 }: {
   currentLocale: string;
@@ -34,13 +32,15 @@ export function LocaleSwitcher({
   keepMobileDrawer?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [pending, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
-  const router = useRouter();
-  const active = (routing.locales.includes(currentLocale as "es" | "en" | "pt")
-    ? currentLocale
-    : routing.defaultLocale) as (typeof routing.locales)[number];
+  const { locale: liveLocale, pending, switchLocale } = useLocaleSwitch();
+  const active = (
+    routing.locales.includes(liveLocale as "es" | "en" | "pt")
+      ? liveLocale
+      : routing.locales.includes(currentLocale as "es" | "en" | "pt")
+        ? currentLocale
+        : routing.defaultLocale
+  ) as (typeof routing.locales)[number];
 
   useEffect(() => {
     if (!open) return;
@@ -58,12 +58,9 @@ export function LocaleSwitcher({
     };
   }, [open]);
 
-  function switchLocale(locale: (typeof routing.locales)[number]) {
+  function onPick(locale: (typeof routing.locales)[number]) {
     if (locale === active || pending) return;
-    if (keepMobileDrawer) markMobileNavDrawerOpen();
-    startTransition(() => {
-      router.replace(pathname, { locale });
-    });
+    switchLocale(locale, { keepMobileDrawer });
   }
 
   if (variant === "inline") {
@@ -72,9 +69,7 @@ export function LocaleSwitcher({
         role="listbox"
         aria-label={label}
         aria-busy={pending || undefined}
-        className={`flex w-full gap-1 rounded-lg border border-white/10 bg-black/20 p-1 ${
-          pending ? "pointer-events-none opacity-70" : ""
-        }`}
+        className="flex w-full gap-1 rounded-lg border border-white/10 bg-black/20 p-1"
       >
         {routing.locales.map((locale) => {
           const isActive = locale === active;
@@ -87,10 +82,10 @@ export function LocaleSwitcher({
               aria-label={LOCALE_LABEL[locale]}
               title={LOCALE_LABEL[locale]}
               disabled={pending}
-              onClick={() => switchLocale(locale)}
+              onClick={() => onPick(locale)}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 transition-colors ${
                 isActive
-                  ? "bg-pokeball-red/20 text-on-surface ring-1 ring-pokeball-red/40"
+                  ? "bg-white/10 text-on-surface ring-1 ring-white/20"
                   : "text-on-surface-variant hover:bg-white/5 hover:text-on-surface"
               }`}
             >
@@ -124,9 +119,6 @@ export function LocaleSwitcher({
           title={LOCALE_SHORT[active]}
           className="h-3.5 w-auto rounded-[2px]"
         />
-        {/* Entre 1024 y 1279 el navbar completo va justo de ancho: acá el
-            selector queda en bandera sola, que ya identifica el idioma. El
-            `aria-label` sigue diciendo cuál es para lectores de pantalla. */}
         <span className="hidden text-label-sm uppercase xl:inline">{LOCALE_SHORT[active]}</span>
         <span className="material-symbols-outlined hidden text-[14px]! opacity-70 xl:inline">
           expand_more
@@ -142,11 +134,14 @@ export function LocaleSwitcher({
             const isActive = locale === active;
             return (
               <li key={locale} role="option" aria-selected={isActive}>
-                <Link
-                  href={pathname}
-                  locale={locale}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 text-label-md transition-colors ${
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => {
+                    setOpen(false);
+                    onPick(locale);
+                  }}
+                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-label-md transition-colors ${
                     isActive
                       ? "bg-white/10 text-on-surface"
                       : "text-on-surface-variant hover:bg-white/5 hover:text-on-surface"
@@ -159,7 +154,7 @@ export function LocaleSwitcher({
                   />
                   <span className="flex-1">{LOCALE_LABEL[locale]}</span>
                   <span className="text-label-sm uppercase opacity-60">{LOCALE_SHORT[locale]}</span>
-                </Link>
+                </button>
               </li>
             );
           })}

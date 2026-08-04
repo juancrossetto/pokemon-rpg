@@ -36,9 +36,9 @@ export type ZoneObjectiveState = {
  * Recompensa por objetivo, escalada al nivel de la zona.
  *
  * Los objetos siguen la lógica de los juegos: explorar del todo una ruta te
- * deja balls, completar la Pokédex paga con Caramelo Raro (el premio clásico
- * de los hitos de Pokédex), y limpiar a los entrenadores devuelve curación
- * para poder seguir. Todo sale del catálogo que ya siembra `items.ts`.
+ * deja balls, registrar las especies de la zona (cruzártelas explorando acá)
+ * paga con Caramelo Raro, y limpiar a los entrenadores devuelve curación para
+ * poder seguir. Todo sale del catálogo que ya siembra `items.ts`.
  */
 export function objectiveReward(
   zone: MapLocation,
@@ -80,8 +80,9 @@ export function evaluateObjective(
     current = zone.completedStages;
     target = zone.totalStages;
   } else if (objective === "pokedex") {
-    current = zone.encounters.filter((e) => e.caught).length;
-    target = zone.encounters.length;
+    const targets = zone.encounters.filter((e) => e.forObjective);
+    current = targets.filter((e) => e.caught).length;
+    target = targets.length;
   } else {
     current = zone.trainers.filter((t) => t.defeated).length;
     target = zone.trainers.length;

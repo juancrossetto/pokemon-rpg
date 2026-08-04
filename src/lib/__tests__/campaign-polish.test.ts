@@ -33,6 +33,7 @@ function zone(partial: Partial<MapLocation> & Pick<MapLocation, "id">): MapLocat
     encounterRate: "medium",
     stages: [],
     spawnSpeciesIds: [16],
+    objectiveSpeciesIds: [16],
     encounters: [],
     masteryXp: 0,
     masteryLevel: 1,
@@ -118,7 +119,7 @@ describe("trainer zone unlock gate", () => {
 });
 
 describe("evaluateObjective pokedex", () => {
-  it("requires caught (owned+seen-in-zone), not just owned elsewhere", () => {
+  it("counts only forObjective species seen in-zone", () => {
     const z = zone({
       id: "route-1",
       encounters: [
@@ -128,7 +129,9 @@ describe("evaluateObjective pokedex", () => {
           spriteUrl: "",
           types: ["flying"],
           caught: false,
+          owned: true,
           seen: true,
+          forObjective: true,
           rarity: "common",
         },
         {
@@ -137,7 +140,21 @@ describe("evaluateObjective pokedex", () => {
           spriteUrl: "",
           types: ["normal"],
           caught: true,
+          owned: false,
           seen: true,
+          forObjective: true,
+          rarity: "common",
+        },
+        {
+          // Spawnea acá pero la misión ya la pidió otra zona.
+          speciesId: 21,
+          name: "Spearow",
+          spriteUrl: "",
+          types: ["flying"],
+          caught: true,
+          owned: true,
+          seen: true,
+          forObjective: false,
           rarity: "common",
         },
       ],

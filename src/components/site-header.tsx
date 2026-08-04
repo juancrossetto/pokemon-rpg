@@ -13,6 +13,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { listNotifications } from "@/lib/notifications";
 import type { CombatLock } from "@/lib/battle-lock";
+import { getActiveTowerRun } from "@/lib/battle-lock";
 import { HandbookHost } from "@/components/handbook/handbook-modal";
 import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
 
@@ -77,6 +78,9 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   };
   const notifications = session?.user
     ? await listNotifications(session.user.id)
+    : null;
+  const activeTowerRun = session?.user?.id
+    ? await getActiveTowerRun(session.user.id, { includeParked: true })
     : null;
   const lock = combatLock;
   const lockedHref =
@@ -280,6 +284,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         loginLabel={t("login")}
         registerLabel={t("register")}
         notifications={notifications}
+        adventureTowerActive={Boolean(activeTowerRun) || lock?.kind === "tower"}
       />
 
       {session?.user && <HandbookHost />}

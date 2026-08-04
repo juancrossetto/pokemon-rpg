@@ -123,7 +123,8 @@ const MODIFIER_VISUAL: Record<
   sun_field: { icon: "wb_sunny", accent: "#fbbf24", src: towerSkillSrc(11) },
   rain_field: { icon: "water_drop", accent: THEME.secondary, src: towerSkillSrc(12) },
   fire_boost: { icon: "local_fire_department", accent: "#f97316", src: towerSkillSrc(13) },
-  heal_cut: { icon: "heart_minus", accent: "#fb7185" },
+  // Arte de corazones (skill8): cura ↔ cura reducida.
+  heal_cut: { icon: "heart_minus", accent: "#fb7185", src: towerSkillSrc(8) },
   speed_surge: { icon: "speed", accent: "#fbbf24" },
   no_items: { icon: "block", accent: "#94a3b8" },
 };
@@ -1094,40 +1095,55 @@ export function TowerEndedSummary({
         </div>
       </div>
 
-      {/* Loot — franja baja alargada y chata */}
+      {/* Loot — en mobile: rewards arriba + CTA a ancho completo (el chip
+          al costado comprimía el botín y se veía desbalanceado). */}
       <div className="relative mt-2.5 px-3.5 pb-3.5 sm:mt-3 sm:px-4 sm:pb-4">
-        <div className="flex min-h-[3.25rem] items-center gap-3 rounded-xl border border-white/[0.08] bg-black/25 px-3 py-2 sm:min-h-[3.5rem] sm:gap-3.5 sm:px-3.5">
-          <div className="min-w-0 flex-1">
+        <div
+          className={`rounded-xl border px-3 py-2.5 sm:px-3.5 sm:py-3 ${
+            canClaim && !lootClaimed
+              ? "border-primary/25 bg-gradient-to-b from-primary/10 to-black/30"
+              : "border-white/[0.08] bg-black/25"
+          }`}
+        >
+          <div className="flex items-start justify-between gap-2">
             <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-electric-yellow/75">
               {t("result.lootKept")}
             </p>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 [&_.font-mono]:text-white!">
-              {loot.length > 0 ? (
-                <RewardList rewards={loot} size="sm" unitLabels={unitLabels} />
-              ) : (
-                <p className="text-[11px] text-white/40">{t("result.lootEmpty")}</p>
-              )}
-              {!canClaim || lootClaimed || alreadyGranted ? (
-                <p className="text-[10px] font-medium text-white/45 sm:text-[11px]">{lootStatus}</p>
-              ) : null}
-            </div>
+            {lootClaimed ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-electric-yellow/85">
+                <span className="material-symbols-outlined text-[14px]!">check_circle</span>
+                {t("result.lootClaimed")}
+              </span>
+            ) : null}
           </div>
 
-          {canClaim && !lootClaimed ? (
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 [&_.font-mono]:text-white!">
+            {loot.length > 0 ? (
+              <RewardList rewards={loot} size="sm" unitLabels={unitLabels} />
+            ) : (
+              <p className="text-[11px] text-white/40">{t("result.lootEmpty")}</p>
+            )}
+          </div>
+
+          {!canClaim || lootClaimed || alreadyGranted ? (
+            !lootClaimed ? (
+              <p className="mt-1.5 text-[10px] font-medium leading-snug text-white/45 sm:text-[11px]">
+                {lootStatus}
+              </p>
+            ) : null
+          ) : (
             <button
               type="button"
               disabled={pending}
               onClick={() => start(async () => claimTowerLoot(locale, runId))}
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-lg bg-pokeball-red px-3 text-[11px] font-bold uppercase tracking-wider text-white transition hover:brightness-110 disabled:opacity-50 sm:h-10 sm:px-3.5 sm:text-[12px]"
+              className="ui-btn-primary mt-3 flex w-full min-h-11 items-center justify-center gap-2 px-4 text-[12px] font-bold uppercase tracking-[0.14em] sm:mt-3.5 sm:min-h-12 sm:text-[13px]"
             >
-              <span className="material-symbols-outlined text-[16px]! sm:text-[18px]!">redeem</span>
+              <span className="material-symbols-outlined text-[18px]! sm:text-[20px]!">
+                redeem
+              </span>
               {pending ? t("actions.working") : t("result.claimCta")}
             </button>
-          ) : lootClaimed ? (
-            <span className="material-symbols-outlined shrink-0 text-[20px]! text-electric-yellow/80">
-              check_circle
-            </span>
-          ) : null}
+          )}
         </div>
       </div>
     </section>
@@ -1399,9 +1415,9 @@ export function TowerBlessingDraft({
 /**
  * Descanso con coste de oportunidad.
  *
- * Curarse o llevarse una bendición es la única elección real entre draft y
- * draft. Las dos opciones se presentan como cartas enfrentadas —mismo peso
- * visual que el draft— para que la renuncia se sienta.
+ * Overlay fijo (como el draft de bendiciones): en mobile la elección vivía
+ * enterrada al fondo del aside y no se veía. Curarse o sintonizar quedan
+ * delante del camino, con el mismo peso visual que elegir un buff.
  */
 export function TowerRestFork({
   locale,
@@ -1418,6 +1434,7 @@ export function TowerRestFork({
   const [pending, start] = useTransition();
   const [picked, setPicked] = useState<TowerRestChoice | null>(null);
   const lowHp = teamHpPct < 0.35 && canAttune;
+  const inviting = !pending;
 
   const choose = (choice: TowerRestChoice) => {
     setPicked(choice);
@@ -1425,67 +1442,81 @@ export function TowerRestFork({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-electric-yellow/20 bg-[#0a0c12] p-3 sm:p-4">
-      <span
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/85 px-2 pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.75rem)] pt-4 backdrop-blur-md sm:items-center sm:p-4 sm:pb-4">
+      <div
         aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-electric-yellow) 14%, transparent), transparent 55%)",
-        }}
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_28%,rgba(253,224,71,0.14),transparent_55%)]"
       />
 
-      <div className="relative z-10 text-center">
-        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-electric-yellow/90">
-          {t("rest.title")}
-        </p>
-        <p className="mt-1 text-[11px] text-on-surface-variant/80">{t("rest.hint")}</p>
-      </div>
-
-      <div className="relative z-10 mt-3 grid grid-cols-2 gap-2 sm:gap-2.5">
-        <RestOption
-          seed="tower-rest-recover"
-          imageSrc="/tower/rest-snorlax.png"
-          accent={THEME.tertiary}
-          foil="linear-gradient(145deg, color-mix(in srgb, var(--theme-tertiary) 65%, black) 0%, color-mix(in srgb, var(--theme-tertiary) 70%, white) 45%, color-mix(in srgb, var(--theme-tertiary) 55%, black) 100%)"
-          wash="radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-electric-yellow) 28%, transparent) 0%, transparent 62%)"
-          stat={`+${recoveryPct}%`}
-          title={t("rest.recoverTitle")}
-          body={t("rest.recoverBody", { pct: recoveryPct })}
-          pending={pending}
-          active={picked === "recover"}
-          dimmed={pending && picked !== "recover"}
-          onClick={() => choose("recover")}
-        />
-        <RestOption
-          seed="tower-rest-attune"
-          imageSrc="/tower/rest-alakazam.png"
-          accent={THEME.secondary}
-          foil="linear-gradient(145deg, color-mix(in srgb, var(--theme-secondary) 65%, black) 0%, color-mix(in srgb, var(--theme-secondary) 55%, white) 45%, color-mix(in srgb, var(--theme-secondary) 55%, black) 100%)"
-          wash="radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-water-blue) 28%, transparent) 0%, transparent 62%)"
-          stat="✦"
-          title={t("rest.attuneTitle")}
-          body={
-            canAttune ? t("rest.attuneBody") : t("rest.attuneUnavailable")
-          }
-          pending={pending}
-          active={picked === "attune"}
-          dimmed={pending && picked !== "attune"}
-          disabled={!canAttune}
-          onClick={() => choose("attune")}
-        />
-      </div>
-
-      {lowHp ? (
-        <div className="relative z-10 mt-3 flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2">
-          <span className="material-symbols-outlined mt-0.5 text-[16px]! text-amber-300">
-            warning
-          </span>
-          <p className="text-[11px] leading-snug text-amber-100/90">
-            {t("rest.lowHpWarning")}
+      <div className="tp-rise relative my-auto w-full max-w-lg">
+        <div className="mb-3.5 text-center sm:mb-5">
+          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-electric-yellow/90">
+            {t("rest.title")}
+          </p>
+          <p className="mt-1 text-[11px] text-on-surface-variant/80 sm:mt-1.5 sm:text-label-sm">
+            {t("rest.hint")}
           </p>
         </div>
-      ) : null}
+
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+          <RestOption
+            seed="tower-rest-recover"
+            imageSrc="/tower/rest-snorlax.png"
+            accent={THEME.tertiary}
+            foil="linear-gradient(145deg, color-mix(in srgb, var(--theme-tertiary) 65%, black) 0%, color-mix(in srgb, var(--theme-tertiary) 70%, white) 45%, color-mix(in srgb, var(--theme-tertiary) 55%, black) 100%)"
+            wash="radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-electric-yellow) 28%, transparent) 0%, transparent 62%)"
+            stat={`+${recoveryPct}%`}
+            title={t("rest.recoverTitle")}
+            body={t("rest.recoverBody", { pct: recoveryPct })}
+            pending={pending}
+            active={picked === "recover"}
+            dimmed={pending && picked !== "recover"}
+            inviting={inviting}
+            inviteDelay={0}
+            onClick={() => choose("recover")}
+          />
+          <RestOption
+            seed="tower-rest-attune"
+            imageSrc="/tower/rest-alakazam.png"
+            accent={THEME.secondary}
+            foil="linear-gradient(145deg, color-mix(in srgb, var(--theme-secondary) 65%, black) 0%, color-mix(in srgb, var(--theme-secondary) 55%, white) 45%, color-mix(in srgb, var(--theme-secondary) 55%, black) 100%)"
+            wash="radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-water-blue) 28%, transparent) 0%, transparent 62%)"
+            stat="✦"
+            title={t("rest.attuneTitle")}
+            body={
+              canAttune ? t("rest.attuneBody") : t("rest.attuneUnavailable")
+            }
+            pending={pending}
+            active={picked === "attune"}
+            dimmed={pending && picked !== "attune"}
+            disabled={!canAttune}
+            inviting={inviting && canAttune}
+            inviteDelay={280}
+            onClick={() => choose("attune")}
+          />
+        </div>
+
+        {lowHp ? (
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2">
+            <span className="material-symbols-outlined mt-0.5 text-[16px]! text-amber-300">
+              warning
+            </span>
+            <p className="text-[11px] leading-snug text-amber-100/90">
+              {t("rest.lowHpWarning")}
+            </p>
+          </div>
+        ) : null}
+
+        {pending ? (
+          <p className="mt-3 text-center text-[11px] text-on-surface-variant sm:mt-4 sm:text-label-sm">
+            {t("actions.working")}
+          </p>
+        ) : (
+          <p className="tower-blessing-pick-hint mt-3 text-center text-[11px] text-white/55 sm:text-[10px] sm:text-white/40">
+            {t("blessing.pickTap")}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -1503,6 +1534,8 @@ function RestOption({
   active,
   dimmed,
   disabled,
+  inviting,
+  inviteDelay = 0,
   onClick,
 }: {
   seed: string;
@@ -1517,6 +1550,8 @@ function RestOption({
   active: boolean;
   dimmed: boolean;
   disabled?: boolean;
+  inviting?: boolean;
+  inviteDelay?: number;
   onClick: () => void;
 }) {
   return (
@@ -1524,9 +1559,20 @@ function RestOption({
       type="button"
       disabled={pending || disabled}
       onClick={onClick}
-      style={{ background: foil, "--rest-glow": `${accent}66` } as CSSProperties}
-      className={`tower-blessing-card group relative block w-full rounded-2xl p-[2px] text-left transition duration-200 disabled:cursor-not-allowed ${
-        dimmed || disabled ? "opacity-40" : "hover:-translate-y-0.5 hover:scale-[1.015]"
+      style={
+        {
+          background: foil,
+          "--rest-glow": `${accent}66`,
+          "--blessing-glow": `${accent}88`,
+          animationDelay: inviting ? `${inviteDelay}ms` : undefined,
+        } as CSSProperties
+      }
+      className={`tower-blessing-card group relative block w-full rounded-2xl p-[2px] text-left transition duration-200 disabled:cursor-not-allowed active:scale-[0.985] ${
+        inviting ? "tower-blessing-card--invite" : ""
+      } ${
+        dimmed || disabled
+          ? "opacity-40"
+          : "hover:-translate-y-0.5 hover:scale-[1.015]"
       } ${active ? "scale-[1.015]" : ""}`}
     >
       <span className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[0.95rem] bg-[#0a0c12] px-2 pb-3 pt-2.5 sm:px-3.5 sm:pb-4 sm:pt-3">

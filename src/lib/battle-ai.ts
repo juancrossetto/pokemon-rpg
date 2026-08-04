@@ -62,3 +62,37 @@ export function pickWildMove(
 
   return best;
 }
+
+/**
+ * Elige el moveId del jugador en auto-batalla. Respeta Choice lock y Struggle
+ * (sin PP). Reusa la misma heurística del rival.
+ */
+export function pickAutoPlayerMoveId(
+  moves: { moveId: number; name: string; type: string; category: MoveSnapshot["category"]; power?: number | null; accuracy?: number | null; pp: number; target?: string | null }[],
+  attacker: CombatantStats,
+  defender: CombatantStats,
+  defenderHp: number,
+  choiceLockMoveId: number | null,
+): number {
+  if (choiceLockMoveId != null) {
+    const locked = moves.find((m) => m.moveId === choiceLockMoveId);
+    if (locked && locked.pp > 0) return choiceLockMoveId;
+  }
+  if (moves.length === 0) return 0;
+  if (moves.every((m) => m.pp <= 0)) return moves[0]!.moveId;
+
+  const snapshots: MoveSnapshot[] = moves.map((m) => ({
+    id: m.moveId,
+    name: m.name,
+    type: m.type,
+    category: m.category,
+    power: m.power ?? null,
+    accuracy: m.accuracy ?? null,
+    priority: 0,
+    pp: m.pp,
+    target: m.target,
+  }));
+  const pps = moves.map((m) => m.pp);
+  return pickWildMove(snapshots, attacker, defender, defenderHp, pps).id;
+}
+

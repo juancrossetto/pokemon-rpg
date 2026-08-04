@@ -29,6 +29,7 @@ function zone(partial: Partial<MapLocation> & Pick<MapLocation, "id">): MapLocat
     encounterRate: "medium",
     stages: [],
     spawnSpeciesIds: [],
+    objectiveSpeciesIds: [],
     encounters: [],
     masteryXp: 0,
     masteryLevel: 1,

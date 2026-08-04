@@ -1,8 +1,15 @@
 import { locationEncounterRate } from "./encounters";
 import { isStageUnlocked, listLocationsForUi, type CampaignProgressRow } from "./progress";
 import { fallbackLocationPoint, locationPoint } from "./region-map";
-import type { EncounterRate } from "./types";
+import type { CampaignLocationKind, EncounterRate } from "./types";
 import type { Rarity } from "./rarity";
+
+/** Zonas cuya misión Pokédex “reclama” especies (sin repetir entre misiones). */
+const OBJECTIVE_SPECIES_KINDS = new Set<CampaignLocationKind>([
+  "route",
+  "forest",
+  "dungeon",
+]);
 
 export type MapStage = {
   id: string;
@@ -17,9 +24,20 @@ export type MapEncounter = {
   name: string;
   spriteUrl: string;
   types: string[];
+  /**
+   * Cuenta para el objetivo de zona: ya te la cruzaste explorando acá
+   * (alcanza con el encuentro; no hace falta capturarla de nuevo).
+   */
   caught: boolean;
-  /** Ya te lo cruzaste en esta zona: si es false va como silueta desconocida. */
+  /** Ya la tenés en el equipo/PC (cualquier origen). */
+  owned: boolean;
+  /** Sprite revelado: la poseés o la viste en esta zona. */
   seen: boolean;
+  /**
+   * Entra en el objetivo Pokédex de esta zona. Cada especie se asigna a una
+   * sola misión de campaña (primera ruta/bosque/mazmorra que la spawnea).
+   */
+  forObjective: boolean;
   rarity: Rarity;
 };
 
@@ -40,6 +58,11 @@ export type MapLocation = {
   stages: MapStage[];
   /** Especies que spawnean en la zona (unión de sus stages). */
   spawnSpeciesIds: number[];
+  /**
+   * Subset de `spawnSpeciesIds` para el objetivo Pokédex: sin repetir especies
+   * entre misiones (primera zona de exploración que las spawnea).
+   */
+  objectiveSpeciesIds: number[];
   /** Se completa en `loadMapLocations` — vacío si se armó sin datos de DB. */
   encounters: MapEncounter[];
   /** Mastery del jugador en la zona (0 si nunca farmeó ahí). */
@@ -70,6 +93,9 @@ export type MapTrainer = {
  * Sin coordenadas en el arte → fallback de grilla (nunca se dropea en silencio).
  */
 export function buildMapLocations(progress: CampaignProgressRow): MapLocation[] {
+  /** Especies ya pedidas por una misión anterior (orden de campaña). */
+  const claimedForObjective = new Set<number>();
+
   return listLocationsForUi(progress).flatMap(
     ({ location, unlocked, completedStages, totalStages }, index) => {
       const point =
@@ -77,6 +103,16 @@ export function buildMapLocations(progress: CampaignProgressRow): MapLocation[] 
         fallbackLocationPoint(location.id, index);
       const wildStages = location.stages.filter((s) => !s.isGymMilestone);
       const levelSource = wildStages.length > 0 ? wildStages : location.stages;
+      const spawnSpeciesIds = [
+        ...new Set(wildStages.flatMap((s) => s.spawnSpeciesIds)),
+      ];
+
+      let objectiveSpeciesIds: number[] = [];
+      if (OBJECTIVE_SPECIES_KINDS.has(location.kind)) {
+        objectiveSpeciesIds = spawnSpeciesIds.filter((id) => !claimedForObjective.has(id));
+        for (const id of objectiveSpeciesIds) claimedForObjective.add(id);
+      }
+
       return [
         {
           id: location.id,
@@ -90,7 +126,8 @@ export function buildMapLocations(progress: CampaignProgressRow): MapLocation[] 
           levelMin: levelSource.length ? Math.min(...levelSource.map((s) => s.levelMin)) : 1,
           levelMax: levelSource.length ? Math.max(...levelSource.map((s) => s.levelMax)) : 1,
           encounterRate: locationEncounterRate(location),
-          spawnSpeciesIds: [...new Set(wildStages.flatMap((s) => s.spawnSpeciesIds))],
+          spawnSpeciesIds,
+          objectiveSpeciesIds,
           encounters: [],
           masteryXp: 0,
           masteryLevel: 1,

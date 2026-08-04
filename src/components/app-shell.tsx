@@ -1,9 +1,10 @@
-import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/site-header";
 import { CombatLockGate } from "@/components/combat-lock-gate";
+import { I18nClientProvider } from "@/components/i18n-client-provider";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCombatLock, enforceCombatLockInLayout, stripLocale } from "@/lib/battle-lock";
@@ -46,9 +47,10 @@ export async function AppShell({
     }
   }
   const combatLock = session?.user ? await getCombatLock(session.user.id) : null;
+  const messages = await getMessages();
 
   return (
-    <NextIntlClientProvider>
+    <I18nClientProvider locale={locale} messages={messages}>
       <Providers>
         <CombatLockGate lock={combatLock} />
         <SiteHeader combatLock={combatLock} />
@@ -56,6 +58,6 @@ export async function AppShell({
           {children}
         </div>
       </Providers>
-    </NextIntlClientProvider>
+    </I18nClientProvider>
   );
 }

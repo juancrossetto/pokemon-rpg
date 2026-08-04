@@ -96,8 +96,9 @@ html[data-icons="ready"] .material-symbols-outlined {
 }
 
 :root {
-  /* Fallback hasta que MobileChrome mida la altura real (sin safe-area). */
-  --bottom-nav-h: 3.75rem;
+  /* Fallback hasta que MobileChrome mida la altura real (sin safe-area).
+     Incluye el dock + el FAB de Combat que sobresale. */
+  --bottom-nav-h: 5.25rem;
   --vv-gap: 0px;
 }
 
@@ -662,13 +663,14 @@ body {
 }
 @media (max-width: 767px) {
   .battle-cmd-btn {
-    height: 3.65rem;
-    min-height: 3.65rem;
-    max-height: 3.65rem;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
     gap: 0.2rem;
     font-size: 9px;
     letter-spacing: 0.08em;
     border-radius: 0.65rem;
+    padding: 0.35rem 0.25rem;
   }
   .battle-cmd-btn__icon .material-symbols-outlined {
     font-size: 20px !important;
@@ -1353,36 +1355,154 @@ body {
   animation: panel-swap 0.18s ease-out;
 }
 
-/* FX de movimientos: banner, proyectil, impacto y tint del arena */
+/* Banner de poder: card glass redondeada, acento del tipo. */
 @keyframes move-banner-in {
   0% {
     opacity: 0;
-    transform: translate(-50%, -8px) scale(0.92);
+    transform: translateX(2.5rem) scale(0.98);
   }
-  18% {
+  14% {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
   }
-  78% {
+  32% {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: translateX(0) scale(1);
+  }
+  74% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -4px) scale(0.98);
+    transform: translateX(2.75rem) scale(0.99);
   }
 }
 .move-banner {
+  --move-banner-accent: #60a5fa;
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 7.5rem;
+  max-width: none;
+  animation: move-banner-in 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.move-banner__shell {
+  display: block;
+  border-radius: 0.9rem;
+  padding: 1px;
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--move-banner-accent) 85%, white) 0%,
+    color-mix(in srgb, var(--move-banner-accent) 45%, #94a3b8) 42%,
+    color-mix(in srgb, var(--move-banner-accent) 70%, #0f172a) 100%
+  );
+  box-shadow:
+    0 8px 24px color-mix(in srgb, var(--move-banner-accent) 28%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--move-banner-accent) 18%, transparent);
+}
+.move-banner__panel {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 2.9rem;
+  overflow: hidden;
+  border-radius: calc(0.9rem - 1px);
+  background:
+    radial-gradient(
+      ellipse 80% 120% at 0% 50%,
+      color-mix(in srgb, var(--move-banner-accent) 38%, transparent) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--move-banner-accent) 32%, #10131c) 0%,
+      color-mix(in srgb, var(--move-banner-accent) 10%, #0c0f16) 42%,
+      #0a0c12 100%
+    );
+}
+.move-banner__accent {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    var(--move-banner-accent) 30%,
+    color-mix(in srgb, var(--move-banner-accent) 70%, white) 50%,
+    var(--move-banner-accent) 70%,
+    transparent
+  );
+  box-shadow: 0 0 14px color-mix(in srgb, var(--move-banner-accent) 70%, transparent);
+}
+.move-banner__content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  padding: 0.35rem 0.9rem;
-  border-radius: 999px;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 2.9rem;
+  padding: 0.45rem 0.9rem 0.5rem 0.95rem;
   color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-  animation: move-banner-in 0.95s ease-out forwards;
+  -webkit-font-smoothing: antialiased;
+}
+.move-banner__type {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--move-banner-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--move-banner-accent) 28%, rgba(0, 0, 0, 0.25));
+  padding: 0.12rem 0.5rem;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--move-banner-accent) 25%, white);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--move-banner-accent) 25%, transparent);
+}
+.move-banner__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  color: #f8fafc;
+  text-shadow: 0 1px 8px color-mix(in srgb, var(--move-banner-accent) 35%, transparent);
+}
+@media (min-width: 768px) {
+  .move-banner__shell {
+    border-radius: 1rem;
+  }
+  .move-banner__panel {
+    border-radius: calc(1rem - 1px);
+  }
+  .move-banner__panel,
+  .move-banner__content {
+    min-height: 3.2rem;
+  }
+  .move-banner__type {
+    font-size: 9px;
+  }
+  .move-banner__name {
+    font-size: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .move-banner {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes move-orb-right {
@@ -1739,11 +1859,14 @@ body {
     .move-beam-right, .move-beam-left, .move-impact, .arena-type-flash) {
   animation-duration: 0.2s;
 }
-[data-battle-speed="2"] :is(.damage-popup, .eff-popup, .move-banner, .sprite-faint,
+[data-battle-speed="2"] :is(.damage-popup, .eff-popup, .sprite-faint,
     .sprite-enter, .sprite-recall,
     .ball-throw-travel, .ball-shake-once, .ball-catch-flash, .ball-break,
     .sprite-absorb-ball, .sprite-heal) {
   animation-duration: 0.5s;
+}
+[data-battle-speed="2"] .move-banner {
+  animation-duration: 1.2s;
 }
 [data-battle-speed="2"] .health-bar-fill {
   transition-duration: 0.15s;
@@ -1755,11 +1878,14 @@ body {
     .move-beam-right, .move-beam-left, .move-impact, .arena-type-flash) {
   animation-duration: 0.14s;
 }
-[data-battle-speed="3"] :is(.damage-popup, .eff-popup, .move-banner, .sprite-faint,
+[data-battle-speed="3"] :is(.damage-popup, .eff-popup, .sprite-faint,
     .sprite-enter, .sprite-recall,
     .ball-throw-travel, .ball-shake-once, .ball-catch-flash, .ball-break,
     .sprite-absorb-ball, .sprite-heal) {
   animation-duration: 0.34s;
+}
+[data-battle-speed="3"] .move-banner {
+  animation-duration: 0.8s;
 }
 [data-battle-speed="3"] .health-bar-fill {
   transition-duration: 0.1s;
@@ -2921,7 +3047,7 @@ body {
 .pvp-report__scoreboard {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  align-items: center;
+  align-items: start;
   gap: 0.75rem;
   border-radius: 1rem;
   border: 1px solid color-mix(in srgb, white 10%, transparent);
@@ -2932,6 +3058,7 @@ body {
 .pvp-report__vs {
   display: grid;
   place-items: center;
+  align-self: center;
   padding-inline: 0.25rem;
 }
 .pvp-report__vs-text {
@@ -2942,19 +3069,21 @@ body {
     0 0 22px color-mix(in srgb, #5ef0ff 35%, transparent);
 }
 .pvp-report__fighter {
-  display: flex;
+  display: grid;
   min-width: 0;
-  flex-direction: column;
+  grid-template-rows: auto minmax(1.35rem, auto) auto;
   gap: 0.35rem;
-  align-items: flex-start;
+  align-content: start;
+  justify-items: start;
 }
 .pvp-report__fighter.is-right {
-  align-items: flex-end;
+  justify-items: end;
   text-align: right;
 }
 .pvp-report__fighter-id {
   display: flex;
   min-width: 0;
+  max-width: 100%;
   align-items: center;
   gap: 0.4rem;
 }
@@ -2967,23 +3096,29 @@ body {
   white-space: nowrap;
   font-size: 0.95rem;
   font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
 }
-.pvp-report__fighter--a .pvp-report__fighter-name {
-  color: #7dd8ff;
+.pvp-report__scoreboard:has(.is-winner) .pvp-report__fighter:not(.is-winner) .pvp-report__fighter-name {
+  color: var(--color-error);
 }
-.pvp-report__fighter--b .pvp-report__fighter-name {
-  color: var(--color-electric-yellow);
+.pvp-report__fighter.is-winner .pvp-report__fighter-name {
+  color: #7ddea0;
+}
+.pvp-report__fighter-badge {
+  display: flex;
+  min-height: 1.35rem;
+  align-items: center;
 }
 .pvp-report__winner-chip {
   border-radius: 0.3rem;
-  border: 1px solid color-mix(in srgb, #2eb8ff 45%, transparent);
-  background: color-mix(in srgb, #2eb8ff 14%, transparent);
+  border: 1px solid color-mix(in srgb, #7ddea0 50%, transparent);
+  background: color-mix(in srgb, #7ddea0 16%, transparent);
   padding: 0.15rem 0.45rem;
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #9ae5ff;
+  color: #7ddea0;
 }
 .pvp-report__elo {
   display: flex;
@@ -2997,6 +3132,9 @@ body {
   font-weight: 700;
   color: #fff;
 }
+.pvp-report__fighter:not(.is-winner) .pvp-report__elo-value {
+  color: rgba(255, 255, 255, 0.72);
+}
 .pvp-report__elo-delta {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.8rem;
@@ -3004,7 +3142,7 @@ body {
   animation: pvp-report-delta-pop 0.55s ease-out 0.2s both;
 }
 .pvp-report__elo-delta.is-up {
-  color: #5ef0ff;
+  color: #7ddea0;
 }
 .pvp-report__elo-delta.is-down {
   color: var(--color-error);
@@ -3545,26 +3683,25 @@ body {
   }
 }
 
-/* Campaign adventure — barra / fill de progreso (primary → tertiary). */
+/* Campaign adventure — fills de progreso (solo primary, un acento). */
 .campaign-warm-bar {
   background: linear-gradient(
     90deg,
-    var(--color-pokeball-red) 0%,
-    color-mix(in srgb, var(--color-pokeball-red) 45%, var(--color-electric-yellow)) 52%,
-    var(--color-electric-yellow) 100%
+    var(--theme-primary-deep) 0%,
+    var(--theme-primary) 48%,
+    var(--theme-primary-bright) 100%
   );
   box-shadow:
-    0 0 8px color-mix(in srgb, var(--color-pokeball-red) 45%, transparent),
-    0 0 16px color-mix(in srgb, var(--color-electric-yellow) 35%, transparent);
+    0 0 8px color-mix(in srgb, var(--theme-primary) 40%, transparent),
+    0 0 18px color-mix(in srgb, var(--theme-primary) 22%, transparent);
 }
 
-/* Línea vertical del recorrido: tubo neón tertiary → primary. */
+/* Línea vertical del recorrido: glow mono primary. */
 .campaign-path-neon {
   box-shadow:
-    0 0 3px var(--color-electric-yellow),
-    0 0 8px color-mix(in srgb, var(--color-electric-yellow) 85%, transparent),
-    0 0 16px color-mix(in srgb, var(--color-pokeball-red) 55%, transparent),
-    0 0 28px color-mix(in srgb, var(--color-pokeball-red) 30%, transparent);
+    0 0 4px color-mix(in srgb, var(--theme-primary-bright) 90%, transparent),
+    0 0 10px color-mix(in srgb, var(--theme-primary) 55%, transparent),
+    0 0 22px color-mix(in srgb, var(--theme-primary) 28%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5478,34 +5615,249 @@ html.boot-splash-pending .boot-splash {
   }
 }
 
-/* Bottom nav mobile: fondo rojo suave que se desliza con rebote elástico.
-   Sin `--animate` no hay transition: el primer paint (refresh / PWA) no debe
-   “tirar” los iconos desde 0,0 con el overshoot del cubic-bezier. */
+/* ── Mobile bottom nav (PWA dock) ─────────────────────────────────────────
+   Dock flotante estilo idle/gacha (Clash Royale / Unite). Desktop (xl+) no
+   lo usa: el `display: flex` de acá pisa el `xl:hidden` de Tailwind (misma
+   especificidad, esta regla gana por orden), así que lo ocultamos en media. */
+.mobile-bottom-nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 70;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  /* Sólo arriba: el FAB sobresale. Sin gap lateral/inferior (pegado al borde). */
+  padding: 1.35rem 0 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  pointer-events: none;
+}
+
+@media (min-width: 1280px) {
+  .mobile-bottom-nav {
+    display: none;
+  }
+}
+
+.mobile-bottom-nav__dock {
+  pointer-events: auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: end;
+  width: 100%;
+  max-width: none;
+  min-height: 3.85rem;
+  padding: 0.28rem 0.45rem max(0.4rem, env(safe-area-inset-bottom, 0px));
+  border-radius: 1.35rem 1.35rem 0 0;
+  border: 1px solid color-mix(in srgb, white 10%, transparent);
+  border-bottom: none;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #2a2d3a 88%, white) 0%,
+      #14161f 42%,
+      #0a0b11 100%
+    );
+  box-shadow:
+    0 -8px 28px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.45);
+}
+
+.mobile-bottom-nav__dock--flat {
+  display: flex;
+  grid-template-columns: unset;
+}
+
+.mobile-bottom-nav__dock--flat .mobile-nav-tab {
+  flex: 1 1 0;
+}
+
+.mobile-nav-tab {
+  --nav-glow: var(--theme-primary);
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  min-height: 3.25rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  padding: 0.2rem 0.15rem 0.28rem;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 88%, transparent);
+  transition:
+    color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mobile-nav-tab--active {
+  color: color-mix(in srgb, var(--theme-primary) 78%, white);
+  transform: translateY(-0.12rem);
+}
+
+/* Pastilla deslizante detrás del ícono activo (el label queda afuera). */
 .mobile-nav-active-bg {
-  background: color-mix(in srgb, var(--color-pokeball-red) 8%, transparent);
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 1.15rem;
+  background:
+    radial-gradient(
+      85% 85% at 50% 35%,
+      color-mix(in srgb, var(--theme-primary) 42%, transparent) 0%,
+      color-mix(in srgb, var(--theme-primary) 16%, transparent) 55%,
+      color-mix(in srgb, var(--theme-primary) 6%, transparent) 100%
+    );
+  box-shadow:
+    0 0 14px color-mix(in srgb, var(--theme-primary) 32%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
+}
+
+.mobile-nav-active-bg--fab {
+  /* El FAB activo ya es el highlight; no duplicar pastilla detrás. */
+  opacity: 0;
 }
 
 .mobile-nav-active-bg--animate {
   transition:
-    left 820ms cubic-bezier(0.34, 1.55, 0.45, 1),
-    width 720ms cubic-bezier(0.22, 1.4, 0.36, 1),
-    top 820ms cubic-bezier(0.34, 1.55, 0.45, 1),
-    height 720ms cubic-bezier(0.22, 1.4, 0.36, 1);
+    left 560ms cubic-bezier(0.32, 1.25, 0.42, 1),
+    width 480ms cubic-bezier(0.22, 1.2, 0.36, 1),
+    top 560ms cubic-bezier(0.32, 1.25, 0.42, 1),
+    height 480ms cubic-bezier(0.22, 1.2, 0.36, 1),
+    border-radius 420ms ease,
+    background 420ms ease,
+    box-shadow 420ms ease;
 }
 
-.mobile-nav-tab {
-  transition: color 620ms cubic-bezier(0.22, 1, 0.36, 1);
+.mobile-nav-tab-icon,
+.mobile-nav-tab-text,
+.mobile-nav-fab {
+  position: relative;
+  z-index: 1;
 }
 
 .mobile-nav-tab-icon {
+  display: flex;
+  height: 2.85rem;
+  width: 2.85rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
   transition:
-    transform 680ms cubic-bezier(0.22, 1, 0.36, 1),
-    margin 680ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 680ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mobile-nav-tab-icon img,
+.mobile-nav-fab img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+}
+
+.mobile-nav-tab--active .mobile-nav-tab-icon {
+  transform: scale(1.08);
+  filter: brightness(1.12);
+}
+
+.mobile-nav-tab-text {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.mobile-nav-tab--active .mobile-nav-tab-text {
+  font-weight: 700;
+  opacity: 0.92;
+}
+
+/* Combat: botón central flotante (FAB).
+   Elevado siempre; el color magenta solo cuando el tab está activo. */
+.mobile-nav-tab--combat {
+  justify-content: flex-end;
+  gap: 0.2rem;
+  padding-bottom: 0.15rem;
+}
+
+.mobile-nav-fab {
+  position: relative;
+  display: flex;
+  height: 3.55rem;
+  width: 3.55rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-top: -1.55rem;
+  border-radius: 9999px;
+  border: 1.5px solid color-mix(in srgb, white 14%, transparent);
+  background:
+    radial-gradient(
+      120% 100% at 30% 18%,
+      color-mix(in srgb, #3a3d4a 90%, white) 0%,
+      #1a1c26 52%,
+      #0e1018 100%
+    );
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.45),
+    0 0 0 2px color-mix(in srgb, #0a0b11 70%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 16%, transparent),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.35);
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mobile-nav-fab img {
+  height: 2.45rem;
+  width: 2.45rem;
+}
+
+.mobile-nav-tab--combat.mobile-nav-tab--active {
+  transform: translateY(-0.28rem);
+}
+
+.mobile-nav-tab--combat.mobile-nav-tab--active .mobile-nav-fab {
+  transform: scale(1.07);
+  border-color: color-mix(in srgb, var(--theme-primary) 55%, white);
+  background:
+    radial-gradient(
+      120% 100% at 30% 18%,
+      color-mix(in srgb, var(--theme-primary) 55%, white) 0%,
+      color-mix(in srgb, var(--theme-primary) 75%, #1a0a20) 48%,
+      color-mix(in srgb, var(--theme-primary-deep) 80%, #0a0610) 100%
+    );
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.45),
+    0 0 26px color-mix(in srgb, var(--theme-primary) 55%, transparent),
+    0 0 40px color-mix(in srgb, var(--theme-primary) 25%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 45%, transparent),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.28);
+}
+
+.mobile-nav-tab--combat .mobile-nav-tab-text {
+  margin-top: 0.05rem;
 }
 
 .mobile-nav-tab--no-motion,
-.mobile-nav-tab--no-motion .mobile-nav-tab-icon {
+.mobile-nav-tab--no-motion .mobile-nav-tab-icon,
+.mobile-nav-tab--no-motion .mobile-nav-fab {
   transition: none !important;
 }
 
@@ -5525,14 +5877,27 @@ html.boot-splash-pending .boot-splash {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mobile-nav-active-bg--animate,
   .mobile-nav-tab,
-  .mobile-nav-tab-icon {
+  .mobile-nav-tab-icon,
+  .mobile-nav-fab {
+    transition: none;
+  }
+
+  .mobile-nav-active-bg--animate {
     transition: none;
   }
 
   .mobile-nav-tab-label {
     animation: none;
+  }
+
+  .mobile-nav-tab--active,
+  .mobile-nav-tab--combat.mobile-nav-tab--active {
+    transform: none;
+  }
+
+  .mobile-nav-tab--combat.mobile-nav-tab--active .mobile-nav-fab {
+    transform: none;
   }
 }
 
@@ -5903,6 +6268,40 @@ html.boot-splash-pending .boot-splash {
 
 .mobile-nav-sheet {
   will-change: transform, opacity;
+  border-radius: 1.25rem 1.25rem 0 0;
+  border: 1px solid color-mix(in srgb, white 8%, transparent);
+  border-bottom: none;
+  background: #0c0e14;
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.mobile-nav-sheet__handle {
+  background: color-mix(in srgb, white 18%, transparent);
+}
+
+.mobile-nav-sheet__title {
+  color: var(--color-on-surface-variant);
+  letter-spacing: 0.12em;
+}
+
+.mobile-nav-sheet__close {
+  border: 1px solid color-mix(in srgb, white 8%, transparent);
+  background: transparent;
+  color: var(--color-on-surface-variant);
+}
+
+.mobile-nav-sheet__footer {
+  border-top: 1px solid color-mix(in srgb, white 6%, transparent);
+  background: #0c0e14;
+}
+
+.mobile-nav-sheet__see-all {
+  border: 1px solid color-mix(in srgb, white 10%, transparent);
+  background: transparent;
+}
+
+.mobile-nav-sheet__see-all:active {
+  background: color-mix(in srgb, white 5%, transparent);
 }
 
 .mobile-nav-sheet.is-open {

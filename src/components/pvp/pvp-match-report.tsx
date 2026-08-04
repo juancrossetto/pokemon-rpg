@@ -382,7 +382,10 @@ function Combatant({
         <FlagIcon code={country} className="h-3.5 w-auto rounded-[2px] shrink-0" />
         <span className="pvp-report__fighter-name">{username}</span>
       </div>
-      {won ? <span className="pvp-report__winner-chip">{winLabel}</span> : null}
+      {/* Slot fijo: si solo el ganador tiene chip, el Elo del otro sube y se desalinea. */}
+      <div className="pvp-report__fighter-badge">
+        {won ? <span className="pvp-report__winner-chip">{winLabel}</span> : null}
+      </div>
       <div className="pvp-report__elo">
         <span className="pvp-report__elo-value">{ratingAfter}</span>
         <span

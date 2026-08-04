@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -102,9 +101,7 @@ export default async function LocaleLayout({
         <div className="fixed top-0 left-1/4 h-96 w-96 rounded-full bg-pokeball-red/5 blur-[120px] pointer-events-none" />
         <div className="fixed bottom-0 right-1/4 h-[500px] w-[500px] rounded-full bg-electric-yellow/[0.02] blur-[150px] pointer-events-none" />
 
-        <Suspense fallback={null}>
-          <AppShell locale={locale}>{children}</AppShell>
-        </Suspense>
+        <AppShell locale={locale}>{children}</AppShell>
         <AppToastViewport />
       </body>
     </html>

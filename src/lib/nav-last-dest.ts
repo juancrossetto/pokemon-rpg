@@ -2,6 +2,9 @@
  * Último destino visitado por grupo de la bottom bar mobile.
  * Así el primer toque de "Aventura" vuelve a Gimnasios si fue ahí la última vez,
  * en vez de siempre a Viaje.
+ *
+ * Excepción: `/tower` sólo se recuerda mientras haya un intento activo; si el
+ * run terminó, Aventura vuelve a `/campaign`.
  */
 
 const STORAGE_KEY = "poke-mobile-nav-last";

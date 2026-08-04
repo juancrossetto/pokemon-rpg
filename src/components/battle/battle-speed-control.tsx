@@ -28,12 +28,12 @@ export function BattleSpeedControl({ className = "" }: { className?: string }) {
     <button
       type="button"
       onClick={() => setBattleSpeed(nextBattleSpeed(getBattleSpeed()))}
-      className={`flex h-9 items-center gap-1 rounded-full border border-white/15 bg-black/55 px-2.5 text-white/90 backdrop-blur-sm transition-colors hover:border-white/30 hover:bg-black/70 ${className}`}
+      className={`flex h-9 w-9 flex-col items-center justify-center gap-0 rounded-full border border-white/40 bg-[#141414]/95 text-white shadow-[0_2px_8px_rgba(0,0,0,0.45)] transition-colors hover:border-white/55 hover:bg-[#1a1a1a] md:h-10 md:w-10 ${className}`}
       title={label}
       aria-label={label}
     >
-      <span className="material-symbols-outlined text-[18px]!">speed</span>
-      <span className="text-[11px] font-bold tabular-nums">{speed}x</span>
+      <span className="material-symbols-outlined text-[15px]! leading-none md:text-[16px]!">fast_forward</span>
+      <span className="text-[8px] font-bold leading-none tabular-nums md:text-[9px]">{speed}x</span>
     </button>
   );
 }

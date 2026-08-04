@@ -33,7 +33,7 @@ type Tag = { label: string; icon: string; tone: "win" | "ko" | "caught" | "neutr
 
 const EXIT_MS = 420;
 const COIN_ICON = itemHdIconUrl("Gold Coin") ?? "/items/hd/gold-coin.png";
-const XP_ICON = itemHdIconUrl("Rare Candy") ?? "/items/hd/rare-candy.png";
+const XP_ICON = "/ui/exp.png";
 const TROPHY_ICON = "/pvp/win-trophy.png";
 
 type LeaveTarget = string | (() => void | Promise<void>);
@@ -468,13 +468,13 @@ export function BattleResult({
                         {entry.name}
                       </span>
                       <span className="flex shrink-0 items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 font-mono text-[15px] font-bold tabular-nums text-emerald-400">
+                        <span className="inline-flex items-center gap-1.5 font-mono text-[15px] font-bold tabular-nums text-sky-300">
                           <Image
                             src={XP_ICON}
                             alt=""
-                            width={24}
-                            height={24}
-                            className="h-6 w-6 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]"
+                            width={28}
+                            height={28}
+                            className="h-7 w-7 object-contain drop-shadow-[0_0_8px_rgba(56,189,248,0.45)]"
                             unoptimized
                           />
                           +{entry.xpGained} XP

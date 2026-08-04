@@ -9,6 +9,14 @@ export function markMobileNavDrawerOpen(): void {
   }
 }
 
+export function peekMobileNavDrawerOpen(): boolean {
+  try {
+    return sessionStorage.getItem(MOBILE_NAV_DRAWER_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function consumeMobileNavDrawerOpen(): boolean {
   try {
     if (sessionStorage.getItem(MOBILE_NAV_DRAWER_KEY) !== "1") return false;

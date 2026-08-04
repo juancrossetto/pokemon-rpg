@@ -43,7 +43,7 @@ export function TurnOrderChip({ playerFirst }: { playerFirst: boolean }) {
   const t = useTranslations("battle");
   return (
     <span
-      className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+      className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
         playerFirst
           ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-200"
           : "border-amber-400/40 bg-amber-500/15 text-amber-200"
@@ -154,7 +154,7 @@ export function MovesView({
               <div className="flex min-w-0 shrink-0 items-start justify-between gap-1">
                 <span className="flex min-w-0 items-center gap-1">
                   <span
-                    className={`material-symbols-outlined text-[13px]! shrink-0 ${CATEGORY_TONE[category]}`}
+                    className={`material-symbols-outlined text-[12px]! shrink-0 md:text-[13px]! ${CATEGORY_TONE[category]}`}
                     title={t(`category.${category}`)}
                     aria-label={t(`category.${category}`)}
                   >
@@ -163,7 +163,7 @@ export function MovesView({
                   <span className="truncate text-xs font-bold leading-tight text-white md:text-sm">
                     {formatMoveName(m.name)}
                     {isSpreadMove(m.target, m.name) ? (
-                      <span className="ml-1 text-[9px] font-bold uppercase text-amber-200/90">
+                      <span className="ml-1 text-[8px] font-bold uppercase text-amber-200/90 md:text-[9px]">
                         {t("spreadMoveTag")}
                       </span>
                     ) : null}
@@ -189,7 +189,7 @@ export function MovesView({
                 </span>
                 <span className="flex items-center gap-0.5 text-white/90">
                   {lockedOut && (
-                    <span className="material-symbols-outlined text-[12px]! text-amber-300">lock</span>
+                    <span className="material-symbols-outlined text-[11px]! text-amber-300">lock</span>
                   )}
                   <span className="mr-0.5 uppercase tracking-wider text-white/40">{t("ppLabel")}</span>
                   <span className="font-bold">

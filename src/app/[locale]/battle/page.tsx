@@ -158,7 +158,14 @@ export default async function BattlePage({
       prisma.battleSession.findMany({
         where: {
           userId,
+          // Solo salvajes de Aventura: sin gimnasio, torre, PvP, guerra ni
+          // entrenadores de ruta (esos también usan BattleSession).
           gymId: null,
+          gymRunId: null,
+          towerRunId: null,
+          pvpMatchId: null,
+          clanWarBattleId: null,
+          routeTrainerId: null,
           status: { in: ["WON", "LOST", "FLED", "CAUGHT"] },
         },
         include: { wildSpecies: { select: { name: true, spriteUrl: true } } },
