@@ -9874,24 +9874,28 @@ html.boot-splash-pending .boot-splash {
   acompañan el movimiento: la bottom nav se ve flotando en vez de anclada.
 
   Estrategia:
-  1. Bloquear el scroll del documento (`html`/`body` overflow:hidden).
-  2. Mover el scroll a `.app-main` con `overscroll-behavior-y: contain`
-     para que el rebote no salga al viewport.
-  3. Forzar capa propia en header/nav (`translateZ(0)`) para que iOS no las
-     recomponga con el rubber-band.
+  1. Bloquear el scroll del documento (`overflow:hidden`) sin acotar con
+     `max-height: 100dvh` — ese tope deja una franja muerta bajo los fixed.
+  2. Mover el scroll a `.app-main` con `overscroll-behavior-y: contain`.
+  3. En iOS standalone, `bottom: 0` de un fixed suele caer en el borde
+     *safe* (arriba del home indicator). Empujamos la nav hacia el borde
+     físico con margen negativo + padding de safe-area, y el dock ya no
+     vuelve a sumar ese inset (evitar doble hueco).
 
-  `.is-standalone` lo pone MobileChrome en <html> y <body> cuando
-  `navigator.standalone` es true (Safari iOS) o display-mode:standalone.
+  `.is-standalone` lo pone MobileChrome en <html> y <body>.
 */
 @media all and (display-mode: standalone) {
   html {
     height: 100%;
+    height: -webkit-fill-available;
     overflow: hidden;
+    background-color: var(--color-background);
   }
 
   body {
+    min-height: 100%;
+    min-height: -webkit-fill-available;
     height: 100%;
-    max-height: 100dvh;
     overflow: hidden;
     overscroll-behavior: none;
     overscroll-behavior-y: none;
@@ -9905,21 +9909,41 @@ html.boot-splash-pending .boot-splash {
     -webkit-overflow-scrolling: touch;
   }
 
-  .mobile-top-chrome,
-  .mobile-bottom-nav {
+  .mobile-top-chrome {
     transform: translateZ(0);
     backface-visibility: hidden;
+  }
+
+  /*
+    Hueco negro bajo el dock: iOS coloca bottom:0 en el borde safe.
+    Bajamos la barra al borde físico y pintamos la franja del home indicator.
+  */
+  .mobile-bottom-nav {
+    bottom: 0;
+    margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background-color: #0a0b11;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .mobile-bottom-nav__dock {
+    /* El safe-area ya lo aporta el shell de la nav. */
+    padding-bottom: 0.4rem;
   }
 }
 
 html.is-standalone {
   height: 100%;
+  height: -webkit-fill-available;
   overflow: hidden;
+  background-color: var(--color-background);
 }
 
 body.is-standalone {
+  min-height: 100%;
+  min-height: -webkit-fill-available;
   height: 100%;
-  max-height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
   overscroll-behavior-y: none;
@@ -9934,11 +9958,24 @@ body.is-standalone .app-main {
 }
 
 html.is-standalone .mobile-top-chrome,
-html.is-standalone .mobile-bottom-nav,
-body.is-standalone .mobile-top-chrome,
-body.is-standalone .mobile-bottom-nav {
+body.is-standalone .mobile-top-chrome {
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+html.is-standalone .mobile-bottom-nav,
+body.is-standalone .mobile-bottom-nav {
+  bottom: 0;
+  margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background-color: #0a0b11;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+html.is-standalone .mobile-bottom-nav__dock,
+body.is-standalone .mobile-bottom-nav__dock {
+  padding-bottom: 0.4rem;
 }
 
 /* Indicador del selector de secciones del perfil. Mismo rebote elástico que el
