@@ -14,7 +14,6 @@ import { forfeitClanWarBattle } from "@/actions/forfeit-clan-war-battle";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BattleSprite } from "@/components/battle-sprite";
-import { battleSpeciesScale } from "@/lib/battle-sprite-scale";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
 import { typeColor } from "@/lib/type-colors";
 import { formatMoveName } from "@/lib/format-move-name";
@@ -2216,17 +2215,12 @@ export function BattleArena({
     !attackingSide && !shakingSide && !faintingSide && !playerEntering && !healingTarget && !ballAnim;
   const wildIdle =
     !attackingSide && !shakingSide && !faintingSide && !wildEntering && !wildAbsorbedByBall && !captureBall;
-  // Tamaño relativo al alto del campo: el jugador ocupa el primer plano
-  // (58–88% del alto) y el rival el fondo (32–48%), y dentro de cada rango
-  // la especie define dónde cae. Fallback para el primer render/SSR.
+  // Tamaño fijo relativo al alto del campo (sin zoom por especie): el GIF
+  // Showdown se ve a su proporción original dentro de la caja.
   const isAlphaWild = initialLog.some((line) => line === "alpha");
   const arenaH = arenaHeightPx || 400;
-  const playerSpeciesScale = battleSpeciesScale(activePlayer.speciesName);
-  const wildSpeciesScale = battleSpeciesScale(activeWild.speciesName);
-  const playerT = Math.min(1, Math.max(0, (playerSpeciesScale - 0.52) / (1.3 - 0.52)));
-  const wildT = Math.min(1, Math.max(0, (wildSpeciesScale - 0.52) / (1.3 - 0.52)));
-  const playerSpritePx = Math.round(arenaH * (0.62 + playerT * 0.28));
-  const wildSpritePx = Math.round(arenaH * (0.3 + wildT * 0.14) * (isAlphaWild ? 1.1 : 1));
+  const playerSpritePx = Math.round(arenaH * 0.72);
+  const wildSpritePx = Math.round(arenaH * 0.36 * (isAlphaWild ? 1.1 : 1));
   const playerSpriteClass = [
     "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "player" && attackingLane === "A"
@@ -2338,10 +2332,10 @@ export function BattleArena({
   const lastLogEntry = log[log.length - 1];
 
   return (
-    <div className="flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden px-2 py-1 sm:px-margin-mobile md:px-margin-desktop md:py-2">
-      <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col gap-1 overflow-hidden md:gap-2">
+    <div className="flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden px-2 py-0.5 sm:px-margin-mobile md:px-margin-desktop md:py-2">
+      <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col gap-0.5 overflow-hidden md:gap-2">
         {/* Top — mayor parte del alto en mobile */}
-        <div className="flex min-h-0 flex-1 flex-col gap-1 md:gap-2">
+        <div className="flex min-h-0 flex-1 flex-col gap-0.5 md:gap-2">
         {/* Mobile: rival — avatar + party (o sprite único si es salvaje/torre) */}
         <div className="lg:hidden shrink-0">
           <PartySidebar
@@ -2831,6 +2825,8 @@ export function BattleArena({
               align="right"
               variant={foeSidebarWild ? "wild" : "party"}
               featuredSpriteUrl={wildFeaturedSprite}
+              featuredLevel={wildEncounterHeader ? activeWild.level : null}
+              encounterPlace={wildEncounterHeader ? encounterPlace : null}
             >
               {foeSidebarWild
                 ? opponentParty.length > 1
@@ -2872,48 +2868,79 @@ export function BattleArena({
         </div>
         </div>
 
-        {/* En submenús mobile el log completo cede espacio a los comandos, pero
-            quedarse sin ninguna referencia de lo que pasó es peor: sobrevive la
-            última línea. */}
-        {commandExpanded && lastLogEntry && (
-          <p className="md:hidden shrink-0 truncate rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] leading-snug text-white/80">
-            {lastLogEntry.text}
-          </p>
-        )}
-
-        <div
-          className={`grid min-h-0 min-w-0 shrink-0 items-stretch gap-1 md:gap-2 md:h-[min(14rem,32dvh)] md:max-h-[14rem] ${
-            commandExpanded
-              ? "max-md:h-[12.5rem] max-md:max-h-[12.5rem]"
-              : "max-md:h-[7.5rem] max-md:max-h-[7.5rem]"
-          } ${commandExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2"}`}
-        >
+        {/* Panel inferior: altura fija en mobile (el campo no salta al
+            abrir poderes). Un poco más bajo para ceder alto al arena. */}
+        <div className="flex min-h-0 min-w-0 shrink-0 flex-col gap-1 max-md:h-[9.25rem] max-md:max-h-[9.25rem] md:h-[min(14rem,32dvh)] md:max-h-[14rem] md:gap-2">
+          {commandExpanded && lastLogEntry ? (
+            <p
+              className="md:hidden shrink-0 truncate rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] leading-snug text-white/80"
+              aria-live="polite"
+            >
+              {lastLogEntry.text}
+            </p>
+          ) : null}
+          <div
+            className={`grid min-h-0 min-w-0 flex-1 items-stretch gap-1 md:gap-2 ${
+              commandExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2"
+            }`}
+          >
           {/* Log — en submenús mobile cede espacio a los comandos */}
           <div
             aria-live="polite"
             aria-label={t("battleLogLabel")}
-            className={`glass-panel px-2 py-1.5 md:px-4 md:py-3 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 h-full min-h-0 min-w-0 ${
+            className={`glass-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-2 py-1.5 md:px-4 md:py-3 ${
               commandExpanded ? "hidden md:flex" : ""
             }`}
           >
-            {log.map((entry, i) => (
-              <p
-                key={i}
-                className={`text-[10px] md:text-label-md leading-snug md:leading-relaxed break-words [overflow-wrap:anywhere] ${
-                  entry.side === "player"
-                    ? "text-left text-on-surface"
-                    : entry.side === "wild"
-                      ? "text-right text-on-surface"
-                      : "text-left text-on-surface-variant"
-                }`}
-              >
-                <span className="text-pokeball-red/80 mr-1">&gt;</span>
-                {entry.text}
-              </p>
-            ))}
             {view === "menu" && !isAnimating && outcome === "ongoing" && (
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-dashed border-white/15 pt-1">
-                <p className="text-[10px] md:text-label-md font-bold text-on-surface leading-snug break-words [overflow-wrap:anywhere]">
+              <div className="mb-1 flex shrink-0 flex-col gap-1 border-b border-white/12 pb-1.5 md:mb-0 md:hidden">
+                <p className="text-[11px] font-bold leading-snug tracking-tight text-white">
+                  {isDouble
+                    ? t("whatWillDo", {
+                        name: (
+                          pendingDoubleMoveA != null && playerB
+                            ? playerB.name
+                            : activePlayer.name
+                        ).toUpperCase(),
+                      })
+                    : t("whatWillDo", { name: activePlayer.name.toUpperCase() })}
+                </p>
+                {!isDouble ? (
+                  <div className="self-start">
+                    <TurnOrderChip playerFirst={playerOutspeeds} />
+                  </div>
+                ) : null}
+              </div>
+            )}
+            <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden md:gap-0.5">
+              {log.map((entry, i) => {
+                const isLatest = i === log.length - 1;
+                const sideTone =
+                  entry.side === "player"
+                    ? "border-l-emerald-400/70 text-white/90"
+                    : entry.side === "wild"
+                      ? "border-l-amber-400/70 text-white/90"
+                      : "border-l-white/25 text-white/55";
+                return (
+                  <p
+                    key={`${i}-${entry.text}`}
+                    className={`border-l-2 pl-1.5 text-[10px] leading-[1.35] break-words [overflow-wrap:anywhere] md:border-l-0 md:pl-0 md:text-label-md md:leading-relaxed ${sideTone} ${
+                      isLatest ? "battle-log-line--latest font-medium text-white" : ""
+                    } ${
+                      /* Desktop: rival a la derecha; mobile: todo a la izquierda (ancho útil). */
+                      entry.side === "wild" ? "md:text-right" : "text-left"
+                    }`}
+                  >
+                    <span className="mr-1 text-pokeball-red/80 md:inline">&gt;</span>
+                    {entry.text}
+                  </p>
+                );
+              })}
+              <div ref={logEndRef} />
+            </div>
+            {view === "menu" && !isAnimating && outcome === "ongoing" && (
+              <div className="mt-auto hidden items-center justify-between gap-2 border-t border-dashed border-white/15 pt-1 md:flex">
+                <p className="text-label-md font-bold leading-snug break-words [overflow-wrap:anywhere] text-on-surface">
                   {isDouble
                     ? t("whatWillDo", {
                         name: (
@@ -2927,7 +2954,6 @@ export function BattleArena({
                 {!isDouble && <TurnOrderChip playerFirst={playerOutspeeds} />}
               </div>
             )}
-            <div ref={logEndRef} />
           </div>
 
           {/* Comandos */}
@@ -2960,7 +2986,7 @@ export function BattleArena({
                   className="battle-cmd-btn battle-cmd-pokemon"
                 >
                   <span className="battle-cmd-btn__icon" aria-hidden>
-                    <PokeballIcon className="h-5 w-5 md:h-6 md:w-6" />
+                    <PokeballIcon mono className="h-5 w-5 md:h-6 md:w-6" />
                   </span>
                   <span className="battle-cmd-btn__label">{t("pokemonMenu")}</span>
                 </button>
@@ -3077,6 +3103,7 @@ export function BattleArena({
                 onBack={() => setView("menu")}
               />
             )}
+          </div>
           </div>
         </div>
       </div>

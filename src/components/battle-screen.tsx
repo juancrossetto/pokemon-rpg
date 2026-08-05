@@ -97,11 +97,11 @@ export function BattleScreen({
     return null;
   }
 
-  // Altura = viewport menos header + bottom nav (mismo cálculo que
-  // `.pb-bottom-nav`). Sin esto el body crece con el min-height del
-  // arena y aparece scroll de página innecesario.
+  // Altura hasta el tope del dock (`--bottom-sheet-inset`) menos un
+  // respiro mínimo (0.375rem) para que comandos/log no peguen al dock.
+  // El `-mb` anula todo el `.pb-bottom-nav` del shell.
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px)-var(--bottom-nav-h,3.75rem)-env(safe-area-inset-bottom,0px)-1.75rem-var(--vv-gap,0px))] xl:h-[calc(100dvh-3.5rem)]">
+    <div className="flex min-h-0 flex-col overflow-hidden max-md:-mb-[calc(var(--bottom-nav-h,5.25rem)+env(safe-area-inset-bottom,0px)+1.75rem+var(--vv-gap,0px))] h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px)-var(--bottom-sheet-inset,var(--bottom-nav-h,5.25rem))-0.375rem)] xl:mb-0 xl:h-[calc(100dvh-3.5rem)]">
       <BattleArena key={battle.battleId} {...battle} />
     </div>
   );

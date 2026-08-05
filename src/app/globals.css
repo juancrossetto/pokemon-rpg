@@ -599,37 +599,49 @@ body {
 }
 
 .battle-cmd-btn {
-  --cmd-accent: rgba(255, 255, 255, 0.28);
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   width: 100%;
   min-height: 0;
   height: 100%;
   overflow: hidden;
-  border-radius: 0.75rem;
-  border: 1.5px solid color-mix(in srgb, var(--cmd-accent) 55%, transparent);
-  background:
-    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--cmd-accent) 14%, transparent) 0%, transparent 62%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
-    rgba(14, 16, 22, 0.94);
+  isolation: isolate;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #161922;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 0 0 1px rgba(0, 0, 0, 0.35),
-    0 0 14px color-mix(in srgb, var(--cmd-accent) 18%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 6px 14px rgba(0, 0, 0, 0.28);
   color: rgba(255, 255, 255, 0.92);
   font-size: 10px;
   letter-spacing: 0.1em;
   font-weight: 700;
   text-transform: uppercase;
   transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.1s ease;
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease,
+    transform 0.12s ease;
+}
+.battle-cmd-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.02) 38%,
+    transparent 58%
+  );
+  pointer-events: none;
+  z-index: 0;
 }
 .battle-cmd-btn__icon {
   position: relative;
@@ -637,8 +649,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: color-mix(in srgb, var(--cmd-accent) 85%, white);
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--cmd-accent) 45%, transparent));
+  color: rgba(255, 255, 255, 0.88);
+  transition: color 0.18s ease;
 }
 .battle-cmd-btn__label {
   position: relative;
@@ -646,24 +658,15 @@ body {
   line-height: 1.1;
   text-align: center;
 }
-.battle-cmd-pokemon {
-  --cmd-accent: #4ade80;
-}
-.battle-cmd-bag {
-  --cmd-accent: #fb923c;
-}
-.battle-cmd-run {
-  --cmd-accent: #a78bfa;
-}
 @media (max-width: 767px) {
   .battle-cmd-btn {
     height: 100%;
     min-height: 0;
     max-height: none;
-    gap: 0.2rem;
+    gap: 0.28rem;
     font-size: 9px;
     letter-spacing: 0.08em;
-    border-radius: 0.65rem;
+    border-radius: 0.7rem;
     padding: 0.35rem 0.25rem;
   }
   .battle-cmd-btn__icon .material-symbols-outlined {
@@ -673,51 +676,44 @@ body {
 @media (min-width: 768px) {
   .battle-cmd-btn {
     min-height: 4.85rem;
-    gap: 0.4rem;
+    gap: 0.45rem;
     font-size: 11px;
     letter-spacing: 0.12em;
-    border-radius: 0.85rem;
+    border-radius: 0.95rem;
   }
   .battle-cmd-btn__icon .material-symbols-outlined {
-    font-size: 26px !important;
+    font-size: 24px !important;
   }
 }
 .battle-cmd-btn:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--cmd-accent) 80%, white);
+  border-color: rgba(255, 255, 255, 0.28);
+  background: #1d212c;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 1px rgba(0, 0, 0, 0.3),
-    0 0 20px color-mix(in srgb, var(--cmd-accent) 32%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 8px 18px rgba(0, 0, 0, 0.34);
+  color: #fff;
+}
+.battle-cmd-btn:hover:not(:disabled) .battle-cmd-btn__icon {
+  color: #fff;
 }
 .battle-cmd-btn:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: translateY(1px) scale(0.985);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 .battle-cmd-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
-/* Seleccionado: borde + glow violeta (secondary), como el ejemplo. */
-.battle-cmd-fight {
-  --cmd-accent: var(--theme-secondary);
-  border-width: 2px;
-  border-color: color-mix(in srgb, var(--theme-secondary) 75%, white);
-  background:
-    radial-gradient(ellipse at 50% 20%, color-mix(in srgb, var(--theme-secondary) 28%, transparent) 0%, transparent 58%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
-    rgba(12, 10, 20, 0.96);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px color-mix(in srgb, var(--theme-secondary) 35%, transparent),
-    0 0 22px color-mix(in srgb, var(--theme-secondary) 45%, transparent),
-    0 0 40px color-mix(in srgb, var(--theme-secondary) 22%, transparent);
-}
-.battle-cmd-fight:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--theme-secondary) 55%, white);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 0 0 1px color-mix(in srgb, var(--theme-secondary) 45%, transparent),
-    0 0 26px color-mix(in srgb, var(--theme-secondary) 55%, transparent),
-    0 0 48px color-mix(in srgb, var(--theme-secondary) 28%, transparent);
+@media (prefers-reduced-motion: reduce) {
+  .battle-cmd-btn {
+    transition: none;
+  }
+  .battle-cmd-btn:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 .battle-move-card {
@@ -1181,7 +1177,7 @@ body {
     transform: translateX(0);
   }
   50% {
-    transform: translateX(24px) scale(1.05);
+    transform: translateX(24px);
   }
 }
 .sprite-lunge-right {
@@ -1194,7 +1190,7 @@ body {
     transform: translateX(0);
   }
   45% {
-    transform: translateX(40px) scale(1.1);
+    transform: translateX(40px);
   }
 }
 .sprite-lunge-right-hard {
@@ -1207,7 +1203,7 @@ body {
     transform: translateX(0);
   }
   50% {
-    transform: translateX(-24px) scale(1.05);
+    transform: translateX(-24px);
   }
 }
 .sprite-lunge-left {
@@ -1220,11 +1216,30 @@ body {
     transform: translateX(0);
   }
   45% {
-    transform: translateX(-40px) scale(1.1);
+    transform: translateX(-40px);
   }
 }
 .sprite-lunge-left-hard {
   animation: lunge-left-hard 0.38s ease-in-out;
+}
+
+@keyframes battle-log-in {
+  from {
+    opacity: 0.45;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.battle-log-line--latest {
+  animation: battle-log-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .battle-log-line--latest {
+    animation: none;
+  }
 }
 
 @keyframes damage-popup {

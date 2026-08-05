@@ -97,12 +97,12 @@ export function BattleAudioControls({ bgmKind }: { bgmKind: BattleBgmKind }) {
       <button
         type="button"
         onClick={onToggleMute}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/40 bg-[#141414]/95 text-white shadow-[0_2px_8px_rgba(0,0,0,0.45)] transition-colors hover:border-white/55 hover:bg-[#1a1a1a] md:h-10 md:w-10"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/40 bg-[#141414]/95 text-white shadow-[0_2px_8px_rgba(0,0,0,0.45)] transition-colors hover:border-white/55 hover:bg-[#1a1a1a] md:h-9 md:w-9"
         title={effectiveMusicMuted ? t("unmuteMusic") : t("muteMusic")}
         aria-label={effectiveMusicMuted ? t("unmuteMusic") : t("muteMusic")}
         aria-pressed={effectiveMusicMuted}
       >
-        <span className="material-symbols-outlined text-[20px]! md:text-[22px]!">
+        <span className="material-symbols-outlined text-[17px]! md:text-[19px]!">
           {effectiveMusicMuted ? "volume_off" : musicVolume < 0.35 ? "volume_down" : "volume_up"}
         </span>
       </button>

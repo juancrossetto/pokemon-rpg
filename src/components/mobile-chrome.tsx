@@ -651,7 +651,7 @@ export function MobileChrome({
       // No borrar --bottom-nav-h/--vv-gap acá: en remount (Strict/locale) el
       // hueco a 0 hacía saltar la barra un frame antes de volver a medir.
     };
-  }, [primary.length, showMore, moreOpen]);
+  }, [primary.length, showMore, moreOpen, lockedHref]);
 
   // Bloqueo de scroll mientras el sheet esté montado (también durante el
   // slide-out). La trampa de foco sólo aplica con el sheet usable.
@@ -911,7 +911,10 @@ export function MobileChrome({
         className="mobile-bottom-nav xl:hidden"
       >
         {lockedHref && lockedLabel ? (
-          <div className="mobile-bottom-nav__dock mobile-bottom-nav__dock--flat">
+          <div
+            ref={dockRef}
+            className="mobile-bottom-nav__dock mobile-bottom-nav__dock--flat"
+          >
             <Link
               href={lockedHref}
               className="mobile-nav-tab mobile-nav-tab--active flex-1"

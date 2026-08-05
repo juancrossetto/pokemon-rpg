@@ -55,9 +55,9 @@ export function PartySidebar({
   variant?: "party" | "wild";
   /** Sprite del mon activo. */
   featuredSpriteUrl?: string | null;
-  /** Nivel del mon activo (strip mobile salvaje). */
+  /** Nivel del mon activo (sidebar salvaje). */
   featuredLevel?: number | null;
-  /** Lugar del encuentro (ruta/piso) — punta opuesta al mon en mobile. */
+  /** Lugar del encuentro (ruta/piso/torre). */
   encounterPlace?: {
     title: string;
     subtitle: string | null;
@@ -215,30 +215,97 @@ export function PartySidebar({
   }
 
   if (isWild) {
+    const placeIcon = encounterPlace?.iconUrl ?? null;
     return (
-      <div className="flex h-full min-w-0 flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.055] via-[#12141a]/92 to-black/40 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_32px_rgba(0,0,0,0.35)]">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">
-          {name}
-        </p>
-        <div className="relative flex h-[5.5rem] w-[5.5rem] items-center justify-center">
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-[-6%] rounded-full bg-primary/14 blur-2xl"
-          />
-          {featuredSpriteUrl ? (
-            <Image
-              src={featuredSpriteUrl}
-              alt=""
-              width={96}
-              height={96}
-              className="relative h-[92%] w-[92%] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
-              unoptimized
+      <div className="flex h-full min-w-0 flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.055] via-[#12141a]/92 to-black/40 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_32px_rgba(0,0,0,0.35)]">
+        {encounterPlace ? (
+          <div className="flex min-w-0 items-center gap-2 border-b border-white/[0.07] pb-2.5">
+            <span
+              aria-hidden
+              className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-secondary/40 bg-secondary/20 shadow-[0_0_12px_color-mix(in_srgb,var(--theme-secondary)_40%,transparent)]"
+            >
+              <span className="absolute inset-0 rounded-full bg-secondary/25 blur-md" />
+              {placeIcon ? (
+                <Image
+                  src={placeIcon}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="relative h-full w-full object-cover"
+                  sizes="36px"
+                />
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="relative h-3.5 w-3.5 text-secondary"
+                  fill="currentColor"
+                  aria-hidden
+                >
+                  <path d="M12 2.5c.4 2.8 2.2 5 4.8 6.2-1.6.7-2.8 2-3.4 3.6-.6-1.6-1.8-2.9-3.4-3.6C12.6 7.5 14.4 5.3 12 2.5Zm0 10.2c1.7 1.4 2.8 3.5 2.8 5.8 0 1.8-1.3 3.5-2.8 3.5s-2.8-1.7-2.8-3.5c0-2.3 1.1-4.4 2.8-5.8Z" />
+                </svg>
+              )}
+            </span>
+            <div className="min-w-0">
+              <p
+                title={encounterPlace.title}
+                className="truncate text-[12px] font-bold leading-tight text-white/92"
+              >
+                {encounterPlace.title}
+              </p>
+              {encounterPlace.subtitle ? (
+                <p
+                  title={encounterPlace.subtitle}
+                  className="truncate text-[10px] font-medium leading-tight text-secondary"
+                >
+                  {encounterPlace.subtitle}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2.5 py-3">
+          <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-secondary">
+            {t("wildTag")}
+          </p>
+          <div className="relative flex h-[5.5rem] w-[5.5rem] items-center justify-center">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-[-6%] rounded-full bg-secondary/14 blur-2xl"
             />
-          ) : (
-            <PokeballIcon className="relative h-8 w-8 opacity-35" />
-          )}
+            {featuredSpriteUrl ? (
+              <Image
+                src={featuredSpriteUrl}
+                alt=""
+                width={96}
+                height={96}
+                className="relative h-[92%] w-[92%] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
+                unoptimized
+              />
+            ) : (
+              <PokeballIcon className="relative h-8 w-8 opacity-35" />
+            )}
+          </div>
+          <div className="min-w-0 px-1 text-center">
+            <p
+              title={name}
+              className="truncate text-[13px] font-bold uppercase leading-tight tracking-wide text-white"
+            >
+              {name}
+            </p>
+            {featuredLevel != null ? (
+              <p className="mt-0.5 text-[11px] font-medium text-white/55">
+                {t("level", { level: featuredLevel })}
+              </p>
+            ) : null}
+          </div>
         </div>
-        {hasChildren ? <div className="flex justify-center gap-1.5">{children}</div> : null}
+
+        {hasChildren ? (
+          <div className="flex justify-center gap-1.5 border-t border-white/[0.07] pt-2.5">
+            {children}
+          </div>
+        ) : null}
       </div>
     );
   }
