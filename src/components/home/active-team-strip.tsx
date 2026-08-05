@@ -258,8 +258,11 @@ function TeamSlot({
 
           <div className="absolute left-1 top-1 z-[2] flex max-w-[calc(100%-0.5rem)] flex-wrap items-center gap-0.5 md:left-2 md:top-1.5 md:max-w-[calc(100%-0.75rem)]">
             {isLead ? (
-              <span className="flex items-center text-violet-300" title={leadLabel}>
-                <span className="material-symbols-outlined text-[13px]! leading-none md:text-[15px]!">
+              <span
+                className="flex items-center text-[#21CEA1] drop-shadow-[0_0_6px_rgba(33,206,161,0.55)]"
+                title={leadLabel}
+              >
+                <span className="material-symbols-outlined ms-fill text-[13px]! leading-none md:text-[15px]!">
                   military_tech
                 </span>
               </span>
@@ -353,18 +356,12 @@ function TeamSlot({
               <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
                 {member.labels.hp}
               </span>
-              <div className="h-1.5 overflow-hidden rounded-[2px] bg-white/12">
-                <div
-                  className={`h-full rounded-[2px] transition-[width] duration-300 ${
-                    fainted
-                      ? "bg-error"
-                      : hpPct <= 25
-                        ? "bg-gradient-to-r from-orange-500 to-amber-300"
-                        : "bg-gradient-to-r from-emerald-500 to-lime-400"
-                  }`}
-                  style={{ width: `${hpPct}%` }}
-                />
-              </div>
+              <SegmentedStatBar
+                pct={hpPct}
+                variant={hpBarVariant(hpPct)}
+                segments={8}
+                heightClass="h-1.5"
+              />
             </div>
 
             <div className="hidden space-y-1 md:block">
@@ -630,16 +627,20 @@ export function ActiveTeamStrip({
       className={`relative flex min-w-0 flex-col ${pending ? "opacity-90" : ""}`}
     >
       {title ? (
-        <div className="mb-2 flex items-end justify-between gap-3 px-0.5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="page-title text-[10px] leading-none tracking-[0.16em] text-secondary sm:text-white/45">
             {title}
           </p>
           {manageHref && manageLabel ? (
             <Link
               href={manageHref}
-              className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40 transition hover:text-white/75"
+              aria-label={manageLabel}
+              title={manageLabel}
+              className="-mr-0.5 inline-flex shrink-0 items-center justify-center p-0.5 text-secondary transition hover:brightness-125 active:scale-95 sm:text-white/45 sm:hover:text-white/75"
             >
-              {manageLabel}
+              <span className="material-symbols-outlined text-[16px]! leading-none">
+                tune
+              </span>
             </Link>
           ) : null}
         </div>

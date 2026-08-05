@@ -8,8 +8,7 @@ type SharedProps = {
   icon?: string;
   className?: string;
   disabled?: boolean;
-  /** `"gold"` (default) for rewards/gym, `"red"` for adventure/explore. */
-  variant?: "gold" | "red";
+  variant?: "gold" | "red" | "secondary";
 };
 
 type AsLink = SharedProps & {
@@ -24,14 +23,29 @@ type AsButton = SharedProps & {
 
 export type GameCtaButtonProps = AsLink | AsButton;
 
+const BUTTON_OMIT = new Set([
+  "children",
+  "icon",
+  "className",
+  "disabled",
+  "variant",
+  "href",
+]);
+
 /**
  * CTA principal de juego (Explorar / recompensa):
- * dorado o rojo, tipografía Grobold uppercase.
+ * dorado, rojo o secondary, tipografía Grobold uppercase.
  * No usar para chips ni links secundarios de información.
  */
 export function GameCtaButton(props: GameCtaButtonProps) {
   const { children, icon, className = "", disabled, variant = "gold" } = props;
-  const classes = `game-cta ${variant === "red" ? "game-cta--red" : ""} ${disabled ? "game-cta--disabled" : ""} ${className}`.trim();
+  const variantClass =
+    variant === "red"
+      ? "game-cta--red"
+      : variant === "secondary"
+        ? "game-cta--secondary"
+        : "";
+  const classes = `game-cta ${variantClass} ${disabled ? "game-cta--disabled" : ""} ${className}`.trim();
 
   const content = (
     <>
@@ -59,9 +73,17 @@ export function GameCtaButton(props: GameCtaButtonProps) {
     );
   }
 
-  const { href: _h, icon: _i, className: _c, children: _ch, variant: _v, ...buttonProps } = props as AsButton & { variant?: string };
+  const buttonProps: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(props)) {
+    if (!BUTTON_OMIT.has(key)) buttonProps[key] = value;
+  }
+
   return (
-    <button {...buttonProps} disabled={disabled} className={classes}>
+    <button
+      {...(buttonProps as ComponentPropsWithoutRef<"button">)}
+      disabled={disabled}
+      className={classes}
+    >
       {content}
     </button>
   );

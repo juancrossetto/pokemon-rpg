@@ -54,7 +54,11 @@ export async function AppShell({
       <Providers>
         <CombatLockGate lock={combatLock} />
         <SiteHeader combatLock={combatLock} />
-        <div className="app-main pb-bottom-nav relative z-10 flex min-h-0 flex-1 flex-col pt-[calc(3.5rem+env(safe-area-inset-top))] xl:pt-14">
+        <div
+          className={`app-main relative z-10 flex min-h-0 flex-1 flex-col pt-[calc(3.5rem+env(safe-area-inset-top))] xl:pt-14${
+            session?.user ? " pb-bottom-nav" : ""
+          }`}
+        >
           {children}
         </div>
       </Providers>

@@ -573,7 +573,17 @@ export function MobileChrome({
   */
   useEffect(() => {
     const root = bottomNavRef.current;
-    if (!root) return;
+    if (!root) {
+      /* Sin sesión no hay bottom bar: el padding de contenido no debe reservarla. */
+      document.documentElement.style.setProperty("--bottom-nav-h", "0px");
+      document.documentElement.style.setProperty("--bottom-sheet-inset", "0px");
+      document.documentElement.style.setProperty("--vv-gap", "0px");
+      const vh = Math.round(window.innerHeight);
+      if (vh > 0) {
+        document.documentElement.style.setProperty("--app-vh", `${vh}px`);
+      }
+      return;
+    }
 
     function publishNavHeight() {
       if (!root) return;
@@ -664,7 +674,7 @@ export function MobileChrome({
       // No borrar --bottom-nav-h/--vv-gap acá: en remount (Strict/locale) el
       // hueco a 0 hacía saltar la barra un frame antes de volver a medir.
     };
-  }, [primary.length, showMore, moreOpen, lockedHref]);
+  }, [primary.length, showMore, moreOpen, lockedHref, userName]);
 
   // Bloqueo de scroll mientras el sheet esté montado (también durante el
   // slide-out). La trampa de foco sólo aplica con el sheet usable.
@@ -916,9 +926,10 @@ export function MobileChrome({
       </header>
 
       {/*
-        Bottom bar siempre visible: el sheet se ancla encima (`--bottom-nav-h`)
-        y el backdrop no la tapa, así Más puede cerrar y el contexto no desaparece.
+        Bottom bar sólo con sesión: sin login basta el header (CTA login/register).
+        El sheet se ancla encima (`--bottom-nav-h`) y el backdrop no la tapa.
       */}
+      {userName ? (
       <nav
         ref={bottomNavRef}
         className={`mobile-bottom-nav xl:hidden${lockedHref ? " mobile-bottom-nav--locked" : ""}`}
@@ -1104,6 +1115,7 @@ export function MobileChrome({
           </div>
         )}
       </nav>
+      ) : null}
 
       {/*
         El drawer se desmonta al cerrarse. Estuvo montado en permanente y
@@ -1113,7 +1125,7 @@ export function MobileChrome({
         `visibility: hidden` —WebKit lo hace— para que la pantalla entera quede
         borrosa de forma permanente.
       */}
-      {moreOpen && showMore && (
+      {moreOpen && showMore && userName && (
         <div className="fixed inset-0 z-[60] xl:hidden" role="presentation">
           <button
             type="button"

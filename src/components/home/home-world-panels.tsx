@@ -54,9 +54,9 @@ function SectionLabel({
 }
 
 /**
- * Acciones diarias estilo Clash: tiles grandes, chip de estado, glow + hover.
- * Desktop: chip siempre en un slot fijo arriba (si no hay status, queda vacío)
- * para que ícono + título no salten entre tiles. Mobile: chip en esquina.
+ * Acciones diarias estilo Clash: slots con ícono HD + badge de estado.
+ * Mobile: sin labels de texto (solo ícono + chip) — aria-label para a11y.
+ * Desktop: chip arriba + ícono + título.
  */
 export function HomeDailyActions({
   actions,
@@ -71,23 +71,35 @@ export function HomeDailyActions({
         <SectionLabel title={labels.title} />
       </div>
       {/* Grid fijo (no scroll): el overflow-x del home recortaba la 1ª tile y el glow. */}
-      <div className="grid grid-cols-6 gap-1.5 px-0.5 py-1 sm:gap-2.5 sm:px-0 sm:py-0">
+      <div className="grid grid-cols-6 gap-1.5 px-0.5 pt-2.5 pb-1 sm:gap-2.5 sm:px-0 sm:py-0">
         {actions.map((action) => {
           const accent = ACCENT[action.id] ?? "var(--color-electric-yellow)";
           const label = labels.items[action.labelKey] ?? action.labelKey;
           const className = [
-            "home-daily-tile group relative flex aspect-square w-full flex-col items-center justify-center overflow-visible rounded-xl text-center transition sm:aspect-auto sm:justify-start sm:gap-1 sm:overflow-hidden sm:rounded-2xl sm:px-1.5 sm:pb-3 sm:pt-2",
+            "home-daily-tile group relative flex aspect-square w-full flex-col items-center justify-center overflow-visible rounded-[0.85rem] text-center transition sm:aspect-auto sm:justify-start sm:gap-1 sm:overflow-hidden sm:rounded-2xl sm:px-1.5 sm:pb-3 sm:pt-2",
             "active:scale-[0.96]",
             action.hot ? "home-daily-tile--hot" : "",
           ].join(" ");
           const style = { "--daily-accent": accent } as CSSProperties;
 
-          const statusChip = action.status ? (
+          const statusChipDesktop = action.status ? (
             <span
               className={`max-w-full truncate rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold tabular-nums leading-none ${
                 action.hot
                   ? "bg-[color-mix(in_srgb,var(--daily-accent)_28%,transparent)] text-white ring-1 ring-[color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
                   : "bg-black/45 text-white/70"
+              }`}
+            >
+              {action.status}
+            </span>
+          ) : null;
+
+          const statusChipMobile = action.status ? (
+            <span
+              className={`home-daily-tile__badge max-w-[110%] truncate px-1 py-0.5 font-mono text-[8px] font-black uppercase leading-none tracking-wide tabular-nums ${
+                action.hot
+                  ? "home-daily-tile__badge--hot"
+                  : "home-daily-tile__badge--idle"
               }`}
             >
               {action.status}
@@ -101,27 +113,19 @@ export function HomeDailyActions({
                 className="home-daily-tile__glow pointer-events-none absolute inset-0 rounded-[inherit]"
               />
 
-              {/* Mobile: badge en esquina */}
-              {statusChip ? (
-                <span className="absolute right-0 top-0 z-[2] max-w-[2.75rem] sm:hidden">
-                  <span
-                    className={`block truncate rounded-md px-0.5 py-px font-mono text-[7px] font-bold tabular-nums leading-none ${
-                      action.hot
-                        ? "bg-[color-mix(in_srgb,var(--daily-accent)_28%,transparent)] text-white ring-1 ring-[color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
-                        : "bg-black/55 text-white/70"
-                    }`}
-                  >
-                    {action.status}
-                  </span>
+              {/* Mobile: badge flotante arriba (estilo chest slot) */}
+              {statusChipMobile ? (
+                <span className="absolute left-1/2 top-0 z-[2] -translate-x-1/2 -translate-y-1/2 sm:hidden">
+                  {statusChipMobile}
                 </span>
               ) : null}
 
               {/* Desktop: slot de altura fija arriba → todas las tiles alinean ícono/título */}
               <span className="relative z-[1] hidden h-[18px] w-full items-center justify-center sm:flex">
-                {statusChip}
+                {statusChipDesktop}
               </span>
 
-              <span className="relative z-[1] flex h-[70%] w-[70%] max-h-10 max-w-10 items-center justify-center sm:h-14 sm:w-14 sm:max-h-none sm:max-w-none sm:shrink-0">
+              <span className="relative z-[1] flex h-[78%] w-[78%] max-h-11 max-w-11 items-center justify-center sm:h-14 sm:w-14 sm:max-h-none sm:max-w-none sm:shrink-0">
                 <Image
                   src={action.iconSrc}
                   alt=""
@@ -146,7 +150,10 @@ export function HomeDailyActions({
                 onClick={() => openDailyRewardModal()}
                 className={className}
                 style={style}
-                aria-label={label}
+                aria-label={
+                  action.status ? `${label}. ${action.status}` : label
+                }
+                title={label}
               >
                 {inner}
               </button>
@@ -161,7 +168,10 @@ export function HomeDailyActions({
                 prefetch={false}
                 className={className}
                 style={style}
-                aria-label={label}
+                aria-label={
+                  action.status ? `${label}. ${action.status}` : label
+                }
+                title={label}
               >
                 {inner}
               </Link>
@@ -174,6 +184,7 @@ export function HomeDailyActions({
               className={className}
               style={style}
               aria-label={label}
+              title={label}
             >
               {inner}
             </div>
@@ -334,33 +345,56 @@ export function HomeEventsProgress({
 
   return (
     <section className="min-w-0">
-      {/* Mobile: resumen chico — el detalle vive en Viaje / Eventos */}
+      {/* Mobile: resumen tipo HUD de misión (no list-row Material) */}
       <div className="sm:hidden">
         <Link
-          href={claimableCount > 0 && weekly.claimableMilestones > 0 ? "/events" : "/campaign"}
-          className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#12141c]/90 px-3 py-2.5 transition active:scale-[0.99] hover:border-white/18"
+          href={
+            claimableCount > 0 && weekly.claimableMilestones > 0
+              ? "/events"
+              : "/campaign"
+          }
+          className={`home-mission-hud relative flex flex-col gap-2 overflow-hidden rounded-2xl border px-3 py-2.5 transition active:scale-[0.99] ${
+            claimableCount > 0
+              ? "home-mission-hud--claim border-pokeball-red/45 bg-gradient-to-br from-pokeball-red/[0.14] via-[#12141c] to-[#0c0e16]"
+              : "border-white/10 bg-[#12141c]/95"
+          }`}
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-secondary">
-            <span className="material-symbols-outlined text-[20px]!">flag</span>
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
-              {labels.progressTitle}
+          <span className="flex items-center gap-2.5">
+            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+              <Image
+                src="/nav/adventure-icon.png"
+                alt=""
+                width={40}
+                height={40}
+                className="h-9 w-9 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+                unoptimized
+              />
             </span>
-            <span className="mt-0.5 flex items-center gap-1.5 truncate text-[13px] font-medium text-white/85">
-              {adventure.zoneName ?? labels.tabAdventure}
-              <span className="font-mono text-[12px] tabular-nums text-white/45">
-                {adventureDone}/{adventure.objectives.length || 0}
+            <span className="min-w-0 flex-1">
+              <span className="page-title block text-[11px] tracking-[0.12em] text-secondary">
+                {labels.progressTitle}
+              </span>
+              <span className="mt-0.5 flex items-center gap-1.5 truncate text-[13px] font-semibold text-white">
+                {adventure.zoneName ?? labels.tabAdventure}
+                <span className="font-mono text-[11px] tabular-nums text-white/50">
+                  {adventureDone}/{adventure.objectives.length || 0}
+                </span>
               </span>
             </span>
+            {claimableCount > 0 ? (
+              <span className="page-title shrink-0 rounded-md bg-pokeball-red/25 px-2 py-1 text-[9px] tracking-wider text-pokeball-red ring-1 ring-pokeball-red/40">
+                {labels.claimable}
+              </span>
+            ) : null}
           </span>
-          {claimableCount > 0 ? (
-            <span className="shrink-0 rounded-md bg-pokeball-red/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-pokeball-red">
-              {labels.claimable}
-            </span>
-          ) : null}
-          <span className="material-symbols-outlined shrink-0 text-[18px]! text-white/35">
-            chevron_right
+          <span
+            className="h-1.5 overflow-hidden rounded-full bg-black/45"
+            aria-hidden
+          >
+            <span
+              className="campaign-warm-bar block h-full rounded-full"
+              style={{ width: `${adventurePct}%` }}
+            />
           </span>
         </Link>
       </div>

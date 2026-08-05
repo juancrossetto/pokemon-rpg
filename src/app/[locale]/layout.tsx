@@ -49,6 +49,12 @@ export async function generateMetadata({
 
 export const viewport: Viewport = {
   themeColor: "#0a0806",
+  width: "device-width",
+  initialScale: 1,
+  /* Evita que iOS deje la app “zoomed” tras foco en inputs de login (<16px)
+     o gestos accidentales; en PWA/juego el pinch-zoom no aporta. */
+  maximumScale: 1,
+  userScalable: false,
   /* Necesario para que env(safe-area-inset-*) sea > 0 con status bar
      translucida; sin esto la bottom nav queda bajo el home indicator. */
   viewportFit: "cover",

@@ -4138,10 +4138,14 @@ body {
 
 /* Home — tiles de acciones diarias (Clash-like). */
 .home-daily-tile {
-  background: color-mix(in srgb, var(--daily-accent, #fff) 8%, #12141c);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 42%),
+    color-mix(in srgb, var(--daily-accent, #fff) 10%, #12141c);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 18%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.28),
+    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 22%, transparent),
+    0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
 .home-daily-tile__glow {
@@ -4154,12 +4158,40 @@ body {
   transition: opacity 180ms ease;
 }
 
+.home-daily-tile__badge {
+  display: block;
+  border-radius: 0.35rem;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 2px 6px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+
+.home-daily-tile__badge--hot {
+  color: #fff;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--daily-accent, #4ade80) 88%, white) 0%,
+    color-mix(in srgb, var(--daily-accent, #16a34a) 75%, black) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--daily-accent, #fff) 55%, white);
+}
+
+.home-daily-tile__badge--idle {
+  color: rgba(255, 255, 255, 0.88);
+  background: linear-gradient(180deg, #3a3f52 0%, #252836 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
 .home-daily-tile:hover,
 .home-daily-tile:focus-visible {
-  background: color-mix(in srgb, var(--daily-accent, #fff) 14%, #161822);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 42%),
+    color-mix(in srgb, var(--daily-accent, #fff) 16%, #161822);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 40%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.28),
+    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 45%, transparent),
     0 0 22px color-mix(in srgb, var(--daily-accent, #fff) 28%, transparent);
 }
 
@@ -4170,8 +4202,9 @@ body {
 
 .home-daily-tile--hot {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 50%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.28),
+    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 55%, transparent),
     0 0 18px color-mix(in srgb, var(--daily-accent, #fff) 35%, transparent);
   animation: home-daily-tile-pulse 2.4s ease-in-out infinite;
 }
@@ -4181,19 +4214,42 @@ body {
   100% {
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.28),
       0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 45%, transparent),
       0 0 14px color-mix(in srgb, var(--daily-accent, #fff) 28%, transparent);
   }
   50% {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 65%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.28),
+      0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 70%, transparent),
       0 0 26px color-mix(in srgb, var(--daily-accent, #fff) 45%, transparent);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .home-daily-tile--hot {
+    animation: none;
+  }
+}
+
+.home-mission-hud--claim {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-pokeball-red) 22%, transparent);
+  animation: home-mission-claim-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes home-mission-claim-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 16px color-mix(in srgb, var(--color-pokeball-red) 18%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 28px color-mix(in srgb, var(--color-pokeball-red) 36%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-mission-hud--claim {
     animation: none;
   }
 }

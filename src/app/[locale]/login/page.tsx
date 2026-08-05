@@ -43,7 +43,7 @@ export default function LoginPage() {
   }
 
   const fieldClass =
-    "w-full rounded-xl border border-white/12 bg-black/45 py-3 pl-11 pr-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-pokeball-red/55 focus:bg-black/55 focus:ring-1 focus:ring-pokeball-red/30";
+    "w-full rounded-xl border border-white/12 bg-black/45 py-3 pl-11 pr-3 text-[16px] text-white outline-none transition placeholder:text-white/35 focus:border-pokeball-red/55 focus:bg-black/55 focus:ring-1 focus:ring-pokeball-red/30";
 
   return (
     <div className="relative isolate flex min-h-[calc(100dvh-3rem)] flex-1 flex-col md:min-h-[calc(100dvh-4rem)]">

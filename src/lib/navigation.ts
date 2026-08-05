@@ -79,7 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.campaign",
         href: "/campaign",
         icon: "map",
-        iconSrc: "/nav/map-icon.png?v=4",
+        iconSrc: "/nav/location-icon.png?v=2",
       },
       {
         id: "gyms",

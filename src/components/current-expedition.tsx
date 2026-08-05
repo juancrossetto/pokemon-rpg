@@ -10,7 +10,6 @@ import { RegionMapDialog, type MapLocation } from "@/components/region-map-dialo
 import { ExpeditionAmbient } from "@/components/home/expedition-ambient";
 import { GameCtaButton } from "@/components/game-cta-button";
 import { milestoneCtaKey, milestoneHref } from "@/lib/journey-ux";
-import { CoachMark } from "@/components/journey-guidance";
 
 export type CurrentExpeditionProps = {
   locationNameKey: string;
@@ -56,7 +55,6 @@ export function CurrentExpedition({
   gymHref,
 }: CurrentExpeditionProps) {
   const t = useTranslations("campaign");
-  const tUx = useTranslations("ux");
   const tTypes = useTranslations("pokedex.pokemonTypes");
   const ctaHref = milestoneHref(milestone, { gymHref });
   const ctaLabel = t(milestoneCtaKey(milestone));
@@ -152,20 +150,13 @@ export function CurrentExpedition({
               </div>
             ) : null}
 
-            <CoachMark
-              storageKey={milestone.kind === "gym" ? "coach-gym" : "coach-explore"}
-              message={milestone.kind === "gym" ? tUx("coachGym") : tUx("coachExplore")}
-              align="top"
-              className="pointer-events-auto"
+            <GameCtaButton
+              href={ctaHref}
+              variant="red"
+              className="expedition-cta min-h-9 w-full text-[11px]!"
             >
-              <GameCtaButton
-                href={ctaHref}
-                variant="red"
-                className="expedition-cta min-h-9 w-full text-[11px]!"
-              >
-                {ctaLabel}
-              </GameCtaButton>
-            </CoachMark>
+              {ctaLabel}
+            </GameCtaButton>
           </div>
         </div>
       </section>
@@ -204,7 +195,7 @@ export function CurrentExpedition({
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-pokeball-red sm:text-[11px] sm:tracking-[0.18em]">
               {t(regionNameKey)}
             </p>
-            <h2 className="truncate text-[18px] font-bold leading-tight tracking-tight text-white sm:mt-0.5 sm:text-[24px]">
+            <h2 className="page-title mt-0.5 truncate text-[18px] leading-none tracking-tight text-white sm:text-[24px]">
               {t(locationNameKey)}
             </h2>
             <p className="truncate text-[11px] leading-snug text-white/65 sm:mt-0.5 sm:text-[13px]">
@@ -220,16 +211,16 @@ export function CurrentExpedition({
 
           {wildTypes.length > 0 && (
             <ul
-              className="pointer-events-auto hidden shrink-0 flex-wrap items-center justify-end gap-0.5 sm:flex sm:gap-1"
+              className="pointer-events-auto flex shrink-0 flex-wrap items-center justify-end gap-0.5 sm:gap-1"
               aria-label={t("predictedTypes")}
             >
-              {wildTypes.map((type) => {
+              {wildTypes.slice(0, 3).map((type) => {
                 const color = typeColor(type);
                 const label = tTypes(type.toLowerCase() as "normal");
                 return (
                   <li key={type}>
                     <span
-                      className="flex h-8 w-8 items-center justify-center rounded-full border"
+                      className="flex h-6 w-6 items-center justify-center rounded-full border sm:h-8 sm:w-8"
                       style={{
                         background: `radial-gradient(circle at 35% 30%, ${color}ee, ${color}88)`,
                         borderColor: `${color}aa`,
@@ -244,7 +235,7 @@ export function CurrentExpedition({
                         width={16}
                         height={16}
                         unoptimized
-                        className="h-3.5 w-3.5 object-contain brightness-110"
+                        className="h-2.5 w-2.5 object-contain brightness-110 sm:h-3.5 sm:w-3.5"
                       />
                     </span>
                   </li>
@@ -256,8 +247,8 @@ export function CurrentExpedition({
 
         <div className="space-y-1.5 sm:space-y-2.5">
           {stagesTotal > 0 && (
-            <div className="hidden sm:block">
-              <div className="mb-1 flex items-center justify-between gap-2 text-[11px] text-white/60">
+            <div>
+              <div className="mb-0.5 flex items-center justify-between gap-2 text-[10px] text-white/55 sm:mb-1 sm:text-[11px] sm:text-white/60">
                 <span>{t("journeyProgress")}</span>
                 <span className="font-mono tabular-nums text-white/80">
                   {stagesDone}/{stagesTotal}
@@ -268,7 +259,7 @@ export function CurrentExpedition({
                 aria-valuenow={stagesDone}
                 aria-valuemin={0}
                 aria-valuemax={stagesTotal}
-                className="h-2 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10"
+                className="h-1.5 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10 sm:h-2"
               >
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-pokeball-red to-electric-yellow transition-[width] duration-500"
@@ -278,30 +269,30 @@ export function CurrentExpedition({
             </div>
           )}
 
-          <div className="flex items-stretch gap-1.5 sm:gap-2">
-            <CoachMark
-              storageKey={milestone.kind === "gym" ? "coach-gym" : "coach-explore"}
-              message={milestone.kind === "gym" ? tUx("coachGym") : tUx("coachExplore")}
-              align="top"
-              className="pointer-events-auto min-w-0 flex-1"
-            >
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="pointer-events-auto min-w-0 flex-1">
               <GameCtaButton
                 href={ctaHref}
                 variant="red"
-                className="expedition-cta min-h-11! px-3! py-2! text-[13px]! sm:min-h-12! sm:px-[1.1rem]! sm:py-[0.55rem]! sm:text-[13px]!"
+                className="expedition-cta w-full min-h-11! px-3! py-2! text-[13px]! sm:min-h-12! sm:px-[1.1rem]! sm:py-[0.55rem]! sm:text-[13px]!"
               >
                 {ctaLabel}
               </GameCtaButton>
-            </CoachMark>
+            </div>
             <Link
               href="/campaign"
               aria-label={t("journeyGuide")}
-              className="pointer-events-auto inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-black/45 px-2.5 text-[13px] font-medium text-on-surface backdrop-blur-sm transition hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:min-h-12 sm:min-w-12 sm:px-3"
+              title={t("journeyGuide")}
+              className="pointer-events-auto inline-flex h-11 w-11 shrink-0 items-center justify-center transition hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 sm:h-12 sm:w-12"
             >
-              <span className="material-symbols-outlined text-[18px]! sm:text-[20px]!">
-                menu_book
-              </span>
-              <span className="hidden sm:inline">{t("journeyGuideShort")}</span>
+              <Image
+                src="/nav/location-icon.png?v=2"
+                alt=""
+                width={44}
+                height={44}
+                className="h-9 w-9 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)] sm:h-10 sm:w-10"
+                unoptimized
+              />
             </Link>
           </div>
         </div>

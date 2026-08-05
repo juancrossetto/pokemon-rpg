@@ -75,7 +75,7 @@ export default function RegisterPage() {
   }
 
   const fieldClass =
-    "w-full rounded-xl border border-white/12 bg-black/45 py-3 pl-11 pr-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-pokeball-red/55 focus:bg-black/55 focus:ring-1 focus:ring-pokeball-red/30";
+    "w-full rounded-xl border border-white/12 bg-black/45 py-3 pl-11 pr-3 text-[16px] text-white outline-none transition placeholder:text-white/35 focus:border-pokeball-red/55 focus:bg-black/55 focus:ring-1 focus:ring-pokeball-red/30";
 
   const preview = (
     <div className="relative flex items-end justify-center overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-white/6 to-black/40 px-3 py-3">

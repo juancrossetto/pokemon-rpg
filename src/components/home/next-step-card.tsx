@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { NextStep } from "@/lib/next-step";
@@ -19,48 +20,56 @@ export async function NextStepCard({ step }: { step: NextStep }) {
   const t = await getTranslations("nextStep");
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-electric-yellow/30 bg-gradient-to-br from-electric-yellow/[0.12] via-black/40 to-black/60 p-3.5 shadow-[0_12px_36px_rgba(0,0,0,0.45)] sm:p-4">
+    <section className="relative overflow-hidden rounded-2xl border border-electric-yellow/35 bg-gradient-to-br from-electric-yellow/[0.14] via-[#12141c] to-[#0a0c12] p-3.5 shadow-[0_12px_36px_rgba(0,0,0,0.45)] sm:p-4">
       <span
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-electric-yellow/70 to-transparent"
       />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-electric-yellow/10 blur-2xl"
+      />
 
-      <div className="flex items-start gap-3">
+      <div className="relative flex items-start gap-3">
         <span
           aria-hidden
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-electric-yellow/40 bg-electric-yellow/10 text-electric-yellow"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-electric-yellow/35 bg-black/35"
         >
-          <span className="material-symbols-outlined text-[24px]!">{step.icon}</span>
+          <Image
+            src="/nav/adventure-icon.png"
+            alt=""
+            width={36}
+            height={36}
+            className="h-8 w-8 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
+            unoptimized
+          />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-electric-yellow">
+          <p className="page-title text-[10px] tracking-[0.18em] text-electric-yellow">
             {t("eyebrow")}
           </p>
-          <h2 className="mt-0.5 text-[17px] font-semibold leading-tight tracking-tight text-white sm:text-[19px]">
+          <h2 className="page-title mt-0.5 text-[16px] leading-none tracking-tight text-white sm:text-[18px]">
             {t(step.titleKey)}
           </h2>
-          <p className="mt-1 text-[12px] leading-snug text-white/65 sm:text-[13px]">
+          <p className="mt-1.5 text-[12px] leading-snug text-white/65 sm:text-[13px]">
             {t(step.bodyKey)}
           </p>
         </div>
       </div>
 
-      <div className="mt-3 flex items-stretch gap-2">
+      <div className="relative mt-3 flex items-stretch gap-2">
         <Link
           href={step.href}
           className="game-cta game-cta--red inline-flex min-h-11 flex-1 sm:min-h-12"
         >
-          {t(step.ctaKey)}
+          <span className="game-cta__label">{t(step.ctaKey)}</span>
         </Link>
         {step.secondary && (
           <Link
             href={step.secondary.href}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-black/40 px-3.5 text-[13px] font-medium text-on-surface transition hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:min-h-12"
+            className="game-cta game-cta--secondary inline-flex w-auto! min-h-11 shrink-0 gap-1.5! px-3! sm:min-h-12 sm:px-3.5!"
           >
-            <span aria-hidden className="material-symbols-outlined text-[18px]!">
-              {step.secondary.icon}
-            </span>
-            {t(step.secondary.ctaKey)}
+            <span className="game-cta__label">{t(step.secondary.ctaKey)}</span>
           </Link>
         )}
       </div>

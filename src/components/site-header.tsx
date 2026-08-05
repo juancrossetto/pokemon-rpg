@@ -159,11 +159,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
             : [];
         }),
       ]
-    : [
-        { href: "/ranking", label: t("ranking"), icon: "trophy" },
-        { href: "/login", label: t("login"), icon: "login" },
-        { href: "/register", label: t("register"), icon: "person_add" },
-      ];
+    : [];
 
   const brandHref = lockedHref ?? (session?.user ? "/" : "/login");
 
