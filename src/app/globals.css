@@ -100,6 +100,9 @@ html[data-icons="ready"] .material-symbols-outlined {
      Incluye el dock + el FAB de Combat que sobresale. */
   --bottom-nav-h: 5.25rem;
   --vv-gap: 0px;
+  /* Viewport real (innerHeight). Lo publica mobile-chrome; evita el desfase
+     iOS entre 100dvh y el dock fijo. */
+  --app-vh: 100dvh;
 }
 
 @layer utilities {
@@ -5912,7 +5915,7 @@ html[data-nav-pending] .app-main {
   }
 }
 
-/* ── Boot splash (solo mobile post-login) ────────────────────────────── */
+/* ── Boot splash (warmup de pantallas al abrir la app) ───────────────── */
 
 .boot-splash {
   position: fixed;
@@ -5937,10 +5940,34 @@ html.boot-splash-pending .boot-splash {
   pointer-events: none !important;
 }
 
+.boot-splash__mobile,
+.boot-splash__desktop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.boot-splash__mobile {
+  display: flex;
+}
+
+.boot-splash__desktop {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--color-pokeball-red) 14%, transparent), transparent 55%),
+    #0a0806;
+}
+
 @media (min-width: 1280px) {
-  .boot-splash,
-  html.boot-splash-pending .boot-splash {
-    display: none !important;
+  .boot-splash__mobile {
+    display: none;
+  }
+
+  .boot-splash__desktop {
+    display: flex;
   }
 }
 
@@ -5951,6 +5978,14 @@ html.boot-splash-pending .boot-splash {
   height: 100%;
   object-fit: cover;
   object-position: center top;
+}
+
+.boot-splash__pokeball {
+  position: relative;
+  z-index: 1;
+  width: min(360px, 42vw);
+  height: auto;
+  object-fit: contain;
 }
 
 .boot-splash__shade {
@@ -5968,6 +6003,15 @@ html.boot-splash-pending .boot-splash {
   z-index: 1;
   margin-top: auto;
   padding: max(1.25rem, env(safe-area-inset-bottom)) 1.75rem max(1.5rem, env(safe-area-inset-bottom));
+}
+
+.boot-splash__footer--desktop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin-top: 0;
+  padding: 1.75rem 2.5rem 2rem;
 }
 
 .boot-splash__meta {
@@ -6006,9 +6050,9 @@ html.boot-splash-pending .boot-splash {
   height: 100%;
   width: 0%;
   border-radius: inherit;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.35), #fff, rgba(255, 255, 255, 0.55));
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
-  transition: width 80ms linear;
+  background: var(--color-pokeball-red);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-pokeball-red) 45%, transparent);
+  transition: width 120ms linear;
 }
 
 @media (prefers-reduced-motion: reduce) {

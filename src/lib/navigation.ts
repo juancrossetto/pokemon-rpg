@@ -277,6 +277,20 @@ export function allNavIconSrcs(): string[] {
   return [...urls];
 }
 
+/**
+ * Destinos principales a precargar al arrancar la app.
+ * Misma fuente que la nav: un destino nuevo entra solo.
+ */
+export function navWarmupHrefs(): string[] {
+  const hrefs = new Set<string>([NAV_HOME.href]);
+  for (const group of NAV_GROUPS) {
+    for (const child of visibleChildren(group)) {
+      if (!child.disabled) hrefs.add(child.href);
+    }
+  }
+  return [...hrefs];
+}
+
 /** ¿La ruta actual cae dentro de este destino? */
 export function itemMatches(pathname: string, item: NavItem): boolean {
   const candidates = [item.href, ...(item.matchRoutes ?? [])];

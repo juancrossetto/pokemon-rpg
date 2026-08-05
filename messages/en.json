@@ -4,7 +4,8 @@
     "description": "Catch, train, and battle — climb the ranking until you're number one."
   },
   "loading": {
-    "syncing": "Syncing..."
+    "syncing": "Syncing...",
+    "boot": "Loading"
   },
   "nav": {
     "brand": "Pokémon RPG",

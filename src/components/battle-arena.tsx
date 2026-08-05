@@ -2875,7 +2875,7 @@ export function BattleArena({
 
         {/* Panel inferior: altura fija en mobile (el campo no salta al
             abrir poderes). Un poco más bajo para ceder alto al arena. */}
-        <div className="flex min-h-0 min-w-0 shrink-0 flex-col gap-1 max-md:h-[9.25rem] max-md:max-h-[9.25rem] md:h-[min(14rem,32dvh)] md:max-h-[14rem] md:gap-2">
+        <div className="flex min-h-0 min-w-0 shrink-0 flex-col gap-1 max-md:h-[11rem] max-md:max-h-[11rem] md:h-[min(14rem,32dvh)] md:max-h-[14rem] md:gap-2">
           {commandExpanded && lastLogEntry ? (
             <p
               className="md:hidden shrink-0 truncate rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] leading-snug text-white/80"

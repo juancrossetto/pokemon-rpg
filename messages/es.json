@@ -4,7 +4,8 @@
     "description": "Capturá, entrená y batallá — sube en el ranking hasta ser el número uno."
   },
   "loading": {
-    "syncing": "Sincronizando..."
+    "syncing": "Sincronizando...",
+    "boot": "Cargando"
   },
   "nav": {
     "brand": "Pokémon RPG",

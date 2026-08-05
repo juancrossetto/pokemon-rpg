@@ -4,7 +4,6 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
-import { BootSplashController } from "@/components/boot-splash";
 import { BootSplashMarkup } from "@/components/boot-splash-markup";
 import { InlineScript } from "@/components/inline-script";
 import { bootSplashEarlyScript } from "@/lib/boot-splash";
@@ -70,6 +69,8 @@ export default async function LocaleLayout({
     notFound();
   }
 
+  const tLoading = await getTranslations({ locale, namespace: "loading" });
+
   return (
     <html
       lang={locale}
@@ -96,6 +97,7 @@ export default async function LocaleLayout({
           rel="stylesheet"
         />
         <link rel="preload" href="/splash/boot.webp" as="image" />
+        <link rel="preload" href="/loaders/pokeball-loader-transparent.webp" as="image" />
         <InlineScript
           id="boot-splash-early"
           html={`${bootSplashEarlyScript()}(${iconsReadyEarlyScript()})();`}
@@ -106,8 +108,7 @@ export default async function LocaleLayout({
         // standalone-early puede agregar `is-standalone` antes de hidratar.
         suppressHydrationWarning
       >
-        <BootSplashMarkup />
-        <BootSplashController />
+        <BootSplashMarkup label={tLoading("boot")} />
 
         <div className="fixed top-0 left-1/4 h-96 w-96 rounded-full bg-pokeball-red/5 blur-[120px] pointer-events-none" />
         <div className="fixed bottom-0 right-1/4 h-[500px] w-[500px] rounded-full bg-electric-yellow/[0.02] blur-[150px] pointer-events-none" />

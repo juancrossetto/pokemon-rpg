@@ -1,13 +1,17 @@
 /**
  * Markup estático del splash. Server Component (sin "use client").
- * El progreso lo anima `BootSplashController` vía DOM.
+ * Mobile: wallpaper Mewtwo. Desktop: Pokéball. El % lo anima el warmup.
  */
-export function BootSplashMarkup() {
+export function BootSplashMarkup({
+  label,
+}: {
+  label: string;
+}) {
   return (
     <div
       id="boot-splash"
       className="boot-splash"
-      role="status"
+      role="progressbar"
       aria-live="polite"
       aria-busy="false"
       aria-hidden="true"
@@ -15,18 +19,44 @@ export function BootSplashMarkup() {
       aria-valuemax={100}
       aria-valuenow={0}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/splash/boot.webp" alt="" className="boot-splash__art" fetchPriority="high" />
-      <div className="boot-splash__shade" aria-hidden />
-      <div className="boot-splash__footer">
-        <div className="boot-splash__meta">
-          <span className="boot-splash__label">Cargando</span>
-          <span id="boot-splash-pct" className="boot-splash__pct">
-            0%
-          </span>
+      <div className="boot-splash__mobile">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/splash/boot.webp"
+          alt=""
+          className="boot-splash__art"
+          fetchPriority="high"
+        />
+        <div className="boot-splash__shade" aria-hidden />
+        <div className="boot-splash__footer">
+          <div className="boot-splash__meta">
+            <span className="boot-splash__label">{label}</span>
+            <span className="boot-splash__pct boot-splash-pct">0%</span>
+          </div>
+          <div className="boot-splash__track" aria-hidden>
+            <div className="boot-splash__fill boot-splash-fill" style={{ width: "0%" }} />
+          </div>
         </div>
-        <div className="boot-splash__track" aria-hidden>
-          <div id="boot-splash-fill" className="boot-splash__fill" style={{ width: "0%" }} />
+      </div>
+
+      <div className="boot-splash__desktop">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/loaders/pokeball-loader-transparent.webp"
+          alt=""
+          className="boot-splash__pokeball"
+          width={360}
+          height={270}
+          fetchPriority="high"
+        />
+        <div className="boot-splash__footer boot-splash__footer--desktop">
+          <div className="boot-splash__meta">
+            <span className="boot-splash__label">{label}</span>
+            <span className="boot-splash__pct boot-splash-pct">0%</span>
+          </div>
+          <div className="boot-splash__track" aria-hidden>
+            <div className="boot-splash__fill boot-splash-fill" style={{ width: "0%" }} />
+          </div>
         </div>
       </div>
     </div>

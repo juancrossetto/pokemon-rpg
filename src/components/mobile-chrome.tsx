@@ -577,6 +577,14 @@ export function MobileChrome({
 
     function publishNavHeight() {
       if (!root) return;
+      /*
+        Misma unidad que usa el dock (`innerHeight`). En iOS `100dvh` ≠
+        innerHeight y la batalla / el sheet terminaban debajo del nav.
+      */
+      const vh = Math.round(window.innerHeight);
+      if (vh > 0) {
+        document.documentElement.style.setProperty("--app-vh", `${vh}px`);
+      }
       const styles = getComputedStyle(root);
       const padBottom = Number.parseFloat(styles.paddingBottom) || 0;
       const height = Math.ceil(root.getBoundingClientRect().height - padBottom);
@@ -591,7 +599,7 @@ export function MobileChrome({
       if (dock) {
         const inset = Math.max(
           0,
-          Math.ceil(window.innerHeight - dock.getBoundingClientRect().top) - 1,
+          Math.ceil(vh - dock.getBoundingClientRect().top) - 1,
         );
         document.documentElement.style.setProperty("--bottom-sheet-inset", `${inset}px`);
       } else {
@@ -625,6 +633,12 @@ export function MobileChrome({
 
     publishNavHeight();
     publishVvGap();
+    // Segundo tick: el padding standalone del dock a veces aplica después
+    // del primer layout y el inset quedaba corto (sheet/batalla tapados).
+    const remasureRaf = window.requestAnimationFrame(() => {
+      publishNavHeight();
+      publishVvGap();
+    });
 
     const observer = new ResizeObserver(publishNavHeight);
     observer.observe(root);
@@ -643,6 +657,7 @@ export function MobileChrome({
     window.visualViewport?.addEventListener("resize", onViewportSettle);
 
     return () => {
+      window.cancelAnimationFrame(remasureRaf);
       observer.disconnect();
       window.removeEventListener("resize", onViewportSettle);
       window.visualViewport?.removeEventListener("resize", onViewportSettle);
@@ -1121,7 +1136,6 @@ export function MobileChrome({
             onAnimationEnd={onSheetAnimationEnd}
             className={[
               "mobile-nav-sheet absolute inset-x-0 flex flex-col overflow-hidden",
-              groupMode ? "max-h-[min(52dvh,28rem)]" : "max-h-[min(78dvh,40rem)]",
               skipSheetMotion
                 ? ""
                 : drawerPhase === "closing"
@@ -1133,6 +1147,17 @@ export function MobileChrome({
               .join(" ")}
             style={{
               bottom: "var(--bottom-sheet-inset, var(--bottom-nav-h, 5.25rem))",
+              /*
+                Altura explícita (no sólo max-height): en iOS un flex column
+                con solo max-h no encoge el scroll y el footer tapa Pokédex.
+                `--app-vh` = innerHeight, la misma base que el inset del dock.
+              */
+              height: groupMode
+                ? "min(52dvh, 28rem, calc(var(--app-vh, 100dvh) - var(--bottom-sheet-inset, 5.25rem) - 0.75rem))"
+                : "min(78dvh, 40rem, calc(var(--app-vh, 100dvh) - var(--bottom-sheet-inset, 5.25rem) - 0.75rem))",
+              maxHeight: groupMode
+                ? "min(52dvh, 28rem, calc(var(--app-vh, 100dvh) - var(--bottom-sheet-inset, 5.25rem) - 0.75rem))"
+                : "min(78dvh, 40rem, calc(var(--app-vh, 100dvh) - var(--bottom-sheet-inset, 5.25rem) - 0.75rem))",
               ...(drawerShown && (isSwipeDragging || sheetDragY > 0)
                 ? { transform: `translate3d(0, ${sheetDragY}px, 0)` }
                 : {}),
@@ -1174,7 +1199,7 @@ export function MobileChrome({
 
             <div
               data-nav-scroll
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-2"
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3 [-webkit-overflow-scrolling:touch]"
               onTouchStart={onGroupSwipeStart}
               onTouchEnd={onGroupSwipeEnd}
               onTouchCancel={() => {
