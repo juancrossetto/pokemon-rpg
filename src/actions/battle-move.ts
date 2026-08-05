@@ -52,6 +52,7 @@ export interface XpSummaryEntry {
   instanceId: string;
   name: string;
   fromSpriteUrl: string;
+  isShiny: boolean;
   xpGained: number;
   leveledUpTo: number | null;
   previousLevel: number;
@@ -889,6 +890,7 @@ export async function submitBattleMove(
       speciesId: number;
       name: string;
       fromSpriteUrl: string;
+      isShiny: boolean;
       fromLevel: number;
       toLevel: number;
       leveledUpTo: number | null;
@@ -914,6 +916,7 @@ export async function submitBattleMove(
         speciesId: p.speciesId,
         name: p.nickname ?? p.species.name,
         fromSpriteUrl: p.species.spriteUrl,
+        isShiny: p.isShiny,
         fromLevel: p.level,
         toLevel: result.newLevel,
         leveledUpTo: result.leveledUpTo,
@@ -966,6 +969,7 @@ export async function submitBattleMove(
           instanceId: meta.instanceId,
           name: meta.name,
           fromSpriteUrl: meta.fromSpriteUrl,
+          isShiny: meta.isShiny,
           xpGained: meta.share,
           leveledUpTo: meta.leveledUpTo,
           previousLevel: meta.fromLevel,

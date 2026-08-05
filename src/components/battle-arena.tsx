@@ -184,6 +184,7 @@ export function BattleArena({
     // Metadata interna (stage de farming) — no mostrar al jugador.
     if (raw.startsWith("stage:")) return null;
     if (raw === "alpha") return t("alphaEncounter");
+    if (raw === "shiny") return t("shinyEncounter");
     if (raw.startsWith("appear:")) return tLog("appear", { name: raw.slice(7) });
     if (raw.startsWith("switch:")) return tLog("switchIn", { name: raw.slice(7) });
     if (raw.startsWith("switchForced:")) return tLog("switchForced", { name: raw.slice(14) });
@@ -279,6 +280,7 @@ export function BattleArena({
     speciesName: player.speciesName,
     level: player.level,
     spriteUrl: player.spriteUrl,
+    isShiny: player.isShiny ?? false,
   });
   // playEvent() lee nombres vía nameFor() dentro de funciones async que ya
   // arrancaron con un closure viejo de activePlayer (setActivePlayer no lo
@@ -2106,6 +2108,7 @@ export function BattleArena({
       speciesName: result.newPlayer.speciesName,
       level: result.newPlayer.level,
       spriteUrl: result.newPlayer.spriteUrl,
+      isShiny: result.newPlayer.isShiny ?? false,
     });
     // Server already applied wild counter into newPlayer.currentHp.
     setPlayerHp(result.newPlayer.currentHp);
@@ -2773,6 +2776,7 @@ export function BattleArena({
                 <BattleSprite
                   speciesName={activePlayer.speciesName}
                   facing="back"
+                  isShiny={activePlayer.isShiny}
                   fallbackUrl={activePlayer.spriteUrl}
                   alt={activePlayer.name}
                   width={isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx}
@@ -2805,6 +2809,7 @@ export function BattleArena({
                   <BattleSprite
                     speciesName={playerB.speciesName}
                     facing="back"
+                    isShiny={playerB.isShiny ?? false}
                     fallbackUrl={playerB.spriteUrl}
                     alt={playerB.name}
                     width={Math.round(playerSpritePx * 0.78)}

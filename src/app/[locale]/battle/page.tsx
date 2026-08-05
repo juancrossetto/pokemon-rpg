@@ -465,7 +465,8 @@ export default async function BattlePage({
         name: r.nickname ?? r.species.name,
         speciesName: r.species.name,
         level: r.level,
-        spriteUrl: r.species.spriteUrl,
+        spriteUrl: spriteFor(r.species.spriteUrl, r.isShiny),
+        isShiny: r.isShiny,
         currentHp:
           r.id === instance.id
             ? instance.currentHp
@@ -480,7 +481,8 @@ export default async function BattlePage({
         name: instance.nickname ?? instance.species.name,
         speciesName: instance.species.name,
         level: instance.level,
-        spriteUrl: instance.species.spriteUrl,
+        spriteUrl: spriteFor(instance.species.spriteUrl, instance.isShiny),
+        isShiny: instance.isShiny,
         currentHp: instance.currentHp,
         maxHp: playerMaxHp,
       },
@@ -491,7 +493,8 @@ export default async function BattlePage({
               name: instB.nickname ?? instB.species.name,
               speciesName: instB.species.name,
               level: instB.level,
-              spriteUrl: instB.species.spriteUrl,
+              spriteUrl: spriteFor(instB.species.spriteUrl, instB.isShiny),
+              isShiny: instB.isShiny,
               currentHp: instB.currentHp,
               maxHp: calculateMaxHp(
                 instB.species.baseHp,

@@ -181,7 +181,8 @@ export function PokedexTerminal({
         list = list.filter((e) => e.isFavorite);
         break;
       case "shiny":
-        list = list.filter((e) => e.hasShiny);
+        // Atlas shiny: todas las especies de la región; las no obtenidas
+        // se pintan como sombra (ver DexCard / DexListRow).
         break;
       case "legendary":
         list = list.filter((e) => e.isLegendary && !e.isMythical);
@@ -555,6 +556,7 @@ export function PokedexTerminal({
                   entry={entry}
                   labels={labels}
                   forceLocked={regionLocked}
+                  shinyAtlas={quick === "shiny"}
                 />
               ))}
             </ul>
@@ -566,6 +568,7 @@ export function PokedexTerminal({
                   entry={entry}
                   labels={labels}
                   forceLocked={regionLocked}
+                  shinyAtlas={quick === "shiny"}
                 />
               ))}
             </ul>
@@ -658,16 +661,28 @@ function DexCard({
   entry,
   labels,
   forceLocked = false,
+  shinyAtlas = false,
 }: {
   entry: PokedexSpeciesCard;
   labels: PokedexLabels;
   forceLocked?: boolean;
+  /** Filtro Shiny: arte variocolor; sombra si aún no lo tenés. */
+  shinyAtlas?: boolean;
 }) {
-  const unseen = forceLocked || entry.status === "unseen";
-  const seenOnly = !forceLocked && entry.status === "seen";
-  const caught = !forceLocked && entry.status === "caught";
-  const tip = forceLocked ? labels.locked : unseen ? labels.unknown : entry.name;
+  const speciesUnseen = forceLocked || entry.status === "unseen";
+  const shinyLocked = shinyAtlas && !entry.hasShiny;
+  const unseen = speciesUnseen || shinyLocked;
+  const seenOnly = !forceLocked && !shinyLocked && entry.status === "seen";
+  const caught = !forceLocked && !shinyLocked && entry.status === "caught";
+  const tip = forceLocked
+    ? labels.locked
+    : shinyLocked
+      ? labels.icons.shiny
+      : speciesUnseen
+        ? labels.unknown
+        : entry.name;
   const dexNum = String(entry.id).padStart(3, "0");
+  const showShinyArt = shinyAtlas || entry.hasShiny;
 
   return (
     <li>
@@ -683,10 +698,10 @@ function DexCard({
           <span
             className={[
               "font-mono text-[10px] tabular-nums leading-none tracking-wide sm:text-[11px]",
-              unseen ? "text-white/30" : "text-white/70",
+              speciesUnseen ? "text-white/30" : "text-white/70",
             ].join(" ")}
           >
-            {unseen ? "—" : `#${dexNum}`}
+            {speciesUnseen ? "—" : `#${dexNum}`}
           </span>
           {entry.isFavorite ? (
             <span
@@ -704,7 +719,7 @@ function DexCard({
         <div className="relative flex aspect-square w-full max-w-[7.5rem] items-center justify-center self-center">
           {entry.spriteUrl ? (
             <Image
-              src={spriteFor(entry.spriteUrl, entry.hasShiny)}
+              src={spriteFor(entry.spriteUrl, showShinyArt)}
               alt={unseen ? labels.unknown : entry.name}
               width={128}
               height={128}
@@ -727,8 +742,15 @@ function DexCard({
               >
                 auto_awesome
               </span>
+            ) : shinyAtlas ? (
+              <span
+                className="material-symbols-outlined text-[12px]! text-white/35"
+                title={labels.icons.shiny}
+              >
+                auto_awesome
+              </span>
             ) : null}
-            {caught ? (
+            {!shinyLocked && caught ? (
               <span title={labels.statusCaught} className="drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)]">
                 <Image
                   src={itemHdIconUrl("Poke Ball") ?? "/items/hd/poke-ball.png"}
@@ -739,7 +761,7 @@ function DexCard({
                   unoptimized
                 />
               </span>
-            ) : seenOnly ? (
+            ) : !shinyLocked && seenOnly ? (
               <span
                 className="material-symbols-outlined text-[12px]! text-white/55"
                 title={labels.statusSeen}
@@ -753,10 +775,10 @@ function DexCard({
         <p
           className={[
             "w-full truncate px-0.5 text-center text-[11px] capitalize leading-tight sm:text-[12px]",
-            unseen ? "text-white/40" : "text-white/85",
+            speciesUnseen || shinyLocked ? "text-white/40" : "text-white/85",
           ].join(" ")}
         >
-          {unseen ? labels.unknown : entry.name}
+          {speciesUnseen ? labels.unknown : entry.name}
         </p>
       </article>
     </li>
@@ -767,15 +789,20 @@ function DexListRow({
   entry,
   labels,
   forceLocked = false,
+  shinyAtlas = false,
 }: {
   entry: PokedexSpeciesCard;
   labels: PokedexLabels;
   forceLocked?: boolean;
+  shinyAtlas?: boolean;
 }) {
   const primary = entry.types[0] ?? "normal";
   const glow = neonTypeColor(primary);
-  const unseen = forceLocked || entry.status === "unseen";
+  const speciesUnseen = forceLocked || entry.status === "unseen";
+  const shinyLocked = shinyAtlas && !entry.hasShiny;
+  const unseen = speciesUnseen || shinyLocked;
   const rarityStyle = RARITY_STYLES[entry.rarity];
+  const showShinyArt = shinyAtlas || entry.hasShiny;
 
   return (
     <li className="relative">
@@ -799,24 +826,22 @@ function DexListRow({
         <div className="relative z-10 h-10 w-10 shrink-0">
           {entry.spriteUrl ? (
             <Image
-              src={spriteFor(entry.spriteUrl, entry.hasShiny)}
+              src={spriteFor(entry.spriteUrl, showShinyArt)}
               alt={unseen ? labels.unknown : entry.name}
               width={40}
               height={40}
               className={[
                 "h-10 w-10 object-contain",
-                unseen
-                  ? "brightness-0 invert opacity-[0.5]"
-                  : "",
+                unseen ? "brightness-0 invert opacity-[0.5]" : "",
               ].join(" ")}
             />
           ) : null}
         </div>
         <div className="relative z-10 min-w-0 flex-1">
           <p className="truncate text-label-md capitalize text-on-surface">
-            {unseen ? labels.unknown : entry.name}
+            {speciesUnseen ? labels.unknown : entry.name}
           </p>
-          {!unseen && (
+          {!speciesUnseen && (
             <p className="truncate text-[10px] uppercase tracking-wide text-on-surface-variant">
               {entry.types
                 .map((t) => labels.pokemonTypes[t.toLowerCase()] ?? t)

@@ -15,6 +15,7 @@ export type LevelUpOfferEntry = {
   name: string;
   leveledUpTo: number | null;
   fromSpriteUrl?: string | null;
+  isShiny?: boolean;
   autoTaught: LevelUpMoveInfo[];
   pendingMoves: LevelUpMoveInfo[];
   evolveOffer: EvolveOffer | null;
@@ -382,6 +383,7 @@ export function LevelUpOffersPanel({
               <EvolveReveal
                 name={reveal.toName}
                 spriteUrl={reveal.toSpriteUrl}
+                isShiny={entry.isShiny ?? false}
                 label={t("evolvedInto", { name: reveal.toName })}
               />
             )}
@@ -391,6 +393,7 @@ export function LevelUpOffersPanel({
                 <EvolveOfferCard
                   fromName={entry.name}
                   fromSpriteUrl={entry.fromSpriteUrl}
+                  isShiny={entry.isShiny ?? false}
                   offer={offer}
                   level={entry.leveledUpTo ?? offer.evolveLevel}
                   isEvolving={isEvolving}
@@ -438,6 +441,7 @@ export function LevelUpOffersPanel({
 function EvolveOfferCard({
   fromName,
   fromSpriteUrl,
+  isShiny = false,
   offer,
   level,
   isEvolving,
@@ -448,6 +452,7 @@ function EvolveOfferCard({
 }: {
   fromName: string;
   fromSpriteUrl?: string | null;
+  isShiny?: boolean;
   offer: EvolveOffer;
   level: number;
   isEvolving: boolean;
@@ -463,8 +468,8 @@ function EvolveOfferCard({
   onEvolve: () => void;
   onLater: () => void;
 }) {
-  const fromSrc = fromSpriteUrl ? spriteFor(fromSpriteUrl, false) : null;
-  const toSrc = spriteFor(offer.toSpriteUrl, false);
+  const fromSrc = fromSpriteUrl ? spriteFor(fromSpriteUrl, isShiny) : null;
+  const toSrc = spriteFor(offer.toSpriteUrl, isShiny);
 
   return (
     <div
@@ -564,10 +569,12 @@ function EvolveOfferCard({
 function EvolveReveal({
   name,
   spriteUrl,
+  isShiny = false,
   label,
 }: {
   name: string;
   spriteUrl: string;
+  isShiny?: boolean;
   label: string;
 }) {
   return (
@@ -583,7 +590,7 @@ function EvolveReveal({
         <div className="relative flex h-28 w-28 items-center justify-center">
           <span className="absolute inset-2 rounded-full bg-tertiary/25 blur-xl" />
           <Image
-            src={spriteFor(spriteUrl, false)}
+            src={spriteFor(spriteUrl, isShiny)}
             alt={name}
             width={112}
             height={112}

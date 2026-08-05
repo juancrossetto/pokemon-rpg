@@ -933,7 +933,14 @@ export function MobileChrome({
         y el backdrop no la tapa, así Más puede cerrar y el contexto no desaparece.
       */}
       <nav
-        ref={bottomNavRef}
+        ref={(node) => {
+          bottomNavRef.current = node;
+          // Ref callback corre en el commit (antes del paint): si esperamos
+          // useLayoutEffect, iOS a veces pinta un frame con el menú arriba.
+          if (node && isStandalone()) {
+            pinStandaloneNavElement(node);
+          }
+        }}
         className="mobile-bottom-nav xl:hidden"
       >
         {lockedHref && lockedLabel ? (

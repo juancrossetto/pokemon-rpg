@@ -22,6 +22,7 @@ export type UseRareCandyResult =
       itemName: string;
       pokemonName: string;
       fromSpriteUrl: string;
+      isShiny: boolean;
       newLevel: number;
       previousLevel: number;
       currentHp: number;
@@ -151,6 +152,7 @@ export async function useRareCandy(
     itemName: candy.item.name,
     pokemonName: instance.nickname?.trim() || instance.species.name,
     fromSpriteUrl: instance.species.spriteUrl,
+    isShiny: instance.isShiny,
     newLevel,
     previousLevel,
     currentHp: newCurrentHp,

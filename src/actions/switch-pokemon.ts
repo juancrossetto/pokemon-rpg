@@ -9,6 +9,7 @@ import { RESET_PLAYER_STAGES } from "@/lib/battle-stages";
 import { calculateMaxHp, calculateStat } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
+import { spriteFor } from "@/lib/shiny";
 
 const MAX_LOG_LINES = 20;
 
@@ -19,6 +20,7 @@ export interface SwitchPokemonResult {
     speciesName: string;
     level: number;
     spriteUrl: string;
+    isShiny: boolean;
     currentHp: number;
     maxHp: number;
     stats: { atk: number; spAtk: number; speed: number };
@@ -131,7 +133,8 @@ export async function switchPokemon(
         name: newName,
         speciesName: newInstance.species.name,
         level: newInstance.level,
-        spriteUrl: newInstance.species.spriteUrl,
+        spriteUrl: spriteFor(newInstance.species.spriteUrl, newInstance.isShiny),
+        isShiny: newInstance.isShiny,
         currentHp: newInstance.currentHp,
         maxHp: calculateMaxHp(newInstance.species.baseHp, newInstance.level, newInstance.ptConstitution),
         stats: newStats,
@@ -209,7 +212,8 @@ export async function switchPokemon(
       name: newName,
       speciesName: newInstance.species.name,
       level: newInstance.level,
-      spriteUrl: newInstance.species.spriteUrl,
+      spriteUrl: spriteFor(newInstance.species.spriteUrl, newInstance.isShiny),
+      isShiny: newInstance.isShiny,
       currentHp: playerHp,
       maxHp: calculateMaxHp(newInstance.species.baseHp, newInstance.level, newInstance.ptConstitution),
       stats: newStats,

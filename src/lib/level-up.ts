@@ -4,6 +4,7 @@
 import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
+import { spriteFor } from "@/lib/shiny";
 
 export type LevelUpMoveInfo = {
   moveId: number;
@@ -347,7 +348,11 @@ export async function evolvePokemonInstance(opts: {
     },
   });
   if (!evolved.ok) return evolved;
-  return { ...evolved, fromSpriteUrl: instance.species.spriteUrl };
+  return {
+    ...evolved,
+    fromSpriteUrl: spriteFor(instance.species.spriteUrl, instance.isShiny),
+    toSpriteUrl: spriteFor(evolved.toSpriteUrl, instance.isShiny),
+  };
 }
 
 /**
@@ -424,7 +429,7 @@ export async function evolvePokemonWithItem(opts: {
   });
   if (!stone) return { ok: false, error: "no_item" };
 
-  const fromSpriteUrl = instance.species.spriteUrl;
+  const fromSpriteUrl = spriteFor(instance.species.spriteUrl, instance.isShiny);
   const evolved = await applySpeciesEvolution({
     userId: opts.userId,
     instance: {
@@ -454,7 +459,12 @@ export async function evolvePokemonWithItem(opts: {
     });
   }
 
-  return { ...evolved, itemName: opts.itemName, fromSpriteUrl };
+  return {
+    ...evolved,
+    itemName: opts.itemName,
+    fromSpriteUrl,
+    toSpriteUrl: spriteFor(evolved.toSpriteUrl, instance.isShiny),
+  };
 }
 
 async function applySpeciesEvolution(opts: {

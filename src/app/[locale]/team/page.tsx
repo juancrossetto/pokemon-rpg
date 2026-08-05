@@ -243,6 +243,7 @@ export default async function TeamPage({
       ownedHeldItems,
       isFavorite: instance.isFavorite,
       isTradeLocked: instance.isTradeLocked,
+      isShiny: instance.isShiny,
     };
   });
 
@@ -358,6 +359,7 @@ export default async function TeamPage({
             evolving: t("drawer.evolving"),
             canEvolveBadge: t("drawer.canEvolveBadge"),
             favoriteBadge: tMenu("favoriteBadge"),
+            shinyBadge: t("shinyBadge"),
             showDetails: t("drawer.showDetails"),
             hideDetails: t("drawer.hideDetails"),
             tabAbout: t("drawer.tabAbout"),

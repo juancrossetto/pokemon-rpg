@@ -23,6 +23,7 @@ export type ShowcaseBadges = {
   lead?: string | null;
   level: string;
   favorite?: string | null;
+  shiny?: string | null;
   tradeLocked?: string | null;
   /**
    * Etiqueta de "puede evolucionar". Si es `""` se muestra solo el ícono, que
@@ -137,6 +138,17 @@ export function PokemonShowcaseCard({
               <span className="material-symbols-outlined ms-fill text-[11px]! leading-none">
                 star
               </span>
+            </span>
+          ) : null}
+          {badges.shiny ? (
+            <span
+              title={badges.shiny}
+              className="inline-flex items-center gap-0.5 rounded-full border border-electric-yellow/40 bg-electric-yellow/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-electric-yellow backdrop-blur-sm"
+            >
+              <span className="material-symbols-outlined text-[11px]! leading-none">
+                auto_awesome
+              </span>
+              {badges.shiny}
             </span>
           ) : null}
           {badges.tradeLocked ? (

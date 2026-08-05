@@ -183,7 +183,7 @@ function LevelUpFanfare({
         {leveled.map((entry) => (
           <div key={entry.instanceId} className="flex items-center gap-2">
             <Image
-              src={uiSpriteUrl(entry.fromSpriteUrl)}
+              src={uiSpriteUrl(entry.fromSpriteUrl, entry.isShiny)}
               alt={entry.name}
               width={40}
               height={40}
@@ -426,6 +426,7 @@ export function BattleResult({
                     name: e.name,
                     leveledUpTo: e.leveledUpTo,
                     fromSpriteUrl: e.fromSpriteUrl,
+                    isShiny: e.isShiny,
                     autoTaught: e.autoTaught ?? [],
                     pendingMoves: e.pendingMoves ?? [],
                     evolveOffer: e.evolveOffer ?? null,

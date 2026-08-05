@@ -12,6 +12,7 @@ export interface Combatant {
   level: number;
   /** Official artwork — fallback si el GIF falla. */
   spriteUrl: string;
+  isShiny?: boolean;
 }
 
 export interface PokeballStack {
@@ -36,6 +37,7 @@ export interface RosterMember {
   currentHp: number;
   maxHp: number;
   types: string[];
+  isShiny?: boolean;
 }
 
 export interface OpponentPartyMember {

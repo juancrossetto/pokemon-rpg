@@ -14,6 +14,7 @@ import { completeFarmingStageOnWildWin } from "@/lib/campaign/sync";
 import { runWildCounterAttack } from "@/lib/wild-counter";
 import { revalidateCombatUi } from "@/lib/battle-lock";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
+import { SHINY_CATCH_REWARD, spriteFor } from "@/lib/shiny";
 
 const MAX_LOG_LINES = 20;
 const TEAM_SIZE = 6;
@@ -30,6 +31,8 @@ export interface CapturedPokemonInfo {
   moves: { moveId: number; name: string; type: string; pp: number }[];
   /** true si el equipo estaba lleno y fue al PC. */
   sentToPc: boolean;
+  isShiny: boolean;
+  shinyReward: { coins: number; gems: number } | null;
 }
 
 export interface AttemptCaptureResult {
@@ -124,6 +127,10 @@ export async function attemptCapture(
       },
     });
 
+    const shinyReward = battle.wildIsShiny
+      ? { coins: SHINY_CATCH_REWARD.coins, gems: SHINY_CATCH_REWARD.gems }
+      : null;
+
     await prisma.$transaction([
       prisma.battleSession.update({
         where: { id: battle.id },
@@ -132,6 +139,17 @@ export async function attemptCapture(
       prisma.battleLog.create({
         data: { kind: "PVE_WILD", userId, userWon: true },
       }),
+      ...(shinyReward
+        ? [
+            prisma.user.update({
+              where: { id: userId },
+              data: {
+                coins: { increment: shinyReward.coins },
+                gems: { increment: shinyReward.gems },
+              },
+            }),
+          ]
+        : []),
     ]);
 
     await markSpeciesSeen(userId, battle.wildSpeciesId);
@@ -162,7 +180,7 @@ export async function attemptCapture(
         speciesId: species.id,
         name: species.name,
         level: battle.wildLevel,
-        spriteUrl: species.spriteUrl,
+        spriteUrl: spriteFor(species.spriteUrl, battle.wildIsShiny),
         types: species.types,
         maxHp: calculateMaxHp(species.baseHp, battle.wildLevel),
         stats: {
@@ -177,6 +195,8 @@ export async function attemptCapture(
           return { moveId: m.id, name: m.name, type: m.type, pp: m.pp };
         }),
         sentToPc: openSlot === null,
+        isShiny: battle.wildIsShiny,
+        shinyReward,
       },
     };
   }

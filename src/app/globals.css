@@ -99,6 +99,8 @@ html[data-icons="ready"] .material-symbols-outlined {
   /* Fallback hasta que MobileChrome mida la altura real (sin safe-area).
      Incluye el dock + el FAB de Combat que sobresale. */
   --bottom-nav-h: 5.25rem;
+  /* 0 en Safari; el early script lo pone en 34px en PWA standalone. */
+  --standalone-sat-bottom: 0px;
   --vv-gap: 0px;
 }
 
@@ -6044,13 +6046,15 @@ html.boot-splash-pending .boot-splash {
 .mobile-bottom-nav {
   position: fixed;
   inset-inline: 0;
-  bottom: 0;
+  /* Browser: var=0 → bottom 0. Standalone: early script pone 34px antes del paint. */
+  bottom: calc(-1 * var(--standalone-sat-bottom, 0px));
   z-index: 70;
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  /* Sólo arriba: el FAB sobresale. Sin gap lateral/inferior (pegado al borde). */
+  /* Sólo arriba: el FAB sobresale. El bottom lo completa --standalone-sat-bottom. */
   padding: 1.35rem 0 0;
+  padding-bottom: var(--standalone-sat-bottom, 0px);
   border: none;
   border-radius: 0;
   background: transparent;
@@ -10099,14 +10103,11 @@ html.boot-splash-pending .boot-splash {
   1. Bloquear el scroll del documento (`overflow:hidden`) sin acotar con
      `max-height: 100dvh` — ese tope deja una franja muerta bajo los fixed.
   2. Mover el scroll a `.app-main` con `overscroll-behavior-y: contain`.
-  3. En iOS standalone no hay barra de Safari: `bottom: 0` cae en el borde
-     *safe* (arriba del home indicator). Empujamos al borde físico con
-     `bottom: -34px` + `padding-bottom: 34px` FIJOS (sin env()). El dock no
-     vuelve a sumar safe-area (evitar doble hueco).
-
-  El salto al navegar/refrescar se evita clavando el mismo offset en:
-  critical CSS, globals, early script (inline !important) y MobileChrome
-  (re-pin en useLayoutEffect por ruta). Nunca limpiar style.bottom en standalone.
+  3. Offset vía `--standalone-sat-bottom` (0 browser / 34px standalone),
+     seteado por el early script ANTES del primer paint. El nav base ya lee
+     esa var — no hace falta pelear con bottom:0 → -34px al hidratar.
+  4. visibility:hidden hasta data-sat-pinned evita ver un frame elevado si
+     iOS tarda en aplicar display-mode:standalone.
 */
 @media all and (display-mode: standalone) {
   html {
@@ -10139,9 +10140,7 @@ html.boot-splash-pending .boot-splash {
   }
 
   .mobile-bottom-nav {
-    bottom: -34px !important;
     margin-bottom: 0 !important;
-    padding-bottom: 34px !important;
     background-color: #0a0b11;
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -10182,9 +10181,7 @@ html.is-standalone .mobile-top-chrome {
 }
 
 html.is-standalone .mobile-bottom-nav {
-  bottom: -34px !important;
   margin-bottom: 0 !important;
-  padding-bottom: 34px !important;
   background-color: #0a0b11;
   transform: translateZ(0);
   backface-visibility: hidden;

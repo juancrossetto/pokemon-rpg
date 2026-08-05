@@ -13,6 +13,7 @@ type EvolvePopupProps = {
   fromSpriteUrl: string | null;
   toName: string;
   toSpriteUrl: string;
+  isShiny?: boolean;
   labels: {
     /** “¿Qué? ¡X está evolucionando!” */
     evolving: string;
@@ -33,11 +34,12 @@ export function EvolvePopup({
   fromSpriteUrl,
   toName,
   toSpriteUrl,
+  isShiny = false,
   labels,
   onContinue,
 }: EvolvePopupProps) {
-  const fromSrc = fromSpriteUrl ? spriteFor(fromSpriteUrl, false) : null;
-  const toSrc = spriteFor(toSpriteUrl, false);
+  const fromSrc = fromSpriteUrl ? spriteFor(fromSpriteUrl, isShiny) : null;
+  const toSrc = spriteFor(toSpriteUrl, isShiny);
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<EvolvePhase>("intro");
   /** En morph: true = silueta “to”, false = silueta “from”. */

@@ -100,6 +100,7 @@ export interface TeamMember {
   }[];
   isFavorite: boolean;
   isTradeLocked: boolean;
+  isShiny: boolean;
 }
 
 export interface TeamRosterLabels {
@@ -128,6 +129,7 @@ export interface TeamRosterLabels {
   evolving: string;
   canEvolveBadge: string;
   favoriteBadge: string;
+  shinyBadge: string;
   showDetails: string;
   hideDetails: string;
   tabAbout: string;
@@ -401,6 +403,7 @@ function PokemonCard({
           lead: member.isLead ? labels.lead : null,
           level: member.levelLabel,
           favorite: member.isFavorite ? labels.favoriteBadge : null,
+          shiny: member.isShiny ? labels.shinyBadge : null,
           canEvolve: canEvolve ? labels.canEvolveBadge : null,
           heldItem: member.heldItem?.displayName ?? null,
         }}
