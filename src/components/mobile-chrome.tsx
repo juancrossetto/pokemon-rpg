@@ -921,7 +921,7 @@ export function MobileChrome({
       */}
       <nav
         ref={bottomNavRef}
-        className="mobile-bottom-nav xl:hidden"
+        className={`mobile-bottom-nav xl:hidden${lockedHref ? " mobile-bottom-nav--locked" : ""}`}
       >
         {lockedHref && lockedLabel ? (
           <div
@@ -1199,7 +1199,7 @@ export function MobileChrome({
 
             <div
               data-nav-scroll
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3 [-webkit-overflow-scrolling:touch]"
+              className="min-h-0 flex-1 basis-0 overflow-y-auto overscroll-contain px-3 pb-3"
               onTouchStart={onGroupSwipeStart}
               onTouchEnd={onGroupSwipeEnd}
               onTouchCancel={() => {
@@ -1235,7 +1235,7 @@ export function MobileChrome({
               )}
             </div>
 
-            <div className="mobile-nav-sheet__footer shrink-0 px-4 pt-3 pb-3">
+            <div className="mobile-nav-sheet__footer relative z-[2] shrink-0 px-4 pt-3 pb-3">
               {groupMode && groups.length > 0 ? (
                 <button
                   type="button"

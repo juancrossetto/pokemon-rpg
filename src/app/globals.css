@@ -6811,6 +6811,8 @@ html.boot-splash-pending .boot-splash {
 }
 
 .mobile-nav-sheet__footer {
+  position: relative;
+  z-index: 2;
   border-top: 1px solid color-mix(in srgb, white 6%, transparent);
   background: #0c0e14;
 }
@@ -10231,7 +10233,9 @@ html.boot-splash-pending .boot-splash {
     bottom: 0 !important;
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
-    background-color: #0a0b11;
+    /* NO pintar el wrapper: el padding-top (FAB) tapaba batalla y el sheet
+       en iOS. El color vive en el dock (+ ::after bajo el home indicator). */
+    background-color: transparent;
     transform: translateZ(0);
     backface-visibility: hidden;
   }
@@ -10242,13 +10246,13 @@ html.boot-splash-pending .boot-splash {
     left: 0;
     right: 0;
     top: 100%;
-    height: 50px;
+    height: 34px;
     background: #0a0b11;
     pointer-events: none;
   }
 
   .mobile-bottom-nav__dock {
-    padding-bottom: 34px !important;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
@@ -10285,7 +10289,8 @@ html.is-standalone .mobile-bottom-nav {
   bottom: 0 !important;
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
-  background-color: #0a0b11;
+  /* Igual que display-mode:standalone — no pintar el padding FAB. */
+  background-color: transparent;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
@@ -10296,13 +10301,18 @@ html.is-standalone .mobile-bottom-nav::after {
   left: 0;
   right: 0;
   top: 100%;
-  height: 50px;
+  height: 34px;
   background: #0a0b11;
   pointer-events: none;
 }
 
 html.is-standalone .mobile-bottom-nav__dock {
-  padding-bottom: 34px !important;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* Sin FAB (batalla / dock flat): no reservar 1.35rem arriba del dock. */
+.mobile-bottom-nav--locked {
+  padding-top: 0;
 }
 
 /* Indicador del selector de secciones del perfil. Mismo rebote elástico que el
