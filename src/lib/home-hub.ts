@@ -31,6 +31,8 @@ export type HomeIdentity = {
   country: string | null;
   /** Tipos del favorito (o líder) — firman el flúor del banner. */
   companionTypes: string[];
+  /** Id de HOME_BANNER_OPTIONS — arte de fondo del banner de home. */
+  homeBannerId: string | null;
 };
 
 /** Tile de “acciones diarias” (ex Quick Access). */

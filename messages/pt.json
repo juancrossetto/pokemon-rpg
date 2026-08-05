@@ -20,6 +20,7 @@
     "shop": "Loja",
     "pc": "PC",
     "inventory": "Inventário",
+    "bag": "Bag",
     "login": "Entrar",
     "register": "Criar conta",
     "logout": "Sair",
@@ -27,6 +28,8 @@
     "trainer": "Treinador",
     "inBattle": "Em combate",
     "inGym": "No ginásio",
+    "inTower": "Na Torre",
+    "lockedNavHint": "Termine ou saia para navegar",
     "ranking": "Tabelas",
     "friends": "Amigos",
     "clans": "Clãs",
@@ -82,8 +85,7 @@
     "swipeGroups": "Deslize para trocar de grupo",
     "events": "Eventos",
     "profile": "Meu perfil",
-    "tower": "Torre",
-    "inTower": "Na Torre"
+    "tower": "Torre"
   },
   "notifications": {
     "eyebrow": "Alertas ao vivo",
@@ -2681,6 +2683,15 @@
       "change": "Mudar retrato",
       "title": "Escolha seu retrato",
       "hint": "Aparece no seu perfil e no ranking.",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "cancel": "Cancelar",
+      "error": "Não foi possível salvar. Tente de novo."
+    },
+    "banner": {
+      "change": "Mudar banner",
+      "title": "Escolha seu banner",
+      "hint": "Aparece no início e no seu perfil.",
       "save": "Salvar",
       "saving": "Salvando…",
       "cancel": "Cancelar",

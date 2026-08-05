@@ -541,6 +541,10 @@ body {
 /**
  * Título de pantalla / h1 de hubs. Grobold + uppercase.
  * El tamaño lo aporta el caller (`text-headline-lg`, clamp, …).
+ *
+ * Usar con mesura: solo el título hero de la pantalla (y CTAs via `.game-cta`).
+ * No en nombres de NPCs/Pokémon, estados, labels de fila ni meta copy —
+ * ahí va Inter (`font-semibold` / `text-white`).
  */
 @utility page-title {
   font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
@@ -3171,6 +3175,44 @@ body {
   animation: loot-target-pulse 0.7s ease-out;
 }
 
+/* Collect FX: ítem vuela del botón de claim al avatar / pastilla. */
+.loot-fly-chip {
+  --loot-dx: 0px;
+  --loot-dy: 0px;
+  position: fixed;
+  z-index: 90;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: -1.25rem 0 0 -1.25rem;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.loot-fly-chip img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.55));
+}
+
+.loot-fly-chip.is-flying {
+  animation: loot-fly-chip-move 680ms cubic-bezier(0.4, 0.05, 0.65, 1) forwards;
+}
+
+@keyframes loot-fly-chip-move {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--loot-dx), var(--loot-dy)) scale(0.22);
+    opacity: 0.12;
+  }
+}
+
 /* Home hub panels — look de juego (pulse / reward bob). */
 @keyframes home-panel-pulse {
   0%,
@@ -4568,7 +4610,8 @@ body {
   .center-heal-spark,
   .coin-delta-float,
   .coin-spin-nudge,
-  .loot-target-pulse {
+  .loot-target-pulse,
+  .loot-fly-chip.is-flying {
     animation: none;
   }
 }
@@ -6323,6 +6366,82 @@ html.boot-splash-pending .boot-splash {
   .friends-filter-indicator {
     transition: none;
   }
+}
+
+/* ── Home identity banner ─────────────────────────────────────────────────
+   Arte visible + scrim local al copy. `.home-identity__frame` es el slot de
+   marco (default sutil; PNG premium vía `frameSrc`). */
+.home-identity__wash {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(8, 10, 16, 0.18) 0%,
+      transparent 38%,
+      rgba(8, 10, 16, 0.32) 100%
+    ),
+    radial-gradient(120% 90% at 100% 50%, rgba(8, 10, 16, 0.12) 0%, transparent 55%);
+}
+
+.home-identity__scrim {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(8, 10, 16, 0.72) 0%,
+    rgba(8, 10, 16, 0.48) 28%,
+    rgba(8, 10, 16, 0.18) 52%,
+    transparent 68%
+  );
+}
+
+.home-identity__fluor {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      100% 80% at 0% 0%,
+      color-mix(in srgb, var(--hi-fluor-from) 18%, transparent) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      70% 70% at 100% 15%,
+      color-mix(in srgb, var(--hi-fluor-to) 12%, transparent) 0%,
+      transparent 48%
+    );
+}
+
+.home-identity__frame {
+  pointer-events: none;
+  position: absolute;
+  inset: 3px;
+  z-index: 1;
+  border-radius: calc(1rem - 2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1.5px rgba(0, 0, 0, 0.2),
+    0 10px 28px rgba(0, 0, 0, 0.32);
+}
+
+.home-identity__frame::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: calc(0.85rem - 2px);
+  border: 1px solid color-mix(in srgb, white 12%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+  opacity: 0.75;
+}
+
+.home-identity__copy {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.65),
+    0 0 18px rgba(0, 0, 0, 0.35);
 }
 
 /* ── Mobile bottom nav (PWA dock) ─────────────────────────────────────────
@@ -10505,6 +10624,75 @@ html.is-standalone .mobile-bottom-nav__dock {
   padding-top: 0;
 }
 
+/* Status strip en run locked (gimnasio / torre / combate): misma superficie
+   que el dock, sin card interno — solo icono + texto informativo. */
+.mobile-bottom-nav__dock--status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 0.4rem 0.85rem max(0.4rem, env(safe-area-inset-bottom, 0px));
+  border-radius: 1rem 1rem 0 0;
+}
+
+.mobile-nav-status {
+  pointer-events: auto;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 0;
+  padding: 0.15rem 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #fff;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav-status__art {
+  flex-shrink: 0;
+  width: 1.85rem;
+  height: 1.85rem;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+
+.mobile-nav-status__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.12rem;
+  text-align: left;
+}
+
+.mobile-nav-status__label {
+  overflow: hidden;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: color-mix(in srgb, white 88%, var(--color-pokeball-red));
+}
+
+.mobile-nav-status__hint {
+  overflow: hidden;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: color-mix(in srgb, white 48%, transparent);
+}
+
 /* Indicador del selector de secciones del perfil. Mismo rebote elástico que el
    de la barra de navegación, para que los dos selectores de la app se muevan
    igual. */
@@ -10597,11 +10785,21 @@ html.is-standalone .mobile-bottom-nav__dock {
     linear-gradient(180deg, #0d1015 0%, #08090d 55%, #050609 100%);
 }
 
+.tp-hero--bannered {
+  background: #08090d;
+}
+
 .tp-hero > span[aria-hidden] {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
+}
+
+.tp-hero__wash {
+  background:
+    linear-gradient(180deg, rgba(8, 10, 16, 0.35) 0%, rgba(8, 10, 16, 0.55) 55%, rgba(5, 6, 9, 0.78) 100%),
+    linear-gradient(90deg, rgba(8, 10, 16, 0.25) 0%, transparent 40%, rgba(8, 10, 16, 0.25) 100%);
 }
 
 /* Cenital: cono de luz desde arriba del centro. Va apenas teñido con el color
@@ -10649,10 +10847,20 @@ html.is-standalone .mobile-bottom-nav__dock {
 /* Viñeta + filo caliente abajo: hunde las esquinas y cierra la card. */
 .tp-hero__vignette {
   background:
-    radial-gradient(80% 66% at 50% 46%, transparent 30%, rgba(0, 0, 0, 0.78) 100%),
+    radial-gradient(80% 66% at 50% 46%, transparent 30%, rgba(0, 0, 0, 0.55) 100%),
     linear-gradient(
       0deg,
       color-mix(in srgb, var(--hero-accent) 22%, transparent) 0%,
+      transparent 7%
+    );
+}
+
+.tp-hero--bannered .tp-hero__vignette {
+  background:
+    radial-gradient(80% 66% at 50% 46%, transparent 38%, rgba(0, 0, 0, 0.42) 100%),
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--hero-accent) 18%, transparent) 0%,
       transparent 7%
     );
 }

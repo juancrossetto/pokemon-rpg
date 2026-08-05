@@ -72,6 +72,7 @@ export function UserMenu({
         // El contenedor sigue la silueta de la placa: con `rounded-full` el
         // anillo de foco dibujaba un círculo alrededor de un avatar cuadrado.
         className="group relative flex items-center justify-center rounded-[28%] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40"
+        data-loot-target="avatar"
       >
         <TrainerAvatar name={name} src={avatar?.src ?? null} size="xs" active={open} />
       </button>

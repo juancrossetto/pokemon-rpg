@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { abandonGymRun } from "@/actions/abandon-gym-run";
+import { ConfirmModal } from "@/components/confirm-modal";
+import { GameCtaButton } from "@/components/game-cta-button";
 
 export function GymRunExitButton({
   gymRunId,
@@ -19,44 +21,38 @@ export function GymRunExitButton({
   };
 }) {
   const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   return (
     <>
-      <button
+      <GameCtaButton
         type="button"
+        variant="secondary"
+        icon="logout"
+        disabled={pending}
         onClick={() => setOpen(true)}
-        className="w-full flex items-center justify-center gap-2 rounded-xl bg-error/15 border border-error/35 px-4 py-3 text-label-md text-error/90 hover:bg-error/25 hover:border-error/50 hover:text-error transition-all"
+        className="mb-0!"
       >
-        <span className="material-symbols-outlined text-[18px]!">warning</span>
         {labels.emergencyExit}
-      </button>
+      </GameCtaButton>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-margin-mobile">
-          <div className="glass-panel border-error/50 p-6 max-w-sm w-full text-center">
-            <span className="material-symbols-outlined text-[40px]! text-error">warning</span>
-            <h3 className="text-headline-md text-error mt-2">{labels.warningTitle}</h3>
-            <p className="text-label-md text-on-surface-variant mt-2">{labels.warningBody}</p>
-            <div className="flex flex-col gap-2 mt-6">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="w-full ui-btn-primary px-4 py-2 text-label-md"
-              >
-                {labels.returnToChallenge}
-              </button>
-              <form action={abandonGymRun.bind(null, gymRunId, locale)}>
-                <button
-                  type="submit"
-                  className="w-full rounded-lg border border-white/20 px-4 py-2 text-label-md text-on-surface-variant hover:text-on-surface transition-colors"
-                >
-                  {labels.confirmExit}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={open}
+        title={labels.warningTitle}
+        body={labels.warningBody}
+        confirmLabel={labels.confirmExit}
+        cancelLabel={labels.returnToChallenge}
+        tone="danger"
+        pending={pending}
+        onCancel={() => {
+          if (!pending) setOpen(false);
+        }}
+        onConfirm={() => {
+          startTransition(async () => {
+            await abandonGymRun(gymRunId, locale);
+          });
+        }}
+      />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { getTranslations, getLocale } from "next-intl/server";
+import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -8,7 +9,12 @@ import { UserMenu } from "@/components/user-menu";
 import { MobileChrome } from "@/components/mobile-chrome";
 import { ResourceBar, type ResourceBarLabels } from "@/components/resource-bar";
 import { NavLinks, type NavLabels } from "@/components/nav-links";
-import { MOBILE_BAR_GROUPS, NAV_GROUPS, visibleChildren } from "@/lib/navigation";
+import {
+  findNavItem,
+  MOBILE_BAR_SLOTS,
+  NAV_GROUPS,
+  visibleChildren,
+} from "@/lib/navigation";
 import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { listNotifications } from "@/lib/notifications";
@@ -99,6 +105,15 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         : lock?.kind === "tower"
           ? t("inTower")
           : null;
+  const lockedHint = lockedHref ? t("lockedNavHint") : null;
+  const lockedIconSrc =
+    lock?.kind === "gym"
+      ? "/nav/gym-icon.png?v=4"
+      : lock?.kind === "tower"
+        ? "/nav/tower-icon.png?v=4"
+        : lock?.kind === "battle"
+          ? "/nav/battle-icon.png?v=4"
+          : null;
 
   /**
    * Etiquetas de la navegación, resueltas una sola vez en el servidor. Los
@@ -130,36 +145,54 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   };
 
   /**
-   * Bottom bar de mobile: Inicio + tres grupos frecuentes + Menú. Cada grupo
-   * apunta a su primer destino, que es el de entrada natural de la sección
-   * (Aventura → Viaje, Combate → Batalla salvaje, Colección → Mi equipo).
+   * Bottom bar de mobile: Inicio + Aventura + Combate + Bag + Menú.
+   * Bag es atajo directo a /inventory (sin mini-sheet de Colección).
    */
-  const primary = session?.user
-    ? [
-        { href: "/", label: t("home"), icon: "home", iconSrc: "/nav/home-icon.png?v=4" },
-        ...MOBILE_BAR_GROUPS.flatMap((id) => {
-          const group = NAV_GROUPS.find((g) => g.id === id);
-          const first = group ? visibleChildren(group)[0] : undefined;
-          return group && first
-            ? [
-                {
-                  href: first.href,
-                  label: t(group.labelKey),
-                  icon: group.icon,
-                  groupId: group.id,
-                  ...(group.id === "combat"
-                    ? { iconSrc: "/nav/battle-icon.png?v=4" }
-                    : group.id === "adventure"
-                      ? { iconSrc: "/nav/adventure-icon.png?v=4" }
-                      : group.id === "collection"
-                        ? { iconSrc: "/nav/collection-icon.png?v=4" }
-                        : {}),
-                },
-              ]
-            : [];
-        }),
-      ]
-    : [];
+  type MobilePrimaryLink = {
+    href: string;
+    label: string;
+    icon: string;
+    iconSrc?: string;
+    groupId?: string;
+    lootTarget?: "inventory";
+  };
+  const primary: MobilePrimaryLink[] = [];
+  if (session?.user) {
+    primary.push({
+      href: "/",
+      label: t("home"),
+      icon: "home",
+      iconSrc: "/nav/home-icon.png?v=4",
+    });
+    for (const slot of MOBILE_BAR_SLOTS) {
+      if (slot.kind === "item") {
+        const item = findNavItem(slot.id);
+        if (!item) continue;
+        primary.push({
+          href: "/inventory",
+          label: t("bag"),
+          icon: item.icon,
+          iconSrc: item.iconSrc ?? "/nav/bag-icon.png?v=4",
+          lootTarget: "inventory",
+        });
+        continue;
+      }
+      const group = NAV_GROUPS.find((g) => g.id === slot.id);
+      const first = group ? visibleChildren(group)[0] : undefined;
+      if (!group || !first) continue;
+      primary.push({
+        href: first.href,
+        label: t(group.labelKey),
+        icon: group.icon,
+        groupId: group.id,
+        ...(group.id === "combat"
+          ? { iconSrc: "/nav/battle-icon.png?v=4" }
+          : group.id === "adventure"
+            ? { iconSrc: "/nav/adventure-icon.png?v=4" }
+            : {}),
+      });
+    }
+  }
 
   const brandHref = lockedHref ?? (session?.user ? "/" : "/login");
 
@@ -185,12 +218,30 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
             <div className="ml-4 flex items-center gap-1">
               <Link
                 href={lockedHref}
-                className="inline-flex items-center gap-1.5 rounded-md border border-pokeball-red/50 bg-pokeball-red/15 px-3 py-1 text-label-sm font-bold text-pokeball-red"
+                className="inline-flex items-center gap-2 rounded-full border border-pokeball-red/40 bg-pokeball-red/12 py-1 pl-1.5 pr-3 text-label-sm font-bold text-pokeball-red"
               >
-                <span className="material-symbols-outlined text-[16px]!">
-                  {lock?.kind === "gym" ? "military_tech" : "swords"}
+                {lockedIconSrc ? (
+                  <Image
+                    src={lockedIconSrc}
+                    alt=""
+                    width={22}
+                    height={22}
+                    className="h-[22px] w-[22px] object-contain"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="material-symbols-outlined text-[16px]!">
+                    {lock?.kind === "gym" ? "military_tech" : "swords"}
+                  </span>
+                )}
+                <span className="flex min-w-0 flex-col leading-tight">
+                  <span>{lockedLabel}</span>
+                  {lockedHint ? (
+                    <span className="text-[10px] font-medium tracking-normal text-white/45 normal-case">
+                      {lockedHint}
+                    </span>
+                  ) : null}
                 </span>
-                {lockedLabel}
               </Link>
             </div>
           ) : (
@@ -265,7 +316,8 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         profileLabel={t("profile")}
         lockedHref={lockedHref}
         lockedLabel={lockedLabel}
-        lockedIcon={lock?.kind === "gym" ? "military_tech" : "swords"}
+        lockedHint={lockedHint}
+        lockedIconSrc={lockedIconSrc}
         primary={primary}
         groups={session?.user ? NAV_GROUPS : []}
         navLabels={navLabels}

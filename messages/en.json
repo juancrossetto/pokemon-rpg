@@ -20,6 +20,7 @@
     "shop": "Shop",
     "pc": "PC",
     "inventory": "Bag",
+    "bag": "Bag",
     "login": "Log in",
     "register": "Create account",
     "logout": "Log out",
@@ -27,6 +28,8 @@
     "trainer": "Trainer",
     "inBattle": "In battle",
     "inGym": "In the gym",
+    "inTower": "In the Tower",
+    "lockedNavHint": "Finish or exit to browse",
     "ranking": "Leaderboards",
     "friends": "Friends",
     "clans": "Clans",
@@ -82,8 +85,7 @@
     "swipeGroups": "Swipe to switch groups",
     "events": "Events",
     "profile": "My profile",
-    "tower": "Tower",
-    "inTower": "In the Tower"
+    "tower": "Tower"
   },
   "notifications": {
     "eyebrow": "Live alerts",
@@ -2681,6 +2683,15 @@
       "change": "Change portrait",
       "title": "Choose your portrait",
       "hint": "Shown on your profile and in the ranking.",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "error": "Couldn't save. Try again."
+    },
+    "banner": {
+      "change": "Change banner",
+      "title": "Choose your banner",
+      "hint": "Shown on Home and on your profile.",
       "save": "Save",
       "saving": "Saving…",
       "cancel": "Cancel",

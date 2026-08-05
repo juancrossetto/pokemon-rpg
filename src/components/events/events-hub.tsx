@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { itemHdIconUrl } from "@/lib/item-sprites";
@@ -10,8 +9,8 @@ import {
   claimEventMission,
   claimWeeklyMilestone,
 } from "@/actions/claim-reward";
-import { announceCoinDelta } from "@/lib/coin-fx";
-import { RewardChip, RewardList } from "@/components/events/reward-chip";
+import { playRewardCollectFx } from "@/lib/loot-fly-fx";
+import { RewardList } from "@/components/events/reward-chip";
 import { DailyCalendar } from "@/components/events/daily-calendar";
 import type { RewardDef } from "@/lib/events/rewards";
 import type { DailyState, LimitedEventState, WeeklyState } from "@/lib/events/state";
@@ -110,7 +109,6 @@ export function EventsHub({
   locale: string;
 }) {
   const now = useSharedClock();
-  const [reveal, setReveal] = useState<RewardDef[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function onError(code: string) {
@@ -161,7 +159,6 @@ export function EventsHub({
         labels={labels}
         locale={locale}
         now={now}
-        onReveal={setReveal}
         onError={onError}
         clearError={() => setError(null)}
       />
@@ -171,7 +168,6 @@ export function EventsHub({
         labels={labels}
         locale={locale}
         now={now}
-        onReveal={setReveal}
         onError={onError}
         clearError={() => setError(null)}
       />
@@ -181,14 +177,9 @@ export function EventsHub({
         labels={labels}
         locale={locale}
         now={now}
-        onReveal={setReveal}
         onError={onError}
         clearError={() => setError(null)}
       />
-
-      {reveal && (
-        <RewardReveal rewards={reveal} labels={labels} onClose={() => setReveal(null)} />
-      )}
     </div>
   );
 }
@@ -205,7 +196,6 @@ function LimitedPanel({
   labels,
   locale,
   now,
-  onReveal,
   onError,
   clearError,
 }: {
@@ -213,7 +203,6 @@ function LimitedPanel({
   labels: EventsLabels;
   locale: string;
   now: number;
-  onReveal: (rewards: RewardDef[]) => void;
   onError: (code: string) => void;
   clearError: () => void;
 }) {
@@ -222,7 +211,7 @@ function LimitedPanel({
   const remaining = new Date(limited.endsAt).getTime() - now;
   const accent = limited.accent;
 
-  function claim(missionId: string) {
+  function claim(missionId: string, origin?: { x: number; y: number }) {
     if (pending) return;
     clearError();
     setBusy(missionId);
@@ -233,8 +222,7 @@ function LimitedPanel({
         onError(result.error);
         return;
       }
-      if (result.coinsDelta !== 0) announceCoinDelta(result.coinsDelta);
-      onReveal(result.granted);
+      playRewardCollectFx(result.granted, origin);
     });
   }
 
@@ -311,7 +299,13 @@ function LimitedPanel({
                 ) : mission.claimable ? (
                   <button
                     type="button"
-                    onClick={() => claim(mission.id)}
+                    onClick={(event) => {
+                      const r = event.currentTarget.getBoundingClientRect();
+                      claim(mission.id, {
+                        x: r.left + r.width / 2,
+                        y: r.top + r.height / 2,
+                      });
+                    }}
                     disabled={pending}
                     className="ev-cta ev-cta--solid"
                   >
@@ -404,7 +398,6 @@ function DailyPanel({
   labels,
   locale,
   now,
-  onReveal,
   onError,
   clearError,
 }: {
@@ -412,14 +405,13 @@ function DailyPanel({
   labels: EventsLabels;
   locale: string;
   now: number;
-  onReveal: (rewards: RewardDef[]) => void;
   onError: (code: string) => void;
   clearError: () => void;
 }) {
   const [pending, startTransition] = useTransition();
   const remaining = new Date(daily.nextResetAt).getTime() - now;
 
-  function claim() {
+  function claim(origin?: { x: number; y: number }) {
     if (pending || !daily.canClaim) return;
     clearError();
     startTransition(async () => {
@@ -428,8 +420,7 @@ function DailyPanel({
         onError(result.error);
         return;
       }
-      if (result.coinsDelta !== 0) announceCoinDelta(result.coinsDelta);
-      onReveal(result.granted);
+      playRewardCollectFx(result.granted, origin);
     });
   }
 
@@ -470,7 +461,13 @@ function DailyPanel({
           {daily.canClaim ? (
             <button
               type="button"
-              onClick={claim}
+              onClick={(event) => {
+                const r = event.currentTarget.getBoundingClientRect();
+                claim({
+                  x: r.left + r.width / 2,
+                  y: r.top + r.height / 2,
+                });
+              }}
               disabled={pending}
               className="ev-cta ev-cta--solid ev-daily__claim"
             >
@@ -500,7 +497,6 @@ function WeeklyPanel({
   labels,
   locale,
   now,
-  onReveal,
   onError,
   clearError,
 }: {
@@ -508,7 +504,6 @@ function WeeklyPanel({
   labels: EventsLabels;
   locale: string;
   now: number;
-  onReveal: (rewards: RewardDef[]) => void;
   onError: (code: string) => void;
   clearError: () => void;
 }) {
@@ -518,7 +513,7 @@ function WeeklyPanel({
   const accent = "#ec4899";
   const objectiveTotal = weekly.objectives.length;
 
-  function claim(milestone: number) {
+  function claim(milestone: number, origin?: { x: number; y: number }) {
     if (pending) return;
     clearError();
     setBusy(milestone);
@@ -529,8 +524,7 @@ function WeeklyPanel({
         onError(result.error);
         return;
       }
-      if (result.coinsDelta !== 0) announceCoinDelta(result.coinsDelta);
-      onReveal(result.granted);
+      playRewardCollectFx(result.granted, origin);
     });
   }
 
@@ -645,7 +639,13 @@ function WeeklyPanel({
                 ) : milestone.claimable ? (
                   <button
                     type="button"
-                    onClick={() => claim(milestone.percent)}
+                    onClick={(event) => {
+                      const r = event.currentTarget.getBoundingClientRect();
+                      claim(milestone.percent, {
+                        x: r.left + r.width / 2,
+                        y: r.top + r.height / 2,
+                      });
+                    }}
                     disabled={pending}
                     className="ev-cta ev-cta--solid"
                   >
@@ -660,118 +660,5 @@ function WeeklyPanel({
         })}
       </ul>
     </section>
-  );
-}
-
-/* ── Confirmación de recompensa ───────────────────────────────────────── */
-
-/**
- * Panel de confirmación reutilizable: muestra lo que efectivamente entregó el
- * servidor, no lo que el cliente esperaba. Si una recompensa se omitió por
- * faltar del catálogo, acá no aparece —y eso es correcto: se informa lo real.
- */
-function RewardReveal({
-  rewards,
-  labels,
-  onClose,
-}: {
-  rewards: RewardDef[];
-  labels: EventsLabels;
-  onClose: () => void;
-}) {
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", onKey);
-    panelRef.current?.querySelector<HTMLButtonElement>("[data-autofocus]")?.focus();
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
-    };
-  }, [onClose]);
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center"
-      role="presentation"
-    >
-      <button
-        type="button"
-        aria-label={labels.close}
-        onClick={onClose}
-        className="market-sheet-backdrop-in absolute inset-0 bg-black/70 backdrop-blur-sm"
-      />
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="reward-reveal-title"
-        className="market-sheet-in reward-halo relative w-full max-w-sm overflow-hidden rounded-t-2xl border-t border-tertiary/25 bg-[#0b0d13]/98 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center backdrop-blur-xl sm:rounded-2xl sm:border sm:pb-5"
-      >
-        {/* Línea superior teñida: marca que es un panel de premio sin teñir la
-            card entera ni recurrir a un gradiente fuerte. */}
-        <span
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-tertiary/70 to-transparent"
-        />
-
-        <span
-          aria-hidden
-          className="relative mx-auto grid h-12 w-12 place-items-center rounded-full border border-tertiary/30 bg-tertiary/10"
-        >
-          <span className="material-symbols-outlined text-[26px]! text-tertiary">redeem</span>
-        </span>
-        <h2
-          id="reward-reveal-title"
-          className="relative mt-2 text-headline-md tracking-tight text-white"
-        >
-          {labels.revealTitle}
-        </h2>
-
-        {/*
-          Una recompensa ocupa una tarjeta ancha; varias se reparten en fila.
-          Antes una sola quedaba en una caja enorme y vacía, que es lo que hacía
-          ver el panel desangelado.
-        */}
-        <ul
-          className={`relative mt-4 grid gap-2 ${
-            rewards.length === 1 ? "grid-cols-1" : "grid-cols-2"
-          }`}
-        >
-          {rewards.map((reward, index) => (
-            <li
-              key={`${reward.kind}-${index}`}
-              className="reward-pop flex items-center justify-center gap-2 rounded-xl border border-tertiary/20 bg-gradient-to-b from-white/[0.06] to-transparent px-3 py-3"
-              style={{ animationDelay: `${index * 90}ms` }}
-            >
-              <RewardChip reward={reward} size="lg" unitLabels={labels.rewards} />
-            </li>
-          ))}
-        </ul>
-
-        <div className="relative mt-5 flex items-center gap-2">
-          <Link
-            href="/inventory"
-            className="flex h-11 flex-1 items-center justify-center rounded-md border border-white/12 text-label-sm text-on-surface-variant transition hover:border-white/25"
-          >
-            {labels.revealInventory}
-          </Link>
-          <button
-            type="button"
-            data-autofocus
-            onClick={onClose}
-            className="ui-btn-primary h-11 flex-1 text-label-sm font-bold"
-          >
-            {labels.revealClose}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
   );
 }

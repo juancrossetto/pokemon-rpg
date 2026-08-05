@@ -1,13 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 import { FlagIcon } from "@/components/flag-icon";
 import { AvatarPicker, type AvatarPickerLabels } from "@/components/avatar-picker";
+import { BannerPicker, type BannerPickerLabels } from "@/components/banner-picker";
 import { TrainerProfileScene } from "@/components/profile/trainer-profile-scene";
 import { TrainerCpArc } from "@/components/profile/trainer-cp-arc";
 import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
 import { avatarById } from "@/lib/avatars";
+import { homeBannerById } from "@/lib/home-banners";
 import type { TrainerAppearance } from "@/lib/trainer-appearance";
 import type { PvpDivision, PvpTier } from "@/lib/pvp/tiers";
 
@@ -47,7 +50,9 @@ export function TrainerIdentityHero({
   appearance,
   canEdit,
   currentAvatarId,
+  currentBannerId,
   avatarLabels,
+  bannerLabels,
   labels,
 }: {
   username: string;
@@ -75,27 +80,28 @@ export function TrainerIdentityHero({
   appearance?: TrainerAppearance | null;
   canEdit: boolean;
   currentAvatarId: string | null;
+  currentBannerId: string | null;
   avatarLabels: AvatarPickerLabels;
+  bannerLabels: BannerPickerLabels;
   labels: IdentityHeroLabels;
 }) {
   /*
-    Retrato optimista. El servidor tarda en devolver el avatar nuevo porque el
-    guardado revalida el layout entero; mientras tanto el jugador ya eligió y
-    espera verlo. Este estado local pinta el cambio en el acto y el render del
-    servidor lo confirma después con el mismo valor.
-
-    `null` = todavía no se tocó nada en esta sesión y manda lo que vino del
-    servidor. El propio picker revierte llamando de nuevo si la escritura falla.
+    Retrato / banner optimistas. El servidor tarda en devolver el valor nuevo
+    porque el guardado revalida el layout entero; mientras tanto el jugador ya
+    eligió y espera verlo.
   */
   const [pickedAvatarId, setPickedAvatarId] = useState<string | null>(null);
+  const [pickedBannerId, setPickedBannerId] = useState<string | null>(null);
   const avatarId = pickedAvatarId ?? currentAvatarId;
+  const bannerId = pickedBannerId ?? currentBannerId;
+  const bannerSrc = homeBannerById(bannerId).src;
   const spriteUrl = pickedAvatarId
     ? (avatarById(pickedAvatarId)?.stageSrc ?? trainerSpriteUrl)
     : trainerSpriteUrl;
 
   return (
     <section
-      className="tp-hero relative overflow-hidden rounded-[1.75rem] border border-white/8"
+      className="tp-hero tp-hero--bannered relative overflow-hidden rounded-[1.75rem] border border-white/8"
       style={
         {
           "--hero-accent": companionAccent,
@@ -104,13 +110,25 @@ export function TrainerIdentityHero({
         } as React.CSSProperties
       }
     >
+      <div aria-hidden className="absolute inset-0 z-0">
+        <Image
+          src={bannerSrc}
+          alt=""
+          fill
+          priority
+          quality={90}
+          sizes="(max-width: 1280px) 100vw, 960px"
+          className="object-cover object-[center_40%]"
+        />
+      </div>
       {/* Capas del fondo. Ver `.tp-hero__*` en globals.css. */}
+      <span aria-hidden className="tp-hero__wash" />
       <span aria-hidden className="tp-hero__sweep" />
       <span aria-hidden className="tp-hero__grid" />
       <span aria-hidden className="tp-hero__scanline" />
       <span aria-hidden className="tp-hero__vignette" />
 
-      <div className="relative px-3 pb-6 pt-6 sm:px-5 sm:pt-7">
+      <div className="relative z-[1] px-3 pb-6 pt-6 sm:px-5 sm:pt-7">
         {/* Cabecera editorial: nombre → liga PvP → metadatos. Ver `.tp-id__*`. */}
         <div className="tp-id mb-1 text-center">
           <h1 className="tp-id__name">
@@ -178,7 +196,17 @@ export function TrainerIdentityHero({
             />
           </div>
           {canEdit && (
-            <div className="absolute bottom-0 right-0 z-10">
+            <div className="absolute bottom-0 right-0 z-10 flex flex-col gap-2">
+              <BannerPicker
+                currentBannerId={bannerId}
+                labels={bannerLabels}
+                showAffordance={false}
+                onSaved={setPickedBannerId}
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-[#14161c]/95 text-on-surface-variant shadow-lg backdrop-blur-md transition hover:border-white/40 hover:text-white">
+                  <span className="material-symbols-outlined text-[18px]!">wallpaper</span>
+                </span>
+              </BannerPicker>
               <AvatarPicker
                 currentAvatarId={avatarId}
                 labels={avatarLabels}

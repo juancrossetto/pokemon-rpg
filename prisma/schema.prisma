@@ -23,6 +23,8 @@ model User {
   gender          String? // "male" | "female" | "unspecified", opcional — puro perfil, sin efecto en mecánicas
   age             Int? // opcional
   avatarId        String? // referencia a AVATAR_OPTIONS en src/lib/avatars.ts, no una imagen — null = iniciales (comportamiento actual)
+  /// Banner de home/perfil — id de HOME_BANNER_OPTIONS (`src/lib/home-banners.ts`). null = default.
+  homeBannerId    String?
   coins           Int       @default(0)
   /// Moneda premium (gemas) — reservada para usos de PC / economía especial.
   gems            Int       @default(0)

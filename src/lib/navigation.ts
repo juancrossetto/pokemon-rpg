@@ -228,23 +228,35 @@ export const NAV_HOME: NavItem = {
 };
 
 /**
- * Destinos de la bottom bar de mobile: los cuatro de uso frecuente más el
+ * Destinos de la bottom bar de mobile: los de uso frecuente más el
  * botón de menú, que abre el drawer con la navegación completa.
  *
- * Se eligen por id contra `NAV_GROUPS` en vez de repetir las rutas, así un
- * cambio de href no deja la bottom bar apuntando a una ruta vieja.
+ * `group` = tab con mini-sheet al segundo toque.
+ * `item` = atajo directo (Bag → /inventory) sin drawer de grupo.
  */
-export const MOBILE_BAR_GROUPS = ["adventure", "combat", "collection"] as const;
+export type MobileBarSlot =
+  | { kind: "group"; id: "adventure" | "combat" }
+  | { kind: "item"; id: "inventory" };
+
+export const MOBILE_BAR_SLOTS: readonly MobileBarSlot[] = [
+  { kind: "group", id: "adventure" },
+  { kind: "group", id: "combat" },
+  { kind: "item", id: "inventory" },
+] as const;
+
+/** Ids de grupo presentes en la bottom bar (swipe del mini-sheet). */
+export const MOBILE_BAR_GROUPS = ["adventure", "combat"] as const;
 
 /**
- * Accesos rápidos del drawer mobile (fuera de los tres tabs de grupo).
+ * Accesos rápidos del drawer mobile (fuera de los tabs de grupo).
  * Se resuelven por id contra `NAV_GROUPS` para no duplicar href/iconos.
+ * Bag ya está en la barra: acá van equipo / Pokédex / ranking / mercado.
  */
 export const MOBILE_NAV_SHORTCUTS = [
+  "team",
   "pokedex",
   "ranking",
   "market",
-  "inventory",
 ] as const;
 
 export function visibleChildren(group: NavGroup): NavItem[] {
@@ -269,10 +281,10 @@ export function allNavIconSrcs(): string[] {
       if (child.iconSrc) urls.add(child.iconSrc);
     }
   }
-  // Tabs de la bottom bar (grupo, no ítem).
+  // Tabs de la bottom bar (grupo / atajo).
   urls.add("/nav/adventure-icon.png?v=4");
   urls.add("/nav/battle-icon.png?v=4");
-  urls.add("/nav/collection-icon.png?v=4");
+  urls.add("/nav/bag-icon.png?v=4");
   urls.add("/nav/menu-icon.png?v=4");
   return [...urls];
 }

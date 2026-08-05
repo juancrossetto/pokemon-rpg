@@ -99,10 +99,65 @@ export type GymChallengeCorridorProps = {
   labels: CorridorLabels;
 };
 
-const NODE = 48; // px — nodos alineados al mismo eje
+const NODE = 44;
+const COIN_ICON = "/items/hd/poke-coin.png";
+const XP_ICON = "/ui/exp.png";
+const ENERGY_ICON = "/items/hd/energy.png";
 
-function fmt(template: string, n: number) {
-  return template.replace("{n}", String(n));
+function RewardBits({
+  coins,
+  xp,
+  prefix = "",
+  tmName,
+  className = "",
+}: {
+  coins?: number;
+  xp?: number;
+  prefix?: "+" | "";
+  tmName?: string | null;
+  className?: string;
+}) {
+  const showCoins = typeof coins === "number" && coins > 0;
+  const showXp = typeof xp === "number" && xp > 0;
+  if (!showCoins && !showXp && !tmName) return null;
+
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] font-semibold tabular-nums text-white/80 ${className}`}
+    >
+      {showCoins ? (
+        <span className="inline-flex items-center gap-1">
+          {prefix ? <span className="text-white/55">{prefix}</span> : null}
+          <Image
+            src={COIN_ICON}
+            alt=""
+            width={16}
+            height={16}
+            className="h-4 w-4 object-contain"
+            unoptimized
+          />
+          {coins}
+        </span>
+      ) : null}
+      {showXp ? (
+        <span className="inline-flex items-center gap-1">
+          {prefix ? <span className="text-white/55">{prefix}</span> : null}
+          <Image
+            src={XP_ICON}
+            alt=""
+            width={16}
+            height={16}
+            className="h-4 w-4 object-contain"
+            unoptimized
+          />
+          {xp}
+        </span>
+      ) : null}
+      {tmName ? (
+        <span className="text-white/70">{tmName}</span>
+      ) : null}
+    </div>
+  );
 }
 
 function DifficultyPips({ value, accent }: { value: number; accent?: string }) {
@@ -113,7 +168,8 @@ function DifficultyPips({ value, accent }: { value: number; accent?: string }) {
           key={i}
           className="h-1 w-1 rounded-full"
           style={{
-            background: i < value ? (accent ?? "var(--color-pokeball-red)") : "rgba(255,255,255,0.15)",
+            background:
+              i < value ? (accent ?? "var(--color-pokeball-red)") : "rgba(255,255,255,0.15)",
             boxShadow: i < value && accent ? `0 0 4px ${accent}` : undefined,
           }}
         />
@@ -132,7 +188,7 @@ function TeamIcons({ team, reveal }: { team: CorridorTeamMember[]; reveal: boole
           return (
             <span
               key={i}
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-black/40 text-[10px] text-white/35"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.04] text-[10px] text-white/35 ring-1 ring-white/10"
             >
               ?
             </span>
@@ -141,7 +197,7 @@ function TeamIcons({ team, reveal }: { team: CorridorTeamMember[]; reveal: boole
         return (
           <span
             key={`${m.name}-${m.level}`}
-            className="relative h-7 w-7 overflow-hidden rounded-full border border-white/10 bg-black/40"
+            className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white/[0.04] ring-1 ring-white/10"
             title={`${m.name} Lv.${m.level}`}
           >
             <Image
@@ -149,7 +205,7 @@ function TeamIcons({ team, reveal }: { team: CorridorTeamMember[]; reveal: boole
               alt={m.name}
               width={28}
               height={28}
-              className="object-contain p-0.5"
+              className="h-7 w-7 object-contain"
               unoptimized
             />
           </span>
@@ -196,17 +252,20 @@ function ProgressBar({ pct, accent }: { pct: number; accent: string }) {
     const key = "gym-corridor-progress";
     const prev = Number(sessionStorage.getItem(key) ?? "0");
     const start = Number.isFinite(prev) ? Math.min(100, Math.max(0, prev)) : 0;
-    setDisplay(start);
-    const frame = requestAnimationFrame(() => setDisplay(pct));
+    // Primer tick post-montaje: evita setState síncrono en el efecto.
+    const boot = requestAnimationFrame(() => {
+      setDisplay(start);
+      requestAnimationFrame(() => setDisplay(pct));
+    });
     sessionStorage.setItem(key, String(pct));
-    return () => cancelAnimationFrame(frame);
+    return () => cancelAnimationFrame(boot);
   }, [pct]);
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+    <div className="flex items-center gap-2.5">
+      <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/10">
         <div
-          className="absolute inset-y-0 left-0 rounded-full gym-corridor-progress-fill"
+          className="absolute inset-y-0 left-0 rounded-full gym-corridor-progress-fill transition-[width] duration-500"
           style={{
             width: `${display}%`,
             background: `linear-gradient(90deg, ${accent}, var(--color-pokeball-red))`,
@@ -214,7 +273,7 @@ function ProgressBar({ pct, accent }: { pct: number; accent: string }) {
           }}
         />
       </div>
-      <span className="text-label-sm tabular-nums text-on-surface-variant w-9 text-right">
+      <span className="w-9 text-right text-[11px] font-semibold tabular-nums text-white/55">
         {Math.round(display)}%
       </span>
     </div>
@@ -223,31 +282,36 @@ function ProgressBar({ pct, accent }: { pct: number; accent: string }) {
 
 function CombatButton({
   label,
-  costHint,
+  energyCost,
   disabled,
 }: {
   label: string;
-  costHint: string;
+  energyCost: number;
   disabled?: boolean;
 }) {
   return (
-    <div className="space-y-1.5">
-      <button
-        type="submit"
-        disabled={disabled}
-        className="gym-corridor-combat-btn game-cta game-cta--red group relative !mb-0 w-full overflow-hidden disabled:pointer-events-none"
-      >
-        <span className="absolute inset-0 gym-corridor-combat-sheen opacity-0 group-hover:opacity-100 transition-opacity" />
-        <span className="relative z-10 flex items-center justify-center gap-2">
-          <span className="material-symbols-outlined text-[18px]!">swords</span>
-          {label}
-        </span>
-      </button>
-      <p className="text-center text-label-sm text-on-surface-variant flex items-center justify-center gap-1">
-        <span className="material-symbols-outlined text-[14px]! text-sky-400">bolt</span>
-        {costHint}
-      </p>
-    </div>
+    <button
+      type="submit"
+      disabled={disabled}
+      className="game-cta game-cta--red mb-0! gap-2 disabled:pointer-events-none sm:gap-2.5"
+    >
+      <span className="game-cta__label">{label}</span>
+      <span
+        aria-hidden
+        className="h-4 w-px shrink-0 bg-white/25"
+      />
+      <span className="inline-flex items-center gap-1 font-sans text-[13px] font-semibold tabular-nums tracking-normal text-white normal-case">
+        <Image
+          src={ENERGY_ICON}
+          alt=""
+          width={20}
+          height={20}
+          className="h-5 w-5 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
+          unoptimized
+        />
+        <span>−{energyCost}</span>
+      </span>
+    </button>
   );
 }
 
@@ -263,7 +327,8 @@ function PathNode({
   size?: number;
 }) {
   const isActive = status === "active";
-  const isLit = status === "entry" || status === "cleared" || status === "active" || status === "leader";
+  const isLit =
+    status === "entry" || status === "cleared" || status === "active" || status === "leader";
 
   let border = "rgba(255,255,255,0.12)";
   let boxShadow: string | undefined;
@@ -277,7 +342,7 @@ function PathNode({
 
   return (
     <div
-      className={`relative z-10 flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 bg-surface-container-highest ${
+      className={`relative z-10 flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 bg-[#12141c] ${
         isActive ? "gym-corridor-node-pulse" : ""
       }`}
       style={{ width: size, height: size, borderColor: border, boxShadow }}
@@ -320,6 +385,31 @@ function PathRail({ accent, fillPct }: { accent: string; fillPct: number }) {
   );
 }
 
+function StatusChip({
+  label,
+  tone,
+  accent,
+}: {
+  label: string;
+  tone: "active" | "cleared" | "locked";
+  accent: string;
+}) {
+  const color =
+    tone === "active"
+      ? accent
+      : tone === "cleared"
+        ? "rgba(255,255,255,0.45)"
+        : "rgba(255,255,255,0.28)";
+  return (
+    <span
+      className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.08em]"
+      style={{ color }}
+    >
+      {label}
+    </span>
+  );
+}
+
 export function GymChallengeCorridor({
   gymRunId,
   locale,
@@ -336,6 +426,7 @@ export function GymChallengeCorridor({
   trainers,
   clearedSlots,
   progressPct,
+  energyCost,
   canAffordBattle,
   energyError,
   leadError,
@@ -346,8 +437,7 @@ export function GymChallengeCorridor({
   const leaderUnlocked = clearedSlots >= trainers.length;
   const totalRooms = trainers.length + 1;
   const roomIndex = Math.min(clearedSlots + 1, totalRooms);
-  // Nodos: entrada + trainers + líder. La línea llega hasta el desafío actual.
-  const totalPathNodes = trainers.length + 1; // tramos desde entrada → líder
+  const totalPathNodes = trainers.length + 1;
   const pathFillPct = (Math.min(clearedSlots + 1, totalPathNodes) / totalPathNodes) * 100;
   const battleAction = startGymRunBattle.bind(null, gymRunId, locale);
 
@@ -371,95 +461,97 @@ export function GymChallengeCorridor({
         : labels.room.replace("{n}", String(roomIndex)).replace("{total}", String(totalRooms));
 
   return (
-    <div className="relative flex-1 overflow-hidden">
+    <div className="relative flex-1 overflow-x-hidden">
       <AmbienceLayer
         particle={theme.particle}
         accent={theme.accent}
         fogOpacity={theme.fogOpacity}
       />
 
-      <div className="relative z-10 px-margin-mobile md:px-margin-desktop py-6">
-        <div className="mx-auto max-w-xl">
-          {/* Header compacto */}
-          <header className="mb-4">
-            <div className="flex items-start justify-between gap-3 mb-1">
+      <div className="relative z-10 px-3 py-4 sm:px-6 sm:py-6 xl:px-8">
+        <div className="mx-auto w-full max-w-xl lg:max-w-2xl">
+          <header className="mb-4 sm:mb-5">
+            <div className="mb-2 flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-label-sm tracking-[0.12em] uppercase text-on-surface-variant">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-secondary">
                   {labels.title}
                 </p>
-                <h1 className="page-title truncate text-headline-lg text-white">{gymName}</h1>
+                <h1 className="page-title mt-1 truncate text-[1.45rem] leading-none tracking-tight text-white sm:text-[1.75rem]">
+                  {gymName}
+                </h1>
               </div>
-              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/40">
-                <Image src={badgeUrl} alt={badgeName} width={44} height={44} className="object-contain p-1" />
+              <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[#12141c] sm:h-14 sm:w-14">
+                <Image
+                  src={badgeUrl}
+                  alt={badgeName}
+                  width={48}
+                  height={48}
+                  className="h-9 w-9 object-contain sm:h-10 sm:w-10"
+                />
               </div>
             </div>
-            <p className="text-label-sm text-on-surface-variant mb-3">
+            <p className="mb-3 text-[12px] leading-snug text-white/50 sm:text-[13px]">
               {roomLabel}
-              <span className="text-white/25 mx-1.5">·</span>
+              <span className="mx-1.5 text-white/20">·</span>
               <span style={{ color: theme.accent }}>{typeLabel}</span>
-              <span className="text-white/25 mx-1.5">·</span>
+              <span className="mx-1.5 text-white/20">·</span>
               {leaderName}
             </p>
             <ProgressBar pct={progressPct} accent={theme.accent} />
           </header>
 
-          {/* Una sola franja de info */}
-          <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2.5 text-label-sm text-on-surface-variant">
-            <span>
-              {labels.finalReward}:{" "}
-              <span className="text-on-surface">{fmt(labels.coins, coinReward)}</span>
-              {tmRewardName ? (
-                <>
-                  <span className="text-white/25 mx-1">·</span>
-                  <span className="text-on-surface">{tmRewardName}</span>
-                </>
-              ) : null}
-            </span>
-            {(accumulated.coins > 0 || accumulated.xp > 0) && (
-              <span>
-                {labels.accumulated}:{" "}
-                <span className="text-on-surface">{fmt(labels.coins, accumulated.coins)}</span>
-                <span className="text-white/25 mx-1">·</span>
-                <span className="text-on-surface">{fmt(labels.xp, accumulated.xp)}</span>
-              </span>
-            )}
+          <div className="mb-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 sm:px-3.5">
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
+              {labels.finalReward}
+            </p>
+            <RewardBits coins={coinReward} tmName={tmRewardName} className="text-[13px] text-white/90" />
+            {accumulated.coins > 0 || accumulated.xp > 0 ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">
+                  {labels.accumulated}
+                </span>
+                <RewardBits
+                  coins={accumulated.coins}
+                  xp={accumulated.xp}
+                  className="text-[11px] text-white/55"
+                />
+              </div>
+            ) : null}
           </div>
 
-          <p className="mb-5 text-label-sm text-on-surface-variant/80 flex items-start gap-1.5">
-            <span className="material-symbols-outlined text-[16px]! text-error/70 shrink-0 mt-px">
+          <p className="mb-4 flex items-start gap-1.5 text-[11px] leading-snug text-white/45 sm:mb-5">
+            <span className="material-symbols-outlined mt-px shrink-0 text-[15px]! text-white/35">
               info
             </span>
             {labels.warning}
           </p>
 
-          {energyError && (
-            <p className="mb-4 text-label-sm text-error flex items-center gap-1.5 rounded-lg border border-error/30 bg-error/10 px-3 py-2">
+          {energyError ? (
+            <p className="mb-3 flex items-center gap-1.5 rounded-xl border border-error/30 bg-error/10 px-3 py-2 text-[12px] text-error">
               <span className="material-symbols-outlined text-[16px]!">bolt</span>
               {labels.noEnergy}
             </p>
-          )}
-          {leadError && (
-            <p className="mb-4 text-label-sm text-error flex items-center gap-1.5 rounded-lg border border-error/30 bg-error/10 px-3 py-2">
+          ) : null}
+          {leadError ? (
+            <p className="mb-3 flex items-center gap-1.5 rounded-xl border border-error/30 bg-error/10 px-3 py-2 text-[12px] text-error">
               <span className="material-symbols-outlined text-[16px]!">heart_broken</span>
               {labels.faintedLead}
             </p>
-          )}
+          ) : null}
 
-          {/* Camino alineado */}
-          <div className="relative mb-8">
+          <div className="relative mb-6 sm:mb-8">
             <PathRail accent={theme.accent} fillPct={pathFillPct} />
 
-            {/* Entrada */}
             <div className="relative mb-3 flex items-center gap-3" style={{ minHeight: NODE }}>
               <PathNode status="entry" accent={theme.accent}>
                 <span
-                  className="material-symbols-outlined text-[20px]!"
+                  className="material-symbols-outlined text-[18px]!"
                   style={{ color: theme.accent }}
                 >
                   login
                 </span>
               </PathNode>
-              <p className="text-label-sm uppercase tracking-[0.1em] text-on-surface-variant">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">
                 {labels.entry}
               </p>
             </div>
@@ -470,97 +562,94 @@ export function GymChallengeCorridor({
               const isLocked = trainer.status === "locked";
 
               return (
-                <div
-                  key={trainer.id}
-                  className="relative mb-3 flex items-stretch gap-3"
-                >
+                <div key={trainer.id} className="relative mb-3 flex items-stretch gap-3">
                   <div className="flex flex-col items-center pt-2" style={{ width: NODE }}>
                     <PathNode status={trainer.status} accent={theme.accent}>
                       <Image
                         src={trainer.spriteUrl || showdownTrainerSpriteUrl("youngster")}
                         alt=""
-                        width={40}
-                        height={40}
-                        className={`object-contain ${isLocked ? "opacity-40 grayscale" : ""} ${isCleared ? "opacity-75" : ""}`}
+                        width={36}
+                        height={36}
+                        className={`object-contain ${isLocked ? "opacity-40 grayscale" : ""} ${
+                          isCleared ? "opacity-75" : ""
+                        }`}
                         unoptimized
                       />
                     </PathNode>
                   </div>
 
                   <article
-                    className={`flex-1 min-w-0 rounded-xl border px-3.5 py-3 transition-colors ${
+                    className={`min-w-0 flex-1 rounded-2xl border px-3 py-3 sm:px-3.5 ${
                       isActive
-                        ? "bg-white/[0.03]"
+                        ? "bg-[#12141c]/90"
                         : isCleared
-                          ? "border-white/8 bg-white/[0.02] opacity-70"
+                          ? "border-white/8 bg-white/[0.02] opacity-75"
                           : "border-white/8 bg-white/[0.02] opacity-45"
                     }`}
                     style={
                       isActive
                         ? {
                             borderColor: `${theme.accent}88`,
-                            boxShadow: `0 0 20px ${theme.accent}22`,
+                            boxShadow: `0 0 22px ${theme.accent}20`,
                           }
                         : isCleared
                           ? { borderColor: `${theme.accent}33` }
                           : undefined
                     }
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-label-sm text-on-surface-variant truncate">
+                        <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-white/40">
                           {trainer.trainerClass}
                         </p>
-                        <h2 className="text-base sm:text-lg text-on-surface truncate leading-tight">
+                        <h2 className="mt-0.5 truncate text-[15px] font-semibold leading-tight text-white sm:text-[16px]">
                           {trainer.name}
                         </h2>
                       </div>
-                      <span
-                        className="shrink-0 text-label-sm"
-                        style={{
-                          color: isActive
-                            ? theme.accent
-                            : isCleared
-                              ? "var(--color-on-surface-variant)"
-                              : "rgba(255,255,255,0.35)",
-                        }}
-                      >
-                        {isCleared
-                          ? labels.statusCleared
-                          : isActive
-                            ? labels.statusPending
-                            : labels.statusLocked}
-                      </span>
+                      <StatusChip
+                        label={
+                          isCleared
+                            ? labels.statusCleared
+                            : isActive
+                              ? labels.statusPending
+                              : labels.statusLocked
+                        }
+                        tone={isCleared ? "cleared" : isActive ? "active" : "locked"}
+                        accent={theme.accent}
+                      />
                     </div>
 
                     {isCleared ? (
-                      <p className="mt-1.5 text-label-sm text-on-surface-variant">
-                        +{fmt(labels.coins, trainer.rewardCoins)}
-                        <span className="text-white/20 mx-1">·</span>
-                        +{fmt(labels.xp, trainer.rewardXp)}
-                      </p>
+                      <RewardBits
+                        coins={trainer.rewardCoins}
+                        xp={trainer.rewardXp}
+                        prefix="+"
+                        className="mt-2 text-white/55"
+                      />
                     ) : (
                       <div className="mt-2.5 space-y-2.5">
                         <div className="flex items-center justify-between gap-2">
                           <TeamIcons team={trainer.team} reveal={!isLocked} />
-                          {!isLocked && <DifficultyPips value={trainer.difficulty} accent={theme.accent} />}
+                          {!isLocked ? (
+                            <DifficultyPips value={trainer.difficulty} accent={theme.accent} />
+                          ) : null}
                         </div>
-                        {!isLocked && (
-                          <p className="text-label-sm text-on-surface-variant">
-                            {fmt(labels.coins, trainer.rewardCoins)}
-                            <span className="text-white/20 mx-1">·</span>
-                            {fmt(labels.xp, trainer.rewardXp)}
-                          </p>
-                        )}
-                        {isActive && (
+                        {!isLocked ? (
+                          <RewardBits
+                            coins={trainer.rewardCoins}
+                            xp={trainer.rewardXp}
+                            className="text-white/55"
+                          />
+                        ) : null}
+                        {isActive ? (
                           <form action={battleAction}>
                             <CombatButton
                               label={labels.initiateCombat}
-                              costHint={labels.energyCostHint}
+                              energyCost={energyCost}
                               disabled={!canAffordBattle}
                             />
                           </form>
-                        )}
+                        ) : null}
                       </div>
                     )}
                   </article>
@@ -568,7 +657,6 @@ export function GymChallengeCorridor({
               );
             })}
 
-            {/* Líder */}
             <div className="relative flex items-stretch gap-3">
               <div className="flex flex-col items-center pt-2" style={{ width: NODE }}>
                 <PathNode
@@ -579,12 +667,12 @@ export function GymChallengeCorridor({
                     <Image
                       src={leaderSpriteUrl ?? portraitUrl!}
                       alt={leaderUnlocked ? leaderName : ""}
-                      width={40}
-                      height={40}
+                      width={36}
+                      height={36}
                       className={`object-contain ${leaderUnlocked ? "" : "gym-corridor-silhouette"}`}
                     />
                   ) : (
-                    <span className="material-symbols-outlined text-[22px]! text-white/30">
+                    <span className="material-symbols-outlined text-[20px]! text-white/30">
                       military_tech
                     </span>
                   )}
@@ -592,37 +680,36 @@ export function GymChallengeCorridor({
               </div>
 
               <article
-                className={`flex-1 min-w-0 rounded-xl border px-3.5 py-3 ${
-                  leaderUnlocked ? "bg-white/[0.03]" : "border-white/8 bg-black/30"
+                className={`min-w-0 flex-1 rounded-2xl border px-3 py-3 sm:px-3.5 ${
+                  leaderUnlocked ? "bg-[#12141c]/90" : "border-white/8 bg-black/30"
                 }`}
                 style={
                   leaderUnlocked
                     ? {
                         borderColor: `${theme.accent}99`,
-                        boxShadow: `0 0 24px ${theme.accent}28`,
+                        boxShadow: `0 0 24px ${theme.accent}24`,
                       }
                     : undefined
                 }
               >
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-label-sm text-on-surface-variant">{labels.leader}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-white/40">
+                      {labels.leader}
+                    </p>
                     <h2
-                      className={`text-base sm:text-lg leading-tight truncate ${
-                        leaderUnlocked ? "text-on-surface" : "text-on-surface/50"
+                      className={`mt-0.5 truncate text-[15px] font-semibold leading-tight sm:text-[16px] ${
+                        leaderUnlocked ? "text-white" : "text-white/45"
                       }`}
                     >
                       {leaderUnlocked ? leaderName : labels.leaderUnknown}
                     </h2>
                   </div>
-                  <span
-                    className="shrink-0 text-label-sm"
-                    style={{
-                      color: leaderUnlocked ? theme.accent : "rgba(255,255,255,0.35)",
-                    }}
-                  >
-                    {leaderUnlocked ? labels.statusPending : labels.statusLocked}
-                  </span>
+                  <StatusChip
+                    label={leaderUnlocked ? labels.statusPending : labels.statusLocked}
+                    tone={leaderUnlocked ? "active" : "locked"}
+                    accent={theme.accent}
+                  />
                 </div>
 
                 <div className="mt-2.5 space-y-2.5">
@@ -632,25 +719,21 @@ export function GymChallengeCorridor({
                         <TeamIcons team={leaderTeam} reveal />
                         <DifficultyPips value={5} accent={theme.accent} />
                       </div>
-                      <p className="text-label-sm text-on-surface-variant">
-                        {fmt(labels.coins, coinReward)}
-                        {tmRewardName ? (
-                          <>
-                            <span className="text-white/20 mx-1">·</span>
-                            {tmRewardName}
-                          </>
-                        ) : null}
-                      </p>
+                      <RewardBits
+                        coins={coinReward}
+                        tmName={tmRewardName}
+                        className="text-white/55"
+                      />
                       <form action={battleAction}>
                         <CombatButton
                           label={labels.initiateCombat}
-                          costHint={labels.energyCostHint}
+                          energyCost={energyCost}
                           disabled={!canAffordBattle}
                         />
                       </form>
                     </>
                   ) : (
-                    <p className="text-label-sm text-on-surface-variant/70">
+                    <p className="text-[12px] leading-snug text-white/40">
                       {labels.leaderLockedHint}
                     </p>
                   )}

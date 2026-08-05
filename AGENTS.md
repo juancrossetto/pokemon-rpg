@@ -206,6 +206,11 @@ batalla, evolución, torre, perfil...) — revisar ahí antes de escribir una
 animación nueva, y si se agrega una, sumarla también al bloque
 `@media (prefers-reduced-motion: reduce)` correspondiente.
 
+**Grobold / `page-title`:** no abusar. Va en el título hero de la pantalla y en
+CTAs de juego (`.game-cta`). No en nombres de entrenadores/Pokémon, estados
+(“Cleared”, “Awaiting…”), labels de fila ni meta copy — ahí Inter
+(`font-semibold` / tipografía UI normal).
+
 ### Hidratación e islas de cliente
 
 Nada de `Math.random()` ni `Date.now()` durante el render — server y cliente

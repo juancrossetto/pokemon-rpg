@@ -14,7 +14,7 @@ import {
   type ZoneObjectiveState,
 } from "@/lib/campaign/objectives";
 import { type Rarity } from "@/lib/campaign/rarity";
-import { itemSpriteUrl } from "@/lib/item-sprites";
+import { itemDisplayUrl } from "@/lib/item-sprites";
 import {
   MasteryIcon,
   ZoneIcon,
@@ -38,11 +38,7 @@ import {
   type CampaignRequirement,
 } from "@/lib/campaign";
 import { masteryBonuses, masteryProgressPercent } from "@/lib/mastery";
-import {
-  ZoneRewardPopup,
-  type ZoneRewardClaim,
-} from "@/components/zone-reward-popup";
-import { announceCoinDelta } from "@/lib/coin-fx";
+import { playLootCollectFx, rewardToLootPiece } from "@/lib/loot-fly-fx";
 import { showToast } from "@/lib/app-toast";
 import {
   campaignClaimErrorKey,
@@ -227,7 +223,6 @@ export function CampaignJourney({
   /** null = ninguna card del recorrido expandida (todas colapsadas). */
   const [zoneId, setZoneId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [claimPopup, setClaimPopup] = useState<ZoneRewardClaim | null>(null);
   const [unlockToast, setUnlockToast] = useState<{ id: string; name: string } | null>(null);
 
   const chapter = chapters[chapterIndex] ?? chapters[0];
@@ -364,19 +359,27 @@ export function CampaignJourney({
     });
   }
 
-  function claim(locationId: string, objective: ZoneObjectiveId) {
+  function claim(
+    locationId: string,
+    objective: ZoneObjectiveId,
+    origin?: { x: number; y: number },
+  ) {
     startTransition(async () => {
       const result = await claimZoneObjective(locale, locationId, objective);
       if (!result.ok) {
         showToast(t(campaignClaimErrorKey(result.error)), "error");
         return;
       }
-      announceCoinDelta(result.coins);
-      setClaimPopup({
-        objectiveLabel: t(`obj_${objective}`),
-        coins: result.coins,
-        itemName: result.itemName,
-        quantity: result.quantity,
+      playLootCollectFx({
+        origin,
+        coinsDelta: result.coins,
+        pieces: [
+          rewardToLootPiece({
+            kind: "item",
+            itemName: result.itemName,
+            quantity: result.quantity,
+          }),
+        ],
       });
     });
   }
@@ -408,17 +411,6 @@ export function CampaignJourney({
     <div className={pending ? "opacity-90 transition-opacity" : undefined}>
       {unlockToast && (
         <UnlockCelebration locationId={unlockToast.id} locationName={unlockToast.name} />
-      )}
-      {claimPopup && (
-        <ZoneRewardPopup
-          reward={claimPopup}
-          labels={{
-            title: t("rewardClaimed"),
-            coins: t("rewardCoins"),
-            continue: t("rewardContinue"),
-          }}
-          onContinue={() => setClaimPopup(null)}
-        />
       )}
 
       {/* Hero banner ilustrado + próximo objetivo */}
@@ -607,7 +599,7 @@ export function CampaignJourney({
               onTravel={() => travelTo(zone.id)}
               onFarmStage={farmStage}
               onChallengeTrainer={challengeTrainer}
-              onClaim={(objective) => claim(zone.id, objective)}
+              onClaim={(objective, origin) => claim(zone.id, objective, origin)}
             />
           )}
         </div>
@@ -1189,7 +1181,7 @@ function ZonePanel({
   onTravel: () => void;
   onFarmStage: (stageId: string) => void;
   onChallengeTrainer: (trainerId: string) => void;
-  onClaim: (objective: ZoneObjectiveId) => void;
+  onClaim: (objective: ZoneObjectiveId, origin?: { x: number; y: number }) => void;
 }) {
   const t = useTranslations("campaign");
   const tUx = useTranslations("ux");
@@ -1311,15 +1303,17 @@ function ZonePanel({
         <>
           <p className={`mt-3 mb-1.5 ${SECTION_LABEL}`}>{t("objectives")}</p>
           <ul className="flex flex-col divide-y divide-white/[0.06]">
-            {objectives.map((obj, index) => {
+            {objectives.map((obj) => {
               return (
                 <Objective
                   key={obj.id}
                   state={obj}
-                  step={index + 1}
-                  isMain={obj.id === "stages"}
                   label={t(`obj_${obj.id}`)}
-                  hint={obj.id === "pokedex" ? t("obj_pokedexHint") : undefined}
+                  hint={
+                    obj.id === "pokedex"
+                      ? t("obj_pokedexHint")
+                      : undefined
+                  }
                   findHereLabel={obj.id === "pokedex" ? t("obj_pokedexFindHere") : undefined}
                   claimLabel={t("claim")}
                   claimedLabel={t("claimed")}
@@ -1329,7 +1323,7 @@ function ZonePanel({
                       ? zone.encounters.filter((e) => e.forObjective)
                       : undefined
                   }
-                  onClaim={() => onClaim(obj.id)}
+                  onClaim={(origin) => onClaim(obj.id, origin)}
                 />
               );
             })}
@@ -1629,8 +1623,6 @@ function ZonePanel({
 
 function Objective({
   state,
-  step,
-  isMain,
   label,
   hint,
   findHereLabel,
@@ -1641,8 +1633,6 @@ function Objective({
   onClaim,
 }: {
   state: ZoneObjectiveState;
-  step: number;
-  isMain: boolean;
   label: string;
   hint?: string;
   findHereLabel?: string;
@@ -1650,7 +1640,7 @@ function Objective({
   claimedLabel: string;
   pending: boolean;
   encounters?: MapEncounter[];
-  onClaim: () => void;
+  onClaim: (origin?: { x: number; y: number }) => void;
 }) {
   const pct = state.target > 0 ? Math.min(100, (state.current / state.target) * 100) : 0;
   const shell = state.claimable
@@ -1659,117 +1649,116 @@ function Objective({
 
   return (
     <li className={`px-0.5 py-2.5 transition ${shell}`}>
-      <div className="flex items-start gap-2.5">
-        <span
-          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold tabular-nums ${
-            state.done
-              ? "bg-pokeball-red/20 text-pokeball-red"
-              : isMain
-                ? "bg-pokeball-red/20 text-pokeball-red"
-                : "bg-white/8 text-white/55"
-          }`}
-          aria-hidden
-        >
-          {state.done ? (
-            <span className="material-symbols-outlined text-[15px]! leading-none">check</span>
-          ) : (
-            step
-          )}
-        </span>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <p className={`min-w-0 flex-1 ${ZONE_ROW_TITLE}`}>{label}</p>
-            <span className={`shrink-0 ${ZONE_ROW_META} text-white/90`}>
-              {state.current}
-              <span className="text-white/40">/{state.target}</span>
-            </span>
-          </div>
-
-          {hint && state.id === "pokedex" && !state.done ? (
-            <p className="mt-1 text-[11px] leading-snug text-white/45">{hint}</p>
+      <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-1">
+          <p
+            className={`min-w-0 truncate ${ZONE_ROW_TITLE} ${
+              state.claimed ? "text-white/55" : ""
+            }`}
+          >
+            {label}
+          </p>
+          {hint ? (
+            <details className="relative shrink-0">
+              <summary
+                className="flex h-5 w-5 cursor-pointer list-none items-center justify-center text-white/40 transition hover:text-white/70 marker:content-none [&::-webkit-details-marker]:hidden"
+                aria-label={hint}
+                title={hint}
+              >
+                <span className="material-symbols-outlined text-[15px]! leading-none">
+                  info
+                </span>
+              </summary>
+              <div className="absolute left-0 top-[calc(100%+0.35rem)] z-20 w-[min(16.5rem,calc(100vw-3rem))] rounded-lg border border-white/12 bg-[#12141c]/96 px-2.5 py-2 text-[11px] leading-snug text-white/70 shadow-[0_12px_28px_rgba(0,0,0,0.5)] backdrop-blur-md">
+                {hint}
+              </div>
+            </details>
           ) : null}
-
-          {!state.done ? (
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  pct > 0 ? "campaign-warm-bar" : "bg-transparent"
-                }`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          ) : null}
-
-          {encounters && encounters.length > 0 ? (
-            <ul className="mt-2 flex flex-wrap gap-1.5">
-              {encounters.map((mon) => {
-                const ownedElsewhere = mon.owned && !mon.caught;
-                const title = mon.caught
-                  ? mon.name
-                  : ownedElsewhere && findHereLabel
-                    ? `${mon.name} · ${findHereLabel}`
-                    : mon.name;
-                return (
-                  <li
-                    key={mon.speciesId}
-                    title={title}
-                    className={`relative flex h-10 w-10 items-center justify-center rounded-lg bg-white/[0.04] ring-1 ${
-                      ownedElsewhere
-                        ? "ring-pokeball-red/45"
-                        : "ring-white/[0.06]"
-                    }`}
-                  >
-                    <Image
-                      src={mon.spriteUrl}
-                      alt={mon.name}
-                      width={36}
-                      height={36}
-                      className={`h-8 w-8 object-contain ${
-                        mon.caught
-                          ? ""
-                          : ownedElsewhere
-                            ? "opacity-90"
-                            : mon.seen
-                              ? "opacity-55 grayscale"
-                              : "brightness-0 opacity-40"
-                      }`}
-                    />
-                    {mon.caught ? (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-400 text-surface">
-                        <span className="material-symbols-outlined text-[10px]! leading-none">
-                          check
-                        </span>
-                      </span>
-                    ) : null}
-                    {ownedElsewhere ? (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-pokeball-red text-white">
-                        <span className="material-symbols-outlined text-[10px]! leading-none">
-                          explore
-                        </span>
-                      </span>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          ) : null}
-
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <ObjectiveRewardBits state={state} />
-            <ObjectiveClaimControl
-              state={state}
-              claimLabel={claimLabel}
-              claimedLabel={claimedLabel}
-              pending={pending}
-              onClaim={onClaim}
-            />
-          </div>
         </div>
+        <span className={`shrink-0 ${ZONE_ROW_META} text-white/90`}>
+          {state.current}
+          <span className="text-white/40">/{state.target}</span>
+        </span>
+      </div>
+
+      {!state.done ? (
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.08]">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              pct > 0 ? "campaign-warm-bar" : "bg-transparent"
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      ) : null}
+
+      {encounters && encounters.length > 0 ? (
+        <ul className="mt-2 flex flex-wrap gap-1.5">
+          {encounters.map((mon) => {
+            const ownedElsewhere = mon.owned && !mon.caught;
+            const title = mon.caught
+              ? mon.name
+              : ownedElsewhere && findHereLabel
+                ? `${mon.name} · ${findHereLabel}`
+                : mon.name;
+            return (
+              <li
+                key={mon.speciesId}
+                title={title}
+                className={`relative flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.04] ring-1 ${
+                  ownedElsewhere ? "ring-pokeball-red/45" : "ring-white/[0.06]"
+                }`}
+              >
+                <Image
+                  src={mon.spriteUrl}
+                  alt={mon.name}
+                  width={32}
+                  height={32}
+                  className={`h-7 w-7 object-contain ${
+                    mon.caught
+                      ? ""
+                      : ownedElsewhere
+                        ? "opacity-90"
+                        : mon.seen
+                          ? "opacity-55 grayscale"
+                          : "brightness-0 opacity-40"
+                  }`}
+                />
+                {mon.caught ? (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-emerald-400 text-surface">
+                    <span className="material-symbols-outlined text-[9px]! leading-none">
+                      check
+                    </span>
+                  </span>
+                ) : null}
+                {ownedElsewhere ? (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-pokeball-red text-white">
+                    <span className="material-symbols-outlined text-[9px]! leading-none">
+                      explore
+                    </span>
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <ObjectiveRewardBits state={state} />
+        <ObjectiveClaimControl
+          state={state}
+          claimLabel={claimLabel}
+          claimedLabel={claimedLabel}
+          pending={pending}
+          onClaim={onClaim}
+        />
       </div>
     </li>
   );
 }
+
+const OBJECTIVE_COIN_HD = "/items/hd/poke-coin.png";
 
 function ObjectiveRewardBits({
   state,
@@ -1783,18 +1772,26 @@ function ObjectiveRewardBits({
     >
       <span className="inline-flex items-center gap-1">
         <Image
-          src={itemSpriteUrl(state.reward.itemName)}
+          src={itemDisplayUrl(state.reward.itemName, "hd")}
           alt=""
-          width={22}
-          height={22}
-          className="h-5 w-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
+          width={28}
+          height={28}
+          className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
+          unoptimized
         />
-        <span className="font-mono text-[12px] font-semibold tabular-nums text-white">
+        <span className="font-mono text-[13px] font-semibold tabular-nums text-white">
           ×{state.reward.quantity}
         </span>
       </span>
-      <span className="inline-flex items-center gap-0.5 font-mono text-[12px] font-semibold tabular-nums text-pokeball-red">
-        <span className="material-symbols-outlined text-[15px]!">paid</span>
+      <span className="inline-flex items-center gap-1 font-mono text-[13px] font-semibold tabular-nums text-white">
+        <Image
+          src={OBJECTIVE_COIN_HD}
+          alt=""
+          width={28}
+          height={28}
+          className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
+          unoptimized
+        />
         {state.reward.coins}
       </span>
     </div>
@@ -1812,14 +1809,20 @@ function ObjectiveClaimControl({
   claimLabel: string;
   claimedLabel: string;
   pending: boolean;
-  onClaim: () => void;
+  onClaim: (origin?: { x: number; y: number }) => void;
 }) {
   if (state.claimable) {
     return (
       <button
         type="button"
         disabled={pending}
-        onClick={onClaim}
+        onClick={(event) => {
+          const r = event.currentTarget.getBoundingClientRect();
+          onClaim({
+            x: r.left + r.width / 2,
+            y: r.top + r.height / 2,
+          });
+        }}
         className="shrink-0 rounded-md bg-pokeball-red px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-[0_4px_14px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent)] transition hover:brightness-110 disabled:opacity-40"
       >
         {claimLabel}

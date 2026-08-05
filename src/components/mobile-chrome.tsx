@@ -37,6 +37,8 @@ type NavLink = {
    * marca "Aventura" aunque el tab apunte a `/campaign`.
    */
   groupId?: string;
+  /** Destino del FX de loot (Bag recibe ítems reclamados). */
+  lootTarget?: "inventory" | "coins" | "energy" | "gems" | "avatar";
 };
 
 type IndicatorBox = {
@@ -191,7 +193,8 @@ export function MobileChrome({
   profileLabel,
   lockedHref,
   lockedLabel,
-  lockedIcon,
+  lockedHint,
+  lockedIconSrc,
   primary,
   groups,
   navLabels,
@@ -224,7 +227,8 @@ export function MobileChrome({
   profileLabel: string;
   lockedHref: string | null;
   lockedLabel: string | null;
-  lockedIcon: "swords" | "military_tech";
+  lockedHint: string | null;
+  lockedIconSrc: string | null;
   primary: NavLink[];
   /** Misma configuración que consume el navbar desktop. */
   groups: NavGroup[];
@@ -937,17 +941,31 @@ export function MobileChrome({
         {lockedHref && lockedLabel ? (
           <div
             ref={dockRef}
-            className="mobile-bottom-nav__dock mobile-bottom-nav__dock--flat"
+            className="mobile-bottom-nav__dock mobile-bottom-nav__dock--status"
           >
             <Link
               href={lockedHref}
               prefetch
-              className="mobile-nav-tab mobile-nav-tab--active flex-1"
+              className="mobile-nav-status"
+              aria-current="page"
             >
-              <span className="mobile-nav-tab-icon">
-                <span className="material-symbols-outlined text-[28px]!">{lockedIcon}</span>
+              {lockedIconSrc ? (
+                <Image
+                  src={lockedIconSrc}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="mobile-nav-status__art"
+                  unoptimized
+                  priority
+                />
+              ) : null}
+              <span className="mobile-nav-status__copy">
+                <span className="mobile-nav-status__label">{lockedLabel}</span>
+                {lockedHint ? (
+                  <span className="mobile-nav-status__hint">{lockedHint}</span>
+                ) : null}
               </span>
-              <span className="mobile-nav-tab-text">{lockedLabel}</span>
             </Link>
           </div>
         ) : (
@@ -996,11 +1014,21 @@ export function MobileChrome({
                   href={item.href}
                   prefetch
                   data-active={showActive || undefined}
+                  data-loot-target={item.lootTarget}
                   aria-current={showActive ? "page" : undefined}
                   aria-label={item.label}
                   onClick={(event) => {
+                    // Bag / Inicio: destino directo, sin mini-sheet de grupo.
+                    if (!item.groupId) {
+                      if (drawerShown) closeMore();
+                      if (item.lootTarget === "inventory") {
+                        event.preventDefault();
+                        router.push("/inventory");
+                      }
+                      return;
+                    }
                     // Ya estás en el grupo: segundo toque abre/cierra el mini-sheet.
-                    if (item.groupId && active) {
+                    if (active) {
                       event.preventDefault();
                       // Torre finalizada: el tab Aventura debe volver a Viaje,
                       // no quedarse en /tower abriendo el drawer.
@@ -1022,10 +1050,8 @@ export function MobileChrome({
                       return;
                     }
                     // Primer toque: ir al último destino del grupo si hay.
-                    if (item.groupId) {
-                      event.preventDefault();
-                      router.push(resolveGroupHref(item.groupId, item.href));
-                    }
+                    event.preventDefault();
+                    router.push(resolveGroupHref(item.groupId, item.href));
                   }}
                   className={`mobile-nav-tab ${
                     tabMotionReady ? "" : "mobile-nav-tab--no-motion "
