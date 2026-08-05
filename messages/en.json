@@ -3231,7 +3231,9 @@
     },
     "locked": {
       "title": "Tower sealed",
-      "body": "Earn {count} badges to unlock the Combat Tower.",
+      "body": "Earn gym badges to open the climb.",
+      "requirement": "Badges",
+      "remaining": "{n} left",
       "cta": "Go to gyms"
     },
     "rules": {
@@ -3354,11 +3356,11 @@
     },
     "result": {
       "failedTitle": "Run failed",
-      "failedBody": "Your squad fell in the Tower. Adventure HP is already restored.",
+      "failedBody": "Squad fell · Adventure HP restored",
       "completedTitle": "Tower cleared!",
-      "completedBody": "You reached the top. Your Adventure team is back.",
+      "completedBody": "Summit reached · Adventure team is back",
       "abandonedTitle": "Climb abandoned",
-      "abandonedBody": "You withdrew. Your Adventure team was restored.",
+      "abandonedBody": "Climb withdrawn · Adventure HP restored",
       "floorReached": "Floor reached",
       "lootKept": "Loot from this climb",
       "lootEmpty": "You didn't clear any floors.",

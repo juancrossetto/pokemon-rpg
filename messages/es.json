@@ -3231,7 +3231,9 @@
     },
     "locked": {
       "title": "Torre sellada",
-      "body": "Conseguí {count} medallas para desbloquear la Torre de Combate.",
+      "body": "Ganá medallas de gimnasio para abrir el ascenso.",
+      "requirement": "Medallas",
+      "remaining": "Faltan {n}",
       "cta": "Ir a gimnasios"
     },
     "rules": {
@@ -3354,11 +3356,11 @@
     },
     "result": {
       "failedTitle": "Intento fallido",
-      "failedBody": "Tu equipo cayó en la Torre. El HP de Aventura ya se restauró.",
+      "failedBody": "Equipo caído · HP de Aventura restaurado",
       "completedTitle": "¡Torre completada!",
-      "completedBody": "Llegaste al final. Tu equipo de Aventura ya está de vuelta.",
+      "completedBody": "Cumbre alcanzada · equipo de Aventura de vuelta",
       "abandonedTitle": "Ascenso abandonado",
-      "abandonedBody": "Te retiraste. El equipo de Aventura se restauró.",
+      "abandonedBody": "Ascenso retirado · HP de Aventura restaurado",
       "floorReached": "Piso alcanzado",
       "lootKept": "Botín de este ascenso",
       "lootEmpty": "No llegaste a cobrar ningún piso.",

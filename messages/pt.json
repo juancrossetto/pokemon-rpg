@@ -3231,7 +3231,9 @@
     },
     "locked": {
       "title": "Torre selada",
-      "body": "Conquiste {count} medalhas para desbloquear a Torre de Combate.",
+      "body": "Ganhe medalhas de ginásio para abrir a subida.",
+      "requirement": "Medalhas",
+      "remaining": "Faltam {n}",
       "cta": "Ir aos ginásios"
     },
     "rules": {
@@ -3354,11 +3356,11 @@
     },
     "result": {
       "failedTitle": "Tentativa falhou",
-      "failedBody": "Sua equipe caiu na Torre. O HP de Aventura já foi restaurado.",
+      "failedBody": "Equipe caiu · HP de Aventura restaurado",
       "completedTitle": "Torre concluída!",
-      "completedBody": "Você chegou ao fim. Sua equipe de Aventura já voltou.",
+      "completedBody": "Cume alcançado · equipe de Aventura de volta",
       "abandonedTitle": "Subida abandonada",
-      "abandonedBody": "Você desistiu. A equipe de Aventura foi restaurada.",
+      "abandonedBody": "Subida retirada · HP de Aventura restaurado",
       "floorReached": "Andar alcançado",
       "lootKept": "Espólio desta subida",
       "lootEmpty": "Você não cobrou nenhum andar.",

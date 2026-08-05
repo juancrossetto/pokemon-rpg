@@ -824,7 +824,7 @@ export function TowerRunStatus({
     >
       <LootLane
         label={t("loot.earnedTitle")}
-        accent="#f2c000"
+        accent="var(--color-pokeball-red)"
         empty={earned.length === 0 ? t("loot.earnedEmpty") : null}
       >
         {earned.length > 0 ? (
@@ -834,7 +834,7 @@ export function TowerRunStatus({
 
       <LootLane
         label={t("loot.nextTitle")}
-        accent="#a78bfa"
+        accent="var(--theme-secondary)"
         badge={hasFirstClear ? t("loot.firstClear") : null}
         className="border-l border-white/[0.07]"
       >
@@ -947,9 +947,7 @@ function LootLane({
 
 /**
  * Resumen al cerrar un intento: derrota, victoria o abandono.
- *
- * Layout: header + squad (protagonista) + loot en franja baja alargada.
- * El botín queda en `pendingLoot` hasta que el jugador lo reclame acá.
+ * Pantalla de resultado tipo juego: piso como héroe, lineup, botín con sello.
  */
 export function TowerEndedSummary({
   kind,
@@ -1002,149 +1000,160 @@ export function TowerEndedSummary({
       ? t("result.lootAlreadyGranted")
       : t("result.lootHint");
 
+  const coinLoot = loot.find((r): r is Extract<RewardDef, { kind: "coins" }> => r.kind === "coins");
+  const otherLoot = loot.filter((r) => r.kind !== "coins");
+  const coinAmount = coinLoot?.amount ?? null;
+
   return (
     <section
-      className="relative overflow-hidden rounded-2xl border"
-      style={{
-        borderColor: `color-mix(in srgb, ${accent} 28%, transparent)`,
-        background: `linear-gradient(165deg, color-mix(in srgb, ${accent} 12%, transparent) 0%, rgba(12,14,20,0.96) 42%, rgba(10,12,18,0.98) 100%)`,
-      }}
+      className="tower-result relative isolate overflow-hidden rounded-2xl px-3 py-4 sm:px-4 sm:py-5"
+      style={
+        {
+          "--tower-result-accent": accent,
+        } as CSSProperties
+      }
     >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full blur-3xl"
-        style={{ background: `color-mix(in srgb, ${accent} 22%, transparent)` }}
-      />
+      <span aria-hidden className="tower-result__glow pointer-events-none absolute inset-0" />
 
-      {/* Header */}
-      <div className="relative flex items-start justify-between gap-3 px-3.5 pt-3.5 sm:px-4 sm:pt-4">
-        <div className="min-w-0 flex-1">
-          <p
-            className="text-[10px] font-black uppercase tracking-[0.22em]"
-            style={{ color: accent }}
-          >
-            {t(titleKey)}
-          </p>
-          <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-white/60 sm:text-[13px]">
-            {t(bodyKey)}
-          </p>
-        </div>
-        <div className="shrink-0 rounded-xl border border-white/10 bg-black/35 px-3 py-1.5 text-right backdrop-blur-sm">
-          <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
+      {/* Status + floor hero */}
+      <div className="relative flex flex-col items-center text-center">
+        <p className="page-title text-[11px] tracking-[0.2em] text-[color:var(--tower-result-accent)]">
+          {t(titleKey)}
+        </p>
+
+        <div className="relative mt-3 flex flex-col items-center">
+          <span
+            aria-hidden
+            className="tower-result__ring pointer-events-none absolute left-1/2 top-1/2 h-[5.5rem] w-[5.5rem] -translate-x-1/2 -translate-y-1/2 rounded-full sm:h-24 sm:w-24"
+          />
+          <p className="page-title text-[9px] tracking-[0.18em] text-white/40">
             {t("result.floorReached")}
           </p>
-          <p className="mt-0.5 font-mono text-[22px] font-black leading-none tabular-nums text-white sm:text-[24px]">
+          <p className="tower-result__floor page-title mt-1 text-[3.25rem] leading-none tracking-[0.02em] text-white sm:text-[3.6rem]">
             {floorReached}
           </p>
         </div>
+
+        <p className="mt-3 w-full truncate px-1 text-center text-[12px] leading-none text-white/50 sm:text-[13px]">
+          {t(bodyKey)}
+        </p>
       </div>
 
-      {/* Squad — protagonista, ancho completo */}
-      <div className="relative mt-3 px-3.5 sm:mt-3.5 sm:px-4">
-        <div className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2.5 sm:px-3.5 sm:py-3">
-          <p className="mb-2 text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
-            {t("result.finalTeam")}
-          </p>
-          <ul className="grid grid-cols-6 gap-1.5 sm:gap-2">
-            {team.map((m) => {
-              const down = m.defeated || m.currentHp <= 0;
-              const pct = m.maxHp > 0 ? m.currentHp / m.maxHp : 0;
-              const hpColor =
-                pct > 0.5 ? THEME.tertiary : pct > 0.2 ? THEME.hpWarn : "var(--color-error)";
-              return (
-                <li
-                  key={m.instanceId}
-                  title={`${m.nickname ?? m.speciesName} · ${m.currentHp}/${m.maxHp}`}
-                  className={`relative flex flex-col items-center rounded-lg border px-1 pb-1 pt-1.5 ${
-                    down
-                      ? "border-error/30 bg-error/10"
-                      : "border-white/[0.1] bg-white/[0.04]"
+      {/* Lineup */}
+      <div className="relative mt-5">
+        <ul className="flex items-end justify-center gap-1 sm:gap-1.5">
+          {team.map((m, i) => {
+            const down = m.defeated || m.currentHp <= 0;
+            const pct = m.maxHp > 0 ? m.currentHp / m.maxHp : 0;
+            return (
+              <li
+                key={m.instanceId}
+                title={`${m.nickname ?? m.speciesName} · ${m.currentHp}/${m.maxHp}`}
+                className="tower-result__mon relative flex min-w-0 flex-1 flex-col items-center"
+                style={{ animationDelay: `${i * 45}ms` }}
+              >
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute bottom-1 h-3.5 w-10 rounded-[100%] opacity-50 blur-md"
+                  style={{
+                    background: down
+                      ? "color-mix(in srgb, var(--color-error) 55%, transparent)"
+                      : "color-mix(in srgb, var(--tower-result-accent) 40%, transparent)",
+                  }}
+                />
+                <Image
+                  src={m.spriteUrl}
+                  alt={m.nickname ?? m.speciesName}
+                  width={64}
+                  height={64}
+                  unoptimized
+                  className={`relative z-[1] h-12 w-12 object-contain sm:h-[3.35rem] sm:w-[3.35rem] ${
+                    down ? "opacity-70 grayscale-[0.65] brightness-90" : ""
+                  }`}
+                />
+                {down ? (
+                  <span className="material-symbols-outlined absolute -right-0.5 -top-0.5 z-[2] text-[14px]! leading-none text-error drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
+                    skull
+                  </span>
+                ) : null}
+                <div className="relative z-[1] mt-1 h-1 w-[78%] overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.round(Math.max(0, pct) * 100)}%`,
+                      background: down
+                        ? "var(--color-error)"
+                        : pct > 0.5
+                          ? "#21CEA1"
+                          : pct > 0.2
+                            ? THEME.hpWarn
+                            : "var(--color-error)",
+                    }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      {/* Loot — premio protagonista */}
+      <div className="relative mt-5 flex flex-col items-center">
+        {loot.length === 0 ? (
+          <p className="text-[12px] text-white/40">{t("result.lootEmpty")}</p>
+        ) : (
+          <div className="relative flex items-center gap-2.5">
+            {coinAmount != null ? (
+              <>
+                <Image
+                  src="/items/hd/poke-coin-bundle-s.png"
+                  alt=""
+                  width={48}
+                  height={48}
+                  className={`h-11 w-11 object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.45)] ${
+                    lootClaimed ? "opacity-70" : ""
+                  }`}
+                  unoptimized
+                />
+                <span
+                  className={`page-title text-[1.65rem] leading-none tracking-[0.04em] tabular-nums sm:text-[1.85rem] ${
+                    lootClaimed ? "text-white/55" : "text-white"
                   }`}
                 >
-                  <Image
-                    src={m.spriteUrl}
-                    alt={m.nickname ?? m.speciesName}
-                    width={48}
-                    height={48}
-                    unoptimized
-                    className={`h-9 w-9 object-contain sm:h-10 sm:w-10 ${
-                      down ? "opacity-85 grayscale-[0.4]" : ""
-                    }`}
-                  />
-                  {down ? (
-                    <span className="material-symbols-outlined absolute right-0 top-0 text-[11px]! text-error drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)] sm:text-[12px]!">
-                      skull
-                    </span>
-                  ) : null}
-                  <div className="mt-1 h-[3px] w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.round(Math.max(0, pct) * 100)}%`,
-                        background: down ? "var(--color-error)" : hpColor,
-                      }}
-                    />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-2 text-[10px] leading-snug text-white/40 sm:text-[11px]">
-            {t("result.teamRestored")}
-          </p>
-        </div>
-      </div>
-
-      {/* Loot — en mobile: rewards arriba + CTA a ancho completo (el chip
-          al costado comprimía el botín y se veía desbalanceado). */}
-      <div className="relative mt-2.5 px-3.5 pb-3.5 sm:mt-3 sm:px-4 sm:pb-4">
-        <div
-          className={`rounded-xl border px-3 py-2.5 sm:px-3.5 sm:py-3 ${
-            canClaim && !lootClaimed
-              ? "border-primary/25 bg-gradient-to-b from-primary/10 to-black/30"
-              : "border-white/[0.08] bg-black/25"
-          }`}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-electric-yellow/75">
-              {t("result.lootKept")}
-            </p>
-            {lootClaimed ? (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-electric-yellow/85">
-                <span className="material-symbols-outlined text-[14px]!">check_circle</span>
-                {t("result.lootClaimed")}
-              </span>
-            ) : null}
-          </div>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 [&_.font-mono]:text-white!">
-            {loot.length > 0 ? (
-              <RewardList rewards={loot} size="sm" unitLabels={unitLabels} />
+                  {coinAmount.toLocaleString()}
+                </span>
+              </>
             ) : (
-              <p className="text-[11px] text-white/40">{t("result.lootEmpty")}</p>
+              <RewardList rewards={loot} size="md" unitLabels={unitLabels} />
             )}
           </div>
+        )}
 
-          {!canClaim || lootClaimed || alreadyGranted ? (
-            !lootClaimed ? (
-              <p className="mt-1.5 text-[10px] font-medium leading-snug text-white/45 sm:text-[11px]">
-                {lootStatus}
-              </p>
-            ) : null
-          ) : (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => start(async () => claimTowerLoot(locale, runId))}
-              className="ui-btn-primary mt-3 flex w-full min-h-11 items-center justify-center gap-2 px-4 text-[12px] font-bold uppercase tracking-[0.14em] sm:mt-3.5 sm:min-h-12 sm:text-[13px]"
-            >
-              <span className="material-symbols-outlined text-[18px]! sm:text-[20px]!">
-                redeem
-              </span>
-              {pending ? t("actions.working") : t("result.claimCta")}
-            </button>
-          )}
-        </div>
+        {otherLoot.length > 0 && coinAmount != null ? (
+          <div className="mt-2">
+            <RewardList rewards={otherLoot} size="sm" unitLabels={unitLabels} />
+          </div>
+        ) : null}
+
+        {lootClaimed ? (
+          <p className="page-title mt-2 text-[9px] tracking-[0.14em] text-[#21CEA1]">
+            {t("result.lootClaimed")}
+          </p>
+        ) : !canClaim || alreadyGranted ? (
+          <p className="mt-2 text-center text-[11px] leading-snug text-white/45">
+            {lootStatus}
+          </p>
+        ) : (
+          <GameCtaButton
+            type="button"
+            variant="gold"
+            className="mt-3 w-full max-w-xs"
+            disabled={pending}
+            onClick={() => start(async () => claimTowerLoot(locale, runId))}
+          >
+            {pending ? t("actions.working") : t("result.claimCta")}
+          </GameCtaButton>
+        )}
       </div>
     </section>
   );
@@ -1629,12 +1638,9 @@ function RestOption({
  * ------------------------------------------------------------------ */
 
 /**
- * Acción principal, siempre alcanzable.
- *
- * En el layout anterior el CTA era el último bloque de la tercera columna: en
- * mobile había que pasar el camino, la grilla de stats, el acordeón de reglas
- * y la nota de "Experto próximamente" para poder desafiar un piso. Acá queda
- * fijo sobre la bottom nav, que es donde el pulgar ya está.
+ * Acción principal del hub de Torre.
+ * En flujo (no fixed): scrollea con la pantalla; el CTA sigue siendo
+ * game-cta rojo al estilo hub.
  */
 export function TowerActionBar({
   action,
@@ -1689,46 +1695,42 @@ export function TowerActionBar({
     : null;
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] z-30 border-t border-white/10 bg-[#0b0d13]/95 px-margin-mobile pt-2 pb-2 backdrop-blur-xl sm:pt-2.5 sm:pb-2.5 md:px-margin-desktop xl:bottom-0">
-      <div className="mx-auto w-full max-w-6xl">
-        {timerLabel ? (
-          <div className="mb-1.5 flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 sm:mb-2 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2">
-            <span className="material-symbols-outlined text-[15px]! text-on-surface-variant sm:text-[16px]!">
-              schedule
-            </span>
-            <p className="text-[10px] text-on-surface-variant sm:text-[11px]">
-              {t("reset.nextIn")}{" "}
-              <span className="font-mono font-bold tabular-nums text-white">{timerLabel}</span>
-            </p>
-          </div>
-        ) : null}
-        {action.destination ? (
-          <GameCtaButton href={action.destination} variant="red" disabled={!action.enabled}>
-            {t(action.labelKey)}
-          </GameCtaButton>
-        ) : (
-          <GameCtaButton
-            type="button"
-            variant="red"
-            icon="swords"
-            disabled={!action.enabled || pending}
-            onClick={run}
-          >
-            {pending ? t("actions.working") : t(action.labelKey)}
-          </GameCtaButton>
-        )}
-        {action.reasonKey && (
-          <p className="mt-1.5 pb-0.5 text-center text-[10px] leading-snug text-on-surface-variant">
-            {t(action.reasonKey)}
-          </p>
-        )}
-        {canPark || canAbandon ? (
-          <div className="mt-1.5 flex items-center justify-center gap-4 sm:gap-5">
-            {canPark ? <TowerParkButton locale={locale} variant="bar" /> : null}
-            {canAbandon ? <TowerAbandonButton locale={locale} variant="bar" /> : null}
-          </div>
-        ) : null}
-      </div>
+    <div className="space-y-2">
+      {timerLabel ? (
+        <div className="flex items-center justify-center gap-2 px-1">
+          <span className="page-title text-[9px] tracking-[0.14em] text-white/45">
+            {t("reset.nextIn")}
+          </span>
+          <span className="page-title text-[13px] tabular-nums tracking-wide text-secondary">
+            {timerLabel}
+          </span>
+        </div>
+      ) : null}
+      {action.destination ? (
+        <GameCtaButton href={action.destination} variant="red" disabled={!action.enabled}>
+          {t(action.labelKey)}
+        </GameCtaButton>
+      ) : (
+        <GameCtaButton
+          type="button"
+          variant="red"
+          disabled={!action.enabled || pending}
+          onClick={run}
+        >
+          {pending ? t("actions.working") : t(action.labelKey)}
+        </GameCtaButton>
+      )}
+      {action.reasonKey && (
+        <p className="px-1 text-center text-[11px] leading-snug text-white/50">
+          {t(action.reasonKey)}
+        </p>
+      )}
+      {canPark || canAbandon ? (
+        <div className="flex items-center justify-center gap-5 pt-0.5">
+          {canPark ? <TowerParkButton locale={locale} variant="bar" /> : null}
+          {canAbandon ? <TowerAbandonButton locale={locale} variant="bar" /> : null}
+        </div>
+      ) : null}
     </div>
   );
 }

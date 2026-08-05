@@ -86,7 +86,7 @@ export default async function TowerPage({
     vuelve a quedar bloqueado con timer.
   */
   const attemptState = await reconcileTowerPeriodAttempts(userId);
-  let [badgeCount, progress, activeRun, lastEndedRun] = await Promise.all([
+  const [badgeCount, progress, activeRun, lastEndedRun] = await Promise.all([
     prisma.badge.count({ where: { userId } }),
     prisma.towerProgress.findUnique({
       where: {
@@ -241,19 +241,14 @@ export default async function TowerPage({
     unlocked &&
     activeRun?.status !== "AWAITING_BLESSING" &&
     activeRun?.status !== "RESTING";
-  /*
-    La action bar es fixed sobre el bottom nav (~timer + CTA + reason ≈ 9.5rem).
-    El padding del main tiene que liberar esa franja; si no, stats/reglas quedan
-    tapadas hasta scrollear “de más”.
-  */
-  const mainPadClass = showActionBar
-    ? "pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+7.25rem+var(--vv-gap,0px))] xl:pb-28"
-    : "pb-bottom-nav";
 
   return (
-    <main className={`mx-auto flex w-full max-w-6xl flex-col gap-2.5 px-3 py-3 sm:gap-4 sm:py-4 xl:px-6 ${mainPadClass}`}>
-      <header className="relative isolate rounded-xl border border-white/10 sm:rounded-2xl">
-        <div className="absolute inset-0 overflow-hidden rounded-xl sm:rounded-2xl">
+    <main
+      data-tower-page
+      className="mx-auto flex w-full max-w-6xl flex-col gap-2.5 px-3 pt-3 pb-0 sm:gap-4 sm:pt-4 xl:px-6"
+    >
+      <header className="relative isolate overflow-hidden rounded-2xl border border-white/10">
+        <div className="absolute inset-0">
           <Image
             src="/tower/torre-prisma.jpg"
             alt=""
@@ -263,7 +258,11 @@ export default async function TowerPage({
             className="object-cover object-[center_22%] sm:object-[center_30%]"
           />
           <div
-            className="absolute inset-0 bg-gradient-to-t from-[#0b0d13] via-[#0b0d13]/55 to-[#0b0d13]/15"
+            className="absolute inset-0 bg-gradient-to-t from-[#0b0d13] via-[#0b0d13]/60 to-[#0b0d13]/20"
+            aria-hidden
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-[#0b0d13]/50 via-transparent to-transparent"
             aria-hidden
           />
         </div>
@@ -277,14 +276,14 @@ export default async function TowerPage({
             />
             <details className="relative">
               <summary
-                className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full border border-white/20 bg-black/45 text-white/80 backdrop-blur-sm transition hover:border-white/35 hover:bg-black/60 hover:text-white marker:content-none [&::-webkit-details-marker]:hidden"
+                className="flex h-8 w-8 cursor-pointer list-none items-center justify-center text-secondary transition hover:brightness-125 marker:content-none [&::-webkit-details-marker]:hidden"
                 aria-label={t("rules.title")}
                 title={t("rules.title")}
               >
-                <span className="material-symbols-outlined text-[18px]!">info</span>
+                <span className="material-symbols-outlined text-[20px]!">help</span>
               </summary>
-              <div className="absolute right-0 top-[calc(100%+0.4rem)] w-[min(18.5rem,calc(100vw-2rem))] rounded-xl border border-white/12 bg-[#12141c]/96 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">
+              <div className="absolute right-0 top-[calc(100%+0.4rem)] w-[min(18.5rem,calc(100vw-2rem))] rounded-xl border border-secondary/25 bg-[#12141c]/96 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+                <p className="page-title mb-2 text-[10px] tracking-[0.16em] text-secondary">
                   {t("rules.title")}
                 </p>
                 <ul className="space-y-1.5 text-[12px] leading-snug text-white/65">
@@ -299,18 +298,32 @@ export default async function TowerPage({
           </div>
         ) : null}
 
-        <div className="relative z-10 flex min-h-[11.5rem] flex-col justify-end gap-0.5 px-3.5 pb-3 pt-10 sm:min-h-[10rem] sm:gap-1 sm:px-5 sm:py-4 sm:pt-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
-            {t("eyebrow")}
-            <span className="text-white/35"> · </span>
-            <span className="text-white/55">{t("difficulties.normal")}</span>
-          </p>
-          <h1 className="page-title text-headline-sm text-white drop-shadow-sm sm:text-headline-md">
-            {t(COMBAT_TOWER_CONFIG.nameKey)}
-          </h1>
-          <p className="hidden max-w-xl text-label-md text-white/75 sm:block">{t("tagline")}</p>
+        <div className="relative z-10 flex min-h-[9.25rem] flex-col justify-end gap-1 px-3.5 pb-3 pt-10 sm:min-h-[9rem] sm:px-5 sm:py-3.5 sm:pt-3.5">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/nav/tower-icon.png"
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)] sm:h-8 sm:w-8"
+              unoptimized
+            />
+            <div className="min-w-0">
+              <p className="page-title text-[10px] tracking-[0.18em] text-secondary">
+                {t("eyebrow")}
+                <span className="text-white/30"> · </span>
+                <span className="text-white/55">{t("difficulties.normal")}</span>
+              </p>
+              <h1 className="page-title mt-0.5 text-[1.35rem] leading-none tracking-tight text-white drop-shadow-sm sm:text-headline-md">
+                {t(COMBAT_TOWER_CONFIG.nameKey)}
+              </h1>
+            </div>
+          </div>
+          <p className="hidden max-w-xl text-[13px] text-white/70 sm:block">{t("tagline")}</p>
         </div>
       </header>
+
+      {process.env.NODE_ENV === "development" ? <TowerDevPanel locale={locale} /> : null}
 
       {err ? (
         <p className="rounded-lg border border-error/30 bg-error/10 px-3 py-2 text-label-sm text-error">
@@ -319,7 +332,10 @@ export default async function TowerPage({
       ) : null}
 
       {!unlocked ? (
-        <TowerLockedState minBadges={COMBAT_TOWER_CONFIG.unlock.minBadges} />
+        <TowerLockedState
+          minBadges={COMBAT_TOWER_CONFIG.unlock.minBadges}
+          currentBadges={badgeCount}
+        />
       ) : (
         <div className="grid gap-2 sm:gap-3 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-4">
           {/*
@@ -355,32 +371,42 @@ export default async function TowerPage({
               </div>
             ) : null}
 
-            <aside className="order-3 flex flex-col gap-2 sm:gap-3">
+            {showActionBar ? (
+              <div className="order-2">
+                <TowerActionBar
+                  action={primary}
+                  locale={locale}
+                  resetAtMs={showResetTimer ? resetAt.getTime() : null}
+                  canAbandon={Boolean(activeRun)}
+                  canPark={Boolean(activeRun)}
+                />
+              </div>
+            ) : null}
+
+            <aside className="order-4 flex flex-col gap-2 sm:gap-3 lg:order-3">
               {team ? <TowerSquad team={team} blessings={activeBlessings} /> : null}
 
-              <dl className="grid grid-cols-2 gap-2">
-                <div className="rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent px-3 py-2.5">
-                  <dt className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
+              <dl className="grid grid-cols-2 gap-3 px-0.5">
+                <div>
+                  <dt className="page-title text-[9px] tracking-[0.14em] text-white/40">
                     {t("summary.best")}
                   </dt>
-                  <dd className="page-title mt-1 text-[1.35rem] leading-none tracking-[0.04em] text-electric-yellow sm:text-[1.5rem]">
+                  <dd className="page-title mt-1 text-[1.45rem] leading-none tracking-[0.04em] text-secondary sm:text-[1.5rem]">
                     {progress?.highestFloorAllTime ?? 0}
                   </dd>
                 </div>
-                <div className="rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent px-3 py-2.5">
-                  <dt className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/40">
+                <div>
+                  <dt className="page-title text-[9px] tracking-[0.14em] text-white/40">
                     {t("summary.nextBoss")}
                   </dt>
-                  <dd className="page-title mt-1 text-[1.35rem] leading-none tracking-[0.04em] text-pokeball-red sm:text-[1.5rem]">
+                  <dd className="page-title mt-1 text-[1.45rem] leading-none tracking-[0.04em] text-pokeball-red sm:text-[1.5rem]">
                     {nextGuardian ?? "—"}
                   </dd>
                 </div>
               </dl>
 
-              {activeRun ? (
-                <div
-                  className={`flex flex-col gap-2 ${showActionBar ? "hidden lg:flex" : ""}`}
-                >
+              {activeRun && !showActionBar ? (
+                <div className="flex flex-col gap-2">
                   <TowerParkButton locale={locale} variant="panel" />
                   <TowerAbandonButton locale={locale} variant="panel" />
                 </div>
@@ -388,7 +414,7 @@ export default async function TowerPage({
             </aside>
           </div>
 
-          <section className="relative order-2 isolate flex h-[min(46vh,22rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#0e1016] p-2 sm:h-[min(52vh,26rem)] sm:p-3 lg:col-start-1 lg:row-start-1 lg:h-auto lg:min-h-[min(68vh,34rem)] lg:max-h-[calc(100dvh-11rem)]">
+          <section className="relative order-3 isolate flex h-[min(46vh,22rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#0e1016] p-2 sm:h-[min(52vh,26rem)] sm:p-3 lg:col-start-1 lg:row-start-1 lg:order-none lg:h-auto lg:min-h-[min(68vh,34rem)] lg:max-h-[calc(100dvh-11rem)]">
             <Image
               src="/tower/torre-prisma.jpg"
               alt=""
@@ -400,7 +426,7 @@ export default async function TowerPage({
               className="absolute inset-0 bg-gradient-to-b from-[#0e1016]/30 via-[#0e1016]/85 to-[#0e1016]"
               aria-hidden
             />
-            <p className="relative z-10 mb-1 shrink-0 px-0.5 text-[8px] font-bold uppercase tracking-[0.16em] text-white/45 sm:mb-1.5 sm:text-[9px]">
+            <p className="page-title relative z-10 mb-1 shrink-0 px-0.5 text-[9px] tracking-[0.16em] text-secondary sm:mb-1.5 sm:text-[10px]">
               {endedSummary ? t("path.reviewTitle") : t("path.title")}
             </p>
             <div
@@ -442,18 +468,6 @@ export default async function TowerPage({
       {activeRun && activeBlessings.length > 0 ? (
         <TowerBlessingArrival blessingIds={activeBlessings.map((b) => b.id)} />
       ) : null}
-
-      {showActionBar ? (
-        <TowerActionBar
-          action={primary}
-          locale={locale}
-          resetAtMs={showResetTimer ? resetAt.getTime() : null}
-          canAbandon={Boolean(activeRun)}
-          canPark={Boolean(activeRun)}
-        />
-      ) : null}
-
-      {process.env.NODE_ENV === "development" ? <TowerDevPanel locale={locale} /> : null}
     </main>
   );
 }
