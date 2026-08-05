@@ -9,6 +9,7 @@ import {
   challengeTowerFloor,
   chooseTowerBlessing,
   parkTowerRun,
+  resumeTowerRun,
   startTowerRun,
 } from "@/actions/tower";
 import { ConfirmModal } from "@/components/confirm-modal";
@@ -271,6 +272,49 @@ export function TowerParkButton({
         }}
       />
     </>
+  );
+}
+
+/** Banner + CTA para retomar un ascenso pausado (sin auto-resume al abrir /tower). */
+export function TowerResumePanel({
+  locale,
+  compact = false,
+}: {
+  locale: string;
+  compact?: boolean;
+}) {
+  const t = useTranslations("tower");
+  const [pending, start] = useTransition();
+
+  return (
+    <div
+      className={
+        compact
+          ? "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+          : "rounded-xl border border-electric-yellow/25 bg-electric-yellow/8 p-3 sm:p-4"
+      }
+    >
+      {compact ? null : (
+        <div className="mb-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-electric-yellow/80">
+            {t("park.pausedTitle")}
+          </p>
+          <p className="mt-1 text-label-sm text-on-surface-variant">{t("park.pausedBody")}</p>
+        </div>
+      )}
+      {compact ? (
+        <p className="min-w-0 flex-1 text-label-sm text-white/75">{t("park.pausedBody")}</p>
+      ) : null}
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => start(async () => resumeTowerRun(locale))}
+        className="ui-btn-primary inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 px-5 text-label-md font-bold disabled:opacity-40 sm:w-auto"
+      >
+        <span className="material-symbols-outlined text-[18px]!">play_arrow</span>
+        {pending ? "…" : t("park.resumeCta")}
+      </button>
+    </div>
   );
 }
 

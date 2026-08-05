@@ -4,7 +4,6 @@ import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCombatLock } from "@/lib/battle-lock";
-import { lockUsers } from "@/lib/db-locks";
 import {
   COMBAT_TOWER_CONFIG,
   DEFAULT_DIFFICULTY_ID,
@@ -15,12 +14,16 @@ import {
   parseTowerTeamSnapshot,
   resolveBlessings,
   getTowerFloors,
-  resumeTowerRunInTx,
 } from "@/lib/tower";
 import { reconcileTowerPeriodAttempts } from "@/lib/tower/attempts";
 import { nextTowerReset } from "@/lib/tower/week";
 import { parsePendingLoot } from "@/lib/tower/settle";
-import { TowerAbandonButton, TowerParkButton, TowerLockedState } from "@/components/tower/tower-ui";
+import {
+  TowerAbandonButton,
+  TowerParkButton,
+  TowerLockedState,
+  TowerResumePanel,
+} from "@/components/tower/tower-ui";
 import {
   TowerActionBar,
   TowerAttemptsChip,
@@ -113,21 +116,12 @@ export default async function TowerPage({
   ]);
 
   /*
-    Auto-resume al abrir la Torre: mutar + redirect (no revalidatePath en
-    render — Next lo rechaza). El siguiente request ve layout/navbar al día.
+    Ascenso pausado: NO auto-reanudar. Antes, al abrir /tower (p. ej. el tab
+    Aventura recuerda la última ruta) se despausaba solo, el combat-lock
+    volvía a activarse y cualquier ida a /gyms rebotaba a la Torre.
   */
-  if (activeRun?.parkedAt) {
-    const parkedId = activeRun.id;
-    await prisma.$transaction(
-      async (tx) => {
-        await lockUsers(tx, userId);
-        await resumeTowerRunInTx(tx, parkedId, userId);
-      },
-      { timeout: 20_000 },
-    );
-    redirect({ href: "/tower", locale });
-    return null;
-  }
+  const isParked = Boolean(activeRun?.parkedAt);
+  const liveRun = activeRun && !isParked ? activeRun : null;
 
   const unlocked = isTowerUnlocked(badgeCount);
   const attemptsMax = attemptState.attemptsMax;
@@ -147,11 +141,11 @@ export default async function TowerPage({
   const primary = getNextTowerAction({
     unlocked,
     attemptsRemaining,
-    runStatus: activeRun?.status ?? null,
+    runStatus: liveRun?.status ?? null,
     inBattle: false,
-    currentFloor: activeRun?.currentFloor ?? 1,
-    floor: activeRun ? floor : getTowerFloor(1),
-    team,
+    currentFloor: liveRun?.currentFloor ?? 1,
+    floor: liveRun ? floor : getTowerFloor(1),
+    team: liveRun ? team : null,
   });
 
   const allFloors = getTowerFloors();
@@ -164,12 +158,12 @@ export default async function TowerPage({
   const err =
     query.err && (TOWER_ERRORS as readonly string[]).includes(query.err) ? query.err : null;
 
-  const offered = activeRun
-    ? resolveBlessings(activeRun.offeredBlessingIds)
+  const offered = liveRun
+    ? resolveBlessings(liveRun.offeredBlessingIds)
     : [];
 
   const teamHpPct = team ? averageHpRatio(team) : 0;
-  const canAttune = activeRun ? pickBlessingOffers(activeRun.blessingIds).length > 0 : false;
+  const canAttune = liveRun ? pickBlessingOffers(liveRun.blessingIds).length > 0 : false;
   const activeBlessings = activeRun
     ? resolveBlessings(activeRun.blessingIds).map((b) => ({
         id: b.id,
@@ -239,8 +233,10 @@ export default async function TowerPage({
 
   const showActionBar =
     unlocked &&
-    activeRun?.status !== "AWAITING_BLESSING" &&
-    activeRun?.status !== "RESTING";
+    Boolean(liveRun) &&
+    liveRun?.status !== "AWAITING_BLESSING" &&
+    liveRun?.status !== "RESTING";
+  const showResumeBar = unlocked && isParked;
 
   return (
     <main
@@ -371,14 +367,20 @@ export default async function TowerPage({
               </div>
             ) : null}
 
+            {showResumeBar ? (
+              <div className="order-2">
+                <TowerResumePanel locale={locale} />
+              </div>
+            ) : null}
+
             {showActionBar ? (
               <div className="order-2">
                 <TowerActionBar
                   action={primary}
                   locale={locale}
                   resetAtMs={showResetTimer ? resetAt.getTime() : null}
-                  canAbandon={Boolean(activeRun)}
-                  canPark={Boolean(activeRun)}
+                  canAbandon={Boolean(liveRun)}
+                  canPark={Boolean(liveRun)}
                 />
               </div>
             ) : null}
@@ -405,7 +407,7 @@ export default async function TowerPage({
                 </div>
               </dl>
 
-              {activeRun && !showActionBar ? (
+              {liveRun && !showActionBar ? (
                 <div className="flex flex-col gap-2">
                   <TowerParkButton locale={locale} variant="panel" />
                   <TowerAbandonButton locale={locale} variant="panel" />
@@ -452,7 +454,7 @@ export default async function TowerPage({
         </div>
       )}
 
-      {unlocked && activeRun?.status === "RESTING" ? (
+      {unlocked && liveRun?.status === "RESTING" ? (
         <TowerRestFork
           locale={locale}
           recoveryPct={COMBAT_TOWER_CONFIG.rules.recoveryPercentage}
@@ -461,11 +463,11 @@ export default async function TowerPage({
         />
       ) : null}
 
-      {unlocked && activeRun?.status === "AWAITING_BLESSING" && offered.length > 0 ? (
+      {unlocked && liveRun?.status === "AWAITING_BLESSING" && offered.length > 0 ? (
         <TowerBlessingDraft blessings={offered} locale={locale} />
       ) : null}
 
-      {activeRun && activeBlessings.length > 0 ? (
+      {liveRun && activeBlessings.length > 0 ? (
         <TowerBlessingArrival blessingIds={activeBlessings.map((b) => b.id)} />
       ) : null}
     </main>

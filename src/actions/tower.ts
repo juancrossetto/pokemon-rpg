@@ -395,10 +395,10 @@ export async function parkTowerRun(locale: string) {
 
   revalidatePath(`/${locale}/tower`);
   revalidateCombatUi(locale);
-  redirect({ href: "/", locale });
+  redirect({ href: "/campaign", locale });
 }
 
-/** Reanuda un ascenso pausado (al volver a /tower). */
+/** Reanuda un ascenso pausado (CTA explícito en /tower). */
 export async function resumeTowerRun(locale: string) {
   const userId = await requireUser(locale);
   if (!userId) return;

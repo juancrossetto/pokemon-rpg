@@ -3223,7 +3223,10 @@
       "title": "Sair para Aventura?",
       "body": "O progresso da subida é salvo (HP/PP da tentativa). Seu time de Aventura volta como estava ao entrar. Você pode continuar depois pela Torre.",
       "confirmCta": "Sair para Aventura",
-      "cancel": "Ficar"
+      "cancel": "Ficar",
+      "pausedTitle": "Subida pausada",
+      "pausedBody": "Seu progresso está salvo. Pode ir aos ginásios ou à jornada; volte aqui e toque em continuar quando quiser seguir.",
+      "resumeCta": "Continuar subida"
     },
     "floorDetail": {
       "title": "Andar {n}",
@@ -3238,7 +3241,7 @@
     },
     "rules": {
       "title": "Regras da subida",
-      "hp": "O HP da tentativa é salvo ao sair para Aventura; seu time de Aventura volta como na entrada. Voltar à Torre retoma o estado da subida.",
+      "hp": "Ao sair para Aventura o HP da tentativa é salvo e seu time de Aventura volta como na entrada. Na Torre, toque em Continuar para retomar a subida.",
       "attempts": "{n} tentativa por semana (reinício domingo 21h ART).",
       "boss": "Guardião a cada 10 andares, com recuperação maior após a vitória.",
       "blessings": "Escolha bênçãos temporárias em marcos importantes.",

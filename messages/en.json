@@ -3223,7 +3223,10 @@
       "title": "Leave to Adventure?",
       "body": "Your climb progress is saved (run HP/PP). Your Adventure team returns as it was when you entered. You can continue later from the Tower.",
       "confirmCta": "Leave to Adventure",
-      "cancel": "Stay"
+      "cancel": "Stay",
+      "pausedTitle": "Climb paused",
+      "pausedBody": "Your progress is saved. You can visit gyms or the journey; come back here and tap continue when you want to keep climbing.",
+      "resumeCta": "Continue climb"
     },
     "floorDetail": {
       "title": "Floor {n}",
@@ -3238,7 +3241,7 @@
     },
     "rules": {
       "title": "Climb rules",
-      "hp": "Run HP is saved when you leave to Adventure; your Adventure team returns as it was on entry. Coming back to the Tower resumes the climb state.",
+      "hp": "When you leave to Adventure, run HP is saved and your Adventure team returns as it was on entry. In the Tower, tap Continue to resume the climb.",
       "attempts": "{n} attempt per week (resets Sunday 9pm ART).",
       "boss": "A guardian every 10 floors, with stronger recovery after victory.",
       "blessings": "Pick temporary blessings at key milestones.",
