@@ -199,137 +199,178 @@ export default async function ClanDetailPage({
   };
 
   return (
-    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 pb-[calc(var(--bottom-nav-h,3.5rem)+env(safe-area-inset-bottom)+1rem)]">
-      <div className="mx-auto max-w-3xl">
-        <Link
-          href="/clans"
-          className="inline-flex min-h-11 items-center gap-1 text-label-sm text-on-surface-variant hover:text-on-surface mb-3"
-        >
-          <span className="material-symbols-outlined text-[16px]!">arrow_back</span>
-          {t("backToDirectory")}
-        </Link>
+    <div className="clans-arena relative isolate flex-1 overflow-x-hidden pb-[calc(var(--bottom-nav-h,3.5rem)+env(safe-area-inset-bottom)+0.5rem)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_0%,color-mix(in_srgb,var(--color-pokeball-red)_16%,transparent),transparent_45%),radial-gradient(ellipse_at_95%_8%,color-mix(in_srgb,var(--color-electric-yellow)_8%,transparent),transparent_40%)]"
+      />
+
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-3 py-3 sm:px-margin-desktop sm:py-6">
+        {myRole === null ? (
+          <Link
+            href="/clans"
+            className="mb-3 inline-flex min-h-10 items-center gap-1 text-[12px] text-white/45 transition hover:text-white"
+          >
+            <span className="material-symbols-outlined text-[16px]!">arrow_back</span>
+            {t("backToDirectory")}
+          </Link>
+        ) : (
+          <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] sm:mb-3">
+            <span
+              aria-hidden
+              className="h-1.5 w-1.5 rounded-full bg-pokeball-red shadow-[0_0_8px_color-mix(in_srgb,var(--color-pokeball-red)_55%,transparent)]"
+            />
+            <span className="text-pokeball-red/90">{t("memberHome.eyebrow")}</span>
+          </p>
+        )}
 
         {notice && (
-          <div className="mb-4 rounded-lg border border-tertiary/40 bg-tertiary/10 px-4 py-2 text-label-md text-tertiary">
+          <div className="mb-3 rounded-xl border border-tertiary/40 bg-tertiary/10 px-4 py-2.5 text-[13px] text-tertiary">
             {t(`notices.${notice}`)}
           </div>
         )}
         {error && (
-          <div className="mb-4 rounded-lg border border-error/40 bg-error-container/30 px-4 py-2 text-label-md text-error">
+          <div className="mb-3 rounded-xl border border-error/40 bg-error-container/30 px-4 py-2.5 text-[13px] text-error">
             {t(`errors.${error}`)}
           </div>
         )}
 
-        <header
-          className="rounded-2xl border border-white/10 p-4 mb-4 overflow-hidden relative"
-          style={{
-            background: `linear-gradient(120deg, ${headerPrimary}26, transparent 50%), linear-gradient(180deg, ${headerSecondary}dd, rgba(0,0,0,0.35))`,
-          }}
-        >
-          <div className="relative z-10">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div className="flex items-start gap-4 min-w-0">
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-2">
-                  <ClanEmblemBadge emblem={clan.emblem} size={88} title={clan.name} />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="page-title text-headline-lg text-white">
-                    <span className="font-mono text-pokeball-red">[{clan.tag}]</span> {clan.name}
-                  </h1>
-                  {clan.motto ? (
-                    <p className="text-label-md text-on-surface/80 italic mt-0.5">“{clan.motto}”</p>
-                  ) : null}
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-label-sm text-on-surface-variant">
-                    <ClanAffinityChip
-                      affinity={clan.affinity}
-                      label={t(`affinities.${clan.affinity}`)}
-                      size="sm"
-                    />
-                    <span>{t(`focuses.${clan.focus}`)}</span>
-                    <span>{t(`joinPolicies.${clan.joinPolicy}`)}</span>
-                    <span>{t("memberCount", { count: members.length, max: CLAN_MAX_MEMBERS })}</span>
-                  </div>
-                  <div className="mt-2 w-full max-w-md">
-                    <div className="mb-1 flex items-center justify-between text-[11px] text-on-surface-variant">
-                      <span>{t("hub.level", { level: clanLevel })}</span>
-                      <span>{clanExp.toLocaleString()} / {nextLevelExp.toLocaleString()} XP</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-white/10">
-                      <div
-                        className="h-2 rounded-full bg-tertiary transition-[width] duration-300"
-                        style={{ width: `${progressPct}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
+        <header className="game-float-card relative mb-4 overflow-hidden rounded-2xl">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at 88% 0%, ${headerPrimary}22, transparent 48%), radial-gradient(ellipse at 100% 100%, ${headerSecondary}28, transparent 42%)`,
+            }}
+          />
+
+          <div className="relative z-10 p-4 sm:p-5">
+            <div className="flex items-center gap-4 sm:gap-6">
+              <div className="h-[7.5rem] w-[7.5rem] shrink-0 bg-transparent sm:h-44 sm:w-44">
+                <ClanEmblemBadge
+                  emblem={clan.emblem}
+                  size={176}
+                  fill
+                  title={clan.name}
+                  className="drop-shadow-[0_10px_24px_rgba(0,0,0,0.55)]"
+                />
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                {clanRank > 0 ? (
-                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
-                    {t("hub.rank", { rank: clanRank })}
-                  </span>
-                ) : null}
-                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
-                  {t("badgeTotal", { count: totalBadges })}
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
-                  {t("power", { value: totalPower })}
-                </span>
-              {!inAnyClan && clan.joinPolicy === "OPEN" && (
-                <form action={joinClan.bind(null, locale)}>
-                  <input type="hidden" name="clanId" value={clan.id} />
-                  <SubmitButton
-                    label={isFull ? t("full") : t("join")}
-                    pendingLabel={t("joining")}
-                    disabled={isFull}
-                    className="ui-btn-primary min-h-11 px-4 text-label-md"
+              <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h1 className="page-title truncate text-[clamp(1.2rem,3.8vw,1.85rem)] leading-[1.05] tracking-tight text-white">
+                      <span className="font-mono text-pokeball-red">[{clan.tag}]</span>{" "}
+                      {clan.name}
+                    </h1>
+                    {clan.motto ? (
+                      <p className="mt-1 truncate text-[12px] italic text-white/50 sm:text-[13px]">
+                        “{clan.motto}”
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:flex-wrap sm:justify-end">
+                    {!inAnyClan && clan.joinPolicy === "OPEN" && (
+                      <form action={joinClan.bind(null, locale)}>
+                        <input type="hidden" name="clanId" value={clan.id} />
+                        <SubmitButton
+                          label={isFull ? t("full") : t("join")}
+                          pendingLabel={t("joining")}
+                          disabled={isFull}
+                          className="ui-btn-primary min-h-10 px-3.5 text-[12px]"
+                        />
+                      </form>
+                    )}
+                    {!inAnyClan && clan.joinPolicy === "REQUEST" && !pendingMine && (
+                      <form
+                        action={applyToClan.bind(null, locale)}
+                        className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center"
+                      >
+                        <input type="hidden" name="clanId" value={clan.id} />
+                        <input
+                          name="message"
+                          maxLength={140}
+                          placeholder={t("applyMessagePlaceholder")}
+                          className="min-h-10 max-w-[10.5rem] rounded-xl border border-white/15 bg-black/30 px-2.5 text-[11px] text-white"
+                        />
+                        <SubmitButton
+                          label={isFull ? t("full") : t("apply")}
+                          pendingLabel={t("applying")}
+                          disabled={isFull}
+                          className="ui-btn-primary min-h-10 px-3.5 text-[12px]"
+                        />
+                      </form>
+                    )}
+                    {!inAnyClan && pendingMine && (
+                      <span className="inline-flex min-h-10 items-center rounded-xl border border-electric-yellow/40 px-2.5 text-[11px] text-electric-yellow">
+                        {t("applicationPending")}
+                      </span>
+                    )}
+                    {!inAnyClan && clan.joinPolicy === "INVITE" && (
+                      <span className="inline-flex min-h-10 items-center rounded-xl border border-white/15 px-2.5 text-[11px] text-white/45">
+                        {t("inviteOnly")}
+                      </span>
+                    )}
+                    {myRole && myRole !== "LEADER" && (
+                      <form action={leaveClan.bind(null, locale)}>
+                        <SubmitButton
+                          label={t("leave")}
+                          pendingLabel={t("leaving")}
+                          confirmMessage={t("confirmLeave")}
+                          className={DANGER_BTN}
+                        />
+                      </form>
+                    )}
+                    {canManageApps && (
+                      <Link href={`/clans/${clan.id}?tab=more`} className={GHOST_BTN}>
+                        {t("hub.manage")}
+                      </Link>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/45">
+                  <ClanAffinityChip
+                    affinity={clan.affinity}
+                    label={t(`affinities.${clan.affinity}`)}
+                    size="sm"
                   />
-                </form>
-              )}
-              {!inAnyClan && clan.joinPolicy === "REQUEST" && !pendingMine && (
-                <form action={applyToClan.bind(null, locale)} className="flex gap-2 items-center">
-                  <input type="hidden" name="clanId" value={clan.id} />
-                  <input
-                    name="message"
-                    maxLength={140}
-                    placeholder={t("applyMessagePlaceholder")}
-                    className="min-h-11 rounded-lg border border-white/15 bg-black/30 px-3 text-label-sm text-on-surface max-w-48"
-                  />
-                  <SubmitButton
-                    label={isFull ? t("full") : t("apply")}
-                    pendingLabel={t("applying")}
-                    disabled={isFull}
-                    className="ui-btn-primary min-h-11 px-4 text-label-md"
-                  />
-                </form>
-              )}
-              {!inAnyClan && pendingMine && (
-                <span className="min-h-11 inline-flex items-center px-3 rounded-lg border border-electric-yellow/40 text-electric-yellow text-label-sm">
-                  {t("applicationPending")}
-                </span>
-              )}
-              {!inAnyClan && clan.joinPolicy === "INVITE" && (
-                <span className="min-h-11 inline-flex items-center px-3 rounded-lg border border-white/15 text-on-surface-variant text-label-sm">
-                  {t("inviteOnly")}
-                </span>
-              )}
-              {myRole && myRole !== "LEADER" && (
-                <form action={leaveClan.bind(null, locale)}>
-                  <SubmitButton
-                    label={t("leave")}
-                    pendingLabel={t("leaving")}
-                    confirmMessage={t("confirmLeave")}
-                    className={DANGER_BTN}
-                  />
-                </form>
-              )}
-              {canManageApps && (
-                <Link href={`/clans/${clan.id}?tab=more`} className={GHOST_BTN}>
-                  {t("hub.manage")}
-                </Link>
-              )}
+                  <span className="text-white/20">·</span>
+                  <span>{t(`focuses.${clan.focus}`)}</span>
+                  <span className="text-white/20">·</span>
+                  <span>{t(`joinPolicies.${clan.joinPolicy}`)}</span>
+                </div>
+
+                <div className="max-w-sm">
+                  <div className="mb-1 flex items-baseline justify-between gap-2 text-[10px] text-white/40">
+                    <span>{t("hub.level", { level: clanLevel })}</span>
+                    <span className="font-mono tabular-nums text-white/60">
+                      {progressPct}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-linear-to-r from-pokeball-red to-electric-yellow transition-[width] duration-300"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                </div>
               </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-5 gap-1 border-t border-white/8 pt-3 sm:gap-2">
+              <ClanKpi
+                label={t("memberHome.statRank")}
+                value={clanRank > 0 ? `#${clanRank}` : "—"}
+              />
+              <ClanKpi
+                label={t("memberHome.statMembers")}
+                value={`${members.length}/${CLAN_MAX_MEMBERS}`}
+              />
+              <ClanKpi label={t("memberHome.statPower")} value={String(totalPower)} />
+              <ClanKpi label={t("memberHome.statLevel")} value={String(clanLevel)} />
+              <ClanKpi label={t("memberHome.statBadges")} value={String(totalBadges)} />
             </div>
           </div>
         </header>
@@ -351,35 +392,73 @@ export default async function ClanDetailPage({
 
         {(myRole === null || activeTab === "overview") && (
           <section className="mb-4 grid gap-3 md:grid-cols-[1.6fr_1fr]">
-            <div className="rounded-xl border border-white/10 bg-glass-surface p-4">
-              <h2 className="text-headline-md text-on-surface">{t("hub.pendingActionsTitle")}</h2>
-              <ul className="mt-2 flex flex-col gap-1.5 text-label-sm text-on-surface-variant">
+            <div className="game-float-card rounded-2xl p-4 sm:p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                {t("hub.pendingActionsTitle")}
+              </p>
+              <ul className="mt-3 flex flex-col gap-2 text-[13px] text-white/55">
                 {canManageApps && clan.applications.length > 0 ? (
-                  <li>• {t("hub.pendingApplications", { count: clan.applications.length })}</li>
+                  <li className="flex items-start gap-2">
+                    <span className="material-symbols-outlined mt-0.5 text-[16px]! text-electric-yellow">
+                      mail
+                    </span>
+                    {t("hub.pendingApplications", { count: clan.applications.length })}
+                  </li>
                 ) : null}
-                <li>• {t("hub.progressHint", { percent: progressPct })}</li>
-                <li>• {t("hub.nextUnlock", { level: clanLevel + 1 })}</li>
+                <li className="flex items-start gap-2">
+                  <span className="material-symbols-outlined mt-0.5 text-[16px]! text-white/35">
+                    trending_up
+                  </span>
+                  {t("hub.progressHint", { percent: progressPct })}
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="material-symbols-outlined mt-0.5 text-[16px]! text-white/35">
+                    lock_open
+                  </span>
+                  {t("hub.nextUnlock", { level: clanLevel + 1 })}
+                </li>
               </ul>
             </div>
-            <div className="rounded-xl border border-white/10 bg-glass-surface p-4">
-              <h2 className="text-headline-md text-on-surface">{t("hub.activityTitle")}</h2>
-              <ul className="mt-2 flex flex-col gap-1.5 text-label-sm text-on-surface-variant">
-                <li>• {t("hub.activityMembers", { count: members.length })}</li>
-                <li>• {t("hub.activityPower", { power: totalPower })}</li>
-                <li>• {t("hub.activityBadges", { count: totalBadges })}</li>
+            <div className="game-float-card rounded-2xl p-4 sm:p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                {t("hub.activityTitle")}
+              </p>
+              <ul className="mt-3 flex flex-col gap-2 text-[13px] text-white/55">
+                <li className="flex items-start gap-2">
+                  <span className="material-symbols-outlined mt-0.5 text-[16px]! text-white/35">
+                    group
+                  </span>
+                  {t("hub.activityMembers", { count: members.length })}
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="material-symbols-outlined mt-0.5 text-[16px]! text-electric-yellow">
+                    bolt
+                  </span>
+                  {t("hub.activityPower", { power: totalPower })}
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="material-symbols-outlined mt-0.5 text-[16px]! text-tertiary">
+                    military_tech
+                  </span>
+                  {t("hub.activityBadges", { count: totalBadges })}
+                </li>
               </ul>
             </div>
 
             {clan.announcement && myRole && (
-              <div className="rounded-xl border border-tertiary/30 bg-tertiary/10 px-4 py-3 md:col-span-2">
-                <p className="text-label-sm text-tertiary uppercase mb-1">{t("announcement")}</p>
-                <p className="text-label-md text-on-surface whitespace-pre-wrap">{clan.announcement}</p>
+              <div className="game-float-card rounded-2xl border border-tertiary/25 px-4 py-3.5 md:col-span-2 sm:px-5">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-tertiary">
+                  {t("announcement")}
+                </p>
+                <p className="whitespace-pre-wrap text-[13px] text-white/80">{clan.announcement}</p>
               </div>
             )}
             {clan.description && (
-              <div className="rounded-xl border border-white/10 bg-glass-surface px-4 py-3 md:col-span-2">
-                <p className="text-label-sm text-on-surface-variant mb-1">{t("descriptionLabel")}</p>
-                <p className="text-label-md text-on-surface whitespace-pre-wrap">{clan.description}</p>
+              <div className="game-float-card rounded-2xl px-4 py-3.5 md:col-span-2 sm:px-5">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                  {t("descriptionLabel")}
+                </p>
+                <p className="whitespace-pre-wrap text-[13px] text-white/70">{clan.description}</p>
               </div>
             )}
           </section>
@@ -402,8 +481,8 @@ export default async function ClanDetailPage({
                     key={m.userId}
                     className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
                       isSelf
-                        ? "border-pokeball-red/40 bg-pokeball-red/5"
-                        : "border-white/10 bg-glass-surface"
+                        ? "border-pokeball-red/40 bg-pokeball-red/8"
+                        : "border-white/8 bg-black/25"
                     }`}
                   >
                     <RoleChip role={m.role} label={t(`roles.${m.role}`)} />
@@ -828,5 +907,26 @@ function RoleChip({ role, label }: { role: ClanRole; label: string }) {
       <span className="material-symbols-outlined text-[12px]!">{icon}</span>
       {label}
     </span>
+  );
+}
+
+function ClanKpi({
+  label,
+  value,
+  className = "",
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <div className={`min-w-0 text-center ${className}`}>
+      <p className="text-[8px] font-semibold uppercase tracking-wider text-white/35 sm:text-[9px]">
+        {label}
+      </p>
+      <p className="mt-1 font-mono text-[0.95rem] font-bold tabular-nums leading-none text-white sm:text-[1.1rem]">
+        {value}
+      </p>
+    </div>
   );
 }

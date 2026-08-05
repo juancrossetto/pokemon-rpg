@@ -55,6 +55,8 @@ function SectionLabel({
 
 /**
  * Acciones diarias estilo Clash: tiles grandes, chip de estado, glow + hover.
+ * Desktop: chip siempre en un slot fijo arriba (si no hay status, queda vacío)
+ * para que ícono + título no salten entre tiles. Mobile: chip en esquina.
  */
 export function HomeDailyActions({
   actions,
@@ -74,11 +76,23 @@ export function HomeDailyActions({
           const accent = ACCENT[action.id] ?? "var(--color-electric-yellow)";
           const label = labels.items[action.labelKey] ?? action.labelKey;
           const className = [
-            "home-daily-tile group relative flex aspect-square w-full flex-col items-center justify-center overflow-visible rounded-xl text-center transition sm:aspect-auto sm:gap-1.5 sm:overflow-hidden sm:rounded-2xl sm:px-1.5 sm:py-3",
+            "home-daily-tile group relative flex aspect-square w-full flex-col items-center justify-center overflow-visible rounded-xl text-center transition sm:aspect-auto sm:justify-start sm:gap-1 sm:overflow-hidden sm:rounded-2xl sm:px-1.5 sm:pb-3 sm:pt-2",
             "active:scale-[0.96]",
             action.hot ? "home-daily-tile--hot" : "",
           ].join(" ");
           const style = { "--daily-accent": accent } as CSSProperties;
+
+          const statusChip = action.status ? (
+            <span
+              className={`max-w-full truncate rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold tabular-nums leading-none ${
+                action.hot
+                  ? "bg-[color-mix(in_srgb,var(--daily-accent)_28%,transparent)] text-white ring-1 ring-[color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
+                  : "bg-black/45 text-white/70"
+              }`}
+            >
+              {action.status}
+            </span>
+          ) : null;
 
           const inner = (
             <>
@@ -86,7 +100,28 @@ export function HomeDailyActions({
                 aria-hidden
                 className="home-daily-tile__glow pointer-events-none absolute inset-0 rounded-[inherit]"
               />
-              <span className="relative z-[1] flex h-[70%] w-[70%] max-h-10 max-w-10 items-center justify-center sm:h-14 sm:w-14 sm:max-h-none sm:max-w-none">
+
+              {/* Mobile: badge en esquina */}
+              {statusChip ? (
+                <span className="absolute right-0 top-0 z-[2] max-w-[2.75rem] sm:hidden">
+                  <span
+                    className={`block truncate rounded-md px-0.5 py-px font-mono text-[7px] font-bold tabular-nums leading-none ${
+                      action.hot
+                        ? "bg-[color-mix(in_srgb,var(--daily-accent)_28%,transparent)] text-white ring-1 ring-[color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
+                        : "bg-black/55 text-white/70"
+                    }`}
+                  >
+                    {action.status}
+                  </span>
+                </span>
+              ) : null}
+
+              {/* Desktop: slot de altura fija arriba → todas las tiles alinean ícono/título */}
+              <span className="relative z-[1] hidden h-[18px] w-full items-center justify-center sm:flex">
+                {statusChip}
+              </span>
+
+              <span className="relative z-[1] flex h-[70%] w-[70%] max-h-10 max-w-10 items-center justify-center sm:h-14 sm:w-14 sm:max-h-none sm:max-w-none sm:shrink-0">
                 <Image
                   src={action.iconSrc}
                   alt=""
@@ -96,23 +131,10 @@ export function HomeDailyActions({
                   unoptimized
                 />
               </span>
-              {action.status ? (
-                <span
-                  className={`absolute right-0 top-0 z-[2] max-w-[2.75rem] truncate rounded-md px-0.5 py-px font-mono text-[7px] font-bold tabular-nums leading-none sm:static sm:mt-0 sm:max-w-[95%] sm:px-1.5 sm:py-0.5 sm:text-[10px] ${
-                    action.hot
-                      ? "bg-[color-mix(in_srgb,var(--daily-accent)_28%,transparent)] text-white ring-1 ring-[color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
-                      : "bg-black/55 text-white/70 sm:bg-black/35 sm:text-white/60"
-                  }`}
-                >
-                  {action.status}
-                </span>
-              ) : null}
+
               <span className="relative z-[1] hidden max-w-full truncate px-0.5 text-[11px] font-bold uppercase tracking-[0.06em] text-white/85 group-hover:text-white sm:block">
                 {label}
               </span>
-              {!action.status ? (
-                <span className="hidden h-[14px] sm:block" aria-hidden />
-              ) : null}
             </>
           );
 

@@ -60,8 +60,8 @@ export function ClanCard({
     <article
       className={`flex flex-col rounded-xl border p-3 transition-colors ${
         highlight
-          ? "border-pokeball-red/35 bg-pokeball-red/5"
-          : "border-white/10 bg-glass-surface hover:border-white/20"
+          ? "border-pokeball-red/35 bg-pokeball-red/8 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-pokeball-red)_12%,transparent)]"
+          : "border-white/8 bg-black/25 hover:border-white/16 hover:bg-black/35"
       }`}
     >
       {featuredReason ? (

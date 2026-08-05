@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { CampaignPrimaryObjective, CampaignJourneyMenuTrigger } from "@/components/campaign-primary-objective";
 import { selectLocation, setFarmingStage } from "@/actions/campaign";
 import { startTrainerBattle } from "@/actions/route-trainer";
@@ -29,6 +30,7 @@ import {
   campaignMapArtLayout,
   campaignMapSrc,
   getCampaignPrimaryAction,
+  getCampaignActionForZone,
   getZoneUnlockRequirements,
   resolveZoneNodeStatus,
   type CampaignNodeStatus,
@@ -220,6 +222,7 @@ export function CampaignJourney({
 }) {
   const t = useTranslations("campaign");
   const tUx = useTranslations("ux");
+  const router = useRouter();
   const [chapterIndex, setChapterIndex] = useState(initialChapter);
   /** null = ninguna card del recorrido expandida (todas colapsadas). */
   const [zoneId, setZoneId] = useState<string | null>(null);
@@ -228,8 +231,9 @@ export function CampaignJourney({
   const [unlockToast, setUnlockToast] = useState<{ id: string; name: string } | null>(null);
 
   const chapter = chapters[chapterIndex] ?? chapters[0];
+  const selectedZone = zoneId ? (chapter?.zones.find((z) => z.id === zoneId) ?? null) : null;
   const zone =
-    (zoneId ? chapter?.zones.find((z) => z.id === zoneId) : null) ??
+    selectedZone ??
     chapter?.zones.find((z) => z.id === farmingLocationId) ??
     chapter?.zones[0] ??
     null;
@@ -251,12 +255,62 @@ export function CampaignJourney({
     gymRecommendedLevel: gymRecLevel,
   });
 
-  const gymChallengeHref =
-    primaryAction.action === "challenge_gym" && primaryAction.milestone.kind === "gym"
-      ? gymRequirements[primaryAction.milestone.locationId ?? ""]?.gymId
-        ? `/gyms/${gymRequirements[primaryAction.milestone.locationId!].gymId}`
-        : primaryAction.href
+  const selectedGymHref =
+    selectedZone?.kindKey === "kinds.gym" && selectedZone.id
+      ? gymRequirements[selectedZone.id]?.gymId
+        ? `/gyms/${gymRequirements[selectedZone.id].gymId}`
+        : null
       : null;
+
+  const selectedGymRec =
+    selectedZone?.kindKey === "kinds.gym"
+      ? gymRequirements[selectedZone.id]?.recommendedLevel
+      : null;
+
+  const barAction =
+    selectedZone && chapter
+      ? getCampaignActionForZone({
+          zone: selectedZone,
+          farmingLocationId,
+          progress,
+          earnedGymOrders,
+          teamMaxLevel: summary.teamMaxLevel,
+          chapter,
+          storyMilestone: milestone,
+          gymRecommendedLevel: selectedGymRec ?? gymRecLevel,
+          gymHref: selectedGymHref,
+        })
+      : primaryAction;
+
+  const storyGymHref =
+    primaryAction.milestone.kind === "gym" && primaryAction.milestone.locationId
+      ? gymRequirements[primaryAction.milestone.locationId]?.gymId
+        ? `/gyms/${gymRequirements[primaryAction.milestone.locationId].gymId}`
+        : primaryAction.href
+      : chapter?.gym
+        ? gymRequirements[chapter.gym.id]?.gymId
+          ? `/gyms/${gymRequirements[chapter.gym.id].gymId}`
+          : null
+        : null;
+
+  const gymChallengeHref =
+    barAction.action === "challenge_gym"
+      ? selectedGymHref ?? storyGymHref ?? barAction.href
+      : null;
+
+  const gymChallengeBadgeSrc = (() => {
+    if (barAction.action !== "challenge_gym") return null;
+    const locationId =
+      selectedZone?.kindKey === "kinds.gym"
+        ? selectedZone.id
+        : primaryAction.milestone.kind === "gym" && primaryAction.milestone.locationId
+          ? primaryAction.milestone.locationId
+          : chapter?.gym?.id ?? null;
+    const badgeType =
+      (locationId ? gymRequirements[locationId]?.badgeType : null) ??
+      (barAction.gymOrder != null ? BADGE_TYPE_BY_ORDER[barAction.gymOrder] : null);
+    return badgeType ? gymBadgeImageUrl(badgeType) : null;
+  })();
   const helpBullets = (tUx.raw("help.campaign") as string[]) ?? [];
   // Título del banner = destino del capítulo que estás mirando (no farming sticky).
   const locationLabelKey =
@@ -288,6 +342,14 @@ export function CampaignJourney({
       await selectLocation(id, locale);
       const nameKey = chapters.flatMap((c) => c.zones).find((z) => z.id === id)?.nameKey;
       if (nameKey) showToast(t("movedHere", { name: t(nameKey) }), "success");
+    });
+  }
+
+  /** Barra desktop: viajar a la zona seleccionada y abrir combate. */
+  function travelAndExplore(id: string) {
+    startTransition(async () => {
+      await selectLocation(id, locale);
+      router.push("/battle");
     });
   }
 
@@ -371,8 +433,13 @@ export function CampaignJourney({
             }
           />
           <CampaignPrimaryObjective
-            action={primaryAction}
+            action={barAction}
             gymHref={gymChallengeHref}
+            gymBadgeSrc={gymChallengeBadgeSrc}
+            onTravel={
+              selectedZone ? () => travelAndExplore(selectedZone.id) : undefined
+            }
+            travelPending={pending}
             bannerSrc={bannerArt.src}
             bannerObjectPosition={bannerArt.objectPosition}
             locationName={t(locationLabelKey)}
@@ -1491,18 +1558,22 @@ function ZonePanel({
             ) : (
               <>
                 {!isFarming ? (
-                  <GameCtaButton
-                    icon="explore"
-                    variant="red"
-                    disabled={pending}
-                    onClick={onTravel}
-                  >
-                    {t("startExploring")}
-                  </GameCtaButton>
+                  <div className="lg:hidden">
+                    <GameCtaButton
+                      icon="explore"
+                      variant="red"
+                      disabled={pending}
+                      onClick={onTravel}
+                    >
+                      {t("startExploring")}
+                    </GameCtaButton>
+                  </div>
                 ) : (
-                  <GameCtaButton href="/battle" icon="explore" variant="red">
-                    {t("continueExpedition")}
-                  </GameCtaButton>
+                  <div className="lg:hidden">
+                    <GameCtaButton href="/battle" icon="explore" variant="red">
+                      {t("continueExpedition")}
+                    </GameCtaButton>
+                  </div>
                 )}
 
                 {/* Stages solo desktop: en mobile el objetivo principal ya marca el progreso. */}

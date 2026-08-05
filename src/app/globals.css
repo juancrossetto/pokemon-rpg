@@ -99,8 +99,6 @@ html[data-icons="ready"] .material-symbols-outlined {
   /* Fallback hasta que MobileChrome mida la altura real (sin safe-area).
      Incluye el dock + el FAB de Combat que sobresale. */
   --bottom-nav-h: 5.25rem;
-  /* 0 en Safari; el early script lo pone en 34px en PWA standalone. */
-  --standalone-sat-bottom: 0px;
   --vv-gap: 0px;
 }
 
@@ -5817,46 +5815,100 @@ body {
   }
 }
 
-/* --- Loader de ruta ---------------------------------------------------- */
+/* --- Spinner de navegación (overlay, no bloquea chrome) ---------------- */
 
 /*
-  El loader nace invisible y recién aparece a los 320ms.
-
-  El umbral no es arbitrario: por debajo de ~300ms una transición se percibe
-  como respuesta directa y mostrar un indicador la hace sentir MÁS lenta, no
-  menos. Arriba de eso el usuario necesita saber que algo está pasando.
-
-  Si la navegación termina antes, el fallback se desmonta con la opacidad
-  todavía en 0 y nunca se ve. `both` mantiene el estado inicial durante el
-  delay; sin eso el loader parpadearía a opacidad 1 antes de empezar.
+  La pantalla actual se queda montada (sin loading.tsx). Al toque se marca
+  `html[data-nav-pending]` para atenuar el main al instante; si la ruta
+  tarda de verdad, el cliente monta el Pokéball. Header y bottom nav
+  siguen interactivos para cancelar/cambiar.
 */
-.route-loader {
-  animation: route-loader-in 200ms ease-out 320ms both;
+html[data-nav-pending] .app-main {
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+  pointer-events: none;
 }
 
-@keyframes route-loader-in {
+@media (prefers-reduced-motion: reduce) {
+  html[data-nav-pending] .app-main {
+    transition: none;
+  }
+}
+
+.nav-pending {
+  position: fixed;
+  top: calc(3.5rem + env(safe-area-inset-top, 0px));
+  left: 0;
+  right: 0;
+  bottom: calc(
+    var(--bottom-nav-h, 5.25rem) + env(safe-area-inset-bottom, 0px) + var(--vv-gap, 0px)
+  );
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+@media (min-width: 1280px) {
+  .nav-pending {
+    top: 3.5rem;
+    bottom: 0;
+  }
+}
+
+.nav-pending__scrim {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, #0a0806 58%, transparent);
+  backdrop-filter: blur(1.5px);
+}
+
+.nav-pending > :not(.nav-pending__scrim) {
+  position: relative;
+  z-index: 1;
+}
+
+.nav-pending[data-phase="pending"] {
+  animation: nav-pending-in 200ms ease-out both;
+}
+
+.nav-pending[data-phase="done"] {
+  animation: nav-pending-out 180ms ease-in both;
+  pointer-events: none;
+}
+
+@keyframes nav-pending-in {
   from {
     opacity: 0;
-    transform: scale(0.98);
   }
   to {
     opacity: 1;
-    transform: none;
+  }
+}
+
+@keyframes nav-pending-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .route-loader {
-    animation: route-loader-appear 1ms linear 320ms both;
+  .nav-pending[data-phase="pending"],
+  .nav-pending[data-phase="done"] {
+    animation: none;
   }
 
-  @keyframes route-loader-appear {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+  .nav-pending[data-phase="done"] {
+    opacity: 0;
+  }
+
+  .nav-pending__scrim {
+    backdrop-filter: none;
   }
 }
 
@@ -6046,15 +6098,13 @@ html.boot-splash-pending .boot-splash {
 .mobile-bottom-nav {
   position: fixed;
   inset-inline: 0;
-  /* Browser: var=0 → bottom 0. Standalone: early script pone 34px antes del paint. */
-  bottom: calc(-1 * var(--standalone-sat-bottom, 0px));
+  bottom: 0;
   z-index: 70;
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  /* Sólo arriba: el FAB sobresale. El bottom lo completa --standalone-sat-bottom. */
+  /* Sólo arriba: el FAB sobresale. Nunca mover `bottom` con safe-area. */
   padding: 1.35rem 0 0;
-  padding-bottom: var(--standalone-sat-bottom, 0px);
   border: none;
   border-radius: 0;
   background: transparent;
@@ -10095,19 +10145,13 @@ html.boot-splash-pending .boot-splash {
    --------------------------------------------------------------------------- */
 
 /*
-  Con la app anclada, iOS deja rebotar el documento al llegar al final del
-  scroll, y durante ese rebote los elementos `position: fixed` se despegan y
-  acompañan el movimiento: la bottom nav se ve flotando en vez de anclada.
+  PWA anclada: bloquear scroll del documento y moverlo a `.app-main`.
 
-  Estrategia:
-  1. Bloquear el scroll del documento (`overflow:hidden`) sin acotar con
-     `max-height: 100dvh` — ese tope deja una franja muerta bajo los fixed.
-  2. Mover el scroll a `.app-main` con `overscroll-behavior-y: contain`.
-  3. Offset vía `--standalone-sat-bottom` (0 browser / 34px standalone),
-     seteado por el early script ANTES del primer paint. El nav base ya lee
-     esa var — no hace falta pelear con bottom:0 → -34px al hidratar.
-  4. visibility:hidden hasta data-sat-pinned evita ver un frame elevado si
-     iOS tarda en aplicar display-mode:standalone.
+  El nav queda SIEMPRE en `bottom: 0` (igual que en Safari). No usar
+  `bottom: -Npx` ni vars que cambien el bottom — eso hacía saltar el menú.
+
+  Safe-area: sólo padding FIJO en el dock (34px), nunca env() (parpadea).
+  Si iOS deja una franja bajo el viewport, ::after la pinta sin mover el dock.
 */
 @media all and (display-mode: standalone) {
   html {
@@ -10140,14 +10184,27 @@ html.boot-splash-pending .boot-splash {
   }
 
   .mobile-bottom-nav {
+    bottom: 0 !important;
     margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
     background-color: #0a0b11;
     transform: translateZ(0);
     backface-visibility: hidden;
   }
 
+  .mobile-bottom-nav::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 50px;
+    background: #0a0b11;
+    pointer-events: none;
+  }
+
   .mobile-bottom-nav__dock {
-    padding-bottom: 0.4rem !important;
+    padding-bottom: 34px !important;
   }
 }
 
@@ -10181,14 +10238,27 @@ html.is-standalone .mobile-top-chrome {
 }
 
 html.is-standalone .mobile-bottom-nav {
+  bottom: 0 !important;
   margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
   background-color: #0a0b11;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
 
+html.is-standalone .mobile-bottom-nav::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 50px;
+  background: #0a0b11;
+  pointer-events: none;
+}
+
 html.is-standalone .mobile-bottom-nav__dock {
-  padding-bottom: 0.4rem !important;
+  padding-bottom: 34px !important;
 }
 
 /* Indicador del selector de secciones del perfil. Mismo rebote elástico que el

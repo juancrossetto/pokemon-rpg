@@ -120,6 +120,7 @@ export function NavLinks({
       )}
       <Link
         href="/"
+        prefetch
         data-active={homeActive || undefined}
         aria-current={homeActive ? "page" : undefined}
         className={`${TRIGGER_BASE} ${
@@ -142,6 +143,7 @@ export function NavLinks({
             <Link
               key={group.id}
               href={only.href}
+              prefetch
               data-active={active || undefined}
               aria-current={active ? "page" : undefined}
               className={`${TRIGGER_BASE} ${
@@ -304,6 +306,7 @@ function NavGroupMenu({
                 <Link
                   key={item.id}
                   href={item.href}
+                  prefetch
                   role="menuitem"
                   tabIndex={open ? 0 : -1}
                   aria-current={itemActive ? "page" : undefined}

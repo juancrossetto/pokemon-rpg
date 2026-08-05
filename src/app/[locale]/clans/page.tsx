@@ -261,122 +261,134 @@ export default async function ClansPage({
   };
 
   return (
-    <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 pb-[calc(var(--bottom-nav-h,3.5rem)+env(safe-area-inset-bottom)+1rem)]">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-4">
-          <h1 className="page-title text-headline-lg text-white md:text-display-lg">{t("title")}</h1>
-          <p className="text-label-md text-on-surface-variant mt-1">{t("subtitle")}</p>
-        </div>
-
-        {notice && (
-          <div className="mb-4 rounded-lg border border-tertiary/40 bg-tertiary/10 px-4 py-2 text-label-md text-tertiary">
+    <div className="flex-1 pb-[calc(var(--bottom-nav-h,3.5rem)+env(safe-area-inset-bottom)+0.5rem)]">
+      {notice && (
+        <div className="relative z-20 mx-auto w-full max-w-6xl px-3 pt-3 sm:px-margin-desktop sm:pt-4">
+          <div className="rounded-xl border border-tertiary/40 bg-tertiary/10 px-4 py-2.5 text-[13px] text-tertiary">
             {t(`notices.${notice}`)}
           </div>
-        )}
-        {error && (
-          <div className="mb-4 rounded-lg border border-error/40 bg-error-container/30 px-4 py-2 text-label-md text-error">
+        </div>
+      )}
+      {error && (
+        <div className="relative z-20 mx-auto w-full max-w-6xl px-3 pt-3 sm:px-margin-desktop sm:pt-4">
+          <div className="rounded-xl border border-error/40 bg-error-container/30 px-4 py-2.5 text-[13px] text-error">
             {t(`errors.${error}`)}
           </div>
-        )}
-        <ClanCreateCoinFxGuard error={error} />
+        </div>
+      )}
+      <ClanCreateCoinFxGuard error={error} />
 
-        {!membership ? (
-          <div className="mb-6 flex flex-col gap-4">
-            {pendingInvites.length > 0 && (
-              <section className="rounded-xl border border-tertiary/30 bg-tertiary/10 p-4">
-                <h2 className="text-headline-md text-on-surface mb-2">{t("invitesTitle")}</h2>
-                <ul className="flex flex-col gap-2">
-                  {pendingInvites.map((inv) => (
-                    <li
-                      key={inv.id}
-                      className="flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2"
-                    >
-                      <ClanEmblemBadge emblem={inv.clan.emblem} size={36} />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-label-md text-on-surface">
-                          [{inv.clan.tag}] {inv.clan.name}
-                        </div>
-                        <div className="text-label-sm text-on-surface-variant">
-                          {t("inviteFrom", { name: inv.fromUser.username })}
-                        </div>
-                      </div>
-                      <form action={respondInvite.bind(null, locale)}>
-                        <input type="hidden" name="inviteId" value={inv.id} />
-                        <input type="hidden" name="decision" value="accept" />
-                        <SubmitButton
-                          label={t("acceptInvite")}
-                          pendingLabel={t("saving")}
-                          className="ui-btn-primary min-h-11 px-3 text-label-sm"
-                        />
-                      </form>
-                      <form action={respondInvite.bind(null, locale)}>
-                        <input type="hidden" name="inviteId" value={inv.id} />
-                        <input type="hidden" name="decision" value="decline" />
-                        <SubmitButton
-                          label={t("declineInvite")}
-                          pendingLabel={t("saving")}
-                          className="min-h-11 px-3 rounded-lg border border-white/15 text-label-sm text-on-surface-variant"
-                        />
-                      </form>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {pendingApp && (
-              <section className="rounded-xl border border-electric-yellow/30 bg-electric-yellow/10 p-4">
-                <h2 className="text-headline-md text-on-surface mb-1">{t("pendingApplicationTitle")}</h2>
-                <div className="flex items-center gap-3">
-                  <ClanEmblemBadge emblem={pendingApp.clan.emblem} size={40} />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-label-md text-on-surface">
-                      [{pendingApp.clan.tag}] {pendingApp.clan.name}
-                    </div>
-                    <p className="text-label-sm text-on-surface-variant">
-                      {t("pendingApplicationHint")}
+      {!membership ? (
+        <ClanLanding
+          locale={locale}
+          coins={me.coins}
+          clans={discoveryClans}
+          inviteCount={pendingInvites.length}
+          wizardLabels={wizardLabels}
+          discoveryLabels={discoveryLabels}
+          labels={{
+            eyebrow: t("eyebrow"),
+            title: t("title"),
+            subtitle: t("landing.subtitle"),
+            searchClan: t("landing.searchClan"),
+            createClan: t("landing.createClan"),
+            actionsTitle: t("landing.actionsTitle"),
+            recommendedTitle: t("landing.recommendedTitle"),
+            whyJoinTitle: t("landing.whyJoinTitle"),
+            listTitle: t("landing.listTitle"),
+            close: t("landing.close"),
+            heroStatus: t("landing.heroStatus"),
+            heroHint: t("landing.heroHint"),
+            statClans: t("landing.statClans"),
+            statOpen: t("landing.statOpen"),
+            statInvites: t("landing.statInvites"),
+            benefits: [
+              t("landing.benefitMissions"),
+              t("landing.benefitBenefits"),
+              t("landing.benefitWars"),
+              t("landing.benefitCommunity"),
+            ],
+            card: cardLabels,
+            empty: t("emptyDirectory"),
+          }}
+          alerts={
+            pendingInvites.length > 0 || pendingApp ? (
+              <div className="mb-4 flex flex-col gap-3">
+                {pendingInvites.length > 0 ? (
+                  <section className="game-float-card rounded-2xl border border-tertiary/25 p-4 sm:p-5">
+                    <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-tertiary/90">
+                      {t("invitesTitle")}
                     </p>
-                  </div>
-                  <form action={cancelApplication.bind(null, locale)}>
-                    <input type="hidden" name="clanId" value={pendingApp.clan.id} />
-                    <SubmitButton
-                      label={t("cancelApplication")}
-                      pendingLabel={t("saving")}
-                      className="min-h-11 px-3 rounded-lg border border-error/30 text-error text-label-sm"
-                    />
-                  </form>
-                </div>
-              </section>
-            )}
+                    <ul className="flex flex-col gap-2">
+                      {pendingInvites.map((inv) => (
+                        <li
+                          key={inv.id}
+                          className="flex flex-wrap items-center gap-3 rounded-xl border border-white/8 bg-black/25 px-3 py-2.5"
+                        >
+                          <ClanEmblemBadge emblem={inv.clan.emblem} size={36} />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[13px] font-medium text-white">
+                              [{inv.clan.tag}] {inv.clan.name}
+                            </div>
+                            <div className="text-[12px] text-white/45">
+                              {t("inviteFrom", { name: inv.fromUser.username })}
+                            </div>
+                          </div>
+                          <form action={respondInvite.bind(null, locale)}>
+                            <input type="hidden" name="inviteId" value={inv.id} />
+                            <input type="hidden" name="decision" value="accept" />
+                            <SubmitButton
+                              label={t("acceptInvite")}
+                              pendingLabel={t("saving")}
+                              className="ui-btn-primary min-h-11 px-3 text-[12px]"
+                            />
+                          </form>
+                          <form action={respondInvite.bind(null, locale)}>
+                            <input type="hidden" name="inviteId" value={inv.id} />
+                            <input type="hidden" name="decision" value="decline" />
+                            <SubmitButton
+                              label={t("declineInvite")}
+                              pendingLabel={t("saving")}
+                              className="min-h-11 rounded-xl border border-white/15 px-3 text-[12px] text-white/55"
+                            />
+                          </form>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
 
-            <ClanLanding
-              locale={locale}
-              coins={me.coins}
-              clans={discoveryClans}
-              wizardLabels={wizardLabels}
-              discoveryLabels={discoveryLabels}
-              labels={{
-                title: t("title"),
-                subtitle: t("landing.subtitle"),
-                searchClan: t("landing.searchClan"),
-                createClan: t("landing.createClan"),
-                recommendedTitle: t("landing.recommendedTitle"),
-                whyJoinTitle: t("landing.whyJoinTitle"),
-                listTitle: t("landing.listTitle"),
-                close: t("landing.close"),
-                benefits: [
-                  t("landing.benefitMissions"),
-                  t("landing.benefitBenefits"),
-                  t("landing.benefitWars"),
-                  t("landing.benefitCommunity"),
-                ],
-                card: cardLabels,
-                empty: t("emptyDirectory"),
-              }}
-            />
-          </div>
-        ) : null}
-      </div>
+                {pendingApp ? (
+                  <section className="game-float-card rounded-2xl border border-electric-yellow/25 p-4 sm:p-5">
+                    <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-electric-yellow/90">
+                      {t("pendingApplicationTitle")}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <ClanEmblemBadge emblem={pendingApp.clan.emblem} size={40} />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[13px] font-medium text-white">
+                          [{pendingApp.clan.tag}] {pendingApp.clan.name}
+                        </div>
+                        <p className="text-[12px] text-white/45">
+                          {t("pendingApplicationHint")}
+                        </p>
+                      </div>
+                      <form action={cancelApplication.bind(null, locale)}>
+                        <input type="hidden" name="clanId" value={pendingApp.clan.id} />
+                        <SubmitButton
+                          label={t("cancelApplication")}
+                          pendingLabel={t("saving")}
+                          className="min-h-11 rounded-xl border border-error/30 px-3 text-[12px] text-error"
+                        />
+                      </form>
+                    </div>
+                  </section>
+                ) : null}
+              </div>
+            ) : null
+          }
+        />
+      ) : null}
     </div>
   );
 }

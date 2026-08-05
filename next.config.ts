@@ -17,6 +17,17 @@ const nextConfig: NextConfig = {
     // (que rompía /logo.png y cualquier otra imagen local sin versión).
     localPatterns: [{ pathname: "/**" }],
   },
+  experimental: {
+    /*
+      Sin esto, el client cache de rutas dinámicas dura 0s: cada click a
+      team↔inventory↔clans vuelve a esperar el RSC completo y se siente lag.
+      30s alcanza para moverse entre tabs sin datos obsoletos de más.
+    */
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
 };
 
 export default withNextIntl(nextConfig);

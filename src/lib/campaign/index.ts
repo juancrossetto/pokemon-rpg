@@ -110,6 +110,7 @@ export {
   getGymChallengeRequirements,
   canChallengeGym,
   getCampaignPrimaryAction,
+  getCampaignActionForZone,
   resolveZoneNodeStatus,
   getMissingRequirements,
   getZoneUnlockRequirements,

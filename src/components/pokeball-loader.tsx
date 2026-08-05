@@ -23,21 +23,7 @@ export function PokeballLoader({
   variant?: LoaderVariant;
 }) {
   return (
-    /*
-      `route-loader` retrasa la aparición 320ms.
-
-      Next monta `loading.tsx` como fallback de Suspense apenas empieza la
-      navegación, sin importar cuánto tarde la pantalla. Con la mayoría de las
-      rutas resolviendo en 200–400ms, el resultado era un loader a pantalla
-      completa parpadeando en CADA cambio de pantalla: la app se sentía lenta
-      justamente por el indicador que avisaba que estaba cargando.
-
-      Con el retraso, una navegación rápida desmonta el fallback antes de que
-      llegue a verse —se siente instantánea— y el loader aparece solo cuando la
-      pantalla de verdad demora. Es CSS puro, así que no agrega estado ni
-      hidratación, y se adapta solo a lo que tarde cada ruta en cada dispositivo.
-    */
-    <div className="route-loader flex flex-1 flex-col items-center justify-center gap-lg py-24">
+    <div className="flex flex-1 flex-col items-center justify-center gap-lg py-24">
       {variant === "gif" ? (
         <div className="relative flex items-center justify-center">
           <Image

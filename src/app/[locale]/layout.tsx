@@ -79,10 +79,8 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Primero: PWA iOS — inyecta CSS crítico + var + pin antes del paint. */}
+        {/* PWA iOS: marca is-standalone antes del paint (sólo scroll, no mueve el nav). */}
         <InlineScript id="standalone-early" html={standaloneEarlyScript()} />
-        {/* Copia del CSS crítico en el árbol React (el early usa id distinto
-            `-early` para no pelear al hidratar). */}
         <style
           id="standalone-nav-critical"
           dangerouslySetInnerHTML={{ __html: standaloneNavCriticalCss() }}

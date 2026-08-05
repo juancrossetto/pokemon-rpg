@@ -24,10 +24,6 @@ import { getLastNavHref, setLastNavHref } from "@/lib/nav-last-dest";
 import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
 import { openHandbook } from "@/lib/handbook/open";
 import { chapterForPath } from "@/lib/handbook/chapters";
-import {
-  pinStandaloneNavElement,
-  STANDALONE_SAT_BOTTOM_PX,
-} from "@/lib/standalone-early";
 
 type NavLink = {
   href: string;
@@ -168,6 +164,7 @@ function DrawerNavRow({
   return (
     <Link
       href={item.href}
+      prefetch
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={rowClass}
@@ -404,40 +401,20 @@ export function MobileChrome({
   const pathname = usePathname();
   const prevPathname = useRef(pathname);
 
-  // Clase + listener pageshow (una sola vez).
+  // Clase standalone (scroll en `.app-main`). No tocar position/bottom del nav.
   useLayoutEffect(() => {
     if (!isStandalone()) return;
     const html = document.documentElement;
     html.classList.add("is-standalone");
     document.body.classList.add("is-standalone");
-    html.style.setProperty(
-      "--standalone-sat-bottom",
-      `${STANDALONE_SAT_BOTTOM_PX}px`,
-    );
 
     const onPageShow = () => {
       html.classList.add("is-standalone");
       document.body.classList.add("is-standalone");
-      html.style.setProperty(
-        "--standalone-sat-bottom",
-        `${STANDALONE_SAT_BOTTOM_PX}px`,
-      );
-      if (bottomNavRef.current) {
-        pinStandaloneNavElement(bottomNavRef.current);
-      }
     };
     window.addEventListener("pageshow", onPageShow);
     return () => window.removeEventListener("pageshow", onPageShow);
   }, []);
-
-  // Re-pin inline antes del paint en cada navegación / cambio de dock (combate).
-  // Sin esto iOS deja un frame con la barra elevada (hueco negro).
-  useLayoutEffect(() => {
-    if (!isStandalone()) return;
-    if (bottomNavRef.current) {
-      pinStandaloneNavElement(bottomNavRef.current);
-    }
-  }, [pathname, lockedHref]);
 
   // En standalone el scroll vive en `.app-main` (body overflow:hidden).
   // Next scrollea el window; acá reseteamos el contenedor real al navegar.
@@ -641,15 +618,10 @@ export function MobileChrome({
       document.documentElement.style.setProperty("--vv-gap", `${gap}px`);
     }
 
-    // En standalone NUNCA limpiar bottom: eso soltaba el anclaje un frame
-    // (barra subía) al remount/cambio de lockedHref. Re-pin inline.
-    if (isStandalone()) {
-      pinStandaloneNavElement(root);
-    } else {
-      root.style.bottom = "";
-      root.style.paddingBottom = "";
-      root.style.marginBottom = "";
-    }
+    // Nunca tocar style.bottom: el nav vive en bottom:0 fijo.
+    root.style.bottom = "";
+    root.style.paddingBottom = "";
+    root.style.marginBottom = "";
 
     publishNavHeight();
     publishVvGap();
@@ -933,14 +905,7 @@ export function MobileChrome({
         y el backdrop no la tapa, así Más puede cerrar y el contexto no desaparece.
       */}
       <nav
-        ref={(node) => {
-          bottomNavRef.current = node;
-          // Ref callback corre en el commit (antes del paint): si esperamos
-          // useLayoutEffect, iOS a veces pinta un frame con el menú arriba.
-          if (node && isStandalone()) {
-            pinStandaloneNavElement(node);
-          }
-        }}
+        ref={bottomNavRef}
         className="mobile-bottom-nav xl:hidden"
       >
         {lockedHref && lockedLabel ? (
@@ -950,6 +915,7 @@ export function MobileChrome({
           >
             <Link
               href={lockedHref}
+              prefetch
               className="mobile-nav-tab mobile-nav-tab--active flex-1"
             >
               <span className="mobile-nav-tab-icon">
@@ -1002,6 +968,7 @@ export function MobileChrome({
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch
                   data-active={showActive || undefined}
                   aria-current={showActive ? "page" : undefined}
                   aria-label={item.label}

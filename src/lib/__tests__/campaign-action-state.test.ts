@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canChallengeGym,
+  getCampaignActionForZone,
   getCampaignPrimaryAction,
   getGymChallengeRequirements,
   getMissingRequirements,
@@ -229,5 +230,88 @@ describe("resolveZoneNodeStatus", () => {
         badgeEarned: false,
       }),
     ).toBe("in_progress");
+  });
+});
+
+describe("getCampaignActionForZone", () => {
+  const storyMilestone = {
+    kind: "gym" as const,
+    id: "gym-1",
+    nameKey: "locations.saffron-gym",
+    locationId: "saffron-gym",
+    gymOrder: 6,
+  };
+
+  const chapterBase: Chapter = {
+    number: 6,
+    nameKey: "locations.saffron-city",
+    zones: [],
+    gym: null,
+    gymOrder: 6,
+    stagesDone: 4,
+    stagesTotal: 4,
+    speciesCaught: 0,
+    speciesTotal: 0,
+    unlocked: true,
+    completed: false,
+    percent: 80,
+  };
+
+  it("explores when the selected wild zone is already farming", () => {
+    const action = getCampaignActionForZone({
+      zone: zone({ id: "saffron-city", nameKey: "locations.saffron-city" }),
+      farmingLocationId: "saffron-city",
+      progress: progress(),
+      earnedGymOrders: [],
+      teamMaxLevel: 50,
+      chapter: chapterBase,
+      storyMilestone,
+    });
+    expect(action.action).toBe("explore");
+    expect(action.labelKey).toBe("continueExpedition");
+    expect(action.href).toBe("/battle");
+  });
+
+  it("asks to travel when the selected wild zone is not farming", () => {
+    const action = getCampaignActionForZone({
+      zone: zone({ id: "route-15", nameKey: "locations.route-15" }),
+      farmingLocationId: "saffron-city",
+      progress: progress(),
+      earnedGymOrders: [],
+      teamMaxLevel: 50,
+      chapter: chapterBase,
+      storyMilestone,
+    });
+    expect(action.action).toBe("travel");
+    expect(action.labelKey).toBe("startExploring");
+  });
+
+  it("challenges gym when selected gym chapter is cleared", () => {
+    const wild = chapterWildStagesForGym(1);
+    const action = getCampaignActionForZone({
+      zone: zone({
+        id: "pewter-gym",
+        nameKey: "locations.pewter-gym",
+        kindKey: "kinds.gym",
+        gymOrder: 1,
+      }),
+      farmingLocationId: "route-1",
+      progress: progress({ completedStageIds: wild.map((s) => s.id) }),
+      earnedGymOrders: [],
+      teamMaxLevel: 20,
+      chapter: { ...chapterBase, number: 1, gymOrder: 1 },
+      storyMilestone: {
+        kind: "gym",
+        id: "gym-1",
+        nameKey: "locations.pewter-gym",
+        locationId: "pewter-gym",
+        gymOrder: 1,
+      },
+      gymHref: "/gyms/pewter",
+      gymRecommendedLevel: 12,
+    });
+    expect(action.action).toBe("challenge_gym");
+    expect(action.labelKey).toBe("challengeGym");
+    expect(action.href).toBe("/gyms/pewter");
   });
 });

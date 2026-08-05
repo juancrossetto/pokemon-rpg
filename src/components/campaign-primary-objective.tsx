@@ -4,7 +4,6 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { GameCtaButton } from "@/components/game-cta-button";
 import { MapIcon } from "@/components/zone-icons";
 import type { CampaignActionState, CampaignRequirement } from "@/lib/campaign";
 
@@ -23,6 +22,81 @@ function translateRequirement(
   return t(req.descriptionKey, params);
 }
 
+/** CTA de la barra: tipografía UI normal, una sola línea. */
+function ObjectiveBarCta({
+  href,
+  label,
+  icon,
+  badgeSrc,
+  gymReady,
+  disabled,
+  isTravel,
+  onTravel,
+}: {
+  href: string;
+  label: string;
+  icon: string;
+  /** Medalla a conseguir — reemplaza el ícono genérico en desafío de gimnasio. */
+  badgeSrc?: string | null;
+  gymReady: boolean;
+  disabled: boolean;
+  isTravel: boolean;
+  onTravel?: () => void;
+}) {
+  const className = [
+    "ui-btn-primary inline-flex w-full items-center justify-center gap-1.5 px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.06em]",
+    gymReady
+      ? "bg-[color-mix(in_srgb,var(--theme-primary-bright)_92%,white)] shadow-[0_4px_14px_color-mix(in_srgb,var(--theme-primary)_35%,transparent)]"
+      : "",
+    disabled ? "pointer-events-none opacity-50" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const body = (
+    <>
+      {badgeSrc ? (
+        <Image
+          src={badgeSrc}
+          alt=""
+          width={22}
+          height={22}
+          unoptimized
+          className="h-[22px] w-[22px] shrink-0 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
+          aria-hidden
+        />
+      ) : (
+        <span className="material-symbols-outlined text-[18px]! leading-none" aria-hidden>
+          {icon}
+        </span>
+      )}
+      <span className="whitespace-nowrap">{label}</span>
+    </>
+  );
+
+  if (isTravel) {
+    return (
+      <button type="button" disabled={disabled} onClick={onTravel} className={className}>
+        {body}
+      </button>
+    );
+  }
+
+  if (disabled) {
+    return (
+      <span className={className} aria-disabled="true">
+        {body}
+      </span>
+    );
+  }
+
+  return (
+    <Link href={href} className={className}>
+      {body}
+    </Link>
+  );
+}
+
 /**
  * Hero de campaña: banner ilustrado (arte libre a la derecha) +
  * card de próximo objetivo debajo — no tapa al Pikachu.
@@ -30,6 +104,9 @@ function translateRequirement(
 export function CampaignPrimaryObjective({
   action,
   gymHref,
+  gymBadgeSrc,
+  onTravel,
+  travelPending = false,
   bannerSrc,
   bannerObjectPosition = "68% bottom",
   locationName,
@@ -41,6 +118,11 @@ export function CampaignPrimaryObjective({
 }: {
   action: CampaignActionState;
   gymHref?: string | null;
+  /** PNG de la medalla del gimnasio a desafiar. */
+  gymBadgeSrc?: string | null;
+  /** Cuando `action.action === "travel"`: selecciona zona (y suele ir a batalla). */
+  onTravel?: () => void;
+  travelPending?: boolean;
   bannerSrc: string;
   /** Encuadre del arte — evita cortar Pokémon abajo/derecha. */
   bannerObjectPosition?: string;
@@ -55,6 +137,7 @@ export function CampaignPrimaryObjective({
   const href =
     action.action === "challenge_gym" && gymHref ? gymHref : action.href;
   const gymReady = action.action === "challenge_gym";
+  const isTravel = action.action === "travel";
   const showReqs = action.missingRequirements.length > 0;
 
   const title =
@@ -127,77 +210,79 @@ export function CampaignPrimaryObjective({
         </div>
       </section>
 
-      {/* Próximo objetivo: desktop only — en mobile el panel de zona ya lo cubre. */}
+      {/* Próximo objetivo — solo desktop; barra chata para no comerse el recorrido. */}
       <section
-        className={`game-float-card hidden rounded-2xl p-3 sm:p-3.5 lg:block ${
+        className={`game-float-card hidden rounded-xl px-3 py-2.5 lg:block ${
           gymReady ? "ring-1 ring-electric-yellow/40" : "ring-1 ring-pokeball-red/28"
         }`}
       >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <div className="flex items-center gap-4">
           <div className="min-w-0 flex-1">
             <p
-              className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
+              className={`text-[9px] font-semibold uppercase tracking-[0.16em] ${
                 gymReady ? "text-electric-yellow" : "text-pokeball-red"
               }`}
             >
               {t("nextObjective")}
             </p>
-            <h2 className="mt-0.5 truncate text-[1.05rem] font-bold tracking-tight text-white sm:text-[1.2rem]">
+            <h2 className="truncate text-[0.95rem] font-bold leading-snug tracking-tight text-white">
               {title}
             </h2>
 
-            {progressTarget > 0 && (
-              <div className="mt-2.5">
-                <div className="mb-1 flex items-center justify-between gap-2 text-[11px] text-white/50">
-                  <span>{t("objectiveProgress")}</span>
-                  <span className="font-mono text-electric-yellow">
+            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              {progressTarget > 0 && (
+                <div className="flex min-w-[8rem] max-w-[14rem] flex-1 items-center gap-2">
+                  <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-black/50 ring-1 ring-white/8">
+                    <div
+                      className="campaign-warm-bar h-full rounded-full transition-all duration-500 motion-reduce:transition-none"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                  <span className="shrink-0 font-mono text-[11px] text-electric-yellow">
                     {progressCurrent}/{progressTarget}
                   </span>
                 </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-black/50 ring-1 ring-white/8">
-                  <div
-                    className="campaign-warm-bar h-full rounded-full transition-all duration-500 motion-reduce:transition-none"
-                    style={{ width: `${progressPct}%` }}
-                  />
-                </div>
-              </div>
-            )}
+              )}
 
-            {action.recommendedLevel != null && action.recommendedLevel > 0 && (
-              <p className="mt-2 text-[12px] text-white/50">
-                {t("reqLevel", { level: action.recommendedLevel })}
-              </p>
-            )}
+              {action.recommendedLevel != null &&
+                action.recommendedLevel > 0 &&
+                !showReqs && (
+                  <p className="text-[11px] text-white/45">
+                    {t("reqLevel", { level: action.recommendedLevel })}
+                  </p>
+                )}
 
-            {showReqs && (
-              <ul className="mt-2.5 flex flex-col gap-1">
-                {action.missingRequirements.map((req) => (
-                  <li
-                    key={req.id}
-                    className={`flex items-start gap-1.5 text-[12px] ${
-                      req.completed ? "text-electric-yellow" : "text-white/50"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined mt-0.5 text-[15px]!">
-                      {req.completed ? "check_circle" : "radio_button_unchecked"}
-                    </span>
-                    <span>{translateRequirement(t, req)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+              {showReqs && (
+                <ul className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5">
+                  {action.missingRequirements.map((req) => (
+                    <li
+                      key={req.id}
+                      className={`inline-flex max-w-full items-center gap-1 text-[11px] ${
+                        req.completed ? "text-electric-yellow/90" : "text-white/50"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[13px]! leading-none">
+                        {req.completed ? "check_circle" : "radio_button_unchecked"}
+                      </span>
+                      <span className="truncate">{translateRequirement(t, req)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
 
-          <div className="w-full shrink-0 sm:w-auto sm:min-w-[15rem]">
-            <GameCtaButton
+          <div className="w-[min(100%,15rem)] shrink-0">
+            <ObjectiveBarCta
               href={href}
-              disabled={!action.enabled}
-              variant="gold"
-              icon={gymReady ? "military_tech" : "explore"}
-              className="campaign-hero-cta min-h-11 shadow-[0_8px_24px_rgba(255,140,20,0.35)]"
-            >
-              {t(action.labelKey)}
-            </GameCtaButton>
+              label={t(action.labelKey)}
+              icon="explore"
+              badgeSrc={gymReady ? gymBadgeSrc : null}
+              gymReady={gymReady}
+              disabled={!action.enabled || (isTravel && (travelPending || !onTravel))}
+              isTravel={isTravel}
+              onTravel={onTravel}
+            />
           </div>
         </div>
       </section>

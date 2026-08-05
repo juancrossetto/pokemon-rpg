@@ -150,19 +150,26 @@ export function ClanEmblemBadge({
   size = 48,
   className = "",
   title,
+  fill = false,
 }: {
   emblem: unknown;
   size?: number;
   className?: string;
   title?: string;
+  /** Si true, ocupa el contenedor (ignora size en CSS; size sigue para el attr img). */
+  fill?: boolean;
 }) {
   const data: ClanEmblem = parseClanEmblem(emblem);
+  const boxStyle = fill ? undefined : { width: size, height: size };
+  const boxClass = fill
+    ? `relative inline-flex h-full w-full shrink-0 items-center justify-center bg-transparent ${className}`
+    : `relative inline-flex shrink-0 items-center justify-center bg-transparent ${className}`;
 
   if (isPresetEmblem(data)) {
     return (
       <span
-        className={`relative inline-flex shrink-0 items-center justify-center ${className}`}
-        style={{ width: size, height: size }}
+        className={boxClass}
+        style={boxStyle}
         role="img"
         aria-label={title ?? "Clan emblem"}
       >
@@ -172,7 +179,7 @@ export function ClanEmblemBadge({
           alt={title ?? "Clan emblem"}
           width={size}
           height={size}
-          className="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
+          className="h-full w-full bg-transparent object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
           draggable={false}
         />
       </span>
@@ -180,6 +187,11 @@ export function ClanEmblemBadge({
   }
 
   return (
-    <ProceduralEmblem data={data} size={size} title={title} className={className} />
+    <ProceduralEmblem
+      data={data}
+      size={size}
+      title={title}
+      className={`${fill ? "h-full w-full" : ""} ${className}`.trim()}
+    />
   );
 }

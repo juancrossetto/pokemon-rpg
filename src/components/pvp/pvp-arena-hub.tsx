@@ -212,10 +212,10 @@ export function PvpArenaHub({
               />
             </div>
 
-            <section className="pvp-hero game-float-card relative overflow-hidden rounded-2xl">
+            <section className="pvp-hero game-float-card relative overflow-visible rounded-2xl">
               <div
                 aria-hidden
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_0%_0%,color-mix(in_srgb,var(--color-electric-yellow)_12%,transparent),transparent_50%)]"
+                className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl bg-[radial-gradient(ellipse_at_0%_0%,color-mix(in_srgb,var(--color-electric-yellow)_12%,transparent),transparent_50%)]"
               />
 
               <div className="relative flex flex-col gap-5 p-4 sm:p-5 md:p-6">
@@ -233,8 +233,8 @@ export function PvpArenaHub({
                 </div>
 
                 <div className="flex items-center gap-4 sm:gap-5">
-                  <div className="min-w-0 flex-1">
-                    <p className="page-title pvp-rating-num text-[clamp(3.5rem,12vw,5.25rem)] leading-[0.9] tracking-wide">
+                  <div className="min-w-0 flex-1 overflow-visible">
+                    <p className="page-title pvp-rating-num pt-1 text-[clamp(3.5rem,12vw,5.25rem)] leading-[1.05] tracking-wide">
                       {rating}
                     </p>
                     <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-white/60">

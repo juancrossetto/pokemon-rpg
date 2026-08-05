@@ -32,13 +32,16 @@ export type CampaignPrimaryActionKind =
   | "continue"
   | "challenge_gym"
   | "view_journey"
-  | "blocked";
+  | "blocked"
+  /** Viajar a una zona (cambia farming); el CTA usa onClick, no href. */
+  | "travel";
 
 export type CampaignActionLabelKey =
   | "challengeGym"
   | "continueExpedition"
   | "viewJourney"
-  | "exploreLocation";
+  | "exploreLocation"
+  | "startExploring";
 
 /**
  * Condición evaluada con datos reales.
@@ -233,6 +236,152 @@ export function getCampaignPrimaryAction(ctx: CampaignActionContext): CampaignAc
     objectiveTitleKey: "objectiveExploreStage",
     locationNameKey: milestone.nameKey,
     progress,
+    missingRequirements: [],
+  };
+}
+
+/**
+ * CTA de la barra cuando el jugador eligió un nodo del recorrido.
+ * No reemplaza el milestone de historia: sólo contextualiza el botón.
+ */
+export function getCampaignActionForZone(opts: {
+  zone: MapLocation;
+  farmingLocationId: string;
+  progress: CampaignProgressRow;
+  earnedGymOrders: number[];
+  teamMaxLevel: number;
+  chapter: Chapter;
+  /** Milestone de historia (se reusa en el shape; la UI contextualiza título/CTA). */
+  storyMilestone: CampaignMilestone;
+  gymRecommendedLevel?: number | null;
+  /** `/gyms/{id}` cuando el nodo es el gimnasio del capítulo. */
+  gymHref?: string | null;
+}): CampaignActionState {
+  const {
+    zone,
+    farmingLocationId,
+    progress,
+    earnedGymOrders,
+    teamMaxLevel,
+    chapter,
+    storyMilestone,
+    gymRecommendedLevel,
+    gymHref,
+  } = opts;
+  const milestone = storyMilestone;
+  const isGym = zone.kindKey === "kinds.gym";
+
+  if (!zone.unlocked) {
+    return {
+      action: "blocked",
+      labelKey: "continueExpedition",
+      enabled: false,
+      href: "/battle",
+      milestone,
+      objectiveTitleKey: "objectiveExploreStage",
+      locationNameKey: zone.nameKey,
+      missingRequirements: getZoneUnlockRequirements(zone.id, progress),
+    };
+  }
+
+  if (isGym) {
+    const gymOrder = chapter.gymOrder ?? zone.gymOrder;
+    if (gymOrder == null) {
+      return {
+        action: "blocked",
+        labelKey: "continueExpedition",
+        enabled: false,
+        href: "/battle",
+        milestone,
+        objectiveTitleKey: "objectiveChallengeGym",
+        locationNameKey: zone.nameKey,
+        missingRequirements: [],
+      };
+    }
+
+    const hasBadge = earnedGymOrders.includes(gymOrder);
+    const reqs = getGymChallengeRequirements(
+      gymOrder,
+      progress.completedStageIds,
+      teamMaxLevel,
+      gymRecommendedLevel,
+    );
+    const stagesReq = reqs.find((r) => r.type === "complete_all_chapter_stages");
+    const canFight = canChallengeGym(gymOrder, progress.completedStageIds, { hasBadge });
+
+    if (!canFight) {
+      return {
+        action: "blocked",
+        labelKey: "continueExpedition",
+        enabled: true,
+        href: "/battle",
+        milestone,
+        objectiveTitleKey: "objectiveClearChapterStages",
+        locationNameKey: zone.nameKey,
+        progress:
+          stagesReq && stagesReq.requiredAmount != null
+            ? {
+                current: stagesReq.currentAmount ?? 0,
+                target: stagesReq.requiredAmount,
+              }
+            : undefined,
+        missingRequirements: reqs,
+        recommendedLevel: gymRecommendedLevel ?? undefined,
+        gymOrder,
+      };
+    }
+
+    return {
+      action: "challenge_gym",
+      labelKey: "challengeGym",
+      enabled: true,
+      href: gymHref ?? milestoneHref(milestone),
+      milestone,
+      objectiveTitleKey: "objectiveChallengeGym",
+      locationNameKey: zone.nameKey,
+      progress: stagesReq
+        ? {
+            current: stagesReq.currentAmount ?? 0,
+            target: stagesReq.requiredAmount ?? 0,
+          }
+        : undefined,
+      missingRequirements: reqs,
+      recommendedLevel: gymRecommendedLevel ?? undefined,
+      gymOrder,
+    };
+  }
+
+  // Ruta / ciudad / bosque…
+  const progressBar =
+    chapter.stagesTotal > 0
+      ? { current: chapter.stagesDone, target: chapter.stagesTotal }
+      : zone.totalStages > 0
+        ? { current: zone.completedStages, target: zone.totalStages }
+        : undefined;
+
+  if (zone.id === farmingLocationId) {
+    return {
+      action: "explore",
+      labelKey: "continueExpedition",
+      enabled: true,
+      href: "/battle",
+      milestone,
+      objectiveTitleKey: "objectiveExploreStage",
+      locationNameKey: zone.nameKey,
+      progress: progressBar,
+      missingRequirements: [],
+    };
+  }
+
+  return {
+    action: "travel",
+    labelKey: "startExploring",
+    enabled: true,
+    href: "/battle",
+    milestone,
+    objectiveTitleKey: "objectiveExploreStage",
+    locationNameKey: zone.nameKey,
+    progress: progressBar,
     missingRequirements: [],
   };
 }
