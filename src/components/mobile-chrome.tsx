@@ -24,6 +24,10 @@ import { getLastNavHref, setLastNavHref } from "@/lib/nav-last-dest";
 import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
 import { openHandbook } from "@/lib/handbook/open";
 import { chapterForPath } from "@/lib/handbook/chapters";
+import {
+  pinStandaloneNavElement,
+  STANDALONE_SAT_BOTTOM_PX,
+} from "@/lib/standalone-early";
 
 type NavLink = {
   href: string;
@@ -385,26 +389,6 @@ export function MobileChrome({
     }
   }, [primary]);
 
-  // Clase + anclaje standalone. useLayoutEffect: corre antes del paint post-
-  // hidratar, así React no deja un frame sin `is-standalone` (pisaba className
-  // del <html> y la nav saltaba). NO medimos env(): al refrescar parpadea y
-  // re-escribir --standalone-sat-bottom era el salto. Offset fijo en CSS.
-  useLayoutEffect(() => {
-    if (!isStandalone()) return;
-    const html = document.documentElement;
-    html.classList.add("is-standalone");
-    document.body.classList.add("is-standalone");
-    html.style.setProperty("--standalone-sat-bottom", "34px");
-
-    const onPageShow = () => {
-      html.classList.add("is-standalone");
-      document.body.classList.add("is-standalone");
-      html.style.setProperty("--standalone-sat-bottom", "34px");
-    };
-    window.addEventListener("pageshow", onPageShow);
-    return () => window.removeEventListener("pageshow", onPageShow);
-  }, []);
-
   // Habilita transitions de tabs tras asentar el layout (más lento en PWA
   // standalone: si no, el scale del tab activo “salta” al refrescar).
   useEffect(() => {
@@ -419,6 +403,41 @@ export function MobileChrome({
   // compara directo contra los href de los links.
   const pathname = usePathname();
   const prevPathname = useRef(pathname);
+
+  // Clase + listener pageshow (una sola vez).
+  useLayoutEffect(() => {
+    if (!isStandalone()) return;
+    const html = document.documentElement;
+    html.classList.add("is-standalone");
+    document.body.classList.add("is-standalone");
+    html.style.setProperty(
+      "--standalone-sat-bottom",
+      `${STANDALONE_SAT_BOTTOM_PX}px`,
+    );
+
+    const onPageShow = () => {
+      html.classList.add("is-standalone");
+      document.body.classList.add("is-standalone");
+      html.style.setProperty(
+        "--standalone-sat-bottom",
+        `${STANDALONE_SAT_BOTTOM_PX}px`,
+      );
+      if (bottomNavRef.current) {
+        pinStandaloneNavElement(bottomNavRef.current);
+      }
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
+
+  // Re-pin inline antes del paint en cada navegación / cambio de dock (combate).
+  // Sin esto iOS deja un frame con la barra elevada (hueco negro).
+  useLayoutEffect(() => {
+    if (!isStandalone()) return;
+    if (bottomNavRef.current) {
+      pinStandaloneNavElement(bottomNavRef.current);
+    }
+  }, [pathname, lockedHref]);
 
   // En standalone el scroll vive en `.app-main` (body overflow:hidden).
   // Next scrollea el window; acá reseteamos el contenedor real al navegar.
@@ -622,8 +641,15 @@ export function MobileChrome({
       document.documentElement.style.setProperty("--vv-gap", `${gap}px`);
     }
 
-    // Anclar siempre al borde: cualquier inset dinámico es la fuente del salto.
-    root.style.bottom = "";
+    // En standalone NUNCA limpiar bottom: eso soltaba el anclaje un frame
+    // (barra subía) al remount/cambio de lockedHref. Re-pin inline.
+    if (isStandalone()) {
+      pinStandaloneNavElement(root);
+    } else {
+      root.style.bottom = "";
+      root.style.paddingBottom = "";
+      root.style.marginBottom = "";
+    }
 
     publishNavHeight();
     publishVvGap();

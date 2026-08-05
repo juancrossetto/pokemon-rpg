@@ -10099,14 +10099,14 @@ html.boot-splash-pending .boot-splash {
   1. Bloquear el scroll del documento (`overflow:hidden`) sin acotar con
      `max-height: 100dvh` — ese tope deja una franja muerta bajo los fixed.
   2. Mover el scroll a `.app-main` con `overscroll-behavior-y: contain`.
-  3. En iOS standalone, `bottom: 0` de un fixed suele caer en el borde
-     *safe* (arriba del home indicator). Empujamos la nav hacia el borde
-     físico con margen negativo + padding de safe-area, y el dock ya no
-     vuelve a sumar ese inset (evitar doble hueco).
+  3. En iOS standalone no hay barra de Safari: `bottom: 0` cae en el borde
+     *safe* (arriba del home indicator). Empujamos al borde físico con
+     `bottom: -34px` + `padding-bottom: 34px` FIJOS (sin env()). El dock no
+     vuelve a sumar safe-area (evitar doble hueco).
 
-  Offset FIJO 34px (home indicator iPhone X+). No usamos env() ni re-medición
-  JS: al refrescar env() parpadea 0→34 y la barra subía/bajaba. El early
-  script + <style> del layout clavan el mismo valor con !important.
+  El salto al navegar/refrescar se evita clavando el mismo offset en:
+  critical CSS, globals, early script (inline !important) y MobileChrome
+  (re-pin en useLayoutEffect por ruta). Nunca limpiar style.bottom en standalone.
 */
 @media all and (display-mode: standalone) {
   html {
