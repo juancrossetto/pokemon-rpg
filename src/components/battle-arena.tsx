@@ -73,6 +73,7 @@ import { forecastDamage } from "@/lib/damage-forecast";
 import { EmptyPartySlot, HpPlate, PartyIcon, PartySidebar } from "@/components/battle/arena-panels";
 import { CaptureSummary } from "@/components/battle/capture-summary";
 import { BattleOutcomeScreen } from "@/components/battle/battle-outcome-screen";
+import { BattleTurnTimer } from "@/components/battle/battle-turn-timer";
 import { BagView, MovesView, TargetView, TeamView, TurnOrderChip } from "@/components/battle/command-views";
 import { needsFoeTargetPick, isSpreadMove } from "@/lib/move-target";
 
@@ -164,6 +165,7 @@ export function BattleArena({
   playerBStatus: initialPlayerBStatus = null,
   wildBStatus: initialWildBStatus = null,
   pvpMatchId = null,
+  turnDeadlineAt: initialTurnDeadlineAt = null,
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tLog = useTranslations("battle.log");
@@ -385,6 +387,9 @@ export function BattleArena({
   const [effPopup, setEffPopup] = useState<{ text: string; key: number } | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [outcome, setOutcome] = useState<Outcome>("ongoing");
+  const [turnDeadlineAt, setTurnDeadlineAt] = useState<string | null>(
+    initialTurnDeadlineAt ?? null,
+  );
   const [xpSummary, setXpSummary] = useState<XpSummaryEntry[] | null>(null);
   const [coinsGained, setCoinsGained] = useState(0);
   const [pvpResult, setPvpResult] = useState<{
@@ -1661,6 +1666,10 @@ export function BattleArena({
       setTmRewardName(result.tmRewardName);
     }
 
+    if (result.turnDeadlineAt !== undefined) {
+      setTurnDeadlineAt(result.turnDeadlineAt);
+    }
+
     if (result.outcome === "won") {
       await playFaintAndFinish("wild", "won");
     } else if (result.outcome === "lost") {
@@ -2398,6 +2407,17 @@ export function BattleArena({
               } as CSSProperties
             }
           >
+            <BattleTurnTimer
+              battleId={battleId}
+              locale={locale}
+              deadlineAt={turnDeadlineAt}
+              paused={isAnimating || outcome !== "ongoing"}
+              onExpired={() => {
+                setTurnDeadlineAt(null);
+                appendLog(t("idleTimeout"));
+                setOutcome("lost");
+              }}
+            />
             {/* Placa rival + banner de poder al costado; HUD debajo. */}
             <div className="absolute top-2.5 right-2 left-2.5 z-30 flex flex-col items-start gap-3.5 md:top-3 md:right-1.5 md:left-3 md:gap-4">
               <div className="flex w-full items-stretch gap-1.5 md:gap-2">

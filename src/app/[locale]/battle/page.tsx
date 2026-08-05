@@ -27,6 +27,8 @@ import { gymLeaderPortraitUrl, gymTypeTrainerSpriteSlug } from "@/lib/gym-art";
 import { parseTeamSnap } from "@/lib/pvp/team";
 import { resolveBattleBg } from "@/lib/battle-bg";
 import { parseDoublesFieldB } from "@/lib/doubles";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 export default async function BattlePage({
   params,
@@ -56,7 +58,7 @@ export default async function BattlePage({
     });
   }
 
-  const battle = await prisma.battleSession.findFirst({
+  let battle = await prisma.battleSession.findFirst({
     where: { userId, status: "ACTIVE" },
     orderBy: { updatedAt: "desc" },
     include: {
@@ -93,6 +95,19 @@ export default async function BattlePage({
       opponentUser: { select: { username: true, avatarId: true } },
     },
   });
+
+  if (battle) {
+    if (await closeBattleIfIdle(battle, locale)) {
+      battle = null;
+    } else if (!battle.turnDeadlineAt) {
+      const deadline = nextTurnDeadline();
+      await prisma.battleSession.update({
+        where: { id: battle.id },
+        data: { turnDeadlineAt: deadline },
+      });
+      battle = { ...battle, turnDeadlineAt: deadline };
+    }
+  }
 
   let initialBattle: BattleArenaProps | null = null;
   let hasHealthyTeam = true;
@@ -630,6 +645,7 @@ export default async function BattlePage({
       battleBg,
       encounterPlace,
       pvpMatchId: battle.pvpMatchId,
+      turnDeadlineAt: battle.turnDeadlineAt?.toISOString() ?? null,
     };
   }
 

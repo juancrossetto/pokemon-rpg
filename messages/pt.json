@@ -731,6 +731,8 @@
     },
     "run": "Fugir",
     "forfeit": "Desistir",
+    "turnTimerAria": "Tempo para escolher: {time}",
+    "idleTimeout": "O tempo acabou. Batalha perdida.",
     "backToPvp": "Voltar ao PvP",
     "pvpRating": "Rating",
     "coins": "moedas",

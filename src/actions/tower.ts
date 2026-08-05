@@ -42,6 +42,7 @@ import {
 import { scaleEnemyForFloor } from "@/lib/tower/scaling";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { currentSeasonKey } from "@/lib/pvp/seasons";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 
 async function requireUser(locale: string) {
   const session = await auth();
@@ -308,6 +309,7 @@ export async function challengeTowerFloor(locale: string) {
         participantIds: partnerSnap
           ? [leadSnap.instanceId, partnerSnap.instanceId]
           : [leadSnap.instanceId],
+        turnDeadlineAt: nextTurnDeadline(),
       },
     });
   });

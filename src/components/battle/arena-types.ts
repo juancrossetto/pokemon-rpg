@@ -144,4 +144,6 @@ export interface BattleArenaProps {
   movesB?: BattleMoveOption[];
   playerBStatus?: string | null;
   wildBStatus?: string | null;
+  /** ISO del deadline de decisión del jugador (reloj de inactividad). */
+  turnDeadlineAt?: string | null;
 }

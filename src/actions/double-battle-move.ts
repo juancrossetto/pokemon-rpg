@@ -10,6 +10,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidateCombatUi } from "@/lib/battle-lock";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 import { calculateMaxHp } from "@/lib/stats";
 import {
   effectivePp,
@@ -195,6 +197,49 @@ export async function submitDoubleBattleMoves(
     },
   });
   if (!battle?.towerRunId) return null;
+
+  if (await closeBattleIfIdle(battle, locale)) {
+    const fieldB = parseDoublesFieldB(battle.fieldB);
+    const instA = battle.pokemonInstance;
+    const instB = battle.pokemonInstanceB!;
+    return {
+      events: [],
+      playerMaxHp: calculateMaxHp(instA.species.baseHp, instA.level, instA.ptConstitution),
+      wildMaxHp: battle.wildMaxHp,
+      playerBMaxHp: calculateMaxHp(instB.species.baseHp, instB.level, instB.ptConstitution),
+      wildBMaxHp: fieldB?.wild.maxHp ?? null,
+      playerHp: instA.currentHp,
+      wildHp: battle.wildCurrentHp,
+      playerBHp: instB.currentHp,
+      wildBHp: fieldB?.wild.currentHp ?? null,
+      outcome: "lost",
+      leveledUpTo: null,
+      xpGained: null,
+      xpSummary: null,
+      coinsGained: 0,
+      badgeEarned: false,
+      tmRewardName: null,
+      rematch: false,
+      playerMovesPp: instA.moves.map((m) => ({
+        moveId: m.moveId,
+        pp: m.currentPp,
+      })),
+      playerMovesPpB: instB.moves.map((m) => ({
+        moveId: m.moveId,
+        pp: m.currentPp,
+      })),
+      playerChoiceLockMoveId: battle.playerChoiceLockMoveId,
+      playerChargeMoveId: battle.playerChargeMoveId,
+      playerChargeMoveIdB: fieldB?.player.chargeMoveId ?? null,
+      playerStatus: battle.playerStatus,
+      wildStatus: battle.wildStatus,
+      playerBStatus: fieldB?.player.status ?? null,
+      wildBStatus: fieldB?.wild.status ?? null,
+      pvpResult: null,
+      nextOpponent: null,
+      turnDeadlineAt: null,
+    };
+  }
 
   const fieldBParsed = parseDoublesFieldB(battle.fieldB);
   if (!fieldBParsed || !battle.pokemonInstanceB) return null;
@@ -699,6 +744,7 @@ export async function submitDoubleBattleMoves(
         fieldB: JSON.parse(JSON.stringify(nextFieldB)),
         participantIds,
         log: finalLog,
+        turnDeadlineAt: nextTurnDeadline(),
       },
     });
   });
@@ -723,6 +769,8 @@ function buildResult(input: {
   nextFieldB: DoublesFieldB;
 }): DoubleUseMoveResult {
   const { events, field, outcome, nextFieldB } = input;
+  const turnDeadlineAt =
+    outcome === "ongoing" ? nextTurnDeadline().toISOString() : null;
 
   const mapPp = (
     inst: InstWithMoves,
@@ -765,5 +813,6 @@ function buildResult(input: {
     playerChargeMoveIdB: field.playerB?.chargeMoveId ?? null,
     pvpResult: null,
     nextOpponent: null,
+    turnDeadlineAt,
   };
 }

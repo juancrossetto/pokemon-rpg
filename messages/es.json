@@ -731,6 +731,8 @@
     },
     "run": "Huir",
     "forfeit": "Rendirse",
+    "turnTimerAria": "Tiempo para elegir: {time}",
+    "idleTimeout": "Te quedaste sin tiempo. Batalla perdida.",
     "backToPvp": "Volver a PvP",
     "pvpRating": "Rating",
     "coins": "monedas",

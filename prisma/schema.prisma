@@ -948,6 +948,8 @@ model BattleSession {
   wildAccStage           Int                 @default(0)
   wildEvaStage           Int                 @default(0)
   fleeAttempts           Int                 @default(0) // fallos de huida; sube la chance (Gen III)
+  /// Límite absoluto para que el jugador elija la próxima acción. Si vence, derrota por inactividad.
+  turnDeadlineAt         DateTime?
   // Objeto equipado del jugador (fijo para toda la batalla, no se puede
   // cambiar en combate — ver blockIfInCombat en equip-held-item).
   playerChoiceLockMoveId Int? // si porta un objeto CHOICE_LOCK, el movimiento al que quedó atado

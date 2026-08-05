@@ -731,6 +731,8 @@
     },
     "run": "Run",
     "forfeit": "Forfeit",
+    "turnTimerAria": "Time to choose: {time}",
+    "idleTimeout": "You ran out of time. Battle lost.",
     "backToPvp": "Back to PvP",
     "pvpRating": "Rating",
     "coins": "coins",

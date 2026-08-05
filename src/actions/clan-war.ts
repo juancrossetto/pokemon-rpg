@@ -29,6 +29,7 @@ import {
   pickWarOpponent,
 } from "@/lib/clan-war";
 import { settleClanWarSlot } from "@/lib/clan-war/settle-slot";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 
 export type ClanWarActionResult =
   | { ok: true; warId?: string; battleId?: string; won?: boolean }
@@ -451,6 +452,7 @@ export async function startClanWarBattle(
             opponentSlot: firstOpp.slot,
             log: [`challengeClanWar:${foeName}`, `sendOut:${firstOpp.speciesName}`],
             participantIds: [lead.instanceId],
+            turnDeadlineAt: nextTurnDeadline(),
           },
         });
         ok = true;

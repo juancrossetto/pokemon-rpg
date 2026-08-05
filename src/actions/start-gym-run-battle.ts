@@ -8,6 +8,7 @@ import { getMovesetForLevel } from "@/lib/moveset";
 import { currentGymRunOpponent } from "@/lib/gym-run";
 import { GYM_BATTLE_ENERGY_COST, getCurrentEnergy } from "@/lib/energy";
 import { revalidateCombatUi } from "@/lib/battle-lock";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 
 // Arranca la batalla contra el próximo oponente de una corrida ya iniciada
 // (subordinado o líder). La energía se descuenta ACÁ, al iniciar — no al
@@ -104,6 +105,7 @@ export async function startGymRunBattle(gymRunId: string, locale: string) {
         wildMovePp,
         log: introLog,
         participantIds: [lead.id],
+        turnDeadlineAt: nextTurnDeadline(),
       },
     }),
   ]);

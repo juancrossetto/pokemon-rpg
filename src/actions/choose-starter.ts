@@ -7,6 +7,7 @@ import { STARTER_SPECIES_IDS, rivalStarterFor } from "@/lib/starters";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 
 const STARTER_LEVEL = 5;
 const STARTER_POKEBALL_COUNT = 5;
@@ -152,6 +153,7 @@ export async function chooseStarter(
           ),
           participantIds: [starterInstance.id],
           log: [`appear:${rival.name}`, "tutorial"],
+          turnDeadlineAt: nextTurnDeadline(),
         },
       });
 

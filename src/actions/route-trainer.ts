@@ -10,6 +10,7 @@ import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { isLocationUnlocked } from "@/lib/campaign";
 import { getRouteTrainer } from "@/lib/campaign/trainers";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 
 export type StartTrainerResult =
   | { success: true }
@@ -102,6 +103,7 @@ export async function startTrainerBattle(
       routeTrainerId: trainer.id,
       participantIds: [lead.id],
       log: [`appear:${species.name}`, `trainer:${trainer.id}`],
+      turnDeadlineAt: nextTurnDeadline(),
     },
   });
 

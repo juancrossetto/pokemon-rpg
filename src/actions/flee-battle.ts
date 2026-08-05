@@ -9,6 +9,8 @@ import { stageMultiplier } from "@/lib/status";
 import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
 import type { TurnEvent } from "@/lib/battle";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 const MAX_LOG_LINES = 20;
 
@@ -43,6 +45,14 @@ export async function fleeBattle(sessionId: string, locale: string): Promise<Fle
   });
   if (!battle) return null;
   if (battle.routeTrainerId) return null;
+  if (await closeBattleIfIdle(battle, locale)) {
+    return {
+      fled: false,
+      counterAttack: null,
+      playerHpAfter: battle.pokemonInstance.currentHp,
+      outcome: "lost",
+    };
+  }
 
   const instance = battle.pokemonInstance;
   const playerBase = playerCombatantStats(instance.species, instance.level, instance);
@@ -85,11 +95,13 @@ export async function fleeBattle(sessionId: string, locale: string): Promise<Fle
             status: "LOST",
             fleeAttempts: { increment: 1 },
             log: finalLog,
+            turnDeadlineAt: null,
             ...counter.statePatch,
           }
         : {
             fleeAttempts: { increment: 1 },
             log: finalLog,
+            turnDeadlineAt: nextTurnDeadline(),
             ...counter.statePatch,
           },
     }),

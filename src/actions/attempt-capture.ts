@@ -15,6 +15,8 @@ import { runWildCounterAttack } from "@/lib/wild-counter";
 import { revalidateCombatUi } from "@/lib/battle-lock";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
 import { SHINY_CATCH_REWARD, spriteFor } from "@/lib/shiny";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 const MAX_LOG_LINES = 20;
 const TEAM_SIZE = 6;
@@ -77,6 +79,17 @@ export async function attemptCapture(
   if (battle.gymId || battle.routeTrainerId) return null;
   if (!inventoryItem || inventoryItem.quantity < 1) return null;
   if (inventoryItem.item.type !== "POKEBALL") return null;
+  if (await closeBattleIfIdle(battle, locale)) {
+    return {
+      caught: false,
+      shakes: 0,
+      ballName: inventoryItem.item.name,
+      counterAttack: null,
+      playerHpAfter: battle.pokemonInstance.currentHp,
+      outcome: "lost",
+      capturedPokemon: null,
+    };
+  }
 
   const ball = inventoryItem.item;
   const instance = battle.pokemonInstance;
@@ -213,8 +226,8 @@ export async function attemptCapture(
     prisma.battleSession.update({
       where: { id: battle.id },
       data: lostBattle
-        ? { status: "LOST", log: finalLog, ...counter.statePatch }
-        : { log: finalLog, ...counter.statePatch },
+        ? { status: "LOST", log: finalLog, turnDeadlineAt: null, ...counter.statePatch }
+        : { log: finalLog, turnDeadlineAt: nextTurnDeadline(), ...counter.statePatch },
     }),
     ...(lostBattle
       ? [prisma.battleLog.create({ data: { kind: "PVE_WILD" as const, userId, userWon: false } })]

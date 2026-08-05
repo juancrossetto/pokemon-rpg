@@ -16,6 +16,7 @@ import {
   type TeamRowForSnap,
 } from "@/lib/pvp/team";
 import { primeChallengerTeamForBattle } from "@/lib/pvp/restore";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const PVP_LIMIT = 15;
@@ -228,6 +229,7 @@ export async function startPvpBattle(
             opponentSlot: firstOpp.slot,
             log: [`challengePvp:${opponent!.username}`, `sendOut:${firstOpp.speciesName}`],
             participantIds: [lead.instanceId],
+            turnDeadlineAt: nextTurnDeadline(),
           },
         });
       },

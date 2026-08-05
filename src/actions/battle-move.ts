@@ -45,6 +45,8 @@ import { notifySettledPvp, settlePvpMatch } from "@/lib/pvp/settle";
 import { settleClanWarSlot } from "@/lib/clan-war/settle-slot";
 import { parseTeamSnap, type PvpTeamMemberSnap } from "@/lib/pvp/team";
 import { twoTurnSpec } from "@/lib/two-turn";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 const MAX_LOG_LINES = 20;
 
@@ -103,6 +105,8 @@ export interface UseMoveResult {
     types: string[];
     stats: { def: number; spDef: number; speed: number };
   } | null;
+  /** ISO del próximo deadline de decisión (si sigue ACTIVE). */
+  turnDeadlineAt?: string | null;
 }
 
 function applyXpGain(
@@ -173,6 +177,38 @@ export async function submitBattleMove(
     },
   });
   if (!battle) return null;
+
+  if (await closeBattleIfIdle(battle, locale)) {
+    const instance = battle.pokemonInstance;
+    return {
+      events: [],
+      playerMaxHp: calculateMaxHp(
+        instance.species.baseHp,
+        instance.level,
+        instance.ptConstitution,
+      ),
+      wildMaxHp: battle.wildMaxHp,
+      outcome: "lost",
+      leveledUpTo: null,
+      xpGained: null,
+      xpSummary: null,
+      coinsGained: 0,
+      badgeEarned: false,
+      tmRewardName: null,
+      rematch: false,
+      playerMovesPp: instance.moves.map((m) => ({
+        moveId: m.moveId,
+        pp: m.currentPp,
+      })),
+      playerChoiceLockMoveId: battle.playerChoiceLockMoveId,
+      playerChargeMoveId: battle.playerChargeMoveId,
+      playerStatus: battle.playerStatus,
+      wildStatus: battle.wildStatus,
+      pvpResult: null,
+      nextOpponent: null,
+      turnDeadlineAt: null,
+    };
+  }
 
   // Carga de 2 turnos (Fly/Dig…) manda sobre Choice y sobre lo que eligió
   // el jugador: el 2º turno está forzado.
@@ -594,6 +630,7 @@ export async function submitBattleMove(
               ...RESET_WILD_STAGES,
               wildChargeMoveId: null,
               log: finalLog,
+              turnDeadlineAt: nextTurnDeadline(),
             },
           }),
           ...(battle.pvpMatchId
@@ -631,6 +668,7 @@ export async function submitBattleMove(
           wildStatus: null,
           pvpResult: null,
           nextOpponent,
+          turnDeadlineAt: nextTurnDeadline().toISOString(),
         };
       }
 
@@ -1359,7 +1397,11 @@ export async function submitBattleMove(
       prisma.pokemonInstance.update({ where: { id: instance.id }, data: { currentHp: 0 } }),
       prisma.battleSession.update({
         where: { id: battle.id },
-        data: { ...battleStateData, log: finalLog },
+        data: {
+          ...battleStateData,
+          log: finalLog,
+          turnDeadlineAt: nextTurnDeadline(),
+        },
       }),
     ]);
   } else {
@@ -1368,7 +1410,11 @@ export async function submitBattleMove(
       prisma.pokemonInstance.update({ where: { id: instance.id }, data: { currentHp: playerHp } }),
       prisma.battleSession.update({
         where: { id: battle.id },
-        data: { ...battleStateData, log: finalLog },
+        data: {
+          ...battleStateData,
+          log: finalLog,
+          turnDeadlineAt: nextTurnDeadline(),
+        },
       }),
     ]);
   }
@@ -1380,11 +1426,19 @@ export async function submitBattleMove(
     revalidatePath(`/${locale}/campaign`);
   }
 
+  const outcome = wonBattle
+    ? "won"
+    : lostBattle
+      ? "lost"
+      : mustSwitch
+        ? "fainted"
+        : "ongoing";
+
   return {
     events,
     playerMaxHp,
     wildMaxHp: battle.wildMaxHp,
-    outcome: wonBattle ? "won" : lostBattle ? "lost" : mustSwitch ? "fainted" : "ongoing",
+    outcome,
     leveledUpTo,
     xpGained,
     xpSummary,
@@ -1399,5 +1453,9 @@ export async function submitBattleMove(
     wildStatus: wildState.status,
     pvpResult,
     nextOpponent,
+    turnDeadlineAt:
+      outcome === "ongoing" || outcome === "fainted"
+        ? nextTurnDeadline().toISOString()
+        : null,
   };
 }

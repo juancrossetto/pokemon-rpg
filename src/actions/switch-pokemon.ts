@@ -10,6 +10,8 @@ import { calculateMaxHp, calculateStat } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
 import { spriteFor } from "@/lib/shiny";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 const MAX_LOG_LINES = 20;
 
@@ -37,6 +39,7 @@ export interface SwitchPokemonResult {
   };
   counterAttack: TurnEvent | null;
   outcome: "continues" | "lost" | "fainted";
+  turnDeadlineAt?: string | null;
 }
 
 export async function switchPokemon(
@@ -58,6 +61,33 @@ export async function switchPokemon(
     },
   });
   if (!battle) return null;
+
+  if (await closeBattleIfIdle(battle, locale)) {
+    return {
+      newPlayer: {
+        instanceId: battle.pokemonInstanceId,
+        name: battle.pokemonInstance.nickname ?? battle.pokemonInstance.species.name,
+        speciesName: battle.pokemonInstance.species.name,
+        level: battle.pokemonInstance.level,
+        spriteUrl: spriteFor(
+          battle.pokemonInstance.species.spriteUrl,
+          battle.pokemonInstance.isShiny,
+        ),
+        isShiny: battle.pokemonInstance.isShiny,
+        currentHp: 0,
+        maxHp: calculateMaxHp(
+          battle.pokemonInstance.species.baseHp,
+          battle.pokemonInstance.level,
+          battle.pokemonInstance.ptConstitution,
+        ),
+        stats: { atk: 0, spAtk: 0, speed: 0 },
+        moves: [],
+      },
+      counterAttack: null,
+      outcome: "lost",
+      turnDeadlineAt: null,
+    };
+  }
 
   const newInstance = await prisma.pokemonInstance.findFirst({
     where: { id: newInstanceId, ownerId: userId, teamSlot: { not: null } },
@@ -122,6 +152,7 @@ export async function switchPokemon(
         participantIds,
         ...clearPlayerStatus,
         log: [...battle.log, `switchForced:${newName}`].slice(-MAX_LOG_LINES),
+        turnDeadlineAt: nextTurnDeadline(),
       },
     });
 
@@ -142,6 +173,7 @@ export async function switchPokemon(
       },
       counterAttack: null,
       outcome: "continues",
+      turnDeadlineAt: nextTurnDeadline().toISOString(),
     };
   }
 
@@ -176,7 +208,9 @@ export async function switchPokemon(
         ...clearPlayerStatus,
         ...counter.statePatch,
         // el statePatch puede pisar playerStatus con el del counter (sobre el que entró)
-        ...(lostBattle ? { status: "LOST" as const } : {}),
+        ...(lostBattle
+          ? { status: "LOST" as const, turnDeadlineAt: null }
+          : { turnDeadlineAt: nextTurnDeadline() }),
       },
     }),
     ...(lostBattle
@@ -221,5 +255,6 @@ export async function switchPokemon(
     },
     counterAttack: counter.counterAttack,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
+    turnDeadlineAt: lostBattle ? null : nextTurnDeadline().toISOString(),
   };
 }

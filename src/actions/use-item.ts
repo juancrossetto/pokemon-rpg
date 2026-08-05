@@ -7,6 +7,8 @@ import type { TurnEvent } from "@/lib/battle";
 import { calculateMaxHp } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
+import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 const MAX_LOG_LINES = 20;
 
@@ -48,6 +50,15 @@ export async function applyBattleItem(
   ]);
   if (!battle) return null;
   if (!inventoryItem || inventoryItem.quantity < 1) return null;
+  if (await closeBattleIfIdle(battle, locale)) {
+    return {
+      healedTo: battle.pokemonInstance.currentHp,
+      healedBy: 0,
+      itemName: inventoryItem.item.name,
+      counterAttack: null,
+      outcome: "lost",
+    };
+  }
   const { item } = inventoryItem;
   const healAmount = item.healAmount;
   if (item.type !== "POTION" || healAmount === null) return null;
@@ -83,8 +94,8 @@ export async function applyBattleItem(
     prisma.battleSession.update({
       where: { id: battle.id },
       data: lostBattle
-        ? { status: "LOST", log: finalLog, ...counter.statePatch }
-        : { log: finalLog, ...counter.statePatch },
+        ? { status: "LOST", log: finalLog, turnDeadlineAt: null, ...counter.statePatch }
+        : { log: finalLog, turnDeadlineAt: nextTurnDeadline(), ...counter.statePatch },
     }),
     ...(lostBattle
       ? [
