@@ -474,7 +474,9 @@ export function StarterHub({
             </p>
           </div>
 
-          <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          {/* 2 columnas en mobile: con 6 iniciales, una sola columna obligaba
+              a scrollear toda la elección. */}
+          <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             {starters.map((species, index) => (
               <StarterCard
                 key={species.id}

@@ -1152,15 +1152,9 @@ body {
   }
 }
 
-/* Layout de batalla desktop: 3 columnas fijas (evita fallos de arbitrary minmax). */
+/* Layout de batalla: columna única alineada al fondo Showdown (ver .battle-stage). */
 @utility battle-desktop-grid {
   width: 100%;
-}
-
-@media (min-width: 1024px) {
-  .battle-desktop-grid {
-    grid-template-columns: 13rem minmax(0, 1fr) 13rem;
-  }
 }
 
 /* Barra HP del party sidebar — rectangular, degradé verde → flúor. */
@@ -1273,6 +1267,17 @@ body {
 }
 .sprite-shake {
   animation: sprite-shake 0.4s ease-in-out;
+}
+
+/*
+ * A 1× (arena 753px) esto no cambia nada: sin escalado, el modo de
+ * interpolación es irrelevante. Existe para el escalón 2× de pantallas
+ * grandes, donde `pixelated` es lo que hace que el doble se lea como pixel
+ * art ampliado y no como una foto borrosa.
+ */
+.battle-sprite-pixel,
+.battle-arena-field {
+  image-rendering: pixelated;
 }
 
 @keyframes sprite-flash {

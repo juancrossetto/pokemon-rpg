@@ -382,7 +382,7 @@ export default async function BattlePage({
               {
                 slot: 1,
                 name: battle.wildSpecies.name,
-                spriteUrl: battle.wildSpecies.spriteUrl,
+                spriteUrl: spriteFor(battle.wildSpecies.spriteUrl, battle.wildIsShiny),
                 fainted: false,
                 active: true,
               },
@@ -619,14 +619,14 @@ export default async function BattlePage({
               {
                 slot: 1,
                 name: battle.wildSpecies.name,
-                spriteUrl: battle.wildSpecies.spriteUrl,
+                spriteUrl: spriteFor(battle.wildSpecies.spriteUrl, battle.wildIsShiny),
                 fainted: battle.wildCurrentHp <= 0,
                 active: true,
               },
               {
                 slot: 2,
                 name: wildBSpecies.name,
-                spriteUrl: wildBSpecies.spriteUrl,
+                spriteUrl: spriteFor(wildBSpecies.spriteUrl, fieldB.wild.isShiny),
                 fainted: fieldB.wild.currentHp <= 0,
                 active: true,
               },

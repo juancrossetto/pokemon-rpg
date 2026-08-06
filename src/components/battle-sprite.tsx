@@ -51,7 +51,7 @@ export function BattleSprite({
       alt={alt}
       width={width}
       height={height}
-      className={className}
+      className={`battle-sprite-pixel ${className ?? ""}`.trim()}
       style={style}
       unoptimized
       onError={() => {

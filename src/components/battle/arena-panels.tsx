@@ -8,6 +8,7 @@ import Image from "next/image";
 import { type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { PokeballIcon } from "@/components/pokeball-icon";
+import { ShinyMark } from "@/components/shiny-mark";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import {
   BATTLE_STATS,
@@ -72,6 +73,7 @@ export function PartySidebar({
   variant = "party",
   featuredSpriteUrl = null,
   featuredLevel = null,
+  featuredIsShiny = false,
   encounterPlace = null,
   children,
 }: {
@@ -85,6 +87,8 @@ export function PartySidebar({
   featuredSpriteUrl?: string | null;
   /** Nivel del mon activo (sidebar salvaje). */
   featuredLevel?: number | null;
+  /** Variocolor: brillo en el strip mobile del salvaje. */
+  featuredIsShiny?: boolean;
   /** Lugar del encuentro (ruta/piso/torre). */
   encounterPlace?: {
     title: string;
@@ -101,27 +105,27 @@ export function PartySidebar({
 
   if (compact && isWild && (encounterPlace || featuredLevel != null)) {
     return (
-      <div className="flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-black/30 px-2.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+      <div className="flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-black/30 px-2.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:gap-3 md:px-3.5 md:py-2.5">
         {encounterPlace ? (
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-2.5">
             <span
               aria-hidden
-              className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-secondary/40 bg-secondary/20 shadow-[0_0_12px_color-mix(in_srgb,var(--theme-secondary)_40%,transparent)]"
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-secondary/40 bg-secondary/20 shadow-[0_0_12px_color-mix(in_srgb,var(--theme-secondary)_40%,transparent)] md:h-11 md:w-11"
             >
               <span className="absolute inset-0 rounded-full bg-secondary/25 blur-md" />
               {placeIconUrl ? (
                 <Image
                   src={placeIconUrl}
                   alt=""
-                  width={32}
-                  height={32}
+                  width={44}
+                  height={44}
                   className="relative h-full w-full object-cover"
-                  sizes="32px"
+                  sizes="44px"
                 />
               ) : (
                 <svg
                   viewBox="0 0 24 24"
-                  className="relative h-3.5 w-3.5 text-secondary"
+                  className="relative h-3.5 w-3.5 text-secondary md:h-4 md:w-4"
                   fill="currentColor"
                   aria-hidden
                 >
@@ -132,14 +136,14 @@ export function PartySidebar({
             <div className="min-w-0">
               <p
                 title={encounterPlace.title}
-                className="truncate text-[11px] font-bold leading-tight text-white/92"
+                className="truncate text-[11px] font-bold leading-tight text-white/92 md:text-[13px]"
               >
                 {encounterPlace.title}
               </p>
               {encounterPlace.subtitle ? (
                 <p
                   title={encounterPlace.subtitle}
-                  className="truncate text-[10px] font-medium leading-tight text-secondary"
+                  className="truncate text-[10px] font-medium leading-tight text-secondary md:text-[11px]"
                 >
                   {encounterPlace.subtitle}
                 </p>
@@ -152,35 +156,40 @@ export function PartySidebar({
         {hasChildren ? (
           <div className="flex shrink-0 items-stretch gap-1">{children}</div>
         ) : null}
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5 md:gap-2.5">
           {featuredSpriteUrl ? (
-            <span className="relative flex h-10 w-10 items-center justify-center">
+            <span className="relative flex h-10 w-10 items-center justify-center md:h-14 md:w-14">
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-full bg-secondary/25 blur-md"
+                className={`pointer-events-none absolute inset-0 rounded-full blur-md ${
+                  featuredIsShiny ? "bg-[#FFCC00]/35" : "bg-secondary/25"
+                }`}
               />
               <Image
                 src={featuredSpriteUrl}
                 alt=""
-                width={40}
-                height={40}
-                className="relative h-9 w-9 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
+                width={56}
+                height={56}
+                className="relative h-9 w-9 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)] md:h-12 md:w-12"
                 unoptimized
               />
             </span>
           ) : null}
           <div className="min-w-0 text-left">
-            <p className="text-[8px] font-bold uppercase tracking-[0.14em] text-secondary">
+            <p className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.14em] text-secondary md:text-[10px]">
               {t("wildTag")}
+              {featuredIsShiny ? (
+                <ShinyMark className="h-3 w-3 md:h-3.5 md:w-3.5" title={t("shinyBadge")} />
+              ) : null}
             </p>
             <p
               title={name}
-              className="max-w-[6.5rem] truncate text-[11px] font-bold uppercase leading-tight text-white"
+              className="max-w-[6.5rem] truncate text-[11px] font-bold uppercase leading-tight text-white md:max-w-[9rem] md:text-[13px]"
             >
               {name}
             </p>
             {featuredLevel != null ? (
-              <p className="text-[9px] leading-tight text-white/55">
+              <p className="text-[9px] leading-tight text-white/55 md:text-[11px]">
                 {t("level", { level: featuredLevel })}
               </p>
             ) : null}
@@ -193,13 +202,13 @@ export function PartySidebar({
   if (compact) {
     return (
       <div
-        className={`flex items-center gap-2 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-black/30 px-2 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ${
+        className={`flex items-center gap-2 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-black/30 px-2 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:gap-3 md:px-3 md:py-2.5 ${
           align === "right" ? "flex-row-reverse" : ""
         }`}
       >
-        <div className="flex w-[3.25rem] shrink-0 flex-col items-center gap-0.5">
+        <div className="flex w-[3.25rem] shrink-0 flex-col items-center gap-0.5 md:w-16">
           {isWild && featuredSpriteUrl ? (
-            <span className="relative flex h-10 w-10 items-center justify-center">
+            <span className="relative flex h-10 w-10 items-center justify-center md:h-14 md:w-14">
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-0 rounded-full bg-primary/25 blur-md"
@@ -207,36 +216,45 @@ export function PartySidebar({
               <Image
                 src={featuredSpriteUrl}
                 alt=""
-                width={40}
-                height={40}
-                className="relative h-9 w-9 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
+                width={56}
+                height={56}
+                className="relative h-9 w-9 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)] md:h-12 md:w-12"
                 unoptimized
               />
             </span>
           ) : (
-            <span className="relative">
+            <span className="relative inline-flex">
               <span
                 aria-hidden
-                className="pointer-events-none absolute -inset-1 rounded-[28%] bg-primary/20 blur-md"
+                className="pointer-events-none absolute -inset-1 rounded-[28%] bg-primary/20 blur-md md:-inset-1.5"
               />
               <TrainerAvatar
                 name={name}
                 src={portraitUrl}
                 size="sm"
                 pixel={pixelPortrait}
-                className="relative"
+                className="relative md:hidden"
+              />
+              <TrainerAvatar
+                name={name}
+                src={portraitUrl}
+                size="md"
+                pixel={pixelPortrait}
+                className="relative hidden md:inline-flex"
               />
             </span>
           )}
           <p
             title={name}
-            className="w-full truncate text-center text-[9px] font-bold leading-tight text-white/90"
+            className="w-full truncate text-center text-[9px] font-bold leading-tight text-white/90 md:text-[11px]"
           >
             {name}
           </p>
         </div>
         {hasChildren ? (
-          <div className="flex min-w-0 flex-1 items-stretch gap-1.5">{children}</div>
+          <div className="flex min-w-0 flex-1 items-stretch gap-1.5 md:gap-2.5">
+            {children}
+          </div>
         ) : null}
       </div>
     );
@@ -341,21 +359,29 @@ export function PartySidebar({
   return (
     <div className="flex h-full min-h-0 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-primary/[0.08] via-[#12141a]/94 to-black/45 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_14px_36px_rgba(0,0,0,0.4)]">
       <div className="flex shrink-0 flex-col items-center gap-2 border-b border-white/[0.07] pb-2.5">
-        <span className="relative shrink-0">
+        {/*
+          `inline-flex` y no el `inline` por defecto: como span inline, el
+          wrapper heredaba el espacio de línea bajo la baseline y quedaba unos
+          px más alto que el avatar, así que el ring de `inset-0` no calzaba
+          con las esquinas redondeadas del retrato.
+        */}
+        <span className="relative inline-flex shrink-0">
           <span
             aria-hidden
             className="pointer-events-none absolute -inset-2 rounded-[32%] bg-primary/25 blur-xl"
           />
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-[28%] ring-1 ring-primary/35"
+            className="pointer-events-none absolute inset-0 z-2 rounded-[28%] ring-1 ring-primary/35"
           />
+          {/* El `rounded` va acá también: la sombra sigue la caja del span
+              externo, que sin radio la dibujaba cuadrada detrás del retrato. */}
           <TrainerAvatar
             name={name}
             src={portraitUrl}
             size="xl"
             pixel={pixelPortrait}
-            className="relative shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
+            className="relative rounded-[28%] shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
           />
         </span>
         <p
@@ -383,6 +409,7 @@ export function PartyIcon({
   compact = false,
   level,
   types,
+  isShiny = false,
   onSelect,
   selectHint,
 }: {
@@ -394,6 +421,7 @@ export function PartyIcon({
   compact?: boolean;
   level?: number;
   types?: string[];
+  isShiny?: boolean;
   /** Abrir cambio / info rápida. */
   onSelect?: () => void;
   selectHint?: string;
@@ -404,6 +432,7 @@ export function PartyIcon({
       name,
       level != null ? `Nv. ${level}` : null,
       typeof hpPct === "number" ? `${Math.round(hpPct)}%` : null,
+      isShiny ? "Shiny" : null,
       typeLine || null,
       onSelect ? selectHint : null,
     ]
@@ -411,7 +440,7 @@ export function PartyIcon({
       .join(" · ");
 
   const shellClass = compact
-    ? `relative flex min-w-0 flex-1 flex-col items-center gap-0.5 ${fainted ? "opacity-55" : ""}`
+    ? `relative flex min-w-0 flex-1 flex-col items-center gap-0.5 md:gap-1 ${fainted ? "opacity-55" : ""}`
     : `relative flex w-[5.25rem] max-w-full shrink-0 flex-col items-center gap-0.5 ${fainted ? "opacity-55" : ""}`;
 
   const body = (
@@ -419,10 +448,10 @@ export function PartyIcon({
       <div
         className={
           compact
-            ? `relative flex aspect-square w-full min-h-[2.35rem] items-center justify-center overflow-hidden rounded-md ${
+            ? `relative flex aspect-square w-full min-h-[2.35rem] items-center justify-center overflow-hidden rounded-md md:min-h-[4.5rem] md:rounded-lg ${
                 active
                   ? "bg-primary/15 ring-1 ring-primary/70 shadow-[0_0_10px_color-mix(in_srgb,var(--color-pokeball-red)_30%,transparent)]"
-                  : "bg-white/[0.04]"
+                  : "bg-white/[0.04] md:bg-white/[0.06]"
               }`
             : `relative flex aspect-square w-full items-center justify-center ${
                 active ? "rounded-md ring-1 ring-primary/50" : ""
@@ -433,19 +462,24 @@ export function PartyIcon({
           <Image
             src={spriteUrl}
             alt={name}
-            width={compact ? 48 : 56}
-            height={compact ? 48 : 56}
+            width={compact ? 72 : 56}
+            height={compact ? 72 : 56}
             className={`object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${
-              compact ? "h-[94%] w-[94%]" : "h-[92%] w-[92%]"
+              compact ? "h-[94%] w-[94%] md:h-[90%] md:w-[90%]" : "h-[92%] w-[92%]"
             } ${fainted ? "grayscale-[0.55]" : ""}`}
           />
         ) : (
-          <PokeballIcon className={compact ? "h-4 w-4 opacity-40" : "h-5 w-5 opacity-40"} />
+          <PokeballIcon className={compact ? "h-4 w-4 opacity-40 md:h-6 md:w-6" : "h-5 w-5 opacity-40"} />
         )}
+        {isShiny && !fainted ? (
+          <span className="absolute left-0.5 top-0.5 md:left-1 md:top-1">
+            <ShinyMark className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" />
+          </span>
+        ) : null}
         {fainted ? (
           <span
             className={`material-symbols-outlined absolute right-0 top-0 text-error drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
-              compact ? "text-[9px]!" : "text-[11px]!"
+              compact ? "text-[9px]! md:text-[12px]!" : "text-[11px]!"
             }`}
           >
             skull
@@ -453,9 +487,17 @@ export function PartyIcon({
         ) : null}
       </div>
       {typeof hpPct === "number" && !fainted ? (
-        <PartyHpLine hpPct={hpPct} thick={!compact} className={compact ? "mx-[8%] w-[84%]" : "w-[92%]"} />
+        <PartyHpLine
+          hpPct={hpPct}
+          thick={!compact}
+          className={
+            compact
+              ? "mx-[8%] w-[84%] md:mx-[6%] md:w-[88%] [&_.party-hp__track]:md:h-[0.38rem]"
+              : "w-[92%]"
+          }
+        />
       ) : (
-        <PartyHpEmpty fainted={fainted} className={compact ? "mx-[8%] w-[84%]" : "w-[92%]"} />
+        <PartyHpEmpty fainted={fainted} className={compact ? "mx-[8%] w-[84%] md:mx-[6%] md:w-[88%]" : "w-[92%]"} />
       )}
     </>
   );
@@ -481,24 +523,41 @@ export function PartyIcon({
   );
 }
 
+/**
+ * Slot vacío del equipo. Usa la pokeball HD (misma arte que la mochila) en vez
+ * del SVG plano: al 20% de opacidad ese SVG quedaba como un punto gris sin
+ * lectura. Acá va apagada pero reconocible — se entiende que es un lugar libre,
+ * no un elemento roto.
+ */
 export function EmptyPartySlot({ compact = false }: { compact?: boolean }) {
+  const ball = (
+    <Image
+      src="/items/hd/poke-ball.png"
+      alt=""
+      width={40}
+      height={40}
+      className="h-full w-full object-contain opacity-30 saturate-[0.35] drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+      unoptimized
+    />
+  );
+
+  // Sin Pokémon no hay HP que mostrar: la barra vacía sugería un slot ocupado
+  // al 0% (o sea, uno debilitado), que es justo lo contrario de "está libre".
   if (compact) {
     return (
-      <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
-        <div className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-white/[0.08] bg-white/[0.02]">
-          <PokeballIcon className="h-3.5 w-3.5 opacity-20" />
+      <div className="flex min-w-0 flex-1 flex-col items-center">
+        <div className="flex aspect-square w-full min-h-[2.35rem] items-center justify-center rounded-md border border-dashed border-white/[0.08] bg-white/[0.02] p-1 md:min-h-[4.5rem] md:rounded-lg md:p-2">
+          {ball}
         </div>
-        <PartyHpEmpty className="mx-[8%] w-[84%]" />
       </div>
     );
   }
 
   return (
-    <div className="flex w-[5.25rem] max-w-full shrink-0 flex-col items-center gap-0.5">
-      <div className="flex aspect-square w-full items-center justify-center opacity-35">
-        <PokeballIcon className="h-5 w-5" />
+    <div className="flex w-[5.25rem] max-w-full shrink-0 flex-col items-center">
+      <div className="flex aspect-square w-full items-center justify-center p-[22%]">
+        {ball}
       </div>
-      <PartyHpEmpty className="w-[92%]" />
     </div>
   );
 }
@@ -568,6 +627,7 @@ export function HpPlate({
   maxHp,
   status,
   stages,
+  isShiny = false,
   align = "left",
   className = "",
 }: {
@@ -577,9 +637,11 @@ export function HpPlate({
   maxHp: number;
   status?: string | null;
   stages?: StatStages;
+  isShiny?: boolean;
   align?: "left" | "right";
   className?: string;
 }) {
+  const t = useTranslations("battle");
   const hpPct = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
   const hpClass = hpTone(hpPct);
   const critical = hpPct > 0 && hpPct <= 20;
@@ -588,7 +650,7 @@ export function HpPlate({
     <div
       className={`hp-plate${align === "right" ? " hp-plate--mirror" : ""}${
         critical ? " hp-plate--critical" : ""
-      } ${className}`}
+      }${isShiny ? " hp-plate--shiny" : ""} ${className}`}
     >
       <div className="hp-plate__shell">
         <div className="hp-plate__panel">
@@ -604,6 +666,12 @@ export function HpPlate({
               <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/55 md:text-[12px]">
                 {levelLabel}
               </span>
+              {isShiny ? (
+                <ShinyMark
+                  className="h-3.5 w-3.5 md:h-[1.05rem] md:w-[1.05rem]"
+                  title={t("shinyBadge")}
+                />
+              ) : null}
               {status ? <StatusBadge status={status} /> : null}
             </div>
 

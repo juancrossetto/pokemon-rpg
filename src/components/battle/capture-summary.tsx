@@ -7,6 +7,7 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import type { CapturedPokemonInfo } from "@/actions/attempt-capture";
+import { ShinyMark } from "@/components/shiny-mark";
 import { typeColor } from "@/lib/type-colors";
 import { useTypeLabel } from "@/hooks/use-type-label";
 
@@ -86,10 +87,8 @@ export function CaptureSummary({
               {t("level", { level: info.level })}
             </p>
             {info.isShiny && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-electric-yellow">
-                <span className="material-symbols-outlined text-[14px]! leading-none">
-                  auto_awesome
-                </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#FFCC00]">
+                <ShinyMark className="h-4 w-4" />
                 {t("shinyBadge")}
               </span>
             )}

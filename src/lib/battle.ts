@@ -161,6 +161,17 @@ export function xpForVictory(wildLevel: number): number {
   return wildLevel * 12;
 }
 
+/**
+ * Fracción de XP que cobra la banca viva (la que no peleó).
+ *
+ * Reparto estilo Gen VI: el que pelea cobra el total y el resto del equipo
+ * cobra esta fracción **además**, en vez de dividir un pozo fijo entre todos.
+ * Dividir hacía que criar un equipo de 6 costara ~6× más peleas que
+ * sobrenivelar un solo carry, y un carry sobrenivelado vuelve irrelevante la
+ * ventaja de tipos — justo la decisión que el combate quiere que importe.
+ */
+export const BENCH_XP_SHARE = 0.5;
+
 /** Une IDs de participantes de batalla sin duplicados (orden de primera aparición). */
 export function mergeBattleParticipantIds(
   ...idLists: (readonly (string | null | undefined)[] | string | null | undefined)[]

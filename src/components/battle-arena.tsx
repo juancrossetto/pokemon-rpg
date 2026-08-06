@@ -90,7 +90,10 @@ import {
   BATTLE_WILD_SPRITE_FRAC,
   BATTLE_WILD_SPRITE_WIDTH_CAP,
   battleSpeciesScale,
+  spriteBoxFromNatural,
+  BATTLE_ARENA_BASE_W,
 } from "@/lib/battle-sprite-scale";
+import { spriteNaturalPx } from "@/lib/battle-sprite-natural";
 import { fleeChancePercent } from "@/lib/flee";
 
 export type { BattleArenaProps, OpponentPartyMember } from "@/components/battle/arena-types";
@@ -2372,20 +2375,50 @@ export function BattleArena({
   const isAlphaWild = initialLog.some((line) => line === "alpha");
   const arenaH = arenaHeightPx || 400;
   const arenaW = arenaWidthPx || 360;
-  function spriteBoxPx(fracH: number, widthCap: number, speciesName: string, alpha = false) {
-    const byHeight = arenaH * fracH * battleSpeciesScale(speciesName) * (alpha ? 1.1 : 1);
+  /*
+    Zoom del escenario, sólo en pasos **enteros**. El fondo nativo es 753px y
+    el arte de sprites va de 45px a 172px: cualquier factor intermedio (1.4×)
+    deja píxeles de tamaño desparejo y se ve peor que no escalar. A 2× exacto
+    con `image-rendering: pixelated` el conjunto se lee como un juego retro
+    ampliado, que es la única forma de pasar de 753px sin ensuciar.
+  */
+  const arenaZoom = arenaW >= BATTLE_ARENA_BASE_W * 1.9 ? 2 : 1;
+  /*
+    Modelo Showdown: el tamaño sale del arte nativo (que ya codifica cuán
+    grande es la especie), no de una fracción del campo. La rama por
+    `battleSpeciesScale` queda sólo para especies que no estén en la tabla
+    de tamaños nativos, y ahí sí se capea el agrandado a 3× entero.
+  */
+  function spriteBoxPx(
+    fracH: number,
+    widthCap: number,
+    speciesName: string,
+    facing: "front" | "back",
+    alpha = false,
+  ) {
     const byWidth = arenaW * widthCap;
+    const natural = spriteNaturalPx(speciesName, facing);
+    if (natural) {
+      // 0.75 y no 0.62: con el tope justo, un Charizard de espalda (258px en
+      // Showdown) quedaba recortado a 223px y perdía la presencia que le toca.
+      const maxPx = Math.min(byWidth, arenaH * 0.75);
+      const box = spriteBoxFromNatural(natural, facing, maxPx) * arenaZoom;
+      return alpha ? Math.round(box * 1.1) : box;
+    }
+    const byHeight = arenaH * fracH * battleSpeciesScale(speciesName) * (alpha ? 1.1 : 1);
     return Math.round(Math.min(byHeight, byWidth));
   }
   const playerSpritePx = spriteBoxPx(
     BATTLE_PLAYER_SPRITE_FRAC,
     BATTLE_PLAYER_SPRITE_WIDTH_CAP,
     activePlayer.speciesName,
+    "back",
   );
   const wildSpritePx = spriteBoxPx(
     BATTLE_WILD_SPRITE_FRAC,
     BATTLE_WILD_SPRITE_WIDTH_CAP,
     activeWild.speciesName,
+    "front",
     isAlphaWild,
   );
   const playerBSpritePx = playerB
@@ -2394,6 +2427,7 @@ export function BattleArena({
           BATTLE_PLAYER_SPRITE_FRAC,
           BATTLE_PLAYER_SPRITE_WIDTH_CAP,
           playerB.speciesName,
+          "back",
         ) * 0.82,
       )
     : Math.round(playerSpritePx * 0.82);
@@ -2403,6 +2437,7 @@ export function BattleArena({
           BATTLE_WILD_SPRITE_FRAC,
           BATTLE_WILD_SPRITE_WIDTH_CAP,
           wildB.speciesName,
+          "front",
         ) * 0.78,
       )
     : Math.round(wildSpritePx * 0.78);
@@ -2490,19 +2525,11 @@ export function BattleArena({
   const emptyOpponentSlots = foeSidebarWild
     ? 0
     : Math.max(0, 6 - opponentParty.length);
-  const wildFeaturedSprite =
-    opponentParty.find((m) => m.active)?.spriteUrl ??
-    opponentParty[0]?.spriteUrl ??
-    activeWild.spriteUrl;
-  const foePartyIcons = opponentParty.map((m) => (
-    <PartyIcon
-      key={`o-${m.slot}`}
-      spriteUrl={m.spriteUrl}
-      name={m.name}
-      fainted={m.fainted}
-      active={m.active}
-    />
-  ));
+  const wildFeaturedSprite = foeSidebarWild
+    ? activeWild.spriteUrl
+    : (opponentParty.find((m) => m.active)?.spriteUrl ??
+      opponentParty[0]?.spriteUrl ??
+      activeWild.spriteUrl);
   const foePartyIconsCompact = opponentParty.map((m) => (
     <PartyIcon
       key={`o-${m.slot}`}
@@ -2519,10 +2546,14 @@ export function BattleArena({
   return (
     <div className="flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden px-1.5 py-0.5 sm:px-2 md:px-3 md:py-1.5">
       <div className="mx-auto flex w-full max-w-7xl min-h-0 flex-1 flex-col gap-0.5 overflow-hidden md:gap-1.5">
-        {/* Top — mayor parte del alto en mobile */}
-        <div className="flex min-h-0 flex-1 flex-col gap-0.5 md:gap-1.5">
-        {/* Mobile: rival — avatar + party (o sprite único si es salvaje/torre) */}
-        <div className="lg:hidden shrink-0">
+        {/*
+          Columna del combate: rival + campo + equipo comparten el ancho del
+          fondo Showdown (753 / 1506). Antes el party iba a max-w-7xl y el
+          arena a 753px → desktop “a medias”.
+        */}
+        <div className="battle-stage mx-auto flex min-h-0 w-full max-w-[753px] flex-1 flex-col gap-0.5 overflow-hidden md:gap-1.5 2xl:max-w-[1506px]">
+        {/* Rival — barra horizontal (mismo patrón que mobile). */}
+        <div className="shrink-0">
           <PartySidebar
             name={wildEncounterHeader ? activeWild.name : foeLabel}
             portraitUrl={opponentPortraitUrl}
@@ -2531,6 +2562,7 @@ export function BattleArena({
             variant={foeSidebarWild ? "wild" : "party"}
             featuredSpriteUrl={wildFeaturedSprite}
             featuredLevel={wildEncounterHeader ? activeWild.level : null}
+            featuredIsShiny={wildEncounterHeader ? Boolean(activeWild.isShiny) : false}
             encounterPlace={wildEncounterHeader ? encounterPlace : null}
           >
             {foeSidebarWild
@@ -2546,40 +2578,17 @@ export function BattleArena({
           </PartySidebar>
         </div>
 
-        <div className="battle-desktop-grid grid flex-1 grid-cols-1 items-stretch gap-1 min-h-0 min-w-0 md:gap-2 lg:grid-cols-[13rem_1fr_13rem]">
-          {/* Player sidebar (desktop) */}
-          <aside className="hidden min-h-0 min-w-0 overflow-hidden lg:block">
-            <PartySidebar name={trainerName} portraitUrl={trainerPortraitUrl} align="left">
-              {party.map((m) => (
-                <PartyIcon
-                  key={m.instanceId}
-                  spriteUrl={m.spriteUrl}
-                  name={m.name}
-                  fainted={m.currentHp <= 0}
-                  active={m.instanceId === activePlayer.instanceId}
-                  hpPct={(m.currentHp / m.maxHp) * 100}
-                  level={m.level}
-                  types={m.types}
-                  selectHint={t("partyTapHint")}
-                  onSelect={
-                    !isAnimating && !isDouble && hasHealthyBackup
-                      ? () => setView("team")
-                      : undefined
-                  }
-                />
-              ))}
-              {Array.from({ length: emptyPlayerSlots }).map((_, i) => (
-                <EmptyPartySlot key={`pe-${i}`} />
-              ))}
-            </PartySidebar>
-          </aside>
-
           {/* Arena */}
-          <div className="relative flex min-h-0 min-w-0 flex-col">
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           <div
             ref={arenaFieldRef}
             data-battle-speed={battleSpeed}
-            className={`battle-arena-field relative mx-auto h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-white/10 ${
+            /*
+              753px = ancho nativo de los fondos de Showdown (753×500). El
+              padre `.battle-stage` ya fija ese tope; acá el campo llena el
+              ancho disponible.
+            */
+            className={`battle-arena-field relative m-auto aspect-16/9 max-h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl border border-white/10 ${
               arenaFlash ? "arena-type-flash" : ""
             }`}
             style={
@@ -2614,6 +2623,7 @@ export function BattleArena({
                   maxHp={wildMaxHp}
                   status={wildStatus}
                   stages={wildStages}
+                  isShiny={activeWild.isShiny}
                   align="left"
                 />
                 {moveBanner ? (
@@ -2655,6 +2665,7 @@ export function BattleArena({
                 maxHp={wildBMaxHp}
                 status={wildBStatus}
                 stages={NO_STAGES}
+                isShiny={wildB.isShiny}
                 align="left"
               />
             )}
@@ -2670,6 +2681,7 @@ export function BattleArena({
               maxHp={playerMaxHp}
               status={playerStatus}
               stages={playerStages}
+              isShiny={activePlayer.isShiny}
               align="right"
             />
             {isDouble && playerB && (
@@ -2681,6 +2693,7 @@ export function BattleArena({
                 maxHp={playerBMaxHp}
                 status={playerBStatus}
                 stages={NO_STAGES}
+                isShiny={playerB.isShiny}
                 align="right"
               />
             )}
@@ -3028,33 +3041,8 @@ export function BattleArena({
           </div>
           </div>
 
-          {/* Opponent sidebar (desktop) */}
-          <aside className="hidden min-h-0 min-w-0 overflow-hidden lg:block">
-            <PartySidebar
-              name={foeSidebarWild ? activeWild.name : foeLabel}
-              portraitUrl={opponentPortraitUrl}
-              align="right"
-              variant={foeSidebarWild ? "wild" : "party"}
-              featuredSpriteUrl={wildFeaturedSprite}
-              featuredLevel={wildEncounterHeader ? activeWild.level : null}
-              encounterPlace={wildEncounterHeader ? encounterPlace : null}
-            >
-              {foeSidebarWild
-                ? opponentParty.length > 1
-                  ? foePartyIcons
-                  : null
-                : [
-                    ...foePartyIcons,
-                    ...Array.from({ length: emptyOpponentSlots }).map((_, i) => (
-                      <EmptyPartySlot key={`oe-${i}`} />
-                    )),
-                  ]}
-            </PartySidebar>
-          </aside>
-        </div>
-
-        {/* Mobile: jugador — avatar + party */}
-        <div className="lg:hidden shrink-0">
+        {/* Jugador — barra horizontal alineada al campo */}
+        <div className="shrink-0">
           <PartySidebar
             name={trainerName}
             portraitUrl={trainerPortraitUrl}
@@ -3071,6 +3059,7 @@ export function BattleArena({
                 hpPct={(m.currentHp / m.maxHp) * 100}
                 level={m.level}
                 types={m.types}
+                isShiny={m.isShiny}
                 compact
                 selectHint={t("partyTapHint")}
                 onSelect={
@@ -3087,9 +3076,8 @@ export function BattleArena({
         </div>
         </div>
 
-        {/* Panel inferior: altura fija en mobile (el campo no salta al
-            abrir poderes). Más bajo para ceder alto al arena. */}
-        <div className="flex min-h-0 min-w-0 shrink-0 flex-col gap-1 max-md:h-[10.5rem] max-md:max-h-[10.5rem] md:h-[min(13rem,30dvh)] md:max-h-[13rem] md:gap-1.5">
+        {/* Panel inferior: misma columna que el stage en desktop. */}
+        <div className="battle-stage mx-auto flex min-h-0 w-full max-w-[753px] shrink-0 flex-col gap-1 max-md:h-[10.5rem] max-md:max-h-[10.5rem] md:h-[min(13rem,30dvh)] md:max-h-[13rem] md:gap-1.5 2xl:max-w-[1506px]">
           {commandExpanded && lastLogEntry ? (
             <p
               className="md:hidden shrink-0 truncate rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] leading-snug text-white/80"

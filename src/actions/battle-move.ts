@@ -13,6 +13,7 @@ import {
 } from "@/lib/battle-stages";
 import { calculateMaxHp, xpForLevel, UNSPENT_POINTS_PER_LEVEL } from "@/lib/stats";
 import {
+  BENCH_XP_SHARE,
   effectivePp,
   playerActsFirst,
   STRUGGLE_MOVE,
@@ -917,8 +918,10 @@ export async function submitBattleMove(
       const hpNow = p.id === instance.id ? playerHp : p.currentHp;
       return hpNow > 0;
     });
-    const share = Math.max(1, Math.floor(totalXp / Math.max(1, participants.length)));
-    xpGained = share;
+    // Reparto Gen VI (ver BENCH_XP_SHARE): el que peleó cobra el total, la
+    // banca viva cobra una fracción encima — no se divide un pozo fijo.
+    const activeShare = Math.max(1, totalXp);
+    const benchShare = Math.max(1, Math.floor(totalXp * BENCH_XP_SHARE));
 
     xpSummary = [];
     const instanceUpdates = [];
@@ -936,6 +939,8 @@ export async function submitBattleMove(
 
     for (const p of participants) {
       const isActive = p.id === instance.id;
+      const share = isActive ? activeShare : benchShare;
+      if (isActive) xpGained = share;
       const hpBefore = isActive ? playerHp : Math.max(0, p.currentHp);
       const result = applyXpGain(
         p.xp,
@@ -1041,7 +1046,7 @@ export async function submitBattleMove(
         wildMaxHp: battle.wildMaxHp,
         outcome: "trainer_cleared",
         leveledUpTo,
-        xpGained: share,
+        xpGained: activeShare,
         xpSummary,
         coinsGained: coinsAwarded,
         badgeEarned: false,
@@ -1107,7 +1112,7 @@ export async function submitBattleMove(
         wildMaxHp: battle.wildMaxHp,
         outcome: "won",
         leveledUpTo,
-        xpGained: share,
+        xpGained: activeShare,
         xpSummary,
         coinsGained: coinsAwarded,
         badgeEarned: false,
