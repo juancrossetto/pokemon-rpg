@@ -894,7 +894,7 @@ body {
 .hp-plate__content {
   position: relative;
   z-index: 1;
-  padding: 0.48rem 0.9rem 0.45rem;
+  padding: 0.42rem 0.75rem 0.4rem;
   /* Texto derecho; la barra se re-inclina aparte. */
   transform: skewX(calc(0deg - var(--hp-plate-skew)));
 }
@@ -913,7 +913,7 @@ body {
     border-radius: calc(1.15rem - 1.5px);
   }
   .hp-plate__content {
-    padding: 0.55rem 1.05rem 0.5rem;
+    padding: 0.75rem 1.35rem 0.68rem;
   }
 }
 
@@ -925,7 +925,7 @@ body {
 }
 .hp-plate__bar-track {
   position: relative;
-  height: 0.62rem;
+  height: 0.58rem;
   overflow: hidden;
   border-radius: 0.28rem;
   padding: 1px;
@@ -950,7 +950,7 @@ body {
 }
 @media (min-width: 768px) {
   .hp-plate__bar-track {
-    height: 0.72rem;
+    height: 0.95rem;
     border-radius: 0.32rem;
   }
   .hp-plate__bar-track::before {
@@ -1114,12 +1114,91 @@ body {
   }
 }
 
+/* Layout de batalla desktop: 3 columnas fijas (evita fallos de arbitrary minmax). */
+@utility battle-desktop-grid {
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .battle-desktop-grid {
+    grid-template-columns: 13rem minmax(0, 1fr) 13rem;
+  }
+}
+
+/* Barra HP del party sidebar — rectangular, degradé verde → flúor. */
+.party-hp {
+  display: block;
+  width: 100%;
+}
+
+.party-hp__track {
+  position: relative;
+  height: 0.3rem;
+  overflow: hidden;
+  border-radius: 0.2rem;
+  background: #1a1d26;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.party-hp--lg .party-hp__track {
+  height: 0.38rem;
+  border-radius: 0.22rem;
+}
+
+.party-hp__track--faint {
+  background: color-mix(in srgb, var(--color-error) 28%, #1a1d26);
+  box-shadow: none;
+}
+
+.party-hp__fill {
+  position: relative;
+  height: 100%;
+  border-radius: 0.12rem;
+  transition: width 220ms ease;
+}
+
+.party-hp__fill--ok {
+  background: linear-gradient(90deg, #1f9d4a 0%, #2ecc5a 42%, #7CFF4D 100%);
+}
+
+.party-hp__fill--yellow {
+  background: linear-gradient(90deg, #c4a00a 0%, #e8c21a 45%, #ffe566 100%);
+}
+
+.party-hp__fill--red {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-error) 90%, #7f1d1d) 0%,
+    color-mix(in srgb, var(--color-error) 75%, #fb7185) 55%,
+    #fca5a5 100%
+  );
+}
+
+.party-hp__sheen {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .party-hp__fill {
+    transition: none;
+  }
+}
+
 .battle-arena-field {
+  /* Overlay liviano: el bioma se lee; los sprites siguen con sombra propia. */
   background:
-    linear-gradient(180deg, rgba(10, 18, 14, 0.55) 0%, rgba(12, 22, 16, 0.72) 100%),
+    linear-gradient(180deg, rgba(8, 14, 12, 0.22) 0%, rgba(10, 16, 14, 0.38) 55%, rgba(8, 12, 10, 0.48) 100%),
     var(--arena-bg-image, none) center / cover no-repeat,
-    radial-gradient(ellipse 80% 50% at 70% 28%, rgba(56, 120, 72, 0.35), transparent 60%),
-    radial-gradient(ellipse 70% 45% at 25% 78%, rgba(40, 80, 50, 0.4), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 70% 28%, rgba(56, 120, 72, 0.22), transparent 60%),
+    radial-gradient(ellipse 70% 45% at 25% 78%, rgba(40, 80, 50, 0.28), transparent 55%),
     linear-gradient(180deg, #1a2a22 0%, #243830 42%, #1c2820 100%);
 }
 .battle-arena-field::before {
@@ -1127,8 +1206,8 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 38% 12% at 72% 48%, rgba(0, 0, 0, 0.28), transparent 70%),
-    radial-gradient(ellipse 42% 14% at 28% 82%, rgba(0, 0, 0, 0.35), transparent 70%);
+    radial-gradient(ellipse 38% 12% at 72% 48%, rgba(0, 0, 0, 0.18), transparent 70%),
+    radial-gradient(ellipse 42% 14% at 28% 82%, rgba(0, 0, 0, 0.22), transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -10875,14 +10954,16 @@ html.is-standalone .mobile-bottom-nav__dock {
 }
 
 .mobile-nav-status {
+  --combat-lock-accent: var(--color-pokeball-red);
   pointer-events: auto;
+  position: relative;
   display: inline-flex;
   max-width: 100%;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
+  gap: 0.5rem;
   min-height: 0;
-  padding: 0.15rem 0;
+  padding: 0.2rem 0.35rem;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -10892,10 +10973,37 @@ html.is-standalone .mobile-bottom-nav__dock {
   -webkit-tap-highlight-color: transparent;
 }
 
+.mobile-nav-status--battle {
+  --combat-lock-accent: var(--color-pokeball-red);
+}
+
+.mobile-nav-status--gym {
+  --combat-lock-accent: #e8b84a;
+}
+
+.mobile-nav-status--tower {
+  --combat-lock-accent: #6ec8ff;
+}
+
+.mobile-nav-status__live {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+}
+
+.mobile-nav-status__live-dot {
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--combat-lock-accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--combat-lock-accent) 55%, transparent);
+  animation: combat-lock-pulse 1.6s ease-out infinite;
+}
+
 .mobile-nav-status__art {
   flex-shrink: 0;
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 1.75rem;
+  height: 1.75rem;
   object-fit: contain;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
 }
@@ -10904,32 +11012,186 @@ html.is-standalone .mobile-bottom-nav__dock {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 0.12rem;
+  gap: 0.08rem;
+  padding-right: 0;
   text-align: left;
 }
 
 .mobile-nav-status__label {
   overflow: hidden;
   font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 0.8125rem;
-  font-weight: 650;
-  letter-spacing: 0.01em;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   line-height: 1.1;
   text-overflow: ellipsis;
+  text-transform: uppercase;
   white-space: nowrap;
-  color: color-mix(in srgb, white 88%, var(--color-pokeball-red));
+  color: #fff;
 }
 
 .mobile-nav-status__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
   overflow: hidden;
   font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 500;
+  font-size: 0.68rem;
+  font-weight: 550;
   letter-spacing: 0.01em;
   line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: color-mix(in srgb, white 48%, transparent);
+  color: color-mix(in srgb, white 58%, var(--combat-lock-accent));
+}
+
+.mobile-nav-status__chevron {
+  font-size: 0.8rem !important;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-status__live-dot {
+    animation: none;
+  }
+}
+
+/* Chip "en combate" del navbar desktop — simple: ícono + texto, sin card. */
+.combat-lock-chip {
+  --combat-lock-accent: var(--color-pokeball-red);
+  position: relative;
+  display: inline-flex;
+  max-width: min(100%, 16rem);
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.15rem 0.1rem;
+  box-shadow: none;
+  color: #fff;
+  text-decoration: none;
+  transition: opacity 140ms ease;
+}
+
+.combat-lock-chip:hover {
+  opacity: 0.88;
+}
+
+.combat-lock-chip:active {
+  opacity: 0.75;
+}
+
+.combat-lock-chip--battle {
+  --combat-lock-accent: var(--color-pokeball-red);
+}
+
+.combat-lock-chip--gym {
+  --combat-lock-accent: #e8b84a;
+}
+
+.combat-lock-chip--tower {
+  --combat-lock-accent: #6ec8ff;
+}
+
+.combat-lock-chip__live {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+}
+
+.combat-lock-chip__live-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--combat-lock-accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--combat-lock-accent) 55%, transparent);
+  animation: combat-lock-pulse 1.6s ease-out infinite;
+}
+
+.combat-lock-chip__icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: color-mix(in srgb, white 80%, var(--combat-lock-accent));
+}
+
+.combat-lock-chip__copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.08rem;
+  padding-right: 0;
+}
+
+.combat-lock-chip__label {
+  overflow: hidden;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.combat-lock-chip__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12rem;
+  overflow: hidden;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: color-mix(in srgb, white 62%, var(--combat-lock-accent));
+}
+
+.combat-lock-chip__chevron {
+  font-size: 0.85rem !important;
+  line-height: 1;
+  translate: 0 0.5px;
+}
+
+.combat-lock-chip:hover .combat-lock-chip__chevron {
+  translate: 2px 0.5px;
+}
+
+@keyframes combat-lock-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--combat-lock-accent) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 0.45rem transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-lock-chip,
+  .combat-lock-chip__chevron {
+    transition: none;
+  }
+
+  .combat-lock-chip__live-dot {
+    animation: none;
+  }
+
+  .combat-lock-chip:hover .combat-lock-chip__chevron {
+    translate: 0 0.5px;
+  }
 }
 
 /* Indicador del selector de secciones del perfil. Mismo rebote elástico que el

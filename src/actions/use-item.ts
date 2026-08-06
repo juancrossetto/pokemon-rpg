@@ -7,7 +7,7 @@ import type { TurnEvent } from "@/lib/battle";
 import { calculateMaxHp } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
-import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { turnDeadlineForBattle } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 import { isReviveItemName, reviveHpFraction } from "@/lib/squad-bag";
 
@@ -157,6 +157,7 @@ async function finalizeBattleItemTurn(args: {
     id: string;
     gymId: string | null;
     gymRunId: string | null;
+    pvpMatchId?: string | null;
     log: string[];
   };
   userId: string;
@@ -227,7 +228,7 @@ async function finalizeBattleItemTurn(args: {
           }
         : {
             log: finalLog,
-            turnDeadlineAt: nextTurnDeadline(),
+            turnDeadlineAt: turnDeadlineForBattle(battle),
             ...counter.statePatch,
           },
     }),

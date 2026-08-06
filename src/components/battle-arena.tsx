@@ -74,9 +74,24 @@ import { EmptyPartySlot, HpPlate, PartyIcon, PartySidebar } from "@/components/b
 import { CaptureSummary } from "@/components/battle/capture-summary";
 import { BattleOutcomeScreen } from "@/components/battle/battle-outcome-screen";
 import { BattleTurnTimer } from "@/components/battle/battle-turn-timer";
-import { BagView, MovesView, ReviveTargetView, TargetView, TeamView, TurnOrderChip } from "@/components/battle/command-views";
+import {
+  BagView,
+  MovesView,
+  ReviveTargetView,
+  TargetView,
+  TeamView,
+  YourTurnStatus,
+} from "@/components/battle/command-views";
 import { needsFoeTargetPick, isSpreadMove } from "@/lib/move-target";
 import { reviveHpFraction } from "@/lib/squad-bag";
+import {
+  BATTLE_PLAYER_SPRITE_FRAC,
+  BATTLE_PLAYER_SPRITE_WIDTH_CAP,
+  BATTLE_WILD_SPRITE_FRAC,
+  BATTLE_WILD_SPRITE_WIDTH_CAP,
+  battleSpeciesScale,
+} from "@/lib/battle-sprite-scale";
+import { fleeChancePercent } from "@/lib/flee";
 
 export type { BattleArenaProps, OpponentPartyMember } from "@/components/battle/arena-types";
 
@@ -167,6 +182,7 @@ export function BattleArena({
   wildBStatus: initialWildBStatus = null,
   pvpMatchId = null,
   turnDeadlineAt: initialTurnDeadlineAt = null,
+  fleeAttempts: initialFleeAttempts = 0,
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tLog = useTranslations("battle.log");
@@ -393,6 +409,9 @@ export function BattleArena({
   const [turnDeadlineAt, setTurnDeadlineAt] = useState<string | null>(
     initialTurnDeadlineAt ?? null,
   );
+  const [fleeAttempts, setFleeAttempts] = useState(initialFleeAttempts);
+  /** Último poder usado con éxito (singles) — atajo "Repetir". */
+  const [lastMoveId, setLastMoveId] = useState<number | null>(null);
   const [xpSummary, setXpSummary] = useState<XpSummaryEntry[] | null>(null);
   const [coinsGained, setCoinsGained] = useState(0);
   const [pvpResult, setPvpResult] = useState<{
@@ -449,6 +468,7 @@ export function BattleArena({
   // fijos: el campo cambia mucho de alto entre mobile, desktop y DevTools.
   const arenaFieldRef = useRef<HTMLDivElement>(null);
   const [arenaHeightPx, setArenaHeightPx] = useState(0);
+  const [arenaWidthPx, setArenaWidthPx] = useState(0);
   const bgmKind = isGymBattle || isPvpBattle || opponentName ? "boss" : "wild";
 
   const teamRoster = party.filter((m) => m.instanceId !== activePlayer.instanceId);
@@ -483,10 +503,13 @@ export function BattleArena({
     if (!field) return;
     const observer = new ResizeObserver(() => {
       const el = arenaFieldRef.current;
-      if (el) setArenaHeightPx(el.clientHeight);
+      if (!el) return;
+      setArenaHeightPx(el.clientHeight);
+      setArenaWidthPx(el.clientWidth);
     });
     observer.observe(field);
     setArenaHeightPx(field.clientHeight);
+    setArenaWidthPx(field.clientWidth);
     return () => observer.disconnect();
   }, []);
 
@@ -1630,6 +1653,7 @@ export function BattleArena({
       setIsAnimating(false);
       return;
     }
+    setLastMoveId(moveId);
 
     for (const event of result.events) {
       await playEvent(event);
@@ -1914,6 +1938,10 @@ export function BattleArena({
         appendLog(tLog("fleeFailed"), "system");
         setView("menu");
         return;
+      }
+
+      if (typeof result.fleeAttempts === "number") {
+        setFleeAttempts(result.fleeAttempts);
       }
 
       if (result.fled) {
@@ -2211,6 +2239,7 @@ export function BattleArena({
       spriteUrl: result.newPlayer.spriteUrl,
       isShiny: result.newPlayer.isShiny ?? false,
     });
+    setLastMoveId(null);
     // Server already applied wild counter into newPlayer.currentHp.
     setPlayerHp(result.newPlayer.currentHp);
     setPlayerMaxHp(result.newPlayer.maxHp);
@@ -2315,6 +2344,21 @@ export function BattleArena({
     potionStacks.find((p) => p.itemId === pendingReviveItemId)?.name ?? "Revive";
   const hasHealthyBackup = teamRoster.some((m) => m.currentHp > 0);
 
+  const lastMoveOption =
+    !isDouble && lastMoveId != null
+      ? activeMoves.find((m) => m.moveId === lastMoveId) ?? null
+      : null;
+  const canRepeatLast =
+    Boolean(lastMoveOption) &&
+    (lastMoveOption?.pp ?? 0) > 0 &&
+    (choiceLockMoveId == null || choiceLockMoveId === lastMoveId) &&
+    (chargeMoveId == null || chargeMoveId === lastMoveId);
+
+  const showFleeChance = !isTrainerStyle && !isPvpBattle && !isGymBattle;
+  const fleePct = showFleeChance
+    ? fleeChancePercent(stagedPlayer.speed, stagedWild.speed, fleeAttempts)
+    : null;
+
   const seFlash = moveFx?.mode === "hit" && (moveFx.effectiveness ?? 1) > 1;
   const physicalLunge = moveFx?.mode === "hit" && moveFx.category === "PHYSICAL";
   const wildAbsorbedByBall =
@@ -2323,12 +2367,45 @@ export function BattleArena({
     !attackingSide && !shakingSide && !faintingSide && !playerEntering && !healingTarget && !ballAnim;
   const wildIdle =
     !attackingSide && !shakingSide && !faintingSide && !wildEntering && !wildAbsorbedByBall && !captureBall;
-  // Tamaño fijo relativo al alto del campo (sin zoom por especie): el GIF
-  // Showdown se ve a su proporción original dentro de la caja.
+  // Caja relativa al alto del campo + escala por especie, capeada por ancho
+  // para que en mobile alto/angosto no se estiren ni se corten.
   const isAlphaWild = initialLog.some((line) => line === "alpha");
   const arenaH = arenaHeightPx || 400;
-  const playerSpritePx = Math.round(arenaH * 0.72);
-  const wildSpritePx = Math.round(arenaH * 0.36 * (isAlphaWild ? 1.1 : 1));
+  const arenaW = arenaWidthPx || 360;
+  function spriteBoxPx(fracH: number, widthCap: number, speciesName: string, alpha = false) {
+    const byHeight = arenaH * fracH * battleSpeciesScale(speciesName) * (alpha ? 1.1 : 1);
+    const byWidth = arenaW * widthCap;
+    return Math.round(Math.min(byHeight, byWidth));
+  }
+  const playerSpritePx = spriteBoxPx(
+    BATTLE_PLAYER_SPRITE_FRAC,
+    BATTLE_PLAYER_SPRITE_WIDTH_CAP,
+    activePlayer.speciesName,
+  );
+  const wildSpritePx = spriteBoxPx(
+    BATTLE_WILD_SPRITE_FRAC,
+    BATTLE_WILD_SPRITE_WIDTH_CAP,
+    activeWild.speciesName,
+    isAlphaWild,
+  );
+  const playerBSpritePx = playerB
+    ? Math.round(
+        spriteBoxPx(
+          BATTLE_PLAYER_SPRITE_FRAC,
+          BATTLE_PLAYER_SPRITE_WIDTH_CAP,
+          playerB.speciesName,
+        ) * 0.82,
+      )
+    : Math.round(playerSpritePx * 0.82);
+  const wildBSpritePx = wildB
+    ? Math.round(
+        spriteBoxPx(
+          BATTLE_WILD_SPRITE_FRAC,
+          BATTLE_WILD_SPRITE_WIDTH_CAP,
+          wildB.speciesName,
+        ) * 0.78,
+      )
+    : Math.round(wildSpritePx * 0.78);
   const playerSpriteClass = [
     "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "player" && attackingLane === "A"
@@ -2440,10 +2517,10 @@ export function BattleArena({
   const lastLogEntry = log[log.length - 1];
 
   return (
-    <div className="flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden px-2 py-0.5 sm:px-margin-mobile md:px-margin-desktop md:py-2">
-      <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col gap-0.5 overflow-hidden md:gap-2">
+    <div className="flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden px-1.5 py-0.5 sm:px-2 md:px-3 md:py-1.5">
+      <div className="mx-auto flex w-full max-w-7xl min-h-0 flex-1 flex-col gap-0.5 overflow-hidden md:gap-1.5">
         {/* Top — mayor parte del alto en mobile */}
-        <div className="flex min-h-0 flex-1 flex-col gap-0.5 md:gap-2">
+        <div className="flex min-h-0 flex-1 flex-col gap-0.5 md:gap-1.5">
         {/* Mobile: rival — avatar + party (o sprite único si es salvaje/torre) */}
         <div className="lg:hidden shrink-0">
           <PartySidebar
@@ -2469,9 +2546,9 @@ export function BattleArena({
           </PartySidebar>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[176px_minmax(0,1fr)_176px] gap-1.5 md:gap-2.5 items-stretch flex-1 min-h-0 min-w-0">
+        <div className="battle-desktop-grid grid flex-1 grid-cols-1 items-stretch gap-1 min-h-0 min-w-0 md:gap-2 lg:grid-cols-[13rem_1fr_13rem]">
           {/* Player sidebar (desktop) */}
-          <div className="hidden lg:block">
+          <aside className="hidden min-h-0 min-w-0 overflow-hidden lg:block">
             <PartySidebar name={trainerName} portraitUrl={trainerPortraitUrl} align="left">
               {party.map((m) => (
                 <PartyIcon
@@ -2481,19 +2558,28 @@ export function BattleArena({
                   fainted={m.currentHp <= 0}
                   active={m.instanceId === activePlayer.instanceId}
                   hpPct={(m.currentHp / m.maxHp) * 100}
+                  level={m.level}
+                  types={m.types}
+                  selectHint={t("partyTapHint")}
+                  onSelect={
+                    !isAnimating && !isDouble && hasHealthyBackup
+                      ? () => setView("team")
+                      : undefined
+                  }
                 />
               ))}
               {Array.from({ length: emptyPlayerSlots }).map((_, i) => (
                 <EmptyPartySlot key={`pe-${i}`} />
               ))}
             </PartySidebar>
-          </div>
+          </aside>
 
           {/* Arena */}
+          <div className="relative flex min-h-0 min-w-0 flex-col">
           <div
             ref={arenaFieldRef}
             data-battle-speed={battleSpeed}
-            className={`battle-arena-field relative mx-auto w-full max-w-[44rem] min-h-0 flex-1 overflow-hidden rounded-xl border border-white/10 ${
+            className={`battle-arena-field relative mx-auto h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-white/10 ${
               arenaFlash ? "arena-type-flash" : ""
             }`}
             style={
@@ -2503,23 +2589,25 @@ export function BattleArena({
               } as CSSProperties
             }
           >
-            <BattleTurnTimer
-              battleId={battleId}
-              locale={locale}
-              deadlineAt={turnDeadlineAt}
-              paused={isAnimating || outcome !== "ongoing"}
-              onExpired={() => {
-                setTurnDeadlineAt(null);
-                appendLog(t("idleTimeout"));
-                setLossReason("idle");
-                setOutcome("lost");
-              }}
-            />
+            {isPvpBattle ? (
+              <BattleTurnTimer
+                battleId={battleId}
+                locale={locale}
+                deadlineAt={turnDeadlineAt}
+                paused={isAnimating || outcome !== "ongoing"}
+                onExpired={() => {
+                  setTurnDeadlineAt(null);
+                  appendLog(t("idleTimeout"));
+                  setLossReason("idle");
+                  setOutcome("lost");
+                }}
+              />
+            ) : null}
             {/* Placa rival + banner de poder al costado; HUD debajo. */}
             <div className="absolute top-2.5 right-2 left-2.5 z-30 flex flex-col items-start gap-3.5 md:top-3 md:right-1.5 md:left-3 md:gap-4">
               <div className="flex w-full items-stretch gap-1.5 md:gap-2">
                 <HpPlate
-                  className="relative z-20 w-[min(52vw,11.5rem)] shrink-0 sm:w-[min(46vw,12.5rem)] md:w-[min(100%,13.5rem)]"
+                  className="relative z-20 w-[min(52vw,11.5rem)] shrink-0 sm:w-[min(48vw,12.75rem)] md:w-[min(100%,19.5rem)]"
                   name={activeWild.name}
                   levelLabel={t("level", { level: activeWild.level })}
                   currentHp={wildHp}
@@ -2560,7 +2648,7 @@ export function BattleArena({
             </div>
             {isDouble && wildB && (
               <HpPlate
-                className="absolute top-2 left-[calc(min(52vw,11.5rem)+0.65rem)] z-20 w-[min(42vw,9.5rem)] md:top-3 md:left-[calc(min(100%,13.5rem)+0.85rem)] md:w-[min(100%,12rem)]"
+                className="absolute top-2 left-[calc(min(52vw,11.5rem)+0.45rem)] z-20 w-[min(36vw,8.25rem)] sm:left-[calc(min(48vw,12.75rem)+0.55rem)] sm:w-[min(40vw,9.5rem)] md:top-3 md:left-[calc(min(100%,19.5rem)+0.9rem)] md:w-[min(100%,15.5rem)]"
                 name={wildB.name}
                 levelLabel={t("level", { level: wildB.level })}
                 currentHp={wildBHp}
@@ -2575,7 +2663,7 @@ export function BattleArena({
                 player sprite bottom-left. Same-corner plates were covering the
                 sprites, which is why the player looked cropped and small. */}
             <HpPlate
-              className="absolute bottom-2.5 right-2.5 z-30 w-[min(52vw,11.5rem)] sm:w-[min(46vw,12.5rem)] md:bottom-3 md:right-3 md:w-[min(100%,14rem)]"
+              className="absolute bottom-2 right-2 z-30 w-[min(52vw,11.5rem)] sm:bottom-2.5 sm:right-2.5 sm:w-[min(48vw,12.75rem)] md:bottom-3 md:right-3 md:w-[min(100%,20rem)]"
               name={activePlayer.name}
               levelLabel={t("level", { level: activePlayer.level })}
               currentHp={playerHp}
@@ -2586,7 +2674,7 @@ export function BattleArena({
             />
             {isDouble && playerB && (
               <HpPlate
-                className="absolute bottom-2 right-[calc(min(52vw,11.5rem)+0.65rem)] z-30 w-[min(42vw,9.5rem)] md:bottom-3 md:right-[calc(min(100%,14rem)+0.85rem)] md:w-[min(100%,12rem)]"
+                className="absolute bottom-2 right-[calc(min(52vw,11.5rem)+0.45rem)] z-30 w-[min(36vw,8.25rem)] sm:right-[calc(min(48vw,12.75rem)+0.55rem)] sm:w-[min(40vw,9.5rem)] md:bottom-3 md:right-[calc(min(100%,20rem)+0.9rem)] md:w-[min(100%,15.5rem)]"
                 name={playerB.name}
                 levelLabel={t("level", { level: playerB.level })}
                 currentHp={playerBHp}
@@ -2645,7 +2733,7 @@ export function BattleArena({
               </span>
             )}
 
-            {/* Opponent sprite — far plate, lower so it sits on the grass */}
+            {/* Opponent sprite — far plate (posiciones clásicas del campo). */}
             <div
               className={`absolute z-[1] origin-bottom ${
                 isDouble
@@ -2760,8 +2848,8 @@ export function BattleArena({
                     : ""
                 }`}
                 style={{
-                  width: Math.round(wildSpritePx * 0.78),
-                  height: Math.round(wildSpritePx * 0.78),
+                  width: wildBSpritePx,
+                  height: wildBSpritePx,
                   opacity: wildBHp <= 0 ? 0.35 : 1,
                 }}
                 onClick={() => {
@@ -2810,8 +2898,8 @@ export function BattleArena({
                     isShiny={wildB.isShiny ?? false}
                     fallbackUrl={wildB.spriteUrl}
                     alt={wildB.name}
-                    width={Math.round(wildSpritePx * 0.78)}
-                    height={Math.round(wildSpritePx * 0.78)}
+                    width={wildBSpritePx}
+                    height={wildBSpritePx}
                     className={wildBSpriteClass}
                     style={shakeStyle("wild", "B")}
                   />
@@ -2819,7 +2907,7 @@ export function BattleArena({
               </div>
             )}
 
-            {/* Player sprite — near plate, bottom-left */}
+            {/* Player sprite — near plate (posiciones clásicas del campo). */}
             <div
               className={`absolute z-[1] origin-bottom ${
                 isDouble ? "left-[2%] bottom-[2%]" : "left-[2%] bottom-[2%]"
@@ -2908,8 +2996,8 @@ export function BattleArena({
               <div
                 className="absolute left-[30%] bottom-[6%] z-[1] origin-bottom md:left-[32%]"
                 style={{
-                  width: Math.round(playerSpritePx * 0.78),
-                  height: Math.round(playerSpritePx * 0.78),
+                  width: playerBSpritePx,
+                  height: playerBSpritePx,
                   opacity: playerBHp <= 0 ? 0.35 : 1,
                 }}
               >
@@ -2929,8 +3017,8 @@ export function BattleArena({
                     isShiny={playerB.isShiny ?? false}
                     fallbackUrl={playerB.spriteUrl}
                     alt={playerB.name}
-                    width={Math.round(playerSpritePx * 0.78)}
-                    height={Math.round(playerSpritePx * 0.78)}
+                    width={playerBSpritePx}
+                    height={playerBSpritePx}
                     className={playerBSpriteClass}
                     style={shakeStyle("player", "B")}
                   />
@@ -2938,9 +3026,10 @@ export function BattleArena({
               </div>
             )}
           </div>
+          </div>
 
           {/* Opponent sidebar (desktop) */}
-          <div className="hidden lg:block">
+          <aside className="hidden min-h-0 min-w-0 overflow-hidden lg:block">
             <PartySidebar
               name={foeSidebarWild ? activeWild.name : foeLabel}
               portraitUrl={opponentPortraitUrl}
@@ -2961,7 +3050,7 @@ export function BattleArena({
                     )),
                   ]}
             </PartySidebar>
-          </div>
+          </aside>
         </div>
 
         {/* Mobile: jugador — avatar + party */}
@@ -2980,7 +3069,15 @@ export function BattleArena({
                 fainted={m.currentHp <= 0}
                 active={m.instanceId === activePlayer.instanceId}
                 hpPct={(m.currentHp / m.maxHp) * 100}
+                level={m.level}
+                types={m.types}
                 compact
+                selectHint={t("partyTapHint")}
+                onSelect={
+                  !isAnimating && !isDouble && hasHealthyBackup
+                    ? () => setView("team")
+                    : undefined
+                }
               />
             ))}
             {Array.from({ length: emptyPlayerSlots }).map((_, i) => (
@@ -2991,8 +3088,8 @@ export function BattleArena({
         </div>
 
         {/* Panel inferior: altura fija en mobile (el campo no salta al
-            abrir poderes). Un poco más bajo para ceder alto al arena. */}
-        <div className="flex min-h-0 min-w-0 shrink-0 flex-col gap-1 max-md:h-[11rem] max-md:max-h-[11rem] md:h-[min(14rem,32dvh)] md:max-h-[14rem] md:gap-2">
+            abrir poderes). Más bajo para ceder alto al arena. */}
+        <div className="flex min-h-0 min-w-0 shrink-0 flex-col gap-1 max-md:h-[10.5rem] max-md:max-h-[10.5rem] md:h-[min(13rem,30dvh)] md:max-h-[13rem] md:gap-1.5">
           {commandExpanded && lastLogEntry ? (
             <p
               className="md:hidden shrink-0 truncate rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] leading-snug text-white/80"
@@ -3016,22 +3113,7 @@ export function BattleArena({
           >
             {view === "menu" && !isAnimating && outcome === "ongoing" && (
               <div className="mb-1 flex shrink-0 flex-col gap-1 border-b border-white/12 pb-1.5 md:mb-0 md:hidden">
-                <p className="text-[11px] font-bold leading-snug tracking-tight text-white">
-                  {isDouble
-                    ? t("whatWillDo", {
-                        name: (
-                          pendingDoubleMoveA != null && playerB
-                            ? playerB.name
-                            : activePlayer.name
-                        ).toUpperCase(),
-                      })
-                    : t("whatWillDo", { name: activePlayer.name.toUpperCase() })}
-                </p>
-                {!isDouble ? (
-                  <div className="self-start">
-                    <TurnOrderChip playerFirst={playerOutspeeds} />
-                  </div>
-                ) : null}
+                <YourTurnStatus playerFirst={playerOutspeeds} showOrder={!isDouble} />
               </div>
             )}
             <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden md:gap-0.5">
@@ -3063,17 +3145,15 @@ export function BattleArena({
             {view === "menu" && !isAnimating && outcome === "ongoing" && (
               <div className="mt-auto hidden items-center justify-between gap-2 border-t border-dashed border-white/15 pt-1 md:flex">
                 <p className="text-label-md font-bold leading-snug break-words [overflow-wrap:anywhere] text-on-surface">
-                  {isDouble
-                    ? t("whatWillDo", {
-                        name: (
-                          pendingDoubleMoveA != null && playerB
-                            ? playerB.name
-                            : activePlayer.name
-                        ).toUpperCase(),
-                      })
-                    : t("whatWillDo", { name: activePlayer.name.toUpperCase() })}
+                  {t("whatWillDo", {
+                    name: (
+                      isDouble && pendingDoubleMoveA != null && playerB
+                        ? playerB.name
+                        : activePlayer.name
+                    ).toUpperCase(),
+                  })}
                 </p>
-                {!isDouble && <TurnOrderChip playerFirst={playerOutspeeds} />}
+                {!isDouble && <YourTurnStatus playerFirst={playerOutspeeds} />}
               </div>
             )}
           </div>
@@ -3081,7 +3161,25 @@ export function BattleArena({
           {/* Comandos */}
           <div key={view} className="panel-swap min-h-0 min-w-0 flex-1 overflow-hidden flex flex-col">
             {view === "menu" && (
-              <div className="grid h-full min-h-0 grid-cols-2 gap-1.5 max-md:auto-rows-fr md:gap-2">
+              <div className="flex h-full min-h-0 flex-col gap-1.5 md:gap-2">
+                {canRepeatLast && lastMoveOption ? (
+                  <button
+                    type="button"
+                    disabled={isAnimating}
+                    onClick={() => {
+                      unlockBattleAudio();
+                      resumeBattleBgm();
+                      void handleMove(lastMoveOption.moveId);
+                    }}
+                    className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide text-primary hover:bg-primary/25 disabled:opacity-40"
+                  >
+                    <span className="material-symbols-outlined text-[16px]!" aria-hidden>
+                      replay
+                    </span>
+                    {t("repeatMove", { move: formatMoveName(lastMoveOption.name) })}
+                  </button>
+                ) : null}
+                <div className="grid min-h-0 flex-1 grid-cols-2 gap-1.5 max-md:auto-rows-fr md:gap-2">
                 <button
                   type="button"
                   disabled={isAnimating}
@@ -3128,6 +3226,11 @@ export function BattleArena({
                   disabled={isAnimating || isGymBattle || (Boolean(opponentName) && !isPvpBattle)}
                   onClick={handleFlee}
                   className="battle-cmd-btn battle-cmd-run"
+                  title={
+                    fleePct != null
+                      ? t("fleeChanceHint", { pct: fleePct })
+                      : undefined
+                  }
                 >
                   <span className="battle-cmd-btn__icon" aria-hidden>
                     <span className="material-symbols-outlined">
@@ -3135,9 +3238,21 @@ export function BattleArena({
                     </span>
                   </span>
                   <span className="battle-cmd-btn__label">
-                    {isPvpBattle ? t("forfeit") : t("run")}
+                    {isPvpBattle ? (
+                      t("forfeit")
+                    ) : fleePct != null ? (
+                      <>
+                        {t("run")}
+                        <span className="mt-0.5 block text-[9px] font-semibold normal-case tracking-normal text-white/65 tabular-nums">
+                          {t("fleeChance", { pct: fleePct })}
+                        </span>
+                      </>
+                    ) : (
+                      t("run")
+                    )}
                   </span>
                 </button>
+                </div>
               </div>
             )}
 

@@ -15,7 +15,6 @@ import { runWildCounterAttack } from "@/lib/wild-counter";
 import { revalidateCombatUi } from "@/lib/battle-lock";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
 import { SHINY_CATCH_REWARD, spriteFor } from "@/lib/shiny";
-import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 const MAX_LOG_LINES = 20;
@@ -227,7 +226,7 @@ export async function attemptCapture(
       where: { id: battle.id },
       data: lostBattle
         ? { status: "LOST", log: finalLog, turnDeadlineAt: null, ...counter.statePatch }
-        : { log: finalLog, turnDeadlineAt: nextTurnDeadline(), ...counter.statePatch },
+        : { log: finalLog, turnDeadlineAt: null, ...counter.statePatch },
     }),
     ...(lostBattle
       ? [prisma.battleLog.create({ data: { kind: "PVE_WILD" as const, userId, userWon: false } })]

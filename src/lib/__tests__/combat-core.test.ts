@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { attemptCapture } from "@/lib/capture";
 import { effectivePp } from "@/lib/battle";
-import { fleeOdds, rollFlee } from "@/lib/flee";
+import { fleeOdds, fleeChancePercent, rollFlee } from "@/lib/flee";
 import {
   multiHitSpec,
   rollMultiHitCount,
@@ -41,6 +41,11 @@ describe("fleeOdds / rollFlee", () => {
     expect(rollFlee(50, 50, 0, () => 0)).toBe(true); // roll 0
     expect(rollFlee(50, 50, 0, () => (odds - 0.5) / 256)).toBe(true);
     expect(rollFlee(50, 50, 0, () => odds / 256)).toBe(false);
+  });
+
+  it("exposes a UI-friendly percent", () => {
+    expect(fleeChancePercent(50, 50, 0)).toBe(50);
+    expect(fleeChancePercent(100, 1, 0)).toBe(100);
   });
 });
 

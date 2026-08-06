@@ -10,7 +10,7 @@ import { calculateMaxHp, calculateStat } from "@/lib/stats";
 import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
 import { spriteFor } from "@/lib/shiny";
-import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { turnDeadlineForBattle } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 const MAX_LOG_LINES = 20;
@@ -152,7 +152,7 @@ export async function switchPokemon(
         participantIds,
         ...clearPlayerStatus,
         log: [...battle.log, `switchForced:${newName}`].slice(-MAX_LOG_LINES),
-        turnDeadlineAt: nextTurnDeadline(),
+        turnDeadlineAt: turnDeadlineForBattle(battle),
       },
     });
 
@@ -173,7 +173,7 @@ export async function switchPokemon(
       },
       counterAttack: null,
       outcome: "continues",
-      turnDeadlineAt: nextTurnDeadline().toISOString(),
+      turnDeadlineAt: turnDeadlineForBattle(battle)?.toISOString() ?? null,
     };
   }
 
@@ -210,7 +210,7 @@ export async function switchPokemon(
         // el statePatch puede pisar playerStatus con el del counter (sobre el que entró)
         ...(lostBattle
           ? { status: "LOST" as const, turnDeadlineAt: null }
-          : { turnDeadlineAt: nextTurnDeadline() }),
+          : { turnDeadlineAt: turnDeadlineForBattle(battle) }),
       },
     }),
     ...(lostBattle
@@ -255,6 +255,6 @@ export async function switchPokemon(
     },
     counterAttack: counter.counterAttack,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
-    turnDeadlineAt: lostBattle ? null : nextTurnDeadline().toISOString(),
+    turnDeadlineAt: lostBattle ? null : turnDeadlineForBattle(battle)?.toISOString() ?? null,
   };
 }

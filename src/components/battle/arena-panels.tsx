@@ -24,14 +24,42 @@ function hpTone(hpPct: number): "" | "yellow" | "red" {
   return "red";
 }
 
-/** Una sola barra rectangular: verde → verde flúor. */
-function PartyHpLine({ hpPct }: { hpPct: number }) {
+/** Barra de HP del sidebar de equipo — pill moderna con tono por umbral. */
+function PartyHpLine({
+  hpPct,
+  thick,
+  className = "",
+}: {
+  hpPct: number;
+  thick?: boolean;
+  className?: string;
+}) {
+  const pct = Math.max(0, Math.min(100, hpPct));
+  const tone = hpTone(pct);
+  const toneClass =
+    tone === "red" ? "party-hp__fill--red" : tone === "yellow" ? "party-hp__fill--yellow" : "party-hp__fill--ok";
+
   return (
-    <div className="mx-[10%] h-[3px] w-[80%] overflow-hidden rounded-[1px] bg-white/12">
-      <div
-        className={`health-bar-fill h-full rounded-none ${hpTone(hpPct)}`}
-        style={{ width: `${Math.max(0, Math.min(100, hpPct))}%` }}
-      />
+    <div
+      className={`party-hp ${thick ? "party-hp--lg" : ""} ${className}`.trim()}
+      role="meter"
+      aria-valuenow={Math.round(pct)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <div className="party-hp__track">
+        <div className={`party-hp__fill ${toneClass}`} style={{ width: `${pct}%` }}>
+          <span className="party-hp__sheen" aria-hidden />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PartyHpEmpty({ fainted, className = "" }: { fainted?: boolean; className?: string }) {
+  return (
+    <div className={`party-hp party-hp--lg ${className}`.trim()} aria-hidden>
+      <div className={`party-hp__track ${fainted ? "party-hp__track--faint" : ""}`} />
     </div>
   );
 }
@@ -217,7 +245,7 @@ export function PartySidebar({
   if (isWild) {
     const placeIcon = encounterPlace?.iconUrl ?? null;
     return (
-      <div className="flex h-full min-w-0 flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.055] via-[#12141a]/92 to-black/40 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_32px_rgba(0,0,0,0.35)]">
+      <div className="flex h-full min-h-0 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.055] via-[#12141a]/92 to-black/40 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_32px_rgba(0,0,0,0.35)]">
         {encounterPlace ? (
           <div className="flex min-w-0 items-center gap-2 border-b border-white/[0.07] pb-2.5">
             <span
@@ -311,8 +339,8 @@ export function PartySidebar({
   }
 
   return (
-    <div className="flex h-full min-w-0 flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-primary/[0.08] via-[#12141a]/94 to-black/45 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_14px_36px_rgba(0,0,0,0.4)]">
-      <div className="flex flex-col items-center gap-2.5 border-b border-white/[0.07] pb-3">
+    <div className="flex h-full min-h-0 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-primary/[0.08] via-[#12141a]/94 to-black/45 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_14px_36px_rgba(0,0,0,0.4)]">
+      <div className="flex shrink-0 flex-col items-center gap-2 border-b border-white/[0.07] pb-2.5">
         <span className="relative shrink-0">
           <span
             aria-hidden
@@ -332,13 +360,16 @@ export function PartySidebar({
         </span>
         <p
           title={name}
-          className="line-clamp-2 max-w-full px-0.5 text-center text-[13px] font-bold leading-snug tracking-wide text-white"
+          className="line-clamp-2 max-w-full px-0.5 text-center text-[12px] font-bold leading-snug tracking-wide text-white"
         >
           {name}
         </p>
       </div>
 
-      <div className="mt-3 grid grid-cols-3 gap-x-1 gap-y-2.5">{children}</div>
+      {/* Columna 1×6 acotada al ancho del sidebar (no estira la grilla). */}
+      <div className="mt-2 flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto overflow-x-hidden px-1 py-0.5">
+        {children}
+      </div>
     </div>
   );
 }
@@ -350,6 +381,10 @@ export function PartyIcon({
   active,
   hpPct,
   compact = false,
+  level,
+  types,
+  onSelect,
+  selectHint,
 }: {
   spriteUrl: string;
   name: string;
@@ -357,88 +392,91 @@ export function PartyIcon({
   active: boolean;
   hpPct?: number;
   compact?: boolean;
+  level?: number;
+  types?: string[];
+  /** Abrir cambio / info rápida. */
+  onSelect?: () => void;
+  selectHint?: string;
 }) {
-  if (compact) {
-    return (
-      <div
-        title={name}
-        className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 ${fainted ? "opacity-55" : ""}`}
-      >
-        <div
-          className={`relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-md ${
-            active
-              ? "bg-primary/15 ring-1 ring-primary/70 shadow-[0_0_10px_color-mix(in_srgb,var(--color-pokeball-red)_30%,transparent)]"
-              : "bg-white/[0.04]"
-          }`}
-        >
-          {spriteUrl ? (
-            <Image
-              src={spriteUrl}
-              alt={name}
-              width={40}
-              height={40}
-              className={`h-[92%] w-[92%] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${
-                fainted ? "grayscale-[0.55]" : ""
-              }`}
-            />
-          ) : (
-            <PokeballIcon className="h-4 w-4 opacity-40" />
-          )}
-          {fainted ? (
-            <span className="material-symbols-outlined absolute right-0 top-0 text-[9px]! text-error drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-              skull
-            </span>
-          ) : null}
-        </div>
-        {typeof hpPct === "number" && !fainted ? (
-          <PartyHpLine hpPct={hpPct} />
-        ) : fainted ? (
-          <div className="mx-[10%] h-[3px] w-[80%] rounded-[1px] bg-error/35" />
-        ) : (
-          <div className="mx-[10%] h-[3px] w-[80%] rounded-[1px] bg-white/[0.06]" />
-        )}
-      </div>
-    );
-  }
+  const typeLine = types?.length ? types.join(" / ") : "";
+  const detail =
+    [
+      name,
+      level != null ? `Nv. ${level}` : null,
+      typeof hpPct === "number" ? `${Math.round(hpPct)}%` : null,
+      typeLine || null,
+      onSelect ? selectHint : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
-  return (
-    <div
-      title={name}
-      className={`relative flex flex-col items-center gap-1 ${fainted ? "opacity-55" : ""}`}
-    >
+  const shellClass = compact
+    ? `relative flex min-w-0 flex-1 flex-col items-center gap-0.5 ${fainted ? "opacity-55" : ""}`
+    : `relative flex w-[5.25rem] max-w-full shrink-0 flex-col items-center gap-0.5 ${fainted ? "opacity-55" : ""}`;
+
+  const body = (
+    <>
       <div
-        className={`relative flex aspect-square w-full items-center justify-center ${
-          active
-            ? "rounded-xl bg-primary/12 ring-1 ring-primary/65 shadow-[0_0_14px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent)]"
-            : ""
-        }`}
+        className={
+          compact
+            ? `relative flex aspect-square w-full min-h-[2.35rem] items-center justify-center overflow-hidden rounded-md ${
+                active
+                  ? "bg-primary/15 ring-1 ring-primary/70 shadow-[0_0_10px_color-mix(in_srgb,var(--color-pokeball-red)_30%,transparent)]"
+                  : "bg-white/[0.04]"
+              }`
+            : `relative flex aspect-square w-full items-center justify-center ${
+                active ? "rounded-md ring-1 ring-primary/50" : ""
+              }`
+        }
       >
         {spriteUrl ? (
           <Image
             src={spriteUrl}
             alt={name}
-            width={44}
-            height={44}
-            className={`h-[88%] w-[88%] object-contain drop-shadow-[0_3px_6px_rgba(0,0,0,0.55)] ${
-              fainted ? "grayscale-[0.55]" : ""
-            }`}
+            width={compact ? 48 : 56}
+            height={compact ? 48 : 56}
+            className={`object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${
+              compact ? "h-[94%] w-[94%]" : "h-[92%] w-[92%]"
+            } ${fainted ? "grayscale-[0.55]" : ""}`}
           />
         ) : (
-          <PokeballIcon className="h-5 w-5 opacity-40" />
+          <PokeballIcon className={compact ? "h-4 w-4 opacity-40" : "h-5 w-5 opacity-40"} />
         )}
         {fainted ? (
-          <span className="material-symbols-outlined absolute right-0 top-0 text-[11px]! text-error drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+          <span
+            className={`material-symbols-outlined absolute right-0 top-0 text-error drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
+              compact ? "text-[9px]!" : "text-[11px]!"
+            }`}
+          >
             skull
           </span>
         ) : null}
       </div>
       {typeof hpPct === "number" && !fainted ? (
-        <PartyHpLine hpPct={hpPct} />
-      ) : fainted ? (
-        <div className="mx-[10%] h-[3px] w-[80%] rounded-[1px] bg-error/35" />
+        <PartyHpLine hpPct={hpPct} thick={!compact} className={compact ? "mx-[8%] w-[84%]" : "w-[92%]"} />
       ) : (
-        <div className="mx-[10%] h-[3px] w-[80%] rounded-[1px] bg-white/[0.06]" />
+        <PartyHpEmpty fainted={fainted} className={compact ? "mx-[8%] w-[84%]" : "w-[92%]"} />
       )}
+    </>
+  );
+
+  if (onSelect) {
+    return (
+      <button
+        type="button"
+        title={detail}
+        aria-label={detail}
+        onClick={onSelect}
+        className={`${shellClass} cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary`}
+      >
+        {body}
+      </button>
+    );
+  }
+
+  return (
+    <div title={detail} aria-label={detail} className={shellClass}>
+      {body}
     </div>
   );
 }
@@ -450,17 +488,17 @@ export function EmptyPartySlot({ compact = false }: { compact?: boolean }) {
         <div className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-white/[0.08] bg-white/[0.02]">
           <PokeballIcon className="h-3.5 w-3.5 opacity-20" />
         </div>
-        <div className="mx-[10%] h-[3px] w-[80%] rounded-[1px] bg-white/[0.04]" />
+        <PartyHpEmpty className="mx-[8%] w-[84%]" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="flex aspect-square w-full items-center justify-center">
-        <PokeballIcon className="h-4 w-4 opacity-20" />
+    <div className="flex w-[5.25rem] max-w-full shrink-0 flex-col items-center gap-0.5">
+      <div className="flex aspect-square w-full items-center justify-center opacity-35">
+        <PokeballIcon className="h-5 w-5" />
       </div>
-      <div className="mx-[10%] h-[3px] w-[80%] rounded-[1px] bg-white/[0.04]" />
+      <PartyHpEmpty className="w-[92%]" />
     </div>
   );
 }
@@ -560,10 +598,10 @@ export function HpPlate({
                 align === "right" ? "flex-row-reverse" : ""
               }`}
             >
-              <span className="min-w-0 truncate text-[11px] font-bold capitalize tracking-tight text-white md:text-[13px]">
+              <span className="min-w-0 truncate text-[11px] font-bold capitalize tracking-tight text-white md:text-[16px]">
                 {name}
               </span>
-              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/50 md:text-[11px]">
+              <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/55 md:text-[12px]">
                 {levelLabel}
               </span>
               {status ? <StatusBadge status={status} /> : null}
@@ -582,9 +620,9 @@ export function HpPlate({
             </div>
 
             <p
-              className={`mt-0.5 text-[9px] font-semibold tabular-nums tracking-wide md:text-[10px] ${
+              className={`mt-0.5 text-[9px] font-semibold tabular-nums tracking-wide md:text-[12px] ${
                 align === "right" ? "text-right" : ""
-              } ${critical ? "text-error" : "text-white/55"}`}
+              } ${critical ? "text-error" : "text-white/60"}`}
             >
               {Math.round(hpPct)}% · {currentHp}/{maxHp}
             </p>

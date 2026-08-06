@@ -28,7 +28,7 @@ import { gymLeaderPortraitUrl, gymTypeTrainerSpriteSlug } from "@/lib/gym-art";
 import { parseTeamSnap } from "@/lib/pvp/team";
 import { resolveBattleBg } from "@/lib/battle-bg";
 import { parseDoublesFieldB } from "@/lib/doubles";
-import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { battleUsesTurnTimer, nextTurnDeadline } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 export default async function BattlePage({
@@ -100,13 +100,19 @@ export default async function BattlePage({
   if (battle) {
     if (await closeBattleIfIdle(battle, locale)) {
       battle = null;
-    } else if (!battle.turnDeadlineAt) {
+    } else if (battleUsesTurnTimer(battle) && !battle.turnDeadlineAt) {
       const deadline = nextTurnDeadline();
       await prisma.battleSession.update({
         where: { id: battle.id },
         data: { turnDeadlineAt: deadline },
       });
       battle = { ...battle, turnDeadlineAt: deadline };
+    } else if (!battleUsesTurnTimer(battle) && battle.turnDeadlineAt) {
+      await prisma.battleSession.update({
+        where: { id: battle.id },
+        data: { turnDeadlineAt: null },
+      });
+      battle = { ...battle, turnDeadlineAt: null };
     }
   }
 
@@ -685,6 +691,7 @@ export default async function BattlePage({
       encounterPlace,
       pvpMatchId: battle.pvpMatchId,
       turnDeadlineAt: battle.turnDeadlineAt?.toISOString() ?? null,
+      fleeAttempts: battle.fleeAttempts,
     };
   }
 

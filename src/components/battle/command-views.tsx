@@ -55,6 +55,25 @@ export function TurnOrderChip({ playerFirst }: { playerFirst: boolean }) {
   );
 }
 
+/** Estado de turno unificado: "Tu turno" + orden por velocidad. */
+export function YourTurnStatus({
+  playerFirst,
+  showOrder = true,
+}: {
+  playerFirst: boolean;
+  showOrder?: boolean;
+}) {
+  const t = useTranslations("battle");
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="rounded-md border border-white/20 bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/90">
+        {t("yourTurn")}
+      </span>
+      {showOrder ? <TurnOrderChip playerFirst={playerFirst} /> : null}
+    </div>
+  );
+}
+
 function BackButton({
   disabled,
   onBack,

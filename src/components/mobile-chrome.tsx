@@ -194,7 +194,9 @@ export function MobileChrome({
   lockedHref,
   lockedLabel,
   lockedHint,
+  lockedReturn,
   lockedIconSrc,
+  lockedKind,
   primary,
   groups,
   navLabels,
@@ -228,7 +230,9 @@ export function MobileChrome({
   lockedHref: string | null;
   lockedLabel: string | null;
   lockedHint: string | null;
+  lockedReturn: string | null;
   lockedIconSrc: string | null;
+  lockedKind: "battle" | "gym" | "tower" | null;
   primary: NavLink[];
   /** Misma configuración que consume el navbar desktop. */
   groups: NavGroup[];
@@ -946,9 +950,14 @@ export function MobileChrome({
             <Link
               href={lockedHref}
               prefetch
-              className="mobile-nav-status"
+              className={`mobile-nav-status${lockedKind ? ` mobile-nav-status--${lockedKind}` : ""}`}
               aria-current="page"
+              title={lockedHint ?? lockedLabel}
+              aria-label={lockedHint ? `${lockedLabel}. ${lockedHint}` : lockedLabel}
             >
+              <span className="mobile-nav-status__live" aria-hidden>
+                <span className="mobile-nav-status__live-dot" />
+              </span>
               {lockedIconSrc ? (
                 <Image
                   src={lockedIconSrc}
@@ -962,7 +971,14 @@ export function MobileChrome({
               ) : null}
               <span className="mobile-nav-status__copy">
                 <span className="mobile-nav-status__label">{lockedLabel}</span>
-                {lockedHint ? (
+                {lockedReturn ? (
+                  <span className="mobile-nav-status__hint">
+                    {lockedReturn}
+                    <span className="material-symbols-outlined mobile-nav-status__chevron" aria-hidden>
+                      arrow_forward
+                    </span>
+                  </span>
+                ) : lockedHint ? (
                   <span className="mobile-nav-status__hint">{lockedHint}</span>
                 ) : null}
               </span>

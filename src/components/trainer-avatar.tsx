@@ -9,6 +9,8 @@ const SIZE_CLASS = {
   md: "h-14 w-14",
   lg: "h-16 w-16",
   xl: "h-20 w-20",
+  /** Sidebar de batalla: un poco más grande que xl. */
+  "2xl": "h-24 w-24",
 } as const;
 
 const INITIALS_CLASS = {
@@ -17,6 +19,7 @@ const INITIALS_CLASS = {
   md: "text-[13px]",
   lg: "text-[15px]",
   xl: "text-[18px]",
+  "2xl": "text-[20px]",
 } as const;
 
 export type TrainerAvatarSize = keyof typeof SIZE_CLASS;
@@ -73,7 +76,7 @@ export function TrainerAvatar({
         {presenceClassName ? (
           <span
             className={`absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-[#0c0e14] ${
-              size === "xl" ? "h-3.5 w-3.5" : "h-3 w-3"
+            size === "2xl" || size === "xl" ? "h-3.5 w-3.5" : "h-3 w-3"
             } ${presenceClassName}`}
           />
         ) : null}
@@ -117,7 +120,7 @@ export function TrainerAvatar({
       {presenceClassName ? (
         <span
           className={`absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-[#0c0e14] ${
-            size === "xl" ? "h-3.5 w-3.5" : size === "xs" ? "h-2 w-2" : "h-3 w-3"
+            size === "2xl" || size === "xl" ? "h-3.5 w-3.5" : size === "xs" ? "h-2 w-2" : "h-3 w-3"
           } ${presenceClassName}`}
         />
       ) : null}

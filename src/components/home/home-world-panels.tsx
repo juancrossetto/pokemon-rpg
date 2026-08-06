@@ -355,71 +355,10 @@ export function HomeEventsProgress({
         ? limited.name
         : null;
 
-  const claimableCount =
-    adventure.objectives.filter((o) => o.claimable).length +
-    weekly.claimableMilestones +
-    limited.missions.filter((m) => m.claimable).length;
-
   return (
     <section className="min-w-0">
-      {/* Mobile: resumen tipo HUD de misión (no list-row Material) */}
-      <div className="sm:hidden">
-        <Link
-          href={
-            claimableCount > 0 && weekly.claimableMilestones > 0
-              ? "/events"
-              : "/campaign"
-          }
-          className={`home-mission-hud relative flex flex-col gap-2 overflow-hidden rounded-2xl border px-3 py-2.5 transition active:scale-[0.99] ${
-            claimableCount > 0
-              ? "home-mission-hud--claim border-pokeball-red/45 bg-gradient-to-br from-pokeball-red/[0.14] via-[#12141c] to-[#0c0e16]"
-              : "border-white/10 bg-[#12141c]/95"
-          }`}
-        >
-          <span className="flex items-center gap-2.5">
-            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center">
-              <Image
-                src="/nav/adventure-icon.png"
-                alt=""
-                width={40}
-                height={40}
-                className="h-9 w-9 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
-                unoptimized
-              />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="page-title block text-[11px] tracking-[0.12em] text-secondary">
-                {labels.progressTitle}
-              </span>
-              <span className="mt-0.5 flex items-center gap-1.5 truncate text-[13px] font-semibold text-white">
-                {adventure.zoneName ?? labels.tabAdventure}
-                <span className="font-mono text-[11px] tabular-nums text-white/50">
-                  {adventureDone}/{adventure.objectives.length || 0}
-                </span>
-              </span>
-            </span>
-            {claimableCount > 0 ? (
-              <span className="page-title shrink-0 rounded-md bg-pokeball-red/25 px-2 py-1 text-[9px] tracking-wider text-pokeball-red ring-1 ring-pokeball-red/40">
-                {labels.claimable}
-              </span>
-            ) : null}
-          </span>
-          <span
-            className="h-1.5 overflow-hidden rounded-full bg-black/45"
-            aria-hidden
-          >
-            <span
-              className="campaign-warm-bar block h-full rounded-full"
-              style={{ width: `${adventurePct}%` }}
-            />
-          </span>
-        </Link>
-      </div>
-
-      <div className="hidden sm:block">
-      {/* Mismo patrón que /events: cinta de encabezado + filas con anillo, para
-          que las dos superficies de misiones se lean como el mismo sistema.
-          El acento sale de los tres knobs del theme, uno por pestaña. */}
+      {/* Misma card con pestañas en mobile y desktop: el HUD resumido de mobile
+          no listaba objetivos ni dejaba cambiar de Aventura/Semanal/Evento. */}
       <div className="ev-quest" style={{ ["--ev-accent" as string]: TAB_ACCENT[tab] }}>
         <div className="ev-ribbon">
           <span aria-hidden className="ev-ribbon__icon">
@@ -600,7 +539,6 @@ export function HomeEventsProgress({
             <span className="home-quest-foot__count">{footer.right}</span>
           </div>
         </div>
-      </div>
       </div>
       </div>
     </section>

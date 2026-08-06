@@ -15,7 +15,6 @@ import { rollShiny } from "@/lib/shiny";
 import { recordSeenSpecies } from "@/lib/zone-progress";
 import { pickEventItemName, rollExplorationEvent } from "@/lib/campaign/events";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
-import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 
 export type StartEncounterResult =
   | { success: true }
@@ -127,7 +126,7 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
           `appear:${wildSpecies.name}`,
         ],
         participantIds: [lead.id],
-        turnDeadlineAt: nextTurnDeadline(),
+        turnDeadlineAt: null,
       },
     });
 

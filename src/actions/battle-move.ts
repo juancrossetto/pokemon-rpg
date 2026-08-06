@@ -45,7 +45,7 @@ import { notifySettledPvp, settlePvpMatch } from "@/lib/pvp/settle";
 import { settleClanWarSlot } from "@/lib/clan-war/settle-slot";
 import { parseTeamSnap, type PvpTeamMemberSnap } from "@/lib/pvp/team";
 import { twoTurnSpec } from "@/lib/two-turn";
-import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { turnDeadlineForBattle } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 const MAX_LOG_LINES = 20;
@@ -630,7 +630,7 @@ export async function submitBattleMove(
               ...RESET_WILD_STAGES,
               wildChargeMoveId: null,
               log: finalLog,
-              turnDeadlineAt: nextTurnDeadline(),
+              turnDeadlineAt: turnDeadlineForBattle(battle),
             },
           }),
           ...(battle.pvpMatchId
@@ -668,7 +668,7 @@ export async function submitBattleMove(
           wildStatus: null,
           pvpResult: null,
           nextOpponent,
-          turnDeadlineAt: nextTurnDeadline().toISOString(),
+          turnDeadlineAt: turnDeadlineForBattle(battle)?.toISOString() ?? null,
         };
       }
 
@@ -1396,7 +1396,7 @@ export async function submitBattleMove(
         data: {
           ...battleStateData,
           log: finalLog,
-          turnDeadlineAt: nextTurnDeadline(),
+          turnDeadlineAt: turnDeadlineForBattle(battle),
         },
       }),
     ]);
@@ -1409,7 +1409,7 @@ export async function submitBattleMove(
         data: {
           ...battleStateData,
           log: finalLog,
-          turnDeadlineAt: nextTurnDeadline(),
+          turnDeadlineAt: turnDeadlineForBattle(battle),
         },
       }),
     ]);
@@ -1451,7 +1451,7 @@ export async function submitBattleMove(
     nextOpponent,
     turnDeadlineAt:
       outcome === "ongoing" || outcome === "fainted"
-        ? nextTurnDeadline().toISOString()
+        ? turnDeadlineForBattle(battle)?.toISOString() ?? null
         : null,
   };
 }

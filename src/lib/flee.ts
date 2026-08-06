@@ -10,6 +10,17 @@ export function fleeOdds(playerSpeed: number, wildSpeed: number, fleeAttempts: n
   return Math.floor((a * 128) / b) + 30 * attempts;
 }
 
+/** Porcentaje 1–100 para mostrar en UI (aprox. del roll Gen III/IV). */
+export function fleeChancePercent(
+  playerSpeed: number,
+  wildSpeed: number,
+  fleeAttempts: number,
+): number {
+  const odds = fleeOdds(playerSpeed, wildSpeed, fleeAttempts);
+  if (odds >= 256) return 100;
+  return Math.min(99, Math.max(1, Math.round((odds / 256) * 100)));
+}
+
 export function rollFlee(
   playerSpeed: number,
   wildSpeed: number,

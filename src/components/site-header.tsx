@@ -1,5 +1,4 @@
 import { getTranslations, getLocale } from "next-intl/server";
-import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -22,6 +21,7 @@ import type { CombatLock } from "@/lib/battle-lock";
 import { getActiveTowerRun } from "@/lib/battle-lock";
 import { HandbookHost } from "@/components/handbook/handbook-modal";
 import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
+import { CombatLockChip, type CombatLockKind } from "@/components/combat-lock-chip";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   const [t, tUx, tHandbook, session, locale] = await Promise.all([
@@ -106,6 +106,11 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
           ? t("inTower")
           : null;
   const lockedHint = lockedHref ? t("lockedNavHint") : null;
+  const lockedReturn = lockedHref ? t("lockedNavReturn") : null;
+  const lockedKind: CombatLockKind | null =
+    lock?.kind === "battle" || lock?.kind === "gym" || lock?.kind === "tower"
+      ? lock.kind
+      : null;
   const lockedIconSrc =
     lock?.kind === "gym"
       ? "/nav/gym-icon.png?v=4"
@@ -214,36 +219,15 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
           <Link href={brandHref} className="shrink-0">
             <BrandLogo alt={t("brand")} priority sizes="72px" className="h-8 w-auto" />
           </Link>
-          {lockedHref && lockedLabel ? (
-            <div className="ml-4 flex items-center gap-1">
-              <Link
-                href={lockedHref}
-                className="inline-flex items-center gap-2 rounded-full border border-pokeball-red/40 bg-pokeball-red/12 py-1 pl-1.5 pr-3 text-label-sm font-bold text-pokeball-red"
-              >
-                {lockedIconSrc ? (
-                  <Image
-                    src={lockedIconSrc}
-                    alt=""
-                    width={22}
-                    height={22}
-                    className="h-[22px] w-[22px] object-contain"
-                    unoptimized
-                  />
-                ) : (
-                  <span className="material-symbols-outlined text-[16px]!">
-                    {lock?.kind === "gym" ? "military_tech" : "swords"}
-                  </span>
-                )}
-                <span className="flex min-w-0 flex-col leading-tight">
-                  <span>{lockedLabel}</span>
-                  {lockedHint ? (
-                    <span className="text-[10px] font-medium tracking-normal text-white/45 normal-case">
-                      {lockedHint}
-                    </span>
-                  ) : null}
-                </span>
-              </Link>
-            </div>
+          {lockedHref && lockedLabel && lockedKind && lockedReturn ? (
+            <CombatLockChip
+              href={lockedHref}
+              label={lockedLabel}
+              hint={lockedHint}
+              returnLabel={lockedReturn}
+              iconSrc={lockedIconSrc}
+              kind={lockedKind}
+            />
           ) : (
             session?.user && <NavLinks groups={NAV_GROUPS} labels={navLabels} />
           )}
@@ -317,7 +301,9 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         lockedHref={lockedHref}
         lockedLabel={lockedLabel}
         lockedHint={lockedHint}
+        lockedReturn={lockedReturn}
         lockedIconSrc={lockedIconSrc}
+        lockedKind={lockedKind}
         primary={primary}
         groups={session?.user ? NAV_GROUPS : []}
         navLabels={navLabels}

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   BATTLE_TURN_IDLE_MS,
+  battleUsesTurnTimer,
   isTurnExpired,
   nextTurnDeadline,
+  turnDeadlineForBattle,
 } from "@/lib/battle-turn-timer";
 
 describe("battle-turn-timer", () => {
@@ -10,6 +12,13 @@ describe("battle-turn-timer", () => {
     const from = new Date("2026-08-05T12:00:00.000Z");
     const deadline = nextTurnDeadline(from);
     expect(deadline.getTime() - from.getTime()).toBe(BATTLE_TURN_IDLE_MS);
+  });
+
+  it("only enables the timer for PvP matches", () => {
+    expect(battleUsesTurnTimer({ pvpMatchId: "m1" })).toBe(true);
+    expect(battleUsesTurnTimer({ pvpMatchId: null })).toBe(false);
+    expect(turnDeadlineForBattle({ pvpMatchId: null })).toBeNull();
+    expect(turnDeadlineForBattle({ pvpMatchId: "m1" })).toBeInstanceOf(Date);
   });
 
   it("treats null deadline as not expired (legacy sessions)", () => {

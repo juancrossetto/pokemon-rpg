@@ -148,4 +148,6 @@ export interface BattleArenaProps {
   wildBStatus?: string | null;
   /** ISO del deadline de decisión del jugador (reloj de inactividad). */
   turnDeadlineAt?: string | null;
+  /** Fallos de huida acumulados (solo salvaje; sube el % Gen III/IV). */
+  fleeAttempts?: number;
 }

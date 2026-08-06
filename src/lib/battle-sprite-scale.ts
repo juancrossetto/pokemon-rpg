@@ -154,10 +154,11 @@ export const SPECIES_HEIGHT_M: Readonly<Record<string, number>> = {
 };
 
 const HEIGHT_CAP_M = 3.5;
-const SCALE_MIN = 0.52;
-const SCALE_MAX = 1.3;
+/** Escala relativa: Abra chico, Venusaur grande, Onix/Gyarados capeados. */
+const SCALE_MIN = 0.62;
+const SCALE_MAX = 1.18;
 
-/** Factor 0.52–1.3 según altura de la especie (Onix/Gyarados se capean). */
+/** Factor ~0.62–1.18 según altura de la especie (Onix/Gyarados se capean). */
 export function battleSpeciesScale(speciesName: string): number {
   const key = speciesName.trim().toLowerCase();
   const raw = SPECIES_HEIGHT_M[key] ?? 1;
@@ -165,4 +166,15 @@ export function battleSpeciesScale(speciesName: string): number {
   const t = Math.min(1, Math.max(0, (h - 0.25) / (HEIGHT_CAP_M - 0.25)));
   return SCALE_MIN + t * (SCALE_MAX - SCALE_MIN);
 }
+
+/** Fracción del alto del campo (antes de escala por especie). */
+export const BATTLE_PLAYER_SPRITE_FRAC = 0.42;
+export const BATTLE_WILD_SPRITE_FRAC = 0.3;
+
+/**
+ * Tope vs ancho del campo: en mobile el arena es muy alto y angosto; si el
+ * tamaño sale sólo del alto, el sprite se pasa de ancho y se ve cortado/deformado.
+ */
+export const BATTLE_PLAYER_SPRITE_WIDTH_CAP = 0.62;
+export const BATTLE_WILD_SPRITE_WIDTH_CAP = 0.48;
 

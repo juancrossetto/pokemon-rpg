@@ -9,7 +9,6 @@ import { stageMultiplier } from "@/lib/status";
 import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
 import type { TurnEvent } from "@/lib/battle";
-import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 
 const MAX_LOG_LINES = 20;
@@ -19,6 +18,8 @@ export interface FleeBattleResult {
   counterAttack: TurnEvent | null;
   playerHpAfter: number;
   outcome: "fled" | "continues" | "lost" | "fainted";
+  /** Intentos fallidos acumulados tras esta acción (para % de huida en UI). */
+  fleeAttempts: number;
 }
 
 /**
@@ -51,6 +52,7 @@ export async function fleeBattle(sessionId: string, locale: string): Promise<Fle
       counterAttack: null,
       playerHpAfter: battle.pokemonInstance.currentHp,
       outcome: "lost",
+      fleeAttempts: battle.fleeAttempts,
     };
   }
 
@@ -76,6 +78,7 @@ export async function fleeBattle(sessionId: string, locale: string): Promise<Fle
       counterAttack: null,
       playerHpAfter: instance.currentHp,
       outcome: "fled",
+      fleeAttempts: battle.fleeAttempts,
     };
   }
 
@@ -101,7 +104,7 @@ export async function fleeBattle(sessionId: string, locale: string): Promise<Fle
         : {
             fleeAttempts: { increment: 1 },
             log: finalLog,
-            turnDeadlineAt: nextTurnDeadline(),
+            turnDeadlineAt: null,
             ...counter.statePatch,
           },
     }),
@@ -117,5 +120,6 @@ export async function fleeBattle(sessionId: string, locale: string): Promise<Fle
     counterAttack: counter.counterAttack,
     playerHpAfter: playerHp,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
+    fleeAttempts: battle.fleeAttempts + 1,
   };
 }
