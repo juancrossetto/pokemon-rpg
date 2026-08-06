@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import Image from "next/image";
+import { useEffect, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { skipGymCooldown } from "@/actions/skip-gym-cooldown";
-import { gymCooldownSkipCost } from "@/lib/gym-cooldown";
+import { formatGymCooldown, gymCooldownSkipCost } from "@/lib/gym-cooldown";
+
+const GEM_ICON = "/items/hd/gem.png";
 
 /**
- * Pagar gemas para limpiar el cooldown de un gimnasio tras una derrota.
+ * Pagar gemas para desafiar de nuevo al líder tras una derrota.
+ * Misma carcasa `game-cta` que torre / desafiar gimnasio.
  */
 export function SkipGymCooldownButton({
   gymId,
@@ -15,14 +19,16 @@ export function SkipGymCooldownButton({
   remainingMs,
   gems,
   compact = false,
+  className = "",
 }: {
   gymId: string;
   hoursLeft: number;
   /** Si no viene, se estima desde hoursLeft (ceil → peor caso). */
   remainingMs?: number;
   gems: number;
-  /** Variante chica para el panel de misión. */
+  /** Variante chica para la barra sticky mobile. */
   compact?: boolean;
+  className?: string;
 }) {
   const t = useTranslations("gyms");
   const locale = useLocale();
@@ -31,11 +37,29 @@ export function SkipGymCooldownButton({
   const [error, setError] = useState<string | null>(null);
 
   const ms = remainingMs ?? hoursLeft * 60 * 60 * 1000;
-  const cost = gymCooldownSkipCost(ms);
+  const [leftMs, setLeftMs] = useState(ms);
+  const cost = gymCooldownSkipCost(leftMs);
   const canPay = gems >= cost && cost > 0;
+  const timeLabel = formatGymCooldown(leftMs);
+  const disabled = pending || !canPay;
+
+  useEffect(() => {
+    let cancelled = false;
+    const frame = requestAnimationFrame(() => {
+      if (!cancelled) setLeftMs(ms);
+    });
+    const interval = setInterval(() => {
+      setLeftMs((prev) => Math.max(0, prev - 1000));
+    }, 1000);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      clearInterval(interval);
+    };
+  }, [ms]);
 
   function onClick() {
-    if (!canPay || pending) return;
+    if (disabled) return;
     setError(null);
     startTransition(async () => {
       const result = await skipGymCooldown(gymId, locale);
@@ -49,48 +73,77 @@ export function SkipGymCooldownButton({
 
   return (
     <div
-      className={`flex flex-col gap-1.5 ${
+      className={`flex flex-col gap-2 ${
         compact ? "items-stretch" : "w-full items-stretch sm:items-end"
-      }`}
+      } ${className}`.trim()}
     >
-      {!compact && (
-        <p className="text-label-sm text-amber-300/90 sm:text-right">
-          {t("cooldownHint", { hours: hoursLeft })}
-        </p>
-      )}
       <button
         type="button"
-        disabled={pending || !canPay}
+        disabled={disabled}
         onClick={onClick}
         title={t("skipCooldownHint", { cost })}
-        className={`ui-btn-gem ${
+        className={`game-cta game-cta--gem mb-0! gap-2 whitespace-nowrap sm:gap-2.5 ${
           compact
-            ? "px-4 py-2.5 text-label-sm"
-            : "rounded-lg px-5 py-3 text-label-md"
-        }`}
+            ? "min-h-11 w-auto! px-4 py-2.5 text-[0.78rem]"
+            : "px-5 py-3"
+        } ${disabled ? "game-cta--disabled" : ""}`.trim()}
       >
-        <span className="material-symbols-outlined text-[18px]!">diamond</span>
-        {pending ? t("skipCooldownPending") : t("skipCooldown")}
-        <span className="inline-flex items-center gap-0.5 font-mono text-[13px]">
-          <span className="material-symbols-outlined text-[15px]!">diamond</span>
-          {cost}
-        </span>
+        {pending ? (
+          <span className="game-cta__label pl-0.5">{t("skipCooldownPending")}</span>
+        ) : (
+          <>
+            <span className="game-cta__label whitespace-nowrap">
+              {t("skipCooldown")}
+            </span>
+            <span aria-hidden className="h-4 w-px shrink-0 bg-white/30" />
+            <span
+              className={`inline-flex shrink-0 items-center gap-1 font-sans font-semibold tabular-nums tracking-normal text-white normal-case ${
+                compact ? "text-[12px]" : "text-[13px]"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[15px]! opacity-90">
+                schedule
+              </span>
+              <span className="font-mono">{timeLabel}</span>
+            </span>
+            <span aria-hidden className="h-4 w-px shrink-0 bg-white/30" />
+            <span
+              className={`inline-flex shrink-0 items-center gap-1 font-sans font-semibold tabular-nums tracking-normal text-white normal-case ${
+                compact ? "text-[12px]" : "text-[13px]"
+              }`}
+            >
+              <Image
+                src={GEM_ICON}
+                alt=""
+                width={22}
+                height={22}
+                className={`shrink-0 object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.55)] ${
+                  compact ? "h-[18px] w-[18px]" : "h-[22px] w-[22px]"
+                }`}
+                unoptimized
+              />
+              <span>{cost}</span>
+            </span>
+          </>
+        )}
       </button>
       {!canPay && cost > 0 ? (
-        <span className={`text-[10px] text-error/90 ${compact ? "" : "sm:text-right"}`}>
-          {t("skipCooldownNoGems")}
-        </span>
-      ) : (
-        <span
-          className={`text-[10px] text-on-surface-variant ${compact ? "" : "sm:text-right"}`}
+        <p
+          className={`px-1 text-[11px] leading-snug text-error/90 ${
+            compact ? "" : "sm:text-right"
+          }`}
         >
-          {t("skipCooldownHint", { cost })}
-        </span>
-      )}
+          {t("skipCooldownNoGems")}
+        </p>
+      ) : null}
       {error ? (
-        <span className={`text-[10px] text-error ${compact ? "" : "sm:text-right"}`}>
+        <p
+          className={`px-1 text-[11px] leading-snug text-error ${
+            compact ? "" : "sm:text-right"
+          }`}
+        >
           {error}
-        </span>
+        </p>
       ) : null}
     </div>
   );

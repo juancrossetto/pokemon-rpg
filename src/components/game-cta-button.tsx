@@ -8,7 +8,7 @@ type SharedProps = {
   icon?: string;
   className?: string;
   disabled?: boolean;
-  variant?: "gold" | "red" | "secondary";
+  variant?: "gold" | "red" | "secondary" | "gem";
 };
 
 type AsLink = SharedProps & {
@@ -44,7 +44,9 @@ export function GameCtaButton(props: GameCtaButtonProps) {
       ? "game-cta--red"
       : variant === "secondary"
         ? "game-cta--secondary"
-        : "";
+        : variant === "gem"
+          ? "game-cta--gem"
+          : "";
   const classes = `game-cta ${variantClass} ${disabled ? "game-cta--disabled" : ""} ${className}`.trim();
 
   const content = (

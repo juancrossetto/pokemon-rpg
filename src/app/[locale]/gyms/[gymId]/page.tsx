@@ -10,7 +10,7 @@ import { nowMs } from "@/lib/time";
 import { StartGymRunButton } from "@/components/start-gym-run-button";
 import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
 import { redirectIfInBattle } from "@/lib/battle-lock";
-import { gymCooldownRemainingMs } from "@/lib/gym-cooldown";
+import { formatGymCooldown, gymCooldownRemainingMs } from "@/lib/gym-cooldown";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { areChapterStagesCompleteForGym } from "@/lib/campaign";
 import { regionDef } from "@/lib/regions";
@@ -100,7 +100,7 @@ export default async function GymLeaderPage({
     fainted_lead: tBattle("faintedLead"),
     locked: t("lockedHint"),
     region_locked: t("regionLockedBody"),
-    on_cooldown: t("cooldownHint", { hours: hoursLeft }),
+    on_cooldown: t("cooldownHint", { time: formatGymCooldown(remainingMs) }),
     closed: t("closedHint"),
     stages_incomplete: t("stagesIncompleteHint"),
   };

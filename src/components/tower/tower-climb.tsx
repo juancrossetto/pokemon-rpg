@@ -1697,16 +1697,24 @@ export function TowerActionBar({
   return (
     <div className="space-y-2">
       {timerLabel ? (
-        <div className="flex items-center justify-center gap-2 px-1">
-          <span className="page-title text-[9px] tracking-[0.14em] text-white/45">
-            {t("reset.nextIn")}
+        // Timer integrado al propio CTA (no una línea aparte arriba): misma
+        // carcasa `game-cta` que el botón de saltar cooldown de gimnasios.
+        <button
+          type="button"
+          disabled
+          aria-label={`${t(action.labelKey)} — ${t("reset.nextIn")} ${timerLabel}`}
+          className="game-cta game-cta--red game-cta--disabled gap-2 whitespace-nowrap sm:gap-2.5"
+        >
+          <span className="game-cta__label whitespace-nowrap">{t(action.labelKey)}</span>
+          <span aria-hidden className="h-4 w-px shrink-0 bg-white/30" />
+          <span className="inline-flex shrink-0 items-center gap-1 font-sans text-[13px] font-semibold tabular-nums tracking-normal text-white normal-case">
+            <span className="material-symbols-outlined text-[15px]! opacity-90">
+              schedule
+            </span>
+            <span className="font-mono">{timerLabel}</span>
           </span>
-          <span className="page-title text-[13px] tabular-nums tracking-wide text-secondary">
-            {timerLabel}
-          </span>
-        </div>
-      ) : null}
-      {action.destination ? (
+        </button>
+      ) : action.destination ? (
         <GameCtaButton href={action.destination} variant="red" disabled={!action.enabled}>
           {t(action.labelKey)}
         </GameCtaButton>

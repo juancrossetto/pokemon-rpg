@@ -355,7 +355,7 @@ model Gym {
   leaderName    String
   badgeName     String  @default("") // nombre real de la medalla (ej. "Boulder Badge")
   type          String // tipo principal del líder — define el ícono/color de la medalla
-  cooldownHours Int     @default(24) // solo aplica tras perder una batalla (no al abandonar la corrida)
+  cooldownHours Int     @default(4) // solo aplica tras perder una batalla (no al abandonar la corrida)
   opensHour     Int     @default(0) // horario de atención en hora local del jugador (0-23).
   closesHour    Int     @default(24) // 0/24 = abierto siempre. Si closes <= opens, cruza la medianoche.
   coinReward    Int     @default(100)

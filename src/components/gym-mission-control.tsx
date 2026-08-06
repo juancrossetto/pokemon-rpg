@@ -11,6 +11,7 @@ import { KANTO_MAP_IMAGE, KANTO_MAP_ASPECT } from "@/lib/gym-map";
 import { marketFeeDiscount, obedienceLevelCap } from "@/lib/badge-perks";
 import { GYM_BATTLE_ENERGY_COST } from "@/lib/energy";
 import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
+import { formatGymCooldown } from "@/lib/gym-cooldown";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
 import { GameCtaButton } from "@/components/game-cta-button";
 import { showToast } from "@/lib/app-toast";
@@ -359,7 +360,9 @@ function statusLabel(
     case "stages":
       return t("statusReadyStages");
     case "cooldown":
-      return t("statusReadyCooldown", { hours: item.hoursLeft });
+      return t("statusReadyCooldown", {
+        time: formatGymCooldown(item.remainingMs),
+      });
     case "closed":
       return t("statusReadyClosed");
     default:
@@ -619,7 +622,8 @@ export function GymMissionControl({
           hoursLeft={selected.hoursLeft}
           remainingMs={selected.remainingMs}
           gems={gems}
-          compact
+          compact={compact}
+          className={wrap}
         />
       );
     }
@@ -1390,14 +1394,14 @@ export function GymMissionControl({
                       <div className="relative z-10 flex h-full flex-col justify-between gap-1 p-2.5 sm:gap-0 sm:p-3.5">
                         <div className="flex items-start justify-between gap-2">
                           {gym.status === "cleared" ? (
-                            <Image
-                              src="/ui/daily-reward-check-sm.png"
-                              alt=""
-                              width={40}
-                              height={40}
-                              unoptimized
-                              className="h-4 w-4 object-contain drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)] sm:h-6 sm:w-6"
-                            />
+                            <span
+                              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_1px_4px_rgba(0,0,0,0.45)] sm:h-6 sm:w-6"
+                              aria-hidden
+                            >
+                              <span className="material-symbols-outlined text-[14px]! leading-none sm:text-[16px]!">
+                                check
+                              </span>
+                            </span>
                           ) : (
                             <span
                               className={`inline-flex items-center gap-1 rounded border px-1 py-0.5 text-[9px] font-semibold uppercase sm:px-1.5 sm:text-[10px] ${style.border} ${style.bg} ${style.text}`}

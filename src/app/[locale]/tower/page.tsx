@@ -231,9 +231,15 @@ export default async function TowerPage({
       (f) => f.type === "boss" && f.floorNumber >= railCurrentFloor,
     )?.floorNumber ?? null;
 
+  /*
+    Sin corrida activa (recién llegado, o después de que un intento termina)
+    es justo cuando hace falta el CTA: arrancar de nuevo, o el botón
+    bloqueado con el countdown de reset si no quedan intentos. Antes exigía
+    `Boolean(liveRun)` y ese caso —el más común— nunca montaba la barra.
+  */
   const showActionBar =
     unlocked &&
-    Boolean(liveRun) &&
+    !isParked &&
     liveRun?.status !== "AWAITING_BLESSING" &&
     liveRun?.status !== "RESTING";
   const showResumeBar = unlocked && isParked;
