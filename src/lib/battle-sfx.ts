@@ -36,7 +36,9 @@ export type SfxKind =
   | "levelUp"
   | "evolve"
   | "heal"
-  | "restorePp";
+  | "restorePp"
+  /** Beep de alarma del reloj de turno (solo synth, sin sample). */
+  | "timerTick";
 
 const SAMPLE_BASE = "/audio/battle/sfx";
 const SAMPLE_EXT = "wav";
@@ -420,11 +422,21 @@ function playSynth(kind: SfxKind) {
       setTimeout(() => tone(640, 90, "sine", 0.1), 80);
       setTimeout(() => tone(760, 110, "triangle", 0.11), 160);
       break;
+    case "timerTick":
+      // Alarma corta de fin de turno: beep agudo + eco.
+      tone(980, 55, "square", 0.11);
+      setTimeout(() => tone(1180, 70, "square", 0.09), 45);
+      break;
   }
 }
 
 export function playBattleSfx(kind: SfxKind) {
   getCtx();
+  // timerTick es synth-only: no hay wav y evitaríamos un 404 por tick.
+  if (kind === "timerTick") {
+    playSynth(kind);
+    return;
+  }
   if (playSample(kind)) return;
 
   // Sample aún no listo: pide carga y usa synth esta vez.

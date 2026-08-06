@@ -206,6 +206,7 @@ function LevelUpFanfare({
 
 export function BattleResult({
   mode,
+  lossReason = null,
   resultText,
   subText,
   player,
@@ -215,6 +216,8 @@ export function BattleResult({
   children,
 }: {
   mode: ResultMode;
+  /** Derrota por reloj: tag y sprite distintos a un K.O. */
+  lossReason?: "faint" | "idle" | null;
   resultText: string;
   subText?: string | null;
   player: ResultFighter;
@@ -226,6 +229,7 @@ export function BattleResult({
   const t = useTranslations("battle");
   const router = useRouter();
   const playerWon = mode === "won" || mode === "trainer_cleared" || mode === "caught";
+  const idleLoss = mode === "lost" && lossReason === "idle";
   const [mounted, setMounted] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const leaveTimer = useRef<number | null>(null);
@@ -243,13 +247,13 @@ export function BattleResult({
     if (playerWon) {
       playGen = startResultBgm("victory");
     } else if (mode === "lost") {
-      playBattleSfx("faint");
+      playBattleSfx(idleLoss ? "miss" : "faint");
       playGen = startResultBgm("defeat");
     } else {
       playBattleSfx("miss");
     }
     return () => stopResultBgm(playGen);
-  }, [mode, playerWon]);
+  }, [mode, playerWon, idleLoss]);
 
   const leave = useCallback(
     (target: LeaveTarget) => {
@@ -266,7 +270,9 @@ export function BattleResult({
 
   const playerTag: Tag =
     mode === "lost"
-      ? { label: t("koTag"), icon: "close", tone: "ko" }
+      ? idleLoss
+        ? { label: t("timeOutTag"), icon: "timer_off", tone: "ko" }
+        : { label: t("koTag"), icon: "close", tone: "ko" }
       : mode === "fled"
         ? { label: t("fledTag"), icon: "directions_run", tone: "neutral" }
         : { label: t("victoryTag"), icon: "trophy", tone: "win" };
@@ -283,7 +289,9 @@ export function BattleResult({
   const headlineTone = playerWon ? "win" : mode === "lost" ? "lose" : "neutral";
   const outcomePillLabel =
     mode === "lost"
-      ? t("defeatTag")
+      ? idleLoss
+        ? t("timeOutDefeatTag")
+        : t("defeatTag")
       : mode === "caught"
         ? t("caughtTag")
         : mode === "fled"
@@ -291,7 +299,9 @@ export function BattleResult({
           : t("victoryTag");
   const outcomePillIcon =
     mode === "lost"
-      ? "sentiment_very_dissatisfied"
+      ? idleLoss
+        ? "timer_off"
+        : "sentiment_very_dissatisfied"
       : mode === "caught"
         ? "sports_baseball"
         : mode === "fled"
@@ -392,7 +402,7 @@ export function BattleResult({
                 <FighterCard
                   fighter={player}
                   tag={playerTag}
-                  defeated={mode === "lost"}
+                  defeated={mode === "lost" && !idleLoss}
                   highlight={playerWon}
                 />
                 <div className="flex flex-col items-center gap-1 pt-8 md:pt-9">

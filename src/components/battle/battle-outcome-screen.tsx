@@ -23,6 +23,7 @@ export interface PvpResultInfo {
 
 export function BattleOutcomeScreen({
   outcome,
+  lossReason = null,
   caughtSentToPc,
   locale,
   player,
@@ -47,6 +48,8 @@ export function BattleOutcomeScreen({
   leaderPortrait,
 }: {
   outcome: Exclude<Outcome, "ongoing">;
+  /** Si la derrota fue por reloj, no por debilitación. */
+  lossReason?: "faint" | "idle" | null;
   caughtSentToPc: boolean;
   locale: string;
   player: { instanceId: string; name: string; speciesName: string; level: number; spriteUrl: string };
@@ -76,11 +79,15 @@ export function BattleOutcomeScreen({
   const [confirmLeaveGym, setConfirmLeaveGym] = useState(false);
   void towerRunId;
 
+  const idleLoss = outcome === "lost" && lossReason === "idle";
+
   const resultText =
     outcome === "won"
       ? t("resultWon")
       : outcome === "lost"
-        ? t("resultLostTitle")
+        ? idleLoss
+          ? t("resultLostIdleTitle")
+          : t("resultLostTitle")
         : outcome === "caught"
           ? t("caughtTitle")
           : outcome === "trainer_cleared"
@@ -89,9 +96,11 @@ export function BattleOutcomeScreen({
   // Bajada en tipografía UI (no Grobold): detalles largos fuera del título display.
   const resultSubText =
     outcome === "lost"
-      ? isTowerBattle
-        ? t("resultLostTower")
-        : t("resultLost")
+      ? idleLoss
+        ? t("resultLostIdle")
+        : isTowerBattle
+          ? t("resultLostTower")
+          : t("resultLost")
       : outcome === "caught"
         ? caughtSentToPc
           ? t("resultCaughtPcDetail")
@@ -105,6 +114,7 @@ export function BattleOutcomeScreen({
   return (
     <BattleResult
       mode={outcome}
+      lossReason={lossReason}
       resultText={resultText}
       subText={resultSubText}
       player={{

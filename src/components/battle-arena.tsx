@@ -388,6 +388,8 @@ export function BattleArena({
   const [effPopup, setEffPopup] = useState<{ text: string; key: number } | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [outcome, setOutcome] = useState<Outcome>("ongoing");
+  /** Distingue derrota por KO vs reloj de inactividad (copy del resultado). */
+  const [lossReason, setLossReason] = useState<"faint" | "idle" | null>(null);
   const [turnDeadlineAt, setTurnDeadlineAt] = useState<string | null>(
     initialTurnDeadlineAt ?? null,
   );
@@ -1265,6 +1267,7 @@ export function BattleArena({
     if (!opts?.skipFaintBeat) await delay(FAINT_MS);
     // Un beat corto para que el KO asiente antes del cartel.
     await delay(450);
+    if (finalOutcome === "lost") setLossReason("faint");
     setOutcome(finalOutcome);
     // No refrescar acá: un refresh RSC (o revalidate de /battle) puede
     // mandar a /run y cortar el resumen. SoftLeave hace el push/refresh.
@@ -1838,9 +1841,22 @@ export function BattleArena({
 
   // AUTO: elige pelea → move (→ target en dobles) sin tocar el menú.
   // Pausa en mochila/equipo y en cambio forzado.
+  // Grace al primer momento accionable para poder apagar AUTO a tiempo.
+  const autoGraceUntilRef = useRef<number | null>(null);
+  useEffect(() => {
+    autoGraceUntilRef.current = null;
+  }, [battleId]);
+
   useEffect(() => {
     if (!autoBattle || isAnimating || outcome !== "ongoing" || mustSwitch) return;
     if (view === "bag" || view === "team") return;
+
+    const AUTO_START_GRACE_MS = 2_800;
+    const AUTO_STEP_MS = 320;
+    if (autoGraceUntilRef.current == null) {
+      autoGraceUntilRef.current = Date.now() + AUTO_START_GRACE_MS;
+    }
+    const delay = Math.max(AUTO_STEP_MS, autoGraceUntilRef.current - Date.now());
 
     let cancelled = false;
     const timer = window.setTimeout(() => {
@@ -1862,7 +1878,7 @@ export function BattleArena({
       if (view === "targets" && isDouble) {
         void actions.handleDoubleTarget(actions.pickAutoTargetLane());
       }
-    }, 320);
+    }, delay);
 
     return () => {
       cancelled = true;
@@ -2265,6 +2281,7 @@ export function BattleArena({
     return (
       <BattleOutcomeScreen
         outcome={outcome}
+        lossReason={lossReason}
         caughtSentToPc={caughtSentToPc}
         locale={locale}
         player={activePlayer}
@@ -2494,6 +2511,7 @@ export function BattleArena({
               onExpired={() => {
                 setTurnDeadlineAt(null);
                 appendLog(t("idleTimeout"));
+                setLossReason("idle");
                 setOutcome("lost");
               }}
             />
