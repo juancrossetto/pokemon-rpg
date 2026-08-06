@@ -7,7 +7,18 @@ import { useRouter } from "@/i18n/navigation";
 import { confirmEvolve, confirmLearnMove } from "@/actions/level-up-offers";
 import { playBattleSfx } from "@/lib/battle-sfx";
 import { typeColor } from "@/lib/type-colors";
-import type { EvolveOffer, LevelUpMoveInfo } from "@/lib/level-up";
+import {
+  showdownCategoryIconUrl,
+  showdownTypeSymbolUrl,
+} from "@/lib/type-icons";
+import { formatMoveName } from "@/lib/format-move-name";
+import {
+  knownFromLevelUp,
+  type EvolveOffer,
+  type KnownMoveInfo,
+  type LevelUpMoveInfo,
+  type MoveCategoryKind,
+} from "@/lib/level-up-read";
 import { spriteFor } from "@/lib/shiny";
 
 export type LevelUpOfferEntry = {
@@ -19,7 +30,7 @@ export type LevelUpOfferEntry = {
   autoTaught: LevelUpMoveInfo[];
   pendingMoves: LevelUpMoveInfo[];
   evolveOffer: EvolveOffer | null;
-  knownMoves: { slot: number; name: string }[];
+  knownMoves: KnownMoveInfo[];
 };
 
 /**
@@ -145,13 +156,13 @@ export function LevelUpOffersPanel({
           if (learned) {
             if (replaceSlot != null) {
               knownMoves = knownMoves.map((k) =>
-                k.slot === replaceSlot ? { slot: replaceSlot, name: learned.name } : k,
+                k.slot === replaceSlot ? knownFromLevelUp(replaceSlot, learned) : k,
               );
             } else {
               const used = new Set(knownMoves.map((k) => k.slot));
               const empty = [1, 2, 3, 4].find((s) => !used.has(s));
               if (empty != null) {
-                knownMoves = [...knownMoves, { slot: empty, name: learned.name }];
+                knownMoves = [...knownMoves, knownFromLevelUp(empty, learned)];
               }
             }
           }
@@ -167,7 +178,7 @@ export function LevelUpOffersPanel({
     });
   }
 
-  function evolve(instanceId: string, offer: EvolveOffer) {
+  function evolve(instanceId: string) {
     setError(null);
     setEvolvingId(instanceId);
     playBattleSfx("evolve");
@@ -246,11 +257,10 @@ export function LevelUpOffersPanel({
                     key={`auto-${m.moveId}`}
                     className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[12px] text-emerald-100"
                   >
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ background: typeColor(m.type), boxShadow: `0 0 8px ${typeColor(m.type)}88` }}
-                    />
-                    <span className="capitalize">{t("learned", { move: m.name })}</span>
+                    <TypeOrb type={m.type} size="sm" />
+                    <span className="capitalize">
+                      {t("learned", { move: formatMoveName(m.name) })}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -258,124 +268,44 @@ export function LevelUpOffersPanel({
 
             {current && (
               <div className="relative px-4 pb-4 pt-2">
-                <div
-                  className="overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-4"
-                  style={{
-                    boxShadow: `inset 0 0 0 1px ${typeColor(current.type)}22`,
+                <LearnMoveCard
+                  move={current}
+                  remaining={remaining}
+                  knownMoves={entry.knownMoves}
+                  hasEmptySlot={hasEmptySlot}
+                  picking={
+                    picking?.instanceId === entry.instanceId &&
+                    picking.move.moveId === current.moveId
+                  }
+                  pending={pending}
+                  labels={{
+                    newMove: t("newMove"),
+                    wantsToLearn: t("wantsToLearn", {
+                      move: formatMoveName(current.name),
+                    }),
+                    morePending: t("morePending", { count: remaining }),
+                    forgetWhich: t("forgetWhich"),
+                    learn: t("learn"),
+                    replace: t("replace"),
+                    skipMove: t("skipMove"),
+                    skipMoveHint: t("skipMoveHint"),
+                    cancel: t("cancel"),
+                    yourMoves: t("yourMoves"),
+                    power: t("power"),
+                    accuracy: t("accuracy"),
+                    pp: t("pp"),
+                    learnAt: t("learnAt", { level: current.learnLevel }),
+                    neverMisses: t("neverMisses"),
+                    category: (c) => t(`category.${c}`),
                   }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10"
-                      style={{
-                        background: `linear-gradient(145deg, ${typeColor(current.type)}55, ${typeColor(current.type)}18)`,
-                      }}
-                    >
-                      <span
-                        className="material-symbols-outlined text-[26px]! text-white"
-                        style={{ filter: `drop-shadow(0 0 8px ${typeColor(current.type)})` }}
-                      >
-                        bolt
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">
-                        {t("newMove")}
-                      </p>
-                      <p className="mt-0.5 truncate text-[17px] font-bold capitalize tracking-tight text-white">
-                        {current.name}
-                      </p>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        <span
-                          className="rounded-full border border-white/10 bg-black/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
-                          style={{ color: typeColor(current.type) }}
-                        >
-                          {current.type}
-                        </span>
-                        <span className="rounded-full border border-white/10 bg-black/40 px-2 py-0.5 font-mono text-[9px] text-white/55">
-                          PP {current.pp}
-                        </span>
-                        <span className="rounded-full border border-white/10 bg-black/40 px-2 py-0.5 font-mono text-[9px] text-white/55">
-                          Nv. {current.learnLevel}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-[12px] leading-snug text-white/65">
-                        {t("wantsToLearn", { move: current.name })}
-                      </p>
-                      {remaining > 0 && (
-                        <p className="mt-1 text-[10px] text-white/40">
-                          {t("morePending", { count: remaining })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {picking?.instanceId === entry.instanceId &&
-                  picking.move.moveId === current.moveId ? (
-                    <div className="mt-4 space-y-1.5 border-t border-white/8 pt-3">
-                      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-white/45">
-                        {t("forgetWhich")}
-                      </p>
-                      {entry.knownMoves.map((k) => (
-                        <button
-                          key={k.slot}
-                          type="button"
-                          disabled={pending}
-                          onClick={() => learn(entry.instanceId, current.moveId, k.slot)}
-                          className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left text-[13px] text-white transition hover:border-pokeball-red/45 hover:bg-pokeball-red/10 disabled:opacity-50"
-                        >
-                          <span className="capitalize">{k.name}</span>
-                          <span className="font-mono text-[10px] text-white/40">#{k.slot}</span>
-                        </button>
-                      ))}
-                      <button
-                        type="button"
-                        disabled={pending}
-                        onClick={() => setPicking(null)}
-                        className="mt-1 w-full rounded-xl px-3 py-2 text-[12px] text-white/50 transition hover:bg-white/5 hover:text-white"
-                      >
-                        {t("cancel")}
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                        {hasEmptySlot ? (
-                          <button
-                            type="button"
-                            disabled={pending}
-                            onClick={() => learn(entry.instanceId, current.moveId, null)}
-                            className="ui-btn-primary flex-1 rounded-xl px-4 py-3 text-[13px] font-bold tracking-wide"
-                          >
-                            {t("learn")}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={pending}
-                            onClick={() =>
-                              setPicking({ instanceId: entry.instanceId, move: current })
-                            }
-                            className="ui-btn-primary flex-1 rounded-xl px-4 py-3 text-[13px] font-bold tracking-wide"
-                          >
-                            {t("replace")}
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          disabled={pending}
-                          onClick={() => skipMove(entry.instanceId, current.moveId)}
-                          className="rounded-xl border border-white/12 bg-white/[0.03] px-4 py-3 text-[13px] font-medium text-white/60 transition hover:border-white/25 hover:text-white disabled:opacity-50 sm:min-w-28"
-                        >
-                          {t("skipMove")}
-                        </button>
-                      </div>
-                      <p className="mt-2 text-center text-[11px] leading-snug text-white/35">
-                        {t("skipMoveHint")}
-                      </p>
-                    </>
-                  )}
-                </div>
+                  onLearnEmpty={() => learn(entry.instanceId, current.moveId, null)}
+                  onStartReplace={() =>
+                    setPicking({ instanceId: entry.instanceId, move: current })
+                  }
+                  onReplaceSlot={(slot) => learn(entry.instanceId, current.moveId, slot)}
+                  onCancelPick={() => setPicking(null)}
+                  onSkip={() => skipMove(entry.instanceId, current.moveId)}
+                />
               </div>
             )}
 
@@ -412,7 +342,7 @@ export function LevelUpOffersPanel({
                       level: entry.leveledUpTo ?? offer.evolveLevel,
                     }),
                   }}
-                  onEvolve={() => evolve(entry.instanceId, offer)}
+                  onEvolve={() => evolve(entry.instanceId)}
                   onLater={() => deferEvolve(entry.instanceId)}
                 />
               </div>
@@ -435,6 +365,328 @@ export function LevelUpOffersPanel({
 
       {error && <p className="text-label-sm text-error">{error}</p>}
     </section>
+  );
+}
+
+type LearnMoveLabels = {
+  newMove: string;
+  wantsToLearn: string;
+  morePending: string;
+  forgetWhich: string;
+  learn: string;
+  replace: string;
+  skipMove: string;
+  skipMoveHint: string;
+  cancel: string;
+  yourMoves: string;
+  power: string;
+  accuracy: string;
+  pp: string;
+  learnAt: string;
+  neverMisses: string;
+  category: (c: MoveCategoryKind) => string;
+};
+
+function accuracyText(accuracy: number | null, neverMisses: string): string {
+  return accuracy == null ? neverMisses : `${accuracy}%`;
+}
+
+function powerDelta(candidate: number | null, known: number | null): number | null {
+  if (candidate == null || known == null) return null;
+  return candidate - known;
+}
+
+/** Ícono de tipo Showdown en órbita de color — mismo patrón que el mapa del home. */
+function TypeOrb({
+  type,
+  size = "md",
+  title,
+}: {
+  type: string;
+  size?: "sm" | "md" | "lg";
+  title?: string;
+}) {
+  const color = typeColor(type);
+  // Ícono ~65% del círculo: el símbolo Showdown es fino y con padding
+  // interno; si queda al 40% se lee como un puntito.
+  const box =
+    size === "lg" ? "h-12 w-12" : size === "sm" ? "h-7 w-7" : "h-9 w-9";
+  const icon =
+    size === "lg" ? "h-7 w-7" : size === "sm" ? "h-4 w-4" : "h-5 w-5";
+  const px = size === "lg" ? 28 : size === "sm" ? 16 : 20;
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center justify-center rounded-full border ${box}`}
+      style={{
+        background: `radial-gradient(circle at 35% 30%, ${color}ee, ${color}88)`,
+        borderColor: `${color}aa`,
+      }}
+      title={title ?? type}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={showdownTypeSymbolUrl(type)}
+        alt=""
+        width={px}
+        height={px}
+        className={`${icon} object-contain brightness-125`}
+        decoding="async"
+      />
+    </span>
+  );
+}
+
+function LearnMoveCard({
+  move,
+  remaining,
+  knownMoves,
+  hasEmptySlot,
+  picking,
+  pending,
+  labels,
+  onLearnEmpty,
+  onStartReplace,
+  onReplaceSlot,
+  onCancelPick,
+  onSkip,
+}: {
+  move: LevelUpMoveInfo;
+  remaining: number;
+  knownMoves: KnownMoveInfo[];
+  hasEmptySlot: boolean;
+  picking: boolean;
+  pending: boolean;
+  labels: LearnMoveLabels;
+  onLearnEmpty: () => void;
+  onStartReplace: () => void;
+  onReplaceSlot: (slot: number) => void;
+  onCancelPick: () => void;
+  onSkip: () => void;
+}) {
+  const color = typeColor(move.type);
+  const formatted = formatMoveName(move.name);
+
+  return (
+    <div
+      className="overflow-hidden rounded-2xl border border-white/10 bg-black/45"
+      style={{ boxShadow: `inset 0 0 0 1px ${color}28` }}
+    >
+      <div
+        className="relative px-3 pb-2.5 pt-3 sm:px-4 sm:pt-4"
+        style={{
+          background: `linear-gradient(165deg, ${color}33 0%, transparent 62%)`,
+        }}
+      >
+        <div className="flex items-start gap-3">
+          <TypeOrb type={move.type} size="lg" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
+              {labels.newMove}
+            </p>
+            <p className="mt-0.5 truncate text-[17px] font-bold tracking-tight text-white sm:text-[18px]">
+              {formatted}
+            </p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-black/35 px-1.5 py-0.5 text-[10px] font-medium text-white/75">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={showdownCategoryIconUrl(move.category)}
+                  alt=""
+                  width={12}
+                  height={12}
+                  className="h-3 w-3 object-contain"
+                  decoding="async"
+                />
+                {labels.category(move.category)}
+              </span>
+              <span className="rounded-md border border-white/10 bg-black/35 px-1.5 py-0.5 font-mono text-[10px] text-white/55">
+                {labels.learnAt}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2">
+          <MoveStat
+            label={labels.power}
+            value={move.power == null ? "—" : String(move.power)}
+            accent={color}
+          />
+          <MoveStat
+            label={labels.accuracy}
+            value={accuracyText(move.accuracy, labels.neverMisses)}
+            accent={color}
+          />
+          <MoveStat label={labels.pp} value={String(move.pp)} accent={color} />
+        </div>
+
+        <p className="mt-2 text-[12px] leading-snug text-white/65">{labels.wantsToLearn}</p>
+        {remaining > 0 && (
+          <p className="mt-0.5 text-[10px] text-white/40">{labels.morePending}</p>
+        )}
+      </div>
+
+      {knownMoves.length > 0 && (
+        <div className="border-t border-white/8 px-3 py-2.5 sm:px-4">
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
+            {picking ? labels.forgetWhich : labels.yourMoves}
+          </p>
+          <ul className="space-y-1">
+            {knownMoves.map((k) => {
+              const delta = powerDelta(move.power, k.power);
+              return (
+                <li key={k.slot}>
+                  {picking ? (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => onReplaceSlot(k.slot)}
+                      className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-left transition hover:border-pokeball-red/45 hover:bg-pokeball-red/10 disabled:opacity-50"
+                    >
+                      <KnownMoveRow
+                        move={k}
+                        labels={labels}
+                        powerDelta={delta}
+                        interactive
+                      />
+                    </button>
+                  ) : (
+                    <div className="rounded-lg border border-white/8 bg-white/[0.02] px-2.5 py-1.5">
+                      <KnownMoveRow move={k} labels={labels} powerDelta={delta} />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {picking && (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={onCancelPick}
+              className="mt-2 w-full rounded-xl px-3 py-2 text-[12px] text-white/50 transition hover:bg-white/5 hover:text-white"
+            >
+              {labels.cancel}
+            </button>
+          )}
+        </div>
+      )}
+
+      {!picking && (
+        <div className="border-t border-white/8 px-3 py-2.5 sm:px-4">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {hasEmptySlot ? (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={onLearnEmpty}
+                className="ui-btn-primary flex-1 rounded-xl px-4 py-2.5 text-[13px] font-bold tracking-wide"
+              >
+                {labels.learn}
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={onStartReplace}
+                className="ui-btn-primary flex-1 rounded-xl px-4 py-2.5 text-[13px] font-bold tracking-wide"
+              >
+                {labels.replace}
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={pending}
+              onClick={onSkip}
+              className="rounded-xl border border-white/12 bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-white/60 transition hover:border-white/25 hover:text-white disabled:opacity-50 sm:min-w-28"
+            >
+              {labels.skipMove}
+            </button>
+          </div>
+          <p className="mt-1.5 text-center text-[11px] leading-snug text-white/35">
+            {labels.skipMoveHint}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MoveStat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent: string;
+}) {
+  return (
+    <div
+      className="rounded-xl border border-white/8 bg-black/30 px-2.5 py-2 text-center"
+      style={{ boxShadow: `inset 0 0 0 1px ${accent}14` }}
+    >
+      <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40">
+        {label}
+      </p>
+      <p className="mt-0.5 font-mono text-[15px] font-bold tabular-nums text-white">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function KnownMoveRow({
+  move,
+  labels,
+  powerDelta: delta,
+  interactive = false,
+}: {
+  move: KnownMoveInfo;
+  labels: LearnMoveLabels;
+  powerDelta: number | null;
+  interactive?: boolean;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <TypeOrb type={move.type} size="sm" />
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="truncate text-[13px] font-semibold text-white">
+            {formatMoveName(move.name)}
+          </span>
+          {delta != null && delta !== 0 && (
+            <span
+              className={`shrink-0 font-mono text-[10px] font-bold tabular-nums ${
+                delta > 0 ? "text-emerald-300" : "text-rose-300"
+              }`}
+            >
+              {delta > 0 ? `+${delta}` : delta}
+            </span>
+          )}
+          {interactive && (
+            <span className="ml-auto shrink-0 font-mono text-[10px] text-white/35">
+              #{move.slot}
+            </span>
+          )}
+        </div>
+        <div className="mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5 font-mono text-[10px] tabular-nums text-white/50">
+          <span className="text-white/45">{labels.category(move.category)}</span>
+          <span>
+            <span className="text-white/30">{labels.power} </span>
+            {move.power ?? "—"}
+          </span>
+          <span>
+            <span className="text-white/30">{labels.accuracy} </span>
+            {accuracyText(move.accuracy, labels.neverMisses)}
+          </span>
+          <span>
+            <span className="text-white/30">{labels.pp} </span>
+            {move.pp}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 

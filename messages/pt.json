@@ -2428,6 +2428,17 @@
     "wantsToLearn": "Quer aprender {move}.",
     "morePending": "+{count} mais na fila",
     "forgetWhich": "Esquecer qual golpe?",
+    "yourMoves": "Seus golpes",
+    "power": "Poder",
+    "accuracy": "Prec.",
+    "pp": "PP",
+    "learnAt": "Nv. {level}",
+    "neverMisses": "Não erra",
+    "category": {
+      "PHYSICAL": "Físico",
+      "SPECIAL": "Especial",
+      "STATUS": "Estado"
+    },
     "learn": "Aprender",
     "replace": "Substituir",
     "skipMove": "Ignorar",

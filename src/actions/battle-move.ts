@@ -38,7 +38,7 @@ import {
   completeFarmingStageOnWildWin,
   syncCampaignAfterGymBadge,
 } from "@/lib/campaign/sync";
-import type { EvolveOffer, LevelUpMoveInfo } from "@/lib/level-up";
+import type { EvolveOffer, LevelUpMoveInfo, KnownMoveInfo } from "@/lib/level-up";
 import { resolveLevelUpEffects } from "@/lib/level-up";
 import { lockUsers } from "@/lib/db-locks";
 import { notifySettledPvp, settlePvpMatch } from "@/lib/pvp/settle";
@@ -62,7 +62,7 @@ export interface XpSummaryEntry {
   pendingMoves: LevelUpMoveInfo[];
   evolveOffer: EvolveOffer | null;
   /** Movimientos actuales (para elegir cuál olvidar). */
-  knownMoves: { slot: number; name: string }[];
+  knownMoves: KnownMoveInfo[];
 }
 
 function coinsForVictory(wildLevel: number): number {
@@ -766,7 +766,6 @@ export async function submitBattleMove(
       if (battle.clanWarBattleId && battle.clanWarBattle) {
         const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
         const slot = battle.clanWarBattle;
-        const war = slot.war;
         const membership = await prisma.clanMember.findUnique({ where: { userId } });
         const myClanId = membership?.clanId;
         if (!myClanId || !battle.opponentUserId) return null;
@@ -983,6 +982,7 @@ export async function submitBattleMove(
         let autoTaught: LevelUpMoveInfo[] = [];
         let pendingMoves: LevelUpMoveInfo[] = [];
         let evolveOffer: EvolveOffer | null = null;
+        let knownMoves: KnownMoveInfo[] = [];
         if (meta.leveledUpTo != null) {
           try {
             const effects = await resolveLevelUpEffects(
@@ -994,15 +994,11 @@ export async function submitBattleMove(
             autoTaught = effects.autoTaught;
             pendingMoves = effects.pendingMoves;
             evolveOffer = effects.evolveOffer;
+            knownMoves = effects.knownMoves;
           } catch (err) {
             console.error("[battle-move] resolveLevelUpEffects", err);
           }
         }
-        const known = await prisma.pokemonMove.findMany({
-          where: { pokemonInstanceId: meta.instanceId },
-          include: { move: { select: { name: true } } },
-          orderBy: { slot: "asc" },
-        });
         entries.push({
           instanceId: meta.instanceId,
           name: meta.name,
@@ -1014,7 +1010,7 @@ export async function submitBattleMove(
           autoTaught,
           pendingMoves,
           evolveOffer,
-          knownMoves: known.map((m) => ({ slot: m.slot, name: m.move.name })),
+          knownMoves,
         });
       }
       return entries;

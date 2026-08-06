@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -9,10 +10,13 @@ import {
   UNSPENT_POINTS_PER_LEVEL,
   xpForLevel,
 } from "@/lib/stats";
-import { blockIfInCombat } from "@/lib/battle-lock";
+import { getCombatLock } from "@/lib/battle-lock";
+import { redirect } from "@/i18n/navigation";
 import {
-  resolveLevelUpEffects,
+  buildLevelUpEffects,
+  toKnownMoveInfo,
   type EvolveOffer,
+  type KnownMoveInfo,
   type LevelUpMoveInfo,
 } from "@/lib/level-up";
 
@@ -30,7 +34,7 @@ export type UseRareCandyResult =
       autoTaught: LevelUpMoveInfo[];
       pendingMoves: LevelUpMoveInfo[];
       evolveOffer: EvolveOffer | null;
-      knownMoves: { slot: number; name: string }[];
+      knownMoves: KnownMoveInfo[];
     }
   | {
       ok: false;
@@ -42,9 +46,22 @@ export type UseRareCandyResult =
         | "in_combat";
     };
 
+const MOVE_SELECT = {
+  id: true,
+  name: true,
+  type: true,
+  category: true,
+  power: true,
+  accuracy: true,
+  pp: true,
+} as const;
+
 /**
  * Consume un Rare Candy y sube 1 nivel (curva Medium Fast, como en los juegos).
  * También enseña movimientos de ese nivel y ofrece evolución si corresponde.
+ *
+ * Optimizado para latencia: lecturas en paralelo, sin re-fetch de known post-update,
+ * y revalidatePath diferido con `after()` para no bloquear la respuesta al cliente.
  */
 export async function useRareCandy(
   instanceId: string,
@@ -54,29 +71,47 @@ export async function useRareCandy(
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
 
-  if (await blockIfInCombat(userId, locale)) {
+  const [lock, instance, candy] = await Promise.all([
+    getCombatLock(userId),
+    prisma.pokemonInstance.findFirst({
+      where: { id: instanceId, ownerId: userId },
+      include: {
+        species: {
+          select: { baseHp: true, id: true, name: true, spriteUrl: true },
+        },
+        moves: {
+          include: { move: { select: MOVE_SELECT } },
+          orderBy: { slot: "asc" },
+        },
+      },
+    }),
+    prisma.inventoryItem.findFirst({
+      where: {
+        userId,
+        quantity: { gt: 0 },
+        item: { name: "Rare Candy" },
+      },
+      include: { item: { select: { id: true, name: true } } },
+    }),
+  ]);
+
+  if (lock?.kind === "battle") {
+    redirect({ href: "/battle", locale });
+    return { ok: false, error: "in_combat" };
+  }
+  if (lock?.kind === "gym") {
+    redirect({ href: `/gyms/${lock.gymId}/run`, locale });
+    return { ok: false, error: "in_combat" };
+  }
+  if (lock?.kind === "tower") {
+    redirect({ href: "/tower", locale });
     return { ok: false, error: "in_combat" };
   }
 
-  const instance = await prisma.pokemonInstance.findFirst({
-    where: { id: instanceId, ownerId: userId },
-    include: {
-      species: { select: { baseHp: true, id: true, name: true, spriteUrl: true } },
-    },
-  });
   if (!instance) return { ok: false, error: "not_found" };
   if (instance.level >= MAX_POKEMON_LEVEL) {
     return { ok: false, error: "max_level" };
   }
-
-  const candy = await prisma.inventoryItem.findFirst({
-    where: {
-      userId,
-      quantity: { gt: 0 },
-      item: { name: "Rare Candy" },
-    },
-    include: { item: { select: { id: true, name: true } } },
-  });
   if (!candy) return { ok: false, error: "no_candy" };
 
   const previousLevel = instance.level;
@@ -97,12 +132,14 @@ export async function useRareCandy(
     instance.currentHp + (newMaxHp - previousMaxHp),
   );
 
-  await prisma.$transaction([
-    prisma.inventoryItem.update({
+  const knownMoves = instance.moves.map((m) => toKnownMoveInfo(m.slot, m.move));
+
+  await prisma.$transaction(async (tx) => {
+    await tx.inventoryItem.update({
       where: { userId_itemId: { userId, itemId: candy.itemId } },
       data: { quantity: { decrement: 1 } },
-    }),
-    prisma.pokemonInstance.update({
+    });
+    await tx.pokemonInstance.update({
       where: { id: instance.id },
       data: {
         level: newLevel,
@@ -110,42 +147,37 @@ export async function useRareCandy(
         unspentPoints: { increment: UNSPENT_POINTS_PER_LEVEL },
         currentHp: newCurrentHp,
       },
-    }),
-  ]);
-
-  if (candy.quantity <= 1) {
-    await prisma.inventoryItem.deleteMany({
-      where: { userId, itemId: candy.itemId, quantity: { lte: 0 } },
     });
-  }
+    if (candy.quantity <= 1) {
+      await tx.inventoryItem.deleteMany({
+        where: { userId, itemId: candy.itemId, quantity: { lte: 0 } },
+      });
+    }
+  });
 
   let autoTaught: LevelUpMoveInfo[] = [];
   let pendingMoves: LevelUpMoveInfo[] = [];
   let evolveOffer: EvolveOffer | null = null;
   try {
-    const effects = await resolveLevelUpEffects(
-      instance.id,
-      instance.speciesId,
-      previousLevel,
-      newLevel,
-    );
+    const effects = await buildLevelUpEffects({
+      speciesId: instance.speciesId,
+      level: newLevel,
+      knownMoves,
+    });
     autoTaught = effects.autoTaught;
     pendingMoves = effects.pendingMoves;
     evolveOffer = effects.evolveOffer;
   } catch (err) {
     // El nivel ya subió; no fallar el caramelo si falla el lookup de moves/evo.
-    console.error("[useRareCandy] resolveLevelUpEffects", err);
+    console.error("[useRareCandy] buildLevelUpEffects", err);
   }
 
-  const known = await prisma.pokemonMove.findMany({
-    where: { pokemonInstanceId: instance.id },
-    include: { move: { select: { name: true } } },
-    orderBy: { slot: "asc" },
+  // No bloquear la respuesta: el cliente ya actualizó nivel/bag en optimistic UI.
+  after(() => {
+    revalidatePath(`/${locale}/team`);
+    revalidatePath(`/${locale}/pc`);
+    revalidatePath(`/${locale}`);
   });
-
-  revalidatePath(`/${locale}/team`);
-  revalidatePath(`/${locale}/pc`);
-  revalidatePath(`/${locale}`);
 
   return {
     ok: true,
@@ -160,6 +192,6 @@ export async function useRareCandy(
     autoTaught,
     pendingMoves,
     evolveOffer,
-    knownMoves: known.map((m) => ({ slot: m.slot, name: m.move.name })),
+    knownMoves,
   };
 }

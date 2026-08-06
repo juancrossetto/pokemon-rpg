@@ -40,3 +40,12 @@ export function showdownTypeSymbolUrl(type: string): string {
   const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
   return `${showdownSpritesBase()}/typeicons/${capitalized}.png`;
 }
+
+/** Ícono de categoría de movimiento (`sprites/categories/Physical.png`). */
+export function showdownCategoryIconUrl(
+  category: "PHYSICAL" | "SPECIAL" | "STATUS",
+): string {
+  const name =
+    category === "PHYSICAL" ? "Physical" : category === "SPECIAL" ? "Special" : "Status";
+  return `${showdownSpritesBase()}/categories/${name}.png`;
+}

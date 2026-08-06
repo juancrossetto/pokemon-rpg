@@ -230,6 +230,16 @@ export function BattleResult({
   const router = useRouter();
   const playerWon = mode === "won" || mode === "trainer_cleared" || mode === "caught";
   const idleLoss = mode === "lost" && lossReason === "idle";
+  // Con oferta de move/evo la card de level-up es la prioridad: ocultar VS + fanfare
+  // evita el scroll forzado por apilar todo en un modal de altura limitada.
+  const hasLevelUpChoices =
+    xpSummary?.some(
+      (e) =>
+        e.leveledUpTo != null &&
+        ((e.pendingMoves?.length ?? 0) > 0 ||
+          (e.autoTaught?.length ?? 0) > 0 ||
+          e.evolveOffer != null),
+    ) ?? false;
   const [mounted, setMounted] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const leaveTimer = useRef<number | null>(null);
@@ -345,7 +355,7 @@ export function BattleResult({
         />
 
         <div
-          className={`result-in relative z-10 my-auto flex max-h-[min(calc(100dvh-1.5rem),48rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-xl ${cardSurface}`}
+          className={`result-in relative z-10 my-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-xl ${cardSurface}`}
         >
           <div
             className={`pointer-events-none absolute inset-x-0 top-0 h-28 ${cardTopGlow} blur-2xl`}
@@ -358,8 +368,12 @@ export function BattleResult({
             />
           ) : null}
 
-          <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 md:px-6 md:py-6">
-            <div className="flex flex-col items-center gap-2.5">
+          <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-6 md:py-5">
+            <div
+              className={`flex flex-col items-center ${
+                hasLevelUpChoices ? "gap-1.5" : "gap-2.5"
+              }`}
+            >
               <span
                 className={`result-outcome-mark inline-flex items-center gap-2 result-outcome-mark--${headlineTone}`}
               >
@@ -367,9 +381,11 @@ export function BattleResult({
                   <Image
                     src={TROPHY_ICON}
                     alt=""
-                    width={36}
-                    height={36}
-                    className="h-9 w-9 object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]"
+                    width={hasLevelUpChoices ? 28 : 36}
+                    height={hasLevelUpChoices ? 28 : 36}
+                    className={`object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)] ${
+                      hasLevelUpChoices ? "h-7 w-7" : "h-9 w-9"
+                    }`}
                     unoptimized
                   />
                 ) : (
@@ -381,46 +397,61 @@ export function BattleResult({
                   {outcomePillLabel}
                 </span>
               </span>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">
-                {t("resultEyebrow")}
-              </p>
-              <h1
-                id="battle-result-title"
-                className={`result-title result-title--${headlineTone} text-center`}
-              >
-                {resultText}
-              </h1>
-              {subText ? (
-                <p className="result-lede mx-auto max-w-sm text-center text-[13px] leading-relaxed text-white/60 md:max-w-md md:text-[0.95rem]">
-                  {subText}
-                </p>
-              ) : null}
+              {!hasLevelUpChoices ? (
+                <>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">
+                    {t("resultEyebrow")}
+                  </p>
+                  <h1
+                    id="battle-result-title"
+                    className={`result-title result-title--${headlineTone} text-center`}
+                  >
+                    {resultText}
+                  </h1>
+                  {subText ? (
+                    <p className="result-lede mx-auto max-w-sm text-center text-[13px] leading-relaxed text-white/60 md:max-w-md md:text-[0.95rem]">
+                      {subText}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <h1
+                  id="battle-result-title"
+                  className="sr-only"
+                >
+                  {resultText}
+                </h1>
+              )}
             </div>
 
-            <section className="relative mt-5 overflow-hidden rounded-2xl border border-white/8 bg-black/40 p-3 md:mt-6 md:p-4">
-              <div className="relative grid grid-cols-[1fr_auto_1fr] items-start gap-2 md:gap-3">
-                <FighterCard
-                  fighter={player}
-                  tag={playerTag}
-                  defeated={mode === "lost" && !idleLoss}
-                  highlight={playerWon}
-                />
-                <div className="flex flex-col items-center gap-1 pt-8 md:pt-9">
-                  <span className="page-title text-[0.7rem] tracking-[0.18em] text-white/40">
-                    VS
-                  </span>
-                  <span className="h-8 w-px bg-linear-to-b from-white/15 to-transparent md:h-10" />
+            {!hasLevelUpChoices ? (
+              <section className="relative mt-5 overflow-hidden rounded-2xl border border-white/8 bg-black/40 p-3 md:mt-6 md:p-4">
+                <div className="relative grid grid-cols-[1fr_auto_1fr] items-start gap-2 md:gap-3">
+                  <FighterCard
+                    fighter={player}
+                    tag={playerTag}
+                    defeated={mode === "lost" && !idleLoss}
+                    highlight={playerWon}
+                  />
+                  <div className="flex flex-col items-center gap-1 pt-8 md:pt-9">
+                    <span className="page-title text-[0.7rem] tracking-[0.18em] text-white/40">
+                      VS
+                    </span>
+                    <span className="h-8 w-px bg-linear-to-b from-white/15 to-transparent md:h-10" />
+                  </div>
+                  <FighterCard
+                    fighter={foe}
+                    tag={foeTag}
+                    defeated={mode !== "lost" && mode !== "fled"}
+                    highlight={mode === "lost"}
+                  />
                 </div>
-                <FighterCard
-                  fighter={foe}
-                  tag={foeTag}
-                  defeated={mode !== "lost" && mode !== "fled"}
-                  highlight={mode === "lost"}
-                />
-              </div>
-            </section>
+              </section>
+            ) : null}
 
-            {xpSummary ? <LevelUpFanfare entries={xpSummary} player={player} /> : null}
+            {xpSummary && !hasLevelUpChoices ? (
+              <LevelUpFanfare entries={xpSummary} player={player} />
+            ) : null}
 
             {xpSummary ? (
               <div className="mt-3">
@@ -446,7 +477,8 @@ export function BattleResult({
               </div>
             ) : null}
 
-            {(coinsGained > 0 || (xpSummary && xpSummary.length > 0)) && (
+            {(coinsGained > 0 || (xpSummary && xpSummary.length > 0)) &&
+              !hasLevelUpChoices && (
               <section className="mt-3 rounded-2xl border border-white/8 bg-black/40 p-3 md:p-4">
                 <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
                   {t("rewardsTitle")}

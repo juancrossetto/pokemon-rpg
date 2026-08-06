@@ -2428,6 +2428,17 @@
     "wantsToLearn": "Wants to learn {move}.",
     "morePending": "+{count} more queued",
     "forgetWhich": "Forget which move?",
+    "yourMoves": "Your moves",
+    "power": "Power",
+    "accuracy": "Acc.",
+    "pp": "PP",
+    "learnAt": "Lv. {level}",
+    "neverMisses": "Never misses",
+    "category": {
+      "PHYSICAL": "Physical",
+      "SPECIAL": "Special",
+      "STATUS": "Status"
+    },
     "learn": "Learn",
     "replace": "Replace",
     "skipMove": "Ignore",

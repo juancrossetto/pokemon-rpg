@@ -603,8 +603,14 @@ export function SquadLevelOffers({
 }) {
   if (typeof document === "undefined") return null;
   return createPortal(
-    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/65 px-4 pt-4 pb-[calc(var(--bottom-nav-h,5.25rem)+env(safe-area-inset-bottom,0px)+0.75rem)] backdrop-blur-md sm:items-center sm:p-4 xl:pb-4">
-      <div className="max-h-[min(72dvh,36rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-tertiary/25 bg-[#0a0e16]/96 shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
+    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/65 px-3 pt-3 pb-[calc(var(--bottom-nav-h,5.25rem)+env(safe-area-inset-bottom,0px)+0.5rem)] backdrop-blur-md sm:items-center sm:p-4 xl:pb-4">
+      {/*
+        Antes: max-h 72dvh / 36rem → la card de aprender move no entraba y
+        forzaba scroll con espacio libre en el overlay. Usamos casi todo el
+        alto disponible del portal (ya descuenta bottom-nav) y un tope holgado
+        en desktop.
+      */}
+      <div className="flex max-h-full w-full max-w-lg flex-col overflow-y-auto overscroll-contain rounded-2xl border border-tertiary/25 bg-[#0a0e16]/96 shadow-[0_24px_80px_rgba(0,0,0,0.65)] sm:max-h-[min(92dvh,52rem)]">
         <LevelUpOffersPanel
           key={entries
             .map((e) => `${e.instanceId}:${e.leveledUpTo}:${e.evolveOffer?.toSpeciesId ?? 0}`)

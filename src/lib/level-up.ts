@@ -5,27 +5,33 @@ import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
 import { spriteFor } from "@/lib/shiny";
+import {
+  toKnownMoveInfo,
+  toLevelUpMoveInfo,
+  type EvolveOffer,
+  type KnownMoveInfo,
+  type LevelUpEffects,
+  type LevelUpMoveInfo,
+} from "@/lib/level-up-read";
 
-export type LevelUpMoveInfo = {
-  moveId: number;
-  name: string;
-  type: string;
-  learnLevel: number;
-  pp: number;
-};
+export type {
+  EvolveOffer,
+  KnownMoveInfo,
+  LevelUpEffects,
+  LevelUpMoveInfo,
+  MoveCategoryKind,
+} from "@/lib/level-up-read";
+export { knownFromLevelUp, toKnownMoveInfo } from "@/lib/level-up-read";
 
-export type EvolveOffer = {
-  toSpeciesId: number;
-  toName: string;
-  toSpriteUrl: string;
-  evolveLevel: number;
-};
-
-export type LevelUpEffects = {
-  autoTaught: LevelUpMoveInfo[];
-  pendingMoves: LevelUpMoveInfo[];
-  evolveOffer: EvolveOffer | null;
-};
+const MOVE_SELECT = {
+  id: true,
+  name: true,
+  type: true,
+  category: true,
+  power: true,
+  accuracy: true,
+  pp: true,
+} as const;
 
 /** Movimientos LEVEL_UP con learnLevel en (fromLevel, toLevel]. */
 export async function getMovesLearnedInRange(
@@ -40,7 +46,7 @@ export async function getMovesLearnedInRange(
       method: "LEVEL_UP",
       learnLevel: { gt: fromLevel, lte: toLevel },
     },
-    include: { move: { select: { id: true, name: true, type: true, pp: true } } },
+    include: { move: { select: MOVE_SELECT } },
     orderBy: { learnLevel: "asc" },
   });
   // Deduplicar por moveId (por si hay filas raras).
@@ -49,13 +55,7 @@ export async function getMovesLearnedInRange(
   for (const r of rows) {
     if (seen.has(r.move.id)) continue;
     seen.add(r.move.id);
-    out.push({
-      moveId: r.move.id,
-      name: r.move.name,
-      type: r.move.type,
-      learnLevel: r.learnLevel ?? toLevel,
-      pp: r.move.pp,
-    });
+    out.push(toLevelUpMoveInfo(r.move, r.learnLevel ?? toLevel));
   }
   return out;
 }
@@ -183,41 +183,55 @@ export async function resolveLevelUpEffects(
   _fromLevel: number,
   toLevel: number,
 ): Promise<LevelUpEffects> {
-  // Leer especie/nivel reales post level-up (por si el caller trae datos viejos).
-  const live = await prisma.pokemonInstance.findUnique({
-    where: { id: instanceId },
-    select: { speciesId: true, level: true },
+  // Especie/nivel post level-up + known en paralelo (evitar 2 RTT en serie).
+  const [live, knownRows] = await Promise.all([
+    prisma.pokemonInstance.findUnique({
+      where: { id: instanceId },
+      select: { speciesId: true, level: true },
+    }),
+    prisma.pokemonMove.findMany({
+      where: { pokemonInstanceId: instanceId },
+      include: { move: { select: MOVE_SELECT } },
+      orderBy: { slot: "asc" },
+    }),
+  ]);
+  return buildLevelUpEffects({
+    speciesId: live?.speciesId ?? speciesId,
+    level: live?.level ?? toLevel,
+    knownMoves: knownRows.map((m) => toKnownMoveInfo(m.slot, m.move)),
   });
-  const effectiveSpeciesId = live?.speciesId ?? speciesId;
-  const effectiveLevel = live?.level ?? toLevel;
+}
 
+/**
+ * Misma lógica que `resolveLevelUpEffects`, pero sin re-leer instancia/known.
+ * Para callers que ya tienen el estado post level-up en memoria (caramelo raro).
+ */
+export async function buildLevelUpEffects(opts: {
+  speciesId: number;
+  level: number;
+  knownMoves: KnownMoveInfo[];
+}): Promise<LevelUpEffects> {
   // fromLevel 0: incluye omitidos de subidas anteriores, no sólo el rango nuevo.
-  // `_fromLevel` se conserva en la firma por compatibilidad con callers.
-  const candidates = await getMovesLearnedInRange(
-    effectiveSpeciesId,
-    0,
-    effectiveLevel,
-  );
-  const known = await prisma.pokemonMove.findMany({
-    where: { pokemonInstanceId: instanceId },
-    orderBy: { slot: "asc" },
-  });
+  const [candidates, evolveOffer] = await Promise.all([
+    getMovesLearnedInRange(opts.speciesId, 0, opts.level),
+    getEvolveOffer(opts.speciesId, opts.level).catch((err) => {
+      console.error("[buildLevelUpEffects] getEvolveOffer", err);
+      return null;
+    }),
+  ]);
   const { autoFill, needsChoice } = classifyNewMoves(
-    new Set(known.map((m) => m.moveId)),
-    new Set(known.map((m) => m.slot)),
+    new Set(opts.knownMoves.map((m) => m.moveId)),
+    new Set(opts.knownMoves.map((m) => m.slot)),
     candidates,
   );
   // Todo pasa por la UI: autoFill = aprende en slot libre al confirmar;
   // needsChoice = hay que olvidar o ignorar.
-  const pendingMoves = [...autoFill, ...needsChoice];
-  let evolveOffer: EvolveOffer | null = null;
-  try {
-    // Re-pregunta en cada subida mientras no evolucione (aunque haya diferido antes).
-    evolveOffer = await getEvolveOffer(effectiveSpeciesId, effectiveLevel);
-  } catch (err) {
-    console.error("[resolveLevelUpEffects] getEvolveOffer", err);
-  }
-  return { autoTaught: [], pendingMoves, evolveOffer };
+  return {
+    autoTaught: [],
+    pendingMoves: [...autoFill, ...needsChoice],
+    evolveOffer,
+    knownMoves: opts.knownMoves,
+  };
 }
 
 /** Aprende un movimiento pendiente reemplazando un slot (o llenando vacío). */
