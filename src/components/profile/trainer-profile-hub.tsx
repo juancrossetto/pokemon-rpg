@@ -6,8 +6,6 @@ export type ProfileTabId = "summary" | "badges" | "team";
 
 export type ProfileHubLabels = {
   tabs: Record<ProfileTabId, string>;
-  /** Rótulo de la ficha del entrenador. */
-  facts: string;
   manageTeam: string;
 };
 
@@ -19,19 +17,11 @@ export type ProfileHubLabels = {
  * las métricas contaban una parte de lo mismo desde otro ángulo. Acá va una
  * fila por dato y cada dato aparece una vez.
  */
-export function TrainerFacts({
-  sectionLabel,
-  rows,
-}: {
-  sectionLabel: string;
-  rows: StatRow[];
-}) {
-  return (
-    <section>
-      <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant/70">
-        {sectionLabel}
-      </p>
-      <TrainerStatRows rows={rows} />
-    </section>
-  );
+export function TrainerFacts({ rows }: { rows: StatRow[] }) {
+  /*
+    Sin rótulo propio: la pestaña activa ya dice qué se está viendo, y el panel
+    ahora cuelga del selector, así que un "FICHA DEL ENTRENADOR" flotando
+    encima repetía la etiqueta que está tres píxeles más arriba.
+  */
+  return <TrainerStatRows rows={rows} />;
 }

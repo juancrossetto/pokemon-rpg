@@ -134,7 +134,11 @@ export function HomeGameHub({
           />
 
           <div className="mx-auto flex min-w-0 flex-1 flex-col gap-2.5 md:gap-6 xl:gap-5">
-            <HomeIdentityBanner identity={bannerIdentity} labels={hubLabels.identity} />
+            <HomeIdentityBanner
+              identity={bannerIdentity}
+              labels={hubLabels.identity}
+              frameId={bannerIdentity.homeFrameId ?? undefined}
+            />
 
             {events.showDailyModal && (
               <DailyGiftModal

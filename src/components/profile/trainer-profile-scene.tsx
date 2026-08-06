@@ -130,7 +130,7 @@ function TrainerScene2D({
 
       <div className="flex min-h-[150px] items-end justify-center sm:min-h-[180px] lg:min-h-[205px]">
         {companionSpriteUrl ? (
-          <figure className="tp-scene__figure tp-scene__figure--companion relative -mr-8 flex shrink-0 items-end sm:-mr-10">
+          <figure className="tp-scene__figure tp-scene__figure--companion relative z-[2] -mr-8 flex shrink-0 items-end sm:-mr-10">
             <span
               aria-hidden
               className="absolute inset-x-0 bottom-0 mx-auto h-3 w-[70%] rounded-[100%] bg-black/55 blur-[3px]"
@@ -149,7 +149,7 @@ function TrainerScene2D({
           </figure>
         ) : null}
 
-        <figure className="tp-scene__figure tp-scene__figure--trainer relative z-[1] flex shrink-0 items-end">
+        <figure className="tp-scene__figure tp-scene__figure--trainer relative z-[2] flex shrink-0 items-end">
           <span
             aria-hidden
             className="absolute inset-x-0 bottom-0 mx-auto h-2.5 w-[62%] rounded-[100%] bg-black/55 blur-[3px]"

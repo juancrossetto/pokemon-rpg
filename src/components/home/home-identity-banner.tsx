@@ -8,16 +8,20 @@ import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
 import { neonTypeColor } from "@/lib/type-colors";
 import type { HomeIdentity } from "@/lib/home-hub";
 import { homeBannerById } from "@/lib/home-banners";
+import { homeFrameById } from "@/lib/home-frames";
 import { divisionRoman, type PvpDivision, type PvpTier } from "@/lib/pvp/tiers";
 
 /**
- * Banner de identidad del home.
- * `frameSrc` reserva el slot de marco (PNG con alfa) para premios cosméticos.
+ * Banner de identidad del home (franja baja).
+ *
+ * `frameId` elige el marco del catálogo (`lib/home-frames`); `null` deja el
+ * borde CSS simple. El recorte en nueve piezas vive en `.home-identity__marco`,
+ * alimentado por las custom properties que arma este componente.
  */
 export function HomeIdentityBanner({
   identity,
   labels,
-  frameSrc = null,
+  frameId = "1",
 }: {
   identity: HomeIdentity;
   labels: {
@@ -33,8 +37,8 @@ export function HomeIdentityBanner({
     lastAchievement: string;
     achievements: Record<string, string>;
   };
-  /** PNG de marco equipado; sin DB todavía — listo para rewards. */
-  frameSrc?: string | null;
+  /** Id del catálogo de marcos. `null` = sin marco, solo borde CSS. */
+  frameId?: string | null;
 }) {
   const pvpTier = identity.pvpTier as PvpTier;
   const pvpTierLabel = labels.pvpTiers[identity.pvpTier] ?? identity.pvpTier;
@@ -49,75 +53,92 @@ export function HomeIdentityBanner({
     : neonTypeColor(mainType, 28);
 
   const cpFormatted = identity.combatPower.toLocaleString();
+  /*
+    El arte del marco y sus medidas viajan como custom properties: el
+    `border-image` y los `calc()` que retraen el arte y separan el copy los leen
+    desde ahí. Antes el PNG estaba escrito en el CSS, así que cambiar de marco
+    obligaba a tocar la hoja de estilos.
+  */
+  const frame = frameId ? homeFrameById(frameId) : null;
+  const frameVars = frame
+    ? ({
+        "--hi-frame-src": `url("${frame.src}")`,
+        "--hi-frame-slice": String(frame.slice),
+        "--hi-rail-top": String(frame.rails.top),
+        "--hi-rail-bottom": String(frame.rails.bottom),
+        "--hi-rail-left": String(frame.rails.left),
+        "--hi-rail-right": String(frame.rails.right),
+      } as CSSProperties)
+    : {};
+  const bannerSrc = homeBannerById(identity.homeBannerId).src;
 
   return (
     <section
-      className="home-identity relative isolate min-h-[6.75rem] overflow-hidden rounded-2xl sm:min-h-[8.75rem] xl:min-h-[9.5rem]"
+      className={`home-identity relative isolate min-h-[6.75rem] overflow-hidden rounded-2xl sm:min-h-[8.75rem] xl:min-h-[9.5rem]${frame ? " home-identity--framed" : ""}`}
       style={
         {
           "--hi-fluor-from": fluorFrom,
           "--hi-fluor-to": fluorTo,
+          ...frameVars,
         } as CSSProperties
       }
     >
-      <div aria-hidden className="absolute inset-0">
+      {/*
+        Todo el arte —paisaje, velos y avatar— vive dentro de esta capa. Cuando
+        hay marco, la capa se mete hacia adentro hasta la línea de los rieles,
+        así el marco RODEA el banner en vez de dibujarse encima. Ver
+        `.home-identity__art`.
+      */}
+      <div aria-hidden className="home-identity__art">
         <Image
-          src={homeBannerById(identity.homeBannerId).src}
+          src={bannerSrc}
           alt=""
           fill
           priority
-          quality={92}
-          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 720px"
-          className="object-cover object-[center_36%]"
+          unoptimized
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 960px"
+          className="object-cover object-center"
         />
-      </div>
 
-      {/* Vignette liviana: el arte se lee; no tapa el paisaje. */}
-      <div aria-hidden className="home-identity__wash" />
+        {/* Vignette liviana: el arte se lee; no tapa el paisaje. */}
+        <div className="home-identity__wash" />
 
-      {/* Scrim solo detrás del copy (izquierda). */}
-      <div aria-hidden className="home-identity__scrim" />
+        {/* Scrim solo detrás del copy (izquierda). */}
+        <div className="home-identity__scrim" />
 
-      {/* Tinte de tipo del favorito, muy suave. */}
-      <div aria-hidden className="home-identity__fluor" />
+        {/* Tinte de tipo del favorito, muy suave. */}
+        <div className="home-identity__fluor" />
 
-      <div
-        aria-hidden
-        className="pointer-events-none absolute bottom-[10%] right-[6%] hidden h-3 w-[24%] rounded-[100%] bg-black/45 blur-md sm:block sm:right-[10%]"
-      />
+        <div className="pointer-events-none absolute bottom-[10%] right-[6%] hidden h-3 w-[24%] rounded-[100%] bg-black/45 blur-md sm:block sm:right-[10%]" />
 
-      {profileArt ? (
-        <div className="pointer-events-none absolute inset-y-1 right-1 z-[3] flex w-[38%] items-end justify-center sm:inset-y-1.5 sm:right-3 sm:w-[34%] md:w-[30%]">
-          <Image
-            src={profileArt}
-            alt=""
-            width={280}
-            height={360}
-            priority
-            className="h-full w-auto max-w-full object-contain object-bottom drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)]"
-            unoptimized
-          />
-        </div>
-      ) : null}
-
-      {/* Marco base + slot PNG para premios futuros. */}
-      <div aria-hidden className="home-identity__frame">
-        {frameSrc ? (
-          <Image
-            src={frameSrc}
-            alt=""
-            fill
-            sizes="(max-width: 1280px) 100vw, 720px"
-            className="object-fill"
-            unoptimized
-          />
+        {profileArt ? (
+          <div className="home-identity__avatar pointer-events-none absolute z-[5] flex items-end justify-center">
+            <Image
+              src={profileArt}
+              alt=""
+              width={280}
+              height={360}
+              priority
+              className="h-full w-auto max-w-full object-contain object-bottom drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)]"
+              unoptimized
+            />
+          </div>
         ) : null}
       </div>
+
+      {/* Marco en nueve piezas. Va en su propia capa y no como borde de la
+          sección: un borde se pinta debajo de los hijos posicionados, así que
+          el paisaje lo tapaba entero. Ver `.home-identity__marco`. */}
+      {frame ? (
+        <div aria-hidden className="home-identity__marco" />
+      ) : (
+        <div aria-hidden className="home-identity__frame" />
+      )}
 
       {/* Mobile */}
       <Link
         href="/profile"
-        className="relative z-[2] flex h-full min-h-[6.75rem] items-center gap-2 p-3.5 pr-[36%] sm:hidden"
+        className="home-identity__hit relative z-[2] flex h-full min-h-[6.75rem] items-center gap-2 pr-[36%] sm:hidden"
         aria-label={labels.viewProfile}
       >
         <div className="home-identity__copy min-w-0 flex-1 space-y-1">
@@ -175,7 +196,7 @@ export function HomeIdentityBanner({
       {/* sm+ */}
       <Link
         href="/profile"
-        className="relative z-[2] hidden h-full min-h-[8.75rem] flex-col justify-center gap-2 p-4 pr-[36%] sm:flex md:pr-[32%] xl:min-h-[9.5rem]"
+        className="home-identity__hit relative z-[2] hidden h-full min-h-[8.75rem] flex-col justify-center gap-2 pr-[36%] sm:flex md:pr-[32%] xl:min-h-[9.5rem]"
         aria-label={labels.viewProfile}
       >
         <div className="home-identity__copy min-w-0">

@@ -6369,8 +6369,37 @@ html.boot-splash-pending .boot-splash {
 }
 
 /* ── Home identity banner ─────────────────────────────────────────────────
-   Arte visible + scrim local al copy. `.home-identity__frame` es el slot de
-   marco (default sutil; PNG premium vía `frameSrc`). */
+   Franja baja (min-height). Marco PNG a borde del card; `.home-identity__frame`
+   = fallback CSS sin PNG. */
+/*
+  Capa de arte del banner: paisaje + velos + avatar.
+
+  Con marco, se retrae hasta la línea de los rieles. Ese es el punto: el marco
+  tiene que RODEAR el banner, no dibujarse encima. Antes el arte llegaba al
+  borde de la card y el marco le pasaba por arriba —le cruzaba las piernas al
+  entrenador y partía el paisaje—.
+
+  Las fracciones (`--hi-rail-*`) vienen del catálogo de marcos y salen de medir
+  cada PNG con `scripts/measure-frame.mjs`: dicen en qué punto de la esquina cae
+  el riel, por lado. `border-image` comprime la esquina entera a `--hi-frame`,
+  así que la proporción se mantiene a cualquier grosor — y el mismo número sirve
+  para retraer el arte y para separar el copy.
+*/
+.home-identity__art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.home-identity--framed .home-identity__art {
+  top: calc(var(--hi-frame) * var(--hi-rail-top));
+  bottom: calc(var(--hi-frame) * var(--hi-rail-bottom));
+  left: calc(var(--hi-frame) * var(--hi-rail-left));
+  right: calc(var(--hi-frame) * var(--hi-rail-right));
+  border-radius: 0.4rem;
+}
+
 .home-identity__wash {
   pointer-events: none;
   position: absolute;
@@ -6415,11 +6444,115 @@ html.boot-splash-pending .boot-splash {
     );
 }
 
+.home-identity__avatar {
+  top: 0.25rem;
+  right: 0.25rem;
+  bottom: 0.25rem;
+  width: 38%;
+}
+
+@media (min-width: 640px) {
+  .home-identity__avatar {
+    top: 0.375rem;
+    right: 0.75rem;
+    bottom: 0.375rem;
+    width: 34%;
+  }
+}
+
+@media (min-width: 768px) {
+  .home-identity__avatar {
+    width: 30%;
+  }
+}
+
+.home-identity__hit {
+  padding: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .home-identity__hit {
+    padding: 1rem;
+  }
+}
+
+/*
+  Marco ornamental en 9 rebanadas (`border-image`), sobre una capa propia.
+
+  Dos cosas que hubo que descartar antes de llegar acá:
+
+  1. Estirar `marco.png` entero con `object-fill` sobre la card. Deforma las
+     volutas de las esquinas —el arte es 1305×634 y la franja mide ~1300×140—
+     y encima necesitaba un `scale(1.06, 1.2)` para acercar los rieles al
+     borde, que empujaba las guardas de arriba y abajo fuera del
+     `overflow: hidden` de la sección. Se veían las puntas laterales y nada más.
+
+  2. Poner el `border-image` en la propia sección. Se aplica bien, pero un
+     borde se pinta en la capa de fondo del elemento: el `<Image>` del paisaje
+     y los velos, que son hijos posicionados, lo tapan por completo.
+
+  Así que el marco va en una capa aparte por encima de todo. `border-image`
+  recorta el arte en nueve piezas: dibuja las cuatro esquinas a tamaño fijo
+  —sin deformarse— y estira sólo los bordes, cada uno en su eje. El corte es
+  exactamente 160px porque así se generaron los assets sueltos (`marco-tl`…
+  son 160×160, y `marco-edge-h` mide 1305−320=985).
+
+  Sin `fill`, el centro queda transparente y el paisaje se ve entero.
+*/
+.home-identity--framed {
+  --hi-frame: 26px;
+}
+
+@media (min-width: 640px) {
+  .home-identity--framed {
+    --hi-frame: 38px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .home-identity--framed {
+    --hi-frame: 44px;
+  }
+}
+
+.home-identity__marco {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border-style: solid;
+  border-width: var(--hi-frame);
+  border-color: transparent;
+  border-image-source: var(--hi-frame-src);
+  border-image-slice: var(--hi-frame-slice);
+  border-image-repeat: stretch;
+}
+
+/*
+  El copy se despeja de los rieles, no de un padding elegido a ojo.
+
+  Dentro de cada rebanada de 160px el riel no está pegado al borde: medido
+  sobre el arte, el de arriba ocupa las filas 75–88 (hasta el 55% de la
+  rebanada), el de abajo termina al 35% contando desde el borde inferior, y los
+  laterales al 44% y 46%. Como `border-image` comprime la rebanada entera a
+  `--hi-frame`, esas fracciones se mantienen a cualquier tamaño: multiplicarlas
+  por el ancho del borde da exactamente dónde cae el riel, y unos píxeles más
+  son el aire. Si mañana cambia `--hi-frame`, el padding se reacomoda solo.
+*/
+.home-identity--framed .home-identity__hit {
+  padding-top: calc(var(--hi-frame) * var(--hi-rail-top) + 6px);
+  padding-bottom: calc(var(--hi-frame) * var(--hi-rail-bottom) + 6px);
+  padding-left: calc(var(--hi-frame) * var(--hi-rail-left) + 8px);
+  padding-right: calc(var(--hi-frame) * var(--hi-rail-right) + 8px);
+}
+
+
+
 .home-identity__frame {
   pointer-events: none;
   position: absolute;
   inset: 3px;
-  z-index: 1;
+  z-index: 4;
   border-radius: calc(1rem - 2px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
@@ -10789,7 +10922,24 @@ html.is-standalone .mobile-bottom-nav__dock {
   background: #08090d;
 }
 
-.tp-hero > span[aria-hidden] {
+/*
+  Con marco, la sección no pinta fondo.
+
+  `.tp-hero--bannered` rellena de `#08090d` toda la card, y con un marco grueso
+  ese relleno asomaba como una banda oscura entre el riel y el borde: se veía
+  "fondo del banner por fuera del marco". Un marco no tiene fondo propio —lo
+  que hay afuera del trazo es la página—. El único área rellena es la capa de
+  arte, que ya se recorta sola.
+*/
+.tp-hero.home-identity--framed {
+  background: transparent;
+}
+
+/* Los velos viven dentro de `.home-identity__art`, no como hijos directos de
+   la sección: si el selector se quedara en `>`, al moverlos perderían el
+   posicionamiento. Se listan las dos formas para no atar el CSS al anidado. */
+.tp-hero > span[aria-hidden],
+.tp-hero > .home-identity__art > span {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -10855,19 +11005,133 @@ html.is-standalone .mobile-bottom-nav__dock {
     );
 }
 
+.tp-hero--bannered .tp-hero__wash {
+  background:
+    linear-gradient(180deg, rgba(8, 10, 16, 0.18) 0%, rgba(8, 10, 16, 0.32) 55%, rgba(5, 6, 9, 0.55) 100%),
+    linear-gradient(90deg, rgba(8, 10, 16, 0.14) 0%, transparent 40%, rgba(8, 10, 16, 0.14) 100%);
+}
+
 .tp-hero--bannered .tp-hero__vignette {
   background:
-    radial-gradient(80% 66% at 50% 46%, transparent 38%, rgba(0, 0, 0, 0.42) 100%),
+    radial-gradient(80% 66% at 50% 46%, transparent 42%, rgba(0, 0, 0, 0.28) 100%),
     linear-gradient(
       0deg,
-      color-mix(in srgb, var(--hero-accent) 18%, transparent) 0%,
+      color-mix(in srgb, var(--hero-accent) 14%, transparent) 0%,
       transparent 7%
     );
+}
+
+.tp-hero--bannered .tp-hero__grid {
+  opacity: 0;
+}
+
+/* Contenido del banner de perfil. Con marco, el padding sale de la misma
+   fórmula que el home: la fracción del riel por el grosor del borde, más aire.
+   Así el nombre y el PC nunca quedan debajo del trazo, cambie el marco que
+   cambie. */
+.tp-hero__body {
+  padding: 1.5rem 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .tp-hero__body {
+    padding: 1.75rem 1.25rem 1.5rem;
+  }
+}
+
+.home-identity--framed .tp-hero__body {
+  padding-top: calc(var(--hi-frame) * var(--hi-rail-top) + 14px);
+  padding-bottom: calc(var(--hi-frame) * var(--hi-rail-bottom) + 14px);
+  padding-left: calc(var(--hi-frame) * var(--hi-rail-left) + 10px);
+  padding-right: calc(var(--hi-frame) * var(--hi-rail-right) + 10px);
+}
+
+/*
+  Grosor del marco en el banner de perfil.
+
+  Hereda la maquinaria del home (`.home-identity--framed`), pero no su medida:
+  la franja del home mide ~140px de alto y un marco de 38px es el 27% de eso,
+  mientras que este banner pasa los 380px y con el mismo valor el margen caía al
+  5% — el marco terminaba pareciendo un trazo dibujado sobre el paisaje en vez
+  de rodearlo. Al escalar el grosor, el arte se retrae proporcionalmente: las
+  fracciones de riel ya están atadas a `--hi-frame`.
+*/
+.tp-hero.home-identity--framed {
+  --hi-frame: 46px;
+}
+
+@media (min-width: 640px) {
+  .tp-hero.home-identity--framed {
+    --hi-frame: 64px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .tp-hero.home-identity--framed {
+    --hi-frame: 76px;
+  }
+}
+
+/*
+  Botones de edición: pegados al borde interior del arte.
+
+  En pantallas angostas van abajo. Arriba chocaban con la bandera y la insignia
+  de liga, que salen a la derecha del nombre centrado; con la card angosta esa
+  fila llega hasta el borde y los botones le caían encima.
+*/
+.tp-hero__tools {
+  bottom: 0.75rem;
+  right: 0.75rem;
+  flex-direction: row;
+}
+
+.home-identity--framed .tp-hero__tools {
+  bottom: calc(var(--hi-frame) * var(--hi-rail-bottom) + 8px);
+  right: calc(var(--hi-frame) * var(--hi-rail-right) + 8px);
+}
+
+@media (min-width: 640px) {
+  .tp-hero__tools {
+    top: 0.75rem;
+    bottom: auto;
+    flex-direction: column;
+  }
+
+  .home-identity--framed .tp-hero__tools {
+    top: calc(var(--hi-frame) * var(--hi-rail-top) + 8px);
+    bottom: auto;
+  }
 }
 
 /* ── Identidad del banner de /profile ─────────────────────────────────────
    Misma familia tipográfica que el resto de la app: Grobold (nombre) +
    Inter (meta) + mono (cifras). */
+
+/* Scrim local detrás del cluster nombre/chips: legible sobre banners claros
+   sin oscurecer la escena ni mover márgenes del marco. */
+.tp-id {
+  position: relative;
+  isolation: isolate;
+}
+
+.tp-id::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: -0.35rem;
+  bottom: -0.45rem;
+  width: min(100%, 22rem);
+  translate: -50% 0;
+  border-radius: 1.25rem;
+  background: radial-gradient(
+    70% 90% at 50% 35%,
+    rgba(8, 10, 16, 0.48) 0%,
+    rgba(8, 10, 16, 0.22) 55%,
+    transparent 78%
+  );
+  pointer-events: none;
+}
 
 .tp-id__name {
   display: flex;
@@ -10886,25 +11150,23 @@ html.is-standalone .mobile-bottom-nav__dock {
   text-transform: uppercase;
 }
 
-/* Solo el texto cuenta para el centro — bandera/insignia van al costado
-   sin empujar el nombre (mismo eje que el CP debajo). */
+/* Nombre + insignia en una sola fila centrada (mismo eje vertical). */
 .tp-id__name-core {
   position: relative;
   display: inline-flex;
-  max-width: min(100%, 18rem);
+  max-width: min(100%, 22rem);
   align-items: center;
   justify-content: center;
+  gap: 0.4rem;
   overflow: visible;
 }
 
 .tp-id__name-trail {
-  position: absolute;
-  left: calc(100% + 0.5rem);
-  top: 50%;
+  position: static;
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 0.4rem;
-  translate: 0 -50%;
+  translate: none;
 }
 
 .tp-id__name-text {
@@ -10922,7 +11184,7 @@ html.is-standalone .mobile-bottom-nav__dock {
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 2px 14px rgba(0, 0, 0, 0.7));
   padding-inline: 0.06em;
   padding-block: 0.12em 0.08em;
 }
@@ -10934,18 +11196,12 @@ html.is-standalone .mobile-bottom-nav__dock {
   }
 }
 
-.tp-id__flag {
-  height: 0.95rem;
-  width: auto;
-  flex-shrink: 0;
-  border-radius: 2px;
-  opacity: 0.9;
-  font-style: normal;
-}
-
 .tp-id__badge {
-  /* Alinea la insignia con el renglón del nombre (flag + badge). */
-  translate: 0 0.05em;
+  /* Ajuste fino: el romano absoluto no suma al layout, pero el disco se lee
+     un pelín alto con align puro — un nudge mínimo lo centra con el nombre. */
+  display: inline-flex;
+  translate: 0 -0.08em;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--hero-accent, #2eb8ff) 35%, transparent));
 }
 
 .tp-id__meta {
@@ -10953,56 +11209,98 @@ html.is-standalone .mobile-bottom-nav__dock {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem 0.5rem;
-  margin: 0.45rem 0 0;
+  gap: 0.35rem 0.75rem;
+  margin: 0.4rem 0 0;
   font-family: var(--font-sans);
-  font-size: 0.66rem;
+  font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: color-mix(in srgb, white 38%, transparent);
+  color: color-mix(in srgb, white 72%, transparent);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
 }
 
+/* Texto plano: sin chip de vidrio. */
 .tp-id__meta-item {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.28rem;
+  gap: 0.3rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  backdrop-filter: none;
+  color: inherit;
 }
 
 .tp-id__meta-item--companion {
+  align-items: center;
   text-transform: capitalize;
   letter-spacing: 0.06em;
 }
 
+.tp-id__meta-sprite {
+  width: 1.15rem;
+  height: 1.15rem;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+
+.tp-id__meta-item--level .tp-id__meta-num {
+  color: color-mix(in srgb, var(--theme-primary-bright, #2eb8ff) 55%, white);
+}
+
 .tp-id__meta-key {
   font-weight: 500;
+  opacity: 0.75;
 }
 
 .tp-id__meta-num {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
-  color: color-mix(in srgb, white 78%, transparent);
-}
-
-.tp-id__meta-sep {
-  width: 1px;
-  height: 0.65rem;
-  background: color-mix(in srgb, white 16%, transparent);
+  color: color-mix(in srgb, white 88%, transparent);
 }
 
 .tp-id__cp-label {
-  font-family: var(--font-sans);
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  background-image: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #b8f4ff 42%,
+    #5ef0ff 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, #2eb8ff 55%, transparent))
+    drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
   animation: tp-cp-fade-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .tp-id__cp-value {
   font-family: var(--font-mono);
   font-weight: 700;
+  background-image: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #b8f4ff 42%,
+    #5ef0ff 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, #2eb8ff 55%, transparent))
+    drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
   animation: tp-cp-fade-in 0.65s 0.06s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tp-cp-arc__knob {
+  animation: tp-cp-fade-in 0.5s 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Arco PC: dibuja desde vacío hasta el progreso real (dashoffset final inline). */
@@ -11427,4 +11725,25 @@ html.is-standalone .mobile-bottom-nav__dock {
     animation: none;
     border-top-color: rgba(255, 255, 255, 0.55);
   }
+}
+
+/* ── Consola del perfil ─────────────────────────────────────────────────────
+   Selector + panel en un solo bloque, colgando del banner. La cabecera lleva
+   su propio fondo para separarse del contenido sin necesitar una línea. */
+.tp-console {
+  background: #0e1118;
+}
+
+.tp-console__tabs {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* La píldora del selector llega hasta el borde inferior de la cabecera: así el
+   panel se lee como una prolongación de la pestaña abierta, que es lo que une
+   los dos bloques. */
+.tp-console__pill {
+  background: #0e1118;
+  border-top: 2px solid var(--theme-primary-bright, #2eb8ff);
+  box-shadow: 0 -8px 20px -12px var(--theme-primary-bright, #2eb8ff);
 }

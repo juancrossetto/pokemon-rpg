@@ -2697,7 +2697,15 @@
       "cancel": "Cancel",
       "error": "Couldn't save. Try again."
     },
-    "facts": "Trainer card",
+    "frame": {
+      "change": "Change frame",
+      "title": "Choose your frame",
+      "hint": "Ornate border for your Home and profile banner.",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "error": "Couldn't save. Try again."
+    },
     "factsRows": {
       "pvpWins": "PvP wins",
       "tower": "Tower",

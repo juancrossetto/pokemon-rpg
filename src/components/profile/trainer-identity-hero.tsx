@@ -3,14 +3,15 @@
 import Image from "next/image";
 import { useState } from "react";
 
-import { FlagIcon } from "@/components/flag-icon";
 import { AvatarPicker, type AvatarPickerLabels } from "@/components/avatar-picker";
 import { BannerPicker, type BannerPickerLabels } from "@/components/banner-picker";
+import { FramePicker, type FramePickerLabels } from "@/components/frame-picker";
 import { TrainerProfileScene } from "@/components/profile/trainer-profile-scene";
 import { TrainerCpArc } from "@/components/profile/trainer-cp-arc";
 import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
 import { avatarById } from "@/lib/avatars";
 import { homeBannerById } from "@/lib/home-banners";
+import { homeFrameById } from "@/lib/home-frames";
 import type { TrainerAppearance } from "@/lib/trainer-appearance";
 import type { PvpDivision, PvpTier } from "@/lib/pvp/tiers";
 
@@ -32,7 +33,7 @@ export function TrainerIdentityHero({
   username,
   companionLine,
   sceneLabel,
-  country,
+  country: _country,
   rankPct,
   rankAccent,
   rankLabel,
@@ -51,8 +52,10 @@ export function TrainerIdentityHero({
   canEdit,
   currentAvatarId,
   currentBannerId,
+  currentFrameId,
   avatarLabels,
   bannerLabels,
+  frameLabels,
   labels,
 }: {
   username: string;
@@ -81,61 +84,86 @@ export function TrainerIdentityHero({
   canEdit: boolean;
   currentAvatarId: string | null;
   currentBannerId: string | null;
+  currentFrameId: string | null;
   avatarLabels: AvatarPickerLabels;
   bannerLabels: BannerPickerLabels;
+  frameLabels: FramePickerLabels;
   labels: IdentityHeroLabels;
 }) {
   /*
-    Retrato / banner optimistas. El servidor tarda en devolver el valor nuevo
-    porque el guardado revalida el layout entero; mientras tanto el jugador ya
-    eligió y espera verlo.
+    Retrato / banner / marco optimistas. El servidor tarda en devolver el valor
+    nuevo porque el guardado revalida el layout entero; mientras tanto el
+    jugador ya eligió y espera verlo.
   */
   const [pickedAvatarId, setPickedAvatarId] = useState<string | null>(null);
   const [pickedBannerId, setPickedBannerId] = useState<string | null>(null);
+  const [pickedFrameId, setPickedFrameId] = useState<string | null>(null);
   const avatarId = pickedAvatarId ?? currentAvatarId;
   const bannerId = pickedBannerId ?? currentBannerId;
+  const frameId = pickedFrameId ?? currentFrameId;
   const bannerSrc = homeBannerById(bannerId).src;
+  const frame = homeFrameById(frameId);
   const spriteUrl = pickedAvatarId
     ? (avatarById(pickedAvatarId)?.stageSrc ?? trainerSpriteUrl)
     : trainerSpriteUrl;
 
   return (
     <section
-      className="tp-hero tp-hero--bannered relative overflow-hidden rounded-[1.75rem] border border-white/8"
+      /*
+        Sin `overflow-hidden` ni borde propio: las volutas del marco sobresalen
+        del rectángulo y un recorte con esquinas redondeadas les comía las
+        puntas. Del paisaje se encarga la capa de arte, que tiene su propio
+        radio y su propio clip. `homeFrameById` siempre devuelve un marco, así
+        que este banner nunca corre sin él.
+      */
+      className="tp-hero tp-hero--bannered home-identity--framed relative"
       style={
         {
           "--hero-accent": companionAccent,
           "--id-grad-from": gradientFrom,
           "--id-grad-to": gradientTo,
+          "--hi-frame-src": `url("${frame.src}")`,
+          "--hi-frame-slice": String(frame.slice),
+          "--hi-rail-top": String(frame.rails.top),
+          "--hi-rail-bottom": String(frame.rails.bottom),
+          "--hi-rail-left": String(frame.rails.left),
+          "--hi-rail-right": String(frame.rails.right),
         } as React.CSSProperties
       }
     >
-      <div aria-hidden className="absolute inset-0 z-0">
+      {/*
+        Paisaje y velos van dentro de la capa de arte, igual que en el home: con
+        marco, la capa se retrae hasta la línea de los rieles y el marco RODEA
+        el banner en vez de dibujarse encima. Ver `.home-identity__art`.
+      */}
+      <div aria-hidden className="home-identity__art z-0">
         <Image
           src={bannerSrc}
           alt=""
           fill
           priority
-          quality={90}
-          sizes="(max-width: 1280px) 100vw, 960px"
+          /* Mismo criterio que el home: no recomprimir el JPG del banner. */
+          unoptimized
+          sizes="(max-width: 1280px) 100vw, 1200px"
           className="object-cover object-[center_40%]"
         />
+        {/* Capas del fondo. Ver `.tp-hero__*` en globals.css. */}
+        <span className="tp-hero__wash" />
+        <span className="tp-hero__sweep" />
+        <span className="tp-hero__grid" />
+        <span className="tp-hero__scanline" />
+        <span className="tp-hero__vignette" />
       </div>
-      {/* Capas del fondo. Ver `.tp-hero__*` en globals.css. */}
-      <span aria-hidden className="tp-hero__wash" />
-      <span aria-hidden className="tp-hero__sweep" />
-      <span aria-hidden className="tp-hero__grid" />
-      <span aria-hidden className="tp-hero__scanline" />
-      <span aria-hidden className="tp-hero__vignette" />
 
-      <div className="relative z-[1] px-3 pb-6 pt-6 sm:px-5 sm:pt-7">
+      <div aria-hidden className="home-identity__marco" />
+
+      <div className="tp-hero__body relative z-[1]">
         {/* Cabecera editorial: nombre → liga PvP → metadatos. Ver `.tp-id__*`. */}
-        <div className="tp-id mb-1 text-center">
+        <div className="tp-id mb-0.5 text-center">
           <h1 className="tp-id__name">
             <span className="tp-id__name-core">
               <span className="tp-id__name-text truncate">{username}</span>
               <span className="tp-id__name-trail">
-                <FlagIcon code={country} className="tp-id__flag" />
                 <span
                   className="tp-id__badge group relative inline-flex shrink-0 outline-none"
                   tabIndex={0}
@@ -145,8 +173,8 @@ export function TrainerIdentityHero({
                     tier={pvpTier}
                     division={pvpDivision}
                     label={pvpTierLabel}
-                    size="sm"
-                    className="shrink-0"
+                    size="md"
+                    className="shrink-0 drop-shadow-[0_4px_14px_rgba(0,0,0,0.55)]"
                   />
                   <span
                     role="tooltip"
@@ -159,18 +187,30 @@ export function TrainerIdentityHero({
             </span>
           </h1>
 
+          {/*
+            Nivel y compañero en texto plano + sombra: sin chip de vidrio, el
+            protagonismo queda en nombre, insignia y PC.
+          */}
           <p className="tp-id__meta">
-            <span className="tp-id__meta-item">
+            <span className="tp-id__meta-item tp-id__meta-item--level">
               <span className="tp-id__meta-key">{labels.level}</span>
               <span className="tp-id__meta-num">{topLevel}</span>
             </span>
             {companionLine ? (
-              <>
-                <span aria-hidden className="tp-id__meta-sep" />
-                <span className="tp-id__meta-item tp-id__meta-item--companion">
-                  {companionLine}
-                </span>
-              </>
+              <span className="tp-id__meta-item tp-id__meta-item--companion">
+                {companionSpriteUrl ? (
+                  <Image
+                    src={companionSpriteUrl}
+                    alt=""
+                    width={36}
+                    height={36}
+                    unoptimized
+                    className="tp-id__meta-sprite"
+                    aria-hidden
+                  />
+                ) : null}
+                {companionLine}
+              </span>
             ) : null}
           </p>
         </div>
@@ -182,9 +222,8 @@ export function TrainerIdentityHero({
             pct={rankPct}
             color={rankAccent}
           />
-          {/* Aire arriba para el PC y el arco: la escena alinea abajo, así que
-              el padding empuja el techo sin mover los pies. */}
-          <div className="pt-[3.4rem] sm:pt-[3.8rem]">
+          {/* Escena por encima del arco (z); el PC sigue en z más alto. */}
+          <div className="relative z-[2] pt-[1.9rem] sm:pt-[2.15rem]">
             <TrainerProfileScene
               username={username}
               trainerSpriteUrl={spriteUrl}
@@ -195,32 +234,46 @@ export function TrainerIdentityHero({
               sceneLabel={sceneLabel}
             />
           </div>
-          {canEdit && (
-            <div className="absolute bottom-0 right-0 z-10 flex flex-col gap-2">
-              <BannerPicker
-                currentBannerId={bannerId}
-                labels={bannerLabels}
-                showAffordance={false}
-                onSaved={setPickedBannerId}
-              >
-                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-[#14161c]/95 text-on-surface-variant shadow-lg backdrop-blur-md transition hover:border-white/40 hover:text-white">
-                  <span className="material-symbols-outlined text-[18px]!">wallpaper</span>
-                </span>
-              </BannerPicker>
-              <AvatarPicker
-                currentAvatarId={avatarId}
-                labels={avatarLabels}
-                showAffordance={false}
-                onSaved={setPickedAvatarId}
-              >
-                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-[#14161c]/95 text-on-surface-variant shadow-lg backdrop-blur-md transition hover:border-white/40 hover:text-white">
-                  <span className="material-symbols-outlined text-[18px]!">edit</span>
-                </span>
-              </AvatarPicker>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Los botones de edición van dentro del arte, no sobre el marco: su
+          posición sale de los mismos rieles que retraen el paisaje. Ver
+          `.tp-hero__tools`. */}
+      {canEdit && (
+        <div className="tp-hero__tools absolute z-20 flex flex-col gap-1.5">
+          <BannerPicker
+            currentBannerId={bannerId}
+            labels={bannerLabels}
+            showAffordance={false}
+            onSaved={setPickedBannerId}
+          >
+            <span className="flex h-9 w-11 items-center justify-center rounded-lg border border-white/12 bg-black/25 text-white/80 shadow-md backdrop-blur-sm transition hover:border-white/30 hover:bg-black/40 hover:text-white sm:h-10 sm:w-12">
+              <span className="material-symbols-outlined text-[18px]!">imagesmode</span>
+            </span>
+          </BannerPicker>
+          <FramePicker
+            currentFrameId={frameId}
+            labels={frameLabels}
+            showAffordance={false}
+            onSaved={setPickedFrameId}
+          >
+            <span className="flex h-9 w-11 items-center justify-center rounded-lg border border-white/12 bg-black/25 text-white/80 shadow-md backdrop-blur-sm transition hover:border-white/30 hover:bg-black/40 hover:text-white sm:h-10 sm:w-12">
+              <span className="material-symbols-outlined text-[18px]!">border_style</span>
+            </span>
+          </FramePicker>
+          <AvatarPicker
+            currentAvatarId={avatarId}
+            labels={avatarLabels}
+            showAffordance={false}
+            onSaved={setPickedAvatarId}
+          >
+            <span className="flex h-9 w-11 items-center justify-center rounded-lg border border-white/12 bg-black/25 text-white/80 shadow-md backdrop-blur-sm transition hover:border-white/30 hover:bg-black/40 hover:text-white sm:h-10 sm:w-12">
+              <span className="material-symbols-outlined text-[18px]!">edit</span>
+            </span>
+          </AvatarPicker>
+        </div>
+      )}
     </section>
   );
 }

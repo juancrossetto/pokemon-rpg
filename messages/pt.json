@@ -2697,7 +2697,15 @@
       "cancel": "Cancelar",
       "error": "Não foi possível salvar. Tente de novo."
     },
-    "facts": "Ficha do treinador",
+    "frame": {
+      "change": "Mudar moldura",
+      "title": "Escolha sua moldura",
+      "hint": "Borda ornamentada do banner do início e do perfil.",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "cancel": "Cancelar",
+      "error": "Não foi possível salvar. Tente de novo."
+    },
     "factsRows": {
       "pvpWins": "Vitórias PvP",
       "tower": "Torre",

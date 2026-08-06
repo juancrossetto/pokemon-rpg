@@ -2697,7 +2697,15 @@
       "cancel": "Cancelar",
       "error": "No se pudo guardar. Probá de nuevo."
     },
-    "facts": "Ficha del entrenador",
+    "frame": {
+      "change": "Cambiar marco",
+      "title": "Elegí tu marco",
+      "hint": "Borde ornamentado del banner de inicio y perfil.",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "cancel": "Cancelar",
+      "error": "No se pudo guardar. Probá de nuevo."
+    },
     "factsRows": {
       "pvpWins": "Victorias PvP",
       "tower": "Torre",

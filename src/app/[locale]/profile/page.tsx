@@ -89,6 +89,7 @@ export default async function ProfilePage({
           country: true,
           avatarId: true,
           homeBannerId: true,
+          homeFrameId: true,
           createdAt: true,
           pvpWins: true,
           pvpLosses: true,
@@ -313,6 +314,15 @@ export default async function ProfilePage({
     cancel: t("banner.cancel"),
     error: t("banner.error"),
   };
+  const frameLabels = {
+    change: t("frame.change"),
+    title: t("frame.title"),
+    hint: t("frame.hint"),
+    save: t("frame.save"),
+    saving: t("frame.saving"),
+    cancel: t("frame.cancel"),
+    error: t("frame.error"),
+  };
 
   const vaultNode = (
     <>
@@ -514,8 +524,10 @@ export default async function ProfilePage({
           canEdit: perms.canEdit,
           currentAvatarId: user.avatarId,
           currentBannerId: user.homeBannerId,
+          currentFrameId: user.homeFrameId,
           avatarLabels,
           bannerLabels,
+          frameLabels,
           labels: {
             power: t("cp"),
             level: t("levelShort"),
@@ -527,7 +539,6 @@ export default async function ProfilePage({
             badges: t("nav.badges"),
             team: t("nav.team"),
           },
-          facts: t("facts"),
           manageTeam: t("manageTeam"),
         }}
         facts={trainerFacts}

@@ -29,12 +29,23 @@ export type StatRow = {
  * Valor + hint en un solo renglón; valores en blanco (sin acento amarillo).
  */
 export function TrainerStatRows({ rows }: { rows: StatRow[] }) {
+  /*
+    Dos columnas desde `lg`. En una sola, cada fila estiraba la etiqueta contra
+    un borde y el valor contra el otro con medio metro de nada en el medio; la
+    lista es el formato correcto —los valores quedan alineados en una columna y
+    se escanean— pero no a 1000px de ancho.
+
+    Los separadores van por celda y no por fila: en grilla, un `border-top`
+    corrido cruzaría el canal entre columnas.
+  */
   return (
-    <ul className="overflow-hidden rounded-2xl border border-white/8 bg-[#0e1118]/90">
+    <ul className="grid overflow-hidden lg:grid-cols-2">
       {rows.map((row, index) => (
         <li
           key={row.id}
-          className={index > 0 ? "border-t border-white/6" : undefined}
+          className={`border-white/6 ${index > 0 ? "border-t" : ""} lg:border-t ${
+            index % 2 === 1 ? "lg:border-l" : ""
+          }`}
         >
           <div className="flex items-center gap-3 px-3.5 py-2.5">
             <span aria-hidden className={FACT_ICON_BOX}>

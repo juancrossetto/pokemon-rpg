@@ -33,6 +33,8 @@ export type HomeIdentity = {
   companionTypes: string[];
   /** Id de HOME_BANNER_OPTIONS — arte de fondo del banner de home. */
   homeBannerId: string | null;
+  /** Id de HOME_FRAME_OPTIONS — marco ornamentado del banner. */
+  homeFrameId: string | null;
 };
 
 /** Tile de “acciones diarias” (ex Quick Access). */

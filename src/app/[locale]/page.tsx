@@ -161,6 +161,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         username: true,
         avatarId: true,
         homeBannerId: true,
+        homeFrameId: true,
         country: true,
         clanMembership: {
           select: {
@@ -539,6 +540,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     country: userRow.country,
     companionTypes: companion?.types ?? [],
     homeBannerId: userRow.homeBannerId,
+    homeFrameId: userRow.homeFrameId,
   };
 
   const myClanId = userRow.clanMembership?.clan.id ?? null;

@@ -24,25 +24,35 @@ export function TrainerCpArc({
   /** @deprecated Se ignora. */
   color?: string;
 }) {
-  const filled = Math.round(Math.max(0, Math.min(1, pct)) * 100);
+  const clamped = Math.max(0, Math.min(1, pct));
+  const filled = Math.round(clamped * 100);
   const arcOffset = 100 - filled;
   const gradientId = "cp-arc-fluor";
 
+  const angle = ((180 - 180 * clamped) * Math.PI) / 180;
+  const KNOB_CX = 160 + 144 * Math.cos(angle);
+  const KNOB_CY = 158 - 144 * Math.sin(angle);
+
   return (
     <>
+      {/*
+        Label + cifra como un solo bloque flúor (misma jerarquía). El arco va
+        detrás de la escena (z-0); este bloque encima (z-3).
+      */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] flex items-baseline justify-center gap-2 pt-0.5">
-        <p className="tp-id__cp-label text-[1.45rem] uppercase leading-none tracking-[0.16em] text-white/60 sm:text-[1.65rem]">
+        <p className="tp-id__cp-label text-[1.85rem] uppercase leading-none tracking-[0.08em] sm:text-[2.15rem]">
           {label}
         </p>
-        <p className="tp-id__cp-value text-[2.45rem] leading-none tracking-[-0.02em] text-white tabular-nums drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-[2.9rem]">
-          {value}
+        <p className="tp-id__cp-value text-[1.85rem] leading-none tracking-[-0.02em] tabular-nums sm:text-[2.15rem]">
+          {value.toLocaleString()}
         </p>
       </div>
 
       <svg
         viewBox="0 0 320 168"
         preserveAspectRatio="xMidYMax meet"
-        className="pointer-events-none absolute inset-x-0 bottom-2 top-0 z-[1] mx-auto w-full max-w-[27rem] overflow-visible"
+        /* Detrás del Pokémon/entrenador (z-0); la escena va en z-2. */
+        className="pointer-events-none absolute inset-x-0 bottom-2 top-[2.1rem] z-0 mx-auto w-full max-w-[27rem] overflow-visible sm:top-[2.35rem]"
         fill="none"
         aria-hidden
         style={{ "--arc-offset": arcOffset } as CSSProperties}
@@ -86,6 +96,22 @@ export function TrainerCpArc({
             filter: `drop-shadow(0 0 3px ${ARC_MID}66)`,
             strokeDashoffset: arcOffset,
           }}
+        />
+        {/*
+          Perilla en la punta del recorrido. Sin ella el arco es un adorno: el
+          punto es lo que dice "vas por acá" y convierte el trazo en un
+          medidor. La posición se calcula, no se aproxima — el arco es una
+          semicircunferencia de centro (160,158) y radio 144 (los extremos
+          están a 288 de distancia, así que el navegador escala el radio de 142
+          al mínimo que los une), y el barrido va de 180° a 0°.
+        */}
+        <circle
+          className="tp-cp-arc__knob"
+          cx={KNOB_CX}
+          cy={KNOB_CY}
+          r="4.5"
+          fill="#ffffff"
+          style={{ filter: `drop-shadow(0 0 6px ${ARC_TO})` }}
         />
       </svg>
     </>
