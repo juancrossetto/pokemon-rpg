@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { unclaimedPurchasesWhere } from "@/lib/market-delivery";
 import { INVENTORY_CATEGORIES, type InventoryEntry } from "@/lib/inventory";
+import {
+  formatItemSource,
+  resolveItemSources,
+} from "@/lib/item-sources";
 import { InventoryTerminal, type InventoryLabels } from "@/components/inventory-terminal";
 import { resolveItemDisplayName } from "@/lib/shop";
 
@@ -14,9 +18,10 @@ export default async function InventoryPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const [t, tShop, session] = await Promise.all([
+  const [t, tShop, tCampaign, session] = await Promise.all([
     getTranslations("inventory"),
     getTranslations("shop"),
+    getTranslations("campaign"),
     auth(),
   ]);
 
@@ -119,30 +124,61 @@ export default async function InventoryPage({
     }));
   }
 
+  const sourceLabels = {
+    shop: t("sources.shop"),
+    gems: t("sources.gems"),
+    explore: t("sources.explore"),
+    zoneObjectives: t("sources.zoneObjectives"),
+    tower: t("sources.tower"),
+    daily: t("sources.daily"),
+    weekly: t("sources.weekly"),
+    events: t("sources.events"),
+    market: t("sources.market"),
+    gym: (locationName: string) => t("sources.gym", { location: locationName }),
+  };
+
   const allowed = new Set<string>(INVENTORY_CATEGORIES);
   const entries: InventoryEntry[] = rows
     // Un tipo nuevo en el schema que todavía no tenga categoría no debe
     // desaparecer en silencio: se filtra acá y queda visible en el log.
     .filter((r) => allowed.has(r.item.type))
-    .map((r) => ({
-      itemId: r.item.id,
-      name: r.item.name,
-      displayName: resolveItemDisplayName(r.item.name, (key) => {
-        const path = `names.${key}`;
-        return tShop.has(path) ? tShop(path) : null;
-      }),
-      type: r.item.type as InventoryEntry["type"],
-      quantity: r.quantity,
-      effectText: r.item.effectText,
-      buyPrice: r.item.buyPrice,
-      moveName: r.item.move?.name ?? null,
-      moveType: r.item.move?.type ?? null,
-      moveCategory: r.item.move?.category ?? null,
-      movePower: r.item.move?.power ?? null,
-      moveAccuracy: r.item.move?.accuracy ?? null,
-      movePp: r.item.move?.pp ?? null,
-      learners: r.item.type === "MACHINE" ? learnersFor(r.item.move?.id) : [],
-    }));
+    .map((r) => {
+      const moveName = r.item.move?.name ?? null;
+      const sources = resolveItemSources({
+        name: r.item.name,
+        type: r.item.type,
+        buyPrice: r.item.buyPrice,
+        gemPrice: r.item.gemPrice,
+        moveName,
+      }).map((source) =>
+        formatItemSource(source, sourceLabels, (locationKey) =>
+          tCampaign.has(`locations.${locationKey}`)
+            ? tCampaign(`locations.${locationKey}`)
+            : locationKey,
+        ),
+      );
+
+      return {
+        itemId: r.item.id,
+        name: r.item.name,
+        displayName: resolveItemDisplayName(r.item.name, (key) => {
+          const path = `names.${key}`;
+          return tShop.has(path) ? tShop(path) : null;
+        }),
+        type: r.item.type as InventoryEntry["type"],
+        quantity: r.quantity,
+        effectText: r.item.effectText,
+        buyPrice: r.item.buyPrice,
+        moveName,
+        moveType: r.item.move?.type ?? null,
+        moveCategory: r.item.move?.category ?? null,
+        movePower: r.item.move?.power ?? null,
+        moveAccuracy: r.item.move?.accuracy ?? null,
+        movePp: r.item.move?.pp ?? null,
+        learners: r.item.type === "MACHINE" ? learnersFor(r.item.move?.id) : [],
+        sources,
+      };
+    });
 
   const labels: InventoryLabels = {
     categories: Object.fromEntries(
@@ -180,6 +216,8 @@ export default async function InventoryPage({
     teach: t("teach"),
     useOnTeam: t("useOnTeam"),
     close: t("close"),
+    sourcesTitle: t("sources.title"),
+    sourcesHint: t("sources.hint"),
     rarity: {
       common: t("rarity.common"),
       rare: t("rarity.rare"),

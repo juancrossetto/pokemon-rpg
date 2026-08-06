@@ -21,12 +21,23 @@ export type BattleLobbyRecent = {
   level: number;
 };
 
+/** Stack usable en combate salvaje (mismo criterio que la mochila in-battle). */
+export type BattleLobbyLoadoutStack = {
+  /** Nombre canónico del ítem (DB / sprites). */
+  name: string;
+  quantity: number;
+  /** Balls: multiplicador de captura. Pociones: PS que cura. */
+  potency: number | null;
+};
+
 export type BattleLobbyData = {
   energy: number;
   energyMax: number;
   energyCost: number;
-  balls: number;
-  potions: number;
+  /** Balls con stock, mejores primero. */
+  balls: BattleLobbyLoadoutStack[];
+  /** Pociones con stock, más débiles primero (como en combate). */
+  heals: BattleLobbyLoadoutStack[];
   unspentTotal: number;
   team: BattleLobbyTeamMember[];
   recent: BattleLobbyRecent[];

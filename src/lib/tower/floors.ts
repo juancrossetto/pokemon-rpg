@@ -87,10 +87,17 @@ function repeatableBundle(floor: number, type: TowerFloorType): RewardBundle {
 function firstClearBundle(floor: number, type: TowerFloorType): RewardBundle {
   const coins = type === "boss" ? 400 + floor * 12 : type === "elite" ? 200 + floor * 6 : 60 + floor * 4;
   const bundle: RewardBundle = [{ kind: "coins", amount: coins }];
-  if (floor % 5 === 0) {
-    bundle.push({ kind: "item", itemName: "Potion", quantity: type === "boss" ? 3 : 1 });
+  // Hitos cada 5: élite deja Revivir; jefe deja Max Revivir (+ gemas).
+  if (type === "elite") {
+    bundle.push({ kind: "item", itemName: "Potion", quantity: 1 });
+    bundle.push({ kind: "item", itemName: "Revive", quantity: 1 });
   }
   if (type === "boss") {
+    bundle.push({
+      kind: "item",
+      itemName: "Max Revive",
+      quantity: floor >= 20 ? 2 : 1,
+    });
     bundle.push({ kind: "gems", amount: floor >= 30 ? 5 : 2 });
   }
   return bundle;

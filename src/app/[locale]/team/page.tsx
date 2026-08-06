@@ -378,6 +378,7 @@ export default async function TeamPage({
               depositLastBlocked: tMenu("depositLastBlocked"),
               depositLockedBlocked: tMenu("depositLockedBlocked"),
               heal: tMenu("heal"),
+              revive: tMenu("revive"),
               restorePp: tMenu("restorePp"),
               rareCandy: tMenu("rareCandy"),
               teachTm: tMenu("teachTm"),

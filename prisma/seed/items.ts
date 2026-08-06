@@ -16,6 +16,8 @@ const POKEBALLS = [
 const POTIONS = [
   { name: "Potion", buyPrice: 300, healAmount: 20 },
   { name: "Super Potion", buyPrice: 700, healAmount: 50 },
+  { name: "Hyper Potion", buyPrice: 1500, healAmount: 200 },
+  { name: "Max Potion", buyPrice: 2500, healAmount: 9999 },
   { name: "Full Restore", buyPrice: 3000, healAmount: 9999 },
 ] as const;
 
@@ -25,6 +27,24 @@ const PP_POTIONS = [
   { name: "Max Ether", buyPrice: 2000, effectText: "Restaura todos los PP de un movimiento." },
   { name: "Elixir", buyPrice: 3000, effectText: "Restaura 10 PP de todos los movimientos." },
   { name: "Max Elixir", buyPrice: 4500, effectText: "Restaura todos los PP de todos los movimientos." },
+] as const;
+
+/*
+  Revivir: fuera de combate, sólo si currentHp <= 0.
+  Precios en monedas (ver análisis economía): utility crítica pero consumible.
+  Sin gemas — las gemas quedan para destinos permanentes (Cordón) / skips.
+*/
+const REVIVES = [
+  {
+    name: "Revive",
+    buyPrice: 1600,
+    effectText: "Reanima a un Pokémon debilitado con la mitad de sus PS.",
+  },
+  {
+    name: "Max Revive",
+    buyPrice: 3800,
+    effectText: "Reanima a un Pokémon debilitado con todos sus PS.",
+  },
 ] as const;
 
 // Bayas comerciables (dossier: consumibles del mercado). Por ahora son
@@ -112,6 +132,25 @@ export async function seedItems() {
       update: {
         buyPrice: potion.buyPrice,
         effectText: potion.effectText,
+        healAmount: null,
+      },
+    });
+  }
+
+  console.log("→ Objetos (Revivir)...");
+  for (const revive of REVIVES) {
+    await prisma.item.upsert({
+      where: { name: revive.name },
+      create: {
+        name: revive.name,
+        type: "POTION",
+        buyPrice: revive.buyPrice,
+        effectText: revive.effectText,
+        healAmount: null,
+      },
+      update: {
+        buyPrice: revive.buyPrice,
+        effectText: revive.effectText,
         healAmount: null,
       },
     });

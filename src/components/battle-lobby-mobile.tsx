@@ -10,7 +10,7 @@ import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
-import { itemDisplayUrl } from "@/lib/item-sprites";
+import { LobbyLoadoutCard } from "@/components/battle/lobby-loadout-card";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 
 /**
@@ -176,52 +176,13 @@ export function BattleLobbyMobile({
         </div>
       </section>
 
-      {/* ── Loadout: balls/pociones (íconos HD como en tienda) ── */}
+      {/* ── Mochila estilo tienda (PNG grandes, sin cards) ── */}
       <section className="lobby-rise" style={{ animationDelay: "60ms" }}>
-        <div className="flex items-stretch divide-x divide-white/10 overflow-hidden rounded-xl border border-white/[0.08] bg-black/25">
-          <ResourceTile
-            icon={
-              <Image
-                src={itemDisplayUrl("Poke Ball")}
-                alt=""
-                width={28}
-                height={28}
-                className="h-7 w-7 object-contain"
-              />
-            }
-            label={t("pokeballsLabel")}
-            value={lobby.balls}
-          />
-          <ResourceTile
-            icon={
-              <Image
-                src={itemDisplayUrl("Potion")}
-                alt=""
-                width={28}
-                height={28}
-                className="h-7 w-7 object-contain"
-              />
-            }
-            label={t("potionsLabel")}
-            value={lobby.potions}
-          />
-        </div>
-        {/*
-          Los puntos viven en Equipo; acá sólo un hint liviano tras farmear XP,
-          sin competir con Explorar / Centro Pokémon.
-        */}
-        {lobby.unspentTotal > 0 && (
-          <Link
-            href="/team"
-            className="mt-1.5 flex items-center gap-1 px-1 py-0.5 text-[11px] text-tertiary/90 active:opacity-80"
-          >
-            <span className="material-symbols-outlined text-[14px]!">bolt</span>
-            <span className="min-w-0 flex-1 truncate">
-              {t("lobby.unspentPoints", { count: lobby.unspentTotal })}
-            </span>
-            <span className="material-symbols-outlined text-[14px]!">chevron_right</span>
-          </Link>
-        )}
+        <LobbyLoadoutCard
+          balls={lobby.balls}
+          heals={lobby.heals}
+          unspentTotal={lobby.unspentTotal}
+        />
       </section>
 
       {/*
@@ -371,32 +332,6 @@ function SectionTitle({
         {children}
       </h2>
       {trailing && <span className="text-[10px] text-on-surface-variant/70">{trailing}</span>}
-    </div>
-  );
-}
-
-function ResourceTile({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="flex flex-1 items-center gap-2 px-3 py-2">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center">
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[10px] uppercase tracking-wider text-on-surface-variant">
-          {label}
-        </span>
-        <span className="block font-mono text-[15px] font-bold leading-tight text-white">
-          {value}
-        </span>
-      </span>
     </div>
   );
 }

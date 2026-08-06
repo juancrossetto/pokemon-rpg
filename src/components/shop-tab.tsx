@@ -6,6 +6,7 @@ import {
   itemKey,
   resolveDescription,
   resolveItemDisplayName,
+  sortShopCatalog,
   toProduct,
   type ShopProduct,
 } from "@/lib/shop";
@@ -52,7 +53,7 @@ export async function ShopTab({
     },
   };
 
-  const products: ShopProduct[] = items.map((item) =>
+  const products: ShopProduct[] = sortShopCatalog(items).map((item) =>
     toProduct(
       item,
       ownedByItem.get(item.id) ?? 0,
@@ -68,6 +69,7 @@ export async function ShopTab({
     categories: {
       POKEBALL: t("types.POKEBALL"),
       POTION: t("types.POTION"),
+      EVOLUTION_STONE: t("types.EVOLUTION_STONE"),
       HELD: t("types.HELD"),
     },
     all: t("all"),

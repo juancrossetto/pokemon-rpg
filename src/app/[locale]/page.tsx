@@ -416,6 +416,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           depositLockedBlocked: t("squadMenu.depositLockedBlocked"),
           hint: t("squadMenu.hint"),
           heal: t("squadMenu.heal"),
+          revive: t("squadMenu.revive"),
           restorePp: t("squadMenu.restorePp"),
           rareCandy: t("squadMenu.rareCandy"),
         },

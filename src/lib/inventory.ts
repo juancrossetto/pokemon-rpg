@@ -78,6 +78,8 @@ export type InventoryEntry = {
   movePp: number | null;
   /** Sólo MACHINE: el equipo actual, con su estado frente a esta MT. */
   learners: TmLearner[];
+  /** Dónde conseguirlo, ya localizado (mapa / tienda / eventos…). */
+  sources: string[];
 };
 
 export function totalUnits(entries: InventoryEntry[]): number {

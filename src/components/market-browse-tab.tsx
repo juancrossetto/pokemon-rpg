@@ -4,15 +4,23 @@ import { prisma } from "@/lib/prisma";
 import { MarketFilterForm } from "@/components/market-filter-form";
 import { MarketCategoryRail } from "@/components/market-category-rail";
 import { MarketHubPanel, MarketStatsBar } from "@/components/market-hub-panel";
-import { MarketItemCard, MarketPokemonCard } from "@/components/market-listing-cards";
+import {
+  MarketExploreCatalog,
+  type MarketExploreListing,
+} from "@/components/market-explore-catalog";
 import {
   fetchMarketHubStats,
   fetchRecentActivity,
   fetchTrending,
+  itemRarity,
+  pokemonRarity,
   resolveCategoryWhere,
+  trainingPercent,
   type MarketCategory,
 } from "@/lib/market-hub";
 import { MAX_PRICE, MIN_PRICE } from "@/lib/market-rules";
+import { calculateMaxHp, calculateStat } from "@/lib/stats";
+import { spriteFor } from "@/lib/shiny";
 import type { Prisma } from "@/generated/prisma/client";
 
 const SORTS = ["recent", "price_asc", "price_desc", "level_desc"] as const;
@@ -54,6 +62,28 @@ function EmptyState({ icon, label }: { icon: string; label: string }) {
       <p className="text-label-md">{label}</p>
     </div>
   );
+}
+
+function resolveExpiry(
+  date: Date | null,
+  t: Awaited<ReturnType<typeof getTranslations<"market">>>,
+): { expiresClosing: boolean; expiresLabel: string | null } {
+  if (!date) return { expiresClosing: false, expiresLabel: null };
+  const remainingMs = date.getTime() - Date.now();
+  const hours = Math.ceil(remainingMs / (60 * 60 * 1000));
+  if (remainingMs <= 0 || hours <= 1) {
+    return { expiresClosing: true, expiresLabel: t("expiresSoon") };
+  }
+  if (hours < 24) {
+    return {
+      expiresClosing: false,
+      expiresLabel: t("expiresInHours", { hours }),
+    };
+  }
+  return {
+    expiresClosing: false,
+    expiresLabel: t("expiresIn", { days: Math.ceil(hours / 24) }),
+  };
 }
 
 export async function MarketBrowseTab({
@@ -202,51 +232,94 @@ export async function MarketBrowseTab({
             />
           ) : (
             /*
-              `auto-fill` + `minmax` en vez de un número fijo de columnas: la
-              grilla decide según el ancho real disponible, así que pasa de 1 a
-              5 columnas sola y nunca deja cards gigantes. El mínimo sube de
-              160px a 200px a partir de `sm` para que en 320–360px entre una
-              sola columna legible en lugar de dos apretadas.
+              Misma grilla GO que la Tienda oficial: PNG grande, sin cards;
+              el detalle (efecto, stats, comprar) vive en el sheet al tocar.
             */
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,200px),1fr))] gap-2.5 min-[420px]:grid-cols-[repeat(auto-fill,minmax(min(100%,168px),1fr))] sm:gap-3.5 lg:grid-cols-[repeat(auto-fill,minmax(min(100%,215px),1fr))]">
-              {listings.map((listing) => {
+            <MarketExploreCatalog
+              locale={locale}
+              coins={coins}
+              listings={listings.flatMap((listing): MarketExploreListing[] => {
                 const isOwn = listing.sellerId === userId;
                 const canAfford = coins >= listing.price;
-                if (listing.kind === "POKEMON" && listing.pokemon) {
-                  return (
-                    <MarketPokemonCard
-                      key={listing.id}
-                      locale={locale}
-                      listingId={listing.id}
-                      price={listing.price}
-                      seller={listing.seller.username}
-                      expiresAt={listing.expiresAt}
-                      isOwn={isOwn}
-                      canAfford={canAfford}
-                      coins={coins}
-                      pokemon={listing.pokemon}
-                    />
-                  );
-                }
-                const item = listing.itemId ? itemById.get(listing.itemId) : null;
-                if (!item) return null;
-                return (
-                  <MarketItemCard
-                    key={listing.id}
-                    locale={locale}
-                    listingId={listing.id}
-                    price={listing.price}
-                    quantity={listing.quantity ?? 1}
-                    seller={listing.seller.username}
-                    expiresAt={listing.expiresAt}
-                    isOwn={isOwn}
-                    canAfford={canAfford}
-                    coins={coins}
-                    item={item}
-                  />
+                const { expiresClosing, expiresLabel } = resolveExpiry(
+                  listing.expiresAt,
+                  t,
                 );
+
+                if (listing.kind === "POKEMON" && listing.pokemon) {
+                  const { pokemon } = listing;
+                  const { species } = pokemon;
+                  const invested =
+                    pokemon.ptStrength +
+                    pokemon.ptDexterity +
+                    pokemon.ptIntelligence +
+                    pokemon.ptSpeed +
+                    pokemon.ptConstitution;
+                  return [
+                    {
+                      kind: "POKEMON",
+                      id: listing.id,
+                      price: listing.price,
+                      seller: listing.seller.username,
+                      expiresClosing,
+                      expiresLabel,
+                      isOwn,
+                      canAfford,
+                      rarity: pokemonRarity({
+                        isShiny: pokemon.isShiny,
+                        level: pokemon.level,
+                        invested,
+                      }),
+                      displayName: pokemon.nickname ?? species.name,
+                      hp: calculateMaxHp(
+                        species.baseHp,
+                        pokemon.level,
+                        pokemon.ptConstitution,
+                      ),
+                      atk: calculateStat(
+                        species.baseAttack,
+                        pokemon.ptStrength,
+                        pokemon.level,
+                      ),
+                      training: trainingPercent(invested, pokemon.level),
+                      invested,
+                      pokemon: {
+                        level: pokemon.level,
+                        isShiny: pokemon.isShiny,
+                        unspentPoints: pokemon.unspentPoints,
+                        spriteUrl: spriteFor(species.spriteUrl, pokemon.isShiny),
+                        types: species.types,
+                        moves: pokemon.moves.map((m) =>
+                          m.move.name.replace(/-/g, " "),
+                        ),
+                      },
+                    },
+                  ];
+                }
+
+                const item = listing.itemId ? itemById.get(listing.itemId) : null;
+                if (!item) return [];
+                return [
+                  {
+                    kind: "ITEM",
+                    id: listing.id,
+                    price: listing.price,
+                    quantity: listing.quantity ?? 1,
+                    seller: listing.seller.username,
+                    expiresClosing,
+                    expiresLabel,
+                    isOwn,
+                    canAfford,
+                    rarity: itemRarity(item),
+                    item: {
+                      name: item.name,
+                      type: item.type,
+                      effectText: item.effectText,
+                    },
+                  },
+                ];
               })}
-            </div>
+            />
           )}
 
           {totalPages > 1 && (

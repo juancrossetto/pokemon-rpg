@@ -8,8 +8,8 @@ import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
-import { itemDisplayUrl } from "@/lib/item-sprites";
 import { BattleLobbyMobile } from "@/components/battle-lobby-mobile";
+import { LobbyLoadoutCard } from "@/components/battle/lobby-loadout-card";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 import { useTypeLabel } from "@/hooks/use-type-label";
 import { HubHelpButton } from "@/components/journey-guidance";
@@ -178,48 +178,11 @@ export function BattleLobby({
           </section>
 
           <div className="flex flex-col gap-4">
-            <section className="glass-panel p-3">
-              <div className="flex items-stretch gap-2">
-                <LoadoutChip
-                  icon={
-                    <Image
-                      src={itemDisplayUrl("Poke Ball")}
-                      alt=""
-                      width={28}
-                      height={28}
-                      className="h-7 w-7 object-contain"
-                    />
-                  }
-                  label={t("pokeballsLabel")}
-                  value={lobby.balls}
-                />
-                <LoadoutChip
-                  icon={
-                    <Image
-                      src={itemDisplayUrl("Potion")}
-                      alt=""
-                      width={28}
-                      height={28}
-                      className="h-7 w-7 object-contain"
-                    />
-                  }
-                  label={t("potionsLabel")}
-                  value={lobby.potions}
-                />
-              </div>
-              {lobby.unspentTotal > 0 && (
-                <Link
-                  href="/team"
-                  className="mt-2 flex items-center gap-1 px-0.5 text-[11px] text-tertiary/90 transition hover:text-tertiary"
-                >
-                  <span className="material-symbols-outlined text-[14px]!">bolt</span>
-                  <span className="min-w-0 flex-1 truncate">
-                    {t("lobby.unspentPoints", { count: lobby.unspentTotal })}
-                  </span>
-                  <span className="material-symbols-outlined text-[14px]!">chevron_right</span>
-                </Link>
-              )}
-            </section>
+            <LobbyLoadoutCard
+              balls={lobby.balls}
+              heals={lobby.heals}
+              unspentTotal={lobby.unspentTotal}
+            />
 
             {/*
               Centro Pokémon, en lugar de los accesos directos y del listado
@@ -390,27 +353,6 @@ export function BattleLobby({
       </div>
     </div>
     </>
-  );
-}
-
-function LoadoutChip({
-  icon,
-  label,
-  value,
-}: {
-  /** Sprite del ítem vía CDN (`item-sprites.ts`). */
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="flex flex-1 items-center gap-2.5 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center">{icon}</span>
-      <span className="min-w-0 flex-1 truncate text-label-sm text-on-surface-variant">
-        {label}
-      </span>
-      <span className="font-mono text-body-lg font-semibold leading-none text-white">{value}</span>
-    </div>
   );
 }
 

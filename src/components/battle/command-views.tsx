@@ -242,8 +242,10 @@ export function BagView({
   ballStacks,
   potionStacks,
   potionsDisabled,
+  revivesDisabled,
   onThrowBall,
   onUsePotion,
+  onUseRevive,
   onBack,
 }: {
   isAnimating: boolean;
@@ -253,13 +255,19 @@ export function BagView({
   potionStacks: PotionStack[];
   /** True cuando el activo está a HP lleno. */
   potionsDisabled: boolean;
+  /** True cuando no hay nadie debilitado en el equipo (salvo el activo). */
+  revivesDisabled: boolean;
   onThrowBall: (itemId: string, name: string) => void;
   onUsePotion: (itemId: string) => void;
+  onUseRevive: (itemId: string) => void;
   onBack: () => void;
 }) {
   const t = useTranslations("battle");
   const hasBalls = showBalls && ballStacks.length > 0;
-  const hasPotions = potionStacks.length > 0;
+  const healStacks = potionStacks.filter((p) => p.kind === "heal");
+  const reviveStacks = potionStacks.filter((p) => p.kind === "revive");
+  const hasPotions = healStacks.length > 0;
+  const hasRevives = reviveStacks.length > 0;
 
   return (
     <div className="flex flex-col gap-1 md:gap-2 h-full min-h-0">
@@ -273,7 +281,7 @@ export function BagView({
         <BackButton disabled={isAnimating} onBack={onBack} label={t("back")} />
       </div>
       <div className="flex flex-col gap-1.5 md:gap-2 flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-        {!hasBalls && !hasPotions && (
+        {!hasBalls && !hasPotions && !hasRevives && (
           <p className="text-label-md text-on-surface-variant text-center py-6">{t("bagEmpty")}</p>
         )}
         {hasBalls && (
@@ -304,7 +312,7 @@ export function BagView({
         {hasPotions && (
           <div className="flex flex-col gap-2">
             <span className="text-label-sm uppercase text-on-surface-variant">{t("potionsLabel")}</span>
-            {potionStacks.map((p) => (
+            {healStacks.map((p) => (
               <button
                 key={p.itemId}
                 type="button"
@@ -323,6 +331,36 @@ export function BagView({
                 <div className="flex-1 text-left">
                   <p className="text-label-md text-on-surface font-bold">{p.name}</p>
                   <p className="text-label-sm text-on-surface-variant">+{p.healAmount} HP</p>
+                </div>
+                <span className="text-label-sm text-on-surface-variant tabular-nums">×{p.quantity}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {hasRevives && (
+          <div className="flex flex-col gap-2">
+            <span className="text-label-sm uppercase text-on-surface-variant">{t("revivesLabel")}</span>
+            {reviveStacks.map((p) => (
+              <button
+                key={p.itemId}
+                type="button"
+                disabled={isAnimating || revivesDisabled}
+                onClick={() => onUseRevive(p.itemId)}
+                className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Image
+                  src={itemSpriteUrl(p.name)}
+                  alt=""
+                  width={32}
+                  height={32}
+                  unoptimized
+                  className="w-8 h-8 object-contain [image-rendering:pixelated] shrink-0"
+                />
+                <div className="flex-1 text-left">
+                  <p className="text-label-md text-on-surface font-bold">{p.name}</p>
+                  <p className="text-label-sm text-on-surface-variant">
+                    {p.name === "Max Revive" ? t("reviveFullHint") : t("reviveHalfHint")}
+                  </p>
                 </div>
                 <span className="text-label-sm text-on-surface-variant tabular-nums">×{p.quantity}</span>
               </button>
@@ -440,6 +478,78 @@ export function TeamView({
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/** Elegir a quién reanimar con Revive / Max Revive (banca debilitada). */
+export function ReviveTargetView({
+  isAnimating,
+  itemName,
+  roster,
+  onRevive,
+  onBack,
+}: {
+  isAnimating: boolean;
+  itemName: string;
+  roster: RosterMember[];
+  onRevive: (member: RosterMember) => void;
+  onBack: () => void;
+}) {
+  const t = useTranslations("battle");
+  const targets = roster.filter((m) => m.currentHp <= 0);
+
+  return (
+    <div className="flex flex-col gap-1 md:gap-2 h-full min-h-0">
+      <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
+        <div>
+          <p className="text-xs md:text-sm font-bold text-primary">{itemName}</p>
+          <p className="text-[10px] md:text-label-sm text-on-surface-variant">
+            {t("reviveSelectPrompt")}
+          </p>
+        </div>
+        <BackButton disabled={isAnimating} onBack={onBack} label={t("back")} />
+      </div>
+      <div className="flex flex-col gap-1.5 md:gap-2 flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
+        {targets.length === 0 ? (
+          <p className="text-label-md text-on-surface-variant text-center py-6">
+            {t("reviveNoTargets")}
+          </p>
+        ) : (
+          targets.map((m) => (
+            <button
+              key={m.instanceId}
+              type="button"
+              disabled={isAnimating}
+              onClick={() => onRevive(m)}
+              className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {m.spriteUrl && (
+                <Image
+                  src={m.spriteUrl}
+                  alt={m.name}
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 object-contain"
+                />
+              )}
+              <div className="flex-1 text-left min-w-0">
+                <div className="flex justify-between items-baseline gap-2">
+                  <span className="text-label-md text-on-surface font-bold capitalize truncate">
+                    {m.name}
+                  </span>
+                  <span className="text-label-sm text-on-surface-variant shrink-0">
+                    {t("level", { level: m.level })}
+                  </span>
+                </div>
+                <span className="mt-1 inline-block rounded bg-error/25 px-1 text-label-sm font-bold uppercase text-error">
+                  {t("fainted")}
+                </span>
+              </div>
+            </button>
+          ))
+        )}
       </div>
     </div>
   );

@@ -10,11 +10,13 @@ import {
 } from "@/actions/pokemon-flags";
 import { healPokemonWithPotion } from "@/actions/heal-pokemon-potion";
 import { restorePokemonPp } from "@/actions/restore-pokemon-pp";
+import { revivePokemon } from "@/actions/revive-pokemon";
 import { useRareCandy as consumeRareCandy } from "@/actions/use-rare-candy";
 import { playBattleSfx } from "@/lib/battle-sfx";
 import {
   EMPTY_SQUAD_BAG,
   estimateHealAmount,
+  reviveHpFraction,
   type SquadBagCounts,
 } from "@/lib/squad-bag";
 import {
@@ -81,6 +83,8 @@ export type SquadActionsOptions = {
   isFavorite?: boolean;
   isTradeLocked?: boolean;
   canHeal: boolean;
+  /** Debilitado (`currentHp <= 0`): puede usar Revive / Max Revive. */
+  canRevive?: boolean;
   canLevelUp?: boolean;
   bagCounts?: SquadBagCounts;
   /**
@@ -111,6 +115,7 @@ export function useSquadActions({
   isFavorite = false,
   isTradeLocked = false,
   canHeal,
+  canRevive = false,
   canLevelUp = true,
   bagCounts = EMPTY_SQUAD_BAG,
   deferServerRefresh = false,
@@ -165,7 +170,7 @@ export function useSquadActions({
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  function bump(key: "heal" | "leppa" | "rareCandy") {
+  function bump(key: "heal" | "leppa" | "rareCandy" | "revive") {
     const next = { ...counts, [key]: Math.max(0, counts[key] - 1) };
     onBagChange?.(next);
   }
@@ -270,7 +275,63 @@ export function useSquadActions({
         setFx(null);
         setToast({
           kind: "error",
-          text: result.error === "full_hp" ? tMenu("fullHp") : tMenu("noPotions"),
+          text:
+            result.error === "full_hp"
+              ? tMenu("fullHp")
+              : result.error === "needs_revive"
+                ? tMenu("needsRevive")
+                : tMenu("noPotions"),
+        });
+        return;
+      }
+      onHealed?.({ currentHp: result.currentHp, maxHp: result.maxHp });
+    });
+  }
+
+  function revive() {
+    if (busy || levelOffers) return;
+    setFeedback(null);
+    if (!canRevive) {
+      setFeedback({ kind: "error", text: tMenu("notFainted") });
+      return;
+    }
+    if (counts.revive <= 0) {
+      setFeedback({ kind: "error", text: tMenu("noRevives") });
+      return;
+    }
+
+    const bagBefore = counts;
+    const hpBefore = currentHp;
+    const maxBefore = maxHp;
+    const estimate =
+      maxBefore != null
+        ? Math.max(
+            1,
+            Math.floor(maxBefore * (reviveHpFraction(counts.reviveItemName) ?? 0.5)),
+          )
+        : 0;
+
+    onBeforeAction?.();
+    pulseBusy();
+    bump("revive");
+    if (maxBefore != null && estimate > 0) {
+      onHealed?.({ currentHp: estimate, maxHp: maxBefore });
+    }
+    playItemFx("heal", estimate > 0 ? `+${estimate} HP` : tMenu("revive"));
+
+    void revivePokemon(instanceId, locale).then((result) => {
+      if (!result.ok) {
+        onBagChange?.(bagBefore);
+        if (hpBefore != null && maxBefore != null) {
+          onHealed?.({ currentHp: hpBefore, maxHp: maxBefore });
+        }
+        setFx(null);
+        setToast({
+          kind: "error",
+          text:
+            result.error === "not_fainted"
+              ? tMenu("notFainted")
+              : tMenu("noRevives"),
         });
         return;
       }
@@ -448,6 +509,7 @@ export function useSquadActions({
     fxMeta: fx ? SQUAD_FX_META[fx.kind] : null,
     levelOffers,
     heal,
+    revive,
     restorePp,
     giveRareCandy,
     toggleFavorite,

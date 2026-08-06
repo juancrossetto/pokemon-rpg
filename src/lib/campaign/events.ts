@@ -28,9 +28,14 @@ export function rollExplorationEvent(): ExplorationEvent {
   return { kind: "none" };
 }
 
-/** Objetos que pueden aparecer explorando — solo consumibles básicos. */
-export const EVENT_ITEM_NAMES = ["Poke Ball", "Potion", "Oran Berry"] as const;
+/** Objetos que pueden aparecer explorando — consumibles básicos + Revivir. */
+export const EVENT_ITEM_NAMES = [
+  "Poke Ball",
+  "Potion",
+  "Oran Berry",
+  "Revive",
+] as const;
 
 export function pickEventItemName(): string {
-  return EVENT_ITEM_NAMES[Math.floor(Math.random() * EVENT_ITEM_NAMES.length)];
+  return EVENT_ITEM_NAMES[Math.floor(Math.random() * EVENT_ITEM_NAMES.length)]!;
 }

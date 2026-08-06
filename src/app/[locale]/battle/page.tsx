@@ -9,6 +9,7 @@ import { getCurrentEnergy, WILD_ENCOUNTER_ENERGY_COST } from "@/lib/energy";
 import { getActiveGymRun, getActiveTowerRun } from "@/lib/battle-lock";
 import { healCooldownMsLeft, healRushCost } from "@/lib/healing";
 import { BattleScreen } from "@/components/battle-screen";
+import { isReviveItemName } from "@/lib/squad-bag";
 import type { BattleArenaProps, OpponentPartyMember } from "@/components/battle-arena";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
@@ -169,7 +170,17 @@ export default async function BattlePage({
           quantity: { gt: 0 },
           item: { type: { in: ["POKEBALL", "POTION"] } },
         },
-        include: { item: { select: { type: true } } },
+        include: {
+          item: {
+            select: {
+              type: true,
+              name: true,
+              catchMultiplier: true,
+              healAmount: true,
+              buyPrice: true,
+            },
+          },
+        },
       }),
       prisma.battleSession.findMany({
         where: {
@@ -195,10 +206,30 @@ export default async function BattlePage({
     const energy = getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt);
     const balls = inventory
       .filter((i) => i.item.type === "POKEBALL")
-      .reduce((sum, i) => sum + i.quantity, 0);
-    const potions = inventory
-      .filter((i) => i.item.type === "POTION")
-      .reduce((sum, i) => sum + i.quantity, 0);
+      .map((i) => ({
+        name: i.item.name,
+        quantity: i.quantity,
+        potency: i.item.catchMultiplier,
+      }))
+      .sort(
+        (a, b) =>
+          (b.potency ?? 0) - (a.potency ?? 0) ||
+          b.quantity - a.quantity ||
+          a.name.localeCompare(b.name),
+      );
+    const heals = inventory
+      .filter((i) => i.item.type === "POTION" && i.item.healAmount != null)
+      .map((i) => ({
+        name: i.item.name,
+        quantity: i.quantity,
+        potency: i.item.healAmount,
+      }))
+      .sort(
+        (a, b) =>
+          (a.potency ?? 0) - (b.potency ?? 0) ||
+          b.quantity - a.quantity ||
+          a.name.localeCompare(b.name),
+      );
 
     const stage = findStage(progress.farmingStageId)?.stage;
     const location = findLocation(progress.farmingLocationId)?.location;
@@ -219,7 +250,7 @@ export default async function BattlePage({
       energyMax: user.energyMax,
       energyCost,
       balls,
-      potions,
+      heals,
       unspentTotal: partyRows.reduce((sum, p) => sum + p.unspentPoints, 0),
       team: partyRows.map((p) => ({
         id: p.id,
@@ -469,12 +500,20 @@ export default async function BattlePage({
         name: p.item.name,
         quantity: p.quantity,
       })),
-      potions: potions.map((p) => ({
-        itemId: p.itemId,
-        name: p.item.name,
-        quantity: p.quantity,
-        healAmount: p.item.healAmount ?? 0,
-      })),
+      potions: potions
+        .filter(
+          (p) => p.item.healAmount != null || isReviveItemName(p.item.name),
+        )
+        .map((p) => {
+          const isRevive = isReviveItemName(p.item.name);
+          return {
+            itemId: p.itemId,
+            name: p.item.name,
+            quantity: p.quantity,
+            healAmount: p.item.healAmount ?? 0,
+            kind: (isRevive ? "revive" : "heal") as "heal" | "revive",
+          };
+        }),
       party: partyRows.map((r) => ({
         instanceId: r.id,
         name: r.nickname ?? r.species.name,

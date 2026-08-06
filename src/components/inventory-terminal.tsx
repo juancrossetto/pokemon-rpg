@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { itemDisplayUrl } from "@/lib/item-sprites";
 import { formatMoveName } from "@/lib/format-move-name";
@@ -51,6 +51,8 @@ export type InventoryLabels = {
   teach: string;
   useOnTeam: string;
   close: string;
+  sourcesTitle: string;
+  sourcesHint: string;
 };
 
 /**
@@ -168,6 +170,7 @@ export function InventoryTerminal({
                   entry={entry}
                   selected={entry.itemId === selectedId}
                   categoryLabel={labels.categories[entry.type]}
+                  sourcesTitle={labels.sourcesTitle}
                   onSelect={() => setSelectedId(entry.itemId)}
                 />
               ))}
@@ -250,18 +253,21 @@ function ItemCard({
   entry,
   selected,
   categoryLabel,
+  sourcesTitle,
   onSelect,
 }: {
   entry: InventoryEntry;
   selected: boolean;
   categoryLabel: string;
+  sourcesTitle: string;
   onSelect: () => void;
 }) {
   const rarity = itemRarity(entry);
   const style = RARITY_STYLES[rarity];
+  const [infoOpen, setInfoOpen] = useState(false);
 
   return (
-    <li>
+    <li className={`relative ${infoOpen ? "z-30" : ""}`}>
       <button
         type="button"
         onClick={onSelect}
@@ -297,7 +303,99 @@ function ItemCard({
           ×{entry.quantity}
         </span>
       </button>
+
+      {entry.sources.length > 0 ? (
+        <SourceInfoButton
+          sources={entry.sources}
+          title={sourcesTitle}
+          className="absolute right-1 top-1"
+          open={infoOpen}
+          onOpenChange={setInfoOpen}
+        />
+      ) : null}
     </li>
+  );
+}
+
+/**
+ * `i` chico que no compite con seleccionar la card: sólo abre al tocarlo.
+ * Cierra con Escape, click afuera o segundo toque.
+ */
+function SourceInfoButton({
+  sources,
+  title,
+  className = "",
+  open,
+  onOpenChange,
+}: {
+  sources: string[];
+  title: string;
+  className?: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const panelId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointer(event: MouseEvent | TouchEvent) {
+      const target = event.target as Node | null;
+      if (target && rootRef.current?.contains(target)) return;
+      onOpenChange(false);
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onOpenChange(false);
+    }
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("touchstart", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("touchstart", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onOpenChange]);
+
+  return (
+    <div ref={rootRef} className={`z-10 ${className}`}>
+      <button
+        type="button"
+        aria-label={title}
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenChange(!open);
+        }}
+        className="flex h-5 w-5 items-center justify-center rounded-full text-white/30 transition hover:bg-white/10 hover:text-white/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
+      >
+        <span className="material-symbols-outlined text-[13px]! leading-none">info</span>
+      </button>
+
+      {open ? (
+        <div
+          id={panelId}
+          role="tooltip"
+          className="absolute right-0 top-6 z-20 w-44 rounded-lg border border-white/12 bg-[#0d1018]/97 p-2 shadow-[0_12px_28px_rgba(0,0,0,0.55)] backdrop-blur-md"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant/80">
+            {title}
+          </p>
+          <ul className="flex flex-col gap-0.5">
+            {sources.map((source) => (
+              <li
+                key={source}
+                className="text-[11px] leading-snug text-white/80"
+              >
+                {source}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -416,6 +514,30 @@ function DetailPanel({
           <p className="text-[12px] leading-snug text-on-surface-variant">{effectText}</p>
         </div>
       )}
+
+      {entry.sources.length > 0 ? (
+        <div>
+          <p className="mb-1 text-[10px] uppercase tracking-[0.18em] text-on-surface-variant">
+            {labels.sourcesTitle}
+          </p>
+          <ul className="flex flex-col gap-0.5">
+            {entry.sources.map((source) => (
+              <li
+                key={source}
+                className="flex items-start gap-1.5 text-[12px] leading-snug text-on-surface-variant"
+              >
+                <span className="mt-0.5 material-symbols-outlined text-[12px]! text-white/30">
+                  place
+                </span>
+                <span>{source}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1.5 text-[10px] leading-snug text-on-surface-variant/55">
+            {labels.sourcesHint}
+          </p>
+        </div>
+      ) : null}
 
       {/*
         Una MT sin esta lista sólo decía qué movimiento enseña, no si servía para

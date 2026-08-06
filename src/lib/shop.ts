@@ -11,12 +11,61 @@
  * el día que existan, pero hoy nadie los completa y por lo tanto no se dibujan.
  */
 
+import { isReviveItemName } from "@/lib/squad-bag";
+
 /** Tope por compra. Evita que un stepper mande 10.000 de un click. */
 export const MAX_PURCHASE_QUANTITY = 99;
 
-export type ShopCategory = "POKEBALL" | "POTION" | "HELD";
+export type ShopCategory = "POKEBALL" | "POTION" | "EVOLUTION_STONE" | "HELD";
 
-export const SHOP_CATEGORIES: ShopCategory[] = ["POKEBALL", "POTION", "HELD"];
+export const SHOP_CATEGORIES: ShopCategory[] = [
+  "POKEBALL",
+  "POTION",
+  "EVOLUTION_STONE",
+  "HELD",
+];
+
+/**
+ * Orden de vitrina: categoría → dentro de pociones, curas de HP juntas
+ * (Potion…Full Restore), luego Revivir / Max Revivir, y después potas de PP.
+ * Así Hyper queda al lado de Super y no intercalada con Ether.
+ */
+export function sortShopCatalog<
+  T extends {
+    type: string;
+    name: string;
+    buyPrice: number;
+    healAmount: number | null;
+  },
+>(items: T[]): T[] {
+  const cat = (type: string) => {
+    const i = SHOP_CATEGORIES.indexOf(type as ShopCategory);
+    return i === -1 ? SHOP_CATEGORIES.length : i;
+  };
+
+  /** 0 = cura HP, 1 = revive, 2 = PP / otros POTION sin healAmount. */
+  const potionBand = (item: { name: string; healAmount: number | null }) => {
+    if (item.healAmount != null) return 0;
+    if (isReviveItemName(item.name)) return 1;
+    return 2;
+  };
+
+  return [...items].sort((a, b) => {
+    const byCat = cat(a.type) - cat(b.type);
+    if (byCat !== 0) return byCat;
+
+    if (a.type === "POTION" && b.type === "POTION") {
+      const byBand = potionBand(a) - potionBand(b);
+      if (byBand !== 0) return byBand;
+      if (a.healAmount != null && b.healAmount != null) {
+        const byHeal = a.healAmount - b.healAmount;
+        if (byHeal !== 0) return byHeal;
+      }
+    }
+
+    return a.buyPrice - b.buyPrice || a.name.localeCompare(b.name);
+  });
+}
 
 /**
  * Identidad visual por categoría. El acento es un detalle —ícono del chip y
@@ -37,6 +86,12 @@ export const SHOP_CATEGORY_META: Record<
     accent: "text-emerald-300",
     ring: "border-emerald-400/25",
     pedestal: "rgba(52,211,153,0.10)",
+  },
+  EVOLUTION_STONE: {
+    icon: "diamond",
+    accent: "text-fuchsia-300",
+    ring: "border-fuchsia-400/25",
+    pedestal: "rgba(232,121,249,0.10)",
   },
   HELD: {
     icon: "shield",

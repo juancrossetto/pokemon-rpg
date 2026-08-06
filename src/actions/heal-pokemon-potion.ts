@@ -16,7 +16,13 @@ export type HealWithPotionResult =
   | { ok: true; healedBy: number; itemName: string; currentHp: number; maxHp: number }
   | {
       ok: false;
-      error: "unauthorized" | "not_found" | "no_potions" | "full_hp" | "in_combat";
+      error:
+        | "unauthorized"
+        | "not_found"
+        | "no_potions"
+        | "full_hp"
+        | "needs_revive"
+        | "in_combat";
     };
 
 /**
@@ -46,8 +52,11 @@ export async function healPokemonWithPotion(
     instance.ptConstitution,
   );
   if (instance.currentHp >= maxHp) return { ok: false, error: "full_hp" };
+  // Las pociones no reaniman: hace falta Revive / Max Revive.
+  if (instance.currentHp <= 0) return { ok: false, error: "needs_revive" };
 
   // Pociones primero (la más débil); si no hay, bayas Oran/Sitrus.
+  // Excluir Revive/Max Revive (POTION sin healAmount no entran por el filtro).
   const potions = await prisma.inventoryItem.findMany({
     where: {
       userId,

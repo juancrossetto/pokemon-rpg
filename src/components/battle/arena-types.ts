@@ -25,7 +25,9 @@ export interface PotionStack {
   itemId: string;
   name: string;
   quantity: number;
+  /** Cura fija de HP; 0 en revives. */
   healAmount: number;
+  kind: "heal" | "revive";
 }
 
 export interface RosterMember {
@@ -66,7 +68,7 @@ export interface BattleMoveOption {
   target?: string | null;
 }
 
-export type View = "menu" | "moves" | "bag" | "team" | "targets";
+export type View = "menu" | "moves" | "bag" | "team" | "targets" | "reviveTargets";
 export type Outcome = "ongoing" | "won" | "lost" | "fled" | "caught" | "trainer_cleared";
 export type LogSide = "player" | "wild" | "system";
 

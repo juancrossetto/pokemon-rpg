@@ -526,9 +526,16 @@ async function MineTab({ locale, userId }: { locale: string; userId: string }) {
                   )}
                 </span>
               </div>
-              <span className="flex shrink-0 items-center gap-1 font-mono text-label-md text-electric-yellow">
-                <span className="material-symbols-outlined text-[14px]!">paid</span>
-                {listing.price}
+              <span className="flex shrink-0 items-center gap-1 font-mono text-label-md text-white">
+                <Image
+                  src="/items/hd/poke-coin.png"
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="h-4 w-4 object-contain"
+                  unoptimized
+                />
+                {listing.price.toLocaleString()}
               </span>
             </div>
 
@@ -612,9 +619,16 @@ async function BoughtTab({ locale, userId }: { locale: string; userId: string })
                       {t("boughtFrom", { name: listing.seller.username })} · {destination}
                     </span>
                   </div>
-                  <span className="flex shrink-0 items-center gap-1 font-mono text-label-md text-electric-yellow">
-                    <span className="material-symbols-outlined text-[14px]!">paid</span>
-                    {listing.price}
+                  <span className="flex shrink-0 items-center gap-1 font-mono text-label-md text-white">
+                    <Image
+                      src="/items/hd/poke-coin.png"
+                      alt=""
+                      width={16}
+                      height={16}
+                      className="h-4 w-4 object-contain"
+                      unoptimized
+                    />
+                    {listing.price.toLocaleString()}
                   </span>
                   </div>
                   <form action={claimPurchase.bind(null, locale)} className="shrink-0">
@@ -660,9 +674,16 @@ async function BoughtTab({ locale, userId }: { locale: string; userId: string })
                       {t("boughtFrom", { name: listing.seller.username })} · {t("bagReceived")}
                     </span>
                   </div>
-                  <span className="flex shrink-0 items-center gap-1 font-mono text-label-md text-electric-yellow">
-                    <span className="material-symbols-outlined text-[14px]!">paid</span>
-                    {listing.price}
+                  <span className="flex shrink-0 items-center gap-1 font-mono text-label-md text-white">
+                    <Image
+                      src="/items/hd/poke-coin.png"
+                      alt=""
+                      width={16}
+                      height={16}
+                      className="h-4 w-4 object-contain"
+                      unoptimized
+                    />
+                    {listing.price.toLocaleString()}
                   </span>
                 </div>
               );

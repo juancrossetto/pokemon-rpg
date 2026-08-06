@@ -34,6 +34,7 @@ export type SquadContextLabels = {
   viewTeam: string;
   hint: string;
   heal: string;
+  revive: string;
   restorePp: string;
   rareCandy: string;
   /** Depositar del equipo al PC. */
@@ -67,6 +68,7 @@ export function SquadCardContextMenu({
   isFavorite,
   isTradeLocked,
   canHeal,
+  canRevive = false,
   canLevelUp = true,
   showFlags = true,
   showViewTeam = true,
@@ -107,6 +109,7 @@ export function SquadCardContextMenu({
   isFavorite: boolean;
   isTradeLocked: boolean;
   canHeal: boolean;
+  canRevive?: boolean;
   canLevelUp?: boolean;
   showFlags?: boolean;
   showViewTeam?: boolean;
@@ -166,6 +169,7 @@ export function SquadCardContextMenu({
     isFavorite,
     isTradeLocked,
     canHeal,
+    canRevive,
     canLevelUp,
     bagCounts,
     onBeforeAction: () => setMenu(null),
@@ -286,6 +290,13 @@ export function SquadCardContextMenu({
             count={counts.heal}
             disabled={busy || Boolean(levelOffers)}
             onSelect={actions.heal}
+          />
+          <ConsumableMenuItem
+            itemName={counts.reviveItemName}
+            label={labels.revive}
+            count={counts.revive}
+            disabled={busy || Boolean(levelOffers)}
+            onSelect={actions.revive}
           />
           <ConsumableMenuItem
             itemName={counts.ppItemName}

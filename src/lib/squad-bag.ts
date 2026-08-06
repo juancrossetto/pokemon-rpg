@@ -1,6 +1,26 @@
 /** Ítems de curación fuera de combate (mismo orden que healPokemonWithPotion). */
 export const HEAL_BERRIES = ["Oran Berry", "Sitrus Berry"] as const;
 
+/**
+ * Revivir / Max Revivir. Fracción del HP máx. al reanimar (clásico).
+ * Viven como `POTION` sin `healAmount` para no mezclarse con curas de HP.
+ */
+export const REVIVE_ITEMS = [
+  { name: "Revive", hpFraction: 0.5 },
+  { name: "Max Revive", hpFraction: 1 },
+] as const;
+
+export const REVIVE_ITEM_NAMES = REVIVE_ITEMS.map((i) => i.name);
+
+export function isReviveItemName(name: string): boolean {
+  return (REVIVE_ITEM_NAMES as readonly string[]).includes(name);
+}
+
+export function reviveHpFraction(name: string): number | null {
+  const hit = REVIVE_ITEMS.find((i) => i.name === name);
+  return hit ? hit.hpFraction : null;
+}
+
 /** Potas / bayas que restauran PP (click derecho → Restaurar PP). */
 export const PP_RESTORE_ITEMS = [
   { name: "Leppa Berry", amount: 10, allMoves: false },
@@ -35,6 +55,10 @@ export type SquadBagCounts = {
   /** Sprite del próximo ítem de PP. */
   ppItemName: string;
   rareCandy: number;
+  /** Revive + Max Revive. */
+  revive: number;
+  /** Sprite del próximo revive (Revive por defecto). */
+  reviveItemName: string;
 };
 
 export const EMPTY_SQUAD_BAG: SquadBagCounts = {
@@ -43,4 +67,6 @@ export const EMPTY_SQUAD_BAG: SquadBagCounts = {
   leppa: 0,
   ppItemName: "Ether",
   rareCandy: 0,
+  revive: 0,
+  reviveItemName: "Revive",
 };

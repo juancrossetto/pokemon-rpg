@@ -74,8 +74,9 @@ import { EmptyPartySlot, HpPlate, PartyIcon, PartySidebar } from "@/components/b
 import { CaptureSummary } from "@/components/battle/capture-summary";
 import { BattleOutcomeScreen } from "@/components/battle/battle-outcome-screen";
 import { BattleTurnTimer } from "@/components/battle/battle-turn-timer";
-import { BagView, MovesView, TargetView, TeamView, TurnOrderChip } from "@/components/battle/command-views";
+import { BagView, MovesView, ReviveTargetView, TargetView, TeamView, TurnOrderChip } from "@/components/battle/command-views";
 import { needsFoeTargetPick, isSpreadMove } from "@/lib/move-target";
+import { reviveHpFraction } from "@/lib/squad-bag";
 
 export type { BattleArenaProps, OpponentPartyMember } from "@/components/battle/arena-types";
 
@@ -412,6 +413,7 @@ export function BattleArena({
    */
   const [ballStacks, setBallStacks] = useState(pokeballs);
   const [potionStacks, setPotionStacks] = useState(potions);
+  const [pendingReviveItemId, setPendingReviveItemId] = useState<string | null>(null);
   const [party, setParty] = useState(initialParty);
   const [opponentParty, setOpponentParty] = useState(initialOpponentParty);
   const [mustSwitch, setMustSwitch] = useState(needsForcedSwitch);
@@ -2065,6 +2067,80 @@ export function BattleArena({
     setIsAnimating(false);
   }
 
+  function handlePickRevive(itemId: string) {
+    if (isAnimating || outcome !== "ongoing" || mustSwitch) return;
+    setPendingReviveItemId(itemId);
+    setView("reviveTargets");
+  }
+
+  async function handleConfirmRevive(member: RosterMember) {
+    if (isAnimating || outcome !== "ongoing" || mustSwitch || !pendingReviveItemId) return;
+    const itemId = pendingReviveItemId;
+    setIsAnimating(true);
+    setView("menu");
+    setPendingReviveItemId(null);
+
+    const prevPotions = potionStacks;
+    const used = potionStacks.find((p) => p.itemId === itemId);
+    const fraction = reviveHpFraction(used?.name ?? "Revive") ?? 0.5;
+    const optimisticHp = Math.max(1, Math.floor(member.maxHp * fraction));
+
+    setPotionStacks((prev) =>
+      prev
+        .map((p) => (p.itemId === itemId ? { ...p, quantity: p.quantity - 1 } : p))
+        .filter((p) => p.quantity > 0),
+    );
+    setParty((prev) =>
+      prev.map((m) =>
+        m.instanceId === member.instanceId ? { ...m, currentHp: optimisticHp } : m,
+      ),
+    );
+
+    playBattleSfx("heal");
+    await delay(ITEM_USE_MS);
+
+    const result = await applyBattleItem(battleId, itemId, locale, member.instanceId);
+    if (!result || !result.revivedTargetId) {
+      setPotionStacks(prevPotions);
+      setParty((prev) =>
+        prev.map((m) =>
+          m.instanceId === member.instanceId
+            ? { ...m, currentHp: member.currentHp }
+            : m,
+        ),
+      );
+      setIsAnimating(false);
+      setView("menu");
+      return;
+    }
+
+    setParty((prev) =>
+      prev.map((m) =>
+        m.instanceId === result.revivedTargetId
+          ? { ...m, currentHp: result.healedTo }
+          : m,
+      ),
+    );
+    appendLog(tLog("usedItem", { name: result.itemName ?? used?.name ?? "?" }), "player");
+    appendLog(
+      t("revivedBy", { name: member.name, hp: result.healedTo }),
+      "player",
+    );
+
+    if (result.counterAttack) {
+      await playEvent(result.counterAttack);
+    }
+    if (result.outcome === "lost") {
+      await playFaintAndFinish("player", "lost");
+    } else if (result.outcome === "fainted") {
+      await playFaintThenForceSwitch();
+    } else {
+      setView("menu");
+    }
+
+    setIsAnimating(false);
+  }
+
   async function handleSwitchTo(member: RosterMember) {
     if (isAnimating || outcome !== "ongoing" || member.currentHp <= 0) return;
     setIsAnimating(true);
@@ -2217,6 +2293,9 @@ export function BattleArena({
 
   const hasBalls = !isTrainerStyle && ballStacks.length > 0;
   const hasPotions = potionStacks.length > 0;
+  const hasFaintedBench = teamRoster.some((m) => m.currentHp <= 0);
+  const pendingReviveName =
+    potionStacks.find((p) => p.itemId === pendingReviveItemId)?.name ?? "Revive";
   const hasHealthyBackup = teamRoster.some((m) => m.currentHp > 0);
 
   const seFlash = moveFx?.mode === "hit" && (moveFx.effectiveness ?? 1) > 1;
@@ -3110,9 +3189,24 @@ export function BattleArena({
                 ballStacks={ballStacks}
                 potionStacks={potionStacks}
                 potionsDisabled={playerHp >= playerMaxHp}
+                revivesDisabled={!hasFaintedBench}
                 onThrowBall={handleThrowBall}
                 onUsePotion={handleUsePotion}
+                onUseRevive={handlePickRevive}
                 onBack={() => setView("menu")}
+              />
+            )}
+
+            {view === "reviveTargets" && (
+              <ReviveTargetView
+                isAnimating={isAnimating}
+                itemName={pendingReviveName}
+                roster={teamRoster}
+                onRevive={handleConfirmRevive}
+                onBack={() => {
+                  setPendingReviveItemId(null);
+                  setView("bag");
+                }}
               />
             )}
 

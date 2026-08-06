@@ -356,7 +356,8 @@ function PokemonCard({
       level={member.level}
       isFavorite={member.isFavorite}
       isTradeLocked={member.isTradeLocked}
-      canHeal={member.currentHp < member.maxHp}
+      canHeal={member.currentHp > 0 && member.currentHp < member.maxHp}
+      canRevive={member.currentHp <= 0}
       canLevelUp={member.level < 100}
       showViewTeam={false}
       labels={labels.menu}

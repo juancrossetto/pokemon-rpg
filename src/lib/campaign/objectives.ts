@@ -37,8 +37,8 @@ export type ZoneObjectiveState = {
  *
  * Los objetos siguen la lógica de los juegos: explorar del todo una ruta te
  * deja balls, registrar las especies de la zona (cruzártelas explorando acá)
- * paga con Caramelo Raro, y limpiar a los entrenadores devuelve curación para
- * poder seguir. Todo sale del catálogo que ya siembra `items.ts`.
+ * paga con Caramelo Raro, y limpiar a los entrenadores deja Revivir / Max
+ * Revivir para seguir la ruta. Todo sale del catálogo que ya siembra `items.ts`.
  */
 export function objectiveReward(
   zone: MapLocation,
@@ -60,9 +60,10 @@ export function objectiveReward(
     // El premio de completar Pokédex: sube un nivel entero.
     return { coins, itemName: "Rare Candy", quantity: tier >= 2 ? 2 : 1 };
   }
+  // Entrenadores: tras pelear a rajatabla hace falta reanimación, no sólo cura.
   return {
     coins,
-    itemName: ["Potion", "Super Potion", "Full Restore"][tier],
+    itemName: ["Revive", "Revive", "Max Revive"][tier],
     quantity: tier === 2 ? 2 : 3,
   };
 }

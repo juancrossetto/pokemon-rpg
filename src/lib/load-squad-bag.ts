@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import {
   HEAL_BERRIES,
   PP_RESTORE_ITEMS,
+  REVIVE_ITEM_NAMES,
+  REVIVE_ITEMS,
   type SquadBagCounts,
 } from "@/lib/squad-bag";
 
@@ -17,7 +19,9 @@ export async function loadSquadBagCounts(userId: string): Promise<SquadBagCounts
         { item: { type: "POTION", healAmount: { not: null } } },
         {
           item: {
-            name: { in: [...HEAL_BERRIES, ...PP_NAMES, "Rare Candy"] },
+            name: {
+              in: [...HEAL_BERRIES, ...PP_NAMES, "Rare Candy", ...REVIVE_ITEM_NAMES],
+            },
           },
         },
       ],
@@ -35,6 +39,9 @@ export async function loadSquadBagCounts(userId: string): Promise<SquadBagCounts
   let ppItemName = "Ether";
   let ppPicked = false;
   let rareCandy = 0;
+  let revive = 0;
+  let reviveItemName = "Revive";
+  let revivePicked = false;
 
   const potions = rows
     .filter((r) => r.item.type === "POTION" && r.item.healAmount != null)
@@ -82,5 +89,23 @@ export async function loadSquadBagCounts(userId: string): Promise<SquadBagCounts
     if (r.item.name === "Rare Candy") rareCandy += r.quantity;
   }
 
-  return { heal, healItemName, leppa, ppItemName, rareCandy };
+  for (const spec of REVIVE_ITEMS) {
+    const stack = rows.find((r) => r.item.name === spec.name);
+    if (!stack) continue;
+    revive += stack.quantity;
+    if (!revivePicked) {
+      reviveItemName = stack.item.name;
+      revivePicked = true;
+    }
+  }
+
+  return {
+    heal,
+    healItemName,
+    leppa,
+    ppItemName,
+    rareCandy,
+    revive,
+    reviveItemName,
+  };
 }

@@ -19,6 +19,7 @@ export const ITEM_HD_ICON_IDS: Record<string, string> = {
   Potion: "potion",
   "Super Potion": "super-potion",
   "Hyper Potion": "hyper-potion",
+  "Max Potion": "max-potion",
   "Full Restore": "full-restore",
   Revive: "revive",
   "Max Revive": "max-revive",

@@ -508,7 +508,8 @@ function MonCard({
       level={mon.level}
       isFavorite={mon.isFavorite}
       isTradeLocked={mon.isTradeLocked}
-      canHeal={mon.currentHp < mon.maxHp}
+      canHeal={mon.currentHp > 0 && mon.currentHp < mon.maxHp}
+      canRevive={mon.currentHp <= 0}
       canLevelUp={mon.level < 100}
       labels={menuLabels}
       bagCounts={bagCounts}

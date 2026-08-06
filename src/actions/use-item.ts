@@ -9,16 +9,19 @@ import { hasHealthyBackup } from "@/lib/team";
 import { runWildCounterAttack } from "@/lib/wild-counter";
 import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
+import { isReviveItemName, reviveHpFraction } from "@/lib/squad-bag";
 
 const MAX_LOG_LINES = 20;
 
 export interface UseItemResult {
-  /** HP tras la cura, antes del contraataque del rival. */
+  /** HP tras la cura/revive, antes del contraataque del rival. */
   healedTo: number;
   healedBy: number;
   itemName: string;
   /** Full Restore también limpia status. */
   statusCured?: boolean;
+  /** Si se reanimó a un miembro del equipo (no al activo). */
+  revivedTargetId?: string;
   counterAttack: TurnEvent | null;
   outcome: "continues" | "lost" | "fainted";
 }
@@ -27,6 +30,8 @@ export async function applyBattleItem(
   sessionId: string,
   itemId: string,
   locale: string,
+  /** Obligatorio para Revive / Max Revive: instancia debilitada del equipo. */
+  targetInstanceId?: string,
 ): Promise<UseItemResult | null> {
   const session = await auth();
   if (!session?.user) return null;
@@ -37,7 +42,10 @@ export async function applyBattleItem(
       where: { id: sessionId, userId, status: "ACTIVE" },
       include: {
         pokemonInstance: {
-          include: { species: { include: { evolvesTo: { select: { id: true } } } }, heldItem: true },
+          include: {
+            species: { include: { evolvesTo: { select: { id: true } } } },
+            heldItem: true,
+          },
         },
         wildSpecies: true,
         wildHeldItem: true,
@@ -59,15 +67,65 @@ export async function applyBattleItem(
       outcome: "lost",
     };
   }
+
   const { item } = inventoryItem;
+  if (item.type !== "POTION") return null;
+
+  if (isReviveItemName(item.name)) {
+    if (!targetInstanceId) return null;
+    const fraction = reviveHpFraction(item.name);
+    if (fraction == null) return null;
+
+    const target = await prisma.pokemonInstance.findFirst({
+      where: {
+        id: targetInstanceId,
+        ownerId: userId,
+        teamSlot: { not: null },
+      },
+      include: { species: { select: { baseHp: true } } },
+    });
+    if (!target || target.currentHp > 0) return null;
+    // Revive es para la banca en el turno normal; el activo debilitado va por mustSwitch.
+    if (target.id === battle.pokemonInstanceId) return null;
+
+    const maxHp = calculateMaxHp(
+      target.species.baseHp,
+      target.level,
+      target.ptConstitution,
+    );
+    const revivedTo = Math.max(1, Math.floor(maxHp * fraction));
+    const counter = await runWildCounterAttack(battle);
+
+    return finalizeBattleItemTurn({
+      battle,
+      userId,
+      locale,
+      itemName: item.name,
+      itemId: inventoryItem.itemId,
+      itemQuantity: inventoryItem.quantity,
+      activeInstanceId: battle.pokemonInstance.id,
+      counter,
+      healedTo: revivedTo,
+      healedBy: revivedTo,
+      revivedTargetId: target.id,
+      reviveTargetHp: revivedTo,
+    });
+  }
+
   const healAmount = item.healAmount;
-  if (item.type !== "POTION" || healAmount === null) return null;
+  if (healAmount === null) return null;
 
   const instance = battle.pokemonInstance;
-  const maxHp = calculateMaxHp(instance.species.baseHp, instance.level, instance.ptConstitution);
+  // Las pociones no reaniman en combate.
+  if (instance.currentHp <= 0) return null;
+
+  const maxHp = calculateMaxHp(
+    instance.species.baseHp,
+    instance.level,
+    instance.ptConstitution,
+  );
   const healedTo = Math.min(maxHp, instance.currentHp + healAmount);
   const healedBy = healedTo - instance.currentHp;
-  // Full Restore en los juegos clásicos también limpia status.
   const curesStatus = item.name.trim().toLowerCase() === "full restore";
   const playerStatusAfterHeal = curesStatus ? null : battle.playerStatus;
   const playerSleepTurnsAfterHeal = curesStatus ? 0 : battle.playerSleepTurns;
@@ -79,23 +137,99 @@ export async function applyBattleItem(
     pokemonInstance: { ...instance, currentHp: healedTo },
   });
 
+  return finalizeBattleItemTurn({
+    battle,
+    userId,
+    locale,
+    itemName: item.name,
+    itemId: inventoryItem.itemId,
+    itemQuantity: inventoryItem.quantity,
+    activeInstanceId: instance.id,
+    counter,
+    healedTo,
+    healedBy,
+    statusCured: curesStatus && battle.playerStatus != null,
+  });
+}
+
+async function finalizeBattleItemTurn(args: {
+  battle: {
+    id: string;
+    gymId: string | null;
+    gymRunId: string | null;
+    log: string[];
+  };
+  userId: string;
+  locale: string;
+  itemName: string;
+  itemId: string;
+  itemQuantity: number;
+  activeInstanceId: string;
+  counter: Awaited<ReturnType<typeof runWildCounterAttack>>;
+  healedTo: number;
+  healedBy: number;
+  statusCured?: boolean;
+  revivedTargetId?: string;
+  reviveTargetHp?: number;
+}): Promise<UseItemResult> {
+  const {
+    battle,
+    userId,
+    locale,
+    itemName,
+    itemId,
+    itemQuantity,
+    activeInstanceId,
+    counter,
+    healedTo,
+    healedBy,
+    statusCured,
+    revivedTargetId,
+    reviveTargetHp,
+  } = args;
+
   const playerHp = counter.playerHp;
   const fainted = playerHp <= 0;
-  const mustSwitch = fainted && (await hasHealthyBackup(userId, instance.id));
+  // Si acabamos de reanimar a alguien, ya hay backup sano aunque la DB
+  // todavía no refleje el HP (el check corre antes del $transaction).
+  const mustSwitch =
+    fainted &&
+    (revivedTargetId != null ||
+      (await hasHealthyBackup(userId, activeInstanceId)));
   const lostBattle = fainted && !mustSwitch;
-  const finalLog = [...battle.log, `item:${item.name}`].slice(-MAX_LOG_LINES);
+  const finalLog = [...battle.log, `item:${itemName}`].slice(-MAX_LOG_LINES);
 
   await prisma.$transaction([
     prisma.inventoryItem.update({
       where: { userId_itemId: { userId, itemId } },
       data: { quantity: { decrement: 1 } },
     }),
-    prisma.pokemonInstance.update({ where: { id: instance.id }, data: { currentHp: playerHp } }),
+    ...(revivedTargetId != null && reviveTargetHp != null
+      ? [
+          prisma.pokemonInstance.update({
+            where: { id: revivedTargetId },
+            data: { currentHp: reviveTargetHp },
+          }),
+        ]
+      : []),
+    prisma.pokemonInstance.update({
+      where: { id: activeInstanceId },
+      data: { currentHp: playerHp },
+    }),
     prisma.battleSession.update({
       where: { id: battle.id },
       data: lostBattle
-        ? { status: "LOST", log: finalLog, turnDeadlineAt: null, ...counter.statePatch }
-        : { log: finalLog, turnDeadlineAt: nextTurnDeadline(), ...counter.statePatch },
+        ? {
+            status: "LOST",
+            log: finalLog,
+            turnDeadlineAt: null,
+            ...counter.statePatch,
+          }
+        : {
+            log: finalLog,
+            turnDeadlineAt: nextTurnDeadline(),
+            ...counter.statePatch,
+          },
     }),
     ...(lostBattle
       ? [
@@ -110,12 +244,27 @@ export async function applyBattleItem(
         ]
       : []),
     ...(lostBattle && battle.gymId
-      ? [prisma.gymAttempt.create({ data: { userId, gymId: battle.gymId, won: false } })]
+      ? [
+          prisma.gymAttempt.create({
+            data: { userId, gymId: battle.gymId, won: false },
+          }),
+        ]
       : []),
     ...(lostBattle && battle.gymRunId
-      ? [prisma.gymRun.update({ where: { id: battle.gymRunId }, data: { status: "ABANDONED" } })]
+      ? [
+          prisma.gymRun.update({
+            where: { id: battle.gymRunId },
+            data: { status: "ABANDONED" },
+          }),
+        ]
       : []),
   ]);
+
+  if (itemQuantity <= 1) {
+    await prisma.inventoryItem.deleteMany({
+      where: { userId, itemId, quantity: { lte: 0 } },
+    });
+  }
 
   if (lostBattle && battle.gymId) {
     const { notifyGymResult } = await import("@/lib/notifications");
@@ -124,13 +273,12 @@ export async function applyBattleItem(
 
   revalidatePath(`/${locale}/team`);
 
-  // healedTo = HP tras la cura (antes del contraataque). El cliente anima la
-  // barra a este valor y después reproduce counterAttack, que baja el HP.
   return {
     healedTo,
     healedBy,
-    itemName: item.name,
-    statusCured: curesStatus && battle.playerStatus != null,
+    itemName,
+    statusCured,
+    revivedTargetId,
     counterAttack: counter.counterAttack,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
   };

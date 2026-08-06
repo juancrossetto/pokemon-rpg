@@ -125,6 +125,7 @@ export async function PcTab({
           depositLockedBlocked: th("squadMenu.depositLockedBlocked"),
           hint: th("squadMenu.hint"),
           heal: th("squadMenu.heal"),
+          revive: th("squadMenu.revive"),
           restorePp: th("squadMenu.restorePp"),
           rareCandy: th("squadMenu.rareCandy"),
         }}
