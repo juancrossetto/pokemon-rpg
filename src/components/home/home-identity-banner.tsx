@@ -64,6 +64,7 @@ export function HomeIdentityBanner({
     ? ({
         "--hi-frame-src": `url("${frame.src}")`,
         "--hi-frame-slice": String(frame.slice),
+        "--hi-frame-weight": String(frame.weight ?? 1),
         "--hi-rail-top": String(frame.rails.top),
         "--hi-rail-bottom": String(frame.rails.bottom),
         "--hi-rail-left": String(frame.rails.left),
@@ -74,7 +75,7 @@ export function HomeIdentityBanner({
 
   return (
     <section
-      className={`home-identity relative isolate min-h-[6.75rem] overflow-hidden rounded-2xl sm:min-h-[8.75rem] xl:min-h-[9.5rem]${frame ? " home-identity--framed" : ""}`}
+      className={`home-identity relative isolate min-h-[7.5rem] overflow-hidden rounded-2xl sm:min-h-[12.5rem] xl:min-h-[16.5rem]${frame ? " home-identity--framed" : ""}`}
       style={
         {
           "--hi-fluor-from": fluorFrom,
@@ -138,7 +139,7 @@ export function HomeIdentityBanner({
       {/* Mobile */}
       <Link
         href="/profile"
-        className="home-identity__hit relative z-[2] flex h-full min-h-[6.75rem] items-center gap-2 pr-[36%] sm:hidden"
+        className="home-identity__hit relative z-[2] flex h-full min-h-[7.5rem] items-center gap-2 pr-[36%] sm:hidden"
         aria-label={labels.viewProfile}
       >
         <div className="home-identity__copy min-w-0 flex-1 space-y-1">
@@ -196,7 +197,7 @@ export function HomeIdentityBanner({
       {/* sm+ */}
       <Link
         href="/profile"
-        className="home-identity__hit relative z-[2] hidden h-full min-h-[8.75rem] flex-col justify-center gap-2 pr-[36%] sm:flex md:pr-[32%] xl:min-h-[9.5rem]"
+        className="home-identity__hit relative z-[2] hidden h-full min-h-[12.5rem] flex-col justify-center gap-2 pr-[36%] sm:flex md:pr-[32%] xl:min-h-[16.5rem]"
         aria-label={labels.viewProfile}
       >
         <div className="home-identity__copy min-w-0">

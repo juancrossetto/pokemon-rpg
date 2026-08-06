@@ -5464,6 +5464,106 @@ body {
   color: var(--color-on-surface-variant);
 }
 
+/* —— Panel de misiones del home ——
+   Reusa el patrón `.ev-*` de /events; sólo agrega las pestañas y el pie. */
+
+.home-quest-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.55rem;
+  padding: 0.2rem;
+  border-radius: 0.55rem;
+  background: var(--color-surface-container-lowest);
+}
+
+.home-quest-tab {
+  position: relative;
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, white 40%, transparent);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.home-quest-tab:hover:not(.is-active) {
+  color: color-mix(in srgb, white 70%, transparent);
+}
+
+.home-quest-tab.is-active {
+  background: color-mix(in srgb, var(--ev-accent) 22%, transparent);
+  color: #fff;
+}
+
+.home-quest-tab__dot {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ev-accent);
+  box-shadow: 0 0 6px var(--ev-accent);
+}
+
+/* Cuerpo del panel: mismo chrome que `.ev-quest__list` pero en columna, porque
+   acá adentro van las pestañas, las filas y el pie —no sólo cards—. */
+.home-quest-panel {
+  padding: 0.65rem;
+  border: 1px solid color-mix(in srgb, white 9%, transparent);
+  border-top: none;
+  border-radius: 0 0 0.85rem 0.85rem;
+  background: #0e1016;
+}
+
+/* Flex con wrap, igual que `.ev-quest__list`: los `.ev-quest__card` traen
+   `flex: 1 1 100%` y sus media queries para ir de 1 a 2 por fila. */
+.home-quest-rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-quest-ready {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ev-accent) 45%, white);
+}
+
+.home-quest-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.6rem;
+  padding-inline: 0.15rem;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, white 38%, transparent);
+}
+
+.home-quest-foot__count {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--ev-accent) 45%, white);
+}
+
 /* Título del popup Daily Reward: Grobold + brillo primary del theme. */
 .daily-reward-title {
   font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
@@ -6499,19 +6599,22 @@ html.boot-splash-pending .boot-splash {
 
   Sin `fill`, el centro queda transparente y el paisaje se ve entero.
 */
+/* El ancho del borde escala con el peso del marco: `border-image` comprime el
+   trozo del borde hasta este ancho, así que un marco de slice 320 con el mismo
+   ancho que uno de 160 se aplasta al doble y pierde el detalle. */
 .home-identity--framed {
-  --hi-frame: 26px;
+  --hi-frame: calc(26px * var(--hi-frame-weight, 1));
 }
 
 @media (min-width: 640px) {
   .home-identity--framed {
-    --hi-frame: 38px;
+    --hi-frame: calc(38px * var(--hi-frame-weight, 1));
   }
 }
 
 @media (min-width: 1280px) {
   .home-identity--framed {
-    --hi-frame: 44px;
+    --hi-frame: calc(44px * var(--hi-frame-weight, 1));
   }
 }
 
@@ -6525,6 +6628,9 @@ html.boot-splash-pending .boot-splash {
   border-color: transparent;
   border-image-source: var(--hi-frame-src);
   border-image-slice: var(--hi-frame-slice);
+  /* `stretch`, no `round`: entre esquina y esquina el arte es un riel liso, así
+     que estirarlo no se nota. Con `round` el trozo se repite y el ornamento de
+     la esquina aparece tileado a lo largo del borde. */
   border-image-repeat: stretch;
 }
 
@@ -11150,23 +11256,24 @@ html.is-standalone .mobile-bottom-nav__dock {
   text-transform: uppercase;
 }
 
-/* Nombre + insignia en una sola fila centrada (mismo eje vertical). */
+/* Nombre centrado: la insignia cuelga a la derecha sin empujar el eje. */
 .tp-id__name-core {
   position: relative;
   display: inline-flex;
   max-width: min(100%, 22rem);
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
   overflow: visible;
 }
 
 .tp-id__name-trail {
-  position: static;
+  position: absolute;
+  left: calc(100% + 0.35rem);
+  top: 50%;
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
-  translate: none;
+  translate: 0 -50%;
 }
 
 .tp-id__name-text {
@@ -11210,7 +11317,7 @@ html.is-standalone .mobile-bottom-nav__dock {
   align-items: center;
   justify-content: center;
   gap: 0.35rem 0.75rem;
-  margin: 0.4rem 0 0;
+  margin: 0.3rem 0 0;
   font-family: var(--font-sans);
   font-size: 0.7rem;
   font-weight: 500;
@@ -11263,38 +11370,54 @@ html.is-standalone .mobile-bottom-nav__dock {
   color: color-mix(in srgb, white 88%, transparent);
 }
 
+.tp-id__cp {
+  margin-top: 0.15rem;
+}
+
 .tp-id__cp-label {
-  font-family: var(--font-mono);
-  font-weight: 700;
+  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-size: clamp(1.55rem, 7.5vw, 2.05rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   background-image: linear-gradient(
     180deg,
     #ffffff 0%,
-    #b8f4ff 42%,
-    #5ef0ff 100%
+    color-mix(in srgb, var(--cp-accent, #5ef0ff) 45%, white) 38%,
+    var(--cp-accent, #5ef0ff) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 10px color-mix(in srgb, #2eb8ff 55%, transparent))
+  filter:
+    drop-shadow(0 0 14px color-mix(in srgb, var(--cp-accent, #2eb8ff) 70%, transparent))
+    drop-shadow(0 0 28px color-mix(in srgb, var(--cp-accent, #2eb8ff) 35%, transparent))
     drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
   animation: tp-cp-fade-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .tp-id__cp-value {
-  font-family: var(--font-mono);
-  font-weight: 700;
+  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-size: clamp(1.7rem, 8.2vw, 2.35rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
   background-image: linear-gradient(
     180deg,
     #ffffff 0%,
-    #b8f4ff 42%,
-    #5ef0ff 100%
+    color-mix(in srgb, var(--cp-accent, #5ef0ff) 40%, white) 36%,
+    var(--cp-accent-to, var(--cp-accent, #5ef0ff)) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 10px color-mix(in srgb, #2eb8ff 55%, transparent))
+  filter:
+    drop-shadow(0 0 16px color-mix(in srgb, var(--cp-accent, #2eb8ff) 75%, transparent))
+    drop-shadow(0 0 32px color-mix(in srgb, var(--cp-accent-to, #2eb8ff) 40%, transparent))
     drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
   animation: tp-cp-fade-in 0.65s 0.06s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

@@ -1,20 +1,26 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState } from "react";
 import { startEncounter, type StartEncounterResult } from "@/actions/start-encounter";
-import { GameCtaButton } from "@/components/game-cta-button";
+import { WILD_ENCOUNTER_ENERGY_COST } from "@/lib/energy";
+
+const ENERGY_ICON = "/items/hd/energy.png";
 
 export function StartEncounterButton({
   locale,
   label,
   errors,
   disabled = false,
+  energyCost = WILD_ENCOUNTER_ENERGY_COST,
 }: {
   locale: string;
   label: string;
   errors: Record<"no_lead" | "fainted_lead" | "no_energy" | "no_stage" | "locked", string>;
   disabled?: boolean;
-  /** @deprecated El CTA usa GameCtaButton; se mantiene por compatibilidad de callers. */
+  /** Coste real de la zona (puede diferir del default). */
+  energyCost?: number;
+  /** @deprecated El CTA ya no usa GameCtaButton; se mantiene por callers viejos. */
   className?: string;
 }) {
   const [state, formAction, pending] = useActionState<StartEncounterResult | null>(
@@ -22,11 +28,29 @@ export function StartEncounterButton({
     null,
   );
 
+  const busy = pending || disabled;
+
   return (
     <form action={formAction} className="flex w-full flex-col items-stretch gap-2">
-      <GameCtaButton type="submit" disabled={pending || disabled} className="cta-pulse">
-        {pending ? "…" : label}
-      </GameCtaButton>
+      <button
+        type="submit"
+        disabled={busy}
+        className={`game-cta game-cta--red mb-0! w-full gap-2 whitespace-nowrap sm:gap-2.5 ${busy ? "game-cta--disabled" : "cta-pulse"}`}
+      >
+        <span className="game-cta__label">{pending ? "…" : label}</span>
+        <span aria-hidden className="h-4 w-px shrink-0 bg-white/25" />
+        <span className="inline-flex shrink-0 items-center gap-1 font-sans text-[13px] font-semibold tabular-nums tracking-normal text-white normal-case">
+          <Image
+            src={ENERGY_ICON}
+            alt=""
+            width={20}
+            height={20}
+            className="h-5 w-5 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
+            unoptimized
+          />
+          <span>−{energyCost}</span>
+        </span>
+      </button>
       {state && !state.success && (
         <p className="text-center text-label-sm text-error">{errors[state.error]}</p>
       )}

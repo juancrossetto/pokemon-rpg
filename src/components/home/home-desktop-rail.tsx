@@ -220,7 +220,40 @@ export function HomeDesktopRail({
         ) : null}
       </section>
 
-      {/* Match Clan */}
+      {/*
+        Sin guerra en curso (`status: "none"`) la card completa era puro
+        placeholder: marcador "— : —", rival con ícono de interrogación y la
+        chapa PRÓXIMAMENTE. Una función que todavía no existe no justifica ~180px
+        del rail, así que colapsa a una fila; cuando hay guerra real vuelve
+        entera.
+      */}
+      {clanWars.status === "none" ? (
+        <Link
+          href={clanHref}
+          className="flex items-center gap-2 rounded-[1.2rem] border border-white/10 bg-[#12141c]/95 px-2.5 py-2 transition hover:border-white/20"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#1a1c24] ring-1 ring-white/10">
+            {clanWars.clanEmblem != null ? (
+              <ClanEmblemBadge emblem={clanWars.clanEmblem} size={22} title={clanLabel} />
+            ) : (
+              <span className="material-symbols-outlined text-[16px]! text-white/35">
+                groups
+              </span>
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[11px] font-semibold leading-tight text-white">
+              {t("clanTitle")}
+            </span>
+            <span className="block truncate text-[9px] uppercase tracking-[0.12em] text-white/40">
+              {t("statusSoon")}
+            </span>
+          </span>
+          <span className="material-symbols-outlined shrink-0 text-[16px]! text-white/30">
+            chevron_right
+          </span>
+        </Link>
+      ) : (
       <section className="overflow-hidden rounded-[1.2rem] border border-white/10 bg-[#12141c]/95 px-2.5 py-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.32)]">
         <div className="flex items-center gap-1.5">
           <span className="rounded-md bg-electric-yellow px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-on-tertiary">
@@ -319,6 +352,7 @@ export function HomeDesktopRail({
           label={clanWars.clanId ? t("clanOpen") : t("clanFind")}
         />
       </section>
+      )}
 
       {/* Top 5 */}
       <section className="overflow-hidden rounded-[1.2rem] border border-white/10 bg-[#12141c]/95 px-2.5 py-2.5">

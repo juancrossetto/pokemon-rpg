@@ -505,7 +505,6 @@ export default async function ProfilePage({
           sceneLabel,
           country: user.country,
           rankPct: pvpProgress.pct / 100,
-          rankAccent: "#2eb8ff",
           rankLabel: pvpStandingLabel,
           pvpTier: pvpStanding.tier,
           pvpDivision: pvpStanding.division,

@@ -131,7 +131,10 @@ export function BannerPicker({
                             fill
                             sizes="(max-width: 640px) 45vw, 240px"
                             className="object-cover"
-                            quality={80}
+                            /* Mismo criterio que home/perfil: sin optimizador.
+                               Si no, un JPG reemplazado in-place puede mostrar
+                               un thumb viejo y al guardar aplicar el archivo real. */
+                            unoptimized
                           />
                           {active ? (
                             <span className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-pokeball-red shadow">

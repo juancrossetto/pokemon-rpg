@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, type CSSProperties } from "react";
 import { Link } from "@/i18n/navigation";
 import { openDailyRewardModal } from "@/lib/daily-gift-fx";
+import { ProgressRing, SegmentedBar } from "@/components/events/quest-parts";
 import type { HomeDailyAction, HomeObjective } from "@/lib/home-hub";
 
 const ACCENT: Record<string, string> = {
@@ -70,13 +71,19 @@ export function HomeDailyActions({
       <div className="hidden sm:block">
         <SectionLabel title={labels.title} />
       </div>
-      {/* Grid fijo (no scroll): el overflow-x del home recortaba la 1ª tile y el glow. */}
-      <div className="grid grid-cols-6 gap-1.5 px-0.5 pt-2.5 pb-1 sm:gap-2.5 sm:px-0 sm:py-0">
+      {/* Grid fijo (no scroll): el overflow-x del home recortaba la 1ª tile y el glow.
+          4 columnas desde que la sección quedó sólo con acciones con estado; en
+          desktop no se estiran a lo ancho — se agrupan a la izquierda para que
+          no compitan en peso con el banner de arriba. */}
+      <div className="grid grid-cols-4 gap-1.5 px-0.5 pt-2.5 pb-1 sm:gap-2.5 sm:px-0 sm:py-0">
         {actions.map((action) => {
           const accent = ACCENT[action.id] ?? "var(--color-electric-yellow)";
           const label = labels.items[action.labelKey] ?? action.labelKey;
           const className = [
-            "home-daily-tile group relative flex aspect-square w-full flex-col items-center justify-center overflow-visible rounded-[0.85rem] text-center transition sm:aspect-auto sm:justify-start sm:gap-1 sm:overflow-hidden sm:rounded-2xl sm:px-1.5 sm:pb-3 sm:pt-2",
+            // Mobile: slot cuadrado. Desktop: fila horizontal —con 4 columnas
+            // repartidas a lo ancho, la tile queda ancha y baja, y una columna
+            // centrada dejaba el aire muerto a los costados.
+            "home-daily-tile group relative flex aspect-square w-full flex-col items-center justify-center overflow-visible rounded-[0.85rem] text-center transition sm:aspect-auto sm:flex-row sm:items-center sm:justify-start sm:gap-2.5 sm:overflow-hidden sm:rounded-2xl sm:px-3 sm:py-2.5 sm:text-left",
             "active:scale-[0.96]",
             action.hot ? "home-daily-tile--hot" : "",
           ].join(" ");
@@ -120,12 +127,7 @@ export function HomeDailyActions({
                 </span>
               ) : null}
 
-              {/* Desktop: slot de altura fija arriba → todas las tiles alinean ícono/título */}
-              <span className="relative z-[1] hidden h-[18px] w-full items-center justify-center sm:flex">
-                {statusChipDesktop}
-              </span>
-
-              <span className="relative z-[1] flex h-[78%] w-[78%] max-h-11 max-w-11 items-center justify-center sm:h-14 sm:w-14 sm:max-h-none sm:max-w-none sm:shrink-0">
+              <span className="relative z-[1] flex h-[78%] w-[78%] max-h-11 max-w-11 items-center justify-center sm:h-11 sm:w-11 sm:max-h-none sm:max-w-none sm:shrink-0">
                 <Image
                   src={action.iconSrc}
                   alt=""
@@ -136,8 +138,12 @@ export function HomeDailyActions({
                 />
               </span>
 
-              <span className="relative z-[1] hidden max-w-full truncate px-0.5 text-[11px] font-bold uppercase tracking-[0.06em] text-white/85 group-hover:text-white sm:block">
-                {label}
+              {/* Desktop: rótulo y estado apilados a la derecha del ícono. */}
+              <span className="relative z-[1] hidden min-w-0 flex-1 flex-col items-start gap-1 sm:flex">
+                <span className="max-w-full truncate text-[11px] font-bold uppercase tracking-[0.06em] text-white/85 group-hover:text-white">
+                  {label}
+                </span>
+                {statusChipDesktop}
               </span>
             </>
           );
@@ -199,6 +205,17 @@ export function HomeDailyActions({
 export const HomeQuickAccess = HomeDailyActions;
 
 type EventsTab = "adventure" | "weekly" | "event";
+
+/**
+ * Un knob del theme por pestaña. El color deja de ser decoración y pasa a
+ * informar en qué dominio estás parado: violeta = aventura, fucsia = semanal,
+ * azul = evento limitado.
+ */
+const TAB_ACCENT: Record<EventsTab, string> = {
+  adventure: "var(--theme-secondary)",
+  weekly: "var(--theme-primary)",
+  event: "var(--theme-tertiary)",
+};
 
 export type HomeEventsAdventure = {
   zoneName: string | null;
@@ -400,17 +417,39 @@ export function HomeEventsProgress({
       </div>
 
       <div className="hidden sm:block">
-      <SectionLabel
-        title={labels.progressTitle}
-        subtitle={subtitle}
-        actionHref={footer.href}
-        actionLabel={footer.cta}
-      />
+      {/* Mismo patrón que /events: cinta de encabezado + filas con anillo, para
+          que las dos superficies de misiones se lean como el mismo sistema.
+          El acento sale de los tres knobs del theme, uno por pestaña. */}
+      <div className="ev-quest" style={{ ["--ev-accent" as string]: TAB_ACCENT[tab] }}>
+        <div className="ev-ribbon">
+          <span aria-hidden className="ev-ribbon__icon">
+            <Image
+              src="/nav/adventure-icon.png"
+              alt=""
+              width={72}
+              height={72}
+              className="h-full w-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
+              unoptimized
+            />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="ev-ribbon__eyebrow">{labels.progressTitle}</span>
+            <span className="ev-ribbon__title truncate">
+              {subtitle ?? labels.tabAdventure}
+            </span>
+          </span>
+          <Link href={footer.href} className="ev-ribbon__timer shrink-0">
+            {footer.cta}
+          </Link>
+        </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#12141c]/90">
+        {/* Contenedor propio: `.ev-quest__list` es un flex con wrap pensado para
+            hijos `.ev-quest__card`, y meterle las pestañas las dejaba al costado
+            del contenido en vez de arriba. */}
+        <div className="home-quest-panel">
         <div
           role="tablist"
-          className="flex border-b border-white/8"
+          className="home-quest-tabs"
           aria-label={labels.progressTitle}
         >
           {tabs.map((t) => (
@@ -420,54 +459,50 @@ export function HomeEventsProgress({
               role="tab"
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
-              className={`relative flex-1 px-2 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] transition sm:text-[11px] ${
-                tab === t.id
-                  ? "bg-white/[0.06] text-white shadow-[inset_0_-2px_0_0_var(--color-pokeball-red)]"
-                  : "text-white/40 hover:text-white/70"
-              }`}
+              className={`home-quest-tab${tab === t.id ? " is-active" : ""}`}
             >
               {t.label}
-              {t.hot ? (
-                <span
-                  aria-hidden
-                  className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-pokeball-red shadow-[0_0_6px_var(--color-pokeball-red)]"
-                />
-              ) : null}
+              {t.hot ? <span aria-hidden className="home-quest-tab__dot" /> : null}
             </button>
           ))}
         </div>
 
-        <div className="p-3.5 sm:p-4">
+        <div>
           {tab === "adventure" ? (
             adventure.objectives.length === 0 ? (
               <p className="py-4 text-center text-[13px] text-white/45">
                 {labels.emptyAdventure}
               </p>
             ) : (
-              <ul className="flex flex-col gap-2">
+              <ul className="home-quest-rows">
                 {adventure.objectives.map((obj) => {
                   const complete = obj.done || obj.claimed;
+                  const pct =
+                    obj.target > 0
+                      ? Math.min(100, Math.round((obj.current / obj.target) * 100))
+                      : 0;
                   return (
                     <li
                       key={obj.id}
-                      className="flex items-center gap-2.5 rounded-xl bg-white/[0.03] px-2.5 py-2"
+                      className={`ev-quest__card${obj.claimable ? " is-ready" : ""}${
+                        complete && !obj.claimable ? " is-done" : ""
+                      }`}
                     >
-                      <MissionCheck complete={complete} />
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/85">
-                        {labels.objectiveLabels[obj.id] ?? obj.labelKey}
-                      </span>
-                      {obj.claimable ? (
-                        <span className="shrink-0 rounded-md bg-pokeball-red/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-pokeball-red">
-                          {labels.claimable}
-                        </span>
-                      ) : null}
-                      <span
-                        className={`shrink-0 font-mono text-[12px] font-bold tabular-nums ${
-                          complete ? "text-electric-yellow" : "text-white/45"
-                        }`}
-                      >
-                        {obj.current}/{obj.target}
-                      </span>
+                      <div className="ev-quest__body">
+                        <div className="ev-quest__main">
+                          <SegmentedBar pct={complete ? 100 : pct} />
+                          <p className="ev-quest__text truncate">
+                            {labels.objectiveLabels[obj.id] ?? obj.labelKey}
+                          </p>
+                          {obj.claimable ? (
+                            <span className="home-quest-ready">{labels.claimable}</span>
+                          ) : null}
+                        </div>
+                        <ProgressRing
+                          current={Math.min(obj.current, obj.target)}
+                          target={obj.target}
+                        />
+                      </div>
                     </li>
                   );
                 })}
@@ -481,25 +516,30 @@ export function HomeEventsProgress({
                 {labels.emptyWeekly}
               </p>
             ) : (
-              <ul className="flex flex-col gap-2">
+              <ul className="home-quest-rows">
                 {weekly.objectives.map((obj) => {
                   const complete = obj.current >= obj.target;
+                  const pct =
+                    obj.target > 0
+                      ? Math.min(100, Math.round((obj.current / obj.target) * 100))
+                      : 0;
                   return (
                     <li
                       key={obj.id}
-                      className="flex items-center gap-2.5 rounded-xl bg-white/[0.03] px-2.5 py-2"
+                      className={`ev-quest__card${complete ? " is-done" : ""}`}
                     >
-                      <MissionCheck complete={complete} />
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/85">
-                        {labels.weeklyLabels[obj.id] ?? obj.id}
-                      </span>
-                      <span
-                        className={`shrink-0 font-mono text-[12px] font-bold tabular-nums ${
-                          complete ? "text-electric-yellow" : "text-white/45"
-                        }`}
-                      >
-                        {Math.min(obj.current, obj.target)}/{obj.target}
-                      </span>
+                      <div className="ev-quest__body">
+                        <div className="ev-quest__main">
+                          <SegmentedBar pct={complete ? 100 : pct} />
+                          <p className="ev-quest__text truncate">
+                            {labels.weeklyLabels[obj.id] ?? obj.id}
+                          </p>
+                        </div>
+                        <ProgressRing
+                          current={Math.min(obj.current, obj.target)}
+                          target={obj.target}
+                        />
+                      </div>
                     </li>
                   );
                 })}
@@ -513,35 +553,39 @@ export function HomeEventsProgress({
                 {labels.emptyEvent}
               </p>
             ) : (
-              <ul className="flex flex-col gap-2">
+              <ul className="home-quest-rows">
                 {limited.missions.map((mission) => {
                   const complete =
                     mission.claimed || mission.current >= mission.target;
+                  const pct =
+                    mission.target > 0
+                      ? Math.min(
+                          100,
+                          Math.round((mission.current / mission.target) * 100),
+                        )
+                      : 0;
                   return (
                     <li
                       key={mission.id}
-                      className="flex items-center gap-2.5 rounded-xl bg-white/[0.03] px-2.5 py-2"
+                      className={`ev-quest__card${mission.claimable ? " is-ready" : ""}${
+                        mission.claimed ? " is-done" : ""
+                      }`}
                     >
-                      <MissionCheck complete={complete} />
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-white/85">
-                        {labels.missionLabels[mission.id] ?? mission.id}
-                      </span>
-                      {mission.claimable ? (
-                        <span className="shrink-0 rounded-md bg-pokeball-red/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-pokeball-red">
-                          {labels.claimable}
-                        </span>
-                      ) : mission.claimed ? (
-                        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-white/35">
-                          {labels.claimed}
-                        </span>
-                      ) : null}
-                      <span
-                        className={`shrink-0 font-mono text-[12px] font-bold tabular-nums ${
-                          complete ? "text-electric-yellow" : "text-white/45"
-                        }`}
-                      >
-                        {mission.current}/{mission.target}
-                      </span>
+                      <div className="ev-quest__body">
+                        <div className="ev-quest__main">
+                          <SegmentedBar pct={complete ? 100 : pct} />
+                          <p className="ev-quest__text truncate">
+                            {labels.missionLabels[mission.id] ?? mission.id}
+                          </p>
+                          {mission.claimable ? (
+                            <span className="home-quest-ready">{labels.claimable}</span>
+                          ) : null}
+                        </div>
+                        <ProgressRing
+                          current={Math.min(mission.current, mission.target)}
+                          target={mission.target}
+                        />
+                      </div>
                     </li>
                   );
                 })}
@@ -549,48 +593,17 @@ export function HomeEventsProgress({
             )
           ) : null}
 
-          <div className="mt-4">
-            <div className="mb-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">
-              <span>{footer.left}</span>
-              <span>{footer.right}</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-black/45">
-              <div
-                className="campaign-warm-bar h-full rounded-full transition-[width] duration-500"
-                style={{ width: `${footer.pct}%` }}
-              />
-            </div>
+          {/* Resumen al pie. El CTA vive sólo en la cinta: antes estaba también
+              acá abajo como botón grande y era el mismo destino dos veces. */}
+          <div className="home-quest-foot">
+            <span>{footer.left}</span>
+            <span className="home-quest-foot__count">{footer.right}</span>
           </div>
-
-          <Link
-            href={footer.href}
-            className="mt-3.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-pokeball-red/45 bg-transparent text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:border-pokeball-red/70 hover:bg-pokeball-red/10"
-          >
-            <span className="material-symbols-outlined text-[16px]!">
-              {footer.icon}
-            </span>
-            {footer.cta}
-          </Link>
         </div>
       </div>
       </div>
+      </div>
     </section>
-  );
-}
-
-function MissionCheck({ complete }: { complete: boolean }) {
-  return (
-    <span
-      className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${
-        complete
-          ? "bg-[color-mix(in_srgb,var(--color-electric-yellow)_18%,transparent)] text-electric-yellow"
-          : "bg-white/6 text-white/35"
-      }`}
-    >
-      <span className="material-symbols-outlined text-[16px]!">
-        {complete ? "check_circle" : "radio_button_unchecked"}
-      </span>
-    </span>
   );
 }
 

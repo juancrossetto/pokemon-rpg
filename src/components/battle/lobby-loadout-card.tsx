@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -12,15 +13,20 @@ const MAX_SHOWN = 4;
 /**
  * Mochila de prep: stacks reales (tipo × qty), compactos.
  * El estilo GO de la tienda vive en Comercio → Explorar, no acá.
+ *
+ * En mobile los chips van en scroll horizontal (evita el wrap 2+1 raro).
+ * `footer` sirve para meter el Centro Pokémon sin una card suelta abajo.
  */
 export function LobbyLoadoutCard({
   balls,
   heals,
   unspentTotal,
+  footer,
 }: {
   balls: BattleLobbyLoadoutStack[];
   heals: BattleLobbyLoadoutStack[];
   unspentTotal: number;
+  footer?: ReactNode;
 }) {
   const t = useTranslations("battle.lobby");
   const tShop = useTranslations("shop");
@@ -94,6 +100,10 @@ export function LobbyLoadoutCard({
           <span className="material-symbols-outlined text-[14px]!">chevron_right</span>
         </Link>
       ) : null}
+
+      {footer ? (
+        <div className="mt-2.5 border-t border-white/[0.08] pt-2.5">{footer}</div>
+      ) : null}
     </section>
   );
 }
@@ -121,7 +131,7 @@ function LoadoutRow({
       {stacks.length === 0 ? (
         <p className="text-[11px] text-white/35">{emptyHint}</p>
       ) : (
-        <ul className="flex flex-wrap gap-1.5">
+        <ul className="-mx-0.5 flex gap-1.5 overflow-x-auto px-0.5 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
           {stacks.map((stack) => {
             const label = itemLabel(stack.name);
             const meta =
@@ -134,7 +144,7 @@ function LoadoutRow({
               <li
                 key={stack.name}
                 title={meta ? `${label} (${meta})` : label}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/8 bg-black/30 py-1 pl-1 pr-2"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/8 bg-black/30 py-1 pl-1 pr-2"
               >
                 <Image
                   src={itemDisplayUrl(stack.name)}
@@ -153,7 +163,7 @@ function LoadoutRow({
             );
           })}
           {extra > 0 ? (
-            <li className="inline-flex items-center rounded-lg border border-white/6 bg-white/4 px-2 py-1 text-[10px] font-semibold text-white/40">
+            <li className="inline-flex shrink-0 items-center rounded-lg border border-white/6 bg-white/4 px-2 py-1 text-[10px] font-semibold text-white/40">
               +{extra}
             </li>
           ) : null}

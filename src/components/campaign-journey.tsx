@@ -413,63 +413,69 @@ export function CampaignJourney({
         <UnlockCelebration locationId={unlockToast.id} locationName={unlockToast.name} />
       )}
 
-      {/* Hero banner ilustrado + próximo objetivo */}
-      <CoachMark storageKey="coach-explore" message={tUx("coachExplore")}>
-        <div>
-          <CampaignUnlockFeedback
-            action={primaryAction.action}
-            locationName={
-              primaryAction.locationNameKey
-                ? t(primaryAction.locationNameKey)
-                : undefined
-            }
-          />
-          <CampaignPrimaryObjective
-            action={barAction}
-            gymHref={gymChallengeHref}
-            gymBadgeSrc={gymChallengeBadgeSrc}
-            onTravel={
-              selectedZone ? () => travelAndExplore(selectedZone.id) : undefined
-            }
-            travelPending={pending}
-            bannerSrc={bannerArt.src}
-            bannerObjectPosition={bannerArt.objectPosition}
-            locationName={t(locationLabelKey)}
-            regionLabel={t("regions.kanto")}
-            chapterLabel={chapter ? `${t("chapter")} ${chapter.number}` : null}
-            stagesDone={chapter?.stagesDone ?? 0}
-            stagesTotal={chapter?.stagesTotal ?? 0}
-            journeyMenu={
-              <details className="group relative">
-                <CampaignJourneyMenuTrigger
-                  desktopLabel={t("viewFullJourney")}
-                  mobileLabel={t("journeyProgress")}
-                />
-                <div className="absolute right-0 z-30 mt-2 w-[min(100vw-1.5rem,22rem)] rounded-2xl game-float-card p-2 sm:w-96">
-                  <JourneyStrip
-                    chapters={chapters}
-                    activeIndex={chapterIndex}
-                    onPick={(i) => {
-                      openChapter(i);
-                    }}
-                    percent={summary.journeyPercent}
-                    label={t("journeyProgress")}
-                    chapterLabel={t("chapter")}
+      {/* Hero por encima del grid: el menú absolute del viaje no puede pelear
+          z-index contra el ZonePanel sticky si el stacking context queda
+          atrapado dentro del CoachMark (z-auto). */}
+      <div className="relative z-30">
+        <CoachMark storageKey="coach-explore" message={tUx("coachExplore")}>
+          <div>
+            <CampaignUnlockFeedback
+              action={primaryAction.action}
+              locationName={
+                primaryAction.locationNameKey
+                  ? t(primaryAction.locationNameKey)
+                  : undefined
+              }
+            />
+            <CampaignPrimaryObjective
+              action={barAction}
+              gymHref={gymChallengeHref}
+              gymBadgeSrc={gymChallengeBadgeSrc}
+              onTravel={
+                selectedZone ? () => travelAndExplore(selectedZone.id) : undefined
+              }
+              travelPending={pending}
+              bannerSrc={bannerArt.src}
+              bannerObjectPosition={bannerArt.objectPosition}
+              locationName={t(locationLabelKey)}
+              regionLabel={t("regions.kanto")}
+              chapterLabel={chapter ? `${t("chapter")} ${chapter.number}` : null}
+              stagesDone={chapter?.stagesDone ?? 0}
+              stagesTotal={chapter?.stagesTotal ?? 0}
+              journeyMenu={
+                <details className="group relative">
+                  <CampaignJourneyMenuTrigger
+                    desktopLabel={t("viewFullJourney")}
+                    mobileLabel={t("journeyProgress")}
                   />
-                  <div className="mt-2">
+                  {/*
+                    Sin float-card exterior: JourneyStrip y JourneySummaryCard ya
+                    traen la suya. El wrapper solo posiciona.
+                  */}
+                  <div className="absolute right-0 top-full z-50 mt-2 flex w-[min(100vw-1.5rem,22rem)] flex-col gap-2 sm:w-96">
+                    <JourneyStrip
+                      chapters={chapters}
+                      activeIndex={chapterIndex}
+                      onPick={(i) => {
+                        openChapter(i);
+                      }}
+                      percent={summary.journeyPercent}
+                      label={t("journeyProgress")}
+                      chapterLabel={t("chapter")}
+                    />
                     <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
+                    <HubHelpPanel
+                      storageKey="hub-help-campaign"
+                      bullets={helpBullets}
+                      handbookChapter="journey"
+                    />
                   </div>
-                  <HubHelpPanel
-                    storageKey="hub-help-campaign"
-                    bullets={helpBullets}
-                    handbookChapter="journey"
-                  />
-                </div>
-              </details>
-            }
-          />
-        </div>
-      </CoachMark>
+                </details>
+              }
+            />
+          </div>
+        </CoachMark>
+      </div>
 
       {/*
         Mobile: mapa → detalle (objetivos / premios).
@@ -582,7 +588,7 @@ export function CampaignJourney({
           `min-w-0`: sin esto el track del grid no puede encoger por debajo del
           contenido más ancho y empuja la columna hermana.
         */}
-        <div className="min-w-0 order-2 lg:order-none lg:sticky lg:top-20 lg:self-start">
+        <div className="min-w-0 order-2 lg:order-none lg:sticky lg:top-20 lg:z-0 lg:self-start">
           {zone && (
             <ZonePanel
               zone={zone}
@@ -645,7 +651,7 @@ function JourneyStrip({
               onClick={() => onPick(i)}
               disabled={!c.unlocked}
               title={`${chapterLabel} ${c.number}`}
-              className={`relative flex min-h-[3.75rem] min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl px-0.5 py-2 transition sm:min-h-[4rem] sm:px-1 ${
+              className={`relative flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl px-0.5 py-1.5 transition sm:min-h-[3.75rem] sm:gap-1.5 sm:px-1 sm:py-2 ${
                 active
                   ? "bg-pokeball-red/14"
                   : c.unlocked
@@ -654,7 +660,7 @@ function JourneyStrip({
               }`}
             >
               <span
-                className={`relative flex h-8 w-8 items-center justify-center rounded-full sm:h-9 sm:w-9 ${
+                className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full sm:h-8 sm:w-8 ${
                   active
                     ? "bg-[color-mix(in_srgb,var(--color-pokeball-red)_14%,#0a0610)] shadow-[0_0_0_2px_var(--color-pokeball-red)]"
                     : c.completed
@@ -665,7 +671,7 @@ function JourneyStrip({
                 }`}
               >
                 {!c.unlocked ? (
-                  <span className="material-symbols-outlined text-[16px]! text-white/40">
+                  <span className="material-symbols-outlined text-[14px]! text-white/40 sm:text-[16px]!">
                     lock
                   </span>
                 ) : badgeType ? (
@@ -675,14 +681,14 @@ function JourneyStrip({
                     width={28}
                     height={28}
                     unoptimized
-                    className={`h-6 w-6 object-contain sm:h-7 sm:w-7 ${
+                    className={`h-5 w-5 object-contain sm:h-6 sm:w-6 ${
                       c.completed || active ? "" : "opacity-55 grayscale"
                     }`}
                     aria-hidden
                   />
                 ) : (
                   <span
-                    className={`material-symbols-outlined text-[18px]! ${
+                    className={`material-symbols-outlined text-[16px]! sm:text-[18px]! ${
                       c.completed || active ? "text-electric-yellow" : "text-white/50"
                     }`}
                   >

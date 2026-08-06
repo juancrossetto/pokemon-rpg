@@ -157,9 +157,14 @@ export function CampaignPrimaryObjective({
 
   return (
     <div className="campaign-hero flex flex-col gap-3">
-      {/* Mobile: strip chato y simple. Desktop: un poco más alto. */}
-      <section className="relative isolate h-[5.75rem] overflow-hidden rounded-xl sm:h-[9.5rem] sm:rounded-2xl lg:h-[11rem]">
-        <div className="pointer-events-none absolute inset-0">
+      {/*
+        Sin isolate/overflow en el section: el menú "Progreso del viaje" es
+        absolute y tiene que pintar por encima del panel sticky de zona.
+        El stacking lo resuelve el wrapper z-30 del hero en campaign-journey.
+        El recorte del arte vive solo en la capa de imagen.
+      */}
+      <section className="relative h-[5.75rem] rounded-xl sm:h-[9.5rem] sm:rounded-2xl lg:h-[11rem]">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
           <Image
             key={`${bannerSrc}:${bannerObjectPosition}`}
             src={bannerSrc}

@@ -132,7 +132,11 @@ export function CurrentExpedition({
             ) : null}
           </div>
 
-          <div className="space-y-2">
+          {/*
+            Sin pointer-events-auto el CTA hereda el none del panel y el click
+            cae en el trigger inset-0 del mapa (cursor lupa).
+          */}
+          <div className="pointer-events-auto space-y-2">
             {stagesTotal > 0 ? (
               <div>
                 <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-white/60">
@@ -153,7 +157,7 @@ export function CurrentExpedition({
             <GameCtaButton
               href={ctaHref}
               variant="red"
-              className="expedition-cta min-h-9 w-full text-[11px]!"
+              className="expedition-cta relative z-[2] min-h-9 w-full text-[11px]!"
             >
               {ctaLabel}
             </GameCtaButton>

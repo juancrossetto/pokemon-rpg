@@ -35,7 +35,6 @@ export function TrainerIdentityHero({
   sceneLabel,
   country: _country,
   rankPct,
-  rankAccent,
   rankLabel,
   pvpTier,
   pvpDivision,
@@ -65,7 +64,6 @@ export function TrainerIdentityHero({
   country: string;
   /** 0–1 — alimenta el arco alrededor del PC. */
   rankPct: number;
-  rankAccent: string;
   /** Liga clasificatoria ya traducida ("Principiante I"…). */
   rankLabel: string;
   pvpTier: PvpTier;
@@ -187,6 +185,16 @@ export function TrainerIdentityHero({
             </span>
           </h1>
 
+          {/* Mismo eje que el nombre: centrado debajo, sin que la insignia lo desplace. */}
+          <TrainerCpArc
+            label={labels.power}
+            value={power}
+            pct={rankPct}
+            from={gradientFrom}
+            to={gradientTo}
+            mode="value"
+          />
+
           {/*
             Nivel y compañero en texto plano + sombra: sin chip de vidrio, el
             protagonismo queda en nombre, insignia y PC.
@@ -220,10 +228,11 @@ export function TrainerIdentityHero({
             label={labels.power}
             value={power}
             pct={rankPct}
-            color={rankAccent}
+            from={gradientFrom}
+            to={gradientTo}
+            mode="arc"
           />
-          {/* Escena por encima del arco (z); el PC sigue en z más alto. */}
-          <div className="relative z-[2] pt-[1.9rem] sm:pt-[2.15rem]">
+          <div className="relative z-[2] pt-1 sm:pt-1.5">
             <TrainerProfileScene
               username={username}
               trainerSpriteUrl={spriteUrl}

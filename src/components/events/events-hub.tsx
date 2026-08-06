@@ -11,6 +11,7 @@ import {
 } from "@/actions/claim-reward";
 import { playRewardCollectFx } from "@/lib/loot-fly-fx";
 import { RewardList } from "@/components/events/reward-chip";
+import { ProgressRing, SegmentedBar } from "@/components/events/quest-parts";
 import { DailyCalendar } from "@/components/events/daily-calendar";
 import type { RewardDef } from "@/lib/events/rewards";
 import type { DailyState, LimitedEventState, WeeklyState } from "@/lib/events/state";
@@ -325,30 +326,6 @@ function LimitedPanel({
   );
 }
 
-/** Barra por tramos: degradé continuo de la 1ª a la última franja. */
-function SegmentedBar({ pct, segments = 4 }: { pct: number; segments?: number }) {
-  const filled = (pct / 100) * segments;
-  return (
-    <span
-      className="ev-seg"
-      aria-hidden
-      style={{ ["--ev-seg-n" as string]: segments }}
-    >
-      {Array.from({ length: segments }, (_, i) => (
-        <span key={i} className="ev-seg__slot">
-          <span
-            className="ev-seg__fill"
-            style={{
-              width: `${Math.max(0, Math.min(1, filled - i)) * 100}%`,
-              ["--ev-seg-i" as string]: i,
-            }}
-          />
-        </span>
-      ))}
-    </span>
-  );
-}
-
 /** Insignia al final de la barra — premio de la misión, como en la referencia. */
 function MissionBadge({ reward }: { reward: RewardDef }) {
   let src = "/items/hd/poke-ball.png";
@@ -364,29 +341,6 @@ function MissionBadge({ reward }: { reward: RewardDef }) {
   return (
     <span className="ev-quest__badge" aria-hidden>
       <Image src={src} alt="" width={40} height={40} className="h-full w-full object-contain" unoptimized />
-    </span>
-  );
-}
-
-/** Anillo con la fracción al centro, como el contador de la referencia. */
-function ProgressRing({ current, target }: { current: number; target: number }) {
-  const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
-  return (
-    <span className="ev-ring">
-      <svg viewBox="0 0 56 56" aria-hidden focusable="false">
-        <circle className="ev-ring__track" cx="28" cy="28" r="23" pathLength={100} />
-        <circle
-          className="ev-ring__fill"
-          cx="28"
-          cy="28"
-          r="23"
-          pathLength={100}
-          strokeDasharray={`${pct} 100`}
-        />
-      </svg>
-      <span className="ev-ring__label">
-        {current}/{target}
-      </span>
     </span>
   );
 }

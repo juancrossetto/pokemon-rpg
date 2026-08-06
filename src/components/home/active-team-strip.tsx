@@ -25,7 +25,7 @@ import type { HomeSquadFilter } from "@/components/home/home-desktop-rail";
 const TEAM_SIZE = 6;
 /** Mobile 3×2 con HP · md+ fila de 6. */
 const SLOT_BOX =
-  "h-full min-h-[7.25rem] w-full md:h-[230px] md:min-h-0";
+  "h-full min-h-[7.25rem] w-full md:h-[248px] md:min-h-0";
 
 function TeamSlot({
   member,
@@ -301,23 +301,25 @@ function TeamSlot({
             )}
           </div>
 
-          <div className="relative z-[1] flex h-full min-h-[2.75rem] w-full max-h-[4.5rem] items-end justify-center md:h-[90px] md:max-h-none md:min-h-0">
+          {/* El sprite manda: ocupa ~55% de la card en desktop. Antes eran 90px
+              sobre 230 (39%) y el Pokémon quedaba detrás del cromo. */}
+          <div className="relative z-[1] flex h-full min-h-[2.75rem] w-full max-h-[4.5rem] items-end justify-center md:h-[132px] md:max-h-none md:min-h-0">
             <div
-              className="absolute bottom-0 h-4 w-10 rounded-[100%] opacity-55 blur-md transition group-hover:opacity-75 md:h-6 md:w-14"
+              className="absolute bottom-0 h-4 w-10 rounded-[100%] opacity-55 blur-md transition group-hover:opacity-75 md:h-7 md:w-20"
               style={{ background: accent }}
             />
             {member.spriteUrl ? (
               <Image
                 src={member.spriteUrl}
                 alt=""
-                width={120}
-                height={120}
-                className={`relative z-[1] h-[88%] w-auto max-h-[72px] max-w-[72px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105 md:h-[90px] md:w-[90px] md:max-h-none md:max-w-none ${
+                width={160}
+                height={160}
+                className={`relative z-[1] h-[88%] w-auto max-h-[72px] max-w-[72px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105 md:h-[130px] md:w-[130px] md:max-h-none md:max-w-none ${
                   fainted ? "grayscale" : ""
                 }`}
               />
             ) : (
-              <span className="material-symbols-outlined relative z-[1] text-[28px]! text-white/25 md:text-[40px]!">
+              <span className="material-symbols-outlined relative z-[1] text-[28px]! text-white/25 md:text-[56px]!">
                 sports_baseball
               </span>
             )}
@@ -348,50 +350,22 @@ function TeamSlot({
             )}
           </div>
 
-          <div className="mt-1 space-y-1 md:mt-1.5">
-            {/* Mobile: sólo HP. Desktop: HP + EXP segmentados. */}
-            <div
-              className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-1 md:hidden"
-              title={`${member.labels.hp} ${member.currentHp}/${member.maxHp}`}
-            >
-              <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
-                {member.labels.hp}
-              </span>
-              <SegmentedStatBar
-                pct={hpPct}
-                variant={hpBarVariant(hpPct)}
-                segments={8}
-                heightClass="h-1.5"
-              />
-            </div>
-
-            <div className="hidden space-y-1 md:block">
-              <div
-                className="grid grid-cols-[1.6rem_minmax(0,1fr)] items-center gap-1"
-                title={`${member.currentHp}/${member.maxHp}`}
-              >
-                <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
-                  {member.labels.hp}
-                </span>
-                <SegmentedStatBar
-                  pct={hpPct}
-                  variant={hpBarVariant(hpPct)}
-                  segments={10}
-                  heightClass="h-2"
-                />
-              </div>
-              <div className="grid grid-cols-[1.6rem_minmax(0,1fr)] items-center gap-1">
-                <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
-                  {member.labels.exp}
-                </span>
-                <SegmentedStatBar
-                  pct={member.xpPct}
-                  variant="xp"
-                  segments={10}
-                  heightClass="h-2"
-                />
-              </div>
-            </div>
+          {/* Sólo HP. La EXP se movió a la ficha de detalle: en la card era una
+              segunda barra que competía con el sprite y casi nunca se mira de
+              un vistazo — HP sí, porque decide si podés combatir. */}
+          <div
+            className="mt-1 grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-1 md:mt-1.5 md:grid-cols-[1.6rem_minmax(0,1fr)]"
+            title={`${member.labels.hp} ${member.currentHp}/${member.maxHp}`}
+          >
+            <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
+              {member.labels.hp}
+            </span>
+            <SegmentedStatBar
+              pct={hpPct}
+              variant={hpBarVariant(hpPct)}
+              segments={8}
+              heightClass="h-1.5 md:h-2"
+            />
           </div>
         </div>
       </button>

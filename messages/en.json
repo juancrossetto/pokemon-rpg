@@ -587,6 +587,7 @@
       "ptConstitution": "Constitution"
     },
     "autoHeal": "Pokémon Center",
+    "autoHealShort": "Heal",
     "openPc": "Storage PC",
     "expToNext": "{xp} to next level",
     "heldItem": "HELD ITEM",
@@ -673,6 +674,7 @@
     "healNoviceFreeHint": "Free with no wait while your team is at Lv. {level} or below.",
     "healCooldown": "Free in {minutes} min",
     "healRush": "Heal now",
+    "healRushShort": "Heal",
     "healRushHint": "Skips the {minutes} min wait",
     "healErrors": {
       "cooldown": "Still regenerating.",

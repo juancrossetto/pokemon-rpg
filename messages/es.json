@@ -587,6 +587,7 @@
       "ptConstitution": "Constitución"
     },
     "autoHeal": "Centro Pokémon",
+    "autoHealShort": "Curar",
     "openPc": "PC de almacenamiento",
     "expToNext": "{xp} para el próximo nivel",
     "heldItem": "OBJETO EQUIPADO",
@@ -673,6 +674,7 @@
     "healNoviceFreeHint": "Gratis y sin espera mientras tu equipo no pase el nv. {level}.",
     "healCooldown": "Gratis en {minutes} min",
     "healRush": "Curar ya",
+    "healRushShort": "Curar",
     "healRushHint": "Saltea los {minutes} min de espera",
     "healErrors": {
       "cooldown": "Todavía está en regeneración.",

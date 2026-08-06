@@ -659,22 +659,9 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       status: t("hub.dailyActions.statusStreakDay", { n: loginStreak }),
       hot: loginStreak >= 3,
     },
-    {
-      id: "friends",
-      href: findNavItem("friends")?.href ?? "/friends",
-      iconSrc: findNavItem("friends")?.iconSrc ?? "/nav/friends-icon.png?v=4",
-      labelKey: "friends",
-      status: null,
-      hot: false,
-    },
-    {
-      id: "market",
-      href: findNavItem("market")?.href ?? "/market",
-      iconSrc: findNavItem("market")?.iconSrc ?? "/nav/shop-icon.png?v=4",
-      labelKey: "market",
-      status: null,
-      hot: false,
-    },
+    // Amigos y Mercado vivían acá sin `status`: no son acciones diarias sino
+    // atajos, y el navbar ya los tiene (Comunidad / Comercio). Sacarlos deja la
+    // sección con un criterio único —sólo lo que hoy tiene estado pendiente—.
   ];
 
   const titleKeys = [

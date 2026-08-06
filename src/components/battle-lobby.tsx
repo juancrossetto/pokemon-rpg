@@ -3,13 +3,13 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { HealButton } from "@/components/heal-button";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
 import { BattleLobbyMobile } from "@/components/battle-lobby-mobile";
 import { LobbyLoadoutCard } from "@/components/battle/lobby-loadout-card";
+import { LobbySquadHealRow } from "@/components/battle/lobby-squad-heal";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 import { useTypeLabel } from "@/hooks/use-type-label";
 import { HubHelpButton } from "@/components/journey-guidance";
@@ -157,6 +157,7 @@ export function BattleLobby({
                   label={t("explore")}
                   errors={startErrors}
                   disabled={!canExplore}
+                  energyCost={lobby.energyCost}
                 />
               ) : (
                 <div className="flex flex-col gap-2">
@@ -170,10 +171,6 @@ export function BattleLobby({
                   </Link>
                 </div>
               )}
-              {/* La barra de energía vive en el header global; acá sólo el coste. */}
-              <p className="mt-2 text-center text-[10px] text-on-surface-variant">
-                {t("lobby.energyHint", { cost: lobby.energyCost })}
-              </p>
             </div>
           </section>
 
@@ -182,46 +179,21 @@ export function BattleLobby({
               balls={lobby.balls}
               heals={lobby.heals}
               unspentTotal={lobby.unspentTotal}
-            />
-
-            {/*
-              Centro Pokémon, en lugar de los accesos directos y del listado
-              del equipo.
-
-              Gimnasios, PvP y Equipo ya están a un click en el navbar. Y el
-              escuadrón completo se ve en Inicio y en Equipo: repetirlo acá
-              sería la cuarta pantalla con la misma información. Lo que **no**
-              existe en ningún otro lado es poder curar sin salir del lugar
-              donde farmeás, así que el panel se queda solo con eso.
-
-              Aparece únicamente si hay alguien herido: con el equipo entero no
-              hay nada que decidir y el bloque no se dibuja.
-            */}
-            {showSquadStatus && (
-              <section className="flex items-center gap-3 rounded-2xl border border-white/10 bg-surface-container-high/70 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                <div className="min-w-0 flex-1 self-center">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface-variant">
-                    {t("lobby.squadStatus")}
-                  </p>
-                  <p className="mt-0.5 truncate text-label-md font-semibold leading-tight text-white">
-                    {t("lobby.hurtCount", { count: lobby.heal.hurtCount })}
-                  </p>
-                </div>
-                <div className="shrink-0 self-center">
-                  <HealButton
+              footer={
+                showSquadStatus ? (
+                  <LobbySquadHealRow
                     locale={locale}
-                    needsHealing
+                    hurtCount={lobby.heal.hurtCount}
                     cooldownMsLeft={lobby.heal.cooldownMsLeft}
                     rushCost={lobby.heal.rushCost}
                     coins={lobby.heal.coins}
                     teamMaxLevel={lobby.heal.teamMaxLevel}
-                    compact
                     onHealed={() => setSquadHealed(true)}
                     onHealFailed={() => setSquadHealed(false)}
                   />
-                </div>
-              </section>
-            )}
+                ) : null
+              }
+            />
 
             {lobby.recent.length > 0 && (
               <section>

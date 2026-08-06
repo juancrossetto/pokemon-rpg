@@ -6,8 +6,23 @@ import { useLocale } from "next-intl";
 import { updateHomeFrame } from "@/actions/update-home-frame";
 import { HOME_FRAME_OPTIONS, homeFrameById } from "@/lib/home-frames";
 
-/** Grosor del marco en la miniatura. Fijo: es lo que las iguala entre sí. */
-const PREVIEW_BORDER = 20;
+/**
+ * Grosor base del marco en la miniatura.
+ *
+ * Ya no es fijo: se multiplica por el `weight` del marco, igual que en el
+ * banner. Era fijo cuando todos los marcos tenían slice 160, y ahí sí los
+ * igualaba. Con los `gym-*` (slice 405–512) un borde de 20px comprimía el
+ * ornamento 25×, y en la miniatura no se veía nada.
+ */
+const PREVIEW_BORDER = 22;
+
+/**
+ * El borde de la miniatura escala con el `slice`, no con un valor fijo: así
+ * todos los marcos se dibujan a la misma compresión y se aprecian por igual.
+ * El tope evita que un marco de slice 512 se coma la miniatura entera.
+ */
+const previewBorder = (slice: number) =>
+  Math.min(Math.round(PREVIEW_BORDER * (slice / 160)), 52);
 
 export type FramePickerLabels = {
   change: string;
@@ -110,16 +125,20 @@ export function FramePicker({
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
-                <ul className="grid grid-cols-2 gap-2 sm:grid-cols-2">
+                {/* Una columna: en dos, la miniatura quedaba en ~190px de ancho
+                    y no hay borde que muestre un ornamento de 512px ahí adentro.
+                    A ancho completo del sheet el marco se aprecia de verdad. */}
+                <ul className="grid grid-cols-1 gap-2.5">
                   {HOME_FRAME_OPTIONS.map((opt) => {
                     const active = selected === opt.id;
+                    const border = previewBorder(opt.slice);
                     return (
                       <li key={opt.id}>
                         <button
                           type="button"
                           aria-pressed={active}
                           onClick={() => setSelected(opt.id)}
-                          className={`relative aspect-[2.2/1] w-full overflow-hidden rounded-xl border bg-[#0a0b11] transition ${
+                          className={`relative aspect-[1.9/1] w-full overflow-hidden rounded-xl border bg-[#0a0b11] transition ${
                             active
                               ? "border-pokeball-red ring-1 ring-pokeball-red/40"
                               : "border-white/10 hover:border-white/25"
@@ -143,10 +162,10 @@ export function FramePicker({
                             aria-hidden
                             className="absolute rounded-sm bg-gradient-to-br from-white/10 to-white/5"
                             style={{
-                              top: PREVIEW_BORDER * opt.rails.top,
-                              bottom: PREVIEW_BORDER * opt.rails.bottom,
-                              left: PREVIEW_BORDER * opt.rails.left,
-                              right: PREVIEW_BORDER * opt.rails.right,
+                              top: border * opt.rails.top,
+                              bottom: border * opt.rails.bottom,
+                              left: border * opt.rails.left,
+                              right: border * opt.rails.right,
                             }}
                           />
                           <span
@@ -155,7 +174,7 @@ export function FramePicker({
                             style={{
                               borderStyle: "solid",
                               borderColor: "transparent",
-                              borderWidth: PREVIEW_BORDER,
+                              borderWidth: border,
                               borderImageSource: `url("${opt.src}")`,
                               borderImageSlice: String(opt.slice),
                               borderImageRepeat: "stretch",

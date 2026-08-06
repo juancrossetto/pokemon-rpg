@@ -5,12 +5,12 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useTypeLabel } from "@/hooks/use-type-label";
 import { HubHelpButton } from "@/components/journey-guidance";
-import { HealButton } from "@/components/heal-button";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
 import { LobbyLoadoutCard } from "@/components/battle/lobby-loadout-card";
+import { LobbySquadHealRow } from "@/components/battle/lobby-squad-heal";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 
 /**
@@ -22,8 +22,7 @@ import type { BattleLobbyData } from "@/lib/battle-lobby";
  * Decisiones de jerarquía:
  * - El h1 "Batalla" y su subtítulo no se muestran: la barra inferior ya dice
  *   en qué pantalla estás, y gastaban ~90px por encima de la acción.
- * - La energía no se repite acá: el header global ya la muestra fija en
- *   pantalla. Sólo queda su coste, debajo del botón que la gasta.
+ * - El coste de energía va dentro del CTA Explorar (mismo patrón que gimnasio).
  * - Los datos de la zona van SOBRE el mapa, que así crece a 190px y deja de ser
  *   decorativo sin costar altura extra.
  */
@@ -155,6 +154,7 @@ export function BattleLobbyMobile({
               label={t("explore")}
               errors={startErrors}
               disabled={!canExplore}
+              energyCost={lobby.energyCost}
             />
           ) : (
             <div className="flex flex-col gap-2">
@@ -168,60 +168,31 @@ export function BattleLobbyMobile({
               </Link>
             </div>
           )}
-          {/* Sólo el coste: la barra de energía vive en el header global y
-              repetirla acá era la misma información dos veces en pantalla. */}
-          <p className="text-center text-[10px] text-on-surface-variant">
-            {t("lobby.energyHint", { cost: lobby.energyCost })}
-          </p>
         </div>
       </section>
 
-      {/* ── Mochila estilo tienda (PNG grandes, sin cards) ── */}
+      {/* ── Mochila (+ cura embebida si hay heridos, sin card suelta) ── */}
       <section className="lobby-rise" style={{ animationDelay: "60ms" }}>
         <LobbyLoadoutCard
           balls={lobby.balls}
           heals={lobby.heals}
           unspentTotal={lobby.unspentTotal}
+          footer={
+            showSquadStatus ? (
+              <LobbySquadHealRow
+                locale={locale}
+                hurtCount={lobby.heal.hurtCount}
+                cooldownMsLeft={lobby.heal.cooldownMsLeft}
+                rushCost={lobby.heal.rushCost}
+                coins={lobby.heal.coins}
+                teamMaxLevel={lobby.heal.teamMaxLevel}
+                onHealed={() => setSquadHealed(true)}
+                onHealFailed={() => setSquadHealed(false)}
+              />
+            ) : null
+          }
         />
       </section>
-
-      {/*
-        Los tres tiles de navegación salieron: Gimnasios vive en Aventura, PvP
-        en Combate y Equipo en Colección, todos a un toque en la bottom bar.
-
-        En su lugar, curar. El caso "líder debilitado" ya se resolvía en el CTA,
-        pero solo cuando el daño ya estaba hecho: si el equipo llega herido a la
-        siguiente exploración, no había aviso. Este bloque aparece apenas hay
-        alguien lastimado y evita el viaje de ida y vuelta a Equipo.
-      */}
-      {showSquadStatus && (
-        <section
-          className="lobby-rise flex items-center gap-3 rounded-2xl border border-white/10 bg-surface-container-high/70 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-          style={{ animationDelay: "90ms" }}
-        >
-          <div className="min-w-0 flex-1 self-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface-variant">
-              {t("lobby.squadStatus")}
-            </p>
-            <p className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-white">
-              {t("lobby.hurtCount", { count: lobby.heal.hurtCount })}
-            </p>
-          </div>
-          <div className="shrink-0 self-center">
-            <HealButton
-              locale={locale}
-              needsHealing
-              cooldownMsLeft={lobby.heal.cooldownMsLeft}
-              rushCost={lobby.heal.rushCost}
-              coins={lobby.heal.coins}
-              teamMaxLevel={lobby.heal.teamMaxLevel}
-              compact
-              onHealed={() => setSquadHealed(true)}
-              onHealFailed={() => setSquadHealed(false)}
-            />
-          </div>
-        </section>
-      )}
 
       {/* ── Últimos encuentros: carrusel horizontal en vez de lista vertical ── */}
       {lobby.recent.length > 0 && (

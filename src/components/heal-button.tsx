@@ -178,8 +178,8 @@ export function HealButton({
           </span>
         ))}
 
-      {(compact || stretch) && onCooldown ? (
-        <span className={`text-[9px] text-on-surface-variant ${compact ? "text-center" : hintAlign}`}>
+      {stretch && onCooldown ? (
+        <span className={`text-[9px] text-on-surface-variant ${hintAlign}`}>
           {t("healCooldown", { minutes: minutesLeft(cooldownMsLeft) })}
         </span>
       ) : null}

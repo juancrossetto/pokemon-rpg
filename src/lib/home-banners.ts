@@ -3,7 +3,10 @@
  * Sin Prisma: client y server pueden importarlo.
  *
  * Assets en `/public/home/banners/banner-{n}.jpg`.
- * El id es el número como string ("1"…"10").
+ * El id es el número como string ("1"…"14").
+ *
+ * `HOME_BANNER_ASSET_VERSION` se concatena al `src` para invalidar caché del
+ * optimizador de Next / del browser cuando se reemplaza un JPG in-place.
  */
 
 export type HomeBannerOption = {
@@ -11,11 +14,29 @@ export type HomeBannerOption = {
   src: string;
 };
 
-const BANNER_IDS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"] as const;
+/** Bump al reemplazar assets sin cambiar el path. */
+export const HOME_BANNER_ASSET_VERSION = "20260806b";
+
+const BANNER_IDS = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "11",
+  "12",
+  "13",
+  "14",
+] as const;
 
 export const HOME_BANNER_OPTIONS: HomeBannerOption[] = BANNER_IDS.map((id) => ({
   id,
-  src: `/home/banners/banner-${id}.jpg`,
+  src: `/home/banners/banner-${id}.jpg?v=${HOME_BANNER_ASSET_VERSION}`,
 }));
 
 /** Default si el user no eligió (o id inválido). Coincide con el banner actual del home. */
