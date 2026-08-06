@@ -66,6 +66,8 @@ export interface BattleMoveOption {
   maxPp: number;
   /** PokeAPI move.target.name */
   target?: string | null;
+  /** Efecto del movimiento (PokeAPI), para la card de poderes. */
+  effectText?: string | null;
 }
 
 export type View = "menu" | "moves" | "bag" | "team" | "targets" | "reviveTargets";

@@ -597,6 +597,7 @@ export default async function BattlePage({
         pp: effectivePp(m.currentPp, m.move.pp),
         maxPp: m.move.pp,
         target: m.move.target ?? null,
+        effectText: m.move.effectText ?? null,
       })),
       movesB:
         isDouble && instB
@@ -610,6 +611,7 @@ export default async function BattlePage({
               pp: effectivePp(m.currentPp, m.move.pp),
               maxPp: m.move.pp,
               target: m.move.target ?? null,
+              effectText: m.move.effectText ?? null,
             }))
           : undefined,
       initialLog: battle.log,

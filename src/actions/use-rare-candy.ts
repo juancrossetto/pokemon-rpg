@@ -54,6 +54,7 @@ const MOVE_SELECT = {
   power: true,
   accuracy: true,
   pp: true,
+  effectText: true,
 } as const;
 
 /**

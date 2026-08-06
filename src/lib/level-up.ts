@@ -31,6 +31,7 @@ const MOVE_SELECT = {
   power: true,
   accuracy: true,
   pp: true,
+  effectText: true,
 } as const;
 
 /** Movimientos LEVEL_UP con learnLevel en (fromLevel, toLevel]. */

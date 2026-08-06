@@ -320,9 +320,11 @@ export function spriteBoxFromNatural(
 
 /**
  * Tope vs ancho del campo: en mobile el arena es muy alto y angosto; si el
- * tamaño sale sólo del alto, el sprite se pasa de ancho y se ve cortado/deformado.
+ * tamaño sale sólo del alto, el sprite se pasa de ancho y se ve cortado.
+ * El tope tiene que ser lo bastante holgado como para no pisar el tamaño
+ * bueno en pantallas angostas (0.62 dejaba a Charizard ~50% del alto).
  */
-export const BATTLE_PLAYER_SPRITE_WIDTH_CAP = 0.62;
-export const BATTLE_WILD_SPRITE_WIDTH_CAP = 0.48;
+export const BATTLE_PLAYER_SPRITE_WIDTH_CAP = 0.88;
+export const BATTLE_WILD_SPRITE_WIDTH_CAP = 0.55;
 
 

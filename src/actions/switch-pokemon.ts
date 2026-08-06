@@ -35,6 +35,7 @@ export interface SwitchPokemonResult {
       category: "PHYSICAL" | "SPECIAL" | "STATUS";
       pp: number;
       maxPp: number;
+      effectText: string | null;
     }[];
   };
   counterAttack: TurnEvent | null;
@@ -120,6 +121,7 @@ export async function switchPokemon(
     category: m.move.category,
     pp: effectivePp(m.currentPp, m.move.pp),
     maxPp: m.move.pp,
+    effectText: m.move.effectText ?? null,
   }));
   // Siempre incluir al que sale y al que entra: el lead puede faltar en
   // participantIds si la sesión nació con el default [] o un create viejo.
