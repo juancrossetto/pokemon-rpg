@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { typeColor } from "@/lib/type-colors";
 import { formatMoveName } from "@/lib/format-move-name";
+import { formatMoveEffectText } from "@/lib/format-move-effect";
 import { itemSpriteUrl } from "@/lib/item-sprites";
 import type {
   BattleMoveOption,
@@ -161,6 +162,7 @@ export function MovesView({
           // Sin accuracy = nunca falla (Swift). Se dice, no se deja vacío.
           const accuracyLabel = m.accuracy == null ? "—" : `${m.accuracy}%`;
           const damage = isStatus ? null : forecast(m);
+          const effect = formatMoveEffectText(m.effectText);
           return (
             <button
               key={m.moveId}
@@ -169,6 +171,7 @@ export function MovesView({
               onClick={() => onSelect(m.moveId)}
               className="battle-move-card battle-move-card-compact battle-move-card-dense text-left disabled:cursor-not-allowed disabled:opacity-40"
               style={{ borderColor: `${color}55` }}
+              title={effect ?? undefined}
             >
               <div className="flex min-w-0 shrink-0 items-start justify-between gap-1">
                 <span className="flex min-w-0 items-center gap-1">
@@ -197,7 +200,7 @@ export function MovesView({
               </div>
               {/* Stats en una sola línea: antes eran 2 renglones (label+valor) y
                   empujaban la efectividad contra el borde con overflow:hidden. */}
-              <div className="mt-auto flex shrink-0 items-baseline justify-between gap-1 text-[10px] tabular-nums md:text-[11px]">
+              <div className="flex shrink-0 items-baseline justify-between gap-1 text-[10px] tabular-nums md:text-[11px]">
                 <span className="text-white/90">
                   <span className="mr-0.5 uppercase tracking-wider text-white/40">{t("powerLabel")}</span>
                   <span className="font-bold text-white">{m.power ?? "—"}</span>
@@ -216,17 +219,20 @@ export function MovesView({
                   </span>
                 </span>
               </div>
+              {effect ? (
+                <p className="min-h-0 shrink line-clamp-2 text-[9px] leading-snug text-white/55 md:text-[10px]">
+                  {effect}
+                </p>
+              ) : null}
               {damage?.guaranteedKo ? (
-                <p className="shrink-0 truncate text-[9px] font-bold leading-snug text-tertiary md:text-[10px]">
+                <p className="mt-auto shrink-0 truncate text-[9px] font-bold leading-snug text-tertiary md:text-[10px]">
                   {t("forecastKo")}
                 </p>
-              ) : (
+              ) : !isStatus ? (
                 <p
-                  className={`shrink-0 truncate text-[9px] leading-snug md:text-[10px] ${
-                    isStatus ? "text-white/45" : eff.className
-                  }`}
+                  className={`mt-auto shrink-0 truncate text-[9px] leading-snug md:text-[10px] ${eff.className}`}
                 >
-                  {isStatus ? t("category.STATUS") : eff.label}
+                  {eff.label}
                   {damage && (
                     <span className="text-white/55">
                       {" · "}
@@ -246,6 +252,8 @@ export function MovesView({
                     <span className="text-amber-300/80">{` · ${t("forecastTwoTurn")}`}</span>
                   )}
                 </p>
+              ) : (
+                <span className="mt-auto" aria-hidden />
               )}
             </button>
           );

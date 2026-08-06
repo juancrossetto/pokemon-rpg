@@ -167,14 +167,19 @@ export function battleSpeciesScale(speciesName: string): number {
   return SCALE_MIN + t * (SCALE_MAX - SCALE_MIN);
 }
 
-/** Fracción del alto del campo (antes de escala por especie). */
-export const BATTLE_PLAYER_SPRITE_FRAC = 0.42;
-export const BATTLE_WILD_SPRITE_FRAC = 0.3;
+/** Fracción del alto del campo (antes de escala por especie).
+ *  Calibrado para que un mon mediano-grande (Charizard ~1.7 m) quede cerca
+ *  del ~72–75% del alto del campo — el tamaño fijo que teníamos antes del
+ *  tope por ancho. 0.42 dejaba al jugador a la mitad. */
+export const BATTLE_PLAYER_SPRITE_FRAC = 0.84;
+export const BATTLE_WILD_SPRITE_FRAC = 0.48;
 
 /**
  * Tope vs ancho del campo: en mobile el arena es muy alto y angosto; si el
- * tamaño sale sólo del alto, el sprite se pasa de ancho y se ve cortado/deformado.
+ * tamaño sale sólo del alto, el sprite se pasa de ancho y se ve cortado.
+ * El tope tiene que ser lo bastante holgado como para no pisar el tamaño
+ * bueno en pantallas angostas (0.62 dejaba a Charizard ~50% del alto).
  */
-export const BATTLE_PLAYER_SPRITE_WIDTH_CAP = 0.62;
-export const BATTLE_WILD_SPRITE_WIDTH_CAP = 0.48;
+export const BATTLE_PLAYER_SPRITE_WIDTH_CAP = 0.88;
+export const BATTLE_WILD_SPRITE_WIDTH_CAP = 0.55;
 

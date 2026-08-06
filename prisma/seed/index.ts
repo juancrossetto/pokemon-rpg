@@ -256,6 +256,7 @@ async function seedSpeciesAndMoves() {
       },
       update: {
         target: move.target?.name ?? "selected-pokemon",
+        effectText: effect?.effect ?? null,
       },
     });
     moveIdByName.set(move.name, move.id);

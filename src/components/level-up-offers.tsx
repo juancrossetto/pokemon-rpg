@@ -12,6 +12,7 @@ import {
   showdownTypeSymbolUrl,
 } from "@/lib/type-icons";
 import { formatMoveName } from "@/lib/format-move-name";
+import { formatMoveEffectText } from "@/lib/format-move-effect";
 import {
   knownFromLevelUp,
   type EvolveOffer,
@@ -465,6 +466,7 @@ function LearnMoveCard({
 }) {
   const color = typeColor(move.type);
   const formatted = formatMoveName(move.name);
+  const effect = formatMoveEffectText(move.effectText);
 
   return (
     <div
@@ -519,6 +521,12 @@ function LearnMoveCard({
           />
           <MoveStat label={labels.pp} value={String(move.pp)} accent={color} />
         </div>
+
+        {effect ? (
+          <p className="mt-2.5 text-[12px] leading-relaxed text-white/70 sm:text-[13px]">
+            {effect}
+          </p>
+        ) : null}
 
         <p className="mt-2 text-[12px] leading-snug text-white/65">{labels.wantsToLearn}</p>
         {remaining > 0 && (
@@ -647,6 +655,8 @@ function KnownMoveRow({
   powerDelta: number | null;
   interactive?: boolean;
 }) {
+  const effect = formatMoveEffectText(move.effectText);
+
   return (
     <div className="flex min-w-0 items-center gap-2">
       <TypeOrb type={move.type} size="sm" />
@@ -685,6 +695,11 @@ function KnownMoveRow({
             {move.pp}
           </span>
         </div>
+        {effect ? (
+          <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/40">
+            {effect}
+          </p>
+        ) : null}
       </div>
     </div>
   );
