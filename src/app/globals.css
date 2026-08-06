@@ -4796,7 +4796,7 @@ body {
   transform: scale(0.99);
 }
 
-/* Hero de /gyms: chato en mobile; en desktop altura moderada (no 420px). */
+/* Hero de /gyms: espacio para el líder a cuerpo completo a la derecha. */
 .gym-mission-hero {
   min-height: 0;
 }
@@ -4804,7 +4804,7 @@ body {
 @media (min-width: 768px) {
   .gym-mission-hero,
   .gym-mission-hero__body {
-    min-height: 300px;
+    min-height: 340px;
   }
 
   .gym-mission-hero__body {

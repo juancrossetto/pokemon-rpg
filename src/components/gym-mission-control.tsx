@@ -3,11 +3,13 @@
 import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
 import { showdownTypeSymbolUrl } from "@/lib/type-icons";
 import type { GymMissionItem, GymMissionStatusKind } from "@/lib/gym-mission";
 import { KANTO_MAP_IMAGE, KANTO_MAP_ASPECT } from "@/lib/gym-map";
 import { marketFeeDiscount, obedienceLevelCap } from "@/lib/badge-perks";
+import { GYM_BATTLE_ENERGY_COST } from "@/lib/energy";
 import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
 import { GameCtaButton } from "@/components/game-cta-button";
@@ -17,6 +19,13 @@ import {
   gymRegionDef,
   type GymRegionId,
 } from "@/lib/gym-regions";
+
+const ENERGY_ICON = "/items/hd/energy.png";
+const COIN_ICON = "/items/hd/poke-coin.png";
+const PROGRESS_FILL =
+  "linear-gradient(90deg, var(--color-tertiary) 0%, var(--theme-tertiary-bright) 52%, #5ef0ff 100%)";
+const PROGRESS_GLOW =
+  "0 0 10px color-mix(in srgb, var(--theme-tertiary-bright) 55%, transparent)";
 
 export type GymRegionTab = {
   id: GymRegionId;
@@ -291,22 +300,25 @@ function GymRegionSkeletonOps({ operationsLabel }: { operationsLabel: string }) 
 }
 
 function CoinReward({ amount, compact = false }: { amount: number; compact?: boolean }) {
+  const icon = compact ? 16 : 22;
   return (
     <span
       className={`inline-flex items-center ${
-        compact ? "gap-0.5 sm:gap-1" : "gap-1.5"
+        compact ? "gap-1" : "gap-1.5"
       }`}
     >
-      <span
-        className={`material-symbols-outlined text-electric-yellow ${
-          compact ? "text-[12px]! sm:text-[14px]!" : "text-[20px]!"
+      <Image
+        src={COIN_ICON}
+        alt=""
+        width={icon}
+        height={icon}
+        className={`object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)] ${
+          compact ? "h-4 w-4" : "h-[22px] w-[22px]"
         }`}
-        aria-hidden
-      >
-        paid
-      </span>
+        unoptimized
+      />
       <span
-        className={`font-mono font-bold tabular-nums text-electric-yellow ${
+        className={`font-mono font-bold tabular-nums text-white ${
           compact ? "text-[11px] sm:text-[12px]" : "text-lg"
         }`}
       >
@@ -554,9 +566,10 @@ export function GymMissionControl({
   const selectedBadgeLabel = selected ? badgeLabel(selected) : "";
   const selectedGymName = selected ? gymNameLabel(selected) : "";
 
-  function renderChallengeAction(opts?: { className?: string }) {
+  function renderChallengeAction(opts?: { className?: string; compact?: boolean }) {
     if (!selected) return null;
     const wrap = opts?.className ?? "";
+    const compact = opts?.compact === true;
     if (regionLocked) {
       return (
         <GameCtaButton
@@ -571,15 +584,32 @@ export function GymMissionControl({
       );
     }
     if (canChallenge || selected.badgeEarned) {
+      // En la barra sticky mobile el ancho es corto: "Desafiar" cabe en una
+      // línea; "Desafiar gimnasio" se partía contra el costo de energía.
+      const label = selected.badgeEarned
+        ? t("rematch")
+        : compact
+          ? t("challenge")
+          : t("challengeGym");
       return (
-        <GameCtaButton
+        <Link
           href={challengeHref}
-          variant="gold"
-          icon="swords"
-          className={wrap}
+          className={`game-cta game-cta--red mb-0! gap-2 whitespace-nowrap sm:gap-2.5 ${compact ? "min-h-11 w-auto! px-3.5 py-2.5 text-[0.72rem]" : ""} ${wrap}`.trim()}
         >
-          {selected.badgeEarned ? t("rematch") : t("challengeGym")}
-        </GameCtaButton>
+          <span className="game-cta__label whitespace-nowrap">{label}</span>
+          <span aria-hidden className="h-4 w-px shrink-0 bg-white/25" />
+          <span className={`inline-flex shrink-0 items-center gap-1 font-sans font-semibold tabular-nums tracking-normal text-white normal-case ${compact ? "text-[12px]" : "text-[13px]"}`}>
+            <Image
+              src={ENERGY_ICON}
+              alt=""
+              width={compact ? 18 : 20}
+              height={compact ? 18 : 20}
+              className={`${compact ? "h-[18px] w-[18px]" : "h-5 w-5"} object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]`}
+              unoptimized
+            />
+            <span>−{GYM_BATTLE_ENERGY_COST}</span>
+          </span>
+        </Link>
       );
     }
     if (selected.onCooldown) {
@@ -768,8 +798,12 @@ export function GymMissionControl({
                 aria-valuemax={badgeTotal}
               >
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-tertiary/80 to-electric-yellow transition-[width] duration-500"
-                  style={{ width: regionAvailable ? `${progressPct}%` : "0%" }}
+                  className="h-full rounded-full transition-[width] duration-500"
+                  style={{
+                    width: regionAvailable ? `${progressPct}%` : "0%",
+                    background: PROGRESS_FILL,
+                    boxShadow: regionAvailable && progressPct > 0 ? PROGRESS_GLOW : undefined,
+                  }}
                 />
               </div>
               <div className="relative grid grid-cols-8 gap-0.5 sm:gap-1">
@@ -873,17 +907,63 @@ export function GymMissionControl({
               <div
                 className="absolute inset-0"
                 style={{
-                  background: `linear-gradient(115deg, ${color}55 0%, transparent 42%), linear-gradient(to top, rgba(6,8,14,0.96) 6%, rgba(6,8,14,0.55) 52%, rgba(6,8,14,0.62) 100%)`,
+                  background: `
+                    linear-gradient(115deg, ${color}55 0%, transparent 42%),
+                    linear-gradient(90deg, rgba(6,8,14,0.88) 0%, rgba(6,8,14,0.52) 48%, rgba(6,8,14,0.18) 78%, rgba(6,8,14,0.28) 100%),
+                    linear-gradient(to top, rgba(6,8,14,0.92) 0%, rgba(6,8,14,0.35) 45%, rgba(6,8,14,0.45) 100%)
+                  `,
                 }}
               />
             </div>
 
             <div
-              className={`gym-mission-hero__body relative z-10 flex flex-col gap-2 p-3 sm:gap-3 sm:p-5 md:gap-4 md:p-6 ${
+              className={`gym-mission-hero__body relative z-10 flex min-h-[13.5rem] flex-col gap-2 p-3 sm:min-h-[18.5rem] sm:gap-3 sm:p-5 md:min-h-[20rem] md:gap-4 md:p-6 ${
                 regionLocked ? "pb-20 sm:pb-24" : ""
               }`}
             >
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 sm:items-end sm:gap-4">
+              {/* Líder a cuerpo completo a la derecha (mobile + desktop). */}
+              {selected.portraitUrl ? (
+                <div
+                  aria-hidden={!regionLocked}
+                  className="pointer-events-none absolute top-0 right-0 bottom-[7.5rem] z-[1] w-[46%] px-3 pt-4 pb-2 sm:inset-y-0 sm:bottom-0 sm:w-[40%] sm:px-5 sm:py-5 md:w-[36%]"
+                >
+                  <div
+                    className="absolute bottom-[10%] left-1/2 h-[65%] w-[80%] -translate-x-1/2 rounded-[100%] opacity-70 blur-2xl"
+                    style={{
+                      background: `radial-gradient(ellipse at center, ${color}66 0%, transparent 70%)`,
+                    }}
+                  />
+                  <div className="relative h-full w-full">
+                    <Image
+                      src={selected.portraitUrl}
+                      alt={regionLocked ? t("regionLocked") : selected.leaderName}
+                      fill
+                      sizes="(max-width: 640px) 44vw, (max-width: 1024px) 34vw, 280px"
+                      className={`object-contain object-bottom drop-shadow-[0_14px_22px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_22px_36px_rgba(0,0,0,0.5)] ${
+                        regionLocked ? LOCKED_SILHOUETTE : ""
+                      }`}
+                      style={
+                        selected.portraitScale > 1
+                          ? {
+                              transform: `scale(${selected.portraitScale})`,
+                              transformOrigin: "bottom center",
+                            }
+                          : undefined
+                      }
+                      priority
+                    />
+                    {regionLocked ? (
+                      <span className="absolute inset-0 z-[2] flex items-center justify-center bg-black/20">
+                        <span className="material-symbols-outlined text-[28px]! text-white/55 sm:text-[36px]!">
+                          lock
+                        </span>
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="relative z-[2] grid min-w-0 grid-cols-1 items-start gap-2.5 pr-[46%] sm:gap-4 sm:pr-[38%] md:pr-[34%]">
                 <div className="min-w-0">
                   <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/55 sm:text-[11px] sm:tracking-[0.2em]">
                     {t("operationLabel", { n: selected.order, total: badgeTotal })}
@@ -926,33 +1006,55 @@ export function GymMissionControl({
                     )}
                   </div>
                 </div>
-
-                {selected.portraitUrl && (
-                  <div
-                    className="relative h-[6.25rem] w-[4.75rem] shrink-0 overflow-hidden rounded-lg border-2 bg-black/30 sm:h-40 sm:w-32 sm:rounded-xl"
-                    style={{ borderColor: `${color}aa`, boxShadow: `0 0 28px ${color}44` }}
-                  >
-                    <Image
-                      src={selected.portraitUrl}
-                      alt={regionLocked ? t("regionLocked") : selected.leaderName}
-                      fill
-                      sizes="(max-width: 640px) 76px, 128px"
-                      className={`object-cover object-top ${regionLocked ? LOCKED_SILHOUETTE : ""}`}
-                      priority
-                    />
-                    {regionLocked && (
-                      <span className="absolute inset-0 flex items-center justify-center bg-black/25">
-                        <span className="material-symbols-outlined text-[24px]! text-white/55 sm:text-[32px]!">
-                          lock
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
 
-              {/* Mobile: equipo + debilidades en el hero (un solo bloque). */}
-              <div className="border-t border-white/10 pt-1.5 lg:hidden">
+              {/* Medalla + rewards (columna izquierda, al lado del líder). */}
+              <div className="relative z-[2] mt-auto flex flex-col gap-2 border-t border-white/10 pt-1.5 pr-[46%] sm:gap-2.5 sm:border-0 sm:pt-0 sm:pr-[40%] md:pr-[36%]">
+                <div className="flex min-w-0 items-center gap-3 sm:gap-3.5">
+                  <div className="flex shrink-0 flex-col items-center gap-1">
+                    <Image
+                      src={selected.badgeUrl}
+                      alt={selectedBadgeLabel}
+                      width={72}
+                      height={72}
+                      className={`h-9 w-9 object-contain sm:h-[52px] sm:w-[52px] ${
+                        selected.badgeEarned && regionPlayable
+                          ? "drop-shadow-[0_0_16px_rgba(242,192,0,0.55)]"
+                          : "opacity-70 grayscale"
+                      }`}
+                    />
+                    <p className="max-w-[7.5rem] truncate text-center text-[9px] font-bold uppercase tracking-[0.1em] text-primary sm:max-w-[8.5rem] sm:text-[10px] sm:tracking-[0.12em]">
+                      {selectedBadgeLabel}
+                    </p>
+                  </div>
+                  {!regionLocked ? (
+                    <>
+                      <div
+                        className="hidden h-11 w-px shrink-0 self-center bg-white/15 sm:block"
+                        aria-hidden
+                      />
+                      <div className="flex min-w-0 flex-col justify-center gap-0.5 sm:gap-1">
+                        <p className="hidden text-[10px] font-mono uppercase tracking-wider text-white/45 sm:block">
+                          {t("rewards")}
+                        </p>
+                        <span className="sm:hidden">
+                          <CoinReward amount={selected.coinReward} compact />
+                        </span>
+                        <span className="hidden sm:inline-flex">
+                          <CoinReward amount={selected.coinReward} />
+                        </span>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+
+                <div className="hidden w-full max-w-[17rem] sm:block">
+                  {renderChallengeAction({ className: "w-full" })}
+                </div>
+              </div>
+
+              {/* Mobile: equipo abajo, ancho completo — no pelea con el líder. */}
+              <div className="relative z-[2] mt-1.5 border-t border-white/10 pt-1.5 lg:hidden">
                 <div className="mb-1 flex items-center gap-1.5">
                   <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/55">
                     {t("enemyTeam")}
@@ -968,7 +1070,7 @@ export function GymMissionControl({
                     />
                   )}
                 </div>
-                <ul className="no-scrollbar flex gap-2.5 overflow-x-auto pb-0.5">
+                <ul className="no-scrollbar -mx-0.5 flex gap-2.5 overflow-x-auto px-0.5 pb-0.5">
                   {selected.team.map((member) => (
                     <li
                       key={member.id}
@@ -1012,50 +1114,6 @@ export function GymMissionControl({
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* Medalla + coins; CTA del hero en sm+ (mobile usa barra sticky). */}
-              <div className="flex flex-col gap-1.5 border-t border-white/10 pt-1.5 sm:gap-2.5 sm:pt-3 sm:flex-row sm:items-end sm:justify-between sm:border-0 sm:pt-0">
-                <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-                  <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-center">
-                    <Image
-                      src={selected.badgeUrl}
-                      alt={selectedBadgeLabel}
-                      width={72}
-                      height={72}
-                      className={`h-9 w-9 object-contain sm:h-[60px] sm:w-[60px] ${
-                        selected.badgeEarned && regionPlayable
-                          ? "drop-shadow-[0_0_16px_rgba(242,192,0,0.55)]"
-                          : "opacity-70 grayscale"
-                      }`}
-                    />
-                    <p className="max-w-[8rem] truncate text-[9px] font-bold uppercase tracking-[0.1em] text-electric-yellow sm:mt-1 sm:max-w-[9rem] sm:text-center sm:text-[10px] sm:tracking-[0.14em]">
-                      {selectedBadgeLabel}
-                    </p>
-                  </div>
-                  {!regionLocked && (
-                    <>
-                      <div className="hidden h-12 w-px shrink-0 bg-white/15 sm:block" />
-                      <div className="min-w-0 sm:block">
-                        <p className="hidden text-[10px] font-mono uppercase tracking-wider text-white/45 sm:block">
-                          {t("rewards")}
-                        </p>
-                        <div className="sm:mt-1">
-                          <span className="sm:hidden">
-                            <CoinReward amount={selected.coinReward} compact />
-                          </span>
-                          <span className="hidden sm:inline">
-                            <CoinReward amount={selected.coinReward} />
-                          </span>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="hidden w-full shrink-0 sm:block sm:w-auto sm:min-w-[11rem] sm:max-w-[16rem]">
-                  {renderChallengeAction()}
-                </div>
               </div>
             </div>
 
@@ -1403,7 +1461,7 @@ export function GymMissionControl({
       {/* CTA siempre al alcance del pulgar, encima de la bottom nav. */}
       {regionAvailable && selected && (
         <div className="gym-mission-sticky-cta sm:hidden">
-          <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-3">
+          <div className="mx-auto flex w-full max-w-6xl items-center gap-2.5 px-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-[11px] font-semibold text-white">
                 {selectedGymName}
@@ -1420,8 +1478,8 @@ export function GymMissionControl({
                 )}
               </p>
             </div>
-            <div className="w-[min(52%,11.5rem)] shrink-0">
-              {renderChallengeAction()}
+            <div className="shrink-0">
+              {renderChallengeAction({ compact: true })}
             </div>
           </div>
         </div>

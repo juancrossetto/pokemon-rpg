@@ -132,6 +132,47 @@ export function gymLeaderPortraitUrl(leaderName: string): string | null {
   return showdownTrainerSpriteUrl(slug);
 }
 
+/**
+ * Ancho/alto real de `/gyms/portraits/{slug}.png`.
+ * Los más anchos (Koga, Chuck…) se ven más chicos con `object-contain`
+ * en un hero alto; `gymLeaderPortraitScale` compensa.
+ */
+const PORTRAIT_ASPECT: Record<string, number> = {
+  blaine: 0.72,
+  brock: 0.39,
+  bugsy: 0.53,
+  chuck: 0.87,
+  clair: 0.72,
+  erika: 0.41,
+  falkner: 0.64,
+  giovanni: 0.78,
+  jasmine: 0.44,
+  karen: 0.43,
+  koga: 0.88,
+  ltsurge: 0.72,
+  misty: 0.69,
+  morty: 0.51,
+  pryce: 0.42,
+  sabrina: 0.7,
+  whitney: 0.66,
+  will: 0.58,
+};
+
+/** Aspecto “ideal” del hero: por debajo de esto el arte ya llena la altura. */
+const PORTRAIT_HERO_TARGET_ASPECT = 0.62;
+
+/**
+ * Escala suave para líderes anchos. Tope bajo: un boost fuerte los recorta
+ * con el overflow del card.
+ */
+export function gymLeaderPortraitScale(leaderName: string): number {
+  const slug = LEADER_SLUGS[leaderName];
+  if (!slug) return 1;
+  const aspect = PORTRAIT_ASPECT[slug] ?? PORTRAIT_HERO_TARGET_ASPECT;
+  if (aspect <= PORTRAIT_HERO_TARGET_ASPECT) return 1;
+  return Math.min(1.08, Number((aspect / PORTRAIT_HERO_TARGET_ASPECT).toFixed(3)));
+}
+
 /** Sprite genérico de entrenador del gimnasio (pre-líder). */
 const GYM_TRAINER_SPRITE: Record<string, string> = {
   rock: "hiker",

@@ -1,6 +1,7 @@
 import {
   gymBadgeImageUrl,
   gymDifficultyStars,
+  gymLeaderPortraitScale,
   gymLeaderPortraitUrl,
 } from "@/lib/gym-art";
 import { gymPoint } from "@/lib/campaign/region-map";
@@ -47,6 +48,8 @@ export type GymMissionItem = {
   recommendedLevel: number;
   difficulty: number;
   portraitUrl: string | null;
+  /** Compensa líderes anchos para que no se vean más chicos que Brock/Erika. */
+  portraitScale: number;
   badgeUrl: string;
   mapSrc: string;
   mapFocusX: number;
@@ -98,6 +101,7 @@ export function toGymMissionItems(statuses: GymStatus[]): GymMissionItem[] {
       recommendedLevel: maxLevel,
       difficulty: gymDifficultyStars(gym.order),
       portraitUrl: gymLeaderPortraitUrl(gym.leaderName),
+      portraitScale: gymLeaderPortraitScale(gym.leaderName),
       badgeUrl: gymBadgeImageUrl(gym.type),
       mapSrc: regionMapSrc(gym.regionId),
       mapFocusX: mapPoint?.x ?? 50,

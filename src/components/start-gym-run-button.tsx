@@ -1,7 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState } from "react";
 import { startGymRun, type StartGymRunResult } from "@/actions/start-gym-run";
+import { GYM_BATTLE_ENERGY_COST } from "@/lib/energy";
+
+const ENERGY_ICON = "/items/hd/energy.png";
 
 export function StartGymRunButton({
   gymId,
@@ -29,14 +33,25 @@ export function StartGymRunButton({
   );
 
   return (
-    <form action={formAction} className="flex flex-col items-center gap-2">
+    <form action={formAction} className="flex w-full flex-col items-center gap-2 sm:w-auto">
       <button
         type="submit"
         disabled={pending}
-        className="game-cta game-cta--red disabled:opacity-50"
+        className="game-cta game-cta--red mb-0! w-full gap-2 disabled:opacity-50 sm:w-auto sm:gap-2.5"
       >
-        <span className="material-symbols-outlined game-cta__icon">swords</span>
         <span className="game-cta__label">{label}</span>
+        <span aria-hidden className="h-4 w-px shrink-0 bg-white/25" />
+        <span className="inline-flex items-center gap-1 font-sans text-[13px] font-semibold tabular-nums tracking-normal text-white normal-case">
+          <Image
+            src={ENERGY_ICON}
+            alt=""
+            width={20}
+            height={20}
+            className="h-5 w-5 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
+            unoptimized
+          />
+          <span>−{GYM_BATTLE_ENERGY_COST}</span>
+        </span>
       </button>
       {state && !state.success && (
         <p className="text-label-sm text-error">
