@@ -187,26 +187,32 @@ export function CaptureSummary({
           </div>
         </div>
 
-        {/* Footer: nickname + confirm */}
-        <div className="flex shrink-0 flex-col gap-2 border-t border-secondary/20 px-3 py-2.5 lg:flex-row lg:items-end lg:gap-3 lg:px-5 lg:py-3">
-          <div className="min-w-0 flex-1 text-left">
-            <label className="mb-1 block text-[9px] font-bold uppercase tracking-[0.1em] text-secondary/85 lg:text-[10px]">
+        {/* Footer: apodo arriba / CTA abajo en mobile; en fila en desktop
+            sin que .game-cta (width:100%) aplaste el input. */}
+        <div className="flex shrink-0 flex-col gap-2.5 border-t border-secondary/20 px-3 py-2.5 sm:flex-row sm:items-end sm:gap-3 lg:px-5 lg:py-3">
+          <div className="min-w-0 w-full flex-1 text-left">
+            <label
+              htmlFor="capture-nickname"
+              className="mb-1.5 block text-[12px] font-medium text-white/55"
+            >
               {t("nicknameLabel")}
             </label>
             <input
+              id="capture-nickname"
               type="text"
               value={nickname}
               onChange={(e) => onNicknameChange(e.target.value)}
               placeholder={info.name}
               maxLength={20}
-              className="w-full rounded-xl border border-secondary/30 bg-black/40 px-3 py-2 text-label-md text-on-surface placeholder:text-on-surface-variant/50 focus:border-secondary/70 focus:outline-none lg:py-2.5"
+              autoComplete="off"
+              className="w-full min-w-0 rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-[15px] text-white placeholder:text-white/35 outline-none transition focus:border-secondary/70 focus:ring-1 focus:ring-secondary/30"
             />
           </div>
           <button
             type="button"
             disabled={saving}
             onClick={onConfirm}
-            className="game-cta game-cta--red w-full shrink-0 lg:w-auto lg:min-w-[10.5rem]"
+            className={`game-cta game-cta--red w-full! shrink-0 sm:w-auto! sm:min-w-[10.5rem]${saving ? " game-cta--disabled" : ""}`}
           >
             {t("confirmCapture")}
           </button>

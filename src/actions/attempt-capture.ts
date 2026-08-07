@@ -16,6 +16,7 @@ import { revalidateCombatUi } from "@/lib/battle-lock";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
 import { SHINY_CATCH_REWARD, spriteFor } from "@/lib/shiny";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
+import { isTutorialBattle } from "@/lib/battle-tutorial";
 
 const MAX_LOG_LINES = 20;
 const TEAM_SIZE = 6;
@@ -75,7 +76,7 @@ export async function attemptCapture(
     }),
   ]);
   if (!battle) return null;
-  if (battle.gymId || battle.routeTrainerId) return null;
+  if (battle.gymId || battle.routeTrainerId || isTutorialBattle(battle)) return null;
   if (!inventoryItem || inventoryItem.quantity < 1) return null;
   if (inventoryItem.item.type !== "POKEBALL") return null;
   if (await closeBattleIfIdle(battle, locale)) {

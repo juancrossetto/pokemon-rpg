@@ -30,6 +30,7 @@ import { resolveBattleBg } from "@/lib/battle-bg";
 import { parseDoublesFieldB } from "@/lib/doubles";
 import { battleUsesTurnTimer, nextTurnDeadline } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
+import { isTutorialBattle } from "@/lib/battle-tutorial";
 
 export default async function BattlePage({
   params,
@@ -391,6 +392,7 @@ export default async function BattlePage({
     // Un entrenador de ruta tiene nombre propio: no es un "Pokémon salvaje".
     const routeTrainer = battle.routeTrainerId ? getRouteTrainer(battle.routeTrainerId) : null;
     const tCampaign = await getTranslations("campaign");
+    const tBattle = await getTranslations("battle");
     const tGyms = battle.gym ? await getTranslations("gyms") : null;
     const gymBadgeKey = battle.gym ? `badges.${battle.gym.order}` : null;
     const gymBadgeName =
@@ -404,12 +406,15 @@ export default async function BattlePage({
         : (battle.gym?.name ?? null);
     const pvpOpponentName =
       battle.opponentUser?.username ?? battle.pvpMatch?.opponent.username ?? null;
+    const tutorialBattle = isTutorialBattle(battle);
     const opponentName =
       battle.pvpMatchId || battle.clanWarBattleId
         ? pvpOpponentName
         : routeTrainer
           ? tCampaign(routeTrainer.nameKey)
-          : (battle.gymTrainer?.name ?? battle.gym?.leaderName ?? null);
+          : tutorialBattle
+            ? tBattle("tutorialRival")
+            : (battle.gymTrainer?.name ?? battle.gym?.leaderName ?? null);
 
     const trainerPortraitUrl = avatarById(userRow?.avatarId)?.src ?? null;
     let opponentPortraitUrl: string | null = null;
@@ -450,7 +455,6 @@ export default async function BattlePage({
       isRouteTrainer: Boolean(routeTrainer),
     });
 
-    const tBattle = await getTranslations("battle");
     let encounterPlace: BattleArenaProps["encounterPlace"] = null;
     if (battleMode === "wild" && progress) {
       const loc = findLocation(progress.farmingLocationId)?.location;

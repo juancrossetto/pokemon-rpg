@@ -8,6 +8,7 @@ import { getMovesetForLevel } from "@/lib/moveset";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
 import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { TUTORIAL_BATTLE_ID } from "@/lib/battle-tutorial";
 
 const STARTER_LEVEL = 5;
 const STARTER_POKEBALL_COUNT = 5;
@@ -151,8 +152,11 @@ export async function chooseStarter(
           wildMovePp: rivalMoveIds.map(
             (id) => rivalMoves.find((m) => m.id === id)?.pp ?? 20,
           ),
+          // No es un entrenador de ruta real: solo marca pelea tutorial
+          // (sin captura ni huida). Ver `isTutorialBattle`.
+          routeTrainerId: TUTORIAL_BATTLE_ID,
           participantIds: [starterInstance.id],
-          log: [`appear:${rival.name}`, "tutorial"],
+          log: [`appear:${rival.name}`, TUTORIAL_BATTLE_ID],
           turnDeadlineAt: nextTurnDeadline(),
         },
       });
