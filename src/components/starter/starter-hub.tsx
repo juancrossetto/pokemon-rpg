@@ -228,7 +228,7 @@ function StarterCard({
 
   return (
     <div
-      className={`starter-card-enter min-w-0 transition-all duration-500 ${
+      className={`starter-card-enter min-w-0 h-full transition-all duration-500 ${
         isDimmed ? "pointer-events-none scale-95 opacity-0 sm:opacity-20" : ""
       } ${isSelected ? "pointer-events-none opacity-0" : ""}`}
       style={{ animationDelay: `${80 + index * 110}ms` }}
@@ -238,7 +238,7 @@ function StarterCard({
         disabled={disabled}
         aria-label={`${chooseLabel} ${displayName}`}
         onClick={() => onPick(species)}
-        className="starter-card group relative flex w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/92 text-left shadow-[0_16px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pokeball-red/60 disabled:cursor-wait"
+        className="starter-card group relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/92 text-left shadow-[0_16px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pokeball-red/60 disabled:cursor-wait"
         style={
           {
             "--starter-accent": accent,
@@ -253,33 +253,33 @@ function StarterCard({
         <div aria-hidden className="starter-card__sheen pointer-events-none absolute inset-0" />
         <PokeSparks seed={`starter-${species.id}`} accent={accent} />
 
-        <div className="relative z-10 flex flex-1 flex-col items-center px-4 pb-5 pt-5">
-          <div className="relative flex h-36 w-full items-center justify-center sm:h-40">
-            <div aria-hidden className="starter-card__pad absolute inset-x-8 bottom-1 h-11 rounded-[100%]" />
-            <div aria-hidden className="starter-card__ring absolute left-1/2 top-[42%] h-22 w-22 -translate-x-1/2 -translate-y-1/2 rounded-full" />
+        <div className="relative z-10 flex flex-1 flex-col items-center px-3 pb-3 pt-3 sm:px-4 sm:pb-4 sm:pt-4">
+          <div className="relative flex h-24 w-full items-center justify-center sm:h-28 md:h-32">
+            <div aria-hidden className="starter-card__pad absolute inset-x-8 bottom-1 h-9 rounded-[100%] sm:h-11" />
+            <div aria-hidden className="starter-card__ring absolute left-1/2 top-[42%] h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full sm:h-20 sm:w-20" />
             {species.spriteUrl ? (
               <Image
                 src={species.spriteUrl}
                 alt=""
                 width={160}
                 height={160}
-                className="starter-card__sprite relative z-10 h-32 w-32 object-contain drop-shadow-[0_10px_22px_rgba(0,0,0,0.55)] sm:h-36 sm:w-36"
+                className="starter-card__sprite relative z-10 h-22 w-22 object-contain drop-shadow-[0_10px_22px_rgba(0,0,0,0.55)] sm:h-28 sm:w-28 md:h-32 md:w-32"
                 unoptimized
               />
             ) : null}
           </div>
 
-          <p className="mt-1 text-center text-[15px] font-semibold tracking-wide text-white/90">
+          <p className="mt-0.5 text-center text-[13px] font-semibold tracking-wide text-white/90 sm:mt-1 sm:text-[15px]">
             {displayName}
           </p>
 
-          <div className="mt-2.5 flex max-w-full flex-nowrap items-center justify-center gap-1 overflow-hidden">
+          <div className="mt-1.5 flex max-w-full flex-nowrap items-center justify-center gap-1 overflow-hidden sm:mt-2">
             {species.types.map((type) => {
               const color = typeColor(type);
               return (
                 <span
                   key={type}
-                  className="starter-card__type shrink-0 whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                  className="starter-card__type shrink-0 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide sm:px-2 sm:text-[10px]"
                   style={{
                     backgroundColor: `${color}33`,
                     color,
@@ -459,26 +459,26 @@ export function StarterHub({
 
       {showPicker ? (
         <div
-          className={`mx-auto max-w-3xl text-center transition-opacity duration-500 ${
+          className={`mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col text-center transition-opacity duration-500 ${
             picked ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
-          <div className="starter-picker-head">
-            <p className="mb-2.5 flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-pokeball-red">
+          <div className="starter-picker-head shrink-0">
+            <p className="mb-1.5 flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-pokeball-red sm:mb-2.5">
               <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
               {t("eyebrow")}
             </p>
-            <h1 className="page-title text-[clamp(1.45rem,5vw,2.25rem)] text-white">
+            <h1 className="page-title text-[clamp(1.25rem,4vw,2rem)] text-white">
               {t("title")}
             </h1>
-            <p className="mx-auto mt-2 max-w-md text-[14px] leading-snug text-white/55">
+            <p className="mx-auto mt-1.5 max-w-md text-[13px] leading-snug text-white/55 sm:mt-2 sm:text-[14px]">
               {t("subtitle")}
             </p>
           </div>
 
           {/* 2 columnas en mobile: con 6 iniciales, una sola columna obligaba
               a scrollear toda la elección. */}
-          <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+          <div className="mt-3 grid min-h-0 flex-1 grid-cols-2 content-center gap-2.5 sm:mt-4 sm:grid-cols-3 sm:gap-3 md:mt-5 md:gap-4">
             {starters.map((species, index) => (
               <StarterCard
                 key={species.id}

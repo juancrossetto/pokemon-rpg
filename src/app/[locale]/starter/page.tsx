@@ -47,7 +47,7 @@ export default async function StarterPage({
   });
 
   return (
-    <div className="flex-1 px-margin-mobile py-8 md:px-margin-desktop">
+    <div className="flex h-[calc(100dvh-3.5rem-env(safe-area-inset-top)-var(--bottom-nav-h)-env(safe-area-inset-bottom,0px)-1.75rem)] max-h-[calc(100dvh-3.5rem-env(safe-area-inset-top)-var(--bottom-nav-h)-env(safe-area-inset-bottom,0px)-1.75rem)] flex-col overflow-hidden px-margin-mobile py-3 md:px-margin-desktop sm:py-4 xl:h-[calc(100dvh-3.5rem)] xl:max-h-[calc(100dvh-3.5rem)]">
       <StarterHub starters={starters} locale={locale} />
     </div>
   );
