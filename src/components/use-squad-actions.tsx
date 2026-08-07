@@ -597,9 +597,17 @@ export function SquadItemFx({
 export function SquadLevelOffers({
   entries,
   onSettled,
+  onEvolved,
 }: {
   entries: LevelUpOfferEntry[];
   onSettled: () => void;
+  onEvolved?: (next: {
+    toName: string;
+    toSpriteUrl: string;
+    level: number;
+    currentHp: number;
+    maxHp: number;
+  }) => void;
 }) {
   if (typeof document === "undefined") return null;
   return createPortal(
@@ -617,6 +625,18 @@ export function SquadLevelOffers({
             .join("|")}
           entries={entries}
           onSettled={onSettled}
+          onEvolved={
+            onEvolved
+              ? (result) =>
+                  onEvolved({
+                    toName: result.toName,
+                    toSpriteUrl: result.toSpriteUrl,
+                    level: result.level,
+                    currentHp: result.currentHp,
+                    maxHp: result.maxHp,
+                  })
+              : undefined
+          }
         />
       </div>
     </div>,

@@ -223,26 +223,39 @@ export function PartySidebar({
               />
             </span>
           ) : (
-            <span className="relative inline-flex">
-              <span
-                aria-hidden
-                className="pointer-events-none absolute -inset-1 rounded-[28%] bg-primary/20 blur-md md:-inset-1.5"
-              />
-              <TrainerAvatar
-                name={name}
-                src={portraitUrl}
-                size="sm"
-                pixel={pixelPortrait}
-                className="relative md:hidden"
-              />
-              <TrainerAvatar
-                name={name}
-                src={portraitUrl}
-                size="md"
-                pixel={pixelPortrait}
-                className="relative hidden md:inline-flex"
-              />
-            </span>
+            <>
+              {/*
+                No poner `hidden`/`md:hidden` en TrainerAvatar: su root ya trae
+                `inline-flex` y en el CSS generado eso pisa el utility (se ven
+                los dos tamaños a la vez). El toggle va en el wrapper.
+              */}
+              <span className="relative inline-flex md:hidden">
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -inset-1 rounded-[28%] bg-primary/20 blur-md"
+                />
+                <TrainerAvatar
+                  name={name}
+                  src={portraitUrl}
+                  size="sm"
+                  pixel={pixelPortrait}
+                  className="relative"
+                />
+              </span>
+              <span className="relative hidden md:inline-flex">
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -inset-1.5 rounded-[28%] bg-primary/20 blur-md"
+                />
+                <TrainerAvatar
+                  name={name}
+                  src={portraitUrl}
+                  size="md"
+                  pixel={pixelPortrait}
+                  className="relative"
+                />
+              </span>
+            </>
           )}
           <p
             title={name}
@@ -392,8 +405,8 @@ export function PartySidebar({
         </p>
       </div>
 
-      {/* Columna 1×6 acotada al ancho del sidebar (no estira la grilla). */}
-      <div className="mt-2 flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto overflow-x-hidden px-1 py-0.5">
+      {/* Grilla 3×2: aprovecha el ancho de la columna info en desktop. */}
+      <div className="mt-2 grid min-h-0 w-full flex-1 grid-cols-3 content-start justify-items-center gap-x-1.5 gap-y-2 overflow-y-auto overflow-x-hidden px-0.5 py-0.5">
         {children}
       </div>
     </div>
@@ -426,13 +439,14 @@ export function PartyIcon({
   onSelect?: () => void;
   selectHint?: string;
 }) {
+  const t = useTranslations("battle");
   const typeLine = types?.length ? types.join(" / ") : "";
   const detail =
     [
       name,
       level != null ? `Nv. ${level}` : null,
       typeof hpPct === "number" ? `${Math.round(hpPct)}%` : null,
-      isShiny ? "Shiny" : null,
+      isShiny ? t("shinyBadge") : null,
       typeLine || null,
       onSelect ? selectHint : null,
     ]
@@ -441,7 +455,7 @@ export function PartyIcon({
 
   const shellClass = compact
     ? `relative flex min-w-0 flex-1 flex-col items-center gap-0.5 md:gap-1 ${fainted ? "opacity-55" : ""}`
-    : `relative flex w-[5.25rem] max-w-full shrink-0 flex-col items-center gap-0.5 ${fainted ? "opacity-55" : ""}`;
+    : `relative flex w-full max-w-[4.75rem] shrink-0 flex-col items-center gap-0.5 ${fainted ? "opacity-55" : ""}`;
 
   const body = (
     <>
@@ -473,7 +487,7 @@ export function PartyIcon({
         )}
         {isShiny && !fainted ? (
           <span className="absolute left-0.5 top-0.5 md:left-1 md:top-1">
-            <ShinyMark className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" />
+            <ShinyMark className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" title={t("shinyBadge")} />
           </span>
         ) : null}
         {fainted ? (
@@ -660,10 +674,10 @@ export function HpPlate({
                 align === "right" ? "flex-row-reverse" : ""
               }`}
             >
-              <span className="min-w-0 truncate text-[11px] font-bold capitalize tracking-tight text-white md:text-[16px]">
+              <span className="min-w-0 truncate text-[11px] font-bold capitalize tracking-tight text-white md:text-[16px] lg:text-[19px] lg:leading-tight">
                 {name}
               </span>
-              <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/55 md:text-[12px]">
+              <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/55 md:text-[12px] lg:text-[13px]">
                 {levelLabel}
               </span>
               {isShiny ? (
@@ -675,20 +689,43 @@ export function HpPlate({
               {status ? <StatusBadge status={status} /> : null}
             </div>
 
-            <div className="hp-plate__bar">
-              <div className="hp-plate__bar-track">
-                <div
-                  className={`hp-plate__bar-fill health-bar-fill ${hpClass}${
-                    critical ? " hp-bar-critical" : ""
-                  }`}
-                  style={{ width: `${hpPct}%` }}
-                />
-                <span className="hp-plate__bar-sheen" aria-hidden />
+            {/*
+              En desktop la barra deja de ser una franja suelta: se lee como
+              "PS ▬▬▬▬ 108/108" en una sola línea, con los números grandes al
+              lado. Abajo de lg queda el layout apilado de siempre.
+            */}
+            <div
+              className={`hp-plate__row ${
+                align === "right" ? "lg:flex-row-reverse" : ""
+              }`}
+            >
+              <span className="hp-plate__hp-label" aria-hidden>
+                {t("hp")}
+              </span>
+              <div className="hp-plate__bar">
+                <div className="hp-plate__bar-track">
+                  <div
+                    className={`hp-plate__bar-fill health-bar-fill ${hpClass}${
+                      critical ? " hp-bar-critical" : ""
+                    }`}
+                    style={{ width: `${hpPct}%` }}
+                  />
+                  <span className="hp-plate__bar-ticks" aria-hidden />
+                  <span className="hp-plate__bar-sheen" aria-hidden />
+                </div>
               </div>
+              <span
+                className={`hp-plate__hp-count ${critical ? "text-error" : "text-white"}`}
+              >
+                <span className="hp-plate__hp-cur">{currentHp}</span>
+                <span className="hp-plate__hp-sep">/</span>
+                <span className="hp-plate__hp-max">{maxHp}</span>
+              </span>
             </div>
 
+            {/* Hasta md: porcentaje + valores en una línea aparte. */}
             <p
-              className={`mt-0.5 text-[9px] font-semibold tabular-nums tracking-wide md:text-[12px] ${
+              className={`mt-0.5 text-[9px] font-semibold tabular-nums tracking-wide md:text-[12px] lg:hidden ${
                 align === "right" ? "text-right" : ""
               } ${critical ? "text-error" : "text-white/60"}`}
             >

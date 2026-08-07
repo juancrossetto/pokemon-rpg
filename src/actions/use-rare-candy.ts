@@ -164,6 +164,7 @@ export async function useRareCandy(
       speciesId: instance.speciesId,
       level: newLevel,
       knownMoves,
+      declinedMoveIds: instance.declinedMoveIds,
     });
     autoTaught = effects.autoTaught;
     pendingMoves = effects.pendingMoves;

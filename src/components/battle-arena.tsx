@@ -46,7 +46,9 @@ import {
   subscribeBattleSpeed,
 } from "@/lib/battle-speed";
 import { pickAutoPlayerMoveId } from "@/lib/battle-ai";
-import { impactFxUrl, resolveMoveProjectile, showdownBattleBgUrl, showdownFxUrl } from "@/lib/showdown-fx";
+import { impactFxUrl, resolveMoveFx, showdownBattleBgUrl, showdownFxUrl } from "@/lib/showdown-fx";
+import type { MoveFxGlow, MoveFxStyle } from "@/lib/showdown-fx";
+import { battleAnimatedSpriteUrl } from "@/lib/showdown-sprites";
 import {
   applyStagesToStats,
   statusAbbrKey,
@@ -71,11 +73,13 @@ import type {
 } from "@/components/battle/arena-types";
 import { forecastDamage } from "@/lib/damage-forecast";
 import { EmptyPartySlot, HpPlate, PartyIcon, PartySidebar } from "@/components/battle/arena-panels";
+import { SpriteStatusFx } from "@/components/battle/status-fx";
 import { CaptureSummary } from "@/components/battle/capture-summary";
 import { BattleOutcomeScreen } from "@/components/battle/battle-outcome-screen";
 import { BattleTurnTimer } from "@/components/battle/battle-turn-timer";
 import {
   BagView,
+  MustSwitchSheet,
   MovesView,
   ReviveTargetView,
   TargetView,
@@ -112,33 +116,184 @@ const STATUS_MS = 620;
 const MISS_MS = 500;
 /** Beat aparte para burn/poison: que no se confunda con el daño del golpe. */
 const RESIDUAL_MS = 720;
-const BALL_TRAVEL_MS = 520;
-/** Un temblor individual (izquierda-derecha-asienta). */
-const BALL_SHAKE_MS = 420;
+/*
+  Captura. El vuelo termina en el CUERPO del rival, no en el piso: de ahí
+  salen el golpe, la absorción y el cierre, y recién después la ball cae.
+  Los ~1.2s de coreografía previos al primer temblor corren en paralelo a la
+  tirada del server, así que su latencia queda tapada por animación en vez de
+  por una ball congelada.
+*/
+const BALL_TRAVEL_MS = 460;
+/** Impacto contra el Pokémon: destello + retroceso. */
+const BALL_HIT_MS = 140;
+/** El rival se convierte en energía y entra. */
+const BALL_ABSORB_MS = 320;
+/** Click de cierre + caída al piso con rebote. */
+const BALL_SEAL_MS = 260;
+/** Beat de tensión antes del primer temblor. */
+const BALL_SETTLE_MS = 150;
+/** Un temblor individual (pivotea sobre la base). */
+const BALL_SHAKE_MS = 460;
 /** Pausa entre temblores — genera tensión. */
-const BALL_SHAKE_GAP_MS = 140;
-/** Absorción mínima; corre en paralelo al resultado del server. */
-const BALL_ABSORB_MS = 90;
-const BALL_CATCH_MS = 680;
-const BALL_BREAK_MS = 380;
+const BALL_SHAKE_GAP_MS = 200;
+const BALL_CATCH_MS = 760;
+/** Cubre la ball reventando + el rival volviendo a materializarse
+ *  (= SPRITE_MATERIALIZE_MS, declarado más abajo). */
+const BALL_BREAK_MS = 560;
 const FAINT_MS = 1100;
 const RECALL_MS = 450;
 const ITEM_USE_MS = 550;
 /** Brillo verde de curación (Recover, drenaje, Rest). */
 const HEAL_PULSE_MS = 560;
 /** Viaje de la ball al enviar Pokémon. */
-const SEND_OUT_TRAVEL_MS = 680;
-/** La ball queda apoyada en el piso antes de abrirse. */
-const SEND_OUT_LAND_MS = 280;
-/** Destello de apertura antes de revelar el sprite. */
-const SEND_OUT_OPEN_MS = 300;
+const SEND_OUT_TRAVEL_MS = 420;
+/** Rebote con squash en el piso: corto, la ball se abre casi al tocar. */
+const SEND_OUT_LAND_MS = 120;
+/** Destello de apertura; el sprite sale al empezar, no al terminar. */
+const SEND_OUT_OPEN_MS = 200;
 const SEND_OUT_BALL_MS = SEND_OUT_TRAVEL_MS + SEND_OUT_LAND_MS + SEND_OUT_OPEN_MS;
+/** El Pokémon aparece con el flash de apertura, no después. */
+const SEND_OUT_REVEAL_MS = SEND_OUT_TRAVEL_MS + SEND_OUT_LAND_MS;
+const SPRITE_ENTER_MS = 280;
+/** Silueta blanca → color al salir de la ball; arranca junto con la apertura.
+ *  Larga a propósito: es el beat que se tiene que poder mirar. */
+const SPRITE_MATERIALIZE_MS = 560;
 const SEND_OUT_BALL_SRC = itemDisplayUrl("Poke Ball", "hd");
 /** Banner del poder: más largo que el golpe para que el slide se lea. */
 const MOVE_BANNER_MS = 2400;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, scaledDelay(ms)));
+}
+
+/** Partículas Showdown tipadas / por move (chorro, hojas, drain…). */
+function MoveHitFx({
+  strikeKey,
+  side,
+  file,
+  files,
+  style,
+  count,
+  glow = "neutral",
+}: {
+  strikeKey: number;
+  side: "player" | "wild";
+  file: string;
+  files?: string[];
+  style: MoveFxStyle;
+  count: number;
+  glow?: MoveFxGlow;
+}) {
+  const fromPlayer = side === "player";
+  const n = Math.max(1, Math.min(8, count));
+  const glowClass = `fx-glow-${glow}`;
+  const srcAt = (i: number) =>
+    showdownFxUrl(files && files.length > 0 ? files[i % files.length]! : file);
+
+  if (style === "bolt") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- FX particle from Showdown CDN
+      <img
+        key={`bolt-${strikeKey}`}
+        src={showdownFxUrl(file)}
+        alt=""
+        aria-hidden
+        className={`fx-bolt absolute z-10 pointer-events-none ${glowClass} ${
+          fromPlayer ? "fx-bolt-on-wild" : "fx-bolt-on-player"
+        }`}
+      />
+    );
+  }
+
+  if (style === "contact") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        key={`contact-${strikeKey}`}
+        src={showdownFxUrl(file)}
+        alt=""
+        aria-hidden
+        className={`fx-contact absolute z-10 pointer-events-none ${glowClass} ${
+          fromPlayer ? "fx-contact-right" : "fx-contact-left"
+        }`}
+      />
+    );
+  }
+
+  if (style === "slash") {
+    let slashFile = file;
+    if (!fromPlayer) {
+      if (file === "leftchop.png") slashFile = "rightchop.png";
+      else if (file === "leftslash.png") slashFile = "rightslash.png";
+      else if (file === "leftclaw.png") slashFile = "rightclaw.png";
+    }
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        key={`slash-${strikeKey}`}
+        src={showdownFxUrl(slashFile)}
+        alt=""
+        aria-hidden
+        className={`fx-slash absolute z-10 pointer-events-none ${glowClass} ${
+          fromPlayer ? "fx-slash-on-wild" : "fx-slash-on-player"
+        }`}
+      />
+    );
+  }
+
+  if (style === "drain") {
+    return (
+      <>
+        {Array.from({ length: n }, (_, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={`drain-${strikeKey}-${i}`}
+            src={srcAt(i)}
+            alt=""
+            aria-hidden
+            className={`fx-projectile fx-drain absolute z-10 pointer-events-none ${glowClass} ${
+              fromPlayer ? "fx-drain-to-player" : "fx-drain-to-wild"
+            }`}
+            style={
+              {
+                "--fx-i": i,
+                "--fx-dy": `${(i - (n - 1) / 2) * 10}px`,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </>
+    );
+  }
+
+  if (style === "stream" || style === "scatter" || style === "projectile") {
+    const dirClass = fromPlayer ? "fx-projectile-right" : "fx-projectile-left";
+    const extra =
+      style === "stream" ? "fx-stream" : style === "scatter" ? "fx-scatter" : "";
+    return (
+      <>
+        {Array.from({ length: n }, (_, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={`proj-${strikeKey}-${i}`}
+            src={srcAt(i)}
+            alt=""
+            aria-hidden
+            className={`fx-projectile absolute z-10 pointer-events-none ${dirClass} ${extra} ${glowClass}`}
+            style={
+              {
+                "--fx-i": i,
+                "--fx-dy": `${(i - (n - 1) / 2) * (style === "scatter" ? 14 : 8)}px`,
+                "--fx-rot": `${(i - (n - 1) / 2) * (style === "scatter" ? 18 : 6)}deg`,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </>
+    );
+  }
+
+  return null;
 }
 
 const NO_STAGES: StatStages = emptyStatStages();
@@ -372,7 +527,9 @@ export function BattleArena({
   const [badgeEarned, setBadgeEarned] = useState(false);
   const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [tmRewardName, setTmRewardName] = useState<string | null>(null);
-  const [ballAnim, setBallAnim] = useState<"recall" | "throw" | "land" | "open" | null>("throw");
+  // Arranca en null: el lanzamiento inicial lo dispara el efecto de send-out
+  // cuando la página terminó de cargar (ver más abajo).
+  const [ballAnim, setBallAnim] = useState<"recall" | "throw" | "land" | "open" | null>(null);
   // Quién está brillando de curación: objeto del jugador, Recover o drenaje.
   const [healingTarget, setHealingTarget] = useState<{
     side: "player" | "wild";
@@ -395,7 +552,10 @@ export function BattleArena({
     effectiveness: number;
     category?: TurnEvent["category"];
     fxFile?: string;
-    fxStyle?: "projectile" | "contact" | "bolt";
+    fxFiles?: string[];
+    fxStyle?: MoveFxStyle;
+    fxCount?: number;
+    fxGlow?: MoveFxGlow;
   } | null>(null);
   /** Vive más que moveFx: el golpe puede terminar antes de que el slide salga. */
   const [moveBanner, setMoveBanner] = useState<{
@@ -459,7 +619,7 @@ export function BattleArena({
   const [nicknameInput, setNicknameInput] = useState("");
   const [savingNickname, setSavingNickname] = useState(false);
   const [captureBall, setCaptureBall] = useState<
-    "throw" | "idle" | "wobble" | "success" | "fail" | null
+    "throw" | "hit" | "absorb" | "seal" | "idle" | "wobble" | "success" | "fail" | null
   >(null);
   /** Nombre del ítem lanzado — para pintar Ultra/Great/Master en la animación. */
   const [captureBallName, setCaptureBallName] = useState<string | null>(null);
@@ -516,28 +676,89 @@ export function BattleArena({
     return () => observer.disconnect();
   }, []);
 
-  // Al iniciar: rival entra → ball viaja → apoya en el piso → se abre → sale el Pokémon.
+  /*
+    Precarga de todo lo que aparece de golpe durante el send-out. Sin esto el
+    GIF del Pokémon se descarga y decodifica justo en el frame en que se revela
+    —y la animación se traba—, porque el sprite recién se monta cuando
+    `playerHidden` pasa a false. Los del equipo también: un cambio dispara la
+    misma descarga en medio del vuelo de la ball.
+  */
   useEffect(() => {
-    const wildTimer = setTimeout(() => setWildEntering(false), 400);
-    playBattleSfx("ball");
-    const landTimer = setTimeout(() => {
-      setBallAnim("land");
-    }, SEND_OUT_TRAVEL_MS);
-    const openTimer = setTimeout(() => {
-      setBallAnim("open");
-      playBattleSfx("ball");
-    }, SEND_OUT_TRAVEL_MS + SEND_OUT_LAND_MS);
-    const revealTimer = setTimeout(() => setPlayerHidden(false), SEND_OUT_BALL_MS);
-    const enterClearTimer = setTimeout(() => setPlayerEntering(false), SEND_OUT_BALL_MS + 400);
-    const ballTimer = setTimeout(() => setBallAnim(null), SEND_OUT_BALL_MS + 120);
-    return () => {
-      clearTimeout(wildTimer);
-      clearTimeout(landTimer);
-      clearTimeout(openTimer);
-      clearTimeout(revealTimer);
-      clearTimeout(enterClearTimer);
-      clearTimeout(ballTimer);
+    const urls = new Set<string>([SEND_OUT_BALL_SRC]);
+    const activeUrl = battleAnimatedSpriteUrl(
+      player.speciesName,
+      "back",
+      player.isShiny ?? false,
+    );
+    urls.add(activeUrl);
+    for (const m of initialParty) {
+      urls.add(battleAnimatedSpriteUrl(m.speciesName, "back", m.isShiny ?? false));
+    }
+    const images: HTMLImageElement[] = [];
+    const ready: Promise<unknown>[] = [];
+    for (const url of urls) {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = url;
+      images.push(img);
+      // Sólo bloqueamos el arranque en el que sale de la ball; el resto del
+      // equipo se precarga en segundo plano para los cambios.
+      if (url === activeUrl || url === SEND_OUT_BALL_SRC) {
+        ready.push(img.decode().catch(() => undefined));
+      }
+    }
+
+    let cancelled = false;
+    const timers: number[] = [];
+    const at = (ms: number, fn: () => void) => {
+      timers.push(window.setTimeout(fn, scaledDelay(ms)));
     };
+
+    // El timeline arranca cuando el hilo principal está libre. En una recarga
+    // dura el mount ocurre en plena hidratación de la página: si largamos acá,
+    // la ball vuela contra un main thread ocupado y se ve a los saltos.
+    const startTimeline = () => {
+      if (cancelled) return;
+      setBallAnim("throw");
+      playBattleSfx("ball");
+      at(SPRITE_ENTER_MS, () => setWildEntering(false));
+      at(SEND_OUT_TRAVEL_MS, () => setBallAnim("land"));
+      at(SEND_OUT_REVEAL_MS, () => {
+        setBallAnim("open");
+        playBattleSfx("sendOut");
+        setPlayerHidden(false);
+      });
+      at(SEND_OUT_REVEAL_MS + SPRITE_MATERIALIZE_MS, () => setPlayerEntering(false));
+      at(SEND_OUT_BALL_MS + 80, () => setBallAnim(null));
+    };
+
+    const pageLoaded =
+      document.readyState === "complete"
+        ? Promise.resolve()
+        : new Promise<void>((resolve) => {
+            window.addEventListener("load", () => resolve(), { once: true });
+          });
+
+    // Tope duro: si algo no resuelve (CDN caído, decode que nunca vuelve), la
+    // batalla igual arranca.
+    const cap = new Promise<void>((resolve) => {
+      timers.push(window.setTimeout(resolve, 1200));
+    });
+
+    void Promise.race([Promise.all([pageLoaded, ...ready]), cap]).then(() => {
+      if (cancelled) return;
+      // Dos frames: el primero cierra el trabajo pendiente del navegador, el
+      // segundo ya es un frame limpio donde empezar a animar.
+      requestAnimationFrame(() => requestAnimationFrame(startTimeline));
+    });
+
+    return () => {
+      cancelled = true;
+      for (const id of timers) clearTimeout(id);
+      for (const img of images) img.src = "";
+    };
+    // Sólo al montar: son los sprites con los que arranca la batalla.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function appendLog(text: string, side: LogSide = "system") {
@@ -977,7 +1198,7 @@ export function BattleArena({
               ? "status"
               : "hit";
       const projectile =
-        mode === "hit" ? resolveMoveProjectile(event.moveType, event.category) : null;
+        mode === "hit" ? resolveMoveFx(event.moveType, event.category, event.moveName) : null;
       const previewDamages =
         mode === "hit" && event.hitDamages && event.hitDamages.length > 0
           ? event.hitDamages
@@ -1011,7 +1232,10 @@ export function BattleArena({
         effectiveness: event.effectiveness,
         category: event.category,
         fxFile: projectile?.file,
+        fxFiles: projectile?.files,
         fxStyle: projectile?.style,
+        fxCount: projectile?.count,
+        fxGlow: projectile?.glow,
       });
       setMoveBanner({
         key: fxKey,
@@ -1990,12 +2214,22 @@ export function BattleArena({
     setCaptureBallName(ballName);
     setCaptureBall("throw");
     await delay(BALL_TRAVEL_MS);
-    setCaptureBall("idle");
-    playBattleSfx("ball");
 
-    // Absorber + server en paralelo: los temblores arrancan apenas la ball
-    // cerró y ya tenemos el roll (sin cola serial absorb → await result).
-    const [result] = await Promise.all([resultPromise, delay(BALL_ABSORB_MS)]);
+    // Pega en el cuerpo.
+    setCaptureBall("hit");
+    playBattleSfx("hit");
+    await delay(BALL_HIT_MS);
+
+    // Se abre y lo absorbe como energía.
+    setCaptureBall("absorb");
+    playBattleSfx("ball");
+    await delay(BALL_ABSORB_MS);
+
+    // Cierra, cae al piso y rebota. El server viene corriendo desde el
+    // lanzamiento: acá se lo espera con animación encima, no en seco.
+    setCaptureBall("seal");
+    playBattleSfx("ball");
+    const [result] = await Promise.all([resultPromise, delay(BALL_SEAL_MS)]);
     if (!result) {
       setBallStacks(prevBalls);
       setCaptureBall(null);
@@ -2004,6 +2238,10 @@ export function BattleArena({
       setView("menu");
       return;
     }
+
+    // La ball queda en el piso con la luz latiendo antes del primer forcejeo.
+    setCaptureBall("idle");
+    await delay(BALL_SETTLE_MS);
 
     // Hasta 3 temblores visibles; el 4º check es el “click” de captura.
     const visibleShakes = Math.min(result.shakes, 3);
@@ -2197,6 +2435,8 @@ export function BattleArena({
     const outgoingHpSnapshot = playerHp;
     const outgoingMaxHpSnapshot = playerMaxHp;
     const forced = mustSwitch;
+    // Cerrar el sheet ya: no esperar a que termine la animación de salida.
+    if (forced) setMustSwitch(false);
 
     if (!forced) {
       setBallAnim("recall");
@@ -2207,18 +2447,18 @@ export function BattleArena({
     setPlayerHidden(true);
     setBallAnim("throw");
     playBattleSfx("ball");
+    // Server en paralelo al vuelo: no sumar latencia encima de la animación.
+    const resultPromise = switchPokemon(battleId, member.instanceId, locale, forced);
     await delay(SEND_OUT_TRAVEL_MS);
     setBallAnim("land");
-    await delay(SEND_OUT_LAND_MS);
-    setBallAnim("open");
-    playBattleSfx("ball");
-    await delay(SEND_OUT_OPEN_MS);
-
-    const result = await switchPokemon(battleId, member.instanceId, locale, forced);
+    // El resultado se espera durante el rebote, no después de la apertura: así
+    // el Pokémon puede salir en el mismo frame en que la ball se abre.
+    const [result] = await Promise.all([resultPromise, delay(SEND_OUT_LAND_MS)]);
     if (!result) {
       setIsAnimating(false);
       setBallAnim(null);
       setPlayerHidden(false);
+      if (forced) setMustSwitch(true);
       return;
     }
 
@@ -2275,12 +2515,16 @@ export function BattleArena({
       }),
     );
 
-    setBallAnim(null);
+    // Apertura y salida arrancan juntas: el chorro de luz de la ball es el
+    // mismo que arma la silueta.
+    setBallAnim("open");
+    playBattleSfx("sendOut");
     setPlayerEntering(true);
     setPlayerHidden(false);
-    await delay(400);
+    await delay(SEND_OUT_OPEN_MS);
+    setBallAnim(null);
+    await delay(SPRITE_MATERIALIZE_MS - SEND_OUT_OPEN_MS);
     setPlayerEntering(false);
-    if (forced) setMustSwitch(false);
 
     if (result.counterAttack) {
       await playEvent(result.counterAttack);
@@ -2364,8 +2608,13 @@ export function BattleArena({
 
   const seFlash = moveFx?.mode === "hit" && (moveFx.effectiveness ?? 1) > 1;
   const physicalLunge = moveFx?.mode === "hit" && moveFx.category === "PHYSICAL";
+  /** El rival ya no está en el campo: entró en la ball (o está entrando). */
   const wildAbsorbedByBall =
-    captureBall === "idle" || captureBall === "wobble" || captureBall === "success";
+    captureBall === "absorb" ||
+    captureBall === "seal" ||
+    captureBall === "idle" ||
+    captureBall === "wobble" ||
+    captureBall === "success";
   const playerIdle =
     !attackingSide && !shakingSide && !faintingSide && !playerEntering && !healingTarget && !ballAnim;
   const wildIdle =
@@ -2442,7 +2691,7 @@ export function BattleArena({
       )
     : Math.round(wildSpritePx * 0.78);
   const playerSpriteClass = [
-    "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
+    "absolute inset-0 z-[1] h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "player" && attackingLane === "A"
       ? physicalLunge
         ? "sprite-lunge-right-hard"
@@ -2453,7 +2702,7 @@ export function BattleArena({
       : "",
     faintingSide === "player" && faintingLane === "A" ? "sprite-faint" : "",
     ballAnim === "recall" ? "sprite-recall" : "",
-    playerEntering ? "sprite-enter" : "",
+    playerEntering ? "sprite-materialize" : "",
     healingTarget?.side === "player" && healingTarget.lane === "A" ? "sprite-heal" : "",
     playerIdle ? "sprite-idle-bob" : "",
   ]
@@ -2461,7 +2710,7 @@ export function BattleArena({
     .join(" ");
 
   const playerBSpriteClass = [
-    "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
+    "absolute inset-0 z-[1] h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "player" && attackingLane === "B"
       ? physicalLunge
         ? "sprite-lunge-right-hard"
@@ -2478,7 +2727,7 @@ export function BattleArena({
     .join(" ");
 
   const wildSpriteClass = [
-    "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
+    "absolute inset-0 z-[1] h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "wild" && attackingLane === "A"
       ? physicalLunge
         ? "sprite-lunge-left-hard"
@@ -2490,7 +2739,7 @@ export function BattleArena({
     faintingSide === "wild" && faintingLane === "A" ? "sprite-faint" : "",
     wildEntering ? "sprite-enter" : "",
     wildAbsorbedByBall ? "sprite-absorb-ball" : "",
-    captureBall === "fail" ? "sprite-enter" : "",
+    captureBall === "fail" ? "sprite-materialize" : "",
     healingTarget?.side === "wild" && healingTarget.lane === "A" ? "sprite-heal" : "",
     wildIdle ? "sprite-idle-bob" : "",
   ]
@@ -2498,7 +2747,7 @@ export function BattleArena({
     .join(" ");
 
   const wildBSpriteClass = [
-    "h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
+    "absolute inset-0 z-[1] h-full w-full object-contain object-bottom drop-shadow-lg origin-bottom",
     attackingSide === "wild" && attackingLane === "B"
       ? physicalLunge
         ? "sprite-lunge-left-hard"
@@ -2540,20 +2789,49 @@ export function BattleArena({
       compact
     />
   ));
+  const selectPartyMember = (m: (typeof party)[number]) => {
+    if (isAnimating || isDouble) return undefined;
+    if (mustSwitch) {
+      if (m.currentHp <= 0 || m.instanceId === activePlayer.instanceId) return undefined;
+      return () => {
+        void handleSwitchTo(m);
+      };
+    }
+    if (!hasHealthyBackup) return undefined;
+    return () => setView("team");
+  };
   const commandExpanded = view !== "menu";
   const lastLogEntry = log[log.length - 1];
 
   return (
-    <div className="flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden px-1.5 py-0.5 sm:px-2 md:px-3 md:py-1.5">
-      <div className="mx-auto flex w-full max-w-7xl min-h-0 flex-1 flex-col gap-0.5 overflow-hidden md:gap-1.5">
+    <div
+      className="battle-shell relative flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden"
+      style={
+        {
+          "--arena-bg-image": `url(${showdownBattleBgUrl(battleBg)})`,
+        } as CSSProperties
+      }
+    >
+      {/* Bioma a full-bleed: sólo desktop (no altera mobile). */}
+      <div className="battle-biome-bleed" aria-hidden />
+      {mustSwitch ? (
+        <MustSwitchSheet
+          isAnimating={isAnimating}
+          roster={teamRoster}
+          foeName={activeWild.name}
+          foeTypes={activeWild.types}
+          matchupInfo={switchMatchupInfo}
+          onSwitch={handleSwitchTo}
+        />
+      ) : null}
+      <div className="battle-layout relative z-[1] mx-auto w-full max-w-7xl px-1.5 py-0.5 sm:px-2 md:px-3 md:py-1.5 lg:max-w-[100rem]">
         {/*
-          Columna del combate: rival + campo + equipo comparten el ancho del
-          fondo Showdown (753 / 1506). Antes el party iba a max-w-7xl y el
-          arena a 753px → desktop “a medias”.
+          < lg: stage centrado 753 + party, como antes.
+          ≥ lg: display:contents → arena/moves/info en el grid padre.
         */}
-        <div className="battle-stage mx-auto flex min-h-0 w-full max-w-[753px] flex-1 flex-col gap-0.5 overflow-hidden md:gap-1.5 2xl:max-w-[1506px]">
-        {/* Rival — barra horizontal (mismo patrón que mobile). */}
-        <div className="shrink-0">
+        <div className="battle-layout__stage battle-stage flex min-h-0 w-full flex-col gap-0.5 overflow-hidden md:gap-1.5">
+        {/* Rival — mobile/tablet; en desktop vive en la columna info. */}
+        <div className="shrink-0 lg:hidden">
           <PartySidebar
             name={wildEncounterHeader ? activeWild.name : foeLabel}
             portraitUrl={opponentPortraitUrl}
@@ -2579,23 +2857,22 @@ export function BattleArena({
         </div>
 
           {/* Arena */}
-          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="battle-layout__arena relative flex min-h-0 min-w-0 flex-1 flex-col">
           <div
             ref={arenaFieldRef}
             data-battle-speed={battleSpeed}
             /*
               753px = ancho nativo de los fondos de Showdown (753×500). El
-              padre `.battle-stage` ya fija ese tope; acá el campo llena el
-              ancho disponible.
+              grid `.battle-layout` ya fija ese tope (o 1506 a 2×); acá el
+              campo llena el ancho de la columna central.
             */
-            className={`battle-arena-field relative m-auto aspect-16/9 max-h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl border border-white/10 ${
+            className={`battle-arena-field relative mx-auto max-h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl border border-white/10 max-lg:h-full max-lg:max-h-none max-lg:aspect-auto lg:m-auto lg:aspect-[753/500] ${
               arenaFlash ? "arena-type-flash" : ""
             }`}
             style={
-              {
-                "--arena-bg-image": `url(${showdownBattleBgUrl(battleBg)})`,
-                ...(arenaFlash ? { "--arena-flash-color": arenaFlash } : {}),
-              } as CSSProperties
+              arenaFlash
+                ? ({ "--arena-flash-color": arenaFlash } as CSSProperties)
+                : undefined
             }
           >
             {isPvpBattle ? (
@@ -2612,7 +2889,8 @@ export function BattleArena({
                 }}
               />
             ) : null}
-            {/* Placa rival + banner de poder al costado; HUD debajo. */}
+            {/* Placas HP sobre el campo (también en desktop — la columna info
+                sólo lleva party/encuentro, sin duplicar estas barras). */}
             <div className="absolute top-2.5 right-2 left-2.5 z-30 flex flex-col items-start gap-3.5 md:top-3 md:right-1.5 md:left-3 md:gap-4">
               <div className="flex w-full items-stretch gap-1.5 md:gap-2">
                 <HpPlate
@@ -2674,7 +2952,7 @@ export function BattleArena({
                 player sprite bottom-left. Same-corner plates were covering the
                 sprites, which is why the player looked cropped and small. */}
             <HpPlate
-              className="absolute bottom-2 right-2 z-30 w-[min(52vw,11.5rem)] sm:bottom-2.5 sm:right-2.5 sm:w-[min(48vw,12.75rem)] md:bottom-3 md:right-3 md:w-[min(100%,20rem)]"
+              className="absolute bottom-2 right-2 z-30 w-[min(52vw,11.5rem)] sm:bottom-2.5 sm:right-2.5 sm:w-[min(48vw,12.75rem)] md:bottom-3 md:right-3 md:w-[min(100%,19.5rem)]"
               name={activePlayer.name}
               levelLabel={t("level", { level: activePlayer.level })}
               currentHp={playerHp}
@@ -2686,7 +2964,7 @@ export function BattleArena({
             />
             {isDouble && playerB && (
               <HpPlate
-                className="absolute bottom-2 right-[calc(min(52vw,11.5rem)+0.45rem)] z-30 w-[min(36vw,8.25rem)] sm:right-[calc(min(48vw,12.75rem)+0.55rem)] sm:w-[min(40vw,9.5rem)] md:bottom-3 md:right-[calc(min(100%,20rem)+0.9rem)] md:w-[min(100%,15.5rem)]"
+                className="absolute bottom-2 right-[calc(min(52vw,11.5rem)+0.45rem)] z-30 w-[min(36vw,8.25rem)] sm:right-[calc(min(48vw,12.75rem)+0.55rem)] sm:w-[min(40vw,9.5rem)] md:bottom-3 md:right-[calc(min(100%,19.5rem)+0.9rem)] md:w-[min(100%,15.5rem)]"
                 name={playerB.name}
                 levelLabel={t("level", { level: playerB.level })}
                 currentHp={playerBHp}
@@ -2698,44 +2976,21 @@ export function BattleArena({
               />
             )}
 
-            {moveFx?.mode === "hit" && moveFx.fxFile && moveFx.fxStyle === "projectile" && (
-              // eslint-disable-next-line @next/next/no-img-element -- FX particle from Showdown CDN
-              <img
-                key={`proj-${moveFx.strikeKey}`}
-                src={showdownFxUrl(moveFx.fxFile)}
-                alt=""
-                aria-hidden
-                className={`fx-projectile absolute top-[42%] z-10 pointer-events-none ${
-                  moveFx.side === "player" ? "fx-projectile-right" : "fx-projectile-left"
-                }`}
+            {moveFx?.mode === "hit" &&
+            moveFx.fxFile &&
+            moveFx.fxStyle &&
+            ((moveFx.fxStyle !== "contact" && moveFx.fxStyle !== "slash") ||
+              attackingSide) ? (
+              <MoveHitFx
+                strikeKey={moveFx.strikeKey}
+                side={moveFx.side}
+                file={moveFx.fxFile}
+                files={moveFx.fxFiles}
+                style={moveFx.fxStyle}
+                count={moveFx.fxCount ?? 1}
+                glow={moveFx.fxGlow}
               />
-            )}
-
-            {moveFx?.mode === "hit" && moveFx.fxFile && moveFx.fxStyle === "bolt" && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={`bolt-${moveFx.strikeKey}`}
-                src={showdownFxUrl(moveFx.fxFile)}
-                alt=""
-                aria-hidden
-                className={`fx-bolt absolute z-10 pointer-events-none ${
-                  moveFx.side === "player" ? "fx-bolt-on-wild" : "fx-bolt-on-player"
-                }`}
-              />
-            )}
-
-            {moveFx?.mode === "hit" && moveFx.fxFile && moveFx.fxStyle === "contact" && attackingSide && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={`contact-${moveFx.strikeKey}`}
-                src={showdownFxUrl(moveFx.fxFile)}
-                alt=""
-                aria-hidden
-                className={`fx-contact absolute z-10 pointer-events-none ${
-                  moveFx.side === "player" ? "fx-contact-right" : "fx-contact-left"
-                }`}
-              />
-            )}
+            ) : null}
 
             {effPopup && (
               <span
@@ -2746,12 +3001,12 @@ export function BattleArena({
               </span>
             )}
 
-            {/* Opponent sprite — far plate (posiciones clásicas del campo). */}
+            {/* Opponent sprite — pies sobre plataforma lejana. */}
             <div
               className={`absolute z-[1] origin-bottom ${
                 isDouble
-                  ? "right-[4%] top-[14%] md:top-[12%]"
-                  : "right-[6%] top-[18%] md:top-[16%]"
+                  ? "right-[10%] bottom-[46%] md:right-[12%] md:bottom-[48%] lg:right-[14%] lg:bottom-[46%]"
+                  : "right-[16%] bottom-[44%] md:right-[18%] md:bottom-[46%] lg:right-[22%] lg:bottom-[42%]"
               } ${view === "targets" && wildHp > 0 ? "cursor-pointer ring-2 ring-amber-300/80 rounded-lg" : ""}`}
               style={{
                 width: isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx,
@@ -2769,48 +3024,93 @@ export function BattleArena({
               role={view === "targets" ? "button" : undefined}
               tabIndex={view === "targets" && wildHp > 0 ? 0 : undefined}
             >
-              {/* Sombra solo mientras el salvaje está en el campo. */}
-              {!wildAbsorbedByBall ? (
+              {/* Plataforma + sombra: ancla visual tipo Gen 5 / Showdown. Se
+                  mantiene mientras la ball descansa sobre ella. */}
+              {!wildAbsorbedByBall || captureBall === "seal" || captureBall === "idle" ||
+              captureBall === "wobble" || captureBall === "success" ? (
                 <span
-                  className="sprite-ground-shadow sprite-ground-shadow-wild absolute left-1/2 bottom-0 -translate-x-1/2"
+                  className="battle-platform battle-platform--wild"
                   aria-hidden
-                />
+                >
+                  <span className="battle-platform__core" />
+                </span>
               ) : null}
-              {/* Ball de captura: viaje + reposo sobre la sombra del rival. */}
+              {/* Ball de captura: vuelo al cuerpo → golpe → absorción → cierre
+                  → caída al piso → forcejeo → click. Ver `.capture-ball`. */}
               {captureBall && captureBallName && (
-                  <div
-                    key={`${captureBall}-${captureShakeKey}`}
-                    className={`absolute z-20 w-6 h-6 pointer-events-none md:w-7 md:h-7 ${
-                      captureBall === "throw"
-                        ? "ball-throw-travel"
-                        : captureBall === "idle"
-                          ? "ball-capture-idle"
-                          : captureBall === "wobble"
-                            ? "ball-shake-once"
-                            : captureBall === "success"
-                              ? "ball-catch-flash"
-                              : "ball-break"
-                    }`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={itemDisplayUrl(captureBallName, "hd")}
-                      alt=""
-                      aria-hidden
-                      className="h-full w-full object-contain drop-shadow-[0_3px_6px_rgba(0,0,0,0.5)]"
-                    />
-                    {captureBall === "idle" && captureShakeKey === 0 ? (
-                      <span className="ball-open-burst" aria-hidden />
-                    ) : null}
-                    {captureBall === "success" && (
-                      <>
-                        <span className="ball-catch-ring" aria-hidden />
-                        <span className="ball-catch-ring ball-catch-ring-delay" aria-hidden />
-                      </>
+                <div
+                  key={`${captureBall}-${captureShakeKey}`}
+                  className={`capture-ball h-6 w-6 md:h-7 md:w-7 ${
+                    captureBall === "throw"
+                      ? "is-throwing"
+                      : captureBall === "hit"
+                        ? "is-hit"
+                        : captureBall === "absorb"
+                          ? "is-absorbing"
+                          : captureBall === "seal"
+                            ? "is-sealing"
+                            : captureBall === "wobble"
+                              ? "is-wobbling"
+                              : captureBall === "success"
+                                ? "is-caught"
+                                : captureBall === "fail"
+                                  ? "is-breaking"
+                                  : "is-idle"
+                  }`}
+                  style={
+                    {
+                      // Altura del cuerpo del rival: hasta acá vuela la ball.
+                      "--capture-lift": `${Math.round(
+                        (isDouble ? wildSpritePx * 0.82 : wildSpritePx) * 0.42,
+                      )}px`,
+                    } as CSSProperties
+                  }
+                >
+                  {captureBall === "throw" && (
+                    <span className="capture-ball__shadow" aria-hidden />
+                  )}
+                  {captureBall === "absorb" && <span className="capture-beam" aria-hidden />}
+                  <span className="capture-ball__hop">
+                    {captureBall === "throw" && (
+                      <span className="capture-ball__trail" aria-hidden />
                     )}
-                    {captureBall === "fail" && <span className="ball-break-burst" aria-hidden />}
-                  </div>
-                )}
+                    <span className="capture-ball__spin">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={itemDisplayUrl(captureBallName, "hd")}
+                        alt=""
+                        aria-hidden
+                        className="h-full w-full object-contain"
+                      />
+                      {(captureBall === "idle" || captureBall === "wobble") && (
+                        <span className="capture-ball__light" aria-hidden />
+                      )}
+                    </span>
+                    {captureBall === "wobble" && <span className="capture-spark" aria-hidden />}
+                  </span>
+                  {captureBall === "hit" && (
+                    <>
+                      <span className="capture-hit-flash" aria-hidden />
+                      <span className="capture-hit-ring" aria-hidden />
+                    </>
+                  )}
+                  {captureBall === "seal" && (
+                    <>
+                      <span className="capture-seal-flash" aria-hidden />
+                      <span className="capture-ball__dust" aria-hidden />
+                    </>
+                  )}
+                  {captureBall === "success" && (
+                    <>
+                      <span className="ball-catch-ring" aria-hidden />
+                      <span className="ball-catch-ring ball-catch-ring-delay" aria-hidden />
+                      <span className="capture-stars" aria-hidden />
+                      <span className="capture-ground-glow" aria-hidden />
+                    </>
+                  )}
+                  {captureBall === "fail" && <span className="ball-break-burst" aria-hidden />}
+                </div>
+              )}
               {damagePopup?.side === "wild" && damagePopup.lane === "A" && (
                 <span
                   key={damagePopup.key}
@@ -2839,23 +3139,52 @@ export function BattleArena({
                 </>
               )}
               {activeWild.spriteUrl && !isVanished("wild", "A") && (
-                <BattleSprite
-                  speciesName={activeWild.speciesName}
-                  facing="front"
-                  isShiny={activeWild.isShiny}
-                  fallbackUrl={activeWild.spriteUrl}
-                  alt={activeWild.name}
-                  width={isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx}
-                  height={isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx}
-                  className={wildSpriteClass}
-                  style={shakeStyle("wild", "A")}
-                />
+                <>
+                  <BattleSprite
+                    speciesName={activeWild.speciesName}
+                    facing="front"
+                    isShiny={activeWild.isShiny}
+                    fallbackUrl={activeWild.spriteUrl}
+                    alt={activeWild.name}
+                    width={isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx}
+                    height={isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx}
+                    className={wildSpriteClass}
+                    style={shakeStyle("wild", "A")}
+                  />
+                  {!wildEntering && !captureBall && <SpriteStatusFx status={wildStatus} />}
+                  {/* Capa roja de "energía" mientras entra en la ball, y silueta
+                      blanca cuando se escapa y vuelve a salir. */}
+                  {captureBall === "absorb" && (
+                    <BattleSprite
+                      speciesName={activeWild.speciesName}
+                      facing="front"
+                      isShiny={activeWild.isShiny}
+                      fallbackUrl={activeWild.spriteUrl}
+                      alt=""
+                      width={isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx}
+                      height={isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx}
+                      className="sprite-absorb-energy"
+                    />
+                  )}
+                  {captureBall === "fail" && (
+                    <BattleSprite
+                      speciesName={activeWild.speciesName}
+                      facing="front"
+                      isShiny={activeWild.isShiny}
+                      fallbackUrl={activeWild.spriteUrl}
+                      alt=""
+                      width={isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx}
+                      height={isDouble ? Math.round(wildSpritePx * 0.82) : wildSpritePx}
+                      className="sprite-materialize-ghost"
+                    />
+                  )}
+                </>
               )}
             </div>
 
             {isDouble && wildB && (
               <div
-                className={`absolute right-[28%] top-[22%] z-[1] origin-bottom md:right-[30%] md:top-[20%] ${
+                className={`absolute right-[32%] bottom-[38%] z-[1] origin-bottom md:right-[34%] md:bottom-[40%] lg:right-[36%] lg:bottom-[38%] ${
                   view === "targets" && wildBHp > 0
                     ? "cursor-pointer ring-2 ring-amber-300/80 rounded-lg"
                     : ""
@@ -2876,7 +3205,9 @@ export function BattleArena({
                 role={view === "targets" ? "button" : undefined}
                 tabIndex={view === "targets" && wildBHp > 0 ? 0 : undefined}
               >
-                <span className="sprite-ground-shadow sprite-ground-shadow-wild absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
+                <span className="battle-platform battle-platform--wild" aria-hidden>
+                  <span className="battle-platform__core" />
+                </span>
                 {damagePopup?.side === "wild" && damagePopup.lane === "B" && (
                   <span
                     key={damagePopup.key}
@@ -2904,6 +3235,7 @@ export function BattleArena({
                     />
                   </>
                 )}
+                <SpriteStatusFx status={wildBStatus} />
                 {!isVanished("wild", "B") && (
                   <BattleSprite
                     speciesName={wildB.speciesName}
@@ -2920,10 +3252,12 @@ export function BattleArena({
               </div>
             )}
 
-            {/* Player sprite — near plate (posiciones clásicas del campo). */}
+            {/* Player sprite — pies sobre plataforma cercana. */}
             <div
               className={`absolute z-[1] origin-bottom ${
-                isDouble ? "left-[2%] bottom-[2%]" : "left-[2%] bottom-[2%]"
+                isDouble
+                  ? "left-[8%] bottom-[10%] lg:left-[10%] lg:bottom-[12%]"
+                  : "left-[12%] bottom-[11%] md:left-[14%] md:bottom-[12%] lg:left-[18%] lg:bottom-[15%]"
               }`}
               style={{
                 width: isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx,
@@ -2931,33 +3265,48 @@ export function BattleArena({
                 opacity: playerHp <= 0 ? 0.35 : 1,
               }}
             >
-              {/* Sombra del jugador: con el Pokémon en campo, o bajo la ball apoyada. */}
+              {/* Plataforma del jugador: con el Pokémon en campo, o bajo la ball apoyada. */}
               {(!playerHidden || ballAnim === "land" || ballAnim === "open") && (
                 <span
-                  className="sprite-ground-shadow sprite-ground-shadow-player absolute left-1/2 bottom-0 -translate-x-1/2"
+                  className="battle-platform battle-platform--player"
                   aria-hidden
-                />
+                >
+                  <span className="battle-platform__core" />
+                </span>
               )}
               {(ballAnim === "throw" || ballAnim === "land" || ballAnim === "open") && (
                 <div
-                  className={`absolute z-20 h-7 w-7 pointer-events-none md:h-8 md:w-8 ${
+                  className={`ball-sendout h-7 w-7 md:h-8 md:w-8 ${
                     ballAnim === "throw"
-                      ? "ball-sendout-travel"
+                      ? "is-traveling"
                       : ballAnim === "land"
-                        ? "ball-sendout-land"
-                        : "ball-sendout-land is-opening"
+                        ? "is-landing"
+                        : "is-opening"
                   }`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={SEND_OUT_BALL_SRC}
-                    alt=""
-                    aria-hidden
-                    className="h-full w-full object-contain"
-                  />
+                  <span className="ball-sendout__shadow" aria-hidden />
+                  <span className="ball-sendout__hop">
+                    {ballAnim === "throw" && (
+                      <span className="ball-sendout__trail" aria-hidden />
+                    )}
+                    <span className="ball-sendout__spin">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={SEND_OUT_BALL_SRC}
+                        alt=""
+                        aria-hidden
+                        className="h-full w-full object-contain"
+                      />
+                    </span>
+                  </span>
+                  {ballAnim === "land" && <span className="ball-sendout__dust" aria-hidden />}
                   {ballAnim === "open" ? (
                     <>
                       <span className="ball-open-burst" aria-hidden />
+                      <span className="ball-sendout-shock" aria-hidden />
+                      <span className="ball-sendout-wisp ball-sendout-wisp--left" aria-hidden />
+                      <span className="ball-sendout-wisp ball-sendout-wisp--right" aria-hidden />
+                      <span className="ball-sendout-beam" aria-hidden />
                       <span className="ball-sendout-ground-glow" aria-hidden />
                     </>
                   ) : null}
@@ -2991,30 +3340,51 @@ export function BattleArena({
                 </>
               )}
               {!playerHidden && !isVanished("player", "A") && activePlayer.spriteUrl && (
-                <BattleSprite
-                  speciesName={activePlayer.speciesName}
-                  facing="back"
-                  isShiny={activePlayer.isShiny}
-                  fallbackUrl={activePlayer.spriteUrl}
-                  alt={activePlayer.name}
-                  width={isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx}
-                  height={isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx}
-                  className={playerSpriteClass}
-                  style={shakeStyle("player", "A")}
-                />
+                <>
+                  <BattleSprite
+                    speciesName={activePlayer.speciesName}
+                    facing="back"
+                    isShiny={activePlayer.isShiny}
+                    fallbackUrl={activePlayer.spriteUrl}
+                    alt={activePlayer.name}
+                    width={isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx}
+                    height={isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx}
+                    className={playerSpriteClass}
+                    style={shakeStyle("player", "A")}
+                  />
+                  {/* El FX de estado va sobre el sprite pero debajo de los
+                      popups de daño; se apaga mientras entra de la ball. */}
+                  {!playerEntering && <SpriteStatusFx status={playerStatus} />}
+                  {/* Capa de silueta: mismo sprite con filtro fijo, sólo cruza
+                      opacidad con el de color. Ver `.sprite-materialize`. */}
+                  {playerEntering && (
+                    <BattleSprite
+                      speciesName={activePlayer.speciesName}
+                      facing="back"
+                      isShiny={activePlayer.isShiny}
+                      fallbackUrl={activePlayer.spriteUrl}
+                      alt=""
+                      width={isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx}
+                      height={isDouble ? Math.round(playerSpritePx * 0.82) : playerSpritePx}
+                      className="sprite-materialize-ghost"
+                    />
+                  )}
+                </>
               )}
             </div>
 
             {isDouble && playerB && (
               <div
-                className="absolute left-[30%] bottom-[6%] z-[1] origin-bottom md:left-[32%]"
+                className="absolute left-[28%] bottom-[12%] z-[1] origin-bottom md:left-[30%] md:bottom-[13%] lg:left-[32%] lg:bottom-[14%]"
                 style={{
                   width: playerBSpritePx,
                   height: playerBSpritePx,
                   opacity: playerBHp <= 0 ? 0.35 : 1,
                 }}
               >
-                <span className="sprite-ground-shadow sprite-ground-shadow-player absolute left-1/2 bottom-0 -translate-x-1/2" aria-hidden />
+                <span className="battle-platform battle-platform--player" aria-hidden>
+                  <span className="battle-platform__core" />
+                </span>
                 {damagePopup?.side === "player" && damagePopup.lane === "B" && (
                   <span
                     key={damagePopup.key}
@@ -3023,6 +3393,7 @@ export function BattleArena({
                     {damagePopup.text}
                   </span>
                 )}
+                <SpriteStatusFx status={playerBStatus} />
                 {!isVanished("player", "B") && (
                   <BattleSprite
                     speciesName={playerB.speciesName}
@@ -3041,8 +3412,8 @@ export function BattleArena({
           </div>
           </div>
 
-        {/* Jugador — barra horizontal alineada al campo */}
-        <div className="shrink-0">
+        {/* Jugador — mobile/tablet; en desktop vive en la columna info. */}
+        <div className="shrink-0 lg:hidden">
           <PartySidebar
             name={trainerName}
             portraitUrl={trainerPortraitUrl}
@@ -3061,12 +3432,10 @@ export function BattleArena({
                 types={m.types}
                 isShiny={m.isShiny}
                 compact
-                selectHint={t("partyTapHint")}
-                onSelect={
-                  !isAnimating && !isDouble && hasHealthyBackup
-                    ? () => setView("team")
-                    : undefined
+                selectHint={
+                  mustSwitch ? t("mustSwitchPrompt") : t("partyTapHint")
                 }
+                onSelect={selectPartyMember(m)}
               />
             ))}
             {Array.from({ length: emptyPlayerSlots }).map((_, i) => (
@@ -3076,78 +3445,78 @@ export function BattleArena({
         </div>
         </div>
 
-        {/* Panel inferior: misma columna que el stage en desktop. */}
-        <div className="battle-stage mx-auto flex min-h-0 w-full max-w-[753px] shrink-0 flex-col gap-1 max-md:h-[10.5rem] max-md:max-h-[10.5rem] md:h-[min(13rem,30dvh)] md:max-h-[13rem] md:gap-1.5 2xl:max-w-[1506px]">
+        {/* Footer mobile: log|cmds al ancho del stage (753). En lg, display:contents. */}
+        <div className="battle-layout__footer">
+        {/* Log — franja inferior mobile (como antes); columna izq. en desktop. */}
+        <div
+          aria-live="polite"
+          aria-label={t("battleLogLabel")}
+          className={`battle-layout__log glass-panel h-full min-h-0 min-w-0 flex-col overflow-hidden px-2 py-1.5 md:px-4 md:py-3 ${
+            commandExpanded ? "hidden md:flex" : "flex"
+          }`}
+        >
+          {view === "menu" && !isAnimating && outcome === "ongoing" && (
+            <div className="mb-1 flex shrink-0 flex-col gap-1 border-b border-white/12 pb-1.5 md:mb-0 md:hidden">
+              <YourTurnStatus playerFirst={playerOutspeeds} showOrder={!isDouble} />
+            </div>
+          )}
+          <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden md:gap-0.5">
+            {log.map((entry, i) => {
+              const isLatest = i === log.length - 1;
+              const sideTone =
+                entry.side === "player"
+                  ? "border-l-emerald-400/70 text-white/90"
+                  : entry.side === "wild"
+                    ? "border-l-amber-400/70 text-white/90"
+                    : "border-l-white/25 text-white/55";
+              return (
+                <p
+                  key={`${i}-${entry.text}`}
+                  className={`border-l-2 pl-1.5 text-[10px] leading-[1.35] break-words [overflow-wrap:anywhere] md:border-l-0 md:pl-0 md:text-label-md md:leading-relaxed ${sideTone} ${
+                    isLatest ? "battle-log-line--latest font-medium text-white" : ""
+                  } ${
+                    entry.side === "wild" ? "md:text-right lg:text-left" : "text-left"
+                  }`}
+                >
+                  <span className="mr-1 text-pokeball-red/80 md:inline">&gt;</span>
+                  {entry.text}
+                </p>
+              );
+            })}
+            <div ref={logEndRef} />
+          </div>
+          {view === "menu" && !isAnimating && outcome === "ongoing" && (
+            <div className="mt-auto hidden items-center justify-between gap-2 border-t border-dashed border-white/15 pt-1 md:flex">
+              <p className="text-label-md font-bold leading-snug break-words [overflow-wrap:anywhere] text-on-surface">
+                {t("whatWillDo", {
+                  name: (
+                    isDouble && pendingDoubleMoveA != null && playerB
+                      ? playerB.name
+                      : activePlayer.name
+                  ).toUpperCase(),
+                })}
+              </p>
+              {!isDouble && <YourTurnStatus playerFirst={playerOutspeeds} />}
+            </div>
+          )}
+        </div>
+
+        {/* Comandos: sin glass en mobile (como antes); bajo el mapa + glass en lg. */}
+        <div
+          key={view}
+          className={`battle-layout__cmds panel-swap glass-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden max-lg:border-0 max-lg:bg-transparent max-lg:rounded-none lg:px-4 lg:py-3 ${
+            commandExpanded ? "max-md:col-span-2" : ""
+          }`}
+        >
           {commandExpanded && lastLogEntry ? (
             <p
-              className="md:hidden shrink-0 truncate rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] leading-snug text-white/80"
+              className="mb-1 shrink-0 truncate rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] leading-snug text-white/80 md:hidden"
               aria-live="polite"
             >
               {lastLogEntry.text}
             </p>
           ) : null}
-          <div
-            className={`grid min-h-0 min-w-0 flex-1 items-stretch gap-1 md:gap-2 ${
-              commandExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2"
-            }`}
-          >
-          {/* Log — en submenús mobile cede espacio a los comandos */}
-          <div
-            aria-live="polite"
-            aria-label={t("battleLogLabel")}
-            className={`glass-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-2 py-1.5 md:px-4 md:py-3 ${
-              commandExpanded ? "hidden md:flex" : ""
-            }`}
-          >
-            {view === "menu" && !isAnimating && outcome === "ongoing" && (
-              <div className="mb-1 flex shrink-0 flex-col gap-1 border-b border-white/12 pb-1.5 md:mb-0 md:hidden">
-                <YourTurnStatus playerFirst={playerOutspeeds} showOrder={!isDouble} />
-              </div>
-            )}
-            <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden md:gap-0.5">
-              {log.map((entry, i) => {
-                const isLatest = i === log.length - 1;
-                const sideTone =
-                  entry.side === "player"
-                    ? "border-l-emerald-400/70 text-white/90"
-                    : entry.side === "wild"
-                      ? "border-l-amber-400/70 text-white/90"
-                      : "border-l-white/25 text-white/55";
-                return (
-                  <p
-                    key={`${i}-${entry.text}`}
-                    className={`border-l-2 pl-1.5 text-[10px] leading-[1.35] break-words [overflow-wrap:anywhere] md:border-l-0 md:pl-0 md:text-label-md md:leading-relaxed ${sideTone} ${
-                      isLatest ? "battle-log-line--latest font-medium text-white" : ""
-                    } ${
-                      /* Desktop: rival a la derecha; mobile: todo a la izquierda (ancho útil). */
-                      entry.side === "wild" ? "md:text-right" : "text-left"
-                    }`}
-                  >
-                    <span className="mr-1 text-pokeball-red/80 md:inline">&gt;</span>
-                    {entry.text}
-                  </p>
-                );
-              })}
-              <div ref={logEndRef} />
-            </div>
-            {view === "menu" && !isAnimating && outcome === "ongoing" && (
-              <div className="mt-auto hidden items-center justify-between gap-2 border-t border-dashed border-white/15 pt-1 md:flex">
-                <p className="text-label-md font-bold leading-snug break-words [overflow-wrap:anywhere] text-on-surface">
-                  {t("whatWillDo", {
-                    name: (
-                      isDouble && pendingDoubleMoveA != null && playerB
-                        ? playerB.name
-                        : activePlayer.name
-                    ).toUpperCase(),
-                  })}
-                </p>
-                {!isDouble && <YourTurnStatus playerFirst={playerOutspeeds} />}
-              </div>
-            )}
-          </div>
-
-          {/* Comandos */}
-          <div key={view} className="panel-swap min-h-0 min-w-0 flex-1 overflow-hidden flex flex-col">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             {view === "menu" && (
               <div className="flex h-full min-h-0 flex-col gap-1.5 md:gap-2">
                 {canRepeatLast && lastMoveOption ? (
@@ -3344,8 +3713,83 @@ export function BattleArena({
               />
             )}
           </div>
+        </div>
+        </div>
+        {/*
+          Info desktop: una card rival + una card tuya (sidebar vertical).
+          Sin placas HP acá — viven en el campo. Mobile no usa este bloque.
+        */}
+        <div className="battle-layout__info">
+          <div className="battle-layout__info-card min-h-0">
+            <PartySidebar
+              name={wildEncounterHeader ? activeWild.name : foeLabel}
+              portraitUrl={opponentPortraitUrl}
+              align="right"
+              variant={foeSidebarWild ? "wild" : "party"}
+              featuredSpriteUrl={wildFeaturedSprite}
+              featuredLevel={wildEncounterHeader ? activeWild.level : null}
+              featuredIsShiny={wildEncounterHeader ? Boolean(activeWild.isShiny) : false}
+              encounterPlace={wildEncounterHeader ? encounterPlace : null}
+            >
+              {foeSidebarWild
+                ? opponentParty.length > 1
+                  ? opponentParty.map((m) => (
+                      <PartyIcon
+                        key={`oe-d-${m.slot}`}
+                        spriteUrl={m.spriteUrl}
+                        name={m.name}
+                        fainted={m.fainted}
+                        active={m.active}
+                      />
+                    ))
+                  : null
+                : [
+                    ...opponentParty.map((m) => (
+                      <PartyIcon
+                        key={`oe-d-${m.slot}`}
+                        spriteUrl={m.spriteUrl}
+                        name={m.name}
+                        fainted={m.fainted}
+                        active={m.active}
+                      />
+                    )),
+                    ...Array.from({ length: emptyOpponentSlots }).map((_, i) => (
+                      <EmptyPartySlot key={`oe-d-empty-${i}`} />
+                    )),
+                  ]}
+            </PartySidebar>
+          </div>
+          <div className="battle-layout__info-card min-h-0">
+            <PartySidebar
+              name={trainerName}
+              portraitUrl={trainerPortraitUrl}
+              align="left"
+            >
+              {party.map((m) => (
+                <PartyIcon
+                  key={`d-${m.instanceId}`}
+                  spriteUrl={m.spriteUrl}
+                  name={m.name}
+                  fainted={m.currentHp <= 0}
+                  active={m.instanceId === activePlayer.instanceId}
+                  hpPct={(m.currentHp / m.maxHp) * 100}
+                  level={m.level}
+                  types={m.types}
+                  isShiny={m.isShiny}
+                  selectHint={
+                    mustSwitch ? t("mustSwitchPrompt") : t("partyTapHint")
+                  }
+                  onSelect={selectPartyMember(m)}
+                />
+              ))}
+              {Array.from({ length: emptyPlayerSlots }).map((_, i) => (
+                <EmptyPartySlot key={`pe-d-${i}`} />
+              ))}
+            </PartySidebar>
           </div>
         </div>
+
+
       </div>
     </div>
   );

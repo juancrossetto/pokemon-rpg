@@ -245,3 +245,38 @@ export function stopResultBgm(playGen?: number) {
   clearResultSchedule();
   resultKind = null;
 }
+
+/*
+  Tema de evolución: pieza corta sintetizada (scripts/generate-evolution-theme.py)
+  alineada a las fases del popup. Una sola pasada, sin loop, y con su propia
+  referencia para que abrir dos evoluciones seguidas no deje dos sonando.
+*/
+const EVOLUTION_BGM_SRC = "/audio/battle/evolution.m4a";
+const EVOLUTION_BGM_VOLUME_BOOST = 1.15;
+let evolutionAudio: HTMLAudioElement | null = null;
+
+export function startEvolutionBgm() {
+  if (typeof window === "undefined") return;
+  stopEvolutionBgm();
+  if (isBattleBgmMuted()) return;
+
+  const el = new Audio();
+  evolutionAudio = el;
+  el.preload = "auto";
+  el.loop = false;
+  el.volume = Math.min(1, getBattleBgmVolume() * EVOLUTION_BGM_VOLUME_BOOST);
+  el.src = EVOLUTION_BGM_SRC;
+
+  const tryPlay = () => {
+    if (evolutionAudio !== el) return;
+    void el.play().catch(() => {});
+  };
+  el.addEventListener("canplaythrough", tryPlay, { once: true });
+  tryPlay();
+}
+
+export function stopEvolutionBgm() {
+  if (!evolutionAudio) return;
+  evolutionAudio.pause();
+  evolutionAudio = null;
+}

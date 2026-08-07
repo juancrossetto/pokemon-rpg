@@ -1,12 +1,27 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { spriteFor } from "@/lib/shiny";
 import { playBattleSfx } from "@/lib/battle-sfx";
+import { startEvolutionBgm, stopEvolutionBgm } from "@/lib/battle-bgm";
 
 type EvolvePhase = "intro" | "morph" | "flash" | "reveal" | "done";
+
+/** Partículas ascendentes: fijas y no aleatorias para que SSR y cliente
+ *  pinten lo mismo (Math.random() acá rompía la hidratación). */
+const MOTES = [
+  { x: 12, dur: 2.6, delay: 0, drift: 14 },
+  { x: 26, dur: 2.1, delay: 0.35, drift: -10 },
+  { x: 38, dur: 3.0, delay: 0.8, drift: 18 },
+  { x: 50, dur: 2.3, delay: 0.15, drift: -6 },
+  { x: 62, dur: 2.8, delay: 0.6, drift: 12 },
+  { x: 74, dur: 2.0, delay: 1.0, drift: -16 },
+  { x: 86, dur: 2.5, delay: 0.45, drift: 8 },
+  { x: 20, dur: 3.2, delay: 1.3, drift: -12 },
+  { x: 68, dur: 3.4, delay: 1.6, drift: 16 },
+] as const;
 
 type EvolvePopupProps = {
   fromName: string;
@@ -52,7 +67,10 @@ export function EvolvePopup({
   useEffect(() => {
     if (!mounted) return;
 
-    playBattleSfx("evolve");
+    // El tema está compuesto contra estos mismos tiempos (ver
+    // scripts/generate-evolution-theme.py): tensión durante el morph y
+    // resolución mayor justo en el reveal.
+    startEvolutionBgm();
 
     const timers: number[] = [];
     const at = (ms: number, fn: () => void) => {
@@ -79,6 +97,7 @@ export function EvolvePopup({
 
     return () => {
       for (const id of timers) window.clearTimeout(id);
+      stopEvolutionBgm();
     };
   }, [mounted]);
 
@@ -124,12 +143,36 @@ export function EvolvePopup({
           {phase === "done" || phase === "reveal" ? labels.into : labels.evolving}
         </p>
 
-        <div className="relative mt-8 flex h-48 w-48 items-center justify-center sm:h-56 sm:w-56">
+        <div
+          className={`evolve-stage evolve-stage--${phase} relative mt-8 flex h-48 w-48 items-center justify-center sm:h-56 sm:w-56`}
+        >
+          <div className="evolve-rays" aria-hidden />
+          <div className="evolve-vortex" aria-hidden />
+          <div className="evolve-vortex evolve-vortex--reverse" aria-hidden />
           <div
             className={`evolve-orbit pointer-events-none absolute inset-[-12%] rounded-full ${
               phase === "morph" ? "evolve-orbit-spin" : ""
             } ${phase === "done" || phase === "reveal" ? "opacity-50" : "opacity-80"}`}
           />
+          <div className="evolve-motes" aria-hidden>
+            {MOTES.map((mote, i) => (
+              <span
+                key={i}
+                className="evolve-mote"
+                style={
+                  {
+                    "--mote-x": `${mote.x}%`,
+                    "--mote-dur": `${mote.dur}s`,
+                    "--mote-delay": `${mote.delay}s`,
+                    "--mote-drift": `${mote.drift}px`,
+                  } as CSSProperties
+                }
+              />
+            ))}
+          </div>
+          <div className="evolve-ring" aria-hidden />
+          <div className="evolve-ring evolve-ring--b" aria-hidden />
+          <div className="evolve-ring evolve-ring--c" aria-hidden />
           <div
             className={`absolute inset-8 rounded-full blur-2xl transition-all duration-500 ${
               phase === "morph" || phase === "flash"
@@ -157,6 +200,14 @@ export function EvolvePopup({
               unoptimized
               priority
             />
+          ) : null}
+
+          {phase === "reveal" ? (
+            <>
+              <span className="evolve-burst" aria-hidden />
+              <span className="evolve-burst evolve-burst--b" aria-hidden />
+              <span className="evolve-sparks" aria-hidden />
+            </>
           ) : null}
         </div>
 

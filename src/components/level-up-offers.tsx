@@ -4,8 +4,7 @@ import Image from "next/image";
 import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { confirmEvolve, confirmLearnMove } from "@/actions/level-up-offers";
-import { playBattleSfx } from "@/lib/battle-sfx";
+import { confirmDeclineMove, confirmEvolve, confirmLearnMove } from "@/actions/level-up-offers";
 import { typeColor } from "@/lib/type-colors";
 import {
   showdownCategoryIconUrl,
@@ -21,6 +20,7 @@ import {
   type MoveCategoryKind,
 } from "@/lib/level-up-read";
 import { spriteFor } from "@/lib/shiny";
+import { EvolvePopup } from "@/components/evolve-popup";
 
 export type LevelUpOfferEntry = {
   instanceId: string;
@@ -35,15 +35,27 @@ export type LevelUpOfferEntry = {
 };
 
 /**
- * Panel post level-up: un movimiento a la vez (aprender / reemplazar / ignorar)
- * y luego confirmar evolución.
+ * Panel post level-up: un movimiento a la vez (aprender / reemplazar /
+ * ignorar / rechazar) y luego confirmar evolución.
  */
+export type EvolvedResult = {
+  instanceId: string;
+  toName: string;
+  toSpriteUrl: string;
+  level: number;
+  currentHp: number;
+  maxHp: number;
+};
+
 export function LevelUpOffersPanel({
   entries,
   onSettled,
+  onEvolved,
 }: {
   entries: LevelUpOfferEntry[];
   onSettled?: () => void;
+  /** Se dispara al confirmar la evolución (antes del reveal), para UI optimista. */
+  onEvolved?: (result: EvolvedResult) => void;
 }) {
   const t = useTranslations("levelUp");
   const locale = useLocale();
@@ -59,6 +71,19 @@ export function LevelUpOffersPanel({
     instanceId: string;
     toName: string;
     toSpriteUrl: string;
+  } | null>(null);
+  /*
+    Evolución post-batalla: se muestra el mismo popup fullscreen que el árbol
+    de evolución (silueta que muta + tema musical), no una card inline. Antes
+    eran dos experiencias distintas para el mismo evento.
+  */
+  const [evolveShow, setEvolveShow] = useState<{
+    instanceId: string;
+    fromName: string;
+    fromSpriteUrl: string | null;
+    toName: string;
+    toSpriteUrl: string;
+    isShiny: boolean;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -139,6 +164,20 @@ export function LevelUpOffersPanel({
     });
   }
 
+  /** Rechazo permanente: persiste y no se vuelve a ofrecer. */
+  function rejectMove(instanceId: string, moveId: number) {
+    setError(null);
+    startTransition(async () => {
+      const result = await confirmDeclineMove(instanceId, moveId, locale);
+      if (!result.ok) {
+        setError(t(`errors.${result.error}`));
+        return;
+      }
+      skipMove(instanceId, moveId);
+      router.refresh();
+    });
+  }
+
   function learn(instanceId: string, moveId: number, replaceSlot: number | null) {
     setError(null);
     startTransition(async () => {
@@ -182,7 +221,7 @@ export function LevelUpOffersPanel({
   function evolve(instanceId: string) {
     setError(null);
     setEvolvingId(instanceId);
-    playBattleSfx("evolve");
+    const evolving = local.find((e) => e.instanceId === instanceId);
     startTransition(async () => {
       const result = await confirmEvolve(instanceId, locale);
       if (!result.ok) {
@@ -195,6 +234,14 @@ export function LevelUpOffersPanel({
         toName: result.toName,
         toSpriteUrl: result.toSpriteUrl,
       });
+      setEvolveShow({
+        instanceId,
+        fromName: evolving?.name ?? "",
+        fromSpriteUrl: evolving?.fromSpriteUrl ?? null,
+        toName: result.toName,
+        toSpriteUrl: result.toSpriteUrl,
+        isShiny: evolving?.isShiny ?? false,
+      });
       setLocal((prev) =>
         prev.map((e) =>
           e.instanceId === instanceId
@@ -202,18 +249,40 @@ export function LevelUpOffersPanel({
             : e,
         ),
       );
-      window.setTimeout(() => {
-        setEvolvingId(null);
-        window.setTimeout(() => {
-          dismissEntry(instanceId);
-          router.refresh();
-        }, 1600);
-      }, 900);
+      onEvolved?.({
+        instanceId,
+        toName: result.toName,
+        toSpriteUrl: result.toSpriteUrl,
+        level: result.level,
+        currentHp: result.currentHp,
+        maxHp: result.maxHp,
+      });
+      setEvolvingId(null);
     });
   }
 
   return (
     <section className="space-y-3" aria-live="polite">
+      {evolveShow && (
+        <EvolvePopup
+          fromName={evolveShow.fromName}
+          fromSpriteUrl={evolveShow.fromSpriteUrl}
+          toName={evolveShow.toName}
+          toSpriteUrl={evolveShow.toSpriteUrl}
+          isShiny={evolveShow.isShiny}
+          labels={{
+            evolving: t("evolvingCry", { name: evolveShow.fromName }),
+            into: t("evolvedInto", { name: evolveShow.toName }),
+            continue: t("dismiss"),
+          }}
+          onContinue={() => {
+            const { instanceId } = evolveShow;
+            setEvolveShow(null);
+            dismissEntry(instanceId);
+            router.refresh();
+          }}
+        />
+      )}
       {visible.map((entry) => {
         const offer = entry.evolveOffer;
         const isEvolving = evolvingId === entry.instanceId;
@@ -290,6 +359,8 @@ export function LevelUpOffersPanel({
                     replace: t("replace"),
                     skipMove: t("skipMove"),
                     skipMoveHint: t("skipMoveHint"),
+                    rejectMove: t("rejectMove"),
+                    rejectMoveHint: t("rejectMoveHint"),
                     cancel: t("cancel"),
                     yourMoves: t("yourMoves"),
                     power: t("power"),
@@ -306,6 +377,7 @@ export function LevelUpOffersPanel({
                   onReplaceSlot={(slot) => learn(entry.instanceId, current.moveId, slot)}
                   onCancelPick={() => setPicking(null)}
                   onSkip={() => skipMove(entry.instanceId, current.moveId)}
+                  onReject={() => rejectMove(entry.instanceId, current.moveId)}
                 />
               </div>
             )}
@@ -378,6 +450,8 @@ type LearnMoveLabels = {
   replace: string;
   skipMove: string;
   skipMoveHint: string;
+  rejectMove: string;
+  rejectMoveHint: string;
   cancel: string;
   yourMoves: string;
   power: string;
@@ -450,6 +524,7 @@ function LearnMoveCard({
   onReplaceSlot,
   onCancelPick,
   onSkip,
+  onReject,
 }: {
   move: LevelUpMoveInfo;
   remaining: number;
@@ -463,6 +538,7 @@ function LearnMoveCard({
   onReplaceSlot: (slot: number) => void;
   onCancelPick: () => void;
   onSkip: () => void;
+  onReject: () => void;
 }) {
   const color = typeColor(move.type);
   const formatted = formatMoveName(move.name);
@@ -606,13 +682,25 @@ function LearnMoveCard({
               type="button"
               disabled={pending}
               onClick={onSkip}
-              className="rounded-xl border border-white/12 bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-white/60 transition hover:border-white/25 hover:text-white disabled:opacity-50 sm:min-w-28"
+              title={labels.skipMoveHint}
+              className="rounded-xl border border-white/12 bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-white/60 transition hover:border-white/25 hover:text-white disabled:opacity-50 sm:min-w-24"
             >
               {labels.skipMove}
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={onReject}
+              title={labels.rejectMoveHint}
+              className="rounded-xl border border-white/12 bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-white/55 transition hover:border-rose-400/35 hover:bg-rose-400/10 hover:text-rose-100 disabled:opacity-50 sm:min-w-24"
+            >
+              {labels.rejectMove}
             </button>
           </div>
           <p className="mt-1.5 text-center text-[11px] leading-snug text-white/35">
             {labels.skipMoveHint}
+            <span className="mx-1.5 text-white/20">·</span>
+            {labels.rejectMoveHint}
           </p>
         </div>
       )}

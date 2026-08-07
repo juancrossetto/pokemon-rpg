@@ -8,6 +8,7 @@ import os
 import random
 import struct
 import wave
+import zlib
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT_DIR = os.path.join(ROOT, "public", "audio", "battle", "sfx")
@@ -40,6 +41,7 @@ KINDS = [
     "faint",
     "status",
     "ball",
+    "sendOut",
     "badge",
     "levelUp",
     "evolve",
@@ -131,7 +133,9 @@ def mix(*tracks: tuple[float, list[float]]) -> list[float]:
 
 
 def make(kind: str) -> list[float]:
-    rng = random.Random(hash(kind) & 0xFFFFFFFF)
+    # crc32 y no hash(): el hash de strings de Python es aleatorio por proceso
+    # (PYTHONHASHSEED), así que regenerar cambiaba el ruido de todos los WAV.
+    rng = random.Random(zlib.crc32(kind.encode()))
     table = {
         "electric": lambda: mix(
             (0.0, noise_burst(rng, 0.05, 0.5, tint=0.9)),
@@ -262,6 +266,17 @@ def make(kind: str) -> list[float]:
         "ball": lambda: mix(
             (0.0, tone_burst(500, 0.07, 0.22, "sine")),
             (0.08, tone_burst(640, 0.09, 0.22, "sine")),
+        ),
+        # Salida del Pokémon: click de apertura, chorro de energía que sube y
+        # tres destellos mientras la silueta toma color. Dura ~0.63 s, que es
+        # lo que tarda la apertura + la materialización en pantalla.
+        "sendOut": lambda: mix(
+            (0.0, tone_burst(880, 0.05, 0.2, "square", a=0.002, r=0.5)),
+            (0.02, noise_burst(rng, 0.26, 0.15, a=0.02, r=0.5, tint=0.5)),
+            (0.03, tone_burst(320, 0.3, 0.24, "tri", slide=1180, a=0.02, r=0.35)),
+            (0.30, tone_burst(1046.5, 0.1, 0.17, "sine")),
+            (0.38, tone_burst(1318.5, 0.12, 0.15, "sine")),
+            (0.47, tone_burst(1568.0, 0.16, 0.13, "tri")),
         ),
         "badge": lambda: mix(
             (0.0, tone_burst(523, 0.1, 0.22, "sine")),

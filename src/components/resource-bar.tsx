@@ -11,6 +11,7 @@ import {
   GYM_BATTLE_ENERGY_COST,
   msUntilNextEnergyPoint,
   PVP_BATTLE_ENERGY_COST,
+  REGEN_MS_PER_POINT,
   WILD_ENCOUNTER_ENERGY_COST,
 } from "@/lib/energy";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";
@@ -166,10 +167,10 @@ function ResourceAction({
 
 const TONE = {
   energy: {
-    value: "text-white",
+    value: "text-sky-100",
     plus: "text-white/55 hover:text-sky-200 hover:bg-white/8",
     ring: "focus-visible:ring-sky-400/50",
-    track: "border-white/12 bg-[#12161f]",
+    track: "border-sky-400/25 bg-[#0e1520]",
   },
   coins: {
     value: "text-white",
@@ -198,6 +199,9 @@ function ResourcePill({
   onOpen,
   popover,
   compact,
+  energyPct,
+  energyState,
+  hoverHint,
 }: {
   tone: Tone;
   value: ReactNode;
@@ -208,6 +212,11 @@ function ResourcePill({
   onOpen: () => void;
   popover: ReactNode;
   compact?: boolean;
+  /** Solo energía: porcentaje 0–100 para la franja inferior. */
+  energyPct?: number;
+  energyState?: "full" | "regen" | "low" | "empty";
+  /** Tip al hover (ej. countdown de regen) — no ocupa ancho en reposo. */
+  hoverHint?: string | null;
 }) {
   const t = TONE[tone];
   const iconSrc = RESOURCE_ICON[tone];
@@ -215,17 +224,27 @@ function ResourcePill({
     tone === "energy" || tone === "gems"
       ? "h-[26px] w-[26px] object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-[28px] sm:w-[28px]"
       : "h-[22px] w-[22px] object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-[24px] sm:w-[24px]";
+  const isEnergy = tone === "energy";
 
   return (
-    <div className="relative shrink-0" data-loot-target={tone}>
+    <div
+      className={`relative shrink-0 ${hoverHint ? "group/pill" : ""}`}
+      data-loot-target={tone}
+    >
       <div
-        className={`relative flex h-7 items-stretch overflow-visible rounded-md border sm:h-8 ${t.track} ${
+        className={`relative flex h-7 items-stretch overflow-hidden rounded-md border sm:h-8 ${t.track} ${
           compact ? "min-w-[4.75rem]" : "min-w-[5.5rem] sm:min-w-[6rem]"
-        } ${open ? "border-white/20 bg-[#181d28]" : ""}`}
+        } ${open ? "border-white/20 bg-[#181d28]" : ""}${
+          isEnergy && energyState === "full" ? " energy-pill--full" : ""
+        }${isEnergy && energyState === "regen" ? " energy-pill--regen" : ""}${
+          isEnergy && energyState === "low" ? " energy-pill--low" : ""
+        }${isEnergy && energyState === "empty" ? " energy-pill--empty" : ""}`}
       >
         <span
           aria-hidden
-          className="flex aspect-square h-full shrink-0 items-center justify-center bg-transparent"
+          className={`flex aspect-square h-full shrink-0 items-center justify-center bg-transparent ${
+            isEnergy && energyState === "regen" ? "energy-icon-pulse" : ""
+          }${isEnergy && energyState === "full" ? "energy-icon-full" : ""}`}
         >
           <Image
             src={iconSrc}
@@ -258,7 +277,26 @@ function ResourcePill({
         >
           <span className="material-symbols-outlined text-[13px]! leading-none">add</span>
         </button>
+
+        {isEnergy && typeof energyPct === "number" ? (
+          <span className="energy-pill-track pointer-events-none absolute inset-x-0 bottom-0 h-[3px]" aria-hidden>
+            <span
+              className="energy-pill-fill block h-full"
+              style={{ width: `${energyPct}%` }}
+            />
+          </span>
+        ) : null}
       </div>
+
+      {hoverHint ? (
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute left-1/2 top-full z-30 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border border-cyan-400/25 bg-[#0b1018]/95 px-1.5 py-0.5 font-mono text-[9px] font-medium tabular-nums text-cyan-300 opacity-0 shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-opacity duration-150 group-hover/pill:opacity-100 group-focus-within/pill:opacity-100 max-sm:hidden"
+        >
+          {hoverHint}
+        </span>
+      ) : null}
+
       {open && popover}
     </div>
   );
@@ -286,6 +324,11 @@ export function ResourceBar({
   const countdown = typeof remaining === "number" ? formatCountdown(remaining) : null;
   const isMobile = variant === "mobile";
   const wasFullRef = useRef<boolean | null>(null);
+  const regenMinutes = Math.round(REGEN_MS_PER_POINT / 60_000);
+  const energyState =
+    energy <= 0 ? "empty" : isFull ? "full" : pct <= 25 ? "low" : "regen";
+  const regenLabel = labels.energyRegen.replace("{minutes}", String(regenMinutes));
+  const nextLabel = labels.energyNext.replace("{time}", countdown ?? "--:--");
 
   // Toast + campanita cuando la barra se llena en vivo (no al montar ya llena).
   useEffect(() => {
@@ -338,48 +381,68 @@ export function ResourceBar({
       onClose={() => setOpen(null)}
     >
       <div className="flex items-end justify-between gap-2">
-        <p className="font-mono text-[22px] font-semibold leading-none tabular-nums text-white">
+        <p className="font-mono text-[22px] font-semibold leading-none tabular-nums text-sky-100">
           {energy}
           <span className="text-[14px] text-white/40">/{energyMax}</span>
         </p>
-        <p className="text-[11px] text-white/50">
-          {isFull
-            ? labels.energyFull
-            : labels.energyNext.replace("{time}", countdown ?? "--:--")}
+        <p
+          className={`text-[11px] tabular-nums ${
+            isFull ? "text-cyan-300" : "text-sky-200/80"
+          }`}
+        >
+          {isFull ? labels.energyFull : nextLabel}
         </p>
       </div>
-      <div className="h-1 overflow-hidden rounded-full bg-white/10">
+
+      <div className="energy-popover-track relative h-2.5 overflow-hidden rounded-[3px]">
         <div
-          className="h-full rounded-full bg-sky-400/85 transition-all duration-500"
+          className={`energy-popover-fill h-full rounded-[3px]${
+            isFull ? " energy-popover-fill--full" : ""
+          }`}
           style={{ width: `${pct}%` }}
         />
+        {!isFull ? <span className="energy-popover-sheen" aria-hidden /> : null}
       </div>
-      <div className="flex items-center justify-between gap-1.5 text-[11px] text-white/55">
-        {[
-          { icon: "explore", cost: WILD_ENCOUNTER_ENERGY_COST, label: labels.energyCostExplore },
-          { icon: "stadium", cost: GYM_BATTLE_ENERGY_COST, label: labels.energyCostGym },
-          { icon: "swords", cost: PVP_BATTLE_ENERGY_COST, label: labels.energyCostPvp },
-        ].map((row) => (
-          <span
-            key={row.label}
-            title={row.label}
-            className="inline-flex flex-1 items-center justify-center gap-0.5 rounded-md bg-white/[0.04] py-1.5 font-mono tabular-nums"
-          >
-            <span className="material-symbols-outlined text-[14px]! text-white/45">
-              {row.icon}
+
+      <p className="text-[11px] leading-snug text-white/50">{regenLabel}</p>
+
+      <div>
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
+          {labels.energyCostsTitle}
+        </p>
+        <div className="flex items-center justify-between gap-1.5 text-[11px] text-white/70">
+          {[
+            { icon: "explore", cost: WILD_ENCOUNTER_ENERGY_COST, label: labels.energyCostExplore },
+            { icon: "stadium", cost: GYM_BATTLE_ENERGY_COST, label: labels.energyCostGym },
+            { icon: "swords", cost: PVP_BATTLE_ENERGY_COST, label: labels.energyCostPvp },
+          ].map((row) => (
+            <span
+              key={row.label}
+              title={row.label}
+              className="inline-flex flex-1 flex-col items-center gap-0.5 rounded-lg border border-sky-400/15 bg-sky-400/[0.06] px-1 py-1.5"
+            >
+              <span className="inline-flex items-center gap-0.5 font-mono tabular-nums text-sky-100">
+                <span className="material-symbols-outlined text-[14px]! text-sky-300/80">
+                  {row.icon}
+                </span>
+                <Image
+                  src={RESOURCE_ICON.energy}
+                  alt=""
+                  width={12}
+                  height={12}
+                  className="h-3 w-3 object-contain"
+                  unoptimized
+                />
+                −{row.cost}
+              </span>
+              <span className="truncate text-[9px] text-white/40">{row.label}</span>
             </span>
-            <Image
-              src={RESOURCE_ICON.energy}
-              alt=""
-              width={12}
-              height={12}
-              className="h-3 w-3 object-contain"
-              unoptimized
-            />
-            {row.cost}
-          </span>
-        ))}
+          ))}
+        </div>
       </div>
+
+      <p className="text-[10px] leading-relaxed text-white/40">{labels.energyPacing}</p>
+
       {energy <= 0 ? (
         <div className="flex gap-1.5">
           <ResourceAction
@@ -453,10 +516,13 @@ export function ResourceBar({
       <ResourcePill
         tone="energy"
         compact={isMobile}
+        energyPct={pct}
+        energyState={energyState}
+        hoverHint={!isFull && countdown ? countdown : null}
         value={
           <span>
             {energy}
-            <span className="text-white/45">/{energyMax}</span>
+            <span className="text-white/40">/{energyMax}</span>
           </span>
         }
         ariaLabel={energyAria}
@@ -507,11 +573,20 @@ export function ResourceBar({
             aria-controls={allPanelId}
             aria-label={labels.resources}
             onClick={() => toggle("all")}
-            className={`flex h-8 min-w-[44px] items-center gap-1.5 rounded-md border border-white/12 bg-black/40 px-2 transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pokeball-red/50 ${
-              open === "all" ? "bg-white/[0.06]" : ""
-            }`}
+            className={`flex h-8 min-w-[44px] items-center gap-1.5 rounded-md border px-2 transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pokeball-red/50 ${
+              energyState === "full"
+                ? "border-cyan-400/35 bg-cyan-400/10"
+                : energyState === "empty"
+                  ? "border-sky-400/20 bg-black/40"
+                  : "border-sky-400/25 bg-black/40"
+            } ${open === "all" ? "bg-white/[0.06]" : ""}`}
           >
-            <span data-loot-target="energy" className="inline-flex items-center gap-1">
+            <span
+              data-loot-target="energy"
+              className={`inline-flex items-center gap-1 ${
+                energyState === "regen" ? "energy-icon-pulse" : ""
+              }${energyState === "full" ? "energy-icon-full" : ""}`}
+            >
               <Image
                 src={RESOURCE_ICON.energy}
                 alt=""
@@ -569,15 +644,21 @@ export function ResourceBar({
                     unoptimized
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="font-mono text-[16px] font-semibold tabular-nums text-white">
+                    <p className="font-mono text-[16px] font-semibold tabular-nums text-sky-100">
                       {energy}
                       <span className="text-white/40">/{energyMax}</span>
                     </p>
                     <p className="text-[10px] text-white/45">
-                      {isFull
-                        ? labels.energyFull
-                        : labels.energyNext.replace("{time}", countdown ?? "--:--")}
+                      {isFull ? labels.energyFull : nextLabel}
                     </p>
+                    <div className="energy-popover-track relative mt-1.5 h-1.5 overflow-hidden rounded-[2px]">
+                      <div
+                        className={`energy-popover-fill h-full rounded-[2px]${
+                          isFull ? " energy-popover-fill--full" : ""
+                        }`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
 

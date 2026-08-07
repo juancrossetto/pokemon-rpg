@@ -108,7 +108,9 @@ export async function PcTab({
       )}
 
       <PcTransfer
-        key={pokemon.map((p) => `${p.id}:${p.teamSlot ?? "box"}`).join("|")}
+        key={pokemon
+          .map((p) => `${p.id}:${p.teamSlot ?? "box"}:${p.speciesId}`)
+          .join("|")}
         locale={locale}
         teamSize={TEAM_SIZE}
         initialTeam={team.map((p) => toPcMon(p, busyParents))}

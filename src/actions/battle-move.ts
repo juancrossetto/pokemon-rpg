@@ -59,6 +59,9 @@ export interface XpSummaryEntry {
   xpGained: number;
   leveledUpTo: number | null;
   previousLevel: number;
+  /** XP acumulada total antes / después del reparto (para barra animada). */
+  xpBefore: number;
+  xpAfter: number;
   autoTaught: LevelUpMoveInfo[];
   pendingMoves: LevelUpMoveInfo[];
   evolveOffer: EvolveOffer | null;
@@ -649,7 +652,9 @@ export async function submitBattleMove(
               ]
             : []),
         ]);
-        revalidatePath(`/${locale}/team`);
+        // Sin revalidatePath: la batalla sigue, `/team` es inalcanzable (redirige
+        // acá) y revalidarla fuerza un re-render de esta misma ruta encima de la
+        // animación del rival entrando. Ver switch-pokemon.ts.
         return {
           events,
           playerMaxHp,
@@ -935,6 +940,8 @@ export async function submitBattleMove(
       toLevel: number;
       leveledUpTo: number | null;
       share: number;
+      xpBefore: number;
+      xpAfter: number;
     }[] = [];
 
     for (const p of participants) {
@@ -963,6 +970,8 @@ export async function submitBattleMove(
         toLevel: result.newLevel,
         leveledUpTo: result.leveledUpTo,
         share,
+        xpBefore: p.xp,
+        xpAfter: result.newXpTotal,
       });
       instanceUpdates.push(
         prisma.pokemonInstance.update({
@@ -1012,6 +1021,8 @@ export async function submitBattleMove(
           xpGained: meta.share,
           leveledUpTo: meta.leveledUpTo,
           previousLevel: meta.fromLevel,
+          xpBefore: meta.xpBefore,
+          xpAfter: meta.xpAfter,
           autoTaught,
           pendingMoves,
           evolveOffer,

@@ -19,6 +19,7 @@ import { playBattleSfx } from "@/lib/battle-sfx";
 import { startResultBgm, stopResultBgm } from "@/lib/battle-bgm";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";
 import type { XpSummaryEntry } from "@/actions/battle-move";
+import { XpGainPanel } from "@/components/battle/xp-gain-panel";
 
 export type ResultMode = "won" | "lost" | "caught" | "fled" | "trainer_cleared";
 
@@ -33,7 +34,6 @@ type Tag = { label: string; icon: string; tone: "win" | "ko" | "caught" | "neutr
 
 const EXIT_MS = 420;
 const COIN_ICON = itemHdIconUrl("Gold Coin") ?? "/items/hd/gold-coin.png";
-const XP_ICON = "/ui/exp.png";
 const TROPHY_ICON = "/pvp/win-trophy.png";
 
 type LeaveTarget = string | (() => void | Promise<void>);
@@ -152,11 +152,7 @@ function LevelUpFanfare({
   const t = useTranslations("battle");
   const leveled = entries.filter((e) => e.leveledUpTo != null);
 
-  useEffect(() => {
-    if (leveled.length === 0) return;
-    playBattleSfx("levelUp");
-  }, [leveled.length]);
-
+  // El SFX de level-up lo dispara la barra de XP al cruzar el umbral.
   if (leveled.length === 0) return null;
 
   return (
@@ -477,6 +473,12 @@ export function BattleResult({
               </div>
             ) : null}
 
+            {xpSummary && xpSummary.length > 0 && hasLevelUpChoices ? (
+              <div className="mt-3 rounded-2xl border border-white/8 bg-black/40 p-2.5 md:p-3">
+                <XpGainPanel entries={xpSummary} compact />
+              </div>
+            ) : null}
+
             {(coinsGained > 0 || (xpSummary && xpSummary.length > 0)) &&
               !hasLevelUpChoices && (
               <section className="mt-3 rounded-2xl border border-white/8 bg-black/40 p-3 md:p-4">
@@ -502,37 +504,9 @@ export function BattleResult({
                     </div>
                   ) : null}
 
-                  {xpSummary?.map((entry) => (
-                    <div
-                      key={entry.instanceId}
-                      className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
-                    >
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium capitalize text-white/85">
-                        {entry.name}
-                      </span>
-                      <span className="flex shrink-0 items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 font-mono text-[15px] font-bold tabular-nums text-sky-300">
-                          <Image
-                            src={XP_ICON}
-                            alt=""
-                            width={28}
-                            height={28}
-                            className="h-7 w-7 object-contain drop-shadow-[0_0_8px_rgba(56,189,248,0.45)]"
-                            unoptimized
-                          />
-                          +{entry.xpGained} XP
-                        </span>
-                        {entry.leveledUpTo ? (
-                          <span className="level-up-chip inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300">
-                            <span className="material-symbols-outlined text-[14px]!">
-                              arrow_upward
-                            </span>
-                            {t("leveledUp", { level: entry.leveledUpTo })}
-                          </span>
-                        ) : null}
-                      </span>
-                    </div>
-                  ))}
+                  {xpSummary && xpSummary.length > 0 ? (
+                    <XpGainPanel entries={xpSummary} showTitle={false} />
+                  ) : null}
                 </div>
               </section>
             )}

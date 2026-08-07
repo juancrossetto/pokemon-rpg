@@ -30,6 +30,8 @@ export type SfxKind =
   | "miss"
   | "faint"
   | "ball"
+  /** Apertura de la ball + el Pokémon materializándose. */
+  | "sendOut"
   | "badge"
   | "status"
   | "crit"
@@ -74,6 +76,7 @@ const BATTLE_PRELOAD: SfxKind[] = [
   "faint",
   "status",
   "ball",
+  "sendOut",
 ];
 
 type SampleState =
@@ -391,6 +394,15 @@ function playSynth(kind: SfxKind) {
     case "ball":
       tone(500, 70, "sine", 0.1);
       setTimeout(() => tone(640, 90, "sine", 0.1), 90);
+      break;
+    case "sendOut":
+      // Click de apertura → chorro que sube → brillo de la silueta.
+      tone(880, 50, "square", 0.08);
+      noiseBurst(260, 1400, "bandpass", 0.07);
+      tone(320, 300, "triangle", 0.11, 1180);
+      setTimeout(() => tone(1046, 100, "sine", 0.08), 300);
+      setTimeout(() => tone(1318, 120, "sine", 0.07), 380);
+      setTimeout(() => tone(1568, 160, "triangle", 0.06), 470);
       break;
     case "badge":
       tone(523, 110, "sine", 0.12);

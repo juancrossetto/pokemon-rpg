@@ -158,7 +158,12 @@ export async function switchPokemon(
       },
     });
 
-    revalidatePath(`/${locale}/team`);
+    // Sin revalidatePath a propósito: `/team` redirige a `/battle` mientras la
+    // batalla está activa, así que revalidarlo no cambia nada que el jugador
+    // pueda ver — pero obliga a Next a re-renderizar y streamear de nuevo la
+    // ruta actual junto con la respuesta de la action. Eso cae justo encima de
+    // la animación de send-out y la traba. El estado de `/team` se revalida al
+    // cerrarse la batalla.
 
     return {
       newPlayer: {
@@ -240,7 +245,9 @@ export async function switchPokemon(
     await notifyGymResult(userId, battle.gymId, false);
   }
 
-  revalidatePath(`/${locale}/team`);
+  // Sólo si la batalla terminó acá: ahí sí el jugador sale a `/team` y la ruta
+  // tiene que estar fresca. Mientras sigue en combate, ver arriba.
+  if (lostBattle) revalidatePath(`/${locale}/team`);
 
   return {
     newPlayer: {

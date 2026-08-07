@@ -174,9 +174,9 @@ export async function applyAutoTeachMoves(
 
 /**
  * Tras subir de nivel: movimientos a ofrecer (sin auto-escribir) + evo.
- * Re-ofrece cualquier LEVEL_UP aún no conocido con learnLevel <= nivel
- * actual — si se ignoró antes, vuelve a preguntar en el próximo level-up
- * (mismo criterio que diferir la evolución).
+ * Re-ofrece LEVEL_UP aún no conocidos con learnLevel <= nivel actual,
+ * salvo los que el jugador rechazó (`declinedMoveIds`).
+ * Ignorar en UI sólo difiere al próximo level-up; rechazar persiste.
  */
 export async function resolveLevelUpEffects(
   instanceId: string,
@@ -188,7 +188,7 @@ export async function resolveLevelUpEffects(
   const [live, knownRows] = await Promise.all([
     prisma.pokemonInstance.findUnique({
       where: { id: instanceId },
-      select: { speciesId: true, level: true },
+      select: { speciesId: true, level: true, declinedMoveIds: true },
     }),
     prisma.pokemonMove.findMany({
       where: { pokemonInstanceId: instanceId },
@@ -200,6 +200,7 @@ export async function resolveLevelUpEffects(
     speciesId: live?.speciesId ?? speciesId,
     level: live?.level ?? toLevel,
     knownMoves: knownRows.map((m) => toKnownMoveInfo(m.slot, m.move)),
+    declinedMoveIds: live?.declinedMoveIds ?? [],
   });
 }
 
@@ -211,6 +212,7 @@ export async function buildLevelUpEffects(opts: {
   speciesId: number;
   level: number;
   knownMoves: KnownMoveInfo[];
+  declinedMoveIds?: number[];
 }): Promise<LevelUpEffects> {
   // fromLevel 0: incluye omitidos de subidas anteriores, no sólo el rango nuevo.
   const [candidates, evolveOffer] = await Promise.all([
@@ -220,13 +222,15 @@ export async function buildLevelUpEffects(opts: {
       return null;
     }),
   ]);
+  const declined = new Set(opts.declinedMoveIds ?? []);
+  const eligible = candidates.filter((m) => !declined.has(m.moveId));
   const { autoFill, needsChoice } = classifyNewMoves(
     new Set(opts.knownMoves.map((m) => m.moveId)),
     new Set(opts.knownMoves.map((m) => m.slot)),
-    candidates,
+    eligible,
   );
   // Todo pasa por la UI: autoFill = aprende en slot libre al confirmar;
-  // needsChoice = hay que olvidar o ignorar.
+  // needsChoice = hay que olvidar, ignorar o rechazar.
   return {
     autoTaught: [],
     pendingMoves: [...autoFill, ...needsChoice],
@@ -298,6 +302,53 @@ export async function learnPendingMove(opts: {
       moveId: opts.moveId,
       currentPp: learnable.move.pp,
     },
+  });
+  return { ok: true };
+}
+
+/**
+ * Rechaza un movimiento LEVEL_UP para siempre: no se vuelve a ofrecer
+ * en próximos level-ups (a diferencia de "Ignorar", que sólo difiere).
+ */
+export async function declinePendingMove(opts: {
+  userId: string;
+  instanceId: string;
+  moveId: number;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const instance = await prisma.pokemonInstance.findFirst({
+    where: { id: opts.instanceId, ownerId: opts.userId },
+    select: {
+      id: true,
+      speciesId: true,
+      level: true,
+      declinedMoveIds: true,
+      moves: { select: { moveId: true } },
+    },
+  });
+  if (!instance) return { ok: false, error: "not_found" };
+
+  if (instance.moves.some((m) => m.moveId === opts.moveId)) {
+    return { ok: false, error: "already_known" };
+  }
+
+  const learnable = await prisma.speciesMove.findFirst({
+    where: {
+      speciesId: instance.speciesId,
+      moveId: opts.moveId,
+      method: "LEVEL_UP",
+      learnLevel: { lte: instance.level },
+    },
+    select: { moveId: true },
+  });
+  if (!learnable) return { ok: false, error: "not_learnable" };
+
+  if (instance.declinedMoveIds.includes(opts.moveId)) {
+    return { ok: true };
+  }
+
+  await prisma.pokemonInstance.update({
+    where: { id: instance.id },
+    data: { declinedMoveIds: { push: opts.moveId } },
   });
   return { ok: true };
 }

@@ -91,6 +91,7 @@ export function SquadCardContextMenu({
   onLeveledUp,
   onPpRestored,
   onFlagsChange,
+  onEvolved,
   onHeldChange,
   onNicknameChange,
   /** Si se pasa, muestra "Dejar en el PC". `canDepositToPc` deshabilita el último. */
@@ -143,6 +144,13 @@ export function SquadCardContextMenu({
     allMoves: boolean;
   }) => void;
   onFlagsChange?: (next: { isFavorite?: boolean; isTradeLocked?: boolean }) => void;
+  onEvolved?: (next: {
+    toName: string;
+    toSpriteUrl: string;
+    level: number;
+    currentHp: number;
+    maxHp: number;
+  }) => void;
   onHeldChange?: (next: HeldItemInfo | null) => void;
   onNicknameChange?: (next: string | null) => void;
   onDepositToPc?: () => void;
@@ -433,6 +441,7 @@ export function SquadCardContextMenu({
         <SquadLevelOffers
           entries={actions.levelOffers}
           onSettled={actions.dismissLevelOffers}
+          onEvolved={onEvolved}
         />
       )}
       {panel === "teach" && canTeach && moves && compatibleTms && teachLabels ? (

@@ -33,16 +33,17 @@ type Zone = "team" | "box";
 type DragState = { id: string; from: Zone };
 type GhostState = { mon: PcMon; x: number; y: number };
 type CardFx = "swap" | "arrive";
+type Selection = { id: string; from: Zone };
 
 const DRAG_THRESHOLD_PX = 10;
 const FX_MS = 520;
 
 /**
- * Equipo y PC con drag & drop (mouse + touch).
+ * Equipo y PC: drag & drop (mango) + selección por doble toque.
  *
- * El estado local es optimista y se revierte si la acción falla. Cualquier
- * gesto termina en `setTeamLayout`: reordenar, mandar a la PC, traer del PC
- * o intercambiar cuando el equipo está lleno.
+ * Con muchos Pokémon el scroll rompe el drag al soltar; el flujo
+ * doble-toque → temblor → un toque en el destino cubre equipo↔PC sin arrastrar.
+ * El estado local es optimista y se revierte si la acción falla.
  */
 export function PcTransfer({
   locale,
@@ -66,6 +67,7 @@ export function PcTransfer({
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const [ghost, setGhost] = useState<GhostState | null>(null);
+  const [selected, setSelected] = useState<Selection | null>(null);
   const [cardFx, setCardFx] = useState<Record<string, CardFx>>({});
   const fxTimers = useRef<Map<string, number>>(new Map());
   const [overSlot, setOverSlot] = useState<number | null>(null);
@@ -74,11 +76,21 @@ export function PcTransfer({
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
+    const timers = fxTimers.current;
     return () => {
-      for (const id of fxTimers.current.values()) window.clearTimeout(id);
-      fxTimers.current.clear();
+      for (const id of timers.values()) window.clearTimeout(id);
+      timers.clear();
     };
   }, []);
+
+  useEffect(() => {
+    if (!selected) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelected(null);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [selected]);
 
   function patchMon(id: string, patch: Partial<PcMon>) {
     const apply = (list: PcMon[]) =>
@@ -88,6 +100,33 @@ export function PcTransfer({
           return { ...m, isFavorite: false };
         }
         return m;
+      });
+    setTeam((prev) => apply(prev));
+    setBox((prev) => apply(prev));
+  }
+
+  function patchEvolved(
+    id: string,
+    next: {
+      toName: string;
+      toSpriteUrl: string;
+      level: number;
+      currentHp: number;
+      maxHp: number;
+    },
+  ) {
+    const apply = (list: PcMon[]) =>
+      list.map((m) => {
+        if (m.id !== id) return m;
+        return {
+          ...m,
+          name: m.name === m.speciesName ? next.toName : m.name,
+          speciesName: next.toName,
+          spriteUrl: next.toSpriteUrl,
+          level: next.level,
+          currentHp: next.currentHp,
+          maxHp: next.maxHp,
+        };
       });
     setTeam((prev) => apply(prev));
     setBox((prev) => apply(prev));
@@ -105,8 +144,9 @@ export function PcTransfer({
       const timer = window.setTimeout(() => {
         setCardFx((cur) => {
           if (!(id in cur)) return cur;
-          const { [id]: _, ...rest } = cur;
-          return rest;
+          const next = { ...cur };
+          delete next[id];
+          return next;
         });
         fxTimers.current.delete(id);
       }, FX_MS);
@@ -121,6 +161,7 @@ export function PcTransfer({
     animateIds: string[],
   ) {
     const previous = { team, box };
+    setSelected(null);
     setTeam(nextTeam);
     setBox(nextBox);
     setError(null);
@@ -205,10 +246,50 @@ export function PcTransfer({
     );
   }
 
+  function pickMon(source: Selection) {
+    const mon = monFrom(source);
+    if (!mon || mon.listed || mon.breeding) return;
+    unlockPcAudio();
+    if (selected?.id === source.id) {
+      setSelected(null);
+      return;
+    }
+    setSelected(source);
+    playPcSfx("select");
+  }
+
+  /** Un toque con selección activa: mueve / intercambia / deposita. */
+  function placeSelection(target: { kind: "team"; index: number } | { kind: "box"; id: string }) {
+    if (!selected || dragRef.current) return;
+
+    if (target.kind === "team") {
+      if (selected.from === "team" && team[target.index]?.id === selected.id) {
+        setSelected(null);
+        return;
+      }
+      dropOnSlot(target.index, selected);
+      return;
+    }
+
+    if (selected.id === target.id) {
+      setSelected(null);
+      return;
+    }
+
+    if (selected.from === "team") {
+      dropOnBox(selected);
+      return;
+    }
+
+    // PC → PC: sólo cambia la selección (no hay orden persistido en la caja).
+    pickMon({ id: target.id, from: "box" });
+  }
+
   function beginDrag(source: DragState, x: number, y: number) {
     unlockPcAudio();
     const mon = monFrom(source);
     if (!mon) return;
+    setSelected(null);
     dragRef.current = source;
     setDrag(source);
     setGhost({ mon, x, y });
@@ -263,7 +344,10 @@ export function PcTransfer({
   }
 
   const slots = Array.from({ length: teamSize }, (_, i) => team[i] ?? null);
-  const dragChips = ["dragChipReorder", "dragChipStore", "dragChipSwap"] as const;
+  const dragChips = ["dragChipReorder", "dragChipStore", "dragChipSwap", "dragChipTap"] as const;
+  const selectedMon = selected ? monFrom(selected) : null;
+  const armedTeam = Boolean(selected) && !drag;
+  const armedBox = selected?.from === "team" && !drag;
 
   return (
     <div className={pending ? "opacity-90 transition-opacity" : undefined}>
@@ -284,12 +368,32 @@ export function PcTransfer({
                 ? "swap_vert"
                 : key === "dragChipStore"
                   ? "inventory_2"
-                  : "sync_alt"}
+                  : key === "dragChipTap"
+                    ? "touch_app"
+                    : "sync_alt"}
             </span>
             {t(key)}
           </span>
         ))}
       </div>
+
+      {selectedMon ? (
+        <div className="mb-3 flex items-center gap-2 rounded-xl border border-electric-yellow/35 bg-electric-yellow/10 px-3 py-2">
+          <span className="material-symbols-outlined text-[18px]! text-electric-yellow">
+            vibration
+          </span>
+          <p className="min-w-0 flex-1 truncate text-[12px] text-electric-yellow/95">
+            {t("selectedHint", { name: selectedMon.name })}
+          </p>
+          <button
+            type="button"
+            onClick={() => setSelected(null)}
+            className="shrink-0 rounded-md border border-white/15 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant transition hover:border-white/30 hover:text-white"
+          >
+            {t("selectedCancel")}
+          </button>
+        </div>
+      ) : null}
 
       <section className="mb-8">
         <h2 className="mb-3 flex items-center gap-2 text-headline-md text-on-surface">
@@ -311,7 +415,7 @@ export function PcTransfer({
               data-pc-drop={`team-${index}`}
               className={`rounded-xl transition ${
                 overSlot === index ? "ring-2 ring-pokeball-red/60 scale-[1.01]" : ""
-              }`}
+              } ${armedTeam && selected?.id !== mon?.id ? "pc-slot-armed" : ""}`}
             >
               {mon ? (
                 <MonCard
@@ -319,6 +423,8 @@ export function PcTransfer({
                   slot={index + 1}
                   zone="team"
                   dragging={drag?.id === mon.id}
+                  selected={selected?.id === mon.id}
+                  selectionArmed={armedTeam}
                   fx={cardFx[mon.id]}
                   onDragEnd={clearDragVisual}
                   onPointerDragStart={(x, y) =>
@@ -326,6 +432,8 @@ export function PcTransfer({
                   }
                   onPointerDragMove={resolveHover}
                   onPointerDragEnd={endDrag}
+                  onPick={() => pickMon({ id: mon.id, from: "team" })}
+                  onPlace={() => placeSelection({ kind: "team", index })}
                   levelLabel={t("level", { level: mon.level })}
                   menuLabels={menuLabels}
                   bagCounts={bagCounts}
@@ -339,6 +447,7 @@ export function PcTransfer({
                     })
                   }
                   onFlagsChange={(next) => patchMon(mon.id, next)}
+                  onEvolved={(next) => patchEvolved(mon.id, next)}
                   onDepositToPc={
                     team.length > 1
                       ? () =>
@@ -348,9 +457,18 @@ export function PcTransfer({
                   canDepositToPc={team.length > 1}
                 />
               ) : (
-                <div className="flex min-h-[92px] items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.02] text-label-sm text-on-surface-variant/50">
+                <button
+                  type="button"
+                  disabled={!selected}
+                  onClick={() => placeSelection({ kind: "team", index })}
+                  className={`flex min-h-[92px] w-full items-center justify-center rounded-xl border border-dashed bg-white/[0.02] text-label-sm transition ${
+                    selected
+                      ? "cursor-pointer border-pokeball-red/40 text-on-surface-variant hover:border-pokeball-red/70 hover:bg-pokeball-red/[0.06]"
+                      : "border-white/10 text-on-surface-variant/50"
+                  }`}
+                >
                   {t("emptySlot", { slot: index + 1 })}
-                </div>
+                </button>
               )}
             </div>
           ))}
@@ -359,9 +477,15 @@ export function PcTransfer({
 
       <section
         data-pc-drop="box"
+        onClick={(event) => {
+          if (!armedBox || !selected) return;
+          const target = event.target as HTMLElement;
+          if (target.closest("article, button, a, [role='menu']")) return;
+          dropOnBox(selected);
+        }}
         className={`rounded-xl transition-colors ${
           overBox ? "ring-2 ring-electric-yellow/50" : ""
-        }`}
+        } ${armedBox ? "pc-box-armed cursor-pointer" : ""}`}
       >
         <h2 className="mb-3 flex items-center gap-2 text-headline-md text-on-surface">
           <Image
@@ -388,6 +512,8 @@ export function PcTransfer({
                 mon={mon}
                 zone="box"
                 dragging={drag?.id === mon.id}
+                selected={selected?.id === mon.id}
+                selectionArmed={Boolean(selected) && !drag}
                 fx={cardFx[mon.id]}
                 onDragEnd={clearDragVisual}
                 onPointerDragStart={(x, y) =>
@@ -395,6 +521,8 @@ export function PcTransfer({
                 }
                 onPointerDragMove={resolveHover}
                 onPointerDragEnd={endDrag}
+                onPick={() => pickMon({ id: mon.id, from: "box" })}
+                onPlace={() => placeSelection({ kind: "box", id: mon.id })}
                 levelLabel={t("level", { level: mon.level })}
                 listedLabel={t("listed")}
                 breedingLabel={t("breedingLocked")}
@@ -410,6 +538,7 @@ export function PcTransfer({
                   })
                 }
                 onFlagsChange={(next) => patchMon(mon.id, next)}
+                onEvolved={(next) => patchEvolved(mon.id, next)}
               />
             ))}
           </div>
@@ -453,11 +582,15 @@ function MonCard({
   slot,
   zone,
   dragging,
+  selected,
+  selectionArmed,
   fx,
   onDragEnd,
   onPointerDragStart,
   onPointerDragMove,
   onPointerDragEnd,
+  onPick,
+  onPlace,
   levelLabel,
   listedLabel,
   breedingLabel,
@@ -467,6 +600,7 @@ function MonCard({
   onHealed,
   onLeveledUp,
   onFlagsChange,
+  onEvolved,
   onDepositToPc,
   canDepositToPc = true,
 }: {
@@ -474,11 +608,15 @@ function MonCard({
   slot?: number;
   zone: Zone;
   dragging: boolean;
+  selected: boolean;
+  selectionArmed: boolean;
   fx?: CardFx;
   onDragEnd: () => void;
   onPointerDragStart: (x: number, y: number) => void;
   onPointerDragMove: (x: number, y: number) => void;
   onPointerDragEnd: (x: number, y: number) => void;
+  onPick: () => void;
+  onPlace: () => void;
   levelLabel: string;
   listedLabel?: string;
   breedingLabel?: string;
@@ -488,6 +626,13 @@ function MonCard({
   onHealed: (next: { currentHp: number; maxHp: number }) => void;
   onLeveledUp: (next: { level: number; currentHp: number; maxHp: number }) => void;
   onFlagsChange: (next: { isFavorite?: boolean; isTradeLocked?: boolean }) => void;
+  onEvolved: (next: {
+    toName: string;
+    toSpriteUrl: string;
+    level: number;
+    currentHp: number;
+    maxHp: number;
+  }) => void;
   onDepositToPc?: () => void;
   canDepositToPc?: boolean;
 }) {
@@ -496,8 +641,15 @@ function MonCard({
   const hpClass = hpPct > 50 ? "" : hpPct > 20 ? "yellow" : "red";
   const canMove = !mon.listed && !mon.breeding;
   const pointerOrigin = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const placeTimer = useRef<number | null>(null);
   const fxClass =
     fx === "swap" ? "pc-card-swap" : fx === "arrive" ? "pc-card-arrive" : "";
+
+  useEffect(() => {
+    return () => {
+      if (placeTimer.current) window.clearTimeout(placeTimer.current);
+    };
+  }, []);
 
   return (
     <SquadCardContextMenu
@@ -517,18 +669,44 @@ function MonCard({
       onHealed={onHealed}
       onLeveledUp={onLeveledUp}
       onFlagsChange={onFlagsChange}
+      onEvolved={onEvolved}
       onDepositToPc={zone === "team" ? onDepositToPc : undefined}
       canDepositToPc={canDepositToPc}
     >
       <article
-        className={`flex items-center gap-3 rounded-xl border border-white/10 bg-glass-surface p-3 pr-8 backdrop-blur-xl transition-opacity ${
-          canMove ? "" : "opacity-60"
-        } ${dragging ? "pointer-events-none opacity-35" : ""} ${fxClass}`}
+        onClick={(event) => {
+          if (!canMove || dragging) return;
+          if ((event.target as HTMLElement).closest("[data-pc-ignore-select]")) return;
+          if (!selectionArmed) return;
+          // Retraso: un doble toque cancela el place y re-elige en su lugar.
+          if (placeTimer.current) window.clearTimeout(placeTimer.current);
+          placeTimer.current = window.setTimeout(() => {
+            placeTimer.current = null;
+            onPlace();
+          }, 220);
+        }}
+        onDoubleClick={(event) => {
+          if (!canMove || dragging) return;
+          if ((event.target as HTMLElement).closest("[data-pc-ignore-select]")) return;
+          event.preventDefault();
+          if (placeTimer.current) {
+            window.clearTimeout(placeTimer.current);
+            placeTimer.current = null;
+          }
+          onPick();
+        }}
+        className={`flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-glass-surface p-3 pr-8 backdrop-blur-xl transition-opacity select-none ${
+          canMove ? "" : "cursor-not-allowed opacity-60"
+        } ${dragging ? "pointer-events-none opacity-35" : ""} ${
+          selected ? "pc-card-selected" : ""
+        } ${fxClass}`}
       >
         <span
+          data-pc-ignore-select
           onPointerDown={(e) => {
             if (!canMove || e.button !== 0) return;
             e.preventDefault();
+            e.stopPropagation();
             pointerOrigin.current = { x: e.clientX, y: e.clientY, active: false };
             (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
           }}
@@ -573,6 +751,7 @@ function MonCard({
             width={48}
             height={48}
             className="h-full w-full object-cover"
+            draggable={false}
           />
           {zone === "team" && slot && (
             <span className="absolute bottom-0 right-0 rounded-tl bg-black/70 px-1 font-mono text-[9px] leading-tight text-white">

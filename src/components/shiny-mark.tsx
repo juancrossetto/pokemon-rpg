@@ -19,7 +19,7 @@ function sparkle(cx: number, cy: number, r: number) {
 
 export function ShinyMark({
   className = "h-4 w-4",
-  title,
+  title = "Shiny",
 }: {
   className?: string;
   title?: string;
@@ -28,9 +28,9 @@ export function ShinyMark({
     <svg
       viewBox="0 0 32 32"
       className={`shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)] ${className}`.trim()}
-      aria-hidden={title ? undefined : true}
-      role={title ? "img" : undefined}
+      role="img"
       aria-label={title}
+      title={title}
     >
       <circle cx="16" cy="16" r="14.5" fill="#FFCC00" />
       <circle

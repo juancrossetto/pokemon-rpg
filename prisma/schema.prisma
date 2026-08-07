@@ -272,6 +272,9 @@ model PokemonInstance {
   heldItemId String?
   heldItem   Item?   @relation(fields: [heldItemId], references: [id])
 
+  /// Movimientos LEVEL_UP que el jugador rechazó: no se vuelven a ofrecer.
+  declinedMoveIds Int[] @default([])
+
   owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   species        Species         @relation(fields: [speciesId], references: [id])
   moves          PokemonMove[]

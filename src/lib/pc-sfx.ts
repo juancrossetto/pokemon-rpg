@@ -10,7 +10,7 @@ import {
   isBattleSfxMuted,
 } from "@/lib/battle-sfx";
 
-export type PcSfxKind = "swap" | "store" | "withdraw" | "reorder";
+export type PcSfxKind = "swap" | "store" | "withdraw" | "reorder" | "select";
 
 let ctx: AudioContext | null = null;
 
@@ -81,6 +81,12 @@ export function playPcSfx(kind: PcSfxKind) {
   if (kind === "withdraw") {
     tone(audio, 380, now, 0.07, vol * 0.4, "triangle");
     tone(audio, 680, now + 0.06, 0.12, vol * 0.5, "sine");
+    return;
+  }
+
+  if (kind === "select") {
+    tone(audio, 540, now, 0.05, vol * 0.32, "triangle");
+    tone(audio, 720, now + 0.04, 0.07, vol * 0.28, "sine");
     return;
   }
 
