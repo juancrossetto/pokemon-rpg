@@ -100,10 +100,10 @@ export default function RegisterPage() {
   );
 
   return (
-    <div className="relative isolate flex min-h-[calc(100dvh-3rem)] flex-1 flex-col md:min-h-[calc(100dvh-4rem)]">
+    <div className="relative isolate flex min-h-0 flex-1 flex-col md:min-h-[calc(100dvh-4rem)]">
       <AuthBackdrop />
 
-      <div className="relative z-10 flex flex-1 flex-col px-4 sm:px-6">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-4 sm:px-6">
         <div className="hidden shrink-0 pt-3 text-center md:block md:pt-4">
           <BrandLogo
             alt={tNav("brand")}
@@ -116,10 +116,10 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center py-4 md:py-6">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-start overflow-y-auto overscroll-contain py-2 sm:py-3 md:justify-center md:py-6">
           <form
             onSubmit={handleSubmit}
-            className="w-full max-w-[420px] lg:max-w-[860px]"
+            className="my-auto w-full max-w-[420px] lg:max-w-[860px] md:my-0"
           >
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/92 shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop-blur-xl">
               <div
@@ -132,13 +132,13 @@ export default function RegisterPage() {
                   <div className={selectedAvatar ? "block" : "hidden lg:block"}>{preview}</div>
                 </aside>
 
-                <div className="flex max-h-[min(78dvh,40rem)] flex-col lg:max-h-none">
-                  <div className="shrink-0 border-b border-white/8 px-5 py-4 sm:px-6">
+                <div className="flex max-h-[min(calc(100dvh-5.25rem),40rem)] flex-col lg:max-h-none">
+                  <div className="shrink-0 border-b border-white/8 px-5 py-3 sm:px-6 sm:py-4">
                     <p className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-pokeball-red">
                       <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
                       {t("eyebrow")}
                     </p>
-                    <h1 className="page-title text-[clamp(1.35rem,5vw,1.85rem)] text-white">
+                    <h1 className="text-[clamp(1.35rem,5vw,1.85rem)] font-semibold uppercase tracking-[0.04em] text-white">
                       {t("title")}
                     </h1>
                     <p className="mt-1.5 text-[13px] leading-snug text-white/50">
@@ -146,7 +146,7 @@ export default function RegisterPage() {
                     </p>
                   </div>
 
-                  <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4 sm:px-6">
+                  <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-3 sm:px-6 sm:py-4">
                     <label className="block">
                       <span className="sr-only">{t("username")}</span>
                       <div className="relative">
@@ -262,7 +262,7 @@ export default function RegisterPage() {
                       <p className="mb-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
                         {t("avatar")}
                       </p>
-                      <div className="max-h-40 overflow-y-auto overscroll-contain rounded-xl border border-white/10 bg-black/25 p-1.5 sm:max-h-48">
+                      <div className="max-h-32 overflow-y-auto overscroll-contain rounded-xl border border-white/10 bg-black/25 p-1.5 sm:max-h-44">
                         <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-7 lg:grid-cols-6">
                           {AVATAR_OPTIONS.map((opt) => (
                             <button
@@ -301,7 +301,7 @@ export default function RegisterPage() {
                     )}
                   </div>
 
-                  <div className="shrink-0 border-t border-white/8 px-5 py-4 sm:px-6">
+                  <div className="shrink-0 border-t border-white/8 px-5 py-3 sm:px-6 sm:py-4">
                     <button
                       type="submit"
                       disabled={status !== "idle"}
@@ -312,7 +312,7 @@ export default function RegisterPage() {
                         {status === "submitting" ? t("submitting") : t("submit")}
                       </span>
                     </button>
-                    <p className="mt-3 text-center text-[13px] text-white/45">
+                    <p className="mt-2.5 text-center text-[13px] text-white/45 sm:mt-3">
                       {t("hasAccount")}{" "}
                       <Link
                         href="/login"

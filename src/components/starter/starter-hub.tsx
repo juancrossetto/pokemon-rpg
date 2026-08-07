@@ -15,6 +15,7 @@ import { PokeSparks } from "@/components/poke-sparks";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";
 import { hasSeen, markSeen } from "@/lib/journey-ux";
 import { typeColor } from "@/lib/type-colors";
+import { formatMoveName } from "@/lib/format-move-name";
 
 export type StarterSpeciesCard = {
   id: number;
@@ -223,6 +224,7 @@ function StarterCard({
   const accent = typeColor(species.types[0] ?? "normal");
   const isSelected = selectedId === species.id;
   const isDimmed = selectedId != null && !isSelected;
+  const displayName = formatMoveName(species.name);
 
   return (
     <div
@@ -234,7 +236,7 @@ function StarterCard({
       <button
         type="button"
         disabled={disabled}
-        aria-label={`${chooseLabel} ${species.name}`}
+        aria-label={`${chooseLabel} ${displayName}`}
         onClick={() => onPick(species)}
         className="starter-card group relative flex w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/92 text-left shadow-[0_16px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pokeball-red/60 disabled:cursor-wait"
         style={
@@ -268,7 +270,7 @@ function StarterCard({
           </div>
 
           <p className="mt-1 text-center text-[15px] font-semibold tracking-wide text-white/90">
-            {species.name}
+            {displayName}
           </p>
 
           <div className="mt-2.5 flex max-w-full flex-nowrap items-center justify-center gap-1 overflow-hidden">
@@ -338,7 +340,7 @@ function StarterReveal({
           id="starter-reveal-title"
           className="starter-reveal__name mt-3 text-[1.35rem] font-semibold tracking-wide text-white"
         >
-          {species.name}
+          {formatMoveName(species.name)}
         </p>
         <p className="starter-reveal__copy page-title mt-3 text-[clamp(1.25rem,4vw,1.75rem)] text-white">
           {title}

@@ -268,13 +268,13 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
             <div className="flex items-center gap-2">
               <Link
                 href="/login"
-                className="page-title inline-flex items-center justify-center rounded-lg border border-white/25 bg-transparent px-3 py-1.5 text-[11px] text-white transition hover:border-white/45 hover:bg-white/6"
+                className="inline-flex items-center justify-center rounded-lg border border-white/25 bg-transparent px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-white transition hover:border-white/45 hover:bg-white/6"
               >
                 {t("login")}
               </Link>
               <Link
                 href="/register"
-                className="page-title inline-flex items-center justify-center rounded-lg border border-pokeball-red bg-pokeball-red px-3 py-1.5 text-[11px] text-white shadow-[0_2px_10px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent)] transition hover:brightness-110"
+                className="inline-flex items-center justify-center rounded-lg border border-pokeball-red bg-pokeball-red px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-white shadow-[0_2px_10px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent)] transition hover:brightness-110"
               >
                 {t("register")}
               </Link>

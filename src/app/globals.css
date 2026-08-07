@@ -8268,6 +8268,10 @@ body {
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  /* Grobold no trae glifos latinos con tilde (ó, ñ, é…): si el browser
+     fuerza un fallback sintético, la Ó de "SESIÓN" se ve pixelada. Limitamos
+     la familia a ASCII y dejamos que Inter cubra el resto del stack. */
+  unicode-range: U+0020-007E;
 }
 
 /* ── Pantalla de eventos ──────────────────────────────────────────────────
