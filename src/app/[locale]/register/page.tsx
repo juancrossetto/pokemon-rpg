@@ -78,8 +78,8 @@ export default function RegisterPage() {
     "w-full rounded-xl border border-white/12 bg-black/45 py-2.5 pl-11 pr-3 text-[16px] text-white outline-none transition placeholder:text-white/35 focus:border-pokeball-red/55 focus:bg-black/55 focus:ring-1 focus:ring-pokeball-red/30 sm:py-3";
 
   const preview = (
-    <div className="relative mx-auto flex w-full max-w-[9.5rem] items-end justify-center overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-white/6 to-black/40 px-3 py-3 lg:max-w-[11rem]">
-      <div className="relative flex h-28 w-full items-end justify-center sm:h-32 lg:h-40">
+    <div className="relative mx-auto flex w-full max-w-[8.5rem] items-end justify-center overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-white/6 to-black/40 px-2.5 py-2.5 lg:max-w-[9.5rem]">
+      <div className="relative flex h-24 w-full items-end justify-center sm:h-28 lg:h-32">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-pokeball-red/10 blur-2xl"
@@ -91,7 +91,7 @@ export default function RegisterPage() {
             className="relative z-10 h-full w-auto max-w-full object-contain object-bottom drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
           />
         ) : (
-          <span className="material-symbols-outlined relative z-10 text-[40px]! text-white/30 lg:text-[48px]!">
+          <span className="material-symbols-outlined relative z-10 text-[36px]! text-white/30 lg:text-[42px]!">
             person
           </span>
         )}
@@ -113,15 +113,15 @@ export default function RegisterPage() {
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pokeball-red/55 to-transparent"
             />
-            <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(200px,240px)_minmax(0,1fr)]">
-              {/* Logo + preview con alto natural — no estira la columna. */}
-              <aside className="flex shrink-0 flex-col justify-center gap-3 border-b border-white/10 px-4 py-3 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-5 lg:py-5">
+            <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(188px,220px)_minmax(0,1fr)] lg:items-start">
+              {/* Columna corta: logo + preview al alto natural (sin estirar). */}
+              <aside className="flex shrink-0 flex-col gap-3 border-b border-white/10 px-4 py-3 lg:sticky lg:top-0 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-4 lg:py-4">
                 <div className="shrink-0 text-center">
                   <BrandLogo
                     alt={tNav("brand")}
                     priority
-                    sizes="140px"
-                    className="mx-auto h-auto w-[100px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:w-[120px] lg:w-[130px]"
+                    sizes="120px"
+                    className="mx-auto h-auto w-[96px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:w-[110px]"
                   />
                   <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.24em] text-white/40">
                     {tLogin("tagline")}
@@ -132,21 +132,22 @@ export default function RegisterPage() {
                 </div>
               </aside>
 
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="shrink-0 border-b border-white/8 px-5 py-2.5 sm:px-6 sm:py-3">
-                  <p className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-pokeball-red">
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:min-h-[min(100%,36rem)] lg:self-stretch">
+                <div className="shrink-0 border-b border-white/8 px-4 py-2 sm:px-5 sm:py-2.5">
+                  <p className="mb-0.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-pokeball-red">
                     <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
                     {t("eyebrow")}
                   </p>
-                  <h1 className="text-[clamp(1.2rem,4vw,1.6rem)] font-semibold uppercase tracking-[0.04em] text-white">
+                  <h1 className="text-[clamp(1.15rem,3.8vw,1.45rem)] font-semibold uppercase tracking-[0.04em] text-white">
                     {t("title")}
                   </h1>
-                  <p className="mt-0.5 text-[12px] leading-snug text-white/50 sm:text-[13px]">
+                  <p className="mt-0.5 text-[12px] leading-snug text-white/50">
                     {t("subtitle")}
                   </p>
                 </div>
 
-                <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-5 py-2.5 sm:space-y-3 sm:px-6 sm:py-3">
+                {/* Un solo scroll del cuerpo; submit queda fijo abajo. */}
+                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-2 [scrollbar-width:thin] sm:space-y-2.5 sm:px-5 sm:py-2.5">
                   <label className="block">
                     <span className="sr-only">{t("username")}</span>
                     <div className="relative">
@@ -262,8 +263,9 @@ export default function RegisterPage() {
                     <p className="mb-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
                       {t("avatar")}
                     </p>
-                    <div className="max-h-24 overflow-y-auto overscroll-contain rounded-xl border border-white/10 bg-black/25 p-1.5 sm:max-h-32">
-                      <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-7 lg:grid-cols-6">
+                    {/* Sin max-height propio: evita el scrollbar anidado de la grilla. */}
+                    <div className="rounded-xl border border-white/10 bg-black/25 p-1.5">
+                      <div className="grid grid-cols-7 gap-1 sm:grid-cols-8 lg:grid-cols-7 xl:grid-cols-8">
                         {AVATAR_OPTIONS.map((opt) => (
                           <button
                             key={opt.id}
@@ -272,7 +274,7 @@ export default function RegisterPage() {
                             onClick={() =>
                               setAvatarId(avatarId === opt.id ? null : opt.id)
                             }
-                            className={`aspect-square overflow-hidden rounded-lg border-2 bg-black/40 transition ${
+                            className={`aspect-square overflow-hidden rounded-md border-2 bg-black/40 transition ${
                               avatarId === opt.id
                                 ? "border-pokeball-red ring-1 ring-pokeball-red/40"
                                 : "border-white/12 hover:border-white/30"
@@ -301,7 +303,7 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                <div className="shrink-0 border-t border-white/8 px-5 py-2.5 sm:px-6 sm:py-3">
+                <div className="shrink-0 border-t border-white/8 px-4 py-2 sm:px-5 sm:py-2.5">
                   <button
                     type="submit"
                     disabled={status !== "idle"}
@@ -312,7 +314,7 @@ export default function RegisterPage() {
                       {status === "submitting" ? t("submitting") : t("submit")}
                     </span>
                   </button>
-                  <p className="mt-1.5 text-center text-[12px] text-white/45 sm:mt-2 sm:text-[13px]">
+                  <p className="mt-1.5 text-center text-[12px] text-white/45">
                     {t("hasAccount")}{" "}
                     <Link
                       href="/login"
