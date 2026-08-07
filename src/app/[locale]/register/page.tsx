@@ -78,8 +78,8 @@ export default function RegisterPage() {
     "w-full rounded-xl border border-white/12 bg-black/45 py-2.5 pl-11 pr-3 text-[16px] text-white outline-none transition placeholder:text-white/35 focus:border-pokeball-red/55 focus:bg-black/55 focus:ring-1 focus:ring-pokeball-red/30 sm:py-3";
 
   const preview = (
-    <div className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-white/6 to-black/40 px-3 py-3">
-      <div className="relative flex h-20 w-full max-w-[6.5rem] items-end justify-center sm:h-24 lg:h-full lg:max-h-56 lg:max-w-[10rem]">
+    <div className="relative mx-auto flex w-full max-w-[9.5rem] items-end justify-center overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-white/6 to-black/40 px-3 py-3 lg:max-w-[11rem]">
+      <div className="relative flex h-28 w-full items-end justify-center sm:h-32 lg:h-40">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-pokeball-red/10 blur-2xl"
@@ -91,7 +91,7 @@ export default function RegisterPage() {
             className="relative z-10 h-full w-auto max-w-full object-contain object-bottom drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
           />
         ) : (
-          <span className="material-symbols-outlined relative z-10 text-[36px]! text-white/30 lg:text-[48px]!">
+          <span className="material-symbols-outlined relative z-10 text-[40px]! text-white/30 lg:text-[48px]!">
             person
           </span>
         )}
@@ -113,9 +113,9 @@ export default function RegisterPage() {
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pokeball-red/55 to-transparent"
             />
-            <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(180px,0.8fr)_minmax(0,1.2fr)]">
-              {/* Logo adentro de la card (columna preview) — no empuja el submit. */}
-              <aside className="flex shrink-0 flex-col gap-2 border-b border-white/10 px-4 py-2.5 lg:min-h-0 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-5 lg:py-4">
+            <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(200px,240px)_minmax(0,1fr)]">
+              {/* Logo + preview con alto natural — no estira la columna. */}
+              <aside className="flex shrink-0 flex-col justify-center gap-3 border-b border-white/10 px-4 py-3 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-5 lg:py-5">
                 <div className="shrink-0 text-center">
                   <BrandLogo
                     alt={tNav("brand")}
@@ -127,13 +127,7 @@ export default function RegisterPage() {
                     {tLogin("tagline")}
                   </p>
                 </div>
-                <div
-                  className={
-                    selectedAvatar
-                      ? "flex min-h-0 flex-1"
-                      : "hidden lg:flex lg:min-h-0 lg:flex-1"
-                  }
-                >
+                <div className={selectedAvatar ? "block" : "hidden lg:block"}>
                   {preview}
                 </div>
               </aside>
@@ -222,43 +216,45 @@ export default function RegisterPage() {
                     <p className="mt-1 px-0.5 text-[11px] text-white/40">{t("passwordHint")}</p>
                   </label>
 
-                  <CountrySelect
-                    compact
-                    label={t("country")}
-                    required
-                    value={country}
-                    onChange={setCountry}
-                    locale={locale}
-                    placeholder={t("countryPlaceholder")}
-                  />
+                  <div className="grid grid-cols-[minmax(0,1.25fr)_minmax(0,0.9fr)] items-end gap-2">
+                    <CountrySelect
+                      compact
+                      label={t("country")}
+                      required
+                      value={country}
+                      onChange={setCountry}
+                      locale={locale}
+                      placeholder={t("countryPlaceholder")}
+                    />
 
-                  <div>
-                    <p className="mb-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
-                      {t("gender")}
-                    </p>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {GENDER_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          aria-pressed={gender === opt.value}
-                          onClick={() =>
-                            setGender(gender === opt.value ? null : opt.value)
-                          }
-                          title={t(
-                            `gender${opt.value[0].toUpperCase()}${opt.value.slice(1)}` as "genderMale",
-                          )}
-                          className={`flex items-center justify-center rounded-xl border py-2 transition sm:py-2.5 ${
-                            gender === opt.value
-                              ? "border-pokeball-red bg-pokeball-red/20 text-pokeball-red"
-                              : "border-white/12 bg-black/40 text-white/45 hover:border-white/25 hover:text-white/70"
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-[18px]!">
-                            {opt.icon}
-                          </span>
-                        </button>
-                      ))}
+                    <div>
+                      <p className="mb-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+                        {t("gender")}
+                      </p>
+                      <div className="grid grid-cols-3 gap-1">
+                        {GENDER_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            aria-pressed={gender === opt.value}
+                            onClick={() =>
+                              setGender(gender === opt.value ? null : opt.value)
+                            }
+                            title={t(
+                              `gender${opt.value[0].toUpperCase()}${opt.value.slice(1)}` as "genderMale",
+                            )}
+                            className={`flex items-center justify-center rounded-xl border py-2 transition ${
+                              gender === opt.value
+                                ? "border-pokeball-red bg-pokeball-red/20 text-pokeball-red"
+                                : "border-white/12 bg-black/40 text-white/45 hover:border-white/25 hover:text-white/70"
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[18px]!">
+                              {opt.icon}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
