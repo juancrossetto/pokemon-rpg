@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { avatarById } from "@/lib/avatars";
 import { useOptimisticAvatarId } from "@/components/optimistic-avatar";
 import { TrainerAvatar } from "@/components/trainer-avatar";
+import { LegalDisclaimer } from "@/components/legal-disclaimer";
 
 /**
  * Menú de cuenta. Solo cuenta: los módulos de juego (equipo, inventario, PC)
@@ -131,6 +132,10 @@ export function UserMenu({
               <span className="material-symbols-outlined text-[18px]!">logout</span>
               {logoutLabel}
             </button>
+          </div>
+
+          <div className="border-t border-white/8 px-2.5 py-2">
+            <LegalDisclaimer tone="menu" />
           </div>
         </div>
       )}

@@ -10,6 +10,7 @@ import { AvatarImage } from "@/components/avatar-image";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { AuthBackdrop } from "@/components/auth-backdrop";
+import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { AVATAR_OPTIONS, avatarById } from "@/lib/avatars";
 import { markBootSplashPending } from "@/lib/boot-splash";
 
@@ -115,7 +116,7 @@ export default function RegisterPage() {
     <div className="relative isolate flex h-[calc(100dvh-3.5rem-env(safe-area-inset-top))] max-h-[calc(100dvh-3.5rem-env(safe-area-inset-top))] flex-col overflow-hidden xl:h-[calc(100dvh-3.5rem)] xl:max-h-[calc(100dvh-3.5rem)]">
       <AuthBackdrop />
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-3 py-2 sm:px-5 sm:py-3">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-3 py-1.5 sm:px-5 sm:py-2">
         <form
           onSubmit={handleSubmit}
           className="mx-auto flex h-full min-h-0 w-full max-w-[420px] flex-col lg:max-w-[860px]"
@@ -346,6 +347,8 @@ export default function RegisterPage() {
           </div>
         </form>
       </div>
+
+      <LegalDisclaimer className="relative z-10 mx-auto max-w-xl shrink-0 px-3 pb-1.5 pt-0.5" />
     </div>
   );
 }

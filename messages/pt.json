@@ -3,6 +3,11 @@
     "title": "Pokémon RPG",
     "description": "Capture, treine e batalhe — suba no ranking até ser o número um."
   },
+  "legal": {
+    "copyright": "© 2026 Poke RPG.",
+    "nintendo": "Pokémon © Nintendo, Creatures Inc. e GAME FREAK.",
+    "fanMade": "Poke RPG é um projeto fã não oficial e não é afiliado, endossado, patrocinado ou aprovado pela Nintendo, Creatures Inc. ou GAME FREAK."
+  },
   "loading": {
     "syncing": "Sincronizando...",
     "boot": "Carregando"

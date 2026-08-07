@@ -7,6 +7,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { AuthBackdrop } from "@/components/auth-backdrop";
+import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { markBootSplashPending } from "@/lib/boot-splash";
 
 export default function LoginPage() {
@@ -49,7 +50,7 @@ export default function LoginPage() {
     <div className="relative isolate flex min-h-[calc(100dvh-3rem)] flex-1 flex-col md:min-h-[calc(100dvh-4rem)]">
       <AuthBackdrop />
 
-      <div className="relative z-10 flex flex-1 flex-col px-4 sm:px-6">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-4 sm:px-6">
         <div className="hidden shrink-0 pt-3 text-center md:block md:pt-4">
           <BrandLogo
             alt={tNav("brand")}
@@ -62,7 +63,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center py-4 md:py-6">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-4 md:py-6">
           <form onSubmit={handleSubmit} className="w-full max-w-[380px] md:max-w-[420px]">
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/92 shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop-blur-xl">
               <div
@@ -174,6 +175,8 @@ export default function LoginPage() {
             </div>
           </form>
         </div>
+
+        <LegalDisclaimer className="relative z-10 mx-auto max-w-md shrink-0 px-2 pb-3 pt-1" />
       </div>
     </div>
   );
