@@ -66,32 +66,34 @@ export function BattleLobby({
         <BattleLobbyMobile locale={locale} hasHealthyTeam={hasHealthyTeam} lobby={lobby} />
       </div>
 
-    <div className="hidden flex-1 px-margin-mobile md:px-margin-desktop py-6 md:py-8 lg:block">
-      <div className="mx-auto flex max-w-5xl flex-col gap-4">
-        <header>
-          <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90">
+      <div className="hidden h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px)-var(--bottom-nav-h,5.25rem)-env(safe-area-inset-bottom,0px)-1.75rem)] max-h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px)-var(--bottom-nav-h,5.25rem)-env(safe-area-inset-bottom,0px)-1.75rem)] flex-col overflow-hidden px-margin-desktop py-3 lg:flex xl:h-[calc(100dvh-3.5rem)] xl:max-h-[calc(100dvh-3.5rem)]">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col gap-2.5">
+        <header className="shrink-0">
+          <p className="mb-0.5 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-400/90">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
             {t("lobby.liveSync")}
           </p>
-          <h1 className="page-title text-headline-lg text-white md:text-display-lg">
+          <h1 className="page-title text-[clamp(1.35rem,2.4vw,1.85rem)] text-white">
             {t("title")}
           </h1>
-          <p className="mt-1 max-w-lg text-label-md text-on-surface-variant">
+          <p className="mt-0.5 max-w-lg text-[13px] leading-snug text-on-surface-variant">
             {t("subtitle")}
           </p>
         </header>
 
-        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="glass-panel relative flex flex-col overflow-hidden p-4">
+        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[1.2fr_0.8fr]">
+          <section className="glass-panel relative flex min-h-0 flex-col overflow-hidden p-3">
             <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-sky-500/15 blur-3xl" />
-            <div className="relative flex flex-1 flex-col">
-              <div className="mb-3 flex items-start justify-between gap-2">
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              <div className="mb-2 flex shrink-0 items-start justify-between gap-2">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-sky-300/80">
                     {t("lobby.currentLocation")}
                   </p>
-                  <h2 className="mt-0.5 text-headline-md text-white">{locationLabel}</h2>
-                  <p className="text-label-sm text-on-surface-variant">{stageLabel}</p>
+                  <h2 className="mt-0.5 text-[1.15rem] font-semibold leading-tight text-white">
+                    {locationLabel}
+                  </h2>
+                  <p className="text-[12px] text-on-surface-variant">{stageLabel}</p>
                 </div>
                 <span
                   className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${RATE_STYLE[lobby.encounterRate]}`}
@@ -101,7 +103,7 @@ export function BattleLobby({
               </div>
 
               {/* Mismo mapa y mismo selector que el dashboard. */}
-              <div className="relative mb-4 min-h-[8rem] flex-1 overflow-hidden rounded-lg border border-white/10 bg-[#0b1424]">
+              <div className="relative mb-2.5 min-h-0 flex-1 overflow-hidden rounded-lg border border-white/10 bg-[#0b1424]">
                 {mapSrc ? (
                   <Image
                     src={mapSrc}
@@ -136,10 +138,10 @@ export function BattleLobby({
                 </div>
               </div>
 
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+              <p className="mb-1.5 shrink-0 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
                 {t("lobby.predictedTypes")}
               </p>
-              <div className="mb-4 flex flex-wrap gap-1.5">
+              <div className="mb-2.5 flex shrink-0 flex-wrap gap-1.5">
                 {predictedTypes.map((type) => (
                   <span
                     key={type}
@@ -151,30 +153,32 @@ export function BattleLobby({
                 ))}
               </div>
 
-              {hasHealthyTeam ? (
-                <StartEncounterButton
-                  locale={locale}
-                  label={t("explore")}
-                  errors={startErrors}
-                  disabled={!canExplore}
-                  energyCost={lobby.energyCost}
-                />
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <p className="text-label-md text-error">{t("errors.faintedLead")}</p>
-                  <Link
-                    href="/team"
-                    className="game-cta game-cta--red"
-                  >
-                    <span className="material-symbols-outlined game-cta__icon">healing</span>
-                    <span className="game-cta__label">{t("goHeal")}</span>
-                  </Link>
-                </div>
-              )}
+              <div className="shrink-0">
+                {hasHealthyTeam ? (
+                  <StartEncounterButton
+                    locale={locale}
+                    label={t("explore")}
+                    errors={startErrors}
+                    disabled={!canExplore}
+                    energyCost={lobby.energyCost}
+                  />
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-label-md text-error">{t("errors.faintedLead")}</p>
+                    <Link
+                      href="/team"
+                      className="game-cta game-cta--red"
+                    >
+                      <span className="material-symbols-outlined game-cta__icon">healing</span>
+                      <span className="game-cta__label">{t("goHeal")}</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
             <LobbyLoadoutCard
               balls={lobby.balls}
               heals={lobby.heals}
@@ -196,26 +200,26 @@ export function BattleLobby({
             />
 
             {lobby.recent.length > 0 && (
-              <section>
-                <h2 className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+              <section className="shrink-0">
+                <h2 className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                   {t("lobby.recent")}
                 </h2>
-                <div className="flex flex-col gap-2">
-                  {lobby.recent.slice(0, 4).map((entry) => (
-                    <div key={entry.id} className="flex items-center gap-2.5">
-                      <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-black/30">
+                <div className="flex flex-col gap-1.5">
+                  {lobby.recent.slice(0, 3).map((entry) => (
+                    <div key={entry.id} className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-black/30">
                         {entry.spriteUrl && (
                           <Image
                             src={entry.spriteUrl}
                             alt={entry.speciesName}
-                            width={36}
-                            height={36}
+                            width={32}
+                            height={32}
                             className="h-full w-full object-cover"
                           />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-label-sm font-medium capitalize text-on-surface">
+                        <p className="truncate text-[13px] font-medium capitalize text-on-surface">
                           {entry.speciesName}
                         </p>
                         <p className="text-[10px] text-on-surface-variant">
@@ -243,11 +247,13 @@ export function BattleLobby({
 
         {/* En vez de repetir el escuadrón (ya está en Inicio y en /team), acá
             va lo que sí importa antes de explorar: qué podés cruzarte. */}
-        <section className="mt-2">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <section className="shrink-0 border-t border-white/8 pt-2">
+          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <h2 className="text-headline-md text-white">{t("lobby.zoneEncounters")}</h2>
-              <span className="text-label-sm text-on-surface-variant">
+              <h2 className="text-[1.05rem] font-semibold text-white">
+                {t("lobby.zoneEncounters")}
+              </h2>
+              <span className="text-[12px] text-on-surface-variant">
                 {locationLabel}
                 <span className="mx-1.5 text-on-surface-variant/40">•</span>
                 {tc("wildLevels", {
@@ -256,7 +262,7 @@ export function BattleLobby({
                 })}
               </span>
             </div>
-            <span className="text-label-sm text-on-surface-variant">
+            <span className="text-[12px] text-on-surface-variant">
               {t("lobby.caughtCount", {
                 caught: lobby.encounters.filter((e) => e.caught).length,
                 total: lobby.encounters.length,
@@ -265,50 +271,50 @@ export function BattleLobby({
           </div>
 
           {lobby.encounters.length === 0 ? (
-            <p className="py-6 text-center text-label-md text-on-surface-variant">
+            <p className="py-3 text-center text-[13px] text-on-surface-variant">
               {t("lobby.noEncounters")}
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6">
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
               {lobby.encounters.map((mon) => (
                 <div
                   key={mon.speciesId}
-                  className="group relative flex flex-col items-center"
+                  className="group relative flex min-w-[4.5rem] flex-col items-center"
                 >
-                  <span className="absolute left-0 top-0 text-[10px] font-mono text-on-surface-variant/60">
+                  <span className="absolute left-0 top-0 text-[9px] font-mono text-on-surface-variant/60">
                     #{String(mon.speciesId).padStart(3, "0")}
                   </span>
                   {mon.caught && (
                     <span
                       title={t("lobby.caught")}
-                      className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-400 text-surface"
+                      className="absolute right-0 top-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-400 text-surface"
                     >
-                      <span className="material-symbols-outlined text-[11px]! leading-none">
+                      <span className="material-symbols-outlined text-[10px]! leading-none">
                         check
                       </span>
                     </span>
                   )}
-                  <div className="mb-1 flex h-16 w-16 items-center justify-center">
+                  <div className="mb-0.5 flex h-11 w-11 items-center justify-center">
                     {mon.spriteUrl && (
                       <Image
                         src={mon.spriteUrl}
                         alt={mon.name}
-                        width={64}
-                        height={64}
+                        width={44}
+                        height={44}
                         className={`h-full w-full object-contain transition group-hover:scale-110 ${
                           mon.caught ? "" : "opacity-90"
                         }`}
                       />
                     )}
                   </div>
-                  <p className="w-full truncate text-center text-label-md font-bold capitalize text-on-surface">
+                  <p className="w-full truncate text-center text-[12px] font-semibold capitalize text-on-surface">
                     {mon.name}
                   </p>
-                  <div className="mt-1 flex flex-wrap justify-center gap-1">
+                  <div className="mt-0.5 flex flex-wrap justify-center gap-0.5">
                     {mon.types.map((type) => (
                       <span
                         key={type}
-                        className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                        className="rounded px-1 py-px text-[8px] font-bold uppercase tracking-wide"
                         style={{
                           backgroundColor: `${typeColor(type)}33`,
                           color: typeColor(type),
