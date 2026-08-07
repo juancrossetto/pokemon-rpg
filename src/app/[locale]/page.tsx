@@ -31,6 +31,12 @@ import { evaluateObjectives } from "@/lib/campaign/objectives";
 import { avatarById } from "@/lib/avatars";
 import { findNavItem } from "@/lib/navigation";
 import { dayKey, serverNow } from "@/lib/events/time";
+import {
+  healCooldownMsLeft,
+  healRushCost,
+  isPokemonCenterFree,
+  minutesLeft,
+} from "@/lib/healing";
 import type {
   HomeDailyAction,
   HomeIdentity,
@@ -163,6 +169,8 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         homeBannerId: true,
         homeFrameId: true,
         country: true,
+        coins: true,
+        lastHealAt: true,
         clanMembership: {
           select: {
             clan: { select: { id: true, tag: true, name: true, emblem: true } },
@@ -615,6 +623,17 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   const gymReady = milestone?.kind === "gym";
   const dailyCanClaim = eventsSummary.daily.canClaim;
 
+  const teamMaxLevel = pokemon.reduce((max, p) => Math.max(max, p.level), 0);
+  const hurtCount = pokemon.filter((p) => {
+    const maxHp = calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution);
+    return p.currentHp < maxHp;
+  }).length;
+  const needsHealing = hurtCount > 0;
+  const healCdMs = healCooldownMsLeft(userRow.lastHealAt);
+  const healNoviceFree = isPokemonCenterFree(teamMaxLevel);
+  const healReady = needsHealing && (healNoviceFree || healCdMs <= 0);
+  const healRush = healRushCost(hurtCount);
+
   const dailyActions: HomeDailyAction[] = [
     {
       id: "daily",
@@ -652,16 +671,36 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       hot: gymReady,
     },
     {
-      id: "streak",
-      href: "/events",
-      iconSrc: "/nav/ranking-icon.png?v=4",
-      labelKey: "streak",
-      status: t("hub.dailyActions.statusStreakDay", { n: loginStreak }),
-      hot: loginStreak >= 3,
+      id: "heal",
+      href: null,
+      iconSrc: "/nav/chansey-icon.png",
+      labelKey: "heal",
+      status: !needsHealing
+        ? healCdMs > 0 && !healNoviceFree
+          ? t("hub.dailyActions.statusHealthyCooldown", {
+              time: `${minutesLeft(healCdMs)}:00`,
+            })
+          : t("hub.dailyActions.statusHealthy")
+        : healReady
+          ? t("hub.dailyActions.statusReady")
+          : t("hub.dailyActions.statusRush", { cost: healRush }),
+      hot:
+        healReady ||
+        (needsHealing &&
+          !healNoviceFree &&
+          healCdMs > 0 &&
+          userRow.coins >= healRush),
+      heal: {
+        needsHealing,
+        cooldownMsLeft: healCdMs,
+        rushCost: healRush,
+        coins: userRow.coins,
+        teamMaxLevel,
+      },
     },
     // Amigos y Mercado vivían acá sin `status`: no son acciones diarias sino
-    // atajos, y el navbar ya los tiene (Comunidad / Comercio). Sacarlos deja la
-    // sección con un criterio único —sólo lo que hoy tiene estado pendiente—.
+    // atajos, y el navbar ya los tiene (Comunidad / Comercio). Racha pasó al
+    // banner de identidad; el 4º slot es el Centro Pokémon (curar desde home).
   ];
 
   const titleKeys = [
@@ -708,10 +747,17 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     },
     dailyActions: {
       title: t("hub.dailyActions.title"),
+      statusReady: t("hub.dailyActions.statusReady"),
+      statusHealthy: t("hub.dailyActions.statusHealthy"),
+      statusHealthyCooldown: t("hub.dailyActions.statusHealthyCooldown", {
+        time: "{time}",
+      }),
+      statusRush: t("hub.dailyActions.statusRush", { cost: "{cost}" }),
       items: {
         daily: t("hub.dailyActions.items.daily"),
         pvp: t("hub.dailyActions.items.pvp"),
         gyms: t("hub.dailyActions.items.gyms"),
+        heal: t("hub.dailyActions.items.heal"),
         streak: t("hub.dailyActions.items.streak"),
         friends: t("hub.dailyActions.items.friends"),
         market: t("hub.dailyActions.items.market"),

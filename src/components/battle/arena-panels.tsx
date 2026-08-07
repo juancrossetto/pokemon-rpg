@@ -10,6 +10,7 @@ import { useTranslations } from "next-intl";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { ShinyMark } from "@/components/shiny-mark";
 import { TrainerAvatar } from "@/components/trainer-avatar";
+import { BattleItemUseFx } from "@/components/battle/battle-item-use-fx";
 import {
   BATTLE_STATS,
   isStatusCondition,
@@ -423,6 +424,8 @@ export function PartyIcon({
   level,
   types,
   isShiny = false,
+  reviving = false,
+  reviveFx = null,
   onSelect,
   selectHint,
 }: {
@@ -435,6 +438,9 @@ export function PartyIcon({
   level?: number;
   types?: string[];
   isShiny?: boolean;
+  /** Pulso / FX al reanimar desde la mochila de batalla. */
+  reviving?: boolean;
+  reviveFx?: { kind: "heal" | "revive"; itemName: string; label: string } | null;
   /** Abrir cambio / info rápida. */
   onSelect?: () => void;
   selectHint?: string;
@@ -453,23 +459,30 @@ export function PartyIcon({
       .filter(Boolean)
       .join(" · ");
 
+  // Durante el FX: si todavía no “despertó” (hp 0), se ve gris pero sin skull
+  // tapando el ícono; cuando sube el HP a mitad de animación, vuelve el color.
+  const lookFainted = fainted && !reviving;
+  const waking = reviving && fainted;
+
   const shellClass = compact
-    ? `relative flex min-w-0 flex-1 flex-col items-center gap-0.5 md:gap-1 ${fainted ? "opacity-55" : ""}`
-    : `relative flex w-full max-w-[4.75rem] shrink-0 flex-col items-center gap-0.5 ${fainted ? "opacity-55" : ""}`;
+    ? `relative z-[1] flex min-w-0 flex-1 flex-col items-center gap-0.5 md:gap-1 ${lookFainted ? "opacity-55" : ""} ${reviving ? "z-20" : ""}`
+    : `relative z-[1] flex w-full max-w-[4.75rem] shrink-0 flex-col items-center gap-0.5 ${lookFainted ? "opacity-55" : ""} ${reviving ? "z-20" : ""}`;
 
   const body = (
     <>
       <div
         className={
           compact
-            ? `relative flex aspect-square w-full min-h-[2.35rem] items-center justify-center overflow-hidden rounded-md md:min-h-[4.5rem] md:rounded-lg ${
+            ? `relative flex aspect-square w-full min-h-[2.35rem] items-center justify-center rounded-md md:min-h-[4.5rem] md:rounded-lg ${
+                reviving ? "overflow-visible" : "overflow-hidden"
+              } ${
                 active
                   ? "bg-primary/15 ring-1 ring-primary/70 shadow-[0_0_10px_color-mix(in_srgb,var(--color-pokeball-red)_30%,transparent)]"
                   : "bg-white/[0.04] md:bg-white/[0.06]"
-              }`
+              } ${reviving ? "party-icon--reviving" : ""}`
             : `relative flex aspect-square w-full items-center justify-center ${
                 active ? "rounded-md ring-1 ring-primary/50" : ""
-              }`
+              } ${reviving ? "party-icon--reviving overflow-visible" : ""}`
         }
       >
         {spriteUrl ? (
@@ -480,17 +493,19 @@ export function PartyIcon({
             height={compact ? 72 : 56}
             className={`object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${
               compact ? "h-[94%] w-[94%] md:h-[90%] md:w-[90%]" : "h-[92%] w-[92%]"
-            } ${fainted ? "grayscale-[0.55]" : ""}`}
+            } ${lookFainted || waking ? "grayscale-[0.55]" : ""} ${
+              reviving ? "party-icon__sprite--waking" : ""
+            }`}
           />
         ) : (
           <PokeballIcon className={compact ? "h-4 w-4 opacity-40 md:h-6 md:w-6" : "h-5 w-5 opacity-40"} />
         )}
-        {isShiny && !fainted ? (
+        {isShiny && !lookFainted && !waking ? (
           <span className="absolute left-0.5 top-0.5 md:left-1 md:top-1">
             <ShinyMark className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" title={t("shinyBadge")} />
           </span>
         ) : null}
-        {fainted ? (
+        {lookFainted ? (
           <span
             className={`material-symbols-outlined absolute right-0 top-0 text-error drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
               compact ? "text-[9px]! md:text-[12px]!" : "text-[11px]!"
@@ -499,8 +514,16 @@ export function PartyIcon({
             skull
           </span>
         ) : null}
+        {reviving && reviveFx ? (
+          <BattleItemUseFx
+            kind={reviveFx.kind}
+            itemName={reviveFx.itemName}
+            label={reviveFx.label}
+            size="party"
+          />
+        ) : null}
       </div>
-      {typeof hpPct === "number" && !fainted ? (
+      {typeof hpPct === "number" && !lookFainted && !waking ? (
         <PartyHpLine
           hpPct={hpPct}
           thick={!compact}
@@ -511,7 +534,10 @@ export function PartyIcon({
           }
         />
       ) : (
-        <PartyHpEmpty fainted={fainted} className={compact ? "mx-[8%] w-[84%] md:mx-[6%] md:w-[88%]" : "w-[92%]"} />
+        <PartyHpEmpty
+          fainted={lookFainted || waking}
+          className={compact ? "mx-[8%] w-[84%] md:mx-[6%] md:w-[88%]" : "w-[92%]"}
+        />
       )}
     </>
   );

@@ -1,10 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { neonTypeColor } from "@/lib/type-colors";
 import { spriteFor } from "@/lib/shiny";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";
+import {
+  diffNewlyCaught,
+  markDexEntriesSeen,
+  readDexSeenCaught,
+} from "@/lib/dex-new-entries";
 import {
   POKEDEX_REGIONS,
   RARITY_ORDER,
@@ -62,6 +67,8 @@ export type PokedexLabels = {
     evolves: string;
   };
   unknown: string;
+  /** Sello de las especies registradas desde la última visita. */
+  newEntry: string;
   statusCaught: string;
   statusSeen: string;
   research: string;
@@ -74,6 +81,58 @@ export type PokedexLabels = {
     pseudo: string;
   };
 };
+
+/**
+ * Especies capturadas desde la última vez que se abrió la Pokédex.
+ *
+ * El registro de una especie nueva es de los pocos hitos de colección del
+ * juego y no tenía momento: la card aparecía como una más. El estado vive en
+ * localStorage porque el server no guarda "cuándo miraste la Pokédex" y no
+ * vale una columna nueva sólo para esto.
+ *
+ * El set arranca vacío y se llena en el primer tick post-montaje: leer
+ * localStorage durante el render rompería la hidratación (server y cliente
+ * producirían marcado distinto).
+ */
+function useNewlyCaught(caughtIds: number[]): Set<number> {
+  const [fresh, setFresh] = useState<Set<number>>(() => new Set());
+  // Clave estable para el efecto: el array llega nuevo en cada render.
+  const caughtKey = caughtIds.join(",");
+  /**
+   * Foto del storage al montar. `undefined` = todavía no se leyó.
+   *
+   * Es un ref y no una lectura directa en cada corrida porque el efecto se
+   * ejecuta dos veces en desarrollo (StrictMode): la primera guardaba la lista
+   * nueva y la segunda leía lo recién escrito, con lo cual no quedaba ninguna
+   * especie marcada como nueva. Congelar el "antes" al montaje también es lo
+   * que se quiere si capturás algo sin salir de la pantalla.
+   */
+  const previousRef = useRef<number[] | null | undefined>(undefined);
+
+  useEffect(() => {
+    const ids = caughtKey ? caughtKey.split(",").map(Number) : [];
+
+    if (previousRef.current === undefined) {
+      previousRef.current = readDexSeenCaught();
+    }
+
+    const added = diffNewlyCaught(previousRef.current, ids);
+    if (added.length === 0) {
+      markDexEntriesSeen(ids);
+      return;
+    }
+    // La persistencia va DENTRO del rAF: en una pestaña en segundo plano el
+    // callback no corre (el navegador lo pausa), y marcar "ya lo viste" antes
+    // de haber podido pintar el sello se comía el momento sin mostrarlo.
+    const boot = requestAnimationFrame(() => {
+      setFresh(new Set(added));
+      markDexEntriesSeen(ids);
+    });
+    return () => cancelAnimationFrame(boot);
+  }, [caughtKey]);
+
+  return fresh;
+}
 
 const ALL_TYPES = [
   "normal",
@@ -133,6 +192,14 @@ export function PokedexTerminal({
   const [view, setView] = useState<DexView>("grid");
   const [query, setQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Sobre el dataset completo, no sobre `visible`: una especie nueva sigue
+  // siendo nueva aunque el filtro activo no la esté mostrando ahora.
+  const caughtIds = useMemo(
+    () => entries.filter((e) => e.status === "caught").map((e) => e.id),
+    [entries],
+  );
+  const newlyCaught = useNewlyCaught(caughtIds);
 
   const regionDef = POKEDEX_REGIONS.find((r) => r.id === region)!;
   const regionProg = progress.regions.find((r) => r.id === region);
@@ -557,6 +624,7 @@ export function PokedexTerminal({
                   labels={labels}
                   forceLocked={regionLocked}
                   shinyAtlas={quick === "shiny"}
+                  isNew={newlyCaught.has(entry.id)}
                 />
               ))}
             </ul>
@@ -569,6 +637,7 @@ export function PokedexTerminal({
                   labels={labels}
                   forceLocked={regionLocked}
                   shinyAtlas={quick === "shiny"}
+                  isNew={newlyCaught.has(entry.id)}
                 />
               ))}
             </ul>
@@ -662,12 +731,15 @@ function DexCard({
   labels,
   forceLocked = false,
   shinyAtlas = false,
+  isNew = false,
 }: {
   entry: PokedexSpeciesCard;
   labels: PokedexLabels;
   forceLocked?: boolean;
   /** Filtro Shiny: arte variocolor; sombra si aún no lo tenés. */
   shinyAtlas?: boolean;
+  /** Registrada desde la última visita: sello + pulso de entrada. */
+  isNew?: boolean;
 }) {
   const speciesUnseen = forceLocked || entry.status === "unseen";
   const shinyLocked = shinyAtlas && !entry.hasShiny;
@@ -690,9 +762,17 @@ function DexCard({
         title={tip}
         className={[
           "group relative flex flex-col items-center gap-0.5 px-0.5 py-1 transition",
-          caught ? "dex-caught-pulse" : "",
+          // Sólo las nuevas. Antes el pulso salía en TODAS las capturadas a la
+          // vez en cada carga: con la Pokédex avanzada era la pantalla entera
+          // latiendo y no señalaba nada.
+          isNew ? "dex-caught-pulse" : "",
         ].join(" ")}
       >
+        {isNew ? (
+          <span className="pointer-events-none absolute -top-1 left-1/2 z-[2] -translate-x-1/2 rounded-full border border-electric-yellow/55 bg-electric-yellow/20 px-1.5 py-px font-mono text-[8px] font-bold uppercase leading-none tracking-wide text-electric-yellow">
+            {labels.newEntry}
+          </span>
+        ) : null}
         {/* Fila superior: Nº + favorito (estilo GO, sin card) */}
         <div className="flex w-full items-center justify-between gap-1 px-0.5">
           <span
@@ -790,11 +870,14 @@ function DexListRow({
   labels,
   forceLocked = false,
   shinyAtlas = false,
+  isNew = false,
 }: {
   entry: PokedexSpeciesCard;
   labels: PokedexLabels;
   forceLocked?: boolean;
   shinyAtlas?: boolean;
+  /** Registrada desde la última visita. */
+  isNew?: boolean;
 }) {
   const primary = entry.types[0] ?? "normal";
   const glow = neonTypeColor(primary);
@@ -823,6 +906,11 @@ function DexListRow({
         <span className="relative z-10 w-10 shrink-0 font-mono text-[11px] text-on-surface-variant">
           #{String(entry.id).padStart(3, "0")}
         </span>
+        {isNew ? (
+          <span className="relative z-10 shrink-0 rounded-full border border-electric-yellow/55 bg-electric-yellow/20 px-1.5 py-px font-mono text-[8px] font-bold uppercase leading-none tracking-wide text-electric-yellow">
+            {labels.newEntry}
+          </span>
+        ) : null}
         <div className="relative z-10 h-10 w-10 shrink-0">
           {entry.spriteUrl ? (
             <Image

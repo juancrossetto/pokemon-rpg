@@ -21,6 +21,7 @@ import { anyEvolveReady } from "@/lib/evolution-readiness";
 import { CoachMark } from "@/components/journey-guidance";
 import { useTypeLabel } from "@/hooks/use-type-label";
 import type { HomeSquadFilter } from "@/components/home/home-desktop-rail";
+import { HOME_TEAM_HEALED_EVENT } from "@/lib/home-heal-fx";
 
 const TEAM_SIZE = 6;
 /** Mobile 3×2 con HP · md+ fila de 6. */
@@ -525,6 +526,22 @@ export function ActiveTeamStrip({
     setLastBagCounts(initialBagCounts);
     setBagCounts(initialBagCounts);
   }
+
+  useEffect(() => {
+    function onTeamHealed() {
+      setMembers((prev) =>
+        prev.map((m) => ({
+          ...m,
+          currentHp: m.maxHp,
+          moves: m.moves.map((slot) =>
+            slot ? { ...slot, currentPp: slot.maxPp } : null,
+          ),
+        })),
+      );
+    }
+    window.addEventListener(HOME_TEAM_HEALED_EVENT, onTeamHealed);
+    return () => window.removeEventListener(HOME_TEAM_HEALED_EVENT, onTeamHealed);
+  }, []);
 
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => members[i] ?? null);
   const firstEmptyIndex = slots.findIndex((m) => m === null);

@@ -41,7 +41,14 @@ export type HomeHubLabels = {
     lastAchievement: string;
     achievements: Record<string, string>;
   };
-  dailyActions: { title: string; items: Record<string, string> };
+  dailyActions: {
+    title: string;
+    items: Record<string, string>;
+    statusReady: string;
+    statusHealthy: string;
+    statusHealthyCooldown: string;
+    statusRush: string;
+  };
   eventsPanel: {
     progressTitle: string;
     emptyAdventure: string;
@@ -159,24 +166,26 @@ export function HomeGameHub({
 
             {nextStep && <div className="shrink-0">{nextStep}</div>}
 
-            <HomeDailyActions
-              actions={dailyActions}
-              labels={hubLabels.dailyActions}
-            />
-
-            <ActiveTeamStrip
-              key={squad.layoutKey}
-              locale={locale}
-              initialMembers={squad.members}
-              emptySlotLabel={squad.emptySlotLabel}
-              leadLabel={squad.leadLabel}
-              slotLabels={squad.slotLabels}
-              initialBagCounts={squad.bagCounts}
-              title={squad.title}
-              manageHref={squad.manageHref}
-              manageLabel={squad.manageLabel}
-              onCompanionTypesChange={setCompanionTypes}
-            />
+            <section className="home-ops-deck game-float-card min-w-0 overflow-visible rounded-[1.25rem] p-2.5 sm:p-3">
+              <HomeDailyActions
+                actions={dailyActions}
+                labels={hubLabels.dailyActions}
+              />
+              <div className="home-ops-deck__rule my-2.5 sm:my-3" aria-hidden />
+              <ActiveTeamStrip
+                key={squad.layoutKey}
+                locale={locale}
+                initialMembers={squad.members}
+                emptySlotLabel={squad.emptySlotLabel}
+                leadLabel={squad.leadLabel}
+                slotLabels={squad.slotLabels}
+                initialBagCounts={squad.bagCounts}
+                title={squad.title}
+                manageHref={squad.manageHref}
+                manageLabel={squad.manageLabel}
+                onCompanionTypesChange={setCompanionTypes}
+              />
+            </section>
 
             <HomeEventsProgress
               adventure={adventure}

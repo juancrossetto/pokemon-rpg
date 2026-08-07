@@ -122,7 +122,7 @@ export default async function PvpMatchPage({
         modeQuick: t("modeQuick"),
         coinsAwarded: (n) => t("coinsAwarded", { n }),
       }}
-      formatTurnLine={(raw) => formatPvpTurnLine(raw, tLog)}
+      formatTurnLine={(raw) => formatPvpTurnLine(raw, tLog, locale)}
     />
   );
 }

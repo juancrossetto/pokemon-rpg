@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { skipGymCooldown } from "@/actions/skip-gym-cooldown";
 import { formatGymCooldown, gymCooldownSkipCost } from "@/lib/gym-cooldown";
+import { announceGemDelta, clearPendingGemDelta } from "@/lib/resource-fx";
 
 const GEM_ICON = "/items/hd/gem.png";
 
@@ -61,9 +62,11 @@ export function SkipGymCooldownButton({
   function onClick() {
     if (disabled) return;
     setError(null);
+    announceGemDelta(-cost);
     startTransition(async () => {
       const result = await skipGymCooldown(gymId, locale);
       if (!result.ok) {
+        clearPendingGemDelta();
         setError(t(`skipCooldownErrors.${result.error}`));
         return;
       }

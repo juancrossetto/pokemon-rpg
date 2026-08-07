@@ -77,6 +77,7 @@ import { SpriteStatusFx } from "@/components/battle/status-fx";
 import { CaptureSummary } from "@/components/battle/capture-summary";
 import { BattleOutcomeScreen } from "@/components/battle/battle-outcome-screen";
 import { BattleTurnTimer } from "@/components/battle/battle-turn-timer";
+import { BattleItemUseFx } from "@/components/battle/battle-item-use-fx";
 import {
   BagView,
   MustSwitchSheet,
@@ -142,7 +143,7 @@ const BALL_CATCH_MS = 760;
 const BALL_BREAK_MS = 560;
 const FAINT_MS = 1100;
 const RECALL_MS = 450;
-const ITEM_USE_MS = 550;
+const ITEM_USE_MS = 1100;
 /** Brillo verde de curación (Recover, drenaje, Rest). */
 const HEAL_PULSE_MS = 560;
 /** Viaje de la ball al enviar Pokémon. */
@@ -418,7 +419,7 @@ export function BattleArena({
       if (i < 0) return raw;
       return tLog("used", {
         name: rest.slice(0, i),
-        move: formatMoveName(rest.slice(i + 1)),
+        move: formatMoveName(rest.slice(i + 1), locale),
       });
     }
     if (raw.startsWith("damage:")) {
@@ -433,7 +434,7 @@ export function BattleArena({
       if (i < 0) return raw;
       return tLog("miss", {
         name: rest.slice(0, i),
-        move: formatMoveName(rest.slice(i + 1)),
+        move: formatMoveName(rest.slice(i + 1), locale),
       });
     }
     if (raw.startsWith("status:")) {
@@ -465,6 +466,11 @@ export function BattleArena({
   // contraataque tras un switch muestre el nombre del Pokémon que se fue.
   const activePlayerNameRef = useRef(player.name);
   const activePlayerIdRef = useRef(player.instanceId);
+  const itemFxKeyRef = useRef(0);
+  const nextItemFxKey = () => {
+    itemFxKeyRef.current += 1;
+    return itemFxKeyRef.current;
+  };
   const [playerHp, setPlayerHp] = useState(player.currentHp);
   const [playerMaxHp, setPlayerMaxHp] = useState(player.maxHp);
   const [playerBHp, setPlayerBHp] = useState(playerB?.currentHp ?? 0);
@@ -535,11 +541,21 @@ export function BattleArena({
     side: "player" | "wild";
     lane: "A" | "B";
   } | null>(null);
+  const [itemUseFx, setItemUseFx] = useState<{
+    kind: "heal" | "revive";
+    side: "player" | "wild";
+    lane: "A" | "B";
+    itemName: string;
+    label: string;
+    key: number;
+    partyInstanceId?: string;
+  } | null>(null);
   const [damagePopup, setDamagePopup] = useState<{
     side: "player" | "wild";
     lane: "A" | "B";
     text: string;
     key: number;
+    tone?: "damage" | "heal";
   } | null>(null);
   const [moveFx, setMoveFx] = useState<{
     key: number;
@@ -1265,7 +1281,7 @@ export function BattleArena({
 
       // Turno 1 de Fly/Dig/Solar Beam: no pega; vanish oculta el sprite.
       if (event.chargePhase === "start") {
-        appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
+        appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName, locale) }), event.side);
         const moveKey = event.moveName.trim().toLowerCase().replace(/\s+/g, "-");
         if (event.semiInvuln === "air") {
           appendLog(tLog("flewUp", { name: nameFor(event.side, lane) }), event.side);
@@ -1329,12 +1345,12 @@ export function BattleArena({
           // "Falló" e "inmune" son cosas distintas: Fissure contra un Flying no
           // erró la puntería, simplemente no le hace nada.
           if (event.noEffect) {
-            appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
+            appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName, locale) }), event.side);
             appendLog(tLog("noEffect"), event.side);
             setEffPopup({ text: tLog("noEffect"), key: fxKey });
             void delay(MISS_MS).then(() => setEffPopup(null));
           } else {
-            appendLog(tLog("miss", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
+            appendLog(tLog("miss", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName, locale) }), event.side);
           }
           await delay(MISS_MS);
           setMoveFx(null);
@@ -1345,7 +1361,7 @@ export function BattleArena({
         }
 
         if (event.isStatus) {
-          appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
+          appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName, locale) }), event.side);
           if (event.statusApplied) {
             const foe = event.targetSide ?? (event.side === "player" ? "wild" : "player");
             const label = t(statusLabelKey(event.statusApplied as StatusCondition));
@@ -1383,7 +1399,7 @@ export function BattleArena({
         const defenderMaxHpNow = readMaxHp(defenderSide, targetLane);
         const hitDamages = previewDamages;
 
-        appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName) }), event.side);
+        appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName, locale) }), event.side);
 
         let hpCursor = readHp(defenderSide, targetLane);
 
@@ -2311,28 +2327,55 @@ export function BattleArena({
 
     const prevPotions = potionStacks;
     const used = potionStacks.find((p) => p.itemId === itemId);
+    const itemName = used?.name ?? "Potion";
+    const rawHeal = used?.healAmount ?? 20;
+    const optimisticHeal = Math.max(
+      0,
+      Math.min(playerMaxHp - playerHp, rawHeal >= 9999 ? playerMaxHp - playerHp : rawHeal),
+    );
+    const optimisticHp = Math.min(playerMaxHp, playerHp + optimisticHeal);
+
     setPotionStacks((prev) =>
       prev.map((p) => (p.itemId === itemId ? { ...p, quantity: p.quantity - 1 } : p)).filter((p) => p.quantity > 0),
     );
 
     setHealingTarget({ side: "player", lane: "A" });
+    setItemUseFx({
+      kind: "heal",
+      side: "player",
+      lane: "A",
+      itemName,
+      label: optimisticHeal > 0 ? `+${optimisticHeal}` : itemName,
+      key: nextItemFxKey(),
+    });
+    if (optimisticHeal > 0) {
+      writeHp("player", "A", optimisticHp);
+      setDamagePopup({
+        side: "player",
+        lane: "A",
+        text: `+${optimisticHeal}`,
+        key: nextItemFxKey(),
+        tone: "heal",
+      });
+    }
     playBattleSfx("heal");
     await delay(ITEM_USE_MS);
     setHealingTarget(null);
+    setItemUseFx(null);
+    setDamagePopup(null);
 
     const result = await applyBattleItem(battleId, itemId, locale);
     if (!result) {
       setPotionStacks(prevPotions);
+      writeHp("player", "A", playerHp);
       setIsAnimating(false);
       setView("menu");
       return;
     }
 
-    // Primero la cura completa (barra + ref), después el contraataque baja el HP.
-    // Antes healedTo venía ya con el daño del rival aplicado: la animación del
-    // golpe no movía la barra y parecía que el rival no atacaba.
+    // Confirmar HP real (por si Max Potion / clamp del server difiere).
     writeHp("player", "A", result.healedTo);
-    appendLog(tLog("usedItem", { name: result.itemName ?? used?.name ?? "?" }), "player");
+    appendLog(tLog("usedItem", { name: result.itemName ?? itemName }), "player");
     appendLog(t("healedBy", { name: activePlayer.name, hp: result.healedBy }), "player");
     if (result.statusCured) {
       writeStatus("player", "A", null);
@@ -2367,7 +2410,8 @@ export function BattleArena({
 
     const prevPotions = potionStacks;
     const used = potionStacks.find((p) => p.itemId === itemId);
-    const fraction = reviveHpFraction(used?.name ?? "Revive") ?? 0.5;
+    const itemName = used?.name ?? "Revive";
+    const fraction = reviveHpFraction(itemName) ?? 0.5;
     const optimisticHp = Math.max(1, Math.floor(member.maxHp * fraction));
 
     setPotionStacks((prev) =>
@@ -2375,14 +2419,27 @@ export function BattleArena({
         .map((p) => (p.itemId === itemId ? { ...p, quantity: p.quantity - 1 } : p))
         .filter((p) => p.quantity > 0),
     );
+
+    // FX sobre el ícono del party (columna), no sobre el mon en campo.
+    setItemUseFx({
+      kind: "revive",
+      side: "player",
+      lane: "A",
+      itemName,
+      label: `+${optimisticHp}`,
+      key: nextItemFxKey(),
+      partyInstanceId: member.instanceId,
+    });
+    playBattleSfx("heal");
+    // Primero el destello con el mon todavía debilitado; a mitad despierta.
+    await delay(ITEM_USE_MS * 0.42);
     setParty((prev) =>
       prev.map((m) =>
         m.instanceId === member.instanceId ? { ...m, currentHp: optimisticHp } : m,
       ),
     );
-
-    playBattleSfx("heal");
-    await delay(ITEM_USE_MS);
+    await delay(ITEM_USE_MS * 0.58);
+    setItemUseFx(null);
 
     const result = await applyBattleItem(battleId, itemId, locale, member.instanceId);
     if (!result || !result.revivedTargetId) {
@@ -2406,7 +2463,7 @@ export function BattleArena({
           : m,
       ),
     );
-    appendLog(tLog("usedItem", { name: result.itemName ?? used?.name ?? "?" }), "player");
+    appendLog(tLog("usedItem", { name: result.itemName ?? itemName }), "player");
     appendLog(
       t("revivedBy", { name: member.name, hp: result.healedTo }),
       "player",
@@ -2920,7 +2977,7 @@ export function BattleArena({
                         <span className="move-banner__content">
                           <span className="move-banner__type">{moveBanner.moveType}</span>
                           <span className="move-banner__name">
-                            {formatMoveName(moveBanner.moveName)}
+                            {formatMoveName(moveBanner.moveName, locale)}
                           </span>
                         </span>
                       </span>
@@ -3114,7 +3171,7 @@ export function BattleArena({
               {damagePopup?.side === "wild" && damagePopup.lane === "A" && (
                 <span
                   key={damagePopup.key}
-                  className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
+                  className={`damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md font-black z-10 ${damagePopup.tone === "heal" ? "damage-popup--heal" : "text-error"}`}
                 >
                   {damagePopup.text}
                 </span>
@@ -3211,7 +3268,7 @@ export function BattleArena({
                 {damagePopup?.side === "wild" && damagePopup.lane === "B" && (
                   <span
                     key={damagePopup.key}
-                    className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
+                    className={`damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md font-black z-10 ${damagePopup.tone === "heal" ? "damage-popup--heal" : "text-error"}`}
                   >
                     {damagePopup.text}
                   </span>
@@ -3315,10 +3372,23 @@ export function BattleArena({
               {damagePopup?.side === "player" && damagePopup.lane === "A" && (
                 <span
                   key={damagePopup.key}
-                  className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
+                  className={`damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md font-black z-10 ${
+                    damagePopup.tone === "heal" ? "damage-popup--heal" : "text-error"
+                  }`}
                 >
                   {damagePopup.text}
                 </span>
+              )}
+              {itemUseFx?.kind === "heal" &&
+                itemUseFx.side === "player" &&
+                itemUseFx.lane === "A" && (
+                <BattleItemUseFx
+                  key={itemUseFx.key}
+                  kind={itemUseFx.kind}
+                  itemName={itemUseFx.itemName}
+                  label={itemUseFx.label}
+                  size="field"
+                />
               )}
               {moveFx?.mode === "hit" && shakingSide === "player" && shakingLane === "A" && (
                 <>
@@ -3388,7 +3458,7 @@ export function BattleArena({
                 {damagePopup?.side === "player" && damagePopup.lane === "B" && (
                   <span
                     key={damagePopup.key}
-                    className="damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md text-error font-black z-10"
+                    className={`damage-popup absolute -top-4 left-1/2 -translate-x-1/2 text-headline-md font-black z-10 ${damagePopup.tone === "heal" ? "damage-popup--heal" : "text-error"}`}
                   >
                     {damagePopup.text}
                   </span>
@@ -3432,6 +3502,16 @@ export function BattleArena({
                 types={m.types}
                 isShiny={m.isShiny}
                 compact
+                reviving={itemUseFx?.partyInstanceId === m.instanceId}
+                reviveFx={
+                  itemUseFx?.partyInstanceId === m.instanceId
+                    ? {
+                        kind: itemUseFx.kind,
+                        itemName: itemUseFx.itemName,
+                        label: itemUseFx.label,
+                      }
+                    : null
+                }
                 selectHint={
                   mustSwitch ? t("mustSwitchPrompt") : t("partyTapHint")
                 }
@@ -3533,7 +3613,7 @@ export function BattleArena({
                     <span className="material-symbols-outlined text-[16px]!" aria-hidden>
                       replay
                     </span>
-                    {t("repeatMove", { move: formatMoveName(lastMoveOption.name) })}
+                    {t("repeatMove", { move: formatMoveName(lastMoveOption.name, locale) })}
                   </button>
                 ) : null}
                 <div className="grid min-h-0 flex-1 grid-cols-2 gap-1.5 max-md:auto-rows-fr md:gap-2">
@@ -3776,6 +3856,16 @@ export function BattleArena({
                   level={m.level}
                   types={m.types}
                   isShiny={m.isShiny}
+                  reviving={itemUseFx?.partyInstanceId === m.instanceId}
+                  reviveFx={
+                    itemUseFx?.partyInstanceId === m.instanceId
+                      ? {
+                          kind: itemUseFx.kind,
+                          itemName: itemUseFx.itemName,
+                          label: itemUseFx.label,
+                        }
+                      : null
+                  }
                   selectHint={
                     mustSwitch ? t("mustSwitchPrompt") : t("partyTapHint")
                   }

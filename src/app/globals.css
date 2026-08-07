@@ -3861,17 +3861,184 @@ body {
   }
 }
 
+/* FX de poción / revive en arena (burst + anillo + ícono). */
+@keyframes battle-item-fx-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0.25);
+    opacity: 0;
+  }
+  22% {
+    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.55);
+    opacity: 0;
+  }
+}
+.battle-item-fx-burst {
+  animation: battle-item-fx-burst 1.05s ease-out both;
+}
+
+@keyframes battle-item-fx-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.35);
+    opacity: 0;
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0;
+  }
+}
+.battle-item-fx-ring {
+  animation: battle-item-fx-ring 1.1s ease-out both;
+}
+.battle-item-fx-ring--late {
+  animation-delay: 0.12s;
+}
+
+@keyframes battle-item-fx-cross {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3) rotate(-8deg);
+    opacity: 0;
+  }
+  18% {
+    transform: translate(-50%, -50%) scale(1.18) rotate(0deg);
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+.battle-item-fx-cross {
+  animation: battle-item-fx-cross 1.1s ease-out both;
+}
+
+@keyframes battle-item-fx-icon {
+  0% {
+    transform: translate(-50%, 18%) scale(0.35) rotate(-16deg);
+    opacity: 0;
+  }
+  22% {
+    transform: translate(-50%, -50%) scale(1.2) rotate(0deg);
+    opacity: 1;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -70%) scale(0.85);
+    opacity: 0;
+  }
+}
+.battle-item-fx-icon {
+  animation: battle-item-fx-icon 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes battle-item-fx-spark {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--sx, 0), var(--sy, -20px)) scale(0.35);
+    opacity: 0;
+  }
+}
+.battle-item-fx-spark {
+  animation: battle-item-fx-spark 0.9s ease-out both;
+}
+
+@keyframes battle-item-fx-label {
+  0% {
+    transform: translate(-50%, 10px) scale(0.8);
+    opacity: 0;
+  }
+  18% {
+    transform: translate(-50%, 0) scale(1.08);
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -14px);
+    opacity: 0;
+  }
+}
+.battle-item-fx-label {
+  animation: battle-item-fx-label 1.1s ease-out both;
+}
+
+.damage-popup--heal {
+  color: #34d399;
+  text-shadow: 0 0 12px rgba(52, 211, 153, 0.65);
+}
+
+.party-icon--reviving {
+  animation: party-icon-revive 1.1s ease-out both;
+}
+@keyframes party-icon-revive {
+  0% {
+    transform: scale(0.94);
+    box-shadow: 0 0 0 0 transparent;
+  }
+  30% {
+    transform: scale(1.1);
+    box-shadow:
+      0 0 0 2px rgba(252, 211, 77, 0.85),
+      0 0 22px 4px rgba(251, 191, 36, 0.55);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes party-icon-sprite-wake {
+  0% {
+    filter: grayscale(0.7) brightness(0.65);
+    transform: scale(0.92);
+  }
+  45% {
+    filter: grayscale(0.25) brightness(1.15);
+    transform: scale(1.06);
+  }
+  100% {
+    filter: none;
+    transform: scale(1);
+  }
+}
+.party-icon__sprite--waking {
+  animation: party-icon-sprite-wake 1.05s ease-out both;
+}
+
+/* Pociones: glow del sprite un poco más largo y notorio. */
+.sprite-heal {
+  animation: heal-glow 0.95s ease-in-out;
+}
 @keyframes heal-glow {
   0%,
   100% {
     filter: brightness(1) drop-shadow(0 0 0 rgba(52, 211, 153, 0));
   }
-  50% {
-    filter: brightness(1.3) drop-shadow(0 0 12px rgba(52, 211, 153, 0.8));
+  40% {
+    filter: brightness(1.45) drop-shadow(0 0 18px rgba(52, 211, 153, 0.95));
   }
-}
-.sprite-heal {
-  animation: heal-glow 0.6s ease-in-out;
+  70% {
+    filter: brightness(1.2) drop-shadow(0 0 10px rgba(110, 231, 183, 0.7));
+  }
 }
 
 @keyframes panel-swap {
@@ -6183,6 +6350,94 @@ body {
   animation: coin-spin-nudge 0.45s ease-out;
 }
 
+/* Valor del header en rojo vivo mientras resta monedas.
+   Sin scale: el pill tiene overflow:hidden y cortaba el último dígito.
+   No usa --color-pokeball-red (en este tema es fucsia). */
+@keyframes coin-spend-pulse {
+  0%,
+  100% {
+    color: #ff2d2d;
+    text-shadow: 0 0 10px rgba(255, 45, 45, 0.65);
+    opacity: 1;
+  }
+  50% {
+    color: #ff5555;
+    text-shadow:
+      0 0 14px rgba(255, 45, 45, 0.9),
+      0 0 24px rgba(255, 45, 45, 0.45);
+    opacity: 0.92;
+  }
+}
+
+.coin-balance-value--spend {
+  display: inline-block;
+  color: #ff2d2d;
+  animation: coin-spend-pulse 0.55s ease-in-out infinite;
+}
+
+.coin-balance-value--gain {
+  display: inline-block;
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.45);
+}
+
+/* Energía / gemas: flash corto al gastar o ganar (sin scale). */
+@keyframes resource-energy-spend-pulse {
+  0%,
+  100% {
+    color: #38bdf8;
+    text-shadow: 0 0 8px rgba(56, 189, 248, 0.55);
+    opacity: 1;
+  }
+  50% {
+    color: #7dd3fc;
+    text-shadow:
+      0 0 12px rgba(56, 189, 248, 0.85),
+      0 0 20px rgba(56, 189, 248, 0.4);
+    opacity: 0.92;
+  }
+}
+
+@keyframes resource-gem-spend-pulse {
+  0%,
+  100% {
+    color: #e879f9;
+    text-shadow: 0 0 8px rgba(232, 121, 249, 0.55);
+    opacity: 1;
+  }
+  50% {
+    color: #f0abfc;
+    text-shadow:
+      0 0 12px rgba(232, 121, 249, 0.85),
+      0 0 20px rgba(232, 121, 249, 0.4);
+    opacity: 0.92;
+  }
+}
+
+.resource-delta-value--energy-spend {
+  display: inline-block;
+  color: #38bdf8;
+  animation: resource-energy-spend-pulse 0.55s ease-in-out infinite;
+}
+
+.resource-delta-value--gem-spend {
+  display: inline-block;
+  color: #e879f9;
+  animation: resource-gem-spend-pulse 0.55s ease-in-out infinite;
+}
+
+.resource-delta-value--energy-gain {
+  display: inline-block;
+  color: #7dd3fc;
+  text-shadow: 0 0 10px rgba(125, 211, 252, 0.5);
+}
+
+.resource-delta-value--gem-gain {
+  display: inline-block;
+  color: #f0abfc;
+  text-shadow: 0 0 10px rgba(240, 171, 252, 0.5);
+}
+
 /* Pastilla del header cuando aterriza el loot del daily reward. */
 @keyframes loot-target-pulse {
   0% {
@@ -7217,77 +7472,129 @@ body {
   }
 }
 
-/* Home — tiles de acciones diarias (Clash-like). */
-.home-daily-tile {
+/* Home — deck unificado (acciones diarias + Active Team). */
+.home-ops-deck {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 42%),
-    color-mix(in srgb, var(--daily-accent, #fff) 10%, #12141c);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.28),
-    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 22%, transparent),
-    0 6px 14px rgba(0, 0, 0, 0.35);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 42%),
+    #12141c;
 }
 
+.home-ops-deck__rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 18%,
+    rgba(255, 255, 255, 0.12) 82%,
+    transparent 100%
+  );
+}
+
+.home-ops-deck .home-daily-tile {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, transparent 55%),
+    rgba(255, 255, 255, 0.025);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.home-ops-deck .home-daily-tile:hover,
+.home-ops-deck .home-daily-tile:focus-visible {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
+    color-mix(in srgb, var(--daily-accent, #fff) 10%, rgba(255, 255, 255, 0.03));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 38%, transparent),
+    0 0 16px color-mix(in srgb, var(--daily-accent, #fff) 16%, transparent);
+}
+
+.home-ops-deck .home-daily-tile--hot {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
+    color-mix(in srgb, var(--daily-accent, #fff) 14%, #161821);
+}
+
+/* Home — tiles de acciones diarias.
+ *
+ * El chasis es neutro a propósito, igual que las team cards y el panel de
+ * eventos (hairline blanco al 8% sobre un velo al 3.5%). Antes cada tile
+ * llevaba su propio anillo de color y un fondo teñido con el acento del
+ * destino: la fila era el único bloque del home con borde de color, se leía
+ * como un widget pegado de otra app y —peor— el color no distinguía la acción
+ * que estaba esperando de las que ya estaban hechas.
+ *
+ * Ahora `--daily-accent` sólo aparece cuando la tile está `--hot` o bajo el
+ * cursor. El color pasa a significar "esto te está esperando".
+ */
+.home-daily-tile {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 55%),
+    rgba(255, 255, 255, 0.035);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* En reposo no hay halo: el resto de las superficies del home tampoco tiene, y
+   cuatro glows permanentes eran justo lo que hacía ruido. */
 .home-daily-tile__glow {
   background: radial-gradient(
     70% 55% at 50% 20%,
-    color-mix(in srgb, var(--daily-accent, #fff) 22%, transparent) 0%,
+    color-mix(in srgb, var(--daily-accent, #fff) 30%, transparent) 0%,
     transparent 70%
   );
-  opacity: 0.85;
-  transition: opacity 180ms ease;
+  opacity: 0;
+  transition: opacity 200ms ease;
 }
 
+/* Un solo chip para mobile y desktop — el tamaño lo pone el call site. */
 .home-daily-tile__badge {
   display: block;
-  border-radius: 0.35rem;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.18) inset,
-    0 2px 6px rgba(0, 0, 0, 0.45);
+  border-radius: 999px;
   white-space: nowrap;
 }
 
 .home-daily-tile__badge--hot {
   color: #fff;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--daily-accent, #4ade80) 88%, white) 0%,
-    color-mix(in srgb, var(--daily-accent, #16a34a) 75%, black) 100%
-  );
-  border: 1px solid color-mix(in srgb, var(--daily-accent, #fff) 55%, white);
+  background: color-mix(in srgb, var(--daily-accent, #fff) 26%, transparent);
+  border: 1px solid color-mix(in srgb, var(--daily-accent, #fff) 55%, transparent);
 }
 
 .home-daily-tile__badge--idle {
-  color: rgba(255, 255, 255, 0.88);
-  background: linear-gradient(180deg, #3a3f52 0%, #252836 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.62);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .home-daily-tile:hover,
 .home-daily-tile:focus-visible {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 42%),
-    color-mix(in srgb, var(--daily-accent, #fff) 16%, #161822);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
+    color-mix(in srgb, var(--daily-accent, #fff) 9%, rgba(255, 255, 255, 0.035));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.28),
-    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 45%, transparent),
-    0 0 22px color-mix(in srgb, var(--daily-accent, #fff) 28%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 40%, transparent),
+    0 0 20px color-mix(in srgb, var(--daily-accent, #fff) 20%, transparent),
+    0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .home-daily-tile:hover .home-daily-tile__glow,
 .home-daily-tile:focus-visible .home-daily-tile__glow {
-  opacity: 1;
+  opacity: 0.9;
 }
 
 .home-daily-tile--hot {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.28),
-    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 55%, transparent),
-    0 0 18px color-mix(in srgb, var(--daily-accent, #fff) 35%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
+    color-mix(in srgb, var(--daily-accent, #fff) 12%, #12141c);
   animation: home-daily-tile-pulse 2.4s ease-in-out infinite;
+}
+
+.home-daily-tile--hot .home-daily-tile__glow {
+  opacity: 0.7;
 }
 
 @keyframes home-daily-tile-pulse {
@@ -7295,22 +7602,28 @@ body {
   100% {
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      inset 0 -2px 0 rgba(0, 0, 0, 0.28),
-      0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 45%, transparent),
-      0 0 14px color-mix(in srgb, var(--daily-accent, #fff) 28%, transparent);
+      0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 38%, transparent),
+      0 0 12px color-mix(in srgb, var(--daily-accent, #fff) 18%, transparent),
+      0 4px 12px rgba(0, 0, 0, 0.3);
   }
   50% {
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.14),
-      inset 0 -2px 0 rgba(0, 0, 0, 0.28),
-      0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 70%, transparent),
-      0 0 26px color-mix(in srgb, var(--daily-accent, #fff) 45%, transparent);
+      0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 62%, transparent),
+      0 0 24px color-mix(in srgb, var(--daily-accent, #fff) 32%, transparent),
+      0 4px 12px rgba(0, 0, 0, 0.3);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Sin pulso queda el anillo del punto medio: la tile hot se sigue leyendo. */
   .home-daily-tile--hot {
     animation: none;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 55%, transparent),
+      0 0 18px color-mix(in srgb, var(--daily-accent, #fff) 25%, transparent),
+      0 4px 12px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -7653,8 +7966,20 @@ body {
   .center-heal-spark,
   .coin-delta-float,
   .coin-spin-nudge,
+  .coin-balance-value--spend,
+  .resource-delta-value--energy-spend,
+  .resource-delta-value--gem-spend,
   .loot-target-pulse,
-  .loot-fly-chip.is-flying {
+  .loot-fly-chip.is-flying,
+  .battle-item-fx-burst,
+  .battle-item-fx-ring,
+  .battle-item-fx-cross,
+  .battle-item-fx-icon,
+  .battle-item-fx-spark,
+  .battle-item-fx-label,
+  .party-icon--reviving,
+  .party-icon__sprite--waking,
+  .damage-popup--heal {
     animation: none;
   }
 }
@@ -12186,7 +12511,11 @@ html.boot-splash-pending .boot-splash {
 .idle-reward--ready {
   animation: idle-reward-pulse 2.8s ease-in-out infinite;
 }
-.idle-reward--ready .idle-reward__chest {
+/* La tile "hot" de acciones diarias ya trae su propio pulso en el chasis
+   (`home-daily-tile-pulse`), así que sólo hereda el bob del cofre — declarar
+   `idle-reward--ready` encima pisaría esa animación en vez de sumarse. */
+.idle-reward--ready .idle-reward__chest,
+.home-daily-tile--hot .idle-reward__chest {
   animation: idle-chest-bob 2.2s ease-in-out infinite;
 }
 
@@ -12378,6 +12707,7 @@ html.boot-splash-pending .boot-splash {
   .expedition-ambient__beacon,
   .idle-reward--ready,
   .idle-reward--ready .idle-reward__chest,
+  .home-daily-tile--hot .idle-reward__chest,
   .quick-action--attention {
     animation: none !important;
   }

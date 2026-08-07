@@ -9,7 +9,7 @@ import { showdownTypeSymbolUrl } from "@/lib/type-icons";
 import type { GymMissionItem, GymMissionStatusKind } from "@/lib/gym-mission";
 import { KANTO_MAP_IMAGE, KANTO_MAP_ASPECT } from "@/lib/gym-map";
 import { marketFeeDiscount, obedienceLevelCap } from "@/lib/badge-perks";
-import { GYM_BATTLE_ENERGY_COST } from "@/lib/energy";
+import { gymBattleEnergyCost } from "@/lib/energy";
 import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
 import { formatGymCooldown } from "@/lib/gym-cooldown";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
@@ -586,6 +586,11 @@ export function GymMissionControl({
         </GameCtaButton>
       );
     }
+    // Lo que se cobra al entrar es el primer combate del pasillo, no el desafío
+    // entero: mostrar el costo del líder acá exageraba la barrera de entrada.
+    const firstBattleEnergyCost = gymBattleEnergyCost(
+      selected.trainerCount > 0 ? "trainer" : "leader",
+    );
     if (canChallenge || selected.badgeEarned) {
       // En la barra sticky mobile el ancho es corto: "Desafiar" cabe en una
       // línea; "Desafiar gimnasio" se partía contra el costo de energía.
@@ -610,7 +615,7 @@ export function GymMissionControl({
               className={`${compact ? "h-[18px] w-[18px]" : "h-5 w-5"} object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]`}
               unoptimized
             />
-            <span>−{GYM_BATTLE_ENERGY_COST}</span>
+            <span>−{firstBattleEnergyCost}</span>
           </span>
         </Link>
       );

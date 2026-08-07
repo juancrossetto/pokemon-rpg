@@ -43,6 +43,17 @@ export type HomeDailyAction = {
   href: string | null;
   /** Si true, abre el modal de daily gift en vez de navegar. */
   openDailyGift?: boolean;
+  /**
+   * Centro Pokémon embebido: al tocar cura (gratis o rush).
+   * Sustituye atajos poco accionables (p. ej. racha).
+   */
+  heal?: {
+    needsHealing: boolean;
+    cooldownMsLeft: number;
+    rushCost: number;
+    coins: number;
+    teamMaxLevel: number;
+  };
   iconSrc: string;
   labelKey: string;
   /** Chip de estado: "Disponible", "Día 7", "6/0", etc. */

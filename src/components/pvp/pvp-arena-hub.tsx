@@ -1,7 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { SubmitButton } from "@/components/submit-button";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
-import { PvpChallengeSearch } from "@/components/pvp-challenge-search";
 import { PvpTeamEditor, type PvpTeamCandidate } from "@/components/pvp-team-editor";
 import { PvpSeasonCountdown } from "@/components/pvp/pvp-season-countdown";
 import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
@@ -9,9 +7,7 @@ import {
   PvpRivalsHistory,
   type PvpHubMatchCard,
 } from "@/components/pvp/pvp-rivals-history";
-import { findMatch } from "@/actions/pvp";
-import { startPvpRanked } from "@/actions/start-pvp-battle";
-import { PvpQuickMatchSubmit } from "@/components/pvp/pvp-quick-match-submit";
+import { PvpModesPanel } from "@/components/pvp/pvp-modes-panel";
 import { type PvpDivision, type PvpTier } from "@/lib/pvp/tiers";
 import type { SeasonTrackNode } from "@/lib/pvp/hub";
 import type { RewardBundle } from "@/lib/events/rewards";
@@ -201,7 +197,7 @@ export function PvpArenaHub({
           <div className="flex min-w-0 flex-col gap-4">
             {/* Mobile: modos primero (ranked | quick + challenge). */}
             <div className="lg:hidden">
-              <ModesPanel
+              <PvpModesPanel
                 locale={locale}
                 title={L.modesTitle}
                 rankedLabel={L.rankedLabel}
@@ -284,7 +280,10 @@ export function PvpArenaHub({
               </div>
             </section>
 
-            <section className="game-float-card rounded-2xl p-4 sm:p-5">
+            {/* `pvp-mode-card` escalona la entrada por posición (nth-child): el
+                hero ya traía la suya (`.pvp-hero`) y el resto de las cards
+                aparecía seco, todas en el mismo frame. */}
+            <section className="pvp-mode-card game-float-card rounded-2xl p-4 sm:p-5">
               <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
@@ -370,7 +369,7 @@ export function PvpArenaHub({
               page={page}
               totalPages={totalPages}
             />
-            <ModesPanel
+            <PvpModesPanel
               locale={locale}
               title={L.modesTitle}
               rankedLabel={L.rankedLabel}
@@ -383,53 +382,6 @@ export function PvpArenaHub({
         </div>
       </div>
     </div>
-  );
-}
-
-function ModesPanel({
-  locale,
-  title,
-  rankedLabel,
-  quickLabel,
-  starting,
-  searching,
-  canFight,
-}: {
-  locale: string;
-  title: string;
-  rankedLabel: string;
-  quickLabel: string;
-  starting: string;
-  searching: string;
-  canFight: boolean;
-}) {
-  return (
-    <section className="game-float-card rounded-2xl p-3.5 sm:p-5">
-      <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
-        {title}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <form action={startPvpRanked.bind(null, locale)}>
-          <SubmitButton
-            label={rankedLabel}
-            pendingLabel={starting}
-            disabled={!canFight}
-            className="game-cta game-cta--red pvp-mode-btn w-full"
-          />
-        </form>
-        <form action={findMatch.bind(null, locale)}>
-          <PvpQuickMatchSubmit
-            label={quickLabel}
-            pendingLabel={searching}
-            disabled={!canFight}
-            className="game-cta pvp-mode-btn w-full"
-          />
-        </form>
-        <div className="col-span-2 min-w-0">
-          <PvpChallengeSearch locale={locale} canFight={canFight} />
-        </div>
-      </div>
-    </section>
   );
 }
 

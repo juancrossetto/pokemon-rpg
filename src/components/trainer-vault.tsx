@@ -7,6 +7,7 @@ import { claimAchievement } from "@/actions/claim-achievement";
 import { RewardList } from "@/components/events/reward-chip";
 import { ProgressRail } from "@/components/trainer-profile-parts";
 import { announceCoinDelta } from "@/lib/coin-fx";
+import { playRewardCollectFx } from "@/lib/loot-fly-fx";
 import type { RewardDef } from "@/lib/events/rewards";
 import { gymBadgeImageUrl } from "@/lib/gym-art";
 import { uiSpriteUrl } from "@/lib/sprites";
@@ -122,7 +123,15 @@ export function TrainerVault({
         setError(labels.claimError);
         return;
       }
-      if (result.coinsDelta !== 0) announceCoinDelta(result.coinsDelta);
+      // `playRewardCollectFx` ya suma las monedas del bundle y llama a
+      // `announceCoinDelta` por dentro: anunciarlo también acá contaba el
+      // delta dos veces en el badge. Si el premio no trae monedas (sólo
+      // ítems), el delta del server sigue siendo la única fuente.
+      if (result.granted.length > 0) {
+        playRewardCollectFx(result.granted);
+      } else if (result.coinsDelta !== 0) {
+        announceCoinDelta(result.coinsDelta);
+      }
       markClaimed(result.claimedIds);
       setLastGranted(result.granted);
     });

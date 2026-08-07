@@ -11,6 +11,8 @@ import { SubmitButton } from "@/components/submit-button";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { FlagIcon } from "@/components/flag-icon";
 import { avatarById } from "@/lib/avatars";
+import { PVP_BATTLE_ENERGY_COST } from "@/lib/energy";
+import { announceEnergyDelta } from "@/lib/resource-fx";
 import { tierAccentClass, tierForRating } from "@/lib/pvp/tiers";
 
 function avatarSrc(avatarId: string | null): string | null {
@@ -88,7 +90,14 @@ export function PvpChallengeSearch({
 
   return (
     <div ref={rootRef} className="pvp-mode-challenge w-full">
-      <form action={startPvpChallenge.bind(null, locale)} className="pvp-mode-challenge__row">
+      <form
+        action={startPvpChallenge.bind(null, locale)}
+        onSubmit={() => {
+          if (!selected || !canFight) return;
+          announceEnergyDelta(-PVP_BATTLE_ENERGY_COST);
+        }}
+        className="pvp-mode-challenge__row"
+      >
         {selected ? (
           <input type="hidden" name="opponentUserId" value={selected.userId} />
         ) : null}

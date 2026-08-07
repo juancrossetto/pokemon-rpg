@@ -5,10 +5,11 @@
 // (sprite | stats+moves) + footer apodo/CTA en fila — sin scroll de página.
 
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { CapturedPokemonInfo } from "@/actions/attempt-capture";
 import { ShinyMark } from "@/components/shiny-mark";
 import { typeColor } from "@/lib/type-colors";
+import { formatMoveName } from "@/lib/format-move-name";
 import { useTypeLabel } from "@/hooks/use-type-label";
 
 function StatCell({ label, value }: { label: string; value: number }) {
@@ -39,6 +40,7 @@ export function CaptureSummary({
 }) {
   const t = useTranslations("battle");
   const tTeam = useTranslations("team");
+  const locale = useLocale();
   const typeLabel = useTypeLabel();
 
   const typeBadges = info.types.map((ty) => {
@@ -130,7 +132,7 @@ export function CaptureSummary({
               className="flex items-center justify-between gap-2 rounded-md bg-white/[0.04] px-2 py-0.5 lg:py-1"
             >
               <span className="truncate text-[11px] font-semibold capitalize text-white/95 lg:text-[12px]">
-                {m.name}
+                {formatMoveName(m.name, locale)}
               </span>
               <span
                 className="shrink-0 text-[9px] font-bold uppercase tracking-wide lg:text-[10px]"

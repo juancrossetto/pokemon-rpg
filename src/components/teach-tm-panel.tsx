@@ -7,6 +7,7 @@ import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { teachMove } from "@/actions/teach-move";
 import { typeColor } from "@/lib/type-colors";
+import { formatMoveName } from "@/lib/format-move-name";
 import type { TeamCompatibleTm, TeamMoveDetail } from "@/components/team-roster";
 import { SquadItemFx, fxMetaFromColor } from "@/components/use-squad-actions";
 import { playBattleSfx } from "@/lib/battle-sfx";
@@ -94,7 +95,7 @@ export function TeachTmPanel({
       }
       playBattleSfx("restorePp");
       setTeachFx({
-        label: teachingItem.moveName,
+        label: formatMoveName(teachingItem.moveName, locale),
         color: typeColor(teachingItem.moveType),
         key: Date.now(),
       });
@@ -179,7 +180,7 @@ export function TeachTmPanel({
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium capitalize text-on-surface">
-                          {tm.moveName}
+                          {formatMoveName(tm.moveName, locale)}
                         </p>
                         <p className="truncate text-[9px] text-on-surface-variant">
                           {tm.code} · {labels.power}: {tm.movePower ?? labels.noPower} · x
@@ -222,7 +223,7 @@ export function TeachTmPanel({
                               {pending
                                 ? labels.teaching
                                 : move
-                                  ? move.name
+                                  ? formatMoveName(move.name, locale)
                                   : labels.emptySlotMove}
                             </button>
                           ))}

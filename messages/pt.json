@@ -322,12 +322,17 @@
         "statusAvailable": "Novo",
         "statusDone": "Feito",
         "statusReady": "Pronto",
+        "statusHealthy": "OK",
+        "statusCooldown": "{minutes} min",
+        "statusHealthyCooldown": "OK · {time}",
+        "statusRush": "{cost}",
         "statusBadges": "{count}/{total}",
         "statusStreakDay": "Dia {n}",
         "items": {
           "daily": "Presente",
           "pvp": "PvP",
           "gyms": "Ginásio",
+          "heal": "Centro",
           "streak": "Sequência",
           "friends": "Amigos",
           "market": "Mercado"
@@ -346,6 +351,7 @@
     "noResults": "Sem coincidências neste arquivo.",
     "searchPlaceholder": "Nome, número, tipo…",
     "unknown": "???",
+    "newEntry": "Novo",
     "statusCaught": "Capturado",
     "statusSeen": "Visto",
     "research": "Pesquisa",
@@ -3041,7 +3047,7 @@
             "body": "Buscar selvagens custa energia. Ela regenera sozinha (1 ponto a cada 30 minutos). Uma barra vazia leva horas para encher: escolha em quais lutas investir.",
             "bullets": [
               "Sem energia você não explora nem entra na fila de PvP.",
-              "Ginásios custam mais energia por combate.",
+              "No ginásio, os subordinados custam 1 e o líder 2.",
               "Se ficar no zero: espere, resgate diárias ou passe na loja."
             ]
           },

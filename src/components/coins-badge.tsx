@@ -221,24 +221,36 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
 
   const isSm = size === "sm";
   const isBar = size === "bar";
+  const valueTone =
+    fx === "down"
+      ? "coin-balance-value--spend"
+      : fx === "up"
+        ? "coin-balance-value--gain"
+        : "";
 
   return (
     <span
       id={isBar ? undefined : "header-coins"}
-      className={`relative inline-flex items-center gap-1 font-mono leading-none text-electric-yellow transition-[box-shadow,transform,color] duration-300 ${
+      className={`relative inline-flex items-center gap-1 font-mono leading-none transition-[box-shadow,transform,color] duration-300 ${
         isBar
-          ? "text-[11px] font-semibold text-white sm:text-[12px]"
+          ? "text-[11px] font-semibold sm:text-[12px]"
           : isSm
             ? "px-2 py-1 text-[11px]"
-            : "rounded-full border border-electric-yellow/25 bg-electric-yellow/10 px-2.5 py-1 text-label-sm"
+            : "rounded-full border px-2.5 py-1 text-label-sm"
       } ${
         fx === "up"
           ? isBar
-            ? "scale-[1.04]"
-            : "scale-[1.04] text-electric-yellow shadow-[0_0_16px_rgba(242,192,0,0.45)]"
+            ? ""
+            : "border-electric-yellow/40 bg-electric-yellow/15 text-electric-yellow shadow-[0_0_16px_rgba(242,192,0,0.45)]"
           : fx === "down"
-            ? "scale-[1.02] text-pokeball-red"
-            : ""
+            ? isBar
+              ? ""
+              : "border-[#ff2d2d]/55 bg-[#ff2d2d]/15 text-[#ff2d2d] shadow-[0_0_14px_rgba(255,45,45,0.4)]"
+            : isBar
+              ? "text-white"
+              : isSm
+                ? "text-electric-yellow"
+                : "border-electric-yellow/25 bg-electric-yellow/10 text-electric-yellow"
       }`}
       aria-live="polite"
       aria-atomic="true"
@@ -253,14 +265,16 @@ export function CoinsBadge({ coins, size = "md", showIcon = true }: CoinsBadgePr
           paid
         </span>
       )}
-      <span className="tabular-nums font-semibold">{display}</span>
+      <span className={`tabular-nums font-semibold ${valueTone}`.trim()}>
+        {display}
+      </span>
       {floater !== null && floater !== 0 && (
         <span
           key={`${floater}-${fx}`}
           aria-hidden
           className={`coin-delta-float pointer-events-none absolute left-1/2 -top-3.5 -translate-x-1/2 font-bold tabular-nums ${
             isSm || isBar ? "text-[10px]" : "text-[11px]"
-          } ${floater > 0 ? "text-electric-yellow" : "text-pokeball-red"}`}
+          } ${floater > 0 ? "text-[#fbbf24]" : "text-[#ff2d2d]"}`}
         >
           {floater > 0 ? `+${floater}` : floater}
         </span>

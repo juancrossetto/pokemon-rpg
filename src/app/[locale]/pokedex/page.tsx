@@ -250,6 +250,7 @@ export default async function PokedexPage({
       evolves: t("stats.evolves"),
     },
     unknown: t("unknown"),
+    newEntry: t("newEntry"),
     statusCaught: t("statusCaught"),
     statusSeen: t("statusSeen"),
     research: t("research"),

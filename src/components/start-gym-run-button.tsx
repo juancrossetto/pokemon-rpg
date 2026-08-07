@@ -1,9 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { startGymRun, type StartGymRunResult } from "@/actions/start-gym-run";
-import { GYM_BATTLE_ENERGY_COST } from "@/lib/energy";
+import {
+  announceEnergyDelta,
+  clearPendingEnergyDelta,
+} from "@/lib/resource-fx";
 
 const ENERGY_ICON = "/items/hd/energy.png";
 
@@ -11,11 +14,15 @@ export function StartGymRunButton({
   gymId,
   locale,
   label,
+  energyCost,
   errors,
 }: {
   gymId: string;
   locale: string;
   label: string;
+  /** Costo del primer combate de la corrida (subordinado, o líder si el
+   *  gimnasio no tiene pasillo) — no del desafío entero. */
+  energyCost: number;
   errors: Record<
     | "no_lead"
     | "fainted_lead"
@@ -32,8 +39,18 @@ export function StartGymRunButton({
     null,
   );
 
+  useEffect(() => {
+    if (state && !state.success) clearPendingEnergyDelta();
+  }, [state]);
+
   return (
-    <form action={formAction} className="flex w-full flex-col items-center gap-2 sm:w-auto">
+    <form
+      action={formAction}
+      onSubmit={() => {
+        announceEnergyDelta(-energyCost);
+      }}
+      className="flex w-full flex-col items-center gap-2 sm:w-auto"
+    >
       <button
         type="submit"
         disabled={pending}
@@ -50,7 +67,7 @@ export function StartGymRunButton({
             className="h-5 w-5 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
             unoptimized
           />
-          <span>−{GYM_BATTLE_ENERGY_COST}</span>
+          <span>−{energyCost}</span>
         </span>
       </button>
       {state && !state.success && (

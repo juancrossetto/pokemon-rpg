@@ -25,7 +25,7 @@ function ChanseyIcon({ className = "h-5 w-5" }: { className?: string }) {
 }
 
 /** Destello en `document.body` — sobrevive si el botón se desmonta al curar. */
-function playCenterHealFx() {
+export function playCenterHealFx() {
   if (typeof document === "undefined") return;
   const host = document.createElement("div");
   document.body.appendChild(host);

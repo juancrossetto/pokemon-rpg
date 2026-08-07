@@ -618,7 +618,7 @@ export function SquadLevelOffers({
         alto disponible del portal (ya descuenta bottom-nav) y un tope holgado
         en desktop.
       */}
-      <div className="flex max-h-full w-full max-w-lg flex-col overflow-y-auto overscroll-contain rounded-2xl border border-tertiary/25 bg-[#0a0e16]/96 shadow-[0_24px_80px_rgba(0,0,0,0.65)] sm:max-h-[min(92dvh,52rem)]">
+      <div className="flex max-h-full w-full max-w-3xl flex-col overflow-y-auto overscroll-contain rounded-2xl border border-tertiary/25 bg-[#0a0e16]/96 shadow-[0_24px_80px_rgba(0,0,0,0.65)] sm:max-h-[min(92dvh,52rem)]">
         <LevelUpOffersPanel
           key={entries
             .map((e) => `${e.instanceId}:${e.leveledUpTo}:${e.evolveOffer?.toSpeciesId ?? 0}`)

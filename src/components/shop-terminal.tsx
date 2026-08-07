@@ -4,8 +4,9 @@ import Image from "next/image";
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { buyItem } from "@/actions/buy-item";
-import { itemDisplayUrl } from "@/lib/item-sprites";
+import { itemDisplayUrl, itemHdIconUrl } from "@/lib/item-sprites";
 import { announceCoinDelta } from "@/lib/coin-fx";
+import { playLootCollectFx } from "@/lib/loot-fly-fx";
 import { showToast } from "@/lib/app-toast";
 import {
   MAX_PURCHASE_QUANTITY,
@@ -112,14 +113,29 @@ export function ShopTerminal({
         })).filter((section) => section.items.length > 0)
       : [{ id: category, items: visible }];
 
-  function onPurchased(product: ShopProduct, quantity: number, coinsLeft: number, after: number) {
+  function onPurchased(
+    product: ShopProduct,
+    quantity: number,
+    coinsLeft: number,
+    after: number,
+    origin?: { x: number; y: number },
+  ) {
     // El badge del header escucha este evento y anima el descuento al toque,
     // sin esperar a que revalide el layout.
     announceCoinDelta(coinsLeft - coins);
     setCoins(coinsLeft);
     setOwned((current) => ({ ...current, [product.id]: after }));
-    // Toast visible: antes la confirmación era sólo sr-only y comprar
-    // parecía no hacer nada.
+    // Mismo vuelo que recompensas: ítem → avatar + chime.
+    const hd = itemHdIconUrl(product.name);
+    const pieceCount = Math.min(Math.max(1, quantity), 5);
+    playLootCollectFx({
+      pieces: Array.from({ length: pieceCount }, () => ({
+        src: hd ?? itemDisplayUrl(product.name),
+        target: "avatar" as const,
+        pixelated: !hd,
+      })),
+      origin,
+    });
     showToast(
       fill(labels.purchased, { count: quantity, name: product.displayName }),
       "success",
@@ -474,12 +490,14 @@ function PurchaseDialog({
     quantity: number,
     coinsLeft: number,
     ownedAfter: number,
+    origin?: { x: number; y: number },
   ) => void;
 }) {
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const panelRef = useRef<HTMLDivElement>(null);
+  const spriteRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
   // Tope real: lo que el saldo aguanta, acotado por el máximo del servidor.
@@ -523,10 +541,23 @@ function PurchaseDialog({
   function confirm() {
     if (pending) return;
     setError(null);
+    const spriteBox = spriteRef.current?.getBoundingClientRect();
+    const origin = spriteBox
+      ? {
+          x: spriteBox.left + spriteBox.width / 2,
+          y: spriteBox.top + spriteBox.height / 2,
+        }
+      : undefined;
     startTransition(async () => {
       const result = await buyItem(product.id, locale, quantity);
       if (result.ok) {
-        onPurchased(product, result.quantity, result.coinsLeft, result.ownedAfter);
+        onPurchased(
+          product,
+          result.quantity,
+          result.coinsLeft,
+          result.ownedAfter,
+          origin,
+        );
         onClose();
         return;
       }
@@ -560,10 +591,12 @@ function PurchaseDialog({
         className="market-sheet-in relative w-full max-w-sm rounded-t-2xl border-t border-white/12 bg-[#0b0d13]/98 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:rounded-2xl sm:border sm:pb-4"
       >
         <div className="flex items-start gap-3">
-          <ShopProductImage
-            name={product.name}
-            pedestal={SHOP_CATEGORY_META[product.category].pedestal}
-          />
+          <div ref={spriteRef}>
+            <ShopProductImage
+              name={product.name}
+              pedestal={SHOP_CATEGORY_META[product.category].pedestal}
+            />
+          </div>
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className="text-label-md font-semibold text-white">
               {fill(labels.buyTitle, { name: product.displayName })}

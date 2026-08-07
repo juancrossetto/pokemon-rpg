@@ -322,12 +322,17 @@
         "statusAvailable": "New",
         "statusDone": "Done",
         "statusReady": "Ready",
+        "statusHealthy": "OK",
+        "statusCooldown": "{minutes} min",
+        "statusHealthyCooldown": "OK · {time}",
+        "statusRush": "{cost}",
         "statusBadges": "{count}/{total}",
         "statusStreakDay": "Day {n}",
         "items": {
           "daily": "Gift",
           "pvp": "PvP",
           "gyms": "Gym",
+          "heal": "Center",
           "streak": "Streak",
           "friends": "Friends",
           "market": "Market"
@@ -346,6 +351,7 @@
     "noResults": "No matches in this archive.",
     "searchPlaceholder": "Name, number, type…",
     "unknown": "???",
+    "newEntry": "New",
     "statusCaught": "Caught",
     "statusSeen": "Seen",
     "research": "Research",
@@ -3041,7 +3047,7 @@
             "body": "Hunting wilds costs energy. It regenerates on its own (1 point every 30 minutes). An empty bar takes hours to refill — spend fights wisely.",
             "bullets": [
               "No energy means no exploring and no PvP queue.",
-              "Gym fights cost more energy per battle.",
+              "In a gym, trainers cost 1 and the leader costs 2.",
               "If you're empty: wait, claim dailies, or visit the shop."
             ]
           },

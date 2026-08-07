@@ -1,8 +1,7 @@
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { FlagIcon } from "@/components/flag-icon";
-import { SubmitButton } from "@/components/submit-button";
-import { startPvpRematch } from "@/actions/start-pvp-battle";
+import { PvpRematchForm } from "@/components/pvp/pvp-rematch-form";
 import { formatMoveName } from "@/lib/format-move-name";
 import type { PvpTeamMemberSnap } from "@/lib/pvp/team";
 import { parseKo } from "@/lib/pvp/ko-log";
@@ -189,13 +188,14 @@ export function PvpMatchReport({
         )}
 
         {iAmInMatch && settled ? (
-          <form action={startPvpRematch.bind(null, locale, foeId)} className="pvp-report__cta-wrap">
-            <SubmitButton
-              label={labels.rematch}
-              pendingLabel={labels.starting}
-              className="pvp-report__cta"
-            />
-          </form>
+          <PvpRematchForm
+            locale={locale}
+            foeId={foeId}
+            label={labels.rematch}
+            pendingLabel={labels.starting}
+            wrapClassName="pvp-report__cta-wrap"
+            className="pvp-report__cta"
+          />
         ) : null}
 
         <section className="pvp-report__kos">
@@ -450,6 +450,7 @@ function extractPrimaryName(line: string): string | null {
 export function formatPvpTurnLine(
   raw: string,
   tLog: (key: string, values?: Record<string, string | number>) => string,
+  locale?: string | null,
 ): string {
   if (raw.startsWith("sendOut:")) return tLog("sendOut", { name: raw.slice("sendOut:".length) });
   if (raw.startsWith("switchIn:")) return tLog("switchIn", { name: raw.slice("switchIn:".length) });
@@ -488,7 +489,7 @@ export function formatPvpTurnLine(
     if (i < 0) return raw;
     return tLog("used", {
       name: rest.slice(0, i),
-      move: formatMoveName(rest.slice(i + 1)),
+      move: formatMoveName(rest.slice(i + 1), locale),
     });
   }
   if (raw.startsWith("damage:")) {
@@ -503,7 +504,7 @@ export function formatPvpTurnLine(
     if (i < 0) return raw;
     return tLog("miss", {
       name: rest.slice(0, i),
-      move: formatMoveName(rest.slice(i + 1)),
+      move: formatMoveName(rest.slice(i + 1), locale),
     });
   }
   if (raw.startsWith("status:")) {

@@ -6,6 +6,8 @@ import { startGymRunBattle } from "@/actions/start-gym-run-battle";
 import { GymRunExitButton } from "@/components/gym-run-exit-button";
 import { showdownTrainerSpriteUrl } from "@/lib/avatars";
 import { gymCorridorTheme } from "@/lib/gym-corridor-theme";
+import { itemDisplayUrl } from "@/lib/item-sprites";
+import { announceEnergyDelta } from "@/lib/resource-fx";
 import { uiSpriteUrl } from "@/lib/sprites";
 
 export type CorridorTeamMember = {
@@ -92,8 +94,10 @@ export type GymChallengeCorridorProps = {
   clearedSlots: number;
   progressPct: number;
   energy: number;
-  energyCost: number;
-  canAffordBattle: boolean;
+  /** Costo de pelear contra un subordinado del pasillo. */
+  trainerEnergyCost: number;
+  /** Costo de pelear contra el líder — más caro que un subordinado. */
+  leaderEnergyCost: number;
   energyError: boolean;
   leadError: boolean;
   labels: CorridorLabels;
@@ -154,7 +158,17 @@ function RewardBits({
         </span>
       ) : null}
       {tmName ? (
-        <span className="text-white/70">{tmName}</span>
+        <span className="inline-flex items-center gap-1">
+          <Image
+            src={itemDisplayUrl(tmName)}
+            alt=""
+            width={16}
+            height={16}
+            className="h-4 w-4 object-contain"
+            unoptimized
+          />
+          <span className="text-white/70">{tmName}</span>
+        </span>
       ) : null}
     </div>
   );
@@ -280,6 +294,33 @@ function ProgressBar({ pct, accent }: { pct: number; accent: string }) {
   );
 }
 
+/**
+ * Slot que se despejó en la navegación anterior, para el pop de "recién
+ * vencido". El valor previo vive en sessionStorage por el mismo motivo que en
+ * `ProgressBar`: la página es un RSC que se remonta entero al volver del
+ * combate, así que el componente no tiene memoria propia entre peleas.
+ *
+ * La clave va scopeada por corrida — con una global, entrar a otro gimnasio
+ * con menos progreso disparaba el pop en el nodo equivocado.
+ */
+function useJustClearedSlot(gymRunId: string, clearedSlots: number): number | null {
+  const [justCleared, setJustCleared] = useState<number | null>(null);
+
+  useEffect(() => {
+    const key = `gym-corridor-cleared:${gymRunId}`;
+    const raw = sessionStorage.getItem(key);
+    sessionStorage.setItem(key, String(clearedSlots));
+    if (raw === null) return;
+    const prev = Number(raw);
+    if (!Number.isFinite(prev) || clearedSlots <= prev) return;
+    // Primer tick post-montaje: evita setState síncrono en el efecto.
+    const boot = requestAnimationFrame(() => setJustCleared(clearedSlots));
+    return () => cancelAnimationFrame(boot);
+  }, [gymRunId, clearedSlots]);
+
+  return justCleared;
+}
+
 function CombatButton({
   label,
   energyCost,
@@ -293,7 +334,11 @@ function CombatButton({
     <button
       type="submit"
       disabled={disabled}
-      className="game-cta game-cta--red mb-0! gap-2 disabled:pointer-events-none sm:gap-2.5"
+      onClick={() => {
+        if (disabled) return;
+        announceEnergyDelta(-energyCost);
+      }}
+      className="game-cta game-cta--red gym-corridor-combat-btn mb-0! gap-2 disabled:pointer-events-none sm:gap-2.5"
     >
       <span className="game-cta__label">{label}</span>
       <span
@@ -320,11 +365,14 @@ function PathNode({
   status,
   accent,
   size = NODE,
+  className = "",
 }: {
   children: ReactNode;
   status: "entry" | "cleared" | "active" | "locked" | "leader";
   accent: string;
   size?: number;
+  /** Efecto puntual del nodo (ej. el pop de recién despejado). */
+  className?: string;
 }) {
   const isActive = status === "active";
   const isLit =
@@ -344,7 +392,7 @@ function PathNode({
     <div
       className={`relative z-10 flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 bg-[#12141c] ${
         isActive ? "gym-corridor-node-pulse" : ""
-      }`}
+      } ${className}`.trim()}
       style={{ width: size, height: size, borderColor: border, boxShadow }}
     >
       {children}
@@ -426,8 +474,9 @@ export function GymChallengeCorridor({
   trainers,
   clearedSlots,
   progressPct,
-  energyCost,
-  canAffordBattle,
+  energy,
+  trainerEnergyCost,
+  leaderEnergyCost,
   energyError,
   leadError,
   labels,
@@ -440,6 +489,14 @@ export function GymChallengeCorridor({
   const totalPathNodes = trainers.length + 1;
   const pathFillPct = (Math.min(clearedSlots + 1, totalPathNodes) / totalPathNodes) * 100;
   const battleAction = startGymRunBattle.bind(null, gymRunId, locale);
+  // Cada botón se banca su propio costo: el del subordinado se puede pagar con
+  // una barra a la que ya no le alcanza para el líder.
+  const canAffordTrainer = energy >= trainerEnergyCost;
+  const canAffordLeader = energy >= leaderEnergyCost;
+  const justCleared = useJustClearedSlot(gymRunId, clearedSlots);
+  // Vencer al último subordinado destapa al líder: ese paso merece la revelación
+  // completa (card + sprite saliendo de la silueta), no sólo dejar de estar gris.
+  const leaderJustUnlocked = leaderUnlocked && justCleared === trainers.length;
 
   const accumulated = useMemo(() => {
     let coins = 0;
@@ -560,11 +617,17 @@ export function GymChallengeCorridor({
               const isActive = trainer.status === "active";
               const isCleared = trainer.status === "cleared";
               const isLocked = trainer.status === "locked";
+              // El que se acaba de vencer: pop del nodo + destello de la sala.
+              const isJustCleared = trainer.slot === justCleared;
 
               return (
                 <div key={trainer.id} className="relative mb-3 flex items-stretch gap-3">
                   <div className="flex flex-col items-center pt-2" style={{ width: NODE }}>
-                    <PathNode status={trainer.status} accent={theme.accent}>
+                    <PathNode
+                      status={trainer.status}
+                      accent={theme.accent}
+                      className={isJustCleared ? "gym-corridor-node-cleared" : ""}
+                    >
                       <Image
                         src={trainer.spriteUrl || showdownTrainerSpriteUrl("youngster")}
                         alt=""
@@ -572,7 +635,7 @@ export function GymChallengeCorridor({
                         height={36}
                         className={`object-contain ${isLocked ? "opacity-40 grayscale" : ""} ${
                           isCleared ? "opacity-75" : ""
-                        }`}
+                        } ${isActive ? "gym-corridor-idle-sway" : ""}`}
                         unoptimized
                       />
                     </PathNode>
@@ -581,11 +644,11 @@ export function GymChallengeCorridor({
                   <article
                     className={`min-w-0 flex-1 rounded-2xl border px-3 py-3 sm:px-3.5 ${
                       isActive
-                        ? "bg-[#12141c]/90"
+                        ? "gym-corridor-card-active bg-[#12141c]/90"
                         : isCleared
-                          ? "border-white/8 bg-white/[0.02] opacity-75"
+                          ? "gym-corridor-card-cleared border-white/8 bg-white/[0.02] opacity-75"
                           : "border-white/8 bg-white/[0.02] opacity-45"
-                    }`}
+                    } ${isJustCleared ? "gym-corridor-room-flash" : ""}`}
                     style={
                       isActive
                         ? {
@@ -645,8 +708,8 @@ export function GymChallengeCorridor({
                           <form action={battleAction}>
                             <CombatButton
                               label={labels.initiateCombat}
-                              energyCost={energyCost}
-                              disabled={!canAffordBattle}
+                              energyCost={trainerEnergyCost}
+                              disabled={!canAffordTrainer}
                             />
                           </form>
                         ) : null}
@@ -669,7 +732,13 @@ export function GymChallengeCorridor({
                       alt={leaderUnlocked ? leaderName : ""}
                       width={36}
                       height={36}
-                      className={`object-contain ${leaderUnlocked ? "" : "gym-corridor-silhouette"}`}
+                      className={`object-contain ${
+                        leaderUnlocked
+                          ? leaderJustUnlocked
+                            ? "gym-corridor-leader-reveal"
+                            : "gym-corridor-idle-sway"
+                          : "gym-corridor-silhouette"
+                      }`}
                     />
                   ) : (
                     <span className="material-symbols-outlined text-[20px]! text-white/30">
@@ -681,8 +750,10 @@ export function GymChallengeCorridor({
 
               <article
                 className={`min-w-0 flex-1 rounded-2xl border px-3 py-3 sm:px-3.5 ${
-                  leaderUnlocked ? "bg-[#12141c]/90" : "border-white/8 bg-black/30"
-                }`}
+                  leaderUnlocked
+                    ? "gym-corridor-card-active bg-[#12141c]/90"
+                    : "border-white/8 bg-black/30"
+                } ${leaderJustUnlocked ? "gym-corridor-leader-card" : ""}`}
                 style={
                   leaderUnlocked
                     ? {
@@ -727,8 +798,8 @@ export function GymChallengeCorridor({
                       <form action={battleAction}>
                         <CombatButton
                           label={labels.initiateCombat}
-                          energyCost={energyCost}
-                          disabled={!canAffordBattle}
+                          energyCost={leaderEnergyCost}
+                          disabled={!canAffordLeader}
                         />
                       </form>
                     </>

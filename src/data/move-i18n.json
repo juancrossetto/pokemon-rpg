@@ -1,0 +1,2312 @@
+{
+  "mega-punch": {
+    "en": {
+      "name": "Mega Punch",
+      "effect": "The target is slugged by a punch thrown with muscle-packed power."
+    },
+    "es": {
+      "name": "Megapuño",
+      "effect": "Un puñetazo de gran potencia."
+    },
+    "pt": {
+      "name": "Mega Punch",
+      "effect": "Un puñetazo de gran potencia."
+    }
+  },
+  "comet-punch": {
+    "en": {
+      "name": "Comet Punch",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Puño Cometa",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Comet Punch",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "fire-punch": {
+    "en": {
+      "name": "Fire Punch",
+      "effect": "The target is attacked with a fiery punch. This may also leave the target with a burn."
+    },
+    "es": {
+      "name": "Puño Fuego",
+      "effect": "Puñetazo ardiente que puede causar quemaduras."
+    },
+    "pt": {
+      "name": "Fire Punch",
+      "effect": "Puñetazo ardiente que puede causar quemaduras."
+    }
+  },
+  "pay-day": {
+    "en": {
+      "name": "Pay Day",
+      "effect": "Coins are hurled at the target to inflict damage. Money is earned after the battle."
+    },
+    "es": {
+      "name": "Día de Pago",
+      "effect": "Arroja monedas al objetivo y las recupera al final del combate."
+    },
+    "pt": {
+      "name": "Pay Day",
+      "effect": "Arroja monedas al objetivo y las recupera al final del combate."
+    }
+  },
+  "karate-chop": {
+    "en": {
+      "name": "Karate Chop",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Golpe Kárate",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Karate Chop",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "pound": {
+    "en": {
+      "name": "Pound",
+      "effect": "The target is physically pounded with a long tail, a foreleg, or the like."
+    },
+    "es": {
+      "name": "Destructor",
+      "effect": "Golpea con las patas o la cola."
+    },
+    "pt": {
+      "name": "Pound",
+      "effect": "Golpea con las patas o la cola."
+    }
+  },
+  "ice-punch": {
+    "en": {
+      "name": "Ice Punch",
+      "effect": "The target is attacked with an icy punch. This may also leave the target frozen."
+    },
+    "es": {
+      "name": "Puño Hielo",
+      "effect": "Puñetazo helado que puede llegar a congelar."
+    },
+    "pt": {
+      "name": "Ice Punch",
+      "effect": "Puñetazo helado que puede llegar a congelar."
+    }
+  },
+  "double-slap": {
+    "en": {
+      "name": "Double Slap",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Doble Bofetón",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Double Slap",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "thunder-punch": {
+    "en": {
+      "name": "Thunder Punch",
+      "effect": "The target is attacked with an electrified punch. This may also leave the target with paralysis."
+    },
+    "es": {
+      "name": "Puño Trueno",
+      "effect": "Puñetazo eléctrico que puede paralizar al adversario."
+    },
+    "pt": {
+      "name": "Thunder Punch",
+      "effect": "Puñetazo eléctrico que puede paralizar al adversario."
+    }
+  },
+  "vice-grip": {
+    "en": {
+      "name": "Vise Grip",
+      "effect": "The target is gripped and squeezed from both sides to inflict damage."
+    },
+    "es": {
+      "name": "Agarre",
+      "effect": "Atrapa y atenaza al objetivo."
+    },
+    "pt": {
+      "name": "Vise Grip",
+      "effect": "Atrapa y atenaza al objetivo."
+    }
+  },
+  "scratch": {
+    "en": {
+      "name": "Scratch",
+      "effect": "Hard, pointed, sharp claws rake the target to inflict damage."
+    },
+    "es": {
+      "name": "Arañazo",
+      "effect": "Araña con afiladas garras."
+    },
+    "pt": {
+      "name": "Scratch",
+      "effect": "Araña con afiladas garras."
+    }
+  },
+  "guillotine": {
+    "en": {
+      "name": "Guillotine",
+      "effect": "A vicious tearing attack with big pincers. The target faints instantly if this attack hits."
+    },
+    "es": {
+      "name": "Guillotina",
+      "effect": "Ataque cortante que debilita al oponente de un golpe si acierta."
+    },
+    "pt": {
+      "name": "Guillotine",
+      "effect": "Ataque cortante que debilita al oponente de un golpe si acierta."
+    }
+  },
+  "razor-wind": {
+    "en": {
+      "name": "Razor Wind",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Viento Cortante",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Razor Wind",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "swords-dance": {
+    "en": {
+      "name": "Swords Dance",
+      "effect": "A frenetic dance to uplift the fighting spirit. This sharply boosts the user's Attack stat."
+    },
+    "es": {
+      "name": "Danza Espada",
+      "effect": "Baile frenético que aumenta mucho el Ataque."
+    },
+    "pt": {
+      "name": "Swords Dance",
+      "effect": "Baile frenético que aumenta mucho el Ataque."
+    }
+  },
+  "bind": {
+    "en": {
+      "name": "Bind",
+      "effect": "A long body, tentacles, or the like are used to bind and squeeze the target for four to five turns."
+    },
+    "es": {
+      "name": "Atadura",
+      "effect": "Ata y oprime de cuatro a cinco turnos."
+    },
+    "pt": {
+      "name": "Bind",
+      "effect": "Ata y oprime de cuatro a cinco turnos."
+    }
+  },
+  "cut": {
+    "en": {
+      "name": "Cut",
+      "effect": "The target is cut with a scythe or claw."
+    },
+    "es": {
+      "name": "Corte",
+      "effect": "Corta al adversario con garras, guadañas, etc."
+    },
+    "pt": {
+      "name": "Cut",
+      "effect": "Corta al adversario con garras, guadañas, etc."
+    }
+  },
+  "wing-attack": {
+    "en": {
+      "name": "Wing Attack",
+      "effect": "The target is struck with large, imposing wings spread wide to inflict damage."
+    },
+    "es": {
+      "name": "Ataque Ala",
+      "effect": "Golpea al objetivo con unas grandes alas."
+    },
+    "pt": {
+      "name": "Wing Attack",
+      "effect": "Golpea al objetivo con unas grandes alas."
+    }
+  },
+  "gust": {
+    "en": {
+      "name": "Gust",
+      "effect": "A gust of wind is whipped up by wings and launched at the target to inflict damage."
+    },
+    "es": {
+      "name": "Tornado",
+      "effect": "Crea un tornado con las alas y lo lanza contra el objetivo."
+    },
+    "pt": {
+      "name": "Gust",
+      "effect": "Crea un tornado con las alas y lo lanza contra el objetivo."
+    }
+  },
+  "whirlwind": {
+    "en": {
+      "name": "Whirlwind",
+      "effect": "The target is blown away, and a different Pokémon is dragged out. In the wild, this ends a battle against a single Pokémon."
+    },
+    "es": {
+      "name": "Remolino",
+      "effect": "Se lleva al objetivo, que es cambiado por otro Pokémon. Si es un Pokémon salvaje, acaba el combate."
+    },
+    "pt": {
+      "name": "Whirlwind",
+      "effect": "Se lleva al objetivo, que es cambiado por otro Pokémon. Si es un Pokémon salvaje, acaba el combate."
+    }
+  },
+  "slam": {
+    "en": {
+      "name": "Slam",
+      "effect": "The target is slammed with a long tail, vines, or the like to inflict damage."
+    },
+    "es": {
+      "name": "Atizar",
+      "effect": "Golpea con la cola o con lianas, por ejemplo, para causar daño al objetivo."
+    },
+    "pt": {
+      "name": "Slam",
+      "effect": "Golpea con la cola o con lianas, por ejemplo, para causar daño al objetivo."
+    }
+  },
+  "fly": {
+    "en": {
+      "name": "Fly",
+      "effect": "The user flies up into the sky on the first turn, then attacks on the next turn."
+    },
+    "es": {
+      "name": "Vuelo",
+      "effect": "El usuario vuela en el primer turno y ataca en el segundo."
+    },
+    "pt": {
+      "name": "Fly",
+      "effect": "El usuario vuela en el primer turno y ataca en el segundo."
+    }
+  },
+  "stomp": {
+    "en": {
+      "name": "Stomp",
+      "effect": "The user attacks by stomping on the target with a big foot. This may also make the target flinch."
+    },
+    "es": {
+      "name": "Pisotón",
+      "effect": "Tremendo pisotón que puede hacer que el objetivo se amedrente."
+    },
+    "pt": {
+      "name": "Stomp",
+      "effect": "Tremendo pisotón que puede hacer que el objetivo se amedrente."
+    }
+  },
+  "vine-whip": {
+    "en": {
+      "name": "Vine Whip",
+      "effect": "The target is struck with slender, whiplike vines to inflict damage."
+    },
+    "es": {
+      "name": "Látigo Cepa",
+      "effect": "Azota al objetivo con ramas finas."
+    },
+    "pt": {
+      "name": "Vine Whip",
+      "effect": "Azota al objetivo con ramas finas."
+    }
+  },
+  "double-kick": {
+    "en": {
+      "name": "Double Kick",
+      "effect": "The user attacks by kicking the target twice in a row using two feet."
+    },
+    "es": {
+      "name": "Doble Patada",
+      "effect": "Una patada doble. Golpea dos veces."
+    },
+    "pt": {
+      "name": "Double Kick",
+      "effect": "Una patada doble. Golpea dos veces."
+    }
+  },
+  "rolling-kick": {
+    "en": {
+      "name": "Rolling Kick",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Patada Giro",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Rolling Kick",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "jump-kick": {
+    "en": {
+      "name": "Jump Kick",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Patada Salto",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Jump Kick",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "mega-kick": {
+    "en": {
+      "name": "Mega Kick",
+      "effect": "The target is attacked by a kick launched with muscle-packed power."
+    },
+    "es": {
+      "name": "Megapatada",
+      "effect": "Patada de extrema fuerza."
+    },
+    "pt": {
+      "name": "Mega Kick",
+      "effect": "Patada de extrema fuerza."
+    }
+  },
+  "headbutt": {
+    "en": {
+      "name": "Headbutt",
+      "effect": "The user sticks out its head and attacks by charging straight into the target. This may also make the target flinch."
+    },
+    "es": {
+      "name": "Golpe Cabeza",
+      "effect": "Potente cabezazo que puede amedrentar al objetivo."
+    },
+    "pt": {
+      "name": "Headbutt",
+      "effect": "Potente cabezazo que puede amedrentar al objetivo."
+    }
+  },
+  "horn-attack": {
+    "en": {
+      "name": "Horn Attack",
+      "effect": "The target is jabbed with a sharply pointed horn to inflict damage."
+    },
+    "es": {
+      "name": "Cornada",
+      "effect": "Ataca al objetivo con una cornada."
+    },
+    "pt": {
+      "name": "Horn Attack",
+      "effect": "Ataca al objetivo con una cornada."
+    }
+  },
+  "sand-attack": {
+    "en": {
+      "name": "Sand Attack",
+      "effect": "Sand is hurled in the target's face, lowering the target's accuracy."
+    },
+    "es": {
+      "name": "Ataque Arena",
+      "effect": "Arroja arena a la cara y baja la Precisión."
+    },
+    "pt": {
+      "name": "Sand Attack",
+      "effect": "Arroja arena a la cara y baja la Precisión."
+    }
+  },
+  "horn-drill": {
+    "en": {
+      "name": "Horn Drill",
+      "effect": "The user stabs the target with a horn that rotates like a drill. The target faints instantly if this attack hits."
+    },
+    "es": {
+      "name": "Perforador",
+      "effect": "Ataque con un cuerno giratorio que fulmina de un solo golpe al objetivo si lo alcanza."
+    },
+    "pt": {
+      "name": "Horn Drill",
+      "effect": "Ataque con un cuerno giratorio que fulmina de un solo golpe al objetivo si lo alcanza."
+    }
+  },
+  "fury-attack": {
+    "en": {
+      "name": "Fury Attack",
+      "effect": "The user attacks by jabbing the target with a horn, a beak, or the like. This move hits two to five times in a row."
+    },
+    "es": {
+      "name": "Ataque Furia",
+      "effect": "Cornea al objetivo de dos a cinco veces."
+    },
+    "pt": {
+      "name": "Fury Attack",
+      "effect": "Cornea al objetivo de dos a cinco veces."
+    }
+  },
+  "take-down": {
+    "en": {
+      "name": "Take Down",
+      "effect": "A reckless full-body charge attack for slamming into the target. This also damages the user a little."
+    },
+    "es": {
+      "name": "Derribo",
+      "effect": "Carga desmedida que también hiere al agresor."
+    },
+    "pt": {
+      "name": "Take Down",
+      "effect": "Carga desmedida que también hiere al agresor."
+    }
+  },
+  "thrash": {
+    "en": {
+      "name": "Thrash",
+      "effect": "The user rampages and attacks for two to three turns. The user then becomes confused."
+    },
+    "es": {
+      "name": "Saña",
+      "effect": "Ataque de dos a tres turnos que acaba confundiendo al agresor."
+    },
+    "pt": {
+      "name": "Thrash",
+      "effect": "Ataque de dos a tres turnos que acaba confundiendo al agresor."
+    }
+  },
+  "body-slam": {
+    "en": {
+      "name": "Body Slam",
+      "effect": "The user attacks by dropping onto the target with its full body weight. This may also leave the target with paralysis."
+    },
+    "es": {
+      "name": "Golpe Cuerpo",
+      "effect": "Salta sobre el objetivo con todo su peso y puede llegar a paralizarlo."
+    },
+    "pt": {
+      "name": "Body Slam",
+      "effect": "Salta sobre el objetivo con todo su peso y puede llegar a paralizarlo."
+    }
+  },
+  "tackle": {
+    "en": {
+      "name": "Tackle",
+      "effect": "A physical attack in which the user charges and slams into the target with its whole body."
+    },
+    "es": {
+      "name": "Placaje",
+      "effect": "Embestida con todo el cuerpo."
+    },
+    "pt": {
+      "name": "Tackle",
+      "effect": "Embestida con todo el cuerpo."
+    }
+  },
+  "double-edge": {
+    "en": {
+      "name": "Double-Edge",
+      "effect": "A reckless life-risking tackle in which the user rushes the target. This also damages the user quite a lot."
+    },
+    "es": {
+      "name": "Doble Filo",
+      "effect": "Ataque arriesgado que también hiere al agresor."
+    },
+    "pt": {
+      "name": "Double-Edge",
+      "effect": "Ataque arriesgado que también hiere al agresor."
+    }
+  },
+  "wrap": {
+    "en": {
+      "name": "Wrap",
+      "effect": "A long body, vines, or the like are used to wrap and squeeze the target for four to five turns."
+    },
+    "es": {
+      "name": "Constricción",
+      "effect": "Oprime al objetivo de cuatro a cinco turnos con ramas o con su cuerpo."
+    },
+    "pt": {
+      "name": "Wrap",
+      "effect": "Oprime al objetivo de cuatro a cinco turnos con ramas o con su cuerpo."
+    }
+  },
+  "twineedle": {
+    "en": {
+      "name": "Twineedle",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Doble Ataque",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Twineedle",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "poison-sting": {
+    "en": {
+      "name": "Poison Sting",
+      "effect": "The user stabs the target with a poisonous stinger to inflict damage. This may also poison the target."
+    },
+    "es": {
+      "name": "Picotazo Veneno",
+      "effect": "Lanza un aguijón tóxico que puede envenenar al objetivo."
+    },
+    "pt": {
+      "name": "Poison Sting",
+      "effect": "Lanza un aguijón tóxico que puede envenenar al objetivo."
+    }
+  },
+  "tail-whip": {
+    "en": {
+      "name": "Tail Whip",
+      "effect": "The user wags its tail cutely, making opposing Pokémon less wary. This lowers their Defense stats."
+    },
+    "es": {
+      "name": "Agitacola",
+      "effect": "Agita la cola para bajar la Defensa del equipo rival."
+    },
+    "pt": {
+      "name": "Tail Whip",
+      "effect": "Agita la cola para bajar la Defensa del equipo rival."
+    }
+  },
+  "pin-missile": {
+    "en": {
+      "name": "Pin Missile",
+      "effect": "The user attacks by shooting sharp spikes at the target. This move hits two to five times in a row."
+    },
+    "es": {
+      "name": "Pin Misil",
+      "effect": "Lanza finas púas que hieren de dos a cinco veces."
+    },
+    "pt": {
+      "name": "Pin Missile",
+      "effect": "Lanza finas púas que hieren de dos a cinco veces."
+    }
+  },
+  "growl": {
+    "en": {
+      "name": "Growl",
+      "effect": "The user growls in an endearing way, making opposing Pokémon less wary. This lowers their Attack stats."
+    },
+    "es": {
+      "name": "Gruñido",
+      "effect": "Dulce gruñido que reduce el Ataque del equipo rival."
+    },
+    "pt": {
+      "name": "Growl",
+      "effect": "Dulce gruñido que reduce el Ataque del equipo rival."
+    }
+  },
+  "sing": {
+    "en": {
+      "name": "Sing",
+      "effect": "A soothing lullaby is sung in a beautiful voice that puts the target to sleep."
+    },
+    "es": {
+      "name": "Canto",
+      "effect": "Cancioncilla que hace dormir profundamente al objetivo."
+    },
+    "pt": {
+      "name": "Sing",
+      "effect": "Cancioncilla que hace dormir profundamente al objetivo."
+    }
+  },
+  "roar": {
+    "en": {
+      "name": "Roar",
+      "effect": "The target is scared off, and a different Pokémon is dragged out. In the wild, this ends a battle against a single Pokémon."
+    },
+    "es": {
+      "name": "Rugido",
+      "effect": "Se lleva al objetivo, que es cambiado por otro Pokémon. Si es un Pokémon salvaje, acaba el combate."
+    },
+    "pt": {
+      "name": "Roar",
+      "effect": "Se lleva al objetivo, que es cambiado por otro Pokémon. Si es un Pokémon salvaje, acaba el combate."
+    }
+  },
+  "supersonic": {
+    "en": {
+      "name": "Supersonic",
+      "effect": "The user generates odd sound waves from its body that confuse the target."
+    },
+    "es": {
+      "name": "Supersónico",
+      "effect": "Raras ondas sónicas que confunden al objetivo."
+    },
+    "pt": {
+      "name": "Supersonic",
+      "effect": "Raras ondas sónicas que confunden al objetivo."
+    }
+  },
+  "sonic-boom": {
+    "en": {
+      "name": "Sonic Boom",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Bomba Sónica",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Sonic Boom",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "acid": {
+    "en": {
+      "name": "Acid",
+      "effect": "Opposing Pokémon are attacked with a spray of harsh acid. This may also lower their Sp. Def stats."
+    },
+    "es": {
+      "name": "Ácido",
+      "effect": "Rocía a los enemigos con un ácido corrosivo. Puede bajar la Defensa Especial."
+    },
+    "pt": {
+      "name": "Acid",
+      "effect": "Rocía a los enemigos con un ácido corrosivo. Puede bajar la Defensa Especial."
+    }
+  },
+  "disable": {
+    "en": {
+      "name": "Disable",
+      "effect": "For four turns, the target will be unable to use whichever move it last used."
+    },
+    "es": {
+      "name": "Anulación",
+      "effect": "Desactiva el último movimiento del objetivo durante cuatro turnos."
+    },
+    "pt": {
+      "name": "Disable",
+      "effect": "Desactiva el último movimiento del objetivo durante cuatro turnos."
+    }
+  },
+  "ember": {
+    "en": {
+      "name": "Ember",
+      "effect": "The target is attacked with small flames. This may also leave the target with a burn."
+    },
+    "es": {
+      "name": "Ascuas",
+      "effect": "Ataca con llamas pequeñas que pueden causar quemaduras."
+    },
+    "pt": {
+      "name": "Ember",
+      "effect": "Ataca con llamas pequeñas que pueden causar quemaduras."
+    }
+  },
+  "hydro-pump": {
+    "en": {
+      "name": "Hydro Pump",
+      "effect": "The target is blasted by a huge volume of water launched under great pressure."
+    },
+    "es": {
+      "name": "Hidrobomba",
+      "effect": "Lanza una gran masa de agua a presión para atacar."
+    },
+    "pt": {
+      "name": "Hydro Pump",
+      "effect": "Lanza una gran masa de agua a presión para atacar."
+    }
+  },
+  "mist": {
+    "en": {
+      "name": "Mist",
+      "effect": "The user cloaks itself and its allies in a white mist that prevents any of their stats from being lowered for five turns."
+    },
+    "es": {
+      "name": "Neblina",
+      "effect": "Rodea de fina niebla al usuario y protege las características de su equipo durante cinco turnos."
+    },
+    "pt": {
+      "name": "Mist",
+      "effect": "Rodea de fina niebla al usuario y protege las características de su equipo durante cinco turnos."
+    }
+  },
+  "water-gun": {
+    "en": {
+      "name": "Water Gun",
+      "effect": "The target is blasted with a forceful shot of water."
+    },
+    "es": {
+      "name": "Pistola Agua",
+      "effect": "Ataca disparando agua con gran potencia."
+    },
+    "pt": {
+      "name": "Water Gun",
+      "effect": "Ataca disparando agua con gran potencia."
+    }
+  },
+  "flamethrower": {
+    "en": {
+      "name": "Flamethrower",
+      "effect": "The target is scorched with an intense blast of fire. This may also leave the target with a burn."
+    },
+    "es": {
+      "name": "Lanzallamas",
+      "effect": "Ataca con una gran ráfaga de fuego que puede causar quemaduras."
+    },
+    "pt": {
+      "name": "Flamethrower",
+      "effect": "Ataca con una gran ráfaga de fuego que puede causar quemaduras."
+    }
+  },
+  "surf": {
+    "en": {
+      "name": "Surf",
+      "effect": "The user attacks everything around it by swamping its surroundings with a giant wave."
+    },
+    "es": {
+      "name": "Surf",
+      "effect": "Inunda el terreno de combate con una ola gigante."
+    },
+    "pt": {
+      "name": "Surf",
+      "effect": "Inunda el terreno de combate con una ola gigante."
+    }
+  },
+  "ice-beam": {
+    "en": {
+      "name": "Ice Beam",
+      "effect": "The target is struck with an icy-cold beam of energy. This may also leave the target frozen."
+    },
+    "es": {
+      "name": "Rayo Hielo",
+      "effect": "Rayo de hielo que puede llegar a congelar."
+    },
+    "pt": {
+      "name": "Ice Beam",
+      "effect": "Rayo de hielo que puede llegar a congelar."
+    }
+  },
+  "blizzard": {
+    "en": {
+      "name": "Blizzard",
+      "effect": "A howling blizzard is summoned to strike opposing Pokémon. This may also leave the opposing Pokémon frozen."
+    },
+    "es": {
+      "name": "Ventisca",
+      "effect": "Tormenta de hielo que puede llegar a congelar."
+    },
+    "pt": {
+      "name": "Blizzard",
+      "effect": "Tormenta de hielo que puede llegar a congelar."
+    }
+  },
+  "psybeam": {
+    "en": {
+      "name": "Psybeam",
+      "effect": "The target is attacked with a peculiar ray. This may also confuse the target."
+    },
+    "es": {
+      "name": "Psicorrayo",
+      "effect": "Extraño rayo que puede causar confusión."
+    },
+    "pt": {
+      "name": "Psybeam",
+      "effect": "Extraño rayo que puede causar confusión."
+    }
+  },
+  "bubble-beam": {
+    "en": {
+      "name": "Bubble Beam",
+      "effect": "A spray of bubbles is forcefully ejected at the target. This may also lower the target's Speed stat."
+    },
+    "es": {
+      "name": "Rayo Burbuja",
+      "effect": "Diluvio de burbujas que puede bajar la Velocidad."
+    },
+    "pt": {
+      "name": "Bubble Beam",
+      "effect": "Diluvio de burbujas que puede bajar la Velocidad."
+    }
+  },
+  "aurora-beam": {
+    "en": {
+      "name": "Aurora Beam",
+      "effect": "The target is hit with a rainbow-colored beam. This may also lower the target's Attack stat."
+    },
+    "es": {
+      "name": "Rayo Aurora",
+      "effect": "Rayo multicolor que puede reducir el Ataque."
+    },
+    "pt": {
+      "name": "Aurora Beam",
+      "effect": "Rayo multicolor que puede reducir el Ataque."
+    }
+  },
+  "drill-peck": {
+    "en": {
+      "name": "Drill Peck",
+      "effect": "A corkscrewing attack that strikes the target with a sharp beak acting as a drill."
+    },
+    "es": {
+      "name": "Pico Taladro",
+      "effect": "Picotazo giratorio y perforador muy potente."
+    },
+    "pt": {
+      "name": "Drill Peck",
+      "effect": "Picotazo giratorio y perforador muy potente."
+    }
+  },
+  "hyper-beam": {
+    "en": {
+      "name": "Hyper Beam",
+      "effect": "The target is attacked with a powerful beam. The user can't move on the next turn."
+    },
+    "es": {
+      "name": "Hiperrayo",
+      "effect": "Es eficaz, pero el atacante deberá descansar en el siguiente turno."
+    },
+    "pt": {
+      "name": "Hyper Beam",
+      "effect": "Es eficaz, pero el atacante deberá descansar en el siguiente turno."
+    }
+  },
+  "peck": {
+    "en": {
+      "name": "Peck",
+      "effect": "The target is jabbed with a sharply pointed beak or horn to inflict damage."
+    },
+    "es": {
+      "name": "Picotazo",
+      "effect": "Ensarta al objetivo con un cuerno o pico punzante."
+    },
+    "pt": {
+      "name": "Peck",
+      "effect": "Ensarta al objetivo con un cuerno o pico punzante."
+    }
+  },
+  "submission": {
+    "en": {
+      "name": "Submission",
+      "effect": "The user grabs the target and recklessly dives for the ground. This also damages the user a little."
+    },
+    "es": {
+      "name": "Sumisión",
+      "effect": "El usuario se lanza al suelo con el oponente en brazos y también se hace un poco de daño."
+    },
+    "pt": {
+      "name": "Submission",
+      "effect": "El usuario se lanza al suelo con el oponente en brazos y también se hace un poco de daño."
+    }
+  },
+  "bite": {
+    "en": {
+      "name": "Bite",
+      "effect": "The target is bitten with viciously sharp fangs. This may also make the target flinch."
+    },
+    "es": {
+      "name": "Mordisco",
+      "effect": "Un voraz bocado que puede amedrentar al objetivo."
+    },
+    "pt": {
+      "name": "Bite",
+      "effect": "Un voraz bocado que puede amedrentar al objetivo."
+    }
+  },
+  "low-kick": {
+    "en": {
+      "name": "Low Kick",
+      "effect": "A powerful low kick that makes the target fall over. The heavier the target, the greater the move's power."
+    },
+    "es": {
+      "name": "Patada Baja",
+      "effect": "Patada baja que derriba al oponente. Cuanto más pesa el objetivo, más daño le causa."
+    },
+    "pt": {
+      "name": "Low Kick",
+      "effect": "Patada baja que derriba al oponente. Cuanto más pesa el objetivo, más daño le causa."
+    }
+  },
+  "seismic-toss": {
+    "en": {
+      "name": "Seismic Toss",
+      "effect": "The target is thrown using the power of gravity. It inflicts damage equal to the user's level."
+    },
+    "es": {
+      "name": "Sísmico",
+      "effect": "Aprovecha la gravedad para derribar al objetivo. Le resta tantos PS como nivel tenga el usuario."
+    },
+    "pt": {
+      "name": "Seismic Toss",
+      "effect": "Aprovecha la gravedad para derribar al objetivo. Le resta tantos PS como nivel tenga el usuario."
+    }
+  },
+  "counter": {
+    "en": {
+      "name": "Counter",
+      "effect": "A retaliatory attack that counters any physical move, inflicting double the damage taken."
+    },
+    "es": {
+      "name": "Contraataque",
+      "effect": "Devuelve un golpe físico por duplicado."
+    },
+    "pt": {
+      "name": "Counter",
+      "effect": "Devuelve un golpe físico por duplicado."
+    }
+  },
+  "strength": {
+    "en": {
+      "name": "Strength",
+      "effect": "The target is slugged with a punch thrown at maximum power."
+    },
+    "es": {
+      "name": "Fuerza",
+      "effect": "Propina un potente puñetazo con todas sus fuerzas."
+    },
+    "pt": {
+      "name": "Strength",
+      "effect": "Propina un potente puñetazo con todas sus fuerzas."
+    }
+  },
+  "absorb": {
+    "en": {
+      "name": "Absorb",
+      "effect": "A nutrient-draining attack. The user's HP is restored by up to half the damage taken by the target."
+    },
+    "es": {
+      "name": "Absorber",
+      "effect": "Un ataque que absorbe nutrientes. Quien lo usa recupera la mitad de los PS del daño que produce."
+    },
+    "pt": {
+      "name": "Absorb",
+      "effect": "Un ataque que absorbe nutrientes. Quien lo usa recupera la mitad de los PS del daño que produce."
+    }
+  },
+  "growth": {
+    "en": {
+      "name": "Growth",
+      "effect": "The user's body grows all at once, boosting the Attack and Sp. Atk stats."
+    },
+    "es": {
+      "name": "Desarrollo",
+      "effect": "Hace que su cuerpo crezca a marchas forzadas con lo que aumenta su Ataque y Ataque Especial."
+    },
+    "pt": {
+      "name": "Growth",
+      "effect": "Hace que su cuerpo crezca a marchas forzadas con lo que aumenta su Ataque y Ataque Especial."
+    }
+  },
+  "leech-seed": {
+    "en": {
+      "name": "Leech Seed",
+      "effect": "A seed is planted on the target. It steals some HP from the target every turn."
+    },
+    "es": {
+      "name": "Drenadoras",
+      "effect": "Planta semillas que absorben PS del objetivo en cada turno y que le sirven para recuperarse."
+    },
+    "pt": {
+      "name": "Leech Seed",
+      "effect": "Planta semillas que absorben PS del objetivo en cada turno y que le sirven para recuperarse."
+    }
+  },
+  "mega-drain": {
+    "en": {
+      "name": "Mega Drain",
+      "effect": "A nutrient-draining attack. The user's HP is restored by up to half the damage taken by the target."
+    },
+    "es": {
+      "name": "Megaagotar",
+      "effect": "Un ataque que absorbe nutrientes. Quien lo usa recupera la mitad de los PS del daño que produce."
+    },
+    "pt": {
+      "name": "Mega Drain",
+      "effect": "Un ataque que absorbe nutrientes. Quien lo usa recupera la mitad de los PS del daño que produce."
+    }
+  },
+  "razor-leaf": {
+    "en": {
+      "name": "Razor Leaf",
+      "effect": "Sharp-edged leaves are launched to slash at opposing Pokémon. This move has a heightened chance of landing a critical hit."
+    },
+    "es": {
+      "name": "Hoja Afilada",
+      "effect": "Corta con hojas afiladas. Un ataque que suele ser crítico."
+    },
+    "pt": {
+      "name": "Razor Leaf",
+      "effect": "Corta con hojas afiladas. Un ataque que suele ser crítico."
+    }
+  },
+  "solar-beam": {
+    "en": {
+      "name": "Solar Beam",
+      "effect": "The user gathers light on the first turn, then blasts a bundled beam on the next turn."
+    },
+    "es": {
+      "name": "Rayo Solar",
+      "effect": "El usuario absorbe luz en el primer turno y en el segundo lanza un potente rayo de energía."
+    },
+    "pt": {
+      "name": "Solar Beam",
+      "effect": "El usuario absorbe luz en el primer turno y en el segundo lanza un potente rayo de energía."
+    }
+  },
+  "poison-powder": {
+    "en": {
+      "name": "Poison Powder",
+      "effect": "The user scatters a cloud of poisonous dust that poisons the target."
+    },
+    "es": {
+      "name": "Polvo Veneno",
+      "effect": "Polvo tóxico que envenena al objetivo."
+    },
+    "pt": {
+      "name": "Poison Powder",
+      "effect": "Polvo tóxico que envenena al objetivo."
+    }
+  },
+  "stun-spore": {
+    "en": {
+      "name": "Stun Spore",
+      "effect": "The user scatters a cloud of numbing powder that paralyzes the target."
+    },
+    "es": {
+      "name": "Paralizador",
+      "effect": "Esparce polvo que paraliza al objetivo."
+    },
+    "pt": {
+      "name": "Stun Spore",
+      "effect": "Esparce polvo que paraliza al objetivo."
+    }
+  },
+  "petal-dance": {
+    "en": {
+      "name": "Petal Dance",
+      "effect": "The user attacks the target by scattering petals for two to three turns. The user then becomes confused."
+    },
+    "es": {
+      "name": "Danza Pétalo",
+      "effect": "Lanza pétalos de dos a tres turnos y acaba confundiendo al atacante."
+    },
+    "pt": {
+      "name": "Petal Dance",
+      "effect": "Lanza pétalos de dos a tres turnos y acaba confundiendo al atacante."
+    }
+  },
+  "string-shot": {
+    "en": {
+      "name": "String Shot",
+      "effect": "The user blows silk from its mouth that binds opposing Pokémon and harshly lowers their Speed stats."
+    },
+    "es": {
+      "name": "Disparo Demora",
+      "effect": "Lanza seda a los rivales y reduce mucho su Velocidad."
+    },
+    "pt": {
+      "name": "String Shot",
+      "effect": "Lanza seda a los rivales y reduce mucho su Velocidad."
+    }
+  },
+  "sleep-powder": {
+    "en": {
+      "name": "Sleep Powder",
+      "effect": "The user scatters a cloud of soporific dust that puts the target to sleep."
+    },
+    "es": {
+      "name": "Somnífero",
+      "effect": "Esparce polvo que duerme al objetivo."
+    },
+    "pt": {
+      "name": "Sleep Powder",
+      "effect": "Esparce polvo que duerme al objetivo."
+    }
+  },
+  "leer": {
+    "en": {
+      "name": "Leer",
+      "effect": "The user gives opposing Pokémon an intimidating leer that lowers their Defense stats."
+    },
+    "es": {
+      "name": "Malicioso",
+      "effect": "Intimida a los rivales para bajar su Defensa."
+    },
+    "pt": {
+      "name": "Leer",
+      "effect": "Intimida a los rivales para bajar su Defensa."
+    }
+  },
+  "fire-spin": {
+    "en": {
+      "name": "Fire Spin",
+      "effect": "The user traps the target inside a fierce vortex of fire that inflicts damage for four to five turns."
+    },
+    "es": {
+      "name": "Giro Fuego",
+      "effect": "Un aro de fuego que atrapa al objetivo de cuatro a cinco turnos."
+    },
+    "pt": {
+      "name": "Fire Spin",
+      "effect": "Un aro de fuego que atrapa al objetivo de cuatro a cinco turnos."
+    }
+  },
+  "dragon-rage": {
+    "en": {
+      "name": "Dragon Rage",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Furia Dragón",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Dragon Rage",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "thunder-shock": {
+    "en": {
+      "name": "Thunder Shock",
+      "effect": "The user attacks the target with a jolt of electricity. This may also leave the target with paralysis."
+    },
+    "es": {
+      "name": "Impactrueno",
+      "effect": "Ataque eléctrico que puede paralizar al objetivo."
+    },
+    "pt": {
+      "name": "Thunder Shock",
+      "effect": "Ataque eléctrico que puede paralizar al objetivo."
+    }
+  },
+  "thunderbolt": {
+    "en": {
+      "name": "Thunderbolt",
+      "effect": "The user attacks the target with a strong electric blast. This may also leave the target with paralysis."
+    },
+    "es": {
+      "name": "Rayo",
+      "effect": "Potente ataque eléctrico que puede paralizar al objetivo."
+    },
+    "pt": {
+      "name": "Thunderbolt",
+      "effect": "Potente ataque eléctrico que puede paralizar al objetivo."
+    }
+  },
+  "fissure": {
+    "en": {
+      "name": "Fissure",
+      "effect": "The user opens up a fissure in the ground and drops the target in. The target faints instantly if this attack hits."
+    },
+    "es": {
+      "name": "Fisura",
+      "effect": "Abre una grieta en el suelo y mete al objetivo en ella. Fulmina en un golpe."
+    },
+    "pt": {
+      "name": "Fissure",
+      "effect": "Abre una grieta en el suelo y mete al objetivo en ella. Fulmina en un golpe."
+    }
+  },
+  "thunder-wave": {
+    "en": {
+      "name": "Thunder Wave",
+      "effect": "The user launches a weak jolt of electricity that paralyzes the target."
+    },
+    "es": {
+      "name": "Onda Trueno",
+      "effect": "Una ligera descarga que paraliza al objetivo si lo alcanza."
+    },
+    "pt": {
+      "name": "Thunder Wave",
+      "effect": "Una ligera descarga que paraliza al objetivo si lo alcanza."
+    }
+  },
+  "rock-throw": {
+    "en": {
+      "name": "Rock Throw",
+      "effect": "The user picks up and throws a small rock at the target to inflict damage."
+    },
+    "es": {
+      "name": "Lanzarrocas",
+      "effect": "Tira una pequeña roca al objetivo."
+    },
+    "pt": {
+      "name": "Rock Throw",
+      "effect": "Tira una pequeña roca al objetivo."
+    }
+  },
+  "thunder": {
+    "en": {
+      "name": "Thunder",
+      "effect": "A wicked thunderbolt is dropped on the target to inflict damage. This may also leave the target with paralysis."
+    },
+    "es": {
+      "name": "Trueno",
+      "effect": "Un poderoso rayo que daña al objetivo y puede paralizarlo."
+    },
+    "pt": {
+      "name": "Thunder",
+      "effect": "Un poderoso rayo que daña al objetivo y puede paralizarlo."
+    }
+  },
+  "confusion": {
+    "en": {
+      "name": "Confusion",
+      "effect": "The target is hit with a weak telekinetic force to inflict damage. This may also confuse the target."
+    },
+    "es": {
+      "name": "Confusión",
+      "effect": "Débil ataque telequinético que puede causar confusión."
+    },
+    "pt": {
+      "name": "Confusion",
+      "effect": "Débil ataque telequinético que puede causar confusión."
+    }
+  },
+  "dig": {
+    "en": {
+      "name": "Dig",
+      "effect": "The user burrows into the ground on the first turn, then attacks on the next turn."
+    },
+    "es": {
+      "name": "Excavar",
+      "effect": "El usuario cava durante el primer turno y ataca en el segundo."
+    },
+    "pt": {
+      "name": "Dig",
+      "effect": "El usuario cava durante el primer turno y ataca en el segundo."
+    }
+  },
+  "meditate": {
+    "en": {
+      "name": "Meditate",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Meditación",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Meditate",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "toxic": {
+    "en": {
+      "name": "Toxic",
+      "effect": "A move that leaves the target badly poisoned. Its poison damage worsens every turn."
+    },
+    "es": {
+      "name": "Tóxico",
+      "effect": "Envenena gravemente al objetivo y causa un daño mayor en cada turno."
+    },
+    "pt": {
+      "name": "Toxic",
+      "effect": "Envenena gravemente al objetivo y causa un daño mayor en cada turno."
+    }
+  },
+  "psychic": {
+    "en": {
+      "name": "Psychic",
+      "effect": "The target is hit with a strong telekinetic force to inflict damage. This may also lower the target’s Sp. Def stat."
+    },
+    "es": {
+      "name": "Psíquico",
+      "effect": "Fuerte ataque telequinético que puede bajar la Defensa Especial del objetivo."
+    },
+    "pt": {
+      "name": "Psychic",
+      "effect": "Fuerte ataque telequinético que puede bajar la Defensa Especial del objetivo."
+    }
+  },
+  "agility": {
+    "en": {
+      "name": "Agility",
+      "effect": "The user relaxes and lightens its body to move faster. This sharply boosts its Speed stat."
+    },
+    "es": {
+      "name": "Agilidad",
+      "effect": "Relaja el cuerpo para ganar mucha Velocidad."
+    },
+    "pt": {
+      "name": "Agility",
+      "effect": "Relaja el cuerpo para ganar mucha Velocidad."
+    }
+  },
+  "quick-attack": {
+    "en": {
+      "name": "Quick Attack",
+      "effect": "The user lunges at the target to inflict damage, moving at blinding speed. This move always goes first."
+    },
+    "es": {
+      "name": "Ataque Rápido",
+      "effect": "Ataca al objetivo a gran velocidad. Este movimiento tiene prioridad alta."
+    },
+    "pt": {
+      "name": "Quick Attack",
+      "effect": "Ataca al objetivo a gran velocidad. Este movimiento tiene prioridad alta."
+    }
+  },
+  "rage": {
+    "en": {
+      "name": "Rage",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Furia",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Rage",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "night-shade": {
+    "en": {
+      "name": "Night Shade",
+      "effect": "The user makes the target see a frightening mirage. It inflicts damage equal to the user's level."
+    },
+    "es": {
+      "name": "Tinieblas",
+      "effect": "Produce un espejismo ante el objetivo, que pierde tantos PS como nivel tenga el usuario."
+    },
+    "pt": {
+      "name": "Night Shade",
+      "effect": "Produce un espejismo ante el objetivo, que pierde tantos PS como nivel tenga el usuario."
+    }
+  },
+  "teleport": {
+    "en": {
+      "name": "Teleport",
+      "effect": "The user switches places with a party Pokémon in waiting, if any. If a wild Pokémon uses this move, it flees."
+    },
+    "es": {
+      "name": "Teletransporte",
+      "effect": "Permite al usuario cambiarse por otro Pokémon del equipo, si es posible. Si un Pokémon salvaje usa este movimiento, huye del combate."
+    },
+    "pt": {
+      "name": "Teleport",
+      "effect": "Permite al usuario cambiarse por otro Pokémon del equipo, si es posible. Si un Pokémon salvaje usa este movimiento, huye del combate."
+    }
+  },
+  "mimic": {
+    "en": {
+      "name": "Mimic",
+      "effect": "The user copies the move last used by the target. The copied move can be used until the user of Mimic leaves the battle."
+    },
+    "es": {
+      "name": "Mimético",
+      "effect": "Copia el último movimiento usado por el objetivo, y puede utilizarlo mientras esté en el combate."
+    },
+    "pt": {
+      "name": "Mimic",
+      "effect": "Copia el último movimiento usado por el objetivo, y puede utilizarlo mientras esté en el combate."
+    }
+  },
+  "screech": {
+    "en": {
+      "name": "Screech",
+      "effect": "An earsplitting screech harshly lowers the target's Defense stat."
+    },
+    "es": {
+      "name": "Chirrido",
+      "effect": "Alarido agudo que reduce mucho la Defensa del objetivo."
+    },
+    "pt": {
+      "name": "Screech",
+      "effect": "Alarido agudo que reduce mucho la Defensa del objetivo."
+    }
+  },
+  "double-team": {
+    "en": {
+      "name": "Double Team",
+      "effect": "By moving rapidly, the user makes illusory copies of itself to boost its evasiveness."
+    },
+    "es": {
+      "name": "Doble Equipo",
+      "effect": "Crea copias de sí mismo para mejorar la Evasión."
+    },
+    "pt": {
+      "name": "Double Team",
+      "effect": "Crea copias de sí mismo para mejorar la Evasión."
+    }
+  },
+  "recover": {
+    "en": {
+      "name": "Recover",
+      "effect": "The user regenerates its cells, restoring its own HP by up to half its max HP."
+    },
+    "es": {
+      "name": "Recuperación",
+      "effect": "Restaura hasta la mitad de los PS máximos."
+    },
+    "pt": {
+      "name": "Recover",
+      "effect": "Restaura hasta la mitad de los PS máximos."
+    }
+  },
+  "minimize": {
+    "en": {
+      "name": "Minimize",
+      "effect": "The user compresses its body to make itself look smaller, which sharply boosts its evasiveness."
+    },
+    "es": {
+      "name": "Reducción",
+      "effect": "El usuario mengua para aumentar mucho la Evasión."
+    },
+    "pt": {
+      "name": "Minimize",
+      "effect": "El usuario mengua para aumentar mucho la Evasión."
+    }
+  },
+  "harden": {
+    "en": {
+      "name": "Harden",
+      "effect": "The user stiffens all the muscles in its body to boost its Defense stat."
+    },
+    "es": {
+      "name": "Fortaleza",
+      "effect": "Tensa la musculatura del usuario para aumentar la Defensa."
+    },
+    "pt": {
+      "name": "Harden",
+      "effect": "Tensa la musculatura del usuario para aumentar la Defensa."
+    }
+  },
+  "smokescreen": {
+    "en": {
+      "name": "Smokescreen",
+      "effect": "The user releases an obscuring cloud of smoke or ink. This lowers the target's accuracy."
+    },
+    "es": {
+      "name": "Pantalla de Humo",
+      "effect": "Baja la Precisión del objetivo con una nube de humo o tinta."
+    },
+    "pt": {
+      "name": "Smokescreen",
+      "effect": "Baja la Precisión del objetivo con una nube de humo o tinta."
+    }
+  },
+  "defense-curl": {
+    "en": {
+      "name": "Defense Curl",
+      "effect": "The user curls up and boosts its Defense stat."
+    },
+    "es": {
+      "name": "Rizo Defensa",
+      "effect": "Se enrosca para ocultar sus puntos débiles y aumentar la Defensa."
+    },
+    "pt": {
+      "name": "Defense Curl",
+      "effect": "Se enrosca para ocultar sus puntos débiles y aumentar la Defensa."
+    }
+  },
+  "withdraw": {
+    "en": {
+      "name": "Withdraw",
+      "effect": "The user withdraws its body into its hard shell, boosting its Defense stat."
+    },
+    "es": {
+      "name": "Refugio",
+      "effect": "El usuario se resguarda en su coraza, por lo que le sube la Defensa."
+    },
+    "pt": {
+      "name": "Withdraw",
+      "effect": "El usuario se resguarda en su coraza, por lo que le sube la Defensa."
+    }
+  },
+  "barrier": {
+    "en": {
+      "name": "Barrier",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Barrera",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Barrier",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "confuse-ray": {
+    "en": {
+      "name": "Confuse Ray",
+      "effect": "The target is exposed to a sinister ray that causes confusion."
+    },
+    "es": {
+      "name": "Rayo Confuso",
+      "effect": "Rayo siniestro que confunde al objetivo."
+    },
+    "pt": {
+      "name": "Confuse Ray",
+      "effect": "Rayo siniestro que confunde al objetivo."
+    }
+  },
+  "light-screen": {
+    "en": {
+      "name": "Light Screen",
+      "effect": "A wondrous wall of light is put up to reduce damage from special moves for five turns."
+    },
+    "es": {
+      "name": "Pantalla de Luz",
+      "effect": "Pared de luz que reduce durante cinco turnos el daño producido por los ataques especiales."
+    },
+    "pt": {
+      "name": "Light Screen",
+      "effect": "Pared de luz que reduce durante cinco turnos el daño producido por los ataques especiales."
+    }
+  },
+  "haze": {
+    "en": {
+      "name": "Haze",
+      "effect": "The user creates a haze that eliminates every stat change among all the Pokémon engaged in battle."
+    },
+    "es": {
+      "name": "Niebla",
+      "effect": "Neblina que elimina los cambios de características de todos los Pokémon en combate."
+    },
+    "pt": {
+      "name": "Haze",
+      "effect": "Neblina que elimina los cambios de características de todos los Pokémon en combate."
+    }
+  },
+  "hypnosis": {
+    "en": {
+      "name": "Hypnosis",
+      "effect": "The user employs hypnotic suggestion to make the target fall asleep."
+    },
+    "es": {
+      "name": "Hipnosis",
+      "effect": "Ataque hipnótico que hace dormir profundamente al objetivo."
+    },
+    "pt": {
+      "name": "Hypnosis",
+      "effect": "Ataque hipnótico que hace dormir profundamente al objetivo."
+    }
+  },
+  "reflect": {
+    "en": {
+      "name": "Reflect",
+      "effect": "A wondrous wall of light is put up to reduce damage from physical moves for five turns."
+    },
+    "es": {
+      "name": "Reflejo",
+      "effect": "Pared de luz que reduce durante cinco turnos el daño producido por los ataques físicos."
+    },
+    "pt": {
+      "name": "Reflect",
+      "effect": "Pared de luz que reduce durante cinco turnos el daño producido por los ataques físicos."
+    }
+  },
+  "bide": {
+    "en": {
+      "name": "Bide",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Venganza",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Bide",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "focus-energy": {
+    "en": {
+      "name": "Focus Energy",
+      "effect": "The user takes a deep breath and focuses so that its future attacks have a heightened chance of landing critical hits."
+    },
+    "es": {
+      "name": "Foco Energía",
+      "effect": "Concentra energía para aumentar las posibilidades de asestar un golpe crítico."
+    },
+    "pt": {
+      "name": "Focus Energy",
+      "effect": "Concentra energía para aumentar las posibilidades de asestar un golpe crítico."
+    }
+  },
+  "metronome": {
+    "en": {
+      "name": "Metronome",
+      "effect": "The user waggles a finger and stimulates its brain into randomly using nearly any move."
+    },
+    "es": {
+      "name": "Metrónomo",
+      "effect": "Mueve un dedo y estimula su cerebro para usar al azar casi cualquier movimiento."
+    },
+    "pt": {
+      "name": "Metronome",
+      "effect": "Mueve un dedo y estimula su cerebro para usar al azar casi cualquier movimiento."
+    }
+  },
+  "mirror-move": {
+    "en": {
+      "name": "Mirror Move",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Espejo",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Mirror Move",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "self-destruct": {
+    "en": {
+      "name": "Self-Destruct",
+      "effect": "The user attacks everything around it by causing an explosion. The user faints upon using this move."
+    },
+    "es": {
+      "name": "Autodestrucción",
+      "effect": "El atacante explota y hiere a todos a su alrededor. El usuario se debilita de inmediato."
+    },
+    "pt": {
+      "name": "Self-Destruct",
+      "effect": "El atacante explota y hiere a todos a su alrededor. El usuario se debilita de inmediato."
+    }
+  },
+  "smog": {
+    "en": {
+      "name": "Smog",
+      "effect": "The target is attacked with a discharge of filthy gases. This may also poison the target."
+    },
+    "es": {
+      "name": "Polución",
+      "effect": "Lanza un ataque con gases tóxicos que pueden llegar a envenenar."
+    },
+    "pt": {
+      "name": "Smog",
+      "effect": "Lanza un ataque con gases tóxicos que pueden llegar a envenenar."
+    }
+  },
+  "lick": {
+    "en": {
+      "name": "Lick",
+      "effect": "The user licks the target with a long tongue to inflict damage. This may also leave the target with paralysis."
+    },
+    "es": {
+      "name": "Lengüetazo",
+      "effect": "Una lengua ataca al objetivo. Puede causar parálisis."
+    },
+    "pt": {
+      "name": "Lick",
+      "effect": "Una lengua ataca al objetivo. Puede causar parálisis."
+    }
+  },
+  "egg-bomb": {
+    "en": {
+      "name": "Egg Bomb",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Bomba Huevo",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Egg Bomb",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "sludge": {
+    "en": {
+      "name": "Sludge",
+      "effect": "The user hurls unsanitary sludge at the target to inflict damage. This may also poison the target."
+    },
+    "es": {
+      "name": "Residuos",
+      "effect": "Arroja residuos al objetivo. Puede llegar a envenenar."
+    },
+    "pt": {
+      "name": "Sludge",
+      "effect": "Arroja residuos al objetivo. Puede llegar a envenenar."
+    }
+  },
+  "earthquake": {
+    "en": {
+      "name": "Earthquake",
+      "effect": "The user sets off an earthquake that strikes every Pokémon around it."
+    },
+    "es": {
+      "name": "Terremoto",
+      "effect": "Un terremoto que afecta a todos los Pokémon que estén a su alrededor."
+    },
+    "pt": {
+      "name": "Earthquake",
+      "effect": "Un terremoto que afecta a todos los Pokémon que estén a su alrededor."
+    }
+  },
+  "bone-club": {
+    "en": {
+      "name": "Bone Club",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Hueso Palo",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Bone Club",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "waterfall": {
+    "en": {
+      "name": "Waterfall",
+      "effect": "The user charges at the target and may make it flinch."
+    },
+    "es": {
+      "name": "Cascada",
+      "effect": "Embiste con un gran impulso que puede llegar a amedrentar."
+    },
+    "pt": {
+      "name": "Waterfall",
+      "effect": "Embiste con un gran impulso que puede llegar a amedrentar."
+    }
+  },
+  "swift": {
+    "en": {
+      "name": "Swift",
+      "effect": "Star-shaped rays are shot at opposing Pokémon. This attack never misses."
+    },
+    "es": {
+      "name": "Meteoros",
+      "effect": "Lanza rayos en forma de estrella que no fallan nunca."
+    },
+    "pt": {
+      "name": "Swift",
+      "effect": "Lanza rayos en forma de estrella que no fallan nunca."
+    }
+  },
+  "clamp": {
+    "en": {
+      "name": "Clamp",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Tenaza",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Clamp",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "skull-bash": {
+    "en": {
+      "name": "Skull Bash",
+      "effect": "The user tucks in its head to raise its Defense stat on the first turn, then rams the target on the next turn."
+    },
+    "es": {
+      "name": "Cabezazo",
+      "effect": "El usuario se prepara y sube su Defensa en el primer turno y en el segundo arremete con un cabezazo."
+    },
+    "pt": {
+      "name": "Skull Bash",
+      "effect": "El usuario se prepara y sube su Defensa en el primer turno y en el segundo arremete con un cabezazo."
+    }
+  },
+  "spike-cannon": {
+    "en": {
+      "name": "Spike Cannon",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Clavo Cañón",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Spike Cannon",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "constrict": {
+    "en": {
+      "name": "Constrict",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Restricción",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Constrict",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "amnesia": {
+    "en": {
+      "name": "Amnesia",
+      "effect": "The user temporarily empties its mind to forget its concerns. This sharply boosts the user's Sp. Def stat."
+    },
+    "es": {
+      "name": "Amnesia",
+      "effect": "El usuario olvida sus preocupaciones y aumenta mucho la Defensa Especial."
+    },
+    "pt": {
+      "name": "Amnesia",
+      "effect": "El usuario olvida sus preocupaciones y aumenta mucho la Defensa Especial."
+    }
+  },
+  "soft-boiled": {
+    "en": {
+      "name": "Soft-Boiled",
+      "effect": "The user restores its own HP by up to half its max HP."
+    },
+    "es": {
+      "name": "Ovocuración",
+      "effect": "Restaura la mitad de los PS máximos del usuario."
+    },
+    "pt": {
+      "name": "Soft-Boiled",
+      "effect": "Restaura la mitad de los PS máximos del usuario."
+    }
+  },
+  "kinesis": {
+    "en": {
+      "name": "Kinesis",
+      "effect": "The user distracts the target by bending a spoon. This lowers the target’s accuracy."
+    },
+    "es": {
+      "name": "Kinético",
+      "effect": "Dobla una cuchara para distraer al objetivo y bajar su nivel de Precisión."
+    },
+    "pt": {
+      "name": "Kinesis",
+      "effect": "Dobla una cuchara para distraer al objetivo y bajar su nivel de Precisión."
+    }
+  },
+  "high-jump-kick": {
+    "en": {
+      "name": "High Jump Kick",
+      "effect": "The target is attacked with a knee kick from a jump. If this move misses, the user takes damage instead."
+    },
+    "es": {
+      "name": "Patada Salto Alta",
+      "effect": "El usuario salta muy alto y da un rodillazo. Si falla, se hará daño."
+    },
+    "pt": {
+      "name": "High Jump Kick",
+      "effect": "El usuario salta muy alto y da un rodillazo. Si falla, se hará daño."
+    }
+  },
+  "glare": {
+    "en": {
+      "name": "Glare",
+      "effect": "The user intimidates the target with the pattern on its belly to cause paralysis."
+    },
+    "es": {
+      "name": "Deslumbrar",
+      "effect": "Intimida y asusta al objetivo con la mirada para dejarlo paralizado."
+    },
+    "pt": {
+      "name": "Glare",
+      "effect": "Intimida y asusta al objetivo con la mirada para dejarlo paralizado."
+    }
+  },
+  "dream-eater": {
+    "en": {
+      "name": "Dream Eater",
+      "effect": "The user eats the dreams of a sleeping target. The user's HP is restored by up to half the damage taken by the target."
+    },
+    "es": {
+      "name": "Comesueños",
+      "effect": "Restaura al usuario la mitad del daño causado a un objetivo dormido."
+    },
+    "pt": {
+      "name": "Dream Eater",
+      "effect": "Restaura al usuario la mitad del daño causado a un objetivo dormido."
+    }
+  },
+  "poison-gas": {
+    "en": {
+      "name": "Poison Gas",
+      "effect": "A cloud of poison gas is sprayed in the faces of opposing Pokémon, poisoning those it hits."
+    },
+    "es": {
+      "name": "Gas Venenoso",
+      "effect": "Lanza una nube de gas tóxico al objetivo. Produce envenenamiento."
+    },
+    "pt": {
+      "name": "Poison Gas",
+      "effect": "Lanza una nube de gas tóxico al objetivo. Produce envenenamiento."
+    }
+  },
+  "barrage": {
+    "en": {
+      "name": "Barrage",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Bombardeo",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Barrage",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "leech-life": {
+    "en": {
+      "name": "Leech Life",
+      "effect": "The user drains the target's blood. The user's HP is restored by up to half the damage taken by the target."
+    },
+    "es": {
+      "name": "Chupavidas",
+      "effect": "Restaura al usuario la mitad del daño causado al objetivo."
+    },
+    "pt": {
+      "name": "Leech Life",
+      "effect": "Restaura al usuario la mitad del daño causado al objetivo."
+    }
+  },
+  "lovely-kiss": {
+    "en": {
+      "name": "Lovely Kiss",
+      "effect": "With a scary face, the user tries to force a kiss on the target. If it succeeds, the target falls asleep."
+    },
+    "es": {
+      "name": "Beso Amoroso",
+      "effect": "Intimida al objetivo con una cara que asusta y le da un beso que lo deja dormido."
+    },
+    "pt": {
+      "name": "Lovely Kiss",
+      "effect": "Intimida al objetivo con una cara que asusta y le da un beso que lo deja dormido."
+    }
+  },
+  "transform": {
+    "en": {
+      "name": "Transform",
+      "effect": "The user transforms into a copy of the target, right down to having the same move set."
+    },
+    "es": {
+      "name": "Transformación",
+      "effect": "El usuario se transforma en una copia del objetivo, con los mismos movimientos."
+    },
+    "pt": {
+      "name": "Transform",
+      "effect": "El usuario se transforma en una copia del objetivo, con los mismos movimientos."
+    }
+  },
+  "sky-attack": {
+    "en": {
+      "name": "Sky Attack",
+      "effect": "The user attacks the turn after using this move. This move has a heightened chance of landing a critical hit and may also make the target flinch."
+    },
+    "es": {
+      "name": "Ataque Aéreo",
+      "effect": "Ataca durante dos turnos y suele asestar un golpe crítico. También puede amedrentar al objetivo."
+    },
+    "pt": {
+      "name": "Sky Attack",
+      "effect": "Ataca durante dos turnos y suele asestar un golpe crítico. También puede amedrentar al objetivo."
+    }
+  },
+  "bubble": {
+    "en": {
+      "name": "Bubble",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Burbuja",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Bubble",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "dizzy-punch": {
+    "en": {
+      "name": "Dizzy Punch",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Puño Mareo",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Dizzy Punch",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "spore": {
+    "en": {
+      "name": "Spore",
+      "effect": "The user scatters bursts of spores that induce sleep."
+    },
+    "es": {
+      "name": "Espora",
+      "effect": "Esparce esporas que inducen al sueño."
+    },
+    "pt": {
+      "name": "Spore",
+      "effect": "Esparce esporas que inducen al sueño."
+    }
+  },
+  "flash": {
+    "en": {
+      "name": "Flash",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Destello",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Flash",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "psywave": {
+    "en": {
+      "name": "Psywave",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Psicoonda",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Psywave",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "splash": {
+    "en": {
+      "name": "Splash",
+      "effect": "The user just flops and splashes around to no effect at all..."
+    },
+    "es": {
+      "name": "Salpicadura",
+      "effect": "No tiene ningún efecto. Solo salpica."
+    },
+    "pt": {
+      "name": "Splash",
+      "effect": "No tiene ningún efecto. Solo salpica."
+    }
+  },
+  "acid-armor": {
+    "en": {
+      "name": "Acid Armor",
+      "effect": "The user alters its cellular structure to liquefy itself, sharply boosting its Defense stat."
+    },
+    "es": {
+      "name": "Armadura Ácida",
+      "effect": "Transforma la estructura celular para hacerse líquido y aumenta mucho la Defensa."
+    },
+    "pt": {
+      "name": "Acid Armor",
+      "effect": "Transforma la estructura celular para hacerse líquido y aumenta mucho la Defensa."
+    }
+  },
+  "fury-swipes": {
+    "en": {
+      "name": "Fury Swipes",
+      "effect": "The user attacks by raking the target with claws, scythes, or the like. This move hits two to five times in a row."
+    },
+    "es": {
+      "name": "Golpes Furia",
+      "effect": "Araña rápidamente de dos a cinco veces."
+    },
+    "pt": {
+      "name": "Fury Swipes",
+      "effect": "Araña rápidamente de dos a cinco veces."
+    }
+  },
+  "explosion": {
+    "en": {
+      "name": "Explosion",
+      "effect": "The user attacks everything around it by causing a tremendous explosion. The user faints upon using this move."
+    },
+    "es": {
+      "name": "Explosión",
+      "effect": "El atacante causa una grandísima explosión y hiere a todos a su alrededor. El usuario se debilita de inmediato."
+    },
+    "pt": {
+      "name": "Explosion",
+      "effect": "El atacante causa una grandísima explosión y hiere a todos a su alrededor. El usuario se debilita de inmediato."
+    }
+  },
+  "crabhammer": {
+    "en": {
+      "name": "Crabhammer",
+      "effect": "The target is hammered with a large pincer. This move has a heightened chance of landing a critical hit."
+    },
+    "es": {
+      "name": "Martillazo",
+      "effect": "Golpea con fuerza con una pinza enorme. Suele asestar un golpe crítico."
+    },
+    "pt": {
+      "name": "Crabhammer",
+      "effect": "Golpea con fuerza con una pinza enorme. Suele asestar un golpe crítico."
+    }
+  },
+  "bonemerang": {
+    "en": {
+      "name": "Bonemerang",
+      "effect": "The user throws the bone it holds. The bone loops around to hit the target twice—coming and going."
+    },
+    "es": {
+      "name": "Huesomerang",
+      "effect": "Lanza un hueso a modo de bumerán que golpea dos veces."
+    },
+    "pt": {
+      "name": "Bonemerang",
+      "effect": "Lanza un hueso a modo de bumerán que golpea dos veces."
+    }
+  },
+  "rest": {
+    "en": {
+      "name": "Rest",
+      "effect": "The user goes to sleep for two turns. This fully restores the user's HP and cures any status conditions."
+    },
+    "es": {
+      "name": "Descanso",
+      "effect": "Restaura todos los PS y cura todos los problemas de estado del usuario, que se duerme los dos turnos siguientes."
+    },
+    "pt": {
+      "name": "Rest",
+      "effect": "Restaura todos los PS y cura todos los problemas de estado del usuario, que se duerme los dos turnos siguientes."
+    }
+  },
+  "hyper-fang": {
+    "en": {
+      "name": "Hyper Fang",
+      "effect": "The user bites hard on the target with its sharp front fangs. This may also make the target flinch."
+    },
+    "es": {
+      "name": "Hipercolmillo",
+      "effect": "Ataca con agudos colmillos. Puede amedrentar al objetivo."
+    },
+    "pt": {
+      "name": "Hyper Fang",
+      "effect": "Ataca con agudos colmillos. Puede amedrentar al objetivo."
+    }
+  },
+  "rock-slide": {
+    "en": {
+      "name": "Rock Slide",
+      "effect": "Large boulders are hurled at opposing Pokémon to inflict damage. This may also make the opposing Pokémon flinch."
+    },
+    "es": {
+      "name": "Avalancha",
+      "effect": "Lanza grandes pedruscos. Puede amedrentar al objetivo."
+    },
+    "pt": {
+      "name": "Rock Slide",
+      "effect": "Lanza grandes pedruscos. Puede amedrentar al objetivo."
+    }
+  },
+  "sharpen": {
+    "en": {
+      "name": "Sharpen",
+      "effect": "This move can’t be used. It’s recommended that this move is forgotten. Once forgotten, this move can’t be remembered."
+    },
+    "es": {
+      "name": "Afilar",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    },
+    "pt": {
+      "name": "Sharpen",
+      "effect": "Este movimiento no se puede usar, por lo que sería mejor olvidarlo, aunque eso implique que no se pueda recordar posteriormente."
+    }
+  },
+  "conversion": {
+    "en": {
+      "name": "Conversion",
+      "effect": "The user changes its type to become the same type as the move at the top of the list of moves it knows."
+    },
+    "es": {
+      "name": "Conversión",
+      "effect": "Cambia el tipo del usuario por el del primero de sus movimientos."
+    },
+    "pt": {
+      "name": "Conversion",
+      "effect": "Cambia el tipo del usuario por el del primero de sus movimientos."
+    }
+  },
+  "tri-attack": {
+    "en": {
+      "name": "Tri Attack",
+      "effect": "The user strikes with a simultaneous three-beam attack. This may also burn, freeze, or paralyze the target."
+    },
+    "es": {
+      "name": "Triataque",
+      "effect": "Ataque triple que puede paralizar, quemar o congelar al objetivo."
+    },
+    "pt": {
+      "name": "Tri Attack",
+      "effect": "Ataque triple que puede paralizar, quemar o congelar al objetivo."
+    }
+  },
+  "super-fang": {
+    "en": {
+      "name": "Super Fang",
+      "effect": "The user chomps hard on the target with its sharp front fangs. This cuts the target's HP in half."
+    },
+    "es": {
+      "name": "Superdiente",
+      "effect": "Finos colmillos que reducen a la mitad los PS del objetivo."
+    },
+    "pt": {
+      "name": "Super Fang",
+      "effect": "Finos colmillos que reducen a la mitad los PS del objetivo."
+    }
+  },
+  "slash": {
+    "en": {
+      "name": "Slash",
+      "effect": "The target is attacked with a slash of claws, scythes, or the like. This move has a heightened chance of landing a critical hit."
+    },
+    "es": {
+      "name": "Cuchillada",
+      "effect": "Ataca con cuchillas o con pinzas. Suele asestar un golpe crítico."
+    },
+    "pt": {
+      "name": "Slash",
+      "effect": "Ataca con cuchillas o con pinzas. Suele asestar un golpe crítico."
+    }
+  },
+  "substitute": {
+    "en": {
+      "name": "Substitute",
+      "effect": "The user creates a substitute for itself using some of its own HP. The substitute serves as the user's decoy."
+    },
+    "es": {
+      "name": "Sustituto",
+      "effect": "Utiliza parte de los PS propios para crear un sustituto que actúa como señuelo."
+    },
+    "pt": {
+      "name": "Substitute",
+      "effect": "Utiliza parte de los PS propios para crear un sustituto que actúa como señuelo."
+    }
+  },
+  "struggle": {
+    "en": {
+      "name": "Struggle",
+      "effect": "This attack is used in desperation only if the user has no PP. It also damages the user a little."
+    },
+    "es": {
+      "name": "Forcejeo",
+      "effect": "Solo se usa como último recurso al acabarse los PP. Hiere un poco al agresor."
+    },
+    "pt": {
+      "name": "Struggle",
+      "effect": "Solo se usa como último recurso al acabarse los PP. Hiere un poco al agresor."
+    }
+  },
+  "fire-blast": {
+    "en": {
+      "name": "Fire Blast",
+      "effect": "The target is attacked with an intense blast of all-consuming fire. This may also leave the target with a burn."
+    },
+    "es": {
+      "name": "Llamarada",
+      "effect": "Llama intensa que chamusca y puede causar quemaduras."
+    },
+    "pt": {
+      "name": "Fire Blast",
+      "effect": "Llama intensa que chamusca y puede causar quemaduras."
+    }
+  }
+}

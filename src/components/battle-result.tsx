@@ -176,8 +176,15 @@ function LevelUpFanfare({
         {t("levelUpFanfare")}
       </p>
       <div className="relative mt-2 flex flex-wrap items-center justify-center gap-3">
-        {leveled.map((entry) => (
-          <div key={entry.instanceId} className="flex items-center gap-2">
+        {/* Cada Pokémon que subió entra con su propio pop, escalonado. El chip
+            ya trae 0.35s de delay para caer después del fanfare; el índice lo
+            corre un poco más para que no aparezcan todos de golpe. */}
+        {leveled.map((entry, i) => (
+          <div
+            key={entry.instanceId}
+            className="level-up-chip flex items-center gap-2"
+            style={{ animationDelay: `${(0.35 + i * 0.09).toFixed(2)}s` }}
+          >
             <Image
               src={uiSpriteUrl(entry.fromSpriteUrl, entry.isShiny)}
               alt={entry.name}
@@ -351,7 +358,9 @@ export function BattleResult({
         />
 
         <div
-          className={`result-in relative z-10 my-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-xl ${cardSurface}`}
+          className={`result-in relative z-10 my-auto flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-2xl border shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-xl ${cardSurface} ${
+            hasLevelUpChoices ? "max-w-3xl" : "max-w-lg"
+          }`}
         >
           <div
             className={`pointer-events-none absolute inset-x-0 top-0 h-28 ${cardTopGlow} blur-2xl`}

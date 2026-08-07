@@ -7,6 +7,8 @@ import { SubmitButton } from "@/components/submit-button";
 import { FlagIcon } from "@/components/flag-icon";
 import { AvatarImage } from "@/components/avatar-image";
 import { startPvpRematch } from "@/actions/start-pvp-battle";
+import { PVP_BATTLE_ENERGY_COST } from "@/lib/energy";
+import { announceEnergyDelta } from "@/lib/resource-fx";
 
 export type PvpHubTeamMon = {
   id: string;
@@ -108,14 +110,6 @@ export function PvpRivalsHistory({
                       : "hover:bg-white/[0.03]"
                   }`}
                 >
-                  <Image
-                    src={m.iWon ? "/pvp/win-trophy.png" : "/pvp/lose-shield.png"}
-                    alt={resultLabel}
-                    width={18}
-                    height={27}
-                    className="h-6 w-auto shrink-0 object-contain"
-                    unoptimized
-                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <FlagIcon
@@ -131,11 +125,16 @@ export function PvpRivalsHistory({
                     </p>
                   </div>
                   <span
-                    className={`shrink-0 font-mono text-[13px] font-bold ${
-                      m.delta >= 0 ? "text-tertiary" : "text-error"
+                    className={`shrink-0 rounded-md px-2 py-1 font-mono text-[12px] font-bold tabular-nums tracking-tight sm:text-[13px] ${
+                      m.delta > 0
+                        ? "bg-tertiary/12 text-tertiary"
+                        : m.delta < 0
+                          ? "bg-error/12 text-error"
+                          : "bg-white/6 text-white/50"
                     }`}
+                    aria-label={resultLabel}
                   >
-                    {m.delta >= 0 ? "+" : ""}
+                    {m.delta > 0 ? "+" : ""}
                     {m.delta}
                   </span>
                 </button>
@@ -240,7 +239,13 @@ function MatchSpotlight({
           <span className="material-symbols-outlined text-[14px]!">info</span>
           {L.viewMatch}
         </Link>
-        <form action={startPvpRematch.bind(null, locale, match.foeId)}>
+        <form
+          action={startPvpRematch.bind(null, locale, match.foeId)}
+          onSubmit={() => {
+            if (!canFight) return;
+            announceEnergyDelta(-PVP_BATTLE_ENERGY_COST);
+          }}
+        >
           <SubmitButton
             label={L.rematch}
             pendingLabel={L.starting}

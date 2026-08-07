@@ -20,7 +20,12 @@ import {
 } from "@/lib/gym-corridor-theme";
 import { showdownTrainerSpriteUrl } from "@/lib/avatars";
 import { GYM_TM_REWARD_BY_TYPE } from "@/lib/gym-tm-rewards";
-import { GYM_BATTLE_ENERGY_COST, getCurrentEnergy } from "@/lib/energy";
+import {
+  GYM_LEADER_BATTLE_ENERGY_COST,
+  GYM_TRAINER_BATTLE_ENERGY_COST,
+  gymBattleEnergyCost,
+  getCurrentEnergy,
+} from "@/lib/energy";
 
 const TYPE_KEYS = [
   "normal",
@@ -156,7 +161,11 @@ export default async function GymRunPage({
   }));
 
   const energy = getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt);
-  const canAffordBattle = energy >= GYM_BATTLE_ENERGY_COST;
+  // Los subordinados cuestan menos que el líder, así que el hint del pasillo
+  // habla del combate que toca ahora — que es el único con botón habilitado.
+  const nextEnergyCost = gymBattleEnergyCost(
+    run.clearedTrainerSlots >= gym.trainers.length ? "leader" : "trainer",
+  );
 
   return (
     <GymChallengeCorridor
@@ -177,8 +186,8 @@ export default async function GymRunPage({
       clearedSlots={run.clearedTrainerSlots}
       progressPct={progressPct}
       energy={energy}
-      energyCost={GYM_BATTLE_ENERGY_COST}
-      canAffordBattle={canAffordBattle}
+      trainerEnergyCost={GYM_TRAINER_BATTLE_ENERGY_COST}
+      leaderEnergyCost={GYM_LEADER_BATTLE_ENERGY_COST}
       energyError={err === "no_energy"}
       leadError={err === "fainted_lead"}
       labels={{
@@ -216,7 +225,7 @@ export default async function GymRunPage({
         leaderChamber: t("corridorLeaderChamber"),
         entry: t("corridorEntry"),
         subordinate: t.raw("subordinate"),
-        energyCostHint: t("corridorEnergyCost", { cost: GYM_BATTLE_ENERGY_COST }),
+        energyCostHint: t("corridorEnergyCost", { cost: nextEnergyCost }),
         noEnergy: t("corridorNoEnergy"),
         faintedLead: t("corridorFaintedLead"),
         typeLabels,

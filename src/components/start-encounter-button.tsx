@@ -1,9 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { startEncounter, type StartEncounterResult } from "@/actions/start-encounter";
 import { WILD_ENCOUNTER_ENERGY_COST } from "@/lib/energy";
+import {
+  announceEnergyDelta,
+  clearPendingEnergyDelta,
+} from "@/lib/resource-fx";
 
 const ENERGY_ICON = "/items/hd/energy.png";
 
@@ -30,8 +34,18 @@ export function StartEncounterButton({
 
   const busy = pending || disabled;
 
+  useEffect(() => {
+    if (state && !state.success) clearPendingEnergyDelta();
+  }, [state]);
+
   return (
-    <form action={formAction} className="flex w-full flex-col items-stretch gap-2">
+    <form
+      action={formAction}
+      onSubmit={() => {
+        announceEnergyDelta(-energyCost);
+      }}
+      className="flex w-full flex-col items-stretch gap-2"
+    >
       <button
         type="submit"
         disabled={busy}

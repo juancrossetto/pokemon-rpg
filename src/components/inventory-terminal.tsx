@@ -2,8 +2,10 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
+import { useLocale } from "next-intl";
 import { itemDisplayUrl } from "@/lib/item-sprites";
 import { formatMoveName } from "@/lib/format-move-name";
+import { formatMoveEffectText } from "@/lib/format-move-effect";
 import { typeColor } from "@/lib/type-colors";
 // Desde @/lib/rarity y NO desde @/lib/market-hub: ese importa prisma, y en un
 // client component eso mete `pg` en el bundle del browser y rompe el build.
@@ -412,17 +414,22 @@ function DetailPanel({
   teamHref: string;
   onClose: () => void;
 }) {
+  const locale = useLocale();
   const rarity = itemRarity(entry);
   const style = RARITY_STYLES[rarity];
   const isRareCandy = entry.name === "Rare Candy";
   // Primer destino útil del CTA: compatible y que todavía no lo sepa.
   const firstTeachable =
     entry.learners.find((l) => l.canLearn && !l.alreadyKnown) ?? null;
-  const moveLabel = entry.moveName ? formatMoveName(entry.moveName) : null;
+  const moveLabel = entry.moveName ? formatMoveName(entry.moveName, locale) : null;
   const effectText =
-    entry.effectText && entry.moveName && moveLabel
+    formatMoveEffectText(entry.effectText, {
+      locale,
+      moveName: entry.moveName,
+    }) ??
+    (entry.effectText && entry.moveName && moveLabel
       ? entry.effectText.replace(new RegExp(entry.moveName, "gi"), moveLabel)
-      : entry.effectText;
+      : entry.effectText);
 
   return (
     <aside

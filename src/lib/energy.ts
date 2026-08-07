@@ -19,8 +19,22 @@ export const REGEN_MS_PER_POINT = 30 * 60 * 1000;
 /** Costo por encuentro salvaje. Un stage puede pisarlo con `energyCost`. */
 export const WILD_ENCOUNTER_ENERGY_COST = 1;
 
-/** Costo por combate de gimnasio (subordinado o líder). */
-export const GYM_BATTLE_ENERGY_COST = 2;
+/**
+ * Costo por combate contra un entrenador subordinado del pasillo del gimnasio.
+ *
+ * Vale la mitad que el líder: el pasillo son 3-5 peleas de trámite antes de la
+ * que importa, y cobrarlas a 2 hacía que una corrida completa se comiera la
+ * barra entera y el jugador llegara al líder sin poder pelearlo.
+ */
+export const GYM_TRAINER_BATTLE_ENERGY_COST = 1;
+
+/** Costo por combate contra el líder de gimnasio. */
+export const GYM_LEADER_BATTLE_ENERGY_COST = 2;
+
+/** Costo del próximo combate de una corrida, según contra quién toque. */
+export function gymBattleEnergyCost(kind: "trainer" | "leader"): number {
+  return kind === "leader" ? GYM_LEADER_BATTLE_ENERGY_COST : GYM_TRAINER_BATTLE_ENERGY_COST;
+}
 
 /** Costo por combate de PvP. */
 export const PVP_BATTLE_ENERGY_COST = 1;

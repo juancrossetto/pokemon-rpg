@@ -15,6 +15,7 @@ import { GameCtaButton } from "@/components/game-cta-button";
 import { RewardList } from "@/components/events/reward-chip";
 import { PokeSparks } from "@/components/poke-sparks";
 import { TowerAbandonButton, TowerParkButton } from "@/components/tower/tower-ui";
+import { playRewardCollectFx } from "@/lib/loot-fly-fx";
 import type { RewardDef } from "@/lib/events/rewards";
 import type {
   TowerBlessing,
@@ -1149,7 +1150,17 @@ export function TowerEndedSummary({
             variant="gold"
             className="mt-3 w-full max-w-xs"
             disabled={pending}
-            onClick={() => start(async () => claimTowerLoot(locale, runId))}
+            onClick={(e) => {
+              // El FX sale del botón antes de invocar la acción: `claimTowerLoot`
+              // redirige a /tower, así que después del await ya no hay dónde
+              // anclar el vuelo. El bundle es el mismo que acredita el server.
+              const r = e.currentTarget.getBoundingClientRect();
+              playRewardCollectFx(loot, {
+                x: r.left + r.width / 2,
+                y: r.top + r.height / 2,
+              });
+              start(async () => claimTowerLoot(locale, runId));
+            }}
           >
             {pending ? t("actions.working") : t("result.claimCta")}
           </GameCtaButton>

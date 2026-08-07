@@ -6,13 +6,16 @@ import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { currentGymRunOpponent } from "@/lib/gym-run";
-import { GYM_BATTLE_ENERGY_COST, getCurrentEnergy } from "@/lib/energy";
+import { gymBattleEnergyCost, getCurrentEnergy } from "@/lib/energy";
 import { revalidateCombatUi } from "@/lib/battle-lock";
 import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 
 // Arranca la batalla contra el próximo oponente de una corrida ya iniciada
 // (subordinado o líder). La energía se descuenta ACÁ, al iniciar — no al
 // ganar/perder. Si después perdés o abandonás la corrida, no se reembolsa.
+// El costo depende de contra quién toque (`gymBattleEnergyCost`), así que hay
+// que resolver el oponente ANTES de validar la energía: chequear contra el
+// costo del líder rechazaría un combate de subordinado que sí se puede pagar.
 export async function startGymRunBattle(gymRunId: string, locale: string) {
   const session = await auth();
   if (!session?.user) {
@@ -36,7 +39,7 @@ export async function startGymRunBattle(gymRunId: string, locale: string) {
     return;
   }
 
-  const [user, lead] = await Promise.all([
+  const [user, lead, opponent] = await Promise.all([
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { energy: true, energyMax: true, energyUpdatedAt: true },
@@ -47,6 +50,7 @@ export async function startGymRunBattle(gymRunId: string, locale: string) {
       where: { ownerId: userId, teamSlot: { not: null }, currentHp: { gt: 0 } },
       orderBy: { teamSlot: "asc" },
     }),
+    currentGymRunOpponent(run.gymId, run.clearedTrainerSlots),
   ]);
 
   if (!lead) {
@@ -54,13 +58,13 @@ export async function startGymRunBattle(gymRunId: string, locale: string) {
     return;
   }
 
+  const energyCost = gymBattleEnergyCost(opponent.kind);
   const currentEnergy = getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt);
-  if (currentEnergy < GYM_BATTLE_ENERGY_COST) {
+  if (currentEnergy < energyCost) {
     redirect({ href: `/gyms/${run.gymId}/run?err=no_energy`, locale });
     return;
   }
 
-  const opponent = await currentGymRunOpponent(run.gymId, run.clearedTrainerSlots);
   const firstMon = opponent.team[0];
   if (!firstMon) {
     redirect({ href: `/gyms/${run.gymId}/run?err=no_opponent`, locale });
@@ -85,7 +89,7 @@ export async function startGymRunBattle(gymRunId: string, locale: string) {
     prisma.user.update({
       where: { id: userId },
       data: {
-        energy: currentEnergy - GYM_BATTLE_ENERGY_COST,
+        energy: currentEnergy - energyCost,
         energyUpdatedAt: new Date(),
       },
     }),

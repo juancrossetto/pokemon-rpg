@@ -8,6 +8,7 @@ import { MarketSubmitButton } from "@/components/market-submit-button";
 import { MarketSellControls } from "@/components/market-sell-controls";
 import { MarketBrowseTab } from "@/components/market-browse-tab";
 import { MarketHubHero } from "@/components/market-hub-chrome";
+import { MarketCollectFx } from "@/components/market-collect-fx";
 import { ShopTab } from "@/components/shop-tab";
 import {
   MARKET_CATEGORIES,
@@ -91,6 +92,9 @@ export default async function MarketPage({
     max?: string;
     sort?: string;
     page?: string;
+    /** Delta de monedas y tipo de retiro — sólo alimentan el collect FX. */
+    coins?: string;
+    got?: string;
   }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
@@ -141,6 +145,8 @@ export default async function MarketPage({
           `auto-fill` pasa sola a 4–5 columnas. */}
       <div className="mx-auto max-w-7xl 2xl:max-w-[104rem]">
         <MarketHubHero listings={hubStats.listings} />
+
+        <MarketCollectFx notice={notice} coins={query.coins} got={query.got} />
 
         {notice && (
           <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-tertiary/40 bg-tertiary/10 px-4 py-2 text-label-md text-tertiary">

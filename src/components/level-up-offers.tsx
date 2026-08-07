@@ -329,7 +329,7 @@ export function LevelUpOffersPanel({
                   >
                     <TypeOrb type={m.type} size="sm" />
                     <span className="capitalize">
-                      {t("learned", { move: formatMoveName(m.name) })}
+                      {t("learned", { move: formatMoveName(m.name, locale) })}
                     </span>
                   </li>
                 ))}
@@ -351,7 +351,7 @@ export function LevelUpOffersPanel({
                   labels={{
                     newMove: t("newMove"),
                     wantsToLearn: t("wantsToLearn", {
-                      move: formatMoveName(current.name),
+                      move: formatMoveName(current.name, locale),
                     }),
                     morePending: t("morePending", { count: remaining }),
                     forgetWhich: t("forgetWhich"),
@@ -541,120 +541,138 @@ function LearnMoveCard({
   onReject: () => void;
 }) {
   const color = typeColor(move.type);
-  const formatted = formatMoveName(move.name);
-  const effect = formatMoveEffectText(move.effectText);
+  const locale = useLocale();
+  const formatted = formatMoveName(move.name, locale);
+  const effect = formatMoveEffectText(move.effectText, {
+    locale,
+    moveName: move.name,
+  });
 
   return (
     <div
       className="overflow-hidden rounded-2xl border border-white/10 bg-black/45"
       style={{ boxShadow: `inset 0 0 0 1px ${color}28` }}
     >
-      <div
-        className="relative px-3 pb-2.5 pt-3 sm:px-4 sm:pt-4"
-        style={{
-          background: `linear-gradient(165deg, ${color}33 0%, transparent 62%)`,
-        }}
-      >
-        <div className="flex items-start gap-3">
-          <TypeOrb type={move.type} size="lg" />
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
-              {labels.newMove}
-            </p>
-            <p className="mt-0.5 truncate text-[17px] font-bold tracking-tight text-white sm:text-[18px]">
-              {formatted}
-            </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-black/35 px-1.5 py-0.5 text-[10px] font-medium text-white/75">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={showdownCategoryIconUrl(move.category)}
-                  alt=""
-                  width={12}
-                  height={12}
-                  className="h-3 w-3 object-contain"
-                  decoding="async"
-                />
-                {labels.category(move.category)}
-              </span>
-              <span className="rounded-md border border-white/10 bg-black/35 px-1.5 py-0.5 font-mono text-[10px] text-white/55">
-                {labels.learnAt}
-              </span>
+      {/*
+        Layout fijo en 2 columnas desde sm: nuevo movimiento | movimientos
+        actuales. Evita cards altísimas con scroll aunque el efecto sea corto.
+      */}
+      <div className="grid sm:grid-cols-2 sm:items-stretch">
+        <div
+          className="relative px-3 pb-2.5 pt-3 sm:px-4 sm:pb-3 sm:pt-4"
+          style={{
+            background: `linear-gradient(165deg, ${color}33 0%, transparent 62%)`,
+          }}
+        >
+          <div className="flex items-start gap-2.5 sm:gap-3">
+            <TypeOrb type={move.type} size="lg" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
+                {labels.newMove}
+              </p>
+              <p className="mt-0.5 truncate text-[17px] font-bold tracking-tight text-white sm:text-[18px]">
+                {formatted}
+              </p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-black/35 px-1.5 py-0.5 text-[10px] font-medium text-white/75">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={showdownCategoryIconUrl(move.category)}
+                    alt=""
+                    width={12}
+                    height={12}
+                    className="h-3 w-3 object-contain"
+                    decoding="async"
+                  />
+                  {labels.category(move.category)}
+                </span>
+                <span className="rounded-md border border-white/10 bg-black/35 px-1.5 py-0.5 font-mono text-[10px] text-white/55">
+                  {labels.learnAt}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2">
-          <MoveStat
-            label={labels.power}
-            value={move.power == null ? "—" : String(move.power)}
-            accent={color}
-          />
-          <MoveStat
-            label={labels.accuracy}
-            value={accuracyText(move.accuracy, labels.neverMisses)}
-            accent={color}
-          />
-          <MoveStat label={labels.pp} value={String(move.pp)} accent={color} />
-        </div>
+          <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2">
+            <MoveStat
+              label={labels.power}
+              value={move.power == null ? "—" : String(move.power)}
+              accent={color}
+            />
+            <MoveStat
+              label={labels.accuracy}
+              value={accuracyText(move.accuracy, labels.neverMisses)}
+              accent={color}
+            />
+            <MoveStat label={labels.pp} value={String(move.pp)} accent={color} />
+          </div>
 
-        {effect ? (
-          <p className="mt-2.5 text-[12px] leading-relaxed text-white/70 sm:text-[13px]">
-            {effect}
-          </p>
-        ) : null}
+          {effect ? (
+            <p className="mt-2.5 line-clamp-4 text-[12px] leading-snug text-white/70 sm:line-clamp-5 sm:text-[13px] sm:leading-relaxed">
+              {effect}
+            </p>
+          ) : null}
 
-        <p className="mt-2 text-[12px] leading-snug text-white/65">{labels.wantsToLearn}</p>
-        {remaining > 0 && (
-          <p className="mt-0.5 text-[10px] text-white/40">{labels.morePending}</p>
-        )}
-      </div>
-
-      {knownMoves.length > 0 && (
-        <div className="border-t border-white/8 px-3 py-2.5 sm:px-4">
-          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
-            {picking ? labels.forgetWhich : labels.yourMoves}
-          </p>
-          <ul className="space-y-1">
-            {knownMoves.map((k) => {
-              const delta = powerDelta(move.power, k.power);
-              return (
-                <li key={k.slot}>
-                  {picking ? (
-                    <button
-                      type="button"
-                      disabled={pending}
-                      onClick={() => onReplaceSlot(k.slot)}
-                      className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-left transition hover:border-pokeball-red/45 hover:bg-pokeball-red/10 disabled:opacity-50"
-                    >
-                      <KnownMoveRow
-                        move={k}
-                        labels={labels}
-                        powerDelta={delta}
-                        interactive
-                      />
-                    </button>
-                  ) : (
-                    <div className="rounded-lg border border-white/8 bg-white/[0.02] px-2.5 py-1.5">
-                      <KnownMoveRow move={k} labels={labels} powerDelta={delta} />
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          {picking && (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={onCancelPick}
-              className="mt-2 w-full rounded-xl px-3 py-2 text-[12px] text-white/50 transition hover:bg-white/5 hover:text-white"
-            >
-              {labels.cancel}
-            </button>
+          <p className="mt-2 text-[12px] leading-snug text-white/65">{labels.wantsToLearn}</p>
+          {remaining > 0 && (
+            <p className="mt-0.5 text-[10px] text-white/40">{labels.morePending}</p>
           )}
         </div>
-      )}
+
+        {knownMoves.length > 0 ? (
+          <div className="border-t border-white/8 px-3 py-2.5 sm:border-l sm:border-t-0 sm:px-4 sm:py-3">
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
+              {picking ? labels.forgetWhich : labels.yourMoves}
+            </p>
+            <ul className="grid grid-cols-2 gap-1">
+              {knownMoves.map((k) => {
+                const delta = powerDelta(move.power, k.power);
+                return (
+                  <li key={k.slot} className="min-w-0">
+                    {picking ? (
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => onReplaceSlot(k.slot)}
+                        className="h-full w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-left transition hover:border-pokeball-red/45 hover:bg-pokeball-red/10 disabled:opacity-50"
+                      >
+                        <KnownMoveRow
+                          move={k}
+                          labels={labels}
+                          powerDelta={delta}
+                          interactive
+                          compact
+                        />
+                      </button>
+                    ) : (
+                      <div className="h-full rounded-lg border border-white/8 bg-white/[0.02] px-2 py-1.5">
+                        <KnownMoveRow
+                          move={k}
+                          labels={labels}
+                          powerDelta={delta}
+                          compact
+                        />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            {picking && (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={onCancelPick}
+                className="mt-2 w-full rounded-xl px-3 py-2 text-[12px] text-white/50 transition hover:bg-white/5 hover:text-white"
+              >
+                {labels.cancel}
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="hidden border-white/8 sm:block sm:border-l" aria-hidden />
+        )}
+      </div>
 
       {!picking && (
         <div className="border-t border-white/8 px-3 py-2.5 sm:px-4">
@@ -737,13 +755,19 @@ function KnownMoveRow({
   labels,
   powerDelta: delta,
   interactive = false,
+  compact = false,
 }: {
   move: KnownMoveInfo;
   labels: LearnMoveLabels;
   powerDelta: number | null;
   interactive?: boolean;
+  /** Sin descripción: filas cortas para el layout de 2 columnas. */
+  compact?: boolean;
 }) {
-  const effect = formatMoveEffectText(move.effectText);
+  const locale = useLocale();
+  const effect = compact
+    ? null
+    : formatMoveEffectText(move.effectText, { locale, moveName: move.name });
 
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -751,7 +775,7 @@ function KnownMoveRow({
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className="truncate text-[13px] font-semibold text-white">
-            {formatMoveName(move.name)}
+            {formatMoveName(move.name, locale)}
           </span>
           {delta != null && delta !== 0 && (
             <span
@@ -768,7 +792,7 @@ function KnownMoveRow({
             </span>
           )}
         </div>
-        <div className="mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5 font-mono text-[10px] tabular-nums text-white/50">
+        <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 font-mono text-[10px] tabular-nums text-white/50">
           <span className="text-white/45">{labels.category(move.category)}</span>
           <span>
             <span className="text-white/30">{labels.power} </span>

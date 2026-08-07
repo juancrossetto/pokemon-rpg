@@ -5,7 +5,7 @@
 // animaciones) siguen viviendo en battle-arena.tsx y entran por props.
 
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { typeColor } from "@/lib/type-colors";
 import { formatMoveName } from "@/lib/format-move-name";
 import { formatMoveEffectText } from "@/lib/format-move-effect";
@@ -126,6 +126,7 @@ export function MovesView({
   onBack: () => void;
 }) {
   const t = useTranslations("battle");
+  const locale = useLocale();
 
   return (
     <div
@@ -158,7 +159,10 @@ export function MovesView({
           // Sin accuracy = nunca falla (Swift). Se dice, no se deja vacío.
           const accuracyLabel = m.accuracy == null ? "—" : `${m.accuracy}%`;
           const damage = isStatus ? null : forecast(m);
-          const effect = formatMoveEffectText(m.effectText);
+          const effect = formatMoveEffectText(m.effectText, {
+            locale,
+            moveName: m.name,
+          });
           return (
             <button
               key={m.moveId}
@@ -179,7 +183,7 @@ export function MovesView({
                     {CATEGORY_ICON[category]}
                   </span>
                   <span className="battle-move-card__name truncate text-xs font-bold leading-tight text-white md:text-sm lg:text-base">
-                    {formatMoveName(m.name)}
+                    {formatMoveName(m.name, locale)}
                     {isSpreadMove(m.target, m.name) ? (
                       <span className="ml-1 text-[8px] font-bold uppercase text-amber-200/90 md:text-[9px] lg:text-[10px]">
                         {t("spreadMoveTag")}
@@ -698,13 +702,14 @@ export function TargetView({
   onBack: () => void;
 }) {
   const t = useTranslations("battle");
+  const locale = useLocale();
   const typeChipColor = moveType ? typeColor(moveType) : null;
   return (
     <div className="flex flex-col gap-1 h-full min-h-0">
       <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
         <div className="min-w-0 flex items-center gap-1.5">
           <p className="text-xs md:text-sm font-bold text-primary truncate">
-            {t("chooseTarget", { move: formatMoveName(moveName) })}
+            {t("chooseTarget", { move: formatMoveName(moveName, locale) })}
           </p>
           {moveType && typeChipColor && (
             <span

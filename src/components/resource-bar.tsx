@@ -4,11 +4,13 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { CoinsBadge } from "@/components/coins-badge";
+import { ResourceDeltaValue } from "@/components/resource-delta-value";
 import { reportEnergyFullAction } from "@/actions/notifications";
 import { showToast } from "@/lib/app-toast";
 import {
   formatCountdown,
-  GYM_BATTLE_ENERGY_COST,
+  GYM_LEADER_BATTLE_ENERGY_COST,
+  GYM_TRAINER_BATTLE_ENERGY_COST,
   msUntilNextEnergyPoint,
   PVP_BATTLE_ENERGY_COST,
   REGEN_MS_PER_POINT,
@@ -233,7 +235,13 @@ function ResourcePill({
     >
       <div
         className={`relative flex h-7 items-stretch overflow-hidden rounded-md border sm:h-8 ${t.track} ${
-          compact ? "min-w-[4.75rem]" : "min-w-[5.5rem] sm:min-w-[6rem]"
+          tone === "coins"
+            ? compact
+              ? "min-w-[5.25rem]"
+              : "min-w-[6.25rem] sm:min-w-[6.75rem]"
+            : compact
+              ? "min-w-[4.75rem]"
+              : "min-w-[5.5rem] sm:min-w-[6rem]"
         } ${open ? "border-white/20 bg-[#181d28]" : ""}${
           isEnergy && energyState === "full" ? " energy-pill--full" : ""
         }${isEnergy && energyState === "regen" ? " energy-pill--regen" : ""}${
@@ -262,9 +270,11 @@ function ResourcePill({
           aria-expanded={open}
           aria-controls={controlsId}
           onClick={onOpen}
-          className={`flex min-w-0 flex-1 items-center justify-center px-1.5 font-mono text-[11px] font-semibold tabular-nums leading-none tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:text-[12px] ${t.value} ${t.ring}`}
+          className={`flex min-w-0 flex-1 items-center justify-center px-1.5 font-mono text-[11px] font-semibold tabular-nums leading-none tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:px-2 sm:text-[12px] ${t.value} ${t.ring}`}
         >
-          <span className="truncate">{value}</span>
+          <span className={tone === "coins" ? "whitespace-nowrap" : "truncate"}>
+            {value}
+          </span>
         </button>
 
         <button
@@ -413,7 +423,12 @@ export function ResourceBar({
         <div className="flex items-center justify-between gap-1.5 text-[11px] text-white/70">
           {[
             { icon: "explore", cost: WILD_ENCOUNTER_ENERGY_COST, label: labels.energyCostExplore },
-            { icon: "stadium", cost: GYM_BATTLE_ENERGY_COST, label: labels.energyCostGym },
+            // Rango, no número: el pasillo cuesta menos que el líder.
+            {
+              icon: "stadium",
+              cost: `${GYM_TRAINER_BATTLE_ENERGY_COST}/${GYM_LEADER_BATTLE_ENERGY_COST}`,
+              label: labels.energyCostGym,
+            },
             { icon: "swords", cost: PVP_BATTLE_ENERGY_COST, label: labels.energyCostPvp },
           ].map((row) => (
             <span
@@ -520,10 +535,11 @@ export function ResourceBar({
         energyState={energyState}
         hoverHint={!isFull && countdown ? countdown : null}
         value={
-          <span>
-            {energy}
-            <span className="text-white/40">/{energyMax}</span>
-          </span>
+          <ResourceDeltaValue
+            kind="energy"
+            value={energy}
+            suffix={<span className="text-white/40">/{energyMax}</span>}
+          />
         }
         ariaLabel={energyAria}
         addLabel={`${labels.add} · ${labels.energy}`}
@@ -547,7 +563,7 @@ export function ResourceBar({
         <ResourcePill
           tone="gems"
           compact={isMobile}
-          value={gems.toLocaleString()}
+          value={<ResourceDeltaValue kind="gems" value={gems} />}
           ariaLabel={gemsAria}
           addLabel={`${labels.add} · ${labels.gems}`}
           open={open === "gems"}
@@ -596,7 +612,7 @@ export function ResourceBar({
                 unoptimized
               />
               <span className="font-mono text-[11px] font-semibold tabular-nums text-sky-100">
-                {energy}
+                <ResourceDeltaValue kind="energy" value={energy} />
               </span>
             </span>
             <span className="mx-0.5 h-3 w-px bg-white/15" aria-hidden />
@@ -622,7 +638,7 @@ export function ResourceBar({
                 unoptimized
               />
               <span className="font-mono text-[11px] font-semibold tabular-nums text-gem">
-                {gems}
+                <ResourceDeltaValue kind="gems" value={gems} />
               </span>
             </span>
           </button>

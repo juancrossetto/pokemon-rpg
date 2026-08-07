@@ -322,12 +322,17 @@
         "statusAvailable": "Nuevo",
         "statusDone": "Hecho",
         "statusReady": "Listo",
+        "statusHealthy": "OK",
+        "statusCooldown": "{minutes} min",
+        "statusHealthyCooldown": "OK · {time}",
+        "statusRush": "{cost}",
         "statusBadges": "{count}/{total}",
         "statusStreakDay": "Día {n}",
         "items": {
           "daily": "Regalo",
           "pvp": "PvP",
           "gyms": "Gimnasio",
+          "heal": "Centro",
           "streak": "Racha",
           "friends": "Amigos",
           "market": "Mercado"
@@ -346,6 +351,7 @@
     "noResults": "Sin coincidencias en este archivo.",
     "searchPlaceholder": "Nombre, número, tipo…",
     "unknown": "???",
+    "newEntry": "Nuevo",
     "statusCaught": "Capturado",
     "statusSeen": "Visto",
     "research": "Investigación",
@@ -3041,7 +3047,7 @@
             "body": "Salir a buscar salvajes cuesta energía. Se regenera sola (1 punto cada 30 minutos). Una barra vacía tarda horas en llenarse: elegí en qué combates la invertís.",
             "bullets": [
               "Sin energía no explorás ni buscás PvP.",
-              "Los gimnasios cuestan más energía por combate.",
+              "En el gimnasio, los subordinados cuestan 1 y el líder 2.",
               "Si te quedás en seco: esperá, reclamá diarias o pasá por la tienda."
             ]
           },

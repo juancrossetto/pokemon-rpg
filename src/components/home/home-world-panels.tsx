@@ -1,16 +1,82 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type CSSProperties } from "react";
-import { Link } from "@/i18n/navigation";
+import { useEffect, useState, useTransition, type CSSProperties } from "react";
+import { useLocale } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { openDailyRewardModal } from "@/lib/daily-gift-fx";
 import { ProgressRing, SegmentedBar } from "@/components/events/quest-parts";
+import { playCenterHealFx } from "@/components/heal-button";
+import { healTeam } from "@/actions/heal-team";
+import { playBattleSfx } from "@/lib/battle-sfx";
+import { announceCoinDelta } from "@/lib/coin-fx";
+import { announceHomeTeamHealed } from "@/lib/home-heal-fx";
+import {
+  HEAL_COOLDOWN_MINUTES,
+  HEAL_RUSH_BASE_COST,
+  isPokemonCenterFree,
+} from "@/lib/healing";
 import type { HomeDailyAction, HomeObjective } from "@/lib/home-hub";
+
+export type HomeDailyActionLabels = {
+  title: string;
+  items: Record<string, string>;
+  statusReady: string;
+  statusHealthy: string;
+  statusHealthyCooldown: string;
+  statusRush: string;
+};
+
+type HealLive = {
+  needsHealing: boolean;
+  cooldownMsLeft: number;
+  rushCost: number;
+  coins: number;
+  teamMaxLevel: number;
+};
+
+function formatHealTimer(ms: number): string {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function healChip(
+  live: HealLive,
+  labels: HomeDailyActionLabels,
+): { text: string; hot: boolean; rush: boolean } {
+  const noviceFree = isPokemonCenterFree(live.teamMaxLevel);
+  const onCooldown = !noviceFree && live.cooldownMsLeft > 0;
+  if (live.needsHealing) {
+    if (!onCooldown) {
+      return { text: labels.statusReady, hot: true, rush: false };
+    }
+    const canPay = live.coins >= live.rushCost;
+    return {
+      text: labels.statusRush.replace("{cost}", String(live.rushCost)),
+      hot: canPay,
+      rush: true,
+    };
+  }
+  if (onCooldown) {
+    return {
+      text: labels.statusHealthyCooldown.replace(
+        "{time}",
+        formatHealTimer(live.cooldownMsLeft),
+      ),
+      hot: false,
+      rush: false,
+    };
+  }
+  return { text: labels.statusHealthy, hot: false, rush: false };
+}
 
 const ACCENT: Record<string, string> = {
   daily: "var(--color-pokeball-red)",
   pvp: "var(--color-electric-yellow)",
   gyms: "var(--theme-primary-bright)",
+  heal: "var(--color-pokeball-red)",
   streak: "var(--color-pokeball-red)",
   friends: "var(--color-water-blue)",
   market: "var(--color-gem)",
@@ -55,61 +121,188 @@ function SectionLabel({
 }
 
 /**
- * Acciones diarias estilo Clash: slots con ícono HD + badge de estado.
- * Mobile: sin labels de texto (solo ícono + chip) — aria-label para a11y.
- * Desktop: chip arriba + ícono + título.
+ * Acciones diarias: 4 tiles en un mismo panel (junto al Active Team).
+ * El Centro Pokémon lleva timer live + rush, y cura el squad al instante.
  */
 export function HomeDailyActions({
   actions,
   labels,
 }: {
   actions: HomeDailyAction[];
-  labels: { title: string; items: Record<string, string> };
+  labels: HomeDailyActionLabels;
 }) {
+  const locale = useLocale();
+  const router = useRouter();
+  const [healPending, startHeal] = useTransition();
+  const [healError, setHealError] = useState(false);
+
+  const serverHeal = actions.find((a) => a.heal)?.heal ?? null;
+  const healSyncKey = serverHeal
+    ? [
+        serverHeal.needsHealing ? 1 : 0,
+        serverHeal.cooldownMsLeft,
+        serverHeal.rushCost,
+        serverHeal.coins,
+        serverHeal.teamMaxLevel,
+      ].join(":")
+    : "";
+
+  /** Override de estado del Centro tras curar (antes del refresh). */
+  const [healOverride, setHealOverride] = useState<{
+    needsHealing: boolean;
+    rushCost: number;
+    coins: number;
+    teamMaxLevel: number;
+  } | null>(null);
+  const [cooldownLeftMs, setCooldownLeftMs] = useState(
+    serverHeal?.cooldownMsLeft ?? 0,
+  );
+  const [lastHealKey, setLastHealKey] = useState(healSyncKey);
+  if (lastHealKey !== healSyncKey) {
+    setLastHealKey(healSyncKey);
+    setHealOverride(null);
+    setCooldownLeftMs(serverHeal?.cooldownMsLeft ?? 0);
+  }
+
+  const healTimerArmed = cooldownLeftMs > 0;
+  useEffect(() => {
+    if (!healTimerArmed) return;
+    const id = window.setInterval(() => {
+      setCooldownLeftMs((prev) => Math.max(0, prev - 250));
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [healTimerArmed]);
+
+  const healLive: HealLive | null = (() => {
+    if (!serverHeal && !healOverride) return null;
+    return {
+      needsHealing: healOverride?.needsHealing ?? serverHeal!.needsHealing,
+      rushCost: healOverride?.rushCost ?? serverHeal!.rushCost,
+      coins: healOverride?.coins ?? serverHeal!.coins,
+      teamMaxLevel: healOverride?.teamMaxLevel ?? serverHeal!.teamMaxLevel,
+      cooldownMsLeft: cooldownLeftMs,
+    };
+  })();
+
+  function runHeal(live: HealLive) {
+    if (healPending || !live.needsHealing) return;
+
+    const noviceFree = isPokemonCenterFree(live.teamMaxLevel);
+    const onCooldown = !noviceFree && live.cooldownMsLeft > 0;
+    const rush = onCooldown;
+    if (rush && live.coins < live.rushCost) return;
+
+    const paid = rush ? live.rushCost : 0;
+    const snapshot = {
+      needsHealing: live.needsHealing,
+      rushCost: live.rushCost,
+      coins: live.coins,
+      teamMaxLevel: live.teamMaxLevel,
+    };
+    const snapshotCd = live.cooldownMsLeft;
+    setHealError(false);
+    playBattleSfx("heal");
+    playCenterHealFx();
+    // Squad al instante — no esperar al router.refresh().
+    announceHomeTeamHealed();
+    setHealOverride({
+      needsHealing: false,
+      coins: live.coins - paid,
+      rushCost: HEAL_RUSH_BASE_COST,
+      teamMaxLevel: live.teamMaxLevel,
+    });
+    setCooldownLeftMs(noviceFree ? 0 : HEAL_COOLDOWN_MINUTES * 60_000);
+
+    startHeal(async () => {
+      const result = await healTeam(locale, rush);
+      if (!result.ok) {
+        setHealError(true);
+        setHealOverride(snapshot);
+        setCooldownLeftMs(snapshotCd);
+        router.refresh();
+        return;
+      }
+      if (rush) announceCoinDelta(-paid);
+      router.refresh();
+    });
+  }
+
   return (
-    <section className="min-w-0" aria-label={labels.title}>
+    <section className="home-ops-deck__actions min-w-0" aria-label={labels.title}>
       <div className="hidden sm:block">
         <SectionLabel title={labels.title} />
       </div>
-      {/* Grid fijo (no scroll): el overflow-x del home recortaba la 1ª tile y el glow.
-          4 columnas desde que la sección quedó sólo con acciones con estado; en
-          desktop no se estiran a lo ancho — se agrupan a la izquierda para que
-          no compitan en peso con el banner de arriba. */}
-      <div className="grid grid-cols-4 gap-1.5 px-0.5 pt-2.5 pb-1 sm:gap-2.5 sm:px-0 sm:py-0">
+      <div className="home-ops-deck__grid grid grid-cols-4 gap-1 px-0.5 pt-1.5 pb-0.5 sm:gap-1.5 sm:px-0 sm:py-0">
         {actions.map((action) => {
           const accent = ACCENT[action.id] ?? "var(--color-electric-yellow)";
           const label = labels.items[action.labelKey] ?? action.labelKey;
+          const isHealTile = Boolean(action.heal && healLive);
+          const chip = isHealTile
+            ? healChip(healLive!, labels)
+            : {
+                text: action.status,
+                hot: Boolean(action.hot),
+                rush: false,
+              };
+          const statusText = chip.text;
+          const tileHot = chip.hot;
+
+          const noviceFree = isHealTile
+            ? isPokemonCenterFree(healLive!.teamMaxLevel)
+            : false;
+          const onCooldown =
+            isHealTile && !noviceFree && healLive!.cooldownMsLeft > 0;
+          const canRush = Boolean(
+            isHealTile &&
+              healLive!.needsHealing &&
+              onCooldown &&
+              healLive!.coins >= healLive!.rushCost,
+          );
+          const healDisabled = Boolean(
+            isHealTile &&
+              (!healLive!.needsHealing || (onCooldown && !canRush)),
+          );
+          const healBusy = Boolean(isHealTile && healPending);
+
           const className = [
-            // Mobile: slot cuadrado. Desktop: fila horizontal —con 4 columnas
-            // repartidas a lo ancho, la tile queda ancha y baja, y una columna
-            // centrada dejaba el aire muerto a los costados.
-            "home-daily-tile group relative flex aspect-square w-full flex-col items-center justify-center overflow-visible rounded-[0.85rem] text-center transition sm:aspect-auto sm:flex-row sm:items-center sm:justify-start sm:gap-2.5 sm:overflow-hidden sm:rounded-2xl sm:px-3 sm:py-2.5 sm:text-left",
+            "home-daily-tile group relative flex aspect-square w-full flex-col items-center justify-center overflow-visible rounded-xl text-center transition sm:aspect-auto sm:flex-row sm:items-center sm:justify-start sm:gap-2.5 sm:overflow-hidden sm:rounded-2xl sm:px-3 sm:py-2.5 sm:text-left",
             "active:scale-[0.96]",
-            action.hot ? "home-daily-tile--hot" : "",
+            tileHot ? "home-daily-tile--hot" : "",
+            healBusy || healDisabled ? "opacity-70" : "",
           ].join(" ");
           const style = { "--daily-accent": accent } as CSSProperties;
 
-          const statusChipDesktop = action.status ? (
-            <span
-              className={`max-w-full truncate rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold tabular-nums leading-none ${
-                action.hot
-                  ? "bg-[color-mix(in_srgb,var(--daily-accent)_28%,transparent)] text-white ring-1 ring-[color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
-                  : "bg-black/45 text-white/70"
-              }`}
-            >
-              {action.status}
+          const chipTone = tileHot
+            ? "home-daily-tile__badge--hot"
+            : "home-daily-tile__badge--idle";
+
+          const chipInner = statusText ? (
+            <span className="inline-flex max-w-full items-center gap-0.5 truncate">
+              {chip.rush ? (
+                <span
+                  className="material-symbols-outlined text-[11px]! leading-none opacity-90 sm:text-[12px]!"
+                  aria-hidden
+                >
+                  paid
+                </span>
+              ) : null}
+              {statusText}
             </span>
           ) : null;
 
-          const statusChipMobile = action.status ? (
+          const statusChipDesktop = chipInner ? (
             <span
-              className={`home-daily-tile__badge max-w-[110%] truncate px-1 py-0.5 font-mono text-[8px] font-black uppercase leading-none tracking-wide tabular-nums ${
-                action.hot
-                  ? "home-daily-tile__badge--hot"
-                  : "home-daily-tile__badge--idle"
-              }`}
+              className={`home-daily-tile__badge max-w-full px-2 py-0.5 font-mono text-[10px] font-semibold leading-none tabular-nums ${chipTone}`}
             >
-              {action.status}
+              {chipInner}
+            </span>
+          ) : null;
+
+          const statusChipMobile = chipInner ? (
+            <span
+              className={`home-daily-tile__badge max-w-[110%] px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase leading-none tracking-wide tabular-nums ${chipTone}`}
+            >
+              {chipInner}
             </span>
           ) : null;
 
@@ -120,14 +313,13 @@ export function HomeDailyActions({
                 className="home-daily-tile__glow pointer-events-none absolute inset-0 rounded-[inherit]"
               />
 
-              {/* Mobile: badge flotante arriba (estilo chest slot) */}
               {statusChipMobile ? (
                 <span className="absolute left-1/2 top-0 z-[2] -translate-x-1/2 -translate-y-1/2 sm:hidden">
                   {statusChipMobile}
                 </span>
               ) : null}
 
-              <span className="relative z-[1] flex h-[78%] w-[78%] max-h-11 max-w-11 items-center justify-center sm:h-11 sm:w-11 sm:max-h-none sm:max-w-none sm:shrink-0">
+              <span className="idle-reward__chest relative z-[1] flex h-[78%] w-[78%] max-h-11 max-w-11 items-center justify-center sm:h-11 sm:w-11 sm:max-h-none sm:max-w-none sm:shrink-0">
                 <Image
                   src={action.iconSrc}
                   alt=""
@@ -138,9 +330,12 @@ export function HomeDailyActions({
                 />
               </span>
 
-              {/* Desktop: rótulo y estado apilados a la derecha del ícono. */}
               <span className="relative z-[1] hidden min-w-0 flex-1 flex-col items-start gap-1 sm:flex">
-                <span className="max-w-full truncate text-[11px] font-bold uppercase tracking-[0.06em] text-white/85 group-hover:text-white">
+                <span
+                  className={`max-w-full truncate text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors group-hover:text-white ${
+                    tileHot ? "text-white" : "text-white/70"
+                  }`}
+                >
                   {label}
                 </span>
                 {statusChipDesktop}
@@ -157,9 +352,37 @@ export function HomeDailyActions({
                 className={className}
                 style={style}
                 aria-label={
-                  action.status ? `${label}. ${action.status}` : label
+                  statusText ? `${label}. ${statusText}` : label
                 }
                 title={label}
+              >
+                {inner}
+              </button>
+            );
+          }
+
+          if (action.heal && healLive) {
+            const titleHint = healError
+              ? label
+              : !healLive.needsHealing
+                ? onCooldown
+                  ? `${label} · ${formatHealTimer(healLive.cooldownMsLeft)}`
+                  : label
+                : onCooldown
+                  ? `${label} · ${healLive.rushCost}`
+                  : label;
+            return (
+              <button
+                key={action.id}
+                type="button"
+                disabled={healBusy || healDisabled}
+                onClick={() => runHeal(healLive)}
+                className={className}
+                style={style}
+                aria-label={
+                  statusText ? `${label}. ${statusText}` : label
+                }
+                title={titleHint}
               >
                 {inner}
               </button>
@@ -175,7 +398,7 @@ export function HomeDailyActions({
                 className={className}
                 style={style}
                 aria-label={
-                  action.status ? `${label}. ${action.status}` : label
+                  statusText ? `${label}. ${statusText}` : label
                 }
                 title={label}
               >
@@ -355,13 +578,21 @@ export function HomeEventsProgress({
         ? limited.name
         : null;
 
+  // ¿La pestaña abierta tiene algo para reclamar? El ícono de la cinta hace bob
+  // cuando sí: es la señal de "hay premio esperando" que el panel no daba —
+  // había que abrir la lista para enterarse.
+  const tabHasClaimable = tabs.find((it) => it.id === tab)?.hot === true;
+
   return (
     <section className="min-w-0">
       {/* Misma card con pestañas en mobile y desktop: el HUD resumido de mobile
           no listaba objetivos ni dejaba cambiar de Aventura/Semanal/Evento. */}
       <div className="ev-quest" style={{ ["--ev-accent" as string]: TAB_ACCENT[tab] }}>
         <div className="ev-ribbon">
-          <span aria-hidden className="ev-ribbon__icon">
+          <span
+            aria-hidden
+            className={`ev-ribbon__icon${tabHasClaimable ? " home-reward-bob" : ""}`}
+          >
             <Image
               src="/nav/adventure-icon.png"
               alt=""
@@ -434,7 +665,9 @@ export function HomeEventsProgress({
                             {labels.objectiveLabels[obj.id] ?? obj.labelKey}
                           </p>
                           {obj.claimable ? (
-                            <span className="home-quest-ready">{labels.claimable}</span>
+                            <span className="home-quest-ready home-reward-shine">
+                              {labels.claimable}
+                            </span>
                           ) : null}
                         </div>
                         <ProgressRing
@@ -517,7 +750,9 @@ export function HomeEventsProgress({
                             {labels.missionLabels[mission.id] ?? mission.id}
                           </p>
                           {mission.claimable ? (
-                            <span className="home-quest-ready">{labels.claimable}</span>
+                            <span className="home-quest-ready home-reward-shine">
+                              {labels.claimable}
+                            </span>
                           ) : null}
                         </div>
                         <ProgressRing

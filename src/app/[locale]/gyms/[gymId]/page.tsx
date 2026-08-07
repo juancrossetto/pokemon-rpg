@@ -14,6 +14,7 @@ import { formatGymCooldown, gymCooldownRemainingMs } from "@/lib/gym-cooldown";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { areChapterStagesCompleteForGym } from "@/lib/campaign";
 import { regionDef } from "@/lib/regions";
+import { gymBattleEnergyCost } from "@/lib/energy";
 
 export default async function GymLeaderPage({
   params,
@@ -94,6 +95,12 @@ export default async function GymLeaderPage({
   const badgeLabel = t.has(badgeKey) ? t(badgeKey) : gym.badgeName;
   const nameKey = `names.${gym.order}`;
   const gymNameLabel = t.has(nameKey) ? t(nameKey) : gym.name;
+
+  // El botón sólo aparece cuando no hay corrida activa, así que el primer
+  // combate es contra el pasillo — salvo que el gimnasio no tenga entrenadores.
+  const firstBattleEnergyCost = gymBattleEnergyCost(
+    gym.trainers.length > 0 ? "trainer" : "leader",
+  );
 
   const errors = {
     no_lead: tBattle("noLead"),
@@ -194,7 +201,13 @@ export default async function GymLeaderPage({
               {!locked && !activeRun && (
                 <>
                   <p className="text-label-sm text-on-surface-variant sm:text-right max-w-full sm:max-w-[220px]">{t("rematchHint")}</p>
-                  <StartGymRunButton gymId={gymId} locale={locale} label={t("rematch")} errors={errors} />
+                  <StartGymRunButton
+                    gymId={gymId}
+                    locale={locale}
+                    label={t("rematch")}
+                    energyCost={firstBattleEnergyCost}
+                    errors={errors}
+                  />
                 </>
               )}
               {activeRun && (
@@ -252,7 +265,13 @@ export default async function GymLeaderPage({
               gems={user.gems}
             />
           ) : (
-            <StartGymRunButton gymId={gymId} locale={locale} label={t("startChallenge")} errors={errors} />
+            <StartGymRunButton
+              gymId={gymId}
+              locale={locale}
+              label={t("startChallenge")}
+              energyCost={firstBattleEnergyCost}
+              errors={errors}
+            />
           )}
           </div>
         </div>

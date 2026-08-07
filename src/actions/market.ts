@@ -42,14 +42,23 @@ function parsePrice(raw: FormDataEntryValue | null): number | null {
   return isPriceValid(price) ? price : null;
 }
 
-function backToMarket(locale: string, tab: string, result: { error?: string; notice?: string }) {
+function backToMarket(
+  locale: string,
+  tab: string,
+  result: { error?: string; notice?: string; coins?: number; got?: "pokemon" | "item" },
+) {
   // 'layout' refresca el SiteHeader (saldo de monedas), no solo la página.
   revalidatePath(`/${locale}`, "layout");
   revalidatePath(`/${locale}/market`);
   revalidatePath(`/${locale}/pc`);
   revalidatePath(`/${locale}/team`);
   const param = result.error ? `&error=${result.error}` : `&notice=${result.notice}`;
-  redirect({ href: `/market?tab=${tab}${param}`, locale });
+  // El delta viaja en la URL sólo para animar el contador del header: el saldo
+  // real lo pone el revalidate de arriba. Por eso el cliente lo valida y lo
+  // acota antes de usarlo — es un parámetro que el jugador puede escribir.
+  const coins = !result.error && result.coins ? `&coins=${result.coins}` : "";
+  const got = !result.error && result.got ? `&got=${result.got}` : "";
+  redirect({ href: `/market?tab=${tab}${param}${coins}${got}`, locale });
 }
 
 /** Cobra la tarifa de publicación. No se devuelve al cancelar ni al expirar. */
@@ -241,6 +250,7 @@ export async function buyListing(locale: string, formData: FormData) {
 
   let error: string | undefined;
   let boughtPokemon = false;
+  let paidPrice = 0;
   try {
     await prisma.$transaction(async (tx) => {
       const listing = await tx.marketListing.findUnique({ where: { id: listingId } });
@@ -270,6 +280,7 @@ export async function buyListing(locale: string, formData: FormData) {
         data: { coins: { decrement: listing.price } },
       });
       if (paid.count === 0) throw new MarketError("insufficient_coins");
+      paidPrice = listing.price;
 
       // El vendedor cobra el precio menos la comisión (esa plata desaparece
       // de la economía a propósito — control de inflación).
@@ -302,7 +313,9 @@ export async function buyListing(locale: string, formData: FormData) {
   backToMarket(
     locale,
     "bought",
-    error ? { error } : { notice: boughtPokemon ? "bought_pokemon" : "bought" },
+    error
+      ? { error }
+      : { notice: boughtPokemon ? "bought_pokemon" : "bought", coins: -paidPrice },
   );
 }
 
@@ -327,6 +340,11 @@ export async function claimPurchase(locale: string, formData: FormData) {
   const listingId = String(formData.get("listingId") ?? "");
 
   let error: string | undefined;
+  // Qué se retiró, para que el collect FX vuele al destino correcto. Va en un
+  // objeto y no en un `let`: al asignarse dentro del callback de la
+  // transacción, el control-flow analysis de TS estrecharía la variable suelta
+  // a `null` y las comparaciones de abajo darían error.
+  const claimedRef: { kind: "pokemon" | "item" | null } = { kind: null };
   try {
     await prisma.$transaction(async (tx) => {
       await lockUsers(tx, userId);
@@ -355,12 +373,14 @@ export async function claimPurchase(locale: string, formData: FormData) {
           where: { id: poke.id },
           data: { ownerId: userId, teamSlot: null },
         });
+        claimedRef.kind = "pokemon";
       } else if (listing.kind === "ITEM" && listing.itemId && listing.quantity) {
         await tx.inventoryItem.upsert({
           where: { userId_itemId: { userId, itemId: listing.itemId } },
           create: { userId, itemId: listing.itemId, quantity: listing.quantity },
           update: { quantity: { increment: listing.quantity } },
         });
+        claimedRef.kind = "item";
       }
     });
   } catch (e) {
@@ -368,7 +388,11 @@ export async function claimPurchase(locale: string, formData: FormData) {
     else throw e;
   }
 
-  backToMarket(locale, "bought", error ? { error } : { notice: "claimed" });
+  backToMarket(
+    locale,
+    "bought",
+    error ? { error } : { notice: "claimed", got: claimedRef.kind ?? undefined },
+  );
 }
 
 export async function cancelListing(locale: string, formData: FormData) {
