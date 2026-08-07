@@ -79,7 +79,7 @@ export default function LoginPage() {
                   <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
                   {t("title")}
                 </p>
-                <h1 className="page-title text-[clamp(1.35rem,5vw,1.85rem)] text-white">
+                <h1 className="text-[clamp(1.35rem,5vw,1.85rem)] font-semibold uppercase tracking-[0.04em] text-white">
                   {t("welcomeTitle")}
                 </h1>
                 <p className="mt-1.5 text-[13px] leading-snug text-white/50">
