@@ -15,10 +15,20 @@ import { markBootSplashPending } from "@/lib/boot-splash";
 
 type Gender = "male" | "female" | "unspecified";
 
-const GENDER_OPTIONS: { value: Gender; icon: string }[] = [
-  { value: "male", icon: "boy" },
-  { value: "female", icon: "girl" },
-  { value: "unspecified", icon: "transgender" },
+const GENDER_OPTIONS: {
+  value: Gender;
+  icon: string;
+  labelKey: "genderMale" | "genderFemale" | "genderUnspecified";
+  shortKey: "genderMaleShort" | "genderFemaleShort" | "genderUnspecifiedShort";
+}[] = [
+  { value: "male", icon: "male", labelKey: "genderMale", shortKey: "genderMaleShort" },
+  { value: "female", icon: "female", labelKey: "genderFemale", shortKey: "genderFemaleShort" },
+  {
+    value: "unspecified",
+    icon: "question_mark",
+    labelKey: "genderUnspecified",
+    shortKey: "genderUnspecifiedShort",
+  },
 ];
 
 export default function RegisterPage() {
@@ -217,7 +227,7 @@ export default function RegisterPage() {
                     <p className="mt-1 px-0.5 text-[11px] text-white/40">{t("passwordHint")}</p>
                   </label>
 
-                  <div className="grid shrink-0 grid-cols-[minmax(0,1.25fr)_minmax(0,0.9fr)] items-end gap-2">
+                  <div className="shrink-0">
                     <CountrySelect
                       compact
                       label={t("country")}
@@ -227,35 +237,42 @@ export default function RegisterPage() {
                       locale={locale}
                       placeholder={t("countryPlaceholder")}
                     />
+                  </div>
 
-                    <div>
-                      <p className="mb-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
-                        {t("gender")}
-                      </p>
-                      <div className="grid grid-cols-3 gap-1">
-                        {GENDER_OPTIONS.map((opt) => (
+                  <div className="shrink-0">
+                    <p className="mb-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+                      {t("gender")}
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {GENDER_OPTIONS.map((opt) => {
+                        const label = t(opt.labelKey);
+                        const shortLabel = t(opt.shortKey);
+                        const selected = gender === opt.value;
+                        return (
                           <button
                             key={opt.value}
                             type="button"
-                            aria-pressed={gender === opt.value}
+                            aria-label={label}
+                            aria-pressed={selected}
+                            title={label}
                             onClick={() =>
-                              setGender(gender === opt.value ? null : opt.value)
+                              setGender(selected ? null : opt.value)
                             }
-                            title={t(
-                              `gender${opt.value[0].toUpperCase()}${opt.value.slice(1)}` as "genderMale",
-                            )}
-                            className={`flex items-center justify-center rounded-xl border py-2 transition ${
-                              gender === opt.value
+                            className={`flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-1.5 transition ${
+                              selected
                                 ? "border-pokeball-red bg-pokeball-red/20 text-pokeball-red"
-                                : "border-white/12 bg-black/40 text-white/45 hover:border-white/25 hover:text-white/70"
+                                : "border-white/12 bg-black/40 text-white/55 hover:border-white/25 hover:text-white/80"
                             }`}
                           >
-                            <span className="material-symbols-outlined text-[18px]!">
+                            <span className="material-symbols-outlined text-[22px]! leading-none sm:text-[24px]!">
                               {opt.icon}
                             </span>
+                            <span className="max-w-full truncate text-[10px] font-semibold leading-tight tracking-wide">
+                              {shortLabel}
+                            </span>
                           </button>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
                   </div>
 
