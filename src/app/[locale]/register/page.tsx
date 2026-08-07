@@ -78,8 +78,8 @@ export default function RegisterPage() {
     "w-full rounded-xl border border-white/12 bg-black/45 py-2.5 pl-11 pr-3 text-[16px] text-white outline-none transition placeholder:text-white/35 focus:border-pokeball-red/55 focus:bg-black/55 focus:ring-1 focus:ring-pokeball-red/30 sm:py-3";
 
   const preview = (
-    <div className="relative mx-auto flex w-full max-w-[8.5rem] items-end justify-center overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-white/6 to-black/40 px-2.5 py-2.5 lg:max-w-[9.5rem]">
-      <div className="relative flex h-24 w-full items-end justify-center sm:h-28 lg:h-32">
+    <div className="relative mx-auto flex w-full max-w-[9.5rem] items-end justify-center overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-white/6 to-black/40 px-3 py-3 lg:max-w-[11rem]">
+      <div className="relative flex h-28 w-full items-end justify-center sm:h-32 lg:h-40">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-pokeball-red/10 blur-2xl"
@@ -91,7 +91,7 @@ export default function RegisterPage() {
             className="relative z-10 h-full w-auto max-w-full object-contain object-bottom drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
           />
         ) : (
-          <span className="material-symbols-outlined relative z-10 text-[36px]! text-white/30 lg:text-[42px]!">
+          <span className="material-symbols-outlined relative z-10 text-[40px]! text-white/30 lg:text-[48px]!">
             person
           </span>
         )}
@@ -100,7 +100,9 @@ export default function RegisterPage() {
   );
 
   return (
-    <div className="relative isolate flex min-h-0 flex-1 flex-col">
+    /* Alto = viewport − header (app-main ya aplica el pt). Sin esto el
+       documento crece y aparece el scrollbar general del browser. */
+    <div className="relative isolate flex h-[calc(100dvh-3.5rem-env(safe-area-inset-top))] max-h-[calc(100dvh-3.5rem-env(safe-area-inset-top))] flex-col overflow-hidden xl:h-[calc(100dvh-3.5rem)] xl:max-h-[calc(100dvh-3.5rem)]">
       <AuthBackdrop />
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col px-3 py-2 sm:px-5 sm:py-3">
@@ -113,15 +115,14 @@ export default function RegisterPage() {
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pokeball-red/55 to-transparent"
             />
-            <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(188px,220px)_minmax(0,1fr)] lg:items-start">
-              {/* Columna corta: logo + preview al alto natural (sin estirar). */}
-              <aside className="flex shrink-0 flex-col gap-3 border-b border-white/10 px-4 py-3 lg:sticky lg:top-0 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-4 lg:py-4">
+            <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(200px,240px)_minmax(0,1fr)] lg:items-stretch">
+              <aside className="flex shrink-0 flex-col justify-center gap-3 border-b border-white/10 px-4 py-3 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-5 lg:py-5">
                 <div className="shrink-0 text-center">
                   <BrandLogo
                     alt={tNav("brand")}
                     priority
-                    sizes="120px"
-                    className="mx-auto h-auto w-[96px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:w-[110px]"
+                    sizes="140px"
+                    className="mx-auto h-auto w-[100px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:w-[120px] lg:w-[130px]"
                   />
                   <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.24em] text-white/40">
                     {tLogin("tagline")}
@@ -132,7 +133,7 @@ export default function RegisterPage() {
                 </div>
               </aside>
 
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:min-h-[min(100%,36rem)] lg:self-stretch">
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                 <div className="shrink-0 border-b border-white/8 px-4 py-2 sm:px-5 sm:py-2.5">
                   <p className="mb-0.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-pokeball-red">
                     <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
@@ -146,9 +147,8 @@ export default function RegisterPage() {
                   </p>
                 </div>
 
-                {/* Un solo scroll del cuerpo; submit queda fijo abajo. */}
-                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-2 [scrollbar-width:thin] sm:space-y-2.5 sm:px-5 sm:py-2.5">
-                  <label className="block">
+                <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-4 py-2 sm:gap-2.5 sm:px-5 sm:py-2.5">
+                  <label className="block shrink-0">
                     <span className="sr-only">{t("username")}</span>
                     <div className="relative">
                       <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]! text-white/40">
@@ -167,7 +167,7 @@ export default function RegisterPage() {
                     </div>
                   </label>
 
-                  <label className="block">
+                  <label className="block shrink-0">
                     <span className="sr-only">{t("email")}</span>
                     <div className="relative">
                       <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]! text-white/40">
@@ -185,7 +185,7 @@ export default function RegisterPage() {
                     </div>
                   </label>
 
-                  <label className="block">
+                  <label className="block shrink-0">
                     <span className="sr-only">{t("password")}</span>
                     <div className="relative">
                       <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]! text-white/40">
@@ -217,7 +217,7 @@ export default function RegisterPage() {
                     <p className="mt-1 px-0.5 text-[11px] text-white/40">{t("passwordHint")}</p>
                   </label>
 
-                  <div className="grid grid-cols-[minmax(0,1.25fr)_minmax(0,0.9fr)] items-end gap-2">
+                  <div className="grid shrink-0 grid-cols-[minmax(0,1.25fr)_minmax(0,0.9fr)] items-end gap-2">
                     <CountrySelect
                       compact
                       label={t("country")}
@@ -259,13 +259,13 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <p className="mb-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+                  <div className="flex min-h-0 flex-1 flex-col">
+                    <p className="mb-1.5 shrink-0 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
                       {t("avatar")}
                     </p>
-                    {/* Sin max-height propio: evita el scrollbar anidado de la grilla. */}
-                    <div className="rounded-xl border border-white/10 bg-black/25 p-1.5">
-                      <div className="grid grid-cols-7 gap-1 sm:grid-cols-8 lg:grid-cols-7 xl:grid-cols-8">
+                    {/* Único scroll interno: la grilla ocupa el resto del alto. */}
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-white/10 bg-black/25 p-1.5 [scrollbar-width:thin]">
+                      <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-7 lg:grid-cols-6">
                         {AVATAR_OPTIONS.map((opt) => (
                           <button
                             key={opt.id}
@@ -274,7 +274,7 @@ export default function RegisterPage() {
                             onClick={() =>
                               setAvatarId(avatarId === opt.id ? null : opt.id)
                             }
-                            className={`aspect-square overflow-hidden rounded-md border-2 bg-black/40 transition ${
+                            className={`aspect-square overflow-hidden rounded-lg border-2 bg-black/40 transition ${
                               avatarId === opt.id
                                 ? "border-pokeball-red ring-1 ring-pokeball-red/40"
                                 : "border-white/12 hover:border-white/30"
@@ -292,12 +292,12 @@ export default function RegisterPage() {
                   </div>
 
                   {error && (
-                    <p className="rounded-xl border border-error/30 bg-error/10 px-3 py-2 text-center text-[13px] text-error">
+                    <p className="shrink-0 rounded-xl border border-error/30 bg-error/10 px-3 py-2 text-center text-[13px] text-error">
                       {t(`errors.${error}`)}
                     </p>
                   )}
                   {status === "success" && (
-                    <p className="rounded-xl border border-tertiary/30 bg-tertiary/10 px-3 py-2 text-center text-[13px] text-tertiary">
+                    <p className="shrink-0 rounded-xl border border-tertiary/30 bg-tertiary/10 px-3 py-2 text-center text-[13px] text-tertiary">
                       {t("success")}
                     </p>
                   )}
