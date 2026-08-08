@@ -13,6 +13,7 @@ import { NextIntlClientProvider, type AbstractIntlMessages } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { markMobileNavDrawerOpen } from "@/lib/nav-drawer-persist";
+import { APP_TIME_ZONE } from "@/lib/app-time-zone";
 
 type AppLocale = (typeof routing.locales)[number];
 
@@ -115,7 +116,7 @@ export function I18nClientProvider({
 
   return (
     <LocaleSwitchContext.Provider value={api}>
-      <NextIntlClientProvider locale={locale} messages={messages}>
+      <NextIntlClientProvider locale={locale} messages={messages} timeZone={APP_TIME_ZONE}>
         {children}
       </NextIntlClientProvider>
     </LocaleSwitchContext.Provider>
