@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { CampaignPrimaryObjective, CampaignJourneyMenuTrigger } from "@/components/campaign-primary-objective";
@@ -41,6 +41,7 @@ import {
   getCampaignPrimaryAction,
   getCampaignActionForZone,
   getZoneUnlockRequirements,
+  recommendedChapterZoneId,
   resolveZoneNodeStatus,
   type CampaignNodeStatus,
   type CampaignProgressRow,
@@ -54,6 +55,7 @@ import {
   campaignTrainerErrorKey,
 } from "@/lib/campaign/client-errors";
 import { HubHelpPanel, CoachMark } from "@/components/journey-guidance";
+import { ExpeditionAmbient } from "@/components/home/expedition-ambient";
 import { UnlockCelebration } from "@/components/unlock-celebration";
 import { CampaignUnlockFeedback } from "@/components/campaign-unlock-feedback";
 import { GameCtaButton } from "@/components/game-cta-button";
@@ -93,10 +95,9 @@ const PATH_DONE_SOFT = "color-mix(in srgb, var(--theme-primary) 18%, transparent
 const PATH_DONE_RING = "color-mix(in srgb, var(--theme-primary-bright) 70%, transparent)";
 const PATH_DONE_GLOW = "color-mix(in srgb, var(--theme-primary) 45%, transparent)";
 const PATH_DONE_GLOW_STRONG = "color-mix(in srgb, var(--theme-primary-bright) 80%, transparent)";
-const PATH_LINE_FILL =
-  "linear-gradient(180deg, var(--theme-primary-bright) 0%, var(--theme-primary) 55%, var(--theme-primary-deep) 100%)";
-const PATH_NODE_SM = "h-6 w-6 sm:h-8 sm:w-8"; /* rail normal — compacto en mobile */
-const PATH_NODE_GYM = "h-9 w-9 sm:h-12 sm:w-12 lg:h-14 lg:w-14"; /* gimnasio */
+/* Nodos grandes: son paradas ilustradas del mapa, no viñetas de una lista. */
+const PATH_NODE_SM = "h-9 w-9 sm:h-12 sm:w-12";
+const PATH_NODE_GYM = "h-12 w-12 sm:h-16 sm:w-16 lg:h-[4.5rem] lg:w-[4.5rem]"; /* gimnasio */
 
 function zoneBarFill(isGym: boolean, done: boolean, inProgress: boolean): string {
   if (isGym || inProgress) return PATH_PROGRESS_FILL;
@@ -173,9 +174,17 @@ const ZONE_ROW_META = "text-[12px] font-mono tabular-nums text-white/55";
 const ZONE_CHIP =
   "inline-flex items-center gap-1 rounded-md bg-pokeball-red/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pokeball-red";
 
-function kindOf(zone: MapLocation): CampaignLocationKind {
+function kindOf(zone: MapLocation | null): CampaignLocationKind {
+  if (!zone) return "route";
   return zone.kindKey.replace("kinds.", "") as CampaignLocationKind;
 }
+
+/**
+ * Sendero entre dos nodos: una S suave en vez de una barra recta.
+ * `preserveAspectRatio="none"` estira el trazo a la altura real de la fila, y
+ * `vector-effect="non-scaling-stroke"` evita que ese estirado deforme el grosor.
+ */
+const TRAIL_PATH = "M10,0 C3,26 17,62 10,100";
 
 export type JourneySummary = {
   badges: number;
@@ -244,6 +253,9 @@ export function CampaignJourney({
   const [zoneId, setZoneId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [unlockToast, setUnlockToast] = useState<{ id: string; name: string } | null>(null);
+  /** El panel de detalle vive debajo de toda la lista en mobile. */
+  const panelRef = useRef<HTMLDivElement>(null);
+  const chapterTabsRef = useRef<HTMLElement>(null);
 
   // Dónde está el viaje de verdad (≠ el capítulo que estás hojeando).
   const currentChapterIdx = activeChapterIndex(chapters, farmingLocationId);
@@ -257,6 +269,35 @@ export function CampaignJourney({
     null;
   const farmingZone =
     chapters.flatMap((c) => c.zones).find((z) => z.id === farmingLocationId) ?? null;
+
+  /** Ambientación de la escena: la toma la zona donde está parado el jugador. */
+  const sceneKind = kindOf(farmingZone ?? zone ?? chapter?.zones[0] ?? null);
+
+  /**
+   * Sprite que camina el mapa: el primero del equipo que pueda pelear. Poner al
+   * Pokémon real del jugador sobre el sendero es lo que convierte el recorrido
+   * en "mi viaje" y no en un índice de zonas.
+   */
+  const leadSpriteUrl =
+    party?.members.find((m) => m.currentHp > 0)?.spriteUrl ??
+    party?.members[0]?.spriteUrl ??
+    null;
+
+  /**
+   * Único nodo señalado como "siguiente". Sólo en el capítulo donde está el
+   * viaje de verdad: hojeando un capítulo futuro, un "Siguiente" ahí sería
+   * mentira (nada de eso se puede jugar todavía).
+   */
+  const recommendedZoneId =
+    chapter && viewingCurrentChapter
+      ? recommendedChapterZoneId({
+          chapter,
+          farmingLocationId,
+          earnedGymOrders,
+          milestoneLocationId:
+            milestone.kind === "complete" ? null : milestone.locationId,
+        })
+      : null;
 
   const gymRecLevel =
     milestone.kind === "gym" && milestone.locationId
@@ -435,6 +476,35 @@ export function CampaignJourney({
     }
   }, [summary.zonesUnlocked, farmingZone, t]);
 
+  // En mobile el detalle vive debajo de toda la lista: sin esto tocar una zona
+  // parece no hacer nada y el jugador sigue tocando cards. Va en un efecto y no
+  // en el handler porque la card elegida se expande al seleccionarla y empuja
+  // al panel hacia abajo — hay que medir después del commit, no antes.
+  useEffect(() => {
+    if (!zoneId) return;
+    if (!window.matchMedia("(max-width: 1023px)").matches) return;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    panelRef.current?.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+      block: "start",
+    });
+  }, [zoneId]);
+
+  // La fila de capítulos scrollea horizontal: con 8 capítulos el activo puede
+  // quedar fuera de pantalla y la pantalla arranca mostrando el capítulo 1.
+  useEffect(() => {
+    const tab = chapterTabsRef.current?.querySelector<HTMLElement>(
+      `[data-chapter-tab="${chapterIndex}"]`,
+    );
+    if (!tab) return;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    tab.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [chapterIndex]);
+
   return (
     <div className={pending ? "opacity-90 transition-opacity" : undefined}>
       {unlockToast && (
@@ -548,6 +618,7 @@ export function CampaignJourney({
 
         <div className="min-w-0 order-1 lg:order-none">
           <nav
+            ref={chapterTabsRef}
             className="mb-3 flex gap-1.5 overflow-x-auto pb-1 xl:hidden"
             aria-label={t("chapter")}
           >
@@ -558,10 +629,16 @@ export function CampaignJourney({
                 <button
                   key={c.number}
                   type="button"
+                  data-chapter-tab={i}
                   onClick={() => openChapter(i)}
                   disabled={!c.unlocked}
-                  title={`${t("chapter")} ${c.number}${isCurrent ? ` · ${t("nodeCurrent")}` : ""}`}
-                  className={`relative min-h-8 shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold leading-tight transition sm:min-h-10 sm:px-3 sm:py-1.5 sm:text-label-sm ${
+                  aria-current={isCurrent ? "step" : selected ? "true" : undefined}
+                  title={
+                    !c.unlocked
+                      ? t("chapterLockedHint")
+                      : `${t("chapter")} ${c.number}${isCurrent ? ` · ${t("nodeCurrent")}` : ""}`
+                  }
+                  className={`relative min-h-8 shrink-0 overflow-hidden rounded-lg px-2.5 pb-1.5 pt-1 text-[11px] font-semibold leading-tight transition sm:min-h-10 sm:px-3 sm:pb-2 sm:pt-1.5 sm:text-label-sm ${
                     isCurrent
                       ? "bg-pokeball-red/18 text-white ring-1 ring-pokeball-red/65 shadow-[0_0_14px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent)]"
                       : selected
@@ -571,17 +648,57 @@ export function CampaignJourney({
                           : "bg-[#12141c] text-white/30"
                   }`}
                 >
-                  {isCurrent ? (
+                  {!c.unlocked ? (
+                    <span className="material-symbols-outlined mr-1 align-middle text-[12px]!">
+                      lock
+                    </span>
+                  ) : isCurrent ? (
                     <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-pokeball-red align-middle shadow-[0_0_6px_var(--color-pokeball-red)]" />
+                  ) : c.completed ? (
+                    <span className="material-symbols-outlined mr-1 align-middle text-[12px]! text-electric-yellow">
+                      check_circle
+                    </span>
                   ) : null}
                   {t(c.nameKey)}
+                  {/* Avance del capítulo en la propia pestaña: la fila deja de
+                      ser un menú plano y muestra por dónde va el viaje. */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-1.5 bottom-0.5 h-[2px] overflow-hidden rounded-full bg-white/10"
+                  >
+                    <span
+                      className={`block h-full rounded-full transition-all duration-500 ${
+                        c.completed ? "bg-electric-yellow" : PATH_PROGRESS_FILL
+                      }`}
+                      style={{ width: `${c.unlocked ? c.percent : 0}%` }}
+                    />
+                  </span>
                 </button>
               );
             })}
           </nav>
 
           {chapter && (
-            <>
+            <div className="campaign-scene overflow-hidden rounded-2xl p-2.5 sm:p-3.5">
+              {/*
+                El arte del capítulo detrás del recorrido: sin esto la pantalla
+                más "de aventura" del juego era una lista sobre el gris de la app.
+              */}
+              <div className="campaign-scene__art" aria-hidden>
+                <Image
+                  src={bannerArt.src}
+                  alt=""
+                  fill
+                  unoptimized
+                  sizes="(max-width: 1024px) 100vw, 900px"
+                  className="object-cover"
+                  style={{ objectPosition: bannerArt.objectPosition }}
+                />
+              </div>
+              <div className="campaign-scene__veil" aria-hidden />
+              <ExpeditionAmbient kind={sceneKind} />
+
+              <div className="relative z-[1]">
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <p className={`mb-0 ${SECTION_LABEL}`}>{t("chapterPath")}</p>
                 {viewingCurrentChapter ? (
@@ -593,8 +710,22 @@ export function CampaignJourney({
                     {t("chapterDone")}
                   </span>
                 ) : null}
+                {/* Hojear capítulos es un callejón sin salida sin esto: no había
+                    forma de volver a donde el viaje está de verdad. */}
+                {!viewingCurrentChapter ? (
+                  <button
+                    type="button"
+                    onClick={() => openChapter(currentChapterIdx)}
+                    className="ml-auto inline-flex min-h-7 items-center gap-1 rounded-md bg-pokeball-red/16 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-pokeball-red ring-1 ring-pokeball-red/45 transition hover:bg-pokeball-red/25"
+                  >
+                    <span className="material-symbols-outlined text-[13px]!">my_location</span>
+                    {t("backToCurrentChapter")}
+                  </button>
+                ) : null}
               </div>
-              <ol className="relative flex flex-col gap-2.5 sm:gap-3.5">
+              {/* `key` por capítulo: al cambiar de capítulo se remonta la lista
+                  y la entrada escalonada vuelve a correr. */}
+              <ol key={chapter.number} className="relative flex flex-col gap-2.5 sm:gap-3.5">
                 {chapter.zones.map((z, i) => {
                   const nodeStatus = resolveZoneNodeStatus({
                     zone: z,
@@ -607,9 +738,16 @@ export function CampaignJourney({
                     <ZoneRow
                       key={z.id}
                       zone={z}
+                      stepIndex={i + 1}
                       isLast={i === chapter.zones.length - 1}
                       selected={zoneId === z.id}
                       isFarming={z.id === farmingLocationId}
+                      isNextStep={z.id === recommendedZoneId}
+                      leadsToNextStep={
+                        recommendedZoneId != null &&
+                        chapter.zones[i + 1]?.id === recommendedZoneId
+                      }
+                      leadSpriteUrl={leadSpriteUrl}
                       gymRequirement={gymRequirements[z.id]}
                       chapter={chapter}
                       teamMaxLevel={summary.teamMaxLevel}
@@ -620,7 +758,8 @@ export function CampaignJourney({
                   );
                 })}
               </ol>
-            </>
+              </div>
+            </div>
           )}
         </div>
 
@@ -628,7 +767,10 @@ export function CampaignJourney({
           `min-w-0`: sin esto el track del grid no puede encoger por debajo del
           contenido más ancho y empuja la columna hermana.
         */}
-        <div className="min-w-0 order-2 lg:order-none lg:sticky lg:top-20 lg:z-0 lg:self-start">
+        <div
+          ref={panelRef}
+          className="min-w-0 order-2 scroll-mt-20 lg:order-none lg:sticky lg:top-20 lg:z-0 lg:self-start"
+        >
           {zone && (
             <ZonePanel
               zone={zone}
@@ -835,9 +977,13 @@ function JourneyStrip({
 
 function ZoneRow({
   zone,
+  stepIndex,
   isLast,
   selected,
   isFarming,
+  isNextStep,
+  leadsToNextStep,
+  leadSpriteUrl,
   gymRequirement,
   chapter,
   teamMaxLevel,
@@ -846,9 +992,17 @@ function ZoneRow({
   onPick,
 }: {
   zone: MapLocation;
+  /** Posición dentro del capítulo (1-based) — el orden a seguir, explícito. */
+  stepIndex: number;
   isLast: boolean;
   selected: boolean;
   isFarming: boolean;
+  /** Único nodo recomendado del capítulo. */
+  isNextStep: boolean;
+  /** El tramo que sale de este nodo desemboca en el recomendado. */
+  leadsToNextStep: boolean;
+  /** Sprite del Pokémon que encabeza el equipo — camina el sendero. */
+  leadSpriteUrl: string | null;
   gymRequirement?: GymRequirement;
   chapter: Chapter;
   teamMaxLevel: number;
@@ -878,10 +1032,10 @@ function ZoneRow({
   const artBleed = hasStageArt && artLayout === "bleed";
   const thumbSrc = campaignMapSrc(zone.id);
   const nodeClass = isGym ? PATH_NODE_GYM : PATH_NODE_SM;
-  /** Debajo del círculo (mt-2 + tamaño del nodo). */
+  /** Debajo del círculo (mt-1.5/mt-2 + tamaño del nodo). */
   const railLineTop = isGym
-    ? "top-[calc(0.5rem+2.25rem)] sm:top-[calc(0.5rem+3rem)] lg:top-[calc(0.5rem+3.5rem)]"
-    : "top-[calc(0.5rem+1.5rem)] sm:top-[calc(0.5rem+2rem)]";
+    ? "top-[calc(0.375rem+3rem)] sm:top-[calc(0.5rem+4rem)] lg:top-[calc(0.5rem+4.5rem)]"
+    : "top-[calc(0.375rem+2.25rem)] sm:top-[calc(0.5rem+3rem)]";
   const lineFilled =
     done || pathPct >= 100 || isFarming || nodeStatus === "current" || nodeStatus === "in_progress";
   const lineFillPct = done || pathPct >= 100 ? 100 : Math.min(100, Math.max(0, pathPct));
@@ -915,11 +1069,39 @@ function ZoneRow({
               : null;
 
   return (
-    <li className="relative flex items-stretch gap-2 sm:gap-3">
-      {/* Ancho fijo (= gimnasio) para centrar nodos chicos y la línea. */}
-      <div className="relative w-9 shrink-0 self-stretch sm:w-12 lg:w-14">
+    <li
+      className="campaign-node-in relative flex items-stretch gap-2 sm:gap-3"
+      style={{ "--campaign-node-i": stepIndex - 1 } as CSSProperties}
+    >
+      {/* Ancho fijo (= gimnasio) para centrar nodos chicos y el sendero. */}
+      <div className="relative w-12 shrink-0 self-stretch sm:w-16 lg:w-[4.5rem]">
+        {/* El entrenador parado en el nodo donde está el jugador. */}
+        {isFarming && leadSpriteUrl ? (
+          <>
+            <span
+              aria-hidden
+              className="campaign-hiker__shadow pointer-events-none absolute left-1/2 top-0 z-20 h-1.5 w-7 -translate-x-1/2 rounded-[50%] bg-black/70 blur-[2px] sm:w-9"
+            />
+            <span
+              className="campaign-hiker pointer-events-none absolute left-1/2 z-20 -top-7 sm:-top-9"
+              title={t("farming")}
+            >
+              <Image
+                src={leadSpriteUrl}
+                alt=""
+                width={44}
+                height={44}
+                unoptimized
+                className="h-8 w-8 object-contain object-bottom drop-shadow-[0_3px_6px_rgba(0,0,0,0.65)] sm:h-11 sm:w-11"
+              />
+            </span>
+          </>
+        ) : null}
+
         <span
-          className={`relative z-10 mx-auto mt-1.5 flex ${nodeClass} items-center justify-center rounded-full border sm:mt-2 ${
+          className={`relative z-10 mx-auto mt-1.5 flex ${nodeClass} items-center justify-center overflow-hidden rounded-full border sm:mt-2 ${
+            isNextStep && !done ? "campaign-next-halo " : ""
+          }${
             !zone.unlocked
               ? "border-white/15 bg-[#12141c] text-white/35"
               : isFarming || nodeStatus === "current"
@@ -943,55 +1125,130 @@ function ZoneRow({
           }
           aria-current={selected || isFarming ? "step" : undefined}
         >
-          {!zone.unlocked ? (
-            <span
-              className={`material-symbols-outlined ${isGym ? "text-[16px]! sm:text-[20px]! lg:text-[22px]!" : "text-[12px]! sm:text-[15px]!"}`}
-            >
-              lock
-            </span>
-          ) : done ? (
-            <span
-              className={`material-symbols-outlined font-bold ${isGym ? "text-[16px]! sm:text-[22px]! lg:text-[24px]!" : "text-[12px]! sm:text-[16px]!"}`}
-              style={{
-                color: PATH_DONE,
-                filter: `drop-shadow(0 0 5px ${PATH_DONE_GLOW_STRONG})`,
-              }}
-            >
-              check
-            </span>
-          ) : isGym && gymRequirement?.leaderSpriteUrl ? (
-            <Image
-              src={gymRequirement.leaderSpriteUrl}
-              alt=""
-              width={56}
-              height={56}
-              unoptimized
-              className={
-                gymRequirement.leaderSpriteUrl.includes("/avatars/")
-                  ? "h-7 w-7 object-contain object-bottom drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-10 sm:w-10 lg:h-11 lg:w-11"
-                  : "h-7 w-7 object-contain object-bottom [image-rendering:pixelated] sm:h-10 sm:w-10 lg:h-11 lg:w-11"
-              }
-            />
-          ) : (
-            <ZoneIcon
-              kind={style.icon}
-              className={isGym ? "h-5 w-5 sm:h-7 sm:w-7 lg:h-8 lg:w-8" : "h-3 w-3 sm:h-4 sm:w-4"}
-            />
-          )}
+          {/* Arte real de la zona dentro del nodo: cada parada del sendero se
+              reconoce por su paisaje, no por un ícono genérico repetido. */}
+          {zone.unlocked && hasStageArt ? (
+            <>
+              <Image
+                src={thumbSrc}
+                alt=""
+                fill
+                sizes="72px"
+                className={`object-cover ${done ? "opacity-30" : "opacity-55"}`}
+                aria-hidden
+              />
+              <span
+                aria-hidden
+                className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(10,11,16,0.25)_0%,rgba(10,11,16,0.8)_100%)]"
+              />
+            </>
+          ) : null}
+
+          <span className="relative flex items-center justify-center">
+            {!zone.unlocked ? (
+              <span
+                className={`material-symbols-outlined ${isGym ? "text-[20px]! sm:text-[26px]! lg:text-[28px]!" : "text-[15px]! sm:text-[19px]!"}`}
+              >
+                lock
+              </span>
+            ) : done ? (
+              <span
+                className={`campaign-node-seal material-symbols-outlined font-bold ${isGym ? "text-[22px]! sm:text-[30px]! lg:text-[32px]!" : "text-[16px]! sm:text-[21px]!"}`}
+                style={{
+                  color: PATH_DONE,
+                  filter: `drop-shadow(0 0 5px ${PATH_DONE_GLOW_STRONG})`,
+                }}
+              >
+                check
+              </span>
+            ) : isGym && gymRequirement?.leaderSpriteUrl ? (
+              <Image
+                src={gymRequirement.leaderSpriteUrl}
+                alt=""
+                width={72}
+                height={72}
+                unoptimized
+                className={
+                  gymRequirement.leaderSpriteUrl.includes("/avatars/")
+                    ? "h-9 w-9 object-contain object-bottom drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-[3.25rem] sm:w-[3.25rem] lg:h-[3.6rem] lg:w-[3.6rem]"
+                    : "h-9 w-9 object-contain object-bottom [image-rendering:pixelated] sm:h-[3.25rem] sm:w-[3.25rem] lg:h-[3.6rem] lg:w-[3.6rem]"
+                }
+              />
+            ) : (
+              <ZoneIcon
+                kind={style.icon}
+                className={
+                  isGym
+                    ? "h-6 w-6 sm:h-9 sm:w-9 lg:h-10 lg:w-10"
+                    : "h-4 w-4 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] sm:h-5 sm:w-5"
+                }
+              />
+            )}
+          </span>
         </span>
-        {!isLast ? (
+
+        {/* Chevron que cae sobre el nodo recomendado: señala el orden sin
+            depender de leer los chips. */}
+        {isNextStep && !done && stepIndex > 1 ? (
           <span
             aria-hidden
-            className={`pointer-events-none absolute left-1/2 z-0 w-[2.5px] min-h-[1.5rem] -translate-x-1/2 overflow-visible rounded-full bg-white/[0.08] ${railLineTop} -bottom-3.5`}
+            className="campaign-next-arrow material-symbols-outlined pointer-events-none absolute left-1/2 top-[-0.6rem] z-20 text-[15px]! text-pokeball-red drop-shadow-[0_0_6px_color-mix(in_srgb,var(--color-pokeball-red)_60%,transparent)]"
           >
-            <span
-              className="campaign-path-neon absolute inset-x-0 top-0 w-full rounded-full transition-[height] duration-500 ease-out"
-              style={{
-                height: `${lineFillPct}%`,
-                background: lineFilled ? PATH_LINE_FILL : "transparent",
-                opacity: lineFilled && lineFillPct > 0 ? 1 : 0,
-              }}
+            keyboard_double_arrow_down
+          </span>
+        ) : null}
+
+        {!isLast ? (
+          /*
+            El `<svg>` va envuelto y no posicionado a mano: con `top`/`bottom` y
+            un viewBox 20×100 el ratio intrínseco gana y el tramo se dibuja 5×
+            más largo que la fila, cruzándose con el sendero siguiente. El span
+            resuelve el alto y el svg lo llena.
+          */
+          <span
+            aria-hidden
+            className={`pointer-events-none absolute left-1/2 z-0 w-7 min-h-[1.5rem] -translate-x-1/2 ${railLineTop} -bottom-4 sm:-bottom-[1.375rem]`}
+          >
+          <svg
+            viewBox="0 0 20 100"
+            preserveAspectRatio="none"
+            className="h-full w-full overflow-visible"
+          >
+            {/* Terreno sin recorrer. */}
+            <path
+              d={TRAIL_PATH}
+              fill="none"
+              stroke="rgba(255,255,255,0.10)"
+              strokeWidth={3}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
             />
+            {/* Huellas marchando hacia el próximo paso. */}
+            {leadsToNextStep ? (
+              <path
+                className="campaign-trail-march"
+                d={TRAIL_PATH}
+                fill="none"
+                strokeWidth={3.5}
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            ) : null}
+            {/* Tramo recorrido: `pathLength=100` normaliza el dash a porcentaje,
+                así el mismo cálculo sirve para filas de cualquier alto. */}
+            {lineFilled && lineFillPct > 0 ? (
+              <path
+                className="campaign-trail-fill"
+                d={TRAIL_PATH}
+                pathLength={100}
+                fill="none"
+                strokeWidth={3.5}
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+                style={{ strokeDasharray: 100, strokeDashoffset: 100 - lineFillPct }}
+              />
+            ) : null}
+          </svg>
           </span>
         ) : null}
       </div>
@@ -1007,11 +1264,13 @@ function ZoneRow({
             ? "opacity-45"
             : selected
               ? "ring-2 ring-electric-yellow/80 shadow-[0_0_28px_color-mix(in_srgb,var(--color-electric-yellow)_42%,transparent),0_0_0_1px_color-mix(in_srgb,var(--color-electric-yellow)_25%,transparent)]"
-              : isFarming || nodeStatus === "current"
-                ? "ring-1 ring-pokeball-red/55 shadow-[0_0_20px_color-mix(in_srgb,var(--color-pokeball-red)_18%,transparent)]"
-                : isGym && !done
-                  ? "ring-1 ring-electric-yellow/40"
-                  : ""
+              : isNextStep && !done
+                ? "ring-2 ring-pokeball-red/70 shadow-[0_0_26px_color-mix(in_srgb,var(--color-pokeball-red)_26%,transparent)]"
+                : isFarming || nodeStatus === "current"
+                  ? "ring-1 ring-pokeball-red/55 shadow-[0_0_20px_color-mix(in_srgb,var(--color-pokeball-red)_18%,transparent)]"
+                  : isGym && !done
+                    ? "ring-1 ring-electric-yellow/40"
+                    : ""
         }`}
       >
         {artBleed && zone.unlocked ? (
@@ -1049,6 +1308,8 @@ function ZoneRow({
               <ZoneRowBody
                 zone={zone}
                 t={t}
+                stepIndex={stepIndex}
+                isNextStep={isNextStep}
                 compact={compact}
                 isGym={isGym}
                 gymWon={gymWon}
@@ -1121,6 +1382,8 @@ function ZoneRow({
               <ZoneRowBody
                 zone={zone}
                 t={t}
+                stepIndex={stepIndex}
+                isNextStep={isNextStep}
                 compact={compact}
                 isGym={isGym}
                 gymWon={gymWon}
@@ -1145,6 +1408,8 @@ function ZoneRow({
 function ZoneRowBody({
   zone,
   t,
+  stepIndex,
+  isNextStep,
   compact,
   isGym,
   gymWon,
@@ -1160,6 +1425,8 @@ function ZoneRowBody({
 }: {
   zone: MapLocation;
   t: ReturnType<typeof useTranslations>;
+  stepIndex: number;
+  isNextStep: boolean;
   compact: boolean;
   isGym: boolean;
   gymWon: boolean;
@@ -1176,6 +1443,16 @@ function ZoneRowBody({
   return (
     <>
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          {/* Ordinal del capítulo: hace explícito que la lista se recorre de
+              arriba hacia abajo, no que son siete opciones sueltas. */}
+          <span
+            className={`font-mono text-[10px] tabular-nums drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)] sm:text-[11px] ${
+              isNextStep ? "text-pokeball-red" : done ? "text-white/45" : "text-white/30"
+            }`}
+            aria-hidden
+          >
+            {String(stepIndex).padStart(2, "0")}
+          </span>
           <h3
             className={`${
               isGym && !compact
@@ -1187,7 +1464,18 @@ function ZoneRowBody({
           >
             {t(zone.nameKey)}
           </h3>
-          {statusLabel && (
+          {/* "Siguiente" reemplaza al estado genérico: dos chips compitiendo
+              en la misma fila diluyen justo la señal que importa. Salvo en una
+              zona bloqueada, donde "Siguiente" solo no diría que falta abrirla. */}
+          {isNextStep && !done ? (
+            <span className="campaign-next-chip inline-flex items-center gap-0.5 rounded-md bg-pokeball-red px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white shadow-[0_2px_10px_color-mix(in_srgb,var(--color-pokeball-red)_45%,transparent)] sm:px-2 sm:text-[9px]">
+              <span className="material-symbols-outlined text-[10px]! leading-none sm:text-[11px]!">
+                play_arrow
+              </span>
+              {t("nodeNext")}
+            </span>
+          ) : null}
+          {statusLabel && !(isNextStep && !done && zone.unlocked) && (
             <span
               className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider sm:px-2 sm:text-[9px] ${
                 gymWon || (done && !isGym)

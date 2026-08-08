@@ -1,10 +1,8 @@
 import Image from "next/image";
 
-// Proporción real del arte (947x447 tras recortarlo). El asset original venía
-// con ~300px de margen transparente por lado, lo que hacía que en el navbar el
-// logo se viera diminuto aunque la caja midiera lo correcto.
-const LOGO_WIDTH = 947;
-const LOGO_HEIGHT = 447;
+// Proporción real del arte (800×381 tras recortar el masterball wordmark).
+const LOGO_WIDTH = 800;
+const LOGO_HEIGHT = 381;
 
 /**
  * Logo de marca. Fuente única para el navbar (desktop y mobile) y las
@@ -32,7 +30,7 @@ export function BrandLogo({
 }) {
   return (
     <Image
-      src="/logo.png"
+      src="/logo.png?v=masterball"
       alt={alt}
       width={LOGO_WIDTH}
       height={LOGO_HEIGHT}

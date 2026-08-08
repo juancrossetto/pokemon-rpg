@@ -8374,10 +8374,273 @@ body {
     0 0 22px color-mix(in srgb, var(--theme-primary) 28%, transparent);
 }
 
+/* Entrada escalonada del recorrido: al cambiar de capítulo las cards no
+   aparecen de golpe, se leen de arriba hacia abajo (que es el orden a seguir). */
+@keyframes campaign-node-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.campaign-node-in {
+  animation: campaign-node-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--campaign-node-i, 0) * 55ms);
+}
+
+/* Nodo recomendado: halo que respira para que el ojo caiga ahí primero. */
+@keyframes campaign-next-halo {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-pokeball-red) 60%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-pokeball-red) 0%, transparent);
+  }
+}
+
+.campaign-next-halo {
+  animation: campaign-next-halo 2.2s cubic-bezier(0.35, 0, 0.35, 1) infinite;
+}
+
+/* Chip "Siguiente": flota apenas, sin robarle atención al CTA. */
+@keyframes campaign-next-chip {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+.campaign-next-chip {
+  animation: campaign-next-chip 1.9s ease-in-out infinite;
+}
+
+/* Flecha que baja hacia el siguiente nodo del riel. */
+@keyframes campaign-next-arrow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translate(-50%, -2px);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, 2px);
+  }
+}
+
+.campaign-next-arrow {
+  animation: campaign-next-arrow 1.6s ease-in-out infinite;
+}
+
+/* Card de objetivo (mobile): entra desde arriba una sola vez por render. */
+@keyframes campaign-objective-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.campaign-objective-in {
+  animation: campaign-objective-in 0.35s ease-out both;
+}
+
+/* Barrido diagonal sobre la card de objetivo cuando la acción está lista. */
+@keyframes campaign-objective-sheen {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+
+.campaign-objective-sheen::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 32%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-electric-yellow) 16%, transparent) 50%,
+    transparent 100%
+  );
+  animation: campaign-objective-sheen 3.6s ease-in-out infinite;
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   Escena de aventura: el recorrido deja de ser una lista sobre el fondo de
+   la app y pasa a ser un tablero ilustrado con el arte del capítulo detrás.
+   ─────────────────────────────────────────────────────────────────────── */
+.campaign-scene {
+  position: relative;
+  background: #0b0d13;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 18px 44px rgba(0, 0, 0, 0.45);
+}
+
+.campaign-scene__art {
+  position: absolute;
+  inset: -10%;
+  filter: blur(3px) saturate(1.2);
+  opacity: 0.3;
+  animation: campaign-scene-drift 42s ease-in-out infinite alternate;
+}
+
+@keyframes campaign-scene-drift {
+  from {
+    transform: scale(1.06) translate3d(-1.6%, 1%, 0);
+  }
+  to {
+    transform: scale(1.15) translate3d(1.6%, -1.6%, 0);
+  }
+}
+
+/* Velo: el arte tiene que ambientar, no pelearle legibilidad a las cards. */
+.campaign-scene__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      120% 70% at 12% 0%,
+      color-mix(in srgb, var(--theme-primary) 12%, transparent) 0%,
+      transparent 60%
+    ),
+    linear-gradient(180deg, rgba(9, 10, 15, 0.74) 0%, rgba(9, 10, 15, 0.9) 55%, rgba(9, 10, 15, 0.96) 100%);
+}
+
+/* ── Sendero ─────────────────────────────────────────────────────────── */
+
+/* Tramo ya recorrido: se "dibuja" al cambiar el progreso. */
+.campaign-trail-fill {
+  stroke: var(--theme-primary-bright);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--theme-primary) 75%, transparent));
+  transition: stroke-dashoffset 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Huellas que marchan hacia el próximo nodo. */
+.campaign-trail-march {
+  stroke: color-mix(in srgb, var(--color-pokeball-red) 85%, transparent);
+  stroke-dasharray: 1 9;
+  animation: campaign-trail-march 1.15s linear infinite;
+}
+
+@keyframes campaign-trail-march {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* ── Entrenador sobre el mapa ────────────────────────────────────────── */
+.campaign-hiker {
+  /* El centrado va en la base y no sólo en el keyframe: si la animación no
+     corre (reduced motion, primer frame), el sprite igual queda sobre el nodo. */
+  transform: translate(-50%, 0);
+  animation: campaign-hiker-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes campaign-hiker-bob {
+  0%,
+  100% {
+    transform: translate(-50%, 0) scaleX(1);
+  }
+  50% {
+    transform: translate(-50%, -4px) scaleX(1.03);
+  }
+}
+
+.campaign-hiker__shadow {
+  animation: campaign-hiker-shadow 2.4s ease-in-out infinite;
+}
+
+@keyframes campaign-hiker-shadow {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: translateX(-50%) scale(0.8);
+  }
+}
+
+/* ── Nodos ───────────────────────────────────────────────────────────── */
+
+/* Sello dorado al completar: el check aterriza, no aparece. */
+.campaign-node-seal {
+  animation: campaign-node-seal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes campaign-node-seal {
+  0% {
+    opacity: 0;
+    transform: scale(1.9) rotate(-14deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.92) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Anillo de progreso del capítulo en el hero. */
+.campaign-ring__value {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .campaign-path-neon,
   .campaign-warm-bar {
     box-shadow: none;
+  }
+
+  .campaign-scene__art,
+  .campaign-trail-march,
+  .campaign-hiker,
+  .campaign-hiker__shadow,
+  .campaign-node-seal {
+    animation: none !important;
+  }
+
+  .campaign-hiker {
+    transform: translate(-50%, 0);
+  }
+
+  .campaign-trail-fill,
+  .campaign-ring__value {
+    transition: none;
+  }
+
+  .campaign-node-in,
+  .campaign-next-halo,
+  .campaign-next-chip,
+  .campaign-next-arrow,
+  .campaign-objective-in,
+  .campaign-objective-sheen::after {
+    animation: none !important;
+  }
+
+  .campaign-objective-sheen::after {
+    display: none;
   }
 }
 
@@ -12024,6 +12287,49 @@ html.boot-splash-pending .boot-splash {
   animation-iteration-count: infinite;
 }
 
+/* Panel de login: glass fino, sin “card gaming” pesada. */
+.auth-login-panel {
+  border: 1px solid color-mix(in srgb, white 10%, transparent);
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, white 6%, transparent) 0%,
+      color-mix(in srgb, #0a0810 88%, transparent) 42%,
+      color-mix(in srgb, #08060c 94%, transparent) 100%
+    );
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 6%, transparent) inset,
+    0 18px 48px rgba(0, 0, 0, 0.42),
+    0 0 0 1px color-mix(in srgb, var(--theme-primary) 8%, transparent);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.auth-login-rise {
+  animation: auth-login-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes auth-login-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-field {
+  caret-color: var(--theme-primary-bright);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-login-rise {
+    animation: none;
+  }
+}
+
 /* Misma idea que .auth-spark pero teñido por el tipo del Pokémon: reutiliza el
    keyframe de abajo y toma el color de --spark-color, que la card ya calcula
    desde --type-accent. Así un Charizard destella naranja y un Blastoise azul. */
@@ -12657,24 +12963,43 @@ html.boot-splash-pending .boot-splash {
 
 /*
   Avatares locales (`/avatars/*1.png`): retratos 3D cel-shaded.
-  `.trainer-sprite-fill` = marcos grandes (hexágono, menú).
-  `.trainer-sprite-thumb` = celdas chicas de la grilla / registro.
+  El arte mezcla encuadres (bustos ajustados vs cuerpo en lienzo vacío), así
+  que `contain` deja celdas irregulares. `cover` + ancla en la cara unifica
+  register, profile picker y chips del header.
 */
-.trainer-sprite-fill {
+.trainer-sprite-fill,
+.trainer-sprite-thumb {
   object-fit: cover;
-  object-position: center 18%;
-  transform: scale(1.12);
-  transform-origin: center 18%;
+  object-position: center 16%;
+  transform: scale(1.14);
+  transform-origin: center 16%;
 }
 
-.trainer-sprite-thumb {
-  object-fit: contain;
-  object-position: center top;
-  padding: 2px;
+/*
+  Stage art cortado a media pierna: el borde duro se disuelve hacia
+  transparente para que no se lea como crop accidental.
+*/
+.trainer-stage--soft-feet {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 68%,
+    rgba(0, 0, 0, 0.55) 84%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 68%,
+    rgba(0, 0, 0, 0.55) 84%,
+    transparent 100%
+  );
+  mask-mode: alpha;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .trainer-sprite-fill {
+  .trainer-sprite-fill,
+  .trainer-sprite-thumb {
     transform: none;
   }
 }

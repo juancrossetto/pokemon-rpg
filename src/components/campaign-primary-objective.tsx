@@ -31,6 +31,67 @@ function translateRequirement(
   return t(req.descriptionKey, params);
 }
 
+/**
+ * Anillo de progreso alrededor del ícono del objetivo. El porcentaje ya vivía
+ * en una barra plana; en circular se lee de un vistazo y le da al bloque el
+ * peso visual que corresponde a la acción principal de la pantalla.
+ */
+function ObjectiveRing({
+  percent,
+  gymReady,
+  size,
+}: {
+  percent: number;
+  gymReady: boolean;
+  size: number;
+}) {
+  const stroke = size <= 30 ? 3 : 3.5;
+  const r = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * r;
+  const accent = gymReady ? "var(--color-electric-yellow)" : "var(--color-pokeball-red)";
+
+  return (
+    <span
+      className="relative grid shrink-0 place-items-center"
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <svg className="absolute inset-0 -rotate-90" viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="rgba(255,255,255,0.10)"
+          strokeWidth={stroke}
+        />
+        <circle
+          className="campaign-ring__value"
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={accent}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - Math.min(100, Math.max(0, percent)) / 100)}
+          style={{ filter: `drop-shadow(0 0 5px color-mix(in srgb, ${accent} 55%, transparent))` }}
+        />
+      </svg>
+      <span
+        className="material-symbols-outlined relative"
+        style={{
+          fontSize: `${Math.round(size * 0.44)}px`,
+          color: accent,
+        }}
+      >
+        {gymReady ? "military_tech" : "flag"}
+      </span>
+    </span>
+  );
+}
+
 /** CTA de la barra: `.game-cta` + Grobold (mismo patrón que Explorar / Torre). */
 function ObjectiveBarCta({
   href,
@@ -40,6 +101,7 @@ function ObjectiveBarCta({
   disabled,
   isTravel,
   onTravel,
+  block = false,
 }: {
   href: string;
   label: string;
@@ -49,9 +111,12 @@ function ObjectiveBarCta({
   disabled: boolean;
   isTravel: boolean;
   onTravel?: () => void;
+  /** Ancho completo — variante mobile de la card de objetivo. */
+  block?: boolean;
 }) {
-  const className =
-    "mb-0! w-auto! min-h-11! min-w-0! shrink-0 gap-1.5! whitespace-nowrap px-3.5! py-2.5! text-[12px]! [&_.game-cta__label]:whitespace-nowrap";
+  const className = block
+    ? "mb-0! min-h-12! w-full! gap-2! text-[13px]!"
+    : "mb-0! w-auto! min-h-11! min-w-0! shrink-0 gap-1.5! whitespace-nowrap px-3.5! py-2.5! text-[12px]! [&_.game-cta__label]:whitespace-nowrap";
 
   // Badge custom: GameCtaButton sólo acepta material icon, así que armamos la
   // carcasa a mano (misma tipografía Grobold).
@@ -250,6 +315,75 @@ export function CampaignPrimaryObjective({
       </section>
 
       {/*
+        Mobile: la card de objetivo también va acá arriba. Antes era `lg:block`
+        y en teléfono la única acción vivía dentro del panel de zona, debajo de
+        toda la lista del recorrido — un jugador nuevo abría /campaign y no
+        tenía ninguna indicación de qué hacer sin scrollear.
+      */}
+      <section
+        className={`campaign-objective-in game-float-card relative overflow-hidden rounded-xl p-3 lg:hidden ${
+          gymReady ? "ring-1 ring-electric-yellow/45" : "ring-1 ring-pokeball-red/35"
+        } ${action.enabled && !showReqs ? "campaign-objective-sheen" : ""}`}
+      >
+        <div className="relative flex items-center gap-2.5">
+          <ObjectiveRing percent={progressPct} gymReady={gymReady} size={38} />
+          <div className="min-w-0 flex-1">
+            <p
+              className={`text-[9px] font-semibold uppercase tracking-[0.16em] ${
+                gymReady ? "text-electric-yellow" : "text-pokeball-red"
+              }`}
+            >
+              {t("nextObjective")}
+            </p>
+            <h2 className="mt-0.5 text-[14px] font-bold leading-snug tracking-tight text-white">
+              {title}
+            </h2>
+          </div>
+          {/* El anillo ya muestra el porcentaje: acá va el crudo, no otra barra. */}
+          {progressTarget > 0 ? (
+            <span className="shrink-0 self-start font-mono text-[12px] tabular-nums text-electric-yellow">
+              {progressCurrent}/{progressTarget}
+            </span>
+          ) : null}
+        </div>
+
+        {showReqs ? (
+          <ul className="relative mt-2 flex flex-col gap-0.5">
+            {action.missingRequirements.map((req) => (
+              <li
+                key={req.id}
+                className={`flex items-start gap-1 text-[11px] leading-snug ${
+                  req.completed ? "text-electric-yellow/90" : "text-white/50"
+                }`}
+              >
+                <span className="material-symbols-outlined mt-px text-[13px]! leading-none">
+                  {req.completed ? "check_circle" : "radio_button_unchecked"}
+                </span>
+                <span>{translateRequirement(t, req)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : action.recommendedLevel != null && action.recommendedLevel > 0 ? (
+          <p className="relative mt-2 text-[11px] text-white/45">
+            {t("reqLevel", { level: action.recommendedLevel })}
+          </p>
+        ) : null}
+
+        <div className="relative mt-3">
+          <ObjectiveBarCta
+            block
+            href={href}
+            label={t(action.labelKey)}
+            icon="explore"
+            badgeSrc={gymReady ? gymBadgeSrc : null}
+            disabled={!action.enabled || (isTravel && (travelPending || !onTravel))}
+            isTravel={isTravel}
+            onTravel={onTravel}
+          />
+        </div>
+      </section>
+
+      {/*
         Misma grilla que el cuerpo (sin px lateral en el section): así el equipo
         comparte el borde derecho con el panel de zona.
       */}
@@ -259,7 +393,8 @@ export function CampaignPrimaryObjective({
         }`}
       >
         <div className="grid items-center gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] xl:grid-cols-[220px_minmax(0,1fr)_minmax(280px,340px)]">
-          <div className="flex min-w-0 items-center gap-4 px-3 xl:col-span-2">
+          <div className="flex min-w-0 items-center gap-3.5 px-3 xl:col-span-2">
+            <ObjectiveRing percent={progressPct} gymReady={gymReady} size={46} />
             <div className="min-w-0 flex-1 text-left">
               <p
                 className={`text-[9px] font-semibold uppercase tracking-[0.16em] ${

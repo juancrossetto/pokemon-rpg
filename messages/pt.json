@@ -666,7 +666,7 @@
       "pointsTitle": "Pontos",
       "pointsHint": "Distribua os pontos livres ganhos ao subir de nível.",
       "heldItemTitle": "Repartir Experiência",
-      "heldItemHint": "O Pokémon que o leva ganha EXP mesmo sem lutar.",
+      "heldItemHint": "Estilo FireRed: metade da EXP vai para quem o leva; o resto se divide entre os que lutaram e seguem vivos.",
       "heldItemEmpty": "Não tem Repartir Experiência. Toque para equipar.",
       "noHeldItems": "Você não tem Repartir Experiência na mochila — pegue num ginásio ou na Loja.",
       "equip": "Equipar",
@@ -1688,7 +1688,7 @@
       "choiceScarf": "Multiplica a Velocidade por 1,5, mas trava o primeiro movimento usado.",
       "choiceBand": "Multiplica o Ataque por 1,5, mas trava o primeiro movimento usado.",
       "leftovers": "Restaura 1/16 do HP máximo ao fim de cada turno.",
-      "expShare": "Se um Pokémon da equipe que não luta o estiver segurando, recebe metade da EXP da vitória.",
+      "expShare": "Divide a EXP ao meio: 50% para quem o leva e 50% repartido entre os que lutaram vivos (estilo FireRed).",
       "lifeOrb": "Aumenta em 30% o poder dos movimentos de dano, com recuo de 1/10 do HP máximo.",
       "linkingCord": "Evolui espécies que normalmente exigem troca.",
       "metalCoat": "Evolui Onix e Scyther (Steelix / Scizor).",
@@ -2586,6 +2586,9 @@
     "nodeWon": "Conquistado",
     "nodeInProgress": "Em progresso",
     "nodeCurrent": "Atual",
+    "nodeNext": "Próximo",
+    "backToCurrentChapter": "Voltar ao atual",
+    "chapterLockedHint": "Abre ao concluir o capítulo anterior.",
     "gymChallengeHint": "Use a ação principal acima quando puder desafiar o líder.",
     "gymLockedHint": "Ainda não pode desafiar o líder.",
     "reqCompleteStageAt": "Conclua {stage} em {location}",
@@ -3310,7 +3313,7 @@
             "body": "Queimadura, paralisia, veneno e sono mudam o combate. Tipos definem efetividade: um super efetivo dói bem mais.",
             "bullets": [
               "Itens held mudam o ritmo (Focus Sash, Choice…).",
-              "Ao vencer, o XP vai para quem lutou.",
+              "Ao vencer, o XP se divide em partes iguais entre os que lutaram e seguem vivos (estilo FireRed).",
               "Se alguém puder evoluir, oferecemos no resumo."
             ]
           }

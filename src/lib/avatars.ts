@@ -33,12 +33,18 @@ const AVATAR_SLUGS = [
   "alanab",
   "anton",
   "antonb",
+  "ariana",
+  "arianaa",
   "aristocrata",
   "ash",
   "aura",
   "aurab",
   "aurac",
   "aurad",
+  "azul",
+  "azula",
+  "azulb",
+  "azulc",
   "blaine",
   "blaineb",
   "brock",
@@ -48,30 +54,32 @@ const AVATAR_SLUGS = [
   "brunob",
   "brunoc",
   "brunod",
+  "camila",
+  "camilaa",
+  "camilab",
   "campista",
   "candela",
   "candelab",
-  "cazabichos",
+  "chase",
   "cheren",
   "cherenb",
   "chica",
   "chicaa",
   "chicamala",
   "cientifico",
+  "cintia",
+  "cintiaa",
   "criadora",
   "damisela",
   "delos",
-  "domadragon",
   "edel",
   "entrenadoraguay",
   "entrenadorguay",
-  "escolar",
-  "escolara",
   "evemaster",
+  "fero",
+  "feroa",
   "francine",
   "fredo",
-  "gary",
-  "gemelas",
   "gladio",
   "gladiob",
   "hiedra",
@@ -80,9 +88,10 @@ const AVATAR_SLUGS = [
   "james",
   "jessie",
   "joven",
-  "jovenn",
   "junco",
   "juncob",
+  "kalm",
+  "kalma",
   "karate",
   "koga",
   "lance",
@@ -91,7 +100,13 @@ const AVATAR_SLUGS = [
   "lem",
   "leti",
   "letib",
+  "lira",
+  "liraa",
+  "lirab",
   "lorelei",
+  "lucho",
+  "luchoa",
+  "luchob",
   "mananti",
   "marcial",
   "marcialb",
@@ -108,22 +123,29 @@ const AVATAR_SLUGS = [
   "morti",
   "mortib",
   "mortic",
+  "n",
+  "na",
   "naboru",
   "nadador",
   "nadadora",
+  "nanci",
+  "nancia",
+  "nb",
+  "nc",
   "nerio",
   "ninobien",
   "oak",
-  "operario",
   "pegaso",
-  "playera",
-  "playero",
+  "petra",
+  "petraa",
   "pokechico",
   "pokefan",
   "pokemaniaco",
   "ranger",
-  "rangerfemenina",
-  "rangermasculino",
+  "rojo",
+  "rojoa",
+  "rojob",
+  "rojoc",
   "roy",
   "royb",
   "royc",
@@ -138,7 +160,6 @@ const AVATAR_SLUGS = [
   "surfista",
   "veterana",
   "veterano",
-  "viejo",
   "vito",
   "vitob",
   "yakon",
@@ -162,27 +183,39 @@ export const AVATAR_OPTIONS: AvatarOption[] = AVATAR_SLUGS.map((slug) => ({
 }));
 
 /**
+ * Stage cortado a media pierna (sin pies). Fade suave en home/perfil para que
+ * el borde no se lea como crop accidental. Ampliar el set si `nb` convence.
+ */
+const STAGE_SOFT_FEET_SLUGS = new Set<string>(["nb"]);
+
+export function avatarStageSoftFeet(avatarId: string | null | undefined): boolean {
+  if (!avatarId) return false;
+  const opt = AVATAR_OPTIONS.find((a) => a.id === avatarId);
+  return STAGE_SOFT_FEET_SLUGS.has(opt?.slug ?? avatarId);
+}
+
+/**
  * Mapa de slugs Showdown → slug local, para cuentas que eligieron avatar
  * antes del catálogo propio.
  */
 const LEGACY_SHOWDOWN_TO_LOCAL: Record<string, (typeof AVATAR_SLUGS)[number]> = {
   youngster: "joven",
-  lass: "jovenn",
+  lass: "chica",
   backpacker: "ranger",
-  backpackerf: "rangerfemenina",
+  backpackerf: "ranger",
   picnicker: "campista",
   hiker: "montanista",
   swimmer: "nadador",
   swimmerf: "nadadora",
   gentleman: "aristocrata",
-  bugcatcher: "cazabichos",
-  twins: "gemelas",
+  bugcatcher: "joven",
+  twins: "chica",
   blackbelt: "karate",
   medium: "medium",
   richboy: "ninobien",
   pokemaniac: "pokemaniaco",
   ruinmaniac: "ruinamaniaco",
-  veteran: "viejo",
+  veteran: "veterano",
   sailor: "marinero",
 };
 
@@ -252,10 +285,35 @@ const LEGACY_SHOWDOWN_SLUGS = [
   "risingstarf",
 ] as const;
 
+/**
+ * Avatares locales retirados del catálogo: cuentas que todavía los tienen
+ * guardados resuelven a un reemplazo cercano en vez de quedarse sin retrato.
+ */
+const RETIRED_LOCAL_TO_CURRENT: Record<string, (typeof AVATAR_SLUGS)[number]> = {
+  escolar: "joven",
+  escolara: "chica",
+  gemelas: "chica",
+  playera: "surfista",
+  playero: "surfista",
+  viejo: "veterano",
+  rangerfemenina: "ranger",
+  rangermasculino: "ranger",
+  operario: "montanista",
+  jovenn: "chica",
+  cazabichos: "joven",
+  gary: "ash",
+  domadragon: "entrenadorguay",
+};
+
 export function avatarById(id: string | null | undefined): AvatarOption | null {
   if (!id) return null;
   const direct = AVATAR_OPTIONS.find((a) => a.id === id);
   if (direct) return direct;
+
+  const retired = RETIRED_LOCAL_TO_CURRENT[id];
+  if (retired) {
+    return AVATAR_OPTIONS.find((a) => a.slug === retired) ?? null;
+  }
 
   const match = /^trainer-(\d+)$/.exec(id);
   if (!match) return null;

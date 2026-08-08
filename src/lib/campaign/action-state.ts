@@ -386,6 +386,57 @@ export function getCampaignActionForZone(opts: {
   };
 }
 
+/**
+ * El único nodo del capítulo que el jugador debería tocar ahora.
+ *
+ * El recorrido dibuja hasta ~7 cards y todas se ven igual de accionables, así
+ * que sin esto un jugador nuevo no tiene de dónde deducir el orden. Reglas, en
+ * orden de prioridad:
+ *
+ * 1. La zona donde ya está parado, si todavía le quedan stages.
+ * 2. La primera zona desbloqueada sin terminar, en el orden del capítulo.
+ * 3. El gimnasio, cuando no queda ninguna zona salvaje pendiente.
+ * 4. El destino de la historia, aunque siga bloqueado: si no queda nada
+ *    jugable en el capítulo el jugador está trabado, y tocar ese nodo es lo
+ *    que le muestra qué le falta para abrirlo.
+ *
+ * `null` = capítulo terminado: no hay nada que señalar.
+ */
+export function recommendedChapterZoneId(opts: {
+  chapter: Chapter;
+  farmingLocationId: string;
+  earnedGymOrders: number[];
+  /** `milestone.locationId` del hito de historia vigente. */
+  milestoneLocationId?: string | null;
+}): string | null {
+  const { chapter, farmingLocationId, earnedGymOrders, milestoneLocationId } = opts;
+
+  const pending = chapter.zones.filter(
+    (z) =>
+      z.kindKey !== "kinds.gym" &&
+      z.unlocked &&
+      z.totalStages > 0 &&
+      z.completedStages < z.totalStages,
+  );
+
+  if (pending.some((z) => z.id === farmingLocationId)) return farmingLocationId;
+  if (pending.length > 0) return pending[0].id;
+
+  const gym = chapter.gym;
+  const badgeWon = chapter.gymOrder != null && earnedGymOrders.includes(chapter.gymOrder);
+  if (gym?.unlocked && !badgeWon) return gym.id;
+
+  if (
+    !badgeWon &&
+    milestoneLocationId &&
+    chapter.zones.some((z) => z.id === milestoneLocationId)
+  ) {
+    return milestoneLocationId;
+  }
+
+  return null;
+}
+
 /** Estado de un nodo del path del capítulo. */
 export function resolveZoneNodeStatus(opts: {
   zone: MapLocation;

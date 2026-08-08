@@ -6,6 +6,7 @@ import {
   getGymChallengeRequirements,
   getMissingRequirements,
   getZoneUnlockRequirements,
+  recommendedChapterZoneId,
   resolveZoneNodeStatus,
 } from "@/lib/campaign/action-state";
 import { CAMPAIGN_DEFAULTS, chapterWildStagesForGym, type CampaignProgressRow } from "@/lib/campaign/progress";
@@ -313,5 +314,107 @@ describe("getCampaignActionForZone", () => {
     expect(action.action).toBe("challenge_gym");
     expect(action.labelKey).toBe("challengeGym");
     expect(action.href).toBe("/gyms/pewter");
+  });
+});
+
+describe("recommendedChapterZoneId", () => {
+  function chapterWith(zones: MapLocation[], partial: Partial<Chapter> = {}): Chapter {
+    return {
+      number: 1,
+      nameKey: "locations.pewter_city",
+      zones,
+      gym: zones.find((z) => z.kindKey === "kinds.gym") ?? null,
+      gymOrder: 1,
+      stagesDone: 0,
+      stagesTotal: 6,
+      speciesCaught: 0,
+      speciesTotal: 0,
+      unlocked: true,
+      completed: false,
+      percent: 0,
+      ...partial,
+    };
+  }
+
+  const gymZone = zone({
+    id: "pewter-gym",
+    kindKey: "kinds.gym",
+    totalStages: 0,
+    gymOrder: 1,
+  });
+
+  it("points at the first unfinished unlocked zone in chapter order", () => {
+    const chapter = chapterWith([
+      zone({ id: "route-1", completedStages: 3, totalStages: 3 }),
+      zone({ id: "route-2", completedStages: 1, totalStages: 3 }),
+      zone({ id: "route-3" }),
+      gymZone,
+    ]);
+    expect(
+      recommendedChapterZoneId({
+        chapter,
+        farmingLocationId: "route-1",
+        earnedGymOrders: [],
+      }),
+    ).toBe("route-2");
+  });
+
+  it("keeps the player where they are standing when that zone is unfinished", () => {
+    const chapter = chapterWith([
+      zone({ id: "route-1", completedStages: 1, totalStages: 3 }),
+      zone({ id: "route-2", completedStages: 0, totalStages: 3 }),
+      gymZone,
+    ]);
+    expect(
+      recommendedChapterZoneId({
+        chapter,
+        farmingLocationId: "route-2",
+        earnedGymOrders: [],
+      }),
+    ).toBe("route-2");
+  });
+
+  it("skips locked zones", () => {
+    const chapter = chapterWith([
+      zone({ id: "route-1", completedStages: 3, totalStages: 3 }),
+      zone({ id: "route-2", unlocked: false }),
+      zone({ id: "route-3", completedStages: 0, totalStages: 3 }),
+      gymZone,
+    ]);
+    expect(
+      recommendedChapterZoneId({
+        chapter,
+        farmingLocationId: "route-1",
+        earnedGymOrders: [],
+      }),
+    ).toBe("route-3");
+  });
+
+  it("points at the gym once every wild zone is cleared", () => {
+    const chapter = chapterWith([
+      zone({ id: "route-1", completedStages: 3, totalStages: 3 }),
+      gymZone,
+    ]);
+    expect(
+      recommendedChapterZoneId({
+        chapter,
+        farmingLocationId: "route-1",
+        earnedGymOrders: [],
+      }),
+    ).toBe("pewter-gym");
+  });
+
+  it("returns null when the badge is already won", () => {
+    const chapter = chapterWith([
+      zone({ id: "route-1", completedStages: 3, totalStages: 3 }),
+      gymZone,
+    ]);
+    expect(
+      recommendedChapterZoneId({
+        chapter,
+        farmingLocationId: "route-1",
+        earnedGymOrders: [1],
+      }),
+    ).toBeNull();
   });
 });

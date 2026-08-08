@@ -44,139 +44,149 @@ export default function LoginPage() {
   }
 
   const fieldClass =
-    "w-full rounded-xl border border-white/12 bg-black/45 py-3 pl-11 pr-3 text-[16px] text-white outline-none transition placeholder:text-white/35 focus:border-pokeball-red/55 focus:bg-black/55 focus:ring-1 focus:ring-pokeball-red/30";
+    "auth-field w-full rounded-lg border border-white/8 bg-white/[0.035] py-2.5 pl-10 pr-3 text-[15px] text-white outline-none transition placeholder:text-white/30 focus:border-[color-mix(in_srgb,var(--theme-primary)_45%,transparent)] focus:bg-white/[0.055] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--theme-primary)_14%,transparent)]";
 
   return (
     <div className="relative isolate flex min-h-[calc(100dvh-3rem)] flex-1 flex-col md:min-h-[calc(100dvh-4rem)]">
       <AuthBackdrop />
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col px-4 sm:px-6">
-        <div className="hidden shrink-0 pt-3 text-center md:block md:pt-4">
-          <BrandLogo
-            alt={tNav("brand")}
-            priority
-            sizes="180px"
-            className="mx-auto h-auto w-[180px] drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]"
-          />
-          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
-            {t("tagline")}
-          </p>
-        </div>
+        <div className="auth-login-rise mx-auto flex w-full max-w-[360px] flex-1 flex-col md:max-w-[380px]">
+          <div className="shrink-0 pt-4 text-center md:pt-5">
+            <BrandLogo
+              alt={tNav("brand")}
+              priority
+              sizes="140px"
+              className="mx-auto h-auto w-[118px] drop-shadow-[0_2px_14px_rgba(0,0,0,0.55)] sm:w-[132px]"
+            />
+            <p className="mt-1.5 text-[9px] font-medium uppercase tracking-[0.32em] text-white/38">
+              {t("tagline")}
+            </p>
+          </div>
 
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-4 md:py-6">
-          <form onSubmit={handleSubmit} className="w-full max-w-[380px] md:max-w-[420px]">
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e14]/92 shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-pokeball-red/55 to-transparent"
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-pokeball-red/10 blur-3xl"
-              />
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-3 md:py-4">
+            <form onSubmit={handleSubmit} className="w-full">
+              <div className="auth-login-panel relative overflow-hidden rounded-2xl">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-[color-mix(in_srgb,var(--theme-primary)_55%,transparent)] to-transparent"
+                />
 
-              <div className="relative px-5 pb-1 pt-5 sm:px-6 sm:pt-6">
-                <p className="mb-2.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-pokeball-red">
-                  <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
-                  {t("title")}
-                </p>
-                <h1 className="text-[clamp(1.35rem,5vw,1.85rem)] font-semibold uppercase tracking-[0.04em] text-white">
-                  {t("welcomeTitle")}
-                </h1>
-                <p className="mt-1.5 text-[13px] leading-snug text-white/50">
-                  {t("welcomeSubtitle")}
-                </p>
-              </div>
-
-              <div className="relative space-y-3 px-5 py-5 sm:px-6">
-                <label className="block">
-                  <span className="sr-only">{t("email")}</span>
-                  <div className="relative">
-                    <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]! text-white/40">
-                      mail
-                    </span>
-                    <input
-                      type="email"
-                      required
-                      autoComplete="email"
-                      placeholder={t("email")}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className={fieldClass}
-                    />
-                  </div>
-                </label>
-
-                <label className="block">
-                  <span className="sr-only">{t("password")}</span>
-                  <div className="relative">
-                    <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]! text-white/40">
-                      lock
-                    </span>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      autoComplete="current-password"
-                      placeholder={t("password")}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className={`${fieldClass} pr-11`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      aria-label={showPassword ? t("hidePassword") : t("showPassword")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-white/40 transition hover:text-white/80"
-                    >
-                      <span className="material-symbols-outlined text-[18px]!">
-                        {showPassword ? "visibility_off" : "visibility"}
-                      </span>
-                    </button>
-                  </div>
-                </label>
-
-                <label className="flex cursor-pointer items-center gap-2.5 px-0.5 py-0.5 text-[13px] text-white/55">
-                  <input
-                    type="checkbox"
-                    checked={remember}
-                    onChange={(e) => setRemember(e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-white/25 bg-black/50 text-pokeball-red focus:ring-pokeball-red/40"
-                  />
-                  {t("rememberMe")}
-                </label>
-
-                {error ? (
-                  <p className="rounded-xl border border-error/30 bg-error/10 px-3 py-2 text-center text-[13px] text-error">
-                    {t("error")}
+                <header className="relative px-5 pb-0 pt-5 text-center sm:px-5">
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[color-mix(in_srgb,var(--theme-primary-bright)_88%,white)]">
+                    {t("title")}
                   </p>
-                ) : null}
+                  <h1 className="page-title whitespace-nowrap text-[clamp(0.98rem,3.8vw,1.28rem)] tracking-[0.02em] text-white">
+                    {t("welcomeTitle")}
+                  </h1>
+                  <p className="mt-1.5 text-[12.5px] leading-snug text-white/48">
+                    {t("welcomeSubtitle")}
+                  </p>
+                </header>
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className={`game-cta game-cta--red mt-1${submitting ? " game-cta--disabled" : ""}`}
-                >
-                  <PokeballIcon className="h-4 w-4 shrink-0" />
-                  <span className="game-cta__label">
-                    {submitting ? t("submitting") : t("submit")}
-                  </span>
-                </button>
+                <div className="relative space-y-2.5 px-5 py-4 sm:px-5">
+                  <label className="block">
+                    <span className="sr-only">{t("email")}</span>
+                    <div className="relative">
+                      <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[17px]! text-white/35">
+                        mail
+                      </span>
+                      <input
+                        type="email"
+                        required
+                        autoComplete="email"
+                        placeholder={t("email")}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={fieldClass}
+                      />
+                    </div>
+                  </label>
 
-                <p className="pt-1 text-center text-[13px] text-white/45">
-                  {t("noAccount")}{" "}
-                  <Link
-                    href="/register"
-                    className="font-semibold text-white/80 underline-offset-2 transition hover:text-white hover:underline"
+                  <label className="block">
+                    <span className="sr-only">{t("password")}</span>
+                    <div className="relative">
+                      <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[17px]! text-white/35">
+                        lock
+                      </span>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        autoComplete="current-password"
+                        placeholder={t("password")}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={`${fieldClass} pr-10`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/35 transition hover:bg-white/6 hover:text-white/75"
+                      >
+                        <span className="material-symbols-outlined text-[17px]!">
+                          {showPassword ? "visibility_off" : "visibility"}
+                        </span>
+                      </button>
+                    </div>
+                  </label>
+
+                  <label className="flex cursor-pointer items-center justify-between gap-3 py-0.5 text-[12.5px] text-white/55">
+                    <span>{t("rememberMe")}</span>
+                    <span className="auth-switch relative inline-flex h-5 w-9 shrink-0 items-center">
+                      <input
+                        type="checkbox"
+                        checked={remember}
+                        onChange={(e) => setRemember(e.target.checked)}
+                        className="peer sr-only"
+                      />
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 rounded-full border border-white/12 bg-white/8 transition peer-checked:border-[color-mix(in_srgb,var(--theme-primary)_50%,transparent)] peer-checked:bg-[color-mix(in_srgb,var(--theme-primary)_38%,transparent)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[color-mix(in_srgb,var(--theme-primary)_55%,transparent)]"
+                      />
+                      <span
+                        aria-hidden
+                        className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white/70 shadow-sm transition peer-checked:translate-x-4 peer-checked:bg-white"
+                      />
+                    </span>
+                  </label>
+
+                  {error ? (
+                    <p
+                      role="alert"
+                      className="rounded-lg border border-error/25 bg-error/10 px-3 py-2 text-center text-[12.5px] text-error"
+                    >
+                      {t("error")}
+                    </p>
+                  ) : null}
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className={`game-cta game-cta--red mt-0.5! min-h-11!${submitting ? " game-cta--disabled" : ""}`}
                   >
-                    {t("registerLinkHere")}
-                  </Link>
-                </p>
-              </div>
-            </div>
-          </form>
-        </div>
+                    <PokeballIcon className="h-4 w-4 shrink-0" />
+                    <span className="game-cta__label">
+                      {submitting ? t("submitting") : t("submit")}
+                    </span>
+                  </button>
 
-        <LegalDisclaimer className="relative z-10 mx-auto max-w-md shrink-0 px-2 pb-3 pt-1" />
+                  <p className="pt-0.5 text-center text-[12.5px] text-white/42">
+                    {t("noAccount")}{" "}
+                    <Link
+                      href="/register"
+                      className="font-semibold text-white/78 underline-offset-2 transition hover:text-white hover:underline"
+                    >
+                      {t("registerLinkHere")}
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <LegalDisclaimer className="relative z-10 mx-auto max-w-md shrink-0 px-2 pb-3 pt-0.5" />
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { ClanEmblemBadge } from "@/components/clans/clan-emblem-badge";
 import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
 import { neonTypeColor } from "@/lib/type-colors";
+import { avatarStageSoftFeet } from "@/lib/avatars";
 import type { HomeIdentity } from "@/lib/home-hub";
 import { homeBannerById } from "@/lib/home-banners";
 import { homeFrameById } from "@/lib/home-frames";
@@ -45,6 +46,7 @@ export function HomeIdentityBanner({
   const standingLabel = `${pvpTierLabel} ${divisionRoman(identity.pvpDivision as PvpDivision)}`;
   const profileArt =
     identity.avatarStageSrc ?? identity.avatarProfileSrc ?? identity.avatarSrc;
+  const softFeet = avatarStageSoftFeet(identity.avatarId);
 
   const mainType = (identity.companionTypes[0] ?? "normal").toLowerCase();
   const fluorFrom = neonTypeColor(mainType);
@@ -120,7 +122,7 @@ export function HomeIdentityBanner({
               width={280}
               height={360}
               priority
-              className="h-full w-auto max-w-full object-contain object-bottom drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)]"
+              className={`h-full w-auto max-w-full object-contain object-bottom drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)]${softFeet ? " trainer-stage--soft-feet" : ""}`}
               unoptimized
             />
           </div>

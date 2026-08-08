@@ -111,6 +111,7 @@ export {
   canChallengeGym,
   getCampaignPrimaryAction,
   getCampaignActionForZone,
+  recommendedChapterZoneId,
   resolveZoneNodeStatus,
   getMissingRequirements,
   getZoneUnlockRequirements,

@@ -163,37 +163,89 @@ export function xpForVictory(wildLevel: number): number {
 }
 
 /**
- * Fracción de XP que cobra la banca viva (la que no peleó).
- *
- * Reparto estilo Gen VI: el que pelea cobra el total y el resto del equipo
- * cobra esta fracción **además**, en vez de dividir un pozo fijo entre todos.
- * Dividir hacía que criar un equipo de 6 costara ~6× más peleas que
- * sobrenivelar un solo carry, y un carry sobrenivelado vuelve irrelevante la
- * ventaja de tipos — justo la decisión que el combate quiere que importe.
+ * Mitad del pozo que va al grupo Exp. Share cuando hay holders vivos
+ * (FireRed / Gen III–V). La otra mitad va a los participantes vivos.
  */
-export const BENCH_XP_SHARE = 0.5;
+export const EXP_SHARE_POOL_FRACTION = 0.5;
 
 /**
- * Fracción de EXP que cobra un Pokémon del equipo con Exp. Share equipado
- * que **no** participó de la pelea. Por defecto igual a la banca participante.
+ * Reparto de EXP estilo FireRed (Gen III):
+ * - Sin Exp. Share: el total se divide en partes iguales entre participantes
+ *   vivos (los debilitados no cobran).
+ * - Con Exp. Share: 50% del total se divide entre participantes vivos y 50%
+ *   entre holders vivos. Quien peleó y además lo lleva cobra ambas mitades.
+ * - Si un grupo queda vacío (p. ej. el único participante se debilitó con
+ *   Explosión), el otro grupo se lleva el pozo completo.
+ * Los restos de la división entera se pierden (como en los juegos).
  */
-export const EXP_SHARE_HELD_FRACTION = 0.5;
+export function distributeVictoryXpShares(params: {
+  totalXp: number;
+  participantIds: readonly string[];
+  expShareHolderIds: readonly string[];
+}): Map<string, number> {
+  const participants = uniqueIds(params.participantIds);
+  const holders = uniqueIds(params.expShareHolderIds);
+  const shares = new Map<string, number>();
+  const totalXp = Math.max(0, Math.floor(params.totalXp));
+  if (totalXp <= 0) return shares;
+
+  const hasP = participants.length > 0;
+  const hasH = holders.length > 0;
+  if (!hasP && !hasH) return shares;
+
+  let participantPool: number;
+  let holderPool: number;
+  if (hasP && hasH) {
+    participantPool = Math.floor(totalXp * EXP_SHARE_POOL_FRACTION);
+    holderPool = totalXp - participantPool;
+  } else if (hasP) {
+    participantPool = totalXp;
+    holderPool = 0;
+  } else {
+    participantPool = 0;
+    holderPool = totalXp;
+  }
+
+  const add = (id: string, amount: number) => {
+    if (amount <= 0) return;
+    shares.set(id, (shares.get(id) ?? 0) + amount);
+  };
+
+  if (hasP && participantPool > 0) {
+    const each = Math.floor(participantPool / participants.length);
+    for (const id of participants) add(id, each);
+  }
+  if (hasH && holderPool > 0) {
+    const each = Math.floor(holderPool / holders.length);
+    for (const id of holders) add(id, each);
+  }
+  return shares;
+}
+
+function uniqueIds(ids: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const id of ids) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
 
 /** Une IDs de participantes de batalla sin duplicados (orden de primera aparición). */
 export function mergeBattleParticipantIds(
   ...idLists: (readonly (string | null | undefined)[] | string | null | undefined)[]
 ): string[] {
-  const seen = new Set<string>();
   const out: string[] = [];
   for (const list of idLists) {
     const ids = typeof list === "string" ? [list] : (list ?? []);
     for (const id of ids) {
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
+      if (!id) continue;
       out.push(id);
     }
   }
-  return out;
+  return uniqueIds(out);
 }
 
 export type SkipReason = "asleep" | "paralyzed" | "frozen" | "disobey" | "flinch";

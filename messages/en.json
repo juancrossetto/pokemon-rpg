@@ -666,7 +666,7 @@
       "pointsTitle": "Points",
       "pointsHint": "Spend free points earned from leveling up.",
       "heldItemTitle": "Exp. Share",
-      "heldItemHint": "The Pokémon holding it gains EXP even if it doesn't battle.",
+      "heldItemHint": "FireRed style: half the EXP goes to the holder; the rest is split among living participants.",
       "heldItemEmpty": "Not holding Exp. Share. Tap to equip it.",
       "noHeldItems": "You don't have Exp. Share in your bag — get it from a gym or the Shop.",
       "equip": "Equip",
@@ -1688,7 +1688,7 @@
       "choiceScarf": "Multiplies Speed by 1.5, but locks in the first move used.",
       "choiceBand": "Multiplies Attack by 1.5, but locks in the first move used.",
       "leftovers": "Restores 1/16 of max HP at the end of each turn.",
-      "expShare": "If held by a team Pokémon that sits out, it earns half the EXP from the victory.",
+      "expShare": "Splits EXP in half: 50% to the holder and 50% shared among living participants (FireRed style).",
       "lifeOrb": "Boosts damaging move power by 30%, with 1/10 max HP recoil.",
       "linkingCord": "Evolves species that normally require trading.",
       "metalCoat": "Evolves Onix and Scyther (Steelix / Scizor).",
@@ -2586,6 +2586,9 @@
     "nodeWon": "Won",
     "nodeInProgress": "In progress",
     "nodeCurrent": "Current",
+    "nodeNext": "Next",
+    "backToCurrentChapter": "Back to current",
+    "chapterLockedHint": "Unlocks when you finish the previous chapter.",
     "gymChallengeHint": "Use the main action above when ready to challenge the leader.",
     "gymLockedHint": "You cannot challenge the leader yet.",
     "reqCompleteStageAt": "Clear {stage} in {location}",
@@ -3310,7 +3313,7 @@
             "body": "Burn, paralysis, poison and sleep swing fights. Types decide effectiveness: a super-effective hit hurts a lot more.",
             "bullets": [
               "Held items change the pace (Focus Sash, Choice…).",
-              "On a win, XP goes to everyone who fought.",
+              "On a win, XP is split evenly among Pokémon that fought and are still conscious (FireRed style).",
               "If someone can evolve, we offer it on the result screen."
             ]
           }

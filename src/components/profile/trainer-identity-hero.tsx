@@ -236,6 +236,7 @@ export function TrainerIdentityHero({
             <TrainerProfileScene
               username={username}
               trainerSpriteUrl={spriteUrl}
+              avatarId={avatarId}
               companionSpriteUrl={companionSpriteUrl}
               companionName={companionName}
               accent={companionAccent}

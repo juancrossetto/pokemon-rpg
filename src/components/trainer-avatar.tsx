@@ -57,7 +57,7 @@ export function TrainerAvatar({
     ? "relative h-full w-full object-contain p-[12%] [image-rendering:pixelated]"
     : framed
       ? "trainer-sprite-fill relative h-full w-full"
-      : "trainer-sprite-thumb relative h-full w-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]";
+      : "trainer-sprite-thumb relative h-full w-full drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]";
 
   if (!framed) {
     return (

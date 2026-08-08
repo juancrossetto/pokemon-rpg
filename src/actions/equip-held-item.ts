@@ -11,16 +11,17 @@ export type EquipHeldItemResult =
 
 /**
  * Exp. Share (y futuros unique-held): un solo Pokémon del jugador puede
- * llevarlo. Al equipar en otro, se traslada sin duplicar en la mochila.
+ * llevarlo. La propiedad queda en la mochila (no se consume al equipar) y al
+ * ponerselo a otro mon se traslada sin duplicar ni vaciar el stack.
  */
 function isUniqueHeldEffect(effect: string | null): boolean {
   return effect === "EXP_SHARE";
 }
 
 /**
- * Equipa un objeto (sale de la mochila, pasa a estar puesto en el Pokémon).
- * Si ya tenía otro equipado, ese vuelve a la mochila en la misma transacción.
- * Si el ítem es único (Exp. Share), se quita de cualquier otro holder primero.
+ * Equipa un objeto. Held normales: salen de la mochila. Unique (Exp. Share):
+ * siguen en la mochila y sólo marcan qué Pokémon lo lleva; si ya estaba en
+ * otro, se mueve.
  */
 export async function equipHeldItem(
   pokemonInstanceId: string,
@@ -62,6 +63,7 @@ export async function equipHeldItem(
   const bagQty = inventoryItem?.quantity ?? 0;
   const canTakeFromBag = bagQty >= 1;
   const canTransfer = otherHolders.length > 0;
+  // Unique: basta con tenerlo en mochila o ya equipado en otro mon.
   if (!canTakeFromBag && !canTransfer) {
     return { ok: false, error: "no_item" };
   }
@@ -70,24 +72,16 @@ export async function equipHeldItem(
   if (instance.heldItemId === itemId) return { ok: true };
 
   await prisma.$transaction(async (tx) => {
-    // Unique: sacar de otros holders. Si además hay en mochila, devolver esos
-    // a la bag (había duplicados); si no, es un traslado y no sumamos.
     if (otherHolders.length > 0) {
       await tx.pokemonInstance.updateMany({
         where: { id: { in: otherHolders.map((h) => h.id) } },
         data: { heldItemId: null },
       });
-      if (canTakeFromBag) {
-        await tx.inventoryItem.upsert({
-          where: { userId_itemId: { userId, itemId } },
-          create: { userId, itemId, quantity: otherHolders.length },
-          update: { quantity: { increment: otherHolders.length } },
-        });
-      }
     }
 
-    // El held anterior del target vuelve a la mochila.
-    if (instance.heldItemId) {
+    // El held anterior del target vuelve a la mochila (si no es el mismo
+    // unique que estamos moviendo — ese no se sacó de la bag).
+    if (instance.heldItemId && instance.heldItemId !== itemId) {
       await tx.inventoryItem.upsert({
         where: { userId_itemId: { userId, itemId: instance.heldItemId } },
         create: { userId, itemId: instance.heldItemId, quantity: 1 },
@@ -95,14 +89,22 @@ export async function equipHeldItem(
       });
     }
 
-    if (canTakeFromBag) {
+    if (unique) {
+      // Propiedad en mochila: no decrementar. Si el stack quedó en 0 por un
+      // equip viejo, restaurarlo para que siga visible y re-equipable.
+      if (bagQty < 1) {
+        await tx.inventoryItem.upsert({
+          where: { userId_itemId: { userId, itemId } },
+          create: { userId, itemId, quantity: 1 },
+          update: { quantity: 1 },
+        });
+      }
+    } else if (canTakeFromBag) {
       await tx.inventoryItem.update({
         where: { userId_itemId: { userId, itemId } },
         data: { quantity: { decrement: 1 } },
       });
     }
-    // Si no había en bag y venía de otro holder: el clear de arriba ya dejó
-    // el ítem "libre" y lo asignamos sin tocar inventario.
 
     await tx.pokemonInstance.update({
       where: { id: pokemonInstanceId },
@@ -130,21 +132,40 @@ export async function unequipHeldItem(
 
   const instance = await prisma.pokemonInstance.findFirst({
     where: { id: pokemonInstanceId, ownerId: userId },
+    include: { heldItem: { select: { heldEffect: true } } },
   });
   if (!instance) return { ok: false, error: "not_found" };
   if (!instance.heldItemId) return { ok: true };
 
-  await prisma.$transaction([
-    prisma.inventoryItem.upsert({
-      where: { userId_itemId: { userId, itemId: instance.heldItemId } },
-      create: { userId, itemId: instance.heldItemId, quantity: 1 },
-      update: { quantity: { increment: 1 } },
-    }),
-    prisma.pokemonInstance.update({
+  const unique = isUniqueHeldEffect(instance.heldItem?.heldEffect ?? null);
+  const heldItemId = instance.heldItemId;
+
+  await prisma.$transaction(async (tx) => {
+    if (unique) {
+      // Ya vive en la mochila; sólo reponer si un equip antiguo lo dejó en 0.
+      const bag = await tx.inventoryItem.findUnique({
+        where: { userId_itemId: { userId, itemId: heldItemId } },
+      });
+      if ((bag?.quantity ?? 0) < 1) {
+        await tx.inventoryItem.upsert({
+          where: { userId_itemId: { userId, itemId: heldItemId } },
+          create: { userId, itemId: heldItemId, quantity: 1 },
+          update: { quantity: 1 },
+        });
+      }
+    } else {
+      await tx.inventoryItem.upsert({
+        where: { userId_itemId: { userId, itemId: heldItemId } },
+        create: { userId, itemId: heldItemId, quantity: 1 },
+        update: { quantity: { increment: 1 } },
+      });
+    }
+
+    await tx.pokemonInstance.update({
       where: { id: pokemonInstanceId },
       data: { heldItemId: null },
-    }),
-  ]);
+    });
+  });
 
   revalidatePath(`/${locale}/team`);
   revalidatePath(`/${locale}/inventory`);

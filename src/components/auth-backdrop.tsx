@@ -18,7 +18,9 @@ export function AuthBackdrop() {
         className="object-cover object-center"
         style={{ imageRendering: "auto" }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-transparent to-background/25" />
+      {/* Velo más marcado detrás del panel: el arte sigue, el form gana contraste. */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,transparent_0%,rgba(6,4,10,0.35)_55%,rgba(6,4,10,0.72)_100%)]" />
+      <div className="absolute inset-0 bg-linear-to-b from-background/20 via-transparent to-background/45" />
       <AuthAtmosphere />
     </div>
   );

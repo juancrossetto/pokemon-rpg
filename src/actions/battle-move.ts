@@ -13,8 +13,7 @@ import {
 } from "@/lib/battle-stages";
 import { calculateMaxHp, xpForLevel, UNSPENT_POINTS_PER_LEVEL } from "@/lib/stats";
 import {
-  BENCH_XP_SHARE,
-  EXP_SHARE_HELD_FRACTION,
+  distributeVictoryXpShares,
   effectivePp,
   playerActsFirst,
   STRUGGLE_MOVE,
@@ -920,8 +919,7 @@ export async function submitBattleMove(
     }
 
     const totalXp = battle.pendingXp + koXp;
-    // Solo cobra XP quien terminó vivo esta pelea. Si un Pokémon quedó en 0 HP,
-    // no cobra en esta victoria ni en las siguientes hasta que lo curen.
+    // FireRed / Gen III: solo cobran vivos. Debilitados quedan fuera del pozo.
     const participantIds = mergeBattleParticipantIds(
       battle.participantIds,
       battle.pokemonInstanceId,
@@ -931,28 +929,35 @@ export async function submitBattleMove(
       where: { id: { in: participantIds } },
       include: { species: true },
     });
-    const participants = allParticipants.filter((p) => {
+    const livingParticipants = allParticipants.filter((p) => {
       const hpNow = p.id === instance.id ? playerHp : p.currentHp;
       return hpNow > 0;
     });
-    // Exp. Share: mon del equipo activo que NO peleó pero lleva el objeto.
+    // Holders vivos del equipo (pueden solaparse con participantes).
     const expShareHolders = await prisma.pokemonInstance.findMany({
       where: {
         ownerId: userId,
         teamSlot: { not: null },
-        id: { notIn: participantIds },
         currentHp: { gt: 0 },
         heldItem: { heldEffect: "EXP_SHARE" },
       },
       include: { species: true },
     });
-    // Reparto Gen VI (ver BENCH_XP_SHARE): el que peleó cobra el total, la
-    // banca viva cobra una fracción encima — no se divide un pozo fijo.
-    const activeShare = Math.max(1, totalXp);
-    const benchShare = Math.max(1, Math.floor(totalXp * BENCH_XP_SHARE));
-    const expShareAmount = Math.max(
-      1,
-      Math.floor(totalXp * EXP_SHARE_HELD_FRACTION),
+    // Si el activo lleva Exp. Share, su HP en DB puede estar desfasado: contarlo
+    // como vivo con el HP del turno.
+    const livingShareHolders = expShareHolders.filter((p) => {
+      if (p.id === instance.id) return playerHp > 0;
+      return p.currentHp > 0;
+    });
+
+    const shareById = distributeVictoryXpShares({
+      totalXp,
+      participantIds: livingParticipants.map((p) => p.id),
+      expShareHolderIds: livingShareHolders.map((p) => p.id),
+    });
+
+    const byId = new Map(
+      [...livingParticipants, ...livingShareHolders].map((p) => [p.id, p]),
     );
 
     xpSummary = [];
@@ -971,25 +976,14 @@ export async function submitBattleMove(
       xpAfter: number;
     }[] = [];
 
-    const recipients: {
-      p: (typeof participants)[number];
-      share: number;
-      isActive: boolean;
-    }[] = [
-      ...participants.map((p) => ({
-        p,
-        share: p.id === instance.id ? activeShare : benchShare,
-        isActive: p.id === instance.id,
-      })),
-      ...expShareHolders.map((p) => ({
-        p,
-        share: expShareAmount,
-        isActive: false,
-      })),
-    ];
+    const activeShare = shareById.get(instance.id) ?? 0;
+    xpGained = activeShare > 0 ? activeShare : null;
 
-    for (const { p, share, isActive } of recipients) {
-      if (isActive) xpGained = share;
+    for (const [id, share] of shareById) {
+      if (share <= 0) continue;
+      const p = byId.get(id);
+      if (!p) continue;
+      const isActive = p.id === instance.id;
       const hpBefore = isActive ? playerHp : Math.max(0, p.currentHp);
       const result = applyXpGain(
         p.xp,

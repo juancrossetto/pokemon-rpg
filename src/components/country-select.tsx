@@ -42,7 +42,7 @@ export function CountrySelect({
   }, [locale]);
 
   const selectClass = compact
-    ? "w-full appearance-none border border-white/15 bg-black/50 py-2.5 pl-10 pr-10 text-label-md font-mono text-on-surface outline-none transition focus:border-pokeball-red/70 focus:ring-1 focus:ring-pokeball-red/40"
+    ? "auth-field w-full appearance-none rounded-lg border border-white/8 bg-white/[0.035] py-2.5 pl-10 pr-10 text-[15px] text-white outline-none transition focus:border-[color-mix(in_srgb,var(--theme-primary)_45%,transparent)] focus:bg-white/[0.055] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--theme-primary)_14%,transparent)]"
     : "w-full appearance-none bg-black/60 border border-[#555] pl-11 pr-10 py-3 text-on-surface font-mono text-label-md focus:outline-none focus:border-electric-yellow focus:ring-1 focus:ring-electric-yellow/50 transition-all";
 
   return (
@@ -59,12 +59,16 @@ export function CountrySelect({
         )}
         {label}
       </label>
-      <div className="relative flex items-center tech-border">
+      <div className={`relative flex items-center${compact ? "" : " tech-border"}`}>
         <span className="pointer-events-none absolute left-3 flex items-center">
           {value ? (
             <FlagIcon code={value} className="h-4 w-auto rounded-sm shadow-sm" />
           ) : (
-            <span className="material-symbols-outlined text-[18px]! text-on-surface-variant/70">
+            <span
+              className={`material-symbols-outlined text-[17px]! ${
+                compact ? "text-white/35" : "text-on-surface-variant/70"
+              }`}
+            >
               travel_explore
             </span>
           )}
@@ -84,7 +88,11 @@ export function CountrySelect({
             </option>
           ))}
         </select>
-        <span className="material-symbols-outlined pointer-events-none absolute right-3 text-[18px]! text-on-surface-variant/70">
+        <span
+          className={`material-symbols-outlined pointer-events-none absolute right-3 text-[17px]! ${
+            compact ? "text-white/35" : "text-on-surface-variant/70"
+          }`}
+        >
           arrow_drop_down
         </span>
       </div>

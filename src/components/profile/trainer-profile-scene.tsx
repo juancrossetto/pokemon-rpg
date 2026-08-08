@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import type { TrainerAppearance } from "@/lib/trainer-appearance";
 import { hasAny3dModel } from "@/lib/trainer-appearance";
+import { avatarStageSoftFeet } from "@/lib/avatars";
 
 const TrainerScene3D = dynamic(
   () => import("@/components/profile/trainer-scene-3d").then((m) => m.TrainerScene3D),
@@ -14,6 +15,8 @@ const TrainerScene3D = dynamic(
 export type ProfileSceneProps = {
   username: string;
   trainerSpriteUrl: string | null;
+  /** Para soft-feet en stage art incompleto (ej. `nb`). */
+  avatarId?: string | null;
   companionSpriteUrl: string | null;
   companionName: string | null;
   accent: string;
@@ -83,10 +86,12 @@ export function TrainerProfileScene(props: ProfileSceneProps) {
 function TrainerScene2D({
   username,
   trainerSpriteUrl,
+  avatarId,
   companionSpriteUrl,
   accent,
   sceneLabel,
 }: ProfileSceneProps) {
+  const softFeet = avatarStageSoftFeet(avatarId);
   /*
     Escena tipo Pokémon GO: entrenador y compañero parados sobre la misma línea
     de piso, solapados, cada uno con su sombra.
@@ -162,7 +167,7 @@ function TrainerScene2D({
               height={420}
               unoptimized
               priority
-              className="relative max-h-[178px] w-auto max-w-[12rem] object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.5)] sm:max-h-[220px] sm:max-w-[15rem] lg:max-h-[262px] lg:max-w-[19rem]"
+              className={`relative max-h-[178px] w-auto max-w-[12rem] object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.5)] sm:max-h-[220px] sm:max-w-[15rem] lg:max-h-[262px] lg:max-w-[19rem]${softFeet ? " trainer-stage--soft-feet" : ""}`}
             />
           ) : (
             <span className="flex h-[170px] w-[5.5rem] items-end justify-center rounded-xl bg-white/5 sm:h-[210px] lg:h-[250px]">

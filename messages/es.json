@@ -666,7 +666,7 @@
       "pointsTitle": "Puntos",
       "pointsHint": "Asigná los puntos libres que ganó al subir de nivel.",
       "heldItemTitle": "Repartir Experiencia",
-      "heldItemHint": "El Pokémon que lo lleva recibe EXP aunque no pelee.",
+      "heldItemHint": "Estilo Rojo Fuego: la mitad de la EXP va a quien lo lleva; la otra se reparte entre los que pelearon vivos.",
       "heldItemEmpty": "No tiene Repartir Experiencia. Tocá para equiparlo.",
       "noHeldItems": "No tenés Repartir Experiencia en la mochila — conseguilo en un gimnasio o la Tienda.",
       "equip": "Equipar",
@@ -1688,7 +1688,7 @@
       "choiceScarf": "Multiplica por 1,5 la Velocidad, pero solo permite usar el primer movimiento elegido.",
       "choiceBand": "Multiplica por 1,5 el Ataque, pero solo permite usar el primer movimiento elegido.",
       "leftovers": "Restaura 1/16 del HP máximo al final de cada turno.",
-      "expShare": "Si lo lleva un Pokémon del equipo que no pelea, recibe la mitad de la EXP de la victoria.",
+      "expShare": "Divide la EXP a la mitad: 50% para quien lo lleva y 50% repartido entre los que pelearon vivos (estilo Rojo Fuego).",
       "lifeOrb": "Aumenta un 30 % la potencia de los movimientos de daño, con retroceso de 1/10 del HP máximo.",
       "linkingCord": "Evoluciona a las especies que normalmente requieren intercambio.",
       "metalCoat": "Evoluciona a Onix y Scyther (Steelix / Scizor).",
@@ -2586,6 +2586,9 @@
     "nodeWon": "Ganado",
     "nodeInProgress": "En curso",
     "nodeCurrent": "Actual",
+    "nodeNext": "Siguiente",
+    "backToCurrentChapter": "Volver al actual",
+    "chapterLockedHint": "Se abre al completar el capítulo anterior.",
     "gymChallengeHint": "Usá la acción principal de arriba cuando puedas desafiar al líder.",
     "gymLockedHint": "Todavía no podés desafiar al líder.",
     "reqCompleteStageAt": "Completá {stage} en {location}",
@@ -3310,7 +3313,7 @@
             "body": "Quemadura, parálisis, veneno y sueño condicionan el combate. Los tipos definen efectividad: un super efectivo duele mucho más.",
             "bullets": [
               "Algunos objetos held cambian el ritmo (Focus Sash, Choice…).",
-              "Al ganar, el XP se reparte entre los que pelearon.",
+              "Al ganar, el XP se reparte en partes iguales entre los que pelearon y siguen vivos (estilo Rojo Fuego).",
               "Si alguien puede evolucionar, te lo ofrecemos en el resumen."
             ]
           }

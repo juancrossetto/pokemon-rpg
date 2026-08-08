@@ -134,12 +134,12 @@ const HELD_ITEMS: {
   {
     name: "Exp. Share",
     effect: "EXP_SHARE",
-    // Misma fracción que la banca participante (BENCH_XP_SHARE): el mon que
-    // no pelea cobra la mitad de la EXP de la victoria.
+    // FireRed / Gen III: con el objeto equipado, la mitad del pozo va al
+    // holder y la otra a los participantes vivos (ver distributeVictoryXpShares).
     value: 0.5,
     buyPrice: 0,
     effectText:
-      "Si lo lleva un Pokémon del equipo que no pelea, recibe la mitad de la EXP de la victoria.",
+      "Divide la EXP a la mitad: 50% para quien lo lleva y 50% repartido entre los que pelearon (estilo Rojo Fuego).",
   },
 ];
 
