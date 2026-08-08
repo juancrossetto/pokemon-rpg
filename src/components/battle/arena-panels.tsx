@@ -100,6 +100,9 @@ export function PartySidebar({
 }) {
   const t = useTranslations("battle");
   const pixelPortrait = Boolean(portraitUrl?.startsWith("http"));
+  /** Arte local HD: bust/contain centrado — el fill+cover de avatares de jugador
+   *  desplaza NPCs de pose asimétrica (brazo alzado, etc.). */
+  const localNpcPortrait = Boolean(portraitUrl && !pixelPortrait);
   const isWild = variant === "wild";
   const hasChildren = Boolean(children);
   const placeIconUrl = encounterPlace?.iconUrl ?? null;
@@ -240,6 +243,7 @@ export function PartySidebar({
                   src={portraitUrl}
                   size="sm"
                   pixel={pixelPortrait}
+                  contain={localNpcPortrait}
                   className="relative"
                 />
               </span>
@@ -253,6 +257,7 @@ export function PartySidebar({
                   src={portraitUrl}
                   size="md"
                   pixel={pixelPortrait}
+                  contain={localNpcPortrait}
                   className="relative"
                 />
               </span>
@@ -393,8 +398,9 @@ export function PartySidebar({
           <TrainerAvatar
             name={name}
             src={portraitUrl}
-            size="xl"
+            size="2xl"
             pixel={pixelPortrait}
+            contain={localNpcPortrait}
             className="relative rounded-[28%] shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
           />
         </span>

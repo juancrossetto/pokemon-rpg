@@ -1556,17 +1556,23 @@ export function GymMissionControl({
                   const style = STATUS_STYLES[gym.status];
 
                   return (
-                    <button
+                    <div
                       key={gym.id}
-                      type="button"
-                      onClick={() => selectGym(gym)}
                       className={`gym-mission-card group relative min-h-[102px] w-[min(64vw,188px)] shrink-0 snap-start overflow-hidden rounded-xl border text-left transition duration-300 sm:min-h-[148px] sm:w-[210px] ${
                         active
                           ? "border-pokeball-red/70 shadow-[0_0_24px_rgba(238,21,21,0.28)]"
                           : "border-white/10 hover:border-pokeball-red/50 hover:shadow-[0_0_22px_rgba(238,21,21,0.22)] hover:scale-[1.02]"
                       } ${gym.locked && !active ? "opacity-70" : ""}`}
                     >
-                      <div className="absolute inset-0">
+                      <button
+                        type="button"
+                        onClick={() => selectGym(gym)}
+                        aria-label={gymNameLabel(gym)}
+                        aria-pressed={active}
+                        className="absolute inset-0 z-[1]"
+                      />
+
+                      <div className="pointer-events-none absolute inset-0">
                         <Image
                           src={gym.mapSrc}
                           alt=""
@@ -1589,7 +1595,7 @@ export function GymMissionControl({
                         />
                       </div>
 
-                      <div className="relative z-10 flex h-full flex-col justify-between gap-1 p-2.5 sm:gap-0 sm:p-3.5">
+                      <div className="pointer-events-none relative z-10 flex h-full flex-col justify-between gap-1 p-2.5 sm:gap-0 sm:p-3.5">
                         <div className="flex items-start justify-between gap-2">
                           {gym.status === "cleared" ? (
                             <span
@@ -1640,12 +1646,14 @@ export function GymMissionControl({
                             <span className="inline-flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
                               <CoinReward amount={gym.coinReward} compact />
                               {gym.avatarRewards.length > 0 ? (
-                                <AvatarRewardPreview
-                                  key={gym.id}
-                                  rewards={gym.avatarRewards}
-                                  compact
-                                  label={t("avatarRewards")}
-                                />
+                                <span className="pointer-events-auto relative z-[2]">
+                                  <AvatarRewardPreview
+                                    key={gym.id}
+                                    rewards={gym.avatarRewards}
+                                    compact
+                                    label={t("avatarRewards")}
+                                  />
+                                </span>
                               ) : null}
                             </span>
                           )}
@@ -1660,7 +1668,7 @@ export function GymMissionControl({
                           />
                         </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

@@ -29,6 +29,11 @@ export type CampaignStage = {
   levelMin: number;
   levelMax: number;
   energyCost?: number;
+  /**
+   * Victorias o capturas salvajes necesarias para marcar el stage completo.
+   * Default 1. Da pista de grindeo antes del gimnasio sin inventar stages vacíos.
+   */
+  clearsRequired?: number;
   /** Pisa la densidad por defecto del tipo de ubicación — ver `encounters.ts`. */
   encounterRate?: EncounterRate;
   /** Al completar este stage, desbloquea esta location (si aún no lo está). */

@@ -23,9 +23,25 @@ export type CampaignNodeStatus =
 export type CampaignRequirementType =
   | "complete_all_chapter_stages"
   | "reach_team_level"
+  | "own_ready_pokemon"
   | "own_previous_badge"
   | "complete_stage"
   | "visit_location";
+
+/** Cuántos Pokémon del equipo deben llegar al nivel de preparación del gym. */
+export const GYM_READY_TEAM_SIZE = 2;
+
+/** Nivel pedido por Pokémon listo: recommendedLevel − 2 (mín. 1). */
+export function gymReadyLevel(recommendedLevel: number): number {
+  return Math.max(1, recommendedLevel - 2);
+}
+
+export function countTeamReadyAtLevel(
+  teamLevels: readonly number[],
+  readyLevel: number,
+): number {
+  return teamLevels.filter((level) => level >= readyLevel).length;
+}
 
 export type CampaignPrimaryActionKind =
   | "explore"
@@ -78,6 +94,8 @@ export type CampaignActionContext = {
   progress: CampaignProgressRow;
   earnedGymOrders: number[];
   teamMaxLevel: number;
+  /** Pokémon del equipo en o por encima del nivel de preparación del gym. */
+  teamReadyCount?: number;
   /** Capítulo activo (opcional: mejora progress del objetivo). */
   chapter?: Chapter | null;
   /** Nivel recomendado del gimnasio del milestone, si aplica. */
@@ -94,6 +112,7 @@ export function getGymChallengeRequirements(
   teamMaxLevel: number,
   recommendedLevel?: number | null,
   regionId: string = "kanto",
+  teamReadyCount: number = 0,
 ): CampaignRequirement[] {
   const wild = chapterWildStagesForGym(gymOrder, regionId);
   const doneSet = new Set(completedStageIds);
@@ -115,6 +134,7 @@ export function getGymChallengeRequirements(
   ];
 
   if (recommendedLevel != null && recommendedLevel > 0) {
+    const readyLevel = gymReadyLevel(recommendedLevel);
     reqs.push({
       id: `gym-${gymOrder}-team-level`,
       type: "reach_team_level",
@@ -124,6 +144,15 @@ export function getGymChallengeRequirements(
       descriptionKey: "reqLevel",
       descriptionParams: { level: recommendedLevel },
     });
+    reqs.push({
+      id: `gym-${gymOrder}-ready-team`,
+      type: "own_ready_pokemon",
+      requiredAmount: GYM_READY_TEAM_SIZE,
+      currentAmount: teamReadyCount,
+      completed: teamReadyCount >= GYM_READY_TEAM_SIZE,
+      descriptionKey: "reqTeamReady",
+      descriptionParams: { count: GYM_READY_TEAM_SIZE, level: readyLevel },
+    });
   }
 
   return reqs;
@@ -132,20 +161,36 @@ export function getGymChallengeRequirements(
 export function canChallengeGym(
   gymOrder: number,
   completedStageIds: readonly string[],
-  opts?: { hasBadge?: boolean; regionId?: string },
+  opts?: {
+    hasBadge?: boolean;
+    regionId?: string;
+    teamMaxLevel?: number;
+    teamReadyCount?: number;
+    recommendedLevel?: number | null;
+  },
 ): boolean {
   if (opts?.hasBadge) return true;
-  return areChapterStagesCompleteForGym(
-    gymOrder,
-    completedStageIds,
-    opts?.regionId ?? "kanto",
-  );
+  if (
+    !areChapterStagesCompleteForGym(
+      gymOrder,
+      completedStageIds,
+      opts?.regionId ?? "kanto",
+    )
+  ) {
+    return false;
+  }
+
+  const rec = opts?.recommendedLevel;
+  if (rec != null && rec > 0) {
+    if ((opts?.teamMaxLevel ?? 0) < rec) return false;
+    if ((opts?.teamReadyCount ?? 0) < GYM_READY_TEAM_SIZE) return false;
+  }
+  return true;
 }
 
 /**
  * CTA + próximo objetivo a partir del progreso real.
- * Soft-gate de nivel: aparece en requisitos pero no deshabilita el CTA
- * (misma política que `startGymRun` hoy).
+ * Nivel y equipo listo son hard-gate (igual que los stages del capítulo).
  */
 export function getCampaignPrimaryAction(ctx: CampaignActionContext): CampaignActionState {
   const milestone = nextMilestone(ctx.progress, ctx.earnedGymOrders);
@@ -166,26 +211,39 @@ export function getCampaignPrimaryAction(ctx: CampaignActionContext): CampaignAc
 
   if (milestone.kind === "gym" && milestone.gymOrder != null) {
     const hasBadge = ctx.earnedGymOrders.includes(milestone.gymOrder);
+    const regionId = ctx.progress.currentRegionId;
     const reqs = getGymChallengeRequirements(
       milestone.gymOrder,
       ctx.progress.completedStageIds,
       ctx.teamMaxLevel,
       ctx.gymRecommendedLevel,
+      regionId,
+      ctx.teamReadyCount ?? 0,
     );
     const stagesReq = reqs.find((r) => r.type === "complete_all_chapter_stages");
     const canFight = canChallengeGym(milestone.gymOrder, ctx.progress.completedStageIds, {
       hasBadge,
+      regionId,
+      teamMaxLevel: ctx.teamMaxLevel,
+      teamReadyCount: ctx.teamReadyCount ?? 0,
+      recommendedLevel: ctx.gymRecommendedLevel,
     });
 
     if (!canFight) {
-      // Todavía faltan stages: el CTA lleva a explorar, no al gimnasio.
+      const missing = reqs.filter((r) => !r.completed);
+      const onlyPrep =
+        stagesReq?.completed &&
+        missing.every((r) => r.type === "reach_team_level" || r.type === "own_ready_pokemon");
+      // Faltan stages o nivel: el CTA lleva a explorar, no al gimnasio.
       return {
         action: "blocked",
         labelKey: "continueExpedition",
         enabled: true,
         href: "/battle",
         milestone,
-        objectiveTitleKey: "objectiveClearChapterStages",
+        objectiveTitleKey: onlyPrep
+          ? "objectivePrepForGym"
+          : "objectiveClearChapterStages",
         locationNameKey: milestone.nameKey,
         progress:
           stagesReq && stagesReq.requiredAmount != null
@@ -250,6 +308,7 @@ export function getCampaignActionForZone(opts: {
   progress: CampaignProgressRow;
   earnedGymOrders: number[];
   teamMaxLevel: number;
+  teamReadyCount?: number;
   chapter: Chapter;
   /** Milestone de historia (se reusa en el shape; la UI contextualiza título/CTA). */
   storyMilestone: CampaignMilestone;
@@ -263,6 +322,7 @@ export function getCampaignActionForZone(opts: {
     progress,
     earnedGymOrders,
     teamMaxLevel,
+    teamReadyCount = 0,
     chapter,
     storyMilestone,
     gymRecommendedLevel,
@@ -305,18 +365,32 @@ export function getCampaignActionForZone(opts: {
       progress.completedStageIds,
       teamMaxLevel,
       gymRecommendedLevel,
+      progress.currentRegionId,
+      teamReadyCount,
     );
     const stagesReq = reqs.find((r) => r.type === "complete_all_chapter_stages");
-    const canFight = canChallengeGym(gymOrder, progress.completedStageIds, { hasBadge });
+    const canFight = canChallengeGym(gymOrder, progress.completedStageIds, {
+      hasBadge,
+      regionId: progress.currentRegionId,
+      teamMaxLevel,
+      teamReadyCount,
+      recommendedLevel: gymRecommendedLevel,
+    });
 
     if (!canFight) {
+      const missing = reqs.filter((r) => !r.completed);
+      const onlyPrep =
+        stagesReq?.completed &&
+        missing.every((r) => r.type === "reach_team_level" || r.type === "own_ready_pokemon");
       return {
         action: "blocked",
         labelKey: "continueExpedition",
         enabled: true,
         href: "/battle",
         milestone,
-        objectiveTitleKey: "objectiveClearChapterStages",
+        objectiveTitleKey: onlyPrep
+          ? "objectivePrepForGym"
+          : "objectiveClearChapterStages",
         locationNameKey: zone.nameKey,
         progress:
           stagesReq && stagesReq.requiredAmount != null

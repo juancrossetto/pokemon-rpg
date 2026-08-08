@@ -49,22 +49,23 @@ function trainer(
 
 /** Dos entrenadores por ruta/cueva; las ciudades y gimnasios no tienen. */
 export const ROUTE_TRAINERS: RouteTrainer[] = [
-  trainer("route-1", "youngster", 16, 4, 50),
-  trainer("route-2", "bug_catcher", 13, 7, 80),
-  trainer("viridian-forest", "bug_catcher_2", 11, 9, 100),
-  trainer("viridian-forest", "camper", 10, 10, 110),
-  trainer("route-3", "lass", 21, 12, 130),
-  trainer("mt-moon", "hiker", 74, 14, 160),
-  trainer("mt-moon", "rocket_grunt", 41, 16, 190),
-  trainer("route-5", "picnicker", 43, 17, 200),
-  trainer("route-11", "gambler", 96, 20, 240),
-  trainer("rock-tunnel", "hiker_2", 95, 22, 280),
-  trainer("rock-tunnel", "pokemaniac", 105, 24, 320),
-  trainer("route-8", "super_nerd", 58, 25, 340),
-  trainer("route-16", "biker", 88, 27, 380),
-  trainer("route-15", "beauty", 44, 30, 430),
-  trainer("route-19", "swimmer", 72, 33, 480),
-  trainer("route-21", "fisherman", 98, 36, 540),
+  // Rattata Nv.3: el inicial Planta no pelea contra volador (Pidgey resiste Grass).
+  trainer("route-1", "youngster", 19, 3, 50),
+  trainer("route-2", "bug_catcher", 13, 5, 70),
+  trainer("viridian-forest", "bug_catcher_2", 11, 6, 90),
+  trainer("viridian-forest", "camper", 10, 7, 100),
+  trainer("route-3", "lass", 21, 10, 120),
+  trainer("mt-moon", "hiker", 74, 12, 150),
+  trainer("mt-moon", "rocket_grunt", 41, 14, 180),
+  trainer("route-5", "picnicker", 43, 15, 190),
+  trainer("route-11", "gambler", 96, 18, 220),
+  trainer("rock-tunnel", "hiker_2", 95, 20, 260),
+  trainer("rock-tunnel", "pokemaniac", 105, 22, 300),
+  trainer("route-8", "super_nerd", 58, 23, 320),
+  trainer("route-16", "biker", 88, 25, 360),
+  trainer("route-15", "beauty", 44, 28, 410),
+  trainer("route-19", "swimmer", 72, 31, 460),
+  trainer("route-21", "fisherman", 98, 34, 520),
 ];
 
 export function trainersForLocation(locationId: string): RouteTrainer[] {

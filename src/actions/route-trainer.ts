@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -89,6 +90,8 @@ export async function startTrainerBattle(
   const maxHp = calculateMaxHp(species.baseHp, trainer.level);
   const moveIds = await getMovesetForLevel(trainer.speciesId, trainer.level);
   const moves = await prisma.move.findMany({ where: { id: { in: moveIds } } });
+  const tCampaign = await getTranslations("campaign");
+  const trainerName = tCampaign(trainer.nameKey);
 
   await prisma.battleSession.create({
     data: {
@@ -102,7 +105,8 @@ export async function startTrainerBattle(
       wildMovePp: moveIds.map((id) => moves.find((m) => m.id === id)?.pp ?? 20),
       routeTrainerId: trainer.id,
       participantIds: [lead.id],
-      log: [`appear:${species.name}`, `trainer:${trainer.id}`],
+      // Mismo patrón que gimnasio: desafío + sendOut (no "apareció un salvaje").
+      log: [`challengeTrainer:${trainerName}`, `sendOut:${species.name}`],
       turnDeadlineAt: nextTurnDeadline(),
     },
   });

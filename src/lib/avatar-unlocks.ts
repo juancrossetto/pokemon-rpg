@@ -41,6 +41,7 @@ export const AVATAR_REWARDS_BY_GYM_ORDER: Record<number, readonly string[]> = {
     "brockk",
     "chicaa",
     "ranger",
+    "cazabichos",
   ],
   // 2 · Misty
   2: [
@@ -59,6 +60,8 @@ export const AVATAR_REWARDS_BY_GYM_ORDER: Record<number, readonly string[]> = {
     "lectro",
     "james",
     "jessie",
+    "reclutarocket",
+    "reclutarocketf",
     "entrenadorguay",
     "entrenadoraguay",
     "fredo",
@@ -83,6 +86,9 @@ export const AVATAR_REWARDS_BY_GYM_ORDER: Record<number, readonly string[]> = {
     "petra",
     "petraa",
     "pokemaniaco",
+    "hugo",
+    "supernerd",
+    "motorista",
     "yakon",
     "maximo",
     "maximob",

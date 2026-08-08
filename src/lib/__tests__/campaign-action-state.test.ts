@@ -53,20 +53,24 @@ describe("canChallengeGym", () => {
 });
 
 describe("getGymChallengeRequirements", () => {
-  it("reports incomplete chapter stages and optional team level", () => {
-    const reqs = getGymChallengeRequirements(1, [], 10, 12);
-    expect(reqs).toHaveLength(2);
+  it("reports incomplete chapter stages and team prep gates", () => {
+    const reqs = getGymChallengeRequirements(1, [], 10, 12, "kanto", 1);
+    expect(reqs).toHaveLength(3);
     expect(reqs[0]?.type).toBe("complete_all_chapter_stages");
     expect(reqs[0]?.completed).toBe(false);
     expect(reqs[1]?.type).toBe("reach_team_level");
     expect(reqs[1]?.completed).toBe(false);
-    expect(getMissingRequirements(reqs)).toHaveLength(2);
+    expect(reqs[2]?.type).toBe("own_ready_pokemon");
+    expect(reqs[2]?.completed).toBe(false);
+    expect(getMissingRequirements(reqs)).toHaveLength(3);
   });
 
   it("marks team level complete when high enough", () => {
-    const reqs = getGymChallengeRequirements(1, [], 20, 12);
+    const reqs = getGymChallengeRequirements(1, [], 20, 12, "kanto", 2);
     const level = reqs.find((r) => r.type === "reach_team_level");
+    const ready = reqs.find((r) => r.type === "own_ready_pokemon");
     expect(level?.completed).toBe(true);
+    expect(ready?.completed).toBe(true);
   });
 });
 
@@ -105,7 +109,7 @@ describe("getCampaignPrimaryAction", () => {
     }
   });
 
-  it("enables challenge_gym when chapter stages are complete", () => {
+  it("enables challenge_gym when chapter stages and team prep are complete", () => {
     const stageIds = chapterWildStagesForGym(1).map((s) => s.id);
     const action = getCampaignPrimaryAction({
       progress: progress({
@@ -118,13 +122,42 @@ describe("getCampaignPrimaryAction", () => {
       }),
       earnedGymOrders: [],
       teamMaxLevel: 20,
+      teamReadyCount: 2,
       gymRecommendedLevel: 12,
     });
     expect(action.milestone.kind).toBe("gym");
     expect(action.action).toBe("challenge_gym");
     expect(action.labelKey).toBe("challengeGym");
     expect(action.enabled).toBe(true);
-    expect(canChallengeGym(1, stageIds)).toBe(true);
+    expect(
+      canChallengeGym(1, stageIds, {
+        teamMaxLevel: 20,
+        teamReadyCount: 2,
+        recommendedLevel: 12,
+      }),
+    ).toBe(true);
+  });
+
+  it("blocks challenge_gym when stages are done but team is underleveled", () => {
+    const stageIds = chapterWildStagesForGym(1).map((s) => s.id);
+    const action = getCampaignPrimaryAction({
+      progress: progress({
+        highestUnlockedLocationId: "pewter-gym",
+        farmingLocationId: "pewter-gym",
+        selectedLocationId: "pewter-gym",
+        farmingStageId: "pewter-gym-1",
+        completedStageIds: stageIds,
+        highestCompletedStageId: stageIds.at(-1) ?? null,
+      }),
+      earnedGymOrders: [],
+      teamMaxLevel: 8,
+      teamReadyCount: 1,
+      gymRecommendedLevel: 12,
+    });
+    expect(action.milestone.kind).toBe("gym");
+    expect(action.action).toBe("blocked");
+    expect(action.objectiveTitleKey).toBe("objectivePrepForGym");
+    expect(action.href).toBe("/battle");
   });
 
   it("returns view_journey when region is complete", () => {
@@ -300,6 +333,7 @@ describe("getCampaignActionForZone", () => {
       progress: progress({ completedStageIds: wild.map((s) => s.id) }),
       earnedGymOrders: [],
       teamMaxLevel: 20,
+      teamReadyCount: 2,
       chapter: { ...chapterBase, number: 1, gymOrder: 1 },
       storyMilestone: {
         kind: "gym",

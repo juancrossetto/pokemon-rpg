@@ -18,10 +18,17 @@ export type ExplorationEvent =
 
 const ALPHA_CHANCE = 0.04;
 const ITEM_CHANCE = 0.08;
+/** Por debajo de este levelMax de zona no salen alphas (cap. 1 más amable). */
+const ALPHA_MIN_ZONE_LEVEL = 8;
 
-export function rollExplorationEvent(): ExplorationEvent {
+export function rollExplorationEvent(opts?: {
+  /** levelMax del stage actual — si es bajo, no hay alphas. */
+  zoneLevelMax?: number;
+}): ExplorationEvent {
   const roll = Math.random();
-  if (roll < ALPHA_CHANCE) {
+  const allowAlpha =
+    opts?.zoneLevelMax == null || opts.zoneLevelMax >= ALPHA_MIN_ZONE_LEVEL;
+  if (allowAlpha && roll < ALPHA_CHANCE) {
     return { kind: "alpha", levelBonus: 3 + Math.floor(Math.random() * 3) };
   }
   if (roll < ALPHA_CHANCE + ITEM_CHANCE) return { kind: "item" };

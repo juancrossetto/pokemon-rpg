@@ -8482,6 +8482,105 @@ body {
 }
 
 /* ───────────────────────────────────────────────────────────────────────
+   Celebración de medalla: la medalla cae y golpea, y el botín entra después
+   fila por fila. Antes todo aparecía junto y el oro/avatares pasaban de largo.
+   ─────────────────────────────────────────────────────────────────────── */
+.gym-badge-slam {
+  animation: gym-badge-slam 0.62s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+
+@keyframes gym-badge-slam {
+  0% {
+    opacity: 0;
+    transform: translateY(-70px) scale(1.7) rotate(-18deg);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(6px) scale(0.9) rotate(4deg);
+  }
+  75% {
+    transform: translateY(-3px) scale(1.04) rotate(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+/* Onda de impacto que sale del golpe de la medalla. */
+.gym-badge-shock {
+  opacity: 0;
+  animation: gym-badge-shock 0.75s ease-out 0.32s both;
+}
+
+@keyframes gym-badge-shock {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+/* Cada premio entra desde la derecha con un rebote corto. */
+.gym-reward-tile--hidden {
+  opacity: 0;
+  transform: translateX(26px);
+}
+
+.gym-reward-tile--in {
+  animation: gym-reward-tile-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes gym-reward-tile-in {
+  0% {
+    opacity: 0;
+    transform: translateX(26px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Los retratos de avatar aparecen de a uno dentro de su fila. */
+.gym-reward-avatar {
+  animation: gym-reward-avatar-in 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes gym-reward-avatar-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gym-badge-slam,
+  .gym-reward-tile--in,
+  .gym-reward-avatar {
+    animation: none !important;
+  }
+
+  .gym-badge-shock {
+    display: none;
+  }
+
+  /* Sin animación no hay quien devuelva la opacidad: los premios revelados
+     tienen que quedar visibles igual. */
+  .gym-reward-tile--in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────
    Escena de aventura: el recorrido deja de ser una lista sobre el fondo de
    la app y pasa a ser un tablero ilustrado con el arte del capítulo detrás.
    ─────────────────────────────────────────────────────────────────────── */

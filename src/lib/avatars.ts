@@ -59,6 +59,7 @@ const AVATAR_SLUGS = [
   "campista",
   "candela",
   "candelab",
+  "cazabichos",
   "chase",
   "cheren",
   "cherenb",
@@ -84,6 +85,7 @@ const AVATAR_SLUGS = [
   "hiedra",
   "hiedrab",
   "hiedrac",
+  "hugo",
   "james",
   "jessie",
   "joven",
@@ -120,6 +122,7 @@ const AVATAR_SLUGS = [
   "morti",
   "mortib",
   "mortic",
+  "motorista",
   "n",
   "na",
   "naboru",
@@ -138,6 +141,8 @@ const AVATAR_SLUGS = [
   "pokefan",
   "pokemaniaco",
   "ranger",
+  "reclutarocket",
+  "reclutarocketf",
   "rojo",
   "rojoa",
   "rojob",
@@ -152,6 +157,7 @@ const AVATAR_SLUGS = [
   "sachiko",
   "serena",
   "serenab",
+  "supernerd",
   "surfista",
   "veterana",
   "veterano",
@@ -163,6 +169,26 @@ const AVATAR_SLUGS = [
 /** Sprites de NPCs/gimnasios/torre siguen en Showdown. */
 export function showdownTrainerSpriteUrl(slug: string): string {
   return `${showdownSpritesBase()}/trainers/${slug}.png`;
+}
+
+/**
+ * Retrato de NPC de clase (entrenadores de ruta, etc.).
+ * Prefiere el arte HD local del catálogo de avatares; si no hay mapeo,
+ * cae al sprite pixel de Showdown.
+ */
+export function npcTrainerPortraitUrl(
+  showdownSlug: string,
+  variant: "thumb" | "profile" = "profile",
+): string {
+  const key = showdownSlug.toLowerCase().replace(/-/g, "");
+  const localSlug = LEGACY_SHOWDOWN_TO_LOCAL[key];
+  const avatar = localSlug
+    ? AVATAR_OPTIONS.find((a) => a.slug === localSlug) ?? null
+    : null;
+  if (avatar) {
+    return variant === "profile" ? avatar.profileSrc : avatar.src;
+  }
+  return showdownTrainerSpriteUrl(showdownSlug);
 }
 
 function localAvatarUrl(slug: string, variant: 1 | 2): string {
@@ -218,11 +244,12 @@ const LEGACY_SHOWDOWN_TO_LOCAL: Record<string, (typeof AVATAR_SLUGS)[number]> = 
   backpacker: "ranger",
   backpackerf: "ranger",
   picnicker: "campista",
+  camper: "campista",
   hiker: "montanista",
   swimmer: "nadador",
   swimmerf: "nadadora",
   gentleman: "entrenadorguay",
-  bugcatcher: "joven",
+  bugcatcher: "cazabichos",
   twins: "chica",
   blackbelt: "karate",
   medium: "leti",
@@ -230,7 +257,26 @@ const LEGACY_SHOWDOWN_TO_LOCAL: Record<string, (typeof AVATAR_SLUGS)[number]> = 
   pokemaniac: "pokemaniaco",
   ruinmaniac: "pokemaniaco",
   veteran: "veterano",
+  veteranf: "veterana",
   sailor: "nadador",
+  beauty: "damisela",
+  biker: "motorista",
+  fisherman: "nadador",
+  gambler: "hugo",
+  supernerd: "supernerd",
+  scientist: "cientifico",
+  scientistf: "cientifico",
+  rocketgrunt: "reclutarocket",
+  rocketgruntf: "reclutarocketf",
+  schoolkid: "joven",
+  schoolkidf: "chica",
+  pokemonbreeder: "criadora",
+  pokemonbreederf: "criadora",
+  acetrainer: "entrenadorguay",
+  acetrainerf: "entrenadoraguay",
+  birdkeeper: "ranger",
+  psychic: "leti",
+  psychicf: "leti",
 };
 
 /** Orden histórico del catálogo Showdown (sólo para resolver ids `trainer-N`). */
@@ -314,9 +360,7 @@ const RETIRED_LOCAL_TO_CURRENT: Record<string, (typeof AVATAR_SLUGS)[number]> = 
   rangermasculino: "ranger",
   operario: "montanista",
   jovenn: "chica",
-  cazabichos: "joven",
   gary: "ash",
-  domadragon: "entrenadorguay",
   ninobien: "joven",
   medium: "leti",
   aristocrata: "entrenadorguay",

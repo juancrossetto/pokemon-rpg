@@ -28,8 +28,73 @@ export type CampaignProgressRow = {
   farmingStageId: string;
   highestCompletedStageId: string | null;
   completedStageIds: string[];
+  /** Progreso parcial hacia `clearsRequired` del stage activo. */
+  stageClearCounts: Record<string, number>;
   lastMilestoneId: string | null;
 };
+
+/** Victorias/capturas necesarias para completar un stage (mínimo 1). */
+export function stageClearsRequired(stage: Pick<CampaignStage, "clearsRequired">): number {
+  return Math.max(1, stage.clearsRequired ?? 1);
+}
+
+export function parseStageClearCounts(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Record<string, number> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+      out[key] = Math.floor(value);
+    }
+  }
+  return out;
+}
+
+/**
+ * Suma una victoria/captura al stage de farming. Si llega a `clearsRequired`,
+ * aplica el clear completo (unlocks, completedStageIds, etc.).
+ */
+export function applyFarmingClear(
+  progress: CampaignProgressRow,
+  stageId: string,
+): {
+  patch: Partial<CampaignProgressRow>;
+  completed: boolean;
+  clears: number;
+  required: number;
+} {
+  const regionId = regionIdOf(progress);
+  const stage = getStage(regionId, stageId) ?? findStage(stageId)?.stage;
+  if (!stage || stage.isGymMilestone || progress.completedStageIds.includes(stageId)) {
+    return { patch: {}, completed: false, clears: 0, required: 1 };
+  }
+
+  const required = stageClearsRequired(stage);
+  const clears = (progress.stageClearCounts[stageId] ?? 0) + 1;
+
+  if (clears < required) {
+    return {
+      patch: {
+        stageClearCounts: { ...progress.stageClearCounts, [stageId]: clears },
+      },
+      completed: false,
+      clears,
+      required,
+    };
+  }
+
+  const nextCounts = { ...progress.stageClearCounts };
+  delete nextCounts[stageId];
+  const completion = applyStageCompletion(
+    { ...progress, stageClearCounts: nextCounts },
+    stageId,
+  );
+  return {
+    patch: { ...completion, stageClearCounts: nextCounts },
+    completed: true,
+    clears: required,
+    required,
+  };
+}
 
 export const CAMPAIGN_DEFAULTS = REGION_CAMPAIGN_DEFAULTS;
 

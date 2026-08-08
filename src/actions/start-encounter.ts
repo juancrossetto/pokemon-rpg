@@ -69,7 +69,7 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
   }
 
   const { speciesId: wildSpeciesId, level: baseLevel } = resolveSpawn(stage);
-  const event = rollExplorationEvent();
+  const event = rollExplorationEvent({ zoneLevelMax: stage.levelMax });
   const wildLevel = event.kind === "alpha" ? baseLevel + event.levelBonus : baseLevel;
   const wildSpecies = await prisma.species.findUniqueOrThrow({ where: { id: wildSpeciesId } });
   const wildMaxHp = calculateMaxHp(wildSpecies.baseHp, wildLevel);

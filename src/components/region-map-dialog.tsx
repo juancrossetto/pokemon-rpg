@@ -268,6 +268,9 @@ export function RegionMapDialog({
                       <span className="truncate">
                         {stage.isGym ? "🏅 " : stage.done ? "✓ " : ""}
                         {t(stage.nameKey)}
+                        {!stage.isGym && stage.clearsRequired > 1 && !stage.done
+                          ? ` · ${stage.clearsCurrent}/${stage.clearsRequired}`
+                          : ""}
                       </span>
                       {!stage.unlocked && !stage.isGym && (
                         <span className="material-symbols-outlined text-[14px]!">lock</span>

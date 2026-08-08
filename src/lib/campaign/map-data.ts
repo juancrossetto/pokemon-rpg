@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { masteryLevel } from "@/lib/mastery";
-import { showdownTrainerSpriteUrl } from "@/lib/avatars";
+import { npcTrainerPortraitUrl } from "@/lib/avatars";
 import { trainersForLocation } from "./trainers";
 import { speciesRarity } from "./rarity";
 import { buildMapLocations, type MapLocation } from "./map-selection";
@@ -66,7 +66,7 @@ export async function loadMapLocations(
       trainers: trainersForLocation(location.id).map((tr) => ({
         id: tr.id,
         nameKey: tr.nameKey,
-        spriteUrl: showdownTrainerSpriteUrl(tr.spriteSlug),
+        spriteUrl: npcTrainerPortraitUrl(tr.spriteSlug, "thumb"),
         level: tr.level,
         coinReward: tr.coinReward,
         defeated: defeated.has(tr.id),

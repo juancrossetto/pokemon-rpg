@@ -38,9 +38,12 @@ import {
   campaignMapHasArt,
   campaignMapArtLayout,
   campaignMapSrc,
+  countTeamReadyAtLevel,
+  GYM_READY_TEAM_SIZE,
   getCampaignPrimaryAction,
   getCampaignActionForZone,
   getZoneUnlockRequirements,
+  gymReadyLevel,
   recommendedChapterZoneId,
   resolveZoneNodeStatus,
   type CampaignNodeStatus,
@@ -196,6 +199,8 @@ export type JourneySummary = {
   shinies: number;
   journeyPercent: number;
   teamMaxLevel: number;
+  /** Niveles del equipo activo — para el gate “2 Pokémon listos”. */
+  teamLevels: number[];
 };
 
 export type GymRequirement = {
@@ -306,10 +311,16 @@ export function CampaignJourney({
         ? gymRequirements[chapter.gym.id]?.recommendedLevel
         : null;
 
+  const readyForLevel = (recommended: number | null | undefined) =>
+    recommended != null && recommended > 0
+      ? countTeamReadyAtLevel(summary.teamLevels, gymReadyLevel(recommended))
+      : 0;
+
   const primaryAction = getCampaignPrimaryAction({
     progress,
     earnedGymOrders,
     teamMaxLevel: summary.teamMaxLevel,
+    teamReadyCount: readyForLevel(gymRecLevel),
     chapter: chapter ?? null,
     gymRecommendedLevel: gymRecLevel,
   });
@@ -334,6 +345,7 @@ export function CampaignJourney({
           progress,
           earnedGymOrders,
           teamMaxLevel: summary.teamMaxLevel,
+          teamReadyCount: readyForLevel(selectedGymRec ?? gymRecLevel),
           chapter,
           storyMilestone: milestone,
           gymRecommendedLevel: selectedGymRec ?? gymRecLevel,
@@ -783,6 +795,7 @@ export function CampaignJourney({
                 zone.gymOrder != null && earnedGymOrders.includes(zone.gymOrder)
               }
               teamMaxLevel={summary.teamMaxLevel}
+              teamLevels={summary.teamLevels}
               unlockRequirements={getZoneUnlockRequirements(zone.id, progress)}
               onTravel={() => travelTo(zone.id)}
               onFarmStage={farmStage}
@@ -1580,6 +1593,7 @@ function ZonePanel({
   gymRequirement,
   gymWon = false,
   teamMaxLevel,
+  teamLevels,
   unlockRequirements,
   onTravel,
   onFarmStage,
@@ -1594,6 +1608,7 @@ function ZonePanel({
   gymRequirement?: GymRequirement;
   gymWon?: boolean;
   teamMaxLevel: number;
+  teamLevels: number[];
   unlockRequirements: CampaignRequirement[];
   onTravel: () => void;
   onFarmStage: (stageId: string) => void;
@@ -1949,20 +1964,45 @@ function ZonePanel({
                       })}
                     </li>
                     {gymRequirement && (
-                      <li
-                        className={`flex items-center gap-1.5 text-[11px] ${
-                          teamMaxLevel >= gymRequirement.recommendedLevel
-                            ? "text-emerald-400"
-                            : "text-white/45"
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[14px]!">
-                          {teamMaxLevel >= gymRequirement.recommendedLevel
-                            ? "check_circle"
-                            : "radio_button_unchecked"}
-                        </span>
-                        {t("reqLevel", { level: gymRequirement.recommendedLevel })}
-                      </li>
+                      <>
+                        <li
+                          className={`flex items-center gap-1.5 text-[11px] ${
+                            teamMaxLevel >= gymRequirement.recommendedLevel
+                              ? "text-emerald-400"
+                              : "text-white/45"
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[14px]!">
+                            {teamMaxLevel >= gymRequirement.recommendedLevel
+                              ? "check_circle"
+                              : "radio_button_unchecked"}
+                          </span>
+                          {t("reqLevel", { level: gymRequirement.recommendedLevel })}
+                        </li>
+                        <li
+                          className={`flex items-center gap-1.5 text-[11px] ${
+                            countTeamReadyAtLevel(
+                              teamLevels,
+                              gymReadyLevel(gymRequirement.recommendedLevel),
+                            ) >= GYM_READY_TEAM_SIZE
+                              ? "text-emerald-400"
+                              : "text-white/45"
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[14px]!">
+                            {countTeamReadyAtLevel(
+                              teamLevels,
+                              gymReadyLevel(gymRequirement.recommendedLevel),
+                            ) >= GYM_READY_TEAM_SIZE
+                              ? "check_circle"
+                              : "radio_button_unchecked"}
+                          </span>
+                          {t("reqTeamReady", {
+                            count: GYM_READY_TEAM_SIZE,
+                            level: gymReadyLevel(gymRequirement.recommendedLevel),
+                          })}
+                        </li>
+                      </>
                     )}
                   </ul>
                 )}
@@ -2024,6 +2064,14 @@ function ZonePanel({
                                       : "radio_button_unchecked"}
                             </span>
                             <span className="min-w-0 flex-1 truncate">{t(stage.nameKey)}</span>
+                            {!stage.isGym && stage.clearsRequired > 1 && !stage.done ? (
+                              <span className="shrink-0 font-mono text-[10px] text-white/55">
+                                {t("stageClearsProgress", {
+                                  current: stage.clearsCurrent,
+                                  required: stage.clearsRequired,
+                                })}
+                              </span>
+                            ) : null}
                           </button>
                         </li>
                       );

@@ -76,6 +76,15 @@ function coinsForVictory(wildLevel: number): number {
   return 10 + wildLevel * 2;
 }
 
+/** Botín de la primera victoria contra un líder de gimnasio. */
+export type GymFirstWinReward = {
+  coins: number;
+  tmName: string | null;
+  heldName: string | null;
+  /** Avatares que la medalla deja disponibles (`avatar-unlocks.ts`). */
+  avatarSlugs: string[];
+};
+
 export interface UseMoveResult {
   events: TurnEvent[];
   playerMaxHp: number;
@@ -90,6 +99,12 @@ export interface UseMoveResult {
   tmRewardName: string | null;
   /** Held / ítem extra del líder (p. ej. Exp. Share en Brock). */
   heldRewardName: string | null;
+  /**
+   * Botín completo de la primera victoria contra un líder, para que la
+   * celebración pueda mostrar de una lo que el jugador se llevó. Opcional
+   * porque sólo aplica a ese caso: el resto de los returns no lo setean.
+   */
+  gymFirstWin?: GymFirstWinReward | null;
   rematch: boolean;
   playerMovesPp: { moveId: number; pp: number }[];
   playerStatus: StatusCondition | null;
@@ -544,6 +559,7 @@ export async function submitBattleMove(
   let badgeEarned = false;
   let tmRewardName: string | null = null;
   let heldRewardName: string | null = null;
+  let gymFirstWin: UseMoveResult["gymFirstWin"] = null;
   let coinsAwarded = 0;
   let nextOpponent: UseMoveResult["nextOpponent"] = null;
   let pvpResult: UseMoveResult["pvpResult"] = null;
@@ -1281,8 +1297,20 @@ export async function submitBattleMove(
     if (battle.gymId) {
       const { notifyGymResult, notifyGymTmReward } = await import("@/lib/notifications");
       const { avatarRewardsForGymOrder } = await import("@/lib/avatar-unlocks");
-      const avatarsUnlocked =
-        badgeEarned && gym ? avatarRewardsForGymOrder(gym.order).length : 0;
+      const avatarSlugs =
+        badgeEarned && gym ? [...avatarRewardsForGymOrder(gym.order)] : [];
+      const avatarsUnlocked = avatarSlugs.length;
+      // El mismo botín que ya se acreditó, empaquetado para la celebración:
+      // sin esto la pantalla de medalla sólo nombraba la MT y el jugador no
+      // llegaba a ver ni el oro ni los avatares que acababa de ganar.
+      if (badgeEarned) {
+        gymFirstWin = {
+          coins: gymCoins,
+          tmName: tmRewardName,
+          heldName: heldRewardName,
+          avatarSlugs,
+        };
+      }
       await notifyGymResult(userId, battle.gymId, true, {
         rematch: alreadyHasThisBadge,
         avatarsUnlocked: avatarsUnlocked > 0 ? avatarsUnlocked : undefined,
@@ -1517,6 +1545,7 @@ export async function submitBattleMove(
     badgeEarned,
     tmRewardName,
     heldRewardName,
+    gymFirstWin,
     rematch: alreadyHasThisBadge,
     playerMovesPp,
     playerChoiceLockMoveId: newChoiceLockMoveId,

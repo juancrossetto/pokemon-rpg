@@ -143,6 +143,8 @@ model CampaignProgress {
   farmingStageId            String
   highestCompletedStageId   String?
   completedStageIds         String[] @default([])
+  /** Victorias/capturas parciales por stageId mientras no se completa (clearsRequired > 1). */
+  stageClearCounts          Json     @default("{}")
   lastMilestoneId           String?
   updatedAt                 DateTime @updatedAt
 

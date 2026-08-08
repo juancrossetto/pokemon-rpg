@@ -2,13 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { lockUsers } from "@/lib/db-locks";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import {
+  applyFarmingClear,
   applyGymBadgeUnlock,
-  applyStageCompletion,
   firstFarmableStage,
+  parseStageClearCounts,
   resolveFarmingAfterStageComplete,
   type CampaignProgressRow,
 } from "@/lib/campaign";
 import { findLocation, findStage } from "@/lib/campaign/content";
+import type { Prisma } from "@/generated/prisma/client";
 
 function rowFromDb(row: {
   currentRegionId: string;
@@ -18,6 +20,7 @@ function rowFromDb(row: {
   farmingStageId: string;
   highestCompletedStageId: string | null;
   completedStageIds: string[];
+  stageClearCounts: unknown;
   lastMilestoneId: string | null;
 }): CampaignProgressRow {
   return {
@@ -28,11 +31,12 @@ function rowFromDb(row: {
     farmingStageId: row.farmingStageId,
     highestCompletedStageId: row.highestCompletedStageId,
     completedStageIds: row.completedStageIds,
+    stageClearCounts: parseStageClearCounts(row.stageClearCounts),
     lastMilestoneId: row.lastMilestoneId,
   };
 }
 
-/** Mark farming stage complete after a wild win/catch; unlock next location/stage. */
+/** Mark farming stage clear progress after a wild win/catch; unlock when ready. */
 export async function completeFarmingStageOnWildWin(userId: string): Promise<void> {
   await ensureCampaignProgress(userId);
 
@@ -45,22 +49,28 @@ export async function completeFarmingStageOnWildWin(userId: string): Promise<voi
     if (!stage || stage.isGymMilestone) return;
 
     const wasEmpty = progress.completedStageIds.length === 0;
-    const patch = applyStageCompletion(progress, stage.id);
+    const { patch, completed } = applyFarmingClear(progress, stage.id);
     if (!Object.keys(patch).length) return;
 
-    const farming = resolveFarmingAfterStageComplete(progress, stage.id, patch);
+    const farming = completed
+      ? resolveFarmingAfterStageComplete(progress, stage.id, patch)
+      : {};
 
+    const { stageClearCounts, ...restPatch } = patch;
     await tx.campaignProgress.update({
       where: { userId },
       data: {
-        ...patch,
+        ...restPatch,
         ...farming,
+        ...(stageClearCounts !== undefined
+          ? { stageClearCounts: stageClearCounts as Prisma.InputJsonValue }
+          : {}),
       },
     });
 
     // Primera etapa limpia: Oak te da balls (no al elegir inicial, para no
-    // capturar en el tutorial).
-    if (wasEmpty) {
+    // capturar en el tutorial). Sólo al completar de verdad el primer stage.
+    if (wasEmpty && completed) {
       const pokeBall = await tx.item.findUnique({
         where: { name: "Poke Ball" },
         select: { id: true },

@@ -2,7 +2,12 @@
 
 import { redirect } from "@/i18n/navigation";
 import { isGymOpenAt } from "@/lib/gym-status";
-import { areChapterStagesCompleteForGym } from "@/lib/campaign";
+import {
+  areChapterStagesCompleteForGym,
+  canChallengeGym,
+  countTeamReadyAtLevel,
+  gymReadyLevel,
+} from "@/lib/campaign";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -19,7 +24,8 @@ export type StartGymRunResult =
         | "region_locked"
         | "on_cooldown"
         | "closed"
-        | "stages_incomplete";
+        | "stages_incomplete"
+        | "team_not_ready";
       hoursLeft?: number;
       opensHour?: number;
       closesHour?: number;
@@ -42,7 +48,10 @@ export async function startGymRun(gymId: string, locale: string): Promise<StartG
     return;
   }
 
-  const gym = await prisma.gym.findUniqueOrThrow({ where: { id: gymId } });
+  const gym = await prisma.gym.findUniqueOrThrow({
+    where: { id: gymId },
+    include: { team: { select: { level: true } } },
+  });
   const region = regionDef(gym.regionId);
   if (!region.playable || !region.gymsAvailable) {
     return { success: false, error: "region_locked" };
@@ -89,7 +98,7 @@ export async function startGymRun(gymId: string, locale: string): Promise<StartG
     prisma.gymAttempt.findFirst({ where: { userId, gymId }, orderBy: { attemptedAt: "desc" } }),
   ]);
 
-  // Primera medalla: hay que terminar los stages del capítulo. Revancha libre.
+  // Primera medalla: stages del capítulo + nivel/equipo listo. Revancha libre.
   if (!ownBadge) {
     const progress = await ensureCampaignProgress(userId);
     if (
@@ -100,6 +109,28 @@ export async function startGymRun(gymId: string, locale: string): Promise<StartG
       )
     ) {
       return { success: false, error: "stages_incomplete" };
+    }
+
+    const recommendedLevel = Math.max(...gym.team.map((p) => p.level), 1);
+    const team = await prisma.pokemonInstance.findMany({
+      where: { ownerId: userId, teamSlot: { not: null } },
+      select: { level: true },
+    });
+    const teamLevels = team.map((p) => p.level);
+    const teamMaxLevel = Math.max(...teamLevels, 1);
+    const teamReadyCount = countTeamReadyAtLevel(
+      teamLevels,
+      gymReadyLevel(recommendedLevel),
+    );
+    if (
+      !canChallengeGym(gym.order, progress.completedStageIds, {
+        regionId: gym.regionId,
+        teamMaxLevel,
+        teamReadyCount,
+        recommendedLevel,
+      })
+    ) {
+      return { success: false, error: "team_not_ready" };
     }
   }
 

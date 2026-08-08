@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
-import { submitBattleMove, type XpSummaryEntry } from "@/actions/battle-move";
+import {
+  submitBattleMove,
+  type GymFirstWinReward,
+  type XpSummaryEntry,
+} from "@/actions/battle-move";
 import { submitDoubleBattleMoves } from "@/actions/double-battle-move";
 import { fleeBattle } from "@/actions/flee-battle";
 import { attemptCapture, type CapturedPokemonInfo } from "@/actions/attempt-capture";
@@ -360,11 +364,17 @@ export function BattleArena({
     opponentName ?? (isTowerBattle ? t("towerFoe") : t("wildFoe"));
 
   function translateBootLog(raw: string): string | null {
-    // Metadata interna (stage de farming) — no mostrar al jugador.
+    // Metadata interna (stage de farming / id de entrenador) — no mostrar.
     if (raw.startsWith("stage:")) return null;
+    if (raw.startsWith("trainer:")) return null;
     if (raw === "alpha") return t("alphaEncounter");
     if (raw === "shiny") return t("shinyEncounter");
-    if (raw.startsWith("appear:")) return tLog("appear", { name: raw.slice(7) });
+    if (raw.startsWith("appear:")) {
+      const name = raw.slice(7);
+      // Combates con entrenador (ruta / tutorial / gym mal logueados): no digas "salvaje".
+      if (opponentName) return tLog("sendOut", { name });
+      return tLog("appear", { name });
+    }
     if (raw.startsWith("switch:")) return tLog("switchIn", { name: raw.slice(7) });
     if (raw.startsWith("switchForced:")) return tLog("switchForced", { name: raw.slice(14) });
     if (raw.startsWith("challengeTrainer:")) {
@@ -536,6 +546,7 @@ export function BattleArena({
   const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [tmRewardName, setTmRewardName] = useState<string | null>(null);
   const [heldRewardName, setHeldRewardName] = useState<string | null>(null);
+  const [gymFirstWin, setGymFirstWin] = useState<GymFirstWinReward | null>(null);
   // Arranca en null: el lanzamiento inicial lo dispara el efecto de send-out
   // cuando la página terminó de cargar (ver más abajo).
   const [ballAnim, setBallAnim] = useState<"recall" | "throw" | "land" | "open" | null>(null);
@@ -1950,6 +1961,9 @@ export function BattleArena({
       appendLog(t("heldEarned", { name: result.heldRewardName }));
       setHeldRewardName(result.heldRewardName);
     }
+    if (result.gymFirstWin) {
+      setGymFirstWin(result.gymFirstWin);
+    }
 
     if (result.turnDeadlineAt !== undefined) {
       setTurnDeadlineAt(result.turnDeadlineAt);
@@ -2013,6 +2027,9 @@ export function BattleArena({
         if (finish.heldRewardName) {
           appendLog(t("heldEarned", { name: finish.heldRewardName }));
           setHeldRewardName(finish.heldRewardName);
+        }
+        if (finish.gymFirstWin) {
+          setGymFirstWin(finish.gymFirstWin);
         }
         if (finish.outcome === "won") {
           await playFaintAndFinish("wild", "won");
@@ -2654,6 +2671,7 @@ export function BattleArena({
         badgeEarned={badgeEarned}
         tmRewardName={tmRewardName}
         heldRewardName={heldRewardName}
+        gymFirstWin={gymFirstWin}
         gymId={gymId}
         gymRunId={gymRunId}
         towerRunId={towerRunId}
@@ -2847,15 +2865,18 @@ export function BattleArena({
 
   const emptyPlayerSlots = Math.max(0, 6 - party.length);
   const isWildEncounter = battleMode === "wild";
-  // Torre / salvaje no tienen entrenador: sidebar de “encuentro”, no grilla de 6.
+  // Torre o salvaje puro: sidebar de “encuentro”. Entrenador de ruta / tutorial
+  // traen `opponentName` y usan el panel de entrenador (no el tag Salvaje).
   const foeSidebarWild =
-    isWildEncounter || isTowerBattle || (!opponentPortraitUrl && !opponentName);
+    isTowerBattle || (isWildEncounter && !opponentName);
   /** Strip mobile: nombre real + lugar (no entrenador de ruta). */
   const wildEncounterHeader =
-    ((isWildEncounter && !opponentName) || isTowerBattle);
-  const emptyOpponentSlots = foeSidebarWild
-    ? 0
-    : Math.max(0, 6 - opponentParty.length);
+    (isWildEncounter && !opponentName) || isTowerBattle;
+  // Ruta / tutorial: 1 mon real — no rellenar 5 pokebolas vacías como si fueran un gym.
+  const emptyOpponentSlots =
+    foeSidebarWild || (!isGymBattle && !isPvpBattle)
+      ? 0
+      : Math.max(0, 6 - opponentParty.length);
   const wildFeaturedSprite = foeSidebarWild
     ? activeWild.spriteUrl
     : (opponentParty.find((m) => m.active)?.spriteUrl ??

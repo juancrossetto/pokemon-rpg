@@ -15,5 +15,6 @@ export const CAMPAIGN_DEFAULTS = {
   farmingStageId: kanto.farmingStageId,
   highestCompletedStageId: null as string | null,
   completedStageIds: [] as string[],
+  stageClearCounts: {} as Record<string, number>,
   lastMilestoneId: null as string | null,
 } as const;

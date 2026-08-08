@@ -24,16 +24,19 @@ const TIER_MSG = {
   legendary: "tiers.legendary",
 } as const satisfies Record<PvpTier, string>;
 
+type Standing = ReturnType<typeof rankForRating>;
+
 /**
  * Muestra el ascenso al entrar a PvP o al home (después del outcome).
  * La animación no se puede cancelar; al terminar limpia el pending.
+ *
+ * El host no llama `useTranslations` en el primer render (SSR): el popup
+ * sólo existe tras peek client-side. Si no, un fallo de RSC/HMR puede
+ * montar este client component sin `NextIntlClientProvider` y tumbar el home.
  */
 export function PvpRankUpHost() {
-  const t = useTranslations("pvp");
   const [open, setOpen] = useState(false);
-  const [standing, setStanding] = useState<ReturnType<typeof rankForRating> | null>(
-    null,
-  );
+  const [standing, setStanding] = useState<Standing | null>(null);
 
   useEffect(() => {
     const pending = peekPvpRankUpPending();
@@ -53,6 +56,18 @@ export function PvpRankUpHost() {
   }, []);
 
   if (!open || !standing) return null;
+
+  return <PvpRankUpDialog standing={standing} onFinished={onFinished} />;
+}
+
+function PvpRankUpDialog({
+  standing,
+  onFinished,
+}: {
+  standing: Standing;
+  onFinished: () => void;
+}) {
+  const t = useTranslations("pvp");
 
   return (
     <PvpRankUpPopup

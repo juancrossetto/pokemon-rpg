@@ -1,5 +1,10 @@
 import { locationEncounterRate } from "./encounters";
-import { isStageUnlocked, listLocationsForUi, type CampaignProgressRow } from "./progress";
+import {
+  isStageUnlocked,
+  listLocationsForUi,
+  stageClearsRequired,
+  type CampaignProgressRow,
+} from "./progress";
 import { fallbackLocationPoint, locationPoint } from "./region-map";
 import type { CampaignLocationKind, EncounterRate } from "./types";
 import type { Rarity } from "./rarity";
@@ -17,6 +22,10 @@ export type MapStage = {
   unlocked: boolean;
   done: boolean;
   isGym: boolean;
+  /** Victorias/capturas pedidas para cerrar el tramo. */
+  clearsRequired: number;
+  /** Progreso parcial actual (0 si ya está done). */
+  clearsCurrent: number;
 };
 
 export type MapEncounter = {
@@ -134,13 +143,21 @@ export function buildMapLocations(progress: CampaignProgressRow): MapLocation[] 
           trainers: [],
           claimedObjectives: [],
           gymOrder: location.requiresGymOrder ?? null,
-          stages: location.stages.map((stage) => ({
-            id: stage.id,
-            nameKey: stage.nameKey,
-            unlocked: isStageUnlocked(stage, progress),
-            done: progress.completedStageIds.includes(stage.id),
-            isGym: !!stage.isGymMilestone,
-          })),
+          stages: location.stages.map((stage) => {
+            const done = progress.completedStageIds.includes(stage.id);
+            const clearsRequired = stageClearsRequired(stage);
+            return {
+              id: stage.id,
+              nameKey: stage.nameKey,
+              unlocked: isStageUnlocked(stage, progress),
+              done,
+              isGym: !!stage.isGymMilestone,
+              clearsRequired,
+              clearsCurrent: done
+                ? clearsRequired
+                : (progress.stageClearCounts[stage.id] ?? 0),
+            };
+          }),
         },
       ];
     },

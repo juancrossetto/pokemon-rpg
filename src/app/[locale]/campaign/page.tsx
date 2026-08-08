@@ -214,6 +214,7 @@ export default async function CampaignPage({
     shinies,
     journeyPercent: journeyProgressPercent(progress),
     teamMaxLevel,
+    teamLevels: team.map((p) => p.level),
   };
 
   const milestone = nextMilestone(progress, earnedOrders);

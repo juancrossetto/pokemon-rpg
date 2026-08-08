@@ -30,7 +30,8 @@ export function StartGymRunButton({
     | "region_locked"
     | "on_cooldown"
     | "closed"
-    | "stages_incomplete",
+    | "stages_incomplete"
+    | "team_not_ready",
     string
   >;
 }) {

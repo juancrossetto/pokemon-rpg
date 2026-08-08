@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   CAMPAIGN_DEFAULTS,
+  parseStageClearCounts,
   repairCampaignProgressPatch,
   type CampaignProgressRow,
 } from "@/lib/campaign";
@@ -13,6 +14,7 @@ function toRow(row: {
   farmingStageId: string;
   highestCompletedStageId: string | null;
   completedStageIds: string[];
+  stageClearCounts?: unknown;
   lastMilestoneId: string | null;
 }): CampaignProgressRow {
   return {
@@ -23,6 +25,7 @@ function toRow(row: {
     farmingStageId: row.farmingStageId,
     highestCompletedStageId: row.highestCompletedStageId,
     completedStageIds: row.completedStageIds,
+    stageClearCounts: parseStageClearCounts(row.stageClearCounts),
     lastMilestoneId: row.lastMilestoneId,
   };
 }

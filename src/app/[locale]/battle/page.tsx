@@ -23,7 +23,7 @@ import {
 import { loadMapLocations } from "@/lib/campaign/map-data";
 import { spriteFor } from "@/lib/shiny";
 import { getRouteTrainer } from "@/lib/campaign/trainers";
-import { avatarById, showdownTrainerSpriteUrl } from "@/lib/avatars";
+import { avatarById, npcTrainerPortraitUrl, showdownTrainerSpriteUrl } from "@/lib/avatars";
 import { gymLeaderPortraitUrl, gymTypeTrainerSpriteSlug } from "@/lib/gym-art";
 import { parseTeamSnap } from "@/lib/pvp/team";
 import { resolveBattleBg } from "@/lib/battle-bg";
@@ -438,7 +438,7 @@ export default async function BattlePage({
       const avId = battle.opponentUser?.avatarId ?? battle.pvpMatch?.opponent.avatarId ?? null;
       opponentPortraitUrl = avatarById(avId)?.src ?? null;
     } else if (routeTrainer) {
-      opponentPortraitUrl = showdownTrainerSpriteUrl(routeTrainer.spriteSlug);
+      opponentPortraitUrl = npcTrainerPortraitUrl(routeTrainer.spriteSlug, "thumb");
     } else if (battle.gymTrainerId && battle.gym?.type) {
       opponentPortraitUrl = showdownTrainerSpriteUrl(gymTypeTrainerSpriteSlug(battle.gym.type));
     } else if (battle.gym?.leaderName) {

@@ -9,6 +9,7 @@ function routeStages(
   levelMin: number,
   levelMax: number,
   unlocksLocationId?: string,
+  clearsRequired?: number,
 ): CampaignStage[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `${prefix}-${i + 1}`,
@@ -18,6 +19,7 @@ function routeStages(
     spawnSpeciesIds: species,
     levelMin: levelMin + Math.floor(i / 2),
     levelMax: levelMax + Math.floor(i / 2),
+    clearsRequired,
     unlocksLocationId: i === count - 1 ? unlocksLocationId : undefined,
   }));
 }
@@ -28,20 +30,22 @@ const VIRIDIAN_FOREST_SECTORS = [
   { id: "vf-deep", nameKey: "sectors.vf_deep", order: 3 },
 ] as const;
 
-/** ~15 stages model location (Viridian Forest). */
+/**
+ * Bosque Verde — pacing suave para el primer capítulo.
+ * Sin evoluciones medias (Pidgeotto) hasta el tramo profundo; sin Butterfree /
+ * Beedrill antes de Brock. Un inicial Nv.5 no debería chocar con un Pidgeotto
+ * en la segunda pelea.
+ */
 function viridianForestStages(baseOrder: number): CampaignStage[] {
-  const entranceSpecies = [10, 11, 13, 14, 16]; // Caterpie, Metapod, Weedle, Kakuna, Pidgey
-  const midSpecies = [10, 13, 16, 17, 25]; // +Pidgeotto, Pikachu
-  const deepSpecies = [12, 15, 16, 17, 25]; // Butterfree, Beedrill, …
+  // Sin Pidgey al inicio: volador resiste Planta y castiga al inicial grass.
+  const entranceSpecies = [10, 13, 19]; // Caterpie, Weedle, Rattata
+  const midSpecies = [10, 11, 13, 14, 19]; // +Metapod, Kakuna
+  const deepSpecies = [10, 11, 13, 14, 16, 17, 25]; // Pidgey/Pidgeotto más tarde
 
-  // 2 stages por sector en vez de 5. Con 15 stages, el bosque era el 24% del
-  // juego entero y todo dentro del capítulo 1: el jugador tardaba más en llegar
-  // a su primera medalla que del gimnasio 2 al 8 juntos. Los sectores siguen
-  // dando la sensación de profundidad sin el muro de grindeo.
   const sectors = [
-    { key: "e", sectorId: "vf-entrance", species: entranceSpecies, level: 3 },
-    { key: "m", sectorId: "vf-mid", species: midSpecies, level: 4 },
-    { key: "d", sectorId: "vf-deep", species: deepSpecies, level: 5 },
+    { key: "e", sectorId: "vf-entrance", species: entranceSpecies, level: 2 },
+    { key: "m", sectorId: "vf-mid", species: midSpecies, level: 3 },
+    { key: "d", sectorId: "vf-deep", species: deepSpecies, level: 4 },
   ];
 
   const stages: CampaignStage[] = [];
@@ -79,9 +83,10 @@ const PALLET: CampaignLocation = {
       locationId: "pallet-town",
       order: 0,
       nameKey: "stages.pallet_1",
-      spawnSpeciesIds: [16, 19], // Pidgey, Rattata
+      spawnSpeciesIds: [19, 19, 16], // Rattata dominante; Pidgey raro (volador vs Planta)
       levelMin: 2,
-      levelMax: 4,
+      levelMax: 3,
+      clearsRequired: 1,
       unlocksLocationId: "route-1",
     },
   ],
@@ -94,7 +99,8 @@ const ROUTE_1: CampaignLocation = {
   nameKey: "locations.route_1",
   kind: "route",
   mapKey: "route-1",
-  stages: routeStages("route-1", "r1", 2, 1, [16, 19], 2, 4, "viridian-city"),
+  // Más Rattata que Pidgey; 2 victorias por tramo.
+  stages: routeStages("route-1", "r1", 3, 1, [19, 19, 16], 2, 4, "viridian-city", 2),
 };
 
 const VIRIDIAN_CITY: CampaignLocation = {
@@ -113,6 +119,7 @@ const VIRIDIAN_CITY: CampaignLocation = {
       spawnSpeciesIds: [16, 19, 21],
       levelMin: 3,
       levelMax: 5,
+      clearsRequired: 2,
       unlocksLocationId: "route-2",
     },
   ],
@@ -128,12 +135,13 @@ const ROUTE_2: CampaignLocation = {
   stages: routeStages(
     "route-2",
     "r2",
-    2,
+    3,
     5,
     [10, 13, 16, 19],
     3,
     5,
     "viridian-forest",
+    2,
   ),
 };
 
@@ -161,9 +169,10 @@ const PEWTER_CITY: CampaignLocation = {
       locationId: "pewter-city",
       order: 23,
       nameKey: "stages.pewter_1",
-      spawnSpeciesIds: [16, 19, 21],
+      spawnSpeciesIds: [16, 19, 21, 27], // +Sandshrew para el grind pre-Brock
       levelMin: 5,
-      levelMax: 8,
+      levelMax: 7,
+      clearsRequired: 3,
       unlocksLocationId: "pewter-gym",
     },
   ],
@@ -200,7 +209,20 @@ const ROUTE_3: CampaignLocation = {
   nameKey: "locations.route_3",
   kind: "route",
   mapKey: "route-3",
-  stages: routeStages("route-3", "r3", 3, 25, [21, 22, 23, 27], 8, 12, "mt-moon"),
+  // Fearow sólo en el último tramo — evita el spike justo después de Brock.
+  stages: [
+    ...routeStages("route-3", "r3", 2, 25, [21, 23, 27], 8, 11),
+    {
+      id: "r3-3",
+      locationId: "route-3",
+      order: 27,
+      nameKey: "stages.r3_3",
+      spawnSpeciesIds: [21, 22, 23, 27],
+      levelMin: 9,
+      levelMax: 12,
+      unlocksLocationId: "mt-moon",
+    },
+  ],
 };
 
 const MT_MOON: CampaignLocation = {

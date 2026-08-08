@@ -38,6 +38,11 @@ export function TrainerAvatar({
   framed = true,
   /** Sprites pixel (Showdown): contain + pixelated en vez del crop HD. */
   pixel = false,
+  /**
+   * Arte NPC / bust: `contain` centrado sin el zoom `trainer-sprite-fill`
+   * (ese crop asume avatares de jugador y corre poses asimétricas).
+   */
+  contain = false,
   presenceClassName,
   className = "",
 }: {
@@ -49,15 +54,18 @@ export function TrainerAvatar({
   /** Si false, sin fondo ni caja — sólo el sprite. */
   framed?: boolean;
   pixel?: boolean;
+  contain?: boolean;
   /** Clase del punto de presencia (absolute, esquina). */
   presenceClassName?: string;
   className?: string;
 }) {
   const imgClass = pixel
     ? "relative h-full w-full object-contain p-[12%] [image-rendering:pixelated]"
-    : framed
-      ? "trainer-sprite-fill relative h-full w-full"
-      : "trainer-sprite-thumb relative h-full w-full drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]";
+    : contain
+      ? "relative h-full w-full object-contain object-center p-[6%]"
+      : framed
+        ? "trainer-sprite-fill relative h-full w-full"
+        : "trainer-sprite-thumb relative h-full w-full drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]";
 
   if (!framed) {
     return (

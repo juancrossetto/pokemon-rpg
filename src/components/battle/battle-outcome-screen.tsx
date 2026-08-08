@@ -12,7 +12,7 @@ import { GymBadgePopup } from "@/components/gym-badge-popup";
 import { PvpHubAnimPersist } from "@/components/pvp/pvp-hub-anim-persist";
 import { startEncounter } from "@/actions/start-encounter";
 import { abandonGymRun } from "@/actions/abandon-gym-run";
-import type { XpSummaryEntry } from "@/actions/battle-move";
+import type { GymFirstWinReward, XpSummaryEntry } from "@/actions/battle-move";
 import type { Outcome } from "@/components/battle/arena-types";
 
 export interface PvpResultInfo {
@@ -40,6 +40,7 @@ export function BattleOutcomeScreen({
   badgeEarned,
   tmRewardName,
   heldRewardName,
+  gymFirstWin,
   gymId,
   gymRunId,
   towerRunId,
@@ -67,6 +68,8 @@ export function BattleOutcomeScreen({
   badgeEarned: boolean;
   tmRewardName: string | null;
   heldRewardName: string | null;
+  /** Botín de la primera medalla; `null` en revancha. */
+  gymFirstWin: GymFirstWinReward | null;
   gymId: string | null;
   gymRunId: string | null;
   towerRunId: string | null;
@@ -159,10 +162,18 @@ export function BattleOutcomeScreen({
           leaderName={gymLeaderName}
           badgeName={gymBadgeName}
           portraitUrl={leaderPortrait}
+          rewards={gymFirstWin}
           labels={{
             badgeEarned: t("badgeEarned"),
+            rewardsTitle: t("rewardsTitle"),
+            coins: t("coins"),
             tmEarned: tmRewardName ? t("tmEarned", { code: tmRewardName }) : null,
             heldEarned: heldRewardName ? t("heldEarned", { name: heldRewardName }) : null,
+            avatarsEarned: gymFirstWin?.avatarSlugs.length
+              ? t("avatarsEarned", { count: gymFirstWin.avatarSlugs.length })
+              : null,
+            avatarsHint: t("avatarsHint"),
+            skip: t("badgeSkip"),
             continue: t("badgeContinue"),
           }}
           onContinue={onBadgeContinue}

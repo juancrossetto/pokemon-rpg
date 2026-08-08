@@ -110,6 +110,7 @@ export default async function GymLeaderPage({
     on_cooldown: t("cooldownHint", { time: formatGymCooldown(remainingMs) }),
     closed: t("closedHint"),
     stages_incomplete: t("stagesIncompleteHint"),
+    team_not_ready: t("teamNotReadyHint"),
   };
 
   return (
