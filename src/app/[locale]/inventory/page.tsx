@@ -67,6 +67,7 @@ export default async function InventoryPage({
         nickname: true,
         level: true,
         speciesId: true,
+        heldItemId: true,
         species: { select: { name: true, spriteUrl: true } },
         moves: { select: { moveId: true } },
       },
@@ -266,6 +267,16 @@ export default async function InventoryPage({
         evolveTargets: isInventoryEvolutionItem(r.item)
           ? evolveTargetsFor(r.item.name)
           : [],
+        equipTargets:
+          r.item.type === "HELD" && r.item.heldEffect != null
+            ? team.map((p) => ({
+                instanceId: p.id,
+                name: p.nickname ?? p.species.name,
+                spriteUrl: p.species.spriteUrl,
+                level: p.level,
+                alreadyEquipped: p.heldItemId === r.item.id,
+              }))
+            : [],
         sources,
       };
     });
@@ -306,6 +317,13 @@ export default async function InventoryPage({
     teach: t("teach"),
     use: t("use"),
     useOnTeam: t("useOnTeam"),
+    equip: t("equip"),
+    equipPickerTitle: t("equipPickerTitle", { name: "{name}" }),
+    equipPickerHint: t("equipPickerHint"),
+    equipAlready: t("equipAlready"),
+    equipping: t("equipping"),
+    equipFailed: t("equipFailed"),
+    equipEmptyTeam: t("equipEmptyTeam"),
     evolvePickerTitle: t("evolvePickerTitle", { name: "{name}" }),
     evolvePickerHint: t("evolvePickerHint"),
     evolveReady: t("evolveReady"),

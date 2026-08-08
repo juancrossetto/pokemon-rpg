@@ -49,6 +49,18 @@ export const CATEGORY_ICON: Record<InventoryCategory, string> = {
 };
 
 /**
+ * Un Pokémon del equipo frente a un held (p. ej. Exp. Share).
+ */
+export type EquipTarget = {
+  instanceId: string;
+  name: string;
+  spriteUrl: string;
+  level: number;
+  /** Ya tiene este mismo ítem puesto. */
+  alreadyEquipped: boolean;
+};
+
+/**
  * Capacidad de la mochila. Es SOLO decorativa: no se valida en ninguna
  * transacción, así que superarla no bloquea comprar ni recibir objetos.
  * Está para dar sensación de RPG; convertirla en regla real implicaría
@@ -121,6 +133,8 @@ export type InventoryEntry = {
    * Vacío si el objeto no se “usa” para evolucionar.
    */
   evolveTargets: EvolveTarget[];
+  /** HELD: equipo para elegir a quién equipárselo. */
+  equipTargets: EquipTarget[];
   /** Dónde conseguirlo, ya localizado (mapa / tienda / eventos…). */
   sources: string[];
 };

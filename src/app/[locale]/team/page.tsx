@@ -108,13 +108,35 @@ export default async function TeamPage({
     where: { userId, quantity: { gt: 0 }, item: { type: "HELD" } },
     include: { item: true },
   });
-  const ownedHeldItems = ownedHeldItemsRows.map((inv) => ({
-    itemId: inv.itemId,
-    name: inv.item.name,
-    displayName: itemLabel(inv.item.name),
-    effectText: inv.item.effectText,
-    quantity: inv.quantity,
-  }));
+  const ownedHeldById = new Map(
+    ownedHeldItemsRows.map((inv) => [
+      inv.itemId,
+      {
+        itemId: inv.itemId,
+        name: inv.item.name,
+        displayName: itemLabel(inv.item.name),
+        effectText: inv.item.effectText,
+        quantity: inv.quantity,
+      },
+    ]),
+  );
+  // Exp. Share equipado sigue disponible en el panel para moverlo a otro mon.
+  for (const p of pokemon) {
+    if (
+      p.heldItem &&
+      p.heldItem.heldEffect === "EXP_SHARE" &&
+      !ownedHeldById.has(p.heldItem.id)
+    ) {
+      ownedHeldById.set(p.heldItem.id, {
+        itemId: p.heldItem.id,
+        name: p.heldItem.name,
+        displayName: itemLabel(p.heldItem.name),
+        effectText: p.heldItem.effectText,
+        quantity: 1,
+      });
+    }
+  }
+  const ownedHeldItems = [...ownedHeldById.values()];
   const ownedMoveIds = ownedMachines
     .map((inv) => inv.item.moveId)
     .filter((id): id is number => id !== null);
@@ -381,6 +403,7 @@ export default async function TeamPage({
               revive: tMenu("revive"),
               restorePp: tMenu("restorePp"),
               rareCandy: tMenu("rareCandy"),
+              allocatePoints: tMenu("allocatePoints"),
               teachTm: tMenu("teachTm"),
               heldItem: tMenu("heldItem"),
               rename: tMenu("rename"),
@@ -416,6 +439,7 @@ export default async function TeamPage({
               equipping: t("drawer.equipping"),
               cancel: t("drawer.cancel"),
               close: t("drawer.close"),
+              equipped: t("drawer.equipped"),
               equipErrors: {
                 unauthorized: t("drawer.teachErrors.unauthorized"),
                 not_found: t("drawer.teachErrors.not_found"),

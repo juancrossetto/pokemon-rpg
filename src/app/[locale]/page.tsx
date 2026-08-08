@@ -116,7 +116,14 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     where: { ownerId: userId, teamSlot: { not: null } },
     include: {
       species: true,
-      heldItem: { select: { name: true } },
+      heldItem: {
+        select: {
+          id: true,
+          name: true,
+          effectText: true,
+          heldEffect: true,
+        },
+      },
       moves: {
         include: { move: { select: { name: true, type: true, pp: true } } },
         orderBy: { slot: "asc" },
@@ -124,7 +131,13 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     },
     orderBy: { teamSlot: "asc" },
   });
-  const bagCounts = await loadSquadBagCounts(userId);
+  const [bagCounts, ownedHeldItemsRows] = await Promise.all([
+    loadSquadBagCounts(userId),
+    prisma.inventoryItem.findMany({
+      where: { userId, quantity: { gt: 0 }, item: { type: "HELD" } },
+      include: { item: true },
+    }),
+  ]);
 
   if (pokemon.length === 0) {
     return (
@@ -375,6 +388,22 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           instance.level,
         ),
         speed: calculateStat(instance.species.baseSpeed, instance.ptSpeed, instance.level),
+        unspentPoints: instance.unspentPoints,
+        points: {
+          ptStrength: instance.ptStrength,
+          ptDexterity: instance.ptDexterity,
+          ptIntelligence: instance.ptIntelligence,
+          ptSpeed: instance.ptSpeed,
+          ptConstitution: instance.ptConstitution,
+        },
+        bases: {
+          baseHp: instance.species.baseHp,
+          baseAttack: instance.species.baseAttack,
+          baseDefense: instance.species.baseDefense,
+          baseSpAtk: instance.species.baseSpAtk,
+          baseSpDef: instance.species.baseSpDef,
+          baseSpeed: instance.species.baseSpeed,
+        },
         evolutionChain: evolutionChains.get(instance.speciesId) ?? [],
         ownedEvolutionItems: ownedEvolutionItemNames,
         heldItemName: instance.heldItem
@@ -429,9 +458,72 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           revive: t("squadMenu.revive"),
           restorePp: t("squadMenu.restorePp"),
           rareCandy: t("squadMenu.rareCandy"),
+          allocatePoints: t("squadMenu.allocatePoints"),
+          heldItem: t("squadMenu.heldItem"),
         },
+        heldItem: instance.heldItem
+          ? {
+              itemId: instance.heldItem.id,
+              name: instance.heldItem.name,
+              displayName: resolveItemDisplayName(instance.heldItem.name, (key) => {
+                const path = `names.${key}`;
+                return tShop.has(path) ? tShop(path) : null;
+              }),
+              effectText: instance.heldItem.effectText,
+            }
+          : null,
       };
     });
+
+  const itemLabel = (name: string) =>
+    resolveItemDisplayName(name, (key) => {
+      const path = `names.${key}`;
+      return tShop.has(path) ? tShop(path) : null;
+    });
+
+  const ownedHeldById = new Map(
+    ownedHeldItemsRows.map((inv) => [
+      inv.itemId,
+      {
+        itemId: inv.itemId,
+        name: inv.item.name,
+        displayName: itemLabel(inv.item.name),
+        effectText: inv.item.effectText,
+        quantity: inv.quantity,
+      },
+    ]),
+  );
+  // Exp. Share equipado sigue disponible en el panel para moverlo a otro mon.
+  for (const m of members) {
+    if (
+      m.heldItem &&
+      !ownedHeldById.has(m.heldItem.itemId) &&
+      pokemon.find((p) => p.id === m.id)?.heldItem?.heldEffect === "EXP_SHARE"
+    ) {
+      ownedHeldById.set(m.heldItem.itemId, {
+        ...m.heldItem,
+        quantity: 1,
+      });
+    }
+  }
+  const ownedHeldItems = [...ownedHeldById.values()];
+  const heldLabels = {
+    title: tt("drawer.heldItemTitle"),
+    hint: tt("drawer.heldItemHint"),
+    change: tt("drawer.equip"),
+    noneOwned: tt("drawer.noHeldItems"),
+    unequip: tt("drawer.unequip"),
+    equipping: tt("drawer.equipping"),
+    cancel: tt("drawer.cancel"),
+    close: tt("drawer.close"),
+    equipped: tt("drawer.equipped"),
+    equipErrors: {
+      unauthorized: tt("drawer.teachErrors.unauthorized"),
+      not_found: tt("drawer.teachErrors.not_found"),
+      no_item: tt("drawer.equipErrors.no_item"),
+      in_combat: tt("drawer.teachErrors.in_combat"),
+    },
+  };
 
   const farmingZoneEarly =
     mapLocations.find((l) => l.id === progress.farmingLocationId) ??
@@ -838,6 +930,8 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           tt("slotLabel", { slot: i + 1 }),
         ),
         bagCounts,
+        ownedHeldItems,
+        heldLabels,
         layoutKey: pokemon.map((p) => `${p.id}:${p.teamSlot}`).join("|"),
         title: t("activeSquad"),
         manageHref: "/team",

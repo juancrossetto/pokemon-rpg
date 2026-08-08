@@ -15,6 +15,7 @@ type GymBadgePopupProps = {
   labels: {
     badgeEarned: string;
     tmEarned: string | null;
+    heldEarned: string | null;
     continue: string;
   };
   onContinue: () => void;
@@ -162,6 +163,14 @@ export function GymBadgePopup({
                 memory
               </span>
               {labels.tmEarned}
+            </p>
+          )}
+          {labels.heldEarned && (
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/35 px-3 py-1 text-[11px] text-white/70">
+              <span className="material-symbols-outlined text-[14px]!" style={{ color: accent }}>
+                bolt
+              </span>
+              {labels.heldEarned}
             </p>
           )}
 

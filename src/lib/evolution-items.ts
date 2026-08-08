@@ -24,6 +24,28 @@ export const SPECIES_EVOLUTION_ITEM: Readonly<Record<number, string>> = {
   76: LINKING_CORD, // Golem
   94: LINKING_CORD, // Gengar
 
+  // Piedras clásicas Gen I (también vienen del backfill PokeAPI)
+  26: "Thunder Stone", // Raichu
+  31: "Moon Stone", // Nidoqueen
+  34: "Moon Stone", // Nidoking
+  36: "Moon Stone", // Clefable
+  38: "Fire Stone", // Ninetales
+  40: "Moon Stone", // Wigglytuff
+  45: "Leaf Stone", // Vileplume
+  59: "Fire Stone", // Arcanine
+  62: "Water Stone", // Poliwrath
+  71: "Leaf Stone", // Victreebel
+  91: "Water Stone", // Cloyster
+  103: "Leaf Stone", // Exeggutor
+  121: "Water Stone", // Starmie
+  134: "Water Stone", // Vaporeon
+  135: "Thunder Stone", // Jolteon
+  136: "Fire Stone", // Flareon
+
+  // Gen II — Piedra Solar
+  182: "Sun Stone", // Bellossom
+  192: "Sun Stone", // Sunflora
+
   // Trueque + objeto → usar objeto
   186: "King's Rock", // Politoed
   199: "King's Rock", // Slowking
@@ -42,15 +64,34 @@ export const SPECIES_EVOLUTION_ITEM: Readonly<Record<number, string>> = {
   683: "Sachet", // Aromatisse
   685: "Whipped Dream", // Softboiled… Slurpuff
 
+  // Gen IV — piedras
+  407: "Shiny Stone", // Roserade
+  429: "Dusk Stone", // Mismagius
+  430: "Dusk Stone", // Honchkrow
+  468: "Shiny Stone", // Togekiss
+  471: "Ice Stone", // Glaceon
+  475: "Dawn Stone", // Gallade
+  478: "Dawn Stone", // Froslass
+
   // Held + level → contacto (simplificado a usar objeto)
   113: "Oval Stone", // Chansey ← Happiny
   461: "Razor Claw", // Weavile
   472: "Razor Fang", // Gliscor
 
+  // Gen V+
+  547: "Sun Stone", // Whimsicott
+  549: "Sun Stone", // Lilligant
+  573: "Shiny Stone", // Cinccino
+  609: "Dusk Stone", // Chandelure
+  671: "Shiny Stone", // Florges
+  681: "Dusk Stone", // Aegislash
+  740: "Ice Stone", // Crabominable
+
   // Contacto Galar / Hisui / Paldea / Kitakami
   841: "Tart Apple", // Flapple
   842: "Sweet Apple", // Appletun
   855: "Cracked Pot", // Polteageist
+  892: "Scroll of Darkness", // Urshifu (Single Strike)
   900: "Black Augurite", // Kleavor
   901: "Peat Block", // Ursaluna
   936: "Auspicious Armor", // Armarouge
@@ -60,6 +101,9 @@ export const SPECIES_EVOLUTION_ITEM: Readonly<Record<number, string>> = {
   1011: "Syrupy Apple", // Dipplin
   1013: "Unremarkable Teacup", // Sinistcha
   1018: "Metal Alloy", // Archaludon
+  10165: "Galarica Cuff", // Slowbro (Galar)
+  10172: "Galarica Wreath", // Slowking (Galar)
+  10191: "Scroll of Waters", // Urshifu (Rapid Strike)
 };
 
 /**
@@ -326,6 +370,42 @@ export type ItemEvolutionRecipe = {
 };
 
 export const ITEM_EVOLUTION_RECIPES: readonly ItemEvolutionRecipe[] = [
+  // Gen I — piedras (monedas)
+  { itemName: "Fire Stone", fromId: 58, fromName: "Growlithe", toId: 59, toName: "Arcanine" },
+  { itemName: "Fire Stone", fromId: 133, fromName: "Eevee", toId: 136, toName: "Flareon" },
+  { itemName: "Fire Stone", fromId: 37, fromName: "Vulpix", toId: 38, toName: "Ninetales" },
+  { itemName: "Water Stone", fromId: 61, fromName: "Poliwhirl", toId: 62, toName: "Poliwrath" },
+  { itemName: "Water Stone", fromId: 90, fromName: "Shellder", toId: 91, toName: "Cloyster" },
+  { itemName: "Water Stone", fromId: 120, fromName: "Staryu", toId: 121, toName: "Starmie" },
+  { itemName: "Water Stone", fromId: 133, fromName: "Eevee", toId: 134, toName: "Vaporeon" },
+  { itemName: "Thunder Stone", fromId: 25, fromName: "Pikachu", toId: 26, toName: "Raichu" },
+  { itemName: "Thunder Stone", fromId: 133, fromName: "Eevee", toId: 135, toName: "Jolteon" },
+  { itemName: "Leaf Stone", fromId: 44, fromName: "Gloom", toId: 45, toName: "Vileplume" },
+  { itemName: "Leaf Stone", fromId: 70, fromName: "Weepinbell", toId: 71, toName: "Victreebel" },
+  { itemName: "Leaf Stone", fromId: 102, fromName: "Exeggcute", toId: 103, toName: "Exeggutor" },
+  { itemName: "Moon Stone", fromId: 30, fromName: "Nidorina", toId: 31, toName: "Nidoqueen" },
+  { itemName: "Moon Stone", fromId: 33, fromName: "Nidorino", toId: 34, toName: "Nidoking" },
+  { itemName: "Moon Stone", fromId: 35, fromName: "Clefairy", toId: 36, toName: "Clefable" },
+  { itemName: "Moon Stone", fromId: 39, fromName: "Jigglypuff", toId: 40, toName: "Wigglytuff" },
+  // Gen II — Piedra Solar
+  { itemName: "Sun Stone", fromId: 44, fromName: "Gloom", toId: 182, toName: "Bellossom" },
+  { itemName: "Sun Stone", fromId: 191, fromName: "Sunkern", toId: 192, toName: "Sunflora" },
+  { itemName: "Sun Stone", fromId: 546, fromName: "Cottonee", toId: 547, toName: "Whimsicott" },
+  { itemName: "Sun Stone", fromId: 548, fromName: "Petilil", toId: 549, toName: "Lilligant" },
+  // Gen IV — Piedra Día / Noche / Alba
+  { itemName: "Shiny Stone", fromId: 176, fromName: "Togetic", toId: 468, toName: "Togekiss" },
+  { itemName: "Shiny Stone", fromId: 315, fromName: "Roselia", toId: 407, toName: "Roserade" },
+  { itemName: "Shiny Stone", fromId: 572, fromName: "Minccino", toId: 573, toName: "Cinccino" },
+  { itemName: "Shiny Stone", fromId: 670, fromName: "Floette", toId: 671, toName: "Florges" },
+  { itemName: "Dusk Stone", fromId: 198, fromName: "Murkrow", toId: 430, toName: "Honchkrow" },
+  { itemName: "Dusk Stone", fromId: 200, fromName: "Misdreavus", toId: 429, toName: "Mismagius" },
+  { itemName: "Dusk Stone", fromId: 608, fromName: "Lampent", toId: 609, toName: "Chandelure" },
+  { itemName: "Dusk Stone", fromId: 680, fromName: "Doublade", toId: 681, toName: "Aegislash" },
+  { itemName: "Dawn Stone", fromId: 281, fromName: "Kirlia", toId: 475, toName: "Gallade" },
+  { itemName: "Dawn Stone", fromId: 361, fromName: "Snorunt", toId: 478, toName: "Froslass" },
+  // Gen VII — Piedra Hielo
+  { itemName: "Ice Stone", fromId: 133, fromName: "Eevee", toId: 471, toName: "Glaceon" },
+  { itemName: "Ice Stone", fromId: 739, fromName: "Crabrawler", toId: 740, toName: "Crabominable" },
   // Cordón Unión
   { itemName: LINKING_CORD, fromId: 64, fromName: "Kadabra", toId: 65, toName: "Alakazam" },
   { itemName: LINKING_CORD, fromId: 67, fromName: "Machoke", toId: 68, toName: "Machamp" },

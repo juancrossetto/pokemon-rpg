@@ -11,7 +11,8 @@ export type HeldEffectKind =
   | "QUICK_CLAW"
   | "SITRUS_BERRY"
   | "LUM_BERRY"
-  | "TYPE_BOOST";
+  | "TYPE_BOOST"
+  | "EXP_SHARE";
 
 export interface HeldItemSnapshot {
   id: string;

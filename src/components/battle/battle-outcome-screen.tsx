@@ -39,6 +39,7 @@ export function BattleOutcomeScreen({
   onBadgeContinue,
   badgeEarned,
   tmRewardName,
+  heldRewardName,
   gymId,
   gymRunId,
   towerRunId,
@@ -65,6 +66,7 @@ export function BattleOutcomeScreen({
   onBadgeContinue: () => void;
   badgeEarned: boolean;
   tmRewardName: string | null;
+  heldRewardName: string | null;
   gymId: string | null;
   gymRunId: string | null;
   towerRunId: string | null;
@@ -160,6 +162,7 @@ export function BattleOutcomeScreen({
           labels={{
             badgeEarned: t("badgeEarned"),
             tmEarned: tmRewardName ? t("tmEarned", { code: tmRewardName }) : null,
+            heldEarned: heldRewardName ? t("heldEarned", { name: heldRewardName }) : null,
             continue: t("badgeContinue"),
           }}
           onContinue={onBadgeContinue}

@@ -535,6 +535,7 @@ export function BattleArena({
   const [badgeEarned, setBadgeEarned] = useState(false);
   const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [tmRewardName, setTmRewardName] = useState<string | null>(null);
+  const [heldRewardName, setHeldRewardName] = useState<string | null>(null);
   // Arranca en null: el lanzamiento inicial lo dispara el efecto de send-out
   // cuando la página terminó de cargar (ver más abajo).
   const [ballAnim, setBallAnim] = useState<"recall" | "throw" | "land" | "open" | null>(null);
@@ -1945,6 +1946,10 @@ export function BattleArena({
       appendLog(t("tmEarned", { code: result.tmRewardName }));
       setTmRewardName(result.tmRewardName);
     }
+    if (result.heldRewardName) {
+      appendLog(t("heldEarned", { name: result.heldRewardName }));
+      setHeldRewardName(result.heldRewardName);
+    }
 
     if (result.turnDeadlineAt !== undefined) {
       setTurnDeadlineAt(result.turnDeadlineAt);
@@ -2004,6 +2009,10 @@ export function BattleArena({
         if (finish.tmRewardName) {
           appendLog(t("tmEarned", { code: finish.tmRewardName }));
           setTmRewardName(finish.tmRewardName);
+        }
+        if (finish.heldRewardName) {
+          appendLog(t("heldEarned", { name: finish.heldRewardName }));
+          setHeldRewardName(finish.heldRewardName);
         }
         if (finish.outcome === "won") {
           await playFaintAndFinish("wild", "won");
@@ -2644,6 +2653,7 @@ export function BattleArena({
         onBadgeContinue={() => setShowBadgePopup(false)}
         badgeEarned={badgeEarned}
         tmRewardName={tmRewardName}
+        heldRewardName={heldRewardName}
         gymId={gymId}
         gymRunId={gymRunId}
         towerRunId={towerRunId}

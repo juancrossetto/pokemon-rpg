@@ -125,6 +125,10 @@ export function resolveItemSources(item: ItemSourceInput): ItemSourceRef[] {
     });
   }
 
+  if (item.name === "Exp. Share") {
+    sources.push({ kind: "gym", locationKey: "pewter_gym" });
+  }
+
   if (TOWER_ITEMS.has(item.name)) {
     sources.push({ kind: "tower" });
   }

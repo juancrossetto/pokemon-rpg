@@ -11,6 +11,7 @@ import {
   type CampaignDockMember,
   type CampaignPartyHeal,
 } from "@/components/campaign-party-dock";
+import type { HeldItemLabels, OwnedHeldItem } from "@/components/held-item-panel";
 import type { SquadContextLabels } from "@/components/squad-card-context-menu";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import type { CampaignActionState, CampaignRequirement } from "@/lib/campaign";
@@ -160,8 +161,10 @@ export function CampaignPrimaryObjective({
     locale: string;
     members: CampaignDockMember[];
     bagCounts: SquadBagCounts;
+    ownedHeldItems: OwnedHeldItem[];
     heal: CampaignPartyHeal;
     menuLabels: SquadContextLabels;
+    heldLabels: HeldItemLabels;
   } | null;
 }) {
   const t = useTranslations("campaign");
@@ -329,13 +332,39 @@ export function CampaignPrimaryObjective({
                 locale={party.locale}
                 initialMembers={party.members}
                 initialBagCounts={party.bagCounts}
+                ownedHeldItems={party.ownedHeldItems}
                 heal={party.heal}
                 menuLabels={party.menuLabels}
+                heldLabels={party.heldLabels}
               />
             </div>
           ) : null}
         </div>
       </section>
+
+      {/*
+        Mobile: franja propia bajo el banner. El CTA de explorar vive en el
+        panel de zona; acá solo equipo (curar / reordenar) sin pelear espacio.
+      */}
+      {party && party.members.length > 0 ? (
+        <section
+          className={`game-float-card rounded-xl px-2 py-1.5 lg:hidden ${
+            party.heal.needsHealing
+              ? "ring-1 ring-pokeball-red/30"
+              : "ring-1 ring-white/[0.08]"
+          }`}
+        >
+          <CampaignPartyDock
+            locale={party.locale}
+            initialMembers={party.members}
+            initialBagCounts={party.bagCounts}
+            ownedHeldItems={party.ownedHeldItems}
+            heal={party.heal}
+            menuLabels={party.menuLabels}
+            heldLabels={party.heldLabels}
+          />
+        </section>
+      ) : null}
     </div>
   );
 }

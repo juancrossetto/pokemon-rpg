@@ -13,6 +13,7 @@ import {
   type HomeEventsWeekly,
 } from "@/components/home/home-world-panels";
 import type { HomeSquadMember } from "@/components/home/squad-types";
+import type { HeldItemLabels, OwnedHeldItem } from "@/components/held-item-panel";
 import type { DailyState } from "@/lib/events/state";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import type {
@@ -98,6 +99,8 @@ export function HomeGameHub({
     leadLabel: string;
     slotLabels: string[];
     bagCounts: SquadBagCounts;
+    ownedHeldItems: OwnedHeldItem[];
+    heldLabels: HeldItemLabels;
     layoutKey: string;
     title: string;
     manageHref: string;
@@ -181,6 +184,8 @@ export function HomeGameHub({
                 leadLabel={squad.leadLabel}
                 slotLabels={squad.slotLabels}
                 initialBagCounts={squad.bagCounts}
+                ownedHeldItems={squad.ownedHeldItems}
+                heldLabels={squad.heldLabels}
                 title={squad.title}
                 manageHref={squad.manageHref}
                 manageLabel={squad.manageLabel}

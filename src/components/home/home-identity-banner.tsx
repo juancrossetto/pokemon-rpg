@@ -75,7 +75,7 @@ export function HomeIdentityBanner({
 
   return (
     <section
-      className={`home-identity relative isolate min-h-[7.5rem] overflow-hidden rounded-2xl sm:min-h-[12.5rem] xl:min-h-[16.5rem]${frame ? " home-identity--framed" : ""}`}
+      className={`home-identity relative isolate min-h-[7rem] overflow-hidden rounded-2xl sm:min-h-[11rem] xl:min-h-[14rem]${frame ? " home-identity--framed" : ""}`}
       style={
         {
           "--hi-fluor-from": fluorFrom,
@@ -139,18 +139,18 @@ export function HomeIdentityBanner({
       {/* Mobile */}
       <Link
         href="/profile"
-        className="home-identity__hit relative z-[2] flex h-full min-h-[7.5rem] items-center gap-2 pr-[36%] sm:hidden"
+        className="home-identity__hit relative z-[2] flex h-full min-h-[7rem] items-center gap-2 pr-[36%] sm:hidden"
         aria-label={labels.viewProfile}
       >
-        <div className="home-identity__copy min-w-0 flex-1 space-y-1">
+        <div className="home-identity__copy min-w-0 flex-1 space-y-1.5">
           <p
-            className="text-[9px] font-semibold uppercase tracking-[0.16em]"
-            style={{ color: `color-mix(in srgb, ${fluorFrom} 72%, white)` }}
+            className="text-[10px] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: `color-mix(in srgb, ${fluorFrom} 78%, white)` }}
           >
             {identity.regionLabel}
           </p>
           <div className="flex min-w-0 items-center gap-1.5">
-            <h2 className="page-title truncate text-[19px] leading-none tracking-tight text-white">
+            <h2 className="page-title truncate text-[22px] leading-none tracking-tight text-white">
               {identity.username}
             </h2>
             <span className="shrink-0" title={`${standingLabel} · ${identity.pvpRating}`}>
@@ -162,26 +162,26 @@ export function HomeIdentityBanner({
               />
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] tabular-nums text-white/70">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-semibold tabular-nums text-white/88">
             <span>
               {labels.level} {identity.level}
             </span>
-            <span className="h-2.5 w-px bg-white/20" aria-hidden />
+            <span className="h-2.5 w-px bg-white/25" aria-hidden />
             <span
               className="font-bold"
-              style={{ color: `color-mix(in srgb, ${fluorFrom} 58%, white)` }}
+              style={{ color: `color-mix(in srgb, ${fluorFrom} 68%, white)` }}
             >
-              <span className="font-semibold opacity-70">{labels.combatPower}</span>{" "}
+              <span className="font-semibold opacity-80">{labels.combatPower}</span>{" "}
               {cpFormatted}
             </span>
             {identity.clanName ? (
               <>
-                <span className="h-2.5 w-px bg-white/20" aria-hidden />
-                <span className="inline-flex min-w-0 items-center gap-1 truncate text-white/75">
+                <span className="h-2.5 w-px bg-white/25" aria-hidden />
+                <span className="inline-flex min-w-0 items-center gap-1 truncate text-white/90">
                   {identity.clanEmblem != null ? (
                     <ClanEmblemBadge
                       emblem={identity.clanEmblem}
-                      size={12}
+                      size={13}
                       title={identity.clanName}
                       className="shrink-0"
                     />
@@ -197,20 +197,20 @@ export function HomeIdentityBanner({
       {/* sm+ */}
       <Link
         href="/profile"
-        className="home-identity__hit relative z-[2] hidden h-full min-h-[12.5rem] flex-col justify-center gap-2 pr-[36%] sm:flex md:pr-[32%] xl:min-h-[16.5rem]"
+        className="home-identity__hit relative z-[2] hidden h-full min-h-[11rem] flex-col justify-center gap-2 pr-[36%] sm:flex md:pr-[32%] xl:min-h-[14rem]"
         aria-label={labels.viewProfile}
       >
         <div className="home-identity__copy min-w-0">
           <p
-            className="text-[10px] font-semibold uppercase tracking-[0.14em]"
-            style={{ color: `color-mix(in srgb, ${fluorFrom} 72%, white)` }}
+            className="text-[11px] font-semibold uppercase tracking-[0.16em] xl:text-xs"
+            style={{ color: `color-mix(in srgb, ${fluorFrom} 78%, white)` }}
           >
             {identity.regionLabel}
           </p>
 
-          <div className="mt-1.5 min-w-0">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h2 className="page-title truncate text-2xl tracking-tight text-white">
+          <div className="mt-2 min-w-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+              <h2 className="page-title truncate text-[1.75rem] leading-none tracking-tight text-white xl:text-[2rem]">
                 {identity.username}
               </h2>
               <span
@@ -221,7 +221,7 @@ export function HomeIdentityBanner({
                   tier={pvpTier}
                   division={identity.pvpDivision as PvpDivision}
                   label={pvpTierLabel}
-                  size="sm"
+                  size="md"
                 />
                 <span
                   role="tooltip"
@@ -237,31 +237,31 @@ export function HomeIdentityBanner({
             </div>
           </div>
 
-          <div className="mt-2 flex min-w-0 flex-row flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-none text-white/70">
+          <div className="mt-2.5 flex min-w-0 flex-row flex-wrap items-center gap-x-2.5 gap-y-1 text-[14px] font-semibold leading-none text-white/90 xl:text-[15px]">
             <span className="shrink-0 tabular-nums">
               {labels.level} {identity.level}
             </span>
-            <span className="h-3 w-px shrink-0 bg-white/20" aria-hidden />
+            <span className="h-3.5 w-px shrink-0 bg-white/30" aria-hidden />
             {identity.clanName ? (
               <span className="inline-flex min-w-0 items-center gap-1.5">
                 {identity.clanEmblem != null ? (
                   <ClanEmblemBadge
                     emblem={identity.clanEmblem}
-                    size={14}
+                    size={16}
                     title={identity.clanName}
                     className="translate-y-px shrink-0"
                   />
                 ) : null}
-                <span className="text-white/80">{identity.clanName}</span>
+                <span className="text-white">{identity.clanName}</span>
               </span>
             ) : (
-              <span className="shrink-0">{labels.noClan}</span>
+              <span className="shrink-0 text-white/80">{labels.noClan}</span>
             )}
             <span
-              className="inline-flex shrink-0 items-center gap-1 text-[13px] font-bold tabular-nums tracking-tight"
-              style={{ color: `color-mix(in srgb, ${fluorFrom} 58%, white)` }}
+              className="inline-flex shrink-0 items-center gap-1 text-[15px] font-bold tabular-nums tracking-tight xl:text-base"
+              style={{ color: `color-mix(in srgb, ${fluorFrom} 68%, white)` }}
             >
-              <span className="opacity-75">{labels.combatPower}</span>
+              <span className="opacity-80">{labels.combatPower}</span>
               <span>{cpFormatted}</span>
             </span>
           </div>

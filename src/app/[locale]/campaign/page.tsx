@@ -19,9 +19,11 @@ import {
   type JourneySummary,
 } from "@/components/campaign-journey";
 import type { CampaignDockMember } from "@/components/campaign-party-dock";
+import type { HeldItemInfo, OwnedHeldItem } from "@/components/held-item-panel";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { calculateMaxHp } from "@/lib/stats";
 import { spriteFor } from "@/lib/shiny";
+import { resolveItemDisplayName } from "@/lib/shop";
 import {
   healCooldownMsLeft,
   healRushCost,
@@ -43,13 +45,15 @@ export default async function CampaignPage({
 
   await redirectIfInBattle(userId, locale);
 
-  const [tHome, , progress] = await Promise.all([
+  const [tHome, tTeam, tShop, progress] = await Promise.all([
     getTranslations("home"),
-    getTranslations("ux"),
+    getTranslations("team"),
+    getTranslations("shop"),
     ensureCampaignProgress(userId),
   ]);
 
-  const [zones, badges, gyms, team, shinies, bagCounts, userHeal] = await Promise.all([
+  const [zones, badges, gyms, team, shinies, bagCounts, userHeal, ownedHeldItemsRows] =
+    await Promise.all([
     loadMapLocations(userId, progress),
     prisma.badge.findMany({
       where: { userId, gym: { regionId: progress.currentRegionId } },
@@ -83,6 +87,14 @@ export default async function CampaignPage({
         isTradeLocked: true,
         isShiny: true,
         species: { select: { name: true, spriteUrl: true, baseHp: true } },
+        heldItem: {
+          select: {
+            id: true,
+            name: true,
+            effectText: true,
+            heldEffect: true,
+          },
+        },
       },
       orderBy: { teamSlot: "asc" },
     }),
@@ -91,6 +103,10 @@ export default async function CampaignPage({
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { coins: true, lastHealAt: true },
+    }),
+    prisma.inventoryItem.findMany({
+      where: { userId, quantity: { gt: 0 }, item: { type: "HELD" } },
+      include: { item: true },
     }),
   ]);
 
@@ -106,6 +122,7 @@ export default async function CampaignPage({
     requirementByLocationId[zone.id] = {
       gymId: matched.id,
       badgeName: matched.badgeName,
+      gymOrder: matched.order,
       badgeType: matched.type,
       recommendedLevel: Math.max(...matched.team.map((p) => p.level), 1),
       // Sprite pixel del líder: identifica el gimnasio mejor que una medalla
@@ -120,8 +137,22 @@ export default async function CampaignPage({
   const initialChapter = activeChapterIndex(chapters, progress.farmingLocationId);
 
   const teamMaxLevel = Math.max(...team.map((p) => p.level), 1);
+  const itemLabel = (name: string) =>
+    resolveItemDisplayName(name, (key) => {
+      const path = `names.${key}`;
+      return tShop.has(path) ? tShop(path) : null;
+    });
+
   const dockMembers: CampaignDockMember[] = team.map((p) => {
     const maxHp = calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution);
+    const held: HeldItemInfo | null = p.heldItem
+      ? {
+          itemId: p.heldItem.id,
+          name: p.heldItem.name,
+          displayName: itemLabel(p.heldItem.name),
+          effectText: p.heldItem.effectText,
+        }
+      : null;
     return {
       id: p.id,
       speciesName: p.species.name,
@@ -132,8 +163,37 @@ export default async function CampaignPage({
       maxHp,
       isFavorite: p.isFavorite,
       isTradeLocked: p.isTradeLocked,
+      heldItem: held,
     };
   });
+
+  const ownedHeldById = new Map<string, OwnedHeldItem>(
+    ownedHeldItemsRows.map((inv) => [
+      inv.itemId,
+      {
+        itemId: inv.itemId,
+        name: inv.item.name,
+        displayName: itemLabel(inv.item.name),
+        effectText: inv.item.effectText,
+        quantity: inv.quantity,
+      },
+    ]),
+  );
+  // Exp. Share equipado sigue disponible en el panel para moverlo a otro mon.
+  for (const m of dockMembers) {
+    if (
+      m.heldItem &&
+      !ownedHeldById.has(m.heldItem.itemId) &&
+      team.find((p) => p.id === m.id)?.heldItem?.heldEffect === "EXP_SHARE"
+    ) {
+      ownedHeldById.set(m.heldItem.itemId, {
+        ...m.heldItem,
+        quantity: 1,
+      });
+    }
+  }
+  const ownedHeldItems = [...ownedHeldById.values()];
+
   const hurtCount = dockMembers.filter((m) => m.currentHp < m.maxHp).length;
   const needsHealing = hurtCount > 0;
   const healCdMs = isPokemonCenterFree(teamMaxLevel)
@@ -176,6 +236,7 @@ export default async function CampaignPage({
           party={{
             members: dockMembers,
             bagCounts,
+            ownedHeldItems,
             heal: {
               needsHealing,
               cooldownMsLeft: healCdMs,
@@ -197,6 +258,24 @@ export default async function CampaignPage({
               revive: tHome("squadMenu.revive"),
               restorePp: tHome("squadMenu.restorePp"),
               rareCandy: tHome("squadMenu.rareCandy"),
+              heldItem: tHome("squadMenu.heldItem"),
+            },
+            heldLabels: {
+              title: tTeam("drawer.heldItemTitle"),
+              hint: tTeam("drawer.heldItemHint"),
+              change: tTeam("drawer.equip"),
+              noneOwned: tTeam("drawer.noHeldItems"),
+              unequip: tTeam("drawer.unequip"),
+              equipping: tTeam("drawer.equipping"),
+              cancel: tTeam("drawer.cancel"),
+              close: tTeam("drawer.close"),
+              equipped: tTeam("drawer.equipped"),
+              equipErrors: {
+                unauthorized: tTeam("drawer.teachErrors.unauthorized"),
+                not_found: tTeam("drawer.teachErrors.not_found"),
+                no_item: tTeam("drawer.equipErrors.no_item"),
+                in_combat: tTeam("drawer.teachErrors.in_combat"),
+              },
             },
           }}
         />

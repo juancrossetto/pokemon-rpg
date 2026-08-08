@@ -86,6 +86,7 @@ export type GymChallengeCorridorProps = {
   badgeUrl: string;
   coinReward: number;
   tmRewardName: string | null;
+  heldRewardName: string | null;
   portraitUrl: string | null;
   leaderSpriteUrl: string | null;
   leaderTeam: CorridorTeamMember[];
@@ -113,17 +114,19 @@ function RewardBits({
   xp,
   prefix = "",
   tmName,
+  heldName,
   className = "",
 }: {
   coins?: number;
   xp?: number;
   prefix?: "+" | "";
   tmName?: string | null;
+  heldName?: string | null;
   className?: string;
 }) {
   const showCoins = typeof coins === "number" && coins > 0;
   const showXp = typeof xp === "number" && xp > 0;
-  if (!showCoins && !showXp && !tmName) return null;
+  if (!showCoins && !showXp && !tmName && !heldName) return null;
 
   return (
     <div
@@ -168,6 +171,19 @@ function RewardBits({
             unoptimized
           />
           <span className="text-white/70">{tmName}</span>
+        </span>
+      ) : null}
+      {heldName ? (
+        <span className="inline-flex items-center gap-1">
+          <Image
+            src={itemDisplayUrl(heldName)}
+            alt=""
+            width={16}
+            height={16}
+            className="h-4 w-4 object-contain"
+            unoptimized
+          />
+          <span className="text-white/70">{heldName}</span>
         </span>
       ) : null}
     </div>
@@ -468,6 +484,7 @@ export function GymChallengeCorridor({
   badgeUrl,
   coinReward,
   tmRewardName,
+  heldRewardName,
   portraitUrl,
   leaderSpriteUrl,
   leaderTeam,
@@ -561,7 +578,12 @@ export function GymChallengeCorridor({
             <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
               {labels.finalReward}
             </p>
-            <RewardBits coins={coinReward} tmName={tmRewardName} className="text-[13px] text-white/90" />
+            <RewardBits
+              coins={coinReward}
+              tmName={tmRewardName}
+              heldName={heldRewardName}
+              className="text-[13px] text-white/90"
+            />
             {accumulated.coins > 0 || accumulated.xp > 0 ? (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">
@@ -793,6 +815,7 @@ export function GymChallengeCorridor({
                       <RewardBits
                         coins={coinReward}
                         tmName={tmRewardName}
+                        heldName={heldRewardName}
                         className="text-white/55"
                       />
                       <form action={battleAction}>

@@ -131,6 +131,16 @@ const HELD_ITEMS: {
     buyPrice: 2000,
     effectText: "+20% de poder en movimientos de tipo Eléctrico.",
   },
+  {
+    name: "Exp. Share",
+    effect: "EXP_SHARE",
+    // Misma fracción que la banca participante (BENCH_XP_SHARE): el mon que
+    // no pelea cobra la mitad de la EXP de la victoria.
+    value: 0.5,
+    buyPrice: 0,
+    effectText:
+      "Si lo lleva un Pokémon del equipo que no pelea, recibe la mitad de la EXP de la victoria.",
+  },
 ];
 
 export async function seedHeldItems() {

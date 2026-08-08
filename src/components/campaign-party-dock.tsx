@@ -9,8 +9,14 @@ import {
   SquadCardContextMenu,
   type SquadContextLabels,
 } from "@/components/squad-card-context-menu";
+import type {
+  HeldItemInfo,
+  HeldItemLabels,
+  OwnedHeldItem,
+} from "@/components/held-item-panel";
 import { hpBarVariant } from "@/components/segmented-stat-bar";
 import { announceHomeTeamHealed, HOME_TEAM_HEALED_EVENT } from "@/lib/home-heal-fx";
+import { itemHdIconUrl, itemSpriteUrl } from "@/lib/item-sprites";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 
 export type CampaignDockMember = {
@@ -23,6 +29,7 @@ export type CampaignDockMember = {
   maxHp: number;
   isFavorite: boolean;
   isTradeLocked: boolean;
+  heldItem?: HeldItemInfo | null;
 };
 
 export type CampaignPartyHeal = {
@@ -72,12 +79,15 @@ function DockSlot({
   index,
   bagCounts,
   menuLabels,
+  ownedHeldItems,
+  heldLabels,
   isDragging,
   isOver,
   pending,
   onBagChange,
   onHealed,
   onFlagsChange,
+  onHeldChange,
   onDragStart,
   onDragEnd,
   onDrop,
@@ -86,6 +96,8 @@ function DockSlot({
   index: number;
   bagCounts: SquadBagCounts;
   menuLabels: SquadContextLabels;
+  ownedHeldItems: OwnedHeldItem[];
+  heldLabels: HeldItemLabels;
   isDragging: boolean;
   isOver: boolean;
   pending: boolean;
@@ -95,6 +107,7 @@ function DockSlot({
     id: string,
     next: { isFavorite?: boolean; isTradeLocked?: boolean },
   ) => void;
+  onHeldChange: (id: string, next: HeldItemInfo | null) => void;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
   onDrop: (index: number) => void;
@@ -179,6 +192,10 @@ function DockSlot({
         onBagChange={onBagChange}
         onHealed={(next) => onHealed(member.id, next.currentHp, next.maxHp)}
         onFlagsChange={(next) => onFlagsChange(member.id, next)}
+        heldItem={member.heldItem ?? null}
+        ownedHeldItems={ownedHeldItems}
+        heldLabels={heldLabels}
+        onHeldChange={(next) => onHeldChange(member.id, next)}
       >
         <button
           type="button"
@@ -233,6 +250,24 @@ function DockSlot({
                 </span>
               </span>
             ) : null}
+            {member.heldItem ? (
+              <span
+                title={member.heldItem.displayName}
+                className="absolute bottom-0 right-0 inline-flex rounded-full border border-white/15 bg-black/55 p-px"
+              >
+                <Image
+                  src={
+                    itemHdIconUrl(member.heldItem.name) ??
+                    itemSpriteUrl(member.heldItem.name)
+                  }
+                  alt=""
+                  width={12}
+                  height={12}
+                  unoptimized
+                  className="h-2.5 w-2.5 object-contain"
+                />
+              </span>
+            ) : null}
           </span>
           <DockHpBar pct={hpPct} fainted={fainted} />
         </button>
@@ -249,14 +284,18 @@ export function CampaignPartyDock({
   locale,
   initialMembers,
   initialBagCounts,
+  ownedHeldItems,
   heal,
   menuLabels,
+  heldLabels,
 }: {
   locale: string;
   initialMembers: CampaignDockMember[];
   initialBagCounts: SquadBagCounts;
+  ownedHeldItems: OwnedHeldItem[];
   heal: CampaignPartyHeal;
   menuLabels: SquadContextLabels;
+  heldLabels: HeldItemLabels;
 }) {
   const t = useTranslations("campaign");
   const [members, setMembers] = useState(initialMembers);
@@ -338,6 +377,8 @@ export function CampaignPartyDock({
               index={index}
               bagCounts={bagCounts}
               menuLabels={menuLabels}
+              ownedHeldItems={ownedHeldItems}
+              heldLabels={heldLabels}
               isDragging={Boolean(member && dragId === member.id)}
               isOver={overSlot === index && dragId != null}
               pending={pending}
@@ -357,6 +398,18 @@ export function CampaignPartyDock({
               onFlagsChange={(id, next) => {
                 setMembers((prev) =>
                   prev.map((m) => (m.id === id ? { ...m, ...next } : m)),
+                );
+              }}
+              onHeldChange={(id, next) => {
+                setMembers((prev) =>
+                  prev.map((m) =>
+                    m.id === id
+                      ? { ...m, heldItem: next }
+                      : // Unique held (Exp. Share): al equipar acá, los otros lo pierden.
+                        next && m.heldItem?.itemId === next.itemId
+                        ? { ...m, heldItem: null }
+                        : m,
+                  ),
                 );
               }}
               onDragStart={setDragId}

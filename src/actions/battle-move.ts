@@ -14,6 +14,7 @@ import {
 import { calculateMaxHp, xpForLevel, UNSPENT_POINTS_PER_LEVEL } from "@/lib/stats";
 import {
   BENCH_XP_SHARE,
+  EXP_SHARE_HELD_FRACTION,
   effectivePp,
   playerActsFirst,
   STRUGGLE_MOVE,
@@ -25,7 +26,10 @@ import {
 } from "@/lib/battle";
 import { pickWildMove } from "@/lib/battle-ai";
 import { disobeyChance, gymRematchCoinMultiplier } from "@/lib/badge-perks";
-import { GYM_TM_REWARD_BY_TYPE } from "@/lib/gym-tm-rewards";
+import {
+  GYM_HELD_ITEM_REWARD_BY_TYPE,
+  GYM_TM_REWARD_BY_TYPE,
+} from "@/lib/gym-tm-rewards";
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import { resolveSingleAction, type SideBattleState } from "@/lib/resolve-action";
 import { applyHeldItemToStats, heldItemSnapshotFromItem } from "@/lib/held-items";
@@ -85,6 +89,8 @@ export interface UseMoveResult {
   coinsGained: number;
   badgeEarned: boolean;
   tmRewardName: string | null;
+  /** Held / ítem extra del líder (p. ej. Exp. Share en Brock). */
+  heldRewardName: string | null;
   rematch: boolean;
   playerMovesPp: { moveId: number; pp: number }[];
   playerStatus: StatusCondition | null;
@@ -199,6 +205,7 @@ export async function submitBattleMove(
       coinsGained: 0,
       badgeEarned: false,
       tmRewardName: null,
+        heldRewardName: null,
       rematch: false,
       playerMovesPp: instance.moves.map((m) => ({
         moveId: m.moveId,
@@ -537,6 +544,7 @@ export async function submitBattleMove(
   let xpGained: number | null = null;
   let badgeEarned = false;
   let tmRewardName: string | null = null;
+  let heldRewardName: string | null = null;
   let coinsAwarded = 0;
   let nextOpponent: UseMoveResult["nextOpponent"] = null;
   let pvpResult: UseMoveResult["pvpResult"] = null;
@@ -666,6 +674,7 @@ export async function submitBattleMove(
           coinsGained: 0,
           badgeEarned: false,
           tmRewardName: null,
+        heldRewardName: null,
           rematch: false,
           playerMovesPp,
           playerChoiceLockMoveId: newChoiceLockMoveId,
@@ -758,6 +767,7 @@ export async function submitBattleMove(
         coinsGained: coinsAwarded,
         badgeEarned: false,
         tmRewardName: null,
+        heldRewardName: null,
         rematch: false,
         playerMovesPp,
         playerChoiceLockMoveId: newChoiceLockMoveId,
@@ -816,6 +826,7 @@ export async function submitBattleMove(
           coinsGained: 0,
           badgeEarned: false,
           tmRewardName: null,
+        heldRewardName: null,
           rematch: false,
           playerMovesPp,
           playerChoiceLockMoveId: newChoiceLockMoveId,
@@ -896,6 +907,7 @@ export async function submitBattleMove(
         coinsGained: coinsAwarded,
         badgeEarned: false,
         tmRewardName: null,
+        heldRewardName: null,
         rematch: alreadyHasThisBadge,
         playerMovesPp,
         playerChoiceLockMoveId: newChoiceLockMoveId,
@@ -923,10 +935,25 @@ export async function submitBattleMove(
       const hpNow = p.id === instance.id ? playerHp : p.currentHp;
       return hpNow > 0;
     });
+    // Exp. Share: mon del equipo activo que NO peleó pero lleva el objeto.
+    const expShareHolders = await prisma.pokemonInstance.findMany({
+      where: {
+        ownerId: userId,
+        teamSlot: { not: null },
+        id: { notIn: participantIds },
+        currentHp: { gt: 0 },
+        heldItem: { heldEffect: "EXP_SHARE" },
+      },
+      include: { species: true },
+    });
     // Reparto Gen VI (ver BENCH_XP_SHARE): el que peleó cobra el total, la
     // banca viva cobra una fracción encima — no se divide un pozo fijo.
     const activeShare = Math.max(1, totalXp);
     const benchShare = Math.max(1, Math.floor(totalXp * BENCH_XP_SHARE));
+    const expShareAmount = Math.max(
+      1,
+      Math.floor(totalXp * EXP_SHARE_HELD_FRACTION),
+    );
 
     xpSummary = [];
     const instanceUpdates = [];
@@ -944,9 +971,24 @@ export async function submitBattleMove(
       xpAfter: number;
     }[] = [];
 
-    for (const p of participants) {
-      const isActive = p.id === instance.id;
-      const share = isActive ? activeShare : benchShare;
+    const recipients: {
+      p: (typeof participants)[number];
+      share: number;
+      isActive: boolean;
+    }[] = [
+      ...participants.map((p) => ({
+        p,
+        share: p.id === instance.id ? activeShare : benchShare,
+        isActive: p.id === instance.id,
+      })),
+      ...expShareHolders.map((p) => ({
+        p,
+        share: expShareAmount,
+        isActive: false,
+      })),
+    ];
+
+    for (const { p, share, isActive } of recipients) {
       if (isActive) xpGained = share;
       const hpBefore = isActive ? playerHp : Math.max(0, p.currentHp);
       const result = applyXpGain(
@@ -958,7 +1000,7 @@ export async function submitBattleMove(
         p.ptConstitution,
         share,
       );
-      // Banca debilitada: gana XP pero no revive por el +HP de level-up.
+      // Banca / Exp. Share debilitados: gana XP pero no revive por el +HP de level-up.
       const newCurrentHp = !isActive && p.currentHp <= 0 ? 0 : result.newCurrentHp;
       levelMetas.push({
         instanceId: p.id,
@@ -1062,6 +1104,7 @@ export async function submitBattleMove(
         coinsGained: coinsAwarded,
         badgeEarned: false,
         tmRewardName: null,
+        heldRewardName: null,
         rematch: alreadyHasThisBadge,
         playerMovesPp,
         playerChoiceLockMoveId: newChoiceLockMoveId,
@@ -1128,6 +1171,7 @@ export async function submitBattleMove(
         coinsGained: coinsAwarded,
         badgeEarned: false,
         tmRewardName: null,
+        heldRewardName: null,
         rematch: false,
         playerMovesPp,
         playerChoiceLockMoveId: newChoiceLockMoveId,
@@ -1151,12 +1195,18 @@ export async function submitBattleMove(
       ? Math.floor((gym?.coinReward ?? 0) * gymRematchCoinMultiplier(alreadyHasThisBadge))
       : 0;
     // El líder regala una MT de su tipo la primera vez que se lo vence —
-    // no en revanchas, mismo criterio que la medalla.
+    // no en revanchas, mismo criterio que la medalla. Brock también da Exp. Share.
     const gymTmMoveName = badgeEarned && gym ? GYM_TM_REWARD_BY_TYPE[gym.type] : undefined;
     const gymTmItem = gymTmMoveName
       ? await prisma.item.findFirst({ where: { type: "MACHINE", move: { name: gymTmMoveName } } })
       : null;
     tmRewardName = gymTmItem?.name ?? null;
+    const gymHeldItemName =
+      badgeEarned && gym ? GYM_HELD_ITEM_REWARD_BY_TYPE[gym.type] : undefined;
+    const gymHeldItem = gymHeldItemName
+      ? await prisma.item.findFirst({ where: { name: gymHeldItemName } })
+      : null;
+    heldRewardName = gymHeldItem?.name ?? null;
     coinsAwarded = (coinsGained ?? 0) + gymCoins + (routeTrainer?.coinReward ?? 0);
     const finalLog = [...battle.log, ...log].slice(-MAX_LOG_LINES);
     await prisma.$transaction([
@@ -1207,6 +1257,15 @@ export async function submitBattleMove(
             prisma.inventoryItem.upsert({
               where: { userId_itemId: { userId, itemId: gymTmItem.id } },
               create: { userId, itemId: gymTmItem.id, quantity: 1 },
+              update: { quantity: { increment: 1 } },
+            }),
+          ]
+        : []),
+      ...(gymHeldItem
+        ? [
+            prisma.inventoryItem.upsert({
+              where: { userId_itemId: { userId, itemId: gymHeldItem.id } },
+              create: { userId, itemId: gymHeldItem.id, quantity: 1 },
               update: { quantity: { increment: 1 } },
             }),
           ]
@@ -1457,6 +1516,7 @@ export async function submitBattleMove(
     coinsGained: coinsAwarded,
     badgeEarned,
     tmRewardName,
+    heldRewardName,
     rematch: alreadyHasThisBadge,
     playerMovesPp,
     playerChoiceLockMoveId: newChoiceLockMoveId,

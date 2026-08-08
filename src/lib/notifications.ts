@@ -320,6 +320,20 @@ export async function deleteNotifications(userId: string, ids: string[]) {
   });
 }
 
+/**
+ * Vacía la bandeja. `onlyRead` deja las pendientes: borrar todo de un panel
+ * recién abierto —donde el auto-leído todavía no corrió— se llevaría avisos
+ * que el jugador no alcanzó a ver.
+ */
+export async function deleteAllNotifications(
+  userId: string,
+  opts: { onlyRead?: boolean } = {},
+) {
+  await prisma.notification.deleteMany({
+    where: { userId, ...(opts.onlyRead ? { readAt: { not: null } } : {}) },
+  });
+}
+
 /** Aviso al vendedor: alguien compró su publicación. */
 export async function notifyMarketSold(listingId: string) {
   const listing = await prisma.marketListing.findUnique({

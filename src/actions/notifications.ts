@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import {
+  deleteAllNotifications,
   deleteNotifications,
   markNotificationsRead,
   syncEnergyFullNotification,
@@ -26,6 +27,13 @@ export async function deleteNotificationAction(id: string) {
   const session = await auth();
   if (!session?.user) return { ok: false as const };
   await deleteNotifications(session.user.id, [id]);
+  return { ok: true as const };
+}
+
+export async function deleteAllNotificationsAction() {
+  const session = await auth();
+  if (!session?.user) return { ok: false as const };
+  await deleteAllNotifications(session.user.id);
   return { ok: true as const };
 }
 

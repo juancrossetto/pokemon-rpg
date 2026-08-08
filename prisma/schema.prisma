@@ -507,6 +507,8 @@ enum HeldEffect {
   SITRUS_BERRY // cura heldValue% del HP máx una vez, al cruzar 50% HP (un solo uso)
   LUM_BERRY // cura cualquier estado alterado apenas se aplica (un solo uso)
   TYPE_BOOST // +heldValue% de poder en movimientos de tipo heldBoostType
+  /// Holder fuera de pelea cobra heldValue de la EXP de la victoria (p. ej. 0.5).
+  EXP_SHARE
 }
 
 model Item {

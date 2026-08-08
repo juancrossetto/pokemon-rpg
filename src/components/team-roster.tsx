@@ -153,6 +153,12 @@ type MemberPatch = Partial<
     | "isFavorite"
     | "isTradeLocked"
     | "unspentPoints"
+    | "points"
+    | "atk"
+    | "def"
+    | "spAtk"
+    | "spDef"
+    | "speed"
     | "xp"
     | "xpForCurrentLevel"
     | "xpToNext"
@@ -231,6 +237,20 @@ export function TeamRoster({
           if (!m || m.instanceId === instanceId) continue;
           if (m.isFavorite || prev[m.instanceId]?.isFavorite) {
             next[m.instanceId] = { ...prev[m.instanceId], isFavorite: false };
+          }
+        }
+      }
+      // Exp. Share (y unique held): un solo holder a la vez.
+      if (patch.heldItem) {
+        const itemId = patch.heldItem.itemId;
+        for (const m of members) {
+          if (!m || m.instanceId === instanceId) continue;
+          const current =
+            prev[m.instanceId]?.heldItem !== undefined
+              ? prev[m.instanceId].heldItem
+              : m.heldItem;
+          if (current?.itemId === itemId) {
+            next[m.instanceId] = { ...prev[m.instanceId], heldItem: null };
           }
         }
       }
@@ -389,6 +409,26 @@ function PokemonCard({
       onFlagsChange={(next) => onMemberPatch(next)}
       onHeldChange={(next) => onMemberPatch({ heldItem: next })}
       onNicknameChange={(next) => onMemberPatch({ nickname: next })}
+      allocatePoints={member.points}
+      allocateUnspent={member.unspentPoints}
+      allocateBases={member.bases}
+      onPointsAllocated={(next) => {
+        const nextCurrentHp =
+          member.currentHp <= 0
+            ? 0
+            : Math.min(next.maxHp, member.currentHp + next.currentHpDelta);
+        onMemberPatch({
+          unspentPoints: next.unspentPoints,
+          points: next.points,
+          maxHp: next.maxHp,
+          currentHp: nextCurrentHp,
+          atk: next.atk,
+          def: next.def,
+          spAtk: next.spAtk,
+          spDef: next.spDef,
+          speed: next.speed,
+        });
+      }}
     >
       <PokemonShowcaseCard
         speciesId={member.speciesId}
@@ -407,6 +447,7 @@ function PokemonCard({
           shiny: member.isShiny ? labels.shinyBadge : null,
           canEvolve: canEvolve ? labels.canEvolveBadge : null,
           heldItem: member.heldItem?.displayName ?? null,
+          heldItemName: member.heldItem?.name ?? null,
         }}
       >
           <div className="mt-3">
@@ -453,17 +494,33 @@ function PokemonCard({
             />
           </div>
 
-          {member.unspentPoints > 0 ? (
-            <div className="relative mt-2" onClick={(e) => e.stopPropagation()}>
-              <AllocatePointsPanel
-                instanceId={member.instanceId}
-                level={member.level}
-                unspentPoints={member.unspentPoints}
-                points={member.points}
-                bases={member.bases}
-              />
-            </div>
-          ) : null}
+          <div className="relative mt-2" onClick={(e) => e.stopPropagation()}>
+            <AllocatePointsPanel
+              instanceId={member.instanceId}
+              level={member.level}
+              unspentPoints={member.unspentPoints}
+              points={member.points}
+              bases={member.bases}
+              defaultOpen={member.unspentPoints > 0}
+              onAllocated={(next) => {
+                const nextCurrentHp =
+                  member.currentHp <= 0
+                    ? 0
+                    : Math.min(next.maxHp, member.currentHp + next.currentHpDelta);
+                onMemberPatch({
+                  unspentPoints: next.unspentPoints,
+                  points: next.points,
+                  maxHp: next.maxHp,
+                  currentHp: nextCurrentHp,
+                  atk: next.atk,
+                  def: next.def,
+                  spAtk: next.spAtk,
+                  spDef: next.spDef,
+                  speed: next.speed,
+                });
+              }}
+            />
+          </div>
       </PokemonShowcaseCard>
     </SquadCardContextMenu>
     </div>

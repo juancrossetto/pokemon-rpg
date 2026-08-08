@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
-import { itemSpriteUrl } from "@/lib/item-sprites";
+import { itemSpriteUrl, itemHdIconUrl } from "@/lib/item-sprites";
 import { EMPTY_SQUAD_BAG, type SquadBagCounts } from "@/lib/squad-bag";
 import {
   SquadItemFx,
@@ -24,7 +24,19 @@ import {
   RenamePokemonPanel,
   type RenameLabels,
 } from "@/components/rename-pokemon-panel";
+import { AllocatePointsPanel } from "@/components/allocate-points-panel";
 import type { TeamCompatibleTm, TeamMoveDetail } from "@/components/team-roster";
+import type { ManualStatKey } from "@/lib/stats";
+
+type AllocPoints = Record<ManualStatKey, number>;
+type AllocBases = {
+  baseHp: number;
+  baseAttack: number;
+  baseDefense: number;
+  baseSpAtk: number;
+  baseSpDef: number;
+  baseSpeed: number;
+};
 
 export type SquadContextLabels = {
   favoriteOn: string;
@@ -46,10 +58,12 @@ export type SquadContextLabels = {
   teachTm?: string;
   heldItem?: string;
   rename?: string;
+  /** Abrir panel de puntos de combate (home / equipo). */
+  allocatePoints?: string;
 };
 
 type MenuState = { x: number; y: number } | null;
-type ManagePanel = "teach" | "held" | "rename" | null;
+type ManagePanel = "teach" | "held" | "rename" | "allocate" | null;
 
 /**
  * Click derecho (o botón ⋮) sobre una card del equipo / PC: curar, PP,
@@ -102,6 +116,10 @@ export function SquadCardContextMenu({
   /** Si se pasa, muestra "Dejar en el PC". `canDepositToPc` deshabilita el último. */
   onDepositToPc,
   canDepositToPc = true,
+  allocatePoints,
+  allocateUnspent = 0,
+  allocateBases,
+  onPointsAllocated,
   children,
 }: {
   instanceId: string;
@@ -165,6 +183,21 @@ export function SquadCardContextMenu({
   onNicknameChange?: (next: string | null) => void;
   onDepositToPc?: () => void;
   canDepositToPc?: boolean;
+  /** Puntos actuales + bases para el atajo "Sumar puntos". */
+  allocatePoints?: AllocPoints;
+  allocateUnspent?: number;
+  allocateBases?: AllocBases;
+  onPointsAllocated?: (next: {
+    unspentPoints: number;
+    points: AllocPoints;
+    maxHp: number;
+    currentHpDelta: number;
+    atk: number;
+    def: number;
+    spAtk: number;
+    spDef: number;
+    speed: number;
+  }) => void;
   children: ReactNode;
 }) {
   const triggerAnchor =
@@ -177,6 +210,12 @@ export function SquadCardContextMenu({
   const canTeach = Boolean(moves && compatibleTms && teachLabels && labels.teachTm);
   const canHold = Boolean(ownedHeldItems && heldLabels && labels.heldItem);
   const canRename = Boolean(speciesName && renameLabels && labels.rename);
+  const canAllocate = Boolean(
+    labels.allocatePoints &&
+      allocatePoints &&
+      allocateBases &&
+      level != null,
+  );
 
   const actions = useSquadActions({
     instanceId,
@@ -343,6 +382,28 @@ export function SquadCardContextMenu({
             disabled={busy || candyPending || Boolean(levelOffers)}
             onSelect={actions.giveRareCandy}
           />
+          {canAllocate ? (
+            <>
+              <div className="my-1 border-t border-white/8" />
+              <MenuItem
+                icon="bolt"
+                iconClassName="text-white/65"
+                label={labels.allocatePoints!}
+                trailing={
+                  allocateUnspent > 0 ? (
+                    <span className="shrink-0 rounded-md bg-white/10 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-white/80">
+                      {allocateUnspent}
+                    </span>
+                  ) : undefined
+                }
+                disabled={busy}
+                onSelect={() => {
+                  setMenu(null);
+                  setPanel("allocate");
+                }}
+              />
+            </>
+          ) : null}
           {canTeach || canHold || canRename ? (
             <>
               <div className="my-1 border-t border-white/8" />
@@ -370,7 +431,9 @@ export function SquadCardContextMenu({
               ) : null}
               {canHold ? (
                 <MenuItem
-                  icon="auto_awesome"
+                  imageSrc={
+                    itemHdIconUrl("Exp. Share") ?? itemSpriteUrl("Exp. Share")
+                  }
                   label={labels.heldItem!}
                   disabled={busy}
                   onSelect={() => {
@@ -501,6 +564,35 @@ export function SquadCardContextMenu({
           onRenamed={onNicknameChange}
         />
       ) : null}
+      {panel === "allocate" &&
+      canAllocate &&
+      allocatePoints &&
+      allocateBases &&
+      level != null ? (
+        <div className="fixed inset-0 z-[90] flex items-end justify-center px-3 pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.75rem)] sm:items-center sm:p-4 sm:pb-4">
+          <button
+            type="button"
+            aria-label={labels.allocatePoints}
+            className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+            onClick={() => setPanel(null)}
+          />
+          <div className="relative z-[1] max-h-[min(80dvh,560px)] w-full max-w-md overflow-y-auto rounded-2xl border border-white/12 bg-[#0b0d13] p-3 shadow-[0_16px_48px_rgba(0,0,0,0.55)]">
+            <AllocatePointsPanel
+              alwaysOpen
+              instanceId={instanceId}
+              level={level}
+              unspentPoints={allocateUnspent}
+              points={allocatePoints}
+              bases={allocateBases}
+              onClose={() => setPanel(null)}
+              onAllocated={(next) => {
+                onPointsAllocated?.(next);
+                setPanel(null);
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -554,6 +646,7 @@ function MenuItem({
   imageSrc,
   iconClassName = "text-on-surface-variant",
   label,
+  trailing,
   disabled,
   title,
   onSelect,
@@ -562,6 +655,7 @@ function MenuItem({
   imageSrc?: string;
   iconClassName?: string;
   label: string;
+  trailing?: ReactNode;
   disabled?: boolean;
   title?: string;
   onSelect: () => void;
@@ -589,7 +683,8 @@ function MenuItem({
           {icon}
         </span>
       )}
-      {label}
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {trailing}
     </button>
   );
 }

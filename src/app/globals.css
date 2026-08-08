@@ -10863,12 +10863,14 @@ html.boot-splash-pending .boot-splash {
   pointer-events: none;
   position: absolute;
   inset: 0;
+  /* Más densidad a la izquierda: el copy del perfil tiene que leerse sobre
+     banners ocupados sin pelear con el paisaje. */
   background: linear-gradient(
     90deg,
-    rgba(8, 10, 16, 0.72) 0%,
-    rgba(8, 10, 16, 0.48) 28%,
-    rgba(8, 10, 16, 0.18) 52%,
-    transparent 68%
+    rgba(8, 10, 16, 0.82) 0%,
+    rgba(8, 10, 16, 0.58) 26%,
+    rgba(8, 10, 16, 0.22) 50%,
+    transparent 66%
   );
 }
 
@@ -10989,12 +10991,22 @@ html.boot-splash-pending .boot-splash {
   `--hi-frame`, esas fracciones se mantienen a cualquier tamaño: multiplicarlas
   por el ancho del borde da exactamente dónde cae el riel, y unos píxeles más
   son el aire. Si mañana cambia `--hi-frame`, el padding se reacomoda solo.
+
+  El aire extra (+14/+18px) evita que marcos con volutas gruesas tapen región,
+  nombre o meta en los bordes superior e inferior.
 */
 .home-identity--framed .home-identity__hit {
-  padding-top: calc(var(--hi-frame) * var(--hi-rail-top) + 6px);
-  padding-bottom: calc(var(--hi-frame) * var(--hi-rail-bottom) + 6px);
-  padding-left: calc(var(--hi-frame) * var(--hi-rail-left) + 8px);
-  padding-right: calc(var(--hi-frame) * var(--hi-rail-right) + 8px);
+  padding-top: calc(var(--hi-frame) * var(--hi-rail-top) + 14px);
+  padding-bottom: calc(var(--hi-frame) * var(--hi-rail-bottom) + 14px);
+  padding-left: calc(var(--hi-frame) * var(--hi-rail-left) + 10px);
+  padding-right: calc(var(--hi-frame) * var(--hi-rail-right) + 10px);
+}
+
+@media (min-width: 640px) {
+  .home-identity--framed .home-identity__hit {
+    padding-top: calc(var(--hi-frame) * var(--hi-rail-top) + 18px);
+    padding-bottom: calc(var(--hi-frame) * var(--hi-rail-bottom) + 18px);
+  }
 }
 
 
@@ -11024,8 +11036,9 @@ html.boot-splash-pending .boot-splash {
 
 .home-identity__copy {
   text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.65),
-    0 0 18px rgba(0, 0, 0, 0.35);
+    0 1px 3px rgba(0, 0, 0, 0.85),
+    0 2px 10px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Mobile bottom nav (PWA dock) ─────────────────────────────────────────
@@ -11803,6 +11816,142 @@ html.boot-splash-pending .boot-splash {
 }
 
 /* Pico: triángulo SVG; el relleno tapa la base contra el borde del panel. */
+/*
+  ===== Filas de notificación =====
+  Entrada escalonada al abrir, pérdida del acento al pasar a leída y colapso
+  al borrar. Sin esto la lista aparecía de golpe y las filas desaparecían de
+  un frame al otro.
+*/
+.notif-row-in {
+  animation: notif-row-in 0.34s cubic-bezier(0.22, 1, 0.32, 1) both;
+  /* Tope en 8: con 30 avisos el último entraría casi un segundo tarde. */
+  animation-delay: calc(min(var(--notif-i, 0), 8) * 32ms);
+}
+@keyframes notif-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/*
+  Colapsa alto y padding: la lista se cierra sola en vez de saltar.
+  `min-height: 0` es imprescindible: como item de un flex column el `auto`
+  implícito no baja del alto del contenido y `max-height: 0` nunca colapsa —
+  sólo se veía el fade, con el hueco quedándose hasta el desmontaje.
+*/
+.notif-row-out {
+  overflow: hidden;
+  min-height: 0;
+  flex: none;
+  animation: notif-row-out 0.28s cubic-bezier(0.5, 0, 0.75, 0) both;
+}
+/*
+  `--notif-h` lo setea el JS con el alto real de la fila antes de borrarla. El
+  fallback de 5rem servía de tope pero dejaba muerto el primer 60% de la
+  animación: interpolar 80px→50px no se ve en una fila de 50px.
+*/
+@keyframes notif-row-out {
+  0% {
+    opacity: 1;
+    max-height: var(--notif-h, 5rem);
+    transform: translateX(0);
+  }
+  35% {
+    opacity: 0.5;
+    transform: translateX(14%);
+  }
+  100% {
+    opacity: 0;
+    max-height: 0;
+    margin-top: -0.25rem;
+    transform: translateX(28%);
+  }
+}
+
+/* El acento rojo se va solo cuando la fila pasa a leída. */
+.notif-row {
+  transition:
+    border-color 0.55s ease,
+    background-color 0.55s ease,
+    background-image 0.55s ease;
+}
+.notif-row--fading {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  background-image: none !important;
+  background-color: rgba(20, 24, 32, 0.8) !important;
+}
+
+/* Punto de "sin leer": late mientras está pendiente y se apaga al leerse. */
+.notif-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-left: 1px;
+  border-radius: 9999px;
+  background: var(--color-pokeball-red);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-pokeball-red) 70%, transparent);
+}
+.notif-row--unread .notif-dot {
+  animation: notif-dot-pulse 1.8s ease-in-out infinite;
+}
+.notif-row--fading .notif-dot {
+  /* `animation: none` explícito: una animación en curso pisa la opacidad
+     declarada, y si la fila conserva `--unread` un frame el punto no se
+     apagaría. */
+  animation: none;
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+}
+@keyframes notif-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* CTA de los avisos accionables: respira para que se note que hay algo ahí. */
+.notif-cta {
+  animation: notif-cta-pulse 2.4s ease-in-out infinite;
+}
+@keyframes notif-cta-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 0 0 color-mix(in srgb, var(--color-pokeball-red) 40%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 0 4px color-mix(in srgb, var(--color-pokeball-red) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notif-row-in,
+  .notif-row-out,
+  .notif-cta,
+  .notif-row--unread .notif-dot {
+    animation: none;
+  }
+  .notif-row-out {
+    opacity: 0;
+  }
+}
+
 .notifications-panel__caret {
   overflow: visible;
 }

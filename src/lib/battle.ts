@@ -173,6 +173,12 @@ export function xpForVictory(wildLevel: number): number {
  */
 export const BENCH_XP_SHARE = 0.5;
 
+/**
+ * Fracción de EXP que cobra un Pokémon del equipo con Exp. Share equipado
+ * que **no** participó de la pelea. Por defecto igual a la banca participante.
+ */
+export const EXP_SHARE_HELD_FRACTION = 0.5;
+
 /** Une IDs de participantes de batalla sin duplicados (orden de primera aparición). */
 export function mergeBattleParticipantIds(
   ...idLists: (readonly (string | null | undefined)[] | string | null | undefined)[]

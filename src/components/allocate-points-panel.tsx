@@ -65,16 +65,35 @@ export function AllocatePointsPanel({
   unspentPoints,
   points,
   bases,
+  defaultOpen = false,
+  /** Sin toggle: panel siempre desplegado (overlay del menú ⋮). */
+  alwaysOpen = false,
+  onClose,
+  onAllocated,
 }: {
   instanceId: string;
   level: number;
   unspentPoints: number;
   points: CurrentPoints;
   bases: SpeciesBases;
+  defaultOpen?: boolean;
+  alwaysOpen?: boolean;
+  onClose?: () => void;
+  onAllocated?: (next: {
+    unspentPoints: number;
+    points: CurrentPoints;
+    maxHp: number;
+    currentHpDelta: number;
+    atk: number;
+    def: number;
+    spAtk: number;
+    spDef: number;
+    speed: number;
+  }) => void;
 }) {
   const t = useTranslations("team");
   const locale = useLocale();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(alwaysOpen || defaultOpen);
   const [pending, startTransition] = useTransition();
   const [draft, setDraft] = useState<CurrentPoints>(emptyDraft);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +106,7 @@ export function AllocatePointsPanel({
   );
   const remaining = unspentPoints - spent;
   const canAllocate = unspentPoints > 0;
+  const expanded = alwaysOpen || open;
 
   function clearHold() {
     if (holdTimer.current) {
@@ -161,45 +181,91 @@ export function AllocatePointsPanel({
         setError(t(`allocateErrors.${result.error}`));
         return;
       }
+      const nextPoints = {
+        ptStrength: points.ptStrength + draft.ptStrength,
+        ptDexterity: points.ptDexterity + draft.ptDexterity,
+        ptIntelligence: points.ptIntelligence + draft.ptIntelligence,
+        ptSpeed: points.ptSpeed + draft.ptSpeed,
+        ptConstitution: points.ptConstitution + draft.ptConstitution,
+      };
+      const oldMaxHp = calculateMaxHp(bases.baseHp, level, points.ptConstitution);
+      const newMaxHp = calculateMaxHp(bases.baseHp, level, nextPoints.ptConstitution);
+      onAllocated?.({
+        unspentPoints: unspentPoints - spent,
+        points: nextPoints,
+        maxHp: newMaxHp,
+        currentHpDelta: newMaxHp - oldMaxHp,
+        atk: calculateStat(bases.baseAttack, nextPoints.ptStrength, level),
+        def: calculateStat(bases.baseDefense, nextPoints.ptDexterity, level),
+        spAtk: calculateStat(bases.baseSpAtk, nextPoints.ptIntelligence, level),
+        spDef: calculateStat(bases.baseSpDef, nextPoints.ptIntelligence, level),
+        speed: calculateStat(bases.baseSpeed, nextPoints.ptSpeed, level),
+      });
       // Asignar puntos es un beat de progresión: merece festejo, no un
       // panel que se cierra mudo.
       showToast(t("allocateSuccess", { count: spent }), "success");
       resetDraft();
-      setOpen(false);
+      if (alwaysOpen) {
+        onClose?.();
+      } else {
+        setOpen(false);
+      }
     });
   }
 
   return (
-    <div className="mt-2 rounded-lg border border-tertiary/25 bg-tertiary/10">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left transition hover:bg-tertiary/10"
-      >
-        <span className="material-symbols-outlined text-[14px]! text-tertiary">bolt</span>
-        <span className="flex-1 text-[10px] font-medium text-tertiary">
-          {canAllocate
-            ? t("unspentPoints", { count: unspentPoints })
-            : t("allocateViewOnly")}
-        </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-tertiary">
-          {open ? t("allocateHide") : t("allocateShow")}
-        </span>
-      </button>
+    <div className="mt-2 rounded-lg border border-white/12 bg-white/[0.04]">
+      {alwaysOpen ? (
+        <div className="flex w-full items-center gap-1.5 px-2 py-1.5">
+          <span className="material-symbols-outlined text-[14px]! text-white/75">bolt</span>
+          <span className="flex-1 text-[10px] font-medium text-white/75">
+            {canAllocate
+              ? t("unspentPoints", { count: unspentPoints })
+              : t("allocateViewOnly")}
+          </span>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/75 transition hover:bg-white/10"
+            >
+              {t("allocateHide")}
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left transition hover:bg-white/[0.04]"
+        >
+          <span className="material-symbols-outlined text-[14px]! text-white/75">bolt</span>
+          <span className="flex-1 text-[10px] font-medium text-white/75">
+            {canAllocate
+              ? t("unspentPoints", { count: unspentPoints })
+              : t("allocateViewOnly")}
+          </span>
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-white/75">
+            {expanded ? t("allocateHide") : t("allocateShow")}
+          </span>
+        </button>
+      )}
 
-      {open && (
-        <div className="border-t border-tertiary/20 px-2 pb-2 pt-1.5">
+      {expanded && (
+        <div className="border-t border-white/10 px-1.5 pb-1.5 pt-1">
           {canAllocate ? (
-            <>
-              <p className="mb-1.5 text-[9px] text-on-surface-variant">{t("allocateHint")}</p>
-              <div className="mb-1.5 flex items-center justify-between text-[10px]">
-                <span className="text-on-surface-variant">{t("allocateRemaining")}</span>
-                <span className="font-mono font-semibold text-tertiary">{remaining}</span>
-              </div>
-            </>
+            <div className="mb-1 flex items-baseline justify-between gap-2 px-0.5">
+              <p className="min-w-0 truncate text-[9px] leading-tight text-on-surface-variant">
+                {t("allocateHint")}
+              </p>
+              <p className="shrink-0 text-[10px] tabular-nums">
+                <span className="text-on-surface-variant">{t("allocateRemaining")} </span>
+                <span className="font-mono font-semibold text-white">{remaining}</span>
+              </p>
+            </div>
           ) : null}
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             {STAT_META.map(({ key, labelKey, affectsKey }) => {
               const invested = points[key];
               const adding = draft[key];
@@ -212,47 +278,45 @@ export function AllocatePointsPanel({
                 MAX_POINTS_PER_STAT - invested - adding,
                 remaining,
               );
+              const combatLabel =
+                key === "ptIntelligence"
+                  ? `${t("allocateAffects.spAtk")} / ${t("allocateAffects.spDef")}`
+                  : t(`allocateAffects.${affectsKey}`);
 
               return (
                 <div
                   key={key}
-                  className="rounded-md border border-white/[0.06] bg-black/20 px-1.5 py-1.5"
+                  className="rounded-md border border-white/[0.06] bg-black/20 px-1.5 py-1"
                 >
-                  <div className="mb-1 flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
                     <div className="min-w-0 flex-1">
                       {/*
-                        La estadística de combate va primero: "Destreza" no le
-                        dice nada a alguien que viene de los juegos. El nombre
-                        RPG queda como etiqueta secundaria del sistema.
+                        Stats de combate primero; el atributo RPG va como
+                        meta en la misma línea para no sumar una fila.
                       */}
-                      <p className="truncate text-[11px] font-semibold text-white">
-                        {t(`allocateAffects.${affectsKey}`)}
-                        {key === "ptIntelligence"
-                          ? ` / ${t("allocateAffects.spDef")}`
-                          : ""}
-                        <span className="ml-1.5 font-mono text-[11px] font-bold text-tertiary">
+                      <p className="truncate text-[11px] font-semibold leading-tight text-white">
+                        {combatLabel}
+                        <span className="ml-1 font-mono text-[11px] font-bold text-white">
                           {projected}
                         </span>
-                      </p>
-                      <p className="truncate text-[9px] text-on-surface-variant">
-                        {t(`attrs.${labelKey}`)}
-                        {" · "}
-                        {invested}
-                        {adding > 0 ? (
-                          <span className="text-tertiary">+{adding}</span>
-                        ) : null}
-                        /{MAX_POINTS_PER_STAT}
+                        <span className="ml-1.5 text-[9px] font-normal text-on-surface-variant">
+                          {t(`attrs.${labelKey}`)} · {invested}
+                          {adding > 0 ? (
+                            <span className="text-white/80">+{adding}</span>
+                          ) : null}
+                          /{MAX_POINTS_PER_STAT}
+                        </span>
                       </p>
                     </div>
                     {!canAllocate ? (
-                      <span className="font-mono text-[11px] font-semibold text-white">
+                      <span className="shrink-0 font-mono text-[11px] font-semibold text-white">
                         {invested}
                       </span>
                     ) : null}
                   </div>
 
                   {canAllocate ? (
-                    <div className="flex flex-wrap items-center gap-1">
+                    <div className="mt-1 flex flex-nowrap items-center gap-0.5">
                       <button
                         type="button"
                         aria-label="-"
@@ -264,9 +328,9 @@ export function AllocatePointsPanel({
                         onPointerUp={clearHold}
                         onPointerLeave={clearHold}
                         onPointerCancel={clearHold}
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 text-on-surface transition hover:border-white/25 disabled:opacity-30"
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-white/10 text-on-surface transition hover:border-white/25 disabled:opacity-30"
                       >
-                        <span className="material-symbols-outlined text-[14px]!">remove</span>
+                        <span className="material-symbols-outlined text-[13px]!">remove</span>
                       </button>
                       <label className="sr-only" htmlFor={`alloc-${instanceId}-${key}`}>
                         {t("allocateAmount")}
@@ -280,7 +344,7 @@ export function AllocatePointsPanel({
                         value={adding}
                         disabled={pending}
                         onChange={(e) => setAbsolute(key, Number(e.target.value))}
-                        className="h-7 w-12 rounded-md border border-white/10 bg-black/40 px-1 text-center font-mono text-[12px] font-semibold text-white outline-none focus:border-tertiary/50"
+                        className="h-6 w-9 shrink-0 rounded border border-white/10 bg-black/40 px-0.5 text-center font-mono text-[11px] font-semibold text-white outline-none focus:border-white/30"
                       />
                       <button
                         type="button"
@@ -293,15 +357,15 @@ export function AllocatePointsPanel({
                         onPointerUp={clearHold}
                         onPointerLeave={clearHold}
                         onPointerCancel={clearHold}
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 text-on-surface transition hover:border-white/25 disabled:opacity-30"
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-white/10 text-on-surface transition hover:border-white/25 disabled:opacity-30"
                       >
-                        <span className="material-symbols-outlined text-[14px]!">add</span>
+                        <span className="material-symbols-outlined text-[13px]!">add</span>
                       </button>
                       <button
                         type="button"
                         disabled={roomLeft < 5 || pending}
                         onClick={() => bump(key, 5)}
-                        className="h-7 rounded-md border border-white/10 px-1.5 text-[9px] font-bold text-on-surface transition hover:border-white/25 disabled:opacity-30"
+                        className="h-6 shrink-0 rounded border border-white/10 px-1 text-[8px] font-bold text-on-surface transition hover:border-white/25 disabled:opacity-30"
                       >
                         {t("allocateAddFive")}
                       </button>
@@ -309,7 +373,7 @@ export function AllocatePointsPanel({
                         type="button"
                         disabled={roomLeft < 10 || pending}
                         onClick={() => bump(key, 10)}
-                        className="h-7 rounded-md border border-white/10 px-1.5 text-[9px] font-bold text-on-surface transition hover:border-white/25 disabled:opacity-30"
+                        className="h-6 shrink-0 rounded border border-white/10 px-1 text-[8px] font-bold text-on-surface transition hover:border-white/25 disabled:opacity-30"
                       >
                         {t("allocateAddTen")}
                       </button>
@@ -317,7 +381,7 @@ export function AllocatePointsPanel({
                         type="button"
                         disabled={roomLeft <= 0 || pending}
                         onClick={() => maxOut(key)}
-                        className="h-7 rounded-md border border-tertiary/30 px-1.5 text-[9px] font-bold text-tertiary transition hover:border-tertiary/60 disabled:opacity-30"
+                        className="ml-auto h-6 shrink-0 rounded border border-white/20 px-1.5 text-[8px] font-bold text-white/80 transition hover:border-white/40 disabled:opacity-30"
                       >
                         {t("allocateMax")}
                       </button>
@@ -330,9 +394,9 @@ export function AllocatePointsPanel({
 
           {canAllocate ? (
             <>
-              {error && <p className="mt-1.5 text-[10px] text-error">{error}</p>}
+              {error && <p className="mt-1 text-[10px] text-error">{error}</p>}
 
-              <div className="mt-2 flex gap-1.5">
+              <div className="mt-1.5 flex gap-1.5">
                 <button
                   type="button"
                   disabled={spent <= 0 || pending}
@@ -345,7 +409,7 @@ export function AllocatePointsPanel({
                   type="button"
                   disabled={spent <= 0 || pending}
                   onClick={confirm}
-                  className="flex-[1.4] rounded-md bg-tertiary px-2 py-1.5 text-[10px] font-bold text-surface transition hover:brightness-110 disabled:opacity-40"
+                  className="flex-[1.4] rounded-md border border-white/20 bg-white/15 px-2 py-1.5 text-[10px] font-bold text-white transition hover:bg-white/22 disabled:opacity-40"
                 >
                   {pending ? t("allocateSaving") : t("allocateConfirm", { count: spent })}
                 </button>

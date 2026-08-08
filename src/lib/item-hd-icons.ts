@@ -138,6 +138,7 @@ export const ITEM_HD_ICON_IDS: Record<string, string> = {
   "Sweet Heart": "sweet-heart",
   Poffin: "poffin",
   Leftovers: "leftovers",
+  "Exp. Share": "exp-share",
   "Choice Band": "choice-band",
   "Choice Scarf": "choice-scarf",
   "Choice Specs": "choice-specs",

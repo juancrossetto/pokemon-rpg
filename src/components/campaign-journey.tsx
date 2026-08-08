@@ -9,6 +9,7 @@ import {
   type CampaignDockMember,
   type CampaignPartyHeal,
 } from "@/components/campaign-party-dock";
+import type { HeldItemLabels, OwnedHeldItem } from "@/components/held-item-panel";
 import type { SquadContextLabels } from "@/components/squad-card-context-menu";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import { selectLocation, setFarmingStage } from "@/actions/campaign";
@@ -21,6 +22,7 @@ import {
 } from "@/lib/campaign/objectives";
 import { type Rarity } from "@/lib/campaign/rarity";
 import { itemDisplayUrl } from "@/lib/item-sprites";
+import { resolveItemDisplayName } from "@/lib/shop";
 import {
   MasteryIcon,
   ZoneIcon,
@@ -28,6 +30,7 @@ import {
 } from "@/components/zone-icons";
 import { gymBadgeImageUrl } from "@/lib/gym-art";
 import type { Chapter } from "@/lib/campaign/chapters";
+import { activeChapterIndex } from "@/lib/campaign/chapters";
 import type { MapEncounter, MapLocation } from "@/lib/campaign/map-selection";
 import type { CampaignLocationKind } from "@/lib/campaign/types";
 import {
@@ -190,6 +193,8 @@ export type GymRequirement = {
   /** Nivel máximo del equipo del líder — referencia para el jugador. */
   recommendedLevel: number;
   badgeName: string;
+  /** Orden del gimnasio en la región → `gyms.badges.{order}`. */
+  gymOrder: number;
   /** Tipo del gimnasio → `/gyms/badges/{type}.png`. */
   badgeType: string;
   gymId: string;
@@ -225,8 +230,10 @@ export function CampaignJourney({
   party?: {
     members: CampaignDockMember[];
     bagCounts: SquadBagCounts;
+    ownedHeldItems: OwnedHeldItem[];
     heal: CampaignPartyHeal;
     menuLabels: SquadContextLabels;
+    heldLabels: HeldItemLabels;
   } | null;
 }) {
   const t = useTranslations("campaign");
@@ -238,7 +245,10 @@ export function CampaignJourney({
   const [pending, startTransition] = useTransition();
   const [unlockToast, setUnlockToast] = useState<{ id: string; name: string } | null>(null);
 
+  // Dónde está el viaje de verdad (≠ el capítulo que estás hojeando).
+  const currentChapterIdx = activeChapterIndex(chapters, farmingLocationId);
   const chapter = chapters[chapterIndex] ?? chapters[0];
+  const viewingCurrentChapter = chapterIndex === currentChapterIdx;
   const selectedZone = zoneId ? (chapter?.zones.find((z) => z.id === zoneId) ?? null) : null;
   const zone =
     selectedZone ??
@@ -466,8 +476,10 @@ export function CampaignJourney({
                       locale,
                       members: party.members,
                       bagCounts: party.bagCounts,
+                      ownedHeldItems: party.ownedHeldItems,
                       heal: party.heal,
                       menuLabels: party.menuLabels,
+                      heldLabels: party.heldLabels,
                     }
                   : null
               }
@@ -485,12 +497,14 @@ export function CampaignJourney({
                     <JourneyStrip
                       chapters={chapters}
                       activeIndex={chapterIndex}
+                      currentIndex={currentChapterIdx}
                       onPick={(i) => {
                         openChapter(i);
                       }}
                       percent={summary.journeyPercent}
                       label={t("journeyProgress")}
                       chapterLabel={t("chapter")}
+                      currentLabel={t("nodeCurrent")}
                     />
                     <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
                     <HubHelpPanel
@@ -515,39 +529,17 @@ export function CampaignJourney({
           <div>
             <p className={`mb-2 ${SECTION_LABEL}`}>{t("chapter")}</p>
             <nav className="game-float-card rounded-2xl p-2" aria-label={t("chapter")}>
-              {chapters.map((c, i) => {
-                const active = i === chapterIndex;
-                return (
-                  <button
-                    key={c.number}
-                    type="button"
-                    onClick={() => openChapter(i)}
-                    disabled={!c.unlocked}
-                    className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-label-sm transition ${
-                      active
-                        ? "bg-[#1a1c24] text-white ring-1 ring-pokeball-red/55 shadow-[0_0_18px_color-mix(in_srgb,var(--color-pokeball-red)_22%,transparent)]"
-                        : c.unlocked
-                          ? "text-white/55 hover:bg-[#1a1c24] hover:text-white"
-                          : "text-white/30"
-                    }`}
-                  >
-                    <span
-                      className={`material-symbols-outlined text-[16px]! ${
-                        c.completed
-                          ? "text-electric-yellow"
-                          : active
-                            ? "text-pokeball-red"
-                            : ""
-                      }`}
-                    >
-                      {c.completed ? "check_circle" : c.unlocked ? "play_arrow" : "lock"}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate">
-                      {c.number}. {t(c.nameKey)}
-                    </span>
-                  </button>
-                );
-              })}
+              {chapters.map((c, i) => (
+                <ChapterNavRow
+                  key={c.number}
+                  chapter={c}
+                  title={t(c.nameKey)}
+                  selected={i === chapterIndex}
+                  isCurrent={i === currentChapterIdx}
+                  currentLabel={t("nodeCurrent")}
+                  onPick={() => openChapter(i)}
+                />
+              ))}
             </nav>
           </div>
           <p className={`px-1 ${SECTION_LABEL}`}>{t("secondaryChapter")}</p>
@@ -560,22 +552,28 @@ export function CampaignJourney({
             aria-label={t("chapter")}
           >
             {chapters.map((c, i) => {
-              const active = i === chapterIndex;
+              const selected = i === chapterIndex;
+              const isCurrent = i === currentChapterIdx;
               return (
                 <button
                   key={c.number}
                   type="button"
                   onClick={() => openChapter(i)}
                   disabled={!c.unlocked}
-                  title={`${t("chapter")} ${c.number}`}
-                  className={`min-h-8 shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold leading-tight transition sm:min-h-10 sm:px-3 sm:py-1.5 sm:text-label-sm ${
-                    active
-                      ? "game-float-card text-white ring-1 ring-pokeball-red/55"
-                      : c.unlocked
-                        ? "bg-[#1a1c24] text-white/55"
-                        : "bg-[#12141c] text-white/30"
+                  title={`${t("chapter")} ${c.number}${isCurrent ? ` · ${t("nodeCurrent")}` : ""}`}
+                  className={`relative min-h-8 shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold leading-tight transition sm:min-h-10 sm:px-3 sm:py-1.5 sm:text-label-sm ${
+                    isCurrent
+                      ? "bg-pokeball-red/18 text-white ring-1 ring-pokeball-red/65 shadow-[0_0_14px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent)]"
+                      : selected
+                        ? "game-float-card text-white ring-1 ring-white/25"
+                        : c.unlocked
+                          ? "bg-[#1a1c24] text-white/55"
+                          : "bg-[#12141c] text-white/30"
                   }`}
                 >
+                  {isCurrent ? (
+                    <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-pokeball-red align-middle shadow-[0_0_6px_var(--color-pokeball-red)]" />
+                  ) : null}
                   {t(c.nameKey)}
                 </button>
               );
@@ -584,7 +582,18 @@ export function CampaignJourney({
 
           {chapter && (
             <>
-              <p className={`mb-2 ${SECTION_LABEL}`}>{t("chapterPath")}</p>
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <p className={`mb-0 ${SECTION_LABEL}`}>{t("chapterPath")}</p>
+                {viewingCurrentChapter ? (
+                  <span className="rounded-md bg-pokeball-red/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white">
+                    {t("nodeCurrent")}
+                  </span>
+                ) : chapter.completed ? (
+                  <span className="rounded-md bg-electric-yellow/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-electric-yellow">
+                    {t("chapterDone")}
+                  </span>
+                ) : null}
+              </div>
               <ol className="relative flex flex-col gap-2.5 sm:gap-3.5">
                 {chapter.zones.map((z, i) => {
                   const nodeStatus = resolveZoneNodeStatus({
@@ -647,20 +656,94 @@ export function CampaignJourney({
 
 /* ────────────────────────────────────────────────────────────────────── */
 
+/* ────────────────────────────────────────────────────────────────────── */
+
+function ChapterNavRow({
+  chapter,
+  title,
+  selected,
+  isCurrent,
+  currentLabel,
+  onPick,
+}: {
+  chapter: Chapter;
+  title: string;
+  selected: boolean;
+  isCurrent: boolean;
+  currentLabel: string;
+  onPick: () => void;
+}) {
+  const icon = !chapter.unlocked
+    ? "lock"
+    : isCurrent
+      ? "my_location"
+      : chapter.completed
+        ? "check_circle"
+        : "play_arrow";
+
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      disabled={!chapter.unlocked}
+      aria-current={isCurrent ? "step" : selected ? "true" : undefined}
+      className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-label-sm transition ${
+        isCurrent
+          ? "bg-pokeball-red/16 text-white ring-1 ring-pokeball-red/70 shadow-[0_0_18px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent)]"
+          : selected
+            ? "bg-[#1a1c24] text-white ring-1 ring-white/22"
+            : chapter.unlocked
+              ? "text-white/55 hover:bg-[#1a1c24] hover:text-white"
+              : "text-white/30"
+      }`}
+    >
+      <span
+        className={`material-symbols-outlined text-[16px]! ${
+          isCurrent
+            ? "text-pokeball-red"
+            : chapter.completed
+              ? "text-electric-yellow"
+              : selected
+                ? "text-white/70"
+                : ""
+        }`}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1 truncate">
+        {chapter.number}. {title}
+      </span>
+      {isCurrent ? (
+        <span className="shrink-0 rounded-md bg-pokeball-red px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">
+          {currentLabel}
+        </span>
+      ) : chapter.unlocked && !chapter.completed ? (
+        <span className="shrink-0 font-mono text-[10px] tabular-nums text-white/40">
+          {chapter.percent}%
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
 function JourneyStrip({
   chapters,
   activeIndex,
+  currentIndex,
   onPick,
   percent,
   label,
   chapterLabel,
+  currentLabel,
 }: {
   chapters: Chapter[];
   activeIndex: number;
+  currentIndex: number;
   onPick: (i: number) => void;
   percent: number;
   label: string;
   chapterLabel: string;
+  currentLabel: string;
 }) {
   return (
     <section className="game-float-card rounded-2xl p-3">
@@ -673,7 +756,8 @@ function JourneyStrip({
         style={{ gridTemplateColumns: `repeat(${chapters.length}, minmax(0, 1fr))` }}
       >
         {chapters.map((c, i) => {
-          const active = i === activeIndex;
+          const selected = i === activeIndex;
+          const isCurrent = i === currentIndex;
           const badgeType = c.gymOrder != null ? BADGE_TYPE_BY_ORDER[c.gymOrder] : null;
           return (
             <button
@@ -681,25 +765,33 @@ function JourneyStrip({
               type="button"
               onClick={() => onPick(i)}
               disabled={!c.unlocked}
-              title={`${chapterLabel} ${c.number}`}
+              title={`${chapterLabel} ${c.number}${isCurrent ? ` · ${currentLabel}` : ""}`}
+              aria-current={isCurrent ? "step" : undefined}
               className={`relative flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl px-0.5 py-1.5 transition sm:min-h-[3.75rem] sm:gap-1.5 sm:px-1 sm:py-2 ${
-                active
-                  ? "bg-pokeball-red/14"
-                  : c.unlocked
-                    ? "bg-[#161822] hover:bg-[#1a1c24]"
-                    : "bg-[#12141c] opacity-45"
+                isCurrent
+                  ? "bg-pokeball-red/16 ring-1 ring-pokeball-red/55"
+                  : selected
+                    ? "bg-[#1a1c24] ring-1 ring-white/20"
+                    : c.unlocked
+                      ? "bg-[#161822] hover:bg-[#1a1c24]"
+                      : "bg-[#12141c] opacity-45"
               }`}
             >
+              {isCurrent ? (
+                <span className="absolute inset-x-1 top-1 rounded-sm bg-pokeball-red px-0.5 text-center text-[7px] font-bold uppercase leading-3 tracking-wide text-white sm:text-[8px]">
+                  {currentLabel}
+                </span>
+              ) : null}
               <span
                 className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full sm:h-8 sm:w-8 ${
-                  active
+                  isCurrent
                     ? "bg-[color-mix(in_srgb,var(--color-pokeball-red)_14%,#0a0610)] shadow-[0_0_0_2px_var(--color-pokeball-red)]"
                     : c.completed
                       ? "bg-[#1a1c24] shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-electric-yellow)_45%,transparent)]"
                       : c.unlocked
                         ? "bg-[#12141c] shadow-[0_0_0_1px_rgba(255,255,255,0.12)]"
                         : "bg-[#0c0e14] shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-                }`}
+                } ${isCurrent ? "mt-2.5 sm:mt-3" : ""}`}
               >
                 {!c.unlocked ? (
                   <span className="material-symbols-outlined text-[14px]! text-white/40 sm:text-[16px]!">
@@ -713,14 +805,14 @@ function JourneyStrip({
                     height={28}
                     unoptimized
                     className={`h-5 w-5 object-contain sm:h-6 sm:w-6 ${
-                      c.completed || active ? "" : "opacity-55 grayscale"
+                      c.completed || isCurrent ? "" : "opacity-55 grayscale"
                     }`}
                     aria-hidden
                   />
                 ) : (
                   <span
                     className={`material-symbols-outlined text-[16px]! sm:text-[18px]! ${
-                      c.completed || active ? "text-electric-yellow" : "text-white/50"
+                      c.completed || isCurrent ? "text-electric-yellow" : "text-white/50"
                     }`}
                   >
                     {c.completed ? "military_tech" : "flag"}
@@ -1222,6 +1314,7 @@ function ZonePanel({
 }) {
   const t = useTranslations("campaign");
   const tUx = useTranslations("ux");
+  const tGyms = useTranslations("gyms");
   const kind = kindOf(zone);
   const style = KIND_STYLE[kind];
   const isGym = kind === "gym";
@@ -1386,7 +1479,7 @@ function ZonePanel({
                       {t("nodeWon")}
                     </p>
                     <p className="truncate text-label-sm text-white">
-                      {gymRequirement.badgeName || t("objBadge")}
+                      {localizedBadgeName(gymRequirement, tGyms) || t("objBadge")}
                     </p>
                   </div>
                   <span className="material-symbols-outlined text-[20px]! text-electric-yellow">
@@ -1409,7 +1502,7 @@ function ZonePanel({
                       {t("objRoleRequirement")}
                     </p>
                     <p className="truncate text-label-sm text-white">
-                      {gymRequirement.badgeName || t("objBadge")}
+                      {localizedBadgeName(gymRequirement, tGyms) || t("objBadge")}
                     </p>
                   </div>
                   <span className="shrink-0 rounded-md bg-[#12141c] px-2 py-1 font-mono text-[11px] text-electric-yellow">
@@ -1797,20 +1890,39 @@ function Objective({
 
 const OBJECTIVE_COIN_HD = "/items/hd/poke-coin.png";
 
+function localizedBadgeName(
+  gym: Pick<GymRequirement, "gymOrder" | "badgeName">,
+  tGyms: ReturnType<typeof useTranslations<"gyms">>,
+): string {
+  const key = `badges.${gym.gymOrder}`;
+  if (tGyms.has(key)) return tGyms(key);
+  return gym.badgeName;
+}
+
 function ObjectiveRewardBits({
   state,
 }: {
   state: ZoneObjectiveState;
 }) {
+  const tShop = useTranslations("shop");
+  const itemLabel = resolveItemDisplayName(state.reward.itemName, (key) => {
+    const path = `names.${key}`;
+    return tShop.has(path) ? tShop(path) : null;
+  });
+  const itemTitle = `${state.reward.quantity}× ${itemLabel}`;
+  const coinsTitle = `${state.reward.coins} ${tShop("coinsUnit")}`;
+
   return (
     <div
-      title={`${state.reward.quantity}× ${state.reward.itemName}`}
       className={`flex items-center gap-2.5 ${state.claimed ? "opacity-45" : ""}`}
     >
-      <span className="inline-flex items-center gap-1">
+      <span
+        title={itemTitle}
+        className="inline-flex items-center gap-1"
+      >
         <Image
           src={itemDisplayUrl(state.reward.itemName, "hd")}
-          alt=""
+          alt={itemTitle}
           width={28}
           height={28}
           className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
@@ -1820,10 +1932,13 @@ function ObjectiveRewardBits({
           ×{state.reward.quantity}
         </span>
       </span>
-      <span className="inline-flex items-center gap-1 font-mono text-[13px] font-semibold tabular-nums text-white">
+      <span
+        title={coinsTitle}
+        className="inline-flex items-center gap-1 font-mono text-[13px] font-semibold tabular-nums text-white"
+      >
         <Image
           src={OBJECTIVE_COIN_HD}
-          alt=""
+          alt={coinsTitle}
           width={28}
           height={28}
           className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"

@@ -287,11 +287,13 @@ export function resolveDescription(
   return t.byName(item.name) ?? item.effectText;
 }
 
-/** Clave i18n de un ítem: "Max Ether" → "maxEther". */
+/** Clave i18n de un ítem: "Max Ether" → "maxEther", "Never-Melt Ice" → "neverMeltIce". */
 export function itemKey(name: string): string {
   const parts = name
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")
+    // Apostrofes se comen (King's → kings); guiones/puntos separan (Never-Melt, Exp.).
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
     .split(/\s+/)
     .filter(Boolean);
   return parts

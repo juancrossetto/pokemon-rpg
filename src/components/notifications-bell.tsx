@@ -7,11 +7,13 @@ import {
   useState,
   useTransition,
   type AnimationEvent,
+  type CSSProperties,
 } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import {
+  deleteAllNotificationsAction,
   deleteNotificationAction,
   markAllNotificationsReadAction,
   markNotificationReadAction,
@@ -25,6 +27,13 @@ import type { NotificationDTO, NotificationImageKind } from "@/lib/notifications
 const ACTION_BTN =
   "grid h-6 w-6 place-items-center rounded-md bg-gradient-to-br from-pokeball-red to-[color-mix(in_srgb,var(--color-pokeball-red)_55%,white)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] transition hover:brightness-110 active:brightness-95";
 
+/** Beat antes de marcar leído: alcanza para ver el acento y el contador bajar. */
+const AUTO_READ_DELAY_MS = 900;
+/** Debe coincidir con `notif-row-out` en globals.css. */
+const ROW_REMOVE_MS = 280;
+/** Cascada al vaciar: se lee como una acción, no como un corte. */
+const DELETE_ALL_STAGGER_MS = 45;
+
 type PanelPhase = "closed" | "open" | "closing";
 type Section = "unread" | "read";
 
@@ -34,6 +43,21 @@ function prefersReducedMotion() {
     window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }
+
+/*
+  Abrir sólo aporta en avisos donde hay algo que reclamar o resolver. En el
+  resto ("ganaste el gimnasio", "energía al máximo") el aviso ES la
+  información: el botón de abrir era ruido y encima competía con el click en
+  la fila, que ya navega.
+*/
+const ACTIONABLE_TYPES = new Set<NotificationDTO["type"]>([
+  "DAILY_REWARD_READY",
+  "GYM_TM_REWARD",
+  "MARKET_SOLD",
+  "FRIEND_REQUEST",
+  "CLAN_INVITE",
+  "CLAN_APPLICATION",
+]);
 
 const PERSON_TYPES = new Set<NotificationDTO["type"]>([
   "PVP_WON",
@@ -266,11 +290,24 @@ export function NotificationsBell({
   const [, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  /*
+    Abrir el panel marca leído lo que hay a la vista, como cualquier app de
+    mensajería. Pero si las sacáramos de "Sin leer" en el acto, la lista se
+    vaciaría delante del usuario justo cuando la abre — así que las recién
+    leídas se quedan en su lugar (perdiendo sólo el acento) hasta que el panel
+    se cierra.
+  */
+  const [justRead, setJustRead] = useState<Set<string>>(() => new Set());
+  /** Filas colapsando antes de desaparecer del array. */
+  const [removing, setRemoving] = useState<Set<string>>(() => new Set());
+  const autoReadTimer = useRef<number | null>(null);
 
   const open = phase === "open";
   const panelVisible = phase !== "closed";
-  const unreadItems = items.filter((i) => !i.readAt);
-  const readItems = items.filter((i) => !!i.readAt);
+  const unreadItems = items.filter((i) => !i.readAt || justRead.has(i.id));
+  const readItems = items.filter((i) => !!i.readAt && !justRead.has(i.id));
   const visibleItems = section === "unread" ? unreadItems : readItems;
   const hasUnreadSale = unreadItems.some((i) => i.type === "MARKET_SOLD");
 
@@ -282,6 +319,11 @@ export function NotificationsBell({
   }
 
   function requestClose() {
+    if (autoReadTimer.current) {
+      window.clearTimeout(autoReadTimer.current);
+      autoReadTimer.current = null;
+    }
+    setJustRead(new Set());
     setPhase((current) => {
       if (current !== "open") return current;
       return prefersReducedMotion() ? "closed" : "closing";
@@ -313,6 +355,26 @@ export function NotificationsBell({
     setSection("unread");
     setPhase("open");
     if (hasUnreadSale) router.refresh();
+    autoMarkVisibleRead();
+  }
+
+  /** Marca leído todo lo pendiente, con un beat para que se vea el contador bajar. */
+  function autoMarkVisibleRead() {
+    const pending = items.filter((i) => !i.readAt);
+    if (pending.length === 0) return;
+    if (autoReadTimer.current) window.clearTimeout(autoReadTimer.current);
+    autoReadTimer.current = window.setTimeout(() => {
+      setJustRead(new Set(pending.map((i) => i.id)));
+      setUnread(0);
+      setItems((prev) =>
+        prev.map((row) =>
+          row.readAt ? row : { ...row, readAt: new Date().toISOString() },
+        ),
+      );
+      startTransition(async () => {
+        await markAllNotificationsReadAction();
+      });
+    }, AUTO_READ_DELAY_MS);
   }
 
   function onPanelAnimationEnd(event: AnimationEvent<HTMLDivElement>) {
@@ -352,11 +414,54 @@ export function NotificationsBell({
     });
   }
 
+  /** Fija el alto real en `--notif-h` para que el colapso arranque en el frame 1. */
+  function lockRowHeight(id: string) {
+    const li = listRef.current?.querySelector<HTMLLIElement>(
+      `li[data-notif-id="${CSS.escape(id)}"]`,
+    );
+    if (li) li.style.setProperty("--notif-h", `${li.offsetHeight}px`);
+  }
+
   function deleteOne(item: NotificationDTO) {
+    // La fila colapsa primero y se saca del array después: quitarla en el acto
+    // hacía saltar la lista de golpe.
+    lockRowHeight(item.id);
+    setRemoving((prev) => new Set(prev).add(item.id));
+    if (!item.readAt) setUnread((n) => Math.max(0, n - 1));
+    window.setTimeout(() => {
+      setItems((prev) => prev.filter((row) => row.id !== item.id));
+      setRemoving((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+    }, ROW_REMOVE_MS);
     startTransition(async () => {
       await deleteNotificationAction(item.id);
-      if (!item.readAt) setUnread((n) => Math.max(0, n - 1));
-      setItems((prev) => prev.filter((row) => row.id !== item.id));
+    });
+  }
+
+  /** Vacía la bandeja con una cascada: cada fila colapsa 45 ms después de la anterior. */
+  function deleteAll() {
+    if (items.length === 0) return;
+    const ids = items.map((i) => i.id);
+    ids.forEach((id, index) => {
+      window.setTimeout(() => {
+        lockRowHeight(id);
+        setRemoving((prev) => new Set(prev).add(id));
+      }, index * DELETE_ALL_STAGGER_MS);
+    });
+    window.setTimeout(
+      () => {
+        setItems([]);
+        setRemoving(new Set());
+        setJustRead(new Set());
+        setUnread(0);
+      },
+      (ids.length - 1) * DELETE_ALL_STAGGER_MS + ROW_REMOVE_MS,
+    );
+    startTransition(async () => {
+      await deleteAllNotificationsAction();
     });
   }
 
@@ -441,6 +546,15 @@ export function NotificationsBell({
                     {t("markAllRead")}
                   </button>
                 )}
+                {items.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={deleteAll}
+                    className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-white/45 transition hover:bg-white/8 hover:text-white"
+                  >
+                    {t("deleteAllAction")}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={requestClose}
@@ -492,7 +606,10 @@ export function NotificationsBell({
               })}
             </div>
 
-            <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-1.5 xl:max-h-[min(62vh,420px)]">
+            <ul
+              ref={listRef}
+              className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-1.5 xl:max-h-[min(62vh,420px)]"
+            >
               {items.length === 0 ? (
                 <li className="rounded-lg border border-dashed border-white/10 px-3 py-8 text-center text-[12px] text-white/40">
                   {t("empty")}
@@ -502,8 +619,12 @@ export function NotificationsBell({
                   {section === "unread" ? t("emptyUnread") : t("emptyRead")}
                 </li>
               ) : (
-                visibleItems.map((item) => {
+                visibleItems.map((item, index) => {
                   const unreadItem = !item.readAt;
+                  const isRemoving = removing.has(item.id);
+                  // Recién leída: mantiene el lugar pero pierde el acento con
+                  // una transición, en vez de saltar a la otra pestaña.
+                  const wasJustRead = justRead.has(item.id);
                   const coins =
                     item.type === "MARKET_SOLD" &&
                     typeof item.payload.coins === "number"
@@ -513,15 +634,30 @@ export function NotificationsBell({
                   const detail = detailFor(item, t);
 
                   return (
-                    <li key={item.id}>
+                    <li
+                      key={item.id}
+                      data-notif-id={item.id}
+                      className={isRemoving ? "notif-row-out" : "notif-row-in"}
+                      style={
+                        isRemoving
+                          ? undefined
+                          : ({ "--notif-i": index } as CSSProperties)
+                      }
+                    >
                       <div
                         className={[
-                          "flex items-center gap-2 overflow-hidden rounded-lg border px-2 py-1.5 transition",
+                          "notif-row flex items-center gap-2 overflow-hidden rounded-lg border px-2 py-1.5",
                           unreadItem
-                            ? "border-pokeball-red/28 bg-gradient-to-r from-pokeball-red/12 via-pokeball-red/5 to-[#141820]"
+                            ? "notif-row--unread border-pokeball-red/28 bg-gradient-to-r from-pokeball-red/12 via-pokeball-red/5 to-[#141820]"
                             : "border-white/6 bg-[#141820]/80 hover:border-white/12",
+                          wasJustRead ? "notif-row--fading" : "",
                         ].join(" ")}
                       >
+                        {/* Se renderiza también en `wasJustRead` para poder
+                            apagarse con transición en vez de desmontarse. */}
+                        {(unreadItem || wasJustRead) && (
+                          <span className="notif-dot" aria-hidden />
+                        )}
                         {item.href ? (
                           <Link
                             href={item.href}
@@ -587,30 +723,22 @@ export function NotificationsBell({
                         )}
 
                         <div className="flex shrink-0 items-center gap-0.5 self-center">
-                          {item.href ? (
+                          {/* Sólo donde abrir hace algo: reclamar, responder,
+                              cobrar. El resto se lee en la fila y listo — y el
+                              botón de "marcar leída" ya no hace falta porque
+                              abrir el panel las marca solas. */}
+                          {item.href && ACTIONABLE_TYPES.has(item.type) ? (
                             <Link
                               href={item.href}
                               onClick={() => onNavigate(item)}
                               aria-label={t("openAction")}
                               title={t("openAction")}
-                              className={ACTION_BTN}
+                              className={`${ACTION_BTN} notif-cta`}
                             >
                               <span className="material-symbols-outlined text-[14px]!">
-                                {unreadItem ? "drafts" : "open_in_new"}
+                                open_in_new
                               </span>
                             </Link>
-                          ) : unreadItem ? (
-                            <button
-                              type="button"
-                              onClick={() => markOneRead(item)}
-                              aria-label={t("markRead")}
-                              title={t("markRead")}
-                              className={ACTION_BTN}
-                            >
-                              <span className="material-symbols-outlined text-[14px]!">
-                                drafts
-                              </span>
-                            </button>
                           ) : null}
                           <button
                             type="button"

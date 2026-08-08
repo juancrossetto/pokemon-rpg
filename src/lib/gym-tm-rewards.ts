@@ -12,3 +12,11 @@ export const GYM_TM_REWARD_BY_TYPE: Record<string, string> = {
   fire: "fire-blast",
   ground: "earthquake",
 };
+
+/**
+ * Objeto held extra al ganar la medalla (primera vez). Brock (roca) regala
+ * Exp. Share para que el equipo crezca temprano sin forzar un solo carry.
+ */
+export const GYM_HELD_ITEM_REWARD_BY_TYPE: Record<string, string> = {
+  rock: "Exp. Share",
+};

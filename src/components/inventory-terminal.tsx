@@ -28,15 +28,18 @@ import {
   filterEntries,
   totalUnits,
   type CategoryFilter,
+  type EquipTarget,
   type EvolveTarget,
   type InventoryEntry,
   type TmLearner,
 } from "@/lib/inventory";
 import { useEvolutionStone as applyEvolutionStone } from "@/actions/use-evolution-stone";
+import { equipHeldItem } from "@/actions/equip-held-item";
 import { EvolvePopup } from "@/components/evolve-popup";
 import { showToast } from "@/lib/app-toast";
 import { playUiSfx } from "@/lib/battle-sfx";
 import { ItemEvolutionRecipes } from "@/components/item-evolution-recipes";
+import { uiSpriteUrl } from "@/lib/sprites";
 
 export type InventoryLabels = {
   categories: Record<string, string>;
@@ -69,6 +72,13 @@ export type InventoryLabels = {
   teach: string;
   use: string;
   useOnTeam: string;
+  equip: string;
+  equipPickerTitle: string;
+  equipPickerHint: string;
+  equipAlready: string;
+  equipping: string;
+  equipFailed: string;
+  equipEmptyTeam: string;
   evolvePickerTitle: string;
   evolvePickerHint: string;
   evolveReady: string;
@@ -448,8 +458,11 @@ function DetailPanel({
   const style = RARITY_STYLES[rarity];
   const isRareCandy = entry.name === "Rare Candy";
   const canUseEvolve = entry.evolveTargets.length > 0;
+  const canEquipHeld =
+    entry.type === "HELD" && entry.equipTargets.length > 0;
   const hasEvolveReady = entry.evolveTargets.some((t) => t.canEvolve);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [equipOpen, setEquipOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [reveal, setReveal] = useState<{
     fromName: string;
@@ -494,6 +507,20 @@ function DetailPanel({
     });
   }
 
+  function onPickEquip(target: EquipTarget) {
+    if (target.alreadyEquipped || pending) return;
+    startTransition(async () => {
+      const result = await equipHeldItem(target.instanceId, entry.itemId, locale);
+      if (!result.ok) {
+        showToast(labels.equipFailed, "error");
+        return;
+      }
+      setEquipOpen(false);
+      showToast(labels.equip, "success");
+      router.refresh();
+    });
+  }
+
   return (
     <aside
       className={`flex flex-col gap-3 rounded-xl border bg-black/40 p-4 backdrop-blur-md ${style.border}`}
@@ -525,6 +552,18 @@ function DetailPanel({
             if (!pending) setPickerOpen(false);
           }}
           onPick={onPickEvolve}
+        />
+      )}
+
+      {equipOpen && (
+        <EquipPickerModal
+          entry={entry}
+          labels={labels}
+          pending={pending}
+          onClose={() => {
+            if (!pending) setEquipOpen(false);
+          }}
+          onPick={onPickEquip}
         />
       )}
 
@@ -677,30 +716,36 @@ function DetailPanel({
             <button
               type="button"
               onClick={() => setPickerOpen(true)}
-              className="ui-btn-primary flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-label-sm"
+              className="ui-btn-primary rounded-lg px-3 py-2 text-center text-label-sm"
             >
-              <span className="material-symbols-outlined text-[16px]!">auto_fix_high</span>
               {labels.use}
             </button>
           ) : (
             <span
               aria-disabled
               title={labels.evolveNoTarget}
-              className="flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-white/8 px-3 py-2 text-label-sm text-on-surface-variant/40"
+              className="flex cursor-not-allowed items-center justify-center rounded-lg border border-white/8 px-3 py-2 text-label-sm text-on-surface-variant/40"
             >
-              <span className="material-symbols-outlined text-[16px]!">auto_fix_high</span>
               {labels.use}
             </span>
           ))}
+        {canEquipHeld ? (
+          <button
+            type="button"
+            onClick={() => setEquipOpen(true)}
+            className="ui-btn-primary rounded-lg px-3 py-2 text-center text-label-sm"
+          >
+            {labels.equip}
+          </button>
+        ) : null}
         <a
           href={sellHref}
-          className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-label-sm ${
-            canUseEvolve
-              ? "border border-white/12 text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface"
+          className={`rounded-lg px-3 py-2 text-center text-label-sm ${
+            canUseEvolve || canEquipHeld
+              ? "border border-white/12 text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
               : "ui-btn-primary"
           }`}
         >
-          <span className="material-symbols-outlined text-[16px]!">sell</span>
           {labels.sell}
         </a>
         {/*
@@ -715,27 +760,24 @@ function DetailPanel({
           (firstTeachable ? (
             <a
               href={`${teamHref}?teach=${encodeURIComponent(entry.itemId)}&member=${encodeURIComponent(firstTeachable.instanceId)}`}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-white/12 px-3 py-2 text-label-sm text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface"
+              className="rounded-lg border border-white/12 px-3 py-2 text-center text-label-sm text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
             >
-              <span className="material-symbols-outlined text-[16px]!">school</span>
               {labels.teach}
             </a>
           ) : (
             <span
               aria-disabled
               title={labels.noCompatible}
-              className="flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-white/8 px-3 py-2 text-label-sm text-on-surface-variant/40"
+              className="flex cursor-not-allowed items-center justify-center rounded-lg border border-white/8 px-3 py-2 text-label-sm text-on-surface-variant/40"
             >
-              <span className="material-symbols-outlined text-[16px]!">school</span>
               {labels.teach}
             </span>
           ))}
         {isRareCandy && (
           <a
             href={teamHref}
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-white/12 px-3 py-2 text-label-sm text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface"
+            className="rounded-lg border border-white/12 px-3 py-2 text-center text-label-sm text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
           >
-            <span className="material-symbols-outlined text-[16px]!">nutrition</span>
             {labels.useOnTeam}
           </a>
         )}
@@ -747,6 +789,148 @@ function DetailPanel({
 function fill(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (_, key: string) =>
     vars[key] != null ? String(vars[key]) : `{${key}}`,
+  );
+}
+
+function EquipPickerModal({
+  entry,
+  labels,
+  pending,
+  onClose,
+  onPick,
+}: {
+  entry: InventoryEntry;
+  labels: InventoryLabels;
+  pending: boolean;
+  onClose: () => void;
+  onPick: (target: EquipTarget) => void;
+}) {
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape" && !pending) onClose();
+    }
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [onClose, pending]);
+
+  if (!mounted) return null;
+
+  const title = fill(labels.equipPickerTitle, { name: entry.displayName });
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[120] flex items-end justify-center bg-black/65 p-3 sm:items-center sm:p-6"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !pending) onClose();
+      }}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="flex max-h-[min(85vh,32rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#12141c] shadow-2xl"
+      >
+        <div className="flex items-start gap-3 border-b border-white/10 px-4 py-3">
+          <Image
+            src={itemDisplayUrl(entry.name)}
+            alt=""
+            width={40}
+            height={40}
+            unoptimized
+            className="h-10 w-10 shrink-0 object-contain"
+          />
+          <div className="min-w-0 flex-1">
+            <h2
+              id={titleId}
+              className="text-[15px] font-bold leading-snug text-white"
+            >
+              {title}
+            </h2>
+            <p className="mt-0.5 text-[11px] leading-snug text-on-surface-variant">
+              {labels.equipPickerHint}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={pending}
+            aria-label={labels.close}
+            className="shrink-0 rounded-md p-1 text-on-surface-variant transition hover:text-white disabled:opacity-40"
+          >
+            <span className="material-symbols-outlined text-[18px]!">close</span>
+          </button>
+        </div>
+
+        <ul className="flex-1 overflow-y-auto overscroll-contain px-2 py-2">
+          {entry.equipTargets.length === 0 ? (
+            <li className="px-3 py-6 text-center text-[12px] text-on-surface-variant">
+              {labels.equipEmptyTeam}
+            </li>
+          ) : (
+            entry.equipTargets.map((target) => {
+              const disabled = target.alreadyEquipped || pending;
+              return (
+                <li key={target.instanceId}>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => onPick(target)}
+                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    <Image
+                      src={uiSpriteUrl(target.spriteUrl)}
+                      alt=""
+                      width={48}
+                      height={48}
+                      unoptimized
+                      className="h-12 w-12 shrink-0 object-contain"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-white">
+                        {target.name}
+                      </p>
+                      <p className="text-[11px] text-on-surface-variant">
+                        {target.alreadyEquipped
+                          ? labels.equipAlready
+                          : pending
+                            ? labels.equipping
+                            : `Nv. ${target.level}`}
+                      </p>
+                    </div>
+                    {!target.alreadyEquipped ? (
+                      <span className="material-symbols-outlined text-[18px]! text-white/40">
+                        chevron_right
+                      </span>
+                    ) : (
+                      <span className="material-symbols-outlined text-[18px]! text-emerald-400/80">
+                        check_circle
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })
+          )}
+        </ul>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

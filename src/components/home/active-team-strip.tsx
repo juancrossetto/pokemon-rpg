@@ -13,15 +13,18 @@ import {
 } from "@/components/squad-card-context-menu";
 import { SquadCardSheet, type SquadCardSheetLabels } from "@/components/squad-card-sheet";
 import { PokemonShowcaseCard } from "@/components/pokemon-showcase-card";
+import { AllocatePointsPanel } from "@/components/allocate-points-panel";
 import { PokeSparks } from "@/components/poke-sparks";
 import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
 import type { HomeSquadMember } from "@/components/home/squad-types";
+import type { HeldItemInfo, HeldItemLabels, OwnedHeldItem } from "@/components/held-item-panel";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import { anyEvolveReady } from "@/lib/evolution-readiness";
 import { CoachMark } from "@/components/journey-guidance";
 import { useTypeLabel } from "@/hooks/use-type-label";
 import type { HomeSquadFilter } from "@/components/home/home-desktop-rail";
 import { HOME_TEAM_HEALED_EVENT } from "@/lib/home-heal-fx";
+import { itemHdIconUrl, itemSpriteUrl } from "@/lib/item-sprites";
 
 const TEAM_SIZE = 6;
 /** Mobile 3×2 con HP · md+ fila de 6. */
@@ -40,6 +43,7 @@ function TeamSlot({
   onLeveledUp,
   onPpRestored,
   onFlagsChange,
+  onPointsAllocated,
   onDepositToPc,
   canDepositToPc,
   isDepositing,
@@ -49,6 +53,9 @@ function TeamSlot({
   onDragStart,
   onDragEnd,
   showEmptyCoach,
+  ownedHeldItems,
+  heldLabels,
+  onHeldChange,
 }: {
   member: HomeSquadMember | null;
   index: number;
@@ -70,6 +77,20 @@ function TeamSlot({
     id: string,
     next: { isFavorite?: boolean; isTradeLocked?: boolean },
   ) => void;
+  onPointsAllocated: (
+    id: string,
+    next: {
+      unspentPoints: number;
+      points: HomeSquadMember["points"];
+      maxHp: number;
+      currentHpDelta: number;
+      atk: number;
+      def: number;
+      spAtk: number;
+      spDef: number;
+      speed: number;
+    },
+  ) => void;
   onDepositToPc: (id: string) => void;
   canDepositToPc: boolean;
   isDepositing: boolean;
@@ -80,10 +101,14 @@ function TeamSlot({
   onDragEnd: () => void;
   /** Un solo coach mark en el primer slot vacío, no uno por cada hueco. */
   showEmptyCoach?: boolean;
+  ownedHeldItems: OwnedHeldItem[];
+  heldLabels: HeldItemLabels;
+  onHeldChange: (id: string, next: HeldItemInfo | null) => void;
 }) {
   const tTeam = useTranslations("team");
   const typeLabel = useTypeLabel();
   const tUx = useTranslations("ux");
+  const tRail = useTranslations("home.rail");
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const skipClickRef = useRef(false);
@@ -143,6 +168,15 @@ function TeamSlot({
   );
   const displayName = member.nickname ?? member.speciesName;
   const isLead = index === 0;
+  /* Misma suma que `pokemonPower` en ranking: HP + las 5 stats de combate. */
+  const combatPower =
+    member.maxHp +
+    member.atk +
+    member.def +
+    member.spAtk +
+    member.spDef +
+    member.speed;
+  const cpMark = `${tRail("cp")} ${combatPower.toLocaleString()}`;
 
   const sheetLabels: SquadCardSheetLabels = {
     showDetails: member.labels.showDetails,
@@ -184,6 +218,9 @@ function TeamSlot({
     canLevelUp: member.level < 100,
     labels: member.menuLabels,
     bagCounts,
+    allocatePoints: member.points,
+    allocateUnspent: member.unspentPoints,
+    allocateBases: member.bases,
     onBagChange,
     onHealed: ({ currentHp, maxHp }: { currentHp: number; maxHp: number }) =>
       onHealed(member.id, currentHp, maxHp),
@@ -196,11 +233,28 @@ function TeamSlot({
       }),
     onFlagsChange: (next: { isFavorite?: boolean; isTradeLocked?: boolean }) =>
       onFlagsChange(member.id, next),
+    onPointsAllocated: (
+      next: {
+        unspentPoints: number;
+        points: HomeSquadMember["points"];
+        maxHp: number;
+        currentHpDelta: number;
+        atk: number;
+        def: number;
+        spAtk: number;
+        spDef: number;
+        speed: number;
+      },
+    ) => onPointsAllocated(member.id, next),
     onDepositToPc: () => {
       setOpen(false);
       onDepositToPc(member.id);
     },
     canDepositToPc,
+    heldItem: member.heldItem,
+    ownedHeldItems,
+    heldLabels,
+    onHeldChange: (next: HeldItemInfo | null) => onHeldChange(member.id, next),
   };
 
   return (
@@ -225,7 +279,7 @@ function TeamSlot({
             if (skipClickRef.current || isDepositing) return;
             setOpen(true);
           }}
-          aria-label={`${displayName}, ${member.levelLabel}`}
+          aria-label={`${displayName}, ${member.levelLabel}, ${cpMark}`}
           className={`team-card team-slot group relative flex ${SLOT_BOX} flex-col overflow-hidden rounded-xl border text-left transition duration-300 active:scale-[0.97] md:rounded-[1.25rem] ${
             isDepositing ? "team-slot--depositing" : ""
           } ${isOver ? "ring-2 ring-pokeball-red/60 ring-offset-2 ring-offset-background" : ""} ${
@@ -300,6 +354,24 @@ function TeamSlot({
                 </span>
               </span>
             )}
+            {member.heldItem ? (
+              <span
+                title={member.heldItem.displayName}
+                className="inline-flex items-center rounded-full border border-white/15 bg-black/50 p-0.5 backdrop-blur-sm"
+              >
+                <Image
+                  src={
+                    itemHdIconUrl(member.heldItem.name) ??
+                    itemSpriteUrl(member.heldItem.name)
+                  }
+                  alt=""
+                  width={16}
+                  height={16}
+                  unoptimized
+                  className="h-3.5 w-3.5 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)] md:h-4 md:w-4"
+                />
+              </span>
+            ) : null}
           </div>
 
           {/* El sprite manda: ocupa ~55% de la card en desktop. Antes eran 90px
@@ -351,13 +423,17 @@ function TeamSlot({
             )}
           </div>
 
-          {/* Sólo HP. La EXP se movió a la ficha de detalle: en la card era una
-              segunda barra que competía con el sprite y casi nunca se mira de
-              un vistazo — HP sí, porque decide si podés combatir. */}
+          {/* PC + HP: meta de combate al pie, sin watermark sobre el sprite. */}
           <div
-            className="mt-1 grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-1 md:mt-1.5 md:grid-cols-[1.6rem_minmax(0,1fr)]"
-            title={`${member.labels.hp} ${member.currentHp}/${member.maxHp}`}
+            className="mt-1 grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-x-1 gap-y-0.5 md:mt-1.5 md:grid-cols-[1.6rem_minmax(0,1fr)] md:gap-y-1"
+            title={`${cpMark} · ${member.labels.hp} ${member.currentHp}/${member.maxHp}`}
           >
+            <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
+              {tRail("cp")}
+            </span>
+            <span className="font-mono text-[10px] font-semibold tabular-nums leading-none text-white/70 md:text-[11px]">
+              {combatPower.toLocaleString()}
+            </span>
             <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">
               {member.labels.hp}
             </span>
@@ -414,6 +490,7 @@ function TeamSlot({
                       tradeLocked: member.isTradeLocked ? member.labels.tradeLocked : null,
                       canEvolve: canEvolve ? (member.labels.canEvolveBadge ?? "") : null,
                       heldItem: member.heldItemName,
+                      heldItemName: member.heldItem?.name ?? null,
                     }}
                     overlay={
                       <button
@@ -446,6 +523,17 @@ function TeamSlot({
                         currentLevel={member.level}
                         ownedEvolutionItems={member.ownedEvolutionItems}
                       />
+                      <div className="relative mt-1" onClick={(e) => e.stopPropagation()}>
+                        <AllocatePointsPanel
+                          instanceId={member.id}
+                          level={member.level}
+                          unspentPoints={member.unspentPoints}
+                          points={member.points}
+                          bases={member.bases}
+                          defaultOpen={member.unspentPoints > 0}
+                          onAllocated={(next) => onPointsAllocated(member.id, next)}
+                        />
+                      </div>
                     </div>
                   </PokemonShowcaseCard>
                 </SquadCardContextMenu>
@@ -476,6 +564,8 @@ export function ActiveTeamStrip({
   leadLabel,
   slotLabels,
   initialBagCounts,
+  ownedHeldItems,
+  heldLabels,
   focusFilter = "all",
   title,
   manageHref,
@@ -488,6 +578,8 @@ export function ActiveTeamStrip({
   leadLabel: string;
   slotLabels: string[];
   initialBagCounts: SquadBagCounts;
+  ownedHeldItems: OwnedHeldItem[];
+  heldLabels: HeldItemLabels;
   focusFilter?: HomeSquadFilter;
   title?: string;
   manageHref?: string;
@@ -680,8 +772,26 @@ export function ActiveTeamStrip({
                 slotLabel={slotLabels[i] ?? String(i + 1)}
                 emptyLabel={emptySlotLabel}
                 bagCounts={bagCounts}
+                ownedHeldItems={ownedHeldItems}
+                heldLabels={heldLabels}
                 showEmptyCoach={i === firstEmptyIndex}
                 onBagChange={setBagCounts}
+                onHeldChange={(id, next) =>
+                  setMembers((prev) =>
+                    prev.map((m) =>
+                      m.id === id
+                        ? {
+                            ...m,
+                            heldItem: next,
+                            heldItemName: next?.displayName ?? null,
+                          }
+                        : // Unique held (Exp. Share): al equipar acá, los otros lo pierden.
+                          next && m.heldItem?.itemId === next.itemId
+                          ? { ...m, heldItem: null, heldItemName: null }
+                          : m,
+                    ),
+                  )
+                }
                 onHealed={(id, currentHp, maxHp) =>
                   setMembers((prev) =>
                     prev.map((m) => (m.id === id ? { ...m, currentHp, maxHp } : m)),
@@ -740,6 +850,29 @@ export function ActiveTeamStrip({
                     }),
                   );
                 }}
+                onPointsAllocated={(id, next) =>
+                  setMembers((prev) =>
+                    prev.map((m) => {
+                      if (m.id !== id) return m;
+                      const nextCurrentHp =
+                        m.currentHp <= 0
+                          ? 0
+                          : Math.min(next.maxHp, m.currentHp + next.currentHpDelta);
+                      return {
+                        ...m,
+                        unspentPoints: next.unspentPoints,
+                        points: next.points,
+                        maxHp: next.maxHp,
+                        currentHp: nextCurrentHp,
+                        atk: next.atk,
+                        def: next.def,
+                        spAtk: next.spAtk,
+                        spDef: next.spDef,
+                        speed: next.speed,
+                      };
+                    }),
+                  )
+                }
                 onDepositToPc={depositToPc}
                 canDepositToPc={canDeposit}
                 isDepositing={member !== null && depositingId === member.id}

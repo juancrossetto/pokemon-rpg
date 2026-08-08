@@ -1,4 +1,5 @@
 import type { SquadContextLabels } from "@/components/squad-card-context-menu";
+import type { HeldItemInfo } from "@/components/held-item-panel";
 import type { EvolutionStage } from "@/lib/evolution-readiness";
 
 /**
@@ -70,9 +71,26 @@ export type HomeSquadMember = {
   spAtk: number;
   spDef: number;
   speed: number;
+  unspentPoints: number;
+  points: {
+    ptStrength: number;
+    ptDexterity: number;
+    ptIntelligence: number;
+    ptSpeed: number;
+    ptConstitution: number;
+  };
+  bases: {
+    baseHp: number;
+    baseAttack: number;
+    baseDefense: number;
+    baseSpAtk: number;
+    baseSpDef: number;
+    baseSpeed: number;
+  };
   evolutionChain: EvolutionStage[];
   ownedEvolutionItems?: string[];
   heldItemName: string | null;
+  heldItem: HeldItemInfo | null;
   moves: (HomeSquadMove | null)[];
   labels: Omit<HomeSquadCardLabels, "lead" | "slot" | "level">;
   menuLabels: SquadContextLabels;

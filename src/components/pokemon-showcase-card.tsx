@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { CSSProperties, ReactNode } from "react";
 import { typeColor } from "@/lib/type-colors";
 import { useTypeLabel } from "@/hooks/use-type-label";
+import { itemHdIconUrl, itemSpriteUrl } from "@/lib/item-sprites";
 
 /**
  * La card grande de un Pokémon: fondo teñido por su tipo, marca de agua de
@@ -30,7 +31,10 @@ export type ShowcaseBadges = {
    * es lo que hacen las cards chicas por falta de espacio.
    */
   canEvolve?: string | null;
+  /** Nombre visible del held (tooltip). */
   heldItem?: string | null;
+  /** Nombre canónico del seed para el ícono HD (`Exp. Share`, …). */
+  heldItemName?: string | null;
 };
 
 export function PokemonShowcaseCard({
@@ -167,15 +171,22 @@ export function PokemonShowcaseCard({
               {badges.canEvolve}
             </span>
           ) : null}
-          {badges.heldItem ? (
+          {badges.heldItem || badges.heldItemName ? (
             <span
-              title={badges.heldItem}
-              className="inline-flex items-center gap-0.5 rounded-full border border-white/15 bg-black/45 px-1.5 py-0.5 text-[8px] font-semibold text-white/70 backdrop-blur-sm"
+              title={badges.heldItem ?? badges.heldItemName ?? undefined}
+              className="inline-flex items-center rounded-full border border-white/15 bg-black/50 p-0.5 backdrop-blur-sm"
             >
-              <span className="material-symbols-outlined text-[11px]! leading-none text-tertiary">
-                auto_awesome
-              </span>
-              {badges.heldItem}
+              <Image
+                src={
+                  itemHdIconUrl(badges.heldItemName ?? "Exp. Share") ??
+                  itemSpriteUrl(badges.heldItemName ?? "Exp. Share")
+                }
+                alt=""
+                width={18}
+                height={18}
+                unoptimized
+                className="h-[18px] w-[18px] object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+              />
             </span>
           ) : null}
         </div>

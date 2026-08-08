@@ -19,7 +19,10 @@ import {
   trainerSpriteSlugFromName,
 } from "@/lib/gym-corridor-theme";
 import { showdownTrainerSpriteUrl } from "@/lib/avatars";
-import { GYM_TM_REWARD_BY_TYPE } from "@/lib/gym-tm-rewards";
+import {
+  GYM_HELD_ITEM_REWARD_BY_TYPE,
+  GYM_TM_REWARD_BY_TYPE,
+} from "@/lib/gym-tm-rewards";
 import {
   GYM_LEADER_BATTLE_ENERGY_COST,
   GYM_TRAINER_BATTLE_ENERGY_COST,
@@ -120,6 +123,13 @@ export default async function GymRunPage({
         select: { name: true },
       })
     : null;
+  const heldCanonical = GYM_HELD_ITEM_REWARD_BY_TYPE[gym.type] ?? null;
+  const heldItem = heldCanonical
+    ? await prisma.item.findFirst({
+        where: { name: heldCanonical },
+        select: { name: true },
+      })
+    : null;
 
   const typeLabels: Record<string, string> = {};
   for (const key of TYPE_KEYS) {
@@ -178,6 +188,7 @@ export default async function GymRunPage({
       badgeUrl={gymBadgeImageUrl(gym.type)}
       coinReward={gym.coinReward}
       tmRewardName={tmItem?.name ?? null}
+      heldRewardName={heldItem?.name ?? null}
       portraitUrl={gymLeaderPortraitUrl(gym.leaderName)}
       leaderSpriteUrl={gymLeaderImageUrl(gym.leaderName)}
       leaderTeam={leaderTeam}
