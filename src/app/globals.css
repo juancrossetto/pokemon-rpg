@@ -9355,6 +9355,44 @@ body {
   animation: gym-mission-slide-left 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes gym-avatar-reward-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gym-avatar-reward-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.gym-avatar-reward-pop {
+  animation: gym-avatar-reward-pop-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: bottom left;
+}
+
+.gym-avatar-reward-pop__item {
+  animation: gym-avatar-reward-item-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gym-avatar-reward-pop,
+  .gym-avatar-reward-pop__item {
+    animation: none !important;
+  }
+}
+
 .gym-mission-panel {
   animation: gym-mission-slide-right 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -11155,26 +11193,46 @@ html.boot-splash-pending .boot-splash {
 }
 
 .home-identity__avatar {
-  top: 0.25rem;
-  right: 0.25rem;
-  bottom: 0.25rem;
-  width: 38%;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40%;
+  overflow: hidden;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+/*
+  Anclado abajo-derecha, sin pasarse del alto del banner (si no, corta la
+  cabeza). Un translate leve lo acerca al marco sin “zoom” que clippee.
+*/
+.home-identity__avatar-img {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: right bottom;
+  transform: translateX(4%);
+  transform-origin: 100% 100%;
 }
 
 @media (min-width: 640px) {
   .home-identity__avatar {
-    top: 0.375rem;
-    right: 0.75rem;
-    bottom: 0.375rem;
-    width: 34%;
+    width: 36%;
+  }
+
+  .home-identity__avatar-img {
+    transform: translateX(6%);
   }
 }
 
 @media (min-width: 768px) {
   .home-identity__avatar {
-    width: 30%;
+    width: 32%;
   }
 }
+
+/* Soft-feet es solo para la escena de perfil; el banner de home no lo usa. */
 
 .home-identity__hit {
   padding: 0.875rem;
@@ -12976,25 +13034,69 @@ html.boot-splash-pending .boot-splash {
 }
 
 /*
-  Stage art cortado a media pierna: el borde duro se disuelve hacia
-  transparente para que no se lea como crop accidental.
+  Stage cortado a media pierna: mask largo + velo de piso.
+  El fade solo no alcanza (borde “fantasma”); el ::after oscurece la
+  zona del corte y lo lee como niebla / sombra de escena.
 */
-.trainer-stage--soft-feet {
+.trainer-stage-soft {
+  /*
+    Sin `position: relative`: en el banner de home el slot ya es `absolute`.
+    Si lo pisamos a relative, el avatar vuelve al flujo y tapa el copy a la
+    izquierda.
+  */
+  isolation: isolate;
+}
+
+.trainer-stage-soft__art {
   -webkit-mask-image: linear-gradient(
     to bottom,
     #000 0%,
-    #000 68%,
-    rgba(0, 0, 0, 0.55) 84%,
+    #000 52%,
+    rgba(0, 0, 0, 0.92) 62%,
+    rgba(0, 0, 0, 0.55) 74%,
+    rgba(0, 0, 0, 0.22) 86%,
+    rgba(0, 0, 0, 0.06) 94%,
     transparent 100%
   );
   mask-image: linear-gradient(
     to bottom,
     #000 0%,
-    #000 68%,
-    rgba(0, 0, 0, 0.55) 84%,
+    #000 52%,
+    rgba(0, 0, 0, 0.92) 62%,
+    rgba(0, 0, 0, 0.55) 74%,
+    rgba(0, 0, 0, 0.22) 86%,
+    rgba(0, 0, 0, 0.06) 94%,
     transparent 100%
   );
   mask-mode: alpha;
+  /* Drop-shadow duro delinea el corte; con soft-feet pesa menos. */
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.35));
+}
+
+.trainer-stage-soft::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 32%;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(
+    ellipse 78% 95% at 50% 100%,
+    rgba(6, 8, 14, 0.72) 0%,
+    rgba(6, 8, 14, 0.38) 42%,
+    rgba(6, 8, 14, 0.1) 68%,
+    transparent 82%
+  );
+  filter: blur(5px);
+}
+
+@media (min-width: 640px) {
+  .trainer-stage-soft::after {
+    height: 28%;
+    filter: blur(6px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

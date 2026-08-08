@@ -154,10 +154,12 @@ function TrainerScene2D({
           </figure>
         ) : null}
 
-        <figure className="tp-scene__figure tp-scene__figure--trainer relative z-[2] flex shrink-0 items-end">
+        <figure
+          className={`tp-scene__figure tp-scene__figure--trainer relative z-[2] flex shrink-0 items-end${softFeet ? " trainer-stage-soft" : ""}`}
+        >
           <span
             aria-hidden
-            className="absolute inset-x-0 bottom-0 mx-auto h-2.5 w-[62%] rounded-[100%] bg-black/55 blur-[3px]"
+            className={`absolute inset-x-0 bottom-0 mx-auto rounded-[100%] bg-black/55 blur-[3px]${softFeet ? " h-4 w-[78%]" : " h-2.5 w-[62%]"}`}
           />
           {trainerSpriteUrl ? (
             <Image
@@ -167,7 +169,11 @@ function TrainerScene2D({
               height={420}
               unoptimized
               priority
-              className={`relative max-h-[178px] w-auto max-w-[12rem] object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.5)] sm:max-h-[220px] sm:max-w-[15rem] lg:max-h-[262px] lg:max-w-[19rem]${softFeet ? " trainer-stage--soft-feet" : ""}`}
+              className={
+                softFeet
+                  ? "trainer-stage-soft__art relative max-h-[178px] w-auto max-w-[12rem] object-contain sm:max-h-[220px] sm:max-w-[15rem] lg:max-h-[262px] lg:max-w-[19rem]"
+                  : "relative max-h-[178px] w-auto max-w-[12rem] object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.5)] sm:max-h-[220px] sm:max-w-[15rem] lg:max-h-[262px] lg:max-w-[19rem]"
+              }
             />
           ) : (
             <span className="flex h-[170px] w-[5.5rem] items-end justify-center rounded-xl bg-white/5 sm:h-[210px] lg:h-[250px]">

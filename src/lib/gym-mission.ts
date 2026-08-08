@@ -8,6 +8,8 @@ import { gymPoint } from "@/lib/campaign/region-map";
 import { regionMapSrc, type GameRegionId } from "@/lib/regions";
 import type { GymStatus } from "@/lib/gym-status";
 import { getWeaknesses } from "@/lib/type-effectiveness";
+import { avatarById, avatarDisplayName } from "@/lib/avatars";
+import { avatarRewardsForGymOrder } from "@/lib/avatar-unlocks";
 
 export type GymMissionStatusKind =
   | "cleared"
@@ -25,6 +27,12 @@ export type GymMissionTeamMember = {
   types: string[];
 };
 
+export type GymMissionAvatarReward = {
+  slug: string;
+  src: string;
+  name: string;
+};
+
 export type GymMissionItem = {
   id: string;
   regionId: string;
@@ -34,6 +42,8 @@ export type GymMissionItem = {
   badgeName: string;
   type: string;
   coinReward: number;
+  /** Retratos que se liberan la primera vez que ganás esta medalla/sello. */
+  avatarRewards: GymMissionAvatarReward[];
   badgeEarned: boolean;
   locked: boolean;
   stagesIncomplete: boolean;
@@ -77,6 +87,17 @@ export function toGymMissionItems(statuses: GymStatus[]): GymMissionItem[] {
     const maxLevel = levels.length ? Math.max(...levels) : 1;
     const regionId = gym.regionId as GameRegionId;
     const mapPoint = gymPoint(gym.order, regionId);
+    const avatarRewards = avatarRewardsForGymOrder(gym.order)
+      .map((slug) => {
+        const opt = avatarById(slug);
+        if (!opt) return null;
+        return {
+          slug,
+          src: opt.src,
+          name: avatarDisplayName(slug),
+        };
+      })
+      .filter((r): r is GymMissionAvatarReward => r != null);
 
     return {
       id: gym.id,
@@ -87,6 +108,7 @@ export function toGymMissionItems(statuses: GymStatus[]): GymMissionItem[] {
       badgeName: gym.badgeName,
       type: gym.type,
       coinReward: gym.coinReward,
+      avatarRewards,
       badgeEarned: status.badgeEarned,
       locked: status.locked,
       stagesIncomplete: status.stagesIncomplete,

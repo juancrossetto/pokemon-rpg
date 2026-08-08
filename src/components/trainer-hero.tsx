@@ -99,7 +99,11 @@ export function TrainerHero({
           buscar cómo cambiarlo. Antes el avatar sólo se podía elegir al
           registrarse y después no había ninguna forma de tocarlo.
         */}
-        <AvatarPicker currentAvatarId={currentAvatarId} labels={avatarLabels}>
+        <AvatarPicker
+          currentAvatarId={currentAvatarId}
+          unlockedIds={[]}
+          labels={avatarLabels}
+        >
           <RankFrame src={avatarSrc} alt={username} rank={rank.tier} size={148} />
         </AvatarPicker>
 

@@ -35,7 +35,6 @@ const AVATAR_SLUGS = [
   "antonb",
   "ariana",
   "arianaa",
-  "aristocrata",
   "ash",
   "aura",
   "aurab",
@@ -110,10 +109,8 @@ const AVATAR_SLUGS = [
   "mananti",
   "marcial",
   "marcialb",
-  "marinero",
   "maximo",
   "maximob",
-  "medium",
   "mist",
   "misty",
   "mistyy",
@@ -133,7 +130,6 @@ const AVATAR_SLUGS = [
   "nb",
   "nc",
   "nerio",
-  "ninobien",
   "oak",
   "pegaso",
   "petra",
@@ -149,7 +145,6 @@ const AVATAR_SLUGS = [
   "roy",
   "royb",
   "royc",
-  "ruinamaniaco",
   "sabrina",
   "sabrinab",
   "sabrinac",
@@ -183,15 +178,34 @@ export const AVATAR_OPTIONS: AvatarOption[] = AVATAR_SLUGS.map((slug) => ({
 }));
 
 /**
- * Stage cortado a media pierna (sin pies). Fade suave en home/perfil para que
- * el borde no se lea como crop accidental. Ampliar el set si `nb` convence.
+ * Fade + velo en la base del stage en **perfil** (escena centrada).
+ * Se aplica a todos: en los cortados tapa el borde duro; en los completos
+ * apenas disuelve la zona de los pies y se integra con la sombra de piso.
  */
-const STAGE_SOFT_FEET_SLUGS = new Set<string>(["nb"]);
-
 export function avatarStageSoftFeet(avatarId: string | null | undefined): boolean {
-  if (!avatarId) return false;
-  const opt = AVATAR_OPTIONS.find((a) => a.id === avatarId);
-  return STAGE_SOFT_FEET_SLUGS.has(opt?.slug ?? avatarId);
+  return Boolean(avatarId);
+}
+
+const AVATAR_SLUG_SET = new Set<string>(AVATAR_SLUGS);
+
+/**
+ * Nombre legible del retrato (slug → "Ariana A", "Rojo", "N B").
+ * Las variantes de una letra se detectan si el resto también es un slug del catálogo.
+ */
+export function avatarDisplayName(slug: string | null | undefined): string {
+  if (!slug) return "";
+  if (slug.length > 1) {
+    const letter = slug.slice(-1);
+    const root = slug.slice(0, -1);
+    if (/^[a-d]$/i.test(letter) && AVATAR_SLUG_SET.has(root)) {
+      return `${capitalizeAvatar(root)} ${letter.toUpperCase()}`;
+    }
+  }
+  return capitalizeAvatar(slug);
+}
+
+function capitalizeAvatar(slug: string): string {
+  return slug.charAt(0).toUpperCase() + slug.slice(1);
 }
 
 /**
@@ -207,16 +221,16 @@ const LEGACY_SHOWDOWN_TO_LOCAL: Record<string, (typeof AVATAR_SLUGS)[number]> = 
   hiker: "montanista",
   swimmer: "nadador",
   swimmerf: "nadadora",
-  gentleman: "aristocrata",
+  gentleman: "entrenadorguay",
   bugcatcher: "joven",
   twins: "chica",
   blackbelt: "karate",
-  medium: "medium",
-  richboy: "ninobien",
+  medium: "leti",
+  richboy: "joven",
   pokemaniac: "pokemaniaco",
-  ruinmaniac: "ruinamaniaco",
+  ruinmaniac: "pokemaniaco",
   veteran: "veterano",
-  sailor: "marinero",
+  sailor: "nadador",
 };
 
 /** Orden histórico del catálogo Showdown (sólo para resolver ids `trainer-N`). */
@@ -303,6 +317,11 @@ const RETIRED_LOCAL_TO_CURRENT: Record<string, (typeof AVATAR_SLUGS)[number]> = 
   cazabichos: "joven",
   gary: "ash",
   domadragon: "entrenadorguay",
+  ninobien: "joven",
+  medium: "leti",
+  aristocrata: "entrenadorguay",
+  ruinamaniaco: "pokemaniaco",
+  marinero: "nadador",
 };
 
 export function avatarById(id: string | null | undefined): AvatarOption | null {

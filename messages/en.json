@@ -127,6 +127,7 @@
     "marketExpiredDetail": "{item}",
     "gymWonTitle": "Badge",
     "gymWonDetail": "{leader} · {gym}",
+    "gymWonAvatarsDetail": "{leader} · {gym} · +{count} portraits",
     "gymWonRematchTitle": "Rematch",
     "gymWonRematchDetail": "{leader} · {gym}",
     "gymLostTitle": "Defeat",
@@ -1120,6 +1121,7 @@
     "recommendedLevel": "Recommended Lv. {level}",
     "difficulty": "Difficulty",
     "rewards": "Rewards",
+    "avatarRewards": "Portraits",
     "enemyTeam": "Enemy Team",
     "weaknesses": "Weaknesses",
     "badges": {
@@ -2995,11 +2997,14 @@
     "avatar": {
       "change": "Change portrait",
       "title": "Choose your portrait",
-      "hint": "Shown on your profile and in the ranking.",
+      "hint": "You start with 12. More unlock as you clear gyms.",
       "save": "Save",
       "saving": "Saving…",
       "cancel": "Cancel",
-      "error": "Couldn't save. Try again."
+      "error": "Couldn't save. Try again.",
+      "errorLocked": "You haven't unlocked this portrait yet.",
+      "locked": "Locked",
+      "lockedHint": "Gym {order}"
     },
     "banner": {
       "change": "Change banner",

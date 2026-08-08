@@ -11,7 +11,8 @@ import { PokeballIcon } from "@/components/pokeball-icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { AuthBackdrop } from "@/components/auth-backdrop";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
-import { AVATAR_OPTIONS, avatarById } from "@/lib/avatars";
+import { avatarById } from "@/lib/avatars";
+import { starterAvatarOptions } from "@/lib/avatar-unlocks";
 import { markBootSplashPending } from "@/lib/boot-splash";
 
 type Gender = "male" | "female" | "unspecified";
@@ -286,7 +287,7 @@ export default function RegisterPage() {
                     </p>
                     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-lg border border-white/8 bg-black/20 p-1.5 [scrollbar-width:thin]">
                       <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-7 lg:grid-cols-6">
-                        {AVATAR_OPTIONS.map((opt) => (
+                        {starterAvatarOptions().map((opt) => (
                           <button
                             key={opt.id}
                             type="button"

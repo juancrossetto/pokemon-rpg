@@ -1,6 +1,9 @@
 /**
- * Regenera logo de marca, favicon y íconos PWA a partir de los masterball
- * de Downloads. Framing PWA: any @ 80%, maskable @ 60%, fondo #0a0806.
+ * Regenera logo de marca, favicon e íconos PWA/iOS.
+ *
+ * - Header (`public/logo.png`) + favicon: masterball de Downloads.
+ * - Home screen iOS/Android (`apple-icon`, `icon.png`, `public/icons/*`):
+ *   `logo-mobile.png` (icono cuadrado listo; no se reencuadra al 80%/60%).
  */
 import sharp from "sharp";
 import fs from "fs";
@@ -9,7 +12,6 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
-const BG = { r: 10, g: 8, b: 6, alpha: 1 }; // #0a0806
 const BLACK_THRESH = 14;
 const TMP = path.join(ROOT, ".tmp-brand");
 
@@ -19,6 +21,11 @@ const SRC_LOGO =
 const SRC_FAVICON =
   process.env.BRAND_FAVICON_SRC ??
   "C:/Users/Fede Crossetto/Downloads/favicon-masterball.png";
+const SRC_MOBILE =
+  process.env.BRAND_MOBILE_SRC ??
+  (fs.existsSync(path.join(ROOT, "public/logo-mobile.png"))
+    ? path.join(ROOT, "public/logo-mobile.png")
+    : "C:/Users/Fede Crossetto/Downloads/logo-mobile.png");
 
 async function knockoutAndTrim(srcPath, destPath) {
   const { data, info } = await sharp(srcPath)
@@ -71,33 +78,6 @@ function buildIco(pngBuffersWithSize) {
   ]);
 }
 
-async function makeAppIcon(logoPath, size, scale, outPath) {
-  const target = Math.round(size * scale);
-  const logoBuf = await sharp(logoPath)
-    .resize(target, target, {
-      fit: "contain",
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
-    .png()
-    .toBuffer();
-  const logoMeta = await sharp(logoBuf).metadata();
-  const left = Math.round((size - logoMeta.width) / 2);
-  const top = Math.round((size - logoMeta.height) / 2);
-  await sharp({
-    create: { width: size, height: size, channels: 4, background: BG },
-  })
-    .composite([{ input: logoBuf, left, top }])
-    .png({ compressionLevel: 9 })
-    .toFile(outPath);
-  console.log(
-    "wrote",
-    path.relative(ROOT, outPath),
-    `${size}x${size}`,
-    `scale ${scale}`,
-    `${fs.statSync(outPath).size}b`,
-  );
-}
-
 fs.mkdirSync(TMP, { recursive: true });
 
 const logoPath = path.join(ROOT, "public/logo.png");
@@ -129,44 +109,7 @@ await sharp(ballTrimPath)
   .png({ compressionLevel: 9 })
   .toFile(ballSquarePath);
 
-await sharp({
-  create: { width: 512, height: 512, channels: 4, background: BG },
-})
-  .composite([
-    {
-      input: await sharp(ballSquarePath)
-        .resize(512, 512, {
-          fit: "contain",
-          background: { r: 0, g: 0, b: 0, alpha: 0 },
-        })
-        .png()
-        .toBuffer(),
-      gravity: "centre",
-    },
-  ])
-  .png({ compressionLevel: 9 })
-  .toFile(path.join(ROOT, "src/app/icon.png"));
-console.log("wrote src/app/icon.png");
-
-await sharp({
-  create: { width: 180, height: 180, channels: 4, background: BG },
-})
-  .composite([
-    {
-      input: await sharp(ballSquarePath)
-        .resize(180, 180, {
-          fit: "contain",
-          background: { r: 0, g: 0, b: 0, alpha: 0 },
-        })
-        .png()
-        .toBuffer(),
-      gravity: "centre",
-    },
-  ])
-  .png({ compressionLevel: 9 })
-  .toFile(path.join(ROOT, "src/app/apple-icon.png"));
-console.log("wrote src/app/apple-icon.png");
-
+// Favicon del tab: sigue siendo la Master Ball suelta (legible a 16–48px).
 const icoParts = [];
 for (const s of [16, 32, 48]) {
   const png = await sharp(ballSquarePath)
@@ -181,20 +124,40 @@ for (const s of [16, 32, 48]) {
 fs.writeFileSync(path.join(ROOT, "src/app/favicon.ico"), buildIco(icoParts));
 console.log("wrote src/app/favicon.ico");
 
-await makeAppIcon(logoFullPath, 192, 0.8, path.join(ROOT, "public/icons/icon-192.png"));
-await makeAppIcon(logoFullPath, 512, 0.8, path.join(ROOT, "public/icons/icon-512.png"));
-await makeAppIcon(
-  logoFullPath,
-  192,
-  0.6,
-  path.join(ROOT, "public/icons/icon-192-maskable.png"),
-);
-await makeAppIcon(
-  logoFullPath,
-  512,
-  0.6,
-  path.join(ROOT, "public/icons/icon-512-maskable.png"),
-);
+// Icono de pantalla de inicio (iOS apple-touch + Android/PWA): logo-mobile.
+if (!fs.existsSync(SRC_MOBILE)) {
+  throw new Error(`Missing mobile icon source: ${SRC_MOBILE}`);
+}
+const mobileOut = path.join(ROOT, "public/logo-mobile.png");
+if (path.resolve(SRC_MOBILE) !== path.resolve(mobileOut)) {
+  await sharp(SRC_MOBILE).png({ compressionLevel: 9 }).toFile(mobileOut);
+  console.log("wrote public/logo-mobile.png");
+}
+
+await sharp(SRC_MOBILE)
+  .resize(512, 512, { fit: "cover" })
+  .png({ compressionLevel: 9 })
+  .toFile(path.join(ROOT, "src/app/icon.png"));
+console.log("wrote src/app/icon.png");
+
+await sharp(SRC_MOBILE)
+  .resize(180, 180, { fit: "cover" })
+  .png({ compressionLevel: 9 })
+  .toFile(path.join(ROOT, "src/app/apple-icon.png"));
+console.log("wrote src/app/apple-icon.png");
+
+for (const [size, name] of [
+  [192, "icon-192.png"],
+  [512, "icon-512.png"],
+  [192, "icon-192-maskable.png"],
+  [512, "icon-512-maskable.png"],
+]) {
+  await sharp(SRC_MOBILE)
+    .resize(size, size, { fit: "cover" })
+    .png({ compressionLevel: 9 })
+    .toFile(path.join(ROOT, "public/icons", name));
+  console.log("wrote", path.join("public/icons", name));
+}
 
 fs.rmSync(TMP, { recursive: true, force: true });
 console.log(`LOGO_DIMS=${logoMeta.width}x${logoMeta.height}`);

@@ -136,6 +136,13 @@ function detailFor(
     case "MARKET_EXPIRED":
       return t("marketExpiredDetail", { item: p.itemName ?? "—" });
     case "GYM_WON":
+      if (!p.rematch && typeof p.avatarsUnlocked === "number" && p.avatarsUnlocked > 0) {
+        return t("gymWonAvatarsDetail", {
+          gym: p.gymName ?? "—",
+          leader: p.leaderName ?? "—",
+          count: p.avatarsUnlocked,
+        });
+      }
       return p.rematch
         ? t("gymWonRematchDetail", { gym: p.gymName ?? "—", leader: p.leaderName ?? "—" })
         : t("gymWonDetail", { gym: p.gymName ?? "—", leader: p.leaderName ?? "—" });

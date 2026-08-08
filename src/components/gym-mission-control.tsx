@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
@@ -303,11 +304,7 @@ function GymRegionSkeletonOps({ operationsLabel }: { operationsLabel: string }) 
 function CoinReward({ amount, compact = false }: { amount: number; compact?: boolean }) {
   const icon = compact ? 16 : 22;
   return (
-    <span
-      className={`inline-flex items-center ${
-        compact ? "gap-1" : "gap-1.5"
-      }`}
-    >
+    <span className={`inline-flex items-center ${compact ? "gap-1" : "gap-1.5"}`}>
       <Image
         src={COIN_ICON}
         alt=""
@@ -326,6 +323,181 @@ function CoinReward({ amount, compact = false }: { amount: number; compact?: boo
         +{amount.toLocaleString()}
       </span>
     </span>
+  );
+}
+
+/**
+ * Miniatura + conteo. Al click despliega el lote de retratos (portal + stagger)
+ * para no quedar clippeado por el `overflow-hidden` del hero.
+ */
+function AvatarRewardPreview({
+  rewards,
+  compact = false,
+  label,
+}: {
+  rewards: GymMissionItem["avatarRewards"];
+  compact?: boolean;
+  label: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number } | null>(
+    null,
+  );
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function place() {
+      const btn = btnRef.current;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      const width = Math.min(288, window.innerWidth - 16);
+      let left = rect.left;
+      if (left + width > window.innerWidth - 8) {
+        left = Math.max(8, window.innerWidth - 8 - width);
+      }
+      // Abrir hacia arriba del botón.
+      const top = Math.max(8, rect.top - 8);
+      setPanelPos({ top, left });
+    }
+
+    place();
+
+    function onDoc(e: MouseEvent) {
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    function onReposition() {
+      place();
+    }
+
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onReposition);
+    window.addEventListener("scroll", onReposition, true);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
+    };
+  }, [open]);
+
+  if (rewards.length === 0) return null;
+  const lead = rewards[0];
+  const size = compact ? 20 : 24;
+
+  const panel =
+    open && mounted && panelPos
+      ? createPortal(
+          <div
+            className="fixed z-200"
+            style={{
+              top: panelPos.top,
+              left: panelPos.left,
+              transform: "translateY(-100%)",
+              width: "min(18rem, calc(100vw - 1rem))",
+            }}
+          >
+            <div
+              ref={panelRef}
+              role="dialog"
+              aria-label={label}
+              className="gym-avatar-reward-pop min-w-[11.5rem] rounded-xl border border-white/12 bg-[#12151c]/96 p-2 shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-md"
+            >
+              <p className="mb-1.5 px-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-white/45">
+                {label}
+                <span className="ml-1.5 font-mono tabular-nums text-white/70">
+                  +{rewards.length}
+                </span>
+              </p>
+              <ul className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+                {rewards.map((r, i) => (
+                  <li
+                    key={r.slug}
+                    className="gym-avatar-reward-pop__item flex flex-col items-center gap-1 rounded-lg px-1 py-1.5"
+                    style={{ animationDelay: `${i * 45}ms` }}
+                  >
+                    <span className="relative h-10 w-10 overflow-hidden rounded-[28%] ring-1 ring-white/20">
+                      <Image
+                        src={r.src}
+                        alt=""
+                        width={40}
+                        height={40}
+                        className="trainer-sprite-thumb h-full w-full"
+                        unoptimized
+                      />
+                    </span>
+                    <span className="line-clamp-2 max-w-[4.2rem] text-center text-[9px] font-medium leading-tight text-white/75">
+                      {r.name}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-label={`${label}: +${rewards.length}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className={`inline-flex items-center rounded-md transition hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40 ${
+          compact ? "gap-1 px-0.5 py-0.5" : "gap-1.5 px-1 py-0.5"
+        } ${open ? "bg-white/10" : ""}`}
+      >
+        <span
+          className="relative block shrink-0 overflow-hidden rounded-[28%] ring-1 ring-white/30"
+          style={{ width: size, height: size }}
+        >
+          <Image
+            src={lead.src}
+            alt=""
+            width={size}
+            height={size}
+            className="trainer-sprite-thumb h-full w-full"
+            unoptimized
+          />
+        </span>
+        <span
+          className={`font-mono font-bold tabular-nums text-white ${
+            compact ? "text-[11px] sm:text-[12px]" : "text-[13px] sm:text-sm"
+          }`}
+        >
+          +{rewards.length}
+        </span>
+        <span
+          className={`material-symbols-outlined text-white/50 transition ${
+            compact ? "text-[14px]!" : "text-[16px]!"
+          } ${open ? "rotate-180" : ""}`}
+          aria-hidden
+        >
+          expand_more
+        </span>
+      </button>
+      {panel}
+    </>
   );
 }
 
@@ -1046,12 +1218,33 @@ export function GymMissionControl({
                         <p className="hidden text-[10px] font-mono uppercase tracking-wider text-white/45 sm:block">
                           {t("rewards")}
                         </p>
-                        <span className="sm:hidden">
-                          <CoinReward amount={selected.coinReward} compact />
-                        </span>
-                        <span className="hidden sm:inline-flex">
-                          <CoinReward amount={selected.coinReward} />
-                        </span>
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                          <span className="sm:hidden">
+                            <CoinReward amount={selected.coinReward} compact />
+                          </span>
+                          <span className="hidden sm:inline-flex">
+                            <CoinReward amount={selected.coinReward} />
+                          </span>
+                          {selected.avatarRewards.length > 0 ? (
+                            <>
+                              <span className="sm:hidden">
+                                <AvatarRewardPreview
+                                  key={`m-${selected.id}`}
+                                  rewards={selected.avatarRewards}
+                                  compact
+                                  label={t("avatarRewards")}
+                                />
+                              </span>
+                              <span className="hidden sm:inline-flex">
+                                <AvatarRewardPreview
+                                  key={`d-${selected.id}`}
+                                  rewards={selected.avatarRewards}
+                                  label={t("avatarRewards")}
+                                />
+                              </span>
+                            </>
+                          ) : null}
+                        </div>
                       </div>
                     </>
                   ) : null}
@@ -1444,7 +1637,17 @@ export function GymMissionControl({
                               {t("regionLocked")}
                             </span>
                           ) : (
-                            <CoinReward amount={gym.coinReward} compact />
+                            <span className="inline-flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                              <CoinReward amount={gym.coinReward} compact />
+                              {gym.avatarRewards.length > 0 ? (
+                                <AvatarRewardPreview
+                                  key={gym.id}
+                                  rewards={gym.avatarRewards}
+                                  compact
+                                  label={t("avatarRewards")}
+                                />
+                              ) : null}
+                            </span>
                           )}
                           <Image
                             src={gym.badgeUrl}

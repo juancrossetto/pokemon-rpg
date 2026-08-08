@@ -52,6 +52,7 @@ export function TrainerIdentityHero({
   currentAvatarId,
   currentBannerId,
   currentFrameId,
+  unlockedAvatarIds,
   avatarLabels,
   bannerLabels,
   frameLabels,
@@ -83,6 +84,7 @@ export function TrainerIdentityHero({
   currentAvatarId: string | null;
   currentBannerId: string | null;
   currentFrameId: string | null;
+  unlockedAvatarIds: readonly string[];
   avatarLabels: AvatarPickerLabels;
   bannerLabels: BannerPickerLabels;
   frameLabels: FramePickerLabels;
@@ -274,6 +276,7 @@ export function TrainerIdentityHero({
           </FramePicker>
           <AvatarPicker
             currentAvatarId={avatarId}
+            unlockedIds={unlockedAvatarIds}
             labels={avatarLabels}
             showAffordance={false}
             onSaved={setPickedAvatarId}

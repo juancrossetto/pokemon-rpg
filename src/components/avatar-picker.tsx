@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
 import { updateAvatar } from "@/actions/update-avatar";
 import { AvatarImage } from "@/components/avatar-image";
 import { useSetOptimisticAvatarId } from "@/components/optimistic-avatar";
-import { AVATAR_OPTIONS, avatarById } from "@/lib/avatars";
+import { avatarById, avatarDisplayName } from "@/lib/avatars";
+import {
+  avatarOptionsInStoryOrder,
+  avatarUnlockRequirement,
+} from "@/lib/avatar-unlocks";
 
 export type AvatarPickerLabels = {
   change: string;
@@ -17,36 +21,33 @@ export type AvatarPickerLabels = {
   saving: string;
   cancel: string;
   error: string;
+  errorLocked: string;
+  locked: string;
+  /** ICU: `{order}` = Gym.order que desbloquea. */
+  lockedHint: string;
 };
 
 /**
  * Selector de retrato.
  *
- * Se abre desde el avatar del hero del perfil, que es donde el jugador lo
- * busca. Confirma con un botón en vez de guardar al tocar: la grilla tiene
- * decenas de opciones y en mobile es fácil rozar una mientras se scrollea.
- *
- * El sheet se porta a `document.body` para no pelear stacking/overflow con el
- * chrome móvil (bottom nav z-50, hero con overflow-hidden).
+ * Se abre desde el avatar del hero del perfil. Confirma con un botón en vez de
+ * guardar al tocar. Los no desbloqueados se muestran atenuados y no se pueden
+ * elegir (progreso de gimnasio → `unlockedIds`).
  */
 export function AvatarPicker({
   currentAvatarId,
+  unlockedIds,
   labels,
   children,
   showAffordance = true,
   onSaved,
 }: {
   currentAvatarId: string | null;
+  /** Ids/slugs ya liberados (starters + medallas). */
+  unlockedIds: readonly string[];
   labels: AvatarPickerLabels;
-  /**
-   * Se llama con el id elegido apenas se confirma, **antes** de que el servidor
-   * responda, para que quien renderiza el retrato lo pinte ya. Si la escritura
-   * falla se vuelve a llamar con el id anterior.
-   */
   onSaved?: (avatarId: string | null) => void;
-  /** Disparador — normalmente el propio retrato del hero. */
   children: React.ReactNode;
-  /** Badge de lápiz sobre el disparador. Desactivar si el hijo ya es un botón de editar. */
   showAffordance?: boolean;
 }) {
   const locale = useLocale();
@@ -60,16 +61,14 @@ export function AvatarPicker({
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
+  const unlocked = useMemo(() => new Set(unlockedIds), [unlockedIds]);
+
+  const storyOptions = useMemo(() => avatarOptionsInStoryOrder(), []);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  /*
-    La selección se reinicia al ABRIR, no con un efecto que observe el cierre.
-    El resultado para el jugador es el mismo —descartar sin guardar y reabrir
-    muestra lo que está puesto de verdad— pero sin encadenar un render extra
-    cada vez que se cierra el panel.
-  */
   function openPicker() {
     setSelected(avatarById(currentAvatarId)?.id ?? currentAvatarId);
     setError(null);
@@ -89,23 +88,12 @@ export function AvatarPicker({
     };
   }, [open]);
 
-  /*
-    Guardar cierra el panel en el acto y pinta el avatar nuevo; la escritura
-    sigue en segundo plano.
-
-    Antes esto esperaba a `updateAvatar` dentro de la transición, y esa promesa
-    no resuelve cuando termina el UPDATE: resuelve cuando termina el
-    `revalidatePath(..., "layout")` que dispara, o sea cuando el servidor
-    volvió a renderizar el layout entero (header, con sus consultas) más la
-    página de perfil (dieciocho consultas) contra una base remota. El panel se
-    quedaba en "Guardando…" todo ese rato tapando la pantalla y después se
-    cerraba de golpe, así que el cambio nunca se veía ocurrir.
-
-    Revalidar sigue haciendo falta —el header vive en el layout y el próximo
-    render tiene que traer el avatar nuevo—, pero ya no bloquea el feedback.
-  */
   function save() {
     if (!selected || pending) return;
+    if (!unlocked.has(selected)) {
+      setError(labels.errorLocked);
+      return;
+    }
     const next = selected;
     const previous = resolvedCurrentId;
     setError(null);
@@ -116,11 +104,9 @@ export function AvatarPicker({
     start(async () => {
       const result = await updateAvatar(next, locale);
       if (!result.ok) {
-        // Volver atrás y reabrir con el motivo: es la única forma de contarlo
-        // una vez que el panel ya se cerró.
         onSaved?.(previous);
         setOptimisticAvatarId(previous, userKey);
-        setError(labels.error);
+        setError(result.error === "locked" ? labels.errorLocked : labels.error);
         setOpen(true);
       }
     });
@@ -137,51 +123,87 @@ export function AvatarPicker({
               onClick={() => setOpen(false)}
             />
 
-            {/*
-              Altura explícita (no sólo max-h): sin ella el flex-1 de la grilla
-              no se contrae en mobile y el footer con Guardar queda clippeado
-              debajo del viewport / detrás del bottom nav.
-            */}
             <div
               role="dialog"
               aria-modal="true"
               aria-label={labels.title}
               className="relative flex h-[min(88dvh,100%)] w-full flex-col overflow-hidden rounded-t-2xl border border-white/12 bg-[#12141a] shadow-2xl sm:h-auto sm:max-h-[min(85dvh,40rem)] sm:max-w-lg sm:rounded-2xl"
             >
-              <div className="shrink-0 border-b border-white/8 px-4 py-3">
+              <div className="shrink-0 border-b border-white/8 px-5 py-3.5 sm:px-6">
                 <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-white/20 sm:hidden" />
-                <p className="text-label-lg font-bold text-white">{labels.title}</p>
-                <p className="mt-0.5 text-[11px] text-on-surface-variant">{labels.hint}</p>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-label-lg font-bold text-white">{labels.title}</p>
+                    <p className="mt-0.5 text-[11px] text-on-surface-variant">{labels.hint}</p>
+                  </div>
+                  {selected ? (
+                    <p
+                      className="max-w-[45%] shrink-0 pt-0.5 text-right text-[17px] font-semibold leading-tight tracking-wide text-white sm:text-[18px]"
+                      aria-live="polite"
+                    >
+                      {avatarDisplayName(selected)}
+                    </p>
+                  ) : null}
+                </div>
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
                 <ul className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-                  {AVATAR_OPTIONS.map((opt) => {
+                  {storyOptions.map((opt) => {
                     const active = selected === opt.id;
+                    const isUnlocked = unlocked.has(opt.id);
+                    const req = avatarUnlockRequirement(opt.slug);
+                    const lockTitle =
+                      !isUnlocked && req?.kind === "gym"
+                        ? labels.lockedHint.replace("{order}", String(req.order))
+                        : labels.locked;
                     return (
                       <li key={opt.id}>
                         <button
                           type="button"
                           aria-pressed={active}
-                          onClick={() => setSelected(opt.id)}
+                          aria-label={
+                            isUnlocked
+                              ? avatarDisplayName(opt.slug)
+                              : `${avatarDisplayName(opt.slug)} — ${lockTitle}`
+                          }
+                          aria-disabled={!isUnlocked}
+                          title={!isUnlocked ? lockTitle : undefined}
+                          onClick={() => {
+                            if (!isUnlocked) {
+                              setError(labels.errorLocked);
+                              return;
+                            }
+                            setError(null);
+                            setSelected(opt.id);
+                          }}
                           className={`relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-[22%] border transition ${
-                            active
-                              ? "border-pokeball-red bg-pokeball-red/12"
-                              : "border-white/8 bg-black/25 hover:border-white/25"
+                            !isUnlocked
+                              ? "border-white/6 bg-black/40 opacity-45"
+                              : active
+                                ? "border-pokeball-red bg-pokeball-red/12"
+                                : "border-white/8 bg-black/25 hover:border-white/25"
                           }`}
                         >
                           <AvatarImage
                             src={opt.src}
-                            alt={opt.slug}
-                            className="trainer-sprite-thumb absolute inset-0 h-full w-full"
+                            alt={avatarDisplayName(opt.slug)}
+                            className={`trainer-sprite-thumb absolute inset-0 h-full w-full${!isUnlocked ? " grayscale" : ""}`}
                           />
-                          {active && (
+                          {!isUnlocked ? (
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/35">
+                              <span className="material-symbols-outlined text-[18px]! text-white/80">
+                                lock
+                              </span>
+                            </span>
+                          ) : null}
+                          {active && isUnlocked ? (
                             <span className="absolute bottom-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-pokeball-red">
                               <span className="material-symbols-outlined text-[11px]! text-white">
                                 check
                               </span>
                             </span>
-                          )}
+                          ) : null}
                         </button>
                       </li>
                     );
@@ -207,7 +229,12 @@ export function AvatarPicker({
                 <button
                   type="button"
                   onClick={save}
-                  disabled={pending || !selected || selected === currentAvatarId}
+                  disabled={
+                    pending ||
+                    !selected ||
+                    selected === currentAvatarId ||
+                    !unlocked.has(selected)
+                  }
                   className="ui-btn-primary min-h-11 flex-1 rounded-xl text-label-md font-bold"
                 >
                   {pending ? labels.saving : labels.save}

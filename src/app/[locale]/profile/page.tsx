@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { avatarById } from "@/lib/avatars";
+import { unlockedAvatarIds } from "@/lib/avatar-unlocks";
 import { uiSpriteUrl } from "@/lib/sprites";
 import { neonTypeColor, typeColor } from "@/lib/type-colors";
 import { calculateMaxHp } from "@/lib/stats";
@@ -138,7 +139,15 @@ export default async function ProfilePage({
         select: {
           id: true,
           earnedAt: true,
-          gym: { select: { name: true, badgeName: true, type: true, leaderName: true } },
+          gym: {
+            select: {
+              name: true,
+              badgeName: true,
+              type: true,
+              leaderName: true,
+              order: true,
+            },
+          },
         },
         orderBy: { earnedAt: "asc" },
       }),
@@ -295,6 +304,16 @@ export default async function ProfilePage({
   // `stageSrc` y no `profileSrc`: la escena alinea los pies con la línea de
   // piso, y para eso el arte tiene que venir sin margen transparente.
   const trainerSprite = avatarById(user.avatarId)?.stageSrc ?? null;
+  const unlockedAvatars = [
+    ...unlockedAvatarIds(badges.map((b) => b.gym.order)),
+  ];
+  // Cuentas que ya tenían un retrato de antes del gate lo siguen pudiendo usar.
+  if (user.avatarId) {
+    const current = avatarById(user.avatarId);
+    if (current && !unlockedAvatars.includes(current.id)) {
+      unlockedAvatars.push(current.id);
+    }
+  }
 
   const avatarLabels = {
     change: t("avatar.change"),
@@ -304,6 +323,9 @@ export default async function ProfilePage({
     saving: t("avatar.saving"),
     cancel: t("avatar.cancel"),
     error: t("avatar.error"),
+    errorLocked: t("avatar.errorLocked"),
+    locked: t("avatar.locked"),
+    lockedHint: t("avatar.lockedHint", { order: "{order}" }),
   };
   const bannerLabels = {
     change: t("banner.change"),
@@ -524,6 +546,7 @@ export default async function ProfilePage({
           currentAvatarId: user.avatarId,
           currentBannerId: user.homeBannerId,
           currentFrameId: user.homeFrameId,
+          unlockedAvatarIds: unlockedAvatars,
           avatarLabels,
           bannerLabels,
           frameLabels,

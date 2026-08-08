@@ -127,6 +127,7 @@
     "marketExpiredDetail": "{item}",
     "gymWonTitle": "Insígnia",
     "gymWonDetail": "{leader} · {gym}",
+    "gymWonAvatarsDetail": "{leader} · {gym} · +{count} retratos",
     "gymWonRematchTitle": "Revanche",
     "gymWonRematchDetail": "{leader} · {gym}",
     "gymLostTitle": "Derrota",
@@ -1120,6 +1121,7 @@
     "recommendedLevel": "Nv. recomendado {level}",
     "difficulty": "Dificuldade",
     "rewards": "Recompensas",
+    "avatarRewards": "Retratos",
     "enemyTeam": "Equipe inimiga",
     "weaknesses": "Fraquezas",
     "badges": {
@@ -2995,11 +2997,14 @@
     "avatar": {
       "change": "Mudar retrato",
       "title": "Escolha seu retrato",
-      "hint": "Aparece no seu perfil e no ranking.",
+      "hint": "Você começa com 12. O resto libera ao vencer ginásios.",
       "save": "Salvar",
       "saving": "Salvando…",
       "cancel": "Cancelar",
-      "error": "Não foi possível salvar. Tente de novo."
+      "error": "Não foi possível salvar. Tente de novo.",
+      "errorLocked": "Você ainda não desbloqueou este retrato.",
+      "locked": "Bloqueado",
+      "lockedHint": "Ginásio {order}"
     },
     "banner": {
       "change": "Mudar banner",

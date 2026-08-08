@@ -30,6 +30,8 @@ export type NotificationPayload = {
   /** Miniatura: avatar de usuario, ítem, medalla o líder. */
   imageUrl?: string;
   imageKind?: NotificationImageKind;
+  /** Retratos liberados al ganar la medalla (primera vez). */
+  avatarsUnlocked?: number;
 };
 
 async function avatarUrlForUserId(userId: string): Promise<string | undefined> {
@@ -434,7 +436,7 @@ export async function notifyGymResult(
   userId: string,
   gymId: string,
   won: boolean,
-  opts?: { rematch?: boolean },
+  opts?: { rematch?: boolean; avatarsUnlocked?: number },
 ) {
   const gym = await prisma.gym.findUnique({
     where: { id: gymId },
@@ -455,10 +457,11 @@ export async function notifyGymResult(
       gymName: gym.name,
       leaderName: gym.leaderName,
       rematch: opts?.rematch ?? false,
+      avatarsUnlocked: opts?.avatarsUnlocked,
       imageUrl,
       imageKind,
     },
-    href: `/gyms/${gymId}`,
+    href: won ? "/profile" : `/gyms/${gymId}`,
   });
 }
 

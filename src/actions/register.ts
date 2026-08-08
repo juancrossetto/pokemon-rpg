@@ -5,6 +5,8 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { CAMPAIGN_DEFAULTS } from "@/lib/campaign";
+import { isAvatarUnlocked } from "@/lib/avatar-unlocks";
+import { avatarById } from "@/lib/avatars";
 
 const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
@@ -30,6 +32,16 @@ export async function registerUser(
   }
 
   const { email, username, password, country, locale, gender, age, avatarId } = parsed.data;
+
+  let resolvedAvatarId: string | null = null;
+  if (avatarId) {
+    const option = avatarById(avatarId);
+    if (!option || !isAvatarUnlocked(option.slug, [])) {
+      return { success: false, error: "invalid_input" };
+    }
+    resolvedAvatarId = option.id;
+  }
+
   const passwordHash = await bcrypt.hash(password, 12);
 
   try {
@@ -42,7 +54,7 @@ export async function registerUser(
         locale,
         gender: gender ?? null,
         age: age ?? null,
-        avatarId: avatarId ?? null,
+        avatarId: resolvedAvatarId,
         campaignProgress: {
           create: { ...CAMPAIGN_DEFAULTS },
         },

@@ -1280,7 +1280,13 @@ export async function submitBattleMove(
 
     if (battle.gymId) {
       const { notifyGymResult, notifyGymTmReward } = await import("@/lib/notifications");
-      await notifyGymResult(userId, battle.gymId, true, { rematch: alreadyHasThisBadge });
+      const { avatarRewardsForGymOrder } = await import("@/lib/avatar-unlocks");
+      const avatarsUnlocked =
+        badgeEarned && gym ? avatarRewardsForGymOrder(gym.order).length : 0;
+      await notifyGymResult(userId, battle.gymId, true, {
+        rematch: alreadyHasThisBadge,
+        avatarsUnlocked: avatarsUnlocked > 0 ? avatarsUnlocked : undefined,
+      });
       if (badgeEarned && tmRewardName) {
         await notifyGymTmReward(userId, battle.gymId, tmRewardName);
       }
