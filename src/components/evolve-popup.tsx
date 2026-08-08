@@ -170,9 +170,6 @@ export function EvolvePopup({
               />
             ))}
           </div>
-          <div className="evolve-ring" aria-hidden />
-          <div className="evolve-ring evolve-ring--b" aria-hidden />
-          <div className="evolve-ring evolve-ring--c" aria-hidden />
           <div
             className={`absolute inset-8 rounded-full blur-2xl transition-all duration-500 ${
               phase === "morph" || phase === "flash"

@@ -295,6 +295,7 @@
         "emptyEvent": "No hay evento activo por ahora.",
         "rewards": "Recompensas",
         "claimable": "LISTO",
+        "claimAction": "Reclamar",
         "claimed": "COBRADO",
         "go": "IR",
         "openCampaign": "Abrir viaje",
@@ -602,6 +603,7 @@
       "ptConstitution": "Constitución"
     },
     "autoHeal": "Centro Pokémon",
+    "autoHealHealthy": "Equipo sano",
     "autoHealShort": "Curar",
     "openPc": "PC de almacenamiento",
     "expToNext": "{xp} para el próximo nivel",
@@ -2177,6 +2179,36 @@
     "journeyGuideShort": "Guía",
     "continueExpedition": "Salir a explorar",
     "challengeGym": "Desafiar gimnasio",
+    "partyDock": {
+      "label": "Equipo",
+      "fainted": "Debilitado",
+      "dragHint": "Arrastrá para reordenar",
+      "careHint": "Tocá para curar o revivir",
+      "errors": {
+        "unauthorized": "Sesión expirada.",
+        "in_battle": "Estás en combate.",
+        "rate_limited": "Demasiado rápido. Probá de nuevo.",
+        "last_team_member": "Necesitás al menos un Pokémon.",
+        "team_full": "El equipo está lleno.",
+        "generic": "No se pudo reordenar."
+      }
+    },
+    "guide": {
+      "steps": {
+        "explore": "Explorá el tramo actual",
+        "clear_zone": "Completá todos los tramos de la zona",
+        "claim_rewards": "Reclamá las recompensas de zona",
+        "heal": "Curá a tu equipo",
+        "challenge_gym": "Desafiá el gimnasio"
+      },
+      "cta": {
+        "explore": "Salir a explorar",
+        "clear_zone": "Ver viaje",
+        "claim_rewards": "Reclamar recompensas",
+        "heal": "Curar equipo",
+        "challenge_gym": "Desafiar gimnasio"
+      }
+    },
     "farming": "Estás acá",
     "select": "Seleccionar",
     "selected": "Seleccionada",
@@ -2972,12 +3004,12 @@
     "onboarding": {
       "eyebrow": "Cómo empezar",
       "title": "Tu guía rápida",
-      "step1Title": "Elegí una zona",
-      "step1Body": "En el Viaje marcás dónde avanzar la historia.",
-      "step2Title": "Salí a explorar",
-      "step2Body": "Peleá, capturá y ganá XP en tu zona.",
+      "step1Title": "Explorá tu zona",
+      "step1Body": "Desde el inicio salí a pelear en el tramo marcado. Cada victoria avanza la historia.",
+      "step2Title": "Reclamá recompensas",
+      "step2Body": "Al completar objetivos de zona, cobralos en Aventura (home) o en el Viaje. No los dejes acumulados.",
       "step3Title": "Desafiá el gimnasio",
-      "step3Body": "Cuando estés listo, ganá la medalla y seguí.",
+      "step3Body": "Cuando la zona esté lista, ganá la medalla para desbloquear el siguiente tramo.",
       "step4Title": "Manejá tu energía",
       "step4Body": "Cada combate gasta energía y se recarga sola: 1 punto cada 30 minutos.",
       "cta": "Entendido"

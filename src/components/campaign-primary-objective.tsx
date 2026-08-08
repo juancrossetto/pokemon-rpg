@@ -5,6 +5,14 @@ import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { MapIcon } from "@/components/zone-icons";
+import { GameCtaButton } from "@/components/game-cta-button";
+import {
+  CampaignPartyDock,
+  type CampaignDockMember,
+  type CampaignPartyHeal,
+} from "@/components/campaign-party-dock";
+import type { SquadContextLabels } from "@/components/squad-card-context-menu";
+import type { SquadBagCounts } from "@/lib/squad-bag";
 import type { CampaignActionState, CampaignRequirement } from "@/lib/campaign";
 
 function translateRequirement(
@@ -22,13 +30,12 @@ function translateRequirement(
   return t(req.descriptionKey, params);
 }
 
-/** CTA de la barra: tipografía UI normal, una sola línea. */
+/** CTA de la barra: `.game-cta` + Grobold (mismo patrón que Explorar / Torre). */
 function ObjectiveBarCta({
   href,
   label,
   icon,
   badgeSrc,
-  gymReady,
   disabled,
   isTravel,
   onTravel,
@@ -38,62 +45,77 @@ function ObjectiveBarCta({
   icon: string;
   /** Medalla a conseguir — reemplaza el ícono genérico en desafío de gimnasio. */
   badgeSrc?: string | null;
-  gymReady: boolean;
   disabled: boolean;
   isTravel: boolean;
   onTravel?: () => void;
 }) {
-  const className = [
-    "ui-btn-primary inline-flex w-full items-center justify-center gap-1.5 px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.06em]",
-    gymReady
-      ? "bg-[color-mix(in_srgb,var(--theme-primary-bright)_92%,white)] shadow-[0_4px_14px_color-mix(in_srgb,var(--theme-primary)_35%,transparent)]"
-      : "",
-    disabled ? "pointer-events-none opacity-50" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const className =
+    "mb-0! w-auto! min-h-11! min-w-0! shrink-0 gap-1.5! whitespace-nowrap px-3.5! py-2.5! text-[12px]! [&_.game-cta__label]:whitespace-nowrap";
 
-  const body = (
-    <>
-      {badgeSrc ? (
+  // Badge custom: GameCtaButton sólo acepta material icon, así que armamos la
+  // carcasa a mano (misma tipografía Grobold).
+  if (badgeSrc) {
+    const classes = `game-cta game-cta--red ${disabled ? "game-cta--disabled" : ""} ${className}`.trim();
+    const body = (
+      <>
         <Image
           src={badgeSrc}
           alt=""
           width={22}
           height={22}
           unoptimized
-          className="h-[22px] w-[22px] shrink-0 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
+          className="game-cta__icon h-[22px] w-[22px] shrink-0 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
           aria-hidden
         />
-      ) : (
-        <span className="material-symbols-outlined text-[18px]! leading-none" aria-hidden>
-          {icon}
+        <span className="game-cta__label whitespace-nowrap">{label}</span>
+      </>
+    );
+    if (isTravel) {
+      return (
+        <button type="button" disabled={disabled} onClick={onTravel} className={classes}>
+          {body}
+        </button>
+      );
+    }
+    if (disabled) {
+      return (
+        <span className={classes} aria-disabled="true">
+          {body}
         </span>
-      )}
-      <span className="whitespace-nowrap">{label}</span>
-    </>
-  );
-
-  if (isTravel) {
+      );
+    }
     return (
-      <button type="button" disabled={disabled} onClick={onTravel} className={className}>
+      <Link href={href} className={classes}>
         {body}
-      </button>
+      </Link>
     );
   }
 
-  if (disabled) {
+  if (isTravel) {
     return (
-      <span className={className} aria-disabled="true">
-        {body}
-      </span>
+      <GameCtaButton
+        type="button"
+        disabled={disabled}
+        onClick={onTravel}
+        variant="red"
+        icon={icon}
+        className={className}
+      >
+        {label}
+      </GameCtaButton>
     );
   }
 
   return (
-    <Link href={href} className={className}>
-      {body}
-    </Link>
+    <GameCtaButton
+      href={href}
+      disabled={disabled}
+      variant="red"
+      icon={icon}
+      className={className}
+    >
+      {label}
+    </GameCtaButton>
   );
 }
 
@@ -115,6 +137,7 @@ export function CampaignPrimaryObjective({
   stagesDone,
   stagesTotal,
   journeyMenu,
+  party,
 }: {
   action: CampaignActionState;
   gymHref?: string | null;
@@ -132,6 +155,14 @@ export function CampaignPrimaryObjective({
   stagesDone: number;
   stagesTotal: number;
   journeyMenu?: ReactNode;
+  /** Mini-equipo a la derecha de la barra (antes del CTA). */
+  party?: {
+    locale: string;
+    members: CampaignDockMember[];
+    bagCounts: SquadBagCounts;
+    heal: CampaignPartyHeal;
+    menuLabels: SquadContextLabels;
+  } | null;
 }) {
   const t = useTranslations("campaign");
   const href =
@@ -215,80 +246,94 @@ export function CampaignPrimaryObjective({
         </div>
       </section>
 
-      {/* Próximo objetivo — solo desktop; barra chata para no comerse el recorrido. */}
+      {/*
+        Misma grilla que el cuerpo (sin px lateral en el section): así el equipo
+        comparte el borde derecho con el panel de zona.
+      */}
       <section
-        className={`game-float-card hidden rounded-xl px-3 py-2.5 lg:block ${
+        className={`game-float-card hidden rounded-xl py-2.5 lg:block ${
           gymReady ? "ring-1 ring-electric-yellow/40" : "ring-1 ring-pokeball-red/28"
         }`}
       >
-        <div className="flex items-center gap-4">
-          <div className="min-w-0 flex-1">
-            <p
-              className={`text-[9px] font-semibold uppercase tracking-[0.16em] ${
-                gymReady ? "text-electric-yellow" : "text-pokeball-red"
-              }`}
-            >
-              {t("nextObjective")}
-            </p>
-            <h2 className="truncate text-[0.95rem] font-bold leading-snug tracking-tight text-white">
-              {title}
-            </h2>
+        <div className="grid items-center gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] xl:grid-cols-[220px_minmax(0,1fr)_minmax(280px,340px)]">
+          <div className="flex min-w-0 items-center gap-4 px-3 xl:col-span-2">
+            <div className="min-w-0 flex-1 text-left">
+              <p
+                className={`text-[9px] font-semibold uppercase tracking-[0.16em] ${
+                  gymReady ? "text-electric-yellow" : "text-pokeball-red"
+                }`}
+              >
+                {t("nextObjective")}
+              </p>
+              <h2 className="mt-0.5 text-[1.05rem] font-bold leading-snug tracking-tight text-white sm:text-[1.1rem]">
+                {title}
+              </h2>
 
-            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-              {progressTarget > 0 && (
-                <div className="flex min-w-[8rem] max-w-[14rem] flex-1 items-center gap-2">
-                  <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-black/50 ring-1 ring-white/8">
-                    <div
-                      className="campaign-warm-bar h-full rounded-full transition-all duration-500 motion-reduce:transition-none"
-                      style={{ width: `${progressPct}%` }}
-                    />
+              <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                {progressTarget > 0 && (
+                  <div className="flex w-full max-w-[22rem] items-center gap-2.5">
+                    <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-black/50 ring-1 ring-white/8">
+                      <div
+                        className="campaign-warm-bar h-full rounded-full transition-all duration-500 motion-reduce:transition-none"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                    <span className="shrink-0 font-mono text-[11px] text-electric-yellow">
+                      {progressCurrent}/{progressTarget}
+                    </span>
                   </div>
-                  <span className="shrink-0 font-mono text-[11px] text-electric-yellow">
-                    {progressCurrent}/{progressTarget}
-                  </span>
-                </div>
-              )}
-
-              {action.recommendedLevel != null &&
-                action.recommendedLevel > 0 &&
-                !showReqs && (
-                  <p className="text-[11px] text-white/45">
-                    {t("reqLevel", { level: action.recommendedLevel })}
-                  </p>
                 )}
 
-              {showReqs && (
-                <ul className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5">
-                  {action.missingRequirements.map((req) => (
-                    <li
-                      key={req.id}
-                      className={`inline-flex max-w-full items-center gap-1 text-[11px] ${
-                        req.completed ? "text-electric-yellow/90" : "text-white/50"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[13px]! leading-none">
-                        {req.completed ? "check_circle" : "radio_button_unchecked"}
-                      </span>
-                      <span className="truncate">{translateRequirement(t, req)}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
+                {action.recommendedLevel != null &&
+                  action.recommendedLevel > 0 &&
+                  !showReqs && (
+                    <p className="text-[11px] text-white/45">
+                      {t("reqLevel", { level: action.recommendedLevel })}
+                    </p>
+                  )}
 
-          <div className="w-[min(100%,15rem)] shrink-0">
+                {showReqs && (
+                  <ul className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5">
+                    {action.missingRequirements.map((req) => (
+                      <li
+                        key={req.id}
+                        className={`inline-flex max-w-full items-center gap-1 text-[11px] ${
+                          req.completed ? "text-electric-yellow/90" : "text-white/50"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[13px]! leading-none">
+                          {req.completed ? "check_circle" : "radio_button_unchecked"}
+                        </span>
+                        <span className="truncate">{translateRequirement(t, req)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+
             <ObjectiveBarCta
               href={href}
               label={t(action.labelKey)}
               icon="explore"
               badgeSrc={gymReady ? gymBadgeSrc : null}
-              gymReady={gymReady}
               disabled={!action.enabled || (isTravel && (travelPending || !onTravel))}
               isTravel={isTravel}
               onTravel={onTravel}
             />
           </div>
+
+          {party && party.members.length > 0 ? (
+            <div className="min-w-0 w-full pr-3 lg:col-start-2 xl:col-start-3">
+              <CampaignPartyDock
+                locale={party.locale}
+                initialMembers={party.members}
+                initialBagCounts={party.bagCounts}
+                heal={party.heal}
+                menuLabels={party.menuLabels}
+              />
+            </div>
+          ) : null}
         </div>
       </section>
     </div>

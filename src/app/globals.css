@@ -5762,41 +5762,11 @@ body {
   animation-duration: 22s;
 }
 
-/* Anillos que suben y se cierran sobre el sprite mientras muta. */
-.evolve-ring {
-  position: absolute;
-  left: 50%;
-  bottom: 4%;
-  width: 86%;
-  aspect-ratio: 3 / 1;
-  border-radius: 9999px;
-  border: 2px solid rgba(255, 255, 255, 0.55);
-  box-shadow: 0 0 18px rgba(255, 255, 255, 0.35);
-  pointer-events: none;
+/* Nada de contornos duros al terminar: el aro fino quedaba dibujado sobre el
+   Pokémon ya revelado y se leía como un óvalo de UI, no como luz. */
+.evolve-stage--reveal .evolve-orbit,
+.evolve-stage--done .evolve-orbit {
   opacity: 0;
-  transform: translateX(-50%);
-}
-.evolve-stage--morph .evolve-ring {
-  animation: evolve-ring-rise 1.6s ease-in infinite;
-}
-.evolve-ring--b {
-  animation-delay: 0.53s;
-}
-.evolve-ring--c {
-  animation-delay: 1.06s;
-}
-@keyframes evolve-ring-rise {
-  0% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(0) scale(1.15);
-  }
-  18% {
-    opacity: 0.85;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-190%) scale(0.35);
-  }
 }
 
 /* Partículas ascendentes: dan volumen al centro sin costar layout. */
@@ -5908,13 +5878,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .evolve-vortex,
   .evolve-rays,
-  .evolve-ring,
   .evolve-mote,
   .evolve-burst,
   .evolve-sparks {
     animation: none;
   }
-  .evolve-ring,
   .evolve-motes,
   .evolve-sparks {
     display: none;
@@ -6820,6 +6788,11 @@ body {
   }
 }
 
+/*
+  Onda del impacto. Sin borde duro a propósito: un contorno de 2px se lee como
+  una pastilla de UI cruzando el texto en vez de una onda de luz — el mismo
+  problema que tenían los aros del popup de evolución.
+*/
 .learned-ring {
   position: absolute;
   left: 50%;
@@ -6827,13 +6800,23 @@ body {
   width: 60%;
   aspect-ratio: 2.4 / 1;
   border-radius: 9999px;
-  border: 2px solid color-mix(in srgb, var(--learned-accent, #60a5fa) 65%, white);
   pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 58%,
+    color-mix(in srgb, var(--learned-accent, #60a5fa) 55%, white) 76%,
+    transparent 92%
+  );
   animation: learned-ring 1.3s cubic-bezier(0.12, 0.72, 0.28, 1) 0.26s forwards;
 }
 .learned-ring--b {
   animation-delay: 0.44s;
-  border-color: rgba(255, 255, 255, 0.55);
+  background: radial-gradient(
+    ellipse at center,
+    transparent 58%,
+    rgba(255, 255, 255, 0.5) 76%,
+    transparent 92%
+  );
 }
 @keyframes learned-ring {
   0% {
@@ -6843,7 +6826,6 @@ body {
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(2.8);
-    border-width: 0.5px;
   }
 }
 

@@ -295,6 +295,7 @@
         "emptyEvent": "No active event right now.",
         "rewards": "Rewards",
         "claimable": "READY",
+        "claimAction": "Claim",
         "claimed": "CLAIMED",
         "go": "GO",
         "openCampaign": "Open journey",
@@ -602,6 +603,7 @@
       "ptConstitution": "Constitution"
     },
     "autoHeal": "Pokémon Center",
+    "autoHealHealthy": "Party is healthy",
     "autoHealShort": "Heal",
     "openPc": "Storage PC",
     "expToNext": "{xp} to next level",
@@ -2177,6 +2179,36 @@
     "journeyGuideShort": "Guide",
     "continueExpedition": "Head out to explore",
     "challengeGym": "Challenge gym",
+    "partyDock": {
+      "label": "Party",
+      "fainted": "Fainted",
+      "dragHint": "Drag to reorder",
+      "careHint": "Tap to heal or revive",
+      "errors": {
+        "unauthorized": "Session expired.",
+        "in_battle": "You're in a battle.",
+        "rate_limited": "Too fast. Try again.",
+        "last_team_member": "You need at least one Pokémon.",
+        "team_full": "Your party is full.",
+        "generic": "Couldn't reorder."
+      }
+    },
+    "guide": {
+      "steps": {
+        "explore": "Explore the current stretch",
+        "clear_zone": "Clear every stretch in the zone",
+        "claim_rewards": "Claim zone rewards",
+        "heal": "Heal your team",
+        "challenge_gym": "Challenge the gym"
+      },
+      "cta": {
+        "explore": "Head out to explore",
+        "clear_zone": "Open journey",
+        "claim_rewards": "Claim rewards",
+        "heal": "Heal team",
+        "challenge_gym": "Challenge gym"
+      }
+    },
     "farming": "You are here",
     "select": "Select",
     "selected": "Selected",
@@ -2972,12 +3004,12 @@
     "onboarding": {
       "eyebrow": "How to start",
       "title": "Quick guide",
-      "step1Title": "Pick a zone",
-      "step1Body": "On the Journey, mark where to advance the story.",
-      "step2Title": "Go explore",
-      "step2Body": "Battle, catch, and earn XP in your zone.",
+      "step1Title": "Explore your zone",
+      "step1Body": "From home, head out to battle the marked stretch. Each win advances the story.",
+      "step2Title": "Claim rewards",
+      "step2Body": "When zone objectives are ready, claim them in Adventure (home) or on the Journey. Don't leave them sitting.",
       "step3Title": "Challenge the gym",
-      "step3Body": "When ready, earn the badge and keep going.",
+      "step3Body": "When the zone is ready, earn the badge to unlock the next stretch.",
       "step4Title": "Manage your energy",
       "step4Body": "Every battle spends energy and it refills on its own: 1 point every 30 minutes.",
       "cta": "Got it"

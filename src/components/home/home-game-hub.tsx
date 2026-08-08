@@ -55,6 +55,7 @@ export type HomeHubLabels = {
     emptyWeekly: string;
     emptyEvent: string;
     claimable: string;
+    claimAction: string;
     claimed: string;
     openCampaign: string;
     openEvents: string;

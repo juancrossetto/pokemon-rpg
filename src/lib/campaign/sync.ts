@@ -44,6 +44,7 @@ export async function completeFarmingStageOnWildWin(userId: string): Promise<voi
     const stage = findStage(progress.farmingStageId)?.stage;
     if (!stage || stage.isGymMilestone) return;
 
+    const wasEmpty = progress.completedStageIds.length === 0;
     const patch = applyStageCompletion(progress, stage.id);
     if (!Object.keys(patch).length) return;
 
@@ -56,6 +57,22 @@ export async function completeFarmingStageOnWildWin(userId: string): Promise<voi
         ...farming,
       },
     });
+
+    // Primera etapa limpia: Oak te da balls (no al elegir inicial, para no
+    // capturar en el tutorial).
+    if (wasEmpty) {
+      const pokeBall = await tx.item.findUnique({
+        where: { name: "Poke Ball" },
+        select: { id: true },
+      });
+      if (pokeBall) {
+        await tx.inventoryItem.upsert({
+          where: { userId_itemId: { userId, itemId: pokeBall.id } },
+          create: { userId, itemId: pokeBall.id, quantity: 5 },
+          update: { quantity: { increment: 5 } },
+        });
+      }
+    }
   });
 }
 

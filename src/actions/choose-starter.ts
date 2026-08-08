@@ -11,7 +11,6 @@ import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 import { TUTORIAL_BATTLE_ID } from "@/lib/battle-tutorial";
 
 const STARTER_LEVEL = 5;
-const STARTER_POKEBALL_COUNT = 5;
 const STARTER_POTION_COUNT = 3;
 const STARTER_BERRY_COUNT = 2;
 const STARTER_COINS = 500;
@@ -65,8 +64,7 @@ export async function chooseStarter(
   const moveIds = await getMovesetForLevel(speciesId, STARTER_LEVEL);
   const moves = await prisma.move.findMany({ where: { id: { in: moveIds } } });
 
-  const [pokeBall, potion, oranBerry] = await Promise.all([
-    prisma.item.findUnique({ where: { name: "Poke Ball" } }),
+  const [potion, oranBerry] = await Promise.all([
     prisma.item.findUnique({ where: { name: "Potion" } }),
     prisma.item.findUnique({ where: { name: "Oran Berry" } }),
   ]);
@@ -95,15 +93,6 @@ export async function chooseStarter(
         },
       },
     }),
-    ...(pokeBall
-      ? [
-          prisma.inventoryItem.upsert({
-            where: { userId_itemId: { userId, itemId: pokeBall.id } },
-            create: { userId, itemId: pokeBall.id, quantity: STARTER_POKEBALL_COUNT },
-            update: { quantity: { increment: STARTER_POKEBALL_COUNT } },
-          }),
-        ]
-      : []),
     ...(potion
       ? [
           prisma.inventoryItem.upsert({

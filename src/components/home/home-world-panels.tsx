@@ -441,6 +441,7 @@ const TAB_ACCENT: Record<EventsTab, string> = {
 };
 
 export type HomeEventsAdventure = {
+  zoneId: string | null;
   zoneName: string | null;
   objectives: HomeObjective[];
 };
@@ -487,6 +488,7 @@ export function HomeEventsProgress({
     emptyWeekly: string;
     emptyEvent: string;
     claimable: string;
+    claimAction: string;
     claimed: string;
     openCampaign: string;
     openEvents: string;
@@ -499,12 +501,46 @@ export function HomeEventsProgress({
     missionLabels: Record<string, string>;
   };
 }) {
+  const locale = useLocale();
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [claimedIds, setClaimedIds] = useState<Set<string>>(() => new Set());
   const [tab, setTab] = useState<EventsTab>(() =>
-    adventure.objectives.length > 0 ? "adventure" : "weekly",
+    adventure.objectives.some((o) => o.claimable)
+      ? "adventure"
+      : adventure.objectives.length > 0
+        ? "adventure"
+        : "weekly",
   );
 
+  function claimObjective(objectiveId: string, origin?: { x: number; y: number }) {
+    if (!adventure.zoneId || pending) return;
+    startTransition(async () => {
+      const { claimZoneObjective } = await import("@/actions/zone-rewards");
+      const { playLootCollectFx, rewardToLootPiece } = await import("@/lib/loot-fly-fx");
+      const result = await claimZoneObjective(locale, adventure.zoneId!, objectiveId);
+      if (!result.ok) return;
+      setClaimedIds((prev) => new Set(prev).add(objectiveId));
+      playLootCollectFx({
+        origin,
+        coinsDelta: result.coins,
+        pieces: [
+          ...(result.coins > 0
+            ? [rewardToLootPiece({ kind: "coins", amount: result.coins })]
+            : []),
+          rewardToLootPiece({
+            kind: "item",
+            itemName: result.itemName,
+            quantity: result.quantity,
+          }),
+        ],
+      });
+      router.refresh();
+    });
+  }
+
   const adventureDone = adventure.objectives.filter(
-    (o) => o.done || o.claimed,
+    (o) => o.done || o.claimed || claimedIds.has(o.id),
   ).length;
   const adventurePct =
     adventure.objectives.length === 0
@@ -646,7 +682,9 @@ export function HomeEventsProgress({
             ) : (
               <ul className="home-quest-rows">
                 {adventure.objectives.map((obj) => {
-                  const complete = obj.done || obj.claimed;
+                  const justClaimed = claimedIds.has(obj.id);
+                  const complete = obj.done || obj.claimed || justClaimed;
+                  const claimable = obj.claimable && !justClaimed;
                   const pct =
                     obj.target > 0
                       ? Math.min(100, Math.round((obj.current / obj.target) * 100))
@@ -654,8 +692,8 @@ export function HomeEventsProgress({
                   return (
                     <li
                       key={obj.id}
-                      className={`ev-quest__card${obj.claimable ? " is-ready" : ""}${
-                        complete && !obj.claimable ? " is-done" : ""
+                      className={`ev-quest__card${claimable ? " is-ready" : ""}${
+                        complete && !claimable ? " is-done" : ""
                       }`}
                     >
                       <div className="ev-quest__body">
@@ -664,7 +702,21 @@ export function HomeEventsProgress({
                           <p className="ev-quest__text truncate">
                             {labels.objectiveLabels[obj.id] ?? obj.labelKey}
                           </p>
-                          {obj.claimable ? (
+                          {claimable && adventure.zoneId ? (
+                            <button
+                              type="button"
+                              disabled={pending}
+                              className="home-quest-ready home-reward-shine"
+                              onClick={(e) =>
+                                claimObjective(obj.id, {
+                                  x: e.clientX,
+                                  y: e.clientY,
+                                })
+                              }
+                            >
+                              {labels.claimAction}
+                            </button>
+                          ) : claimable ? (
                             <span className="home-quest-ready home-reward-shine">
                               {labels.claimable}
                             </span>

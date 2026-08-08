@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { showdownTypeSymbolUrl } from "@/lib/type-icons";
 import { typeColor } from "@/lib/type-colors";
 import type { CampaignMilestone } from "@/lib/campaign";
+import type { AdventureGuideStep } from "@/lib/adventure-guide";
 import { RegionMapDialog, type MapLocation } from "@/components/region-map-dialog";
 import { ExpeditionAmbient } from "@/components/home/expedition-ambient";
 import { GameCtaButton } from "@/components/game-cta-button";
@@ -32,6 +33,8 @@ export type CurrentExpeditionProps = {
   variant?: "hero" | "rail";
   /** Ruta directa al gimnasio del hito, cuando `/gyms` no lo lista (Alto Mando). */
   gymHref?: string | null;
+  /** Checklist paso a paso de la aventura. */
+  guideSteps?: AdventureGuideStep[];
 };
 
 export function CurrentExpedition({
@@ -53,11 +56,17 @@ export function CurrentExpedition({
   stagesTotal,
   variant = "hero",
   gymHref,
+  guideSteps = [],
 }: CurrentExpeditionProps) {
   const t = useTranslations("campaign");
   const tTypes = useTranslations("pokedex.pokemonTypes");
-  const ctaHref = milestoneHref(milestone, { gymHref });
-  const ctaLabel = t(milestoneCtaKey(milestone));
+  const ctaHref =
+    guideSteps.find((s) => s.status === "current")?.href ??
+    milestoneHref(milestone, { gymHref });
+  const currentGuide = guideSteps.find((s) => s.status === "current");
+  const ctaLabel = currentGuide
+    ? t(`guide.cta.${currentGuide.id}`)
+    : t(milestoneCtaKey(milestone));
   const stagePct =
     stagesTotal > 0 ? Math.max(0, Math.min(100, (stagesDone / stagesTotal) * 100)) : 0;
 
@@ -250,7 +259,43 @@ export function CurrentExpedition({
         </div>
 
         <div className="space-y-1.5 sm:space-y-2.5">
-          {stagesTotal > 0 && (
+          {guideSteps.length > 0 ? (
+            <ol className="pointer-events-auto flex flex-col gap-1 rounded-xl border border-white/10 bg-black/35 px-2.5 py-2 backdrop-blur-sm">
+              {guideSteps.map((step, i) => {
+                const isCurrent = step.status === "current";
+                const isDone = step.status === "done";
+                return (
+                  <li key={step.id}>
+                    <Link
+                      href={step.href}
+                      className={`flex items-center gap-2 rounded-lg px-1.5 py-1 text-[11px] leading-snug transition ${
+                        isCurrent
+                          ? "bg-electric-yellow/15 text-white"
+                          : isDone
+                            ? "text-white/45"
+                            : "text-white/55 hover:text-white/80"
+                      }`}
+                    >
+                      <span
+                        className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
+                          isCurrent
+                            ? "bg-electric-yellow text-black"
+                            : isDone
+                              ? "bg-emerald-500/30 text-emerald-200"
+                              : "bg-white/10 text-white/50"
+                        }`}
+                      >
+                        {isDone ? "✓" : i + 1}
+                      </span>
+                      <span className={isCurrent ? "font-semibold" : undefined}>
+                        {t(`guide.steps.${step.id}`)}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : stagesTotal > 0 ? (
             <div>
               <div className="mb-0.5 flex items-center justify-between gap-2 text-[10px] text-white/55 sm:mb-1 sm:text-[11px] sm:text-white/60">
                 <span>{t("journeyProgress")}</span>
@@ -271,7 +316,7 @@ export function CurrentExpedition({
                 />
               </div>
             </div>
-          )}
+          ) : null}
 
           <div className="flex items-center gap-1.5 sm:gap-2">
             <div className="pointer-events-auto min-w-0 flex-1">

@@ -295,6 +295,7 @@
         "emptyEvent": "Nenhum evento ativo no momento.",
         "rewards": "Recompensas",
         "claimable": "PRONTO",
+        "claimAction": "Resgatar",
         "claimed": "RESGATADO",
         "go": "IR",
         "openCampaign": "Abrir jornada",
@@ -602,6 +603,7 @@
       "ptConstitution": "Constituição"
     },
     "autoHeal": "Centro Pokémon",
+    "autoHealHealthy": "Equipe saudável",
     "autoHealShort": "Curar",
     "openPc": "PC de armazenamento",
     "expToNext": "{xp} para o próximo nível",
@@ -2177,6 +2179,36 @@
     "journeyGuideShort": "Guia",
     "continueExpedition": "Sair para explorar",
     "challengeGym": "Desafiar ginásio",
+    "partyDock": {
+      "label": "Equipe",
+      "fainted": "Desmaiado",
+      "dragHint": "Arraste para reordenar",
+      "careHint": "Toque para curar ou reviver",
+      "errors": {
+        "unauthorized": "Sessão expirada.",
+        "in_battle": "Você está em combate.",
+        "rate_limited": "Rápido demais. Tente de novo.",
+        "last_team_member": "Você precisa de pelo menos um Pokémon.",
+        "team_full": "A equipe está cheia.",
+        "generic": "Não foi possível reordenar."
+      }
+    },
+    "guide": {
+      "steps": {
+        "explore": "Explore o trecho atual",
+        "clear_zone": "Complete todos os trechos da zona",
+        "claim_rewards": "Resgate as recompensas da zona",
+        "heal": "Cure seu time",
+        "challenge_gym": "Desafie o ginásio"
+      },
+      "cta": {
+        "explore": "Sair para explorar",
+        "clear_zone": "Ver jornada",
+        "claim_rewards": "Resgatar recompensas",
+        "heal": "Curar time",
+        "challenge_gym": "Desafiar ginásio"
+      }
+    },
     "farming": "Você está aqui",
     "select": "Selecionar",
     "selected": "Selecionada",
@@ -2972,12 +3004,12 @@
     "onboarding": {
       "eyebrow": "Como começar",
       "title": "Guia rápida",
-      "step1Title": "Escolha uma zona",
-      "step1Body": "Na Jornada você marca onde avançar a história.",
-      "step2Title": "Saia para explorar",
-      "step2Body": "Batalhe, capture e ganhe XP na sua zona.",
+      "step1Title": "Explore sua zona",
+      "step1Body": "Do início, saia para batalhar no trecho marcado. Cada vitória avança a história.",
+      "step2Title": "Resgate recompensas",
+      "step2Body": "Ao completar objetivos de zona, resgate-os em Aventura (home) ou na Jornada. Não deixe acumulado.",
       "step3Title": "Desafie o ginásio",
-      "step3Body": "Quando estiver pronto, ganhe a medalha e siga.",
+      "step3Body": "Quando a zona estiver pronta, ganhe a medalha para liberar o próximo trecho.",
       "step4Title": "Cuide da sua energia",
       "step4Body": "Cada batalha gasta energia e ela se recarrega sozinha: 1 ponto a cada 30 minutos.",
       "cta": "Entendi"

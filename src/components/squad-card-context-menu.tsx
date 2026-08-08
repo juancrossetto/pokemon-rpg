@@ -74,6 +74,11 @@ export function SquadCardContextMenu({
   showViewTeam = true,
   triggerVariant = "default",
   triggerPosition,
+  /** Sin botón ⋮ — abrir con click primario (`openOnPrimaryClick`) o menú contextual. */
+  hideTrigger = false,
+  /** Click izquierdo sobre el hijo abre el menú (útil en strips compactas). */
+  openOnPrimaryClick = false,
+  className = "",
   labels,
   bagCounts = EMPTY_SQUAD_BAG,
   moves,
@@ -122,6 +127,11 @@ export function SquadCardContextMenu({
    * pisaban.
    */
   triggerPosition?: string;
+  /** Sin botón ⋮ — abrir con click primario o menú contextual. */
+  hideTrigger?: boolean;
+  /** Click izquierdo sobre el hijo abre el menú (strips compactas). */
+  openOnPrimaryClick?: boolean;
+  className?: string;
   labels: SquadContextLabels;
   bagCounts?: SquadBagCounts;
   moves?: (TeamMoveDetail | null)[];
@@ -228,7 +238,7 @@ export function SquadCardContextMenu({
   return (
     <div
       ref={rootRef}
-      className={`group relative h-full shrink-0 ${fx ? "squad-fx-pulse" : ""}`}
+      className={`group relative h-full shrink-0 ${fx ? "squad-fx-pulse" : ""} ${className}`.trim()}
       style={
         fxMeta
           ? ({ "--squad-fx-glow": fxMeta.glow } as CSSProperties)
@@ -239,6 +249,17 @@ export function SquadCardContextMenu({
         e.stopPropagation();
         openAt(e.clientX, e.clientY);
       }}
+      onClick={
+        openOnPrimaryClick
+          ? (e) => {
+              // Drag / reorder: no abrir el menú al soltar.
+              if ((e.target as HTMLElement).closest("[data-dock-dragging]")) return;
+              e.preventDefault();
+              e.stopPropagation();
+              openAt(e.clientX, e.clientY);
+            }
+          : undefined
+      }
     >
       {children}
 
@@ -260,30 +281,32 @@ export function SquadCardContextMenu({
         </p>
       ) : null}
 
-      <button
-        type="button"
-        aria-label={labels.hint}
-        title={labels.hint}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-          openAt(rect.left, rect.bottom + 4);
-        }}
-        className={
-          triggerVariant === "ghost"
-            ? `absolute ${triggerAnchor} z-20 flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition duration-150 hover:bg-white/8 hover:text-white/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/25 active:bg-white/12 active:text-white`
-            : `absolute ${triggerAnchor} z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-[0_4px_12px_rgba(0,0,0,0.45)] backdrop-blur-md transition duration-200 hover:scale-105 hover:border-white/30 hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 active:scale-95`
-        }
-      >
-        <span
-          className={`material-symbols-outlined leading-none ${
-            triggerVariant === "ghost" ? "text-[15px]!" : "text-[17px]!"
-          }`}
+      {!hideTrigger ? (
+        <button
+          type="button"
+          aria-label={labels.hint}
+          title={labels.hint}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+            openAt(rect.left, rect.bottom + 4);
+          }}
+          className={
+            triggerVariant === "ghost"
+              ? `absolute ${triggerAnchor} z-20 flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition duration-150 hover:bg-white/8 hover:text-white/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/25 active:bg-white/12 active:text-white`
+              : `absolute ${triggerAnchor} z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-[0_4px_12px_rgba(0,0,0,0.45)] backdrop-blur-md transition duration-200 hover:scale-105 hover:border-white/30 hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 active:scale-95`
+          }
         >
-          more_vert
-        </span>
-      </button>
+          <span
+            className={`material-symbols-outlined leading-none ${
+              triggerVariant === "ghost" ? "text-[15px]!" : "text-[17px]!"
+            }`}
+          >
+            more_vert
+          </span>
+        </button>
+      ) : null}
 
       {menu && (
         <div

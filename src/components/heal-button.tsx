@@ -52,6 +52,7 @@ export function HealButton({
   teamMaxLevel,
   stretch = false,
   compact = false,
+  iconOnly = false,
   onHealed,
   onHealFailed,
 }: {
@@ -66,6 +67,8 @@ export function HealButton({
   stretch?: boolean;
   /** Lobby / fila embebida: sin hint inferior, botón más contenido. */
   compact?: boolean;
+  /** Dock de campaña: sólo ícono Chansey / bolt (tooltip con el estado). */
+  iconOnly?: boolean;
   /** Al iniciar la cura (p. ej. ocultar el card de heridos en /battle). */
   onHealed?: () => void;
   /** Si la cura falló tras un hide optimista. */
@@ -80,17 +83,21 @@ export function HealButton({
   const canPay = coins >= rushCost;
   const freeReady = needsHealing && !onCooldown;
 
-  const shell = stretch
-    ? "flex w-full min-w-0 flex-col items-stretch gap-1 sm:w-auto sm:items-end"
-    : compact
-      ? "flex flex-col items-stretch gap-0.5"
-      : "flex flex-col items-end gap-1";
-
-  const btnSize = compact
-    ? "game-cta !mb-0 !min-h-10 !w-auto !min-w-[9.75rem] !px-3 !py-2 !text-[0.78rem]"
+  const shell = iconOnly
+    ? "relative flex flex-col items-center"
     : stretch
-      ? "game-cta !mb-0 !min-h-10 w-full !px-3 !py-2 !text-[0.85rem] sm:!w-auto sm:!min-w-[11rem] sm:!px-[1.1rem] sm:!py-[0.55rem] sm:!text-[0.95rem]"
-      : "game-cta !mb-0 !w-auto !min-w-[11rem]";
+      ? "flex w-full min-w-0 flex-col items-stretch gap-1 sm:w-auto sm:items-end"
+      : compact
+        ? "flex flex-col items-stretch gap-0.5"
+        : "flex flex-col items-end gap-1";
+
+  const btnSize = iconOnly
+    ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pokeball-red/90 text-white shadow-[0_2px_10px_rgba(238,21,21,0.35)] ring-1 ring-white/15 transition hover:bg-pokeball-red disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
+    : compact
+      ? "game-cta !mb-0 !min-h-10 !w-auto !min-w-[9.75rem] !px-3 !py-2 !text-[0.78rem]"
+      : stretch
+        ? "game-cta !mb-0 !min-h-10 w-full !px-3 !py-2 !text-[0.85rem] sm:!w-auto sm:!min-w-[11rem] sm:!px-[1.1rem] sm:!py-[0.55rem] sm:!text-[0.95rem]"
+        : "game-cta !mb-0 !w-auto !min-w-[11rem]";
 
   const hintAlign = stretch || compact ? "text-center sm:text-right" : "text-right";
 
@@ -111,6 +118,21 @@ export function HealButton({
   }
 
   if (!needsHealing) {
+    if (iconOnly) {
+      return (
+        <div className={shell}>
+          <button
+            type="button"
+            disabled
+            title={t("autoHealHealthy")}
+            aria-label={t("autoHealHealthy")}
+            className={`${btnSize} opacity-40`}
+          >
+            <ChanseyIcon className="h-5 w-5 opacity-80" />
+          </button>
+        </div>
+      );
+    }
     return (
       <div className={shell}>
         <button
@@ -125,6 +147,45 @@ export function HealButton({
         {!compact && !stretch && noviceFree ? (
           <span className={`whitespace-nowrap text-[10px] font-medium text-emerald-400/90 ${hintAlign}`}>
             {t("healNoviceFree", { level: HEAL_FREE_UNTIL_LEVEL })}
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (iconOnly) {
+    const rushTitle = t("healRushHint", { minutes: minutesLeft(cooldownMsLeft) });
+    const freeTitle = noviceFree
+      ? t("healNoviceFreeHint", { level: HEAL_FREE_UNTIL_LEVEL })
+      : t("autoHeal");
+    return (
+      <div className={shell}>
+        {onCooldown ? (
+          <button
+            type="button"
+            disabled={pending || !canPay}
+            onClick={() => run(true)}
+            title={`${rushTitle} · ${rushCost}`}
+            aria-label={t("healRush")}
+            className={`${btnSize} ${!canPay ? "bg-white/10 text-white/50 shadow-none" : "bg-electric-yellow/90 text-black hover:bg-electric-yellow"}`}
+          >
+            <span className="material-symbols-outlined text-[18px]! leading-none">bolt</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={pending || !freeReady}
+            onClick={() => run(false)}
+            title={freeTitle}
+            aria-label={t("autoHeal")}
+            className={btnSize}
+          >
+            <ChanseyIcon className="h-5 w-5" />
+          </button>
+        )}
+        {error ? (
+          <span className="absolute -bottom-4 left-1/2 z-10 w-max max-w-[9rem] -translate-x-1/2 text-center text-[9px] text-error">
+            {t(`healErrors.${error}`)}
           </span>
         ) : null}
       </div>

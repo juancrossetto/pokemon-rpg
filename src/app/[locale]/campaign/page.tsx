@@ -18,6 +18,15 @@ import {
   type GymRequirement,
   type JourneySummary,
 } from "@/components/campaign-journey";
+import type { CampaignDockMember } from "@/components/campaign-party-dock";
+import { loadSquadBagCounts } from "@/lib/load-squad-bag";
+import { calculateMaxHp } from "@/lib/stats";
+import { spriteFor } from "@/lib/shiny";
+import {
+  healCooldownMsLeft,
+  healRushCost,
+  isPokemonCenterFree,
+} from "@/lib/healing";
 
 export default async function CampaignPage({
   params,
@@ -34,13 +43,13 @@ export default async function CampaignPage({
 
   await redirectIfInBattle(userId, locale);
 
-  const [t, , progress] = await Promise.all([
-    getTranslations("campaign"),
+  const [tHome, , progress] = await Promise.all([
+    getTranslations("home"),
     getTranslations("ux"),
     ensureCampaignProgress(userId),
   ]);
 
-  const [zones, badges, gyms, team, shinies] = await Promise.all([
+  const [zones, badges, gyms, team, shinies, bagCounts, userHeal] = await Promise.all([
     loadMapLocations(userId, progress),
     prisma.badge.findMany({
       where: { userId, gym: { regionId: progress.currentRegionId } },
@@ -64,9 +73,25 @@ export default async function CampaignPage({
     }),
     prisma.pokemonInstance.findMany({
       where: { ownerId: userId, teamSlot: { not: null } },
-      select: { level: true },
+      select: {
+        id: true,
+        level: true,
+        currentHp: true,
+        ptConstitution: true,
+        nickname: true,
+        isFavorite: true,
+        isTradeLocked: true,
+        isShiny: true,
+        species: { select: { name: true, spriteUrl: true, baseHp: true } },
+      },
+      orderBy: { teamSlot: "asc" },
     }),
     prisma.pokemonInstance.count({ where: { ownerId: userId, isShiny: true } }),
+    loadSquadBagCounts(userId),
+    prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { coins: true, lastHealAt: true },
+    }),
   ]);
 
   // El match va por `gymOrder`, que la zona ya trae de la data de campaña: por
@@ -94,6 +119,27 @@ export default async function CampaignPage({
   const chapters = buildChapters(zones, earnedOrders, gymOrderByLocationId, eliteOrders);
   const initialChapter = activeChapterIndex(chapters, progress.farmingLocationId);
 
+  const teamMaxLevel = Math.max(...team.map((p) => p.level), 1);
+  const dockMembers: CampaignDockMember[] = team.map((p) => {
+    const maxHp = calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution);
+    return {
+      id: p.id,
+      speciesName: p.species.name,
+      nickname: p.nickname,
+      spriteUrl: spriteFor(p.species.spriteUrl, p.isShiny),
+      level: p.level,
+      currentHp: Math.min(p.currentHp, maxHp),
+      maxHp,
+      isFavorite: p.isFavorite,
+      isTradeLocked: p.isTradeLocked,
+    };
+  });
+  const hurtCount = dockMembers.filter((m) => m.currentHp < m.maxHp).length;
+  const needsHealing = hurtCount > 0;
+  const healCdMs = isPokemonCenterFree(teamMaxLevel)
+    ? 0
+    : healCooldownMsLeft(userHeal.lastHealAt);
+
   const allSpecies = new Map(zones.flatMap((z) => z.encounters).map((e) => [e.speciesId, e]));
   const summary: JourneySummary = {
     badges: earnedOrders.filter((o) => !eliteOrders.has(o)).length,
@@ -107,7 +153,7 @@ export default async function CampaignPage({
     zonesTotal: zones.length,
     shinies,
     journeyPercent: journeyProgressPercent(progress),
-    teamMaxLevel: Math.max(...team.map((p) => p.level), 1),
+    teamMaxLevel,
   };
 
   const milestone = nextMilestone(progress, earnedOrders);
@@ -127,6 +173,32 @@ export default async function CampaignPage({
           milestone={milestone}
           progress={progress}
           earnedGymOrders={earnedOrders}
+          party={{
+            members: dockMembers,
+            bagCounts,
+            heal: {
+              needsHealing,
+              cooldownMsLeft: healCdMs,
+              rushCost: healRushCost(hurtCount),
+              coins: userHeal.coins,
+              teamMaxLevel,
+            },
+            menuLabels: {
+              favoriteOn: tHome("squadMenu.favoriteOn"),
+              favoriteOff: tHome("squadMenu.favoriteOff"),
+              lockOn: tHome("squadMenu.lockOn"),
+              lockOff: tHome("squadMenu.lockOff"),
+              viewTeam: tHome("squadMenu.viewTeam"),
+              depositToPc: tHome("squadMenu.depositToPc"),
+              depositLastBlocked: tHome("squadMenu.depositLastBlocked"),
+              depositLockedBlocked: tHome("squadMenu.depositLockedBlocked"),
+              hint: tHome("squadMenu.hint"),
+              heal: tHome("squadMenu.heal"),
+              revive: tHome("squadMenu.revive"),
+              restorePp: tHome("squadMenu.restorePp"),
+              rareCandy: tHome("squadMenu.rareCandy"),
+            },
+          }}
         />
       </div>
     </div>

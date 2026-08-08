@@ -9,27 +9,27 @@
     "trainers": [
       {
         "name": "Excursionista Rocío",
-        "pokemon": [{ "name": "geodude", "level": 8 }]
+        "pokemon": [{ "name": "geodude", "level": 7 }]
       },
       {
         "name": "Minero Beto",
         "pokemon": [
-          { "name": "geodude", "level": 10 },
-          { "name": "rhyhorn", "level": 11 }
+          { "name": "geodude", "level": 8 },
+          { "name": "rhyhorn", "level": 9 }
         ]
       },
       {
         "name": "Excursionista Liam",
         "pokemon": [
-          { "name": "onix", "level": 11 },
-          { "name": "geodude", "level": 12 }
+          { "name": "onix", "level": 9 },
+          { "name": "geodude", "level": 10 }
         ]
       }
     ],
     "pokemon": [
-      { "name": "geodude", "level": 12 },
-      { "name": "kabuto", "level": 13 },
-      { "name": "onix", "level": 14 }
+      { "name": "geodude", "level": 10 },
+      { "name": "kabuto", "level": 11 },
+      { "name": "onix", "level": 12 }
     ],
     "isElite": false
   },

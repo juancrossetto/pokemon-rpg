@@ -49,7 +49,7 @@ function trainer(
 
 /** Dos entrenadores por ruta/cueva; las ciudades y gimnasios no tienen. */
 export const ROUTE_TRAINERS: RouteTrainer[] = [
-  trainer("route-1", "youngster", 16, 5, 60),
+  trainer("route-1", "youngster", 16, 4, 50),
   trainer("route-2", "bug_catcher", 13, 7, 80),
   trainer("viridian-forest", "bug_catcher_2", 11, 9, 100),
   trainer("viridian-forest", "camper", 10, 10, 110),

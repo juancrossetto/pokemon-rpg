@@ -40,8 +40,8 @@ function viridianForestStages(baseOrder: number): CampaignStage[] {
   // dando la sensación de profundidad sin el muro de grindeo.
   const sectors = [
     { key: "e", sectorId: "vf-entrance", species: entranceSpecies, level: 3 },
-    { key: "m", sectorId: "vf-mid", species: midSpecies, level: 5 },
-    { key: "d", sectorId: "vf-deep", species: deepSpecies, level: 7 },
+    { key: "m", sectorId: "vf-mid", species: midSpecies, level: 4 },
+    { key: "d", sectorId: "vf-deep", species: deepSpecies, level: 5 },
   ];
 
   const stages: CampaignStage[] = [];
@@ -94,7 +94,7 @@ const ROUTE_1: CampaignLocation = {
   nameKey: "locations.route_1",
   kind: "route",
   mapKey: "route-1",
-  stages: routeStages("route-1", "r1", 3, 1, [16, 19], 2, 5, "viridian-city"),
+  stages: routeStages("route-1", "r1", 2, 1, [16, 19], 2, 4, "viridian-city"),
 };
 
 const VIRIDIAN_CITY: CampaignLocation = {
@@ -128,11 +128,11 @@ const ROUTE_2: CampaignLocation = {
   stages: routeStages(
     "route-2",
     "r2",
-    3,
+    2,
     5,
     [10, 13, 16, 19],
     3,
-    6,
+    5,
     "viridian-forest",
   ),
 };
@@ -162,8 +162,8 @@ const PEWTER_CITY: CampaignLocation = {
       order: 23,
       nameKey: "stages.pewter_1",
       spawnSpeciesIds: [16, 19, 21],
-      levelMin: 7,
-      levelMax: 10,
+      levelMin: 5,
+      levelMax: 8,
       unlocksLocationId: "pewter-gym",
     },
   ],
@@ -184,8 +184,8 @@ const PEWTER_GYM: CampaignLocation = {
       order: 24,
       nameKey: "stages.pewter_gym_milestone",
       spawnSpeciesIds: [74], // Geodude flavour; real clear = badge
-      levelMin: 12,
-      levelMax: 14,
+      levelMin: 9,
+      levelMax: 11,
       isGymMilestone: true,
       gymOrder: 1,
       unlocksLocationId: "route-3",

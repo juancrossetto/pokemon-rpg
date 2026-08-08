@@ -5,6 +5,12 @@ import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { CampaignPrimaryObjective, CampaignJourneyMenuTrigger } from "@/components/campaign-primary-objective";
+import {
+  type CampaignDockMember,
+  type CampaignPartyHeal,
+} from "@/components/campaign-party-dock";
+import type { SquadContextLabels } from "@/components/squad-card-context-menu";
+import type { SquadBagCounts } from "@/lib/squad-bag";
 import { selectLocation, setFarmingStage } from "@/actions/campaign";
 import { startTrainerBattle } from "@/actions/route-trainer";
 import { claimZoneObjective } from "@/actions/zone-rewards";
@@ -203,6 +209,7 @@ export function CampaignJourney({
   milestone,
   progress,
   earnedGymOrders,
+  party = null,
 }: {
   locale: string;
   chapters: Chapter[];
@@ -215,6 +222,12 @@ export function CampaignJourney({
   milestone: CampaignMilestone;
   progress: CampaignProgressRow;
   earnedGymOrders: number[];
+  party?: {
+    members: CampaignDockMember[];
+    bagCounts: SquadBagCounts;
+    heal: CampaignPartyHeal;
+    menuLabels: SquadContextLabels;
+  } | null;
 }) {
   const t = useTranslations("campaign");
   const tUx = useTranslations("ux");
@@ -447,6 +460,17 @@ export function CampaignJourney({
               chapterLabel={chapter ? `${t("chapter")} ${chapter.number}` : null}
               stagesDone={chapter?.stagesDone ?? 0}
               stagesTotal={chapter?.stagesTotal ?? 0}
+              party={
+                party
+                  ? {
+                      locale,
+                      members: party.members,
+                      bagCounts: party.bagCounts,
+                      heal: party.heal,
+                      menuLabels: party.menuLabels,
+                    }
+                  : null
+              }
               journeyMenu={
                 <details className="group relative">
                   <CampaignJourneyMenuTrigger
@@ -488,42 +512,44 @@ export function CampaignJourney({
       */}
       <div className="mt-4 grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_minmax(280px,340px)] lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
         <aside className="hidden flex-col gap-3 xl:flex">
-          <nav className="game-float-card rounded-2xl p-2" aria-label={t("chapter")}>
-            <p className={`mb-1.5 px-1.5 pt-1 ${SECTION_LABEL}`}>{t("chapterPath")}</p>
-            {chapters.map((c, i) => {
-              const active = i === chapterIndex;
-              return (
-                <button
-                  key={c.number}
-                  type="button"
-                  onClick={() => openChapter(i)}
-                  disabled={!c.unlocked}
-                  className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-label-sm transition ${
-                    active
-                      ? "bg-[#1a1c24] text-white ring-1 ring-pokeball-red/55 shadow-[0_0_18px_color-mix(in_srgb,var(--color-pokeball-red)_22%,transparent)]"
-                      : c.unlocked
-                        ? "text-white/55 hover:bg-[#1a1c24] hover:text-white"
-                        : "text-white/30"
-                  }`}
-                >
-                  <span
-                    className={`material-symbols-outlined text-[16px]! ${
-                      c.completed
-                        ? "text-electric-yellow"
-                        : active
-                          ? "text-pokeball-red"
-                          : ""
+          <div>
+            <p className={`mb-2 ${SECTION_LABEL}`}>{t("chapter")}</p>
+            <nav className="game-float-card rounded-2xl p-2" aria-label={t("chapter")}>
+              {chapters.map((c, i) => {
+                const active = i === chapterIndex;
+                return (
+                  <button
+                    key={c.number}
+                    type="button"
+                    onClick={() => openChapter(i)}
+                    disabled={!c.unlocked}
+                    className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-label-sm transition ${
+                      active
+                        ? "bg-[#1a1c24] text-white ring-1 ring-pokeball-red/55 shadow-[0_0_18px_color-mix(in_srgb,var(--color-pokeball-red)_22%,transparent)]"
+                        : c.unlocked
+                          ? "text-white/55 hover:bg-[#1a1c24] hover:text-white"
+                          : "text-white/30"
                     }`}
                   >
-                    {c.completed ? "check_circle" : c.unlocked ? "play_arrow" : "lock"}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate">
-                    {c.number}. {t(c.nameKey)}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
+                    <span
+                      className={`material-symbols-outlined text-[16px]! ${
+                        c.completed
+                          ? "text-electric-yellow"
+                          : active
+                            ? "text-pokeball-red"
+                            : ""
+                      }`}
+                    >
+                      {c.completed ? "check_circle" : c.unlocked ? "play_arrow" : "lock"}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {c.number}. {t(c.nameKey)}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
           <p className={`px-1 ${SECTION_LABEL}`}>{t("secondaryChapter")}</p>
           <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
         </aside>

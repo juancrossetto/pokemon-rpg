@@ -50,7 +50,6 @@ export default async function PvpMatchPage({
       koLog: true,
       turnLog: true,
       turns: true,
-      createdAt: true,
       challenger: { select: { username: true, country: true } },
       opponent: { select: { username: true, country: true } },
     },

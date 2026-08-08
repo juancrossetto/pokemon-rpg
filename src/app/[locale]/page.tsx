@@ -29,6 +29,7 @@ import { regionMeta } from "@/lib/campaign/regions";
 import { regionBadgeTarget } from "@/lib/regions";
 import { resolveItemDisplayName } from "@/lib/shop";
 import { evaluateObjectives } from "@/lib/campaign/objectives";
+import { buildAdventureGuide } from "@/lib/adventure-guide";
 import { avatarById } from "@/lib/avatars";
 import { findNavItem } from "@/lib/navigation";
 import { dayKey, serverNow } from "@/lib/events/time";
@@ -432,6 +433,19 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       };
     });
 
+  const farmingZoneEarly =
+    mapLocations.find((l) => l.id === progress.farmingLocationId) ??
+    mapLocations.find((l) => l.id === expedition?.location.id) ??
+    null;
+  const zoneObjectivesEarly = farmingZoneEarly
+    ? evaluateObjectives(farmingZoneEarly, new Set(farmingZoneEarly.claimedObjectives))
+    : [];
+  const claimableCount = zoneObjectivesEarly.filter((o) => o.claimable).length;
+  const teamHurtEarly = pokemon.filter((p) => {
+    const maxHp = calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution);
+    return p.currentHp < maxHp;
+  }).length;
+
   const expeditionProps =
     expedition && milestone
       ? {
@@ -452,6 +466,14 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           stagesDone: locationStagesDone,
           stagesTotal: locationStages.length,
           gymHref: eliteGymHref,
+          guideSteps: buildAdventureGuide({
+            milestoneKind: milestone.kind,
+            stagesDone: locationStagesDone,
+            stagesTotal: locationStages.length,
+            claimableCount,
+            needsHealing: teamHurtEarly > 0,
+            gymHref: eliteGymHref,
+          }),
         }
       : null;
 
@@ -598,13 +620,8 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         : "none") as "none" | "active" | "completed",
   };
 
-  const farmingZone =
-    mapLocations.find((l) => l.id === progress.farmingLocationId) ??
-    mapLocations.find((l) => l.id === expedition?.location.id) ??
-    null;
-  const zoneObjectives = farmingZone
-    ? evaluateObjectives(farmingZone, new Set(farmingZone.claimedObjectives))
-    : [];
+  const farmingZone = farmingZoneEarly;
+  const zoneObjectives = zoneObjectivesEarly;
   const homeObjectives: HomeObjective[] = zoneObjectives.map((o) => ({
     id: o.id,
     labelKey: o.id,
@@ -620,6 +637,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   const objectiveZoneName = farmingZone
     ? tCampaign(farmingZone.nameKey)
     : null;
+  const objectiveZoneId = farmingZone?.id ?? null;
 
   const gymReady = milestone?.kind === "gym";
   const dailyCanClaim = eventsSummary.daily.canClaim;
@@ -770,6 +788,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       emptyWeekly: t("hub.objectives.emptyWeekly"),
       emptyEvent: t("hub.objectives.emptyEvent"),
       claimable: t("hub.objectives.claimable"),
+      claimAction: t("hub.objectives.claimAction"),
       claimed: t("hub.objectives.claimed"),
       openCampaign: t("hub.objectives.openCampaign"),
       openEvents: t("hub.objectives.openEvents"),
@@ -831,6 +850,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       }}
       identity={identity}
       adventure={{
+        zoneId: objectiveZoneId,
         zoneName: objectiveZoneName,
         objectives: homeObjectives,
       }}

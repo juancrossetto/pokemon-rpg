@@ -158,7 +158,8 @@ export function resolveMoveUse(
 }
 
 export function xpForVictory(wildLevel: number): number {
-  return wildLevel * 12;
+  // ×15: el arranque (Lv 5 vs salvajes 2–6) subía demasiado lento para sentir avance.
+  return wildLevel * 15;
 }
 
 /**
