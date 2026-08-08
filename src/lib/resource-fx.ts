@@ -101,6 +101,18 @@ export function announceEnergyDelta(delta: number): void {
   announce(energySlot, delta, true);
 }
 
+/** Dispara la animación con el pending ya sembrado (sin sumar otra vez). */
+export function flushPendingEnergyDelta(): void {
+  if (typeof window === "undefined") return;
+  const pending = readPending(energySlot);
+  if (!pending || pending.delta === 0) return;
+  window.dispatchEvent(
+    new CustomEvent<ResourceDeltaDetail>(ENERGY_DELTA_EVENT, {
+      detail: { delta: pending.delta },
+    }),
+  );
+}
+
 export function peekPendingEnergyDelta(): number {
   return readPending(energySlot)?.delta ?? 0;
 }

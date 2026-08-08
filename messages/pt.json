@@ -809,8 +809,8 @@
     "musicOn": "Som",
     "musicOff": "Mute",
     "musicVolume": "Volume da música",
-    "muteSfx": "Silenciar efeitos",
-    "unmuteSfx": "Ativar efeitos",
+    "muteSfx": "Silenciar efeitos de batalha",
+    "unmuteSfx": "Ativar efeitos de batalha",
     "sfxVolume": "Volume dos efeitos",
     "musicCredit": "Música: Matthew Pablo",
     "whatWillDo": "O que {name} deve fazer?",
@@ -840,6 +840,7 @@
     "animationSpeed": "Velocidade da animação: {speed}x",
     "autoBattleOn": "Batalha automática: ligada",
     "autoBattleOff": "Batalha automática: desligada",
+    "autoBattleLocked": "Batalha automática: desbloqueie com {count} Pokémon no Nv. {level}+",
     "youMoveFirst": "Você ataca primeiro",
     "foeMovesFirst": "O rival ataca primeiro",
     "turnOrderHint": "Pela Velocidade. Golpes com prioridade podem passar na frente.",
@@ -1412,6 +1413,7 @@
     "title": "Loja",
     "bannerAlt": "Interior da loja Pokémon",
     "types": {
+      "ENERGY": "Energia",
       "POTION": "Cura",
       "POKEBALL": "Poké Balls",
       "EVOLUTION_STONE": "Pedras",
@@ -1447,7 +1449,10 @@
     "catchRate": "×{multiplier} de eficácia de captura.",
     "healAmount": "Restaura {amount} HP.",
     "healFull": "Restaura todo o HP e cura qualquer problema de status.",
+    "energyFull": "Sua energia já está no máximo.",
+    "energyFullShort": "No máximo",
     "names": {
+      "energyPack": "Pacote de energia",
       "eviolite": "Mineral Evolutivo",
       "fireStone": "Pedra do Fogo",
       "fullRestore": "Restaurar tudo",
@@ -1471,6 +1476,7 @@
     "increase": "Adicionar um",
     "close": "Fechar",
     "effects": {
+      "energyPack": "Restaura 10 pontos de energia na hora.",
       "ether": "Restaura 10 PP de um movimento.",
       "maxEther": "Restaura todos os PP de um movimento.",
       "elixir": "Restaura 10 PP de todos os movimentos.",
@@ -2109,6 +2115,12 @@
     "teamSaving": "Salvando…",
     "teamClear": "Limpar preset",
     "teamSlot": "Slot {n}",
+    "teamReorderHint": "Arraste ou toque em dois slots para reordenar. O × remove do preset.",
+    "teamRemove": "Remover do preset",
+    "teamSwapTarget": "Toque em outro slot para trocar",
+    "rankUpTitle": "Ascensão!",
+    "rankUpSubtitle": "Você alcançou {rank}",
+    "rankUpContinue": "Continuar",
     "historyTitle": "Histórico",
     "emptyHistory": "Você ainda não jogou nenhum combate PvP.",
     "win": "Venceu",
@@ -2146,8 +2158,10 @@
       "no_opponents": "Não há rivais disponíveis agora. Tente mais tarde.",
       "no_energy": "Você não tem energia suficiente para buscar um combate.",
       "rate_limited": "Muitos combates seguidos. Espere um momento.",
-      "cooldown": "Você desafiou esse rival há pouco. Espere alguns minutos."
-    }
+      "cooldown": "Você desafiou esse rival há pouco."
+    },
+    "cooldownReadyIn": "Disponível em {time}",
+    "errorDismiss": "Entendi"
   },
   "campaign": {
     "eyebrow": "Jornada de Kanto",
@@ -2470,7 +2484,7 @@
     "learn": "Aprender",
     "replace": "Substituir",
     "skipMove": "Ignorar",
-    "skipMoveHint": "Vou perguntar de novo no próximo nível",
+    "skipMoveHint": "Não aprende neste nível",
     "rejectMove": "Recusar",
     "rejectMoveHint": "Não será oferecido de novo",
     "cancel": "Cancelar",

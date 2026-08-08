@@ -3,12 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
-import { SubmitButton } from "@/components/submit-button";
 import { FlagIcon } from "@/components/flag-icon";
 import { AvatarImage } from "@/components/avatar-image";
-import { startPvpRematch } from "@/actions/start-pvp-battle";
-import { PVP_BATTLE_ENERGY_COST } from "@/lib/energy";
-import { announceEnergyDelta } from "@/lib/resource-fx";
+import { PvpRematchForm } from "@/components/pvp/pvp-rematch-form";
 
 export type PvpHubTeamMon = {
   id: string;
@@ -32,6 +29,8 @@ export type PvpHubMatchCard = {
   delta: number;
   myTeam: PvpHubTeamMon[];
   foeTeam: PvpHubTeamMon[];
+  /** Ms restantes para volver a desafiar a este rival (0 = libre). */
+  cooldownMsLeft: number;
 };
 
 type Labels = {
@@ -239,20 +238,15 @@ function MatchSpotlight({
           <span className="material-symbols-outlined text-[14px]!">info</span>
           {L.viewMatch}
         </Link>
-        <form
-          action={startPvpRematch.bind(null, locale, match.foeId)}
-          onSubmit={() => {
-            if (!canFight) return;
-            announceEnergyDelta(-PVP_BATTLE_ENERGY_COST);
-          }}
-        >
-          <SubmitButton
-            label={L.rematch}
-            pendingLabel={L.starting}
-            disabled={!canFight}
-            className="inline-flex min-h-0! items-center rounded-md border border-white/12 bg-white/4 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/65 hover:border-white/25 hover:text-white"
-          />
-        </form>
+        <PvpRematchForm
+          locale={locale}
+          foeId={match.foeId}
+          label={L.rematch}
+          pendingLabel={L.starting}
+          disabled={!canFight}
+          cooldownMsLeft={match.cooldownMsLeft}
+          className="inline-flex min-h-0! items-center rounded-md border border-white/12 bg-white/4 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/65 hover:border-white/25 hover:text-white"
+        />
       </div>
     </div>
   );

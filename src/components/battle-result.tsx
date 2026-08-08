@@ -216,6 +216,7 @@ export function BattleResult({
   foe,
   xpSummary,
   coinsGained,
+  pvpRating = null,
   children,
 }: {
   mode: ResultMode;
@@ -227,6 +228,8 @@ export function BattleResult({
   foe: ResultFighter;
   xpSummary: XpSummaryEntry[] | null;
   coinsGained: number;
+  /** Elo PvP ranked: fila compacta en Recompensas (sin barra). */
+  pvpRating?: { before: number; after: number } | null;
   children: ReactNode;
 }) {
   const t = useTranslations("battle");
@@ -488,7 +491,9 @@ export function BattleResult({
               </div>
             ) : null}
 
-            {(coinsGained > 0 || (xpSummary && xpSummary.length > 0)) &&
+            {(coinsGained > 0 ||
+              Boolean(pvpRating) ||
+              (xpSummary && xpSummary.length > 0)) &&
               !hasLevelUpChoices && (
               <section className="mt-3 rounded-2xl border border-white/8 bg-black/40 p-3 md:p-4">
                 <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
@@ -509,6 +514,27 @@ export function BattleResult({
                           unoptimized
                         />
                         +{coinsGained}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {pvpRating ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[13px] font-medium text-white/70">
+                        {t("pvpRating")}
+                      </span>
+                      <span className="inline-flex items-baseline gap-1.5 font-mono text-[15px] font-bold tabular-nums text-white">
+                        <span>{pvpRating.after}</span>
+                        <span
+                          className={
+                            pvpRating.after - pvpRating.before >= 0
+                              ? "text-emerald-400"
+                              : "text-error"
+                          }
+                        >
+                          ({pvpRating.after - pvpRating.before >= 0 ? "+" : ""}
+                          {pvpRating.after - pvpRating.before})
+                        </span>
                       </span>
                     </div>
                   ) : null}

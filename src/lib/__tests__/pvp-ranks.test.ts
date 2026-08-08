@@ -75,4 +75,17 @@ describe("pvp rank divisions", () => {
     expect(divisionRoman(2)).toBe("II");
     expect(divisionRoman(3)).toBe("III");
   });
+
+  it("never shows 100% until the next floor is reached", () => {
+    // Principiante I → Ascendente III floor = 1100. 1099 redondeaba a 100%.
+    const almost = nextRankProgress(1099);
+    expect(almost.current).toEqual({ tier: "beginner", division: 1 });
+    expect(almost.next).toEqual({ tier: "rising", division: 3 });
+    expect(almost.pct).toBeLessThan(100);
+    expect(almost.pct).toBeGreaterThanOrEqual(99);
+
+    const promoted = nextRankProgress(1100);
+    expect(promoted.current).toEqual({ tier: "rising", division: 3 });
+    expect(promoted.pct).toBe(0);
+  });
 });

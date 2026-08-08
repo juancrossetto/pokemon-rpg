@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useTransition } from "react";
+import { useState, useTransition, type CSSProperties } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { confirmDeclineMove, confirmEvolve, confirmLearnMove } from "@/actions/level-up-offers";
@@ -21,6 +21,7 @@ import {
 } from "@/lib/level-up-read";
 import { spriteFor } from "@/lib/shiny";
 import { EvolvePopup } from "@/components/evolve-popup";
+import { MoveLearnedPopup } from "@/components/move-learned-popup";
 
 export type LevelUpOfferEntry = {
   instanceId: string;
@@ -85,6 +86,24 @@ export function LevelUpOffersPanel({
     toSpriteUrl: string;
     isShiny: boolean;
   } | null>(null);
+  /*
+    Celebración de poder aprendido. Es una cola porque un level-up puede dejar
+    varios movimientos: los `autoTaught` (slot libre, el servidor ya los
+    enseñó) se siembran acá en el primer render — si no, se aprendían en
+    silencio y sólo quedaban listados. Los que el jugador elige se van
+    encolando después. Inicializador lazy y no un efecto: `entries` ya está
+    disponible en el primer render (igual que `local`).
+  */
+  const [learnQueue, setLearnQueue] = useState<
+    { pokemonName: string; move: LevelUpMoveInfo }[]
+  >(() =>
+    entries.flatMap((e) =>
+      e.leveledUpTo != null
+        ? e.autoTaught.map((move) => ({ pokemonName: e.name, move }))
+        : [],
+    ),
+  );
+  const learnedShow = learnQueue[0] ?? null;
   const [error, setError] = useState<string | null>(null);
 
   const visible = local.filter(
@@ -122,7 +141,7 @@ export function LevelUpOffersPanel({
     });
   }
 
-  /** Diferir: no evoluciona; el próximo level-up vuelve a ofrecer. */
+  /** Diferir evolución; el próximo level-up vuelve a ofrecer. */
   function deferEvolve(instanceId: string) {
     setEvolvingId(null);
     setRevealed((r) => (r?.instanceId === instanceId ? null : r));
@@ -187,6 +206,11 @@ export function LevelUpOffersPanel({
         return;
       }
       setPicking(null);
+      const entry = local.find((e) => e.instanceId === instanceId);
+      const learnedMove = entry?.pendingMoves.find((m) => m.moveId === moveId);
+      if (entry && learnedMove) {
+        setLearnQueue((q) => [...q, { pokemonName: entry.name, move: learnedMove }]);
+      }
       setLocal((prev) =>
         prev.map((e) => {
           if (e.instanceId !== instanceId) return e;
@@ -263,6 +287,19 @@ export function LevelUpOffersPanel({
 
   return (
     <section className="space-y-3" aria-live="polite">
+      {learnedShow && (
+        <MoveLearnedPopup
+          key={`${learnedShow.pokemonName}-${learnedShow.move.moveId}`}
+          pokemonName={learnedShow.pokemonName}
+          moveName={learnedShow.move.name}
+          moveType={learnedShow.move.type}
+          category={learnedShow.move.category}
+          power={learnedShow.move.power}
+          accuracy={learnedShow.move.accuracy}
+          pp={learnedShow.move.pp}
+          onFinished={() => setLearnQueue((q) => q.slice(1))}
+        />
+      )}
       {evolveShow && (
         <EvolvePopup
           fromName={evolveShow.fromName}
@@ -294,6 +331,38 @@ export function LevelUpOffersPanel({
           !current &&
           entry.autoTaught.length === 0 &&
           (offer != null || reveal != null);
+        const learnedOnly =
+          !current &&
+          entry.autoTaught.length > 0 &&
+          !offer &&
+          !reveal;
+
+        if (learnedOnly) {
+          return (
+            <LearnedAckPanel
+              key={entry.instanceId}
+              pokemonName={entry.name}
+              level={entry.leveledUpTo ?? 0}
+              moves={entry.autoTaught}
+              locale={locale}
+              labels={{
+                newMove: t("newMove"),
+                title: t("title", {
+                  name: entry.name,
+                  level: entry.leveledUpTo ?? 0,
+                }),
+                learned: (move) => t("learned", { move }),
+                dismiss: t("dismiss"),
+                power: t("power"),
+                accuracy: t("accuracy"),
+                pp: t("pp"),
+                neverMisses: t("neverMisses"),
+                category: (c) => t(`category.${c}`),
+              }}
+              onDismiss={() => dismissEntry(entry.instanceId)}
+            />
+          );
+        }
 
         return (
           <div
@@ -321,16 +390,23 @@ export function LevelUpOffersPanel({
             )}
 
             {entry.autoTaught.length > 0 && (
-              <ul className="relative space-y-1.5 px-4 pt-2">
+              <ul className="relative space-y-2 px-4 pt-2">
                 {entry.autoTaught.map((m) => (
-                  <li
-                    key={`auto-${m.moveId}`}
-                    className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[12px] text-emerald-100"
-                  >
-                    <TypeOrb type={m.type} size="sm" />
-                    <span className="capitalize">
-                      {t("learned", { move: formatMoveName(m.name, locale) })}
-                    </span>
+                  <li key={`auto-${m.moveId}`}>
+                    <LearnedMoveRow
+                      move={m}
+                      locale={locale}
+                      headline={t("learned", {
+                        move: formatMoveName(m.name, locale),
+                      })}
+                      labels={{
+                        power: t("power"),
+                        accuracy: t("accuracy"),
+                        pp: t("pp"),
+                        neverMisses: t("neverMisses"),
+                        category: (c) => t(`category.${c}`),
+                      }}
+                    />
                   </li>
                 ))}
               </ul>
@@ -464,6 +540,121 @@ type LearnMoveLabels = {
 
 function accuracyText(accuracy: number | null, neverMisses: string): string {
   return accuracy == null ? neverMisses : `${accuracy}%`;
+}
+
+type LearnedRowLabels = {
+  power: string;
+  accuracy: string;
+  pp: string;
+  neverMisses: string;
+  category: (c: MoveCategoryKind) => string;
+};
+
+/** Fila de poder aprendido — mismo idioma visual que la celebración full-screen. */
+function LearnedMoveRow({
+  move,
+  locale,
+  headline,
+  labels,
+}: {
+  move: LevelUpMoveInfo;
+  locale: string;
+  headline: string;
+  labels: LearnedRowLabels;
+}) {
+  const accent = typeColor(move.type);
+  return (
+    <div
+      className="learned-ack-row"
+      style={{ "--learned-accent": accent } as CSSProperties}
+    >
+      <div className="learned-ack-row__glow" aria-hidden />
+      <TypeOrb type={move.type} size="md" title={move.type} />
+      <div className="min-w-0 flex-1">
+        <p className="learned-ack-row__headline">{headline}</p>
+        <p className="learned-ack-row__name">{formatMoveName(move.name, locale)}</p>
+        <div className="learned-ack-row__meta">
+          <span className="learned-ack-chip">
+            <Image
+              src={showdownCategoryIconUrl(move.category)}
+              alt=""
+              width={22}
+              height={14}
+              className="h-3.5 w-[22px] object-contain"
+              unoptimized
+            />
+            {labels.category(move.category)}
+          </span>
+          <span className="learned-ack-stat">
+            <em>{labels.power}</em> {move.power ?? "—"}
+          </span>
+          <span className="learned-ack-stat">
+            <em>{labels.accuracy}</em>{" "}
+            {accuracyText(move.accuracy, labels.neverMisses)}
+          </span>
+          <span className="learned-ack-stat">
+            <em>{labels.pp}</em> {move.pp}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Aviso post-celebración: sin card gris opaca. Acento del tipo, tipografía
+ * expresiva y CTA limpio — continúa el feel del slam de `MoveLearnedPopup`.
+ */
+function LearnedAckPanel({
+  pokemonName,
+  level,
+  moves,
+  locale,
+  labels,
+  onDismiss,
+}: {
+  pokemonName: string;
+  level: number;
+  moves: LevelUpMoveInfo[];
+  locale: string;
+  labels: {
+    newMove: string;
+    title: string;
+    learned: (move: string) => string;
+    dismiss: string;
+  } & LearnedRowLabels;
+  onDismiss: () => void;
+}) {
+  const accent = typeColor(moves[0]?.type ?? "normal");
+  return (
+    <div
+      className="learned-ack"
+      style={{ "--learned-accent": accent } as CSSProperties}
+      role="status"
+    >
+      <div className="learned-ack__aura" aria-hidden />
+      <p className="learned-ack__kicker">{labels.newMove}</p>
+      <p className="learned-ack__owner">{labels.title}</p>
+
+      <ul className="learned-ack__list">
+        {moves.map((m) => (
+          <li key={m.moveId}>
+            <LearnedMoveRow
+              move={m}
+              locale={locale}
+              headline={labels.learned(formatMoveName(m.name, locale))}
+              labels={labels}
+            />
+          </li>
+        ))}
+      </ul>
+
+      <button type="button" onClick={onDismiss} className="learned-ack__cta">
+        {labels.dismiss}
+      </button>
+      <span className="sr-only">{pokemonName} · {level}</span>
+    </div>
+  );
 }
 
 function powerDelta(candidate: number | null, known: number | null): number | null {

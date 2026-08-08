@@ -6,7 +6,7 @@ import { createRoot } from "react-dom/client";
 import { useTranslations } from "next-intl";
 import { healTeam } from "@/actions/heal-team";
 import { HEAL_FREE_UNTIL_LEVEL, minutesLeft } from "@/lib/healing";
-import { playBattleSfx } from "@/lib/battle-sfx";
+import { playUiSfx } from "@/lib/battle-sfx";
 import { announceCoinDelta } from "@/lib/coin-fx";
 
 const HEAL_FX_MS = 1400;
@@ -96,7 +96,7 @@ export function HealButton({
 
   function run(rush: boolean) {
     setError(null);
-    playBattleSfx("heal");
+    playUiSfx("heal");
     playCenterHealFx();
     onHealed?.();
     startTransition(async () => {

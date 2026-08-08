@@ -13,6 +13,7 @@ import { loadEventsSummary } from "@/lib/events/state";
 import { getNextStep, isEliteMilestone } from "@/lib/next-step";
 import { HomeGameHub } from "@/components/home/home-game-hub";
 import { NextStepCard } from "@/components/home/next-step-card";
+import { PvpRankUpHost } from "@/components/pvp/pvp-rank-up-host";
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolution-chain";
@@ -799,7 +800,9 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   };
 
   return (
-    <HomeGameHub
+    <>
+      <PvpRankUpHost />
+      <HomeGameHub
       locale={locale}
       expedition={expeditionProps}
       nextStep={nextStep.standalone ? <NextStepCard step={nextStep} /> : null}
@@ -856,5 +859,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       dailyActions={dailyActions}
       hubLabels={hubLabels}
     />
+    </>
   );
 }

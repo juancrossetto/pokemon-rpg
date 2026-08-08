@@ -1,7 +1,7 @@
 // 1 punto de energía cada 30 minutos — ver dossier de diseño: la energía limita
 // cuánto se puede grindear y es el control de inflación principal.
 //
-// Llenar 20 puntos tarda 10h, así que una barra vacía ya no se recupera dentro
+// Llenar 30 puntos tarda 15h, así que una barra vacía ya no se recupera dentro
 // de la misma sesión y el jugador tiene que elegir en qué gasta. Es el único
 // número que hay que tocar para recalibrar el ritmo del juego.
 export const REGEN_MS_PER_POINT = 30 * 60 * 1000;

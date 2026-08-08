@@ -280,3 +280,65 @@ export function stopEvolutionBgm() {
   evolutionAudio.pause();
   evolutionAudio = null;
 }
+
+/*
+  Ascenso de rango PvP: reusa la fanfarria de victoria. El popup aparece al
+  entrar al hub o al home (nunca sobre la pantalla de resultado), así que no
+  compite con `startResultBgm` — pero lleva su propia referencia para no
+  depender del `resultPlayGen` compartido. El corte es con fade porque el
+  clip dura ~12 s y el popup mucho menos: cortarlo en seco se nota.
+*/
+const RANK_UP_BGM_VOLUME_BOOST = 0.9;
+let rankUpAudio: HTMLAudioElement | null = null;
+let rankUpFade: number | null = null;
+
+export function startRankUpBgm() {
+  if (typeof window === "undefined") return;
+  stopRankUpBgm();
+  if (isBattleBgmMuted()) return;
+
+  const el = new Audio();
+  rankUpAudio = el;
+  el.preload = "auto";
+  el.loop = false;
+  el.volume = Math.min(1, getBattleBgmVolume() * RANK_UP_BGM_VOLUME_BOOST);
+  el.src = VICTORY_BGM_SRC;
+
+  const tryPlay = () => {
+    if (rankUpAudio !== el) return;
+    void el.play().catch(() => {});
+  };
+  el.addEventListener("canplaythrough", tryPlay, { once: true });
+  tryPlay();
+}
+
+/** `fadeMs` > 0 baja el volumen antes de cortar. */
+export function stopRankUpBgm(fadeMs = 0) {
+  if (rankUpFade != null) {
+    window.clearInterval(rankUpFade);
+    rankUpFade = null;
+  }
+  const el = rankUpAudio;
+  if (!el) return;
+  if (fadeMs <= 0) {
+    el.pause();
+    rankUpAudio = null;
+    return;
+  }
+  const step = 50;
+  const drop = el.volume / Math.max(1, fadeMs / step);
+  rankUpFade = window.setInterval(() => {
+    if (rankUpAudio !== el) {
+      if (rankUpFade != null) window.clearInterval(rankUpFade);
+      rankUpFade = null;
+      return;
+    }
+    el.volume = Math.max(0, el.volume - drop);
+    if (el.volume <= 0.01) {
+      el.pause();
+      rankUpAudio = null;
+      if (rankUpFade != null) window.clearInterval(rankUpFade);
+      rankUpFade = null;
+    }
+  }, step);
+}

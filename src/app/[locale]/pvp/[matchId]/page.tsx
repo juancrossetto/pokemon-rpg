@@ -5,10 +5,12 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseTeamSnap } from "@/lib/pvp/team";
 import { faintedBySide } from "@/lib/pvp/ko-log";
+import { pvpChallengeCooldownRemainingMs } from "@/lib/pvp/cooldown";
 import {
   formatPvpTurnLine,
   PvpMatchReport,
 } from "@/components/pvp/pvp-match-report";
+import { PvpRankUpHost } from "@/components/pvp/pvp-rank-up-host";
 
 export default async function PvpMatchPage({
   params,
@@ -37,6 +39,7 @@ export default async function PvpMatchPage({
       status: true,
       mode: true,
       seasonKey: true,
+      createdAt: true,
       coinsAwarded: true,
       challengerRatingBefore: true,
       challengerRatingAfter: true,
@@ -62,6 +65,22 @@ export default async function PvpMatchPage({
   const iWon = iAmInMatch && settled && match.winnerId === userId;
   const foeId = iAmChallenger ? match.opponentId : match.challengerId;
 
+  const latestPair = iAmInMatch
+    ? await prisma.pvpMatch.findFirst({
+        where: {
+          OR: [
+            { challengerId: userId, opponentId: foeId },
+            { challengerId: foeId, opponentId: userId },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true },
+      })
+    : null;
+  const cooldownMsLeft = pvpChallengeCooldownRemainingMs(
+    latestPair?.createdAt ?? match.createdAt,
+  );
+
   const challengerTeam = parseTeamSnap(match.challengerTeam);
   const opponentTeam = parseTeamSnap(match.opponentTeam);
   const fainted = faintedBySide(match.koLog);
@@ -70,7 +89,9 @@ export default async function PvpMatchPage({
     tBattle(`log.${key}`, values);
 
   return (
-    <PvpMatchReport
+    <>
+      <PvpRankUpHost />
+      <PvpMatchReport
       locale={locale}
       settled={settled}
       iAmInMatch={iAmInMatch}
@@ -79,6 +100,7 @@ export default async function PvpMatchPage({
       mode={match.mode}
       coinsAwarded={match.coinsAwarded ?? 0}
       foeId={foeId}
+      cooldownMsLeft={cooldownMsLeft}
       challenger={match.challenger}
       opponent={match.opponent}
       challengerWon={challengerWon}
@@ -124,5 +146,6 @@ export default async function PvpMatchPage({
       }}
       formatTurnLine={(raw) => formatPvpTurnLine(raw, tLog, locale)}
     />
+    </>
   );
 }

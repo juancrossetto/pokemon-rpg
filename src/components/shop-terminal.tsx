@@ -4,8 +4,13 @@ import Image from "next/image";
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { buyItem } from "@/actions/buy-item";
+import { buyEnergyPack } from "@/actions/buy-energy-pack";
 import { itemDisplayUrl, itemHdIconUrl } from "@/lib/item-sprites";
 import { announceCoinDelta } from "@/lib/coin-fx";
+import {
+  flushPendingEnergyDelta,
+  seedPendingEnergyDelta,
+} from "@/lib/resource-fx";
 import { playLootCollectFx } from "@/lib/loot-fly-fx";
 import { showToast } from "@/lib/app-toast";
 import {
@@ -15,6 +20,7 @@ import {
   type ShopCategory,
   type ShopProduct,
 } from "@/lib/shop";
+import { isEnergyPackProductId } from "@/lib/shop-energy-pack";
 
 export interface ShopLabels {
   categories: Record<ShopCategory, string>;
@@ -46,6 +52,8 @@ export interface ShopLabels {
   emptyAction: string;
   noResults: string;
   errorGeneric: string;
+  /** Energía ya al máximo: no se puede comprar el pack. */
+  energyFull: string;
   coinsUnit: string;
 }
 
@@ -119,23 +127,58 @@ export function ShopTerminal({
     coinsLeft: number,
     after: number,
     origin?: { x: number; y: number },
+    energyDelta?: number,
+    energyAfter?: number,
   ) {
     // El badge del header escucha este evento y anima el descuento al toque,
     // sin esperar a que revalide el layout.
     announceCoinDelta(coinsLeft - coins);
     setCoins(coinsLeft);
-    setOwned((current) => ({ ...current, [product.id]: after }));
-    // Mismo vuelo que recompensas: ítem → avatar + chime.
+    if (!product.hideOwned) {
+      setOwned((current) => ({ ...current, [product.id]: after }));
+    }
     const hd = itemHdIconUrl(product.name);
-    const pieceCount = Math.min(Math.max(1, quantity), 5);
-    playLootCollectFx({
-      pieces: Array.from({ length: pieceCount }, () => ({
-        src: hd ?? itemDisplayUrl(product.name),
-        target: "avatar" as const,
-        pixelated: !hd,
-      })),
-      origin,
-    });
+    if (product.grantEnergy && energyDelta && energyDelta > 0) {
+      // Misma pipeline que el oro al ganar: seed → hold en el header → flush
+      // dispara el conteo de a 1 (sobrevive el remount del layout).
+      if (typeof energyAfter === "number") {
+        try {
+          sessionStorage.setItem(
+            "pokerpg:energy-last-shown",
+            String(Math.max(0, energyAfter - energyDelta)),
+          );
+        } catch {
+          /* private mode */
+        }
+      }
+      seedPendingEnergyDelta(energyDelta);
+      playLootCollectFx({
+        pieces: [
+          {
+            src: hd ?? itemDisplayUrl(product.name),
+            target: "energy",
+            pixelated: !hd,
+            // Una unidad por punto de energía comprado: se arrastran de a una.
+            count: energyDelta,
+          },
+        ],
+        origin,
+        // El contador sube cuando la primera unidad toca la pastilla, no al
+        // click: si no, el número ya estaba en el total antes de que llegara.
+        onFirstLanding: () => flushPendingEnergyDelta(),
+      });
+    } else {
+      // Mismo vuelo que recompensas: ítem → avatar + chime.
+      const pieceCount = Math.min(Math.max(1, quantity), 5);
+      playLootCollectFx({
+        pieces: Array.from({ length: pieceCount }, () => ({
+          src: hd ?? itemDisplayUrl(product.name),
+          target: "avatar" as const,
+          pixelated: !hd,
+        })),
+        origin,
+      });
+    }
     showToast(
       fill(labels.purchased, { count: quantity, name: product.displayName }),
       "success",
@@ -367,9 +410,11 @@ function ShopProductTile({
         onClick={onBuy}
         disabled={disabled}
         title={
-          !canAfford && !blocked
-            ? fill(labels.missing, { amount: missing.toLocaleString() })
-            : product.description ?? undefined
+          blocked
+            ? blocked.label
+            : !canAfford
+              ? fill(labels.missing, { amount: missing.toLocaleString() })
+              : product.description ?? undefined
         }
         className="group flex w-full flex-col items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-45"
       >
@@ -406,7 +451,7 @@ function ShopProductTile({
         )}
       </button>
 
-      {owned > 0 && (
+      {owned > 0 && !product.hideOwned && (
         <p className="mt-1 font-mono text-[9px] text-on-surface-variant/55">
           {fill(labels.owned, { count: owned })}
         </p>
@@ -491,6 +536,8 @@ function PurchaseDialog({
     coinsLeft: number,
     ownedAfter: number,
     origin?: { x: number; y: number },
+    energyDelta?: number,
+    energyAfter?: number,
   ) => void;
 }) {
   const [quantity, setQuantity] = useState(1);
@@ -549,25 +596,34 @@ function PurchaseDialog({
         }
       : undefined;
     startTransition(async () => {
-      const result = await buyItem(product.id, locale, quantity);
+      const result = isEnergyPackProductId(product.id)
+        ? await buyEnergyPack(locale, quantity)
+        : await buyItem(product.id, locale, quantity);
       if (result.ok) {
         onPurchased(
           product,
           result.quantity,
           result.coinsLeft,
-          result.ownedAfter,
+          "ownedAfter" in result ? result.ownedAfter : 0,
           origin,
+          "energyDelta" in result ? result.energyDelta : undefined,
+          "energyAfter" in result ? result.energyAfter : undefined,
         );
         onClose();
         return;
       }
       // El error se muestra dentro del panel: cerrarlo perdería la cantidad
       // que el jugador ya eligió.
-      setError(
+      const message =
         result.error === "no_coins" && result.missing !== undefined
           ? fill(labels.missing, { amount: result.missing.toLocaleString() })
-          : labels.errorGeneric,
-      );
+          : result.error === "energy_full"
+            ? labels.energyFull
+            : labels.errorGeneric;
+      setError(message);
+      if (result.error === "energy_full") {
+        showToast(labels.energyFull, "error");
+      }
     });
   }
 
@@ -606,7 +662,7 @@ function PurchaseDialog({
                 {product.description}
               </p>
             )}
-            {owned > 0 && (
+            {owned > 0 && !product.hideOwned && (
               <p className="mt-1 font-mono text-[10px] text-on-surface-variant">
                 {fill(labels.owned, { count: owned })}
               </p>

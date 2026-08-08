@@ -114,8 +114,24 @@ export function setBattleSfxVolume(volume: number) {
   window.localStorage.setItem(STORAGE_VOLUME, String(v));
 }
 
+/**
+ * Override puntual del mute (p. ej. SFX de UI fuera de combate).
+ * `null` = respetar `battle-sfx-muted` del storage.
+ */
+let muteOverride: boolean | null = null;
+
 function currentSfxVolume(): number {
-  if (isBattleSfxMuted()) return 0;
+  const muted = muteOverride ?? isBattleSfxMuted();
+  if (muted) return 0;
+  return getBattleSfxVolume();
+}
+
+/**
+ * Volumen efectivo para SFX de interfaz (cura, PC, loot…).
+ * Usa el slider de efectos pero **ignora** el mute de batalla: silenciar la
+ * pelea no debería dejar muda el resto de la app.
+ */
+export function getUiSfxVolume(): number {
   return getBattleSfxVolume();
 }
 
@@ -442,21 +458,32 @@ function playSynth(kind: SfxKind) {
   }
 }
 
-export function playBattleSfx(kind: SfxKind) {
-  getCtx();
-  // timerTick es synth-only: no hay wav y evitaríamos un 404 por tick.
-  if (kind === "timerTick") {
-    playSynth(kind);
-    return;
-  }
-  if (playSample(kind)) return;
+export function playBattleSfx(kind: SfxKind, opts?: { ignoreMute?: boolean }) {
+  const prev = muteOverride;
+  if (opts?.ignoreMute) muteOverride = false;
+  try {
+    getCtx();
+    // timerTick es synth-only: no hay wav y evitaríamos un 404 por tick.
+    if (kind === "timerTick") {
+      playSynth(kind);
+      return;
+    }
+    if (playSample(kind)) return;
 
-  // Sample aún no listo: pide carga y usa synth esta vez.
-  void loadSample(kind).then((el) => {
-    // Si llegó tarde al mismo frame no importa; el próximo hit ya tendrá sample.
-    if (el) sampleCache.set(kind, { status: "ready", el });
-  });
-  playSynth(kind);
+    // Sample aún no listo: pide carga y usa synth esta vez.
+    void loadSample(kind).then((el) => {
+      // Si llegó tarde al mismo frame no importa; el próximo hit ya tendrá sample.
+      if (el) sampleCache.set(kind, { status: "ready", el });
+    });
+    playSynth(kind);
+  } finally {
+    muteOverride = prev;
+  }
+}
+
+/** SFX de UI (cura, PC, recompensas…): respeta volumen, no el mute de batalla. */
+export function playUiSfx(kind: SfxKind) {
+  playBattleSfx(kind, { ignoreMute: true });
 }
 
 export function battleSfxForMove(

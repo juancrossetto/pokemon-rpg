@@ -8,6 +8,9 @@ import {
   type PvpHubMatchCard,
 } from "@/components/pvp/pvp-rivals-history";
 import { PvpModesPanel } from "@/components/pvp/pvp-modes-panel";
+import { PvpHubProgressFill } from "@/components/pvp/pvp-hub-progress-fill";
+import { PvpRankUpHost } from "@/components/pvp/pvp-rank-up-host";
+import { PvpErrorNotice } from "@/components/pvp/pvp-error-notice";
 import { type PvpDivision, type PvpTier } from "@/lib/pvp/tiers";
 import type { SeasonTrackNode } from "@/lib/pvp/hub";
 import type { RewardBundle } from "@/lib/events/rewards";
@@ -66,9 +69,12 @@ type Props = {
     paginationPrev: string;
     paginationNext: string;
     paginationPageOf: string;
+    errorDismiss: string;
     tiers: Record<PvpTier, string>;
   };
   error: string | null;
+  /** Ms de cooldown PvP a mostrar en el popup (error=cooldown). */
+  cooldownMsLeft?: number;
   rating: number;
   tier: PvpTier;
   division: PvpDivision;
@@ -124,6 +130,7 @@ export function PvpArenaHub({
   locale,
   labels: L,
   error,
+  cooldownMsLeft = 0,
   rating,
   tier,
   division,
@@ -174,6 +181,7 @@ export function PvpArenaHub({
       />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-3 py-3 pb-6 sm:px-margin-desktop sm:py-6 sm:pb-8">
+        <PvpRankUpHost />
         <div className="mb-3 flex items-end justify-between gap-3 sm:mb-4">
           <div className="min-w-0">
             <p className="mb-0.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em]">
@@ -188,9 +196,11 @@ export function PvpArenaHub({
         </div>
 
         {error ? (
-          <div className="mb-3 rounded-xl border border-error/40 bg-error-container/30 px-4 py-2.5 text-[13px] text-error">
-            {error}
-          </div>
+          <PvpErrorNotice
+            message={error}
+            dismissLabel={L.errorDismiss}
+            cooldownMsLeft={cooldownMsLeft}
+          />
         ) : null}
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.95fr)] lg:gap-5 lg:items-start">
@@ -269,10 +279,7 @@ export function PvpArenaHub({
                         </span>
                       </div>
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                        <div
-                          className="pvp-arena-bar h-full rounded-full"
-                          style={{ width: `${nextTierPct}%` }}
-                        />
+                        <PvpHubProgressFill pct={nextTierPct} />
                       </div>
                     </div>
                   ) : null}
@@ -298,9 +305,9 @@ export function PvpArenaHub({
                 ) : null}
               </div>
               <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="pvp-arena-bar h-full rounded-full transition-[width] duration-500"
-                  style={{ width: `${nextTierPct}%` }}
+                <PvpHubProgressFill
+                  pct={nextTierPct}
+                  className="pvp-arena-bar h-full rounded-full"
                 />
               </div>
               <div className="no-scrollbar -mx-1 flex items-start justify-between gap-1 overflow-x-auto px-1 pb-1 sm:gap-2">

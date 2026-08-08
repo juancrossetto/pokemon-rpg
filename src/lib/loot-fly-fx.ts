@@ -1,6 +1,6 @@
 import { itemHdIconUrl, itemSpriteUrl } from "@/lib/item-sprites";
 import { announceCoinDelta } from "@/lib/coin-fx";
-import { getBattleSfxVolume, isBattleSfxMuted } from "@/lib/battle-sfx";
+import { getUiSfxVolume } from "@/lib/battle-sfx";
 import type { RewardDef } from "@/lib/events/rewards";
 
 export type LootFlyTarget = "coins" | "energy" | "gems" | "avatar" | "inventory";
@@ -9,13 +9,26 @@ export type LootFlyPiece = {
   src: string;
   target: LootFlyTarget;
   pixelated?: boolean;
+  /**
+   * Unidades que representa. Los recursos vuelan moneda por moneda (o energía
+   * por energía) hasta `MAX_CHIPS_PER_PIECE`; sin esto una recompensa de 500
+   * monedas mandaba un solo PNG y no se leía la cantidad.
+   */
+  count?: number;
 };
 
 const COIN_HD = "/items/hd/poke-coin.png";
 const ENERGY_HD = "/items/hd/energy.png";
 const GEM_HD = "/items/hd/gem.png";
-const FLY_MS = 920;
+/** Igual que `loot-fly-chip-move` en globals.css — si cambia una, cambia la otra. */
+const FLY_MS = 680;
 const STAGGER_MS = 90;
+/** Tope de chips por recurso: más que esto es ruido y no se distingue. */
+const MAX_CHIPS_PER_PIECE = 10;
+/** Ventana total de salida: con muchos chips el stagger se comprime. */
+const SPAWN_WINDOW_MS = 460;
+/** Cuántos chips suenan al aterrizar (si no, 10 chips = 10 sonidos). */
+const MAX_LAND_SFX = 4;
 
 let sfxCtx: AudioContext | null = null;
 
@@ -57,12 +70,11 @@ function tone(
   osc.stop(when + dur + 0.02);
 }
 
-/** Chime corto al reclamar (respeta mute/volumen de SFX de batalla). */
+/** Chime corto al reclamar (respeta volumen de SFX; el mute de batalla no aplica). */
 function playLootCollectSfx(pieceCount: number): void {
-  if (isBattleSfxMuted()) return;
   const audio = getSfxCtx();
   if (!audio) return;
-  const vol = getBattleSfxVolume() * 0.5;
+  const vol = getUiSfxVolume() * 0.5;
   if (vol <= 0) return;
   const now = audio.currentTime + 0.01;
   // Subida brillante + cierre suave — “agarraste el loot”.
@@ -75,10 +87,9 @@ function playLootCollectSfx(pieceCount: number): void {
 }
 
 function playLootLandSfx(): void {
-  if (isBattleSfxMuted()) return;
   const audio = getSfxCtx();
   if (!audio) return;
-  const vol = getBattleSfxVolume() * 0.4;
+  const vol = getUiSfxVolume() * 0.4;
   if (vol <= 0) return;
   const now = audio.currentTime + 0.01;
   tone(audio, 520, now, 0.05, vol * 0.28, "sine");
@@ -149,18 +160,19 @@ export function rewardToLootPiece(reward: RewardDef): LootFlyPiece {
     };
   }
   if (reward.kind === "coins") {
-    return { src: COIN_HD, target: "coins", pixelated: false };
+    return { src: COIN_HD, target: "coins", pixelated: false, count: reward.amount };
   }
   if (reward.kind === "energy") {
-    return { src: ENERGY_HD, target: "energy", pixelated: false };
+    return { src: ENERGY_HD, target: "energy", pixelated: false, count: reward.amount };
   }
-  return { src: GEM_HD, target: "gems", pixelated: false };
+  return { src: GEM_HD, target: "gems", pixelated: false, count: reward.amount };
 }
 
 function spawnFlyer(
   piece: LootFlyPiece,
   origin: { x: number; y: number },
   delayMs: number,
+  opts: { landSfx: boolean; jitter: number } = { landSfx: true, jitter: 0 },
 ): void {
   const target = resolveLootTarget(piece.target);
   const layer = document.createElement("div");
@@ -181,9 +193,11 @@ function spawnFlyer(
   const dy = target.y - origin.y;
   // Arco lateral suave: perpendicular al vector de vuelo, acotado.
   const len = Math.hypot(dx, dy) || 1;
-  const arc = Math.min(56, Math.max(22, len * 0.14));
+  // El jitter abre el abanico: sin esto los chips de un mismo recurso se
+  // superponen exactos y parecen uno solo con motion blur.
+  const arc = Math.min(56, Math.max(22, len * 0.14)) + opts.jitter;
   const arcX = (-dy / len) * arc;
-  const arcY = (dx / len) * arc * 0.35 - 28;
+  const arcY = (dx / len) * arc * 0.35 - 28 + opts.jitter * 0.4;
 
   window.setTimeout(() => {
     layer.classList.add("is-flying");
@@ -194,9 +208,11 @@ function spawnFlyer(
     pulseLootTarget(piece.target);
   }, delayMs);
 
-  window.setTimeout(() => {
-    playLootLandSfx();
-  }, delayMs + FLY_MS - 80);
+  if (opts.landSfx) {
+    window.setTimeout(() => {
+      playLootLandSfx();
+    }, delayMs + FLY_MS - 80);
+  }
 
   window.setTimeout(() => {
     layer.remove();
@@ -210,31 +226,64 @@ function spawnFlyer(
 export function playLootCollectFx(opts: {
   pieces: LootFlyPiece[];
   origin?: { x: number; y: number };
-  /** Si se pasa, dispara el +N del badge de monedas. */
+  /** Si se pasa, dispara el +N/−N del badge de monedas. */
   coinsDelta?: number;
+  /**
+   * Se llama cuando el primer chip toca el header. Sirve para que el contador
+   * arranque a subir junto con la llegada y no antes (ej. el flush de energía
+   * de la tienda).
+   */
+  onFirstLanding?: () => void;
 }): void {
   if (typeof window === "undefined") return;
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (opts.coinsDelta && opts.coinsDelta !== 0) {
-    announceCoinDelta(opts.coinsDelta);
-  }
 
-  if (reduced || opts.pieces.length === 0) return;
+  if (reduced || opts.pieces.length === 0) {
+    // Sin vuelo no hay nada que esperar: el contador sube ya.
+    if (opts.coinsDelta) announceCoinDelta(opts.coinsDelta);
+    opts.onFirstLanding?.();
+    return;
+  }
 
   const origin = opts.origin ?? {
     x: window.innerWidth / 2,
     y: window.innerHeight * 0.45,
   };
 
-  // Monedas ya tienen el contador animado: no clonar el PNG hacia la pastilla.
-  const flyPieces = opts.pieces.filter((p) => p.target !== "coins");
-  if (flyPieces.length === 0) return;
+  /*
+    Un chip por unidad (topeado): monedas y energía se arrastran de a una hasta
+    la pastilla del header, que es lo que hace legible la cantidad. Antes las
+    monedas ni siquiera volaban — se filtraban acá porque el contador ya se
+    animaba solo, pero el contador sin el vuelo no muestra de dónde salieron.
+  */
+  const chips: LootFlyPiece[] = [];
+  for (const piece of opts.pieces) {
+    const units = Math.max(1, Math.min(MAX_CHIPS_PER_PIECE, Math.floor(piece.count ?? 1)));
+    for (let i = 0; i < units; i++) chips.push(piece);
+  }
+  if (chips.length === 0) return;
 
-  playLootCollectSfx(flyPieces.length);
-  flyPieces.forEach((piece, index) => {
-    spawnFlyer(piece, origin, index * STAGGER_MS);
+  playLootCollectSfx(chips.length);
+
+  // Con pocos chips el stagger es el de siempre; con muchos se comprime para
+  // que la ráfaga entera entre en la misma ventana.
+  const stagger = Math.min(STAGGER_MS, Math.max(40, SPAWN_WINDOW_MS / chips.length));
+
+  chips.forEach((piece, index) => {
+    spawnFlyer(piece, origin, index * stagger, {
+      landSfx: index < MAX_LAND_SFX,
+      // Abanico alterno a los costados, creciendo hacia el medio de la ráfaga.
+      jitter: (index % 2 === 0 ? 1 : -1) * (index % 5) * 9,
+    });
   });
+
+  // El contador arranca con la llegada del primer chip, no con el click.
+  const landAt = Math.max(0, FLY_MS - 60);
+  window.setTimeout(() => {
+    if (opts.coinsDelta) announceCoinDelta(opts.coinsDelta);
+    opts.onFirstLanding?.();
+  }, landAt);
 }
 
 /** Atajo desde `RewardDef[]` (events / daily). */

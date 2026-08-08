@@ -6461,6 +6461,8 @@ body {
 .loot-fly-chip {
   --loot-dx: 0px;
   --loot-dy: 0px;
+  --loot-arc-x: 0px;
+  --loot-arc-y: 0px;
   position: fixed;
   z-index: 90;
   width: 2.5rem;
@@ -6481,12 +6483,23 @@ body {
   animation: loot-fly-chip-move 680ms cubic-bezier(0.4, 0.05, 0.65, 1) forwards;
 }
 
+/*
+  El arco estaba muerto: `spawnFlyer` seteaba `--loot-arc-x/y` pero los
+  keyframes sólo usaban dx/dy, así que todos los chips iban en línea recta y
+  superpuestos. Con el punto medio desplazado, cada uno describe su curva y la
+  ráfaga se abre en abanico.
+*/
 @keyframes loot-fly-chip-move {
   0% {
     transform: translate(0, 0) scale(1);
     opacity: 1;
   }
-  70% {
+  55% {
+    transform: translate(
+        calc(var(--loot-dx) * 0.55 + var(--loot-arc-x, 0px)),
+        calc(var(--loot-dy) * 0.55 + var(--loot-arc-y, 0px))
+      )
+      scale(0.78);
     opacity: 1;
   }
   100% {
@@ -6616,6 +6629,920 @@ body {
     0 0 18px color-mix(in srgb, #5ef0ff 35%, transparent);
 }
 
+/*
+  ===== Movimiento aprendido =====
+  Mismo criterio que el ascenso de rango: sin card, la información es la
+  pantalla. Todo se tiñe con `--learned-accent` (el color del tipo del
+  movimiento) y sólo se anima transform/opacity.
+*/
+.learned-scrim {
+  background:
+    radial-gradient(
+      ellipse 75% 60% at 50% 46%,
+      color-mix(in srgb, var(--learned-accent, #60a5fa) 20%, transparent) 0%,
+      transparent 70%
+    ),
+    rgba(3, 5, 9, 0.9);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: learned-fade-in 0.45s ease-out both;
+}
+@keyframes learned-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Fogonazo del impacto, en el color del tipo. */
+.learned-flash {
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 46%,
+    color-mix(in srgb, var(--learned-accent, #60a5fa) 75%, white) 0%,
+    transparent 58%
+  );
+  animation: learned-flash 0.7s ease-out 0.24s both;
+}
+@keyframes learned-flash {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Rayos de energía saliendo del centro. */
+.learned-rays {
+  pointer-events: none;
+  background: repeating-conic-gradient(
+    from 0deg at 50% 46%,
+    color-mix(in srgb, var(--learned-accent, #60a5fa) 20%, transparent) 0deg 2.5deg,
+    transparent 2.5deg 12deg
+  );
+  mask-image: radial-gradient(circle at 50% 46%, transparent 12%, #000 34%, transparent 68%);
+  -webkit-mask-image: radial-gradient(circle at 50% 46%, transparent 12%, #000 34%, transparent 68%);
+  animation:
+    learned-rays-spin 26s linear infinite,
+    learned-fade-in 0.9s ease-out 0.28s both;
+}
+@keyframes learned-rays-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.learned-motes {
+  pointer-events: none;
+  overflow: hidden;
+  animation: learned-fade-in 1s ease-out 0.4s both;
+}
+.learned-mote {
+  position: absolute;
+  left: var(--m-x, 50%);
+  bottom: -3%;
+  width: var(--m-size, 4px);
+  height: var(--m-size, 4px);
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--learned-accent, #60a5fa) 70%, white);
+  animation: learned-mote-rise var(--m-dur, 2.6s) linear infinite;
+  animation-delay: var(--m-delay, 0s);
+}
+@keyframes learned-mote-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  14% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-115vh) translateX(var(--m-drift, 0px)) scale(0.3);
+  }
+}
+
+.learned-kicker {
+  font-size: clamp(0.65rem, 2.8vw, 0.78rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  color: color-mix(in srgb, var(--learned-accent, #60a5fa) 45%, white);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--learned-accent, #60a5fa) 70%, transparent);
+  animation: learned-text-in 0.6s cubic-bezier(0.2, 1, 0.3, 1) 0.1s both;
+}
+
+/* El nombre del poder es el héroe: entra de golpe con onda expansiva. */
+.learned-name-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.7rem 0 0.2rem;
+  padding: 0.2rem 0;
+}
+.learned-name {
+  position: relative;
+  /* Sin `overflow: hidden`: recortaba el text-shadow y dejaba un rectángulo
+     con borde duro alrededor del nombre. */
+  /* Tope en 3rem y quiebre balanceado: nombres largos ("Flamethrower",
+     "Extreme Speed") se desbordaban del contenedor a 3.6rem. */
+  max-width: 100%;
+  font-size: clamp(1.7rem, 8.5vw, 3rem);
+  font-weight: 900;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  color: #fff;
+  text-shadow:
+    0 0 30px color-mix(in srgb, var(--learned-accent, #60a5fa) 65%, transparent),
+    0 3px 14px rgba(0, 0, 0, 0.8);
+  animation: learned-name-slam 0.75s cubic-bezier(0.16, 1.1, 0.3, 1) 0.16s both;
+}
+@keyframes learned-name-slam {
+  0% {
+    opacity: 0;
+    transform: scale(1.9);
+    filter: blur(10px);
+  }
+  40% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  62% {
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/*
+  Barrido de luz sobre el texto, una pasada tras el impacto. Es una copia del
+  nombre (`attr(data-name)`) con el degradé recortado a los glifos: si fuera
+  una banda encima, se vería el blanco también en los huecos entre letras.
+*/
+.learned-name::after {
+  content: attr(data-name);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 58%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  animation: learned-sweep 1.1s ease-out 0.75s both;
+}
+@keyframes learned-sweep {
+  0% {
+    opacity: 0;
+    background-position: 160% 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    background-position: -80% 0;
+  }
+}
+
+.learned-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 60%;
+  aspect-ratio: 2.4 / 1;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in srgb, var(--learned-accent, #60a5fa) 65%, white);
+  pointer-events: none;
+  animation: learned-ring 1.3s cubic-bezier(0.12, 0.72, 0.28, 1) 0.26s forwards;
+}
+.learned-ring--b {
+  animation-delay: 0.44s;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+@keyframes learned-ring {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.35);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.8);
+    border-width: 0.5px;
+  }
+}
+
+.learned-chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  animation: learned-text-in 0.6s cubic-bezier(0.2, 1, 0.3, 1) 0.62s both;
+}
+.learned-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.28rem 0.7rem;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+.learned-chip--type {
+  border-color: color-mix(in srgb, var(--learned-accent, #60a5fa) 55%, transparent);
+  background: color-mix(in srgb, var(--learned-accent, #60a5fa) 22%, rgba(0, 0, 0, 0.3));
+  color: #fff;
+}
+
+.learned-stats {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
+  margin-top: 1.1rem;
+  animation: learned-text-in 0.6s cubic-bezier(0.2, 1, 0.3, 1) 0.78s both;
+}
+.learned-stats > div {
+  min-width: 5.2rem;
+  padding: 0 1rem;
+}
+.learned-stats > div + div {
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+.learned-stats dt {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+.learned-stats dd {
+  margin-top: 0.2rem;
+  font-size: clamp(0.95rem, 4vw, 1.15rem);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+.learned-owner {
+  margin-top: 1.2rem;
+  font-size: clamp(0.8rem, 3.4vw, 0.95rem);
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.6);
+  animation: learned-text-in 0.6s cubic-bezier(0.2, 1, 0.3, 1) 0.92s both;
+}
+
+@keyframes learned-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.learned-overlay--out {
+  animation: learned-out 0.6s ease-in both;
+}
+@keyframes learned-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+}
+
+/*
+  ===== Aviso post-aprendizaje (Listo) =====
+  Misma familia tipográfica/acento que el slam full-screen, sin card gris.
+*/
+.learned-ack {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  padding: 1.35rem 1.15rem 1.15rem;
+  border-radius: 1.35rem;
+  border: 1px solid color-mix(in srgb, var(--learned-accent, #60a5fa) 28%, transparent);
+  background:
+    radial-gradient(
+      ellipse 90% 70% at 50% -10%,
+      color-mix(in srgb, var(--learned-accent, #60a5fa) 22%, transparent) 0%,
+      transparent 62%
+    ),
+    rgba(8, 10, 16, 0.92);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: learned-ack-in 0.55s cubic-bezier(0.2, 1, 0.3, 1) both;
+}
+.learned-ack__aura {
+  pointer-events: none;
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 55%;
+  background: radial-gradient(
+    ellipse at 50% 100%,
+    color-mix(in srgb, var(--learned-accent, #60a5fa) 35%, transparent),
+    transparent 70%
+  );
+  opacity: 0.85;
+  z-index: -1;
+}
+.learned-ack__kicker {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  text-align: center;
+  color: color-mix(in srgb, var(--learned-accent, #60a5fa) 55%, white);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--learned-accent, #60a5fa) 55%, transparent);
+}
+.learned-ack__owner {
+  margin: 0.35rem 0 0;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+.learned-ack__list {
+  margin: 1rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  list-style: none;
+  padding: 0;
+}
+.learned-ack-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--learned-accent, #60a5fa) 22%, transparent);
+  background: color-mix(in srgb, var(--learned-accent, #60a5fa) 10%, rgba(0, 0, 0, 0.35));
+  overflow: hidden;
+}
+.learned-ack-row__glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--learned-accent, #60a5fa) 18%, transparent) 0%,
+    transparent 42%
+  );
+}
+.learned-ack-row__headline {
+  position: relative;
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--learned-accent, #60a5fa) 40%, white);
+}
+.learned-ack-row__name {
+  position: relative;
+  margin: 0.15rem 0 0;
+  font-size: clamp(1.05rem, 4.2vw, 1.35rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: #fff;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--learned-accent, #60a5fa) 45%, transparent);
+}
+.learned-ack-row__meta {
+  position: relative;
+  margin-top: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.65rem;
+}
+.learned-ack-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+.learned-ack-stat {
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.88);
+}
+.learned-ack-stat em {
+  margin-right: 0.2rem;
+  font-style: normal;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.learned-ack__cta {
+  margin-top: 1.05rem;
+  width: 100%;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--learned-accent, #60a5fa) 45%, transparent);
+  background: color-mix(in srgb, var(--learned-accent, #60a5fa) 22%, rgba(0, 0, 0, 0.35));
+  padding: 0.8rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  box-shadow: 0 0 28px color-mix(in srgb, var(--learned-accent, #60a5fa) 22%, transparent);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+.learned-ack__cta:hover {
+  background: color-mix(in srgb, var(--learned-accent, #60a5fa) 34%, rgba(0, 0, 0, 0.25));
+  border-color: color-mix(in srgb, var(--learned-accent, #60a5fa) 65%, transparent);
+}
+.learned-ack__cta:active {
+  transform: scale(0.985);
+}
+@keyframes learned-ack-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learned-scrim,
+  .learned-flash,
+  .learned-rays,
+  .learned-motes,
+  .learned-mote,
+  .learned-kicker,
+  .learned-name,
+  .learned-sweep,
+  .learned-ring,
+  .learned-chips,
+  .learned-stats,
+  .learned-owner,
+  .learned-ack {
+    animation: none;
+  }
+  .learned-flash,
+  .learned-rays,
+  .learned-motes,
+  .learned-sweep,
+  .learned-ring {
+    display: none;
+  }
+  .learned-overlay--out {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/*
+  ===== Ascenso de rango PvP =====
+  Sin card: la insignia es la pantalla. Todo se tiñe con `--rankup-accent`,
+  que el componente setea según el tier alcanzado. Sólo transform/opacity.
+*/
+.rankup-scrim {
+  background:
+    radial-gradient(
+      ellipse 70% 55% at 50% 45%,
+      color-mix(in srgb, var(--rankup-accent, #38bdf8) 16%, transparent) 0%,
+      transparent 68%
+    ),
+    rgba(3, 5, 9, 0.9);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: rankup-scrim-in 0.5s ease-out both;
+}
+@keyframes rankup-scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Fogonazo del impacto: la insignia "llega" con un golpe de luz. */
+.rankup-flash {
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--rankup-accent, #38bdf8) 70%, white) 0%,
+    transparent 62%
+  );
+  pointer-events: none;
+  animation: rankup-flash 0.75s ease-out 0.32s both;
+}
+@keyframes rankup-flash {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.rankup-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 46vh en el min: en pantallas bajas (landscape) el cuadrado no empuja el
+     título y el rango fuera de vista. */
+  width: min(78vw, 46vh, 22rem);
+  aspect-ratio: 1;
+  margin: 0.5rem 0;
+}
+
+/* Rayos que salen de la insignia. */
+.rankup-rays {
+  position: absolute;
+  inset: -18%;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: repeating-conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--rankup-accent, #38bdf8) 22%, transparent) 0deg 3deg,
+    transparent 3deg 13deg
+  );
+  mask-image: radial-gradient(circle, transparent 28%, #000 58%, transparent 80%);
+  -webkit-mask-image: radial-gradient(circle, transparent 28%, #000 58%, transparent 80%);
+  animation:
+    rankup-rays-spin 18s linear infinite,
+    rankup-fade-in 0.9s ease-out 0.3s both;
+}
+@keyframes rankup-rays-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Vórtice más denso girando al revés: da profundidad detrás del metal. */
+.rankup-vortex {
+  position: absolute;
+  inset: -4%;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in srgb, var(--rankup-accent, #38bdf8) 45%, transparent) 30deg,
+    transparent 76deg,
+    rgba(255, 255, 255, 0.22) 160deg,
+    transparent 210deg,
+    color-mix(in srgb, var(--rankup-accent, #38bdf8) 35%, transparent) 290deg,
+    transparent 340deg
+  );
+  mask-image: radial-gradient(circle, transparent 34%, #000 52%, #000 72%, transparent 88%);
+  -webkit-mask-image: radial-gradient(circle, transparent 34%, #000 52%, #000 72%, transparent 88%);
+  animation:
+    rankup-vortex-spin 6s linear infinite reverse,
+    rankup-fade-in 0.8s ease-out 0.35s both;
+}
+@keyframes rankup-vortex-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rankup-glow {
+  position: absolute;
+  inset: 18%;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--rankup-accent, #38bdf8) 55%, transparent) 0%,
+    transparent 70%
+  );
+  filter: blur(26px);
+  animation:
+    rankup-glow-pulse 2.6s ease-in-out 0.6s infinite,
+    rankup-fade-in 0.6s ease-out 0.3s both;
+}
+@keyframes rankup-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes rankup-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Ondas expansivas del impacto. */
+.rankup-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in srgb, var(--rankup-accent, #38bdf8) 60%, white);
+  pointer-events: none;
+  animation: rankup-ring 1.5s cubic-bezier(0.12, 0.72, 0.28, 1) 0.34s forwards;
+}
+.rankup-ring--b {
+  animation-delay: 0.52s;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+@keyframes rankup-ring {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.35);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3);
+    border-width: 0.5px;
+  }
+}
+
+/* Estrellitas del golpe. */
+.rankup-sparks {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #fff;
+  pointer-events: none;
+  box-shadow:
+    0 -104px 0 color-mix(in srgb, var(--rankup-accent, #38bdf8) 40%, white),
+    88px -62px 0 rgba(255, 255, 255, 0.9),
+    104px 10px 0 color-mix(in srgb, var(--rankup-accent, #38bdf8) 40%, white),
+    64px 86px 0 rgba(255, 255, 255, 0.85),
+    -20px 106px 0 color-mix(in srgb, var(--rankup-accent, #38bdf8) 40%, white),
+    -92px 56px 0 rgba(255, 255, 255, 0.9),
+    -106px -28px 0 color-mix(in srgb, var(--rankup-accent, #38bdf8) 40%, white),
+    -56px -92px 0 rgba(255, 255, 255, 0.85);
+  animation: rankup-sparks 1.5s ease-out 0.34s forwards;
+}
+@keyframes rankup-sparks {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.1) rotate(0deg);
+  }
+  16% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.8) rotate(40deg);
+  }
+}
+
+/* Motas que suben. */
+.rankup-motes {
+  position: absolute;
+  inset: -8%;
+  overflow: hidden;
+  border-radius: 9999px;
+  pointer-events: none;
+  animation: rankup-fade-in 1s ease-out 0.5s both;
+}
+.rankup-mote {
+  position: absolute;
+  left: var(--m-x, 50%);
+  bottom: -4%;
+  width: var(--m-size, 4px);
+  height: var(--m-size, 4px);
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--rankup-accent, #38bdf8) 65%, white);
+  animation: rankup-mote-rise var(--m-dur, 2.6s) linear infinite;
+  animation-delay: var(--m-delay, 0s);
+}
+@keyframes rankup-mote-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  16% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-230%) translateX(var(--m-drift, 0px)) scale(0.3);
+  }
+}
+
+/*
+  La insignia: entra grande y desenfocada, frena de golpe contra su escala
+  final (ahí caen el flash y las ondas) y después queda flotando.
+*/
+.rankup-badge {
+  position: relative;
+  display: inline-flex;
+  isolation: isolate;
+  filter: drop-shadow(0 0 34px color-mix(in srgb, var(--rankup-accent, #38bdf8) 55%, transparent));
+  animation:
+    rankup-badge-slam 0.85s cubic-bezier(0.16, 1.1, 0.3, 1) both,
+    rankup-badge-float 3.4s ease-in-out 0.9s infinite;
+}
+@keyframes rankup-badge-slam {
+  0% {
+    opacity: 0;
+    transform: scale(2.4) rotate(-14deg);
+  }
+  28% {
+    opacity: 1;
+  }
+  /* El frenazo: sobrepasa un poco y vuelve. */
+  46% {
+    transform: scale(0.9) rotate(3deg);
+  }
+  68% {
+    transform: scale(1.06) rotate(-1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+@keyframes rankup-badge-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -8px;
+  }
+}
+
+/* Barrido de luz sobre el metal. */
+.rankup-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: linear-gradient(
+    102deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.55) 49%,
+    transparent 58%
+  );
+  background-size: 280% 100%;
+  mask-image: radial-gradient(circle, #000 58%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle, #000 58%, transparent 72%);
+  animation: rankup-shine-sweep 2.2s ease-in-out 0.9s infinite;
+}
+@keyframes rankup-shine-sweep {
+  0% {
+    background-position: 150% 0;
+  }
+  55%,
+  100% {
+    background-position: -70% 0;
+  }
+}
+
+/* Salida: se va todo junto con el fundido de la música. */
+.rankup-overlay--out {
+  animation: rankup-out 0.7s ease-in both;
+}
+@keyframes rankup-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+/* Tipografía: sin chrome, sólo jerarquía. */
+.rankup-title {
+  font-size: clamp(1.5rem, 6.5vw, 2.4rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-shadow:
+    0 0 24px color-mix(in srgb, var(--rankup-accent, #38bdf8) 55%, transparent),
+    0 2px 12px rgba(0, 0, 0, 0.8);
+  animation: rankup-text-in 0.7s cubic-bezier(0.2, 1, 0.3, 1) 0.15s both;
+}
+.rankup-subtitle {
+  margin-top: 0.4rem;
+  font-size: clamp(0.75rem, 3.2vw, 0.9rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  animation: rankup-text-in 0.7s cubic-bezier(0.2, 1, 0.3, 1) 0.25s both;
+}
+.rankup-standing {
+  margin-top: 0.25rem;
+  font-size: clamp(1rem, 4.4vw, 1.4rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: color-mix(in srgb, var(--rankup-accent, #38bdf8) 30%, white);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--rankup-accent, #38bdf8) 60%, transparent);
+  animation: rankup-text-in 0.8s cubic-bezier(0.2, 1, 0.3, 1) 0.72s both;
+}
+@keyframes rankup-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rankup-flash,
+  .rankup-rays,
+  .rankup-vortex,
+  .rankup-glow,
+  .rankup-ring,
+  .rankup-sparks,
+  .rankup-mote,
+  .rankup-motes,
+  .rankup-badge,
+  .rankup-shine,
+  .rankup-title,
+  .rankup-subtitle,
+  .rankup-standing,
+  .rankup-scrim {
+    animation: none;
+  }
+  .rankup-overlay--out {
+    animation: none;
+    opacity: 0;
+  }
+  .rankup-flash,
+  .rankup-ring,
+  .rankup-sparks,
+  .rankup-motes,
+  .rankup-shine {
+    display: none;
+  }
+}
+
 .pvp-arena-chip {
   background: linear-gradient(
     180deg,
@@ -6722,51 +7649,65 @@ body {
   color: rgba(255, 255, 255, 0.85);
 }
 
-.pvp-report__hero {
+/* Resultado + scoreboard en una sola card */
+.pvp-report__summary {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   border-radius: 1rem;
   border: 1px solid color-mix(in srgb, white 10%, transparent);
   background: #12141c;
-  padding: 1.35rem 1.25rem 1.25rem;
-  text-align: center;
+  padding: 0.85rem 0.95rem 0.95rem;
   animation: pvp-report-hero-in 0.5s ease-out both;
 }
 .pvp-report__hero-glow {
   pointer-events: none;
   position: absolute;
   inset: -20% -10% auto;
-  height: 70%;
+  height: 55%;
   z-index: 0;
   opacity: 0.9;
 }
-.pvp-report__hero--win .pvp-report__hero-glow {
+.pvp-report__summary--win .pvp-report__hero-glow {
   background: radial-gradient(
     60% 80% at 50% 0%,
     color-mix(in srgb, #2eb8ff 35%, transparent) 0%,
     transparent 70%
   );
 }
-.pvp-report__hero--loss .pvp-report__hero-glow {
+.pvp-report__summary--loss .pvp-report__hero-glow {
   background: radial-gradient(
     60% 80% at 50% 0%,
     color-mix(in srgb, var(--color-error) 28%, transparent) 0%,
     transparent 70%
   );
 }
-.pvp-report__hero--active .pvp-report__hero-glow {
+.pvp-report__summary--active .pvp-report__hero-glow {
   background: radial-gradient(
     60% 80% at 50% 0%,
     color-mix(in srgb, var(--color-electric-yellow) 28%, transparent) 0%,
     transparent 70%
   );
 }
-.pvp-report__eyebrow {
+.pvp-report__summary-head {
   position: relative;
   z-index: 1;
-  margin: 0 0 0.35rem;
-  font-size: 0.65rem;
+  text-align: center;
+}
+.pvp-report__summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.2rem;
+}
+.pvp-report__eyebrow {
+  margin: 0;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -6776,86 +7717,80 @@ body {
   position: relative;
   z-index: 1;
   margin: 0;
-  font-size: clamp(1.65rem, 4.5vw, 2.15rem);
+  font-size: clamp(1.35rem, 3.8vw, 1.75rem);
+  line-height: 1.15;
 }
-.pvp-report__hero--win .pvp-report__title {
+.pvp-report__summary--win .pvp-report__title {
   color: #7dd8ff;
   text-shadow: 0 0 24px color-mix(in srgb, #2eb8ff 45%, transparent);
 }
-.pvp-report__hero--loss .pvp-report__title {
+.pvp-report__summary--loss .pvp-report__title {
   color: color-mix(in srgb, var(--color-error) 85%, white);
 }
-.pvp-report__hero--active .pvp-report__title {
+.pvp-report__summary--active .pvp-report__title {
   color: var(--color-electric-yellow);
 }
-.pvp-report__meta {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.85rem;
-}
 .pvp-report__coins {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #fff;
+  color: rgba(255, 255, 255, 0.88);
   font-variant-numeric: tabular-nums;
 }
 
 .pvp-report__scoreboard {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  align-items: start;
-  gap: 0.75rem;
-  border-radius: 1rem;
-  border: 1px solid color-mix(in srgb, white 10%, transparent);
-  background: #12141c;
-  padding: 1rem 1rem 1.1rem;
-  animation: pvp-report-hero-in 0.55s ease-out 0.06s both;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, white 7%, transparent);
+  background: color-mix(in srgb, black 28%, transparent);
+  padding: 0.65rem 0.7rem;
 }
 .pvp-report__vs {
   display: grid;
   place-items: center;
   align-self: center;
-  padding-inline: 0.25rem;
+  padding-inline: 0.15rem;
 }
 .pvp-report__vs-text {
-  font-size: clamp(1.25rem, 3.5vw, 1.65rem);
+  font-size: clamp(1rem, 2.8vw, 1.25rem);
   color: #7dd8ff;
   text-shadow:
     0 0 10px color-mix(in srgb, #2eb8ff 55%, transparent),
     0 0 22px color-mix(in srgb, #5ef0ff 35%, transparent);
 }
 .pvp-report__fighter {
-  display: grid;
+  display: flex;
   min-width: 0;
-  grid-template-rows: auto minmax(1.35rem, auto) auto;
-  gap: 0.35rem;
-  align-content: start;
-  justify-items: start;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: flex-start;
 }
 .pvp-report__fighter.is-right {
-  justify-items: end;
+  align-items: flex-end;
   text-align: right;
 }
 .pvp-report__fighter-id {
   display: flex;
   min-width: 0;
   max-width: 100%;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem 0.4rem;
 }
 .pvp-report__fighter.is-right .pvp-report__fighter-id {
   flex-direction: row-reverse;
+  justify-content: flex-start;
 }
 .pvp-report__fighter-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.95rem;
+  max-width: 7.5rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.85);
 }
@@ -6865,31 +7800,27 @@ body {
 .pvp-report__fighter.is-winner .pvp-report__fighter-name {
   color: #7ddea0;
 }
-.pvp-report__fighter-badge {
-  display: flex;
-  min-height: 1.35rem;
-  align-items: center;
-}
 .pvp-report__winner-chip {
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   border: 1px solid color-mix(in srgb, #7ddea0 50%, transparent);
   background: color-mix(in srgb, #7ddea0 16%, transparent);
-  padding: 0.15rem 0.45rem;
-  font-size: 0.6rem;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.55rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #7ddea0;
+  flex-shrink: 0;
 }
 .pvp-report__elo {
   display: flex;
   align-items: baseline;
-  gap: 0.4rem;
+  gap: 0.35rem;
   font-variant-numeric: tabular-nums;
 }
 .pvp-report__elo-value {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #fff;
 }
@@ -6898,7 +7829,7 @@ body {
 }
 .pvp-report__elo-delta {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 700;
   animation: pvp-report-delta-pop 0.55s ease-out 0.2s both;
 }
@@ -6911,7 +7842,7 @@ body {
 
 .pvp-report__section-title {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -6920,24 +7851,26 @@ body {
 .pvp-report__teams {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  animation: pvp-report-hero-in 0.55s ease-out 0.1s both;
+  gap: 0.45rem;
+  animation: pvp-report-hero-in 0.55s ease-out 0.08s both;
+}
+.pvp-report__teams-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 .pvp-report__teams-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.65rem;
-}
-@media (min-width: 640px) {
-  .pvp-report__teams-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
 }
 .pvp-report__team {
-  border-radius: 0.9rem;
+  border-radius: 0.75rem;
   border: 1px solid color-mix(in srgb, white 9%, transparent);
   background: #12141c;
-  padding: 0.75rem;
+  padding: 0.5rem;
+  min-width: 0;
 }
 .pvp-report__team--a {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #2eb8ff 16%, transparent);
@@ -6946,11 +7879,11 @@ body {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-electric-yellow) 16%, transparent);
 }
 .pvp-report__team-head {
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.35rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 .pvp-report__team--a .pvp-report__team-head {
@@ -6962,7 +7895,7 @@ body {
 .pvp-report__mons {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.4rem;
+  gap: 0.28rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -6972,10 +7905,10 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
-  border-radius: 0.55rem;
+  gap: 0.05rem;
+  border-radius: 0.45rem;
   background: color-mix(in srgb, black 35%, transparent);
-  padding: 0.55rem 0.25rem 0.45rem;
+  padding: 0.3rem 0.15rem 0.28rem;
 }
 .pvp-report__mon.is-fainted {
   opacity: 0.55;
@@ -6996,8 +7929,8 @@ body {
   object-fit: contain;
   width: auto;
   height: auto;
-  max-width: 3.5rem;
-  max-height: 3.5rem;
+  max-width: 2.5rem;
+  max-height: 2.5rem;
 }
 .pvp-report__sprite.is-fainted {
   filter: grayscale(1);
@@ -7007,39 +7940,32 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   font-weight: 650;
   text-transform: capitalize;
   color: rgba(255, 255, 255, 0.9);
+  line-height: 1.15;
 }
 .pvp-report__mon-lv {
-  font-size: 0.6rem;
+  font-size: 0.52rem;
   color: rgba(255, 255, 255, 0.4);
   font-variant-numeric: tabular-nums;
-}
-.pvp-report__mon-ko {
-  position: relative;
-  z-index: 1;
-  font-size: 0.55rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-error);
+  line-height: 1.1;
 }
 
 .pvp-report__cta-wrap {
-  animation: pvp-report-hero-in 0.55s ease-out 0.14s both;
+  animation: pvp-report-hero-in 0.55s ease-out 0.1s both;
 }
 .pvp-report__cta {
   position: relative;
   overflow: hidden;
   width: 100%;
-  height: 2.85rem;
+  height: 2.55rem;
   border: none;
   border-radius: 0.75rem;
   background: linear-gradient(90deg, #1a6dff 0%, #2eb8ff 48%, #5ef0ff 100%);
   color: #041018;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -7074,26 +8000,27 @@ body {
 .pvp-report__kos {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.45rem;
 }
 .pvp-report__ko-list {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.3rem;
   margin: 0;
-  padding: 0;
+  padding: 0.4rem 0.55rem 0.55rem;
   list-style: none;
+  border-top: 1px solid color-mix(in srgb, white 7%, transparent);
 }
 .pvp-report__ko {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.35rem 0.45rem;
-  border-radius: 0.65rem;
-  border: 1px solid color-mix(in srgb, white 8%, transparent);
-  background: #12141c;
-  padding: 0.55rem 0.7rem;
-  font-size: 0.8rem;
+  gap: 0.3rem 0.4rem;
+  border-radius: 0.55rem;
+  border: 1px solid color-mix(in srgb, white 6%, transparent);
+  background: color-mix(in srgb, black 28%, transparent);
+  padding: 0.4rem 0.55rem;
+  font-size: 0.75rem;
 }
 .pvp-report__ko-icon {
   font-size: 16px !important;
@@ -7138,7 +8065,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.75rem 0.9rem;
+  padding: 0.6rem 0.8rem;
   user-select: none;
 }
 .pvp-report__log-summary::-webkit-details-marker {
@@ -7236,8 +8163,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pvp-report__hero,
-  .pvp-report__scoreboard,
+  .pvp-report__summary,
   .pvp-report__teams,
   .pvp-report__cta-wrap,
   .pvp-report__elo-delta,
@@ -8268,10 +9194,34 @@ body {
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  /* Grobold no trae glifos latinos con tilde (ó, ñ, é…): si el browser
-     fuerza un fallback sintético, la Ó de "SESIÓN" se ve pixelada. Limitamos
-     la familia a ASCII y dejamos que Inter cubra el resto del stack. */
+  /* Solo ASCII: Grobold no trae glifos con tilde (É, Í, Ó, Ñ…). */
   unicode-range: U+0020-007E;
+}
+
+/*
+  Mismo `font-family: "Grobold"` para Latin-1 / Extended: Inter Black.
+  El browser elige esta cara sólo cuando falta el glifo en el woff2
+  original — así "SESIÓN" / "ENERGÍA" no caen a Inter Regular (fino).
+*/
+@font-face {
+  font-family: "Grobold";
+  src: url("/fonts/Inter-Black.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+00A0-00FF, U+2000-206F;
+  /* Black es un poco más angosto; un toque de size-adjust acerca al display. */
+  size-adjust: 103%;
+}
+
+@font-face {
+  font-family: "Grobold";
+  src: url("/fonts/Inter-Black-latin-ext.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-024F, U+1E00-1EFF;
+  size-adjust: 103%;
 }
 
 /* ── Pantalla de eventos ──────────────────────────────────────────────────

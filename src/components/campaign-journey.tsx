@@ -374,6 +374,11 @@ export function CampaignJourney({
         origin,
         coinsDelta: result.coins,
         pieces: [
+          // Las monedas también vuelan: antes sólo se pasaba `coinsDelta`, así
+          // que el contador subía sin que nada saliera del objetivo cobrado.
+          ...(result.coins > 0
+            ? [rewardToLootPiece({ kind: "coins", amount: result.coins })]
+            : []),
           rewardToLootPiece({
             kind: "item",
             itemName: result.itemName,

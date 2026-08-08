@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { SoftLeaveButton, BattleResult } from "@/components/battle-result";
 import { GymBadgePopup } from "@/components/gym-badge-popup";
+import { PvpHubAnimPersist } from "@/components/pvp/pvp-hub-anim-persist";
 import { startEncounter } from "@/actions/start-encounter";
 import { abandonGymRun } from "@/actions/abandon-gym-run";
 import type { XpSummaryEntry } from "@/actions/battle-move";
@@ -131,33 +132,24 @@ export function BattleOutcomeScreen({
         spriteUrl: foe.spriteUrl,
       }}
       xpSummary={xpSummary}
-      coinsGained={coinsGained}
+      coinsGained={
+        coinsGained > 0 ? coinsGained : (pvpResult?.coinsAwarded ?? 0)
+      }
+      pvpRating={
+        pvpResult && pvpResult.ratingBefore !== pvpResult.ratingAfter
+          ? {
+              before: pvpResult.ratingBefore,
+              after: pvpResult.ratingAfter,
+            }
+          : null
+      }
     >
-      {isPvpBattle && pvpResult && (
-        <div className="mb-1 w-full max-w-sm rounded-xl border border-white/12 bg-white/4 px-4 py-3 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
-            {t("pvpRating")}
-          </p>
-          <p className="font-mono text-headline-md text-electric-yellow">
-            {pvpResult.ratingAfter}{" "}
-            <span
-              className={
-                pvpResult.ratingAfter - pvpResult.ratingBefore >= 0
-                  ? "text-emerald-400"
-                  : "text-error"
-              }
-            >
-              ({pvpResult.ratingAfter - pvpResult.ratingBefore >= 0 ? "+" : ""}
-              {pvpResult.ratingAfter - pvpResult.ratingBefore})
-            </span>
-          </p>
-          {pvpResult.coinsAwarded > 0 && (
-            <p className="mt-1 text-[13px] text-white">
-              +{pvpResult.coinsAwarded} {t("coins")}
-            </p>
-          )}
-        </div>
-      )}
+      {isPvpBattle && pvpResult ? (
+        <PvpHubAnimPersist
+          ratingBefore={pvpResult.ratingBefore}
+          ratingAfter={pvpResult.ratingAfter}
+        />
+      ) : null}
       {showBadgePopup && badgeEarned && gymType && (
         <GymBadgePopup
           gymType={gymType}

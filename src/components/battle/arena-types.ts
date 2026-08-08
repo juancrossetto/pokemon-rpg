@@ -152,4 +152,9 @@ export interface BattleArenaProps {
   turnDeadlineAt?: string | null;
   /** Fallos de huida acumulados (solo salvaje; sube el % Gen III/IV). */
   fleeAttempts?: number;
+  /**
+   * Auto-batalla desbloqueada (≥3 Pokémon a Nv. 10+). Si falta, el toggle
+   * queda locked y el loop no corre aunque localStorage diga on.
+   */
+  autoBattleUnlocked?: boolean;
 }

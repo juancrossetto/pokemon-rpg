@@ -10,6 +10,10 @@ import { blockIfInCombat, revalidateCombatUi } from "@/lib/battle-lock";
 import { getCurrentEnergy, PVP_BATTLE_ENERGY_COST as PVP_ENERGY_COST } from "@/lib/energy";
 import { ensureSeason } from "@/lib/pvp/seasons";
 import {
+  PVP_CHALLENGE_COOLDOWN_MS,
+  pvpChallengeCooldownRemainingMs,
+} from "@/lib/pvp/cooldown";
+import {
   PVP_TEAM_INCLUDE,
   resolveTeamRows,
   snapshotTeam,
@@ -21,12 +25,14 @@ import { nextTurnDeadline } from "@/lib/battle-turn-timer";
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const PVP_LIMIT = 15;
 const MATCH_POOL = 8;
-/** Mínimo entre desafíos al mismo rival (evita farmear Elo). */
-const PVP_CHALLENGE_COOLDOWN_MS = 10 * 60 * 1000;
 
-function backToPvp(locale: string, error: string) {
+function backToPvp(locale: string, error: string, waitMs?: number) {
   revalidatePath(`/${locale}/pvp`);
-  redirect({ href: `/pvp?error=${error}`, locale });
+  const q =
+    waitMs != null && waitMs > 0
+      ? `?error=${encodeURIComponent(error)}&waitMs=${Math.ceil(waitMs)}`
+      : `?error=${encodeURIComponent(error)}`;
+  redirect({ href: `/pvp${q}`, locale });
 }
 
 async function loadTeamRows(userId: string): Promise<TeamRowForSnap[]> {
@@ -132,10 +138,11 @@ export async function startPvpBattle(
       ],
       createdAt: { gte: new Date(Date.now() - PVP_CHALLENGE_COOLDOWN_MS) },
     },
-    select: { id: true },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, createdAt: true },
   });
   if (recent && (opts?.opponentUsername || opts?.rematchUserId)) {
-    backToPvp(locale, "cooldown");
+    backToPvp(locale, "cooldown", pvpChallengeCooldownRemainingMs(recent.createdAt));
     return;
   }
 

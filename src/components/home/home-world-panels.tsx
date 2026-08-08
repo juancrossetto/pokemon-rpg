@@ -8,7 +8,7 @@ import { openDailyRewardModal } from "@/lib/daily-gift-fx";
 import { ProgressRing, SegmentedBar } from "@/components/events/quest-parts";
 import { playCenterHealFx } from "@/components/heal-button";
 import { healTeam } from "@/actions/heal-team";
-import { playBattleSfx } from "@/lib/battle-sfx";
+import { playUiSfx } from "@/lib/battle-sfx";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import { announceHomeTeamHealed } from "@/lib/home-heal-fx";
 import {
@@ -201,7 +201,7 @@ export function HomeDailyActions({
     };
     const snapshotCd = live.cooldownMsLeft;
     setHealError(false);
-    playBattleSfx("heal");
+    playUiSfx("heal");
     playCenterHealFx();
     // Squad al instante — no esperar al router.refresh().
     announceHomeTeamHealed();

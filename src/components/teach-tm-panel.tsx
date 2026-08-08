@@ -10,7 +10,7 @@ import { typeColor } from "@/lib/type-colors";
 import { formatMoveName } from "@/lib/format-move-name";
 import type { TeamCompatibleTm, TeamMoveDetail } from "@/components/team-roster";
 import { SquadItemFx, fxMetaFromColor } from "@/components/use-squad-actions";
-import { playBattleSfx } from "@/lib/battle-sfx";
+import { playUiSfx } from "@/lib/battle-sfx";
 
 export type TeachTmLabels = {
   title: string;
@@ -93,7 +93,7 @@ export function TeachTmPanel({
         setError(labels.teachErrors[result.error] ?? result.error);
         return;
       }
-      playBattleSfx("restorePp");
+      playUiSfx("restorePp");
       setTeachFx({
         label: formatMoveName(teachingItem.moveName, locale),
         color: typeColor(teachingItem.moveType),

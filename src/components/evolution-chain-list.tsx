@@ -17,7 +17,7 @@ import { confirmEvolve } from "@/actions/level-up-offers";
 // empieza con `use` y `react-hooks/rules-of-hooks` la marca como llamada
 // inválida dentro del callback. Mismo criterio que `applyRareCandy`.
 import { useEvolutionStone as applyEvolutionStone } from "@/actions/use-evolution-stone";
-import { playBattleSfx } from "@/lib/battle-sfx";
+import { playUiSfx } from "@/lib/battle-sfx";
 import { showToast } from "@/lib/app-toast";
 import { EvolvePopup } from "@/components/evolve-popup";
 
@@ -174,7 +174,7 @@ export function EvolutionChainList({
     setBusySpeciesId(opts.toSpeciesId);
     startTransition(async () => {
       try {
-        playBattleSfx("evolve");
+        playUiSfx("evolve");
         const result =
           opts.kind === "level"
             ? await confirmEvolve(instanceId, locale)

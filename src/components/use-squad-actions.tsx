@@ -12,7 +12,7 @@ import { healPokemonWithPotion } from "@/actions/heal-pokemon-potion";
 import { restorePokemonPp } from "@/actions/restore-pokemon-pp";
 import { revivePokemon } from "@/actions/revive-pokemon";
 import { useRareCandy as consumeRareCandy } from "@/actions/use-rare-candy";
-import { playBattleSfx } from "@/lib/battle-sfx";
+import { playUiSfx } from "@/lib/battle-sfx";
 import {
   EMPTY_SQUAD_BAG,
   estimateHealAmount,
@@ -177,9 +177,9 @@ export function useSquadActions({
 
   function playItemFx(kind: SquadItemFxKind, label: string) {
     setFx({ kind, label, key: Date.now() });
-    if (kind === "heal") playBattleSfx("heal");
-    else if (kind === "pp") playBattleSfx("restorePp");
-    else playBattleSfx("levelUp");
+    if (kind === "heal") playUiSfx("heal");
+    else if (kind === "pp") playUiSfx("restorePp");
+    else playUiSfx("levelUp");
   }
 
   function softRefresh() {
@@ -475,20 +475,33 @@ export function useSquadActions({
           if (!existing) {
             next = [...prev, entry];
           } else {
-            next = prev.map((e) =>
-              e.instanceId !== instanceId
-                ? e
-                : {
-                    ...e,
-                    leveledUpTo: entry.leveledUpTo,
-                    fromSpriteUrl: entry.fromSpriteUrl,
-                    isShiny: entry.isShiny,
-                    autoTaught: [...e.autoTaught, ...entry.autoTaught],
-                    pendingMoves: [...e.pendingMoves, ...entry.pendingMoves],
-                    evolveOffer: entry.evolveOffer ?? e.evolveOffer,
-                    knownMoves: entry.knownMoves,
-                  },
-            );
+            next = prev.map((e) => {
+              if (e.instanceId !== instanceId) return e;
+              // Preferir slots ya actualizados en UI (tras aprender/pisar).
+              const knownBySlot = new Map(e.knownMoves.map((k) => [k.slot, k]));
+              for (const k of entry.knownMoves) {
+                if (!knownBySlot.has(k.slot)) knownBySlot.set(k.slot, k);
+              }
+              const knownMoves = [...knownBySlot.values()].sort(
+                (a, b) => a.slot - b.slot,
+              );
+              const knownIds = new Set(knownMoves.map((k) => k.moveId));
+              const pendingById = new Map<number, (typeof e.pendingMoves)[number]>();
+              for (const m of [...e.pendingMoves, ...entry.pendingMoves]) {
+                if (knownIds.has(m.moveId)) continue;
+                if (!pendingById.has(m.moveId)) pendingById.set(m.moveId, m);
+              }
+              return {
+                ...e,
+                leveledUpTo: entry.leveledUpTo,
+                fromSpriteUrl: entry.fromSpriteUrl,
+                isShiny: entry.isShiny,
+                autoTaught: [...e.autoTaught, ...entry.autoTaught],
+                pendingMoves: [...pendingById.values()],
+                evolveOffer: entry.evolveOffer ?? e.evolveOffer,
+                knownMoves,
+              };
+            });
           }
         }
         levelOffersRef.current = next;
@@ -610,15 +623,22 @@ export function SquadLevelOffers({
   }) => void;
 }) {
   if (typeof document === "undefined") return null;
+  const learnedAckOnly = entries.every(
+    (e) =>
+      e.leveledUpTo != null &&
+      e.autoTaught.length > 0 &&
+      e.pendingMoves.length === 0 &&
+      e.evolveOffer == null,
+  );
   return createPortal(
-    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/65 px-3 pt-3 pb-[calc(var(--bottom-nav-h,5.25rem)+env(safe-area-inset-bottom,0px)+0.5rem)] backdrop-blur-md sm:items-center sm:p-4 xl:pb-4">
-      {/*
-        Antes: max-h 72dvh / 36rem → la card de aprender move no entraba y
-        forzaba scroll con espacio libre en el overlay. Usamos casi todo el
-        alto disponible del portal (ya descuenta bottom-nav) y un tope holgado
-        en desktop.
-      */}
-      <div className="flex max-h-full w-full max-w-3xl flex-col overflow-y-auto overscroll-contain rounded-2xl border border-tertiary/25 bg-[#0a0e16]/96 shadow-[0_24px_80px_rgba(0,0,0,0.65)] sm:max-h-[min(92dvh,52rem)]">
+    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/70 px-3 pt-3 pb-[calc(var(--bottom-nav-h,5.25rem)+env(safe-area-inset-bottom,0px)+0.5rem)] backdrop-blur-md sm:items-center sm:p-4 xl:pb-4">
+      <div
+        className={
+          learnedAckOnly
+            ? "flex max-h-full w-full max-w-md flex-col overflow-y-auto overscroll-contain"
+            : "flex max-h-full w-full max-w-3xl flex-col overflow-y-auto overscroll-contain rounded-2xl border border-tertiary/25 bg-[#0a0e16]/96 shadow-[0_24px_80px_rgba(0,0,0,0.65)] sm:max-h-[min(92dvh,52rem)]"
+        }
+      >
         <LevelUpOffersPanel
           key={entries
             .map((e) => `${e.instanceId}:${e.leveledUpTo}:${e.evolveOffer?.toSpeciesId ?? 0}`)

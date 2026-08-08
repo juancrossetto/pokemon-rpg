@@ -342,6 +342,7 @@ export function BattleArena({
   pvpMatchId = null,
   turnDeadlineAt: initialTurnDeadlineAt = null,
   fleeAttempts: initialFleeAttempts = 0,
+  autoBattleUnlocked = true,
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tLog = useTranslations("battle.log");
@@ -506,11 +507,12 @@ export function BattleArena({
     getBattleSpeed,
     getServerBattleSpeed,
   );
-  const autoBattle = useSyncExternalStore(
+  const autoBattlePref = useSyncExternalStore(
     subscribeBattleAuto,
     getBattleAuto,
     getServerBattleAuto,
   );
+  const autoBattle = autoBattleUnlocked && autoBattlePref;
   const [log, setLog] = useState<LogEntry[]>(() => {
     const entries: LogEntry[] = [];
     for (const text of initialLog) {
@@ -2987,7 +2989,7 @@ export function BattleArena({
               </div>
               <div className="mt-1 flex flex-col items-start gap-1.5 md:mt-1.5 md:gap-2">
                 <BattleSpeedControl />
-                <BattleAutoControl />
+                <BattleAutoControl unlocked={autoBattleUnlocked} />
                 <BattleAudioControls bgmKind={bgmKind} />
               </div>
             </div>

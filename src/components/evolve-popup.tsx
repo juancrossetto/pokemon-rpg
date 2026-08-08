@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { spriteFor } from "@/lib/shiny";
-import { playBattleSfx } from "@/lib/battle-sfx";
+import { playUiSfx } from "@/lib/battle-sfx";
 import { startEvolutionBgm, stopEvolutionBgm } from "@/lib/battle-bgm";
 
 type EvolvePhase = "intro" | "morph" | "flash" | "reveal" | "done";
@@ -90,7 +90,7 @@ export function EvolvePopup({
 
     at(1600 + 3200, () => {
       setPhase("flash");
-      playBattleSfx("evolve");
+      playUiSfx("evolve");
     });
     at(1600 + 3200 + 450, () => setPhase("reveal"));
     at(1600 + 3200 + 450 + 900, () => setPhase("done"));

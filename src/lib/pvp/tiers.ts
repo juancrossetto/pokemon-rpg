@@ -133,10 +133,13 @@ export function nextRankProgress(rating: number): {
   }
   const nextFloor = rankFloor(next);
   const span = Math.max(1, nextFloor - currentFloor);
-  const pct = Math.min(
-    100,
-    Math.max(0, Math.round(((rating - currentFloor) / span) * 100)),
-  );
+  // Nunca mostrar 100% si todavía no cruzaste el floor (p.ej. 1099 → Ascendente
+  // redondeaba a 100% pero seguías en Principiante I).
+  const rawPct = ((rating - currentFloor) / span) * 100;
+  const pct =
+    rating >= nextFloor
+      ? 100
+      : Math.min(99, Math.max(0, Math.round(rawPct)));
   return { current, next, pct, currentFloor, nextFloor };
 }
 
@@ -165,6 +168,31 @@ export function nextTierProgress(rating: number): {
 }
 
 /** Color accent Tailwind-ish class fragment for UI chips. */
+/**
+ * Color plano del tier. `tierAccentClass` sirve para chips, pero glows,
+ * conic-gradients y `color-mix` necesitan el valor, no una clase.
+ */
+export function tierGlowColor(tier: PvpTier): string {
+  switch (tier) {
+    case "beginner":
+      return "#84cc16";
+    case "rising":
+      return "#38bdf8";
+    case "advanced":
+      return "#a78bfa";
+    case "elite":
+      return "#fbbf24";
+    case "bronzeMaster":
+      return "#fb923c";
+    case "crystalMaster":
+      return "#67e8f9";
+    case "champion":
+      return "#ffcc00";
+    case "legendary":
+      return "#e879f9";
+  }
+}
+
 export function tierAccentClass(tier: PvpTier): string {
   switch (tier) {
     case "beginner":

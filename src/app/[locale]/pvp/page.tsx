@@ -23,6 +23,10 @@ import { speciesRarity } from "@/lib/pokedex";
 import { parseTeamSnap } from "@/lib/pvp/team";
 import { faintedBySide } from "@/lib/pvp/ko-log";
 import {
+  PVP_CHALLENGE_COOLDOWN_MS,
+  pvpChallengeCooldownRemainingMs,
+} from "@/lib/pvp/cooldown";
+import {
   divisionRoman,
   rankForRating,
   type PvpTier,
@@ -37,7 +41,7 @@ export default async function PvpPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ error?: string; page?: string }>;
+  searchParams: Promise<{ error?: string; page?: string; waitMs?: string }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   const [t, session] = await Promise.all([getTranslations("pvp"), auth()]);
@@ -51,6 +55,9 @@ export default async function PvpPage({
   await redirectIfInBattle(userId, locale);
 
   const errorCode = pickCode(query.error, PVP_ERRORS);
+  const waitMsParsed = Number.parseInt(query.waitMs ?? "", 10);
+  const waitMsFromQuery =
+    Number.isFinite(waitMsParsed) && waitMsParsed > 0 ? waitMsParsed : 0;
   const page = Math.max(1, Number.parseInt(query.page ?? "1", 10) || 1);
   const seasonKey = currentSeasonKey();
   const seasonEnd = nextSeasonReset();
@@ -208,6 +215,22 @@ export default async function PvpPage({
   };
 
   const selfAvatarSrc = avatarHeroSrc(me.avatarId);
+
+  const recentPairMatches = await prisma.pvpMatch.findMany({
+    where: {
+      OR: [{ challengerId: userId }, { opponentId: userId }],
+      createdAt: { gte: new Date(Date.now() - PVP_CHALLENGE_COOLDOWN_MS) },
+    },
+    select: { challengerId: true, opponentId: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+  });
+  const cooldownByFoe = new Map<string, number>();
+  for (const row of recentPairMatches) {
+    const foeId = row.challengerId === userId ? row.opponentId : row.challengerId;
+    if (cooldownByFoe.has(foeId)) continue;
+    cooldownByFoe.set(foeId, pvpChallengeCooldownRemainingMs(row.createdAt));
+  }
+
   const hubMatches: PvpHubMatchCard[] = matches.map((m) => {
     const iAmChallenger = m.challengerId === userId;
     const foe = iAmChallenger ? m.opponent : m.challenger;
@@ -251,9 +274,15 @@ export default async function PvpPage({
         iAmChallenger ? opponentTeam : challengerTeam,
         iAmChallenger ? "b" : "a",
       ),
+      cooldownMsLeft: cooldownByFoe.get(foeId) ?? 0,
     };
   });
 
+  const popupCooldownMs =
+    errorCode === "cooldown"
+      ? waitMsFromQuery ||
+        Math.max(0, ...[...cooldownByFoe.values()], 0)
+      : 0;
   const tierLabels = {
     beginner: t("tiers.beginner"),
     rising: t("tiers.rising"),
@@ -271,6 +300,7 @@ export default async function PvpPage({
       <PvpArenaHub
         locale={locale}
         error={errorCode ? t(`errors.${errorCode}`) : null}
+        cooldownMsLeft={popupCooldownMs}
         rating={me.pvpRating}
         tier={tier}
         division={division}
@@ -355,6 +385,7 @@ export default async function PvpPage({
           paginationPrev: t("pagination.prev"),
           paginationNext: t("pagination.next"),
           paginationPageOf: t("pagination.pageOf", { page, total: totalPages }),
+          errorDismiss: t("errorDismiss"),
           tiers: tierLabels,
         }}
       />

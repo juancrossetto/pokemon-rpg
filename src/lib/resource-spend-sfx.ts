@@ -1,8 +1,8 @@
 /**
  * Chime descendente al gastar energía/gemas (inverso del collect de loot).
- * Respeta mute/volumen de SFX de batalla.
+ * Usa el volumen de efectos; el mute de batalla no lo apaga.
  */
-import { getBattleSfxVolume, isBattleSfxMuted } from "@/lib/battle-sfx";
+import { getUiSfxVolume } from "@/lib/battle-sfx";
 
 let sfxCtx: AudioContext | null = null;
 
@@ -45,10 +45,9 @@ function tone(
 }
 
 export function playResourceSpendSfx(): void {
-  if (isBattleSfxMuted()) return;
   const audio = getSfxCtx();
   if (!audio) return;
-  const vol = getBattleSfxVolume() * 0.42;
+  const vol = getUiSfxVolume() * 0.42;
   if (vol <= 0) return;
   const now = audio.currentTime + 0.01;
   tone(audio, 720, now, 0.06, vol * 0.3, "triangle");

@@ -42,6 +42,8 @@ export type PvpMatchReportProps = {
   mode: "RANKED" | "QUICK" | string;
   coinsAwarded: number;
   foeId: string;
+  /** Ms restantes para rematch contra este rival. */
+  cooldownMsLeft?: number;
   challenger: { username: string; country: string };
   opponent: { username: string; country: string };
   challengerWon: boolean;
@@ -60,8 +62,7 @@ export type PvpMatchReportProps = {
 };
 
 /**
- * Recap post-partida PvP: hero de resultado → scoreboard → equipos → rematch → logs.
- * Presentacional; la page arma el DTO desde Prisma.
+ * Recap post-partida PvP: resultado + scoreboard juntos → equipos densos → rematch → logs.
  */
 export function PvpMatchReport({
   locale,
@@ -72,6 +73,7 @@ export function PvpMatchReport({
   mode,
   coinsAwarded,
   foeId,
+  cooldownMsLeft = 0,
   challenger,
   opponent,
   challengerWon,
@@ -106,64 +108,70 @@ export function PvpMatchReport({
   const sideName = (side: "a" | "b") =>
     side === "a" ? challenger.username : opponent.username;
 
+  const showOutcomeHero = (iAmInMatch && settled) || !settled;
+  const modeLabel = mode === "RANKED" ? labels.modeRanked : labels.modeQuick;
+
   return (
-    <div className="pvp-report flex-1 px-margin-mobile py-5 md:px-margin-desktop md:py-7">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="pvp-report flex-1 px-margin-mobile py-4 md:px-margin-desktop md:py-6">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         <Link href="/pvp" className="pvp-report__back">
           <span className="material-symbols-outlined text-[16px]!">arrow_back</span>
           {labels.backToPvp}
         </Link>
 
-        {iAmInMatch && settled ? (
-          <header className={`pvp-report__hero pvp-report__hero--${outcomeTone}`}>
-            <div className="pvp-report__hero-glow" aria-hidden />
-            <p className="pvp-report__eyebrow">
-              {mode === "RANKED" ? labels.modeRanked : labels.modeQuick}
-            </p>
-            <h1 className="pvp-report__title page-title">{outcomeTitle}</h1>
-            {coinsAwarded > 0 ? (
-              <div className="pvp-report__meta">
-                <span className="pvp-report__coins">{labels.coinsAwarded(coinsAwarded)}</span>
+        <section
+          className={`pvp-report__summary pvp-report__summary--${outcomeTone}`}
+          aria-label={labels.vsShort}
+        >
+          <div className="pvp-report__hero-glow" aria-hidden />
+
+          {showOutcomeHero ? (
+            <div className="pvp-report__summary-head">
+              <div className="pvp-report__summary-meta">
+                {settled ? (
+                  <span className="pvp-report__eyebrow">{modeLabel}</span>
+                ) : null}
+                {settled && coinsAwarded > 0 ? (
+                  <span className="pvp-report__coins">
+                    {labels.coinsAwarded(coinsAwarded)}
+                  </span>
+                ) : null}
               </div>
-            ) : null}
-          </header>
-        ) : null}
+              <h1 className="pvp-report__title page-title">{outcomeTitle}</h1>
+            </div>
+          ) : null}
 
-        {!settled ? (
-          <header className="pvp-report__hero pvp-report__hero--active">
-            <div className="pvp-report__hero-glow" aria-hidden />
-            <h1 className="pvp-report__title page-title">{labels.active}</h1>
-          </header>
-        ) : null}
-
-        <section className="pvp-report__scoreboard" aria-label={labels.vsShort}>
-          <Combatant
-            username={challenger.username}
-            country={challenger.country}
-            won={challengerWon}
-            ratingBefore={challengerRatingBefore}
-            ratingAfter={challengerRatingAfter}
-            winLabel={labels.winner}
-            side="a"
-          />
-          <div className="pvp-report__vs" aria-hidden>
-            <span className="pvp-report__vs-text page-title">{labels.vsShort}</span>
+          <div className="pvp-report__scoreboard">
+            <Combatant
+              username={challenger.username}
+              country={challenger.country}
+              won={challengerWon}
+              ratingBefore={challengerRatingBefore}
+              ratingAfter={challengerRatingAfter}
+              winLabel={labels.winner}
+              side="a"
+            />
+            <div className="pvp-report__vs" aria-hidden>
+              <span className="pvp-report__vs-text page-title">{labels.vsShort}</span>
+            </div>
+            <Combatant
+              username={opponent.username}
+              country={opponent.country}
+              won={settled && !challengerWon}
+              ratingBefore={opponentRatingBefore}
+              ratingAfter={opponentRatingAfter}
+              winLabel={labels.winner}
+              side="b"
+              alignRight
+            />
           </div>
-          <Combatant
-            username={opponent.username}
-            country={opponent.country}
-            won={settled && !challengerWon}
-            ratingBefore={opponentRatingBefore}
-            ratingAfter={opponentRatingAfter}
-            winLabel={labels.winner}
-            side="b"
-            alignRight
-          />
         </section>
 
         {(challengerTeam.length > 0 || opponentTeam.length > 0) && (
           <section className="pvp-report__teams">
-            <h2 className="pvp-report__section-title">{labels.teamsTitle}</h2>
+            <div className="pvp-report__teams-head">
+              <h2 className="pvp-report__section-title">{labels.teamsTitle}</h2>
+            </div>
             <div className="pvp-report__teams-grid">
               <TeamPanel
                 username={challenger.username}
@@ -193,56 +201,73 @@ export function PvpMatchReport({
             foeId={foeId}
             label={labels.rematch}
             pendingLabel={labels.starting}
+            cooldownMsLeft={cooldownMsLeft}
             wrapClassName="pvp-report__cta-wrap"
             className="pvp-report__cta"
           />
         ) : null}
 
         <section className="pvp-report__kos">
-          <h2 className="pvp-report__section-title">{labels.battleLog}</h2>
-          {koLog.length === 0 ? (
-            <p className="pvp-report__empty">{labels.noKos}</p>
-          ) : (
-            <ol className="pvp-report__ko-list">
-              {koLog.map((entry, i) => {
-                const parsed = parseKo(entry);
-                if (!parsed) return null;
-                const attackerIsChallenger = parsed.attackerSide === "a";
-                const attacker = byName.get(parsed.attackerName.toLowerCase());
-                const faintedMon = byName.get(parsed.faintedName.toLowerCase());
-                return (
-                  <li key={i} className="pvp-report__ko">
-                    {attacker?.spriteUrl ? (
-                      <Sprite src={attacker.spriteUrl} alt={parsed.attackerName} fainted={false} />
-                    ) : (
-                      <span className="material-symbols-outlined pvp-report__ko-icon">
-                        swords
+          <details className="pvp-report__log-details">
+            <summary className="pvp-report__log-summary">
+              <span className="pvp-report__section-title">{labels.battleLog}</span>
+              <span className="pvp-report__log-hint">
+                <span className="pvp-report__log-hint--closed">{labels.turnLogShow}</span>
+                <span className="pvp-report__log-hint--open">{labels.turnLogHide}</span>
+              </span>
+            </summary>
+            {koLog.length === 0 ? (
+              <p className="pvp-report__empty">{labels.noKos}</p>
+            ) : (
+              <ol className="pvp-report__ko-list">
+                {koLog.map((entry, i) => {
+                  const parsed = parseKo(entry);
+                  if (!parsed) return null;
+                  const attackerIsChallenger = parsed.attackerSide === "a";
+                  const attacker = byName.get(parsed.attackerName.toLowerCase());
+                  const faintedMon = byName.get(parsed.faintedName.toLowerCase());
+                  return (
+                    <li key={i} className="pvp-report__ko">
+                      {attacker?.spriteUrl ? (
+                        <Sprite
+                          src={attacker.spriteUrl}
+                          alt={parsed.attackerName}
+                          fainted={false}
+                        />
+                      ) : (
+                        <span className="material-symbols-outlined pvp-report__ko-icon">
+                          swords
+                        </span>
+                      )}
+                      <span
+                        className={`pvp-report__ko-name ${
+                          attackerIsChallenger ? "is-a" : "is-b"
+                        }`}
+                      >
+                        {parsed.attackerName}
                       </span>
-                    )}
-                    <span
-                      className={`pvp-report__ko-name ${
-                        attackerIsChallenger ? "is-a" : "is-b"
-                      }`}
-                    >
-                      {parsed.attackerName}
-                    </span>
-                    <span className="pvp-report__ko-mid">
-                      {labels.defeated(sideName(parsed.attackerSide))}
-                    </span>
-                    {faintedMon?.spriteUrl ? (
-                      <Sprite src={faintedMon.spriteUrl} alt={parsed.faintedName} fainted />
-                    ) : null}
-                    <span className="pvp-report__ko-fainted capitalize">
-                      {parsed.faintedName}
-                    </span>
-                    <span className="pvp-report__ko-owner">
-                      ({sideName(parsed.faintedSide)})
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
+                      <span className="pvp-report__ko-mid">
+                        {labels.defeated(sideName(parsed.attackerSide))}
+                      </span>
+                      {faintedMon?.spriteUrl ? (
+                        <Sprite
+                          src={faintedMon.spriteUrl}
+                          alt={parsed.faintedName}
+                          fainted
+                        />
+                      ) : null}
+                      <span className="pvp-report__ko-fainted capitalize">
+                        {parsed.faintedName}
+                      </span>
+                      <span className="pvp-report__ko-owner">
+                        ({sideName(parsed.faintedSide)})
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </details>
         </section>
 
         <section className="pvp-report__log">
@@ -310,14 +335,21 @@ function TeamPanel({
             return (
               <li
                 key={mon.instanceId}
+                title={
+                  isFainted
+                    ? `${mon.name} · ${levelLabel(mon.level)} · ${faintedLabel}`
+                    : `${mon.name} · ${levelLabel(mon.level)}`
+                }
                 className={`pvp-report__mon ${isFainted ? "is-fainted" : ""}`}
               >
-                <Sprite src={mon.spriteUrl} alt={mon.name} fainted={isFainted} size={56} />
+                <Sprite
+                  src={mon.spriteUrl}
+                  alt={mon.name}
+                  fainted={isFainted}
+                  size={40}
+                />
                 <span className="pvp-report__mon-name">{mon.name}</span>
                 <span className="pvp-report__mon-lv">{levelLabel(mon.level)}</span>
-                {isFainted ? (
-                  <span className="pvp-report__mon-ko">{faintedLabel}</span>
-                ) : null}
               </li>
             );
           })}
@@ -381,9 +413,6 @@ function Combatant({
       <div className="pvp-report__fighter-id">
         <FlagIcon code={country} className="h-3.5 w-auto rounded-[2px] shrink-0" />
         <span className="pvp-report__fighter-name">{username}</span>
-      </div>
-      {/* Slot fijo: si solo el ganador tiene chip, el Elo del otro sube y se desalinea. */}
-      <div className="pvp-report__fighter-badge">
         {won ? <span className="pvp-report__winner-chip">{winLabel}</span> : null}
       </div>
       <div className="pvp-report__elo">

@@ -78,7 +78,7 @@ export const ITEM_HD_ICON_IDS: Record<string, string> = {
   "Gold Coin": "gold-coin",
   "Poke Coin Bundle S": "poke-coin-bundle-s",
   "Poke Coin Bundle XL": "poke-coin-bundle-xl",
-  Gem: "gem",
+  "Energy Pack": "energy-pack",
   Energy: "energy",
   // Held / type boosters (main series)
   Charcoal: "charcoal",

@@ -14,12 +14,14 @@ export function SubmitButton({
   className,
   disabled = false,
   confirmMessage,
+  title,
 }: {
   label: string;
   pendingLabel: string;
   className: string;
   disabled?: boolean;
   confirmMessage?: string;
+  title?: string;
 }) {
   const { pending } = useFormStatus();
 
@@ -27,6 +29,7 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={disabled || pending}
+      title={title}
       onClick={(event) => {
         if (confirmMessage && !window.confirm(confirmMessage)) event.preventDefault();
       }}

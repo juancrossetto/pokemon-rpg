@@ -10,9 +10,9 @@ import type { RewardBundle } from "./rewards";
  * progreso por un día sin entrar. La consecuencia es que el ciclo no está
  * atado al calendario: el "día 12" es el duodécimo reclamo, no el 12 del mes.
  *
- * **Balance.** Un jugador activo hace ~48 combates diarios (20 de energía,
- * +1 cada 30 min) a ~50 monedas cada uno: unas 2.400 monedas por día. El
- * promedio del ciclo queda alrededor del 12% de ese ingreso, así que el
+ * **Balance.** Un jugador activo hace ~58 combates diarios (30 de energía,
+ * +1 cada 30 min) a ~50 monedas cada uno: unas 2.900 monedas por día. El
+ * promedio del ciclo queda alrededor del 10% de ese ingreso, así que el
  * regalo motiva volver sin competir con jugar. El ciclo completo entrega
  * ~9.500 monedas más objetos a lo largo de 28 días: menos de cuatro días de
  * juego activo, repartidos en un mes.

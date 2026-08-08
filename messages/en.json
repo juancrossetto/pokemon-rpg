@@ -809,8 +809,8 @@
     "musicOn": "Sound",
     "musicOff": "Mute",
     "musicVolume": "Music volume",
-    "muteSfx": "Mute SFX",
-    "unmuteSfx": "Unmute SFX",
+    "muteSfx": "Mute battle SFX",
+    "unmuteSfx": "Unmute battle SFX",
     "sfxVolume": "SFX volume",
     "musicCredit": "Music: Matthew Pablo",
     "whatWillDo": "What will {name} do?",
@@ -840,6 +840,7 @@
     "animationSpeed": "Animation speed: {speed}x",
     "autoBattleOn": "Auto battle: on",
     "autoBattleOff": "Auto battle: off",
+    "autoBattleLocked": "Auto battle: unlock with {count} Pokémon at Lv. {level}+",
     "youMoveFirst": "You move first",
     "foeMovesFirst": "Foe moves first",
     "turnOrderHint": "Based on Speed. Priority moves can go first anyway.",
@@ -1412,6 +1413,7 @@
     "title": "Shop",
     "bannerAlt": "Inside the Pokémon shop",
     "types": {
+      "ENERGY": "Energy",
       "POTION": "Healing",
       "POKEBALL": "Poké Balls",
       "EVOLUTION_STONE": "Stones",
@@ -1447,7 +1449,10 @@
     "catchRate": "×{multiplier} catch effectiveness.",
     "healAmount": "Restores {amount} HP.",
     "healFull": "Fully restores HP and cures any status condition.",
+    "energyFull": "Your energy is already full.",
+    "energyFullShort": "Full",
     "names": {
+      "energyPack": "Energy Pack",
       "eviolite": "Eviolite",
       "fireStone": "Fire Stone",
       "fullRestore": "Full Restore",
@@ -1471,6 +1476,7 @@
     "increase": "Add one",
     "close": "Close",
     "effects": {
+      "energyPack": "Instantly restores 10 energy.",
       "ether": "Restores 10 PP of one move.",
       "maxEther": "Restores all PP of one move.",
       "elixir": "Restores 10 PP of every move.",
@@ -2109,6 +2115,12 @@
     "teamSaving": "Saving…",
     "teamClear": "Clear preset",
     "teamSlot": "Slot {n}",
+    "teamReorderHint": "Drag or tap two slots to reorder. Use × to remove.",
+    "teamRemove": "Remove from preset",
+    "teamSwapTarget": "Tap another slot to swap",
+    "rankUpTitle": "Rank up!",
+    "rankUpSubtitle": "You reached {rank}",
+    "rankUpContinue": "Continue",
     "historyTitle": "History",
     "emptyHistory": "You have not played any PvP matches yet.",
     "win": "Won",
@@ -2146,8 +2158,10 @@
       "no_opponents": "No opponents available right now. Try again later.",
       "no_energy": "You do not have enough energy to find a match.",
       "rate_limited": "Too many matches in a row. Give it a moment.",
-      "cooldown": "You challenged that rival recently. Wait a few minutes."
-    }
+      "cooldown": "You challenged that rival recently."
+    },
+    "cooldownReadyIn": "Available in {time}",
+    "errorDismiss": "Got it"
   },
   "campaign": {
     "eyebrow": "Kanto Journey",
@@ -2470,7 +2484,7 @@
     "learn": "Learn",
     "replace": "Replace",
     "skipMove": "Ignore",
-    "skipMoveHint": "I'll ask again the next time it levels up",
+    "skipMoveHint": "Skip learning it at this level",
     "rejectMove": "Reject",
     "rejectMoveHint": "Won't be offered again",
     "cancel": "Cancel",

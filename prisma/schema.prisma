@@ -30,8 +30,8 @@ model User {
   coins           Int       @default(0)
   /// Moneda premium (gemas) — reservada para usos de PC / economía especial.
   gems            Int       @default(0)
-  energy          Int       @default(20)
-  energyMax       Int       @default(20)
+  energy          Int       @default(30)
+  energyMax       Int       @default(30)
   energyUpdatedAt DateTime  @default(now()) // para calcular regeneración sin cron
   lastHealAt      DateTime? // Centro Pokémon: la curación gratis tiene cooldown; pagar lo saltea
   /// Presencia social: se actualiza al cargar Friends / heartbeat. Null = nunca visto online.

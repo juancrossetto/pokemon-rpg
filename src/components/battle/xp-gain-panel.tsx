@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import type { XpSummaryEntry } from "@/actions/battle-move";
-import { playBattleSfx } from "@/lib/battle-sfx";
+import { playUiSfx } from "@/lib/battle-sfx";
 import { uiSpriteUrl } from "@/lib/sprites";
 import { MAX_POKEMON_LEVEL, xpForLevel } from "@/lib/stats";
 
@@ -211,7 +211,7 @@ function XpGainRow({
         setBarPct(seg.from * 100);
         await animateValue(seg.from, seg.to, seg.durationMs, (v) => setBarPct(v * 100));
         if (seg.levelUpAfter) {
-          playBattleSfx("levelUp");
+          playUiSfx("levelUp");
           setCelebrating(true);
           setDisplayLevel(seg.level + 1);
           setBarPct(0);
@@ -252,14 +252,14 @@ function XpGainRow({
       if (flight) {
         setOrb(flight);
         setPhase("fly");
-        playBattleSfx("energy");
+        playUiSfx("energy");
         await waitPaint();
         if (cancelRef.current) return;
         await wait(ORB_FLIGHT_MS);
         if (cancelRef.current) return;
 
         setPhase("impact");
-        playBattleSfx("heal");
+        playUiSfx("heal");
         await wait(IMPACT_MS);
         if (cancelRef.current) return;
         setOrb(null);

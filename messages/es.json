@@ -809,8 +809,8 @@
     "musicOn": "Sonido",
     "musicOff": "Mute",
     "musicVolume": "Volumen de la música",
-    "muteSfx": "Silenciar efectos",
-    "unmuteSfx": "Activar efectos",
+    "muteSfx": "Silenciar efectos de batalla",
+    "unmuteSfx": "Activar efectos de batalla",
     "sfxVolume": "Volumen de efectos",
     "musicCredit": "Música: Matthew Pablo",
     "whatWillDo": "¿Qué debería hacer {name}?",
@@ -840,6 +840,7 @@
     "animationSpeed": "Velocidad de animación: {speed}x",
     "autoBattleOn": "Auto batalla: activada",
     "autoBattleOff": "Auto batalla: desactivada",
+    "autoBattleLocked": "Auto batalla: desbloqueá con {count} Pokémon a Nv. {level}+",
     "youMoveFirst": "Pegás primero",
     "foeMovesFirst": "El rival pega primero",
     "turnOrderHint": "Según velocidad. Los movimientos con prioridad pueden adelantarse.",
@@ -1412,6 +1413,7 @@
     "title": "Tienda",
     "bannerAlt": "Interior de la tienda Pokémon",
     "types": {
+      "ENERGY": "Energía",
       "POTION": "Curación",
       "POKEBALL": "Poké Balls",
       "EVOLUTION_STONE": "Piedras",
@@ -1447,7 +1449,10 @@
     "catchRate": "×{multiplier} de efectividad de captura.",
     "healAmount": "Restaura {amount} HP.",
     "healFull": "Restaura todos los PS y cura cualquier problema de estado.",
+    "energyFull": "Tu energía ya está al máximo.",
+    "energyFullShort": "Al máximo",
     "names": {
+      "energyPack": "Pack de energía",
       "eviolite": "Mineral Evolutivo",
       "fireStone": "Piedra Fuego",
       "fullRestore": "Restaurar todo",
@@ -1471,6 +1476,7 @@
     "increase": "Agregar uno",
     "close": "Cerrar",
     "effects": {
+      "energyPack": "Restaura 10 puntos de energía al instante.",
       "ether": "Restaura 10 PP de un movimiento.",
       "maxEther": "Restaura todos los PP de un movimiento.",
       "elixir": "Restaura 10 PP de todos los movimientos.",
@@ -2109,6 +2115,12 @@
     "teamSaving": "Guardando…",
     "teamClear": "Vaciar preset",
     "teamSlot": "Slot {n}",
+    "teamReorderHint": "Arrastrá o tocá dos slots para reordenar. La × saca del preset.",
+    "teamRemove": "Quitar del preset",
+    "teamSwapTarget": "Tocá otro slot para intercambiar",
+    "rankUpTitle": "¡Ascenso!",
+    "rankUpSubtitle": "Alcanzaste {rank}",
+    "rankUpContinue": "Continuar",
     "historyTitle": "Historial",
     "emptyHistory": "Todavía no jugaste ningún combate PvP.",
     "win": "Ganó",
@@ -2146,8 +2158,10 @@
       "no_opponents": "No hay rivales disponibles por ahora. Probá más tarde.",
       "no_energy": "No te alcanza la energía para buscar un combate.",
       "rate_limited": "Demasiados combates seguidos. Esperá un momento.",
-      "cooldown": "Ya desafiaste a ese rival hace poco. Esperá unos minutos."
-    }
+      "cooldown": "Ya desafiaste a ese rival hace poco."
+    },
+    "cooldownReadyIn": "Disponible en {time}",
+    "errorDismiss": "Entendido"
   },
   "campaign": {
     "eyebrow": "Viaje de Kanto",
@@ -2470,7 +2484,7 @@
     "learn": "Aprender",
     "replace": "Reemplazar",
     "skipMove": "Ignorar",
-    "skipMoveHint": "Te lo preguntaré de nuevo al subir de nivel",
+    "skipMoveHint": "No lo aprende en este nivel",
     "rejectMove": "Rechazar",
     "rejectMoveHint": "No se vuelve a ofrecer",
     "cancel": "Cancelar",

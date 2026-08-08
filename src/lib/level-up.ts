@@ -63,8 +63,8 @@ export async function getMovesLearnedInRange(
 
 /**
  * Oferta de evolución por nivel.
- * Se reevalúa en CADA level-up: diferir ("Más tarde") no guarda nada;
- * mientras siga siendo esta especie y level >= evolveLevel, se vuelve a preguntar.
+ * Usa `Species.evolveLevel` del padre; si falta, cae a `evolveMinLevel` del hijo
+ * (backfill de método). Se reevalúa en cada level-up: diferir no guarda nada.
  */
 export async function getEvolveOffer(
   speciesId: number,
@@ -75,20 +75,34 @@ export async function getEvolveOffer(
     select: {
       evolveLevel: true,
       evolvesTo: {
-        select: { id: true, name: true, spriteUrl: true },
+        select: {
+          id: true,
+          name: true,
+          spriteUrl: true,
+          evolveTrigger: true,
+          evolveMinLevel: true,
+        },
         orderBy: { id: "asc" },
-        take: 1,
       },
     },
   });
-  if (species?.evolveLevel == null || level < species.evolveLevel) return null;
-  const next = species.evolvesTo[0];
+  if (!species) return null;
+
+  // Solo evoluciones por nivel (no piedras / Linking Cord en el mismo padre).
+  const next =
+    species.evolvesTo.find(
+      (c) => c.evolveTrigger === "level-up" || c.evolveTrigger == null,
+    ) ?? null;
   if (!next) return null;
+
+  const requiredLevel = species.evolveLevel ?? next.evolveMinLevel;
+  if (requiredLevel == null || level < requiredLevel) return null;
+
   return {
     toSpeciesId: next.id,
     toName: next.name,
     toSpriteUrl: next.spriteUrl,
-    evolveLevel: species.evolveLevel,
+    evolveLevel: requiredLevel,
   };
 }
 
@@ -174,14 +188,14 @@ export async function applyAutoTeachMoves(
 
 /**
  * Tras subir de nivel: movimientos a ofrecer (sin auto-escribir) + evo.
- * Re-ofrece LEVEL_UP aún no conocidos con learnLevel <= nivel actual,
- * salvo los que el jugador rechazó (`declinedMoveIds`).
- * Ignorar en UI sólo difiere al próximo level-up; rechazar persiste.
+ * Solo movimientos con learnLevel en (fromLevel, toLevel].
+ * Los rechazados (`declinedMoveIds`) no vuelven; "Ignorar" en UI sólo
+ * cierra este level-up (no reabre el mismo move en cada caramelo).
  */
 export async function resolveLevelUpEffects(
   instanceId: string,
   speciesId: number,
-  _fromLevel: number,
+  fromLevel: number,
   toLevel: number,
 ): Promise<LevelUpEffects> {
   // Especie/nivel post level-up + known en paralelo (evitar 2 RTT en serie).
@@ -199,6 +213,7 @@ export async function resolveLevelUpEffects(
   return buildLevelUpEffects({
     speciesId: live?.speciesId ?? speciesId,
     level: live?.level ?? toLevel,
+    fromLevel,
     knownMoves: knownRows.map((m) => toKnownMoveInfo(m.slot, m.move)),
     declinedMoveIds: live?.declinedMoveIds ?? [],
   });
@@ -211,12 +226,13 @@ export async function resolveLevelUpEffects(
 export async function buildLevelUpEffects(opts: {
   speciesId: number;
   level: number;
+  /** Nivel antes del level-up; solo se ofrecen moves nuevos en el rango. */
+  fromLevel: number;
   knownMoves: KnownMoveInfo[];
   declinedMoveIds?: number[];
 }): Promise<LevelUpEffects> {
-  // fromLevel 0: incluye omitidos de subidas anteriores, no sólo el rango nuevo.
   const [candidates, evolveOffer] = await Promise.all([
-    getMovesLearnedInRange(opts.speciesId, 0, opts.level),
+    getMovesLearnedInRange(opts.speciesId, opts.fromLevel, opts.level),
     getEvolveOffer(opts.speciesId, opts.level).catch((err) => {
       console.error("[buildLevelUpEffects] getEvolveOffer", err);
       return null;
@@ -285,23 +301,44 @@ export async function learnPendingMove(opts: {
     return { ok: false, error: "need_slot" };
   }
 
-  await prisma.pokemonMove.upsert({
-    where: {
-      pokemonInstanceId_slot: {
-        pokemonInstanceId: instance.id,
-        slot: opts.replaceSlot,
+  const replaced = instance.moves.find((m) => m.slot === opts.replaceSlot);
+  // Olvidar un LEVEL_UP no debe reabrirlo en cada caramelo: marcar declined.
+  const declineIds: number[] = [];
+  if (
+    replaced &&
+    replaced.moveId !== opts.moveId &&
+    !instance.declinedMoveIds.includes(replaced.moveId)
+  ) {
+    declineIds.push(replaced.moveId);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.pokemonMove.upsert({
+      where: {
+        pokemonInstanceId_slot: {
+          pokemonInstanceId: instance.id,
+          slot: opts.replaceSlot!,
+        },
       },
-    },
-    create: {
-      pokemonInstanceId: instance.id,
-      moveId: opts.moveId,
-      slot: opts.replaceSlot,
-      currentPp: learnable.move.pp,
-    },
-    update: {
-      moveId: opts.moveId,
-      currentPp: learnable.move.pp,
-    },
+      create: {
+        pokemonInstanceId: instance.id,
+        moveId: opts.moveId,
+        slot: opts.replaceSlot!,
+        currentPp: learnable.move.pp,
+      },
+      update: {
+        moveId: opts.moveId,
+        currentPp: learnable.move.pp,
+      },
+    });
+    if (declineIds.length > 0) {
+      await tx.pokemonInstance.update({
+        where: { id: instance.id },
+        data: {
+          declinedMoveIds: [...instance.declinedMoveIds, ...declineIds],
+        },
+      });
+    }
   });
   return { ok: true };
 }
@@ -381,8 +418,15 @@ export async function evolvePokemonInstance(opts: {
           baseHp: true,
           evolveLevel: true,
           evolvesTo: {
-            select: { id: true, name: true, spriteUrl: true, baseHp: true },
-            take: 1,
+            select: {
+              id: true,
+              name: true,
+              spriteUrl: true,
+              baseHp: true,
+              evolveTrigger: true,
+              evolveMinLevel: true,
+            },
+            orderBy: { id: "asc" },
           },
         },
       },
@@ -393,8 +437,9 @@ export async function evolvePokemonInstance(opts: {
   const offer = await getEvolveOffer(instance.speciesId, instance.level);
   if (!offer) return { ok: false, error: "not_ready" };
 
-  const next = instance.species.evolvesTo[0];
-  if (!next || next.id !== offer.toSpeciesId) return { ok: false, error: "not_ready" };
+  const next =
+    instance.species.evolvesTo.find((c) => c.id === offer.toSpeciesId) ?? null;
+  if (!next) return { ok: false, error: "not_ready" };
 
   const evolved = await applySpeciesEvolution({
     userId: opts.userId,

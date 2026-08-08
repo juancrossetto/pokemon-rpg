@@ -28,6 +28,10 @@ import { gymLeaderPortraitUrl, gymTypeTrainerSpriteSlug } from "@/lib/gym-art";
 import { parseTeamSnap } from "@/lib/pvp/team";
 import { resolveBattleBg } from "@/lib/battle-bg";
 import { parseDoublesFieldB } from "@/lib/doubles";
+import {
+  BATTLE_AUTO_UNLOCK_LEVEL,
+  isBattleAutoUnlocked,
+} from "@/lib/battle-auto";
 import { battleUsesTurnTimer, nextTurnDeadline } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 import { isTutorialBattle } from "@/lib/battle-tutorial";
@@ -325,7 +329,8 @@ export default async function BattlePage({
         ? parseTeamSnap(battle.clanWarBattle?.opponentTeam)
         : [];
 
-    const [pokeballs, potions, partyRows, opponentTeam, userRow] = await Promise.all([
+    const [pokeballs, potions, partyRows, opponentTeam, userRow, autoUnlockLevels] =
+      await Promise.all([
       prisma.inventoryItem.findMany({
         where: { userId, quantity: { gt: 0 }, item: { type: "POKEBALL" } },
         include: { item: true },
@@ -360,8 +365,19 @@ export default async function BattlePage({
         where: { id: userId },
         select: { avatarId: true },
       }),
+      prisma.pokemonInstance.findMany({
+        where: {
+          ownerId: userId,
+          level: { gte: BATTLE_AUTO_UNLOCK_LEVEL },
+        },
+        select: { level: true },
+        take: 3,
+      }),
     ]);
 
+    const autoBattleUnlocked = isBattleAutoUnlocked(
+      autoUnlockLevels.map((row) => row.level),
+    );
     const opponentParty: OpponentPartyMember[] =
       pvpTeam.length > 0
         ? pvpTeam.map((m) => ({
@@ -698,6 +714,7 @@ export default async function BattlePage({
       pvpMatchId: battle.pvpMatchId,
       turnDeadlineAt: battle.turnDeadlineAt?.toISOString() ?? null,
       fleeAttempts: battle.fleeAttempts,
+      autoBattleUnlocked,
     };
   }
 

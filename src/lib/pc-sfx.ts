@@ -2,13 +2,10 @@
 
 /**
  * SFX cortos del PC (Web Audio): intercambio, guardar, retirar, reordenar.
- * Respeta el mute/volumen de batalla para no pelear con preferencias del jugador.
+ * Usa el volumen de efectos; el mute de batalla no los apaga.
  */
 
-import {
-  getBattleSfxVolume,
-  isBattleSfxMuted,
-} from "@/lib/battle-sfx";
+import { getUiSfxVolume } from "@/lib/battle-sfx";
 
 export type PcSfxKind = "swap" | "store" | "withdraw" | "reorder" | "select";
 
@@ -57,11 +54,10 @@ export function unlockPcAudio() {
 }
 
 export function playPcSfx(kind: PcSfxKind) {
-  if (isBattleSfxMuted()) return;
   const audio = getCtx();
   if (!audio) return;
 
-  const vol = getBattleSfxVolume() * 0.55;
+  const vol = getUiSfxVolume() * 0.55;
   if (vol <= 0) return;
   const now = audio.currentTime + 0.01;
 

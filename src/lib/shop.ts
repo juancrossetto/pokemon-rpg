@@ -16,13 +16,27 @@ import { isReviveItemName } from "@/lib/squad-bag";
 /** Tope por compra. Evita que un stepper mande 10.000 de un click. */
 export const MAX_PURCHASE_QUANTITY = 99;
 
-export type ShopCategory = "POKEBALL" | "POTION" | "EVOLUTION_STONE" | "HELD";
+export type ShopCategory =
+  | "ENERGY"
+  | "POKEBALL"
+  | "POTION"
+  | "EVOLUTION_STONE"
+  | "HELD";
 
-export const SHOP_CATEGORIES: ShopCategory[] = [
+/**
+ * Categorías con filas reales en `Item`. `ENERGY` es solo de vitrina (pack
+ * virtual) y no se consulta contra la base.
+ */
+export const SHOP_ITEM_CATEGORIES = [
   "POKEBALL",
   "POTION",
   "EVOLUTION_STONE",
   "HELD",
+] as const satisfies readonly ShopCategory[];
+
+export const SHOP_CATEGORIES: ShopCategory[] = [
+  "ENERGY",
+  ...SHOP_ITEM_CATEGORIES,
 ];
 
 /**
@@ -75,6 +89,12 @@ export const SHOP_CATEGORY_META: Record<
   ShopCategory,
   { icon: string; accent: string; ring: string; pedestal: string }
 > = {
+  ENERGY: {
+    icon: "bolt",
+    accent: "text-amber-300",
+    ring: "border-amber-400/25",
+    pedestal: "rgba(251,191,36,0.12)",
+  },
   POKEBALL: {
     icon: "sports_baseball",
     accent: "text-sky-300",
@@ -123,6 +143,13 @@ export type ShopProduct = {
   requirement?: { kind: "level" | "badge" | "region"; label: string };
   /** Precio anterior y descuento, para cuando existan rotaciones. */
   discount?: { originalPrice: number; percent: number; endsAt?: string };
+  /**
+   * Producto virtual: al comprar otorga energía (no entra al inventario).
+   * Ej. Energy Pack de la tienda oficial.
+   */
+  grantEnergy?: number;
+  /** Oculta el contador "Tenés: N" (packs de energía, etc.). */
+  hideOwned?: boolean;
 };
 
 type ItemRow = {

@@ -11,7 +11,7 @@ type Props = {
   label: string;
   division?: PvpDivision;
   /** Visual size of the badge art. */
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   /** Show the text chip next to / under the badge. */
   showLabel?: boolean;
   className?: string;
@@ -21,6 +21,8 @@ const SIZES = {
   sm: { px: 40, className: "h-10 w-10", roman: "text-[9px]" },
   md: { px: 64, className: "h-16 w-16", roman: "text-[11px]" },
   lg: { px: 88, className: "h-[5.5rem] w-[5.5rem]", roman: "text-[13px]" },
+  /** Celebración de ascenso: la insignia ES la pantalla. */
+  xl: { px: 240, className: "h-44 w-44 sm:h-56 sm:w-56", roman: "text-[17px]" },
 } as const;
 
 export function PvpRankBadge({

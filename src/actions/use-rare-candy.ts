@@ -163,6 +163,7 @@ export async function useRareCandy(
     const effects = await buildLevelUpEffects({
       speciesId: instance.speciesId,
       level: newLevel,
+      fromLevel: previousLevel,
       knownMoves,
       declinedMoveIds: instance.declinedMoveIds,
     });

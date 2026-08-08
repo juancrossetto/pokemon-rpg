@@ -9,7 +9,7 @@
 import { EVENT_ITEM_NAMES } from "@/lib/campaign/events";
 import { DAILY_CYCLE } from "@/lib/events/daily";
 import { GYM_TM_REWARD_BY_TYPE } from "@/lib/gym-tm-rewards";
-import { SHOP_CATEGORIES, type ShopCategory } from "@/lib/shop";
+import { SHOP_ITEM_CATEGORIES } from "@/lib/shop";
 
 /** Clave de `campaign.locations.*` para el gimnasio que regala la MT. */
 const GYM_TYPE_LOCATION: Record<string, string> = {
@@ -105,7 +105,7 @@ export function resolveItemSources(item: ItemSourceInput): ItemSourceRef[] {
     sources.push({ kind: "gems" });
   } else if (
     item.buyPrice > 0 &&
-    SHOP_CATEGORIES.includes(item.type as ShopCategory)
+    SHOP_ITEM_CATEGORIES.includes(item.type as (typeof SHOP_ITEM_CATEGORIES)[number])
   ) {
     sources.push({ kind: "shop" });
   }

@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { ShopTerminal, type ShopLabels } from "@/components/shop-terminal";
 import {
-  SHOP_CATEGORIES,
+  SHOP_ITEM_CATEGORIES,
   itemKey,
   resolveDescription,
   resolveItemDisplayName,
@@ -10,6 +10,8 @@ import {
   toProduct,
   type ShopProduct,
 } from "@/lib/shop";
+import { buildEnergyPackProduct } from "@/lib/shop-energy-pack";
+import { getCurrentEnergy } from "@/lib/energy";
 
 /** Catálogo oficial embebido en el hub de Comercio (`/market?tab=shop`). */
 export async function ShopTab({
@@ -23,7 +25,7 @@ export async function ShopTab({
 
   const [items, user, inventory] = await Promise.all([
     prisma.item.findMany({
-      where: { type: { in: [...SHOP_CATEGORIES] }, buyPrice: { gt: 0 } },
+      where: { type: { in: [...SHOP_ITEM_CATEGORIES] }, buyPrice: { gt: 0 } },
       orderBy: [{ type: "asc" }, { buyPrice: "asc" }],
       select: {
         id: true,
@@ -35,7 +37,15 @@ export async function ShopTab({
         healAmount: true,
       },
     }),
-    prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { coins: true } }),
+    prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: {
+        coins: true,
+        energy: true,
+        energyMax: true,
+        energyUpdatedAt: true,
+      },
+    }),
     prisma.inventoryItem.findMany({
       where: { userId },
       select: { itemId: true, quantity: true },
@@ -53,7 +63,7 @@ export async function ShopTab({
     },
   };
 
-  const products: ShopProduct[] = sortShopCatalog(items).map((item) =>
+  const catalog: ShopProduct[] = sortShopCatalog(items).map((item) =>
     toProduct(
       item,
       ownedByItem.get(item.id) ?? 0,
@@ -65,8 +75,30 @@ export async function ShopTab({
     ),
   );
 
+  const energyNow = getCurrentEnergy(
+    user.energy,
+    user.energyMax,
+    user.energyUpdatedAt,
+  );
+  const energyFull = energyNow >= user.energyMax;
+
+  const energyPack = buildEnergyPackProduct({
+    displayName: t.has("names.energyPack")
+      ? t("names.energyPack")
+      : "Energy Pack",
+    description: t.has("effects.energyPack")
+      ? t("effects.energyPack")
+      : "",
+    requirement: energyFull
+      ? { kind: "level", label: t("energyFullShort") }
+      : undefined,
+  });
+
+  const products: ShopProduct[] = [energyPack, ...catalog];
+
   const labels: ShopLabels = {
     categories: {
+      ENERGY: t("types.ENERGY"),
       POKEBALL: t("types.POKEBALL"),
       POTION: t("types.POTION"),
       EVOLUTION_STONE: t("types.EVOLUTION_STONE"),
@@ -96,6 +128,7 @@ export async function ShopTab({
     emptyAction: t("emptyAction"),
     noResults: t("noResults"),
     errorGeneric: t("errorGeneric"),
+    energyFull: t("energyFull"),
     coinsUnit: t("coinsUnit"),
   };
 
