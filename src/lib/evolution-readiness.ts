@@ -1,4 +1,5 @@
 import type { DexStatus } from "@/lib/pokedex";
+import { LINKING_CORD } from "@/lib/evolution-items";
 
 /**
  * Tipos y lógica pura de evolución, **sin acceso a datos**.
@@ -25,7 +26,7 @@ import type { DexStatus } from "@/lib/pokedex";
  * así que el requisito llega indistinguible de una piedra: la UI necesita el
  * nombre para poder aclarar que reemplaza al intercambio y no es una piedra más.
  */
-export const TRADE_EVOLUTION_ITEM = "Linking Cord";
+export const TRADE_EVOLUTION_ITEM = LINKING_CORD;
 
 export type EvolutionRequirement =
   | { kind: "level"; level: number }

@@ -25,13 +25,17 @@ export async function ShopTab({
 
   const [items, user, inventory] = await Promise.all([
     prisma.item.findMany({
-      where: { type: { in: [...SHOP_ITEM_CATEGORIES] }, buyPrice: { gt: 0 } },
+      where: {
+        type: { in: [...SHOP_ITEM_CATEGORIES] },
+        OR: [{ buyPrice: { gt: 0 } }, { gemPrice: { gt: 0 } }],
+      },
       orderBy: [{ type: "asc" }, { buyPrice: "asc" }],
       select: {
         id: true,
         name: true,
         type: true,
         buyPrice: true,
+        gemPrice: true,
         effectText: true,
         catchMultiplier: true,
         healAmount: true,
@@ -41,6 +45,7 @@ export async function ShopTab({
       where: { id: userId },
       select: {
         coins: true,
+        gems: true,
         energy: true,
         energyMax: true,
         energyUpdatedAt: true,
@@ -130,6 +135,10 @@ export async function ShopTab({
     errorGeneric: t("errorGeneric"),
     energyFull: t("energyFull"),
     coinsUnit: t("coinsUnit"),
+    gemsUnit: t("gemsUnit"),
+    insufficientGems: t("insufficientGems"),
+    missingGems: t("missingGems", { amount: "{amount}" }),
+    evolvesTitle: t("evolvesTitle"),
   };
 
   return (
@@ -138,6 +147,7 @@ export async function ShopTab({
       labels={labels}
       locale={locale}
       initialCoins={user.coins}
+      initialGems={user.gems}
       eyebrow={t("eyebrow")}
       title={t("title")}
       subtitle={t("subtitle")}

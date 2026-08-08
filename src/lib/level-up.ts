@@ -534,7 +534,7 @@ export async function evolvePokemonWithItem(opts: {
     where: {
       userId: opts.userId,
       quantity: { gt: 0 },
-      item: { name: opts.itemName, type: "EVOLUTION_STONE" },
+      item: { name: opts.itemName },
     },
     select: { itemId: true, quantity: true },
   });

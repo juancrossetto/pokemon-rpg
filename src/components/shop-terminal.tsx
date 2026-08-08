@@ -4,10 +4,12 @@ import Image from "next/image";
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { buyItem } from "@/actions/buy-item";
+import { buyItemWithGems } from "@/actions/buy-item-gems";
 import { buyEnergyPack } from "@/actions/buy-energy-pack";
 import { itemDisplayUrl, itemHdIconUrl } from "@/lib/item-sprites";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import {
+  announceGemDelta,
   flushPendingEnergyDelta,
   seedPendingEnergyDelta,
 } from "@/lib/resource-fx";
@@ -21,6 +23,7 @@ import {
   type ShopProduct,
 } from "@/lib/shop";
 import { isEnergyPackProductId } from "@/lib/shop-energy-pack";
+import { ItemEvolutionRecipes } from "@/components/item-evolution-recipes";
 
 export interface ShopLabels {
   categories: Record<ShopCategory, string>;
@@ -55,6 +58,12 @@ export interface ShopLabels {
   /** Energía ya al máximo: no se puede comprar el pack. */
   energyFull: string;
   coinsUnit: string;
+  gemsUnit: string;
+  insufficientGems: string;
+  /** Con `{amount}`. */
+  missingGems: string;
+  /** Título del bloque from → ítem → to. */
+  evolvesTitle: string;
 }
 
 /** A partir de acá el catálogo justifica un buscador. */
@@ -71,6 +80,7 @@ export function ShopTerminal({
   labels,
   locale,
   initialCoins,
+  initialGems = 0,
   eyebrow,
   title,
   subtitle,
@@ -80,6 +90,7 @@ export function ShopTerminal({
   labels: ShopLabels;
   locale: string;
   initialCoins: number;
+  initialGems?: number;
   eyebrow: string;
   title: string;
   subtitle: string;
@@ -87,6 +98,7 @@ export function ShopTerminal({
   hideHeader?: boolean;
 }) {
   const [coins, setCoins] = useState(initialCoins);
+  const [gems, setGems] = useState(initialGems);
   const [owned, setOwned] = useState<Record<string, number>>(() =>
     Object.fromEntries(products.map((p) => [p.id, p.owned])),
   );
@@ -97,11 +109,14 @@ export function ShopTerminal({
 
   const showSearch = products.length > SEARCH_THRESHOLD;
 
+  const walletOf = (product: ShopProduct) =>
+    product.currency === "gems" ? gems : coins;
+
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return products.filter((product) => {
       if (category !== "all" && product.category !== category) return false;
-      if (affordableOnly && coins < product.price) return false;
+      if (affordableOnly && walletOf(product) < product.price) return false;
       if (!needle) return true;
       return (
         product.name.toLowerCase().includes(needle) ||
@@ -109,7 +124,9 @@ export function ShopTerminal({
         (product.description?.toLowerCase().includes(needle) ?? false)
       );
     });
-  }, [products, category, affordableOnly, coins, query]);
+    // walletOf lee coins/gems; ambos en deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [products, category, affordableOnly, coins, gems, query]);
 
   // Agrupado solo cuando se ven todas: dentro de una categoría el encabezado
   // repetiría lo que ya dice el chip activo.
@@ -124,16 +141,32 @@ export function ShopTerminal({
   function onPurchased(
     product: ShopProduct,
     quantity: number,
-    coinsLeft: number,
+    balanceLeft: number,
     after: number,
     origin?: { x: number; y: number },
     energyDelta?: number,
     energyAfter?: number,
   ) {
-    // El badge del header escucha este evento y anima el descuento al toque,
-    // sin esperar a que revalide el layout.
-    announceCoinDelta(coinsLeft - coins);
-    setCoins(coinsLeft);
+    if (product.currency === "gems") {
+      const spend = -(product.price * quantity);
+      const delta = balanceLeft - gems;
+      // Si el RSC ya sincronizó `gems` vía revalidate, `delta` puede ser 0:
+      // usamos el precio cobrado para no saltar el anuncio.
+      const effective = delta !== 0 ? delta : spend;
+      try {
+        sessionStorage.setItem(
+          "pokerpg:gems-last-shown",
+          String(Math.max(0, balanceLeft - effective)),
+        );
+      } catch {
+        /* private mode */
+      }
+      announceGemDelta(effective, balanceLeft);
+      setGems(balanceLeft);
+    } else {
+      announceCoinDelta(balanceLeft - coins);
+      setCoins(balanceLeft);
+    }
     if (!product.hideOwned) {
       setOwned((current) => ({ ...current, [product.id]: after }));
     }
@@ -257,7 +290,7 @@ export function ShopTerminal({
                   key={product.id}
                   product={product}
                   owned={owned[product.id] ?? 0}
-                  coins={coins}
+                  wallet={walletOf(product)}
                   labels={labels}
                   onBuy={() => setTarget(product)}
                 />
@@ -271,7 +304,7 @@ export function ShopTerminal({
         <PurchaseDialog
           product={target}
           owned={owned[target.id] ?? 0}
-          coins={coins}
+          wallet={walletOf(target)}
           labels={labels}
           locale={locale}
           onClose={() => setTarget(null)}
@@ -386,22 +419,26 @@ function ShopCategoryNav({
 function ShopProductTile({
   product,
   owned,
-  coins,
+  wallet,
   labels,
   onBuy,
 }: {
   product: ShopProduct;
   owned: number;
-  coins: number;
+  wallet: number;
   labels: ShopLabels;
   onBuy: () => void;
 }) {
   const meta = SHOP_CATEGORY_META[product.category];
-  const canAfford = coins >= product.price;
-  const missing = product.price - coins;
+  const canAfford = wallet >= product.price;
+  const missing = product.price - wallet;
   const soldOut = product.stock !== undefined && product.stock <= 0;
   const blocked = product.requirement;
   const disabled = Boolean(blocked) || soldOut;
+  const premium = product.currency === "gems";
+  const missingTemplate = premium ? labels.missingGems : labels.missing;
+  const unitLabel = premium ? labels.gemsUnit : labels.coinsUnit;
+  const priceIcon = premium ? "/items/hd/gem.png" : "/items/hd/poke-coin.png";
 
   return (
     <article className="shop-tile flex min-w-0 flex-col items-center text-center">
@@ -413,7 +450,7 @@ function ShopProductTile({
           blocked
             ? blocked.label
             : !canAfford
-              ? fill(labels.missing, { amount: missing.toLocaleString() })
+              ? fill(missingTemplate, { amount: missing.toLocaleString() })
               : product.description ?? undefined
         }
         className="group flex w-full flex-col items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-45"
@@ -436,7 +473,7 @@ function ShopProductTile({
             className={`shop-price-pill ${canAfford ? "" : "shop-price-pill--muted"}`}
           >
             <Image
-              src="/items/hd/poke-coin.png"
+              src={priceIcon}
               alt=""
               width={16}
               height={16}
@@ -446,7 +483,7 @@ function ShopProductTile({
             <span className="font-mono tabular-nums">
               {product.price.toLocaleString()}
             </span>
-            <span className="sr-only">{labels.coinsUnit}</span>
+            <span className="sr-only">{unitLabel}</span>
           </span>
         )}
       </button>
@@ -518,7 +555,7 @@ function ShopProductImage({
 function PurchaseDialog({
   product,
   owned,
-  coins,
+  wallet,
   labels,
   locale,
   onClose,
@@ -526,14 +563,14 @@ function PurchaseDialog({
 }: {
   product: ShopProduct;
   owned: number;
-  coins: number;
+  wallet: number;
   labels: ShopLabels;
   locale: string;
   onClose: () => void;
   onPurchased: (
     product: ShopProduct,
     quantity: number,
-    coinsLeft: number,
+    balanceLeft: number,
     ownedAfter: number,
     origin?: { x: number; y: number },
     energyDelta?: number,
@@ -546,11 +583,13 @@ function PurchaseDialog({
   const panelRef = useRef<HTMLDivElement>(null);
   const spriteRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const premium = product.currency === "gems";
+  const missingTemplate = premium ? labels.missingGems : labels.missing;
 
   // Tope real: lo que el saldo aguanta, acotado por el máximo del servidor.
-  const affordable = Math.max(1, Math.min(MAX_PURCHASE_QUANTITY, Math.floor(coins / product.price)));
+  const affordable = Math.max(1, Math.min(MAX_PURCHASE_QUANTITY, Math.floor(wallet / product.price)));
   const total = product.price * quantity;
-  const balanceAfter = coins - total;
+  const balanceAfter = wallet - total;
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -598,12 +637,20 @@ function PurchaseDialog({
     startTransition(async () => {
       const result = isEnergyPackProductId(product.id)
         ? await buyEnergyPack(locale, quantity)
-        : await buyItem(product.id, locale, quantity);
+        : premium
+          ? await buyItemWithGems(product.id, locale, quantity)
+          : await buyItem(product.id, locale, quantity);
       if (result.ok) {
+        const balanceLeft =
+          "gemsLeft" in result
+            ? result.gemsLeft
+            : "coinsLeft" in result
+              ? result.coinsLeft
+              : wallet;
         onPurchased(
           product,
           result.quantity,
-          result.coinsLeft,
+          balanceLeft,
           "ownedAfter" in result ? result.ownedAfter : 0,
           origin,
           "energyDelta" in result ? result.energyDelta : undefined,
@@ -615,8 +662,9 @@ function PurchaseDialog({
       // El error se muestra dentro del panel: cerrarlo perdería la cantidad
       // que el jugador ya eligió.
       const message =
-        result.error === "no_coins" && result.missing !== undefined
-          ? fill(labels.missing, { amount: result.missing.toLocaleString() })
+        (result.error === "no_coins" || result.error === "no_gems") &&
+        result.missing !== undefined
+          ? fill(missingTemplate, { amount: result.missing.toLocaleString() })
           : result.error === "energy_full"
             ? labels.energyFull
             : labels.errorGeneric;
@@ -668,6 +716,13 @@ function PurchaseDialog({
               </p>
             )}
           </div>
+        </div>
+
+        <div className="mt-3 max-h-40 overflow-y-auto overscroll-contain">
+          <ItemEvolutionRecipes
+            itemName={product.name}
+            title={labels.evolvesTitle}
+          />
         </div>
 
         <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">

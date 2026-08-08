@@ -1,4 +1,10 @@
 import { prisma } from "../../src/lib/prisma";
+import {
+  EXTRA_EVOLUTION_STONES,
+  GEM_EVOLUTION_ITEMS,
+  LINKING_CORD,
+  SPECIES_EVOLUTION_ITEM,
+} from "../../src/lib/evolution-items";
 
 // Multiplicadores reales de los juegos clásicos (Gen III+). Master Ball usa
 // un valor altísimo para que la fórmula de captura dé siempre "atrapado" en
@@ -56,38 +62,50 @@ const BERRIES = [
   { name: "Rare Candy", buyPrice: 4800, effectText: "Sube 1 nivel al Pokémon." },
 ] as const;
 
-// Piedras de evolución comerciables. El flujo de evolución se suma después;
-// sin estos ítems el mercado no cubría el catálogo del dossier.
+// Piedras de evolución comerciables (monedas). Las Gen2+ extras viven en
+// EXTRA_EVOLUTION_STONES; los objetos de trueque/contacto van por gemas.
 const EVOLUTION_STONES = [
   { name: "Fire Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies de tipo Fuego." },
   { name: "Water Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies de tipo Agua." },
   { name: "Thunder Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies de tipo Eléctrico." },
   { name: "Leaf Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies de tipo Planta." },
   { name: "Moon Stone", buyPrice: 2100, effectText: "Evoluciona ciertas especies (p. ej. Clefairy)." },
+  ...EXTRA_EVOLUTION_STONES,
 ] as const;
 
 /**
- * Cordón Unión: reemplaza al intercambio.
- *
- * En Kanto hay cuatro especies que en los juegos evolucionan solo por
- * intercambio (Kadabra, Machoke, Graveler, Haunter). Sin sistema de trueque
- * quedaban inalcanzables, así que se resuelve como lo hizo la propia saga en
- * Escarlata/Púrpura: un objeto que dispara esa evolución.
- *
- * Es el único ítem que se paga con gemas: son cuatro de los Pokémon más
- * fuertes de la región y la moneda premium necesitaba un destino real —hasta
- * ahora el contador del header siempre marcaba cero.
- *
- * Lleva `type: EVOLUTION_STONE` a propósito, aunque no sea una piedra: es el
- * tipo por el que filtra `loadOwnedEvolutionItems`, así que entra solo en la
- * lista de objetos de evolución disponibles.
+ * Aplica el mapa Wikidex: cada hijo queda `use-item` + su objeto.
+ * Las especies que aún no existen en la base se saltan (0 filas).
  */
-const LINKING_CORD = {
-  name: "Linking Cord",
-  buyPrice: 0,
-  gemPrice: 8,
-  effectText: "Evoluciona a las especies que normalmente requieren intercambio.",
-} as const;
+export async function remapEvolutionItemsFromCatalog(): Promise<number> {
+  let updated = 0;
+  for (const [speciesId, itemName] of Object.entries(SPECIES_EVOLUTION_ITEM)) {
+    const res = await prisma.species.updateMany({
+      where: { id: Number(speciesId) },
+      data: {
+        evolveTrigger: "use-item",
+        evolveItem: itemName,
+      },
+    });
+    updated += res.count;
+  }
+
+  // Cualquier `trade` residual (gens nuevas / backfill) → Cordón Unión.
+  const leftover = await prisma.species.updateMany({
+    where: { evolveTrigger: "trade" },
+    data: {
+      evolveTrigger: "use-item",
+      evolveItem: LINKING_CORD,
+    },
+  });
+  updated += leftover.count;
+  return updated;
+}
+
+/** @deprecated Usar `remapEvolutionItemsFromCatalog`. */
+export async function remapTradeEvolutionsToLinkingCord(): Promise<number> {
+  return remapEvolutionItemsFromCatalog();
+}
 
 export async function seedItems() {
   console.log("→ Objetos (Poké Balls)...");
@@ -170,22 +188,26 @@ export async function seedItems() {
     });
   }
 
-  console.log("→ Objeto (Cordón Unión)...");
-  await prisma.item.upsert({
-    where: { name: LINKING_CORD.name },
-    create: {
-      name: LINKING_CORD.name,
-      type: "EVOLUTION_STONE",
-      buyPrice: LINKING_CORD.buyPrice,
-      gemPrice: LINKING_CORD.gemPrice,
-      effectText: LINKING_CORD.effectText,
-    },
-    update: {
-      buyPrice: LINKING_CORD.buyPrice,
-      gemPrice: LINKING_CORD.gemPrice,
-      effectText: LINKING_CORD.effectText,
-    },
-  });
+  console.log("→ Objetos evolutivos (gemas)...");
+  for (const item of GEM_EVOLUTION_ITEMS) {
+    if (item.skipCreate) continue;
+    await prisma.item.upsert({
+      where: { name: item.name },
+      create: {
+        name: item.name,
+        type: "EVOLUTION_STONE",
+        buyPrice: 0,
+        gemPrice: item.gemPrice,
+        effectText: item.effectText,
+      },
+      update: {
+        buyPrice: 0,
+        gemPrice: item.gemPrice,
+        effectText: item.effectText,
+        type: "EVOLUTION_STONE",
+      },
+    });
+  }
 
   console.log("→ Objetos (Piedras de evolución)...");
   for (const stone of EVOLUTION_STONES) {
@@ -199,5 +221,10 @@ export async function seedItems() {
       },
       update: { buyPrice: stone.buyPrice, effectText: stone.effectText },
     });
+  }
+
+  const remapped = await remapEvolutionItemsFromCatalog();
+  if (remapped > 0) {
+    console.log(`→ Remap evoluciones (Wikidex / Cordón / held): ${remapped}`);
   }
 }

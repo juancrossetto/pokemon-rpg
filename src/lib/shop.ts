@@ -40,15 +40,85 @@ export const SHOP_CATEGORIES: ShopCategory[] = [
 ];
 
 /**
+ * Orden histórico de objetos evolutivos en la vitrina (gen de introducción).
+ * Piedras clásicas primero; luego trueque/held; después contacto moderno.
+ * Lo que no esté acá va al final (precio / nombre).
+ */
+export const EVOLUTION_SHOP_HISTORY_ORDER: readonly string[] = [
+  // Gen I — piedras
+  "Fire Stone",
+  "Water Stone",
+  "Thunder Stone",
+  "Leaf Stone",
+  "Moon Stone",
+  // Gen II — piedra + trueque
+  "Sun Stone",
+  "King's Rock",
+  "Metal Coat",
+  "Dragon Scale",
+  "Up-Grade",
+  // Gen III
+  "Deep Sea Tooth",
+  "Deep Sea Scale",
+  // Gen IV — piedras + trueque/held
+  "Shiny Stone",
+  "Dusk Stone",
+  "Dawn Stone",
+  "Oval Stone",
+  "Razor Claw",
+  "Razor Fang",
+  "Protector",
+  "Electirizer",
+  "Magmarizer",
+  "Dubious Disc",
+  "Reaper Cloth",
+  // Gen V
+  "Prism Scale",
+  // Gen VI
+  "Sachet",
+  "Whipped Dream",
+  // Gen VII
+  "Ice Stone",
+  // Gen VIII
+  "Tart Apple",
+  "Sweet Apple",
+  "Cracked Pot",
+  "Chipped Pot",
+  "Galarica Cuff",
+  "Galarica Wreath",
+  "Scroll of Darkness",
+  "Scroll of Waters",
+  // Hisui / SV Linking Cord
+  "Black Augurite",
+  "Peat Block",
+  "Linking Cord",
+  // Gen IX
+  "Auspicious Armor",
+  "Malicious Armor",
+  "Syrupy Apple",
+  "Unremarkable Teacup",
+  "Masterpiece Teacup",
+  "Metal Alloy",
+  "Leader's Crest",
+  "Gimmighoul Coin",
+];
+
+const evolutionHistoryIndex = new Map(
+  EVOLUTION_SHOP_HISTORY_ORDER.map((name, i) => [name, i]),
+);
+
+/**
  * Orden de vitrina: categoría → dentro de pociones, curas de HP juntas
  * (Potion…Full Restore), luego Revivir / Max Revivir, y después potas de PP.
  * Así Hyper queda al lado de Super y no intercalada con Ether.
+ * Piedras / objetos evolutivos: orden de introducción en la saga.
  */
 export function sortShopCatalog<
   T extends {
     type: string;
     name: string;
     buyPrice: number;
+    gemPrice?: number | null;
     healAmount: number | null;
   },
 >(items: T[]): T[] {
@@ -64,6 +134,11 @@ export function sortShopCatalog<
     return 2;
   };
 
+  const shelfPrice = (item: { buyPrice: number; gemPrice?: number | null }) =>
+    item.gemPrice != null && item.gemPrice > 0 ? item.gemPrice : item.buyPrice;
+
+  const evoHistory = (name: string) => evolutionHistoryIndex.get(name) ?? 10_000;
+
   return [...items].sort((a, b) => {
     const byCat = cat(a.type) - cat(b.type);
     if (byCat !== 0) return byCat;
@@ -77,7 +152,12 @@ export function sortShopCatalog<
       }
     }
 
-    return a.buyPrice - b.buyPrice || a.name.localeCompare(b.name);
+    if (a.type === "EVOLUTION_STONE" && b.type === "EVOLUTION_STONE") {
+      const byHistory = evoHistory(a.name) - evoHistory(b.name);
+      if (byHistory !== 0) return byHistory;
+    }
+
+    return shelfPrice(a) - shelfPrice(b) || a.name.localeCompare(b.name);
   });
 }
 
@@ -121,8 +201,8 @@ export const SHOP_CATEGORY_META: Record<
   },
 };
 
-/** Moneda del precio. Hoy solo existe `coins`; el tipo deja lugar a más. */
-export type ShopCurrency = "coins";
+/** Moneda del precio: monedas del día a día o gemas (Cordón Unión). */
+export type ShopCurrency = "coins" | "gems";
 
 export type ShopProduct = {
   id: string;
@@ -157,6 +237,7 @@ type ItemRow = {
   name: string;
   type: string;
   buyPrice: number;
+  gemPrice?: number | null;
   effectText: string | null;
   catchMultiplier: number | null;
   healAmount: number | null;
@@ -232,13 +313,14 @@ export function toProduct(
   description: string | null,
   displayName?: string,
 ): ShopProduct {
+  const gemPriced = item.gemPrice != null && item.gemPrice > 0;
   return {
     id: item.id,
     name: item.name,
     displayName: displayName ?? item.name,
     category: item.type as ShopCategory,
-    price: item.buyPrice,
-    currency: "coins",
+    price: gemPriced ? item.gemPrice! : item.buyPrice,
+    currency: gemPriced ? "gems" : "coins",
     description,
     owned,
   };

@@ -216,29 +216,37 @@ export function ResourceDeltaValue({
   useEffect(() => {
     const eventName = kind === "energy" ? ENERGY_DELTA_EVENT : GEM_DELTA_EVENT;
     function onDelta(event: Event) {
-      const delta = (event as CustomEvent<ResourceDeltaDetail>).detail?.delta;
+      const detail = (event as CustomEvent<ResourceDeltaDetail>).detail;
+      const delta = detail?.delta;
       if (!delta || !Number.isFinite(delta)) return;
       const from = displayRef.current;
       const server = valueRef.current;
+      const knownAfter =
+        typeof detail.balanceAfter === "number" &&
+        Number.isFinite(detail.balanceAfter)
+          ? Math.max(0, detail.balanceAfter)
+          : null;
 
-      // Si el layout ya revalidó al total nuevo, rebobinamos y contamos de a 1.
-      if (from === server) {
-        const rewind = Math.max(0, server - delta);
-        if (rewind === server) {
-          clearPending(kind);
-          playFx(delta);
-          return;
-        }
-        commitDisplay(rewind);
-        tweenTo(server, delta);
-        return;
-      }
-
+      // Misma regla que CoinsBadge: si el prop todavía no refresheó, contamos
+      // desde la pantalla (from + delta). Si el caller pasó balanceAfter, ese
+      // es el destino — no esperamos revalidatePath del layout.
       const end =
-        delta > 0
-          ? Math.max(server, from + delta)
-          : Math.min(server, from + delta);
+        knownAfter !== null
+          ? knownAfter
+          : delta > 0
+            ? Math.max(server, from + delta)
+            : Math.min(server, from + delta);
+
       if (from === end) {
+        // Remount snappeó al total nuevo: rebobinar y contar de a 1.
+        if (knownAfter !== null) {
+          const rewind = Math.max(0, end - delta);
+          if (rewind !== end) {
+            commitDisplay(rewind);
+            tweenTo(end, delta);
+            return;
+          }
+        }
         clearPending(kind);
         playFx(delta);
         return;

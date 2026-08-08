@@ -5,13 +5,13 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useState, useTransition, type ReactNode } from "react";
 import { typeColor } from "@/lib/type-colors";
-import { itemSpriteUrl } from "@/lib/item-sprites";
+import { itemDisplayUrl } from "@/lib/item-sprites";
 import {
   readinessForRequirement,
-  TRADE_EVOLUTION_ITEM,
   type EvolutionRequirement,
   type EvolutionStage,
 } from "@/lib/evolution-readiness";
+import { isTradeSubstituteItem } from "@/lib/evolution-items";
 import { confirmEvolve } from "@/actions/level-up-offers";
 // Aliasada a propósito: es una server action, no un hook, pero el nombre
 // empieza con `use` y `react-hooks/rules-of-hooks` la marca como llamada
@@ -375,7 +375,7 @@ function ConnectorRow({
       ? readinessForRequirement(req, currentLevel, ownedSet)
       : null;
   const tradeItemHint =
-    req?.kind === "item" && req.itemName === TRADE_EVOLUTION_ITEM
+    req?.kind === "item" && isTradeSubstituteItem(req.itemName)
       ? labels.tradeItemHintLabel
       : null;
 
@@ -427,11 +427,12 @@ function ConnectorRow({
           </span>
           {req?.kind === "item" && (
             <Image
-              src={itemSpriteUrl(req.itemName)}
+              src={itemDisplayUrl(req.itemName)}
               alt=""
               width={12}
               height={12}
               className="h-3 w-3 shrink-0 object-contain"
+              unoptimized
             />
           )}
           {requirementLabel(req, labels)}
@@ -515,11 +516,12 @@ function EvolveActionButton({
         className="inline-flex min-h-8 items-center gap-1 rounded-md border border-gem/40 bg-gem px-2 text-[10px] font-semibold text-on-gem transition hover:brightness-110 disabled:opacity-60"
       >
         <Image
-          src={itemSpriteUrl(req.itemName)}
+          src={itemDisplayUrl(req.itemName)}
           alt=""
           width={14}
           height={14}
           className="h-3.5 w-3.5 object-contain"
+          unoptimized
         />
         {busy
           ? (evolvingLabel ?? useStoneLabel)

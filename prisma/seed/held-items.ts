@@ -12,6 +12,7 @@ const HELD_ITEMS: {
   stat?: "atk" | "spAtk" | "speed";
   boostType?: string;
   buyPrice: number;
+  gemPrice?: number;
   effectText: string;
 }[] = [
   {
@@ -70,8 +71,12 @@ const HELD_ITEMS: {
     name: "King's Rock",
     effect: "FLINCH_CHANCE",
     value: 0.1,
-    buyPrice: 2500,
-    effectText: "10% de probabilidad de que el rival no pueda moverse tras recibir un golpe.",
+    // Gemas: también es objeto evolutivo (Politoed / Slowking). Sin monedas
+    // para no duplicar sink — la tienda lo lista por gemPrice.
+    buyPrice: 0,
+    gemPrice: 7,
+    effectText:
+      "Evoluciona a Poliwhirl y Slowpoke. En combate: 10% de flinch tras un golpe.",
   },
   {
     name: "Quick Claw",
@@ -138,6 +143,7 @@ export async function seedHeldItems() {
         name: item.name,
         type: isBerry ? "BERRY" : "HELD",
         buyPrice: item.buyPrice,
+        gemPrice: item.gemPrice ?? null,
         effectText: item.effectText,
         heldEffect: item.effect,
         heldValue: item.value,
@@ -146,6 +152,7 @@ export async function seedHeldItems() {
       },
       update: {
         buyPrice: item.buyPrice,
+        gemPrice: item.gemPrice ?? null,
         effectText: item.effectText,
         heldEffect: item.effect,
         heldValue: item.value,

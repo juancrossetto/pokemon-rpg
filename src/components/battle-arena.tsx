@@ -11,7 +11,7 @@ import { applyBattleItem } from "@/actions/use-item";
 import { setPokemonNickname } from "@/actions/rename-pokemon";
 import { forfeitPvpBattle } from "@/actions/forfeit-pvp-battle";
 import { forfeitClanWarBattle } from "@/actions/forfeit-clan-war-battle";
-import { announceCoinDelta } from "@/lib/coin-fx";
+import { seedPendingCoinDelta } from "@/lib/coin-fx";
 import { PokeballIcon } from "@/components/pokeball-icon";
 import { BattleSprite } from "@/components/battle-sprite";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
@@ -1899,6 +1899,19 @@ export function BattleArena({
       return;
     }
     setLastMoveId(moveId);
+    // Sembrar YA: el action revalidó el layout y el badge puede recibir el
+    // saldo nuevo durante playEvent. Sin pending, el header suma sin el vuelo.
+    if (result.coinsGained > 0) {
+      setCoinsGained(result.coinsGained);
+      seedPendingCoinDelta(result.coinsGained);
+    }
+    if (result.pvpResult) {
+      setPvpResult(result.pvpResult);
+      if (result.coinsGained <= 0 && result.pvpResult.coinsAwarded > 0) {
+        setCoinsGained(result.pvpResult.coinsAwarded);
+        seedPendingCoinDelta(result.pvpResult.coinsAwarded);
+      }
+    }
 
     for (const event of result.events) {
       await playEvent(event);
@@ -1920,13 +1933,6 @@ export function BattleArena({
     }
     if (result.xpSummary) {
       setXpSummary(result.xpSummary);
-    }
-    if (result.coinsGained > 0) {
-      setCoinsGained(result.coinsGained);
-      announceCoinDelta(result.coinsGained);
-    }
-    if (result.pvpResult) {
-      setPvpResult(result.pvpResult);
     }
 
     if (result.badgeEarned) {
@@ -1962,6 +1968,17 @@ export function BattleArena({
       const finishId = result.playerChargeMoveId;
       const finish = await submitBattleMove(battleId, finishId, locale);
       if (finish) {
+        if (finish.coinsGained > 0) {
+          setCoinsGained(finish.coinsGained);
+          seedPendingCoinDelta(finish.coinsGained);
+        }
+        if (finish.pvpResult) {
+          setPvpResult(finish.pvpResult);
+          if (finish.coinsGained <= 0 && finish.pvpResult.coinsAwarded > 0) {
+            setCoinsGained(finish.pvpResult.coinsAwarded);
+            seedPendingCoinDelta(finish.pvpResult.coinsAwarded);
+          }
+        }
         for (const event of finish.events) {
           await playEvent(event);
         }
@@ -1978,11 +1995,6 @@ export function BattleArena({
         );
         if (finish.xpGained) appendLog(t("xpGained", { xp: finish.xpGained }));
         if (finish.xpSummary) setXpSummary(finish.xpSummary);
-        if (finish.coinsGained > 0) {
-          setCoinsGained(finish.coinsGained);
-          announceCoinDelta(finish.coinsGained);
-        }
-        if (finish.pvpResult) setPvpResult(finish.pvpResult);
         if (finish.badgeEarned) {
           appendLog(t("badgeEarned"));
           playBattleSfx("badge");
@@ -2110,7 +2122,7 @@ export function BattleArena({
 
   // AUTO: elige pelea → move (→ target en dobles) sin tocar el menú.
   // Pausa en mochila/equipo y en cambio forzado.
-  // Grace al primer momento accionable para poder apagar AUTO a tiempo.
+  // Grace corto al primer momento accionable para poder apagar AUTO a tiempo.
   const autoGraceUntilRef = useRef<number | null>(null);
   useEffect(() => {
     autoGraceUntilRef.current = null;
@@ -2120,8 +2132,9 @@ export function BattleArena({
     if (!autoBattle || isAnimating || outcome !== "ongoing" || mustSwitch) return;
     if (view === "bag" || view === "team") return;
 
-    const AUTO_START_GRACE_MS = 2_800;
-    const AUTO_STEP_MS = 320;
+    // Antes 2800 ms: se sentía a "AUTO colgado". 900 ms alcanza para cancelar.
+    const AUTO_START_GRACE_MS = 900;
+    const AUTO_STEP_MS = scaledDelay(220);
     if (autoGraceUntilRef.current == null) {
       autoGraceUntilRef.current = Date.now() + AUTO_START_GRACE_MS;
     }

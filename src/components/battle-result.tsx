@@ -20,6 +20,8 @@ import { startResultBgm, stopResultBgm } from "@/lib/battle-bgm";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";
 import type { XpSummaryEntry } from "@/actions/battle-move";
 import { XpGainPanel } from "@/components/battle/xp-gain-panel";
+import { playLootCollectFx, rewardToLootPiece } from "@/lib/loot-fly-fx";
+import { flushPendingCoinDelta } from "@/lib/coin-fx";
 
 export type ResultMode = "won" | "lost" | "caught" | "fled" | "trainer_cleared";
 
@@ -238,7 +240,7 @@ export function BattleResult({
   const idleLoss = mode === "lost" && lossReason === "idle";
   // Con oferta de move/evo la card de level-up es la prioridad: ocultar VS + fanfare
   // evita el scroll forzado por apilar todo en un modal de altura limitada.
-  const hasLevelUpChoices =
+  const needsLevelUpChoices =
     xpSummary?.some(
       (e) =>
         e.leveledUpTo != null &&
@@ -246,9 +248,13 @@ export function BattleResult({
           (e.autoTaught?.length ?? 0) > 0 ||
           e.evolveOffer != null),
     ) ?? false;
+  const [offersSettled, setOffersSettled] = useState(false);
+  const hasLevelUpChoices = needsLevelUpChoices && !offersSettled;
   const [mounted, setMounted] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const leaveTimer = useRef<number | null>(null);
+  const coinOriginRef = useRef<HTMLSpanElement>(null);
+  const coinFxPlayedRef = useRef(false);
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setMounted(true));
@@ -257,6 +263,48 @@ export function BattleResult({
       if (leaveTimer.current !== null) window.clearTimeout(leaveTimer.current);
     };
   }, []);
+
+  // Monedas: vuelan al header cuando se ve la fila de recompensas (no al KO).
+  useEffect(() => {
+    if (!mounted || coinsGained <= 0 || hasLevelUpChoices || coinFxPlayedRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+    let tries = 0;
+    let retryTimer = 0;
+
+    function playFromOrigin() {
+      if (cancelled || coinFxPlayedRef.current) return;
+      const el = coinOriginRef.current;
+      if (!el) {
+        // El portal monta en el frame siguiente; reintentar un poco.
+        if (tries++ < 12) {
+          retryTimer = window.setTimeout(playFromOrigin, 50);
+          return;
+        }
+        flushPendingCoinDelta();
+        coinFxPlayedRef.current = true;
+        return;
+      }
+      coinFxPlayedRef.current = true;
+      const r = el.getBoundingClientRect();
+      playLootCollectFx({
+        origin: { x: r.left + r.width / 2, y: r.top + r.height / 2 },
+        pieces: [rewardToLootPiece({ kind: "coins", amount: coinsGained })],
+        // Ya sembramos el pending al ganar: flush al aterrizar (sin sumar 2×).
+        onFirstLanding: () => flushPendingCoinDelta(),
+      });
+    }
+
+    const kick = window.setTimeout(playFromOrigin, 380);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(kick);
+      window.clearTimeout(retryTimer);
+    };
+  }, [mounted, coinsGained, hasLevelUpChoices]);
 
   useEffect(() => {
     let playGen = 0;
@@ -276,12 +324,17 @@ export function BattleResult({
       if (leaving) return;
       setLeaving(true);
       stopResultBgm();
+      // Si el jugador se va antes del vuelo, no dejes el badge trabado en pending.
+      if (!coinFxPlayedRef.current && coinsGained > 0) {
+        coinFxPlayedRef.current = true;
+        flushPendingCoinDelta();
+      }
       leaveTimer.current = window.setTimeout(() => {
         if (typeof target === "string") router.push(target);
         else void target();
       }, EXIT_MS);
     },
-    [leaving, router],
+    [leaving, router, coinsGained],
   );
 
   const playerTag: Tag =
@@ -481,6 +534,7 @@ export function BattleResult({
                     evolveOffer: e.evolveOffer ?? null,
                     knownMoves: e.knownMoves ?? [],
                   }))}
+                  onSettled={() => setOffersSettled(true)}
                 />
               </div>
             ) : null}
@@ -504,7 +558,10 @@ export function BattleResult({
                   {coinsGained > 0 ? (
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-[13px] font-medium text-white/70">{t("coins")}</span>
-                      <span className="inline-flex items-center gap-1.5 font-mono text-[15px] font-bold tabular-nums text-white">
+                      <span
+                        ref={coinOriginRef}
+                        className="inline-flex items-center gap-1.5 font-mono text-[15px] font-bold tabular-nums text-white"
+                      >
                         <Image
                           src={COIN_ICON}
                           alt=""

@@ -6432,7 +6432,8 @@ body {
   --loot-arc-x: 0px;
   --loot-arc-y: 0px;
   position: fixed;
-  z-index: 90;
+  /* Por encima del overlay de victoria (z-90) para que se vea el arrastre. */
+  z-index: 110;
   width: 2.5rem;
   height: 2.5rem;
   margin: -1.25rem 0 0 -1.25rem;

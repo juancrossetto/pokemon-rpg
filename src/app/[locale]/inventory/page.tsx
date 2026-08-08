@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { unclaimedPurchasesWhere } from "@/lib/market-delivery";
-import { INVENTORY_CATEGORIES, type InventoryEntry } from "@/lib/inventory";
+import { INVENTORY_CATEGORIES, isInventoryEvolutionItem, type InventoryEntry } from "@/lib/inventory";
 import {
   formatItemSource,
   resolveItemSources,
@@ -89,9 +89,17 @@ export default async function InventoryPage({
     .filter((id): id is number => id != null);
   const teamSpeciesIds = [...new Set(team.map((p) => p.speciesId))];
 
-  const machineCompat =
+  const evolveItemNames = [
+    ...new Set(
+      rows
+        .filter((r) => isInventoryEvolutionItem(r.item))
+        .map((r) => r.item.name),
+    ),
+  ];
+
+  const [machineCompat, evoChildren] = await Promise.all([
     machineMoveIds.length > 0 && teamSpeciesIds.length > 0
-      ? await prisma.speciesMove.findMany({
+      ? prisma.speciesMove.findMany({
           where: {
             method: "MACHINE",
             speciesId: { in: teamSpeciesIds },
@@ -99,13 +107,56 @@ export default async function InventoryPage({
           },
           select: { speciesId: true, moveId: true },
         })
-      : [];
+      : Promise.resolve([]),
+    evolveItemNames.length > 0 && teamSpeciesIds.length > 0
+      ? prisma.species.findMany({
+          where: {
+            evolvesFromId: { in: teamSpeciesIds },
+            evolveTrigger: "use-item",
+            evolveItem: { in: evolveItemNames },
+          },
+          select: {
+            id: true,
+            name: true,
+            spriteUrl: true,
+            evolveItem: true,
+            evolveMinLevel: true,
+            evolvesFromId: true,
+          },
+          orderBy: { id: "asc" },
+        })
+      : Promise.resolve([]),
+  ]);
 
   const compatBySpecies = new Map<number, Set<number>>();
   for (const row of machineCompat) {
     const set = compatBySpecies.get(row.speciesId) ?? new Set<number>();
     set.add(row.moveId);
     compatBySpecies.set(row.speciesId, set);
+  }
+
+  // speciesId padre + nombre de ítem → primera forma destino (mismo criterio
+  // que evolvePokemonWithItem: orderBy id, take 1).
+  const evoByFromItem = new Map<
+    string,
+    {
+      id: number;
+      name: string;
+      spriteUrl: string;
+      evolveMinLevel: number | null;
+    }
+  >();
+  for (const child of evoChildren) {
+    if (child.evolvesFromId == null || child.evolveItem == null) continue;
+    const key = `${child.evolvesFromId}::${child.evolveItem}`;
+    if (!evoByFromItem.has(key)) {
+      evoByFromItem.set(key, {
+        id: child.id,
+        name: child.name,
+        spriteUrl: child.spriteUrl,
+        evolveMinLevel: child.evolveMinLevel,
+      });
+    }
   }
 
   const knownBySpeciesInstance = new Map(
@@ -122,6 +173,42 @@ export default async function InventoryPage({
       canLearn: compatBySpecies.get(p.speciesId)?.has(moveId) ?? false,
       alreadyKnown: knownBySpeciesInstance.get(p.id)?.has(moveId) ?? false,
     }));
+  }
+
+  function evolveTargetsFor(itemName: string) {
+    return team.map((p) => {
+      const next = evoByFromItem.get(`${p.speciesId}::${itemName}`);
+      if (!next) {
+        return {
+          instanceId: p.id,
+          name: p.nickname ?? p.species.name,
+          spriteUrl: p.species.spriteUrl,
+          level: p.level,
+          speciesMatches: false,
+          canEvolve: false,
+          levelsShort: 0,
+          toSpeciesId: null,
+          toName: null,
+          toSpriteUrl: null,
+        };
+      }
+      const levelsShort =
+        next.evolveMinLevel != null
+          ? Math.max(0, next.evolveMinLevel - p.level)
+          : 0;
+      return {
+        instanceId: p.id,
+        name: p.nickname ?? p.species.name,
+        spriteUrl: p.species.spriteUrl,
+        level: p.level,
+        speciesMatches: true,
+        canEvolve: levelsShort === 0,
+        levelsShort,
+        toSpeciesId: next.id,
+        toName: next.name,
+        toSpriteUrl: next.spriteUrl,
+      };
+    });
   }
 
   const sourceLabels = {
@@ -176,6 +263,9 @@ export default async function InventoryPage({
         moveAccuracy: r.item.move?.accuracy ?? null,
         movePp: r.item.move?.pp ?? null,
         learners: r.item.type === "MACHINE" ? learnersFor(r.item.move?.id) : [],
+        evolveTargets: isInventoryEvolutionItem(r.item)
+          ? evolveTargetsFor(r.item.name)
+          : [],
         sources,
       };
     });
@@ -214,10 +304,20 @@ export default async function InventoryPage({
     noCompatible: t("noCompatible"),
     sell: t("sell"),
     teach: t("teach"),
+    use: t("use"),
     useOnTeam: t("useOnTeam"),
+    evolvePickerTitle: t("evolvePickerTitle", { name: "{name}" }),
+    evolvePickerHint: t("evolvePickerHint"),
+    evolveReady: t("evolveReady"),
+    evolveNeedLevel: t("evolveNeedLevel", { level: "{level}" }),
+    evolveIncompatible: t("evolveIncompatible"),
+    evolveNoTarget: t("evolveNoTarget"),
+    evolveUsing: t("evolveUsing"),
+    evolveFailed: t("evolveFailed"),
     close: t("close"),
     sourcesTitle: t("sources.title"),
     sourcesHint: t("sources.hint"),
+    evolvesTitle: t("evolvesTitle"),
     rarity: {
       common: t("rarity.common"),
       rare: t("rarity.rare"),

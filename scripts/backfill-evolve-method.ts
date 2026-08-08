@@ -108,8 +108,13 @@ async function main() {
   });
   console.log(`→ Actualizadas ${updated} especies. Sin método: ${missing}.`);
 
+  // PokeAPI deja `trade` / held; el juego aplica el catálogo Wikidex.
+  const { remapEvolutionItemsFromCatalog } = await import("../prisma/seed/items");
+  const remapped = await remapEvolutionItemsFromCatalog();
+  console.log(`→ Remap evoluciones (catálogo): ${remapped}`);
+
   const sample = await prisma.species.findMany({
-    where: { id: { in: [26, 65, 94, 134, 135, 136] } },
+    where: { id: { in: [26, 65, 94, 134, 135, 136, 186, 208] } },
     select: { id: true, name: true, evolveTrigger: true, evolveItem: true, evolveMinLevel: true },
     orderBy: { id: "asc" },
   });

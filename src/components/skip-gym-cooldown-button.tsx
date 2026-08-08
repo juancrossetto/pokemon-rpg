@@ -62,7 +62,7 @@ export function SkipGymCooldownButton({
   function onClick() {
     if (disabled) return;
     setError(null);
-    announceGemDelta(-cost);
+    announceGemDelta(-cost, Math.max(0, gems - cost));
     startTransition(async () => {
       const result = await skipGymCooldown(gymId, locale);
       if (!result.ok) {

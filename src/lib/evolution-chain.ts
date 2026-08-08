@@ -147,13 +147,16 @@ export function buildEvolutionChain(
   });
 }
 
-/** Piedras de evolución que el jugador tiene en la mochila (qty > 0). */
+/** Piedras / objetos de evolución que el jugador tiene en la mochila (qty > 0). */
 export async function loadOwnedEvolutionItems(userId: string): Promise<Set<string>> {
   const rows = await prisma.inventoryItem.findMany({
     where: {
       userId,
       quantity: { gt: 0 },
-      item: { type: "EVOLUTION_STONE" },
+      OR: [
+        { item: { type: "EVOLUTION_STONE" } },
+        { item: { gemPrice: { gt: 0 } } },
+      ],
     },
     select: { item: { select: { name: true } } },
   });
@@ -182,7 +185,9 @@ export async function loadEvolutionChainsForTeam(
     // Precios de los objetos de evolución, en una sola consulta para toda la
     // pantalla: la pestaña EVO muestra cuánto cuesta cada uno.
     prisma.item.findMany({
-      where: { type: "EVOLUTION_STONE" },
+      where: {
+        OR: [{ type: "EVOLUTION_STONE" }, { gemPrice: { gt: 0 } }],
+      },
       select: { name: true, buyPrice: true, gemPrice: true },
     }),
   ]);

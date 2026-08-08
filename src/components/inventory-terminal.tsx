@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import Image from "next/image";
-import { useLocale } from "next-intl";
+import { createPortal } from "react-dom";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { itemDisplayUrl } from "@/lib/item-sprites";
 import { formatMoveName } from "@/lib/format-move-name";
 import { formatMoveEffectText } from "@/lib/format-move-effect";
@@ -18,9 +28,15 @@ import {
   filterEntries,
   totalUnits,
   type CategoryFilter,
+  type EvolveTarget,
   type InventoryEntry,
   type TmLearner,
 } from "@/lib/inventory";
+import { useEvolutionStone as applyEvolutionStone } from "@/actions/use-evolution-stone";
+import { EvolvePopup } from "@/components/evolve-popup";
+import { showToast } from "@/lib/app-toast";
+import { playUiSfx } from "@/lib/battle-sfx";
+import { ItemEvolutionRecipes } from "@/components/item-evolution-recipes";
 
 export type InventoryLabels = {
   categories: Record<string, string>;
@@ -51,10 +67,21 @@ export type InventoryLabels = {
   noCompatible: string;
   sell: string;
   teach: string;
+  use: string;
   useOnTeam: string;
+  evolvePickerTitle: string;
+  evolvePickerHint: string;
+  evolveReady: string;
+  evolveNeedLevel: string;
+  evolveIncompatible: string;
+  evolveNoTarget: string;
+  evolveUsing: string;
+  evolveFailed: string;
   close: string;
   sourcesTitle: string;
   sourcesHint: string;
+  /** Título del bloque “sirve para evolucionar…”. */
+  evolvesTitle: string;
 };
 
 /**
@@ -415,9 +442,21 @@ function DetailPanel({
   onClose: () => void;
 }) {
   const locale = useLocale();
+  const router = useRouter();
+  const tLevelUp = useTranslations("levelUp");
   const rarity = itemRarity(entry);
   const style = RARITY_STYLES[rarity];
   const isRareCandy = entry.name === "Rare Candy";
+  const canUseEvolve = entry.evolveTargets.length > 0;
+  const hasEvolveReady = entry.evolveTargets.some((t) => t.canEvolve);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [reveal, setReveal] = useState<{
+    fromName: string;
+    fromSpriteUrl: string;
+    toName: string;
+    toSpriteUrl: string;
+  } | null>(null);
   // Primer destino útil del CTA: compatible y que todavía no lo sepa.
   const firstTeachable =
     entry.learners.find((l) => l.canLearn && !l.alreadyKnown) ?? null;
@@ -431,10 +470,64 @@ function DetailPanel({
       ? entry.effectText.replace(new RegExp(entry.moveName, "gi"), moveLabel)
       : entry.effectText);
 
+  function onPickEvolve(target: EvolveTarget) {
+    if (!target.canEvolve || target.toSpeciesId == null || pending) return;
+    startTransition(async () => {
+      playUiSfx("evolve");
+      const result = await applyEvolutionStone(
+        target.instanceId,
+        entry.name,
+        locale,
+        target.toSpeciesId!,
+      );
+      if (!result.ok) {
+        showToast(labels.evolveFailed, "error");
+        return;
+      }
+      setPickerOpen(false);
+      setReveal({
+        fromName: result.fromName,
+        fromSpriteUrl: result.fromSpriteUrl,
+        toName: result.toName,
+        toSpriteUrl: result.toSpriteUrl,
+      });
+    });
+  }
+
   return (
     <aside
       className={`flex flex-col gap-3 rounded-xl border bg-black/40 p-4 backdrop-blur-md ${style.border}`}
     >
+      {reveal && (
+        <EvolvePopup
+          fromName={reveal.fromName}
+          fromSpriteUrl={reveal.fromSpriteUrl}
+          toName={reveal.toName}
+          toSpriteUrl={reveal.toSpriteUrl}
+          labels={{
+            evolving: tLevelUp("evolvingCry", { name: reveal.fromName }),
+            into: tLevelUp("evolvedInto", { name: reveal.toName }),
+            continue: tLevelUp("dismiss"),
+          }}
+          onContinue={() => {
+            setReveal(null);
+            router.refresh();
+          }}
+        />
+      )}
+
+      {pickerOpen && (
+        <EvolvePickerModal
+          entry={entry}
+          labels={labels}
+          pending={pending}
+          onClose={() => {
+            if (!pending) setPickerOpen(false);
+          }}
+          onPick={onPickEvolve}
+        />
+      )}
+
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className={`text-[10px] uppercase tracking-[0.18em] ${style.text}`}>
@@ -522,6 +615,8 @@ function DetailPanel({
         </div>
       )}
 
+      <ItemEvolutionRecipes itemName={entry.name} title={labels.evolvesTitle} />
+
       {entry.sources.length > 0 ? (
         <div>
           <p className="mb-1 text-[10px] uppercase tracking-[0.18em] text-on-surface-variant">
@@ -577,9 +672,33 @@ function DetailPanel({
       )}
 
       <div className="mt-1 flex flex-col gap-1.5 border-t border-white/10 pt-3">
+        {canUseEvolve &&
+          (hasEvolveReady ? (
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="ui-btn-primary flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-label-sm"
+            >
+              <span className="material-symbols-outlined text-[16px]!">auto_fix_high</span>
+              {labels.use}
+            </button>
+          ) : (
+            <span
+              aria-disabled
+              title={labels.evolveNoTarget}
+              className="flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-white/8 px-3 py-2 text-label-sm text-on-surface-variant/40"
+            >
+              <span className="material-symbols-outlined text-[16px]!">auto_fix_high</span>
+              {labels.use}
+            </span>
+          ))}
         <a
           href={sellHref}
-          className="ui-btn-primary flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-label-sm"
+          className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-label-sm ${
+            canUseEvolve
+              ? "border border-white/12 text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface"
+              : "ui-btn-primary"
+          }`}
         >
           <span className="material-symbols-outlined text-[16px]!">sell</span>
           {labels.sell}
@@ -622,6 +741,200 @@ function DetailPanel({
         )}
       </div>
     </aside>
+  );
+}
+
+function fill(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) =>
+    vars[key] != null ? String(vars[key]) : `{${key}}`,
+  );
+}
+
+function EvolvePickerModal({
+  entry,
+  labels,
+  pending,
+  onClose,
+  onPick,
+}: {
+  entry: InventoryEntry;
+  labels: InventoryLabels;
+  pending: boolean;
+  onClose: () => void;
+  onPick: (target: EvolveTarget) => void;
+}) {
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape" && !pending) onClose();
+    }
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    panelRef.current
+      ?.querySelector<HTMLButtonElement>("button:not([disabled])")
+      ?.focus();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [onClose, pending]);
+
+  if (!mounted) return null;
+
+  const title = fill(labels.evolvePickerTitle, { name: entry.displayName });
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[120] flex items-end justify-center bg-black/65 p-3 sm:items-center sm:p-6"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !pending) onClose();
+      }}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="flex max-h-[min(85vh,32rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#12141c] shadow-2xl"
+      >
+        <div className="flex items-start gap-3 border-b border-white/10 px-4 py-3">
+          <Image
+            src={itemDisplayUrl(entry.name)}
+            alt=""
+            width={40}
+            height={40}
+            unoptimized
+            className="h-10 w-10 shrink-0 object-contain"
+          />
+          <div className="min-w-0 flex-1">
+            <h2
+              id={titleId}
+              className="text-[15px] font-bold leading-snug text-white"
+            >
+              {title}
+            </h2>
+            <p className="mt-0.5 text-[11px] leading-snug text-on-surface-variant">
+              {labels.evolvePickerHint}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={pending}
+            aria-label={labels.close}
+            className="shrink-0 rounded-md p-1 text-on-surface-variant transition hover:text-white disabled:opacity-40"
+          >
+            <span className="material-symbols-outlined text-[18px]!">close</span>
+          </button>
+        </div>
+
+        <ul className="flex-1 overflow-y-auto overscroll-contain px-2 py-2">
+          {entry.evolveTargets.map((target) => (
+            <EvolveTargetRow
+              key={target.instanceId}
+              target={target}
+              labels={labels}
+              pending={pending}
+              onPick={onPick}
+            />
+          ))}
+        </ul>
+
+        {pending ? (
+          <p className="border-t border-white/10 px-4 py-2.5 text-center text-[12px] text-on-surface-variant">
+            {labels.evolveUsing}
+          </p>
+        ) : null}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function EvolveTargetRow({
+  target,
+  labels,
+  pending,
+  onPick,
+}: {
+  target: EvolveTarget;
+  labels: InventoryLabels;
+  pending: boolean;
+  onPick: (target: EvolveTarget) => void;
+}) {
+  const state = !target.speciesMatches
+    ? labels.evolveIncompatible
+    : target.levelsShort > 0
+      ? fill(labels.evolveNeedLevel, {
+          level: target.level + target.levelsShort,
+        })
+      : labels.evolveReady;
+
+  const body = (
+    <>
+      <Image
+        src={target.spriteUrl}
+        alt=""
+        width={40}
+        height={40}
+        unoptimized
+        className={`h-10 w-10 shrink-0 object-contain [image-rendering:pixelated] ${
+          target.canEvolve ? "" : "opacity-40 grayscale"
+        }`}
+      />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate capitalize text-on-surface">
+          {target.name}
+        </span>
+        <span className="block text-[10px] text-on-surface-variant/70">
+          Nv. {target.level}
+          {target.canEvolve && target.toName ? ` → ${target.toName}` : ""}
+        </span>
+      </span>
+      {target.canEvolve ? (
+        <span className="material-symbols-outlined shrink-0 text-[18px]! text-tertiary">
+          auto_fix_high
+        </span>
+      ) : (
+        <span className="max-w-[7.5rem] shrink-0 text-right text-[10px] leading-tight text-on-surface-variant/50">
+          {state}
+        </span>
+      )}
+    </>
+  );
+
+  const base =
+    "flex w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left text-[13px] transition";
+
+  return (
+    <li className="py-0.5">
+      {target.canEvolve ? (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => onPick(target)}
+          className={`${base} border-tertiary/30 bg-tertiary/[0.08] text-on-surface hover:border-tertiary/55 hover:bg-tertiary/15 disabled:cursor-wait disabled:opacity-60`}
+        >
+          {body}
+        </button>
+      ) : (
+        <div
+          className={`${base} cursor-not-allowed border-white/[0.06] bg-white/[0.02] text-on-surface-variant/70`}
+        >
+          {body}
+        </div>
+      )}
+    </li>
   );
 }
 

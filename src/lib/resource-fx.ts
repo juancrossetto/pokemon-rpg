@@ -8,7 +8,11 @@ import { playResourceSpendSfx } from "@/lib/resource-spend-sfx";
 export const ENERGY_DELTA_EVENT = "pokerpg:energy-delta";
 export const GEM_DELTA_EVENT = "pokerpg:gem-delta";
 
-export type ResourceDeltaDetail = { delta: number };
+export type ResourceDeltaDetail = {
+  delta: number;
+  /** Saldo post-delta cuando el caller ya lo conoce (evita esperar revalidate). */
+  balanceAfter?: number;
+};
 
 const ENERGY_PENDING_KEY = "pokerpg:energy-delta-pending";
 const GEM_PENDING_KEY = "pokerpg:gem-delta-pending";
@@ -82,12 +86,25 @@ function clearPending(slot: Slot): void {
   }
 }
 
-function announce(slot: Slot, delta: number, playSfx: boolean): void {
+function announce(
+  slot: Slot,
+  delta: number,
+  playSfx: boolean,
+  balanceAfter?: number,
+): void {
   if (typeof window === "undefined" || !Number.isFinite(delta) || delta === 0) return;
   const next = (readPending(slot)?.delta ?? 0) + delta;
   writePending(slot, next);
+  const detail: ResourceDeltaDetail = { delta };
+  if (
+    typeof balanceAfter === "number" &&
+    Number.isFinite(balanceAfter) &&
+    balanceAfter >= 0
+  ) {
+    detail.balanceAfter = balanceAfter;
+  }
   window.dispatchEvent(
-    new CustomEvent<ResourceDeltaDetail>(slot.event, { detail: { delta } }),
+    new CustomEvent<ResourceDeltaDetail>(slot.event, { detail }),
   );
   if (playSfx && delta < 0) playResourceSpendSfx();
 }
@@ -97,8 +114,8 @@ export function seedPendingEnergyDelta(delta: number): void {
   writePending(energySlot, (readPending(energySlot)?.delta ?? 0) + delta);
 }
 
-export function announceEnergyDelta(delta: number): void {
-  announce(energySlot, delta, true);
+export function announceEnergyDelta(delta: number, balanceAfter?: number): void {
+  announce(energySlot, delta, true, balanceAfter);
 }
 
 /** Dispara la animación con el pending ya sembrado (sin sumar otra vez). */
@@ -126,8 +143,8 @@ export function seedPendingGemDelta(delta: number): void {
   writePending(gemSlot, (readPending(gemSlot)?.delta ?? 0) + delta);
 }
 
-export function announceGemDelta(delta: number): void {
-  announce(gemSlot, delta, true);
+export function announceGemDelta(delta: number, balanceAfter?: number): void {
+  announce(gemSlot, delta, true, balanceAfter);
 }
 
 export function peekPendingGemDelta(): number {

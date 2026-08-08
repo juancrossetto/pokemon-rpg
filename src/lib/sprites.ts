@@ -35,6 +35,15 @@ export function homeSpriteUrl(spriteUrl: string, shiny = false): string {
 }
 
 /**
+ * Sprite HOME por dex/form id de PokeAPI (sin fila en nuestra DB).
+ * Sirve para previews de formas regionales u especies aún no sembradas.
+ */
+export function homeSpriteById(id: number, shiny = false): string {
+  if (!Number.isFinite(id) || id <= 0) return `${HOME_BASE}/0.png`;
+  return shiny ? `${HOME_BASE}/shiny/${id}.png` : `${HOME_BASE}/${id}.png`;
+}
+
+/**
  * Sprite para superficies de UI (cards, ranking, PC…). Preferí HOME.
  */
 export function uiSpriteUrl(spriteUrl: string, isShiny = false): string {
