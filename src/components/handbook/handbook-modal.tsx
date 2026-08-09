@@ -11,6 +11,7 @@ import {
   useHandbookState,
 } from "@/lib/handbook/open";
 import { PVP_TIERS, tierBadgeSrc, type PvpTier } from "@/lib/pvp/tiers";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 type Section =
   | { kind?: "prose"; heading: string; body: string }
@@ -44,8 +45,7 @@ export function HandbookModal() {
   useEffect(() => {
     if (!open) return;
     openerRef.current = document.activeElement as HTMLElement | null;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
 
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -76,7 +76,7 @@ export function HandbookModal() {
 
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
+      releaseScroll();
       openerRef.current?.focus?.();
     };
   }, [open]);

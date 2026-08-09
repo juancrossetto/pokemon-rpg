@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { BattleArena, type BattleArenaProps } from "@/components/battle-arena";
 import { BattleLobby } from "@/components/battle-lobby";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 /**
  * La batalla ACTIVA se toma de props al montar y cuando pasamos de lobby →
@@ -51,10 +52,9 @@ export function BattleScreen({
   // La batalla es viewport-locked: sin scroll de documento detrás.
   useEffect(() => {
     if (!battle) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     return () => {
-      document.body.style.overflow = prev;
+      releaseScroll();
     };
   }, [battle]);
 

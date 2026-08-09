@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import type { MarketCategory } from "@/lib/market-hub";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 type Sort = "recent" | "price_asc" | "price_desc" | "level_desc";
 
@@ -232,8 +233,7 @@ function MarketFilterSheet(props: FilterProps & { count: number }) {
       }
     }
 
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     document.addEventListener("keydown", onKey);
     // El primer campo real toma el foco al abrir; al cerrar vuelve al botón.
     // El `:not([type="hidden"])` importa: el form arranca con los inputs
@@ -244,7 +244,7 @@ function MarketFilterSheet(props: FilterProps & { count: number }) {
 
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
+      releaseScroll();
       opener?.focus();
     };
   }, [open]);

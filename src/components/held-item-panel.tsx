@@ -7,6 +7,7 @@ import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { equipHeldItem, unequipHeldItem } from "@/actions/equip-held-item";
 import { itemHdIconUrl, itemSpriteUrl } from "@/lib/item-sprites";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 export type HeldItemInfo = {
   itemId: string;
@@ -73,10 +74,10 @@ export function HeldItemPanel({
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      releaseScroll();
     };
   }, [onClose]);
 

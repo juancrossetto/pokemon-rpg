@@ -24,6 +24,7 @@ import { getLastNavHref, setLastNavHref } from "@/lib/nav-last-dest";
 import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
 import { openHandbook } from "@/lib/handbook/open";
 import { chapterForPath } from "@/lib/handbook/chapters";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 type NavLink = {
   href: string;
@@ -688,9 +689,9 @@ export function MobileChrome({
   // slide-out). La trampa de foco sólo aplica con el sheet usable.
   useEffect(() => {
     if (!moreOpen) return;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     return () => {
-      document.body.style.overflow = "";
+      releaseScroll();
     };
   }, [moreOpen]);
 
@@ -869,7 +870,16 @@ export function MobileChrome({
       {/* Top bar mobile: brand + resources + account.
           min-h incluye safe-area: con border-box, `min-h-14` + pt-safe
           comía el alto útil y en PWA iOS los iconos quedaban sin aire abajo. */}
-      <header className="mobile-top-chrome fixed top-0 inset-x-0 z-50 flex min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center justify-between gap-2 border-b border-white/10 bg-background/95 px-3 pt-[env(safe-area-inset-top,0px)] pb-2.5 backdrop-blur-xl xl:hidden">
+      {/*
+        Sin `backdrop-blur` acá. Es el único elemento fijo y siempre montado por
+        encima del contenido que scrollea, y un backdrop-filter en esa posición
+        obliga al navegador a recortar y desenfocar el fondo en cada frame de
+        scroll — la causa típica de scroll con tirones en teléfonos. Encima el
+        fondo ya estaba al 95%, así que se pagaba un blur de 24px que casi no se
+        veía. Opaco: mismo aspecto, cero costo por frame. Los backdrop-blur de
+        los modales quedan, que sólo viven mientras la página no scrollea.
+      */}
+      <header className="mobile-top-chrome fixed top-0 inset-x-0 z-50 flex min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center justify-between gap-2 border-b border-white/10 bg-background px-3 pt-[env(safe-area-inset-top,0px)] pb-2.5 xl:hidden">
         <Link
           href={lockedHref ?? brandHref}
           className="flex h-8 shrink-0 items-center justify-center"

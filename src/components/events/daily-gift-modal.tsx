@@ -26,6 +26,7 @@ import {
   DAILY_GIFT_SEEN_KEY,
   openDailyRewardModal,
 } from "@/lib/daily-gift-fx";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 export { openDailyRewardModal };
 
@@ -282,14 +283,13 @@ export function DailyGiftModal({
       }
     }
 
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     document.addEventListener("keydown", onKey);
     panelRef.current?.querySelector<HTMLElement>("[data-autofocus]")?.focus();
 
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
+      releaseScroll();
     };
   }, [bannerOpen, pending]);
 
@@ -313,8 +313,7 @@ export function DailyGiftModal({
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") finish();
     }
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     document.addEventListener("keydown", onKey);
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -355,7 +354,7 @@ export function DailyGiftModal({
       window.clearTimeout(holdTimer);
       window.clearTimeout(flyTimer);
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
+      releaseScroll();
     };
   }, [loot]);
 

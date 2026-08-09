@@ -66,6 +66,18 @@ function PartyHpEmpty({ fainted, className = "" }: { fainted?: boolean; classNam
   );
 }
 
+/**
+ * Tope de ancho de los chips de equipo compactos.
+ *
+ * Los chips son `flex-1` + `aspect-square w-full` para poder achicarse cuando
+ * hay seis; sin tope, con **uno solo** ese `flex-1` se come todo el ancho de la
+ * fila y el cuadrado se vuelve igual de alto (~300px en un teléfono). Se veía
+ * en la primera batalla contra el rival, que pelea con un único Pokémon: la
+ * cabecera del rival tapaba media pantalla y empujaba la arena fuera de vista.
+ * `max-w` deja crecer hasta el tamaño de chip y seguir encogiendo por debajo.
+ */
+const PARTY_CHIP_CAP = "max-w-[3.25rem] md:max-w-[4.5rem]";
+
 export function PartySidebar({
   name,
   portraitUrl,
@@ -271,7 +283,13 @@ export function PartySidebar({
           </p>
         </div>
         {hasChildren ? (
-          <div className="flex min-w-0 flex-1 items-stretch gap-1.5 md:gap-2.5">
+          /* Con el tope de ancho los chips ya no llenan la fila: se agrupan del
+             lado del entrenador para no quedar sueltos en el medio. */
+          <div
+            className={`flex min-w-0 flex-1 items-stretch gap-1.5 md:gap-2.5 ${
+              align === "right" ? "justify-end" : "justify-start"
+            }`}
+          >
             {children}
           </div>
         ) : null}
@@ -471,7 +489,7 @@ export function PartyIcon({
   const waking = reviving && fainted;
 
   const shellClass = compact
-    ? `relative z-[1] flex min-w-0 flex-1 flex-col items-center gap-0.5 md:gap-1 ${lookFainted ? "opacity-55" : ""} ${reviving ? "z-20" : ""}`
+    ? `relative z-[1] flex min-w-0 flex-1 ${PARTY_CHIP_CAP} flex-col items-center gap-0.5 md:gap-1 ${lookFainted ? "opacity-55" : ""} ${reviving ? "z-20" : ""}`
     : `relative z-[1] flex w-full max-w-[4.75rem] shrink-0 flex-col items-center gap-0.5 ${lookFainted ? "opacity-55" : ""} ${reviving ? "z-20" : ""}`;
 
   const body = (
@@ -591,7 +609,7 @@ export function EmptyPartySlot({ compact = false }: { compact?: boolean }) {
   // al 0% (o sea, uno debilitado), que es justo lo contrario de "está libre".
   if (compact) {
     return (
-      <div className="flex min-w-0 flex-1 flex-col items-center">
+      <div className={`flex min-w-0 flex-1 ${PARTY_CHIP_CAP} flex-col items-center`}>
         <div className="flex aspect-square w-full min-h-[2.35rem] items-center justify-center rounded-md border border-dashed border-white/[0.08] bg-white/[0.02] p-1 md:min-h-[4.5rem] md:rounded-lg md:p-2">
           {ball}
         </div>

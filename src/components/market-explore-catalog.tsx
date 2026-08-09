@@ -13,6 +13,7 @@ import { typeColor } from "@/lib/type-colors";
 import { localizePokemonType } from "@/lib/pokemon-type-i18n";
 import { resolveItemDisplayName } from "@/lib/shop";
 import { RARITY_STYLES, type MarketRarity } from "@/lib/rarity";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 const ITEM_PEDESTAL: Record<ItemType, string> = {
   POKEBALL: "rgba(56,189,248,0.10)",
@@ -256,13 +257,12 @@ function ExploreDetailSheet({
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
     }
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     document.addEventListener("keydown", onKey);
     panelRef.current?.querySelector<HTMLButtonElement>("[data-autofocus]")?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
+      releaseScroll();
     };
   }, [onClose]);
 

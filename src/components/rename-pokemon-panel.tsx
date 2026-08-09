@@ -6,6 +6,7 @@ import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { renamePokemonPaid } from "@/actions/rename-pokemon";
 import { MAX_NICKNAME_LENGTH, RENAME_COST } from "@/lib/nickname";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 export type RenameLabels = {
   title: string;
@@ -51,10 +52,10 @@ export function RenamePokemonPanel({
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      releaseScroll();
     };
   }, [onClose]);
 

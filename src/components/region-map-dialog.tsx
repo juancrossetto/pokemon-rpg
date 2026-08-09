@@ -10,6 +10,7 @@ import { REGION_MAP_ASPECT } from "@/lib/campaign/region-map";
 import { ZoneIcon, type ZoneIconKind } from "@/components/zone-icons";
 import { gymLeaderSpriteByOrder } from "@/lib/gym-map";
 import type { MapLocation } from "@/lib/campaign/map-selection";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 export type { MapLocation, MapStage } from "@/lib/campaign/map-selection";
 
@@ -49,10 +50,10 @@ export function RegionMapDialog({
       if (event.key === "Escape") setOpen(false);
     }
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      releaseScroll();
     };
   }, [open]);
 

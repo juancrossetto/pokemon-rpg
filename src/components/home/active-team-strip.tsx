@@ -25,6 +25,7 @@ import { useTypeLabel } from "@/hooks/use-type-label";
 import type { HomeSquadFilter } from "@/components/home/home-desktop-rail";
 import { HOME_TEAM_HEALED_EVENT } from "@/lib/home-heal-fx";
 import { itemHdIconUrl, itemSpriteUrl } from "@/lib/item-sprites";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 const TEAM_SIZE = 6;
 /** Mobile 3×2 con HP · md+ fila de 6. */
@@ -118,11 +119,10 @@ function TeamSlot({
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
     }
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prev;
+      releaseScroll();
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);

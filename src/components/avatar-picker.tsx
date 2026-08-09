@@ -12,6 +12,7 @@ import {
   avatarOptionsInStoryOrder,
   avatarUnlockRequirement,
 } from "@/lib/avatar-unlocks";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 export type AvatarPickerLabels = {
   change: string;
@@ -81,10 +82,10 @@ export function AvatarPicker({
       if (e.key === "Escape") setOpen(false);
     }
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      releaseScroll();
     };
   }, [open]);
 

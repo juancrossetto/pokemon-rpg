@@ -9,6 +9,7 @@ import {
   HOME_BANNER_OPTIONS,
   homeBannerById,
 } from "@/lib/home-banners";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 export type BannerPickerLabels = {
   change: string;
@@ -61,10 +62,10 @@ export function BannerPicker({
       if (e.key === "Escape") setOpen(false);
     }
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      releaseScroll();
     };
   }, [open]);
 

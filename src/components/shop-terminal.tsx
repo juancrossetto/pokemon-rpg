@@ -24,6 +24,7 @@ import {
 } from "@/lib/shop";
 import { isEnergyPackProductId } from "@/lib/shop-energy-pack";
 import { ItemEvolutionRecipes } from "@/components/item-evolution-recipes";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 export interface ShopLabels {
   categories: Record<ShopCategory, string>;
@@ -613,14 +614,13 @@ function PurchaseDialog({
       }
     }
 
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     document.addEventListener("keydown", onKey);
     panelRef.current?.querySelector<HTMLButtonElement>("[data-autofocus]")?.focus();
 
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
+      releaseScroll();
     };
   }, [onClose, pending]);
 

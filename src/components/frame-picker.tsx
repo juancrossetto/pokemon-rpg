@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useLocale } from "next-intl";
 import { updateHomeFrame } from "@/actions/update-home-frame";
 import { HOME_FRAME_OPTIONS, homeFrameById } from "@/lib/home-frames";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 /**
  * Grosor base del marco en la miniatura.
@@ -76,10 +77,10 @@ export function FramePicker({
       if (e.key === "Escape") setOpen(false);
     }
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      releaseScroll();
     };
   }, [open]);
 

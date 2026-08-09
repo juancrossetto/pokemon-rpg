@@ -51,6 +51,7 @@ import {
   tierBadgeSrc,
   type PvpTier,
 } from "@/lib/pvp/tiers";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 function pvpStandingLabel(
   rating: number,
@@ -1267,14 +1268,13 @@ function TrainerCardModal({
   const standing = pvpStandingLabel(card.pvpRating, labels.card.pvpTiers);
 
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prev;
+      releaseScroll();
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);

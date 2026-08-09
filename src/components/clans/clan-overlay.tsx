@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 /**
  * Overlay in-tree (no createPortal) to avoid Turbopack/React DOM
@@ -28,8 +29,7 @@ export function ClanOverlay({
   useEffect(() => {
     if (!open) return;
 
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
 
     const frame = window.requestAnimationFrame(() => {
       closeRef.current?.focus();
@@ -61,7 +61,7 @@ export function ClanOverlay({
     window.addEventListener("keydown", onKey);
     return () => {
       window.cancelAnimationFrame(frame);
-      document.body.style.overflow = prev;
+      releaseScroll();
       window.removeEventListener("keydown", onKey);
     };
   }, [open, onClose]);

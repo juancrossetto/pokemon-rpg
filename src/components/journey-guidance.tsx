@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { hasSeen, markSeen, hasSeenThisSession, markSeenThisSession, type FirstVisitKey } from "@/lib/journey-ux";
 import type { HandbookChapterId } from "@/lib/handbook/chapters";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 /**
  * Botón `i` que abre un popup con tips del hub + link al manual.
@@ -36,14 +37,13 @@ export function HubHelpButton({
       if (event.key === "Escape") setOpen(false);
     }
 
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     document.addEventListener("keydown", onKey);
     panelRef.current?.querySelector<HTMLButtonElement>("[data-autofocus]")?.focus();
 
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
+      releaseScroll();
     };
   }, [open]);
 

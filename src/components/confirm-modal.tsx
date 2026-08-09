@@ -2,6 +2,7 @@
 
 import { useEffect, useEffectEvent, useId, useRef } from "react";
 import { createPortal } from "react-dom";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 /**
  * Confirmación centrada (mobile: bottom sheet). Sustituye window.confirm
@@ -39,14 +40,13 @@ export function ConfirmModal({
       if (event.key === "Escape" && !pending) onCancelEvent();
     }
 
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     document.addEventListener("keydown", onKey);
     panelRef.current?.querySelector<HTMLButtonElement>("[data-autofocus]")?.focus();
 
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
+      releaseScroll();
     };
   }, [open, pending, onCancelEvent]);
 

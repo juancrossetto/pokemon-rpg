@@ -11,6 +11,7 @@ import { formatMoveName } from "@/lib/format-move-name";
 import type { TeamCompatibleTm, TeamMoveDetail } from "@/components/team-roster";
 import { SquadItemFx, fxMetaFromColor } from "@/components/use-squad-actions";
 import { playUiSfx } from "@/lib/battle-sfx";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 export type TeachTmLabels = {
   title: string;
@@ -69,10 +70,10 @@ export function TeachTmPanel({
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      releaseScroll();
     };
   }, [onClose]);
 

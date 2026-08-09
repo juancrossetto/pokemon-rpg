@@ -40,6 +40,7 @@ import { showToast } from "@/lib/app-toast";
 import { playUiSfx } from "@/lib/battle-sfx";
 import { ItemEvolutionRecipes } from "@/components/item-evolution-recipes";
 import { uiSpriteUrl } from "@/lib/sprites";
+import { lockBodyScroll } from "@/lib/scroll-lock";
 
 export type InventoryLabels = {
   categories: Record<string, string>;
@@ -818,12 +819,11 @@ function EquipPickerModal({
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape" && !pending) onClose();
     }
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     document.addEventListener("keydown", onKey);
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
+      releaseScroll();
     };
   }, [onClose, pending]);
 
@@ -960,15 +960,14 @@ function EvolvePickerModal({
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape" && !pending) onClose();
     }
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
     document.addEventListener("keydown", onKey);
     panelRef.current
       ?.querySelector<HTMLButtonElement>("button:not([disabled])")
       ?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
+      releaseScroll();
     };
   }, [onClose, pending]);
 
