@@ -7,6 +7,7 @@ import {
   sendClanMessage,
   type ClanChatMessage,
 } from "@/actions/clan-chat";
+import { scrollElementIntoViewSafe } from "@/lib/scroll-lock";
 
 /**
  * Chat interno del clan.
@@ -56,7 +57,9 @@ export function ClanChat({
   }, [clanId]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "nearest" });
+    const end = endRef.current;
+    if (!end) return;
+    scrollElementIntoViewSafe(end, { block: "end", behavior: "auto" });
   }, [messages]);
 
   function send() {

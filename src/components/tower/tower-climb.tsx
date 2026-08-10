@@ -25,6 +25,7 @@ import type {
   TowerRunCreature,
 } from "@/lib/tower";
 import { floorNodeVisual, pokeApiSpriteUrl } from "@/lib/tower/icons";
+import { scrollElementIntoViewSafe } from "@/lib/scroll-lock";
 
 /* ------------------------------------------------------------------ *
  * Tokens visuales por tipo de piso.
@@ -202,7 +203,13 @@ export function TowerBlessingArrival({
     const target = document.querySelector<HTMLElement>(
       `[data-tower-blessing="${payload.id}"]`,
     );
-    target?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (target) {
+      scrollElementIntoViewSafe(target, {
+        block: "nearest",
+        behavior: "smooth",
+        preferAppMain: true,
+      });
+    }
     const id = window.setTimeout(() => setPhase("fly"), 1100);
     return () => window.clearTimeout(id);
   }, [phase, payload]);
@@ -317,7 +324,7 @@ function useJustClimbed(currentFloor: number) {
 
     const centerInScroller = (behavior: ScrollBehavior) => {
       if (!scroller) {
-        node.scrollIntoView({ block: "center", behavior });
+        scrollElementIntoViewSafe(node, { block: "center", behavior, preferAppMain: true });
         return;
       }
       const nodeRect = node.getBoundingClientRect();
@@ -335,9 +342,10 @@ function useJustClimbed(currentFloor: number) {
     };
 
     const bringRailIntoView = (behavior: ScrollBehavior) => {
-      railSection.scrollIntoView({
+      scrollElementIntoViewSafe(railSection, {
         block: climbed ? "center" : "nearest",
         behavior,
+        preferAppMain: true,
       });
     };
 

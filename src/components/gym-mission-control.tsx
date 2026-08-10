@@ -16,6 +16,7 @@ import { formatGymCooldown } from "@/lib/gym-cooldown";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
 import { GameCtaButton } from "@/components/game-cta-button";
 import { showToast } from "@/lib/app-toast";
+import { scrollElementIntoViewSafe } from "@/lib/scroll-lock";
 import {
   DEFAULT_GYM_REGION_ID,
   gymRegionDef,
@@ -722,9 +723,16 @@ export function GymMissionControl({
     setSelectedId(next.id);
     // En mobile el carrusel queda abajo: al tocar una card, el hero vuelve a vista.
     // Doble rAF: el hero se remonta por `key` y el ref apunta al nodo nuevo.
+    // PWA: no usar scrollIntoView — scrollea `.app-main` a mano.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        heroRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        const hero = heroRef.current;
+        if (!hero) return;
+        scrollElementIntoViewSafe(hero, {
+          behavior: "smooth",
+          block: "nearest",
+          preferAppMain: true,
+        });
       });
     });
   }

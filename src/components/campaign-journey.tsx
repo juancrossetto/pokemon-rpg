@@ -16,6 +16,10 @@ import { selectLocation, setFarmingStage } from "@/actions/campaign";
 import { startTrainerBattle } from "@/actions/route-trainer";
 import { claimZoneObjective } from "@/actions/zone-rewards";
 import {
+  scrollAppMainToElement,
+  scrollChildIntoHorizontalCenter,
+} from "@/lib/scroll-lock";
+import {
   evaluateObjectives,
   type ZoneObjectiveId,
   type ZoneObjectiveState,
@@ -492,33 +496,40 @@ export function CampaignJourney({
   // parece no hacer nada y el jugador sigue tocando cards. Va en un efecto y no
   // en el handler porque la card elegida se expande al seleccionarla y empuja
   // al panel hacia abajo — hay que medir después del commit, no antes.
+  //
+  // Importante (PWA iOS): no usar `scrollIntoView`. El scroll real está en
+  // `.app-main` y scrollIntoView puede trabar ese contenedor hasta recargar.
   useEffect(() => {
     if (!zoneId) return;
     if (!window.matchMedia("(max-width: 1023px)").matches) return;
+    const panel = panelRef.current;
+    if (!panel) return;
     const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    panelRef.current?.scrollIntoView({
-      behavior: smooth ? "smooth" : "auto",
-      block: "start",
+    const raf = window.requestAnimationFrame(() => {
+      scrollAppMainToElement(panel, {
+        behavior: smooth ? "smooth" : "auto",
+        offsetPx: 16,
+      });
     });
+    return () => window.cancelAnimationFrame(raf);
   }, [zoneId]);
 
   // La fila de capítulos scrollea horizontal: con 8 capítulos el activo puede
   // quedar fuera de pantalla y la pantalla arranca mostrando el capítulo 1.
   useEffect(() => {
-    const tab = chapterTabsRef.current?.querySelector<HTMLElement>(
+    const nav = chapterTabsRef.current;
+    const tab = nav?.querySelector<HTMLElement>(
       `[data-chapter-tab="${chapterIndex}"]`,
     );
-    if (!tab) return;
+    if (!nav || !tab) return;
     const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    tab.scrollIntoView({
-      behavior: smooth ? "smooth" : "auto",
-      block: "nearest",
-      inline: "center",
-    });
+    scrollChildIntoHorizontalCenter(nav, tab, smooth ? "smooth" : "auto");
   }, [chapterIndex]);
 
   return (
-    <div className={pending ? "opacity-90 transition-opacity" : undefined}>
+    <div
+      className={`touch-pan-y${pending ? " opacity-90 transition-opacity" : ""}`}
+    >
       {unlockToast && (
         <UnlockCelebration locationId={unlockToast.id} locationName={unlockToast.name} />
       )}
@@ -781,7 +792,7 @@ export function CampaignJourney({
         */}
         <div
           ref={panelRef}
-          className="min-w-0 order-2 scroll-mt-20 lg:order-none lg:sticky lg:top-20 lg:z-0 lg:self-start"
+          className="min-w-0 order-2 scroll-mt-20 touch-pan-y lg:order-none lg:sticky lg:top-20 lg:z-0 lg:self-start"
         >
           {zone && (
             <ZonePanel

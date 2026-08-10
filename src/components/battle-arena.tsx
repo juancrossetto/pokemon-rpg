@@ -82,6 +82,7 @@ import { CaptureSummary } from "@/components/battle/capture-summary";
 import { BattleOutcomeScreen } from "@/components/battle/battle-outcome-screen";
 import { BattleTurnTimer } from "@/components/battle/battle-turn-timer";
 import { BattleItemUseFx } from "@/components/battle/battle-item-use-fx";
+import { scrollElementIntoViewSafe } from "@/lib/scroll-lock";
 import {
   BagView,
   MustSwitchSheet,
@@ -796,7 +797,9 @@ export function BattleArena({
   }
 
   useEffect(() => {
-    logEndRef.current?.scrollIntoView({ block: "end" });
+    const end = logEndRef.current;
+    if (!end) return;
+    scrollElementIntoViewSafe(end, { block: "end", behavior: "auto" });
   }, [log]);
 
   function nameFor(side: "player" | "wild", slot: "A" | "B" = "A") {
