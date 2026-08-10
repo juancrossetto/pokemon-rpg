@@ -11,7 +11,6 @@ import { iconsReadyEarlyScript } from "@/lib/icons-ready";
 import { standaloneEarlyScript, standaloneNavCriticalCss } from "@/lib/standalone-early";
 import { AppShell } from "@/components/app-shell";
 import { AppToastViewport } from "@/components/app-toast-viewport";
-import { StandaloneViewportDebug } from "@/components/standalone-viewport-debug";
 import "../globals.css";
 
 const inter = Inter({
@@ -73,8 +72,10 @@ export const viewport: Viewport = {
      o gestos accidentales; en PWA/juego el pinch-zoom no aporta. */
   maximumScale: 1,
   userScalable: false,
-  /* Necesario para que env(safe-area-inset-*) sea > 0 con status bar
-     translucida; sin esto la bottom nav queda bajo el home indicator. */
+  /* Necesario para que `env(safe-area-inset-bottom)` sea > 0: es lo que hace
+     que el dock cubra el home indicator en vez de quedar debajo. Con la barra
+     de estado opaca el inset de arriba pasa a 0, pero el de abajo sigue
+     haciendo falta (medido en el iPhone: 34pt). */
   viewportFit: "cover",
   /* Evita que el chrome del teclado/URL deje fixed bottom fuera del
      visual viewport en mobile Chromium. */
@@ -154,9 +155,6 @@ export default async function LocaleLayout({
 
         <AppShell locale={locale}>{children}</AppShell>
         <AppToastViewport />
-        {/* TEMPORAL: diagnóstico del dock en PWA anclada. Sólo se monta en
-            standalone. Borrar junto con el componente al terminar. */}
-        <StandaloneViewportDebug />
       </body>
     </html>
   );
