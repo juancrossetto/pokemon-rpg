@@ -131,7 +131,7 @@ function LoadoutRow({
       {stacks.length === 0 ? (
         <p className="text-[11px] text-white/35">{emptyHint}</p>
       ) : (
-        <ul className="-mx-0.5 flex gap-1.5 overflow-x-auto px-0.5 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+        <ul className="-mx-0.5 flex gap-1.5 overflow-x-auto overscroll-x-contain px-0.5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:overscroll-auto sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
           {stacks.map((stack) => {
             const label = itemLabel(stack.name);
             const meta =
@@ -152,6 +152,7 @@ function LoadoutRow({
                   width={22}
                   height={22}
                   className="h-[22px] w-[22px] object-contain"
+                  draggable={false}
                 />
                 <span className="max-w-[5.5rem] truncate text-[11px] font-medium text-white/75">
                   {label}

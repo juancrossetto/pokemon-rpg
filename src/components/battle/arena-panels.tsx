@@ -431,7 +431,7 @@ export function PartySidebar({
       </div>
 
       {/* Grilla 3×2: aprovecha el ancho de la columna info en desktop. */}
-      <div className="mt-2 grid min-h-0 w-full flex-1 grid-cols-3 content-start justify-items-center gap-x-1.5 gap-y-2 overflow-y-auto overflow-x-hidden px-0.5 py-0.5">
+      <div className="mt-2 grid min-h-0 w-full flex-1 grid-cols-3 content-start justify-items-center gap-x-1.5 gap-y-2 overflow-y-auto overflow-x-clip px-0.5 py-0.5">
         {children}
       </div>
     </div>

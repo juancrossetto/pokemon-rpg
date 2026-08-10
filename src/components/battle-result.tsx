@@ -400,7 +400,7 @@ export function BattleResult({
   return createPortal(
     <BattleResultLeaveContext.Provider value={leave}>
       <div
-        className={`battle-result-overlay fixed inset-0 z-[90] flex items-end justify-center overflow-x-hidden overflow-y-auto px-margin-mobile pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:items-center${
+        className={`battle-result-overlay fixed inset-0 z-[90] flex items-end justify-center overflow-x-clip overflow-y-auto px-margin-mobile pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:items-center${
           leaving ? " is-leaving" : ""
         }`}
         role="dialog"

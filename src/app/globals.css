@@ -1291,6 +1291,7 @@ body {
   display: flex;
   gap: 0.15rem;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1332,7 +1333,7 @@ body {
 .battle-bag-sheet__body {
   min-height: 0;
   flex: 1;
-  overflow-x: hidden;
+  overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -8789,6 +8790,12 @@ html.is-standalone .battle-result-overlay .result-in {
   animation: pvp-hex-shine 1.6s ease-in-out infinite;
 }
 
+.pvp-hex-slot {
+  -webkit-user-drag: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
 .pvp-sticky-cta {
   position: fixed;
   left: 0;
@@ -12063,6 +12070,12 @@ html.boot-splash-pending .boot-splash {
   background: transparent;
   box-shadow: none;
   overflow: visible;
+  pointer-events: none;
+}
+
+/* Post-combate: ocultar el dock un instante mientras mide safe-area / inset. */
+.mobile-bottom-nav--settling {
+  visibility: hidden;
   pointer-events: none;
 }
 

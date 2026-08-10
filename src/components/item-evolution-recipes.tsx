@@ -57,6 +57,7 @@ function RecipeRow({ recipe }: { recipe: ItemEvolutionRecipe }) {
           width={28}
           height={28}
           unoptimized
+          draggable={false}
           className="relative z-[1] h-7 w-7 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
         />
       </div>
@@ -74,6 +75,7 @@ function SpeciesCell({ id, name }: { id: number; name: string }) {
         width={56}
         height={56}
         unoptimized
+        draggable={false}
         className="h-12 w-12 object-contain sm:h-14 sm:w-14"
       />
       <span className="line-clamp-2 text-[9px] font-medium leading-tight text-sky-300/90 sm:text-[10px]">

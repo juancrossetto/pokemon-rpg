@@ -203,7 +203,7 @@ export function RegionMapDialog({
               </p>
 
               {active.encounters.length > 0 && (
-                <ul className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5">
+                <ul className="mt-2 flex gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5">
                   {active.encounters.map((mon) => (
                     <li
                       key={mon.speciesId}
@@ -215,6 +215,7 @@ export function RegionMapDialog({
                         alt={mon.name}
                         width={32}
                         height={32}
+                        draggable={false}
                         className={`h-7 w-7 object-contain ${mon.caught ? "" : "opacity-70 grayscale"}`}
                       />
                       {mon.caught && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { setPvpTeam } from "@/actions/set-pvp-team";
@@ -46,6 +46,18 @@ export function PvpTeamEditor({
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const skipClickRef = useRef(false);
+  /** HTML5 DnD en touch captura el gesto y traba el scroll del hub en iOS. */
+  const [canDrag, setCanDrag] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: fine)");
+    function apply() {
+      setCanDrag(mq.matches);
+    }
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   const byId = useMemo(() => new Map(candidates.map((c) => [c.id, c])), [candidates]);
   const assigned = new Set(slots.filter(Boolean) as string[]);
@@ -189,7 +201,7 @@ export function PvpTeamEditor({
               ) : null}
               <button
                 type="button"
-                draggable={Boolean(mon) && !pending}
+                draggable={canDrag && Boolean(mon) && !pending}
                 disabled={pending}
                 onClick={() => onSlotClick(i)}
                 onDragStart={(e) => {
@@ -225,7 +237,7 @@ export function PvpTeamEditor({
                   setDragOver(null);
                   setSelected(null);
                 }}
-                className={`pvp-hex-slot group relative flex flex-col items-center ${
+                className={`pvp-hex-slot group relative flex touch-manipulation flex-col items-center ${
                   isDragging ? "opacity-40" : ""
                 } ${isSelected || isOver ? "scale-[1.03]" : ""}`}
                 title={
@@ -322,7 +334,7 @@ export function PvpTeamEditor({
       </button>
 
       {pickerOpen ? (
-        <div className="flex max-h-44 flex-wrap gap-1.5 overflow-y-auto rounded-xl border border-white/8 bg-black/25 p-2">
+        <div className="flex max-h-44 flex-wrap gap-1.5 overflow-y-auto overscroll-y-contain rounded-xl border border-white/8 bg-black/25 p-2 touch-pan-y">
           {candidates.map((c) => {
             const isAssigned = assigned.has(c.id);
             return (

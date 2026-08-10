@@ -229,7 +229,7 @@ export function InventoryTerminal({
 
       <div className="flex flex-col gap-4 lg:flex-row">
         {/* Sidebar de categorías — en mobile es una fila de chips */}
-        <nav className="flex gap-1.5 overflow-x-auto pb-1 lg:w-44 lg:shrink-0 lg:flex-col lg:overflow-visible lg:pb-0">
+        <nav className="no-scrollbar flex gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:w-44 lg:shrink-0 lg:flex-col lg:overflow-visible lg:overscroll-auto lg:pb-0">
           <CategoryButton
             active={category === "all"}
             icon="apps"
@@ -431,6 +431,7 @@ function ItemCard({
             width={44}
             height={44}
             unoptimized
+            draggable={false}
             className="relative h-11 w-11 object-contain transition-transform duration-200 group-hover:scale-110"
           />
         </span>
@@ -699,6 +700,7 @@ function DetailPanel({
           width={80}
           height={80}
           unoptimized
+          draggable={false}
           className="relative h-20 w-20 object-contain"
         />
       </div>
@@ -954,6 +956,7 @@ function EquipPickerModal({
             width={40}
             height={40}
             unoptimized
+            draggable={false}
             className="h-10 w-10 shrink-0 object-contain"
           />
           <div className="min-w-0 flex-1">
@@ -978,7 +981,7 @@ function EquipPickerModal({
           </button>
         </div>
 
-        <ul className="flex-1 overflow-y-auto overscroll-contain px-2 py-2">
+        <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2">
           {entry.equipTargets.length === 0 ? (
             <li className="px-3 py-6 text-center text-[12px] text-on-surface-variant">
               {labels.equipEmptyTeam}
@@ -1000,6 +1003,7 @@ function EquipPickerModal({
                       width={48}
                       height={48}
                       unoptimized
+                      draggable={false}
                       className="h-12 w-12 shrink-0 object-contain"
                     />
                     <div className="min-w-0 flex-1">
@@ -1098,6 +1102,7 @@ function EvolvePickerModal({
             width={40}
             height={40}
             unoptimized
+            draggable={false}
             className="h-10 w-10 shrink-0 object-contain"
           />
           <div className="min-w-0 flex-1">
@@ -1122,7 +1127,7 @@ function EvolvePickerModal({
           </button>
         </div>
 
-        <ul className="flex-1 overflow-y-auto overscroll-contain px-2 py-2">
+        <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2">
           {entry.evolveTargets.map((target) => (
             <EvolveTargetRow
               key={target.instanceId}
@@ -1172,6 +1177,7 @@ function EvolveTargetRow({
         width={40}
         height={40}
         unoptimized
+        draggable={false}
         className={`h-10 w-10 shrink-0 object-contain [image-rendering:pixelated] ${
           target.canEvolve ? "" : "opacity-40 grayscale"
         }`}
@@ -1253,6 +1259,7 @@ function LearnerRow({
         width={28}
         height={28}
         unoptimized
+        draggable={false}
         className={`h-7 w-7 shrink-0 object-contain [image-rendering:pixelated] ${
           learner.canLearn ? "" : "opacity-40 grayscale"
         }`}

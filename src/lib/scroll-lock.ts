@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 /**
- * Bloqueo de scroll del body con conteo de referencias.
+ * Bloqueo de scroll con conteo de referencias.
  *
  * Antes cada overlay (modales, sheets, pickers, el drawer "Más", la pantalla de
  * batalla…) manejaba `document.body.style.overflow` por su cuenta, y había dos
@@ -17,20 +17,36 @@ import { useEffect } from "react";
  * - Al revés, el que vacía suelta el scroll mientras el de abajo sigue abierto,
  *   y el fondo se mueve detrás del overlay.
  *
- * Con un contador único hay una sola verdad: el body se bloquea cuando entra el
- * primer interesado y se restaura cuando sale el último.
+ * Con un contador único hay una sola verdad: el scroll se bloquea cuando entra
+ * el primer interesado y se restaura cuando sale el último.
+ *
+ * En PWA standalone el body ya está `overflow:hidden` y el scroll real vive en
+ * `.app-main` — también lo bloqueamos, si no el fondo sigue moviéndose bajo el
+ * modal y el gesto puede quedar atrapado al cerrar.
  */
 let holders = 0;
 /** Valor original del body, capturado sólo al tomar el primer lock. */
-let restoreTo: string | null = null;
+let restoreBodyOverflow: string | null = null;
+/** Inline overflow de `.app-main` al primer lock (null si no había nodo). */
+let restoreAppMainOverflow: string | null = null;
+let appMainLocked: HTMLElement | null = null;
 
 /** Toma el lock y devuelve la función para soltarlo (idempotente). */
 export function lockBodyScroll(): () => void {
   if (typeof document === "undefined") return () => {};
 
   if (holders === 0) {
-    restoreTo = document.body.style.overflow;
+    restoreBodyOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    const main = getAppScrollRoot();
+    appMainLocked = main;
+    if (main) {
+      restoreAppMainOverflow = main.style.overflow;
+      main.style.overflow = "hidden";
+    } else {
+      restoreAppMainOverflow = null;
+    }
   }
   holders += 1;
 
@@ -42,8 +58,13 @@ export function lockBodyScroll(): () => void {
     released = true;
     holders = Math.max(0, holders - 1);
     if (holders === 0) {
-      document.body.style.overflow = restoreTo ?? "";
-      restoreTo = null;
+      document.body.style.overflow = restoreBodyOverflow ?? "";
+      restoreBodyOverflow = null;
+      if (appMainLocked) {
+        appMainLocked.style.overflow = restoreAppMainOverflow ?? "";
+        appMainLocked = null;
+        restoreAppMainOverflow = null;
+      }
     }
   };
 }
@@ -178,5 +199,7 @@ export function scrollChildIntoHorizontalCenter(
 /** Sólo para tests: reinicia el contador entre casos. */
 export function __resetScrollLockForTests(): void {
   holders = 0;
-  restoreTo = null;
+  restoreBodyOverflow = null;
+  restoreAppMainOverflow = null;
+  appMainLocked = null;
 }

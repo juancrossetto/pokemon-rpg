@@ -48,6 +48,7 @@ export function AvatarImage({
         width={size}
         height={size}
         className={className}
+        draggable={false}
         onError={() => setFailedSrc(src)}
       />
     );
@@ -56,5 +57,13 @@ export function AvatarImage({
   // <img> y no next/image: necesitamos onError para el fallback y, sin saber a
   // qué tamaño se muestra, `next/image` no puede elegir una resolución mejor.
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={alt} className={className} onError={() => setFailedSrc(src)} />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      draggable={false}
+      onError={() => setFailedSrc(src)}
+    />
+  );
 }

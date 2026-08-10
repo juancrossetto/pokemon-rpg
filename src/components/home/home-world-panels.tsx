@@ -325,6 +325,7 @@ export function HomeDailyActions({
                   alt=""
                   width={56}
                   height={56}
+                  draggable={false}
                   className="h-full w-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.55)] transition duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_14px_color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
                   unoptimized
                 />
@@ -634,6 +635,7 @@ export function HomeEventsProgress({
               alt=""
               width={72}
               height={72}
+              draggable={false}
               className="h-full w-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
               unoptimized
             />

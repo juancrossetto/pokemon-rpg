@@ -71,16 +71,17 @@ export function BattleLobbyMobile({
   return (
     <div className="flex flex-col gap-3 px-margin-mobile py-3">
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <section className="lobby-rise relative overflow-hidden rounded-2xl border border-white/12 bg-surface-container-low shadow-[0_18px_44px_rgba(0,0,0,0.5)]">
+      <section className="lobby-rise relative overflow-clip rounded-2xl border border-white/12 bg-surface-container-low shadow-[0_18px_44px_rgba(0,0,0,0.5)]">
         {/* Mapa protagonista: toda la imagen abre el mapa completo (el trigger
             de RegionMapDialog es inset-0), así que no hace falta el botón. */}
-        <div className="relative h-[190px] w-full overflow-hidden bg-[#0b1424]">
+        <div className="relative h-[190px] w-full overflow-clip bg-[#0b1424]">
           {mapSrc ? (
             <Image
               src={mapSrc}
               alt=""
               fill
               priority
+              draggable={false}
               className="object-cover object-center"
               sizes="100vw"
             />
@@ -198,7 +199,7 @@ export function BattleLobbyMobile({
       {lobby.recent.length > 0 && (
         <section className="lobby-rise" style={{ animationDelay: "120ms" }}>
           <SectionTitle>{t("lobby.recent")}</SectionTitle>
-          <div className="-mx-margin-mobile flex gap-3 overflow-x-auto px-margin-mobile pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-margin-mobile flex gap-3 overflow-x-auto overscroll-x-contain px-margin-mobile pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {lobby.recent.slice(0, 8).map((entry) => (
               <div
                 key={entry.id}
@@ -211,6 +212,7 @@ export function BattleLobbyMobile({
                       alt={entry.speciesName}
                       width={44}
                       height={44}
+                      draggable={false}
                       className="h-full w-full object-cover"
                     />
                   )}
@@ -274,6 +276,7 @@ export function BattleLobbyMobile({
                       alt={mon.name}
                       width={56}
                       height={56}
+                      draggable={false}
                       className={`h-full w-full object-contain ${mon.caught ? "" : "opacity-90"}`}
                     />
                   )}

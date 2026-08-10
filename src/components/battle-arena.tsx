@@ -3627,7 +3627,7 @@ export function BattleArena({
               <YourTurnStatus playerFirst={playerOutspeeds} showOrder={!isDouble} />
             </div>
           )}
-          <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden md:gap-0.5">
+          <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-clip md:gap-0.5">
             {log.map((entry, i) => {
               const isLatest = i === log.length - 1;
               const sideTone =

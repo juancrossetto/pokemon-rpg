@@ -53,6 +53,7 @@ function TeamSlot({
   pending,
   onDragStart,
   onDragEnd,
+  canDrag,
   showEmptyCoach,
   ownedHeldItems,
   heldLabels,
@@ -100,6 +101,8 @@ function TeamSlot({
   pending: boolean;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
+  /** HTML5 DnD en touch captura el gesto y traba el scroll del home en iOS. */
+  canDrag: boolean;
   /** Un solo coach mark en el primer slot vacío, no uno por cada hueco. */
   showEmptyCoach?: boolean;
   ownedHeldItems: OwnedHeldItem[];
@@ -262,7 +265,7 @@ function TeamSlot({
       <SquadCardContextMenu {...menuProps} showViewTeam triggerVariant="ghost">
         <button
           type="button"
-          draggable={!pending && !isDepositing}
+          draggable={canDrag && !pending && !isDepositing}
           onDragStart={(e) => {
             skipClickRef.current = true;
             onDragStart(member.id);
@@ -280,7 +283,7 @@ function TeamSlot({
             setOpen(true);
           }}
           aria-label={`${displayName}, ${member.levelLabel}, ${cpMark}`}
-          className={`team-card team-slot group relative flex ${SLOT_BOX} flex-col overflow-hidden rounded-xl border text-left transition duration-300 active:scale-[0.97] md:rounded-[1.25rem] ${
+          className={`team-card team-slot group relative flex ${SLOT_BOX} touch-manipulation flex-col overflow-hidden rounded-xl border text-left transition duration-300 active:scale-[0.97] md:rounded-[1.25rem] ${
             isDepositing ? "team-slot--depositing" : ""
           } ${isOver ? "ring-2 ring-pokeball-red/60 ring-offset-2 ring-offset-background" : ""} ${
             isDragging ? "opacity-40" : isDepositing ? "" : "hover:scale-[1.01]"
@@ -368,6 +371,7 @@ function TeamSlot({
                   width={16}
                   height={16}
                   unoptimized
+                  draggable={false}
                   className="h-3.5 w-3.5 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)] md:h-4 md:w-4"
                 />
               </span>
@@ -387,6 +391,7 @@ function TeamSlot({
                 alt=""
                 width={160}
                 height={160}
+                draggable={false}
                 className={`relative z-[1] h-[88%] w-auto max-h-[72px] max-w-[72px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105 md:h-[130px] md:w-[130px] md:max-h-none md:max-w-none ${
                   fainted ? "grayscale" : ""
                 }`}
@@ -464,7 +469,7 @@ function TeamSlot({
               aria-label={displayName}
               className="team-detail-sheet relative z-[1] flex max-h-[min(88dvh,calc(100dvh-var(--bottom-nav-h)-env(safe-area-inset-bottom)-1.5rem))] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#0b0d13] shadow-[0_12px_48px_rgba(0,0,0,0.55)] sm:rounded-[1.5rem] sm:shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
             >
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 {/* El disparador "…" se corre a la izquierda: la esquina es
                     del botón de cerrar y los dos se pisaban. */}
                 <SquadCardContextMenu
@@ -595,6 +600,17 @@ export function ActiveTeamStrip({
   const [depositingId, setDepositingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [canDrag, setCanDrag] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: fine)");
+    function apply() {
+      setCanDrag(mq.matches);
+    }
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   const [lastInitialMembers, setLastInitialMembers] = useState(initialMembers);
   if (lastInitialMembers !== initialMembers) {
@@ -884,6 +900,7 @@ export function ActiveTeamStrip({
                   setDragId(null);
                   setOverSlot(null);
                 }}
+                canDrag={canDrag}
               />
             </div>
             );

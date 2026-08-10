@@ -97,6 +97,7 @@ export function HomeIdentityBanner({
           fill
           priority
           unoptimized
+          draggable={false}
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 960px"
           className="object-cover object-center"
         />
@@ -120,6 +121,7 @@ export function HomeIdentityBanner({
               width={280}
               height={360}
               priority
+              draggable={false}
               className="home-identity__avatar-img drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)]"
               unoptimized
             />

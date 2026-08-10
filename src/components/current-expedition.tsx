@@ -339,6 +339,7 @@ export function CurrentExpedition({
                 alt=""
                 width={44}
                 height={44}
+                draggable={false}
                 className="h-9 w-9 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)] sm:h-10 sm:w-10"
                 unoptimized
               />

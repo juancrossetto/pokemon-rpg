@@ -535,7 +535,7 @@ export function GymChallengeCorridor({
         : labels.room.replace("{n}", String(roomIndex)).replace("{total}", String(totalRooms));
 
   return (
-    <div className="relative flex-1 overflow-x-hidden">
+    <div className="relative flex-1 overflow-x-clip">
       <AmbienceLayer
         particle={theme.particle}
         accent={theme.accent}

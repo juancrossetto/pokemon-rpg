@@ -173,8 +173,10 @@ export function PvpArenaHub({
     paginationPageOf: L.paginationPageOf,
   };
 
+  // No usar overflow-x-hidden: computa overflow-y a auto y, con flex-1 bajo
+  // `.app-main`, crea scroll anidado que en iOS/PWA traba el gesto. clip no.
   return (
-    <div className="pvp-arena relative isolate flex-1 overflow-x-hidden">
+    <div className="pvp-arena relative isolate overflow-x-clip">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,color-mix(in_srgb,var(--color-electric-yellow)_16%,transparent),transparent_45%),radial-gradient(ellipse_at_90%_10%,color-mix(in_srgb,var(--color-pokeball-red)_12%,transparent),transparent_40%)]"
@@ -310,7 +312,7 @@ export function PvpArenaHub({
                   className="pvp-arena-bar h-full rounded-full"
                 />
               </div>
-              <div className="no-scrollbar -mx-1 flex items-start justify-between gap-1 overflow-x-auto px-1 pb-1 sm:gap-2">
+              <div className="no-scrollbar -mx-1 flex items-start justify-between gap-1 overflow-x-clip px-1 pb-1 sm:gap-2">
                 {seasonTrack.map((node) => {
                   const locked = node.state === "locked";
                   const current = node.state === "current";

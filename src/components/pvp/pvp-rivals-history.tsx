@@ -76,7 +76,7 @@ export function PvpRivalsHistory({
   const selected = matches.find((m) => m.id === selectedId) ?? matches[0] ?? null;
 
   return (
-    <section className="game-float-card overflow-hidden rounded-2xl">
+    <section className="game-float-card overflow-clip rounded-2xl">
       <div className="border-b border-white/8 px-3 pb-1 pt-4 sm:px-4">
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
           {L.rivalsTitle}
@@ -103,7 +103,7 @@ export function PvpRivalsHistory({
                   onClick={() => setSelectedId(m.id)}
                   aria-pressed={active}
                   title={resultLabel}
-                  className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition sm:px-4 ${
+                  className={`flex w-full touch-manipulation items-center gap-2.5 px-3 py-2.5 text-left transition sm:px-4 ${
                     active
                       ? "bg-white/[0.07] shadow-[inset_3px_0_0_0_var(--color-electric-yellow)]"
                       : "hover:bg-white/[0.03]"
@@ -325,6 +325,7 @@ function TeamSprite({
           height={40}
           className={`h-full w-full object-contain ${mon.fainted ? "grayscale" : ""}`}
           unoptimized
+          draggable={false}
         />
       ) : (
         <span className="text-[9px] text-white/40">{mon.name.slice(0, 2)}</span>

@@ -40,6 +40,7 @@ export async function NextStepCard({ step }: { step: NextStep }) {
             alt=""
             width={36}
             height={36}
+            draggable={false}
             className="h-8 w-8 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
             unoptimized
           />

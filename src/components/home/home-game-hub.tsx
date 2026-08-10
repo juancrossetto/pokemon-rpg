@@ -133,7 +133,7 @@ export function HomeGameHub({
   };
 
   return (
-    <div className="relative flex min-w-0 flex-1 flex-col overflow-x-hidden">
+    <div className="relative flex min-w-0 flex-col overflow-x-clip">
       <JourneyOnboarding />
       <div className="relative flex min-w-0 flex-col px-margin-mobile py-2 md:px-margin-desktop md:py-5">
         <div className="mx-auto flex w-full min-w-0 max-w-3xl gap-4 md:gap-5 xl:max-w-6xl 2xl:max-w-7xl">
