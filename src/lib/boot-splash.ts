@@ -73,41 +73,51 @@ export const BOOT_SPLASH_BG = "#0a0806";
 /**
  * CSS crítico del arranque, inline en el `<head>`.
  *
- * El script de arriba marca `boot-splash-pending` antes del primer paint, pero
- * las reglas de `.boot-splash` viven en `globals.css`, que es una hoja externa:
- * entre el primer paint y que esa hoja llegue, el documento no tiene fondo y el
- * navegador pinta su lienzo por defecto — el destello blanco al abrir la app.
- *
- * Inline no depende de la red, así que lo primero que se ve ya es el splash y
- * no un flash. `color-scheme: dark` es lo que además evita que el UA pinte en
- * claro el lienzo, los scrollbars y los controles antes de aplicar nada.
+ * Incluye el layout del banner mobile: no depende de `globals.css` (hoja
+ * externa). Así el primer paint ya es oscuro + arte, no el lienzo blanco.
  */
 export function bootSplashCriticalCss(): string {
+  const bg = BOOT_SPLASH_BG;
   return [
     `:root{color-scheme:dark;}`,
-    `html{background:${BOOT_SPLASH_BG};}`,
-    `body{background:${BOOT_SPLASH_BG};}`,
+    `html{background:${bg};}`,
+    `body{background:${bg};margin:0;}`,
     `.boot-splash{position:fixed;inset:0;z-index:9999;display:none;`,
-    `flex-direction:column;background:${BOOT_SPLASH_BG};}`,
-    `html.boot-splash-pending .boot-splash{display:flex;opacity:1;visibility:visible;}`,
+    `flex-direction:column;background:${bg};}`,
+    `html.boot-splash-pending .boot-splash{display:flex;opacity:1;visibility:visible;pointer-events:auto;}`,
+    `.boot-splash__mobile,.boot-splash__desktop{position:absolute;inset:0;display:flex;flex-direction:column;}`,
+    `.boot-splash__mobile{display:flex;}`,
+    `.boot-splash__desktop{display:none;align-items:center;justify-content:center;background:${bg};}`,
+    `@media (min-width:1280px){.boot-splash__mobile{display:none;}.boot-splash__desktop{display:flex;}}`,
+    `.boot-splash__art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;}`,
+    `.boot-splash__pokeball{position:relative;z-index:1;width:min(360px,42vw);height:auto;object-fit:contain;}`,
+    `.boot-splash__shade{position:absolute;left:0;right:0;bottom:0;height:38%;`,
+    `background:linear-gradient(to top,rgba(0,0,0,.82) 0%,transparent 100%);pointer-events:none;}`,
+    `.boot-splash__footer{position:relative;z-index:1;margin-top:auto;`,
+    `padding:max(1.25rem,env(safe-area-inset-bottom)) 1.75rem max(1.5rem,env(safe-area-inset-bottom));}`,
+    `.boot-splash__footer--desktop{position:absolute;left:0;right:0;bottom:0;margin-top:0;padding:1.75rem 2.5rem 2rem;}`,
+    `.boot-splash__meta{display:flex;align-items:baseline;justify-content:space-between;gap:.75rem;margin-bottom:.65rem;}`,
+    `.boot-splash__label{font:600 12px/1.2 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.72);}`,
+    `.boot-splash__pct{font:600 12px/1.2 ui-monospace,monospace;color:rgba(255,255,255,.55);}`,
+    `.boot-splash__track{height:3px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}`,
+    `.boot-splash__fill{height:100%;width:0;border-radius:inherit;background:#e879f9;}`,
   ].join("");
 }
 
 /**
- * Seguro para Server Components (layout).
- * Muestra el splash antes del paint si la sesión aún no calentó las rutas
- * (post-login o cookie de sesión) y no estamos en login/register.
+ * Corre en `<head>` antes del paint.
+ * - Login/register o warmup ya hecho → sin splash.
+ * - Cualquier otro cold start → `boot-splash-pending` (banner, no lienzo blanco).
  */
 export function bootSplashEarlyScript(): string {
   return `(function(){try{
+var html=document.documentElement;
 var warm=${JSON.stringify(NAV_WARMUP_DONE_KEY)};
-if(sessionStorage.getItem(warm)==='1')return;
 var path=location.pathname||'';
-if(/\\/(login|register)(\\/|$)/.test(path))return;
-var post=sessionStorage.getItem(${JSON.stringify(BOOT_SPLASH_KEY)})==='1';
-var cookie=document.cookie||'';
-var authed=${JSON.stringify(SESSION_COOKIE_HINTS)}.some(function(n){return cookie.indexOf(n+'=')!==-1;});
-if(!post&&!authed)return;
-document.documentElement.classList.add('boot-splash-pending');
+if(/\\/(login|register)(\\/|$)/.test(path)||sessionStorage.getItem(warm)==='1'){
+html.classList.remove('boot-splash-pending');
+return;
+}
+html.classList.add('boot-splash-pending');
 }catch(e){}})();`;
 }

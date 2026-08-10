@@ -1,0 +1,148 @@
+import { headers } from "next/headers";
+
+/**
+ * Startup images iOS (Add to Home Screen). Sin esto, al abrir la PWA el
+ * WebView pinta lienzo blanco hasta el primer paint del documento.
+ *
+ * Generadas desde `public/splash/boot.webp` → `public/splash/apple/`.
+ * @see public/splash/apple/entries.json
+ */
+export const APPLE_STARTUP_IMAGES: { url: string; media: string }[] = [
+  {
+    url: "/splash/apple/apple-splash-1290-2796.jpg",
+    media:
+      "screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2796-1290.jpg",
+    media:
+      "screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1179-2556.jpg",
+    media:
+      "screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2556-1179.jpg",
+    media:
+      "screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1170-2532.jpg",
+    media:
+      "screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2532-1170.jpg",
+    media:
+      "screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1284-2778.jpg",
+    media:
+      "screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2778-1284.jpg",
+    media:
+      "screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1125-2436.jpg",
+    media:
+      "screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2436-1125.jpg",
+    media:
+      "screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1242-2688.jpg",
+    media:
+      "screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2688-1242.jpg",
+    media:
+      "screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-828-1792.jpg",
+    media:
+      "screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1792-828.jpg",
+    media:
+      "screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-750-1334.jpg",
+    media:
+      "screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1334-750.jpg",
+    media:
+      "screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1242-2208.jpg",
+    media:
+      "screen and (device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2208-1242.jpg",
+    media:
+      "screen and (device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2048-2732.jpg",
+    media:
+      "screen and (device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2732-2048.jpg",
+    media:
+      "screen and (device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1668-2388.jpg",
+    media:
+      "screen and (device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2388-1668.jpg",
+    media:
+      "screen and (device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1640-2360.jpg",
+    media:
+      "screen and (device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2360-1640.jpg",
+    media:
+      "screen and (device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)",
+  },
+  {
+    url: "/splash/apple/apple-splash-1536-2048.jpg",
+    media:
+      "screen and (device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+  },
+  {
+    url: "/splash/apple/apple-splash-2048-1536.jpg",
+    media:
+      "screen and (device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)",
+  },
+];
+
+/** True en login/register: no montar splash en el HTML (evita flash de Mewtwo). */
+export async function isBootSplashAuthGatePath(): Promise<boolean> {
+  const h = await headers();
+  const pathname = h.get("x-pathname") ?? "";
+  return /\/(login|register)(\/|$)/.test(pathname);
+}

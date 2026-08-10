@@ -75,6 +75,9 @@ function sleep(ms: number) {
 /**
  * Al abrir la app (una vez por sesión): muestra Mewtwo en mobile / Pokéball
  * en desktop con barra de %, y detrás precarga todas las pantallas de la nav.
+ *
+ * El splash ya puede estar visible desde el HTML/SSR (evita lienzo blanco).
+ * Acá decidimos si hacemos warmup bloqueante o lo cerramos al toque.
  */
 export function AppBootWarmup() {
   const router = useRouter();
@@ -94,9 +97,15 @@ export function AppBootWarmup() {
 
     const needsBlockingWarmup =
       peekBootSplashPending() || hasAuthSessionCookie();
+
+    // Cold start sin sesión: el banner ya tapó el blanco; no bloqueamos 1s+.
     if (!needsBlockingWarmup) {
-      dismissSplashWithoutWarmup();
-      return;
+      showSplash();
+      setSplashProgress(100);
+      const t = window.setTimeout(() => {
+        hideSplash();
+      }, 420);
+      return () => window.clearTimeout(t);
     }
 
     if (inFlightRef.current) return;

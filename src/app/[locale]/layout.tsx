@@ -6,6 +6,10 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { BootSplashMarkup } from "@/components/boot-splash-markup";
 import { InlineScript } from "@/components/inline-script";
+import {
+  APPLE_STARTUP_IMAGES,
+  isBootSplashAuthGatePath,
+} from "@/lib/apple-startup-images";
 import { bootSplashCriticalCss, bootSplashEarlyScript } from "@/lib/boot-splash";
 import { iconsReadyEarlyScript } from "@/lib/icons-ready";
 import { standaloneEarlyScript, standaloneNavCriticalCss } from "@/lib/standalone-early";
@@ -60,6 +64,15 @@ export async function generateMetadata({
        * compensaban dejan de sumar de más.
        */
       statusBarStyle: "black",
+      startupImage: APPLE_STARTUP_IMAGES,
+    },
+    /*
+     * Next 15 emite `mobile-web-app-capable` en vez de
+     * `apple-mobile-web-app-capable`. iOS sigue necesitando el tag viejo para
+     * mostrar las startup images al abrir la PWA desde el home.
+     */
+    other: {
+      "apple-mobile-web-app-capable": "yes",
     },
   };
 }
@@ -94,13 +107,28 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const tLoading = await getTranslations({ locale, namespace: "loading" });
+  const [tLoading, authGate] = await Promise.all([
+    getTranslations({ locale, namespace: "loading" }),
+    isBootSplashAuthGatePath(),
+  ]);
+
+  // Cold start: splash en el HTML (sin esperar JS) → no hay frame blanco.
+  const htmlClass = [
+    "dark",
+    inter.variable,
+    jetbrainsMono.variable,
+    "h-full",
+    "antialiased",
+    authGate ? "" : "boot-splash-pending",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <html
       lang={locale}
-      className={`dark ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
-      // boot-splash early script puede agregar `boot-splash-pending` antes
+      className={htmlClass}
+      // boot-splash early script puede quitar `boot-splash-pending` antes
       // de hidratar; React no debe pelear por className en ese caso.
       suppressHydrationWarning
     >
@@ -115,6 +143,10 @@ export default async function LocaleLayout({
         <style
           id="boot-splash-critical"
           dangerouslySetInnerHTML={{ __html: bootSplashCriticalCss() }}
+        />
+        <InlineScript
+          id="boot-splash-early"
+          html={`${bootSplashEarlyScript()}(${iconsReadyEarlyScript()})();`}
         />
         {/* PWA iOS: marca is-standalone antes del paint (sólo scroll, no mueve el nav). */}
         <InlineScript id="standalone-early" html={standaloneEarlyScript()} />
@@ -138,17 +170,13 @@ export default async function LocaleLayout({
         />
         <link rel="preload" href="/splash/boot.webp" as="image" />
         <link rel="preload" href="/loaders/pokeball-loader-transparent.webp" as="image" />
-        <InlineScript
-          id="boot-splash-early"
-          html={`${bootSplashEarlyScript()}(${iconsReadyEarlyScript()})();`}
-        />
       </head>
       <body
         className="relative flex min-h-full flex-col overflow-x-clip"
         // standalone-early puede agregar `is-standalone` antes de hidratar.
         suppressHydrationWarning
       >
-        <BootSplashMarkup label={tLoading("boot")} />
+        <BootSplashMarkup label={tLoading("boot")} pending={!authGate} />
 
         <div className="fixed top-0 left-1/4 h-96 w-96 rounded-full bg-pokeball-red/5 blur-[120px] pointer-events-none" />
         <div className="fixed bottom-0 right-1/4 h-[500px] w-[500px] rounded-full bg-electric-yellow/[0.02] blur-[150px] pointer-events-none" />

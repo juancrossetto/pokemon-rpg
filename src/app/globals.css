@@ -17198,7 +17198,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   align-items: center;
   justify-content: center;
   gap: 0.35rem 0.75rem;
-  margin: 0.3rem 0 0;
+  margin: 0.55rem 0 0;
   font-family: var(--font-sans);
   font-size: 0.7rem;
   font-weight: 500;
@@ -17252,14 +17252,27 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 
 .tp-id__cp {
-  margin-top: 0.15rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.1rem;
+  overflow: visible;
+  align-items: center;
+  /* Aire entre PC y meta: Grobold + clip no cabe en line-height:1. */
+  gap: 0.35rem 0.65rem;
+}
+
+.tp-id__cp-label,
+.tp-id__cp-value {
+  overflow: visible;
+  /* Igual que `.tp-id__name-text`: sin esto el trazo inferior se come. */
+  line-height: 1.22;
+  padding-block: 0.14em 0.1em;
+  padding-inline: 0.04em;
 }
 
 .tp-id__cp-label {
   font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
   font-size: clamp(1.55rem, 7.5vw, 2.05rem);
   font-weight: 400;
-  line-height: 1;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   background-image: linear-gradient(
@@ -17283,7 +17296,6 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
   font-size: clamp(1.7rem, 8.2vw, 2.35rem);
   font-weight: 400;
-  line-height: 1;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
   background-image: linear-gradient(

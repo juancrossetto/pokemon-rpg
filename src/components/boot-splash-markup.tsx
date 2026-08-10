@@ -4,8 +4,11 @@
  */
 export function BootSplashMarkup({
   label,
+  pending = false,
 }: {
   label: string;
+  /** Alineado con `html.boot-splash-pending` del SSR. */
+  pending?: boolean;
 }) {
   return (
     <div
@@ -13,8 +16,8 @@ export function BootSplashMarkup({
       className="boot-splash"
       role="progressbar"
       aria-live="polite"
-      aria-busy="false"
-      aria-hidden="true"
+      aria-busy={pending ? "true" : "false"}
+      aria-hidden={pending ? "false" : "true"}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={0}
@@ -26,6 +29,7 @@ export function BootSplashMarkup({
           alt=""
           className="boot-splash__art"
           fetchPriority="high"
+          decoding="sync"
         />
         <div className="boot-splash__shade" aria-hidden />
         <div className="boot-splash__footer">
@@ -48,6 +52,7 @@ export function BootSplashMarkup({
           width={360}
           height={270}
           fetchPriority="high"
+          decoding="async"
         />
         <div className="boot-splash__footer boot-splash__footer--desktop">
           <div className="boot-splash__meta">

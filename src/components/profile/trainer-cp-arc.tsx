@@ -43,7 +43,7 @@ export function TrainerCpArc({
     <>
       {showValue ? (
         <div
-          className="tp-id__cp pointer-events-none relative z-[3] flex items-baseline justify-center gap-2.5"
+          className="tp-id__cp pointer-events-none relative z-[3] flex items-center justify-center gap-2.5"
           style={
             {
               "--cp-accent": from,
