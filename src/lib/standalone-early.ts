@@ -17,17 +17,36 @@ export const STANDALONE_SAT_BOTTOM_PX = 34;
  * hace confiable el scroll en iOS PWA: sin eso, en algunos iPhone el body
  * crece con el contenido, `overflow:hidden` lo recorta y `.app-main` nunca
  * llega a scrollear (síntoma: “no puedo bajar en ninguna página”).
+ *
+ * La altura del body sale SOLO de `inset:0`. Antes se la pisaba con
+ * `height/max-height: var(--app-vh)` (= `window.innerHeight`), que es una
+ * contradicción: `inset:0` ya da el viewport exacto y ese clamp sólo puede
+ * achicarlo. En iOS standalone con `viewport-fit=cover`, `innerHeight` no
+ * siempre incluye las safe areas, así que el body quedaba más corto que la
+ * pantalla y el dock —anclado al borde inferior de esa caja— aparecía
+ * flotando con una banda negra debajo.
+ *
+ * `--app-vh` se sigue publicando y lo siguen usando quienes necesitan la
+ * medida de `innerHeight` para su propio alto (pantalla de batalla, sheets,
+ * overlay de resultado). Lo que ya no hace es definir la caja del body.
  */
 export function standaloneNavCriticalCss(): string {
+  const bodyBox =
+    "position:fixed;inset:0;width:100%;height:100%;min-height:100%;" +
+    "overflow:hidden;overscroll-behavior:none;display:flex;flex-direction:column;";
+  const appMain =
+    "flex:1 1 0%;min-height:0;overflow-x:clip;overflow-y:auto;" +
+    "-webkit-overflow-scrolling:touch;overscroll-behavior-y:none;touch-action:pan-y;";
+
   return [
     `@media all and (display-mode: standalone){`,
     `html{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none;}`,
-    `body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;max-height:100dvh;min-height:0;overflow:hidden;overscroll-behavior:none;display:flex;flex-direction:column;}`,
-    `.app-main{flex:1 1 0%;min-height:0;overflow-x:clip;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:none;touch-action:pan-y;}`,
+    `body{${bodyBox}}`,
+    `.app-main{${appMain}}`,
     `}`,
     `html.is-standalone{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none;}`,
-    `html.is-standalone body{position:fixed;inset:0;width:100%;height:100%;height:var(--app-vh,100dvh);max-height:var(--app-vh,100dvh);min-height:0;overflow:hidden;overscroll-behavior:none;display:flex;flex-direction:column;}`,
-    `html.is-standalone .app-main{flex:1 1 0%;min-height:0;overflow-x:clip;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:none;touch-action:pan-y;}`,
+    `html.is-standalone body{${bodyBox}}`,
+    `html.is-standalone .app-main{${appMain}}`,
   ].join("");
 }
 
