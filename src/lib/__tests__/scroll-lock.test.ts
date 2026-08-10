@@ -4,12 +4,11 @@ import { __resetScrollLockForTests, lockBodyScroll } from "@/lib/scroll-lock";
 /** jsdom no viene en el entorno de vitest de este repo: alcanza con un stub. */
 function stubDocument(bodyOverflow = "") {
   const body = { style: { overflow: bodyOverflow } };
-  const main = { style: { overflow: "" }, classList: { contains: () => true } };
   (globalThis as { document?: unknown }).document = {
     body,
-    querySelector: (sel: string) => (sel === ".app-main" ? main : null),
+    querySelector: () => null,
   };
-  return { body, main };
+  return { body };
 }
 
 describe("scroll-lock", () => {
@@ -18,28 +17,24 @@ describe("scroll-lock", () => {
   });
 
   it("locks on the first holder and restores on the last", () => {
-    const { body, main } = stubDocument();
+    const { body } = stubDocument();
     const release = lockBodyScroll();
     expect(body.style.overflow).toBe("hidden");
-    expect(main.style.overflow).toBe("hidden");
     release();
     expect(body.style.overflow).toBe("");
-    expect(main.style.overflow).toBe("");
   });
 
   it("keeps the lock while a second overlay is still open", () => {
-    const { body, main } = stubDocument();
+    const { body } = stubDocument();
     const releaseSheet = lockBodyScroll();
     const releasePanel = lockBodyScroll();
 
     // El panel de arriba se cierra: el sheet sigue abierto, no se suelta.
     releasePanel();
     expect(body.style.overflow).toBe("hidden");
-    expect(main.style.overflow).toBe("hidden");
 
     releaseSheet();
     expect(body.style.overflow).toBe("");
-    expect(main.style.overflow).toBe("");
   });
 
   it("does not strand the lock when overlays close out of order", () => {

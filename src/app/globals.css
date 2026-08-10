@@ -12073,12 +12073,6 @@ html.boot-splash-pending .boot-splash {
   pointer-events: none;
 }
 
-/* Post-combate: ocultar el dock un instante mientras mide safe-area / inset. */
-.mobile-bottom-nav--settling {
-  visibility: hidden;
-  pointer-events: none;
-}
-
 @media (min-width: 1280px) {
   .mobile-bottom-nav {
     display: none;

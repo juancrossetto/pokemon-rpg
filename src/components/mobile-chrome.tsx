@@ -276,12 +276,6 @@ export function MobileChrome({
   const [indicatorAnimated, setIndicatorAnimated] = useState(false);
   const [sheetDragY, setSheetDragY] = useState(0);
   const [isSwipeDragging, setIsSwipeDragging] = useState(false);
-  /**
-   * Tras soltar el lock de combate el dock completo a veces pinta un frame
-   * levantado (safe-area / inset). Lo ocultamos ~420ms hasta remedir.
-   */
-  const [navUnlockSettling, setNavUnlockSettling] = useState(false);
-  const wasCombatLockedRef = useRef(Boolean(lockedHref));
   const drawerRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
@@ -415,34 +409,6 @@ export function MobileChrome({
   // compara directo contra los href de los links.
   const pathname = usePathname();
   const prevPathname = useRef(pathname);
-
-  useEffect(() => {
-    if (lockedHref) {
-      wasCombatLockedRef.current = true;
-      setNavUnlockSettling(false);
-      return;
-    }
-    if (!wasCombatLockedRef.current) return;
-    wasCombatLockedRef.current = false;
-
-    const root = bottomNavRef.current;
-    if (root) {
-      root.style.bottom = "";
-      root.style.marginBottom = "";
-      root.style.transform = "";
-    }
-    document.documentElement.style.setProperty("--vv-gap", "0px");
-    setNavUnlockSettling(true);
-
-    const showTimer = window.setTimeout(() => {
-      setNavUnlockSettling(false);
-      window.requestAnimationFrame(() => {
-        window.dispatchEvent(new Event("resize"));
-      });
-    }, 420);
-
-    return () => window.clearTimeout(showTimer);
-  }, [lockedHref]);
 
   // Clase standalone (scroll en `.app-main`). No tocar position/bottom del nav.
   useLayoutEffect(() => {
@@ -984,9 +950,7 @@ export function MobileChrome({
       {userName ? (
       <nav
         ref={bottomNavRef}
-        className={`mobile-bottom-nav xl:hidden${lockedHref ? " mobile-bottom-nav--locked" : ""}${
-          navUnlockSettling ? " mobile-bottom-nav--settling" : ""
-        }`}
+        className={`mobile-bottom-nav xl:hidden${lockedHref ? " mobile-bottom-nav--locked" : ""}`}
       >
         {lockedHref && lockedLabel ? (
           <div
