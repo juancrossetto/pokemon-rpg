@@ -70,7 +70,7 @@ const LEADER_AVATAR_BODY_SLUG: Partial<Record<string, string>> = {
   Bruno: "brunoaltomando",
   Agatha: "agatha",
   Lance: "lance",
-  Blue: "gary",
+  Blue: "azulc",
 };
 
 /** Tipos con PNG local en `public/gyms/badges/` (Kanto + Johto). */
