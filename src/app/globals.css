@@ -1151,6 +1151,37 @@ body {
   }
 }
 
+/* Inventario mobile: detalle flotante centrado (no empuja la grilla). */
+.inventory-detail-overlay__scrim {
+  animation: inventory-detail-scrim-in 0.2s ease-out both;
+}
+.inventory-detail-overlay__panel {
+  animation: inventory-detail-panel-in 0.32s cubic-bezier(0.34, 1.4, 0.45, 1) both;
+  transform-origin: center center;
+}
+.inventory-detail-overlay__panel > aside {
+  background: #12141c;
+  border-radius: 1rem;
+}
+@keyframes inventory-detail-scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes inventory-detail-panel-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
 /* Overlay de combate (mochila / equipo / revive): sheet sin “card dentro de card”. */
 .battle-bag-sheet {
   position: absolute;
@@ -1505,6 +1536,10 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .battle-bag-sheet__panel {
     animation: none;
+  }
+  .inventory-detail-overlay__scrim,
+  .inventory-detail-overlay__panel {
+    animation: none !important;
   }
 }
 

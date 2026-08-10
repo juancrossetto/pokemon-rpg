@@ -347,21 +347,23 @@ export default async function InventoryPage({
   return (
     <div className="flex-1 px-margin-mobile py-6 md:px-margin-desktop md:py-8">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
-          <div>
+        <header className="mb-4 flex flex-col gap-2.5 sm:mb-5 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
+          <div className="min-w-0">
             <p className="mb-0.5 flex items-center gap-2 text-label-sm uppercase tracking-[0.2em] text-pokeball-red">
               <span className="h-1.5 w-1.5 rounded-full bg-pokeball-red" />
               {t("eyebrow")}
             </p>
             <h1 className="page-title text-headline-lg text-white">{t("title")}</h1>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-1.5 sm:flex-wrap sm:gap-2">
             <Link
               href="/market?tab=bought"
-              className="inline-flex items-center gap-1.5 rounded-md border border-white/12 bg-white/5 px-3 py-1.5 text-label-sm text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface"
+              className="inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-md border border-white/12 bg-white/5 px-2 py-1.5 text-[11px] text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface sm:flex-none sm:gap-1.5 sm:px-3 sm:text-label-sm"
             >
-              <span className="material-symbols-outlined text-[16px]!">local_shipping</span>
-              {t("marketBag")}
+              <span className="material-symbols-outlined text-[15px]! sm:text-[16px]!">
+                local_shipping
+              </span>
+              <span className="truncate">{t("marketBag")}</span>
               {pendingClaims > 0 && (
                 <span className="ui-chip ui-chip--accent text-[10px] normal-case tracking-normal">
                   {pendingClaims}
@@ -370,10 +372,12 @@ export default async function InventoryPage({
             </Link>
             <Link
               href="/market?tab=sell"
-              className="inline-flex items-center gap-1.5 rounded-md border border-white/12 bg-white/5 px-3 py-1.5 text-label-sm text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface"
+              className="inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-md border border-white/12 bg-white/5 px-2 py-1.5 text-[11px] text-on-surface-variant transition hover:border-pokeball-red/40 hover:text-on-surface sm:flex-none sm:gap-1.5 sm:px-3 sm:text-label-sm"
             >
-              <span className="material-symbols-outlined text-[16px]!">storefront</span>
-              {t("sellLink")}
+              <span className="material-symbols-outlined text-[15px]! sm:text-[16px]!">
+                storefront
+              </span>
+              <span className="truncate">{t("sellLink")}</span>
             </Link>
           </div>
         </header>

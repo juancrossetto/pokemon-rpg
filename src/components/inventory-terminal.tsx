@@ -117,7 +117,11 @@ export function InventoryTerminal({
 }) {
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(entries[0]?.itemId ?? null);
+  // Mobile: sin preselección (el detalle es modal). Desktop: primer ítem.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  /** null = aún no medimos (SSR / primer paint); evita flash de modal en desktop. */
+  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+  const [portalReady, setPortalReady] = useState(false);
 
   const counts = useMemo(() => countsByCategory(entries), [entries]);
   const units = useMemo(() => totalUnits(entries), [entries]);
@@ -133,25 +137,77 @@ export function InventoryTerminal({
   );
 
   const capacityPct = Math.min(100, Math.round((units / BACKPACK_CAPACITY) * 100));
+  const capacityOver = units > BACKPACK_CAPACITY;
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setPortalReady(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    function apply() {
+      const desktop = mq.matches;
+      setIsDesktop(desktop);
+      if (desktop) {
+        setSelectedId((cur) => cur ?? entries[0]?.itemId ?? null);
+      }
+    }
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [entries]);
+
+  useEffect(() => {
+    if (isDesktop !== false || !selected) return;
+    const release = lockBodyScroll();
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelectedId(null);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => {
+      release();
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isDesktop, selected]);
+
+  function closeDetail() {
+    setSelectedId(null);
+  }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Cabecera: stats + capacidad + búsqueda */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex items-end gap-5">
+    <div className="flex flex-col gap-3 lg:gap-4">
+      {/* Cabecera: stats compactos en mobile + búsqueda */}
+      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-end lg:justify-between lg:gap-3">
+        <div className="flex items-center gap-2.5 rounded-lg border border-white/8 bg-black/25 px-2.5 py-2 lg:items-end lg:gap-5 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0">
           <Stat value={entries.length} label={labels.itemsCount} />
+          <span className="h-6 w-px shrink-0 bg-white/10 lg:hidden" aria-hidden />
           <Stat value={units} label={labels.unitsCount} />
-          <div className="min-w-40 flex-1">
-            <p className="mb-1 text-[10px] uppercase tracking-[0.18em] text-on-surface-variant">
-              {labels.capacity}
-            </p>
-            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+          <span className="h-6 w-px shrink-0 bg-white/10 lg:hidden" aria-hidden />
+          <div className="min-w-0 flex-1 lg:min-w-40">
+            <div className="mb-0.5 flex items-baseline justify-between gap-2 lg:mb-1">
+              <p className="text-[9px] uppercase tracking-[0.14em] text-on-surface-variant lg:text-[10px] lg:tracking-[0.18em]">
+                {labels.capacity}
+              </p>
+              <p
+                className={`font-mono text-[10px] tabular-nums lg:mt-1 lg:hidden ${
+                  capacityOver ? "text-pokeball-red" : "text-on-surface-variant"
+                }`}
+              >
+                {units}/{BACKPACK_CAPACITY}
+              </p>
+            </div>
+            <div className="h-1 overflow-hidden rounded-full bg-white/10 lg:h-1.5">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-pokeball-red/70 to-pokeball-red transition-all duration-500"
+                className={`h-full rounded-full transition-all duration-500 ${
+                  capacityOver
+                    ? "bg-pokeball-red"
+                    : "bg-gradient-to-r from-pokeball-red/70 to-pokeball-red"
+                }`}
                 style={{ width: `${capacityPct}%` }}
               />
             </div>
-            <p className="mt-1 font-mono text-[11px] text-on-surface-variant">
+            <p className="mt-1 hidden font-mono text-[11px] text-on-surface-variant lg:block">
               {units} / {BACKPACK_CAPACITY}
             </p>
           </div>
@@ -218,32 +274,77 @@ export function InventoryTerminal({
           )}
         </div>
 
-        {/* Panel contextual: fijo en desktop, hoja inferior en mobile */}
-        <div className="lg:w-72 lg:shrink-0">
-          {selected ? (
-            <DetailPanel
-              entry={selected}
-              labels={labels}
-              sellHref={sellHref}
-              teamHref={teamHref}
-              onClose={() => setSelectedId(null)}
-            />
-          ) : (
-            <div className="hidden h-full items-center justify-center rounded-xl border border-dashed border-white/10 p-6 text-center lg:flex">
-              <p className="text-label-sm text-on-surface-variant/70">{labels.selectHint}</p>
-            </div>
-          )}
-        </div>
+        {/* Desktop: panel contextual fijo. Mobile: modal flotante (portal). */}
+        {isDesktop !== false ? (
+          <div className="hidden lg:block lg:w-72 lg:shrink-0">
+            {selected ? (
+              <DetailPanel
+                entry={selected}
+                labels={labels}
+                sellHref={sellHref}
+                teamHref={teamHref}
+                onClose={closeDetail}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-white/10 p-6 text-center">
+                <p className="text-label-sm text-on-surface-variant/70">
+                  {labels.selectHint}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
+
+      {portalReady &&
+        isDesktop === false &&
+        selected &&
+        createPortal(
+          <div
+            className="inventory-detail-overlay fixed inset-0 z-[100] flex items-center justify-center px-3"
+            style={{
+              paddingTop: "calc(3.25rem + env(safe-area-inset-top, 0px))",
+              paddingBottom:
+                "calc(var(--bottom-sheet-inset, var(--bottom-nav-h, 5.25rem)) + 0.5rem)",
+            }}
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) closeDetail();
+            }}
+          >
+            <button
+              type="button"
+              aria-label={labels.close}
+              className="inventory-detail-overlay__scrim absolute inset-0 bg-black/65"
+              onClick={closeDetail}
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="inventory-detail-overlay__panel relative z-10 max-h-full w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.65)]"
+            >
+              <DetailPanel
+                entry={selected}
+                labels={labels}
+                sellHref={sellHref}
+                teamHref={teamHref}
+                onClose={closeDetail}
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
 
 function Stat({ value, label }: { value: number; label: string }) {
   return (
-    <div>
-      <p className="font-mono text-headline-md leading-none text-white">{value}</p>
-      <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-on-surface-variant">
+    <div className="shrink-0">
+      <p className="font-mono text-[15px] font-semibold leading-none tabular-nums text-white lg:text-headline-md lg:font-normal">
+        {value}
+      </p>
+      <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-on-surface-variant lg:mt-1 lg:text-[10px] lg:tracking-[0.18em]">
         {label}
       </p>
     </div>
