@@ -11,6 +11,7 @@ import { iconsReadyEarlyScript } from "@/lib/icons-ready";
 import { standaloneEarlyScript, standaloneNavCriticalCss } from "@/lib/standalone-early";
 import { AppShell } from "@/components/app-shell";
 import { AppToastViewport } from "@/components/app-toast-viewport";
+import { StandaloneViewportDebug } from "@/components/standalone-viewport-debug";
 import "../globals.css";
 
 const inter = Inter({
@@ -136,6 +137,9 @@ export default async function LocaleLayout({
 
         <AppShell locale={locale}>{children}</AppShell>
         <AppToastViewport />
+        {/* TEMPORAL: diagnóstico del dock en PWA anclada. Sólo se monta en
+            standalone. Borrar junto con el componente al terminar. */}
+        <StandaloneViewportDebug />
       </body>
     </html>
   );
