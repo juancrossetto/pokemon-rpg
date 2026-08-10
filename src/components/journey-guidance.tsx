@@ -362,8 +362,11 @@ export function CoachMark({
   useEffect(() => {
     if (hasSeen(storageKey)) return;
     if (oncePerSession && hasSeenThisSession(storageKey)) return;
-    setShow(true);
-    if (oncePerSession) markSeenThisSession(storageKey);
+    const raf = requestAnimationFrame(() => {
+      setShow(true);
+      if (oncePerSession) markSeenThisSession(storageKey);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [storageKey, oncePerSession]);
 
   useEffect(() => {
