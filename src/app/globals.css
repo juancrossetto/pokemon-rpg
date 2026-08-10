@@ -16387,30 +16387,43 @@ html.boot-splash-pending .boot-splash {
 
   Safe-area: sólo padding FIJO en el dock (34px), nunca env() (parpadea).
   Si iOS deja una franja bajo el viewport, ::after la pinta sin mover el dock.
+
+  Body `position: fixed; inset: 0` + `.app-main { flex: 1 1 0% }` evita el
+  bug de iOS donde el body crece con el contenido, overflow:hidden lo tapa
+  y el usuario no puede scrollear ninguna página en la PWA.
 */
 @media all and (display-mode: standalone) {
   html {
     height: 100%;
-    height: -webkit-fill-available;
+    height: 100dvh;
     overflow: hidden;
+    overscroll-behavior: none;
     background-color: var(--color-background);
   }
 
   body {
-    min-height: 100%;
-    min-height: -webkit-fill-available;
+    position: fixed;
+    inset: 0;
+    width: 100%;
     height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
     overflow: hidden;
     overscroll-behavior: none;
     overscroll-behavior-y: none;
+    display: flex;
+    flex-direction: column;
   }
 
   .app-main {
+    flex: 1 1 0%;
     min-height: 0;
     overflow-x: clip;
     overflow-y: auto;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 
   .mobile-top-chrome {
@@ -16447,26 +16460,37 @@ html.boot-splash-pending .boot-splash {
 
 html.is-standalone {
   height: 100%;
-  height: -webkit-fill-available;
+  height: 100dvh;
   overflow: hidden;
+  overscroll-behavior: none;
   background-color: var(--color-background);
 }
 
 html.is-standalone body {
-  min-height: 100%;
-  min-height: -webkit-fill-available;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  /* `--app-vh` lo publica mobile-chrome desde innerHeight (más fiel que 100dvh
+     en iOS standalone). */
   height: 100%;
+  height: var(--app-vh, 100dvh);
+  max-height: var(--app-vh, 100dvh);
+  min-height: 0;
   overflow: hidden;
   overscroll-behavior: none;
   overscroll-behavior-y: none;
+  display: flex;
+  flex-direction: column;
 }
 
 html.is-standalone .app-main {
+  flex: 1 1 0%;
   min-height: 0;
   overflow-x: clip;
   overflow-y: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 html.is-standalone .mobile-top-chrome {
