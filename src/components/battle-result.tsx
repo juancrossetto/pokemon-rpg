@@ -400,7 +400,7 @@ export function BattleResult({
   return createPortal(
     <BattleResultLeaveContext.Provider value={leave}>
       <div
-        className={`battle-result-overlay fixed inset-0 z-[90] flex items-center justify-center overflow-hidden px-margin-mobile py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]${
+        className={`battle-result-overlay fixed inset-0 z-[90] flex items-end justify-center overflow-x-hidden overflow-y-auto px-margin-mobile pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:items-center${
           leaving ? " is-leaving" : ""
         }`}
         role="dialog"
@@ -413,8 +413,14 @@ export function BattleResult({
           aria-hidden
         />
 
+        {/*
+          max-h resta safe-area + usa --app-vh (innerHeight): en iOS PWA
+          100dvh no coincide con el área visible y los CTAs quedaban bajo el
+          home indicator. En mobile anclamos abajo (items-end) para que los
+          botones no se corten.
+        */}
         <div
-          className={`result-in relative z-10 my-auto flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-2xl border shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-xl ${cardSurface} ${
+          className={`result-in relative z-10 mb-0 flex max-h-[calc(var(--app-vh,100dvh)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1.5rem)] w-full flex-col overflow-hidden rounded-2xl border shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-xl sm:my-auto ${cardSurface} ${
             hasLevelUpChoices ? "max-w-3xl" : "max-w-lg"
           }`}
         >
