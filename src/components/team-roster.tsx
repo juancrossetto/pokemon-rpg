@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { setTeamLayout } from "@/actions/pc";
 import { playPcSfx } from "@/lib/pc-sfx";
-import { AllocatePointsPanel } from "@/components/allocate-points-panel";
 import { SquadCardSheet } from "@/components/squad-card-sheet";
 import { PokemonShowcaseCard } from "@/components/pokemon-showcase-card";
 import {
@@ -491,33 +490,28 @@ function PokemonCard({
               instanceId={member.instanceId}
               currentLevel={member.level}
               ownedEvolutionItems={member.ownedEvolutionItems}
-            />
-          </div>
-
-          <div className="relative mt-2" onClick={(e) => e.stopPropagation()}>
-            <AllocatePointsPanel
-              instanceId={member.instanceId}
-              level={member.level}
-              unspentPoints={member.unspentPoints}
-              points={member.points}
-              bases={member.bases}
-              defaultOpen={member.unspentPoints > 0}
-              onAllocated={(next) => {
-                const nextCurrentHp =
-                  member.currentHp <= 0
-                    ? 0
-                    : Math.min(next.maxHp, member.currentHp + next.currentHpDelta);
-                onMemberPatch({
-                  unspentPoints: next.unspentPoints,
-                  points: next.points,
-                  maxHp: next.maxHp,
-                  currentHp: nextCurrentHp,
-                  atk: next.atk,
-                  def: next.def,
-                  spAtk: next.spAtk,
-                  spDef: next.spDef,
-                  speed: next.speed,
-                });
+              allocate={{
+                level: member.level,
+                unspentPoints: member.unspentPoints,
+                points: member.points,
+                bases: member.bases,
+                onAllocated: (next) => {
+                  const nextCurrentHp =
+                    member.currentHp <= 0
+                      ? 0
+                      : Math.min(next.maxHp, member.currentHp + next.currentHpDelta);
+                  onMemberPatch({
+                    unspentPoints: next.unspentPoints,
+                    points: next.points,
+                    maxHp: next.maxHp,
+                    currentHp: nextCurrentHp,
+                    atk: next.atk,
+                    def: next.def,
+                    spAtk: next.spAtk,
+                    spDef: next.spDef,
+                    speed: next.speed,
+                  });
+                },
               }}
             />
           </div>

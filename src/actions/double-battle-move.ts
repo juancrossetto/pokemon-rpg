@@ -365,6 +365,10 @@ export async function submitDoubleBattleMoves(
           playerAState.baseStats,
           playerAState.hp,
           wildAPp,
+          {
+            attackerHp: wildAState.hp,
+            attackerMaxHp: wildAState.maxHp,
+          },
         );
   const wildBMove =
     wildBDef.chargeMoveId != null
@@ -375,6 +379,10 @@ export async function submitDoubleBattleMoves(
           playerBState.baseStats,
           playerBState.hp,
           wildBPp,
+          {
+            attackerHp: wildBState.hp,
+            attackerMaxHp: wildBState.maxHp,
+          },
         );
 
   const resolved = resolveDoubleTurn(

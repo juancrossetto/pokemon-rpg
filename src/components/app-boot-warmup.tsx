@@ -41,6 +41,7 @@ function showSplash() {
   const splash = document.getElementById("boot-splash");
   if (!splash) return;
   document.documentElement.classList.add("boot-splash-pending");
+  document.documentElement.classList.remove("boot-splash-done");
   splash.classList.remove("boot-splash--out");
   splash.setAttribute("aria-hidden", "false");
   splash.setAttribute("aria-busy", "true");
@@ -57,12 +58,14 @@ function hideSplash() {
     splash?.setAttribute("aria-busy", "false");
     splash?.setAttribute("aria-hidden", "true");
     document.documentElement.classList.remove("boot-splash-pending");
+    document.documentElement.classList.add("boot-splash-done");
   }, 220);
 }
 
 function dismissSplashWithoutWarmup() {
   clearBootSplashPending();
   document.documentElement.classList.remove("boot-splash-pending");
+  document.documentElement.classList.add("boot-splash-done");
   document.getElementById("boot-splash")?.classList.add("boot-splash--out");
 }
 

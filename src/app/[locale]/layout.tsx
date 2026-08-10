@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { hasLocale } from "next-intl";
-import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
@@ -10,7 +10,11 @@ import {
   APPLE_STARTUP_IMAGES,
   isBootSplashAuthGatePath,
 } from "@/lib/apple-startup-images";
-import { bootSplashCriticalCss, bootSplashEarlyScript } from "@/lib/boot-splash";
+import {
+  BOOT_SPLASH_LABELS,
+  bootSplashCriticalCss,
+  bootSplashEarlyScript,
+} from "@/lib/boot-splash";
 import { iconsReadyEarlyScript } from "@/lib/icons-ready";
 import { standaloneEarlyScript, standaloneNavCriticalCss } from "@/lib/standalone-early";
 import { AppShell } from "@/components/app-shell";
@@ -39,10 +43,19 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "meta" });
+  const titles: Record<string, string> = {
+    es: "Pokémon RPG",
+    en: "Pokémon RPG",
+    pt: "Pokémon RPG",
+  };
+  const descriptions: Record<string, string> = {
+    es: "Captura, entrena y competí con otros entrenadores.",
+    en: "Catch, train and compete with other trainers.",
+    pt: "Capture, treine e compete com outros treinadores.",
+  };
   return {
-    title: t("title"),
-    description: t("description"),
+    title: titles[locale] ?? titles.es,
+    description: descriptions[locale] ?? descriptions.es,
     appleWebApp: {
       capable: true,
       title: "PokeRPG",
@@ -107,19 +120,19 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const [tLoading, authGate] = await Promise.all([
-    getTranslations({ locale, namespace: "loading" }),
-    isBootSplashAuthGatePath(),
-  ]);
+  // Sin getTranslations acá: bloquearía el primer HTML. Labels del splash
+  // son estáticos; el resto de i18n vive dentro de AppShell (Suspense).
+  const authGate = await isBootSplashAuthGatePath();
+  const splashLabel =
+    BOOT_SPLASH_LABELS[locale] ?? BOOT_SPLASH_LABELS.es ?? "Cargando";
 
-  // Cold start: splash en el HTML (sin esperar JS) → no hay frame blanco.
   const htmlClass = [
     "dark",
     inter.variable,
     jetbrainsMono.variable,
     "h-full",
     "antialiased",
-    authGate ? "" : "boot-splash-pending",
+    authGate ? "boot-splash-done" : "boot-splash-pending",
   ]
     .filter(Boolean)
     .join(" ");
@@ -128,8 +141,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       className={htmlClass}
-      // boot-splash early script puede quitar `boot-splash-pending` antes
-      // de hidratar; React no debe pelear por className en ese caso.
+      // boot-splash early script puede mutar classList antes de hidratar.
       suppressHydrationWarning
     >
       <head>
@@ -140,6 +152,7 @@ export default async function LocaleLayout({
           (hoja externa) el primer paint es el lienzo blanco del navegador.
         */}
         <meta name="color-scheme" content="dark" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <style
           id="boot-splash-critical"
           dangerouslySetInnerHTML={{ __html: bootSplashCriticalCss() }}
@@ -155,12 +168,17 @@ export default async function LocaleLayout({
           dangerouslySetInnerHTML={{ __html: standaloneNavCriticalCss() }}
         />
         {/*
-          Icon font autoalojada (`@font-face` en globals.css). Antes era una
-          hoja de fonts.googleapis.com acá mismo: render-blocking contra un
-          tercero, o sea que ni el splash pintaba hasta resolverla. Ahora sale
-          del mismo origen y se precarga en paralelo. `display=block` sigue
-          vigente, declarado en el propio @font-face.
+          Startup images iOS: además de metadata (a veces no emite el tag
+          viejo). Sin esto el WebView PWA pinta blanco hasta el primer HTML.
         */}
+        {APPLE_STARTUP_IMAGES.map((img) => (
+          <link
+            key={img.url + img.media}
+            rel="apple-touch-startup-image"
+            href={img.url}
+            media={img.media}
+          />
+        ))}
         <link
           rel="preload"
           href="/fonts/material-symbols-outlined.woff2"
@@ -176,12 +194,15 @@ export default async function LocaleLayout({
         // standalone-early puede agregar `is-standalone` antes de hidratar.
         suppressHydrationWarning
       >
-        <BootSplashMarkup label={tLoading("boot")} pending={!authGate} />
+        {/*
+          Splash SIN Suspense / sin auth: sale en el primer flush de HTML.
+          AppShell espera sesión+DB+mensajes — envuelto, no bloquea el banner.
+        */}
+        <BootSplashMarkup label={splashLabel} pending={!authGate} />
 
-        <div className="fixed top-0 left-1/4 h-96 w-96 rounded-full bg-pokeball-red/5 blur-[120px] pointer-events-none" />
-        <div className="fixed bottom-0 right-1/4 h-[500px] w-[500px] rounded-full bg-electric-yellow/[0.02] blur-[150px] pointer-events-none" />
-
-        <AppShell locale={locale}>{children}</AppShell>
+        <Suspense fallback={null}>
+          <AppShell locale={locale}>{children}</AppShell>
+        </Suspense>
         <AppToastViewport />
       </body>
     </html>

@@ -361,6 +361,10 @@ export async function submitBattleMove(
         playerBase,
         playerState.hp,
         wildMovePp,
+        {
+          attackerHp: wildState.hp,
+          attackerMaxHp: wildState.maxHp,
+        },
       );
   const wildNoPp = wildMovePp.length > 0 && wildMovePp.every((pp) => pp <= 0);
   const lockedPpIdx = lockedWild

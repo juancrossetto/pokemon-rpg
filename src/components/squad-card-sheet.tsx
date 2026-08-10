@@ -4,6 +4,8 @@ import { useState, type ReactNode } from "react";
 import { typeColor } from "@/lib/type-colors";
 import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
 import { EvolutionChainList } from "@/components/evolution-chain-list";
+import { AllocatePointsPanel } from "@/components/allocate-points-panel";
+import type { ManualStatKey } from "@/lib/stats";
 import type { EvolutionStage } from "@/lib/evolution-readiness";
 
 export type SquadCardTab = "about" | "stats" | "evolutions";
@@ -43,7 +45,32 @@ export type SquadCardSheetLabels = {
   evolving?: string;
 };
 
-/** Solapas About / Stats / Evolutions para cards de equipo. */
+export type SquadCardAllocate = {
+  level: number;
+  unspentPoints: number;
+  points: Record<ManualStatKey, number>;
+  bases: {
+    baseHp: number;
+    baseAttack: number;
+    baseDefense: number;
+    baseSpAtk: number;
+    baseSpDef: number;
+    baseSpeed: number;
+  };
+  onAllocated: (next: {
+    unspentPoints: number;
+    points: Record<ManualStatKey, number>;
+    maxHp: number;
+    currentHpDelta: number;
+    atk: number;
+    def: number;
+    spAtk: number;
+    spDef: number;
+    speed: number;
+  }) => void;
+};
+
+/** Solapas Stats / About / Evolutions para cards de equipo. */
 export function SquadCardSheet({
   labels,
   moves,
@@ -62,6 +89,7 @@ export function SquadCardSheet({
   instanceId,
   currentLevel,
   ownedEvolutionItems = [],
+  allocate,
 }: {
   labels: SquadCardSheetLabels;
   moves: SquadCardMoveSlot[];
@@ -81,8 +109,11 @@ export function SquadCardSheet({
   instanceId?: string;
   currentLevel?: number;
   ownedEvolutionItems?: string[];
+  /** Embebe ± de puntos en la pestaña Stats (sin panel extra bajo la card). */
+  allocate?: SquadCardAllocate;
 }) {
-  const [tab, setTab] = useState<SquadCardTab>("about");
+  const hasUnspent = (allocate?.unspentPoints ?? 0) > 0;
+  const [tab, setTab] = useState<SquadCardTab>("stats");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const hpPct = Math.max(0, Math.min(100, maxHp > 0 ? (currentHp / maxHp) * 100 : 0));
   const hpPctLabel = `${Math.round(hpPct)}%`;
@@ -92,8 +123,8 @@ export function SquadCardSheet({
   const slots = Array.from({ length: 4 }, (_, i) => moves[i] ?? null);
 
   const tabs: { id: SquadCardTab; label: string }[] = [
-    { id: "about", label: labels.tabAbout },
     { id: "stats", label: labels.tabStats },
+    { id: "about", label: labels.tabAbout },
     { id: "evolutions", label: labels.tabEvolutions },
   ];
 
@@ -171,7 +202,15 @@ export function SquadCardSheet({
                 active ? "text-white" : "text-white/40 hover:text-white/70",
               ].join(" ")}
             >
-              {t.label}
+              <span className="inline-flex items-center justify-center gap-0.5">
+                {t.label}
+                {t.id === "stats" && hasUnspent ? (
+                  <span
+                    className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400"
+                    aria-hidden
+                  />
+                ) : null}
+              </span>
               {active && (
                 <span className="absolute inset-x-1 bottom-0 h-0.5 rounded-full bg-white" />
               )}
@@ -253,15 +292,34 @@ export function SquadCardSheet({
           </ul>
         )}
 
-        {tab === "stats" && (
-          <div className={compact ? "space-y-1.5" : "space-y-2"}>
-            <MiniStatRow label={labels.atk} value={atk} pct={(atk / statMax) * 100} variant="stat" compact={compact} />
-            <MiniStatRow label={labels.def} value={def} pct={(def / statMax) * 100} variant="stat" compact={compact} />
-            <MiniStatRow label={labels.spAtk} value={spAtk} pct={(spAtk / statMax) * 100} variant="stat" compact={compact} />
-            <MiniStatRow label={labels.spDef} value={spDef} pct={(spDef / statMax) * 100} variant="stat" compact={compact} />
-            <MiniStatRow label={labels.speed} value={speed} pct={(speed / statMax) * 100} variant="stat" compact={compact} />
-          </div>
-        )}
+        {tab === "stats" &&
+          (allocate && instanceId && allocate.unspentPoints > 0 ? (
+            <AllocatePointsPanel
+              embedded
+              instanceId={instanceId}
+              level={allocate.level}
+              unspentPoints={allocate.unspentPoints}
+              points={allocate.points}
+              bases={allocate.bases}
+              onAllocated={allocate.onAllocated}
+              combatLabels={{
+                hp: labels.hp,
+                atk: labels.atk,
+                def: labels.def,
+                spAtk: labels.spAtk,
+                spDef: labels.spDef,
+                speed: labels.speed,
+              }}
+            />
+          ) : (
+            <div className={compact ? "space-y-1.5" : "space-y-2"}>
+              <MiniStatRow label={labels.atk} value={atk} pct={(atk / statMax) * 100} variant="stat" compact={compact} />
+              <MiniStatRow label={labels.def} value={def} pct={(def / statMax) * 100} variant="stat" compact={compact} />
+              <MiniStatRow label={labels.spAtk} value={spAtk} pct={(spAtk / statMax) * 100} variant="stat" compact={compact} />
+              <MiniStatRow label={labels.spDef} value={spDef} pct={(spDef / statMax) * 100} variant="stat" compact={compact} />
+              <MiniStatRow label={labels.speed} value={speed} pct={(speed / statMax) * 100} variant="stat" compact={compact} />
+            </div>
+          ))}
 
         {tab === "evolutions" && (
           <EvolutionChainList

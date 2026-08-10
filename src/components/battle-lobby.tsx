@@ -281,9 +281,6 @@ export function BattleLobby({
                   key={mon.speciesId}
                   className="group relative flex min-w-[4.5rem] flex-col items-center"
                 >
-                  <span className="absolute left-0 top-0 text-[9px] font-mono text-on-surface-variant/60">
-                    #{String(mon.speciesId).padStart(3, "0")}
-                  </span>
                   {mon.caught && (
                     <span
                       title={t("lobby.caught")}

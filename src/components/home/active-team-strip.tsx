@@ -13,7 +13,6 @@ import {
 } from "@/components/squad-card-context-menu";
 import { SquadCardSheet, type SquadCardSheetLabels } from "@/components/squad-card-sheet";
 import { PokemonShowcaseCard } from "@/components/pokemon-showcase-card";
-import { AllocatePointsPanel } from "@/components/allocate-points-panel";
 import { PokeSparks } from "@/components/poke-sparks";
 import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
 import type { HomeSquadMember } from "@/components/home/squad-types";
@@ -527,18 +526,14 @@ function TeamSlot({
                         instanceId={member.id}
                         currentLevel={member.level}
                         ownedEvolutionItems={member.ownedEvolutionItems}
+                        allocate={{
+                          level: member.level,
+                          unspentPoints: member.unspentPoints,
+                          points: member.points,
+                          bases: member.bases,
+                          onAllocated: (next) => onPointsAllocated(member.id, next),
+                        }}
                       />
-                      <div className="relative mt-1" onClick={(e) => e.stopPropagation()}>
-                        <AllocatePointsPanel
-                          instanceId={member.id}
-                          level={member.level}
-                          unspentPoints={member.unspentPoints}
-                          points={member.points}
-                          bases={member.bases}
-                          defaultOpen={member.unspentPoints > 0}
-                          onAllocated={(next) => onPointsAllocated(member.id, next)}
-                        />
-                      </div>
                     </div>
                   </PokemonShowcaseCard>
                 </SquadCardContextMenu>

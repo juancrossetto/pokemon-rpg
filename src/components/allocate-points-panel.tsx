@@ -68,6 +68,13 @@ export function AllocatePointsPanel({
   defaultOpen = false,
   /** Sin toggle: panel siempre desplegado (overlay del menú ⋮). */
   alwaysOpen = false,
+  /**
+   * Dentro de la pestaña Stats: filas compactas con ± junto al valor de
+   * combate, sin el cajón largo de “Asignar / Cerrar”.
+   */
+  embedded = false,
+  /** Etiquetas cortas de combate (ATQ / DEF…) para el layout embebido. */
+  combatLabels,
   onClose,
   onAllocated,
 }: {
@@ -78,6 +85,15 @@ export function AllocatePointsPanel({
   bases: SpeciesBases;
   defaultOpen?: boolean;
   alwaysOpen?: boolean;
+  embedded?: boolean;
+  combatLabels?: {
+    hp: string;
+    atk: string;
+    def: string;
+    spAtk: string;
+    spDef: string;
+    speed: string;
+  };
   onClose?: () => void;
   onAllocated?: (next: {
     unspentPoints: number;
@@ -106,7 +122,7 @@ export function AllocatePointsPanel({
   );
   const remaining = unspentPoints - spent;
   const canAllocate = unspentPoints > 0;
-  const expanded = alwaysOpen || open;
+  const expanded = embedded || alwaysOpen || open;
 
   function clearHold() {
     if (holdTimer.current) {
@@ -207,10 +223,191 @@ export function AllocatePointsPanel({
       resetDraft();
       if (alwaysOpen) {
         onClose?.();
-      } else {
+      } else if (!embedded) {
         setOpen(false);
       }
     });
+  }
+
+  const nextPoints = useMemo(
+    () =>
+      Object.fromEntries(
+        MANUAL_STAT_KEYS.map((k) => [k, points[k] + draft[k]]),
+      ) as CurrentPoints,
+    [points, draft],
+  );
+
+  const projectedCombat = useMemo(
+    () => ({
+      atk: calculateStat(bases.baseAttack, nextPoints.ptStrength, level),
+      def: calculateStat(bases.baseDefense, nextPoints.ptDexterity, level),
+      spAtk: calculateStat(bases.baseSpAtk, nextPoints.ptIntelligence, level),
+      spDef: calculateStat(bases.baseSpDef, nextPoints.ptIntelligence, level),
+      speed: calculateStat(bases.baseSpeed, nextPoints.ptSpeed, level),
+      hp: calculateMaxHp(bases.baseHp, level, nextPoints.ptConstitution),
+    }),
+    [bases, level, nextPoints],
+  );
+
+  // SpDef comparte puntos con SpA: valor proyectado sin ± propio.
+  const L = combatLabels;
+  const combatRows: {
+    key: ManualStatKey;
+    label: string;
+    value: number;
+    editable: boolean;
+  }[] = [
+    { key: "ptStrength", label: L?.atk ?? t("allocateAffects.atk"), value: projectedCombat.atk, editable: true },
+    { key: "ptDexterity", label: L?.def ?? t("allocateAffects.def"), value: projectedCombat.def, editable: true },
+    { key: "ptIntelligence", label: L?.spAtk ?? t("allocateAffects.spAtk"), value: projectedCombat.spAtk, editable: true },
+    { key: "ptIntelligence", label: L?.spDef ?? t("allocateAffects.spDef"), value: projectedCombat.spDef, editable: false },
+    { key: "ptSpeed", label: L?.speed ?? t("allocateAffects.speed"), value: projectedCombat.speed, editable: true },
+    { key: "ptConstitution", label: L?.hp ?? t("allocateAffects.hp"), value: projectedCombat.hp, editable: true },
+  ];
+
+  function renderStatControls(key: ManualStatKey, rowKey: string) {
+    const invested = points[key];
+    const adding = draft[key];
+    const atCap = invested + adding >= MAX_POINTS_PER_STAT;
+    return (
+      <div className="flex shrink-0 items-center gap-0.5">
+        <button
+          type="button"
+          aria-label="-"
+          disabled={adding <= 0 || pending}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            startHold(key, -1);
+          }}
+          onPointerUp={clearHold}
+          onPointerLeave={clearHold}
+          onPointerCancel={clearHold}
+          className="flex h-6 w-6 items-center justify-center rounded border border-white/10 text-on-surface transition hover:border-white/25 disabled:opacity-30"
+        >
+          <span className="material-symbols-outlined text-[13px]!">remove</span>
+        </button>
+        <span
+          className="min-w-[1.25rem] text-center font-mono text-[10px] tabular-nums text-white/70"
+          title={`${invested}${adding > 0 ? `+${adding}` : ""}/${MAX_POINTS_PER_STAT}`}
+        >
+          {adding > 0 ? `+${adding}` : "·"}
+        </span>
+        <button
+          type="button"
+          aria-label="+"
+          disabled={remaining <= 0 || atCap || pending}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            startHold(key, 1);
+          }}
+          onPointerUp={clearHold}
+          onPointerLeave={clearHold}
+          onPointerCancel={clearHold}
+          className="flex h-6 w-6 items-center justify-center rounded border border-white/10 text-on-surface transition hover:border-white/25 disabled:opacity-30"
+        >
+          <span className="material-symbols-outlined text-[13px]!">add</span>
+        </button>
+        {/* rowKey evita colisión SpA/SpD (misma key de puntos) en el map. */}
+        <span className="sr-only">{rowKey}</span>
+      </div>
+    );
+  }
+
+  function renderConfirmBar() {
+    if (!canAllocate) return null;
+    return (
+      <>
+        {error ? <p className="mt-1 text-[10px] text-error">{error}</p> : null}
+        <div className="mt-1.5 flex gap-1.5">
+          <button
+            type="button"
+            disabled={spent <= 0 || pending}
+            onClick={(e) => {
+              e.stopPropagation();
+              resetDraft();
+            }}
+            className="flex-1 rounded-md border border-white/10 px-2 py-1.5 text-[10px] font-semibold text-on-surface-variant transition hover:border-white/20 disabled:opacity-40"
+          >
+            {t("allocateReset")}
+          </button>
+          <button
+            type="button"
+            disabled={spent <= 0 || pending}
+            onClick={(e) => {
+              e.stopPropagation();
+              confirm();
+            }}
+            className="flex-[1.4] rounded-md border border-white/20 bg-white/15 px-2 py-1.5 text-[10px] font-bold text-white transition hover:bg-white/22 disabled:opacity-40"
+          >
+            {pending ? t("allocateSaving") : t("allocateConfirm", { count: spent })}
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  if (embedded) {
+    const barMax = Math.max(
+      projectedCombat.atk,
+      projectedCombat.def,
+      projectedCombat.spAtk,
+      projectedCombat.spDef,
+      projectedCombat.speed,
+      projectedCombat.hp,
+      180,
+    );
+
+    return (
+      <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+        {canAllocate ? (
+          <div className="flex items-center justify-between gap-2 px-0.5">
+            <p className="min-w-0 truncate text-[9px] leading-tight text-on-surface-variant">
+              {t("unspentPoints", { count: remaining })}
+            </p>
+          </div>
+        ) : null}
+
+        <div className="space-y-1">
+          {combatRows.map((row, i) => {
+            const pct = Math.max(0, Math.min(100, (row.value / barMax) * 100));
+            const adding = draft[row.key];
+            return (
+              <div
+                key={`${row.key}-${row.label}-${i}`}
+                className="grid grid-cols-[2.25rem_2.5rem_minmax(0,1fr)_auto] items-center gap-1"
+              >
+                <span className="text-[9px] font-bold uppercase tracking-wider text-white/45">
+                  {row.label}
+                </span>
+                <span
+                  className={[
+                    "text-right font-mono text-[11px] font-semibold tabular-nums",
+                    adding > 0 ? "text-emerald-300" : "text-white",
+                  ].join(" ")}
+                >
+                  {row.value}
+                </span>
+                <div className="h-2 overflow-hidden rounded-sm bg-white/10">
+                  <div
+                    className="h-full rounded-sm bg-white/35 transition-[width]"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {canAllocate && row.editable
+                  ? renderStatControls(row.key, `${row.label}-${i}`)
+                  : canAllocate
+                    ? <span className="w-[4.25rem]" aria-hidden />
+                    : null}
+              </div>
+            );
+          })}
+        </div>
+
+        {renderConfirmBar()}
+      </div>
+    );
   }
 
   return (
@@ -290,10 +487,6 @@ export function AllocatePointsPanel({
                 >
                   <div className="flex min-w-0 items-center gap-1.5">
                     <div className="min-w-0 flex-1">
-                      {/*
-                        Stats de combate primero; el atributo RPG va como
-                        meta en la misma línea para no sumar una fila.
-                      */}
                       <p className="truncate text-[11px] font-semibold leading-tight text-white">
                         {combatLabel}
                         <span className="ml-1 font-mono text-[11px] font-bold text-white">
@@ -392,30 +585,7 @@ export function AllocatePointsPanel({
             })}
           </div>
 
-          {canAllocate ? (
-            <>
-              {error && <p className="mt-1 text-[10px] text-error">{error}</p>}
-
-              <div className="mt-1.5 flex gap-1.5">
-                <button
-                  type="button"
-                  disabled={spent <= 0 || pending}
-                  onClick={resetDraft}
-                  className="flex-1 rounded-md border border-white/10 px-2 py-1.5 text-[10px] font-semibold text-on-surface-variant transition hover:border-white/20 disabled:opacity-40"
-                >
-                  {t("allocateReset")}
-                </button>
-                <button
-                  type="button"
-                  disabled={spent <= 0 || pending}
-                  onClick={confirm}
-                  className="flex-[1.4] rounded-md border border-white/20 bg-white/15 px-2 py-1.5 text-[10px] font-bold text-white transition hover:bg-white/22 disabled:opacity-40"
-                >
-                  {pending ? t("allocateSaving") : t("allocateConfirm", { count: spent })}
-                </button>
-              </div>
-            </>
-          ) : null}
+          {renderConfirmBar()}
         </div>
       )}
     </div>

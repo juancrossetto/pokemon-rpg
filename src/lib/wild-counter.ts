@@ -169,6 +169,10 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
         playerBase,
         playerState.hp,
         wildMovePp,
+        {
+          attackerHp: wildState.hp,
+          attackerMaxHp: wildState.maxHp,
+        },
       );
   const noPp = wildMovePp.length > 0 && wildMovePp.every((pp) => pp <= 0);
   const lockedPpIdx = lockedWild ? snapshots.findIndex((m) => m.id === lockedWild.id) : -1;

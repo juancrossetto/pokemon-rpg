@@ -54,7 +54,7 @@ function DockHpBar({ pct, fainted }: { pct: number; fainted: boolean }) {
   const toneClass =
     variant === "danger"
       ? "party-hp__fill--red"
-      : variant === "xp"
+      : variant === "stat"
         ? "party-hp__fill--yellow"
         : "party-hp__fill--ok";
   return (

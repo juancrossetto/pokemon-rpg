@@ -2098,8 +2098,12 @@ export function BattleArena({
           speed: stagedWild.speed,
         };
     const defenderHp = foeIsB ? wildBHp : wildHp;
+    const attackerHp = forB ? playerBHp : playerHp;
+    const attackerMaxHp = forB ? playerBMaxHp : playerMaxHp;
+    const recentKey = forB ? "B" : "A";
+    const recentMoveIds = autoRecentMoveIdsRef.current[recentKey] ?? [];
 
-    return pickAutoPlayerMoveId(
+    const picked = pickAutoPlayerMoveId(
       pool,
       {
         level: attackerLevel,
@@ -2113,7 +2117,18 @@ export function BattleArena({
       defender,
       defenderHp,
       forB ? null : choiceLockMoveId,
+      {
+        attackerHp,
+        attackerMaxHp,
+        recentMoveIds,
+      },
     );
+    const next = [...recentMoveIds, picked].slice(-6);
+    autoRecentMoveIdsRef.current = {
+      ...autoRecentMoveIdsRef.current,
+      [recentKey]: next,
+    };
+    return picked;
   }
 
   function pickAutoTargetLane(): "A" | "B" {
@@ -2151,10 +2166,12 @@ export function BattleArena({
 
   // AUTO: elige pelea → move (→ target en dobles) sin tocar el menú.
   // Pausa en mochila/equipo y en cambio forzado.
-  // Grace corto al primer momento accionable para poder apagar AUTO a tiempo.
+  // AUTO: historial corto de moves para romper bucles Absorber↔Absorber.
+  const autoRecentMoveIdsRef = useRef<{ A: number[]; B: number[] }>({ A: [], B: [] });
   const autoGraceUntilRef = useRef<number | null>(null);
   useEffect(() => {
     autoGraceUntilRef.current = null;
+    autoRecentMoveIdsRef.current = { A: [], B: [] };
   }, [battleId]);
 
   useEffect(() => {

@@ -39,8 +39,15 @@ export function SegmentedStatBar({
 }
 
 function segmentFill(variant: "xp" | "hp" | "stat" | "danger", t: number): string {
-  if (variant === "xp" || variant === "stat") {
-    // naranja → amarillo
+  if (variant === "xp") {
+    // Azul → celeste (alineado con .xp-gain-fill /ui/exp.png)
+    const r = Math.round(37 + (125 - 37) * t); // #2563eb → #7dd3fc
+    const g = Math.round(99 + (211 - 99) * t);
+    const b = Math.round(235 + (252 - 235) * t);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  if (variant === "stat") {
+    // naranja → amarillo (stats / HP medio)
     const r = Math.round(249 + (253 - 249) * t);
     const g = Math.round(115 + (224 - 115) * t);
     const b = Math.round(22 + (71 - 22) * t);
@@ -59,8 +66,9 @@ function segmentFill(variant: "xp" | "hp" | "stat" | "danger", t: number): strin
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-export function hpBarVariant(pct: number): "hp" | "xp" | "danger" {
+export function hpBarVariant(pct: number): "hp" | "stat" | "danger" {
   if (pct > 50) return "hp";
-  if (pct > 20) return "xp";
+  // Antes reutilizaba "xp" (naranja); EXP ahora es azul/celeste.
+  if (pct > 20) return "stat";
   return "danger";
 }

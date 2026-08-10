@@ -16,6 +16,13 @@ const SESSION_COOKIE_HINTS = [
   "__Secure-authjs.session-token",
 ];
 
+/** Labels del splash sin pasar por next-intl (el layout no debe esperar mensajes). */
+export const BOOT_SPLASH_LABELS: Record<string, string> = {
+  es: "Cargando",
+  en: "Loading",
+  pt: "Carregando",
+};
+
 export function markBootSplashPending(): void {
   try {
     sessionStorage.setItem(BOOT_SPLASH_KEY, "1");
@@ -73,18 +80,19 @@ export const BOOT_SPLASH_BG = "#0a0806";
 /**
  * CSS crítico del arranque, inline en el `<head>`.
  *
- * Incluye el layout del banner mobile: no depende de `globals.css` (hoja
- * externa). Así el primer paint ya es oscuro + arte, no el lienzo blanco.
+ * El splash es VISIBLE por defecto (no `display:none`). Se oculta sólo con
+ * `.boot-splash--out` / `html.boot-splash-done`. Así el primer paint ya es el
+ * banner aunque falle la clase `pending` o el JS temprano.
  */
 export function bootSplashCriticalCss(): string {
   const bg = BOOT_SPLASH_BG;
   return [
     `:root{color-scheme:dark;}`,
-    `html{background:${bg};}`,
-    `body{background:${bg};margin:0;}`,
-    `.boot-splash{position:fixed;inset:0;z-index:9999;display:none;`,
-    `flex-direction:column;background:${bg};}`,
-    `html.boot-splash-pending .boot-splash{display:flex;opacity:1;visibility:visible;pointer-events:auto;}`,
+    `html,body{background:${bg}!important;margin:0;}`,
+    `.boot-splash{position:fixed;inset:0;z-index:9999;display:flex;`,
+    `flex-direction:column;background:${bg};opacity:1;visibility:visible;pointer-events:auto;}`,
+    `html.boot-splash-done .boot-splash,`,
+    `.boot-splash.boot-splash--out{opacity:0!important;visibility:hidden!important;pointer-events:none!important;}`,
     `.boot-splash__mobile,.boot-splash__desktop{position:absolute;inset:0;display:flex;flex-direction:column;}`,
     `.boot-splash__mobile{display:flex;}`,
     `.boot-splash__desktop{display:none;align-items:center;justify-content:center;background:${bg};}`,
@@ -106,18 +114,23 @@ export function bootSplashCriticalCss(): string {
 
 /**
  * Corre en `<head>` antes del paint.
- * - Login/register o warmup ya hecho → sin splash.
- * - Cualquier otro cold start → `boot-splash-pending` (banner, no lienzo blanco).
+ * - Login/register o warmup ya hecho → ocultar splash al toque.
+ * - Cold start → dejar visible (es el default).
  */
 export function bootSplashEarlyScript(): string {
   return `(function(){try{
 var html=document.documentElement;
 var warm=${JSON.stringify(NAV_WARMUP_DONE_KEY)};
 var path=location.pathname||'';
+var splash=document.getElementById('boot-splash');
 if(/\\/(login|register)(\\/|$)/.test(path)||sessionStorage.getItem(warm)==='1'){
+html.classList.add('boot-splash-done');
 html.classList.remove('boot-splash-pending');
+if(splash)splash.classList.add('boot-splash--out');
 return;
 }
 html.classList.add('boot-splash-pending');
+html.classList.remove('boot-splash-done');
+if(splash)splash.classList.remove('boot-splash--out');
 }catch(e){}})();`;
 }

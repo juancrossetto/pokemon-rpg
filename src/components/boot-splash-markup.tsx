@@ -1,6 +1,9 @@
 /**
  * Markup estático del splash. Server Component (sin "use client").
  * Mobile: wallpaper Mewtwo. Desktop: Pokéball. El % lo anima el warmup.
+ *
+ * Estilos inline de emergencia: si el CSS crítico aún no aplicó, el lienzo
+ * ya es oscuro a pantalla completa (no blanco del UA).
  */
 export function BootSplashMarkup({
   label,
@@ -13,7 +16,7 @@ export function BootSplashMarkup({
   return (
     <div
       id="boot-splash"
-      className="boot-splash"
+      className={pending ? "boot-splash" : "boot-splash boot-splash--out"}
       role="progressbar"
       aria-live="polite"
       aria-busy={pending ? "true" : "false"}
@@ -21,6 +24,14 @@ export function BootSplashMarkup({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={0}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        background: "#0a0806",
+      }}
     >
       <div className="boot-splash__mobile">
         {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -11589,17 +11589,23 @@ html[data-nav-pending] .app-main {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  display: none;
+  display: flex;
   flex-direction: column;
   background: #0a0806;
   transition: opacity 420ms ease, visibility 420ms ease;
 }
 
 html.boot-splash-pending .boot-splash {
-  display: flex;
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+}
+
+html.boot-splash-done .boot-splash,
+.boot-splash.boot-splash--out {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .boot-splash--out {
