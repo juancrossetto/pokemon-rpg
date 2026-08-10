@@ -345,6 +345,19 @@ export function CoachMark({
 }) {
   const t = useTranslations("ux");
   const [show, setShow] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const tipRef = useRef<HTMLDivElement>(null);
+  const [tipStyle, setTipStyle] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   useEffect(() => {
     if (hasSeen(storageKey)) return;
@@ -353,6 +366,49 @@ export function CoachMark({
     if (oncePerSession) markSeenThisSession(storageKey);
   }, [storageKey, oncePerSession]);
 
+  useEffect(() => {
+    if (!show) return;
+
+    function place() {
+      const anchor = anchorRef.current;
+      if (!anchor) return;
+      const a = anchor.getBoundingClientRect();
+      const pad = 12;
+      const width = Math.min(260, Math.max(160, window.innerWidth - pad * 2));
+      let left = a.left + a.width / 2 - width / 2;
+      left = Math.max(pad, Math.min(left, window.innerWidth - width - pad));
+
+      // Preferimos debajo; si no entra, arriba.
+      const tipH = tipRef.current?.offsetHeight || 96;
+      const below = a.bottom + 8;
+      const above = a.top - tipH - 8;
+      const top =
+        align === "top" || below + tipH > window.innerHeight - pad
+          ? Math.max(pad, above)
+          : below;
+
+      setTipStyle({ top, left, width });
+    }
+
+    // Dos frames: el primero monta el tip, el segundo ya tiene su alto real.
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      place();
+      raf2 = requestAnimationFrame(place);
+    });
+    const main = document.querySelector(".app-main");
+    window.addEventListener("resize", place);
+    window.visualViewport?.addEventListener("resize", place);
+    main?.addEventListener("scroll", place, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      window.removeEventListener("resize", place);
+      window.visualViewport?.removeEventListener("resize", place);
+      main?.removeEventListener("scroll", place);
+    };
+  }, [show, align, message]);
+
   function dismiss() {
     markSeen(storageKey);
     markSeenThisSession(storageKey);
@@ -360,25 +416,41 @@ export function CoachMark({
   }
 
   return (
-    <div className={`relative ${className}`}>
+    <div ref={anchorRef} className={`relative ${className}`}>
       {children}
-      {show && (
-        <div
-          className={`absolute left-1/2 z-30 w-[min(260px,80vw)] -translate-x-1/2 rounded-xl border border-electric-yellow/40 bg-surface-container-highest p-3 shadow-xl ${
-            align === "bottom" ? "top-full mt-2" : "bottom-full mb-2"
-          }`}
-          role="status"
-        >
-          <p className="text-label-sm text-on-surface">{message}</p>
-          <button
-            type="button"
-            onClick={dismiss}
-            className="mt-2 text-[11px] font-bold uppercase tracking-wider text-electric-yellow"
-          >
-            {t("coachGotIt")}
-          </button>
-        </div>
-      )}
+      {show && mounted
+        ? createPortal(
+            <div
+              ref={tipRef}
+              className="fixed z-[60] rounded-xl border border-electric-yellow/40 bg-surface-container-highest p-3 shadow-xl"
+              style={
+                tipStyle
+                  ? {
+                      top: tipStyle.top,
+                      left: tipStyle.left,
+                      width: tipStyle.width,
+                    }
+                  : {
+                      // Primer frame: fuera de pantalla hasta medir (evita flash cortado).
+                      top: -9999,
+                      left: -9999,
+                      width: Math.min(260, window.innerWidth - 24),
+                    }
+              }
+              role="status"
+            >
+              <p className="text-label-sm text-on-surface">{message}</p>
+              <button
+                type="button"
+                onClick={dismiss}
+                className="mt-2 text-[11px] font-bold uppercase tracking-wider text-electric-yellow"
+              >
+                {t("coachGotIt")}
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
