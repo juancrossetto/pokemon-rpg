@@ -24,13 +24,19 @@ function read(): Metrics {
   const bodyRect = document.body.getBoundingClientRect();
   const vv = window.visualViewport;
 
-  // Safe area real: la leemos pintando el env() en un elemento de prueba.
-  const probe = document.createElement("div");
-  probe.style.cssText =
-    "position:fixed;left:-9999px;height:env(safe-area-inset-bottom,0px);";
-  document.body.appendChild(probe);
-  const safeBottom = Math.round(probe.getBoundingClientRect().height);
-  probe.remove();
+  // Safe areas reales: las leemos pintando el env() en elementos de prueba.
+  const measureEnv = (expr: string) => {
+    const probe = document.createElement("div");
+    probe.style.cssText = `position:fixed;left:-9999px;height:${expr};`;
+    document.body.appendChild(probe);
+    const px = Math.round(probe.getBoundingClientRect().height);
+    probe.remove();
+    return px;
+  };
+  const safeBottom = measureEnv("env(safe-area-inset-bottom,0px)");
+  const safeTop = measureEnv("env(safe-area-inset-top,0px)");
+  // Lo que sobra: si es > 0, el webview no cubre la pantalla.
+  const faltanteVsPantalla = window.screen.height - window.innerHeight;
 
   return {
     standaloneMQ: window.matchMedia("(display-mode: standalone)").matches,
@@ -41,7 +47,9 @@ function read(): Metrics {
     screenH: window.screen.height,
     vvH: vv ? Math.round(vv.height) : "-",
     vvOffsetTop: vv ? Math.round(vv.offsetTop) : "-",
+    safeTop,
     safeBottom,
+    FALTA: faltanteVsPantalla,
     bodyTop: Math.round(bodyRect.top),
     bodyH: Math.round(bodyRect.height),
     bodyBottom: Math.round(bodyRect.bottom),
@@ -100,7 +108,9 @@ export function StandaloneViewportDebug() {
       {Object.entries(metrics).map(([k, v]) => (
         <span key={k} style={{ whiteSpace: "nowrap" }}>
           <span style={{ color: "#8891a8" }}>{k}</span>{" "}
-          <span style={{ color: k === "HUECO" ? "#FF6B6B" : "#7CFFB2" }}>{String(v)}</span>
+          <span style={{ color: k === "HUECO" || k === "FALTA" ? "#FF6B6B" : "#7CFFB2" }}>
+            {String(v)}
+          </span>
         </span>
       ))}
     </div>

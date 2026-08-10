@@ -43,7 +43,24 @@ export async function generateMetadata({
     appleWebApp: {
       capable: true,
       title: "PokeRPG",
-      statusBarStyle: "black-translucent",
+      /*
+       * `black` y no `black-translucent`.
+       *
+       * Con `black-translucent` iOS dibuja el contenido desde y=0 (debajo de la
+       * barra de estado) pero le asigna al webview la altura como si la barra
+       * fuera opaca. Medido en el iPhone: `screen.height` 852 contra
+       * `innerHeight` / `clientHeight` / `visualViewport.height` 793 — 59pt,
+       * justo el alto de la barra de estado. Como el webview arranca arriba de
+       * todo y mide 59pt de menos, sobra esa banda negra abajo, y el dock
+       * (correctamente pegado al fondo del viewport: `HUECO` daba 0) queda
+       * despegado del borde físico.
+       *
+       * Con la barra opaca el viewport arranca debajo de ella y ocupa el resto
+       * completo. `env(safe-area-inset-top)` pasa a 0, que es lo correcto: el
+       * contenido ya no se dibuja bajo la barra, así que los paddings que la
+       * compensaban dejan de sumar de más.
+       */
+      statusBarStyle: "black",
     },
   };
 }
