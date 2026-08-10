@@ -2927,6 +2927,44 @@ export function BattleArena({
           onSwitch={handleSwitchTo}
         />
       ) : null}
+      {view === "bag" ? (
+        <BagView
+          isAnimating={isAnimating}
+          showBalls={!isTrainerStyle}
+          ballStacks={ballStacks}
+          potionStacks={potionStacks}
+          potionsDisabled={playerHp >= playerMaxHp}
+          revivesDisabled={!hasFaintedBench}
+          onThrowBall={handleThrowBall}
+          onUsePotion={handleUsePotion}
+          onUseRevive={handlePickRevive}
+          onBack={() => setView("menu")}
+        />
+      ) : null}
+      {view === "reviveTargets" ? (
+        <ReviveTargetView
+          isAnimating={isAnimating}
+          itemName={pendingReviveName}
+          roster={teamRoster}
+          onRevive={handleConfirmRevive}
+          onBack={() => {
+            setPendingReviveItemId(null);
+            setView("bag");
+          }}
+        />
+      ) : null}
+      {view === "team" && !mustSwitch ? (
+        <TeamView
+          isAnimating={isAnimating}
+          mustSwitch={mustSwitch}
+          roster={teamRoster}
+          foeName={activeWild.name}
+          foeTypes={activeWild.types}
+          matchupInfo={switchMatchupInfo}
+          onSwitch={handleSwitchTo}
+          onBack={() => setView("menu")}
+        />
+      ) : null}
       <div className="battle-layout relative z-[1] mx-auto w-full max-w-7xl px-1.5 py-0.5 sm:px-2 md:px-3 md:py-1.5 lg:max-w-[100rem]">
         {/*
           < lg: stage centrado 753 + party, como antes.
@@ -3798,46 +3836,18 @@ export function BattleArena({
               );
             })()}
 
-            {view === "bag" && (
-              <BagView
-                isAnimating={isAnimating}
-                showBalls={!isTrainerStyle}
-                ballStacks={ballStacks}
-                potionStacks={potionStacks}
-                potionsDisabled={playerHp >= playerMaxHp}
-                revivesDisabled={!hasFaintedBench}
-                onThrowBall={handleThrowBall}
-                onUsePotion={handleUsePotion}
-                onUseRevive={handlePickRevive}
-                onBack={() => setView("menu")}
-              />
-            )}
-
-            {view === "reviveTargets" && (
-              <ReviveTargetView
-                isAnimating={isAnimating}
-                itemName={pendingReviveName}
-                roster={teamRoster}
-                onRevive={handleConfirmRevive}
-                onBack={() => {
-                  setPendingReviveItemId(null);
-                  setView("bag");
-                }}
-              />
-            )}
-
-            {view === "team" && (
-              <TeamView
-                isAnimating={isAnimating}
-                mustSwitch={mustSwitch}
-                roster={teamRoster}
-                foeName={activeWild.name}
-                foeTypes={activeWild.types}
-                matchupInfo={switchMatchupInfo}
-                onSwitch={handleSwitchTo}
-                onBack={() => setView("menu")}
-              />
-            )}
+            {view === "bag" || view === "reviveTargets" || view === "team" ? (
+              <div className="flex h-full min-h-0 flex-col items-center justify-center gap-1 px-2 text-center">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/35">
+                  {view === "bag"
+                    ? t("bagTitle")
+                    : view === "team"
+                      ? t("pokemonMenu")
+                      : pendingReviveName}
+                </p>
+                <p className="text-[12px] text-white/45">{t("selectCommand")}</p>
+              </div>
+            ) : null}
           </div>
         </div>
         </div>

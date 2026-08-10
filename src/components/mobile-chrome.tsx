@@ -972,8 +972,8 @@ export function MobileChrome({
                 <Image
                   src={lockedIconSrc}
                   alt=""
-                  width={32}
-                  height={32}
+                  width={24}
+                  height={24}
                   className="mobile-nav-status__art"
                   unoptimized
                   priority

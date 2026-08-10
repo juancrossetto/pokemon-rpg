@@ -5,11 +5,13 @@
 // animaciones) siguen viviendo en battle-arena.tsx y entran por props.
 
 import Image from "next/image";
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { typeColor } from "@/lib/type-colors";
 import { formatMoveName } from "@/lib/format-move-name";
 import { formatMoveEffectText } from "@/lib/format-move-effect";
 import { itemSpriteUrl } from "@/lib/item-sprites";
+import { itemHdIconUrl } from "@/lib/item-hd-icons";
 import type {
   BattleMoveOption,
   MoveCategory,
@@ -302,106 +304,174 @@ export function BagView({
   const hasPotions = healStacks.length > 0;
   const hasRevives = reviveStacks.length > 0;
 
+  type BagTab = "balls" | "heals" | "revives";
+  const tabs: { id: BagTab; label: string; count: number }[] = [];
+  if (hasBalls) tabs.push({ id: "balls", label: t("pokeballsLabel"), count: ballStacks.length });
+  if (hasPotions) tabs.push({ id: "heals", label: t("potionsLabel"), count: healStacks.length });
+  if (hasRevives) tabs.push({ id: "revives", label: t("revivesLabel"), count: reviveStacks.length });
+
+  const firstTab = tabs[0]?.id ?? "balls";
+  const [tab, setTab] = useState<BagTab>(firstTab);
+  const activeTab = tabs.some((x) => x.id === tab) ? tab : firstTab;
+
+  const sectionHint =
+    activeTab === "heals" && potionsDisabled
+      ? t("bagHealsDisabled")
+      : activeTab === "revives" && revivesDisabled
+        ? t("bagRevivesDisabled")
+        : t("bagPickHint");
+
   return (
-    <div className="flex flex-col gap-1 md:gap-2 h-full min-h-0">
-      <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
-        <div>
-          <p className="text-xs md:text-sm font-bold text-primary">{t("bagTitle")}</p>
-          <p className="text-[10px] md:text-label-sm uppercase text-on-surface-variant tracking-wider">
-            {t("selectCommand")}
-          </p>
+    <div
+      className="battle-bag-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="battle-bag-title"
+    >
+      <button
+        type="button"
+        className="battle-bag-sheet__scrim"
+        aria-label={t("back")}
+        disabled={isAnimating}
+        onClick={onBack}
+      />
+      <div className="battle-bag-sheet__panel">
+        <header className="battle-bag-sheet__head">
+          <div className="battle-bag-sheet__grab" aria-hidden />
+          <div className="battle-bag-sheet__title-row">
+            <div className="min-w-0">
+              <p id="battle-bag-title" className="battle-bag-sheet__title">
+                {t("bagTitle")}
+              </p>
+              <p className="battle-bag-sheet__sub">{sectionHint}</p>
+            </div>
+            <button
+              type="button"
+              disabled={isAnimating}
+              onClick={onBack}
+              className="battle-bag-sheet__close"
+              aria-label={t("back")}
+            >
+              <span className="material-symbols-outlined" aria-hidden>
+                close
+              </span>
+            </button>
+          </div>
+          {tabs.length > 1 ? (
+            <div className="battle-bag-sheet__tabs" role="tablist" aria-label={t("bagTitle")}>
+              {tabs.map((x) => (
+                <button
+                  key={x.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === x.id}
+                  className={`battle-bag-sheet__tab${
+                    activeTab === x.id ? " battle-bag-sheet__tab--active" : ""
+                  }`}
+                  onClick={() => setTab(x.id)}
+                >
+                  <span>{x.label}</span>
+                  <span className="battle-bag-sheet__tab-count">{x.count}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </header>
+
+        <div className="battle-bag-sheet__body">
+          {!hasBalls && !hasPotions && !hasRevives ? (
+            <p className="battle-bag-sheet__empty">{t("bagEmpty")}</p>
+          ) : null}
+
+          {activeTab === "balls" && hasBalls ? (
+            <div className="battle-bag-grid">
+              {ballStacks.map((b) => (
+                <BagItemTile
+                  key={b.itemId}
+                  name={b.name}
+                  quantity={b.quantity}
+                  disabled={isAnimating}
+                  onClick={() => onThrowBall(b.itemId, b.name)}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          {activeTab === "heals" && hasPotions ? (
+            <div className="battle-bag-grid">
+              {healStacks.map((p) => (
+                <BagItemTile
+                  key={p.itemId}
+                  name={p.name}
+                  quantity={p.quantity}
+                  detail={`+${p.healAmount} HP`}
+                  disabled={isAnimating || potionsDisabled}
+                  onClick={() => onUsePotion(p.itemId)}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          {activeTab === "revives" && hasRevives ? (
+            <div className="battle-bag-grid">
+              {reviveStacks.map((p) => (
+                <BagItemTile
+                  key={p.itemId}
+                  name={p.name}
+                  quantity={p.quantity}
+                  detail={
+                    p.name === "Max Revive" ? t("reviveFullHint") : t("reviveHalfHint")
+                  }
+                  disabled={isAnimating || revivesDisabled}
+                  onClick={() => onUseRevive(p.itemId)}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
-        <BackButton disabled={isAnimating} onBack={onBack} label={t("back")} />
-      </div>
-      <div className="flex flex-col gap-1.5 md:gap-2 flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-        {!hasBalls && !hasPotions && !hasRevives && (
-          <p className="text-label-md text-on-surface-variant text-center py-6">{t("bagEmpty")}</p>
-        )}
-        {hasBalls && (
-          <div className="flex flex-col gap-2">
-            <span className="text-label-sm uppercase text-on-surface-variant">{t("pokeballsLabel")}</span>
-            {ballStacks.map((b) => (
-              <button
-                key={b.itemId}
-                type="button"
-                disabled={isAnimating}
-                onClick={() => onThrowBall(b.itemId, b.name)}
-                className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Image
-                  src={itemSpriteUrl(b.name)}
-                  alt=""
-                  width={32}
-                  height={32}
-                  unoptimized
-                  className="w-8 h-8 object-contain [image-rendering:pixelated] shrink-0"
-                />
-                <span className="flex-1 text-left text-label-md text-on-surface font-bold">{b.name}</span>
-                <span className="text-label-sm text-on-surface-variant tabular-nums">×{b.quantity}</span>
-              </button>
-            ))}
-          </div>
-        )}
-        {hasPotions && (
-          <div className="flex flex-col gap-2">
-            <span className="text-label-sm uppercase text-on-surface-variant">{t("potionsLabel")}</span>
-            {healStacks.map((p) => (
-              <button
-                key={p.itemId}
-                type="button"
-                disabled={isAnimating || potionsDisabled}
-                onClick={() => onUsePotion(p.itemId)}
-                className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Image
-                  src={itemSpriteUrl(p.name)}
-                  alt=""
-                  width={32}
-                  height={32}
-                  unoptimized
-                  className="w-8 h-8 object-contain [image-rendering:pixelated] shrink-0"
-                />
-                <div className="flex-1 text-left">
-                  <p className="text-label-md text-on-surface font-bold">{p.name}</p>
-                  <p className="text-label-sm text-on-surface-variant">+{p.healAmount} HP</p>
-                </div>
-                <span className="text-label-sm text-on-surface-variant tabular-nums">×{p.quantity}</span>
-              </button>
-            ))}
-          </div>
-        )}
-        {hasRevives && (
-          <div className="flex flex-col gap-2">
-            <span className="text-label-sm uppercase text-on-surface-variant">{t("revivesLabel")}</span>
-            {reviveStacks.map((p) => (
-              <button
-                key={p.itemId}
-                type="button"
-                disabled={isAnimating || revivesDisabled}
-                onClick={() => onUseRevive(p.itemId)}
-                className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Image
-                  src={itemSpriteUrl(p.name)}
-                  alt=""
-                  width={32}
-                  height={32}
-                  unoptimized
-                  className="w-8 h-8 object-contain [image-rendering:pixelated] shrink-0"
-                />
-                <div className="flex-1 text-left">
-                  <p className="text-label-md text-on-surface font-bold">{p.name}</p>
-                  <p className="text-label-sm text-on-surface-variant">
-                    {p.name === "Max Revive" ? t("reviveFullHint") : t("reviveHalfHint")}
-                  </p>
-                </div>
-                <span className="text-label-sm text-on-surface-variant tabular-nums">×{p.quantity}</span>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </div>
+  );
+}
+
+function BagItemTile({
+  name,
+  quantity,
+  detail,
+  disabled,
+  onClick,
+}: {
+  name: string;
+  quantity: number;
+  detail?: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const hd = itemHdIconUrl(name);
+  const src = hd ?? itemSpriteUrl(name);
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="battle-bag-tile disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      <span className="battle-bag-tile__qty" aria-hidden>
+        ×{quantity}
+      </span>
+      <span className="battle-bag-tile__art">
+        <Image
+          src={src}
+          alt=""
+          width={64}
+          height={64}
+          unoptimized
+          className={`h-full w-full object-contain${hd ? "" : " [image-rendering:pixelated]"}`}
+        />
+      </span>
+      <span className="battle-bag-tile__name">{name}</span>
+      {detail ? <span className="battle-bag-tile__detail">{detail}</span> : null}
+    </button>
   );
 }
 
@@ -580,23 +650,53 @@ export function TeamView({
   if (mustSwitch) return null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-1 md:gap-1.5">
-      <div className="flex shrink-0 items-center justify-between gap-2 px-0.5">
-        <p className="text-xs font-bold text-primary md:text-sm">{t("pokemonMenu")}</p>
-        <BackButton disabled={isAnimating} onBack={onBack} label={t("back")} small />
-      </div>
-      <div className="shrink-0 px-0.5">
-        <SwitchFoeChips foeName={foeName} foeTypes={foeTypes} />
-      </div>
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <SwitchPickGrid
-          roster={roster}
-          isAnimating={isAnimating}
-          highlightReady={false}
-          matchupInfo={matchupInfo}
-          onSwitch={onSwitch}
-          dense
-        />
+    <div
+      className="battle-bag-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="battle-team-title"
+    >
+      <button
+        type="button"
+        className="battle-bag-sheet__scrim"
+        aria-label={t("back")}
+        disabled={isAnimating}
+        onClick={onBack}
+      />
+      <div className="battle-bag-sheet__panel battle-bag-sheet__panel--team">
+        <header className="battle-bag-sheet__head">
+          <div className="battle-bag-sheet__grab" aria-hidden />
+          <div className="battle-bag-sheet__title-row">
+            <div className="min-w-0">
+              <p id="battle-team-title" className="battle-bag-sheet__title">
+                {t("pokemonMenu")}
+              </p>
+              <div className="mt-1.5">
+                <SwitchFoeChips foeName={foeName} foeTypes={foeTypes} />
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={isAnimating}
+              onClick={onBack}
+              className="battle-bag-sheet__close"
+              aria-label={t("back")}
+            >
+              <span className="material-symbols-outlined" aria-hidden>
+                close
+              </span>
+            </button>
+          </div>
+        </header>
+        <div className="battle-bag-sheet__body">
+          <SwitchPickGrid
+            roster={roster}
+            isAnimating={isAnimating}
+            highlightReady={false}
+            matchupInfo={matchupInfo}
+            onSwitch={onSwitch}
+          />
+        </div>
       </div>
     </div>
   );
@@ -618,57 +718,95 @@ export function ReviveTargetView({
 }) {
   const t = useTranslations("battle");
   const targets = roster.filter((m) => m.currentHp <= 0);
+  const hd = itemHdIconUrl(itemName);
+  const itemIcon = hd ?? itemSpriteUrl(itemName);
 
   return (
-    <div className="flex flex-col gap-1 md:gap-2 h-full min-h-0">
-      <div className="flex items-center justify-between gap-2 px-0.5 shrink-0">
-        <div>
-          <p className="text-xs md:text-sm font-bold text-primary">{itemName}</p>
-          <p className="text-[10px] md:text-label-sm text-on-surface-variant">
-            {t("reviveSelectPrompt")}
-          </p>
-        </div>
-        <BackButton disabled={isAnimating} onBack={onBack} label={t("back")} />
-      </div>
-      <div className="flex flex-col gap-1.5 md:gap-2 flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-        {targets.length === 0 ? (
-          <p className="text-label-md text-on-surface-variant text-center py-6">
-            {t("reviveNoTargets")}
-          </p>
-        ) : (
-          targets.map((m) => (
-            <button
-              key={m.instanceId}
-              type="button"
-              disabled={isAnimating}
-              onClick={() => onRevive(m)}
-              className="battle-bag-card disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {m.spriteUrl && (
+    <div
+      className="battle-bag-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="battle-revive-title"
+    >
+      <button
+        type="button"
+        className="battle-bag-sheet__scrim"
+        aria-label={t("back")}
+        disabled={isAnimating}
+        onClick={onBack}
+      />
+      <div className="battle-bag-sheet__panel battle-bag-sheet__panel--revive">
+        <header className="battle-bag-sheet__head">
+          <div className="battle-bag-sheet__grab" aria-hidden />
+          <div className="battle-bag-sheet__title-row">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="battle-bag-sheet__item-thumb">
                 <Image
-                  src={m.spriteUrl}
-                  alt={m.name}
+                  src={itemIcon}
+                  alt=""
                   width={40}
                   height={40}
-                  className="w-10 h-10 object-contain"
+                  unoptimized
+                  className={`h-full w-full object-contain${hd ? "" : " [image-rendering:pixelated]"}`}
                 />
-              )}
-              <div className="flex-1 text-left min-w-0">
-                <div className="flex justify-between items-baseline gap-2">
-                  <span className="text-label-md text-on-surface font-bold capitalize truncate">
-                    {m.name}
-                  </span>
-                  <span className="text-label-sm text-on-surface-variant shrink-0">
-                    {t("level", { level: m.level })}
-                  </span>
-                </div>
-                <span className="mt-1 inline-block rounded bg-error/25 px-1 text-label-sm font-bold uppercase text-error">
-                  {t("fainted")}
-                </span>
+              </span>
+              <div className="min-w-0">
+                <p id="battle-revive-title" className="battle-bag-sheet__title">
+                  {itemName}
+                </p>
+                <p className="battle-bag-sheet__sub">{t("reviveSelectPrompt")}</p>
               </div>
+            </div>
+            <button
+              type="button"
+              disabled={isAnimating}
+              onClick={onBack}
+              className="battle-bag-sheet__close"
+              aria-label={t("back")}
+            >
+              <span className="material-symbols-outlined" aria-hidden>
+                close
+              </span>
             </button>
-          ))
-        )}
+          </div>
+        </header>
+
+        <div className="battle-bag-sheet__body">
+          {targets.length === 0 ? (
+            <p className="battle-bag-sheet__empty">{t("reviveNoTargets")}</p>
+          ) : (
+            <div className="battle-bag-revive-list">
+              {targets.map((m) => (
+                <button
+                  key={m.instanceId}
+                  type="button"
+                  disabled={isAnimating}
+                  onClick={() => onRevive(m)}
+                  className="battle-bag-revive-row disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <span className="battle-bag-revive-row__art">
+                    {m.spriteUrl ? (
+                      <Image
+                        src={m.spriteUrl}
+                        alt=""
+                        width={56}
+                        height={56}
+                        className="h-full w-full object-contain"
+                      />
+                    ) : null}
+                  </span>
+                  <span className="battle-bag-revive-row__copy">
+                    <span className="battle-bag-revive-row__name">{m.name}</span>
+                    <span className="battle-bag-revive-row__meta">
+                      {t("level", { level: m.level })}
+                    </span>
+                  </span>
+                  <span className="battle-bag-revive-row__ko">{t("fainted")}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

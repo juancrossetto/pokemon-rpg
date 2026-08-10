@@ -97,11 +97,12 @@ export function BattleScreen({
     return null;
   }
 
-  // Altura hasta el tope del dock. Con `--bottom-nav-h` (nav medido completo)
-  // y nav locked sin padding FAB, los comandos quedan arriba de "EN COMBATE".
+  // Altura hasta el tope del dock (`--bottom-sheet-inset` incluye safe-area).
+  // En combate locked el dock es una franja baja: usar sheet-inset (no el
+  // fallback 5.25rem del FAB) libera arena / party / comandos.
   // `--app-vh` = innerHeight (iOS). El `-mb` anula `.pb-bottom-nav`.
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden max-md:-mb-[calc(var(--bottom-nav-h,5.25rem)+env(safe-area-inset-bottom,0px)+1.75rem+var(--vv-gap,0px))] h-[calc(var(--app-vh,100dvh)-3.5rem-env(safe-area-inset-top,0px)-var(--bottom-nav-h,5.25rem)-0.5rem)] xl:mb-0 xl:h-[calc(var(--app-vh,100dvh)-3.5rem)]">
+    <div className="flex min-h-0 flex-col overflow-hidden max-md:-mb-[calc(var(--bottom-nav-h,5.25rem)+env(safe-area-inset-bottom,0px)+1.75rem+var(--vv-gap,0px))] h-[calc(var(--app-vh,100dvh)-3.5rem-env(safe-area-inset-top,0px)-var(--bottom-sheet-inset,var(--bottom-nav-h,5.25rem))-0.25rem)] xl:mb-0 xl:h-[calc(var(--app-vh,100dvh)-3.5rem)]">
       <BattleArena key={battle.battleId} {...battle} />
     </div>
   );
