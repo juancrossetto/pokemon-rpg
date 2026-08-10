@@ -1,12 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type AnimationEvent,
+} from "react";
 import { signOut, useSession } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
 import { avatarById } from "@/lib/avatars";
 import { useOptimisticAvatarId } from "@/components/optimistic-avatar";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
+
+type PanelPhase = "closed" | "open" | "closing";
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
 
 /**
  * Menú de cuenta. Solo cuenta: los módulos de juego (equipo, inventario, PC)
@@ -37,8 +51,9 @@ export function UserMenu({
   handbookLabel?: string;
   onHandbook?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [phase, setPhase] = useState<PanelPhase>("closed");
   const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
   const resolvedAvatarId = useOptimisticAvatarId(
     avatarId,
@@ -46,13 +61,43 @@ export function UserMenu({
   );
   const avatar = avatarById(resolvedAvatarId);
 
+  const open = phase === "open";
+  const panelVisible = phase !== "closed";
+
+  function requestClose() {
+    setPhase((current) => {
+      if (current !== "open") return current;
+      return prefersReducedMotion() ? "closed" : "closing";
+    });
+  }
+
+  function togglePanel() {
+    if (phase === "closing") return;
+    if (phase === "open") {
+      requestClose();
+      return;
+    }
+    setPhase("open");
+  }
+
+  function onPanelAnimationEnd(event: AnimationEvent<HTMLDivElement>) {
+    if (event.target !== panelRef.current) return;
+    if (
+      event.animationName &&
+      !event.animationName.includes("notifications-panel-out")
+    ) {
+      return;
+    }
+    setPhase((current) => (current === "closing" ? "closed" : current));
+  }
+
   useEffect(() => {
     if (!open) return;
     function onPointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)) requestClose();
     }
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") requestClose();
     }
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKey);
@@ -69,25 +114,35 @@ export function UserMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={name}
-        onClick={() => setOpen((v) => !v)}
+        onClick={togglePanel}
         // El contenedor sigue la silueta de la placa: con `rounded-full` el
         // anillo de foco dibujaba un círculo alrededor de un avatar cuadrado.
         className="group relative flex items-center justify-center rounded-[28%] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40"
         data-loot-target="avatar"
       >
-        <TrainerAvatar name={name} src={avatar?.src ?? null} size="xs" active={open} />
+        <TrainerAvatar
+          name={name}
+          src={avatar?.src ?? null}
+          size="xs"
+          active={open || phase === "closing"}
+        />
       </button>
 
-      {open && (
+      {panelVisible && (
         <div
+          ref={panelRef}
           role="menu"
-          className="user-menu-panel absolute right-0 top-full z-50 mt-2 w-62 overflow-hidden rounded-2xl border border-white/12 bg-[#16181e]/96 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur-xl"
+          onAnimationEnd={onPanelAnimationEnd}
+          className={[
+            "user-menu-panel absolute right-0 top-full z-50 mt-2 w-62 overflow-hidden rounded-2xl border border-white/12 bg-[#16181e]/96 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur-xl",
+            phase === "closing" ? "is-closing" : "is-open",
+          ].join(" ")}
         >
           {/* Perfil + entrenador fusionados: toda la cabecera lleva a /profile */}
           <Link
             href={profileHref}
             role="menuitem"
-            onClick={() => setOpen(false)}
+            onClick={requestClose}
             className="group/profile flex items-center gap-3 px-3.5 py-3 transition-colors hover:bg-white/4"
           >
             <TrainerAvatar name={name} src={avatar?.src ?? null} size="md" />
@@ -112,7 +167,7 @@ export function UserMenu({
                 type="button"
                 role="menuitem"
                 onClick={() => {
-                  setOpen(false);
+                  requestClose();
                   onHandbook();
                 }}
                 className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-[13px] text-on-surface transition-colors hover:bg-white/6"

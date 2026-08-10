@@ -180,7 +180,7 @@ const TONE = {
     track: "border-white/12 bg-[#12161f]",
   },
   gems: {
-    value: "text-white",
+    value: "text-fuchsia-100",
     plus: "text-white/55 hover:text-gem hover:bg-white/8",
     ring: "focus-visible:ring-gem/50",
     track: "border-white/12 bg-[#12161f]",
@@ -631,7 +631,7 @@ export function ResourceBar({
                 height={22}
                 className="h-[22px] w-[22px] object-contain"
               />
-              <span className="font-mono text-[11px] font-semibold tabular-nums text-gem">
+              <span className="font-mono text-[11px] font-semibold tabular-nums text-fuchsia-100">
                 <ResourceDeltaValue kind="gems" value={gems} />
               </span>
             </span>

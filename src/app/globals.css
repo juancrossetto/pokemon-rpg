@@ -12723,20 +12723,19 @@ html.boot-splash-pending .boot-splash {
   pointer-events: none;
 }
 
+/* Misma animación que el panel de notificaciones (origen top-right). */
 .user-menu-panel {
   transform-origin: top right;
-  animation: user-menu-panel-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
 }
 
-@keyframes user-menu-panel-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.user-menu-panel.is-open {
+  animation: notifications-panel-in 0.48s cubic-bezier(0.34, 1.56, 0.45, 1) both;
+}
+
+.user-menu-panel.is-closing {
+  animation: notifications-panel-out 0.34s cubic-bezier(0.55, 0.08, 0.68, 0.4) both;
+  pointer-events: none;
 }
 
 /*
@@ -12957,7 +12956,8 @@ html.boot-splash-pending .boot-splash {
   .mobile-nav-sheet.is-closing,
   .mobile-nav-sheet-backdrop.is-open,
   .mobile-nav-sheet-backdrop.is-closing,
-  .user-menu-panel,
+  .user-menu-panel.is-open,
+  .user-menu-panel.is-closing,
   .notifications-panel.is-open,
   .notifications-panel.is-closing {
     animation: none !important;
