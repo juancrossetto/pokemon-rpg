@@ -2674,7 +2674,9 @@
     "viewJourney": "Ver a Jornada",
     "stickyExplore": "Sair para explorar",
     "movedHere": "Agora você está em {name}.",
-    "stageSet": "Trecho ativo: {name}."
+    "stageSet": "Trecho ativo: {name}.",
+    "nextChallenge": "Próximo desafio",
+    "gymOfType": "Ginásio {type}"
   },
   "levelUp": {
     "title": "{name} · Nv. {level}",
@@ -3016,6 +3018,8 @@
       "locked": "Bloqueado",
       "lockedHint": "Ginásio {order}"
     },
+    "musicMute": "Silenciar música",
+    "musicUnmute": "Ativar música",
     "banner": {
       "change": "Mudar banner",
       "title": "Escolha seu banner",

@@ -1,4 +1,7 @@
 import { getTranslations, getLocale } from "next-intl/server";
+import { gymLeaderBustUrl } from "@/lib/gym-art";
+import { typeColor } from "@/lib/type-colors";
+import { HomeRouteHero, type HomeNextChallenge } from "@/components/home/home-route-hero";
 import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -164,6 +167,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     tEvents,
     tProfile,
     tCampaign,
+    tTypes,
     tPvp,
     userRow,
     trainerStats,
@@ -175,6 +179,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     getTranslations("events"),
     getTranslations("profile"),
     getTranslations("campaign"),
+    getTranslations("pokedex.pokemonTypes"),
     getTranslations("pvp"),
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
@@ -306,6 +311,19 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         })
       : null;
   const eliteGymHref = eliteGym ? `/gyms/${eliteGym.id}` : null;
+
+  /*
+    Líder del hito, para el panel "próximo desafío" del hero mobile. Es una
+    consulta más sólo cuando el hito es un gimnasio; en rutas y región
+    completa el panel no se dibuja.
+  */
+  const milestoneGym =
+    milestone?.kind === "gym"
+      ? await prisma.gym.findFirst({
+          where: { order: milestone.gymOrder, regionId: progress.currentRegionId },
+          select: { leaderName: true, type: true },
+        })
+      : null;
   const nextStep = getNextStep({
     teamSize: pokemon.length,
     badgeCount: regularBadgeCount,
@@ -370,6 +388,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         speciesName: instance.species.name,
         types: instance.species.types,
         spriteUrl: spriteFor(instance.species.spriteUrl, instance.isShiny),
+        isShiny: instance.isShiny,
         currentHp: instance.currentHp,
         maxHp,
         xpPct,
@@ -568,6 +587,17 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           }),
         }
       : null;
+
+  const nextChallenge: HomeNextChallenge | null = milestoneGym
+    ? {
+        title: milestoneGym.leaderName,
+        subtitle: tCampaign("gymOfType", {
+          type: tTypes(milestoneGym.type.toLowerCase() as "normal"),
+        }),
+        imageUrl: gymLeaderBustUrl(milestoneGym.leaderName),
+        accent: typeColor(milestoneGym.type),
+      }
+    : null;
 
   const combatPower = pokemon.reduce(
     (sum, p) =>
@@ -876,6 +906,8 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     },
     eventsPanel: {
       progressTitle: t("hub.objectives.progressTitle"),
+      objectivesTitle: t("hub.objectives.title"),
+      rewardsTitle: t("hub.objectives.rewards"),
       emptyAdventure: t("hub.objectives.empty"),
       emptyWeekly: t("hub.objectives.emptyWeekly"),
       emptyEvent: t("hub.objectives.emptyEvent"),
@@ -916,6 +948,11 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       <HomeGameHub
       locale={locale}
       expedition={expeditionProps}
+      routeHero={
+        expeditionProps ? (
+          <HomeRouteHero expedition={expeditionProps} nextChallenge={nextChallenge} />
+        ) : null
+      }
       nextStep={nextStep.standalone ? <NextStepCard step={nextStep} /> : null}
       events={{
         daily: eventsSummary.daily,

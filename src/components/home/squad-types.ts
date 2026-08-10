@@ -61,6 +61,8 @@ export type HomeSquadMember = {
   speciesName: string;
   types: string[];
   spriteUrl: string;
+  /** Variocolor — sube la rareza a legendaria en las cards del home. */
+  isShiny: boolean;
   currentHp: number;
   maxHp: number;
   xpPct: number;

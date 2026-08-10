@@ -2674,7 +2674,9 @@
     "viewJourney": "Ver el Viaje",
     "stickyExplore": "Salir a explorar",
     "movedHere": "Ahora estás en {name}.",
-    "stageSet": "Tramo activo: {name}."
+    "stageSet": "Tramo activo: {name}.",
+    "nextChallenge": "Próximo desafío",
+    "gymOfType": "Gimnasio {type}"
   },
   "levelUp": {
     "title": "{name} · Nv. {level}",
@@ -3016,6 +3018,8 @@
       "locked": "Bloqueado",
       "lockedHint": "Gimnasio {order}"
     },
+    "musicMute": "Silenciar música",
+    "musicUnmute": "Activar música",
     "banner": {
       "change": "Cambiar banner",
       "title": "Elegí tu banner",

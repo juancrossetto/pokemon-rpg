@@ -10,6 +10,7 @@ import { playCenterHealFx } from "@/components/heal-button";
 import { healTeam } from "@/actions/heal-team";
 import { playUiSfx } from "@/lib/battle-sfx";
 import { announceCoinDelta } from "@/lib/coin-fx";
+import { HomeObjectivesRail } from "@/components/home/home-objectives-rail";
 import { announceHomeTeamHealed } from "@/lib/home-heal-fx";
 import {
   HEAL_COOLDOWN_MINUTES,
@@ -485,6 +486,10 @@ export function HomeEventsProgress({
   limited: HomeEventsLimited;
   labels: {
     progressTitle: string;
+    /** "Objetivos de zona" — título del carrusel mobile. */
+    objectivesTitle: string;
+    /** "Recompensas" — título del bloque de recompensa final. */
+    rewardsTitle: string;
     emptyAdventure: string;
     emptyWeekly: string;
     emptyEvent: string;
@@ -513,6 +518,42 @@ export function HomeEventsProgress({
         ? "adventure"
         : "weekly",
   );
+
+  /**
+   * Cobra y devuelve la recompensa, para que el carrusel mobile pueda
+   * mostrarla en el centro antes de que el vuelo la lleve al header.
+   */
+  async function claimObjectiveAsync(
+    objectiveId: string,
+    origin?: { x: number; y: number },
+  ): Promise<{ src: string; label: string } | null> {
+    if (!adventure.zoneId || pending) return null;
+    const { claimZoneObjective } = await import("@/actions/zone-rewards");
+    const { playLootCollectFx, rewardToLootPiece } = await import("@/lib/loot-fly-fx");
+    const { itemDisplayUrl } = await import("@/lib/item-sprites");
+    const result = await claimZoneObjective(locale, adventure.zoneId!, objectiveId);
+    if (!result.ok) return null;
+    setClaimedIds((prev) => new Set(prev).add(objectiveId));
+    playLootCollectFx({
+      origin,
+      coinsDelta: result.coins,
+      pieces: [
+        ...(result.coins > 0
+          ? [rewardToLootPiece({ kind: "coins", amount: result.coins })]
+          : []),
+        rewardToLootPiece({
+          kind: "item",
+          itemName: result.itemName,
+          quantity: result.quantity,
+        }),
+      ],
+    });
+    router.refresh();
+    return {
+      src: itemDisplayUrl(result.itemName, "hd"),
+      label: `${result.itemName} ×${result.quantity}`,
+    };
+  }
 
   function claimObjective(objectiveId: string, origin?: { x: number; y: number }) {
     if (!adventure.zoneId || pending) return;
@@ -622,9 +663,25 @@ export function HomeEventsProgress({
 
   return (
     <section className="min-w-0">
-      {/* Misma card con pestañas en mobile y desktop: el HUD resumido de mobile
-          no listaba objetivos ni dejaba cambiar de Aventura/Semanal/Evento. */}
-      <div className="ev-quest" style={{ ["--ev-accent" as string]: TAB_ACCENT[tab] }}>
+      {/* Mobile: carrusel de anillos con la recompensa de ruta. La card con
+          pestañas sigue de lg para arriba, donde además hay semanales y
+          evento limitado. */}
+      <HomeObjectivesRail
+        objectives={adventure.objectives}
+        title={labels.objectivesTitle}
+        rewardTitle={labels.rewardsTitle}
+        claimLabel={labels.claimAction}
+        claimedLabel={labels.claimed}
+        onClaim={claimObjectiveAsync}
+      />
+
+      {/* `ev-quest--desktop` y no `hidden lg:block`: `.ev-quest` declara
+          `display:flex` más abajo en la hoja y con la misma especificidad le
+          gana a la utilidad, así que el panel se colaba en mobile. */}
+      <div
+        className="ev-quest ev-quest--desktop"
+        style={{ ["--ev-accent" as string]: TAB_ACCENT[tab] }}
+      >
         <div className="ev-ribbon">
           <span
             aria-hidden

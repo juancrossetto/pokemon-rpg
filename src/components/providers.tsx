@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { OptimisticAvatarProvider } from "@/components/optimistic-avatar";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { AppBootWarmup } from "@/components/app-boot-warmup";
+import { WorldBgmController } from "@/components/world-bgm-controller";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +12,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <OptimisticAvatarProvider>
         <NavigationProgress />
         <AppBootWarmup />
+        <WorldBgmController />
         {children}
       </OptimisticAvatarProvider>
     </SessionProvider>

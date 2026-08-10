@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { CurrentExpedition, type CurrentExpeditionProps } from "@/components/current-expedition";
 import { ActiveTeamStrip } from "@/components/home/active-team-strip";
+import { HomeSquadCards } from "@/components/home/home-squad-cards";
 import { DailyGiftModal, type GiftModalLabels } from "@/components/events/daily-gift-modal";
 import { HomeIdentityBanner } from "@/components/home/home-identity-banner";
 import {
@@ -52,6 +53,8 @@ export type HomeHubLabels = {
   };
   eventsPanel: {
     progressTitle: string;
+    objectivesTitle: string;
+    rewardsTitle: string;
     emptyAdventure: string;
     emptyWeekly: string;
     emptyEvent: string;
@@ -73,6 +76,7 @@ export type HomeHubLabels = {
 export function HomeGameHub({
   locale,
   expedition,
+  routeHero,
   nextStep,
   events,
   giftLabels,
@@ -87,6 +91,8 @@ export function HomeGameHub({
 }: {
   locale: string;
   expedition: CurrentExpeditionProps | null;
+  /** Hero mobile (Server Component armado en la page). */
+  routeHero: ReactNode;
   nextStep: ReactNode;
   events: {
     daily: DailyState;
@@ -162,13 +168,22 @@ export function HomeGameHub({
               />
             )}
 
+            {/*
+              Mobile lleva el hero de ruta (arte de mapa + CTA único); de lg
+              para arriba sigue `CurrentExpedition`, que aprovecha el ancho.
+              El `NextStepCard` también queda fuera de mobile: el hero ya es
+              el llamado a la acción y dos compitiendo es justo lo que este
+              rediseño vino a sacar.
+            */}
+            {routeHero}
+
             {expedition ? (
-              <div className="xl:hidden">
+              <div className="hidden lg:block xl:hidden">
                 <CurrentExpedition {...expedition} />
               </div>
             ) : null}
 
-            {nextStep && <div className="shrink-0">{nextStep}</div>}
+            {nextStep && <div className="hidden shrink-0 lg:block">{nextStep}</div>}
 
             <section className="home-ops-deck game-float-card min-w-0 overflow-visible rounded-[1.25rem] p-2.5 sm:p-3">
               {/* Quick access / acciones diarias: solo desktop; en mobile el
@@ -180,6 +195,17 @@ export function HomeGameHub({
                 />
                 <div className="home-ops-deck__rule my-2.5 sm:my-3" aria-hidden />
               </div>
+              {/* Mobile: vitrina en carrusel. De lg para arriba sigue el strip,
+                  que tiene el detalle expandible y las acciones por Pokémon. */}
+              <HomeSquadCards
+                members={squad.members}
+                title={squad.title}
+                manageHref={squad.manageHref}
+                manageLabel={squad.manageLabel}
+                leadLabel={squad.leadLabel}
+              />
+
+              <div className="hidden lg:block">
               <ActiveTeamStrip
                 key={squad.layoutKey}
                 locale={locale}
@@ -195,6 +221,7 @@ export function HomeGameHub({
                 manageLabel={squad.manageLabel}
                 onCompanionTypesChange={setCompanionTypes}
               />
+              </div>
             </section>
 
             <HomeEventsProgress

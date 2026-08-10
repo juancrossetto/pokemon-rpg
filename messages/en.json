@@ -2674,7 +2674,9 @@
     "viewJourney": "View Journey",
     "stickyExplore": "Head out to explore",
     "movedHere": "You're now in {name}.",
-    "stageSet": "Active stretch: {name}."
+    "stageSet": "Active stretch: {name}.",
+    "nextChallenge": "Next challenge",
+    "gymOfType": "{type} Gym"
   },
   "levelUp": {
     "title": "{name} · Lv. {level}",
@@ -3016,6 +3018,8 @@
       "locked": "Locked",
       "lockedHint": "Gym {order}"
     },
+    "musicMute": "Mute music",
+    "musicUnmute": "Unmute music",
     "banner": {
       "change": "Change banner",
       "title": "Choose your banner",

@@ -177,18 +177,20 @@ export function CurrentExpedition({
   }
 
   return (
-    <section className="expedition-hero relative flex min-h-[9.5rem] flex-col overflow-hidden rounded-2xl border border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.55)] sm:min-h-[240px] lg:min-h-[300px]">
+    <section className="expedition-hero relative flex min-h-[12.5rem] flex-col overflow-hidden rounded-[1.25rem] border border-white/12 shadow-[0_16px_48px_rgba(0,0,0,0.55)] sm:min-h-[240px] lg:min-h-[300px]">
       <div className="pointer-events-none absolute inset-0">
         <Image
           src={mapSrc}
           alt=""
           fill
-          className="expedition-hero__bg object-cover object-[center_38%] scale-[1.06] opacity-60"
+          className="expedition-hero__bg object-cover object-[center_38%] scale-[1.06] opacity-70"
           sizes="(max-width: 768px) 100vw, 900px"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/25" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-black/20" />
+        {/* Stage: mapa arriba, HUD abajo — menos velo plano, más profundidad. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/10" />
+        <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-black/95 via-black/55 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-transparent to-transparent" />
         <ExpeditionAmbient kind={locationKind} />
       </div>
 
@@ -202,29 +204,29 @@ export function CurrentExpedition({
         triggerLabel={t("openMap")}
       />
 
-      <div className="pointer-events-none relative z-[1] flex flex-1 flex-col justify-between gap-2 p-2.5 sm:gap-3.5 sm:p-4">
+      <div className="pointer-events-none relative z-[1] flex flex-1 flex-col justify-between gap-3 p-3 sm:gap-3.5 sm:p-4">
         <div className="flex items-start justify-between gap-2 sm:gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-pokeball-red sm:text-[11px] sm:tracking-[0.18em]">
               {t(regionNameKey)}
             </p>
-            <h2 className="page-title mt-0.5 truncate text-[18px] leading-none tracking-tight text-white sm:text-[24px]">
+            <h2 className="page-title mt-0.5 truncate text-[20px] leading-none tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)] sm:text-[24px]">
               {t(locationNameKey)}
             </h2>
-            <p className="truncate text-[11px] leading-snug text-white/65 sm:mt-0.5 sm:text-[13px]">
+            <p className="mt-1 truncate text-[11px] leading-snug text-white/70 sm:text-[13px]">
               <span className="font-mono text-secondary">
                 Nv. {levelMin}–{levelMax}
               </span>
-              <span className="mx-1 hidden text-white/30 sm:mx-1.5 sm:inline">·</span>
-              <span className="hidden sm:inline">{t(stageNameKey)}</span>
-              <span className="mx-1 hidden text-white/30 sm:mx-1.5 sm:inline">·</span>
-              <span className="hidden text-white/50 sm:inline">{t(locationKindKey)}</span>
+              <span className="mx-1.5 text-white/30">·</span>
+              <span className="text-white/55">{t(stageNameKey)}</span>
+              <span className="mx-1.5 hidden text-white/30 sm:inline">·</span>
+              <span className="hidden text-white/45 sm:inline">{t(locationKindKey)}</span>
             </p>
           </div>
 
           {wildTypes.length > 0 && (
             <ul
-              className="pointer-events-auto flex shrink-0 flex-wrap items-center justify-end gap-0.5 sm:gap-1"
+              className="pointer-events-auto flex shrink-0 flex-wrap items-center justify-end gap-1"
               aria-label={t("predictedTypes")}
             >
               {wildTypes.slice(0, 3).map((type) => {
@@ -233,7 +235,7 @@ export function CurrentExpedition({
                 return (
                   <li key={type}>
                     <span
-                      className="flex h-6 w-6 items-center justify-center rounded-full border sm:h-8 sm:w-8"
+                      className="flex h-7 w-7 items-center justify-center rounded-full border shadow-[0_4px_12px_rgba(0,0,0,0.35)] sm:h-8 sm:w-8"
                       style={{
                         background: `radial-gradient(circle at 35% 30%, ${color}ee, ${color}88)`,
                         borderColor: `${color}aa`,
@@ -248,7 +250,7 @@ export function CurrentExpedition({
                         width={16}
                         height={16}
                         unoptimized
-                        className="h-2.5 w-2.5 object-contain brightness-110 sm:h-3.5 sm:w-3.5"
+                        className="h-3 w-3 object-contain brightness-110 sm:h-3.5 sm:w-3.5"
                       />
                     </span>
                   </li>
@@ -258,9 +260,9 @@ export function CurrentExpedition({
           )}
         </div>
 
-        <div className="space-y-1.5 sm:space-y-2.5">
+        <div className="space-y-2.5 sm:space-y-2.5">
           {guideSteps.length > 0 ? (
-            <ol className="pointer-events-auto flex flex-col gap-1 rounded-xl border border-white/10 bg-black/35 px-2.5 py-2 backdrop-blur-sm">
+            <ol className="expedition-guide pointer-events-auto flex flex-col gap-0.5">
               {guideSteps.map((step, i) => {
                 const isCurrent = step.status === "current";
                 const isDone = step.status === "done";
@@ -268,24 +270,32 @@ export function CurrentExpedition({
                   <li key={step.id}>
                     <Link
                       href={step.href}
-                      className={`flex items-center gap-2 rounded-lg px-1.5 py-1 text-[11px] leading-snug transition ${
+                      className={[
+                        "expedition-guide__row flex items-center gap-2.5 rounded-lg px-1 py-1 text-[12px] leading-snug transition",
                         isCurrent
-                          ? "bg-electric-yellow/15 text-white"
+                          ? "expedition-guide__row--current text-white"
                           : isDone
-                            ? "text-white/45"
-                            : "text-white/55 hover:text-white/80"
-                      }`}
+                            ? "text-white/50"
+                            : "text-white/45 hover:text-white/75",
+                      ].join(" ")}
                     >
                       <span
-                        className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
+                        className={[
+                          "expedition-guide__mark grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold",
                           isCurrent
-                            ? "bg-electric-yellow text-black"
+                            ? "expedition-guide__mark--current"
                             : isDone
-                              ? "bg-emerald-500/30 text-emerald-200"
-                              : "bg-white/10 text-white/50"
-                        }`}
+                              ? "expedition-guide__mark--done"
+                              : "bg-white/10 text-white/45 ring-1 ring-white/15",
+                        ].join(" ")}
                       >
-                        {isDone ? "✓" : i + 1}
+                        {isDone ? (
+                          <span className="material-symbols-outlined text-[14px]! leading-none">
+                            check
+                          </span>
+                        ) : (
+                          i + 1
+                        )}
                       </span>
                       <span className={isCurrent ? "font-semibold" : undefined}>
                         {t(`guide.steps.${step.id}`)}
@@ -297,7 +307,7 @@ export function CurrentExpedition({
             </ol>
           ) : stagesTotal > 0 ? (
             <div>
-              <div className="mb-0.5 flex items-center justify-between gap-2 text-[10px] text-white/55 sm:mb-1 sm:text-[11px] sm:text-white/60">
+              <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-white/55 sm:text-[11px]">
                 <span>{t("journeyProgress")}</span>
                 <span className="font-mono tabular-nums text-white/80">
                   {stagesDone}/{stagesTotal}
@@ -308,22 +318,22 @@ export function CurrentExpedition({
                 aria-valuenow={stagesDone}
                 aria-valuemin={0}
                 aria-valuemax={stagesTotal}
-                className="h-1.5 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10 sm:h-2"
+                className="h-2 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10"
               >
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-pokeball-red to-electric-yellow transition-[width] duration-500"
+                  className="h-full rounded-full bg-gradient-to-r from-[#2563eb] via-[#0ea5e9] to-[#22d3ee] transition-[width] duration-500"
                   style={{ width: `${stagePct}%` }}
                 />
               </div>
             </div>
           ) : null}
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-stretch gap-2 sm:gap-2.5">
             <div className="pointer-events-auto min-w-0 flex-1">
               <GameCtaButton
                 href={ctaHref}
                 variant="red"
-                className="expedition-cta w-full min-h-11! px-3! py-2! text-[13px]! sm:min-h-12! sm:px-[1.1rem]! sm:py-[0.55rem]! sm:text-[13px]!"
+                className="expedition-cta expedition-cta--stage w-full min-h-12! px-3! py-2.5! text-[14px]! sm:min-h-12! sm:px-[1.1rem]! sm:py-[0.55rem]! sm:text-[13px]!"
               >
                 {ctaLabel}
               </GameCtaButton>
@@ -332,7 +342,7 @@ export function CurrentExpedition({
               href="/campaign"
               aria-label={t("journeyGuide")}
               title={t("journeyGuide")}
-              className="pointer-events-auto inline-flex h-11 w-11 shrink-0 items-center justify-center transition hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 sm:h-12 sm:w-12"
+              className="expedition-map-fab pointer-events-auto inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-black/45 shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition hover:scale-105 hover:border-white/25 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 sm:h-12 sm:w-12"
             >
               <Image
                 src="/nav/location-icon.png?v=2"
@@ -340,7 +350,7 @@ export function CurrentExpedition({
                 width={44}
                 height={44}
                 draggable={false}
-                className="h-9 w-9 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)] sm:h-10 sm:w-10"
+                className="h-8 w-8 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.55)]"
                 unoptimized
               />
             </Link>

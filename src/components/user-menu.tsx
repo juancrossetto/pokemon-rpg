@@ -7,11 +7,18 @@ import {
   type AnimationEvent,
 } from "react";
 import { signOut, useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { avatarById } from "@/lib/avatars";
 import { useOptimisticAvatarId } from "@/components/optimistic-avatar";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
+import {
+  isWorldBgmMuted,
+  setWorldBgmMuted,
+  unlockWorldBgm,
+  WORLD_BGM_MUTE_EVENT,
+} from "@/lib/world-bgm";
 
 type PanelPhase = "closed" | "open" | "closing";
 
@@ -51,7 +58,9 @@ export function UserMenu({
   handbookLabel?: string;
   onHandbook?: () => void;
 }) {
+  const t = useTranslations("profile");
   const [phase, setPhase] = useState<PanelPhase>("closed");
+  const [musicMuted, setMusicMuted] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
@@ -63,6 +72,22 @@ export function UserMenu({
 
   const open = phase === "open";
   const panelVisible = phase !== "closed";
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      setMusicMuted(isWorldBgmMuted());
+    });
+    function onChange(e: Event) {
+      const detail = (e as CustomEvent<{ muted: boolean }>).detail;
+      if (detail && typeof detail.muted === "boolean") setMusicMuted(detail.muted);
+      else setMusicMuted(isWorldBgmMuted());
+    }
+    window.addEventListener(WORLD_BGM_MUTE_EVENT, onChange);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener(WORLD_BGM_MUTE_EVENT, onChange);
+    };
+  }, []);
 
   function requestClose() {
     setPhase((current) => {
@@ -78,6 +103,15 @@ export function UserMenu({
       return;
     }
     setPhase("open");
+  }
+
+  function toggleMusicMute() {
+    const next = !musicMuted;
+    setMusicMuted(next);
+    setWorldBgmMuted(next);
+    // Sólo desbloqueamos autoplay al activar; si muteamos primero y luego
+    // unlock, iOS puede volver a disparar play encima del mute.
+    if (!next) unlockWorldBgm();
   }
 
   function onPanelAnimationEnd(event: AnimationEvent<HTMLDivElement>) {
@@ -106,6 +140,8 @@ export function UserMenu({
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  const musicLabel = musicMuted ? t("musicUnmute") : t("musicMute");
 
   return (
     <div ref={rootRef} className="relative">
@@ -162,6 +198,18 @@ export function UserMenu({
           <div className="mx-3 h-px bg-linear-to-r from-transparent via-white/12 to-transparent" />
 
           <div className="p-1.5">
+            <button
+              type="button"
+              role="menuitemcheckbox"
+              aria-checked={musicMuted}
+              onClick={toggleMusicMute}
+              className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-[13px] text-on-surface transition-colors hover:bg-white/6"
+            >
+              <span className="material-symbols-outlined text-[18px]! text-sky-300">
+                {musicMuted ? "volume_off" : "volume_up"}
+              </span>
+              {musicLabel}
+            </button>
             {handbookLabel && onHandbook ? (
               <button
                 type="button"

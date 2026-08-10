@@ -45,6 +45,8 @@ export function HomeIdentityBanner({
   const standingLabel = `${pvpTierLabel} ${divisionRoman(identity.pvpDivision as PvpDivision)}`;
   const profileArt =
     identity.avatarStageSrc ?? identity.avatarProfileSrc ?? identity.avatarSrc;
+  /** Busto `*1` para mobile; si no hay, se queda con el cuerpo entero. */
+  const bustArt = identity.avatarSrc ?? null;
 
   const mainType = (identity.companionTypes[0] ?? "normal").toLowerCase();
   const fluorFrom = neonTypeColor(mainType);
@@ -115,19 +117,32 @@ export function HomeIdentityBanner({
 
         {profileArt ? (
           <div className="home-identity__avatar pointer-events-none absolute z-[5] flex items-end justify-center">
-            <Image
-              src={profileArt}
-              alt=""
-              width={280}
-              height={360}
-              priority
-              draggable={false}
-              className="home-identity__avatar-img drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)]"
-              unoptimized
-            />
+            {/*
+              Art direction, no zoom. En mobile el cuerpo entero se ve lejos
+              porque el banner es bajo, pero escalarlo recorta distinto en cada
+              avatar (las poses no coinciden) y a varios les come la cabeza.
+              Debajo de sm va el busto `*1`, que ya viene encuadrado por el
+              artista; de sm para arriba sigue el `stageSrc` de cuerpo entero.
+              `<picture>` descarga sólo la fuente que aplica — con dos `Image`
+              y clases de visibilidad se bajarían las dos.
+            */}
+            <picture className="home-identity__avatar-pic">
+              {bustArt ? <source media="(min-width: 640px)" srcSet={profileArt} /> : null}
+              <img
+                src={bustArt ?? profileArt}
+                alt=""
+                width={280}
+                height={360}
+                draggable={false}
+                className="home-identity__avatar-img drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)]"
+              />
+            </picture>
           </div>
         ) : null}
       </div>
+
+      {/* Único movimiento del banner: un brillo que cruza cada 7 s. */}
+      <div aria-hidden className="home-identity__sheen" />
 
       {/* Marco en nueve piezas. Va en su propia capa y no como borde de la
           sección: un borde se pinta debajo de los hijos posicionados, así que
@@ -141,7 +156,7 @@ export function HomeIdentityBanner({
       {/* Mobile */}
       <Link
         href="/profile"
-        className="home-identity__hit relative z-[2] flex h-full min-h-[7rem] items-center gap-2 pr-[42%] sm:hidden"
+        className="home-identity__hit relative z-[2] flex h-full min-h-[7rem] items-center gap-2 pr-[37%] sm:hidden"
         aria-label={labels.viewProfile}
       >
         <div className="home-identity__copy min-w-0 flex-1 space-y-1.5">
@@ -164,33 +179,42 @@ export function HomeIdentityBanner({
               />
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-semibold tabular-nums text-white/88">
-            <span>
-              {labels.level} {identity.level}
+          {/*
+            Chips en vez de una línea de texto con separadores: los mismos
+            datos, pero cada uno con su cápsula e ícono. En mobile el renglón
+            plano se leía como un pie de foto, no como el HUD de un juego.
+          */}
+          <div className="identity-chips">
+            <span className="identity-chip">
+              <span className="identity-chip__key">{labels.level}</span>
+              <span className="identity-chip__val">{identity.level}</span>
             </span>
-            <span className="h-2.5 w-px bg-white/25" aria-hidden />
             <span
-              className="font-bold"
-              style={{ color: `color-mix(in srgb, ${fluorFrom} 68%, white)` }}
+              className="identity-chip identity-chip--accent"
+              style={{ "--chip-accent": fluorFrom } as CSSProperties}
             >
-              <span className="font-semibold opacity-80">{labels.combatPower}</span>{" "}
-              {cpFormatted}
+              <Image
+                src="/nav/cp-profile.png"
+                alt=""
+                width={14}
+                height={14}
+                className="identity-chip__icon"
+                unoptimized
+              />
+              <span className="identity-chip__val">{cpFormatted}</span>
             </span>
             {identity.clanName ? (
-              <>
-                <span className="h-2.5 w-px bg-white/25" aria-hidden />
-                <span className="inline-flex min-w-0 items-center gap-1 truncate text-white/90">
-                  {identity.clanEmblem != null ? (
-                    <ClanEmblemBadge
-                      emblem={identity.clanEmblem}
-                      size={13}
-                      title={identity.clanName}
-                      className="shrink-0"
-                    />
-                  ) : null}
-                  <span className="truncate">{identity.clanName}</span>
-                </span>
-              </>
+              <span className="identity-chip identity-chip--clan">
+                {identity.clanEmblem != null ? (
+                  <ClanEmblemBadge
+                    emblem={identity.clanEmblem}
+                    size={13}
+                    title={identity.clanName}
+                    className="shrink-0"
+                  />
+                ) : null}
+                <span className="identity-chip__val truncate">{identity.clanName}</span>
+              </span>
             ) : null}
           </div>
         </div>

@@ -133,6 +133,21 @@ export function gymLeaderPortraitUrl(leaderName: string): string | null {
 }
 
 /**
+ * Busto — paneles chicos donde el cuerpo entero queda diminuto.
+ *
+ * `{slug}1.png` es el plano corto del avatar; `2.png` es el cuerpo completo,
+ * que en una card de 8 rem deja la cara en 20 px. Fuera del Alto Mando cae al
+ * mismo retrato que `gymLeaderPortraitUrl`.
+ */
+export function gymLeaderBustUrl(leaderName: string): string | null {
+  const avatarSlug = LEADER_AVATAR_BODY_SLUG[leaderName];
+  if (avatarSlug) {
+    return `/avatars/${avatarSlug}1.png`;
+  }
+  return gymLeaderPortraitUrl(leaderName);
+}
+
+/**
  * Ancho/alto real de `/gyms/portraits/{slug}.png`.
  * Los más anchos (Koga, Chuck…) se ven más chicos con `object-contain`
  * en un hero alto; `gymLeaderPortraitScale` compensa.
