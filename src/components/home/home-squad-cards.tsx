@@ -9,6 +9,7 @@ import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar"
 import { showdownTypeSymbolUrl } from "@/lib/type-icons";
 import { typeColor } from "@/lib/type-colors";
 import { calculateMaxHp, calculateStat } from "@/lib/stats";
+import { squadTypeWallpaper } from "@/lib/squad-type-wallpapers";
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { CSSProperties } from "react";
 
@@ -86,6 +87,7 @@ export function HomeSquadCards({
         {members.map((m, index) => {
           const primaryType = m.types[0] ?? "normal";
           const accent = typeColor(primaryType);
+          const wallpaper = squadTypeWallpaper(primaryType);
           const power = memberPower(m);
           const hpPct =
             m.maxHp > 0 ? Math.max(0, Math.min(100, (m.currentHp / m.maxHp) * 100)) : 0;
@@ -95,18 +97,29 @@ export function HomeSquadCards({
             <li key={m.id} className="squad-cards__item">
               <Link
                 href={`/team?focus=${m.id}`}
-                className={`squad-card${fainted ? " squad-card--fainted" : ""}`}
+                className={`squad-card${fainted ? " squad-card--fainted" : ""}${
+                  wallpaper ? " squad-card--wallpaper" : ""
+                }`}
                 data-type-family={typeFamily(primaryType)}
-                style={{ "--card-accent": accent } as CSSProperties}
+                style={
+                  {
+                    "--card-accent": accent,
+                    ...(wallpaper
+                      ? { "--card-wallpaper": `url(${wallpaper})` }
+                      : null),
+                  } as CSSProperties
+                }
               >
-                <span className="squad-card__fx" aria-hidden>
-                  <span className="squad-card__fx-dot" />
-                  <span className="squad-card__fx-dot" />
-                  <span className="squad-card__fx-dot" />
-                  <span className="squad-card__fx-dot" />
-                  <span className="squad-card__fx-dot" />
-                  <span className="squad-card__fx-dot" />
-                </span>
+                {wallpaper ? null : (
+                  <span className="squad-card__fx" aria-hidden>
+                    <span className="squad-card__fx-dot" />
+                    <span className="squad-card__fx-dot" />
+                    <span className="squad-card__fx-dot" />
+                    <span className="squad-card__fx-dot" />
+                    <span className="squad-card__fx-dot" />
+                    <span className="squad-card__fx-dot" />
+                  </span>
+                )}
 
                 <span className="squad-card__badges">
                   <span className="squad-card__badge squad-card__badge--level">
@@ -121,7 +134,9 @@ export function HomeSquadCards({
 
                 <span className="squad-card__art">
                   <span className="squad-card__pool" aria-hidden />
-                  <PokeSparks seed={m.id} accent={accent} />
+                  {m.isShiny ? (
+                    <PokeSparks seed={m.id} accent="#FFE566" />
+                  ) : null}
                   <span className="squad-card__shadow" aria-hidden />
                   <Image
                     src={m.spriteUrl}
@@ -133,33 +148,49 @@ export function HomeSquadCards({
                   />
                 </span>
 
-                <span className="squad-card__hp">
-                  <SegmentedStatBar
-                    pct={hpPct}
-                    variant={hpBarVariant(hpPct)}
-                    segments={8}
-                    heightClass="h-1.5"
-                  />
+                <span className="squad-card__bars">
+                  <span className="squad-card__hp">
+                    <SegmentedStatBar
+                      pct={hpPct}
+                      variant={hpBarVariant(hpPct)}
+                      segments={8}
+                      heightClass="h-1.5"
+                    />
+                  </span>
+                  <span className="squad-card__exp">
+                    <SegmentedStatBar
+                      pct={m.xpPct}
+                      variant="xp"
+                      segments={8}
+                      heightClass="h-1"
+                    />
+                  </span>
                 </span>
 
                 <span className="squad-card__foot">
                   <span className="squad-card__name">{m.nickname ?? m.speciesName}</span>
                   <span className="squad-card__meta">
-                    <Image
-                      src={showdownTypeSymbolUrl(primaryType)}
-                      alt=""
-                      width={14}
-                      height={14}
-                      className="squad-card__type"
-                      unoptimized
-                    />
+                    <span
+                      className="squad-card__type-chip"
+                      style={{ "--type-chip": accent } as CSSProperties}
+                      title={primaryType}
+                    >
+                      <Image
+                        src={showdownTypeSymbolUrl(primaryType)}
+                        alt=""
+                        width={11}
+                        height={11}
+                        className="squad-card__type"
+                        unoptimized
+                      />
+                    </span>
                     <span className="squad-card__cp">{power.toLocaleString()}</span>
                     {m.isShiny ? (
                       <ShinyMark className="squad-card__flag" title="" />
                     ) : null}
                     {m.isFavorite ? (
-                      <span className="material-symbols-outlined ms-fill squad-card__flag squad-card__flag--fav">
-                        star
+                      <span className="squad-card__flag squad-card__flag--fav" aria-hidden>
+                        <span className="material-symbols-outlined ms-fill">star</span>
                       </span>
                     ) : null}
                   </span>

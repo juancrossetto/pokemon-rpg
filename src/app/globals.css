@@ -14957,11 +14957,44 @@ html.boot-splash-done .boot-splash,
     0 12px 28px rgba(0, 0, 0, 0.4);
 }
 
+/* Evita que el long-press / drag nativo se lleve el sprite del CDN
+   en vez de reordenar el slot (sobre todo en mobile). */
+.team-slot img {
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none;
+}
+
 .team-slot.team-card:hover {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 18px 36px rgba(0, 0, 0, 0.5),
     0 0 0 1px color-mix(in srgb, var(--type-accent, var(--color-pokeball-red)) 32%, transparent);
+}
+
+/* Mismos wallpapers de tipo que mobile Active Squad. */
+.team-slot.team-card.team-slot--wallpaper {
+  border-color: color-mix(in srgb, var(--type-accent, #94a3b8) 55%, rgba(255, 255, 255, 0.12));
+  background:
+    linear-gradient(
+      180deg,
+      rgba(6, 4, 14, 0.2) 0%,
+      rgba(6, 4, 14, 0.08) 38%,
+      rgba(4, 2, 10, 0.78) 78%,
+      rgba(2, 1, 6, 0.94) 100%
+    ),
+    var(--slot-wallpaper) center / cover no-repeat;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--type-accent, #94a3b8) 35%, rgba(255, 255, 255, 0.35)),
+    0 0 22px color-mix(in srgb, var(--type-accent, #94a3b8) 28%, transparent),
+    0 12px 28px rgba(0, 0, 0, 0.5);
+}
+.team-slot.team-card.team-slot--wallpaper:hover {
+  border-color: color-mix(in srgb, var(--type-accent, #94a3b8) 70%, white);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 28px color-mix(in srgb, var(--type-accent, #94a3b8) 42%, transparent),
+    0 18px 36px rgba(0, 0, 0, 0.55);
 }
 
 /* Detalle del Pokémon en Home: entrada más jugable que el sheet genérico. */
@@ -18427,6 +18460,26 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   opacity: 0.7;
 }
 
+/*
+  Prueba: wallpaper por tipo (hoy sólo ghost). El arte cubre la card; un
+  scrim abajo asegura legibilidad de nombre/HP. Cuando haya más assets se
+  suman en `squad-type-wallpapers.ts`.
+*/
+.squad-card--wallpaper {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(6, 4, 14, 0.18) 0%,
+      rgba(6, 4, 14, 0.05) 42%,
+      rgba(4, 2, 10, 0.72) 72%,
+      rgba(2, 1, 6, 0.92) 100%
+    ),
+    var(--card-wallpaper) center / cover no-repeat;
+}
+.squad-card--wallpaper .squad-card__pool {
+  display: none;
+}
+
 /* Partículas / motas del tipo: detrás del sprite, encima del fondo. */
 .squad-card__fx {
   pointer-events: none;
@@ -18552,7 +18605,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
-/* Shiny / favorito viven en la fila del pie, junto al tipo y las estrellas. */
+/* Shiny / favorito viven en la fila del pie, junto al tipo y el PC. */
 .squad-card__flag {
   flex: none;
   width: 0.7rem;
@@ -18561,7 +18614,12 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   line-height: 1;
 }
 .squad-card__flag--fav {
-  color: var(--color-electric-yellow, #f2c000);
+  color: var(--theme-primary);
+}
+.squad-card__flag--fav .material-symbols-outlined {
+  font-size: 0.72rem !important;
+  line-height: 1;
+  font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 20;
 }
 
 /* Zona del arte: el color de la card ya viene del degradé, acá sólo el sprite. */
@@ -18622,11 +18680,17 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.7));
 }
 
-.squad-card__hp {
+.squad-card__bars {
   position: relative;
   z-index: 1;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
   margin: 0.15rem 0.45rem 0;
+}
+.squad-card__hp,
+.squad-card__exp {
+  display: block;
 }
 
 .squad-card__foot {
@@ -18634,7 +18698,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   z-index: 1;
   display: block;
   min-width: 0;
-  padding: 0.35rem 0.4rem 0.45rem;
+  padding: 0.28rem 0.4rem 0.4rem;
   text-align: center;
 }
 .squad-card__name {
@@ -18653,14 +18717,40 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   align-items: center;
   justify-content: center;
   gap: 0.22rem;
-  margin-top: 0.2rem;
+  margin-top: 0.18rem;
+}
+.squad-card__type-chip {
+  --type-chip: var(--card-accent);
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 0.95rem;
+  height: 1.05rem;
+  /* Hexágono plano arriba/abajo (estilo badge de tipo moderno). */
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  /* Borde más claro: el fill del chip es el “rim”. */
+  background: color-mix(in srgb, var(--type-chip) 48%, white);
+}
+.squad-card__type-chip::before {
+  content: "";
+  position: absolute;
+  inset: 1.25px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  /* Cara sólida, un poco más profunda que el color de tipo. */
+  background: color-mix(in srgb, var(--type-chip) 86%, #120808);
+  z-index: 0;
 }
 .squad-card__type {
-  width: 14px;
-  height: 14px;
+  position: relative;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
   object-fit: contain;
   flex: none;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+  /* Ícono blanco sobre el fill sólido, como la referencia. */
+  filter: brightness(0) invert(1);
 }
 /* PC del Pokémon: mismo dato que el del encabezado, por card. */
 .squad-card__cp {
@@ -18683,68 +18773,76 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 
 /*
-  ===== Objetivos de ruta (sólo mobile) =====
-  Anillos de progreso en carrusel + recompensa final. Reemplaza la lista de
-  texto que vivía al fondo del home: el dato estaba pero nadie lo miraba.
+  Objetivos de zona (mobile). Un solo acento de marca (primary): progreso,
+  listo y cobrado comparten el mismo flúor. Los íconos 3D llevan el color;
+  el chrome no compite con ellos.
 */
 .objectives-rail {
+  --obj-accent: var(--theme-primary);
+  --obj-accent-soft: color-mix(in srgb, var(--theme-primary) 55%, white);
+  --obj-track: rgba(255, 255, 255, 0.1);
+  --obj-ink: rgba(255, 255, 255, 0.55);
   min-width: 0;
-  border-radius: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, rgba(20, 23, 32, 0.9), rgba(10, 12, 17, 0.95));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  padding: 0.7rem 0 0.75rem;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--theme-primary) 8%, rgba(18, 16, 28, 0.94)) 0%,
+      rgba(10, 10, 16, 0.96) 55%,
+      rgba(8, 8, 12, 0.98) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 28px rgba(0, 0, 0, 0.35);
+  padding: 0.65rem 0 0.7rem;
 }
-/*
-  Grid único: dos columnas (anillos / recompensa) por tres filas
-  (título · contenido · pie). Que los dos títulos compartan la fila 1 es lo
-  que alinea el PNG del regalo con los discos de los anillos — antes cada
-  columna se ordenaba por su cuenta y quedaban a distinta altura.
-*/
 .objectives-rail__grid {
   display: grid;
-  /* `auto` dejaba que la columna del regalo se llevara el ancho que quisiera y
-     el tercer anillo quedaba cortado detrás del divisor. Con un tope fijo la
-     columna de anillos siempre tiene lo suyo. */
-  grid-template-columns: minmax(0, 1fr) 6.6rem;
+  grid-template-columns: minmax(0, 1fr) 5.8rem;
   grid-template-rows: auto auto auto;
   align-items: start;
-  column-gap: 0.7rem;
-  padding: 0 0.8rem;
+  column-gap: 0.55rem;
+  padding: 0 0.75rem;
 }
 
+.objectives-rail__title,
+.objectives-reward__title {
+  align-self: center;
+  margin: 0 0 0.4rem;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--obj-ink);
+}
 .objectives-rail__title {
   grid-column: 1;
   grid-row: 1;
-  align-self: center;
-  margin-bottom: 0.45rem;
-  /* Chico y con poco tracking a propósito: el título es etiqueta, no
-     protagonista, y cada punto que baja es ancho que ganan los anillos. */
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--theme-secondary, #a78bfa) 40%, white);
+}
+.objectives-reward__title {
+  grid-column: 2;
+  grid-row: 1;
+  padding-left: 0.55rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
 }
 
-/* Carrusel: los anillos van conectados por una línea, como en la referencia. */
 .objectives-rail__track {
   grid-column: 1;
   grid-row: 2 / span 2;
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: 0.45rem;
   min-width: 0;
   margin: 0;
-  padding: 0 0.1rem 0.25rem;
+  padding: 0 0.05rem 0.15rem;
   list-style: none;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
-  /* Si igual no entran, el corte se desvanece en vez de quedar a filo: se lee
-     como "hay más, deslizá" y no como un elemento roto. */
-  mask-image: linear-gradient(90deg, #000 88%, transparent 100%);
-  -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, #000 90%, transparent 100%);
 }
 .objectives-rail__track::-webkit-scrollbar {
   display: none;
@@ -18752,39 +18850,31 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 .objectives-rail__item {
   position: relative;
   display: grid;
-  /* Fila de pie reservada siempre: sin esto los que no tienen "Cobrar" eran
-     más bajos y la fila de anillos quedaba escalonada. */
-  grid-template-rows: auto auto 1.15rem;
-  /* Se encogen hasta 3.3rem para que los tres entren en un teléfono angosto;
-     con ancho fijo el tercero quedaba cortado. */
-  flex: 0 1 var(--ring-size, 3.6rem);
-  width: var(--ring-size, 3.6rem);
-  min-width: 2.85rem;
+  grid-template-rows: auto 1.2rem;
+  flex: 0 1 var(--ring-size, 3.35rem);
+  width: var(--ring-size, 3.35rem);
+  min-width: 2.7rem;
   scroll-snap-align: center;
   text-align: center;
 }
-/* Conector al siguiente anillo. */
 .objectives-rail__item:not(:last-child)::after {
   content: "";
   position: absolute;
-  top: 1.75rem;
-  left: calc(100% + 0.05rem);
-  width: 0.4rem;
+  top: 1.6rem;
+  left: calc(100% + 0.02rem);
+  width: 0.38rem;
   height: 2px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--obj-track);
 }
-/* Tramo cumplido: el conector queda encendido, como un camino recorrido. */
 .objectives-rail__item:has(.objective-ring--done):not(:last-child)::after {
-  background: linear-gradient(90deg, #6ee7b7, rgba(110, 231, 183, 0.25));
-  box-shadow: 0 0 6px rgba(110, 231, 183, 0.5);
+  background: var(--obj-accent);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--obj-accent) 45%, transparent);
 }
 
-/*
-  El anillo es un `conic-gradient` recortado con `mask`: sin SVG ni un
-  elemento por segmento, y el porcentaje entra por `--ring-pct`.
-*/
 .objective-ring {
+  --ring-from: var(--obj-accent);
+  --ring-to: var(--obj-accent-soft);
   position: relative;
   display: grid;
   place-items: center;
@@ -18796,180 +18886,119 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   background: none;
   cursor: default;
 }
-/* Aro más grueso y con degradé: el trazo plano de 3 px se veía de wireframe. */
 .objective-ring__track {
   position: absolute;
   inset: 0;
   border-radius: 9999px;
   background: conic-gradient(
-    from 0deg,
-    var(--ring-from, #f2c000) 0%,
-    var(--ring-to, #ffe066) calc(var(--ring-pct, 0) * 1%),
-    rgba(255, 255, 255, 0.1) calc(var(--ring-pct, 0) * 1%)
+    from -90deg,
+    var(--ring-from) 0%,
+    var(--ring-to) calc(var(--ring-pct, 0) * 1%),
+    var(--obj-track) calc(var(--ring-pct, 0) * 1%)
   );
-  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
   -webkit-mask: radial-gradient(
     farthest-side,
-    transparent calc(100% - 5px),
-    #000 calc(100% - 5px)
+    transparent calc(100% - 4px),
+    #000 calc(100% - 4px)
   );
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--ring-to, #ffe066) 55%, transparent));
-}
-/* Colores por estado: azul pendiente, ámbar en curso, verde completo. */
-.objective-ring {
-  --ring-from: #3b82f6;
-  --ring-to: #60a5fa;
-}
-.objective-ring--ready {
-  --ring-from: #f2c000;
-  --ring-to: #ffe066;
-}
-.objective-ring--done {
-  --ring-from: #10b981;
-  --ring-to: #6ee7b7;
 }
 .objective-ring--done .objective-ring__track {
-  background: conic-gradient(from 0deg, #10b981 0%, #6ee7b7 100%);
+  background: conic-gradient(from -90deg, var(--obj-accent) 0%, var(--obj-accent-soft) 100%);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--obj-accent) 40%, transparent));
 }
 .objective-ring__disc {
   position: relative;
   display: grid;
   place-items: center;
-  width: 83%;
+  width: 82%;
   aspect-ratio: 1;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background:
-    radial-gradient(
-      ellipse 80% 60% at 50% 8%,
-      color-mix(in srgb, var(--ring-to, #60a5fa) 26%, transparent) 0%,
-      transparent 70%
-    ),
-    radial-gradient(circle at 50% 30%, #1e2331, #090b11);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: radial-gradient(circle at 50% 28%, #1a1c26, #0a0b10 72%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -4px 10px rgba(0, 0, 0, 0.6),
-    0 0 12px color-mix(in srgb, var(--ring-to, #60a5fa) 22%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.55);
   overflow: hidden;
 }
-/* Brillo especular arriba: le da volumen de ficha, no de círculo plano. */
-.objective-ring__disc::after {
-  content: "";
-  position: absolute;
-  left: 12%;
-  top: 4%;
-  width: 76%;
-  height: 42%;
-  border-radius: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent);
-  pointer-events: none;
+.objective-ring:not(.objective-ring--done):not(.objective-ring--ready) .objective-ring__icon {
+  opacity: 0.72;
+  filter: grayscale(0.25) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.65));
 }
-/* El ícono llena el disco: a 1.6 rem dentro de uno de 3.4 quedaba flotando en
-   negro y se veía chico al lado del PNG del regalo, que sí llena su caja. */
 .objective-ring__icon {
-  width: 69%;
-  height: 69%;
+  width: 68%;
+  height: 68%;
   object-fit: contain;
-  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.75));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
 }
-/* Listo para cobrar: late y se puede tocar. */
 .objective-ring--ready {
   cursor: pointer;
 }
 .objective-ring--ready .objective-ring__disc {
-  border-color: color-mix(in srgb, var(--color-electric-yellow, #f2c000) 55%, transparent);
-  animation: objective-ready-pulse 1.6s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--obj-accent) 55%, transparent);
+  animation: objective-ready-pulse 1.7s ease-in-out infinite;
 }
 @keyframes objective-ready-pulse {
   0%,
   100% {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 0 0 0 color-mix(in srgb, var(--color-electric-yellow, #f2c000) 45%, transparent);
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 0 0 color-mix(in srgb, var(--obj-accent) 40%, transparent);
   }
   50% {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 0 0 6px color-mix(in srgb, var(--color-electric-yellow, #f2c000) 0%, transparent);
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 0 5px color-mix(in srgb, var(--obj-accent) 0%, transparent);
   }
 }
-/* Sacudida al tocar: el "sí, te escuché" que pide un botón de recompensa. */
 .objective-ring--buzz {
   animation: objective-buzz 0.42s ease-in-out;
 }
 @keyframes objective-buzz {
   0%,
-  100% {
-    transform: translateX(0) scale(1);
-  }
-  15% {
-    transform: translateX(-3px) scale(1.08);
-  }
-  32% {
-    transform: translateX(3px) scale(1.08);
-  }
-  50% {
-    transform: translateX(-2px) scale(1.05);
-  }
-  68% {
-    transform: translateX(2px) scale(1.03);
-  }
-  85% {
-    transform: translateX(-1px) scale(1.01);
-  }
+  100% { transform: translateX(0) scale(1); }
+  15% { transform: translateX(-3px) scale(1.06); }
+  32% { transform: translateX(3px) scale(1.06); }
+  50% { transform: translateX(-2px) scale(1.04); }
+  68% { transform: translateX(2px) scale(1.02); }
+  85% { transform: translateX(-1px) scale(1.01); }
 }
 
-.objective-ring__pct {
+.objective-ring__pct,
+.objective-ring__claimed,
+.objective-ring__cta {
   display: block;
-  margin-top: 0.3rem;
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
+  margin-top: 0.28rem;
+  line-height: 1;
+}
+.objective-ring__pct {
+  font-size: 10px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--color-electric-yellow, #f2c000);
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.5);
 }
-.objective-ring__pct.is-done {
-  color: #34d399;
-}
-/* CTA como pastilla, no como texto suelto: se lee como algo tocable. */
 .objective-ring__cta {
   display: inline-block;
-  margin-top: 0.15rem;
-  padding: 0.06rem 0.4rem;
+  padding: 0.12rem 0.38rem;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--color-electric-yellow, #f2c000) 55%, transparent);
-  background: color-mix(in srgb, var(--color-electric-yellow, #f2c000) 20%, rgba(0, 0, 0, 0.5));
+  background: var(--obj-accent);
   font-size: 8px;
   font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--color-electric-yellow, #f2c000) 22%, white);
-}
-.objective-ring__claimed {
-  display: block;
-  margin-top: 0.1rem;
-  font-size: 8px;
-  font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: #1a0618;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--obj-accent) 35%, transparent);
+}
+.objective-ring__claimed {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--obj-accent) 45%, white);
+  opacity: 0.75;
 }
 
-/* Columna de recompensa: título en la fila 1, arte en la 2, barra en la 3. */
-.objectives-reward__title {
-  grid-column: 2;
-  grid-row: 1;
-  align-self: center;
-  margin-bottom: 0.45rem;
-  padding-left: 0.7rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.09);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
-}
 .objectives-reward {
   position: relative;
   grid-column: 2;
@@ -18978,124 +19007,82 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   grid-template-rows: auto auto;
   align-content: start;
   width: 100%;
-  padding-left: 0.7rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.09);
+  padding-left: 0.55rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
   text-align: center;
 }
-/* Halo y destellos detrás del cofre: la esquina dejó de ser un hueco negro. */
 .objectives-reward::before {
   content: "";
   position: absolute;
-  left: calc(50% + 0.45rem);
-  top: 1.85rem;
-  width: 4.6rem;
-  height: 4.6rem;
+  left: calc(50% + 0.28rem);
+  top: 1.55rem;
+  width: 3.6rem;
+  height: 3.6rem;
   transform: translate(-50%, -50%);
   border-radius: 9999px;
   pointer-events: none;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--theme-secondary, #a78bfa) 30%, transparent) 0%,
-    transparent 68%
+    color-mix(in srgb, var(--obj-accent) 22%, transparent) 0%,
+    transparent 70%
   );
-  animation: objectives-reward-glow 3.2s ease-in-out infinite;
+  opacity: 0.7;
+}
+.objectives-reward--ready::before {
+  animation: objectives-reward-glow 2.8s ease-in-out infinite;
 }
 @keyframes objectives-reward-glow {
   0%,
   100% {
-    opacity: 0.45;
-    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.92);
   }
   50% {
-    opacity: 0.9;
-    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.06);
   }
 }
-
-/*
-  Flota siempre, aunque falten objetivos. Antes la única animación estaba
-  detrás de "todo completo", así que en el 90% de las sesiones el panel se
-  veía estático — que es justo lo que lo hacía parecer básico.
-*/
 .objectives-reward__chest {
   position: relative;
-  /* Mismo diámetro EXTERNO que el disco de los anillos (3.4rem + su borde de
-     1px por lado): así los dos "tokens" del panel miden igual en pantalla. */
-  width: calc(2.99rem + 2px);
-  height: calc(2.99rem + 2px);
-  /* El disco arranca por debajo del borde del aro (66 px de aro contra 56 de
-     disco): el regalo baja lo mismo para caer en la misma línea. Medido. */
-  margin: 0.26rem auto 0;
+  width: 2.85rem;
+  height: 2.85rem;
+  margin: 0.22rem auto 0;
   object-fit: contain;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
-  animation: objectives-chest-float 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.55));
+  animation: objectives-chest-float 3.4s ease-in-out infinite;
 }
 @keyframes objectives-chest-float {
   0%,
-  100% {
-    transform: translateY(0) rotate(-1.5deg);
-  }
-  50% {
-    transform: translateY(-4px) rotate(1.5deg);
-  }
+  100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
-/* Con todos los objetivos hechos, el cofre salta pidiendo que lo abras. */
 .objectives-reward__chest--ready {
   animation: objectives-chest-hop 1.5s ease-in-out infinite;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6))
-    drop-shadow(0 0 10px color-mix(in srgb, var(--color-electric-yellow, #f2c000) 55%, transparent));
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 8px color-mix(in srgb, var(--obj-accent) 50%, transparent));
 }
 @keyframes objectives-chest-hop {
   0%,
   62%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-  70% {
-    transform: translateY(-7px) scale(1.06, 0.94);
-  }
-  80% {
-    transform: translateY(0) scale(0.96, 1.06);
-  }
-  90% {
-    transform: translateY(-3px) scale(1.02, 0.98);
-  }
+  100% { transform: translateY(0) scale(1); }
+  70% { transform: translateY(-6px) scale(1.05, 0.95); }
+  80% { transform: translateY(0) scale(0.97, 1.04); }
+  90% { transform: translateY(-2px) scale(1.01, 0.99); }
 }
-/* La barra se apoya en la misma línea que el % / CTA de los anillos. */
 .objectives-reward__meter {
   display: flex;
   align-items: center;
-  gap: 0.22rem;
-  margin-top: 0.5rem;
-}
-.objectives-reward__star {
-  flex: none;
-  width: 0.85rem;
-  height: 0.85rem;
-  background: var(--color-electric-yellow, #f2c000);
-  clip-path: polygon(
-    50% 0%,
-    61% 35%,
-    98% 35%,
-    68% 57%,
-    79% 91%,
-    50% 70%,
-    21% 91%,
-    32% 57%,
-    2% 35%,
-    39% 35%
-  );
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-electric-yellow, #f2c000) 70%, transparent));
+  margin-top: 0.45rem;
 }
 .objectives-reward__bar {
   position: relative;
   display: block;
   flex: 1;
   min-width: 0;
-  height: 1rem;
+  height: 0.9rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.4);
   overflow: hidden;
 }
 .objectives-reward__fill {
@@ -19105,12 +19092,11 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   overflow: hidden;
   background: linear-gradient(
     90deg,
-    var(--color-pokeball-red, #ee1515),
-    var(--color-electric-yellow, #f2c000)
+    var(--theme-primary-deep, var(--obj-accent)),
+    var(--obj-accent-soft)
   );
   transition: width 0.5s ease;
 }
-/* Barrido que recorre lo ganado: la barra deja de ser un bloque estático. */
 .objectives-reward__fill::after {
   content: "";
   position: absolute;
@@ -19118,38 +19104,29 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   background: linear-gradient(
     100deg,
     transparent 35%,
-    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.35) 50%,
     transparent 65%
   );
   background-size: 260% 100%;
   animation: objectives-bar-sheen 2.8s ease-in-out infinite;
 }
 @keyframes objectives-bar-sheen {
-  0% {
-    background-position: 140% 0;
-  }
+  0% { background-position: 140% 0; }
   55%,
-  100% {
-    background-position: -60% 0;
-  }
+  100% { background-position: -60% 0; }
 }
 .objectives-reward__count {
   position: relative;
   display: grid;
   place-items: center;
   height: 100%;
-  font-size: 10px;
-  font-weight: 900;
+  font-size: 9px;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
 }
 
-/*
-  Revelación al centro. La recompensa se ve grande antes de que el vuelo de
-  `loot-fly-fx` la lleve al contador del header: cobrar algo y que sólo suba
-  un número no se siente como haber ganado nada.
-*/
 .objective-reward-center {
   position: fixed;
   inset: 0;
@@ -19169,7 +19146,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   border-radius: 9999px;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--color-electric-yellow, #f2c000) 45%, transparent) 0%,
+    color-mix(in srgb, var(--theme-primary) 40%, transparent) 0%,
     transparent 65%
   );
   animation: objective-center-burst 1.25s ease-out forwards;
@@ -19205,9 +19182,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     opacity: 1;
     transform: scale(1.15) rotate(4deg);
   }
-  40% {
-    transform: scale(1) rotate(0deg);
-  }
+  40% { transform: scale(1) rotate(0deg); }
   78% {
     opacity: 1;
     transform: scale(1) rotate(0deg);
@@ -19237,19 +19212,15 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     opacity: 1;
     transform: translateY(0);
   }
-  78% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+  78% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .objective-ring--ready .objective-ring__disc,
   .objective-ring--buzz,
   .objectives-reward__chest,
-  .objectives-reward::before,
+  .objectives-reward--ready::before,
   .objectives-reward__fill::after,
   .objectives-reward__chest--ready,
   .objective-reward-center__burst,

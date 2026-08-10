@@ -22,12 +22,11 @@ const CENTER_REVEAL_MS = 1250;
 type Reward = { src: string; label: string };
 
 /**
- * Objetivos de ruta en mobile: carrusel de anillos de progreso + la
- * recompensa final. **Sólo mobile** (`lg:hidden`); en desktop sigue el panel
- * con pestañas, que tiene semanales y evento limitado además de estos.
+ * Objetivos de ruta en mobile: pista de misiones + recompensa final.
+ * **Sólo mobile** (`lg:hidden`); en desktop sigue el panel con pestañas.
  *
- * Antes esto era una lista de texto al fondo del home: el dato estaba pero no
- * se miraba. Un anillo con su ícono se lee de un vistazo y es tocable.
+ * Un acento (primary) para progreso / listo / cobrado. Sin arcoíris de
+ * estados: el color no pelea con los íconos 3D ni con el resto del home.
  */
 export function HomeObjectivesRail({
   objectives,
@@ -57,6 +56,7 @@ export function HomeObjectivesRail({
 
   const done = objectives.filter((o) => o.done || o.claimed).length;
   const total = objectives.length;
+  const allDone = done >= total;
 
   async function handleClaim(objective: HomeObjective, el: HTMLElement) {
     if (!objective.claimable) return;
@@ -78,12 +78,6 @@ export function HomeObjectivesRail({
 
   return (
     <section className="objectives-rail lg:hidden">
-      {/*
-        Un solo grid de 2 columnas × 3 filas para que los dos títulos compartan
-        la fila 1 y el regalo caiga en la misma fila que los discos de los
-        anillos. Antes "Recompensas" vivía dentro de su columna, una fila más
-        abajo, y el PNG quedaba desalineado contra los íconos.
-      */}
       <div className="objectives-rail__grid">
         <h2 className="objectives-rail__title">{title}</h2>
         <p className="objectives-reward__title">{rewardTitle}</p>
@@ -110,7 +104,7 @@ export function HomeObjectivesRail({
                   style={{ "--ring-pct": `${pct}` } as CSSProperties}
                   disabled={!o.claimable}
                   onClick={(e) => void handleClaim(o, e.currentTarget)}
-                  aria-label={`${o.current}/${o.target}`}
+                  aria-label={`${o.labelKey} ${o.current}/${o.target}`}
                 >
                   <span className="objective-ring__track" aria-hidden />
                   <span className="objective-ring__disc">
@@ -124,41 +118,39 @@ export function HomeObjectivesRail({
                     />
                   </span>
                 </button>
-                <span
-                  className={`objective-ring__pct${complete ? " is-done" : ""}`}
-                >
-                  {pct}%
-                </span>
                 {o.claimable ? (
                   <span className="objective-ring__cta">{claimLabel}</span>
                 ) : o.claimed ? (
                   <span className="objective-ring__claimed">{claimedLabel}</span>
-                ) : null}
+                ) : (
+                  <span className="objective-ring__pct">
+                    {o.current}/{o.target}
+                  </span>
+                )}
               </li>
             );
           })}
         </ul>
 
-        <div className="objectives-reward">
+        <div
+          className={`objectives-reward${allDone ? " objectives-reward--ready" : ""}`}
+        >
           <Image
             src={REWARD_ICON}
             alt=""
             width={72}
             height={72}
             className={`objectives-reward__chest${
-              done >= total ? " objectives-reward__chest--ready" : ""
+              allDone ? " objectives-reward__chest--ready" : ""
             }`}
             unoptimized
           />
-          {/* Estrella al pie de la barra, como en la referencia: marca el
-              premio y le da un punto de anclaje a la izquierda. */}
           <span className="objectives-reward__meter" aria-hidden>
-            <span className="objectives-reward__star" />
             <span className="objectives-reward__bar">
-            <span
-              className="objectives-reward__fill"
-              style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }}
-            />
+              <span
+                className="objectives-reward__fill"
+                style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }}
+              />
               <span className="objectives-reward__count">
                 {done}/{total}
               </span>
@@ -167,7 +159,6 @@ export function HomeObjectivesRail({
         </div>
       </div>
 
-      {/* Revelación al centro: la recompensa se ve antes de volar al header. */}
       {center
         ? createPortal(
             <div className="objective-reward-center" aria-hidden>
