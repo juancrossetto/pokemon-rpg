@@ -675,11 +675,40 @@ export function MobileChrome({
     */
     window.visualViewport?.addEventListener("resize", onViewportSettle);
 
+    /*
+      PWA anclada en iOS: al volver del background NO dispara `resize` ni
+      `visualViewport resize`. `--app-vh` se queda con la medida del estado
+      anterior y, como en standalone el body usa esa variable para su
+      `height`/`max-height`, el body queda más corto que la pantalla: el dock
+      —que vive en su `bottom: 0`— se ve despegado del borde físico.
+
+      Remedimos al reanudar. En diferido además del tick inmediato porque iOS
+      todavía informa la altura vieja durante los primeros frames del resume.
+    */
+    const resumeTimers: number[] = [];
+
+    function remeasureOnResume() {
+      if (document.visibilityState !== "visible") return;
+      onViewportSettle();
+      resumeTimers.push(
+        window.setTimeout(onViewportSettle, 120),
+        window.setTimeout(onViewportSettle, 400),
+      );
+    }
+
+    document.addEventListener("visibilitychange", remeasureOnResume);
+    window.addEventListener("pageshow", remeasureOnResume);
+    window.addEventListener("orientationchange", remeasureOnResume);
+
     return () => {
       window.cancelAnimationFrame(remasureRaf);
+      for (const t of resumeTimers) window.clearTimeout(t);
       observer.disconnect();
       window.removeEventListener("resize", onViewportSettle);
       window.visualViewport?.removeEventListener("resize", onViewportSettle);
+      document.removeEventListener("visibilitychange", remeasureOnResume);
+      window.removeEventListener("pageshow", remeasureOnResume);
+      window.removeEventListener("orientationchange", remeasureOnResume);
       // No borrar --bottom-nav-h/--vv-gap acá: en remount (Strict/locale) el
       // hueco a 0 hacía saltar la barra un frame antes de volver a medir.
     };
