@@ -171,11 +171,15 @@ export function HomeGameHub({
             {nextStep && <div className="shrink-0">{nextStep}</div>}
 
             <section className="home-ops-deck game-float-card min-w-0 overflow-visible rounded-[1.25rem] p-2.5 sm:p-3">
-              <HomeDailyActions
-                actions={dailyActions}
-                labels={hubLabels.dailyActions}
-              />
-              <div className="home-ops-deck__rule my-2.5 sm:my-3" aria-hidden />
+              {/* Quick access / acciones diarias: solo desktop; en mobile el
+                  chrome ya cubre esos destinos y ocupaba demasiado el home. */}
+              <div className="hidden xl:block">
+                <HomeDailyActions
+                  actions={dailyActions}
+                  labels={hubLabels.dailyActions}
+                />
+                <div className="home-ops-deck__rule my-2.5 sm:my-3" aria-hidden />
+              </div>
               <ActiveTeamStrip
                 key={squad.layoutKey}
                 locale={locale}

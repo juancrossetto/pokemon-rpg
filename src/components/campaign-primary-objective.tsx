@@ -262,7 +262,7 @@ export function CampaignPrimaryObjective({
         El stacking lo resuelve el wrapper z-30 del hero en campaign-journey.
         El recorte del arte vive solo en la capa de imagen.
       */}
-      <section className="relative h-[5.75rem] rounded-xl sm:h-[9.5rem] sm:rounded-2xl lg:h-[11rem]">
+      <section className="relative min-h-[5.75rem] rounded-xl sm:h-[9.5rem] sm:min-h-0 sm:rounded-2xl lg:h-[11rem]">
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
           <Image
             key={`${bannerSrc}:${bannerObjectPosition}`}
@@ -297,7 +297,7 @@ export function CampaignPrimaryObjective({
                 </>
               ) : null}
             </p>
-            <h1 className="page-title mt-0.5 truncate text-[1.05rem] leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-[1.35rem] lg:text-[1.45rem]">
+            <h1 className="page-title mt-0.5 line-clamp-2 text-[1.05rem] leading-[1.15] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:line-clamp-none sm:truncate sm:text-[1.35rem] sm:leading-tight lg:text-[1.45rem]">
               {locationName}
             </h1>
             {stagesTotal > 0 ? (
@@ -321,8 +321,8 @@ export function CampaignPrimaryObjective({
         tenía ninguna indicación de qué hacer sin scrollear.
       */}
       <section
-        className={`campaign-objective-in game-float-card relative overflow-hidden rounded-xl p-3 lg:hidden ${
-          gymReady ? "ring-1 ring-electric-yellow/45" : "ring-1 ring-pokeball-red/35"
+        className={`campaign-objective-in relative overflow-hidden rounded-xl border border-white/8 bg-white/3 p-3 lg:hidden ${
+          gymReady ? "ring-1 ring-electric-yellow/45" : ""
         } ${action.enabled && !showReqs ? "campaign-objective-sheen" : ""}`}
       >
         <div className="relative flex items-center gap-2.5">
@@ -483,10 +483,8 @@ export function CampaignPrimaryObjective({
       */}
       {party && party.members.length > 0 ? (
         <section
-          className={`game-float-card rounded-xl px-2 py-1.5 lg:hidden ${
-            party.heal.needsHealing
-              ? "ring-1 ring-pokeball-red/30"
-              : "ring-1 ring-white/[0.08]"
+          className={`rounded-xl border border-white/8 bg-white/3 px-2 py-1.5 lg:hidden ${
+            party.heal.needsHealing ? "ring-1 ring-pokeball-red/30" : ""
           }`}
         >
           <CampaignPartyDock

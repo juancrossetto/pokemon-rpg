@@ -631,7 +631,7 @@ export function CampaignJourney({
         <div className="min-w-0 order-1 lg:order-none">
           <nav
             ref={chapterTabsRef}
-            className="mb-3 flex gap-1.5 overflow-x-auto pb-1 xl:hidden"
+            className="campaign-chapter-tabs mb-3 flex gap-2 overflow-x-auto pb-0.5 xl:hidden"
             aria-label={t("chapter")}
           >
             {chapters.map((c, i) => {
@@ -650,37 +650,38 @@ export function CampaignJourney({
                       ? t("chapterLockedHint")
                       : `${t("chapter")} ${c.number}${isCurrent ? ` · ${t("nodeCurrent")}` : ""}`
                   }
-                  className={`relative min-h-8 shrink-0 overflow-hidden rounded-lg px-2.5 pb-1.5 pt-1 text-[11px] font-semibold leading-tight transition sm:min-h-10 sm:px-3 sm:pb-2 sm:pt-1.5 sm:text-label-sm ${
+                  className={`campaign-chapter-tab${
                     isCurrent
-                      ? "bg-pokeball-red/18 text-white ring-1 ring-pokeball-red/65 shadow-[0_0_14px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent)]"
+                      ? " campaign-chapter-tab--current"
                       : selected
-                        ? "game-float-card text-white ring-1 ring-white/25"
+                        ? " campaign-chapter-tab--selected"
                         : c.unlocked
-                          ? "bg-[#1a1c24] text-white/55"
-                          : "bg-[#12141c] text-white/30"
+                          ? ""
+                          : " campaign-chapter-tab--locked"
                   }`}
                 >
                   {!c.unlocked ? (
-                    <span className="material-symbols-outlined mr-1 align-middle text-[12px]!">
+                    <span className="material-symbols-outlined text-[13px]!" aria-hidden>
                       lock
                     </span>
                   ) : isCurrent ? (
-                    <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-pokeball-red align-middle shadow-[0_0_6px_var(--color-pokeball-red)]" />
+                    <span className="campaign-chapter-tab__dot" aria-hidden />
                   ) : c.completed ? (
-                    <span className="material-symbols-outlined mr-1 align-middle text-[12px]! text-electric-yellow">
+                    <span
+                      className="material-symbols-outlined text-[13px]! text-electric-yellow"
+                      aria-hidden
+                    >
                       check_circle
                     </span>
                   ) : null}
-                  {t(c.nameKey)}
-                  {/* Avance del capítulo en la propia pestaña: la fila deja de
-                      ser un menú plano y muestra por dónde va el viaje. */}
+                  <span className="campaign-chapter-tab__label">{t(c.nameKey)}</span>
                   <span
                     aria-hidden
-                    className="absolute inset-x-1.5 bottom-0.5 h-[2px] overflow-hidden rounded-full bg-white/10"
+                    className="campaign-chapter-tab__progress"
                   >
                     <span
-                      className={`block h-full rounded-full transition-all duration-500 ${
-                        c.completed ? "bg-electric-yellow" : PATH_PROGRESS_FILL
+                      className={`campaign-chapter-tab__progress-fill${
+                        c.completed ? " campaign-chapter-tab__progress-fill--done" : ""
                       }`}
                       style={{ width: `${c.unlocked ? c.percent : 0}%` }}
                     />
@@ -710,7 +711,7 @@ export function CampaignJourney({
               <ExpeditionAmbient kind={sceneKind} />
 
               <div className="relative z-[1]">
-              <div className="mb-2 flex flex-wrap items-center gap-2">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
                 <p className={`mb-0 ${SECTION_LABEL}`}>{t("chapterPath")}</p>
                 {viewingCurrentChapter ? (
                   <span className="rounded-md bg-pokeball-red/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white">
@@ -1043,10 +1044,16 @@ function ZoneRow({
   const artBleed = hasStageArt && artLayout === "bleed";
   const thumbSrc = campaignMapSrc(zone.id);
   const nodeClass = isGym ? PATH_NODE_GYM : PATH_NODE_SM;
-  /** Debajo del círculo (mt-1.5/mt-2 + tamaño del nodo). */
+  /** Debajo del círculo (mt-1.5/mt-2 + tamaño del nodo). Si hay hiker,
+   *  sumamos el pt reservado para el sprite. */
+  const hikerPad = Boolean(isFarming && leadSpriteUrl);
   const railLineTop = isGym
-    ? "top-[calc(0.375rem+3rem)] sm:top-[calc(0.5rem+4rem)] lg:top-[calc(0.5rem+4.5rem)]"
-    : "top-[calc(0.375rem+2.25rem)] sm:top-[calc(0.5rem+3rem)]";
+    ? hikerPad
+      ? "top-[calc(2rem+0.375rem+3rem)] sm:top-[calc(2.5rem+0.5rem+4rem)] lg:top-[calc(2.5rem+0.5rem+4.5rem)]"
+      : "top-[calc(0.375rem+3rem)] sm:top-[calc(0.5rem+4rem)] lg:top-[calc(0.5rem+4.5rem)]"
+    : hikerPad
+      ? "top-[calc(2rem+0.375rem+2.25rem)] sm:top-[calc(2.5rem+0.5rem+3rem)]"
+      : "top-[calc(0.375rem+2.25rem)] sm:top-[calc(0.5rem+3rem)]";
   const lineFilled =
     done || pathPct >= 100 || isFarming || nodeStatus === "current" || nodeStatus === "in_progress";
   const lineFillPct = done || pathPct >= 100 ? 100 : Math.min(100, Math.max(0, pathPct));
@@ -1084,17 +1091,23 @@ function ZoneRow({
       className="campaign-node-in relative flex items-stretch gap-2 sm:gap-3"
       style={{ "--campaign-node-i": stepIndex - 1 } as CSSProperties}
     >
-      {/* Ancho fijo (= gimnasio) para centrar nodos chicos y el sendero. */}
-      <div className="relative w-12 shrink-0 self-stretch sm:w-16 lg:w-[4.5rem]">
+      {/* Ancho fijo (= gimnasio) para centrar nodos chicos y el sendero.
+          Con hiker activo reservamos altura arriba del nodo para que el
+          sprite no tape “Recorrido del capítulo”. */}
+      <div
+        className={`relative w-12 shrink-0 self-stretch sm:w-16 lg:w-[4.5rem]${
+          isFarming && leadSpriteUrl ? " pt-8 sm:pt-10" : ""
+        }`}
+      >
         {/* El entrenador parado en el nodo donde está el jugador. */}
         {isFarming && leadSpriteUrl ? (
           <>
             <span
               aria-hidden
-              className="campaign-hiker__shadow pointer-events-none absolute left-1/2 top-0 z-20 h-1.5 w-7 -translate-x-1/2 rounded-[50%] bg-black/70 blur-[2px] sm:w-9"
+              className="campaign-hiker__shadow pointer-events-none absolute left-1/2 top-[1.65rem] z-20 h-1.5 w-7 -translate-x-1/2 rounded-[50%] bg-black/70 blur-[2px] sm:top-[2.1rem] sm:w-9"
             />
             <span
-              className="campaign-hiker pointer-events-none absolute left-1/2 z-20 -top-7 sm:-top-9"
+              className="campaign-hiker pointer-events-none absolute left-1/2 top-0 z-20"
               title={t("farming")}
             >
               <Image
