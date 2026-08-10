@@ -52,6 +52,7 @@ function RailAvatar({
           src={avatar.src}
           alt={name}
           className="trainer-sprite-fill h-full w-full"
+          size={48}
         />
       ) : (
         <span className="text-[11px] font-bold text-white/45">
@@ -390,6 +391,7 @@ export function HomeDesktopRail({
                         src={avatar.src}
                         alt={row.playerName}
                         className="trainer-sprite-fill h-full w-full"
+                        size={24}
                       />
                     ) : (
                       <span className="flex h-full w-full items-center justify-center text-[8px] font-bold text-white/50">

@@ -118,8 +118,8 @@ function ObjectiveBarCta({
     ? "mb-0! min-h-12! w-full! gap-2! text-[13px]!"
     : "mb-0! w-auto! min-h-11! min-w-0! shrink-0 gap-1.5! whitespace-nowrap px-3.5! py-2.5! text-[12px]! [&_.game-cta__label]:whitespace-nowrap";
 
-  // Badge custom: GameCtaButton sólo acepta material icon, así que armamos la
-  // carcasa a mano (misma tipografía Grobold).
+  // Badge de gimnasio: carcasa a mano (misma tipografía Grobold) porque el
+  // ícono es la medalla, no el explore/brújula genérico.
   if (badgeSrc) {
     const classes = `game-cta game-cta--red ${disabled ? "game-cta--disabled" : ""} ${className}`.trim();
     const body = (

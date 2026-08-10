@@ -250,13 +250,16 @@ export function ZoneIcon({ kind, className }: { kind: ZoneIconKind; className?: 
     // La plaza isométrica tiene más aire transparente que los otros sprites;
     // un poco más grande equilibra el peso visual en el nodo.
     const scale = kind === "town" ? "scale-[1.35]" : "";
+    // Sin `unoptimized`: el arte de origen es de ~584×610 y acá se pinta a
+    // 28px, así que el navegador bajaba y decodificaba la imagen entera
+    // (medido en campaña: 114× los píxeles necesarios). Son PNG estáticos
+    // locales, no hay animación que el optimizador pueda romper.
     return (
       <Image
         src={src}
         alt=""
         width={64}
         height={64}
-        unoptimized
         className={`object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)] ${scale} ${className ?? ""}`}
         aria-hidden
       />

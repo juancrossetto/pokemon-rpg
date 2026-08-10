@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type {
   ClanEmblem,
   ClanEmblemProcedural,
@@ -173,8 +174,13 @@ export function ClanEmblemBadge({
         role="img"
         aria-label={title ?? "Clan emblem"}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        {/*
+          Los presets son PNG de 512×512 y acá se muestran desde 16px. Con
+          <img> crudo el navegador bajaba y decodificaba los 512² completos
+          para pintar 16² — medido en el home, 1266× los píxeles necesarios.
+          `next/image` sirve la resolución que corresponde al `size`.
+        */}
+        <Image
           src={clanEmblemPresetSrc(data.presetId)}
           alt={title ?? "Clan emblem"}
           width={size}

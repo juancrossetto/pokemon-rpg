@@ -10,6 +10,7 @@ import {
 } from "@/lib/resource-fx";
 
 const ENERGY_ICON = "/items/hd/energy.png";
+const COMPASS_ICON = "/nav/compass-icon.png?v=2";
 
 export function StartEncounterButton({
   locale,
@@ -51,6 +52,14 @@ export function StartEncounterButton({
         disabled={busy}
         className={`game-cta game-cta--red mb-0! w-full gap-2 whitespace-nowrap sm:gap-2.5 ${busy ? "game-cta--disabled" : "cta-pulse"}`}
       >
+        <Image
+          src={COMPASS_ICON}
+          alt=""
+          width={28}
+          height={28}
+          className="game-cta__icon shrink-0 object-contain"
+          aria-hidden
+        />
         <span className="game-cta__label">{pending ? "…" : label}</span>
         <span aria-hidden className="h-4 w-px shrink-0 bg-white/25" />
         <span className="inline-flex shrink-0 items-center gap-1 font-sans text-[13px] font-semibold tabular-nums tracking-normal text-white normal-case">

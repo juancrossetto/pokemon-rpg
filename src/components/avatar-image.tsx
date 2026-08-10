@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 /**
@@ -9,10 +10,20 @@ export function AvatarImage({
   src,
   alt,
   className = "",
+  size,
 }: {
   src: string;
   alt: string;
   className?: string;
+  /**
+   * Lado en px de la caja donde se muestra. Con esto el arte pasa por el
+   * optimizador y baja al tamaño real en vez del original.
+   *
+   * El arte de `/avatars/*1.png` es de 256×256 y en los chips se muestra a
+   * 27–32px: medido en el home, eso son ~108 veces más píxeles de los que se
+   * pintan, decodificados y en memoria por cada retrato de la pantalla.
+   */
+  size?: number;
 }) {
   // Guardamos QUÉ src falló (no un booleano): así cambiar de avatar
   // resetea el fallback solo, sin necesitar un useEffect.
@@ -26,8 +37,24 @@ export function AvatarImage({
     );
   }
 
-  // <img> y no next/image: necesitamos onError para el fallback, y son
-  // assets locales chicos que no ganan nada con la optimización.
+  // Sólo optimizamos arte local y con tamaño conocido. Los sprites remotos
+  // (Showdown) siguen por <img> crudo: algunos son animados y pasarlos por el
+  // optimizador los congelaría en el primer frame.
+  if (size && src.startsWith("/")) {
+    return (
+      <Image
+        src={src}
+        alt={alt}
+        width={size}
+        height={size}
+        className={className}
+        onError={() => setFailedSrc(src)}
+      />
+    );
+  }
+
+  // <img> y no next/image: necesitamos onError para el fallback y, sin saber a
+  // qué tamaño se muestra, `next/image` no puede elegir una resolución mejor.
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={src} alt={alt} className={className} onError={() => setFailedSrc(src)} />;
 }

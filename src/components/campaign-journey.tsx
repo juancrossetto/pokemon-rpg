@@ -701,7 +701,6 @@ export function CampaignJourney({
                   src={bannerArt.src}
                   alt=""
                   fill
-                  unoptimized
                   sizes="(max-width: 1024px) 100vw, 900px"
                   className="object-cover"
                   style={{ objectPosition: bannerArt.objectPosition }}
@@ -958,7 +957,6 @@ function JourneyStrip({
                     alt=""
                     width={28}
                     height={28}
-                    unoptimized
                     className={`h-5 w-5 object-contain sm:h-6 sm:w-6 ${
                       c.completed || isCurrent ? "" : "opacity-55 grayscale"
                     }`}
@@ -1104,7 +1102,6 @@ function ZoneRow({
                 alt=""
                 width={44}
                 height={44}
-                unoptimized
                 className="h-8 w-8 object-contain object-bottom drop-shadow-[0_3px_6px_rgba(0,0,0,0.65)] sm:h-11 sm:w-11"
               />
             </span>
@@ -1180,7 +1177,6 @@ function ZoneRow({
                 alt=""
                 width={72}
                 height={72}
-                unoptimized
                 className={
                   gymRequirement.leaderSpriteUrl.includes("/avatars/")
                     ? "h-9 w-9 object-contain object-bottom drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-[3.25rem] sm:w-[3.25rem] lg:h-[3.6rem] lg:w-[3.6rem]"
@@ -1299,7 +1295,6 @@ function ZoneRow({
                 fill
                 sizes="(max-width: 768px) 100vw, 720px"
                 quality={95}
-                unoptimized
                 className="object-cover object-center"
                 priority={false}
               />
@@ -1648,7 +1643,6 @@ function ZonePanel({
               alt=""
               width={48}
               height={48}
-              unoptimized
               className={
                 gymRequirement.leaderSpriteUrl.includes("/avatars/")
                   ? "h-9 w-9 object-contain object-bottom drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] sm:h-11 sm:w-11"
@@ -1904,7 +1898,6 @@ function ZonePanel({
                         width={36}
                         height={36}
                         className={`h-9 w-9 object-contain ${tr.defeated ? "opacity-55 grayscale" : ""}`}
-                        unoptimized
                       />
                       {tr.defeated && (
                         <span className="absolute -right-0.5 -bottom-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
@@ -2262,7 +2255,6 @@ function ObjectiveRewardBits({
           width={28}
           height={28}
           className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
-          unoptimized
         />
         <span className="font-mono text-[13px] font-semibold tabular-nums text-white">
           ×{state.reward.quantity}
@@ -2278,7 +2270,6 @@ function ObjectiveRewardBits({
           width={28}
           height={28}
           className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
-          unoptimized
         />
         {state.reward.coins}
       </span>

@@ -67,6 +67,32 @@ export function hasAuthSessionCookie(): boolean {
   return SESSION_COOKIE_HINTS.some((name) => raw.includes(`${name}=`));
 }
 
+/** Fondo del splash. Mismo tono que `viewport.themeColor` y `.boot-splash`. */
+export const BOOT_SPLASH_BG = "#0a0806";
+
+/**
+ * CSS crítico del arranque, inline en el `<head>`.
+ *
+ * El script de arriba marca `boot-splash-pending` antes del primer paint, pero
+ * las reglas de `.boot-splash` viven en `globals.css`, que es una hoja externa:
+ * entre el primer paint y que esa hoja llegue, el documento no tiene fondo y el
+ * navegador pinta su lienzo por defecto — el destello blanco al abrir la app.
+ *
+ * Inline no depende de la red, así que lo primero que se ve ya es el splash y
+ * no un flash. `color-scheme: dark` es lo que además evita que el UA pinte en
+ * claro el lienzo, los scrollbars y los controles antes de aplicar nada.
+ */
+export function bootSplashCriticalCss(): string {
+  return [
+    `:root{color-scheme:dark;}`,
+    `html{background:${BOOT_SPLASH_BG};}`,
+    `body{background:${BOOT_SPLASH_BG};}`,
+    `.boot-splash{position:fixed;inset:0;z-index:9999;display:none;`,
+    `flex-direction:column;background:${BOOT_SPLASH_BG};}`,
+    `html.boot-splash-pending .boot-splash{display:flex;opacity:1;visibility:visible;}`,
+  ].join("");
+}
+
 /**
  * Seguro para Server Components (layout).
  * Muestra el splash antes del paint si la sesión aún no calentó las rutas

@@ -22,6 +22,16 @@ const INITIALS_CLASS = {
   "2xl": "text-[20px]",
 } as const;
 
+/** Lado en px de cada `SIZE_CLASS` — hint de resolución para el optimizador. */
+const SIZE_PX = {
+  xs: 32,
+  sm: 44,
+  md: 56,
+  lg: 64,
+  xl: 80,
+  "2xl": 96,
+} as const;
+
 export type TrainerAvatarSize = keyof typeof SIZE_CLASS;
 
 /**
@@ -73,7 +83,7 @@ export function TrainerAvatar({
         className={`relative inline-flex shrink-0 items-center justify-center ${SIZE_CLASS[size]} ${className}`}
       >
         {src ? (
-          <AvatarImage src={src} alt={name} className={imgClass} />
+          <AvatarImage src={src} alt={name} className={imgClass} size={SIZE_PX[size]} />
         ) : (
           <span
             className={`flex h-full w-full items-center justify-center font-bold tracking-wide text-white/50 ${INITIALS_CLASS[size]}`}
@@ -116,7 +126,7 @@ export function TrainerAvatar({
           }}
         />
         {src ? (
-          <AvatarImage src={src} alt={name} className={imgClass} />
+          <AvatarImage src={src} alt={name} className={imgClass} size={SIZE_PX[size]} />
         ) : (
           <span
             className={`relative flex h-full w-full items-center justify-center font-bold tracking-wide ${INITIALS_CLASS[size]}`}

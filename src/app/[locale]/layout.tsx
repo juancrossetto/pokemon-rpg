@@ -6,7 +6,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { BootSplashMarkup } from "@/components/boot-splash-markup";
 import { InlineScript } from "@/components/inline-script";
-import { bootSplashEarlyScript } from "@/lib/boot-splash";
+import { bootSplashCriticalCss, bootSplashEarlyScript } from "@/lib/boot-splash";
 import { iconsReadyEarlyScript } from "@/lib/icons-ready";
 import { standaloneEarlyScript, standaloneNavCriticalCss } from "@/lib/standalone-early";
 import { AppShell } from "@/components/app-shell";
@@ -86,21 +86,36 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <head>
+        {/*
+          Primero de todo y sin depender de la red: el UA tiene que saber que
+          pinta en oscuro antes de aplicar cualquier hoja de estilos, y el
+          splash tiene que tener fondo propio. Si esto llega con `globals.css`
+          (hoja externa) el primer paint es el lienzo blanco del navegador.
+        */}
+        <meta name="color-scheme" content="dark" />
+        <style
+          id="boot-splash-critical"
+          dangerouslySetInnerHTML={{ __html: bootSplashCriticalCss() }}
+        />
         {/* PWA iOS: marca is-standalone antes del paint (sólo scroll, no mueve el nav). */}
         <InlineScript id="standalone-early" html={standaloneEarlyScript()} />
         <style
           id="standalone-nav-critical"
           dangerouslySetInnerHTML={{ __html: standaloneNavCriticalCss() }}
         />
-        {/* Icon font: display=block evita el flash de ligaduras como texto
-            ("home", "bolt"…) que display=swap deja ver. preconnect + subset
-            estático (400) acelera el download vs. el variable 100..700. */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        {/*
+          Icon font autoalojada (`@font-face` en globals.css). Antes era una
+          hoja de fonts.googleapis.com acá mismo: render-blocking contra un
+          tercero, o sea que ni el splash pintaba hasta resolverla. Ahora sale
+          del mismo origen y se precarga en paralelo. `display=block` sigue
+          vigente, declarado en el propio @font-face.
+        */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block"
-          rel="stylesheet"
+          rel="preload"
+          href="/fonts/material-symbols-outlined.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
         />
         <link rel="preload" href="/splash/boot.webp" as="image" />
         <link rel="preload" href="/loaders/pokeball-loader-transparent.webp" as="image" />

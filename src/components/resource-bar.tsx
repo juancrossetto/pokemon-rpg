@@ -116,7 +116,6 @@ function PopoverPanel({
               width={28}
               height={28}
               className="h-7 w-7 shrink-0 object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.55)]"
-              unoptimized
             />
           ) : null}
           <p className="truncate text-[13px] font-semibold tracking-wide text-white">
@@ -260,7 +259,6 @@ function ResourcePill({
             width={tone === "energy" || tone === "gems" ? 32 : 28}
             height={tone === "energy" || tone === "gems" ? 32 : 28}
             className={iconClass}
-            unoptimized
           />
         </span>
 
@@ -446,7 +444,6 @@ export function ResourceBar({
                   width={12}
                   height={12}
                   className="h-3 w-3 object-contain"
-                  unoptimized
                 />
                 −{row.cost}
               </span>
@@ -609,7 +606,6 @@ export function ResourceBar({
                 width={22}
                 height={22}
                 className="h-[22px] w-[22px] object-contain"
-                unoptimized
               />
               <span className="font-mono text-[11px] font-semibold tabular-nums text-sky-100">
                 <ResourceDeltaValue kind="energy" value={energy} />
@@ -623,7 +619,6 @@ export function ResourceBar({
                 width={18}
                 height={18}
                 className="h-[18px] w-[18px] object-contain"
-                unoptimized
               />
               <CoinsBadge coins={coins} size="bar" showIcon={false} />
             </span>
@@ -635,7 +630,6 @@ export function ResourceBar({
                 width={22}
                 height={22}
                 className="h-[22px] w-[22px] object-contain"
-                unoptimized
               />
               <span className="font-mono text-[11px] font-semibold tabular-nums text-gem">
                 <ResourceDeltaValue kind="gems" value={gems} />
@@ -657,7 +651,6 @@ export function ResourceBar({
                     width={28}
                     height={28}
                     className="h-7 w-7 object-contain"
-                    unoptimized
                   />
                   <div className="min-w-0 flex-1">
                     <p className="font-mono text-[16px] font-semibold tabular-nums text-sky-100">
@@ -685,7 +678,6 @@ export function ResourceBar({
                     width={26}
                     height={26}
                     className="h-[26px] w-[26px] object-contain"
-                    unoptimized
                   />
                   <p className="min-w-0 flex-1 font-mono text-[16px] font-semibold tabular-nums text-electric-yellow">
                     {coins.toLocaleString()}
@@ -707,7 +699,6 @@ export function ResourceBar({
                     width={28}
                     height={28}
                     className="h-7 w-7 object-contain"
-                    unoptimized
                   />
                   <p className="min-w-0 flex-1 font-mono text-[16px] font-semibold tabular-nums text-gem">
                     {gems.toLocaleString()}

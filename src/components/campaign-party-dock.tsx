@@ -137,7 +137,6 @@ function DockSlot({
             width={28}
             height={28}
             className="h-5 w-5 object-contain opacity-25 saturate-50"
-            unoptimized
           />
         </div>
         <div className="h-[3px] w-[80%]" />
@@ -236,7 +235,6 @@ function DockSlot({
               className={`h-[92%] w-[92%] object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] ${
                 fainted ? "grayscale-[0.55]" : ""
               }`}
-              unoptimized
             />
             {fainted ? (
               <span className="material-symbols-outlined absolute right-0 top-0 text-[8px]! text-error drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
@@ -263,7 +261,6 @@ function DockSlot({
                   alt=""
                   width={12}
                   height={12}
-                  unoptimized
                   className="h-2.5 w-2.5 object-contain"
                 />
               </span>

@@ -16,6 +16,22 @@ const jobs = [
   { dir: "public", match: /^logo\.png$/, max: 640 },
   { dir: "public/auth", match: /\.png$/, max: 1280 },
   { dir: "public/gyms/maps", match: /\.png$/, max: 900 },
+  /*
+   * Íconos HD de objeto. Se muestran de 10 a ~28px en chips, recompensas y
+   * mochila, y la mayoría del set ya está en 256. Tres quedaron fuera de
+   * escala (rare-candy 1024², energy-pack 512², coin-bag 415×388) y el
+   * navegador los decodifica enteros: medido en campaña, rare-candy pintaba a
+   * 28px con 334 veces los píxeles necesarios. 256 cubre el render real @2x y
+   * deja intacto todo lo que ya cumple.
+   */
+  { dir: "public/items/hd", match: /\.png$/, max: 256 },
+  /*
+   * `location-icon` es el único 512² de /nav y se pinta a 36px como máximo
+   * (medido en el home: 51× los píxeles necesarios). El resto de la carpeta
+   * ya está en 256 y algunos `*-profile` se muestran grandes, así que el job
+   * apunta solo a este archivo.
+   */
+  { dir: "public/nav", match: /^location-icon\.png$/, max: 128 },
 ];
 
 let savedTotal = 0;

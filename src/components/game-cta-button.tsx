@@ -1,7 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
+
+/** Ícono Material `explore` → brújula custom en CTAs de aventura. */
+const EXPLORE_ICON_SRC = "/nav/compass-icon.png?v=2";
 
 type SharedProps = {
   children: ReactNode;
@@ -51,7 +55,16 @@ export function GameCtaButton(props: GameCtaButtonProps) {
 
   const content = (
     <>
-      {icon ? (
+      {icon === "explore" ? (
+        <Image
+          src={EXPLORE_ICON_SRC}
+          alt=""
+          width={28}
+          height={28}
+          className="game-cta__icon shrink-0 object-contain"
+          aria-hidden
+        />
+      ) : icon ? (
         <span className="material-symbols-outlined game-cta__icon" aria-hidden>
           {icon}
         </span>
