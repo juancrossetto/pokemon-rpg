@@ -13353,6 +13353,8 @@ html.boot-splash-done .boot-splash,
   .squad-reorder-ghost__name,
   .squad-card--dragging,
   .squad-card--over,
+  .squad-card--selected,
+  .squad-card--swap,
   .team-slot--dragging,
   .team-slot--drop-target {
     animation: none !important;
@@ -18688,8 +18690,6 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
      contra el padding del hub, que es lo que lo hacía ver encajonado. */
   margin-inline: calc(var(--margin-mobile, 0.75rem) * -1);
   padding-inline: var(--margin-mobile, 0.75rem);
-  /* El scroll horizontal lo maneja el gesto de las cards (pan vs long-press). */
-  touch-action: pan-y;
 }
 .squad-cards__rail::-webkit-scrollbar {
   display: none;
@@ -18697,15 +18697,6 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 .squad-cards__item {
   flex: none;
   scroll-snap-align: start;
-}
-.squad-cards__item--dragging {
-  /* Así elementFromPoint ve la card de debajo al soltar. */
-  pointer-events: none;
-}
-.squad-cards__rail--reordering {
-  overflow-x: hidden;
-  scroll-snap-type: none;
-  touch-action: none;
 }
 /* El host del menú ⋮ envuelve la card; sin esto el absolute del trigger
    se ancla al rail y no a la card. */
@@ -18756,20 +18747,64 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     0 12px 28px rgba(0, 0, 0, 0.55);
   text-align: left;
   text-decoration: none;
-  /* pan-y libre para scrollear el home; el carrusel horizontal lo pan-ea el
-     gesto JS (si capturamos todo, iOS se traba sobre las cards). */
-  touch-action: pan-y;
+  /* Evita zoom por doble toque; el rail padre sigue scrolleando en X/Y. */
+  touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
-  cursor: grab;
+  cursor: pointer;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
     border-color 160ms ease,
     opacity 160ms ease;
 }
+.squad-card--selected {
+  animation: pc-card-shake 0.42s ease-in-out infinite;
+  border-color: rgba(255, 203, 5, 0.72);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--card-accent) 55%, rgba(255, 255, 255, 0.55)),
+    0 0 0 2px rgba(255, 203, 5, 0.42),
+    0 0 22px rgba(255, 203, 5, 0.3),
+    0 12px 28px rgba(0, 0, 0, 0.55);
+  z-index: 2;
+}
+.squad-card--swap {
+  /* FLIP: parte desde la posición vieja y desliza al slot nuevo. */
+  transition: none;
+  animation: squad-card-flip 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+  z-index: 5;
+  will-change: transform;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--card-accent) 55%, rgba(255, 255, 255, 0.55)),
+    0 0 0 2px rgba(255, 203, 5, 0.35),
+    0 16px 36px rgba(0, 0, 0, 0.55);
+}
+@keyframes squad-card-flip {
+  0% {
+    transform: translate(var(--flip-x, 0px), var(--flip-y, 0px)) scale(1.04) rotate(-2deg);
+    filter: brightness(1.08);
+  }
+  55% {
+    transform: translate(
+        calc(var(--flip-x, 0px) * 0.18),
+        calc(var(--flip-y, 0px) * 0.18)
+      )
+      scale(1.1) rotate(1.5deg);
+    filter: brightness(1.15);
+  }
+  100% {
+    transform: translate(0, 0) scale(1) rotate(0);
+    filter: none;
+  }
+}
+.squad-card--armed {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--card-accent) 55%, rgba(255, 255, 255, 0.55)),
+    0 0 0 1.5px rgba(239, 68, 68, 0.5),
+    0 0 18px color-mix(in srgb, var(--card-accent) 42%, transparent),
+    0 12px 28px rgba(0, 0, 0, 0.55);
+}
 .squad-card--dragging {
-  touch-action: none;
   opacity: 0.35;
   cursor: grabbing;
   transform: scale(0.92);

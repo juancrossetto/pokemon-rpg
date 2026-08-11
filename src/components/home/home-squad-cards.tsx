@@ -3,13 +3,14 @@
 import Image from "next/image";
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useTransition,
   type CSSProperties,
 } from "react";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { setTeamLayout } from "@/actions/pc";
 import { playPcSfx } from "@/lib/pc-sfx";
 import { ShinyMark } from "@/components/shiny-mark";
@@ -24,9 +25,22 @@ import { HOME_TEAM_HEALED_EVENT } from "@/lib/home-heal-fx";
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { HeldItemInfo, HeldItemLabels, OwnedHeldItem } from "@/components/held-item-panel";
 import type { SquadBagCounts } from "@/lib/squad-bag";
-import { useSquadReorderGesture } from "@/components/home/use-squad-reorder-gesture";
-import { SquadReorderGhost } from "@/components/home/squad-reorder-ghost";
 
+/** Ventana de doble toque (mobile suele ser más lenta que desktop). */
+const DOUBLE_TAP_MS = 340;
+/** Duración del slide FLIP al intercambiar. */
+const SWAP_FX_MS = 520;
+
+type SquadFlipDelta = { dx: number; dy: number };
+
+function measureSquadCard(id: string): { left: number; top: number } | null {
+  const el = document.querySelector<HTMLElement>(
+    `[data-squad-id="${CSS.escape(id)}"]`,
+  );
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { left: r.left, top: r.top };
+}
 /**
  * Poder del Pokémon. Misma fórmula que `pokemonPower` de `@/lib/ranking`,
  * recalculada acá porque el miembro ya viaja con bases, puntos y nivel: pedir
@@ -59,12 +73,12 @@ function typeFamily(type: string): string {
 }
 
 /**
- * Equipo activo en mobile: carrusel de cards con el color del tipo y el PC
- * de cada Pokémon. **Sólo mobile** (`lg:hidden`); en desktop sigue
- * `ActiveTeamStrip`.
+ * Equipo activo en mobile: carrusel horizontal + reorder al estilo PC
+ * (doble toque → tiembla; toque en otro → intercambia). Sin drag: el long-press
+ * robaba el scroll vertical del home. Un toque ya no abre `/team` (suspendido;
+ * se entra por Administrar / ⋮).
  *
- * Long-press (touch) / arrastre (mouse) reordena; el ⋮ abre el menú de
- * acciones; tap corto lleva a la ficha en `/team`.
+ * **Sólo mobile** (`lg:hidden`); en desktop sigue `ActiveTeamStrip`.
  */
 export function HomeSquadCards({
   locale,
@@ -92,18 +106,19 @@ export function HomeSquadCards({
   const t = useTranslations("home.hub.identity");
   const tTeam = useTranslations("team");
   const tPc = useTranslations("pc");
-  const router = useRouter();
 
   const [members, setMembers] = useState(initialMembers);
   const [bagCounts, setBagCounts] = useState(initialBagCounts);
-  const [dragId, setDragId] = useState<string | null>(null);
-  const dragIdRef = useRef<string | null>(null);
-  const [overSlot, setOverSlot] = useState<number | null>(null);
-  const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [swapFx, setSwapFx] = useState<Record<string, SquadFlipDelta>>({});
+  const swapFxTimers = useRef<Map<string, number>>(new Map());
+  const pendingFlipRef = useRef<{
+    ids: string[];
+    first: Record<string, { left: number; top: number }>;
+  } | null>(null);
   const [depositingId, setDepositingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-
   const [lastInitialMembers, setLastInitialMembers] = useState(initialMembers);
   if (lastInitialMembers !== initialMembers) {
     setLastInitialMembers(initialMembers);
@@ -143,6 +158,48 @@ export function HomeSquadCards({
     return () => window.removeEventListener(HOME_TEAM_HEALED_EVENT, onTeamHealed);
   }, []);
 
+  useEffect(() => {
+    const timers = swapFxTimers.current;
+    return () => {
+      for (const t of timers.values()) window.clearTimeout(t);
+      timers.clear();
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const pending = pendingFlipRef.current;
+    if (!pending) return;
+    pendingFlipRef.current = null;
+
+    const flips: Record<string, SquadFlipDelta> = {};
+    for (const id of pending.ids) {
+      const first = pending.first[id];
+      const last = measureSquadCard(id);
+      if (!first || !last) continue;
+      const dx = first.left - last.left;
+      const dy = first.top - last.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+      flips[id] = { dx, dy };
+    }
+    if (Object.keys(flips).length === 0) return;
+
+    setSwapFx(flips);
+    for (const id of Object.keys(flips)) {
+      const prev = swapFxTimers.current.get(id);
+      if (prev) window.clearTimeout(prev);
+      const timer = window.setTimeout(() => {
+        setSwapFx((cur) => {
+          if (!(id in cur)) return cur;
+          const next = { ...cur };
+          delete next[id];
+          return next;
+        });
+        swapFxTimers.current.delete(id);
+      }, SWAP_FX_MS);
+      swapFxTimers.current.set(id, timer);
+    }
+  }, [members]);
+
   function commit(next: HomeSquadMember[]) {
     const previous = members;
     setMembers(next);
@@ -159,32 +216,55 @@ export function HomeSquadCards({
     });
   }
 
-  function beginDrag(id: string) {
-    dragIdRef.current = id;
-    setDragId(id);
-  }
-
-  function endDrag() {
-    dragIdRef.current = null;
-    setDragId(null);
-    setOverSlot(null);
-    setDragPoint(null);
-  }
-
-  function dropOnSlot(index: number) {
-    const id = dragIdRef.current ?? dragId;
-    if (!id) return;
-    const mon = members.find((m) => m.id === id);
-    if (!mon) return;
-    const rest = members.filter((m) => m.id !== mon.id);
-    const at = Math.min(Math.max(0, index), rest.length);
-    const next = [...rest.slice(0, at), mon, ...rest.slice(at)];
-    if (
-      next.length === members.length &&
-      next.every((m, i) => m.id === members[i]?.id)
-    ) {
+  function pickMember(id: string) {
+    if (depositingId || pending) return;
+    if (selectedId === id) {
+      setSelectedId(null);
       return;
     }
+    setSelectedId(id);
+    playPcSfx("select");
+  }
+
+  function placeSelection(targetIndex: number) {
+    if (!selectedId || depositingId || pending) return;
+    const fromIndex = members.findIndex((m) => m.id === selectedId);
+    if (fromIndex < 0) {
+      setSelectedId(null);
+      return;
+    }
+    if (fromIndex === targetIndex) {
+      setSelectedId(null);
+      return;
+    }
+    const a = members[fromIndex];
+    const b = members[targetIndex];
+    if (!a || !b) {
+      setSelectedId(null);
+      return;
+    }
+    const next = members.map((m, i) => {
+      if (i === fromIndex) return b;
+      if (i === targetIndex) return a;
+      return m;
+    });
+
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduced) {
+      const first: Record<string, { left: number; top: number }> = {};
+      for (const id of [a.id, b.id]) {
+        const box = measureSquadCard(id);
+        if (box) first[id] = box;
+      }
+      if (Object.keys(first).length > 0) {
+        pendingFlipRef.current = { ids: [a.id, b.id], first };
+      }
+    }
+
+    setSelectedId(null);
+    playPcSfx("reorder");
     commit(next);
   }
 
@@ -205,6 +285,7 @@ export function HomeSquadCards({
 
     setError(null);
     setDepositingId(id);
+    setSelectedId(null);
     playPcSfx("store");
 
     const reduced =
@@ -234,7 +315,7 @@ export function HomeSquadCards({
   const totalPower = members.reduce((sum, m) => sum + memberPower(m), 0);
   const canDeposit = members.length > 1;
   const busy = pending || depositingId !== null;
-  const draggingMember = dragId ? members.find((m) => m.id === dragId) ?? null : null;
+  const selectionArmed = selectedId !== null;
 
   return (
     <section className={`squad-cards lg:hidden${busy ? " opacity-90" : ""}`}>
@@ -255,20 +336,7 @@ export function HomeSquadCards({
         </div>
       ) : null}
 
-      {draggingMember && dragPoint ? (
-        <SquadReorderGhost
-          x={dragPoint.x}
-          y={dragPoint.y}
-          spriteUrl={draggingMember.spriteUrl}
-          name={draggingMember.nickname ?? draggingMember.speciesName}
-          accent={typeColor(draggingMember.types[0] ?? "normal")}
-        />
-      ) : null}
-
-      <ul
-        data-squad-rail
-        className={`squad-cards__rail${dragId ? " squad-cards__rail--reordering" : ""}`}
-      >
+      <ul data-squad-rail className="squad-cards__rail">
         {members.map((m, index) => {
           const primaryType = m.types[0] ?? "normal";
           const accent = typeColor(primaryType);
@@ -278,9 +346,11 @@ export function HomeSquadCards({
             m.maxHp > 0 ? Math.max(0, Math.min(100, (m.currentHp / m.maxHp) * 100)) : 0;
           const fainted = m.currentHp <= 0;
           const displayName = m.nickname ?? m.speciesName;
-          const isDragging = dragId === m.id;
-          const isOver = overSlot === index && dragId !== null && dragId !== m.id;
+          const isSelected = selectedId === m.id;
+          const isArmedTarget = selectionArmed && !isSelected;
           const isDepositing = depositingId === m.id;
+          const flip = swapFx[m.id] ?? null;
+          const isSwapping = flip !== null;
 
           const menuProps = {
             instanceId: m.id,
@@ -409,11 +479,7 @@ export function HomeSquadCards({
           };
 
           return (
-            <li
-              key={m.id}
-              data-squad-slot={index}
-              className={`squad-cards__item${isDragging ? " squad-cards__item--dragging" : ""}`}
-            >
+            <li key={m.id} className="squad-cards__item" data-squad-id={m.id}>
               <SquadCardContextMenu
                 {...menuProps}
                 showViewTeam
@@ -433,17 +499,14 @@ export function HomeSquadCards({
                   hpPct={hpPct}
                   fainted={fainted}
                   pending={busy}
-                  isDragging={isDragging}
-                  isOver={isOver}
+                  isSelected={isSelected}
+                  isArmedTarget={isArmedTarget}
                   isDepositing={isDepositing}
-                  onOpen={() => router.push(`/team?focus=${m.id}`)}
-                  onDragStart={() => beginDrag(m.id)}
-                  onDragEnd={endDrag}
-                  onDragHover={setOverSlot}
-                  onDragMove={(x, y) => setDragPoint({ x, y })}
-                  onDragDrop={(slot) => {
-                    dropOnSlot(slot);
-                  }}
+                  isSwapping={isSwapping}
+                  flip={flip}
+                  onPick={() => pickMember(m.id)}
+                  onPlace={() => placeSelection(index)}
+                  selectionArmed={selectionArmed}
                 />
               </SquadCardContextMenu>
             </li>
@@ -466,15 +529,14 @@ function SquadCardButton({
   hpPct,
   fainted,
   pending,
-  isDragging,
-  isOver,
+  isSelected,
+  isArmedTarget,
   isDepositing,
-  onOpen,
-  onDragStart,
-  onDragEnd,
-  onDragHover,
-  onDragMove,
-  onDragDrop,
+  isSwapping,
+  flip,
+  selectionArmed,
+  onPick,
+  onPlace,
 }: {
   member: HomeSquadMember;
   index: number;
@@ -487,52 +549,89 @@ function SquadCardButton({
   hpPct: number;
   fainted: boolean;
   pending: boolean;
-  isDragging: boolean;
-  isOver: boolean;
+  isSelected: boolean;
+  isArmedTarget: boolean;
   isDepositing: boolean;
-  onOpen: () => void;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-  onDragHover: (slotIndex: number | null) => void;
-  onDragMove: (clientX: number, clientY: number) => void;
-  onDragDrop: (slotIndex: number) => void;
+  isSwapping: boolean;
+  flip: SquadFlipDelta | null;
+  selectionArmed: boolean;
+  onPick: () => void;
+  onPlace: () => void;
 }) {
-  const gesture = useSquadReorderGesture({
-    disabled: pending || isDepositing,
-    memberId: m.id,
-    slotAttr: "data-squad-slot",
-    onDragStart: () => onDragStart(),
-    onDragHover,
-    onDragMove,
-    onDragDrop,
-    onDragEnd,
-  });
+  const lastTapAtRef = useRef(0);
+  const singleTapTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (singleTapTimerRef.current != null) {
+        window.clearTimeout(singleTapTimerRef.current);
+      }
+    };
+  }, []);
+
+  function clearSingleTapTimer() {
+    if (singleTapTimerRef.current != null) {
+      window.clearTimeout(singleTapTimerRef.current);
+      singleTapTimerRef.current = null;
+    }
+  }
+
+  function armSingleTap(action: () => void) {
+    clearSingleTapTimer();
+    singleTapTimerRef.current = window.setTimeout(() => {
+      singleTapTimerRef.current = null;
+      lastTapAtRef.current = 0;
+      action();
+    }, DOUBLE_TAP_MS);
+  }
+
+  function handlePick() {
+    clearSingleTapTimer();
+    lastTapAtRef.current = 0;
+    onPick();
+  }
 
   return (
     <button
       type="button"
-      onPointerDown={gesture.onPointerDown}
-      onPointerMove={gesture.onPointerMove}
-      onPointerUp={gesture.onPointerUp}
-      onPointerCancel={gesture.onPointerCancel}
-      onContextMenu={gesture.onContextMenu}
       onClick={() => {
-        if (gesture.shouldSkipClick() || isDepositing || pending) return;
-        onOpen();
+        if (isDepositing || pending) return;
+        const now = performance.now();
+        // Segundo toque dentro de la ventana → seleccionar (no ir a /team).
+        if (now - lastTapAtRef.current < DOUBLE_TAP_MS) {
+          handlePick();
+          return;
+        }
+        lastTapAtRef.current = now;
+        if (!selectionArmed) {
+          // Mobile: un toque no abre /team (suspendido). Sólo doble toque arma.
+          return;
+        }
+        armSingleTap(() => {
+          if (isSelected) onPick();
+          else onPlace();
+        });
       }}
       aria-label={`${displayName}, ${m.levelLabel}`}
+      aria-pressed={isSelected || undefined}
       className={`squad-card${fainted ? " squad-card--fainted" : ""}${
         wallpaper ? " squad-card--wallpaper" : ""
-      }${isDragging ? " squad-card--dragging" : ""}${
-        isOver ? " squad-card--over" : ""
+      }${isSelected ? " squad-card--selected" : ""}${
+        isArmedTarget ? " squad-card--armed" : ""
       }${isDepositing ? " squad-card--depositing" : ""}${
-        isDragging ? " touch-none" : ""
+        isSwapping ? " squad-card--swap" : ""
       }`}
       data-type-family={typeFamily(primaryType)}
       style={
         {
           "--card-accent": accent,
           ...(wallpaper ? { "--card-wallpaper": `url(${wallpaper})` } : null),
+          ...(flip
+            ? {
+                "--flip-x": `${flip.dx}px`,
+                "--flip-y": `${flip.dy}px`,
+              }
+            : null),
         } as CSSProperties
       }
     >
