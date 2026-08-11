@@ -26,22 +26,13 @@ import type { HomeSquadFilter } from "@/components/home/home-desktop-rail";
 import { HOME_TEAM_HEALED_EVENT } from "@/lib/home-heal-fx";
 import { itemHdIconUrl, itemSpriteUrl } from "@/lib/item-sprites";
 import { lockBodyScroll } from "@/lib/scroll-lock";
+import { useSquadReorderGesture } from "@/components/home/use-squad-reorder-gesture";
+import { SquadReorderGhost } from "@/components/home/squad-reorder-ghost";
 
 const TEAM_SIZE = 6;
 /** Mobile 3×2 con HP · md+ fila de 6. */
 const SLOT_BOX =
   "h-full min-h-[7.25rem] w-full md:h-[248px] md:min-h-0";
-/** Long-press antes de reordenar en touch (HTML5 DnD está off en coarse). */
-const TOUCH_REORDER_MS = 340;
-const TOUCH_CANCEL_PX = 12;
-
-function slotIndexFromPoint(x: number, y: number): number | null {
-  const el = document.elementFromPoint(x, y);
-  const host = el?.closest<HTMLElement>("[data-team-slot]");
-  if (!host) return null;
-  const n = Number(host.dataset.teamSlot);
-  return Number.isInteger(n) && n >= 0 && n < TEAM_SIZE ? n : null;
-}
 
 function TeamSlot({
   member,
@@ -65,8 +56,8 @@ function TeamSlot({
   onDragStart,
   onDragEnd,
   onTouchReorderHover,
+  onTouchReorderMove,
   onTouchReorderDrop,
-  canDrag,
   showEmptyCoach,
   ownedHeldItems,
   heldLabels,
@@ -115,9 +106,8 @@ function TeamSlot({
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
   onTouchReorderHover: (slotIndex: number | null) => void;
+  onTouchReorderMove: (clientX: number, clientY: number) => void;
   onTouchReorderDrop: (slotIndex: number) => void;
-  /** HTML5 DnD en touch captura el gesto y traba el scroll del home en iOS. */
-  canDrag: boolean;
   /** Un solo coach mark en el primer slot vacío, no uno por cada hueco. */
   showEmptyCoach?: boolean;
   ownedHeldItems: OwnedHeldItem[];
@@ -130,25 +120,17 @@ function TeamSlot({
   const tRail = useTranslations("home.rail");
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-  const skipClickRef = useRef(false);
-  const touchOriginRef = useRef<{
-    x: number;
-    y: number;
-    pointerId: number;
-    dragging: boolean;
-  } | null>(null);
-  const touchTimerRef = useRef<number | null>(null);
 
-  function clearTouchTimer() {
-    if (touchTimerRef.current != null) {
-      window.clearTimeout(touchTimerRef.current);
-      touchTimerRef.current = null;
-    }
-  }
-
-  useEffect(() => {
-    return () => clearTouchTimer();
-  }, []);
+  const gesture = useSquadReorderGesture({
+    disabled: !member || pending || isDepositing,
+    memberId: member?.id ?? "",
+    slotAttr: "data-team-slot",
+    onDragStart,
+    onDragHover: onTouchReorderHover,
+    onDragMove: onTouchReorderMove,
+    onDragDrop: onTouchReorderDrop,
+    onDragEnd,
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -299,103 +281,28 @@ function TeamSlot({
       <SquadCardContextMenu {...menuProps} showViewTeam triggerVariant="ghost">
         <button
           type="button"
-          draggable={canDrag && !pending && !isDepositing}
-          onDragStart={(e) => {
-            skipClickRef.current = true;
-            onDragStart(member.id);
-            e.dataTransfer.effectAllowed = "move";
-            e.dataTransfer.setData("text/plain", member.id);
-          }}
-          onDragEnd={() => {
-            onDragEnd();
-            requestAnimationFrame(() => {
-              skipClickRef.current = false;
-            });
-          }}
-          onPointerDown={(e) => {
-            // Touch/pen: long-press → reordenar (HTML5 DnD está off en coarse).
-            if (canDrag || pending || isDepositing) return;
-            if (e.pointerType === "mouse") return;
-            if (e.button !== 0) return;
-            clearTouchTimer();
-            touchOriginRef.current = {
-              x: e.clientX,
-              y: e.clientY,
-              pointerId: e.pointerId,
-              dragging: false,
-            };
-            const target = e.currentTarget;
-            touchTimerRef.current = window.setTimeout(() => {
-              touchTimerRef.current = null;
-              const origin = touchOriginRef.current;
-              if (!origin || origin.pointerId !== e.pointerId) return;
-              origin.dragging = true;
-              skipClickRef.current = true;
-              onDragStart(member.id);
-              try {
-                target.setPointerCapture(e.pointerId);
-              } catch {
-                /* already released */
-              }
-            }, TOUCH_REORDER_MS);
-          }}
-          onPointerMove={(e) => {
-            const origin = touchOriginRef.current;
-            if (!origin || origin.pointerId !== e.pointerId) return;
-            if (!origin.dragging) {
-              const dist = Math.hypot(e.clientX - origin.x, e.clientY - origin.y);
-              if (dist > TOUCH_CANCEL_PX) {
-                clearTouchTimer();
-                touchOriginRef.current = null;
-              }
-              return;
-            }
-            e.preventDefault();
-            onTouchReorderHover(slotIndexFromPoint(e.clientX, e.clientY));
-          }}
-          onPointerUp={(e) => {
-            const origin = touchOriginRef.current;
-            clearTouchTimer();
-            touchOriginRef.current = null;
-            if (!origin || origin.pointerId !== e.pointerId || !origin.dragging) return;
-            const slot = slotIndexFromPoint(e.clientX, e.clientY);
-            if (slot != null) onTouchReorderDrop(slot);
-            onDragEnd();
-            try {
-              e.currentTarget.releasePointerCapture(e.pointerId);
-            } catch {
-              /* already released */
-            }
-            requestAnimationFrame(() => {
-              skipClickRef.current = false;
-            });
-          }}
-          onPointerCancel={() => {
-            clearTouchTimer();
-            if (touchOriginRef.current?.dragging) onDragEnd();
-            touchOriginRef.current = null;
-          }}
-          onContextMenu={(e) => {
-            // Long-press nativo (iOS) no debe abrir el menú del browser sobre el sprite.
-            if (!canDrag) e.preventDefault();
-          }}
+          onPointerDown={gesture.onPointerDown}
+          onPointerMove={gesture.onPointerMove}
+          onPointerUp={gesture.onPointerUp}
+          onPointerCancel={gesture.onPointerCancel}
+          onContextMenu={gesture.onContextMenu}
           onClick={() => {
-            if (skipClickRef.current || isDepositing) return;
+            if (gesture.shouldSkipClick() || isDepositing) return;
             setOpen(true);
           }}
           aria-label={`${displayName}, ${member.levelLabel}, ${cpMark}`}
-          className={`team-card team-slot group relative flex ${SLOT_BOX} touch-manipulation flex-col overflow-hidden rounded-xl border text-left transition duration-300 active:scale-[0.97] md:rounded-[1.25rem] select-none ${
+          className={`team-card team-slot group relative flex ${SLOT_BOX} touch-none flex-col overflow-hidden rounded-xl border text-left transition duration-300 active:scale-[0.97] md:rounded-[1.25rem] select-none ${
             wallpaper ? "team-slot--wallpaper" : ""
           } ${
             isDepositing ? "team-slot--depositing" : ""
-          } ${isOver ? "ring-2 ring-pokeball-red/60 ring-offset-2 ring-offset-background" : ""} ${
-            isDragging ? "opacity-40" : isDepositing ? "" : "hover:scale-[1.01]"
+          } ${isOver ? "team-slot--drop-target ring-2 ring-pokeball-red/70 ring-offset-2 ring-offset-background" : ""} ${
+            isDragging ? "team-slot--dragging" : isDepositing ? "" : "hover:scale-[1.01]"
           } ${
             isLead || member.isFavorite
               ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
               : "border-white/[0.08] hover:border-white/20"
           } ${fainted ? "opacity-80" : ""} ${
-            isDragging && !canDrag ? "touch-none" : ""
+            isDragging ? "touch-none" : ""
           }`}
           style={
             {
@@ -720,20 +627,10 @@ export function ActiveTeamStrip({
   const [dragId, setDragId] = useState<string | null>(null);
   const dragIdRef = useRef<string | null>(null);
   const [overSlot, setOverSlot] = useState<number | null>(null);
+  const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null);
   const [depositingId, setDepositingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [canDrag, setCanDrag] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(pointer: fine)");
-    function apply() {
-      setCanDrag(mq.matches);
-    }
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
 
   const [lastInitialMembers, setLastInitialMembers] = useState(initialMembers);
   if (lastInitialMembers !== initialMembers) {
@@ -800,7 +697,14 @@ export function ActiveTeamStrip({
     if (!mon) return;
     const rest = members.filter((m) => m.id !== mon.id);
     const at = Math.min(index, rest.length);
-    commit([...rest.slice(0, at), mon, ...rest.slice(at)]);
+    const next = [...rest.slice(0, at), mon, ...rest.slice(at)];
+    if (
+      next.length === members.length &&
+      next.every((m, i) => m.id === members[i]?.id)
+    ) {
+      return;
+    }
+    commit(next);
   }
 
   function beginDrag(id: string) {
@@ -812,6 +716,7 @@ export function ActiveTeamStrip({
     dragIdRef.current = null;
     setDragId(null);
     setOverSlot(null);
+    setDragPoint(null);
   }
 
   function depositToPc(id: string) {
@@ -856,6 +761,7 @@ export function ActiveTeamStrip({
   }
 
   const canDeposit = members.length > 1;
+  const draggingMember = dragId ? members.find((m) => m.id === dragId) ?? null : null;
 
   return (
     <section
@@ -887,9 +793,24 @@ export function ActiveTeamStrip({
         </div>
       ) : null}
 
+      {draggingMember && dragPoint ? (
+        <SquadReorderGhost
+          x={dragPoint.x}
+          y={dragPoint.y}
+          spriteUrl={draggingMember.spriteUrl}
+          name={draggingMember.nickname ?? draggingMember.speciesName}
+          accent={typeColor(draggingMember.types[0] ?? "normal")}
+        />
+      ) : null}
+
       {/* Mobile 3×2 (foco en el equipo) · md+: fila de 6. */}
       <div className="min-w-0">
-        <div className="grid min-w-0 grid-cols-3 gap-1.5 md:grid-cols-6 md:gap-2">
+        <div
+          data-team-rail
+          className={`grid min-w-0 grid-cols-3 gap-1.5 md:grid-cols-6 md:gap-2${
+            dragId ? " team-strip--reordering" : ""
+          }`}
+        >
           {slots.map((member, i) => {
             const matches =
               !member ||
@@ -897,6 +818,7 @@ export function ActiveTeamStrip({
               (focusFilter === "favorites" && member.isFavorite) ||
               (focusFilter === "injured" && member.currentHp < member.maxHp) ||
               (focusFilter === "ready" && member.currentHp >= member.maxHp);
+            const isDragging = member !== null && dragId === member.id;
             return (
             <div
               key={member?.id ?? `empty-${i}`}
@@ -904,17 +826,7 @@ export function ActiveTeamStrip({
               data-team-slot={i}
               className={`min-h-0 min-w-0 transition-opacity duration-200 ${
                 matches ? "opacity-100" : "opacity-35"
-              }`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setOverSlot(i);
-              }}
-              onDragLeave={() => setOverSlot((s) => (s === i ? null : s))}
-              onDrop={(e) => {
-                e.preventDefault();
-                dropOnSlot(i);
-                endDrag();
-              }}
+              }${isDragging ? " pointer-events-none" : ""}`}
             >
               <TeamSlot
                 member={member}
@@ -1027,17 +939,16 @@ export function ActiveTeamStrip({
                 onDepositToPc={depositToPc}
                 canDepositToPc={canDeposit}
                 isDepositing={member !== null && depositingId === member.id}
-                isDragging={member !== null && dragId === member.id}
-                isOver={overSlot === i && dragId !== null}
+                isDragging={isDragging}
+                isOver={overSlot === i && dragId !== null && !isDragging}
                 pending={pending || depositingId !== null}
                 onDragStart={beginDrag}
                 onDragEnd={endDrag}
                 onTouchReorderHover={setOverSlot}
+                onTouchReorderMove={(x, y) => setDragPoint({ x, y })}
                 onTouchReorderDrop={(slot) => {
                   dropOnSlot(slot);
-                  endDrag();
                 }}
-                canDrag={canDrag}
               />
             </div>
             );

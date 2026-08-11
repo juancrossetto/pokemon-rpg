@@ -1,7 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type AnimationEvent,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import { itemSpriteUrl, itemHdIconUrl } from "@/lib/item-sprites";
 import { EMPTY_SQUAD_BAG, type SquadBagCounts } from "@/lib/squad-bag";
@@ -62,8 +70,31 @@ export type SquadContextLabels = {
   allocatePoints?: string;
 };
 
-type MenuState = { x: number; y: number } | null;
+type MenuState = { x: number; y: number };
+type MenuPhase = "closed" | "open" | "closing";
 type ManagePanel = "teach" | "held" | "rename" | "allocate" | null;
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+/** Reserva el dock mobile + padding para que el menú no quede debajo. */
+function bottomChromePx(): number {
+  if (typeof window === "undefined") return 8;
+  // xl+: no hay bottom nav.
+  if (window.matchMedia("(min-width: 1280px)").matches) return 12;
+  const root = getComputedStyle(document.documentElement);
+  const rem = Number.parseFloat(root.fontSize) || 16;
+  const navRaw = root.getPropertyValue("--bottom-nav-h").trim() || "5.25rem";
+  const nav = navRaw.endsWith("rem")
+    ? Number.parseFloat(navRaw) * rem
+    : Number.parseFloat(navRaw) || 5.25 * rem;
+  // safe-area típico en notch/home indicator; el max-height CSS cubre el resto.
+  return nav + 24;
+}
 
 /**
  * Click derecho (o botón ⋮) sobre una card del equipo / PC: curar, PP,
@@ -204,9 +235,11 @@ export function SquadCardContextMenu({
     triggerPosition ?? (triggerVariant === "ghost" ? "right-0.5 top-0.5" : "right-1.5 top-1.5");
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [menu, setMenu] = useState<MenuState>(null);
+  const [menu, setMenu] = useState<MenuState | null>(null);
+  const [phase, setPhase] = useState<MenuPhase>("closed");
   const [panel, setPanel] = useState<ManagePanel>(autoOpenTeach ? "teach" : null);
   const [depositNotice, setDepositNotice] = useState<string | null>(null);
+  const [portalReady, setPortalReady] = useState(false);
   const canTeach = Boolean(moves && compatibleTms && teachLabels && labels.teachTm);
   const canHold = Boolean(ownedHeldItems && heldLabels && labels.heldItem);
   const canRename = Boolean(speciesName && renameLabels && labels.rename);
@@ -216,6 +249,36 @@ export function SquadCardContextMenu({
       allocateBases &&
       level != null,
   );
+
+  useEffect(() => {
+    // Portal sólo en cliente: evita mismatch de hidratación.
+    const raf = requestAnimationFrame(() => setPortalReady(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  function requestClose() {
+    if (prefersReducedMotion()) {
+      setPhase("closed");
+      setMenu(null);
+      return;
+    }
+    setPhase((current) => (current === "open" ? "closing" : current));
+  }
+
+  function onMenuAnimationEnd(event: AnimationEvent<HTMLDivElement>) {
+    if (event.target !== menuRef.current) return;
+    if (
+      event.animationName &&
+      !event.animationName.includes("notifications-panel-out")
+    ) {
+      return;
+    }
+    setPhase((current) => {
+      if (current !== "closing") return current;
+      setMenu(null);
+      return "closed";
+    });
+  }
 
   const actions = useSquadActions({
     instanceId,
@@ -229,7 +292,7 @@ export function SquadCardContextMenu({
     canRevive,
     canLevelUp,
     bagCounts,
-    onBeforeAction: () => setMenu(null),
+    onBeforeAction: () => requestClose(),
     onBagChange,
     onHealed,
     onLeveledUp,
@@ -239,12 +302,14 @@ export function SquadCardContextMenu({
   const { counts, busy, candyPending, feedback, toast, fx, fxMeta, levelOffers } =
     actions;
 
+  const menuVisible = phase !== "closed" && menu != null;
+
   useEffect(() => {
-    if (!menu) return;
+    if (phase !== "open") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (levelOffers) return;
-        setMenu(null);
+        requestClose();
       }
     };
     const onPointer = (e: MouseEvent | PointerEvent) => {
@@ -253,7 +318,7 @@ export function SquadCardContextMenu({
       if (levelOffers) return;
       if (menuRef.current?.contains(e.target as Node)) return;
       if (rootRef.current?.contains(e.target as Node) && (e as MouseEvent).button === 2) return;
-      setMenu(null);
+      requestClose();
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("mousedown", onPointer);
@@ -261,17 +326,25 @@ export function SquadCardContextMenu({
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("mousedown", onPointer);
     };
-  }, [menu, levelOffers]);
+  }, [phase, levelOffers]);
 
   function openAt(clientX: number, clientY: number) {
     const pad = 8;
     const mw = 240;
-    const mh = 360;
-    const x = Math.min(clientX, window.innerWidth - mw - pad);
-    const y = Math.min(clientY, window.innerHeight - mh - pad);
+    const mh = 400;
+    const bottom = bottomChromePx();
+    const maxBottom = window.innerHeight - bottom;
+    const x = Math.min(Math.max(pad, clientX), window.innerWidth - mw - pad);
+    // Si no entra hacia abajo (sobre el dock), sube el panel.
+    let y = clientY;
+    if (y + mh > maxBottom) {
+      y = Math.max(pad, maxBottom - mh);
+    }
+    y = Math.min(y, Math.max(pad, maxBottom - 120));
     actions.clearFeedback();
     setDepositNotice(null);
-    setMenu({ x: Math.max(pad, x), y: Math.max(pad, y) });
+    setMenu({ x, y });
+    setPhase("open");
   }
 
   return (
@@ -323,6 +396,7 @@ export function SquadCardContextMenu({
       {!hideTrigger ? (
         <button
           type="button"
+          data-squad-no-drag
           aria-label={labels.hint}
           title={labels.hint}
           onClick={(e) => {
@@ -347,182 +421,190 @@ export function SquadCardContextMenu({
         </button>
       ) : null}
 
-      {menu && (
-        <div
-          ref={menuRef}
-          role="menu"
-          className="fixed z-[90] min-w-[220px] overflow-hidden rounded-lg border border-white/12 bg-[#12161f]/95 py-1 shadow-[0_12px_40px_rgba(0,0,0,0.55)] backdrop-blur-md"
-          style={{ left: menu.x, top: menu.y }}
-        >
-          <ConsumableMenuItem
-            itemName={counts.healItemName}
-            label={labels.heal}
-            count={counts.heal}
-            disabled={busy || Boolean(levelOffers)}
-            onSelect={actions.heal}
-          />
-          <ConsumableMenuItem
-            itemName={counts.reviveItemName}
-            label={labels.revive}
-            count={counts.revive}
-            disabled={busy || Boolean(levelOffers)}
-            onSelect={actions.revive}
-          />
-          <ConsumableMenuItem
-            itemName={counts.ppItemName}
-            label={labels.restorePp}
-            count={counts.leppa}
-            disabled={busy || Boolean(levelOffers)}
-            onSelect={actions.restorePp}
-          />
-          <ConsumableMenuItem
-            itemName="Rare Candy"
-            label={labels.rareCandy}
-            count={counts.rareCandy}
-            disabled={busy || candyPending || Boolean(levelOffers)}
-            onSelect={actions.giveRareCandy}
-          />
-          {canAllocate ? (
-            <>
-              <div className="my-1 border-t border-white/8" />
-              <MenuItem
-                icon="bolt"
-                iconClassName="text-white/65"
-                label={labels.allocatePoints!}
-                trailing={
-                  allocateUnspent > 0 ? (
-                    <span className="shrink-0 rounded-md bg-white/10 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-white/80">
-                      {allocateUnspent}
-                    </span>
-                  ) : undefined
-                }
-                disabled={busy}
-                onSelect={() => {
-                  setMenu(null);
-                  setPanel("allocate");
-                }}
-              />
-            </>
-          ) : null}
-          {canTeach || canHold || canRename ? (
-            <>
-              <div className="my-1 border-t border-white/8" />
-              {canRename ? (
+      {portalReady &&
+        menuVisible &&
+        menu &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            onAnimationEnd={onMenuAnimationEnd}
+            className={[
+              "squad-context-menu fixed z-[100] min-w-[220px] max-h-[min(70dvh,calc(100dvh-var(--bottom-nav-h)-env(safe-area-inset-bottom,0px)-1.5rem))] overflow-y-auto overscroll-contain rounded-xl border border-white/12 bg-[#12161f]/96 py-1 shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-md",
+              phase === "closing" ? "is-closing" : "is-open",
+            ].join(" ")}
+            style={{ left: menu.x, top: menu.y }}
+          >
+            <ConsumableMenuItem
+              itemName={counts.healItemName}
+              label={labels.heal}
+              count={counts.heal}
+              disabled={busy || Boolean(levelOffers)}
+              onSelect={actions.heal}
+            />
+            <ConsumableMenuItem
+              itemName={counts.reviveItemName}
+              label={labels.revive}
+              count={counts.revive}
+              disabled={busy || Boolean(levelOffers)}
+              onSelect={actions.revive}
+            />
+            <ConsumableMenuItem
+              itemName={counts.ppItemName}
+              label={labels.restorePp}
+              count={counts.leppa}
+              disabled={busy || Boolean(levelOffers)}
+              onSelect={actions.restorePp}
+            />
+            <ConsumableMenuItem
+              itemName="Rare Candy"
+              label={labels.rareCandy}
+              count={counts.rareCandy}
+              disabled={busy || candyPending || Boolean(levelOffers)}
+              onSelect={actions.giveRareCandy}
+            />
+            {canAllocate ? (
+              <>
+                <div className="my-1 border-t border-white/8" />
                 <MenuItem
-                  icon="edit"
-                  label={labels.rename!}
+                  icon="bolt"
+                  iconClassName="text-white/65"
+                  label={labels.allocatePoints!}
+                  trailing={
+                    allocateUnspent > 0 ? (
+                      <span className="shrink-0 rounded-md bg-white/10 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-white/80">
+                        {allocateUnspent}
+                      </span>
+                    ) : undefined
+                  }
                   disabled={busy}
                   onSelect={() => {
-                    setMenu(null);
-                    setPanel("rename");
+                    requestClose();
+                    setPanel("allocate");
                   }}
                 />
-              ) : null}
-              {canTeach ? (
+              </>
+            ) : null}
+            {canTeach || canHold || canRename ? (
+              <>
+                <div className="my-1 border-t border-white/8" />
+                {canRename ? (
+                  <MenuItem
+                    icon="edit"
+                    label={labels.rename!}
+                    disabled={busy}
+                    onSelect={() => {
+                      requestClose();
+                      setPanel("rename");
+                    }}
+                  />
+                ) : null}
+                {canTeach ? (
+                  <MenuItem
+                    icon="school"
+                    label={labels.teachTm!}
+                    disabled={busy}
+                    onSelect={() => {
+                      requestClose();
+                      setPanel("teach");
+                    }}
+                  />
+                ) : null}
+                {canHold ? (
+                  <MenuItem
+                    imageSrc={
+                      itemHdIconUrl("Exp. Share") ?? itemSpriteUrl("Exp. Share")
+                    }
+                    label={labels.heldItem!}
+                    disabled={busy}
+                    onSelect={() => {
+                      requestClose();
+                      setPanel("held");
+                    }}
+                  />
+                ) : null}
+              </>
+            ) : null}
+            {showFlags ? (
+              <>
+                <div className="my-1 border-t border-white/8" />
                 <MenuItem
-                  icon="school"
-                  label={labels.teachTm!}
+                  icon={isFavorite ? "star" : "star_outline"}
+                  iconClassName={
+                    isFavorite
+                      ? "ms-fill text-electric-yellow"
+                      : "text-on-surface-variant"
+                  }
+                  label={isFavorite ? labels.favoriteOff : labels.favoriteOn}
+                  disabled={busy}
+                  onSelect={actions.toggleFavorite}
+                />
+                <MenuItem
+                  icon={isTradeLocked ? "lock_open" : "lock"}
+                  label={isTradeLocked ? labels.lockOff : labels.lockOn}
+                  disabled={busy}
+                  onSelect={actions.toggleTradeLock}
+                />
+              </>
+            ) : null}
+            {onDepositToPc && labels.depositToPc ? (
+              <>
+                <div className="my-1 border-t border-white/8" />
+                <MenuItem
+                  imageSrc="/nav/pc-icon.png"
+                  label={labels.depositToPc}
                   disabled={busy}
                   onSelect={() => {
-                    setMenu(null);
-                    setPanel("teach");
+                    if (isTradeLocked) {
+                      setDepositNotice(
+                        labels.depositLockedBlocked ?? labels.depositToPc ?? null,
+                      );
+                      return;
+                    }
+                    if (!canDepositToPc) {
+                      setDepositNotice(
+                        labels.depositLastBlocked ?? labels.depositToPc ?? null,
+                      );
+                      return;
+                    }
+                    requestClose();
+                    onDepositToPc();
                   }}
                 />
-              ) : null}
-              {canHold ? (
-                <MenuItem
-                  imageSrc={
-                    itemHdIconUrl("Exp. Share") ?? itemSpriteUrl("Exp. Share")
-                  }
-                  label={labels.heldItem!}
-                  disabled={busy}
-                  onSelect={() => {
-                    setMenu(null);
-                    setPanel("held");
-                  }}
-                />
-              ) : null}
-            </>
-          ) : null}
-          {showFlags ? (
-            <>
-              <div className="my-1 border-t border-white/8" />
-              <MenuItem
-                icon={isFavorite ? "star" : "star_outline"}
-                iconClassName={
-                  isFavorite
-                    ? "ms-fill text-electric-yellow"
-                    : "text-on-surface-variant"
-                }
-                label={isFavorite ? labels.favoriteOff : labels.favoriteOn}
-                disabled={busy}
-                onSelect={actions.toggleFavorite}
-              />
-              <MenuItem
-                icon={isTradeLocked ? "lock_open" : "lock"}
-                label={isTradeLocked ? labels.lockOff : labels.lockOn}
-                disabled={busy}
-                onSelect={actions.toggleTradeLock}
-              />
-            </>
-          ) : null}
-          {onDepositToPc && labels.depositToPc ? (
-            <>
-              <div className="my-1 border-t border-white/8" />
-              <MenuItem
-                imageSrc="/nav/pc-icon.png"
-                label={labels.depositToPc}
-                disabled={busy}
-                onSelect={() => {
-                  if (isTradeLocked) {
-                    setDepositNotice(
-                      labels.depositLockedBlocked ?? labels.depositToPc ?? null,
-                    );
-                    return;
-                  }
-                  if (!canDepositToPc) {
-                    setDepositNotice(
-                      labels.depositLastBlocked ?? labels.depositToPc ?? null,
-                    );
-                    return;
-                  }
-                  setMenu(null);
-                  onDepositToPc();
-                }}
-              />
-            </>
-          ) : null}
-          {showViewTeam ? (
-            <>
-              <div className="my-1 border-t border-white/8" />
-              <Link
-                href="/team"
-                role="menuitem"
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-on-surface transition hover:bg-white/8"
-                onClick={() => setMenu(null)}
+              </>
+            ) : null}
+            {showViewTeam ? (
+              <>
+                <div className="my-1 border-t border-white/8" />
+                <Link
+                  href="/team"
+                  role="menuitem"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-on-surface transition hover:bg-white/8"
+                  onClick={() => requestClose()}
+                >
+                  <span className="material-symbols-outlined text-[18px]! text-on-surface-variant">
+                    groups
+                  </span>
+                  {labels.viewTeam}
+                </Link>
+              </>
+            ) : null}
+            {depositNotice || feedback ? (
+              <p
+                className={[
+                  "mx-2 mb-1 mt-1 rounded-md px-2 py-1.5 text-[11px] leading-snug",
+                  depositNotice || feedback?.kind === "error"
+                    ? "bg-error/15 text-error"
+                    : "bg-emerald-500/15 text-emerald-300",
+                ].join(" ")}
+                role="status"
               >
-                <span className="material-symbols-outlined text-[18px]! text-on-surface-variant">
-                  groups
-                </span>
-                {labels.viewTeam}
-              </Link>
-            </>
-          ) : null}
-          {depositNotice || feedback ? (
-            <p
-              className={[
-                "mx-2 mb-1 mt-1 rounded-md px-2 py-1.5 text-[11px] leading-snug",
-                depositNotice || feedback?.kind === "error"
-                  ? "bg-error/15 text-error"
-                  : "bg-emerald-500/15 text-emerald-300",
-              ].join(" ")}
-              role="status"
-            >
-              {depositNotice ?? feedback?.text}
-            </p>
-          ) : null}
-        </div>
-      )}
+                {depositNotice ?? feedback?.text}
+              </p>
+            ) : null}
+          </div>,
+          document.body,
+        )}
       {actions.levelOffers && (
         <SquadLevelOffers
           entries={actions.levelOffers}
@@ -568,31 +650,35 @@ export function SquadCardContextMenu({
       canAllocate &&
       allocatePoints &&
       allocateBases &&
-      level != null ? (
-        <div className="fixed inset-0 z-[90] flex items-end justify-center px-3 pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.75rem)] sm:items-center sm:p-4 sm:pb-4">
-          <button
-            type="button"
-            aria-label={labels.allocatePoints}
-            className="absolute inset-0 bg-black/65 backdrop-blur-sm"
-            onClick={() => setPanel(null)}
-          />
-          <div className="relative z-[1] max-h-[min(80dvh,560px)] w-full max-w-md overflow-y-auto rounded-2xl border border-white/12 bg-[#0b0d13] p-3 shadow-[0_16px_48px_rgba(0,0,0,0.55)]">
-            <AllocatePointsPanel
-              alwaysOpen
-              instanceId={instanceId}
-              level={level}
-              unspentPoints={allocateUnspent}
-              points={allocatePoints}
-              bases={allocateBases}
-              onClose={() => setPanel(null)}
-              onAllocated={(next) => {
-                onPointsAllocated?.(next);
-                setPanel(null);
-              }}
-            />
-          </div>
-        </div>
-      ) : null}
+      level != null &&
+      portalReady
+        ? createPortal(
+            <div className="fixed inset-0 z-[100] flex items-end justify-center px-3 pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.75rem)] sm:items-center sm:p-4 sm:pb-4">
+              <button
+                type="button"
+                aria-label={labels.allocatePoints}
+                className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+                onClick={() => setPanel(null)}
+              />
+              <div className="relative z-[1] max-h-[min(80dvh,560px)] w-full max-w-md overflow-y-auto rounded-2xl border border-white/12 bg-[#0b0d13] p-3 shadow-[0_16px_48px_rgba(0,0,0,0.55)]">
+                <AllocatePointsPanel
+                  alwaysOpen
+                  instanceId={instanceId}
+                  level={level}
+                  unspentPoints={allocateUnspent}
+                  points={allocatePoints}
+                  bases={allocateBases}
+                  onClose={() => setPanel(null)}
+                  onAllocated={(next) => {
+                    onPointsAllocated?.(next);
+                    setPanel(null);
+                  }}
+                />
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

@@ -195,14 +195,19 @@ export function HomeGameHub({
                 />
                 <div className="home-ops-deck__rule my-2.5 sm:my-3" aria-hidden />
               </div>
-              {/* Mobile: vitrina en carrusel. De lg para arriba sigue el strip,
-                  que tiene el detalle expandible y las acciones por Pokémon. */}
+              {/* Mobile: vitrina en carrusel (⋮ + long-press para reordenar).
+                  De lg para arriba sigue el strip con detalle expandible. */}
               <HomeSquadCards
-                members={squad.members}
+                locale={locale}
+                initialMembers={squad.members}
                 title={squad.title}
                 manageHref={squad.manageHref}
                 manageLabel={squad.manageLabel}
                 leadLabel={squad.leadLabel}
+                initialBagCounts={squad.bagCounts}
+                ownedHeldItems={squad.ownedHeldItems}
+                heldLabels={squad.heldLabels}
+                onCompanionTypesChange={setCompanionTypes}
               />
 
               <div className="hidden lg:block">
