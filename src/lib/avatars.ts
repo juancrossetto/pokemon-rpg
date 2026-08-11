@@ -166,6 +166,29 @@ const AVATAR_SLUGS = [
   "yakon",
 ] as const;
 
+/**
+ * Arte de clase de entrenador sólo para NPCs de ruta / aventura.
+ * Siguen en el catálogo (retratos HD vía `npcTrainerPortraitUrl`) pero no
+ * entran al picker ni a los desbloqueos de jugador: el encuadre no encaja
+ * con el diseño de avatar de perfil.
+ */
+export const AVATAR_ADVENTURE_ONLY_SLUGS = [
+  "cazabichos",
+  "chicaa",
+  "criadora",
+  "damisela",
+  "hugo",
+  "motorista",
+  "pokemaniaco",
+  "supernerd",
+] as const;
+
+const ADVENTURE_ONLY_SET = new Set<string>(AVATAR_ADVENTURE_ONLY_SLUGS);
+
+export function isAdventureOnlyAvatar(slug: string): boolean {
+  return ADVENTURE_ONLY_SET.has(slug);
+}
+
 /** Sprites de NPCs/gimnasios/torre siguen en Showdown. */
 export function showdownTrainerSpriteUrl(slug: string): string {
   return `${showdownSpritesBase()}/trainers/${slug}.png`;

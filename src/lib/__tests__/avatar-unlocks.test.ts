@@ -56,4 +56,23 @@ describe("avatar-unlocks", () => {
     const afterStarters = ordered.slice(AVATAR_STARTER_SLUGS.length);
     expect(afterStarters.slice(0, 3)).toEqual(["chase", "brock", "brockk"]);
   });
+
+  it("no ofrece clases de ruta (arte sólo-aventura) en el picker", () => {
+    const ordered = avatarSlugsInStoryOrder();
+    for (const slug of [
+      "cazabichos",
+      "chicaa",
+      "criadora",
+      "damisela",
+      "hugo",
+      "motorista",
+      "pokemaniaco",
+      "supernerd",
+    ]) {
+      expect(ordered).not.toContain(slug);
+      expect(isAvatarUnlocked(slug, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])).toBe(
+        false,
+      );
+    }
+  });
 });

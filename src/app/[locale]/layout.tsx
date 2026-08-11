@@ -187,6 +187,8 @@ export default async function LocaleLayout({
           crossOrigin="anonymous"
         />
         <link rel="preload" href="/splash/boot.webp" as="image" />
+        <link rel="preload" href="/splash/charizard-boot.mp4" as="video" type="video/mp4" />
+        <link rel="preload" href="/logo.png" as="image" />
         <link rel="preload" href="/loaders/pokeball-loader-transparent.webp" as="image" />
       </head>
       <body

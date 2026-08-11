@@ -11661,7 +11661,16 @@ html.boot-splash-done .boot-splash,
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
+  object-position: center center;
+}
+
+.boot-splash__poster {
+  z-index: 0;
+}
+
+.boot-splash__video {
+  z-index: 1;
+  background: #0a0806;
 }
 
 .boot-splash__pokeball {
@@ -11677,71 +11686,99 @@ html.boot-splash-done .boot-splash,
   left: 0;
   right: 0;
   bottom: 0;
-  height: 38%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, transparent 100%);
+  z-index: 2;
+  height: 46%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.88) 0%,
+    rgba(0, 0, 0, 0.45) 45%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 
 .boot-splash__footer {
   position: relative;
-  z-index: 1;
+  z-index: 3;
+  display: flex;
   margin-top: auto;
-  padding: max(1.25rem, env(safe-area-inset-bottom)) 1.75rem max(1.5rem, env(safe-area-inset-bottom));
+  flex-direction: column;
+  align-items: center;
+  padding: max(1.25rem, env(safe-area-inset-bottom)) 1.5rem
+    max(1.65rem, env(safe-area-inset-bottom));
 }
 
 .boot-splash__footer--desktop {
   position: absolute;
-  left: 0;
   right: 0;
   bottom: 0;
+  left: 0;
   margin-top: 0;
   padding: 1.75rem 2.5rem 2rem;
 }
 
+.boot-splash__logo {
+  display: block;
+  width: min(11.5rem, 52vw);
+  height: auto;
+  margin: 0 auto 0.95rem;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.55));
+}
+
 .boot-splash__meta {
   display: flex;
+  width: 100%;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.7rem;
 }
 
 .boot-splash__label {
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.16em;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .boot-splash__pct {
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.92);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
   font-variant-numeric: tabular-nums;
 }
 
 .boot-splash__track {
-  height: 3px;
+  width: 100%;
+  height: 8px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 .boot-splash__fill {
   height: 100%;
   width: 0%;
   border-radius: inherit;
-  background: var(--color-pokeball-red);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--color-pokeball-red) 45%, transparent);
-  transition: width 120ms linear;
+  background: linear-gradient(90deg, #f43f5e, #e879f9);
+  box-shadow: 0 0 14px color-mix(in srgb, #e879f9 55%, transparent);
+  transition: width 140ms linear;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .boot-splash {
     transition: none;
+  }
+
+  .boot-splash__video {
+    display: none;
   }
 
   .boot-splash__fill {
@@ -11821,7 +11858,28 @@ html.boot-splash-done .boot-splash,
 
 /* ── Home identity banner ─────────────────────────────────────────────────
    Franja baja (min-height). Marco PNG a borde del card; `.home-identity__frame`
-   = fallback CSS sin PNG. */
+   = fallback CSS sin PNG.
+
+   Cabecera del hub: en mobile/md sangra fuera del padding de página; en xl+
+   ocupa todo el ancho del contenedor (rail + columna) y manda sobre el cuerpo.
+*/
+.home-identity-wrap {
+  min-width: 0;
+}
+
+@media (max-width: 639.98px) {
+  .home-identity-wrap .home-identity {
+    border-radius: 0;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  /* Entre sm y lg el rail aún no aparece: un poco de radio al sangrar. */
+  .home-identity-wrap .home-identity {
+    border-radius: 1.25rem;
+  }
+}
+
 /*
   Capa de arte del banner: paisaje + velos + avatar.
 
@@ -12266,9 +12324,16 @@ html.boot-splash-done .boot-splash,
       #14161f 42%,
       #0a0b11 100%
     );
+  /*
+   * Doble filo arriba (luz + sombra inmediata) para que el borde tenga espesor
+   * en vez de ser una línea; y una sombra ambiental más abierta que despegue el
+   * dock del contenido que pasa por detrás al scrollear.
+   */
   box-shadow:
-    0 -8px 28px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
+    0 -10px 34px rgba(0, 0, 0, 0.55),
+    0 -2px 8px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 color-mix(in srgb, white 18%, transparent),
+    inset 0 2px 1px rgba(0, 0, 0, 0.28),
     inset 0 -2px 6px rgba(0, 0, 0, 0.45);
 }
 
@@ -12301,30 +12366,55 @@ html.boot-splash-done .boot-splash,
 }
 
 .mobile-nav-tab--active {
-  color: color-mix(in srgb, var(--theme-primary) 78%, white);
-  transform: translateY(-0.12rem);
+  color: color-mix(in srgb, var(--theme-primary) 70%, white);
+  transform: none;
 }
 
-/* Pastilla deslizante detrás del ícono activo (el label queda afuera). */
+/*
+ * Canal de luz del tab activo.
+ *
+ * Antes era una losa violeta sólida a altura completa: leía como un `div` con
+ * background, no como una consola. Ahora es un halo que sube desde la base con
+ * una barra de acento en el canto superior del dock — el mismo recurso que usan
+ * las tab bars de juego. El relieve real lo aporta la tecla del ícono.
+ */
 .mobile-nav-active-bg {
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  border-radius: 1.15rem;
-  background:
-    radial-gradient(
-      85% 85% at 50% 35%,
-      color-mix(in srgb, var(--theme-primary) 42%, transparent) 0%,
-      color-mix(in srgb, var(--theme-primary) 16%, transparent) 55%,
-      color-mix(in srgb, var(--theme-primary) 6%, transparent) 100%
-    );
-  box-shadow:
-    0 0 14px color-mix(in srgb, var(--theme-primary) 32%, transparent),
-    inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
+  border-radius: 1.15rem 1.15rem 0.85rem 0.85rem;
+  border: none;
+  background: linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--theme-primary) 26%, transparent) 0%,
+    color-mix(in srgb, var(--theme-primary) 12%, transparent) 42%,
+    transparent 88%
+  );
+  box-shadow: none;
+}
+
+/* Barra de acento al ras del canto superior. */
+.mobile-nav-active-bg::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18%;
+  right: 18%;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--theme-primary-bright) 85%, white) 22%,
+    color-mix(in srgb, var(--theme-primary-bright) 95%, white) 50%,
+    color-mix(in srgb, var(--theme-primary-bright) 85%, white) 78%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px color-mix(in srgb, var(--theme-primary) 75%, transparent);
 }
 
 .mobile-nav-active-bg--fab {
-  /* El FAB activo ya es el highlight; no duplicar pastilla detrás. */
+  /* Combate: el FAB ya marca activo; el slot full-height no suma. */
   opacity: 0;
 }
 
@@ -12346,6 +12436,14 @@ html.boot-splash-done .boot-splash,
   z-index: 1;
 }
 
+/*
+ * Cada ícono se apoya en una tecla, no flota sobre el dock.
+ *
+ * En reposo la tecla está hundida (luz arriba, sombra propia abajo); al
+ * activarse se levanta y se enciende. Es el mismo lenguaje del FAB de combate
+ * —pedestal + rim light + glow— aplicado al resto, que es lo que hacía que solo
+ * ese botón se viera parte del juego.
+ */
 .mobile-nav-tab-icon {
   display: flex;
   height: 2.85rem;
@@ -12353,9 +12451,30 @@ html.boot-splash-done .boot-splash,
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  border-radius: 0.95rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 5%, transparent) 0%,
+    rgba(0, 0, 0, 0.16) 52%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.4),
+    0 1px 0 color-mix(in srgb, white 4%, transparent);
   transition:
     transform 480ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 480ms cubic-bezier(0.22, 1, 0.36, 1);
+    filter 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Los inactivos bajan saturación y brillo. Con los cinco a todo color ninguno
+ * gana y la fila se ve como un cajón de stickers; así el activo manda.
+ */
+.mobile-nav-tab:not(.mobile-nav-tab--active) .mobile-nav-tab-icon img {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5)) saturate(0.7) brightness(0.85);
 }
 
 .mobile-nav-tab-icon img,
@@ -12366,9 +12485,37 @@ html.boot-splash-done .boot-splash,
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
 }
 
+/* Tecla encendida: se levanta, toma color y proyecta sombra propia. */
 .mobile-nav-tab--active .mobile-nav-tab-icon {
-  transform: scale(1.08);
-  filter: brightness(1.12);
+  transform: translateY(-0.14rem) scale(1.06);
+  background: radial-gradient(
+    120% 100% at 30% 16%,
+    color-mix(in srgb, var(--theme-primary) 62%, white) 0%,
+    color-mix(in srgb, var(--theme-primary) 82%, #1a0a20) 46%,
+    color-mix(in srgb, var(--theme-primary-deep) 85%, #0a0610) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
+    inset 0 -3px 7px rgba(0, 0, 0, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.5),
+    0 0 18px color-mix(in srgb, var(--theme-primary) 45%, transparent);
+}
+
+/*
+ * Hundir al tocar. Sin esto el tap no devuelve nada hasta que navega, que en
+ * mobile se siente como que el botón no registró.
+ */
+.mobile-nav-tab:active .mobile-nav-tab-icon {
+  transform: translateY(0) scale(0.94);
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0 color-mix(in srgb, white 6%, transparent);
+  transition-duration: 90ms;
+}
+
+.mobile-nav-tab--combat:active .mobile-nav-fab {
+  transform: scale(0.95);
+  transition-duration: 90ms;
 }
 
 .mobile-nav-tab-text {
@@ -12386,7 +12533,11 @@ html.boot-splash-done .boot-splash,
 
 .mobile-nav-tab--active .mobile-nav-tab-text {
   font-weight: 700;
-  opacity: 0.92;
+  opacity: 1;
+  color: color-mix(in srgb, white 88%, var(--theme-primary));
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 0 10px color-mix(in srgb, var(--theme-primary) 55%, transparent);
 }
 
 /* Combat: botón central flotante (FAB).
@@ -12500,6 +12651,13 @@ html.boot-splash-done .boot-splash,
   }
 
   .mobile-nav-tab--combat.mobile-nav-tab--active .mobile-nav-fab {
+    transform: none;
+  }
+
+  /* La tecla sigue encendida (color y relieve), sólo no se desplaza. */
+  .mobile-nav-tab--active .mobile-nav-tab-icon,
+  .mobile-nav-tab:active .mobile-nav-tab-icon,
+  .mobile-nav-tab--combat:active .mobile-nav-fab {
     transform: none;
   }
 }

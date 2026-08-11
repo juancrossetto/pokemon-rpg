@@ -1,6 +1,7 @@
 /**
  * Markup estático del splash. Server Component (sin "use client").
- * Mobile: wallpaper Mewtwo. Desktop: Pokéball. El % lo anima el warmup.
+ * Mobile: video Charizard (poster estático para el primer paint). Desktop:
+ * Pokéball. El % lo anima el warmup.
  *
  * Estilos inline de emergencia: si el CSS crítico aún no aplicó, el lienzo
  * ya es oscuro a pantalla completa (no blanco del UA).
@@ -34,16 +35,37 @@ export function BootSplashMarkup({
       }}
     >
       <div className="boot-splash__mobile">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- poster inmediato sin JS */}
         <img
           src="/splash/boot.webp"
           alt=""
-          className="boot-splash__art"
+          className="boot-splash__art boot-splash__poster"
           fetchPriority="high"
           decoding="sync"
         />
+        <video
+          className="boot-splash__art boot-splash__video"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          poster="/splash/boot.webp"
+          aria-hidden
+        >
+          <source src="/splash/charizard-boot.mp4" type="video/mp4" />
+        </video>
         <div className="boot-splash__shade" aria-hidden />
         <div className="boot-splash__footer">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt=""
+            className="boot-splash__logo"
+            width={220}
+            height={72}
+            decoding="async"
+          />
           <div className="boot-splash__meta">
             <span className="boot-splash__label">{label}</span>
             <span className="boot-splash__pct boot-splash-pct">0%</span>
@@ -66,6 +88,15 @@ export function BootSplashMarkup({
           decoding="async"
         />
         <div className="boot-splash__footer boot-splash__footer--desktop">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt=""
+            className="boot-splash__logo"
+            width={200}
+            height={64}
+            decoding="async"
+          />
           <div className="boot-splash__meta">
             <span className="boot-splash__label">{label}</span>
             <span className="boot-splash__pct boot-splash-pct">0%</span>

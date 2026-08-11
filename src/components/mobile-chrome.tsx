@@ -513,8 +513,8 @@ export function MobileChrome({
     (drawerShown && !groupMode) || (!drawerPresent && !anyPrimaryActive && moreRouteActive);
 
   /*
-    Pastilla deslizante detrás del tab activo. Un único elemento medido sobre
-    `[data-active]` para animar el cambio de sección (no un fade por tab).
+    Pastilla deslizante detrás del tab activo: ancho del tab, alto completo
+    del dock (hasta el safe-area). Un único elemento sobre `[data-active]`.
   */
   useEffect(() => {
     const root = dockRef.current;
@@ -527,18 +527,17 @@ export function MobileChrome({
         return;
       }
       const rootBox = root.getBoundingClientRect();
-      // Pastilla sólo detrás del ícono/FAB — el label queda fuera y no se corta.
-      const target =
-        node.querySelector<HTMLElement>(".mobile-nav-tab-icon, .mobile-nav-fab") ??
-        node;
-      const box = target.getBoundingClientRect();
+      const tabBox = node.getBoundingClientRect();
       const isCombat = node.classList.contains("mobile-nav-tab--combat");
-      const pad = isCombat ? 6 : 5;
+      const styles = getComputedStyle(root);
+      const padBottom = Number.parseFloat(styles.paddingBottom) || 0;
+      const insetX = 2;
       const next = {
-        left: box.left - rootBox.left - pad,
-        top: box.top - rootBox.top - pad,
-        width: Math.max(0, box.width + pad * 2),
-        height: Math.max(0, box.height + pad * 2),
+        left: tabBox.left - rootBox.left + insetX,
+        /* Flush al tope del dock; abajo corta antes del safe-area. */
+        top: 0,
+        width: Math.max(0, tabBox.width - insetX * 2),
+        height: Math.max(0, rootBox.height - padBottom),
         combat: isCombat,
       };
       setIndicator((prev) => {

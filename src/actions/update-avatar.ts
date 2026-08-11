@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { avatarById } from "@/lib/avatars";
+import { avatarById, isAdventureOnlyAvatar } from "@/lib/avatars";
 import { isAvatarUnlocked } from "@/lib/avatar-unlocks";
 
 export type UpdateAvatarResult =
@@ -22,6 +22,7 @@ async function earnedGymOrdersFor(userId: string): Promise<number[]> {
  * Cambia el retrato del entrenador.
  *
  * Valida catálogo + desbloqueo por medallas (ver `avatar-unlocks.ts`).
+ * Rechaza arte sólo-aventura (clases de ruta para NPCs).
  */
 export async function updateAvatar(
   avatarId: string,
@@ -31,7 +32,9 @@ export async function updateAvatar(
   if (!session?.user) return { ok: false, error: "unauthorized" };
 
   const option = avatarById(avatarId);
-  if (!option) return { ok: false, error: "invalid" };
+  if (!option || isAdventureOnlyAvatar(option.slug)) {
+    return { ok: false, error: "invalid" };
+  }
 
   const orders = await earnedGymOrdersFor(session.user.id);
   const user = await prisma.user.findUnique({

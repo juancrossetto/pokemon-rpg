@@ -10,7 +10,7 @@
  * `Badge` (órdenes ganadas); no hay tabla de ownership.
  */
 
-import { AVATAR_OPTIONS } from "@/lib/avatars";
+import { AVATAR_OPTIONS, isAdventureOnlyAvatar } from "@/lib/avatars";
 
 /** Retratos libres desde el registro (Pueblo Paleta + novatos). */
 export const AVATAR_STARTER_SLUGS = [
@@ -32,6 +32,8 @@ export const AVATAR_STARTER_SLUGS = [
  * Lotes por `Gym.order` (seed Kanto).
  * 11–12 meten invitados de otras regiones (post-Kanto).
  * 13 Campeón: Red, Blue, Cynthia, N.
+ *
+ * No incluir slugs de `AVATAR_ADVENTURE_ONLY_SLUGS` (clases de ruta sólo NPC).
  */
 export const AVATAR_REWARDS_BY_GYM_ORDER: Record<number, readonly string[]> = {
   // 1 · Brock — 1.ª medalla
@@ -39,9 +41,7 @@ export const AVATAR_REWARDS_BY_GYM_ORDER: Record<number, readonly string[]> = {
     "chase",
     "brock",
     "brockk",
-    "chicaa",
     "ranger",
-    "cazabichos",
   ],
   // 2 · Misty
   2: [
@@ -51,8 +51,6 @@ export const AVATAR_REWARDS_BY_GYM_ORDER: Record<number, readonly string[]> = {
     "mistyyy",
     "chicamala",
     "model",
-    "damisela",
-    "criadora",
     "francine",
   ],
   // 3 · Lt. Surge + Team Rocket
@@ -85,10 +83,6 @@ export const AVATAR_REWARDS_BY_GYM_ORDER: Record<number, readonly string[]> = {
     "koga",
     "petra",
     "petraa",
-    "pokemaniaco",
-    "hugo",
-    "supernerd",
-    "motorista",
     "yakon",
     "maximo",
     "maximob",
@@ -255,6 +249,7 @@ export function starterAvatarOptions() {
 
 /**
  * Orden de historia: starters (Oak/Ash primero) → gym 1…13.
+ * Excluye arte sólo-aventura (clases de ruta para NPCs).
  */
 export function avatarSlugsInStoryOrder(): string[] {
   const ordered: string[] = [...AVATAR_STARTER_SLUGS];
@@ -262,7 +257,7 @@ export function avatarSlugsInStoryOrder(): string[] {
     const batch = AVATAR_REWARDS_BY_GYM_ORDER[order];
     if (batch) ordered.push(...batch);
   }
-  return ordered;
+  return ordered.filter((slug) => !isAdventureOnlyAvatar(slug));
 }
 
 export function avatarOptionsInStoryOrder() {
@@ -272,16 +267,20 @@ export function avatarOptionsInStoryOrder() {
     .filter((o): o is (typeof AVATAR_OPTIONS)[number] => o != null);
 }
 
-/** Asegura en tests/CI que el catálogo y la tabla de unlocks coinciden. */
+/** Asegura en tests/CI que el catálogo jugable y la tabla de unlocks coinciden. */
 export function assertAvatarUnlockCoverage(): {
   ok: boolean;
   missing: string[];
   extra: string[];
 } {
-  const catalog = new Set(AVATAR_OPTIONS.map((o) => o.slug));
+  const catalog = new Set(
+    AVATAR_OPTIONS.map((o) => o.slug).filter((s) => !isAdventureOnlyAvatar(s)),
+  );
   const covered = new Set<string>(AVATAR_STARTER_SLUGS);
   for (const slugs of Object.values(AVATAR_REWARDS_BY_GYM_ORDER)) {
-    for (const s of slugs) covered.add(s);
+    for (const s of slugs) {
+      if (!isAdventureOnlyAvatar(s)) covered.add(s);
+    }
   }
   const missing = [...catalog].filter((s) => !covered.has(s));
   const extra = [...covered].filter((s) => !catalog.has(s));

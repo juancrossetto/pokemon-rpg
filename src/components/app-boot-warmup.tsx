@@ -11,14 +11,16 @@ import {
 } from "@/lib/boot-splash";
 import { navWarmupHrefs } from "@/lib/navigation";
 
-/** Tiempo mínimo visible para que el % se lea (no un flash). */
-const MIN_VISIBLE_MS = 900;
+/** Tiempo mínimo visible para apreciar el video y leer el %. */
+const MIN_VISIBLE_MS = 3200;
 /** Tope duro: no dejar al jugador trabado si la red falla. */
-const MAX_WAIT_MS = 10000;
+const MAX_WAIT_MS = 12000;
 /** Pausa entre prefetches para no saturar el hilo / la red. */
-const PREFETCH_GAP_MS = 90;
+const PREFETCH_GAP_MS = 120;
 /** Holgura final para que los RSC en vuelo terminen de cachearse. */
-const SETTLE_MS = 250;
+const SETTLE_MS = 400;
+/** Cold start sin sesión: splash corto pero apreciable (tapa el blanco). */
+const GUEST_VISIBLE_MS = 2200;
 
 /** Evita re-prefetchar la misma ruta en el ciclo de vida de la pestaña. */
 const prefetchedHrefs = new Set<string>();
@@ -53,13 +55,16 @@ function hideSplash() {
   clearBootSplashPending();
   markNavWarmupDone();
   setSplashProgress(100);
+  for (const video of splash?.querySelectorAll("video") ?? []) {
+    video.pause();
+  }
   window.setTimeout(() => {
     splash?.classList.add("boot-splash--out");
     splash?.setAttribute("aria-busy", "false");
     splash?.setAttribute("aria-hidden", "true");
     document.documentElement.classList.remove("boot-splash-pending");
     document.documentElement.classList.add("boot-splash-done");
-  }, 220);
+  }, 320);
 }
 
 function dismissSplashWithoutWarmup() {
@@ -76,7 +81,7 @@ function sleep(ms: number) {
 }
 
 /**
- * Al abrir la app (una vez por sesión): muestra Mewtwo en mobile / Pokéball
+ * Al abrir la app (una vez por sesión): muestra Charizard en mobile / Pokéball
  * en desktop con barra de %, y detrás precarga todas las pantallas de la nav.
  *
  * El splash ya puede estar visible desde el HTML/SSR (evita lienzo blanco).
@@ -101,14 +106,26 @@ export function AppBootWarmup() {
     const needsBlockingWarmup =
       peekBootSplashPending() || hasAuthSessionCookie();
 
-    // Cold start sin sesión: el banner ya tapó el blanco; no bloqueamos 1s+.
+    // Cold start sin sesión: el banner ya tapó el blanco; dejamos apreciar el video.
     if (!needsBlockingWarmup) {
       showSplash();
-      setSplashProgress(100);
+      const startedAt = performance.now();
+      let cancelled = false;
+      const tick = window.setInterval(() => {
+        if (cancelled) return;
+        const t = Math.min(1, (performance.now() - startedAt) / GUEST_VISIBLE_MS);
+        setSplashProgress(t * 100);
+      }, 80);
       const t = window.setTimeout(() => {
+        window.clearInterval(tick);
+        setSplashProgress(100);
         hideSplash();
-      }, 420);
-      return () => window.clearTimeout(t);
+      }, GUEST_VISIBLE_MS);
+      return () => {
+        cancelled = true;
+        window.clearInterval(tick);
+        window.clearTimeout(t);
+      };
     }
 
     if (inFlightRef.current) return;

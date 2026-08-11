@@ -77,7 +77,7 @@ export function HomeIdentityBanner({
 
   return (
     <section
-      className={`home-identity relative isolate min-h-[7rem] overflow-hidden rounded-2xl sm:min-h-[11rem] xl:min-h-[14rem]${frame ? " home-identity--framed" : ""}`}
+      className={`home-identity relative isolate min-h-[7rem] overflow-hidden rounded-none sm:rounded-[1.25rem] sm:min-h-[11rem] xl:min-h-[14rem] xl:rounded-2xl${frame ? " home-identity--framed" : ""}`}
       style={
         {
           "--hi-fluor-from": fluorFrom,
@@ -100,7 +100,7 @@ export function HomeIdentityBanner({
           priority
           unoptimized
           draggable={false}
-          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 960px"
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1280px"
           className="object-cover object-center"
         />
 
@@ -223,7 +223,7 @@ export function HomeIdentityBanner({
       {/* sm+ */}
       <Link
         href="/profile"
-        className="home-identity__hit relative z-[2] hidden h-full min-h-[11rem] flex-col justify-center gap-2 pr-[40%] sm:flex md:pr-[36%] xl:min-h-[14rem]"
+        className="home-identity__hit relative z-[2] hidden h-full min-h-[11rem] flex-col justify-center gap-2 pr-[40%] sm:flex md:pr-[36%] xl:min-h-[14rem] xl:pr-[28%]"
         aria-label={labels.viewProfile}
       >
         <div className="home-identity__copy min-w-0">
