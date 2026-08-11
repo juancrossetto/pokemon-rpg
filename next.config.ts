@@ -1,9 +1,15 @@
+import path from "path";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // El home tiene un package-lock.json suelto; sin esto Turbopack toma ~ como
+  // root y rompe imports relativos del CSS (`../styles/...`) + el HMR.
+  turbopack: {
+    root: path.join(__dirname),
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "raw.githubusercontent.com" },

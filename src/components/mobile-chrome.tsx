@@ -531,13 +531,13 @@ export function MobileChrome({
       const isCombat = node.classList.contains("mobile-nav-tab--combat");
       const styles = getComputedStyle(root);
       const padBottom = Number.parseFloat(styles.paddingBottom) || 0;
-      const insetX = 2;
+      const padTop = Number.parseFloat(styles.paddingTop) || 0;
+      /* Lavado del segmento: ancho del tab, alto de la losa (sin safe-area). */
       const next = {
-        left: tabBox.left - rootBox.left + insetX,
-        /* Flush al tope del dock; abajo corta antes del safe-area. */
-        top: 0,
-        width: Math.max(0, tabBox.width - insetX * 2),
-        height: Math.max(0, rootBox.height - padBottom),
+        left: tabBox.left - rootBox.left,
+        top: padTop,
+        width: tabBox.width,
+        height: Math.max(0, rootBox.height - padTop - padBottom),
         combat: isCombat,
       };
       setIndicator((prev) => {
@@ -1154,7 +1154,7 @@ export function MobileChrome({
                   {badge > 0 && (
                     <span
                       aria-hidden
-                      className="absolute right-[14%] top-1 h-2 w-2 rounded-full bg-tertiary ring-2 ring-[#0a0b11]"
+                      className="absolute right-[12%] top-1.5 z-[3] h-2 w-2 rounded-full bg-tertiary ring-2 ring-[#0c0b11]"
                     />
                   )}
                 </Link>

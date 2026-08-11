@@ -12280,9 +12280,8 @@ html.boot-splash-done .boot-splash,
 }
 
 /* ── Mobile bottom nav (PWA dock) ─────────────────────────────────────────
-   Dock flotante estilo idle/gacha (Clash Royale / Unite). Desktop (xl+) no
-   lo usa: el `display: flex` de acá pisa el `xl:hidden` de Tailwind (misma
-   especificidad, esta regla gana por orden), así que lo ocultamos en media. */
+   Una sola losa de piedra con surcos finos entre segmentos (ref Unite/Clash).
+   El activo NO es un cuadrado sólido: solo un lavado + filo superior. */
 .mobile-bottom-nav {
   position: fixed;
   inset-inline: 0;
@@ -12291,7 +12290,6 @@ html.boot-splash-done .boot-splash,
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  /* Sólo arriba: el FAB sobresale. Nunca mover `bottom` con safe-area. */
   padding: 1.35rem 0 0;
   border: none;
   border-radius: 0;
@@ -12308,41 +12306,44 @@ html.boot-splash-done .boot-splash,
 }
 
 .mobile-bottom-nav__dock {
+  --nav-rock-hi: #3a3846;
+  --nav-rock-mid: #16141d;
+  --nav-rock-lo: #09080d;
   pointer-events: auto;
   position: relative;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  align-items: end;
-  width: 100%;
-  max-width: none;
-  min-height: 3.85rem;
-  padding: 0.28rem 0.45rem max(0.4rem, env(safe-area-inset-bottom, 0px));
-  border-radius: 1.35rem 1.35rem 0 0;
-  border: 1px solid color-mix(in srgb, white 10%, transparent);
-  border-bottom: none;
+  align-items: stretch;
+  gap: 0;
+  width: calc(100% - 0.5rem);
+  max-width: 26.5rem;
+  min-height: 4.15rem;
+  margin-inline: auto;
+  padding: 0.2rem 0.2rem max(0.28rem, env(safe-area-inset-bottom, 0px));
+  border-radius: 1.2rem 1.2rem 0.55rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom-color: rgba(0, 0, 0, 0.55);
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, #2a2d3a 88%, white) 0%,
-      #14161f 42%,
-      #0a0b11 100%
+      color-mix(in srgb, var(--nav-rock-hi) 65%, white) 0%,
+      var(--nav-rock-hi) 7%,
+      var(--nav-rock-mid) 40%,
+      var(--nav-rock-lo) 100%
     );
-  /*
-   * Doble filo arriba (luz + sombra inmediata) para que el borde tenga espesor
-   * en vez de ser una línea; y una sombra ambiental más abierta que despegue el
-   * dock del contenido que pasa por detrás al scrollear.
-   */
   box-shadow:
-    0 -10px 34px rgba(0, 0, 0, 0.55),
-    0 -2px 8px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 color-mix(in srgb, white 18%, transparent),
-    inset 0 2px 1px rgba(0, 0, 0, 0.28),
-    inset 0 -2px 6px rgba(0, 0, 0, 0.45);
+    0 -12px 34px rgba(0, 0, 0, 0.55),
+    0 -2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 2px 0 rgba(0, 0, 0, 0.35),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.55);
+  overflow: visible;
 }
 
 .mobile-bottom-nav__dock--flat {
   display: flex;
   grid-template-columns: unset;
+  gap: 0;
 }
 
 .mobile-bottom-nav__dock--flat .mobile-nav-tab {
@@ -12353,71 +12354,90 @@ html.boot-splash-done .boot-splash,
   --nav-glow: var(--theme-primary);
   isolation: isolate;
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   min-width: 0;
-  min-height: 3.25rem;
+  min-height: 3.55rem;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.2rem;
-  padding: 0.2rem 0.15rem 0.28rem;
-  color: color-mix(in srgb, var(--color-on-surface-variant) 88%, transparent);
+  gap: 0.12rem;
+  padding: 0.32rem 0.1rem 0.3rem;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.62);
   transition:
-    color 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    color 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Surco fino tallado entre segmentos — no gap entre fichas. */
+.mobile-nav-tab:not(:first-child)::before {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  top: 16%;
+  bottom: 16%;
+  width: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.14) 18%,
+    rgba(0, 0, 0, 0.65) 50%,
+    rgba(255, 255, 255, 0.1) 82%,
+    transparent 100%
+  );
+  box-shadow: 1px 0 0 rgba(0, 0, 0, 0.45);
 }
 
 .mobile-nav-tab--active {
-  color: color-mix(in srgb, var(--theme-primary) 70%, white);
+  color: #fff;
   transform: none;
 }
 
 /*
- * Canal de luz del tab activo.
- *
- * Antes era una losa violeta sólida a altura completa: leía como un `div` con
- * background, no como una consola. Ahora es un halo que sube desde la base con
- * una barra de acento en el canto superior del dock — el mismo recurso que usan
- * las tab bars de juego. El relieve real lo aporta la tecla del ícono.
+ * Activo: lavado suave + filo superior. Sin caja púrpura opaca.
  */
 .mobile-nav-active-bg {
   position: absolute;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
-  border-radius: 1.15rem 1.15rem 0.85rem 0.85rem;
   border: none;
+  border-radius: 0.85rem 0.85rem 0.45rem 0.45rem;
   background: linear-gradient(
     0deg,
-    color-mix(in srgb, var(--theme-primary) 26%, transparent) 0%,
-    color-mix(in srgb, var(--theme-primary) 12%, transparent) 42%,
-    transparent 88%
+    color-mix(in srgb, var(--theme-primary) 28%, transparent) 0%,
+    color-mix(in srgb, var(--theme-primary) 10%, transparent) 45%,
+    transparent 78%
   );
   box-shadow: none;
+  overflow: hidden;
 }
 
-/* Barra de acento al ras del canto superior. */
 .mobile-nav-active-bg::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 18%;
-  right: 18%;
-  height: 3px;
-  border-radius: 0 0 3px 3px;
+  left: 16%;
+  right: 16%;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    color-mix(in srgb, var(--theme-primary-bright) 85%, white) 22%,
-    color-mix(in srgb, var(--theme-primary-bright) 95%, white) 50%,
-    color-mix(in srgb, var(--theme-primary-bright) 85%, white) 78%,
+    color-mix(in srgb, var(--theme-primary-bright) 90%, white) 30%,
+    #fff 50%,
+    color-mix(in srgb, var(--theme-primary-bright) 90%, white) 70%,
     transparent 100%
   );
-  box-shadow: 0 0 10px color-mix(in srgb, var(--theme-primary) 75%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--theme-primary) 70%, transparent);
 }
 
 .mobile-nav-active-bg--fab {
-  /* Combate: el FAB ya marca activo; el slot full-height no suma. */
   opacity: 0;
 }
 
@@ -12428,8 +12448,7 @@ html.boot-splash-done .boot-splash,
     top 560ms cubic-bezier(0.32, 1.25, 0.42, 1),
     height 480ms cubic-bezier(0.22, 1.2, 0.36, 1),
     border-radius 420ms ease,
-    background 420ms ease,
-    box-shadow 420ms ease;
+    background 420ms ease;
 }
 
 .mobile-nav-tab-icon,
@@ -12439,45 +12458,25 @@ html.boot-splash-done .boot-splash,
   z-index: 1;
 }
 
-/*
- * Cada ícono se apoya en una tecla, no flota sobre el dock.
- *
- * En reposo la tecla está hundida (luz arriba, sombra propia abajo); al
- * activarse se levanta y se enciende. Es el mismo lenguaje del FAB de combate
- * —pedestal + rim light + glow— aplicado al resto, que es lo que hacía que solo
- * ese botón se viera parte del juego.
- */
 .mobile-nav-tab-icon {
   display: flex;
-  height: 2.85rem;
-  width: 2.85rem;
+  height: 2.35rem;
+  width: 2.35rem;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 0.95rem;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, white 5%, transparent) 0%,
-    rgba(0, 0, 0, 0.16) 52%,
-    rgba(0, 0, 0, 0.3) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.4),
-    0 1px 0 color-mix(in srgb, white 4%, transparent);
+  border-radius: 0 !important;
+  background: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: none !important;
   transition:
-    transform 480ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 480ms cubic-bezier(0.22, 1, 0.36, 1),
-    background 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/*
- * Los inactivos bajan saturación y brillo. Con los cinco a todo color ninguno
- * gana y la fila se ve como un cajón de stickers; así el activo manda.
- */
 .mobile-nav-tab:not(.mobile-nav-tab--active) .mobile-nav-tab-icon img {
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5)) saturate(0.7) brightness(0.85);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55)) saturate(0.75) brightness(0.88);
 }
 
 .mobile-nav-tab-icon img,
@@ -12485,34 +12484,27 @@ html.boot-splash-done .boot-splash,
   height: 100%;
   width: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.55));
 }
 
-/* Tecla encendida: se levanta, toma color y proyecta sombra propia. */
 .mobile-nav-tab--active .mobile-nav-tab-icon {
-  transform: translateY(-0.14rem) scale(1.06);
-  background: radial-gradient(
-    120% 100% at 30% 16%,
-    color-mix(in srgb, var(--theme-primary) 62%, white) 0%,
-    color-mix(in srgb, var(--theme-primary) 82%, #1a0a20) 46%,
-    color-mix(in srgb, var(--theme-primary-deep) 85%, #0a0610) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
-    inset 0 -3px 7px rgba(0, 0, 0, 0.35),
-    0 4px 12px rgba(0, 0, 0, 0.5),
-    0 0 18px color-mix(in srgb, var(--theme-primary) 45%, transparent);
+  transform: translateY(-0.06rem) scale(1.04);
+  background: none !important;
+  box-shadow: none !important;
 }
 
-/*
- * Hundir al tocar. Sin esto el tap no devuelve nada hasta que navega, que en
- * mobile se siente como que el botón no registró.
- */
+.mobile-nav-tab--active .mobile-nav-tab-icon img {
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 8px color-mix(in srgb, var(--theme-primary) 30%, transparent));
+}
+
+.mobile-nav-tab:active:not(.mobile-nav-tab--combat) {
+  transform: scale(0.97);
+  transition-duration: 90ms;
+}
+
 .mobile-nav-tab:active .mobile-nav-tab-icon {
-  transform: translateY(0) scale(0.94);
-  box-shadow:
-    inset 0 2px 5px rgba(0, 0, 0, 0.5),
-    inset 0 -1px 0 color-mix(in srgb, white 6%, transparent);
+  transform: none;
   transition-duration: 90ms;
 }
 
@@ -12526,54 +12518,53 @@ html.boot-splash-done .boot-splash,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.55rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   line-height: 1;
   text-transform: uppercase;
-  opacity: 0.55;
+  opacity: 0.65;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
 }
 
 .mobile-nav-tab--active .mobile-nav-tab-text {
-  font-weight: 700;
+  font-weight: 800;
   opacity: 1;
-  color: color-mix(in srgb, white 88%, var(--theme-primary));
+  color: #fff;
   text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.55),
-    0 0 10px color-mix(in srgb, var(--theme-primary) 55%, transparent);
+    0 1px 2px rgba(0, 0, 0, 0.6),
+    0 0 8px color-mix(in srgb, var(--theme-primary) 35%, transparent);
 }
 
-/* Combat: botón central flotante (FAB).
-   Elevado siempre; el color magenta solo cuando el tab está activo. */
 .mobile-nav-tab--combat {
   justify-content: flex-end;
-  gap: 0.2rem;
-  padding-bottom: 0.15rem;
+  gap: 0.12rem;
+  padding-bottom: 0.28rem;
 }
 
 .mobile-nav-fab {
   position: relative;
   display: flex;
-  height: 3.55rem;
-  width: 3.55rem;
+  height: 3.45rem;
+  width: 3.45rem;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  margin-top: -1.55rem;
+  margin-top: -1.5rem;
   border-radius: 9999px;
-  border: 1.5px solid color-mix(in srgb, white 14%, transparent);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
   background:
     radial-gradient(
-      120% 100% at 30% 18%,
-      color-mix(in srgb, #3a3d4a 90%, white) 0%,
-      #1a1c26 52%,
-      #0e1018 100%
+      120% 100% at 30% 16%,
+      color-mix(in srgb, #454257 82%, white) 0%,
+      #1c1a26 50%,
+      #0c0b12 100%
     );
   box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.45),
-    0 0 0 2px color-mix(in srgb, #0a0b11 70%, transparent),
-    inset 0 1px 0 color-mix(in srgb, white 16%, transparent),
-    inset 0 -2px 6px rgba(0, 0, 0, 0.35);
+    0 7px 16px rgba(0, 0, 0, 0.5),
+    0 0 0 2px rgba(8, 7, 12, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -3px 7px rgba(0, 0, 0, 0.45);
   transition:
     transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -12582,34 +12573,34 @@ html.boot-splash-done .boot-splash,
 }
 
 .mobile-nav-fab img {
-  height: 2.45rem;
-  width: 2.45rem;
+  height: 2.35rem;
+  width: 2.35rem;
 }
 
 .mobile-nav-tab--combat.mobile-nav-tab--active {
-  transform: translateY(-0.28rem);
+  transform: translateY(-0.16rem);
 }
 
 .mobile-nav-tab--combat.mobile-nav-tab--active .mobile-nav-fab {
-  transform: scale(1.07);
+  transform: scale(1.05);
   border-color: color-mix(in srgb, var(--theme-primary) 55%, white);
   background:
     radial-gradient(
-      120% 100% at 30% 18%,
-      color-mix(in srgb, var(--theme-primary) 55%, white) 0%,
-      color-mix(in srgb, var(--theme-primary) 75%, #1a0a20) 48%,
-      color-mix(in srgb, var(--theme-primary-deep) 80%, #0a0610) 100%
+      120% 100% at 30% 16%,
+      color-mix(in srgb, var(--theme-primary) 52%, white) 0%,
+      color-mix(in srgb, var(--theme-primary) 70%, #1a0a20) 48%,
+      color-mix(in srgb, var(--theme-primary-deep) 78%, #0a0610) 100%
     );
   box-shadow:
     0 8px 20px rgba(0, 0, 0, 0.45),
-    0 0 26px color-mix(in srgb, var(--theme-primary) 55%, transparent),
-    0 0 40px color-mix(in srgb, var(--theme-primary) 25%, transparent),
-    inset 0 1px 0 color-mix(in srgb, white 45%, transparent),
-    inset 0 -2px 6px rgba(0, 0, 0, 0.28);
+    0 0 22px color-mix(in srgb, var(--theme-primary) 45%, transparent),
+    0 0 0 2px rgba(8, 7, 12, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -3px 7px rgba(0, 0, 0, 0.3);
 }
 
 .mobile-nav-tab--combat .mobile-nav-tab-text {
-  margin-top: 0.05rem;
+  margin-top: 0.02rem;
 }
 
 .mobile-nav-tab--no-motion,
@@ -12649,7 +12640,8 @@ html.boot-splash-done .boot-splash,
   }
 
   .mobile-nav-tab--active,
-  .mobile-nav-tab--combat.mobile-nav-tab--active {
+  .mobile-nav-tab--combat.mobile-nav-tab--active,
+  .mobile-nav-tab:active:not(.mobile-nav-tab--combat) {
     transform: none;
   }
 
@@ -12657,7 +12649,6 @@ html.boot-splash-done .boot-splash,
     transform: none;
   }
 
-  /* La tecla sigue encendida (color y relieve), sólo no se desplaza. */
   .mobile-nav-tab--active .mobile-nav-tab-icon,
   .mobile-nav-tab:active .mobile-nav-tab-icon,
   .mobile-nav-tab--combat:active .mobile-nav-fab {
