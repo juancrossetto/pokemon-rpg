@@ -214,6 +214,26 @@ export function npcTrainerPortraitUrl(
   return showdownTrainerSpriteUrl(showdownSlug);
 }
 
+/**
+ * Arte VS de cerca para NPCs de pasillo/gimnasio (`public/trainers/vs/{slug}.png`).
+ * El pasillo sigue usando el sprite lejos (Showdown / thumb); la intro VS
+ * prefiere este bust cuando existe.
+ */
+const NPC_VS_PORTRAIT_SLUGS = new Set(["ninjaboy"]);
+
+export function hasNpcTrainerVsPortrait(showdownSlug: string): boolean {
+  const key = showdownSlug.toLowerCase().replace(/-/g, "");
+  return NPC_VS_PORTRAIT_SLUGS.has(key);
+}
+
+export function npcTrainerVsPortraitUrl(showdownSlug: string): string {
+  const key = showdownSlug.toLowerCase().replace(/-/g, "");
+  if (NPC_VS_PORTRAIT_SLUGS.has(key)) {
+    return `/trainers/vs/${key}.png`;
+  }
+  return npcTrainerPortraitUrl(showdownSlug, "profile");
+}
+
 function localAvatarUrl(slug: string, variant: 1 | 2): string {
   return `/avatars/${slug}${variant}.png`;
 }

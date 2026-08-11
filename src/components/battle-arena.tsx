@@ -82,6 +82,11 @@ import { CaptureSummary } from "@/components/battle/capture-summary";
 import { BattleOutcomeScreen } from "@/components/battle/battle-outcome-screen";
 import { BattleTurnTimer } from "@/components/battle/battle-turn-timer";
 import { BattleItemUseFx } from "@/components/battle/battle-item-use-fx";
+import {
+  BattleVsIntro,
+  isFreshBattleBoot,
+} from "@/components/battle/battle-vs-intro";
+import type { PvpTier } from "@/lib/pvp/tiers";
 import { scrollElementIntoViewSafe } from "@/lib/scroll-lock";
 import {
   BagView,
@@ -348,6 +353,12 @@ export function BattleArena({
   turnDeadlineAt: initialTurnDeadlineAt = null,
   fleeAttempts: initialFleeAttempts = 0,
   autoBattleUnlocked = true,
+  trainerLevel,
+  trainerPvpTier,
+  trainerPvpDivision,
+  opponentLevel,
+  opponentPvpTier = null,
+  opponentPvpDivision = null,
 }: BattleArenaProps) {
   const t = useTranslations("battle");
   const tLog = useTranslations("battle.log");
@@ -538,9 +549,19 @@ export function BattleArena({
   const [shakingLane, setShakingLane] = useState<"A" | "B">("A");
   const [faintingSide, setFaintingSide] = useState<"player" | "wild" | null>(null);
   const [faintingLane, setFaintingLane] = useState<"A" | "B">("A");
-  const [playerEntering, setPlayerEntering] = useState(true);
-  const [playerHidden, setPlayerHidden] = useState(true);
-  const [wildEntering, setWildEntering] = useState(true);
+  /*
+    Intro VS + send-out sólo en el primer paint de una batalla fresca.
+    Si el jugador recarga a mitad, saltamos directo al campo operativo.
+  */
+  const freshBoot = isFreshBattleBoot(initialLog);
+  const [vsIntroDone, setVsIntroDone] = useState(!freshBoot);
+  /** Contenido del campo (sprites/placas) oculto hasta el send-out. */
+  const [fieldRevealed, setFieldRevealed] = useState(!freshBoot);
+  /** Comandos bloqueados hasta que termine VS + salida de la ball. */
+  const [bootFxDone, setBootFxDone] = useState(!freshBoot);
+  const [playerEntering, setPlayerEntering] = useState(freshBoot);
+  const [playerHidden, setPlayerHidden] = useState(freshBoot);
+  const [wildEntering, setWildEntering] = useState(freshBoot);
   /** Sprite oculto por Fly/Dig/Dive (semi-invulnerable), por calle. */
   const [vanishedKeys, setVanishedKeys] = useState<string[]>([]);
   const [badgeEarned, setBadgeEarned] = useState(false);
@@ -664,6 +685,9 @@ export function BattleArena({
   const [arenaHeightPx, setArenaHeightPx] = useState(0);
   const [arenaWidthPx, setArenaWidthPx] = useState(0);
   const bgmKind = isGymBattle || isPvpBattle || opponentName ? "boss" : "wild";
+  const showVsIntro = freshBoot && !vsIntroDone;
+  const combatBusy = isAnimating || showVsIntro || (freshBoot && !bootFxDone);
+  const fieldAssembling = freshBoot && !fieldRevealed;
 
   const teamRoster = party.filter((m) => m.instanceId !== activePlayer.instanceId);
 
@@ -713,8 +737,11 @@ export function BattleArena({
     —y la animación se traba—, porque el sprite recién se monta cuando
     `playerHidden` pasa a false. Los del equipo también: un cambio dispara la
     misma descarga en medio del vuelo de la ball.
+    Espera a que termine la intro VS (si hubo) para no solapar ball + banners.
   */
   useEffect(() => {
+    if (!vsIntroDone || !freshBoot) return;
+
     const urls = new Set<string>([SEND_OUT_BALL_SRC]);
     const activeUrl = battleAnimatedSpriteUrl(
       player.speciesName,
@@ -750,6 +777,7 @@ export function BattleArena({
     // la ball vuela contra un main thread ocupado y se ve a los saltos.
     const startTimeline = () => {
       if (cancelled) return;
+      setFieldRevealed(true);
       setBallAnim("throw");
       playBattleSfx("ball");
       at(SPRITE_ENTER_MS, () => setWildEntering(false));
@@ -760,7 +788,10 @@ export function BattleArena({
         setPlayerHidden(false);
       });
       at(SEND_OUT_REVEAL_MS + SPRITE_MATERIALIZE_MS, () => setPlayerEntering(false));
-      at(SEND_OUT_BALL_MS + 80, () => setBallAnim(null));
+      at(SEND_OUT_BALL_MS + 80, () => {
+        setBallAnim(null);
+        setBootFxDone(true);
+      });
     };
 
     const pageLoaded =
@@ -788,9 +819,8 @@ export function BattleArena({
       for (const id of timers) clearTimeout(id);
       for (const img of images) img.src = "";
     };
-    // Sólo al montar: son los sprites con los que arranca la batalla.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [vsIntroDone]);
 
   function appendLog(text: string, side: LogSide = "system") {
     setLog((prev) => [...prev.slice(-29), { text, side }]);
@@ -1808,7 +1838,7 @@ export function BattleArena({
   }
 
   async function handleDoubleTarget(lane: "A" | "B") {
-    if (isAnimating || outcome !== "ongoing") return;
+    if (combatBusy || outcome !== "ongoing") return;
     unlockBattleAudio();
     resumeBattleBgm();
 
@@ -1846,7 +1876,7 @@ export function BattleArena({
   }
 
   async function handleMove(moveId: number) {
-    if (isAnimating || outcome !== "ongoing" || mustSwitch) return;
+    if (combatBusy || outcome !== "ongoing" || mustSwitch) return;
     unlockBattleAudio();
     resumeBattleBgm();
 
@@ -2175,7 +2205,7 @@ export function BattleArena({
   }, [battleId]);
 
   useEffect(() => {
-    if (!autoBattle || isAnimating || outcome !== "ongoing" || mustSwitch) return;
+    if (!autoBattle || combatBusy || outcome !== "ongoing" || mustSwitch) return;
     if (view === "bag" || view === "team") return;
 
     // Antes 2800 ms: se sentía a "AUTO colgado". 900 ms alcanza para cancelar.
@@ -2215,6 +2245,9 @@ export function BattleArena({
   }, [
     autoBattle,
     isAnimating,
+    vsIntroDone,
+    bootFxDone,
+    combatBusy,
     outcome,
     mustSwitch,
     view,
@@ -2223,7 +2256,7 @@ export function BattleArena({
   ]);
 
   async function handleFlee() {
-    if (isAnimating || mustSwitch || outcome !== "ongoing") return;
+    if (combatBusy || mustSwitch || outcome !== "ongoing") return;
     if (isGymBattle) return;
     setIsAnimating(true);
     setView("menu");
@@ -2274,7 +2307,7 @@ export function BattleArena({
   }
 
   async function handleThrowBall(itemId: string, ballName: string) {
-    if (isAnimating || outcome !== "ongoing" || mustSwitch || isTrainerStyle) return;
+    if (combatBusy || outcome !== "ongoing" || mustSwitch || isTrainerStyle) return;
     setIsAnimating(true);
     setView("menu");
     appendLog(tLog("threwBall", { name: ballName }), "player");
@@ -2382,7 +2415,7 @@ export function BattleArena({
   }
 
   async function handleUsePotion(itemId: string) {
-    if (isAnimating || outcome !== "ongoing" || mustSwitch) return;
+    if (combatBusy || outcome !== "ongoing" || mustSwitch) return;
     setIsAnimating(true);
     setView("menu");
 
@@ -2457,13 +2490,13 @@ export function BattleArena({
   }
 
   function handlePickRevive(itemId: string) {
-    if (isAnimating || outcome !== "ongoing" || mustSwitch) return;
+    if (combatBusy || outcome !== "ongoing" || mustSwitch) return;
     setPendingReviveItemId(itemId);
     setView("reviveTargets");
   }
 
   async function handleConfirmRevive(member: RosterMember) {
-    if (isAnimating || outcome !== "ongoing" || mustSwitch || !pendingReviveItemId) return;
+    if (combatBusy || outcome !== "ongoing" || mustSwitch || !pendingReviveItemId) return;
     const itemId = pendingReviveItemId;
     setIsAnimating(true);
     setView("menu");
@@ -2545,7 +2578,7 @@ export function BattleArena({
   }
 
   async function handleSwitchTo(member: RosterMember) {
-    if (isAnimating || outcome !== "ongoing" || member.currentHp <= 0) return;
+    if (combatBusy || outcome !== "ongoing" || member.currentHp <= 0) return;
     setIsAnimating(true);
     setView("menu");
 
@@ -2913,7 +2946,7 @@ export function BattleArena({
     />
   ));
   const selectPartyMember = (m: (typeof party)[number]) => {
-    if (isAnimating || isDouble) return undefined;
+    if (combatBusy || isDouble) return undefined;
     if (mustSwitch) {
       if (m.currentHp <= 0 || m.instanceId === activePlayer.instanceId) return undefined;
       return () => {
@@ -2926,6 +2959,12 @@ export function BattleArena({
   const commandExpanded = view !== "menu";
   const lastLogEntry = log[log.length - 1];
 
+  const vsPlaceLabel =
+    encounterPlace?.title ??
+    (isGymBattle ? gymName : null) ??
+    null;
+  const vsFoePortrait = opponentPortraitUrl ?? leaderPortrait;
+
   return (
     <div
       className="battle-shell relative flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden"
@@ -2936,10 +2975,13 @@ export function BattleArena({
       }
     >
       {/* Bioma a full-bleed: sólo desktop (no altera mobile). */}
-      <div className="battle-biome-bleed" aria-hidden />
+      <div
+        className={`battle-biome-bleed${fieldAssembling ? " battle-biome-bleed--assembling" : ""}`}
+        aria-hidden
+      />
       {mustSwitch ? (
         <MustSwitchSheet
-          isAnimating={isAnimating}
+          isAnimating={combatBusy}
           roster={teamRoster}
           foeName={activeWild.name}
           foeTypes={activeWild.types}
@@ -2949,7 +2991,7 @@ export function BattleArena({
       ) : null}
       {view === "bag" ? (
         <BagView
-          isAnimating={isAnimating}
+          isAnimating={combatBusy}
           showBalls={!isTrainerStyle}
           ballStacks={ballStacks}
           potionStacks={potionStacks}
@@ -2963,7 +3005,7 @@ export function BattleArena({
       ) : null}
       {view === "reviveTargets" ? (
         <ReviveTargetView
-          isAnimating={isAnimating}
+          isAnimating={combatBusy}
           itemName={pendingReviveName}
           roster={teamRoster}
           onRevive={handleConfirmRevive}
@@ -2975,7 +3017,7 @@ export function BattleArena({
       ) : null}
       {view === "team" && !mustSwitch ? (
         <TeamView
-          isAnimating={isAnimating}
+          isAnimating={combatBusy}
           mustSwitch={mustSwitch}
           roster={teamRoster}
           foeName={activeWild.name}
@@ -3028,20 +3070,60 @@ export function BattleArena({
               campo llena el ancho de la columna central.
             */
             className={`battle-arena-field relative mx-auto max-h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl border border-white/10 max-lg:h-full max-lg:max-h-none max-lg:aspect-auto lg:m-auto lg:aspect-[753/500] ${
-              arenaFlash ? "arena-type-flash" : ""
-            }`}
+              showVsIntro || fieldAssembling ? "battle-arena-field--assembling" : ""
+            } ${arenaFlash ? "arena-type-flash" : ""}`}
             style={
               arenaFlash
                 ? ({ "--arena-flash-color": arenaFlash } as CSSProperties)
                 : undefined
             }
           >
+            {showVsIntro ? (
+              <BattleVsIntro
+                mode={
+                  isPvpBattle
+                    ? "pvp"
+                    : isGymBattle
+                      ? "gym"
+                      : isTowerBattle
+                        ? "tower"
+                        : "wild"
+                }
+                player={{
+                  name: trainerName,
+                  portraitUrl: trainerPortraitUrl,
+                  level: trainerLevel,
+                  team: initialParty.map((m) => ({
+                    spriteUrl: m.spriteUrl,
+                    fainted: m.currentHp <= 0,
+                  })),
+                  pvpTier: trainerPvpTier as PvpTier,
+                  pvpDivision: trainerPvpDivision,
+                }}
+                foe={{
+                  name: foeLabel,
+                  portraitUrl: vsFoePortrait,
+                  level: opponentLevel,
+                  team:
+                    initialOpponentParty.length > 0
+                      ? initialOpponentParty.map((m) => ({
+                          spriteUrl: m.spriteUrl,
+                          fainted: m.fainted,
+                        }))
+                      : [{ spriteUrl: wild.spriteUrl }],
+                  pvpTier: (opponentPvpTier as PvpTier | null) ?? null,
+                  pvpDivision: opponentPvpDivision,
+                }}
+                placeLabel={vsPlaceLabel}
+                onComplete={() => setVsIntroDone(true)}
+              />
+            ) : null}
             {isPvpBattle ? (
               <BattleTurnTimer
                 battleId={battleId}
                 locale={locale}
                 deadlineAt={turnDeadlineAt}
-                paused={isAnimating || outcome !== "ongoing"}
+                paused={combatBusy || outcome !== "ongoing"}
                 onExpired={() => {
                   setTurnDeadlineAt(null);
                   appendLog(t("idleTimeout"));
@@ -3639,7 +3721,7 @@ export function BattleArena({
             commandExpanded ? "hidden md:flex" : "flex"
           }`}
         >
-          {view === "menu" && !isAnimating && outcome === "ongoing" && (
+          {view === "menu" && !combatBusy && outcome === "ongoing" && (
             <div className="mb-1 flex shrink-0 flex-col gap-1 border-b border-white/12 pb-1.5 md:mb-0 md:hidden">
               <YourTurnStatus playerFirst={playerOutspeeds} showOrder={!isDouble} />
             </div>
@@ -3669,7 +3751,7 @@ export function BattleArena({
             })}
             <div ref={logEndRef} />
           </div>
-          {view === "menu" && !isAnimating && outcome === "ongoing" && (
+          {view === "menu" && !combatBusy && outcome === "ongoing" && (
             <div className="mt-auto hidden items-center justify-between gap-2 border-t border-dashed border-white/15 pt-1 md:flex">
               <p className="text-label-md font-bold leading-snug break-words [overflow-wrap:anywhere] text-on-surface">
                 {t("whatWillDo", {
@@ -3706,7 +3788,7 @@ export function BattleArena({
                 {canRepeatLast && lastMoveOption ? (
                   <button
                     type="button"
-                    disabled={isAnimating}
+                    disabled={combatBusy}
                     onClick={() => {
                       unlockBattleAudio();
                       resumeBattleBgm();
@@ -3723,7 +3805,7 @@ export function BattleArena({
                 <div className="grid min-h-0 flex-1 grid-cols-2 gap-1.5 max-md:auto-rows-fr md:gap-2">
                 <button
                   type="button"
-                  disabled={isAnimating}
+                  disabled={combatBusy}
                   onClick={() => {
                     unlockBattleAudio();
                     resumeBattleBgm();
@@ -3742,7 +3824,7 @@ export function BattleArena({
                 </button>
                 <button
                   type="button"
-                  disabled={isAnimating || isDouble || !hasHealthyBackup}
+                  disabled={combatBusy || isDouble || !hasHealthyBackup}
                   onClick={() => setView("team")}
                   className="battle-cmd-btn battle-cmd-pokemon"
                 >
@@ -3753,7 +3835,7 @@ export function BattleArena({
                 </button>
                 <button
                   type="button"
-                  disabled={isAnimating || isDouble || (!hasBalls && !hasPotions)}
+                  disabled={combatBusy || isDouble || (!hasBalls && !hasPotions)}
                   onClick={() => setView("bag")}
                   className="battle-cmd-btn battle-cmd-bag"
                 >
@@ -3764,7 +3846,7 @@ export function BattleArena({
                 </button>
                 <button
                   type="button"
-                  disabled={isAnimating || isGymBattle || (Boolean(opponentName) && !isPvpBattle)}
+                  disabled={combatBusy || isGymBattle || (Boolean(opponentName) && !isPvpBattle)}
                   onClick={handleFlee}
                   className="battle-cmd-btn battle-cmd-run"
                   title={
@@ -3812,7 +3894,7 @@ export function BattleArena({
                     ? chargeMoveIdB
                     : (chargeMoveId ?? choiceLockMoveId)
                 }
-                isAnimating={isAnimating}
+                isAnimating={combatBusy}
                 effectivenessInfo={effectivenessInfo}
                 playerFirst={playerOutspeeds}
                 forecast={moveForecast}
@@ -3838,7 +3920,7 @@ export function BattleArena({
                   moveName={move?.name ?? ""}
                   moveType={move?.type ?? null}
                   foes={foes}
-                  isAnimating={isAnimating}
+                  isAnimating={combatBusy}
                   onSelect={handleDoubleTarget}
                   onBack={() => {
                     if (targetPickFor === "B") {

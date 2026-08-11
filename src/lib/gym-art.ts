@@ -194,7 +194,7 @@ const GYM_TRAINER_SPRITE: Record<string, string> = {
   water: "swimmer",
   electric: "gentleman",
   grass: "picnicker",
-  poison: "ninja",
+  poison: "ninjaboy",
   psychic: "psychic",
   fire: "blackbelt",
   ground: "worker",

@@ -23,9 +23,15 @@ import {
 import { loadMapLocations } from "@/lib/campaign/map-data";
 import { spriteFor } from "@/lib/shiny";
 import { getRouteTrainer } from "@/lib/campaign/trainers";
-import { avatarById, npcTrainerPortraitUrl, showdownTrainerSpriteUrl } from "@/lib/avatars";
-import { gymLeaderPortraitUrl, gymTypeTrainerSpriteSlug } from "@/lib/gym-art";
+import {
+  avatarById,
+  npcTrainerPortraitUrl,
+  npcTrainerVsPortraitUrl,
+} from "@/lib/avatars";
+import { gymLeaderPortraitUrl } from "@/lib/gym-art";
+import { trainerSpriteSlugFromName } from "@/lib/gym-corridor-theme";
 import { parseTeamSnap } from "@/lib/pvp/team";
+import { rankForRating } from "@/lib/pvp/tiers";
 import { resolveBattleBg } from "@/lib/battle-bg";
 import { parseDoublesFieldB } from "@/lib/doubles";
 import {
@@ -88,7 +94,7 @@ export default async function BattlePage({
           id: true,
           opponentTeam: true,
           opponentId: true,
-          opponent: { select: { username: true, avatarId: true } },
+          opponent: { select: { username: true, avatarId: true, pvpRating: true } },
         },
       },
       clanWarBattle: {
@@ -98,7 +104,7 @@ export default async function BattlePage({
           war: { select: { clanAId: true, clanBId: true } },
         },
       },
-      opponentUser: { select: { username: true, avatarId: true } },
+      opponentUser: { select: { username: true, avatarId: true, pvpRating: true } },
     },
   });
 
@@ -363,7 +369,7 @@ export default async function BattlePage({
             : Promise.resolve([]),
       prisma.user.findUnique({
         where: { id: userId },
-        select: { avatarId: true },
+        select: { avatarId: true, pvpRating: true },
       }),
       prisma.pokemonInstance.findMany({
         where: {
@@ -439,8 +445,11 @@ export default async function BattlePage({
       opponentPortraitUrl = avatarById(avId)?.src ?? null;
     } else if (routeTrainer) {
       opponentPortraitUrl = npcTrainerPortraitUrl(routeTrainer.spriteSlug, "thumb");
-    } else if (battle.gymTrainerId && battle.gym?.type) {
-      opponentPortraitUrl = showdownTrainerSpriteUrl(gymTypeTrainerSpriteSlug(battle.gym.type));
+    } else if (battle.gymTrainer?.name) {
+      // Intro VS: bust de cerca si hay arte en /trainers/vs; si no, thumb/Showdown.
+      opponentPortraitUrl = npcTrainerVsPortraitUrl(
+        trainerSpriteSlugFromName(battle.gymTrainer.name),
+      );
     } else if (battle.gym?.leaderName) {
       opponentPortraitUrl = gymLeaderPortraitUrl(battle.gym.leaderName);
     }
@@ -513,6 +522,21 @@ export default async function BattlePage({
         ? await prisma.species.findUnique({ where: { id: fieldB.wild.speciesId } })
         : null;
 
+    const trainerLevel = partyRows.reduce((max, p) => Math.max(max, p.level), 1);
+    const trainerPvp = rankForRating(userRow?.pvpRating ?? 1000);
+    const opponentRating =
+      battle.opponentUser?.pvpRating ?? battle.pvpMatch?.opponent.pvpRating ?? null;
+    const opponentPvp =
+      opponentRating != null && (battle.pvpMatchId || battle.clanWarBattleId)
+        ? rankForRating(opponentRating)
+        : null;
+    const opponentLevel =
+      pvpTeam.length > 0
+        ? pvpTeam.reduce((max, m) => Math.max(max, m.level), 1)
+        : opponentTeam.length > 0
+          ? opponentTeam.reduce((max, m) => Math.max(max, m.level), 1)
+          : battle.wildLevel;
+
     initialBattle = {
       battleId: battle.id,
       locale,
@@ -520,6 +544,12 @@ export default async function BattlePage({
       trainerPortraitUrl,
       opponentPortraitUrl,
       opponentName,
+      trainerLevel,
+      trainerPvpTier: trainerPvp.tier,
+      trainerPvpDivision: trainerPvp.division,
+      opponentLevel,
+      opponentPvpTier: opponentPvp?.tier ?? null,
+      opponentPvpDivision: opponentPvp?.division ?? null,
       format: isDouble ? "DOUBLE" : "SINGLE",
       pokeballs: pokeballs.map((p) => ({
         itemId: p.itemId,

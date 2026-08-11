@@ -157,4 +157,14 @@ export interface BattleArenaProps {
    * queda locked y el loop no corre aunque localStorage diga on.
    */
   autoBattleUnlocked?: boolean;
+  /** Nivel de entrenador (tope del equipo) — intro VS. */
+  trainerLevel: number;
+  /** Liga clasificatoria del jugador — intro VS. */
+  trainerPvpTier: string;
+  trainerPvpDivision: 1 | 2 | 3;
+  /** Nivel mostrado del rival (tope del equipo o salvaje). */
+  opponentLevel: number;
+  /** Liga del rival (solo PvP / clan war); null en salvaje/gym/torre. */
+  opponentPvpTier: string | null;
+  opponentPvpDivision: 1 | 2 | 3 | null;
 }

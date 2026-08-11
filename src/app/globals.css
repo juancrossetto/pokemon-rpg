@@ -2627,6 +2627,530 @@ html.is-standalone .battle-bag-sheet__panel {
     inset 0 0 0 1px rgba(255, 255, 255, 0.06),
     0 18px 40px rgba(0, 0, 0, 0.35);
 }
+
+/* Campo “armándose” detrás de la intro VS (Clash-style). */
+.battle-arena-field--assembling {
+  animation: battle-field-assemble 3.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* El fondo vive en el propio field; los hijos (sprites, placas) esperan.
+   La intro VS es la excepción: se monta dentro del campo a propósito. */
+.battle-arena-field--assembling > *:not(.battle-vs-intro) {
+  opacity: 0;
+  pointer-events: none;
+}
+.battle-biome-bleed--assembling {
+  animation: battle-biome-assemble 3.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes battle-field-assemble {
+  0% {
+    opacity: 0.35;
+    transform: scale(1.12);
+    filter: blur(6px) saturate(0.7);
+  }
+  55% {
+    opacity: 1;
+    filter: blur(1px) saturate(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0) saturate(1);
+  }
+}
+
+@keyframes battle-biome-assemble {
+  0% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ===== Intro VS pre-combate (acotada al .battle-arena-field) ===== */
+.battle-vs-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding: 0.35rem 0;
+  overflow: hidden;
+  pointer-events: auto;
+  touch-action: none;
+  border-radius: inherit;
+}
+
+.battle-vs-intro__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 48%, transparent 22%, rgba(4, 6, 10, 0.48) 100%),
+    linear-gradient(180deg, rgba(4, 6, 10, 0.36) 0%, transparent 28%, transparent 72%, rgba(4, 6, 10, 0.42) 100%);
+  animation: battle-vs-veil-in 0.35s ease-out both;
+}
+
+.battle-vs-intro.is-exit .battle-vs-intro__veil {
+  animation: battle-vs-veil-out 0.45s ease-in both;
+}
+
+@keyframes battle-vs-veil-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes battle-vs-veil-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.battle-vs-banner {
+  position: relative;
+  z-index: 2;
+  /* Un poco largas, sin llegar al otro extremo. */
+  width: min(84%, 21rem);
+  max-width: 21rem;
+  margin-inline: 0;
+  transform: translateX(-110%);
+  filter:
+    drop-shadow(0 0 0.6px rgba(210, 225, 255, 0.45))
+    drop-shadow(0 6px 14px rgba(0, 0, 0, 0.42));
+}
+
+.battle-vs-banner--foe {
+  align-self: flex-start;
+  margin-right: auto;
+  transform: translateX(-110%);
+}
+
+.battle-vs-banner--player {
+  align-self: flex-end;
+  margin-left: auto;
+  transform: translateX(110%);
+}
+
+.battle-vs-banner__inner {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 5.35rem;
+  padding: 0.5rem 0.85rem 0.5rem 0.45rem;
+  border: none;
+  border-radius: 0.7rem;
+  overflow: hidden;
+  background: rgba(14, 16, 24, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.battle-vs-banner--foe .battle-vs-banner__inner {
+  background: linear-gradient(
+    90deg,
+    rgba(36, 16, 30, 0.97) 0%,
+    rgba(28, 14, 26, 0.94) 62%,
+    rgba(28, 14, 26, 0.72) 84%,
+    rgba(28, 14, 26, 0.28) 100%
+  );
+  box-shadow:
+    inset 3px 0 0 rgba(220, 70, 110, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.battle-vs-banner--player .battle-vs-banner__inner {
+  flex-direction: row-reverse;
+  padding: 0.5rem 0.45rem 0.5rem 0.85rem;
+  background: linear-gradient(
+    270deg,
+    rgba(14, 28, 44, 0.97) 0%,
+    rgba(12, 20, 34, 0.94) 62%,
+    rgba(12, 20, 34, 0.72) 84%,
+    rgba(12, 20, 34, 0.28) 100%
+  );
+  box-shadow:
+    inset -3px 0 0 rgba(70, 140, 210, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.battle-vs-banner__inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 45%);
+}
+
+.battle-vs-banner__avatar {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+}
+
+/* Bust VS landscape (ORAS): un poco más ancho que el chip cuadrado. */
+.battle-vs-banner__avatar--vs {
+  width: 6.5rem;
+  height: 5.25rem;
+}
+.battle-vs-banner__avatar--vs > span {
+  width: 100% !important;
+  height: 100% !important;
+}
+.battle-vs-banner__avatar--vs .trainer-sprite-fill,
+.battle-vs-banner__avatar--vs img {
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  padding: 2% !important;
+  image-rendering: auto !important;
+}
+
+.battle-vs-banner__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.28rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.battle-vs-banner--player .battle-vs-banner__content {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.battle-vs-banner__id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.battle-vs-banner--player .battle-vs-banner__id {
+  align-items: flex-end;
+}
+
+.battle-vs-banner__name {
+  margin: 0;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  max-width: 100%;
+}
+
+.battle-vs-banner__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.5rem;
+}
+
+.battle-vs-banner--player .battle-vs-banner__meta {
+  flex-direction: row-reverse;
+}
+
+.battle-vs-banner__level {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.battle-vs-banner__rank {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.battle-vs-banner__rank-badge {
+  gap: 0 !important;
+}
+
+.battle-vs-banner__rank-badge img,
+.battle-vs-banner__rank-badge .h-10 {
+  height: 1.7rem !important;
+  width: 1.7rem !important;
+}
+
+.battle-vs-banner__rank-badge span.absolute {
+  font-size: 6px !important;
+  padding: 0 2px !important;
+  bottom: -1px !important;
+}
+
+.battle-vs-banner__team {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.12rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.battle-vs-banner--player .battle-vs-banner__team {
+  flex-direction: row-reverse;
+}
+
+.battle-vs-banner__slot {
+  display: grid;
+  place-items: end center;
+  width: 1.85rem;
+  height: 1.85rem;
+  flex: 0 0 auto;
+}
+
+.battle-vs-banner__slot img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+  user-select: none;
+  pointer-events: none;
+}
+
+.battle-vs-banner__slot.is-fainted {
+  opacity: 0.35;
+  filter: grayscale(0.7);
+}
+
+.battle-vs-intro.is-enter .battle-vs-banner--foe {
+  animation: battle-vs-banner-in-left 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.battle-vs-intro.is-enter .battle-vs-banner--player {
+  animation: battle-vs-banner-in-right 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+.battle-vs-intro.is-hold .battle-vs-banner--foe,
+.battle-vs-intro.is-hold .battle-vs-banner--player {
+  transform: translateX(0);
+}
+.battle-vs-intro.is-exit .battle-vs-banner--foe {
+  animation: battle-vs-banner-out-left 0.75s cubic-bezier(0.55, 0, 1, 0.45) both;
+}
+.battle-vs-intro.is-exit .battle-vs-banner--player {
+  animation: battle-vs-banner-out-right 0.75s cubic-bezier(0.55, 0, 1, 0.45) 0.06s both;
+}
+
+@keyframes battle-vs-banner-in-left {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(0); }
+}
+@keyframes battle-vs-banner-in-right {
+  from { transform: translateX(110%); }
+  to { transform: translateX(0); }
+}
+@keyframes battle-vs-banner-out-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-110%); }
+}
+@keyframes battle-vs-banner-out-right {
+  from { transform: translateX(0); }
+  to { transform: translateX(110%); }
+}
+
+.battle-vs-intro__center {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.18rem;
+  padding: 0 0.75rem;
+  pointer-events: none;
+}
+
+.battle-vs-intro__vs {
+  display: grid;
+  place-items: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 50%;
+  border: 2px solid rgba(250, 204, 21, 0.85);
+  background:
+    radial-gradient(circle at 35% 30%, rgba(80, 130, 220, 0.95), rgba(24, 48, 110, 0.98) 70%);
+  box-shadow:
+    0 0 0 2px rgba(12, 18, 40, 0.65),
+    0 8px 16px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  opacity: 0;
+  transform: scale(0.55) rotate(-8deg);
+}
+
+.battle-vs-intro.is-enter .battle-vs-intro__vs {
+  animation: battle-vs-badge-in 0.55s cubic-bezier(0.34, 1.4, 0.45, 1) 0.55s both;
+}
+.battle-vs-intro.is-hold .battle-vs-intro__vs {
+  opacity: 1;
+  transform: scale(1) rotate(-6deg);
+}
+.battle-vs-intro.is-exit .battle-vs-intro__vs {
+  animation: battle-vs-badge-out 0.45s ease-in both;
+}
+
+@keyframes battle-vs-badge-in {
+  from { opacity: 0; transform: scale(0.55) rotate(-8deg); }
+  to { opacity: 1; transform: scale(1) rotate(-6deg); }
+}
+
+@keyframes battle-vs-badge-out {
+  from { opacity: 1; transform: scale(1) rotate(-6deg); }
+  to { opacity: 0; transform: scale(0.7) rotate(-10deg); }
+}
+
+.battle-vs-intro__vs-text {
+  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+  transform: rotate(-6deg);
+}
+
+.battle-vs-intro__mode,
+.battle-vs-intro__place {
+  margin: 0;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
+.battle-vs-intro__mode {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+  opacity: 0;
+}
+
+.battle-vs-intro__place {
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  opacity: 0;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-vs-intro.is-enter .battle-vs-intro__mode,
+.battle-vs-intro.is-enter .battle-vs-intro__place {
+  animation: battle-vs-meta-in 0.45s ease-out 0.7s both;
+}
+.battle-vs-intro.is-hold .battle-vs-intro__mode,
+.battle-vs-intro.is-hold .battle-vs-intro__place {
+  opacity: 1;
+}
+.battle-vs-intro.is-exit .battle-vs-intro__mode,
+.battle-vs-intro.is-exit .battle-vs-intro__place {
+  animation: battle-vs-meta-out 0.3s ease-in both;
+}
+
+@keyframes battle-vs-meta-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes battle-vs-meta-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (min-width: 1024px) {
+  .battle-vs-intro {
+    padding: 0.7rem 0;
+    gap: 0.35rem;
+  }
+  .battle-vs-banner {
+    width: min(76%, 28rem);
+    max-width: 28rem;
+  }
+  .battle-vs-banner__inner {
+    min-height: 5.75rem;
+    gap: 0.7rem;
+    padding: 0.55rem 1.5rem 0.55rem 0.55rem;
+  }
+  .battle-vs-banner--player .battle-vs-banner__inner {
+    padding: 0.55rem 0.55rem 0.55rem 1.5rem;
+  }
+  .battle-vs-banner__name {
+    font-size: 1.08rem;
+  }
+  .battle-vs-banner__level {
+    font-size: 0.8rem;
+  }
+  .battle-vs-banner__slot {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+  .battle-vs-banner__rank-badge img,
+  .battle-vs-banner__rank-badge .h-10 {
+    height: 2rem !important;
+    width: 2rem !important;
+  }
+  .battle-vs-intro__vs {
+    width: 3.7rem;
+    height: 3.7rem;
+  }
+  .battle-vs-intro__vs-text {
+    font-size: 1.35rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-arena-field--assembling,
+  .battle-biome-bleed--assembling,
+  .battle-vs-intro__veil,
+  .battle-vs-intro.is-exit .battle-vs-intro__veil,
+  .battle-vs-intro.is-enter .battle-vs-banner--foe,
+  .battle-vs-intro.is-enter .battle-vs-banner--player,
+  .battle-vs-intro.is-exit .battle-vs-banner--foe,
+  .battle-vs-intro.is-exit .battle-vs-banner--player,
+  .battle-vs-intro.is-enter .battle-vs-intro__vs,
+  .battle-vs-intro.is-exit .battle-vs-intro__vs,
+  .battle-vs-intro.is-enter .battle-vs-intro__mode,
+  .battle-vs-intro.is-enter .battle-vs-intro__place,
+  .battle-vs-intro.is-exit .battle-vs-intro__mode,
+  .battle-vs-intro.is-exit .battle-vs-intro__place {
+    animation: none !important;
+  }
+  .battle-vs-banner--foe,
+  .battle-vs-banner--player {
+    transform: translateX(0);
+  }
+  .battle-vs-intro__vs {
+    opacity: 1;
+    transform: scale(1) rotate(-6deg);
+  }
+  .battle-vs-intro__mode,
+  .battle-vs-intro__place {
+    opacity: 1;
+  }
+}
+
 .battle-arena-field::before {
   content: "";
   position: absolute;
