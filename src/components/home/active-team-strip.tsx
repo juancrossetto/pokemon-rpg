@@ -291,19 +291,17 @@ function TeamSlot({
             setOpen(true);
           }}
           aria-label={`${displayName}, ${member.levelLabel}, ${cpMark}`}
-          className={`team-card team-slot group relative flex ${SLOT_BOX} touch-none flex-col overflow-hidden rounded-xl border text-left transition duration-300 active:scale-[0.97] md:rounded-[1.25rem] select-none ${
+          className={`team-card team-slot group relative flex ${SLOT_BOX} flex-col overflow-hidden rounded-xl border text-left transition duration-300 active:scale-[0.97] md:rounded-[1.25rem] select-none ${
             wallpaper ? "team-slot--wallpaper" : ""
           } ${
             isDepositing ? "team-slot--depositing" : ""
           } ${isOver ? "team-slot--drop-target ring-2 ring-pokeball-red/70 ring-offset-2 ring-offset-background" : ""} ${
-            isDragging ? "team-slot--dragging" : isDepositing ? "" : "hover:scale-[1.01]"
+            isDragging ? "team-slot--dragging touch-none" : isDepositing ? "" : "hover:scale-[1.01]"
           } ${
             isLead || member.isFavorite
               ? "border-pokeball-red/35 shadow-[0_14px_32px_rgba(0,0,0,0.45)]"
               : "border-white/[0.08] hover:border-white/20"
-          } ${fainted ? "opacity-80" : ""} ${
-            isDragging ? "touch-none" : ""
-          }`}
+          } ${fainted ? "opacity-80" : ""}`}
           style={
             {
               "--type-accent": accent,

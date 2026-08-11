@@ -12,15 +12,15 @@ import {
 import { navWarmupHrefs } from "@/lib/navigation";
 
 /** Tiempo mínimo visible para apreciar el video y leer el %. */
-const MIN_VISIBLE_MS = 3200;
+const MIN_VISIBLE_MS = 5500;
 /** Tope duro: no dejar al jugador trabado si la red falla. */
 const MAX_WAIT_MS = 12000;
 /** Pausa entre prefetches para no saturar el hilo / la red. */
 const PREFETCH_GAP_MS = 120;
 /** Holgura final para que los RSC en vuelo terminen de cachearse. */
 const SETTLE_MS = 400;
-/** Cold start sin sesión: splash corto pero apreciable (tapa el blanco). */
-const GUEST_VISIBLE_MS = 2200;
+/** Cold start sin sesión: splash apreciable (Charizard ~10s; no cortar tan pronto). */
+const GUEST_VISIBLE_MS = 5000;
 
 /** Evita re-prefetchar la misma ruta en el ciclo de vida de la pestaña. */
 const prefetchedHrefs = new Set<string>();

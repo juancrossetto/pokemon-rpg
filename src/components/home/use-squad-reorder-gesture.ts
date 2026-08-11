@@ -7,10 +7,10 @@ export const TOUCH_REORDER_MS = 280;
 /** En mouse: arrancar el drag tras este desplazamiento. */
 export const MOUSE_START_PX = 6;
 /**
- * En touch: si el dedo se mueve más que esto ANTES del long-press,
- * asumimos scroll del rail (no cancelamos el pointer: lo manejamos nosotros).
+ * En touch: umbral para decidir el eje del gesto (scroll página / carrusel /
+ * long-press). Por debajo seguimos esperando el hold.
  */
-export const TOUCH_SCROLL_PX = 10;
+export const TOUCH_AXIS_PX = 10;
 
 export type SquadSlotAttr = "data-team-slot" | "data-squad-slot";
 
@@ -32,6 +32,11 @@ function findScrollRail(from: HTMLElement): HTMLElement | null {
   return from.closest<HTMLElement>("[data-squad-rail], [data-team-rail]");
 }
 
+function isHorizontallyScrollable(rail: HTMLElement | null): boolean {
+  if (!rail) return false;
+  return rail.scrollWidth > rail.clientWidth + 2;
+}
+
 type Origin = {
   x: number;
   y: number;
@@ -48,12 +53,14 @@ type Origin = {
 /**
  * Gesto de reorden para cards del squad.
  *
- * Touch en un carrusel: el browser suele robar el gesto para scrollear y
- * dispara `pointercancel` — por eso sólo el primer Pokémon (sin scroll)
- * reordenaba. Acá capturamos el pointer al tocar y:
- * - sin mover mucho + long-press → drag
- * - mover en horizontal → scrolleamos el rail nosotros
+ * Touch sobre un carrusel / grilla:
+ * - hold quieto → long-press → drag
+ * - movimiento **vertical** dominante → soltar el gesto (scroll de página)
+ * - movimiento **horizontal** dominante + rail scrolleable → pan del carrusel
  * - mouse → drag tras unos px
+ *
+ * No capturamos el pointer al `pointerdown`: si no, iOS no puede pan-y la
+ * página y el home se traba encima del equipo.
  */
 export function useSquadReorderGesture({
   disabled,
@@ -102,6 +109,22 @@ export function useSquadReorderGesture({
     return () => clearTimer();
   }, []);
 
+  function capturePointer(target: HTMLElement, pointerId: number) {
+    try {
+      target.setPointerCapture(pointerId);
+    } catch {
+      /* already released */
+    }
+  }
+
+  function releasePointer(target: HTMLElement, pointerId: number) {
+    try {
+      target.releasePointerCapture(pointerId);
+    } catch {
+      /* already released */
+    }
+  }
+
   function beginDrag(
     target: HTMLElement,
     pointerId: number,
@@ -119,11 +142,7 @@ export function useSquadReorderGesture({
     } catch {
       /* no haptic */
     }
-    try {
-      target.setPointerCapture(pointerId);
-    } catch {
-      /* already released */
-    }
+    capturePointer(target, pointerId);
   }
 
   function finishDrag(clientX: number, clientY: number) {
@@ -155,6 +174,13 @@ export function useSquadReorderGesture({
     if (wasDragging) onDragEndRef.current();
   }
 
+  /** Abandona el gesto para que el scroll vertical de la página siga. */
+  function abandonForPageScroll(target: HTMLElement, pointerId: number) {
+    clearTimer();
+    releasePointer(target, pointerId);
+    originRef.current = null;
+  }
+
   return {
     onPointerDown(e: PointerEvent<HTMLElement>) {
       if (disabled) return;
@@ -176,14 +202,8 @@ export function useSquadReorderGesture({
         railStartScroll: rail?.scrollLeft ?? 0,
       };
 
-      // Touch: capturar YA para que el browser no robe el gesto al scrollear
-      // el carrusel (eso dejaba sólo usable la primera card).
+      // No capturar acá: con capture, iOS no puede pan-y `.app-main`.
       if (e.pointerType !== "mouse") {
-        try {
-          target.setPointerCapture(e.pointerId);
-        } catch {
-          /* ignore */
-        }
         const pointerId = e.pointerId;
         timerRef.current = window.setTimeout(() => {
           timerRef.current = null;
@@ -209,21 +229,36 @@ export function useSquadReorderGesture({
       }
 
       if (!origin.dragging) {
-        const dist = Math.hypot(e.clientX - origin.x, e.clientY - origin.y);
+        const dx = e.clientX - origin.x;
+        const dy = e.clientY - origin.y;
+        const dist = Math.hypot(dx, dy);
 
         if (origin.pointerType === "mouse") {
           if (dist < MOUSE_START_PX) return;
           beginDrag(e.currentTarget, e.pointerId, e.clientX, e.clientY);
-        } else if (dist > TOUCH_SCROLL_PX) {
-          // El usuario quiere scrollear el carrusel, no reordenar.
-          clearTimer();
-          origin.scrolling = true;
-          skipClickRef.current = true;
-          e.preventDefault();
-          if (origin.rail) {
-            const dx = e.clientX - origin.x;
-            origin.rail.scrollLeft = origin.railStartScroll - dx;
+        } else if (dist > TOUCH_AXIS_PX) {
+          const absX = Math.abs(dx);
+          const absY = Math.abs(dy);
+
+          // Vertical dominante → scroll de página. No preventDefault.
+          if (absY >= absX) {
+            abandonForPageScroll(e.currentTarget, e.pointerId);
+            return;
           }
+
+          // Horizontal: sólo si el rail realmente scrollea (carrusel).
+          if (isHorizontallyScrollable(origin.rail)) {
+            clearTimer();
+            origin.scrolling = true;
+            skipClickRef.current = true;
+            capturePointer(e.currentTarget, e.pointerId);
+            e.preventDefault();
+            origin.rail!.scrollLeft = origin.railStartScroll - dx;
+            return;
+          }
+
+          // Grilla sin overflow-x: cancelar long-press, no trabar el page scroll.
+          clearTimer();
           return;
         } else {
           return;
@@ -241,11 +276,7 @@ export function useSquadReorderGesture({
         clearTimer();
         return;
       }
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch {
-        /* already released */
-      }
+      releasePointer(e.currentTarget, e.pointerId);
       finishDrag(e.clientX, e.clientY);
     },
 

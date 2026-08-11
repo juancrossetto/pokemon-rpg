@@ -25,8 +25,8 @@ type Reward = { src: string; label: string };
  * Objetivos de ruta en mobile: pista de misiones + recompensa final.
  * **Sólo mobile** (`lg:hidden`); en desktop sigue el panel con pestañas.
  *
- * Un acento (primary) para progreso / listo / cobrado. Sin arcoíris de
- * estados: el color no pelea con los íconos 3D ni con el resto del home.
+ * Acento tertiary (azul → celeste neon). El cofre sólo anima cuando
+ * todos los objetivos están listos para cobrar.
  */
 export function HomeObjectivesRail({
   objectives,
@@ -57,6 +57,8 @@ export function HomeObjectivesRail({
   const done = objectives.filter((o) => o.done || o.claimed).length;
   const total = objectives.length;
   const allDone = done >= total;
+  /** Cofre anima sólo con zona completa y aún hay algo para cobrar. */
+  const giftReady = allDone && objectives.some((o) => o.claimable);
 
   async function handleClaim(objective: HomeObjective, el: HTMLElement) {
     if (!objective.claimable) return;
@@ -133,7 +135,7 @@ export function HomeObjectivesRail({
         </ul>
 
         <div
-          className={`objectives-reward${allDone ? " objectives-reward--ready" : ""}`}
+          className={`objectives-reward${giftReady ? " objectives-reward--ready" : ""}`}
         >
           <Image
             src={REWARD_ICON}
@@ -141,7 +143,7 @@ export function HomeObjectivesRail({
             width={72}
             height={72}
             className={`objectives-reward__chest${
-              allDone ? " objectives-reward__chest--ready" : ""
+              giftReady ? " objectives-reward__chest--ready" : ""
             }`}
             unoptimized
           />

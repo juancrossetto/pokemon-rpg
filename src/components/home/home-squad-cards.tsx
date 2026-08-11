@@ -552,8 +552,14 @@ function SquadCardButton({
           {m.levelLabel}
         </span>
         {index === 0 ? (
-          <span className="squad-card__badge squad-card__badge--lead">
-            {leadLabel}
+          <span
+            className="squad-card__lead"
+            title={leadLabel}
+            aria-label={leadLabel}
+          >
+            <span className="material-symbols-outlined ms-fill" aria-hidden>
+              military_tech
+            </span>
           </span>
         ) : null}
       </span>

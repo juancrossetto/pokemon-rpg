@@ -5701,10 +5701,13 @@ html.is-standalone .battle-result-overlay .result-in {
 
 .energy-icon-pulse {
   animation: energy-icon-pulse 1.8s ease-in-out infinite;
+  /* El drop-shadow no debe teñir el chip entero (oro/gemas al lado). */
+  isolation: isolate;
 }
 
 .energy-icon-full {
   animation: energy-icon-full 2.2s ease-in-out infinite;
+  isolation: isolate;
 }
 
 @keyframes energy-icon-pulse {
@@ -5714,18 +5717,18 @@ html.is-standalone .battle-result-overlay .result-in {
     transform: scale(1);
   }
   50% {
-    filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.7));
-    transform: scale(1.06);
+    filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.55));
+    transform: scale(1.04);
   }
 }
 
 @keyframes energy-icon-full {
   0%,
   100% {
-    filter: drop-shadow(0 0 4px rgba(103, 232, 249, 0.4));
+    filter: drop-shadow(0 0 3px rgba(103, 232, 249, 0.35));
   }
   50% {
-    filter: drop-shadow(0 0 12px rgba(165, 243, 252, 0.85));
+    filter: drop-shadow(0 0 8px rgba(165, 243, 252, 0.65));
   }
 }
 
@@ -15138,6 +15141,9 @@ html.boot-splash-done .boot-splash,
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 12px 28px rgba(0, 0, 0, 0.4);
+  /* pan-y: el scroll vertical del home no se traba sobre el equipo.
+     El reorder es long-press; el pan horizontal del carrusel lo hace el gesto. */
+  touch-action: pan-y;
 }
 
 .team-strip--reordering {
@@ -15146,6 +15152,7 @@ html.boot-splash-done .boot-splash,
 }
 
 .team-slot--dragging {
+  touch-action: none;
   opacity: 0.35;
   transform: scale(0.94);
   filter: grayscale(0.3);
@@ -18749,9 +18756,9 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     0 12px 28px rgba(0, 0, 0, 0.55);
   text-align: left;
   text-decoration: none;
-  /* Ningún pan nativo: si no, iOS/Android se llevan el gesto al scrollear
-     el rail y sólo la primera card (sin scroll) llegaba al long-press. */
-  touch-action: none;
+  /* pan-y libre para scrollear el home; el carrusel horizontal lo pan-ea el
+     gesto JS (si capturamos todo, iOS se traba sobre las cards). */
+  touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
   cursor: grab;
@@ -18762,6 +18769,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     opacity 160ms ease;
 }
 .squad-card--dragging {
+  touch-action: none;
   opacity: 0.35;
   cursor: grabbing;
   transform: scale(0.92);
@@ -18951,12 +18959,18 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   font-family: var(--font-mono, ui-monospace), monospace;
   font-weight: 700;
 }
-.squad-card__badge--lead {
-  border-color: color-mix(in srgb, var(--color-pokeball-red, #ee1515) 50%, transparent);
-  background: color-mix(in srgb, var(--color-pokeball-red, #ee1515) 42%, rgba(0, 0, 0, 0.55));
-  font-size: 8px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+/* Insignia de líder (mismo glyph que ActiveTeamStrip), no pill de texto. */
+.squad-card__lead {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #21cea1;
+  filter: drop-shadow(0 0 5px rgba(33, 206, 161, 0.55));
+}
+.squad-card__lead .material-symbols-outlined {
+  font-size: 14px !important;
+  line-height: 1;
+  font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 20;
 }
 /* Shiny / favorito viven en la fila del pie, junto al tipo y el PC. */
 .squad-card__flag {
@@ -19131,19 +19145,24 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   el chrome no compite con ellos.
 */
 .objectives-rail {
-  --obj-accent: var(--theme-primary);
-  --obj-accent-soft: color-mix(in srgb, var(--theme-primary) 55%, white);
+  /* Azul tertiary → cyan flúor (misma familia que `.xp-gain-fill`). */
+  --obj-accent: #3b82f6;
+  --obj-accent-mid: #0ea5e9;
+  --obj-accent-soft: #22d3ee;
+  --obj-accent-glow: #7dd3fc;
+  --obj-accent-deep: #1d4ed8;
   --obj-track: rgba(255, 255, 255, 0.1);
   --obj-ink: rgba(255, 255, 255, 0.55);
+  --obj-gap: 0.95rem;
   min-width: 0;
   border-radius: 1.15rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
   background:
     linear-gradient(
       165deg,
-      color-mix(in srgb, var(--theme-primary) 8%, rgba(18, 16, 28, 0.94)) 0%,
-      rgba(10, 10, 16, 0.96) 55%,
-      rgba(8, 8, 12, 0.98) 100%
+      color-mix(in srgb, #0ea5e9 12%, rgba(10, 16, 28, 0.94)) 0%,
+      rgba(10, 12, 18, 0.96) 55%,
+      rgba(8, 10, 14, 0.98) 100%
     );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
@@ -19186,7 +19205,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   grid-row: 2 / span 2;
   display: flex;
   align-items: flex-start;
-  gap: 0.45rem;
+  gap: var(--obj-gap);
   min-width: 0;
   margin: 0;
   padding: 0 0.05rem 0.15rem;
@@ -19214,15 +19233,22 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   content: "";
   position: absolute;
   top: 1.6rem;
-  left: calc(100% + 0.02rem);
-  width: 0.38rem;
+  left: 100%;
+  width: var(--obj-gap);
   height: 2px;
   border-radius: 999px;
   background: var(--obj-track);
 }
 .objectives-rail__item:has(.objective-ring--done):not(:last-child)::after {
-  background: var(--obj-accent);
-  box-shadow: 0 0 5px color-mix(in srgb, var(--obj-accent) 45%, transparent);
+  background: linear-gradient(
+    90deg,
+    var(--obj-accent) 0%,
+    var(--obj-accent-mid) 45%,
+    var(--obj-accent-soft) 100%
+  );
+  box-shadow:
+    0 0 6px rgba(34, 211, 238, 0.75),
+    0 0 12px rgba(14, 165, 233, 0.45);
 }
 
 .objective-ring {
@@ -19246,6 +19272,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   background: conic-gradient(
     from -90deg,
     var(--ring-from) 0%,
+    var(--obj-accent-mid) calc(var(--ring-pct, 0) * 0.55%),
     var(--ring-to) calc(var(--ring-pct, 0) * 1%),
     var(--obj-track) calc(var(--ring-pct, 0) * 1%)
   );
@@ -19257,8 +19284,41 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   );
 }
 .objective-ring--done .objective-ring__track {
-  background: conic-gradient(from -90deg, var(--obj-accent) 0%, var(--obj-accent-soft) 100%);
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--obj-accent) 40%, transparent));
+  background: conic-gradient(
+    from -90deg,
+    var(--obj-accent-deep) 0%,
+    var(--obj-accent) 28%,
+    var(--obj-accent-mid) 55%,
+    var(--obj-accent-soft) 78%,
+    var(--obj-accent-glow) 100%
+  );
+  filter:
+    drop-shadow(0 0 2px rgba(125, 211, 252, 0.95))
+    drop-shadow(0 0 8px rgba(34, 211, 238, 0.85))
+    drop-shadow(0 0 16px rgba(14, 165, 233, 0.55));
+  animation: objective-done-neon 2.4s ease-in-out infinite;
+}
+@keyframes objective-done-neon {
+  0%,
+  100% {
+    filter:
+      drop-shadow(0 0 2px rgba(125, 211, 252, 0.85))
+      drop-shadow(0 0 7px rgba(34, 211, 238, 0.7))
+      drop-shadow(0 0 14px rgba(14, 165, 233, 0.4));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 3px rgba(165, 243, 252, 1))
+      drop-shadow(0 0 12px rgba(34, 211, 238, 0.95))
+      drop-shadow(0 0 22px rgba(14, 165, 233, 0.65));
+  }
+}
+.objective-ring--done .objective-ring__disc {
+  border-color: color-mix(in srgb, var(--obj-accent-soft) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.55),
+    0 0 10px rgba(34, 211, 238, 0.28);
 }
 .objective-ring__disc {
   position: relative;
@@ -19288,7 +19348,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   cursor: pointer;
 }
 .objective-ring--ready .objective-ring__disc {
-  border-color: color-mix(in srgb, var(--obj-accent) 55%, transparent);
+  border-color: color-mix(in srgb, var(--obj-accent-soft) 70%, transparent);
   animation: objective-ready-pulse 1.7s ease-in-out infinite;
 }
 @keyframes objective-ready-pulse {
@@ -19296,12 +19356,14 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   100% {
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 0 0 0 color-mix(in srgb, var(--obj-accent) 40%, transparent);
+      0 0 0 0 rgba(34, 211, 238, 0.5),
+      0 0 8px rgba(14, 165, 233, 0.35);
   }
   50% {
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 0 0 5px color-mix(in srgb, var(--obj-accent) 0%, transparent);
+      0 0 0 5px rgba(34, 211, 238, 0),
+      0 0 14px rgba(34, 211, 238, 0.55);
   }
 }
 .objective-ring--buzz {
@@ -19335,21 +19397,29 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   display: inline-block;
   padding: 0.12rem 0.38rem;
   border-radius: 999px;
-  background: var(--obj-accent);
+  background: linear-gradient(
+    135deg,
+    var(--obj-accent) 0%,
+    var(--obj-accent-mid) 50%,
+    var(--obj-accent-soft) 100%
+  );
   font-size: 8px;
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #1a0618;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--obj-accent) 35%, transparent);
+  color: #061018;
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.55),
+    0 0 18px rgba(14, 165, 233, 0.35);
 }
 .objective-ring__claimed {
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--obj-accent) 45%, white);
-  opacity: 0.75;
+  color: var(--obj-accent-glow);
+  opacity: 0.9;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.45);
 }
 
 .objectives-reward {
@@ -19376,12 +19446,14 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   pointer-events: none;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--obj-accent) 22%, transparent) 0%,
+    rgba(34, 211, 238, 0.28) 0%,
+    rgba(14, 165, 233, 0.12) 45%,
     transparent 70%
   );
-  opacity: 0.7;
+  opacity: 0.55;
 }
 .objectives-reward--ready::before {
+  opacity: 0.75;
   animation: objectives-reward-glow 2.8s ease-in-out infinite;
 }
 @keyframes objectives-reward-glow {
@@ -19402,17 +19474,12 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   margin: 0.22rem auto 0;
   object-fit: contain;
   filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.55));
-  animation: objectives-chest-float 3.4s ease-in-out infinite;
-}
-@keyframes objectives-chest-float {
-  0%,
-  100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+  /* Sin float idle: sólo anima cuando está listo para recibir. */
 }
 .objectives-reward__chest--ready {
   animation: objectives-chest-hop 1.5s ease-in-out infinite;
   filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.55))
-    drop-shadow(0 0 8px color-mix(in srgb, var(--obj-accent) 50%, transparent));
+    drop-shadow(0 0 10px color-mix(in srgb, var(--obj-accent-soft) 55%, transparent));
 }
 @keyframes objectives-chest-hop {
   0%,
@@ -19445,9 +19512,15 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   overflow: hidden;
   background: linear-gradient(
     90deg,
-    var(--theme-primary-deep, var(--obj-accent)),
-    var(--obj-accent-soft)
+    var(--obj-accent-deep) 0%,
+    var(--obj-accent) 28%,
+    var(--obj-accent-mid) 55%,
+    var(--obj-accent-soft) 78%,
+    var(--obj-accent-glow) 100%
   );
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transition: width 0.5s ease;
 }
 .objectives-reward__fill::after {
@@ -19499,7 +19572,8 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   border-radius: 9999px;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--theme-primary) 40%, transparent) 0%,
+    rgba(34, 211, 238, 0.5) 0%,
+    rgba(59, 130, 246, 0.2) 40%,
     transparent 65%
   );
   animation: objective-center-burst 1.25s ease-out forwards;
@@ -19572,7 +19646,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 @media (prefers-reduced-motion: reduce) {
   .objective-ring--ready .objective-ring__disc,
   .objective-ring--buzz,
-  .objectives-reward__chest,
+  .objective-ring--done .objective-ring__track,
   .objectives-reward--ready::before,
   .objectives-reward__fill::after,
   .objectives-reward__chest--ready,

@@ -586,27 +586,24 @@ export function ResourceBar({
             aria-controls={allPanelId}
             aria-label={labels.resources}
             onClick={() => toggle("all")}
-            className={`flex h-8 min-w-[44px] items-center gap-1.5 rounded-md border px-2 transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pokeball-red/50 ${
-              energyState === "full"
-                ? "border-cyan-400/35 bg-cyan-400/10"
-                : energyState === "empty"
-                  ? "border-sky-400/20 bg-black/40"
-                  : "border-sky-400/25 bg-black/40"
-            } ${open === "all" ? "bg-white/[0.06]" : ""}`}
+            className={`flex h-8 min-w-[44px] items-center gap-1.5 rounded-md border border-white/12 bg-[#12161f] px-2 transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pokeball-red/50 ${
+              open === "all" ? "bg-white/[0.06]" : ""
+            }`}
           >
-            <span
-              data-loot-target="energy"
-              className={`inline-flex items-center gap-1 ${
-                energyState === "regen" ? "energy-icon-pulse" : ""
-              }${energyState === "full" ? "energy-icon-full" : ""}`}
-            >
-              <Image
-                src={RESOURCE_ICON.energy}
-                alt=""
-                width={22}
-                height={22}
-                className="h-[22px] w-[22px] object-contain"
-              />
+            <span data-loot-target="energy" className="inline-flex items-center gap-1">
+              <span
+                className={`inline-flex ${
+                  energyState === "regen" ? "energy-icon-pulse" : ""
+                }${energyState === "full" ? "energy-icon-full" : ""}`}
+              >
+                <Image
+                  src={RESOURCE_ICON.energy}
+                  alt=""
+                  width={22}
+                  height={22}
+                  className="h-[22px] w-[22px] object-contain"
+                />
+              </span>
               <span className="font-mono text-[11px] font-semibold tabular-nums text-sky-100">
                 <ResourceDeltaValue kind="energy" value={energy} />
               </span>
