@@ -810,6 +810,7 @@
       "squadStatus": "Squad status",
       "hurtCount": "{count, plural, one {# hurt Pokémon} other {# hurt Pokémon}}",
       "stages": "Stages",
+      "zoneMissions": "Zone objectives",
       "claim": "Claim",
       "claimed": "Done",
       "fight": "Fight",

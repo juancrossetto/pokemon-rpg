@@ -368,19 +368,18 @@ export function LevelUpOffersPanel({
           <div
             key={entry.instanceId}
             className={
-              evolveOnly
+              evolveOnly || current
                 ? undefined
                 : "relative overflow-hidden rounded-[1.35rem] border border-white/10 bg-[#121212] shadow-[0_20px_48px_rgba(0,0,0,0.45)]"
             }
           >
-            {!evolveOnly && (
+            {!evolveOnly && !current && (
               <div className="relative px-4 pb-1 pt-4">
                 <div
                   className="pointer-events-none absolute inset-0 opacity-80"
                   style={{
-                    background: current
-                      ? `radial-gradient(ellipse 90% 70% at 0% 0%, ${typeColor(current.type)}40 0%, transparent 55%)`
-                      : "radial-gradient(ellipse 80% 60% at 10% 0%, rgba(255,255,255,0.08), transparent 55%)",
+                    background:
+                      "radial-gradient(ellipse 80% 60% at 10% 0%, rgba(255,255,255,0.08), transparent 55%)",
                   }}
                 />
                 <p className="relative text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">
@@ -389,7 +388,7 @@ export function LevelUpOffersPanel({
               </div>
             )}
 
-            {entry.autoTaught.length > 0 && (
+            {entry.autoTaught.length > 0 && !current && (
               <ul className="relative space-y-2 px-4 pt-2">
                 {entry.autoTaught.map((m) => (
                   <li key={`auto-${m.moveId}`}>
@@ -413,12 +412,16 @@ export function LevelUpOffersPanel({
             )}
 
             {current && (
-              <div className="relative px-4 pb-4 pt-2">
+              <div className="relative">
                 <LearnMoveCard
                   move={current}
                   remaining={remaining}
                   knownMoves={entry.knownMoves}
                   hasEmptySlot={hasEmptySlot}
+                  ownerLabel={t("title", {
+                    name: entry.name,
+                    level: entry.leveledUpTo ?? 0,
+                  })}
                   picking={
                     picking?.instanceId === entry.instanceId &&
                     picking.move.moveId === current.moveId
@@ -707,6 +710,7 @@ function LearnMoveCard({
   remaining,
   knownMoves,
   hasEmptySlot,
+  ownerLabel,
   picking,
   pending,
   labels,
@@ -721,6 +725,8 @@ function LearnMoveCard({
   remaining: number;
   knownMoves: KnownMoveInfo[];
   hasEmptySlot: boolean;
+  /** "Chikorita · Nv. 12" — va dentro de esta card, no en otra envolvente. */
+  ownerLabel: string;
   picking: boolean;
   pending: boolean;
   labels: LearnMoveLabels;
@@ -741,14 +747,12 @@ function LearnMoveCard({
 
   return (
     <div
-      className="overflow-hidden rounded-2xl border border-white/10 bg-black/45"
-      style={{ boxShadow: `inset 0 0 0 1px ${color}28` }}
+      className="overflow-hidden rounded-[1.35rem] border border-white/12 bg-[#121212] shadow-[0_20px_48px_rgba(0,0,0,0.45)]"
+      style={{ boxShadow: `0 20px 48px rgba(0,0,0,0.45), inset 0 0 0 1px ${color}28` }}
     >
       {/*
-        Stack vertical: el panel de victoria (max-w-3xl) no aguanta un
-        2×2 de movimientos al lado del nuevo — nombres como Chupavidas
-        se cortaban y las cards parecían mezcladas. Lista de 4 filas
-        a ancho completo = comparación clara al reemplazar.
+        Una sola card: el poder nuevo es el protagonista. El dueño va como
+        kicker, no como panel envolvente (eso anidaba cards en la victoria).
       */}
       <div
         className="relative px-3 pb-2.5 pt-3 sm:px-4 sm:pb-3 sm:pt-4"
@@ -756,7 +760,10 @@ function LearnMoveCard({
           background: `linear-gradient(165deg, ${color}33 0%, transparent 62%)`,
         }}
       >
-        <div className="flex items-start gap-2.5 sm:gap-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">
+          {ownerLabel}
+        </p>
+        <div className="mt-2 flex items-start gap-2.5 sm:gap-3">
           <TypeOrb type={move.type} size="lg" />
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">

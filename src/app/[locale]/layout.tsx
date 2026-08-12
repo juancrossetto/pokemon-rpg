@@ -8,16 +8,17 @@ import { BootSplashMarkup } from "@/components/boot-splash-markup";
 import { InlineScript } from "@/components/inline-script";
 import {
   APPLE_STARTUP_IMAGES,
-  isBootSplashAuthGatePath,
 } from "@/lib/apple-startup-images";
 import {
   BOOT_SPLASH_LABELS,
   bootSplashCriticalCss,
   bootSplashEarlyScript,
+  bootSplashRevealScript,
 } from "@/lib/boot-splash";
 import { iconsReadyEarlyScript } from "@/lib/icons-ready";
 import { standaloneEarlyScript, standaloneNavCriticalCss } from "@/lib/standalone-early";
 import { AppShell } from "@/components/app-shell";
+import { AppShellFallback } from "@/components/app-shell-fallback";
 import { AppToastViewport } from "@/components/app-toast-viewport";
 import "../globals.css";
 
@@ -122,17 +123,19 @@ export default async function LocaleLayout({
 
   // Sin getTranslations acá: bloquearía el primer HTML. Labels del splash
   // son estáticos; el resto de i18n vive dentro de AppShell (Suspense).
-  const authGate = await isBootSplashAuthGatePath();
   const splashLabel =
     BOOT_SPLASH_LABELS[locale] ?? BOOT_SPLASH_LABELS.es ?? "Cargando";
 
+  // Siempre `boot-splash-done` en el SSR de React: el soft-nav de idioma
+  // remonta este layout y si mandáramos `pending` se veía negro sin spinner.
+  // Cold start: early + reveal scripts pasan a `pending` antes del paint.
   const htmlClass = [
     "dark",
     inter.variable,
     jetbrainsMono.variable,
     "h-full",
     "antialiased",
-    authGate ? "boot-splash-done" : "boot-splash-pending",
+    "boot-splash-done",
   ]
     .filter(Boolean)
     .join(" ");
@@ -200,9 +203,10 @@ export default async function LocaleLayout({
           Splash SIN Suspense / sin auth: sale en el primer flush de HTML.
           AppShell espera sesión+DB+mensajes — envuelto, no bloquea el banner.
         */}
-        <BootSplashMarkup label={splashLabel} pending={!authGate} />
+        <BootSplashMarkup label={splashLabel} />
+        <InlineScript id="boot-splash-reveal" html={bootSplashRevealScript()} />
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<AppShellFallback locale={locale} />}>
           <AppShell locale={locale}>{children}</AppShell>
         </Suspense>
         <AppToastViewport />

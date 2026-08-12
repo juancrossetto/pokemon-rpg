@@ -118,9 +118,11 @@ export function BattleOutcomeScreen({
           : t("resultCaughtDetail")
         : null;
   const ctaPrimary =
-    "ui-btn-primary w-full max-w-sm px-4 py-2.5 text-[14px] font-semibold";
+    "ui-btn-primary w-full max-w-sm px-4 py-2.5 text-[14px] font-semibold sm:py-2.5";
   const ctaSecondary =
-    "inline-flex w-full max-w-sm items-center justify-center rounded-lg border border-white/18 bg-transparent px-4 py-2.5 text-[14px] font-semibold text-white/85 transition hover:border-white/35 hover:bg-white/6 hover:text-white";
+    "inline-flex w-full max-w-sm items-center justify-center rounded-lg border border-white/18 bg-transparent px-4 py-2 text-[13px] font-semibold text-white/85 transition hover:border-white/35 hover:bg-white/6 hover:text-white sm:py-2.5 sm:text-[14px]";
+  const ctaLink =
+    "text-[12px] font-semibold text-white/55 underline-offset-2 transition hover:text-white/85 hover:underline sm:text-[13px]";
 
   return (
     <BattleResult
@@ -258,7 +260,7 @@ export function BattleOutcomeScreen({
           {t("backToGyms")}
         </SoftLeaveButton>
       ) : (
-        <div className="flex w-full max-w-sm flex-col items-center gap-2">
+        <div className="flex w-full max-w-sm flex-col items-center gap-1.5 sm:gap-2">
           <SoftLeaveButton
             className={ctaPrimary}
             onAction={async () => {
@@ -268,17 +270,36 @@ export function BattleOutcomeScreen({
           >
             {tUx("postBattleContinue")}
           </SoftLeaveButton>
-          <SoftLeaveButton href="/campaign" className={ctaSecondary}>
-            {tUx("postBattleJourney")}
-          </SoftLeaveButton>
+          {/* Mobile: Viaje + Inicio en una fila de texto para no sumar 2 botones. */}
+          <div className="flex w-full items-center justify-center gap-3 pt-0.5 sm:hidden">
+            <SoftLeaveButton href="/campaign" className={ctaLink}>
+              {tUx("postBattleJourney")}
+            </SoftLeaveButton>
+            <span className="text-white/25" aria-hidden>
+              ·
+            </span>
+            <SoftLeaveButton href="/" className={ctaLink}>
+              {t("backHome")}
+            </SoftLeaveButton>
+          </div>
+          <div className="hidden w-full flex-col items-center gap-2 sm:flex">
+            <SoftLeaveButton href="/campaign" className={ctaSecondary}>
+              {tUx("postBattleJourney")}
+            </SoftLeaveButton>
+            {xpSummary?.some((e) => e.evolveOffer) ? (
+              <SoftLeaveButton href="/team" className={ctaSecondary}>
+                {tUx("postBattleEvolve")}
+              </SoftLeaveButton>
+            ) : null}
+            <SoftLeaveButton href="/" className={ctaSecondary}>
+              {t("backHome")}
+            </SoftLeaveButton>
+          </div>
           {xpSummary?.some((e) => e.evolveOffer) ? (
-            <SoftLeaveButton href="/team" className={ctaSecondary}>
+            <SoftLeaveButton href="/team" className={`${ctaLink} sm:hidden`}>
               {tUx("postBattleEvolve")}
             </SoftLeaveButton>
           ) : null}
-          <SoftLeaveButton href="/" className={ctaSecondary}>
-            {t("backHome")}
-          </SoftLeaveButton>
         </div>
       )}
     </BattleResult>

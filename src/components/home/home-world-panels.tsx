@@ -527,6 +527,7 @@ export function HomeEventsProgress({
     objectiveLabels: Record<string, string>;
     weeklyLabels: Record<string, string>;
     missionLabels: Record<string, string>;
+    rewardCoins: string;
   };
 }) {
   const locale = useLocale();
@@ -712,10 +713,12 @@ export function HomeEventsProgress({
       <HomeObjectivesRail
         objectives={adventureObjectives}
         title={labels.objectivesTitle}
-        rewardTitle={labels.rewardsTitle}
         claimLabel={labels.claimAction}
         claimedLabel={labels.claimed}
         fightLabel={labels.fightAction}
+        objectiveLabels={labels.objectiveLabels}
+        progressLabel="{current}/{target}"
+        rewardCoinsLabel={labels.rewardCoins}
         onClaim={claimObjectiveAsync}
         onOpenTrainers={
           adventure.trainers.some((tr) => !tr.defeated)

@@ -1,8 +1,8 @@
 "use client";
 
 // Pantalla post-captura: ficha del Pokémon + apodo.
-// Mobile: identidad en fila + bloques densos. Desktop: card ancha 2 columnas
-// (sprite | stats+moves) + footer apodo/CTA en fila — sin scroll de página.
+// Mobile: card al alto del contenido (sin hueco vacío por flex-1).
+// Desktop: card ancha 2 columnas + footer en fila.
 
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
@@ -148,8 +148,8 @@ export function CaptureSummary({
   );
 
   return (
-    <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-1 flex-col overflow-hidden px-margin-mobile py-2 md:px-margin-desktop md:py-3 lg:max-w-4xl lg:justify-center">
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-secondary/25 bg-black/40 shadow-[0_12px_40px_rgba(0,0,0,0.35)] lg:flex-none lg:max-h-full">
+    <div className="mx-auto flex w-full max-w-lg flex-col px-margin-mobile py-2 md:px-margin-desktop md:py-3 lg:h-full lg:min-h-0 lg:max-w-4xl lg:flex-1 lg:justify-center lg:overflow-hidden">
+      <div className="flex flex-col overflow-hidden rounded-2xl border border-secondary/25 bg-black/40 shadow-[0_12px_40px_rgba(0,0,0,0.35)] lg:min-h-0 lg:max-h-full lg:flex-none">
         {/* Header */}
         <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-secondary/15 px-3 py-2 lg:px-5 lg:py-2.5">
           <h1 className="page-title text-base text-secondary lg:text-headline-sm">
@@ -162,8 +162,8 @@ export function CaptureSummary({
           )}
         </div>
 
-        {/* Body */}
-        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-2.5 lg:grid lg:grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] lg:gap-4 lg:p-4">
+        {/* Body — en mobile altura al contenido; en desktop rellena la grilla. */}
+        <div className="flex flex-col gap-2 p-2.5 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,0.38fr)_minmax(0,0.62fr)] lg:gap-4 lg:overflow-hidden lg:p-4">
           {/* Identity */}
           <div className="flex shrink-0 items-center gap-3 lg:flex-col lg:items-center lg:justify-center lg:gap-3 lg:text-center">
             {sprite}
@@ -181,7 +181,7 @@ export function CaptureSummary({
           </div>
 
           {/* Stats + moves */}
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden lg:justify-center">
+          <div className="flex flex-col gap-2 lg:min-h-0 lg:justify-center lg:overflow-hidden">
             {statsGrid}
             {movesList}
           </div>

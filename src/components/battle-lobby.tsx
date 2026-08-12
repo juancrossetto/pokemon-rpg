@@ -183,11 +183,10 @@ export function BattleLobby({
               balls={lobby.balls}
               heals={lobby.heals}
               unspentTotal={lobby.unspentTotal}
-              footer={
+              heal={
                 showSquadStatus ? (
                   <LobbySquadHealRow
                     locale={locale}
-                    hurtCount={lobby.heal.hurtCount}
                     cooldownMsLeft={lobby.heal.cooldownMsLeft}
                     rushCost={lobby.heal.rushCost}
                     coins={lobby.heal.coins}

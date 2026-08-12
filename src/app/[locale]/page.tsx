@@ -1,5 +1,5 @@
 import { getTranslations, getLocale } from "next-intl/server";
-import { gymLeaderBustUrl } from "@/lib/gym-art";
+import { gymLeaderBustUrl, gymLeaderHeroArtKind, gymLeaderPortraitScale } from "@/lib/gym-art";
 import { typeColor } from "@/lib/type-colors";
 import { HomeRouteHero, type HomeNextChallenge } from "@/components/home/home-route-hero";
 import { Link, redirect } from "@/i18n/navigation";
@@ -584,14 +584,19 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       : null;
 
   const nextChallenge: HomeNextChallenge | null = milestoneGym
-    ? {
-        title: milestoneGym.leaderName,
-        subtitle: tCampaign("gymOfType", {
-          type: tTypes(milestoneGym.type.toLowerCase() as "normal"),
-        }),
-        imageUrl: gymLeaderBustUrl(milestoneGym.leaderName),
-        accent: typeColor(milestoneGym.type),
-      }
+    ? (() => {
+        const imageUrl = gymLeaderBustUrl(milestoneGym.leaderName);
+        return {
+          title: milestoneGym.leaderName,
+          subtitle: tCampaign("gymOfType", {
+            type: tTypes(milestoneGym.type.toLowerCase() as "normal"),
+          }),
+          imageUrl,
+          imageKind: gymLeaderHeroArtKind(imageUrl),
+          portraitScale: gymLeaderPortraitScale(milestoneGym.leaderName),
+          accent: typeColor(milestoneGym.type),
+        };
+      })()
     : null;
 
   const combatPower = pokemon.reduce(
@@ -921,6 +926,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         pokedex: t("hub.objectives.pokedex"),
         trainers: t("hub.objectives.trainers"),
       },
+      rewardCoins: t("hub.objectives.rewardCoins"),
       weeklyLabels: {
         logins: tEvents("objectives.logins"),
         battles: tEvents("objectives.battles"),
@@ -973,6 +979,13 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         title: t("activeSquad"),
         manageHref: "/team",
         manageLabel: t("manage"),
+        heal: {
+          needsHealing,
+          cooldownMsLeft: healCdMs,
+          rushCost: healRush,
+          coins: userRow.coins,
+          teamMaxLevel,
+        },
       }}
       rail={{
         pvp: railPvp,

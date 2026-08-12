@@ -772,13 +772,7 @@ export function GymMissionControl({
       selected.trainerCount > 0 ? "trainer" : "leader",
     );
     if (canChallenge || selected.badgeEarned) {
-      // En la barra sticky mobile el ancho es corto: "Desafiar" cabe en una
-      // línea; "Desafiar gimnasio" se partía contra el costo de energía.
-      const label = selected.badgeEarned
-        ? t("rematch")
-        : compact
-          ? t("challenge")
-          : t("challengeGym");
+      const label = selected.badgeEarned ? t("rematch") : t("challengeGym");
       return (
         <Link
           href={challengeHref}
@@ -841,7 +835,7 @@ export function GymMissionControl({
       <HoloGrid />
       <MissionSparks />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-2 px-3 py-2.5 pb-[4.75rem] sm:gap-5 sm:px-margin-desktop sm:py-6 sm:pb-6 md:gap-6 md:py-8 xl:pb-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-2 px-3 py-2.5 pb-3 sm:gap-5 sm:px-margin-desktop sm:py-6 sm:pb-6 md:gap-6 md:py-8 xl:pb-8">
         {/* HEADER — compacto en mobile para llegar antes a la card */}
         <header className="min-w-0">
           <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
@@ -1325,6 +1319,15 @@ export function GymMissionControl({
                   </div>
                 )}
               </div>
+
+              {/* Mobile: CTA en el hero (flujo), sin barra fija negra. */}
+              {!regionLocked ? (
+                <div className="relative z-[2] mt-2 sm:hidden">
+                  {renderChallengeAction({
+                    className: "gym-mission-inline-cta w-full",
+                  })}
+                </div>
+              ) : null}
             </div>
 
             {regionLocked && (
@@ -1685,33 +1688,6 @@ export function GymMissionControl({
         </section>
         )}
       </div>
-
-      {/* CTA siempre al alcance del pulgar, encima de la bottom nav. */}
-      {regionAvailable && selected && (
-        <div className="gym-mission-sticky-cta sm:hidden">
-          <div className="mx-auto flex w-full max-w-6xl items-center gap-2.5 px-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] font-semibold text-white">
-                {selectedGymName}
-              </p>
-              <p className="truncate text-[10px] text-white/55">
-                {regionLocked ? (
-                  t("regionLockedHint")
-                ) : (
-                  <>
-                    {selected.leaderName}
-                    <span className="mx-1 text-white/25">·</span>
-                    {t("recommendedLevel", { level: selected.recommendedLevel })}
-                  </>
-                )}
-              </p>
-            </div>
-            <div className="shrink-0">
-              {renderChallengeAction({ compact: true })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

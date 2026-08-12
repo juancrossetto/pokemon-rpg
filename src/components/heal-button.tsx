@@ -92,7 +92,7 @@ export function HealButton({
         : "flex flex-col items-end gap-1";
 
   const btnSize = iconOnly
-    ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pokeball-red/90 text-white shadow-[0_2px_10px_rgba(238,21,21,0.35)] ring-1 ring-white/15 transition hover:bg-pokeball-red disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
+    ? "heal-chip-btn"
     : compact
       ? "game-cta !mb-0 !min-h-10 !w-auto !min-w-[9.75rem] !px-3 !py-2 !text-[0.78rem]"
       : stretch
@@ -167,9 +167,9 @@ export function HealButton({
             onClick={() => run(true)}
             title={`${rushTitle} · ${rushCost}`}
             aria-label={t("healRush")}
-            className={`${btnSize} ${!canPay ? "bg-white/10 text-white/50 shadow-none" : "bg-electric-yellow/90 text-black hover:bg-electric-yellow"}`}
+            className={`${btnSize} heal-chip-btn--rush${pending || !canPay ? " heal-chip-btn--disabled" : ""}`}
           >
-            <span className="material-symbols-outlined text-[18px]! leading-none">bolt</span>
+            <span className="material-symbols-outlined text-[17px]! leading-none">bolt</span>
           </button>
         ) : (
           <button
@@ -178,9 +178,9 @@ export function HealButton({
             onClick={() => run(false)}
             title={freeTitle}
             aria-label={t("autoHeal")}
-            className={btnSize}
+            className={`${btnSize} heal-chip-btn--ready${pending || !freeReady ? " heal-chip-btn--disabled" : ""}`}
           >
-            <ChanseyIcon className="h-5 w-5" />
+            <ChanseyIcon className="h-[22px] w-[22px]" />
           </button>
         )}
         {error ? (

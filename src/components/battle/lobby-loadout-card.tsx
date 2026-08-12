@@ -15,18 +15,19 @@ const MAX_SHOWN = 4;
  * El estilo GO de la tienda vive en Comercio → Explorar, no acá.
  *
  * En mobile los chips van en scroll horizontal (evita el wrap 2+1 raro).
- * `footer` sirve para meter el Centro Pokémon sin una card suelta abajo.
+ * `heal` va en el header (chip Chansey) para no ocupar una fila entera.
  */
 export function LobbyLoadoutCard({
   balls,
   heals,
   unspentTotal,
-  footer,
+  heal,
 }: {
   balls: BattleLobbyLoadoutStack[];
   heals: BattleLobbyLoadoutStack[];
   unspentTotal: number;
-  footer?: ReactNode;
+  /** Centro Pokémon compacto — header, no footer. */
+  heal?: ReactNode;
 }) {
   const t = useTranslations("battle.lobby");
   const tShop = useTranslations("shop");
@@ -49,12 +50,15 @@ export function LobbyLoadoutCard({
         <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">
           {t("bagTitle")}
         </p>
-        <Link
-          href="/inventory"
-          className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35 transition hover:text-white/70"
-        >
-          {t("bagOpen")}
-        </Link>
+        <div className="flex items-center gap-2">
+          {heal}
+          <Link
+            href="/inventory"
+            className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35 transition hover:text-white/70"
+          >
+            {t("bagOpen")}
+          </Link>
+        </div>
       </div>
 
       {empty ? (
@@ -99,10 +103,6 @@ export function LobbyLoadoutCard({
           </span>
           <span className="material-symbols-outlined text-[14px]!">chevron_right</span>
         </Link>
-      ) : null}
-
-      {footer ? (
-        <div className="mt-2.5 border-t border-white/[0.08] pt-2.5">{footer}</div>
       ) : null}
     </section>
   );

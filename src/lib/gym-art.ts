@@ -133,11 +133,9 @@ export function gymLeaderPortraitUrl(leaderName: string): string | null {
 }
 
 /**
- * Busto — paneles chicos donde el cuerpo entero queda diminuto.
- *
- * `{slug}1.png` es el plano corto del avatar; `2.png` es el cuerpo completo,
- * que en una card de 8 rem deja la cara en 20 px. Fuera del Alto Mando cae al
- * mismo retrato que `gymLeaderPortraitUrl`.
+ * Busto — paneles chicos del hero mobile.
+ * Alto Mando → avatar `*1`; resto → portrait HQ.
+ * El zoom/encuadre (cover + scale) vive en CSS del route-hero.
  */
 export function gymLeaderBustUrl(leaderName: string): string | null {
   const avatarSlug = LEADER_AVATAR_BODY_SLUG[leaderName];
@@ -145,6 +143,16 @@ export function gymLeaderBustUrl(leaderName: string): string | null {
     return `/avatars/${avatarSlug}1.png`;
   }
   return gymLeaderPortraitUrl(leaderName);
+}
+
+/** Clase de arte para el hero mobile según la URL resuelta. */
+export function gymLeaderHeroArtKind(
+  url: string | null,
+): "sprite" | "avatar" | "portrait" {
+  if (!url) return "portrait";
+  if (url.includes("/gyms/leaders/")) return "sprite";
+  if (url.includes("/avatars/")) return "avatar";
+  return "portrait";
 }
 
 /**

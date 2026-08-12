@@ -8,6 +8,7 @@ export function BattleHighlightReel({
   title,
   items,
   labels,
+  compact = false,
 }: {
   title: string;
   items: BattleHighlight[];
@@ -19,8 +20,47 @@ export function BattleHighlightReel({
     multiHit: (count: number) => string;
     seStreak: (count: number) => string;
   };
+  /** Mobile victoria: una sola fila, sin card gorda. */
+  compact?: boolean;
 }) {
   if (items.length === 0) return null;
+
+  const shown = compact ? items.slice(0, 2) : items;
+
+  function labelFor(item: BattleHighlight): string {
+    return item.kind === "crit"
+      ? labels.crit
+      : item.kind === "superEffective"
+        ? labels.superEffective
+        : item.kind === "ko"
+          ? labels.ko
+          : item.kind === "ohko"
+            ? labels.ohko
+            : item.kind === "multiHit"
+              ? labels.multiHit(item.count ?? 2)
+              : labels.seStreak(item.count ?? 3);
+  }
+
+  if (compact) {
+    return (
+      <section className="battle-highlight-reel battle-highlight-reel--compact" aria-label={title}>
+        <ul className="flex flex-wrap items-center justify-center gap-1.5">
+          {shown.map((item, i) => (
+            <li
+              key={`${item.kind}-${i}`}
+              className={`battle-highlight-reel__chip battle-highlight-reel__item--${item.kind}`}
+              style={{ animationDelay: `${0.08 + i * 0.07}s` }}
+            >
+              <span className="battle-highlight-reel__kind">{labelFor(item)}</span>
+              {item.moveName ? (
+                <span className="battle-highlight-reel__move">{item.moveName}</span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+  }
 
   return (
     <section className="battle-highlight-reel mt-3 rounded-2xl border border-white/8 bg-black/40 p-3 md:p-4">
@@ -28,32 +68,18 @@ export function BattleHighlightReel({
         {title}
       </p>
       <ul className="flex flex-col gap-1.5">
-        {items.map((item, i) => {
-          const text =
-            item.kind === "crit"
-              ? labels.crit
-              : item.kind === "superEffective"
-                ? labels.superEffective
-                : item.kind === "ko"
-                  ? labels.ko
-                  : item.kind === "ohko"
-                    ? labels.ohko
-                    : item.kind === "multiHit"
-                      ? labels.multiHit(item.count ?? 2)
-                      : labels.seStreak(item.count ?? 3);
-          return (
-            <li
-              key={`${item.kind}-${i}`}
-              className={`battle-highlight-reel__item battle-highlight-reel__item--${item.kind}`}
-              style={{ animationDelay: `${0.08 + i * 0.07}s` }}
-            >
-              <span className="battle-highlight-reel__kind">{text}</span>
-              {item.moveName ? (
-                <span className="battle-highlight-reel__move">{item.moveName}</span>
-              ) : null}
-            </li>
-          );
-        })}
+        {shown.map((item, i) => (
+          <li
+            key={`${item.kind}-${i}`}
+            className={`battle-highlight-reel__item battle-highlight-reel__item--${item.kind}`}
+            style={{ animationDelay: `${0.08 + i * 0.07}s` }}
+          >
+            <span className="battle-highlight-reel__kind">{labelFor(item)}</span>
+            {item.moveName ? (
+              <span className="battle-highlight-reel__move">{item.moveName}</span>
+            ) : null}
+          </li>
+        ))}
       </ul>
     </section>
   );

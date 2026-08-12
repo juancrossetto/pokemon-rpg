@@ -810,6 +810,7 @@
       "squadStatus": "Estado do esquadrão",
       "hurtCount": "{count, plural, one {# Pokémon ferido} other {# Pokémon feridos}}",
       "stages": "Trechos",
+      "zoneMissions": "Objetivos da zona",
       "claim": "Resgatar",
       "claimed": "Pronto",
       "fight": "Lutar",

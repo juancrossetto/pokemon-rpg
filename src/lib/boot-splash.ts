@@ -80,9 +80,10 @@ export const BOOT_SPLASH_BG = "#0a0806";
 /**
  * CSS crítico del arranque, inline en el `<head>`.
  *
- * El splash es VISIBLE por defecto (no `display:none`). Se oculta sólo con
- * `.boot-splash--out` / `html.boot-splash-done`. Así el primer paint ya es el
- * banner aunque falle la clase `pending` o el JS temprano.
+ * El splash es OCULTO por defecto (`--out` desde React) para que el soft-nav
+ * de idioma no pinte una pantalla negra. El script de revelado lo muestra
+ * sólo en cold start real. Se oculta con `.boot-splash--out` /
+ * `html.boot-splash-done`.
  */
 export function bootSplashCriticalCss(): string {
   const bg = BOOT_SPLASH_BG;
@@ -122,23 +123,49 @@ export function bootSplashCriticalCss(): string {
 
 /**
  * Corre en `<head>` antes del paint.
- * - Login/register o warmup ya hecho → ocultar splash al toque.
- * - Cold start → dejar visible (es el default).
+ * - Login/register o warmup ya hecho → marcar done (splash oculto).
+ * - Cold start → pending; el reveal post-markup quita `--out` del nodo.
  */
 export function bootSplashEarlyScript(): string {
   return `(function(){try{
 var html=document.documentElement;
 var warm=${JSON.stringify(NAV_WARMUP_DONE_KEY)};
 var path=location.pathname||'';
-var splash=document.getElementById('boot-splash');
 if(/\\/(login|register)(\\/|$)/.test(path)||sessionStorage.getItem(warm)==='1'){
 html.classList.add('boot-splash-done');
 html.classList.remove('boot-splash-pending');
-if(splash)splash.classList.add('boot-splash--out');
 return;
 }
 html.classList.add('boot-splash-pending');
 html.classList.remove('boot-splash-done');
-if(splash)splash.classList.remove('boot-splash--out');
+}catch(e){}})();`;
+}
+
+/**
+ * Justo debajo del markup del splash (el nodo ya existe). En cold start
+ * revela Charizard; si el warmup ya corrió, deja `--out`.
+ */
+export function bootSplashRevealScript(): string {
+  return `(function(){try{
+var html=document.documentElement;
+var warm=${JSON.stringify(NAV_WARMUP_DONE_KEY)};
+var path=location.pathname||'';
+var splash=document.getElementById('boot-splash');
+if(!splash)return;
+if(/\\/(login|register)(\\/|$)/.test(path)||sessionStorage.getItem(warm)==='1'){
+html.classList.add('boot-splash-done');
+html.classList.remove('boot-splash-pending');
+splash.classList.add('boot-splash--out');
+splash.setAttribute('aria-hidden','true');
+splash.setAttribute('aria-busy','false');
+return;
+}
+html.classList.add('boot-splash-pending');
+html.classList.remove('boot-splash-done');
+splash.classList.remove('boot-splash--out');
+splash.setAttribute('aria-hidden','false');
+splash.setAttribute('aria-busy','true');
+var video=splash.querySelector('video');
+if(video){try{video.autoplay=true;void video.play();}catch(e){}}
 }catch(e){}})();`;
 }

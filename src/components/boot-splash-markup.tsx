@@ -1,27 +1,26 @@
 /**
  * Markup estático del splash. Server Component (sin "use client").
+ *
+ * Siempre sale con `--out` desde React: el soft-nav de idioma remonta este
+ * layout y si SSR mandara `pending` se veía una pantalla negra sin spinner.
+ * En cold start el script de revelado (justo debajo en el layout) quita
+ * `--out` si el warmup aún no corrió.
+ *
  * Mobile: video Charizard (poster estático para el primer paint). Desktop:
  * Pokéball. El % lo anima el warmup.
  *
  * Estilos inline de emergencia: si el CSS crítico aún no aplicó, el lienzo
  * ya es oscuro a pantalla completa (no blanco del UA).
  */
-export function BootSplashMarkup({
-  label,
-  pending = false,
-}: {
-  label: string;
-  /** Alineado con `html.boot-splash-pending` del SSR. */
-  pending?: boolean;
-}) {
+export function BootSplashMarkup({ label }: { label: string }) {
   return (
     <div
       id="boot-splash"
-      className={pending ? "boot-splash" : "boot-splash boot-splash--out"}
+      className="boot-splash boot-splash--out"
       role="progressbar"
       aria-live="polite"
-      aria-busy={pending ? "true" : "false"}
-      aria-hidden={pending ? "false" : "true"}
+      aria-busy="false"
+      aria-hidden="true"
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={0}
@@ -45,7 +44,6 @@ export function BootSplashMarkup({
         />
         <video
           className="boot-splash__art boot-splash__video"
-          autoPlay
           muted
           loop
           playsInline

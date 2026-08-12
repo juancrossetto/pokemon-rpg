@@ -14,6 +14,10 @@ export type HomeNextChallenge = {
   subtitle: string;
   /** Retrato del líder; si falta, el panel muestra sólo texto. */
   imageUrl: string | null;
+  /** Sprite / avatar / portrait — define cómo encuadrar la imagen. */
+  imageKind?: "sprite" | "avatar" | "portrait";
+  /** Escala extra para portraits HQ en marco chico. */
+  portraitScale?: number;
   /** Color del tipo del gimnasio: tiñe marco y glow del panel. */
   accent: string;
 };
@@ -133,7 +137,16 @@ export async function HomeRouteHero({
                   alt=""
                   width={120}
                   height={120}
-                  className="route-hero__next-img"
+                  className={`route-hero__next-img route-hero__next-img--${nextChallenge.imageKind ?? "portrait"}`}
+                  style={
+                    nextChallenge.imageKind === "portrait"
+                      ? ({
+                          "--portrait-scale": String(
+                            nextChallenge.portraitScale ?? 1,
+                          ),
+                        } as CSSProperties)
+                      : undefined
+                  }
                   unoptimized
                 />
               </span>
@@ -145,7 +158,6 @@ export async function HomeRouteHero({
           <GameCtaButton
             href={playHref}
             variant="gold"
-            icon="explore"
             className="route-hero__cta-btn"
           >
             {playLabel}

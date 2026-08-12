@@ -31,6 +31,9 @@ function setNavPendingAttr(on: boolean) {
  * Navegación tipo app nativa: la pantalla actual se queda hasta que llega
  * la nueva. Al toque se atenúa el contenido; si tarda de verdad, aparece el
  * mismo Pokéball de siempre como overlay (sin desmontar la ruta).
+ *
+ * El cambio de idioma NO pasa por acá: usa `locale-switch-overlay` en body
+ * porque el soft-nav remonta el layout y se llevaría este estado.
  */
 export function NavigationProgress() {
   const pathname = usePathname();

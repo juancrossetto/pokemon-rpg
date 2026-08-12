@@ -4,8 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
-  useTransition,
+  useLayoutEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -14,6 +13,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { markMobileNavDrawerOpen } from "@/lib/nav-drawer-persist";
 import { APP_TIME_ZONE } from "@/lib/app-time-zone";
+import {
+  hideLocaleSwitchOverlay,
+  showLocaleSwitchOverlay,
+} from "@/lib/locale-switch-overlay";
 
 type AppLocale = (typeof routing.locales)[number];
 
@@ -43,6 +46,11 @@ type LocaleSwitchApi = {
   switchLocale: (locale: AppLocale, options?: SwitchLocaleOptions) => void;
 };
 
+type OptimisticLocale = {
+  locale: AppLocale;
+  messages: AbstractIntlMessages;
+};
+
 const LocaleSwitchContext = createContext<LocaleSwitchApi | null>(null);
 
 export function useLocaleSwitch(): LocaleSwitchApi {
@@ -68,6 +76,9 @@ function pathWithoutLocale(pathname: string): string {
  * Provider de i18n en cliente: al cambiar idioma primero aplica messages en
  * memoria (UI al toque) y después hace soft-nav. No usa hooks de
  * `@/i18n/navigation` acá: esos requieren el propio provider.
+ *
+ * El overlay Pokéball vive en `document.body` (no en React) porque el soft-nav
+ * remonta el layout y se llevaría cualquier spinner del árbol.
  */
 export function I18nClientProvider({
   locale: serverLocale,
@@ -78,36 +89,52 @@ export function I18nClientProvider({
   messages: AbstractIntlMessages;
   children: ReactNode;
 }) {
-  const [locale, setLocale] = useState(serverLocale);
-  const [messages, setMessages] = useState(serverMessages);
-  const [pending, startTransition] = useTransition();
+  const [optimistic, setOptimistic] = useState<OptimisticLocale | null>(null);
+  const [seenServerLocale, setSeenServerLocale] = useState(serverLocale);
+  const [loading, setLoading] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  // Cuando el servidor termina el soft-nav, sincronizar.
-  useEffect(() => {
-    setLocale(serverLocale);
-    setMessages(serverMessages);
-  }, [serverLocale, serverMessages]);
+  // Ajuste durante render (patrón React): cuando el soft-nav llega, soltar override.
+  if (serverLocale !== seenServerLocale) {
+    setSeenServerLocale(serverLocale);
+    setOptimistic(null);
+    setLoading(false);
+  }
+
+  const locale = optimistic?.locale ?? serverLocale;
+  const messages = optimistic?.messages ?? serverMessages;
+  const pending =
+    loading || (optimistic !== null && optimistic.locale !== serverLocale);
+
+  useLayoutEffect(() => {
+    if (!pending) hideLocaleSwitchOverlay();
+  }, [pending]);
 
   const switchLocale = useCallback(
     (next: AppLocale, options?: SwitchLocaleOptions) => {
       if (next === locale || pending) return;
       if (options?.keepMobileDrawer) markMobileNavDrawerOpen();
 
-      startTransition(() => {
-        void (async () => {
+      showLocaleSwitchOverlay();
+      setLoading(true);
+      void (async () => {
+        try {
           const nextMessages = await MESSAGE_LOADERS[next]();
-          setMessages(nextMessages);
-          setLocale(next);
+          setOptimistic({ locale: next, messages: nextMessages });
+          setLoading(false);
           if (typeof document !== "undefined") {
             document.documentElement.lang = next;
           }
           const bare = pathWithoutLocale(pathname);
           const href = `/${next}${bare === "/" ? "" : bare}`;
           router.replace(href, { scroll: false });
-        })();
-      });
+        } catch {
+          setOptimistic(null);
+          setLoading(false);
+          hideLocaleSwitchOverlay();
+        }
+      })();
     },
     [locale, pending, pathname, router],
   );

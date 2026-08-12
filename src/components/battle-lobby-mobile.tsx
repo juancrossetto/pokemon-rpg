@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useTypeLabel } from "@/hooks/use-type-label";
@@ -139,10 +139,13 @@ export function BattleLobbyMobile({
     router.refresh();
   }
 
+  const missionsDone = objectives.filter((o) => o.done || o.claimed).length;
+  const showZonePanel = wildStages.length > 1 || objectives.length > 0;
+
   return (
-    <div className="flex flex-col gap-3 px-margin-mobile py-3">
+    <div className="flex flex-col gap-2.5 px-margin-mobile py-3">
       <section className="lobby-rise relative overflow-clip rounded-2xl border border-white/12 bg-surface-container-low shadow-[0_18px_44px_rgba(0,0,0,0.5)]">
-        <div className="relative h-[168px] w-full overflow-clip bg-[#0b1424]">
+        <div className="relative h-[148px] w-full overflow-clip bg-[#0b1424]">
           {mapSrc ? (
             <Image
               src={mapSrc}
@@ -215,146 +218,154 @@ export function BattleLobbyMobile({
             </div>
           </div>
         </div>
-
-        {/* Tramos: chips nativos, sin abrir el mapa. */}
-        {wildStages.length > 1 ? (
-          <div className="lobby-stage-chips border-t border-white/8 px-3 pt-2.5">
-            <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white/45">
-              {t("lobby.stages")}
-            </p>
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {wildStages.map((stage, index) => {
-                const active = stage.id === lobby.farmingStageId;
-                const locked = !stage.unlocked;
-                return (
-                  <button
-                    key={stage.id}
-                    type="button"
-                    disabled={locked || stagePending}
-                    onClick={() => pickStage(stage.id)}
-                    className={`lobby-stage-chip ${
-                      active ? "lobby-stage-chip--active" : ""
-                    } ${stage.done ? "lobby-stage-chip--done" : ""} ${
-                      locked ? "lobby-stage-chip--locked" : ""
-                    }`}
-                    aria-pressed={active}
-                    aria-label={tc(stage.nameKey)}
-                  >
-                    <span className="lobby-stage-chip__n">{index + 1}</span>
-                    {stage.done ? (
-                      <span className="material-symbols-outlined text-[12px]! leading-none">
-                        check
-                      </span>
-                    ) : (
-                      <span className="tabular-nums text-[9px] opacity-70">
-                        {stage.clearsCurrent}/{stage.clearsRequired}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Objetivos de zona — misma info que home. */}
-        {objectives.length > 0 ? (
-          <div className="lobby-obj-row border-t border-white/8 px-3 py-2.5">
-            {objectives.map((obj) => {
-              const pct =
-                obj.target > 0
-                  ? Math.max(0, Math.min(100, Math.round((obj.current / obj.target) * 100)))
-                  : 0;
-              const complete = obj.done || obj.claimed;
-              const isTrainers = obj.id === "trainers";
-              const canFight = isTrainers && trainersLeft > 0 && !obj.claimed;
-              const actionable = obj.claimable || canFight;
-              return (
-                <button
-                  key={obj.id}
-                  type="button"
-                  disabled={!actionable}
-                  onClick={() => {
-                    if (obj.claimable) void claimObjective(obj.id);
-                    else if (canFight) setTrainersOpen(true);
-                  }}
-                  className={`lobby-obj ${complete ? "lobby-obj--done" : ""} ${
-                    obj.claimable ? "lobby-obj--ready" : ""
-                  } ${canFight && !obj.claimable ? "lobby-obj--fight" : ""}`}
-                  style={{ "--ring-pct": String(pct) } as CSSProperties}
-                  aria-label={`${tc(`obj_${obj.id}`)} ${obj.current}/${obj.target}`}
-                >
-                  <span className="lobby-obj__ring" aria-hidden />
-                  <span className="lobby-obj__icon">
-                    <Image
-                      src={OBJECTIVE_ICON[obj.id] ?? "/nav/adventure-icon.png"}
-                      alt=""
-                      width={22}
-                      height={22}
-                      unoptimized
-                    />
-                  </span>
-                  <span className="lobby-obj__meta">
-                    {obj.claimable
-                      ? t("lobby.claim")
-                      : canFight
-                        ? t("lobby.fight")
-                        : obj.claimed
-                          ? t("lobby.claimed")
-                          : `${obj.current}/${obj.target}`}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-
-        <div className="flex flex-col gap-1.5 border-t border-white/8 p-3">
-          {hasHealthyTeam ? (
-            <StartEncounterButton
-              locale={locale}
-              label={t("explore")}
-              errors={startErrors}
-              disabled={!canExplore}
-              energyCost={lobby.energyCost}
-              autoStart={autoPlay}
-            />
-          ) : (
-            <div className="flex flex-col gap-2">
-              <p className="text-label-sm text-error">{t("errors.faintedLead")}</p>
-              <Link href="/team" className="game-cta game-cta--red">
-                <span className="material-symbols-outlined game-cta__icon">healing</span>
-                <span className="game-cta__label">{t("goHeal")}</span>
-              </Link>
-            </div>
-          )}
-
-          {trainersLeft > 0 ? (
-            <button
-              type="button"
-              onClick={() => {
-                playUiSfx("badge");
-                setTrainersOpen(true);
-              }}
-              className="lobby-secondary-cta"
-            >
-              <span className="material-symbols-outlined text-[18px]!">swords</span>
-              <span>{t("lobby.challengeTrainers", { count: trainersLeft })}</span>
-            </button>
-          ) : null}
-        </div>
       </section>
+
+      <section className="lobby-rise lobby-action" style={{ animationDelay: "40ms" }}>
+        {hasHealthyTeam ? (
+          <StartEncounterButton
+            locale={locale}
+            label={t("explore")}
+            errors={startErrors}
+            disabled={!canExplore}
+            energyCost={lobby.energyCost}
+            autoStart={autoPlay}
+          />
+        ) : (
+          <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-surface-container-low p-3">
+            <p className="text-label-sm text-error">{t("errors.faintedLead")}</p>
+            <Link href="/team" className="game-cta game-cta--red">
+              <span className="material-symbols-outlined game-cta__icon">healing</span>
+              <span className="game-cta__label">{t("goHeal")}</span>
+            </Link>
+          </div>
+        )}
+      </section>
+
+      {showZonePanel ? (
+        <section
+          className="lobby-zone-panel lobby-rise"
+          style={{ animationDelay: "80ms" }}
+        >
+          {wildStages.length > 1 ? (
+            <div className="lobby-zone-panel__stages">
+              <p className="lobby-zone-panel__label">{t("lobby.stages")}</p>
+              <div className="lobby-zone-panel__chips">
+                {wildStages.map((stage, index) => {
+                  const active = stage.id === lobby.farmingStageId;
+                  const locked = !stage.unlocked;
+                  return (
+                    <button
+                      key={stage.id}
+                      type="button"
+                      disabled={locked || stagePending}
+                      onClick={() => pickStage(stage.id)}
+                      className={`lobby-stage-chip ${
+                        active ? "lobby-stage-chip--active" : ""
+                      } ${stage.done ? "lobby-stage-chip--done" : ""} ${
+                        locked ? "lobby-stage-chip--locked" : ""
+                      }`}
+                      aria-pressed={active}
+                      aria-label={tc(stage.nameKey)}
+                    >
+                      <span className="lobby-stage-chip__n">{index + 1}</span>
+                      {stage.done ? (
+                        <span className="material-symbols-outlined text-[12px]! leading-none">
+                          check
+                        </span>
+                      ) : (
+                        <span className="tabular-nums text-[9px] opacity-70">
+                          {stage.clearsCurrent}/{stage.clearsRequired}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {objectives.length > 0 ? (
+            <div className={wildStages.length > 1 ? "lobby-zone-panel__missions" : ""}>
+              <div className="lobby-zone-panel__head">
+                <h3 className="lobby-zone-panel__title">{t("lobby.zoneMissions")}</h3>
+                <span className="lobby-zone-panel__count">
+                  {missionsDone}/{objectives.length}
+                </span>
+              </div>
+              <div className="lobby-missions">
+                {objectives.map((obj) => {
+                  const pct =
+                    obj.target > 0
+                      ? Math.max(
+                          0,
+                          Math.min(100, Math.round((obj.current / obj.target) * 100)),
+                        )
+                      : 0;
+                  const complete = obj.done || obj.claimed;
+                  const isTrainers = obj.id === "trainers";
+                  const canFight = isTrainers && trainersLeft > 0 && !obj.claimed;
+                  const actionable = obj.claimable || canFight;
+                  const statusLabel = obj.claimable
+                    ? t("lobby.claim")
+                    : canFight
+                      ? t("lobby.fight")
+                      : obj.claimed
+                        ? t("lobby.claimed")
+                        : `${obj.current}/${obj.target}`;
+
+                  return (
+                    <button
+                      key={obj.id}
+                      type="button"
+                      disabled={!actionable}
+                      onClick={() => {
+                        if (obj.claimable) void claimObjective(obj.id);
+                        else if (canFight) setTrainersOpen(true);
+                      }}
+                      className={`lobby-mission ${complete ? "lobby-mission--done" : ""} ${
+                        obj.claimable ? "lobby-mission--ready" : ""
+                      } ${canFight && !obj.claimable ? "lobby-mission--fight" : ""}`}
+                      aria-label={`${tc(`obj_${obj.id}`)} ${obj.current}/${obj.target}`}
+                    >
+                      <span className="lobby-mission__icon">
+                        <Image
+                          src={OBJECTIVE_ICON[obj.id] ?? "/nav/adventure-icon.png"}
+                          alt=""
+                          width={20}
+                          height={20}
+                          unoptimized
+                        />
+                      </span>
+                      <span className="lobby-mission__body">
+                        <span className="lobby-mission__label">{tc(`obj_${obj.id}`)}</span>
+                        <span className="lobby-mission__status">{statusLabel}</span>
+                      </span>
+                      {!complete ? (
+                        <span className="lobby-mission__track" aria-hidden>
+                          <span
+                            className="lobby-mission__fill"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="lobby-rise" style={{ animationDelay: "60ms" }}>
         <LobbyLoadoutCard
           balls={lobby.balls}
           heals={lobby.heals}
           unspentTotal={lobby.unspentTotal}
-          footer={
+          heal={
             showSquadStatus ? (
               <LobbySquadHealRow
                 locale={locale}
-                hurtCount={lobby.heal.hurtCount}
                 cooldownMsLeft={lobby.heal.cooldownMsLeft}
                 rushCost={lobby.heal.rushCost}
                 coins={lobby.heal.coins}

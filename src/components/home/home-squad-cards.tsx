@@ -21,7 +21,8 @@ import { showdownTypeSymbolUrl } from "@/lib/type-icons";
 import { typeColor } from "@/lib/type-colors";
 import { calculateMaxHp, calculateStat } from "@/lib/stats";
 import { squadTypeWallpaper } from "@/lib/squad-type-wallpapers";
-import { HOME_TEAM_HEALED_EVENT } from "@/lib/home-heal-fx";
+import { HOME_TEAM_HEALED_EVENT, announceHomeTeamHealed } from "@/lib/home-heal-fx";
+import { HealButton } from "@/components/heal-button";
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { HeldItemInfo, HeldItemLabels, OwnedHeldItem } from "@/components/held-item-panel";
 import type { SquadBagCounts } from "@/lib/squad-bag";
@@ -91,6 +92,7 @@ export function HomeSquadCards({
   ownedHeldItems,
   heldLabels,
   onCompanionTypesChange,
+  heal,
 }: {
   locale: string;
   initialMembers: HomeSquadMember[];
@@ -102,8 +104,15 @@ export function HomeSquadCards({
   ownedHeldItems: OwnedHeldItem[];
   heldLabels: HeldItemLabels;
   onCompanionTypesChange?: (types: string[]) => void;
+  /** Centro Pokémon compacto en el header (sólo si hay heridos). */
+  heal?: {
+    needsHealing: boolean;
+    cooldownMsLeft: number;
+    rushCost: number;
+    coins: number;
+    teamMaxLevel: number;
+  } | null;
 }) {
-  const t = useTranslations("home.hub.identity");
   const tTeam = useTranslations("team");
   const tPc = useTranslations("pc");
 
@@ -119,6 +128,15 @@ export function HomeSquadCards({
   const [depositingId, setDepositingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [healHidden, setHealHidden] = useState(false);
+  const healSyncKey = heal
+    ? `${heal.needsHealing ? 1 : 0}:${heal.cooldownMsLeft}:${heal.rushCost}:${heal.coins}`
+    : "none";
+  const [lastHealKey, setLastHealKey] = useState(healSyncKey);
+  if (lastHealKey !== healSyncKey) {
+    setLastHealKey(healSyncKey);
+    setHealHidden(false);
+  }
   const [lastInitialMembers, setLastInitialMembers] = useState(initialMembers);
   if (lastInitialMembers !== initialMembers) {
     setLastInitialMembers(initialMembers);
@@ -312,22 +330,43 @@ export function HomeSquadCards({
 
   if (members.length === 0) return null;
 
-  const totalPower = members.reduce((sum, m) => sum + memberPower(m), 0);
   const canDeposit = members.length > 1;
   const busy = pending || depositingId !== null;
   const selectionArmed = selectedId !== null;
+  const showHeal = Boolean(heal?.needsHealing && !healHidden);
 
   return (
     <section className={`squad-cards lg:hidden${busy ? " opacity-90" : ""}`}>
       <header className="squad-cards__head">
         <h2 className="squad-cards__title">{title}</h2>
-        <span className="squad-cards__power">
-          <span className="squad-cards__power-key">{t("combatPower")}</span>
-          <span className="squad-cards__power-val">{totalPower.toLocaleString()}</span>
-        </span>
-        <Link href={manageHref} className="squad-cards__manage">
-          {manageLabel}
-        </Link>
+        <div className="squad-cards__actions">
+          {showHeal && heal ? (
+            <HealButton
+              locale={locale}
+              needsHealing
+              cooldownMsLeft={heal.cooldownMsLeft}
+              rushCost={heal.rushCost}
+              coins={heal.coins}
+              teamMaxLevel={heal.teamMaxLevel}
+              iconOnly
+              onHealed={() => {
+                setHealHidden(true);
+                announceHomeTeamHealed();
+              }}
+              onHealFailed={() => setHealHidden(false)}
+            />
+          ) : null}
+          <Link
+            href={manageHref}
+            className="squad-cards__manage"
+            aria-label={manageLabel}
+            title={manageLabel}
+          >
+            <span className="material-symbols-outlined" aria-hidden>
+              tune
+            </span>
+          </Link>
+        </div>
       </header>
 
       {error ? (

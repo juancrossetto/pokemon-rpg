@@ -71,6 +71,7 @@ export type HomeHubLabels = {
     objectiveLabels: Record<string, string>;
     weeklyLabels: Record<string, string>;
     missionLabels: Record<string, string>;
+    rewardCoins: string;
   };
 };
 
@@ -112,6 +113,13 @@ export function HomeGameHub({
     title: string;
     manageHref: string;
     manageLabel: string;
+    heal?: {
+      needsHealing: boolean;
+      cooldownMsLeft: number;
+      rushCost: number;
+      coins: number;
+      teamMaxLevel: number;
+    } | null;
   };
   rail: {
     pvp: HomeRailPvp;
@@ -207,6 +215,7 @@ export function HomeGameHub({
                 initialBagCounts={squad.bagCounts}
                 ownedHeldItems={squad.ownedHeldItems}
                 heldLabels={squad.heldLabels}
+                heal={squad.heal}
                 onCompanionTypesChange={setCompanionTypes}
               />
 
