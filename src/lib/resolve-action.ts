@@ -6,6 +6,10 @@ import {
   type TurnEvent,
 } from "@/lib/battle";
 import {
+  earlyGamePowerMultiplier,
+  type EarlyGameBattleMode,
+} from "@/lib/early-game-balance";
+import {
   applyStagesToStats,
   canActThisTurn,
   clampStage,
@@ -120,8 +124,13 @@ export function resolveSingleAction(
     /** Dobles spread: hits 2..N no reaplican burn/poison ni re-tiran canAct. */
     skipResidual?: boolean;
     assumeCanAct?: boolean;
+    earlyGame?: { playerLevel: number; mode: EarlyGameBattleMode };
   },
 ): ActionOutcome {
+  const earlyMult = (side: "player" | "wild") =>
+    opts?.earlyGame
+      ? earlyGamePowerMultiplier(opts.earlyGame.playerLevel, side, opts.earlyGame.mode)
+      : 1;
   const events: TurnEvent[] = [];
   const p: SideBattleState = { ...player, stages: { ...player.stages } };
   const w: SideBattleState = { ...wild, stages: { ...wild.stages } };
@@ -393,7 +402,8 @@ export function resolveSingleAction(
         powerMultiplier:
           heldItemPowerMultiplier(self.heldItem, move.type) *
           invulnMult *
-          (opts?.powerMultiplier ?? 1),
+          (opts?.powerMultiplier ?? 1) *
+          earlyMult(attackerSide),
       });
 
   if (!result.hit) {
@@ -508,7 +518,8 @@ export function resolveSingleAction(
         powerMultiplier:
           heldItemPowerMultiplier(self.heldItem, move.type) *
           invulnMult *
-          (opts?.powerMultiplier ?? 1),
+          (opts?.powerMultiplier ?? 1) *
+          earlyMult(attackerSide),
         forceHit: true,
       });
       const dealt = Math.min(next.damage, foe.hp);
@@ -614,6 +625,9 @@ export function resolveWildCounter(
   player: SideBattleState,
   wild: SideBattleState,
   playerItemConsumed = false,
+  opts?: {
+    earlyGame?: { playerLevel: number; mode: EarlyGameBattleMode };
+  },
 ): ActionOutcome {
-  return resolveSingleAction("wild", wildMove, player, wild, playerItemConsumed);
+  return resolveSingleAction("wild", wildMove, player, wild, playerItemConsumed, opts);
 }

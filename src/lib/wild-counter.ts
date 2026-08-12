@@ -10,12 +10,18 @@ import {
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import { calculateMaxHp } from "@/lib/stats";
 import { resolveWildCounter, type SideBattleState } from "@/lib/resolve-action";
+import { earlyGameBattleMode } from "@/lib/early-game-balance";
 import { heldItemSnapshotFromItem } from "@/lib/held-items";
 import type { StatusCondition } from "@/lib/status";
 import { twoTurnSpec } from "@/lib/two-turn";
 
 type BattleWithFighters = {
   id: string;
+  routeTrainerId?: string | null;
+  pvpMatchId?: string | null;
+  clanWarBattleId?: string | null;
+  gymRunId?: string | null;
+  log?: string[];
   wildCurrentHp: number;
   wildMaxHp: number;
   wildLevel: number;
@@ -132,6 +138,11 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
     semiInvuln: null,
   };
 
+  const earlyMode = earlyGameBattleMode(battle);
+  const earlyGameOpts = earlyMode
+    ? { earlyGame: { playerLevel: instance.level, mode: earlyMode } }
+    : undefined;
+
   const wildMoves = await prisma.move.findMany({ where: { id: { in: battle.wildMoveIds } } });
   const snapshots: MoveSnapshot[] = battle.wildMoveIds
     .map((id) => wildMoves.find((m) => m.id === id))
@@ -172,6 +183,7 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
         {
           attackerHp: wildState.hp,
           attackerMaxHp: wildState.maxHp,
+          earlyGame: Boolean(earlyGameOpts),
         },
       );
   const noPp = wildMovePp.length > 0 && wildMovePp.every((pp) => pp <= 0);
@@ -188,6 +200,7 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
     playerState,
     wildState,
     battle.playerItemConsumed ?? false,
+    earlyGameOpts,
   );
   playerState = outcome.player;
   wildState = outcome.wild;

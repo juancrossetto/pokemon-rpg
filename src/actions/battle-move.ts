@@ -31,6 +31,7 @@ import {
 } from "@/lib/gym-tm-rewards";
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import { resolveSingleAction, type SideBattleState } from "@/lib/resolve-action";
+import { earlyGameBattleMode } from "@/lib/early-game-balance";
 import { applyHeldItemToStats, heldItemSnapshotFromItem } from "@/lib/held-items";
 import { applyStagesToStats, type StatusCondition } from "@/lib/status";
 import { hasHealthyBackup } from "@/lib/team";
@@ -330,6 +331,14 @@ export async function submitBattleMove(
       : null,
   };
 
+  const earlyMode = earlyGameBattleMode(battle);
+  const earlyGameOpts = earlyMode
+    ? { earlyGame: { playerLevel: instance.level, mode: earlyMode } }
+    : undefined;
+  const wildAiCtx = earlyMode
+    ? { attackerHp: wildState.hp, attackerMaxHp: wildState.maxHp, earlyGame: true }
+    : { attackerHp: wildState.hp, attackerMaxHp: wildState.maxHp };
+
   const playerPpNow = effectivePp(chosenMove.currentPp, chosenMove.move.pp);
   const allPlayerMovesEmpty = instance.moves.every(
     (m) => effectivePp(m.currentPp, m.move.pp) <= 0,
@@ -361,10 +370,7 @@ export async function submitBattleMove(
         playerBase,
         playerState.hp,
         wildMovePp,
-        {
-          attackerHp: wildState.hp,
-          attackerMaxHp: wildState.maxHp,
-        },
+        wildAiCtx,
       );
   const wildNoPp = wildMovePp.length > 0 && wildMovePp.every((pp) => pp <= 0);
   const lockedPpIdx = lockedWild
@@ -400,7 +406,14 @@ export async function submitBattleMove(
     });
     log.push(`disobey:${playerState.name}`);
     if (playerState.hp > 0 && wildState.hp > 0) {
-      const counter = resolveSingleAction("wild", wildMove, playerState, wildState, playerItemConsumed);
+      const counter = resolveSingleAction(
+        "wild",
+        wildMove,
+        playerState,
+        wildState,
+        playerItemConsumed,
+        earlyGameOpts,
+      );
       events.push(...counter.events);
       playerState = counter.player;
       wildState = counter.wild;
@@ -439,7 +452,14 @@ export async function submitBattleMove(
         continue;
       }
 
-      const outcome = resolveSingleAction(side, move, playerState, wildState, playerItemConsumed);
+      const outcome = resolveSingleAction(
+        side,
+        move,
+        playerState,
+        wildState,
+        playerItemConsumed,
+        earlyGameOpts,
+      );
       events.push(...outcome.events);
       playerState = outcome.player;
       wildState = outcome.wild;

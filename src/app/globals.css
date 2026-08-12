@@ -13039,11 +13039,19 @@ html.boot-splash-done .boot-splash,
   .home-identity--framed {
     --hi-frame: calc(38px * var(--hi-frame-weight, 1));
   }
+
+  .home-identity__marco {
+    border-width: calc(38px * var(--hi-frame-weight, 1));
+  }
 }
 
 @media (min-width: 1280px) {
   .home-identity--framed {
     --hi-frame: calc(44px * var(--hi-frame-weight, 1));
+  }
+
+  .home-identity__marco {
+    border-width: calc(44px * var(--hi-frame-weight, 1));
   }
 }
 
@@ -13052,15 +13060,16 @@ html.boot-splash-done .boot-splash,
   position: absolute;
   inset: 0;
   z-index: 6;
+  box-sizing: border-box;
+  /* Ancho del borde: media queries + peso del marco. No usar `var(--hi-frame)`
+     acá — en iOS a veces no llega al `border-image` del hijo. */
   border-style: solid;
-  border-width: var(--hi-frame);
   border-color: transparent;
-  /* `border-image-source` va inline (Safari iOS ignora var(--url)). */
-  border-image-slice: var(--hi-frame-slice);
-  /* `stretch`, no `round`: entre esquina y esquina el arte es un riel liso, así
-     que estirarlo no se nota. Con `round` el trozo se repite y el ornamento de
-     la esquina aparece tileado a lo largo del borde. */
-  border-image-repeat: stretch;
+  border-width: calc(26px * var(--hi-frame-weight, 1));
+  /* `border-image` completo va inline (Safari iOS ignora var() en slice/source). */
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /*
@@ -15768,9 +15777,69 @@ html.boot-splash-done .boot-splash,
   }
 }
 
+/* Cartel de desbloqueo / feedback de campaña: rebote al entrar, salida suave */
+.unlock-toast--in {
+  animation: unlock-toast-bounce-in 620ms cubic-bezier(0.22, 1.4, 0.36, 1) both;
+}
+
+.unlock-toast--out {
+  animation: unlock-toast-out 320ms cubic-bezier(0.4, 0, 0.7, 0.2) both;
+}
+
+.unlock-toast-icon {
+  animation: unlock-toast-icon-pop 700ms cubic-bezier(0.22, 1.55, 0.36, 1) 80ms both;
+}
+
+@keyframes unlock-toast-bounce-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-28px) scale(0.82);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(5px) scale(1.06);
+  }
+  75% {
+    transform: translateY(-3px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes unlock-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.92);
+  }
+}
+
+@keyframes unlock-toast-icon-pop {
+  0% {
+    transform: scale(0.5) rotate(-12deg);
+  }
+  60% {
+    transform: scale(1.18) rotate(6deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-toast-in {
     animation: none;
+  }
+
+  .unlock-toast--in,
+  .unlock-toast--out,
+  .unlock-toast-icon {
+    animation: none !important;
   }
 }
 

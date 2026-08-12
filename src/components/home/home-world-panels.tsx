@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, useTransition, type CSSProperties } from "react";
 import { useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { openDailyRewardModal } from "@/lib/daily-gift-fx";
@@ -18,6 +18,16 @@ import {
   isPokemonCenterFree,
 } from "@/lib/healing";
 import type { HomeDailyAction, HomeObjective } from "@/lib/home-hub";
+
+function objectivesWithClaimedOverrides(
+  objectives: HomeObjective[],
+  claimedIds: ReadonlySet<string>,
+): HomeObjective[] {
+  if (claimedIds.size === 0) return objectives;
+  return objectives.map((o) =>
+    claimedIds.has(o.id) ? { ...o, claimed: true, claimable: false } : o,
+  );
+}
 
 export type HomeDailyActionLabels = {
   title: string;
@@ -527,13 +537,23 @@ export function HomeEventsProgress({
     objectiveId: string,
     origin?: { x: number; y: number },
   ): Promise<{ src: string; label: string } | null> {
-    if (!adventure.zoneId || pending) return null;
+    if (!adventure.zoneId || pending || claimedIds.has(objectiveId)) return null;
+
+    // Cobrado al instante en mobile; si el server falla, revertimos.
+    setClaimedIds((prev) => new Set(prev).add(objectiveId));
+
     const { claimZoneObjective } = await import("@/actions/zone-rewards");
     const { playLootCollectFx, rewardToLootPiece } = await import("@/lib/loot-fly-fx");
     const { itemDisplayUrl } = await import("@/lib/item-sprites");
     const result = await claimZoneObjective(locale, adventure.zoneId!, objectiveId);
-    if (!result.ok) return null;
-    setClaimedIds((prev) => new Set(prev).add(objectiveId));
+    if (!result.ok) {
+      setClaimedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(objectiveId);
+        return next;
+      });
+      return null;
+    }
     playLootCollectFx({
       origin,
       coinsDelta: result.coins,
@@ -556,13 +576,20 @@ export function HomeEventsProgress({
   }
 
   function claimObjective(objectiveId: string, origin?: { x: number; y: number }) {
-    if (!adventure.zoneId || pending) return;
+    if (!adventure.zoneId || pending || claimedIds.has(objectiveId)) return;
+    setClaimedIds((prev) => new Set(prev).add(objectiveId));
     startTransition(async () => {
       const { claimZoneObjective } = await import("@/actions/zone-rewards");
       const { playLootCollectFx, rewardToLootPiece } = await import("@/lib/loot-fly-fx");
       const result = await claimZoneObjective(locale, adventure.zoneId!, objectiveId);
-      if (!result.ok) return;
-      setClaimedIds((prev) => new Set(prev).add(objectiveId));
+      if (!result.ok) {
+        setClaimedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(objectiveId);
+          return next;
+        });
+        return;
+      }
       playLootCollectFx({
         origin,
         coinsDelta: result.coins,
@@ -581,9 +608,12 @@ export function HomeEventsProgress({
     });
   }
 
-  const adventureDone = adventure.objectives.filter(
-    (o) => o.done || o.claimed || claimedIds.has(o.id),
-  ).length;
+  const adventureObjectives = useMemo(
+    () => objectivesWithClaimedOverrides(adventure.objectives, claimedIds),
+    [adventure.objectives, claimedIds],
+  );
+
+  const adventureDone = adventureObjectives.filter((o) => o.done || o.claimed).length;
   const adventurePct =
     adventure.objectives.length === 0
       ? 0
@@ -601,7 +631,7 @@ export function HomeEventsProgress({
     {
       id: "adventure",
       label: labels.tabAdventure,
-      hot: adventure.objectives.some((o) => o.claimable),
+      hot: adventureObjectives.some((o) => o.claimable),
     },
     {
       id: "weekly",
@@ -667,7 +697,7 @@ export function HomeEventsProgress({
           pestañas sigue de lg para arriba, donde además hay semanales y
           evento limitado. */}
       <HomeObjectivesRail
-        objectives={adventure.objectives}
+        objectives={adventureObjectives}
         title={labels.objectivesTitle}
         rewardTitle={labels.rewardsTitle}
         claimLabel={labels.claimAction}
@@ -740,10 +770,9 @@ export function HomeEventsProgress({
               </p>
             ) : (
               <ul className="home-quest-rows">
-                {adventure.objectives.map((obj) => {
-                  const justClaimed = claimedIds.has(obj.id);
-                  const complete = obj.done || obj.claimed || justClaimed;
-                  const claimable = obj.claimable && !justClaimed;
+                {adventureObjectives.map((obj) => {
+                  const complete = obj.done || obj.claimed;
+                  const claimable = obj.claimable;
                   const pct =
                     obj.target > 0
                       ? Math.min(100, Math.round((obj.current / obj.target) * 100))

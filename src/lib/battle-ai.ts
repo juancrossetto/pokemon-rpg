@@ -11,6 +11,8 @@ export type PickMoveContext = {
    * Sirve para salir de bucles Absorber↔Absorber en auto.
    */
   recentMoveIds?: number[];
+  /** Arranque: no siempre elige el golpe super eficaz. */
+  earlyGame?: boolean;
 };
 
 function estimateDamage(
@@ -135,7 +137,7 @@ export function pickWildMove(
     } else {
       score += est;
       if (eff === 0) score -= 100;
-      else if (eff > 1) score += 25 * eff;
+      else if (eff > 1) score += (ctx?.earlyGame ? 10 : 25) * eff;
       else if (eff < 1) score -= 10;
       if (est >= defenderHp) score += 80;
 

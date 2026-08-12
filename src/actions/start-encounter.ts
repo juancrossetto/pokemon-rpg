@@ -14,6 +14,7 @@ import { findStage, isStageUnlocked, resolveSpawn } from "@/lib/campaign";
 import { rollShiny } from "@/lib/shiny";
 import { recordSeenSpecies } from "@/lib/zone-progress";
 import { pickEventItemName, rollExplorationEvent } from "@/lib/campaign/events";
+import { capWildLevelForEarlyGame } from "@/lib/early-game-balance";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
 
 export type StartEncounterResult =
@@ -70,7 +71,8 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
 
   const { speciesId: wildSpeciesId, level: baseLevel } = resolveSpawn(stage);
   const event = rollExplorationEvent({ zoneLevelMax: stage.levelMax });
-  const wildLevel = event.kind === "alpha" ? baseLevel + event.levelBonus : baseLevel;
+  let wildLevel = event.kind === "alpha" ? baseLevel + event.levelBonus : baseLevel;
+  wildLevel = capWildLevelForEarlyGame(wildLevel, lead.level, stage.levelMax);
   const wildSpecies = await prisma.species.findUniqueOrThrow({ where: { id: wildSpeciesId } });
   const wildMaxHp = calculateMaxHp(wildSpecies.baseHp, wildLevel);
   const wildMoveIds = await getMovesetForLevel(wildSpeciesId, wildLevel);

@@ -116,7 +116,7 @@ const VIRIDIAN_CITY: CampaignLocation = {
       locationId: "viridian-city",
       order: 4,
       nameKey: "stages.viridian_1",
-      spawnSpeciesIds: [16, 19, 21],
+      spawnSpeciesIds: [16, 19, 19], // Pidgey raro; sin Spearow tan pronto (volador vs Planta)
       levelMin: 3,
       levelMax: 5,
       clearsRequired: 2,
@@ -137,7 +137,7 @@ const ROUTE_2: CampaignLocation = {
     "r2",
     3,
     5,
-    [10, 13, 16, 19],
+    [10, 13, 19, 19],
     3,
     5,
     "viridian-forest",
@@ -169,7 +169,7 @@ const PEWTER_CITY: CampaignLocation = {
       locationId: "pewter-city",
       order: 23,
       nameKey: "stages.pewter_1",
-      spawnSpeciesIds: [16, 19, 21, 27], // +Sandshrew para el grind pre-Brock
+      spawnSpeciesIds: [19, 27, 19, 16], // Menos Spearow/Pidgey; más bicho/tierra neutros para Planta
       levelMin: 5,
       levelMax: 7,
       clearsRequired: 3,
