@@ -24,6 +24,8 @@ const TRACK: Record<WorldBgmKind, string> = {
 let audio: HTMLAudioElement | null = null;
 let currentKind: WorldBgmKind | null = null;
 let unlocked = false;
+/** Pausa automática al ocultar la pestaña/PWA (no confundir con mute del usuario). */
+let backgroundPaused = false;
 
 export function worldBgmUrl(kind: WorldBgmKind): string {
   return TRACK[kind];
@@ -145,6 +147,20 @@ export function resumeWorldBgm() {
   if (!audio || !currentKind || isWorldBgmMuted() || !unlocked) return;
   applyMuteToElement(audio, false);
   void audio.play().catch(() => {});
+}
+
+/** Pausa al minimizar la PWA o cambiar de app (iOS/Android). */
+export function pauseWorldBgmForBackground() {
+  if (!audio || audio.paused || isWorldBgmMuted()) return;
+  backgroundPaused = true;
+  audio.pause();
+}
+
+/** Reanuda sólo si la pausa vino del background, no del mute del usuario. */
+export function resumeWorldBgmFromBackground() {
+  if (!backgroundPaused) return;
+  backgroundPaused = false;
+  resumeWorldBgm();
 }
 
 /**

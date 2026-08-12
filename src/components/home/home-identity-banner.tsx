@@ -9,6 +9,7 @@ import { neonTypeColor } from "@/lib/type-colors";
 import type { HomeIdentity } from "@/lib/home-hub";
 import { homeBannerById } from "@/lib/home-banners";
 import { homeFrameById } from "@/lib/home-frames";
+import { homeFrameMarcoStyle, homeFrameSectionStyle } from "@/lib/home-frame-style";
 import { divisionRoman, type PvpDivision, type PvpTier } from "@/lib/pvp/tiers";
 
 /**
@@ -62,17 +63,7 @@ export function HomeIdentityBanner({
     obligaba a tocar la hoja de estilos.
   */
   const frame = frameId ? homeFrameById(frameId) : null;
-  const frameVars = frame
-    ? ({
-        "--hi-frame-src": `url("${frame.src}")`,
-        "--hi-frame-slice": String(frame.slice),
-        "--hi-frame-weight": String(frame.weight ?? 1),
-        "--hi-rail-top": String(frame.rails.top),
-        "--hi-rail-bottom": String(frame.rails.bottom),
-        "--hi-rail-left": String(frame.rails.left),
-        "--hi-rail-right": String(frame.rails.right),
-      } as CSSProperties)
-    : {};
+  const frameVars = frame ? homeFrameSectionStyle(frame) : {};
   const bannerSrc = homeBannerById(identity.homeBannerId).src;
 
   return (
@@ -148,7 +139,7 @@ export function HomeIdentityBanner({
           sección: un borde se pinta debajo de los hijos posicionados, así que
           el paisaje lo tapaba entero. Ver `.home-identity__marco`. */}
       {frame ? (
-        <div aria-hidden className="home-identity__marco" />
+        <div aria-hidden className="home-identity__marco" style={homeFrameMarcoStyle(frame)} />
       ) : (
         <div aria-hidden className="home-identity__frame" />
       )}

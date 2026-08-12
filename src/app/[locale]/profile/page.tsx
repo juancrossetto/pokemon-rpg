@@ -518,7 +518,7 @@ export default async function ProfilePage({
 
   return (
     <div
-      className="flex-1 px-margin-mobile py-5 pb-bottom-nav md:px-margin-desktop md:py-8"
+      className="flex-1 px-margin-mobile py-5 md:px-margin-desktop md:py-8"
     >
       <TrainerProfileClient
         hero={{

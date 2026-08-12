@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "@/i18n/navigation";
+import { bindAudioVisibilityHandlers } from "@/lib/audio-visibility";
 import {
   startWorldBgm,
   stopWorldBgm,
@@ -11,10 +12,14 @@ import {
 
 /**
  * BGM ambiental según ruta. No corta al cambiar de menú (misma pista =
- * sigue). No pausa al ocultar la pestaña del browser.
+ * sigue). Pausa al minimizar la PWA o cambiar de app.
  */
 export function WorldBgmController() {
   const pathname = usePathname();
+
+  useEffect(() => {
+    bindAudioVisibilityHandlers();
+  }, []);
 
   useEffect(() => {
     function unlock() {

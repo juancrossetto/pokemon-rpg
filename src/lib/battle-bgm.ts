@@ -19,6 +19,7 @@ const VICTORY_BGM_SRC = "/audio/battle/victory.m4a?v=2";
 
 let audio: HTMLAudioElement | null = null;
 let currentKind: BattleBgmKind | null = null;
+let battleBackgroundPaused = false;
 
 let resultCtx: AudioContext | null = null;
 let resultNodes: AudioNode[] = [];
@@ -109,12 +110,34 @@ export function stopBattleBgm() {
   audio.pause();
   audio.currentTime = 0;
   currentKind = null;
+  battleBackgroundPaused = false;
 }
 
 /** Reanuda tras gesto del usuario (Luchar / menú). */
 export function resumeBattleBgm() {
-  if (!audio || isBattleBgmMuted()) return;
+  if (!audio || !currentKind || isBattleBgmMuted()) return;
   void audio.play().catch(() => {});
+}
+
+/** Corta todo el audio de batalla al ir a segundo plano. */
+export function pauseAllBgmForBackground() {
+  if (audio && !audio.paused && !isBattleBgmMuted()) {
+    battleBackgroundPaused = true;
+    audio.pause();
+  }
+  if (resultAudio && !resultAudio.paused) resultAudio.pause();
+  if (evolutionAudio && !evolutionAudio.paused) evolutionAudio.pause();
+  if (rankUpAudio && !rankUpAudio.paused) rankUpAudio.pause();
+  if (resultCtx?.state === "running") void resultCtx.suspend();
+}
+
+/** Reanuda el loop de pelea; los one-shots (victoria/evolución) no se retoman. */
+export function resumeAllBgmFromBackground() {
+  if (battleBackgroundPaused) {
+    battleBackgroundPaused = false;
+    resumeBattleBgm();
+  }
+  if (resultCtx?.state === "suspended") void resultCtx.resume();
 }
 
 function getResultCtx(): AudioContext | null {

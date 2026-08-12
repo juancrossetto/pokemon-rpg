@@ -12,6 +12,7 @@ import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
 import { avatarById } from "@/lib/avatars";
 import { homeBannerById } from "@/lib/home-banners";
 import { homeFrameById } from "@/lib/home-frames";
+import { homeFrameMarcoStyle, homeFrameSectionStyle } from "@/lib/home-frame-style";
 import type { TrainerAppearance } from "@/lib/trainer-appearance";
 import type { PvpDivision, PvpTier } from "@/lib/pvp/tiers";
 
@@ -122,12 +123,7 @@ export function TrainerIdentityHero({
           "--hero-accent": companionAccent,
           "--id-grad-from": gradientFrom,
           "--id-grad-to": gradientTo,
-          "--hi-frame-src": `url("${frame.src}")`,
-          "--hi-frame-slice": String(frame.slice),
-          "--hi-rail-top": String(frame.rails.top),
-          "--hi-rail-bottom": String(frame.rails.bottom),
-          "--hi-rail-left": String(frame.rails.left),
-          "--hi-rail-right": String(frame.rails.right),
+          ...homeFrameSectionStyle(frame),
         } as React.CSSProperties
       }
     >
@@ -155,7 +151,7 @@ export function TrainerIdentityHero({
         <span className="tp-hero__vignette" />
       </div>
 
-      <div aria-hidden className="home-identity__marco" />
+      <div aria-hidden className="home-identity__marco" style={homeFrameMarcoStyle(frame)} />
 
       <div className="tp-hero__body relative z-[1]">
         {/* Cabecera editorial: nombre → liga PvP → metadatos. Ver `.tp-id__*`. */}

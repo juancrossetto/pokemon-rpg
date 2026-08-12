@@ -142,14 +142,14 @@ html[data-icons="ready"] .material-symbols-outlined {
     display: none;
   }
 
-  /* Deja libre la franja de la bottom nav (mobile) + safe-area + holgura.
-     `--vv-gap` cubre innerHeight > clientHeight (mobile chrome / emulación).
-     En iPhone standalone el home indicator exige safe-area; el 1.75rem extra
-     evita que el último bloque quede pegado al borde de la nav. */
+  /* Deja libre la franja de la bottom nav (mobile). `--bottom-nav-h` ya incluye
+     el safe-area del dock (se mide el nav entero); no sumarlo otra vez. */
   .pb-bottom-nav {
-    padding-bottom: calc(
-      var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 1.75rem + var(--vv-gap, 0px)
-    );
+    padding-bottom: calc(var(--bottom-nav-h) + 0.5rem + var(--vv-gap, 0px));
+  }
+
+  html.is-standalone .pb-bottom-nav {
+    padding-bottom: calc(var(--bottom-nav-h) + 0.25rem);
   }
 
   /* Torre: padding = tope del dock (sin overhang del FAB ni holgura).
@@ -13055,7 +13055,7 @@ html.boot-splash-done .boot-splash,
   border-style: solid;
   border-width: var(--hi-frame);
   border-color: transparent;
-  border-image-source: var(--hi-frame-src);
+  /* `border-image-source` va inline (Safari iOS ignora var(--url)). */
   border-image-slice: var(--hi-frame-slice);
   /* `stretch`, no `round`: entre esquina y esquina el arte es un riel liso, así
      que estirarlo no se nota. Con `round` el trozo se repite y el ornamento de
