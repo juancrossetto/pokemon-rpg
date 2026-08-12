@@ -21,6 +21,7 @@ import {
   stageEncounterRate,
 } from "@/lib/campaign";
 import { loadMapLocations } from "@/lib/campaign/map-data";
+import { evaluateObjectives } from "@/lib/campaign/objectives";
 import { spriteFor } from "@/lib/shiny";
 import { getRouteTrainer } from "@/lib/campaign/trainers";
 import {
@@ -44,10 +45,13 @@ import { isTutorialBattle } from "@/lib/battle-tutorial";
 
 export default async function BattlePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ play?: string }>;
 }) {
   const { locale } = await params;
+  const { play } = await searchParams;
   const session = await auth();
 
   if (!session?.user) {
@@ -318,6 +322,26 @@ export default async function BattlePage({
           teamMaxLevel: partyRows.reduce((max, p) => Math.max(max, p.level), 0),
         };
       })(),
+      zoneId: progress.farmingLocationId,
+      stages: (currentZone?.stages ?? []).filter((s) => !s.isGym),
+      trainers: currentZone?.trainers ?? [],
+      objectives: currentZone
+        ? evaluateObjectives(
+            currentZone,
+            new Set(currentZone.claimedObjectives),
+          ).map((o) => ({
+            id: o.id,
+            current: o.current,
+            target: o.target,
+            done: o.done,
+            claimable: o.claimable,
+            claimed: o.claimed,
+          }))
+        : [],
+      autoPlay:
+        play === "1" &&
+        hasHealthyTeam &&
+        energy >= energyCost,
     };
   }
 

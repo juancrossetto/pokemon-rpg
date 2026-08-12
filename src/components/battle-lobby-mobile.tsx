@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState, useTransition, type CSSProperties } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { useTypeLabel } from "@/hooks/use-type-label";
 import { HubHelpButton } from "@/components/journey-guidance";
 import { Link } from "@/i18n/navigation";
@@ -11,20 +12,23 @@ import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
 import { LobbyLoadoutCard } from "@/components/battle/lobby-loadout-card";
 import { LobbySquadHealRow } from "@/components/battle/lobby-squad-heal";
+import {
+  RouteTrainersSheet,
+  type RouteTrainerRow,
+} from "@/components/adventure/route-trainers-sheet";
+import { setFarmingStage } from "@/actions/campaign";
+import { playUiSfx } from "@/lib/battle-sfx";
 import type { BattleLobbyData } from "@/lib/battle-lobby";
 
+const OBJECTIVE_ICON: Record<string, string> = {
+  stages: "/nav/compass-icon.png",
+  trainers: "/nav/battle-icon.png",
+  pokedex: "/nav/collection-icon.png",
+};
+
 /**
- * Lobby de batalla en mobile. Es un árbol aparte del de desktop (que queda
- * intacto) porque la reorganización pedida no se logra sólo reordenando: hay
- * que fusionar cinco bloques —ubicación, frecuencia, mapa, tipos y CTA— en una
- * sola hero card, y eso cambia el anidamiento, no el orden.
- *
- * Decisiones de jerarquía:
- * - El h1 "Batalla" y su subtítulo no se muestran: la barra inferior ya dice
- *   en qué pantalla estás, y gastaban ~90px por encima de la acción.
- * - El coste de energía va dentro del CTA Explorar (mismo patrón que gimnasio).
- * - Los datos de la zona van SOBRE el mapa, que así crece a 190px y deja de ser
- *   decorativo sin costar altura extra.
+ * Lobby de batalla en mobile — base de campamento de la zona.
+ * Explorar, tramos, objetivos y entrenadores sin pasar por Campaign.
  */
 export function BattleLobbyMobile({
   locale,
@@ -39,10 +43,28 @@ export function BattleLobbyMobile({
   const tc = useTranslations("campaign");
   const tUx = useTranslations("ux");
   const typeLabel = useTypeLabel();
+  const router = useRouter();
+  const intlLocale = useLocale();
 
   const canExplore = hasHealthyTeam && lobby.energy >= lobby.energyCost;
   const [squadHealed, setSquadHealed] = useState(false);
+  const [trainersOpen, setTrainersOpen] = useState(false);
+  const [claimedIds, setClaimedIds] = useState<Set<string>>(() => new Set());
+  const [stagePending, startStage] = useTransition();
+  // Un solo disparo: si dejamos `?play=1` en la URL, al volver del combate
+  // el lobby reiniciaría solo. Lo consumimos en el primer mount.
+  const [autoPlay] = useState(() => Boolean(lobby.autoPlay && canExplore));
   const showSquadStatus = lobby.heal.hurtCount > 0 && !squadHealed;
+
+  useEffect(() => {
+    if (!lobby.autoPlay) return;
+    // Sin RSC refresh: sólo limpia el query para el próximo visit.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("play")) {
+      url.searchParams.delete("play");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  }, [lobby.autoPlay]);
 
   const startErrors = {
     no_lead: t("errors.noLead"),
@@ -58,8 +80,6 @@ export function BattleLobbyMobile({
   const stageLabel = lobby.expedition
     ? tc(lobby.expedition.stageNameKey)
     : t("lobby.zoneTerrain");
-  // stageLabel llega como "Ruta 3 · tramo 1" y el título ya dice "Ruta 3":
-  // se recorta el prefijo repetido para que la línea aporte algo nuevo.
   const stageSuffix = stageLabel.startsWith(locationLabel)
     ? stageLabel.slice(locationLabel.length).replace(/^[\s·-]+/, "")
     : stageLabel;
@@ -68,13 +88,61 @@ export function BattleLobbyMobile({
   const regionNameKey = lobby.expedition?.regionNameKey ?? "regions.kanto";
   const caught = lobby.encounters.filter((e) => e.caught).length;
 
+  const objectives = useMemo(
+    () =>
+      lobby.objectives.map((o) =>
+        claimedIds.has(o.id) ? { ...o, claimed: true, claimable: false } : o,
+      ),
+    [lobby.objectives, claimedIds],
+  );
+  const trainersLeft = lobby.trainers.filter((tr) => !tr.defeated).length;
+  const wildStages = lobby.stages.filter((s) => !s.isGym);
+
+  function pickStage(stageId: string) {
+    if (stagePending || stageId === lobby.farmingStageId) return;
+    playUiSfx("badge");
+    navigator.vibrate?.(10);
+    startStage(async () => {
+      await setFarmingStage(stageId, locale);
+      router.refresh();
+    });
+  }
+
+  async function claimObjective(objectiveId: string) {
+    if (!lobby.zoneId || claimedIds.has(objectiveId)) return;
+    setClaimedIds((prev) => new Set(prev).add(objectiveId));
+    playUiSfx("badge");
+    const { claimZoneObjective } = await import("@/actions/zone-rewards");
+    const { playLootCollectFx, rewardToLootPiece } = await import("@/lib/loot-fly-fx");
+    const result = await claimZoneObjective(intlLocale, lobby.zoneId, objectiveId);
+    if (!result.ok) {
+      setClaimedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(objectiveId);
+        return next;
+      });
+      return;
+    }
+    playLootCollectFx({
+      coinsDelta: result.coins,
+      pieces: [
+        ...(result.coins > 0
+          ? [rewardToLootPiece({ kind: "coins", amount: result.coins })]
+          : []),
+        rewardToLootPiece({
+          kind: "item",
+          itemName: result.itemName,
+          quantity: result.quantity,
+        }),
+      ],
+    });
+    router.refresh();
+  }
+
   return (
     <div className="flex flex-col gap-3 px-margin-mobile py-3">
-      {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className="lobby-rise relative overflow-clip rounded-2xl border border-white/12 bg-surface-container-low shadow-[0_18px_44px_rgba(0,0,0,0.5)]">
-        {/* Mapa protagonista: toda la imagen abre el mapa completo (el trigger
-            de RegionMapDialog es inset-0), así que no hace falta el botón. */}
-        <div className="relative h-[190px] w-full overflow-clip bg-[#0b1424]">
+        <div className="relative h-[168px] w-full overflow-clip bg-[#0b1424]">
           {mapSrc ? (
             <Image
               src={mapSrc}
@@ -109,7 +177,6 @@ export function BattleLobbyMobile({
             />
           </div>
 
-          {/* Datos de la zona encima del mapa: no cuestan altura propia. */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-col gap-1.5 p-3">
             <div className="flex items-end justify-between gap-2">
               <div className="min-w-0">
@@ -141,14 +208,108 @@ export function BattleLobbyMobile({
                   style={{
                     background: `linear-gradient(135deg, ${typeColor(type)}, ${typeColor(type)}cc)`,
                   }}
-                >{typeLabel(type)}</span>
+                >
+                  {typeLabel(type)}
+                </span>
               ))}
             </div>
           </div>
         </div>
 
-        {/* CTA: cierra la hero, así queda pegado al contexto que lo justifica. */}
-        <div className="flex flex-col gap-1.5 p-3">
+        {/* Tramos: chips nativos, sin abrir el mapa. */}
+        {wildStages.length > 1 ? (
+          <div className="lobby-stage-chips border-t border-white/8 px-3 pt-2.5">
+            <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white/45">
+              {t("lobby.stages")}
+            </p>
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {wildStages.map((stage, index) => {
+                const active = stage.id === lobby.farmingStageId;
+                const locked = !stage.unlocked;
+                return (
+                  <button
+                    key={stage.id}
+                    type="button"
+                    disabled={locked || stagePending}
+                    onClick={() => pickStage(stage.id)}
+                    className={`lobby-stage-chip ${
+                      active ? "lobby-stage-chip--active" : ""
+                    } ${stage.done ? "lobby-stage-chip--done" : ""} ${
+                      locked ? "lobby-stage-chip--locked" : ""
+                    }`}
+                    aria-pressed={active}
+                    aria-label={tc(stage.nameKey)}
+                  >
+                    <span className="lobby-stage-chip__n">{index + 1}</span>
+                    {stage.done ? (
+                      <span className="material-symbols-outlined text-[12px]! leading-none">
+                        check
+                      </span>
+                    ) : (
+                      <span className="tabular-nums text-[9px] opacity-70">
+                        {stage.clearsCurrent}/{stage.clearsRequired}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Objetivos de zona — misma info que home. */}
+        {objectives.length > 0 ? (
+          <div className="lobby-obj-row border-t border-white/8 px-3 py-2.5">
+            {objectives.map((obj) => {
+              const pct =
+                obj.target > 0
+                  ? Math.max(0, Math.min(100, Math.round((obj.current / obj.target) * 100)))
+                  : 0;
+              const complete = obj.done || obj.claimed;
+              const isTrainers = obj.id === "trainers";
+              const canFight = isTrainers && trainersLeft > 0 && !obj.claimed;
+              const actionable = obj.claimable || canFight;
+              return (
+                <button
+                  key={obj.id}
+                  type="button"
+                  disabled={!actionable}
+                  onClick={() => {
+                    if (obj.claimable) void claimObjective(obj.id);
+                    else if (canFight) setTrainersOpen(true);
+                  }}
+                  className={`lobby-obj ${complete ? "lobby-obj--done" : ""} ${
+                    obj.claimable ? "lobby-obj--ready" : ""
+                  } ${canFight && !obj.claimable ? "lobby-obj--fight" : ""}`}
+                  style={{ "--ring-pct": String(pct) } as CSSProperties}
+                  aria-label={`${tc(`obj_${obj.id}`)} ${obj.current}/${obj.target}`}
+                >
+                  <span className="lobby-obj__ring" aria-hidden />
+                  <span className="lobby-obj__icon">
+                    <Image
+                      src={OBJECTIVE_ICON[obj.id] ?? "/nav/adventure-icon.png"}
+                      alt=""
+                      width={22}
+                      height={22}
+                      unoptimized
+                    />
+                  </span>
+                  <span className="lobby-obj__meta">
+                    {obj.claimable
+                      ? t("lobby.claim")
+                      : canFight
+                        ? t("lobby.fight")
+                        : obj.claimed
+                          ? t("lobby.claimed")
+                          : `${obj.current}/${obj.target}`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-1.5 border-t border-white/8 p-3">
           {hasHealthyTeam ? (
             <StartEncounterButton
               locale={locale}
@@ -156,23 +317,34 @@ export function BattleLobbyMobile({
               errors={startErrors}
               disabled={!canExplore}
               energyCost={lobby.energyCost}
+              autoStart={autoPlay}
             />
           ) : (
             <div className="flex flex-col gap-2">
               <p className="text-label-sm text-error">{t("errors.faintedLead")}</p>
-              <Link
-                href="/team"
-                className="game-cta game-cta--red"
-              >
+              <Link href="/team" className="game-cta game-cta--red">
                 <span className="material-symbols-outlined game-cta__icon">healing</span>
                 <span className="game-cta__label">{t("goHeal")}</span>
               </Link>
             </div>
           )}
+
+          {trainersLeft > 0 ? (
+            <button
+              type="button"
+              onClick={() => {
+                playUiSfx("badge");
+                setTrainersOpen(true);
+              }}
+              className="lobby-secondary-cta"
+            >
+              <span className="material-symbols-outlined text-[18px]!">swords</span>
+              <span>{t("lobby.challengeTrainers", { count: trainersLeft })}</span>
+            </button>
+          ) : null}
         </div>
       </section>
 
-      {/* ── Mochila (+ cura embebida si hay heridos, sin card suelta) ── */}
       <section className="lobby-rise" style={{ animationDelay: "60ms" }}>
         <LobbyLoadoutCard
           balls={lobby.balls}
@@ -195,7 +367,6 @@ export function BattleLobbyMobile({
         />
       </section>
 
-      {/* ── Últimos encuentros: carrusel horizontal en vez de lista vertical ── */}
       {lobby.recent.length > 0 && (
         <section className="lobby-rise" style={{ animationDelay: "120ms" }}>
           <SectionTitle>{t("lobby.recent")}</SectionTitle>
@@ -240,7 +411,6 @@ export function BattleLobbyMobile({
         </section>
       )}
 
-      {/* ── Pokémon de la zona ── */}
       <section className="lobby-rise" style={{ animationDelay: "150ms" }}>
         <SectionTitle
           trailing={t("lobby.caughtCount", { caught, total: lobby.encounters.length })}
@@ -289,6 +459,14 @@ export function BattleLobbyMobile({
           </div>
         )}
       </section>
+
+      <RouteTrainersSheet
+        open={trainersOpen}
+        onClose={() => setTrainersOpen(false)}
+        locale={locale}
+        zoneName={locationLabel}
+        trainers={lobby.trainers as RouteTrainerRow[]}
+      />
     </div>
   );
 }

@@ -908,6 +908,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       emptyEvent: t("hub.objectives.emptyEvent"),
       claimable: t("hub.objectives.claimable"),
       claimAction: t("hub.objectives.claimAction"),
+      fightAction: t("hub.objectives.fightAction"),
       claimed: t("hub.objectives.claimed"),
       openCampaign: t("hub.objectives.openCampaign"),
       openEvents: t("hub.objectives.openEvents"),
@@ -945,7 +946,11 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       expedition={expeditionProps}
       routeHero={
         expeditionProps ? (
-          <HomeRouteHero expedition={expeditionProps} nextChallenge={nextChallenge} />
+          <HomeRouteHero
+            expedition={expeditionProps}
+            nextChallenge={nextChallenge}
+            claimableCount={claimableCount}
+          />
         ) : null
       }
       nextStep={nextStep.standalone ? <NextStepCard step={nextStep} /> : null}
@@ -979,6 +984,13 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         zoneId: objectiveZoneId,
         zoneName: objectiveZoneName,
         objectives: homeObjectives,
+        trainers: (farmingZone?.trainers ?? []).map((tr) => ({
+          id: tr.id,
+          nameKey: tr.nameKey,
+          spriteUrl: tr.spriteUrl,
+          level: tr.level,
+          defeated: tr.defeated,
+        })),
       }}
       weekly={{
         percent: eventsSummary.weekly.percent,

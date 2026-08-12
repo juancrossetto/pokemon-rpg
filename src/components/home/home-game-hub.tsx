@@ -60,6 +60,7 @@ export type HomeHubLabels = {
     emptyEvent: string;
     claimable: string;
     claimAction: string;
+    fightAction: string;
     claimed: string;
     openCampaign: string;
     openEvents: string;

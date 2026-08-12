@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { startEncounter, type StartEncounterResult } from "@/actions/start-encounter";
 import { WILD_ENCOUNTER_ENERGY_COST } from "@/lib/energy";
 import {
@@ -18,6 +18,7 @@ export function StartEncounterButton({
   errors,
   disabled = false,
   energyCost = WILD_ENCOUNTER_ENERGY_COST,
+  autoStart = false,
 }: {
   locale: string;
   label: string;
@@ -27,7 +28,11 @@ export function StartEncounterButton({
   energyCost?: number;
   /** @deprecated El CTA ya no usa GameCtaButton; se mantiene por callers viejos. */
   className?: string;
+  /** Mobile: dispara Explorar al montar (home → `/battle?play=1`). */
+  autoStart?: boolean;
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const didAutoStart = useRef(false);
   const [state, formAction, pending] = useActionState<StartEncounterResult | null>(
     async () => (await startEncounter(locale)) ?? null,
     null,
@@ -39,8 +44,18 @@ export function StartEncounterButton({
     if (state && !state.success) clearPendingEnergyDelta();
   }, [state]);
 
+  useEffect(() => {
+    if (!autoStart || busy || didAutoStart.current) return;
+    didAutoStart.current = true;
+    const id = requestAnimationFrame(() => {
+      formRef.current?.requestSubmit();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [autoStart, busy]);
+
   return (
     <form
+      ref={formRef}
       action={formAction}
       onSubmit={() => {
         announceEnergyDelta(-energyCost);

@@ -5,7 +5,7 @@ import { GameCtaButton } from "@/components/game-cta-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
 import { ExpeditionAmbient } from "@/components/home/expedition-ambient";
 import type { CurrentExpeditionProps } from "@/components/current-expedition";
-import { milestoneCtaKey, milestoneHref } from "@/lib/journey-ux";
+import { milestoneHref } from "@/lib/journey-ux";
 
 export type HomeNextChallenge = {
   /** Nombre del líder (o del hito, si no hay líder). */
@@ -21,18 +21,18 @@ export type HomeNextChallenge = {
 /**
  * Hero de ruta — **sólo mobile** (`lg:hidden`).
  *
- * En desktop sigue mandando `CurrentExpedition`, que aprovecha el ancho con
- * tipos, guía y mapa. Acá el criterio es el opuesto: el arte del mapa ocupa
- * toda la card, hay **un** llamado a la acción y el resto es información de
- * un vistazo (región, ruta, progreso, próximo desafío). Es un Server
- * Component: no tiene estado y así el copy se resuelve en el server.
+ * CTA dual: jugar (explorar / gimnasio) siempre primario; cobrar recompensas
+ * queda como acción secundaria para no interrumpir el loop de granja.
+ * `?play=1` pide al lobby que arranque el encuentro solo.
  */
 export async function HomeRouteHero({
   expedition,
   nextChallenge,
+  claimableCount = 0,
 }: {
   expedition: CurrentExpeditionProps;
   nextChallenge: HomeNextChallenge | null;
+  claimableCount?: number;
 }) {
   const t = await getTranslations("campaign");
   const {
@@ -51,14 +51,17 @@ export async function HomeRouteHero({
     farmingStageId,
     locationKind,
     gymHref,
-    guideSteps = [],
   } = expedition;
 
-  const currentGuide = guideSteps.find((s) => s.status === "current");
-  const ctaHref = currentGuide?.href ?? milestoneHref(milestone, { gymHref });
-  const ctaLabel = currentGuide
-    ? t(`guide.cta.${currentGuide.id}`)
-    : t(milestoneCtaKey(milestone));
+  const gymReady = milestone.kind === "gym";
+  const playHref = gymReady
+    ? milestoneHref(milestone, { gymHref })
+    : "/battle?play=1";
+  const playLabel = gymReady
+    ? t("guide.cta.challenge_gym")
+    : t("guide.cta.explore");
+  const showClaim = claimableCount > 0;
+
   const pct =
     stagesTotal > 0
       ? Math.max(0, Math.min(100, Math.round((stagesDone / stagesTotal) * 100)))
@@ -66,8 +69,6 @@ export async function HomeRouteHero({
 
   return (
     <section className="route-hero lg:hidden">
-      {/* El mapa es el fondo, no una miniatura: es lo que da la sensación de
-          juego que un gradiente con texto encima no da. */}
       <div className="route-hero__art" aria-hidden>
         <Image
           src={mapSrc}
@@ -140,10 +141,25 @@ export async function HomeRouteHero({
           </aside>
         ) : null}
 
-        <div className="route-hero__cta">
-          <GameCtaButton href={ctaHref} variant="gold" className="route-hero__cta-btn">
-            {ctaLabel}
+        <div className={`route-hero__cta${showClaim ? " route-hero__cta--dual" : ""}`}>
+          <GameCtaButton
+            href={playHref}
+            variant="gold"
+            icon="explore"
+            className="route-hero__cta-btn"
+          >
+            {playLabel}
           </GameCtaButton>
+          {showClaim ? (
+            <GameCtaButton
+              href="/campaign"
+              variant="secondary"
+              className="route-hero__cta-secondary"
+            >
+              {t("guide.cta.claim_rewards")}
+              {claimableCount > 1 ? ` (${claimableCount})` : ""}
+            </GameCtaButton>
+          ) : null}
         </div>
       </div>
     </section>

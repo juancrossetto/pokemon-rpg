@@ -11,6 +11,10 @@ import { healTeam } from "@/actions/heal-team";
 import { playUiSfx } from "@/lib/battle-sfx";
 import { announceCoinDelta } from "@/lib/coin-fx";
 import { HomeObjectivesRail } from "@/components/home/home-objectives-rail";
+import {
+  RouteTrainersSheet,
+  type RouteTrainerRow,
+} from "@/components/adventure/route-trainers-sheet";
 import { announceHomeTeamHealed } from "@/lib/home-heal-fx";
 import {
   HEAL_COOLDOWN_MINUTES,
@@ -456,6 +460,13 @@ export type HomeEventsAdventure = {
   zoneId: string | null;
   zoneName: string | null;
   objectives: HomeObjective[];
+  trainers: Array<{
+    id: string;
+    nameKey: string;
+    spriteUrl: string;
+    level: number;
+    defeated: boolean;
+  }>;
 };
 
 export type HomeEventsWeekly = {
@@ -505,6 +516,7 @@ export function HomeEventsProgress({
     emptyEvent: string;
     claimable: string;
     claimAction: string;
+    fightAction: string;
     claimed: string;
     openCampaign: string;
     openEvents: string;
@@ -521,6 +533,7 @@ export function HomeEventsProgress({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [claimedIds, setClaimedIds] = useState<Set<string>>(() => new Set());
+  const [trainersOpen, setTrainersOpen] = useState(false);
   const [tab, setTab] = useState<EventsTab>(() =>
     adventure.objectives.some((o) => o.claimable)
       ? "adventure"
@@ -702,7 +715,23 @@ export function HomeEventsProgress({
         rewardTitle={labels.rewardsTitle}
         claimLabel={labels.claimAction}
         claimedLabel={labels.claimed}
+        fightLabel={labels.fightAction}
         onClaim={claimObjectiveAsync}
+        onOpenTrainers={
+          adventure.trainers.some((tr) => !tr.defeated)
+            ? () => {
+                playUiSfx("badge");
+                setTrainersOpen(true);
+              }
+            : undefined
+        }
+      />
+      <RouteTrainersSheet
+        open={trainersOpen}
+        onClose={() => setTrainersOpen(false)}
+        locale={locale}
+        zoneName={adventure.zoneName}
+        trainers={adventure.trainers as RouteTrainerRow[]}
       />
 
       {/* `ev-quest--desktop` y no `hidden lg:block`: `.ev-quest` declara

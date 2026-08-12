@@ -25,8 +25,7 @@ type Reward = { src: string; label: string };
  * Objetivos de ruta en mobile: pista de misiones + recompensa final.
  * **Sólo mobile** (`lg:hidden`); en desktop sigue el panel con pestañas.
  *
- * Acento tertiary (azul → celeste neon). El cofre sólo anima cuando
- * todos los objetivos están listos para cobrar.
+ * Entrenadores incompletos abren el sheet de pelea (sin ir a Campaign).
  */
 export function HomeObjectivesRail({
   objectives,
@@ -34,22 +33,25 @@ export function HomeObjectivesRail({
   rewardTitle,
   claimLabel,
   claimedLabel,
+  fightLabel,
   onClaim,
+  onOpenTrainers,
 }: {
   objectives: HomeObjective[];
   title: string;
   rewardTitle: string;
   claimLabel: string;
   claimedLabel: string;
+  fightLabel: string;
   /** Devuelve la recompensa a mostrar en el centro, o null si falló. */
   onClaim: (
     objectiveId: string,
     origin: { x: number; y: number },
   ) => Promise<Reward | null>;
+  /** Abre el sheet de entrenadores de la zona. */
+  onOpenTrainers?: () => void;
 }) {
-  /** Objetivo que está "vibrando" tras el tap. */
   const [buzzing, setBuzzing] = useState<string | null>(null);
-  /** Recompensa mostrándose en el centro de la pantalla. */
   const [center, setCenter] = useState<Reward | null>(null);
 
   if (objectives.length === 0) return null;
@@ -57,23 +59,34 @@ export function HomeObjectivesRail({
   const done = objectives.filter((o) => o.done || o.claimed).length;
   const total = objectives.length;
   const allDone = done >= total;
-  /** Cofre anima sólo con zona completa y aún hay algo para cobrar. */
   const giftReady = allDone && objectives.some((o) => o.claimable);
 
-  async function handleClaim(objective: HomeObjective, el: HTMLElement) {
-    if (!objective.claimable) return;
+  async function handleTap(objective: HomeObjective, el: HTMLElement) {
+    const isTrainers = objective.id === "trainers";
+    const canFight =
+      isTrainers &&
+      !objective.claimable &&
+      !objective.claimed &&
+      objective.current < objective.target &&
+      Boolean(onOpenTrainers);
+
+    if (!objective.claimable && !canFight) return;
+
     const rect = el.getBoundingClientRect();
     const origin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 
     setBuzzing(objective.id);
     playUiSfx("badge");
-    // Háptica donde exista (Android / Chrome). En iOS no hace nada y no rompe.
     navigator.vibrate?.(18);
     window.setTimeout(() => setBuzzing(null), 420);
 
+    if (canFight) {
+      onOpenTrainers?.();
+      return;
+    }
+
     const reward = await onClaim(objective.id, origin);
     if (!reward) return;
-    // La recompensa aparece grande en el centro antes de irse al header.
     setCenter(reward);
     window.setTimeout(() => setCenter(null), CENTER_REVEAL_MS);
   }
@@ -91,6 +104,13 @@ export function HomeObjectivesRail({
                 ? Math.max(0, Math.min(100, Math.round((o.current / o.target) * 100)))
                 : 0;
             const complete = o.done || o.claimed;
+            const canFight =
+              o.id === "trainers" &&
+              !o.claimable &&
+              !o.claimed &&
+              o.current < o.target &&
+              Boolean(onOpenTrainers);
+            const actionable = o.claimable || canFight;
             return (
               <li key={o.id} className="objectives-rail__item">
                 <button
@@ -99,13 +119,14 @@ export function HomeObjectivesRail({
                     "objective-ring",
                     complete ? "objective-ring--done" : "",
                     o.claimable ? "objective-ring--ready" : "",
+                    canFight ? "objective-ring--fight" : "",
                     buzzing === o.id ? "objective-ring--buzz" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
                   style={{ "--ring-pct": `${pct}` } as CSSProperties}
-                  disabled={!o.claimable}
-                  onClick={(e) => void handleClaim(o, e.currentTarget)}
+                  disabled={!actionable}
+                  onClick={(e) => void handleTap(o, e.currentTarget)}
                   aria-label={`${o.labelKey} ${o.current}/${o.target}`}
                 >
                   <span className="objective-ring__track" aria-hidden />
@@ -122,6 +143,8 @@ export function HomeObjectivesRail({
                 </button>
                 {o.claimable ? (
                   <span className="objective-ring__cta">{claimLabel}</span>
+                ) : canFight ? (
+                  <span className="objective-ring__cta">{fightLabel}</span>
                 ) : o.claimed ? (
                   <span className="objective-ring__claimed">{claimedLabel}</span>
                 ) : (

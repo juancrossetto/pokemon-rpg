@@ -14332,6 +14332,147 @@ html.boot-splash-done .boot-splash,
   animation: lobby-rise 260ms ease-out both;
 }
 
+/* Lobby mobile: tramos + objetivos (sensación nativa). */
+.lobby-stage-chips {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+}
+.lobby-stage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  min-height: 2rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.lobby-stage-chip:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.lobby-stage-chip--active {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(14, 165, 233, 0.22);
+  color: #fff;
+}
+.lobby-stage-chip--done {
+  border-color: rgba(52, 211, 153, 0.35);
+  color: rgba(167, 243, 208, 0.95);
+}
+.lobby-stage-chip--locked {
+  opacity: 0.4;
+}
+.lobby-stage-chip__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.lobby-stage-chip--active .lobby-stage-chip__n {
+  background: rgba(56, 189, 248, 0.35);
+}
+
+.lobby-obj-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+.lobby-obj {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.2rem 0.15rem;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+}
+.lobby-obj:disabled {
+  opacity: 0.85;
+}
+.lobby-obj__ring {
+  position: absolute;
+  top: 0.2rem;
+  width: 2.55rem;
+  height: 2.55rem;
+  border-radius: 999px;
+  background: conic-gradient(
+    from -90deg,
+    rgba(56, 189, 248, 0.95) calc(var(--ring-pct, 0) * 1%),
+    rgba(255, 255, 255, 0.12) 0
+  );
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+}
+.lobby-obj__icon {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.55rem;
+  height: 2.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(8, 10, 16, 0.85);
+}
+.lobby-obj__meta {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.lobby-obj--ready .lobby-obj__icon {
+  border-color: rgba(34, 211, 238, 0.55);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.35);
+}
+.lobby-obj--ready .lobby-obj__meta {
+  color: #67e8f9;
+}
+.lobby-obj--fight .lobby-obj__icon {
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.28);
+}
+.lobby-obj--fight .lobby-obj__meta {
+  color: #fde68a;
+}
+.lobby-obj--done .lobby-obj__meta {
+  color: rgba(110, 231, 183, 0.9);
+}
+
+.lobby-secondary-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 2.4rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.lobby-secondary-cta:active {
+  transform: scale(0.985);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 @keyframes lobby-rise {
   from {
     opacity: 0;
@@ -19495,18 +19636,31 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   transform: scale(1.28);
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
 }
-/* Un solo CTA, cruzando el ancho: es el punto de la pantalla. */
+/* Un CTA (o dual): cruzando el ancho — es el punto de la pantalla. */
 .route-hero__cta {
   grid-column: 1 / -1;
   grid-row: 3;
   align-self: end;
   padding-top: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.route-hero__cta--dual {
+  gap: 0.4rem;
 }
 .route-hero__cta-btn {
   width: 100%;
   min-height: 3rem;
   font-size: 15px !important;
   letter-spacing: 0.04em;
+}
+.route-hero__cta-secondary {
+  width: 100%;
+  min-height: 2.45rem;
+  font-size: 13px !important;
+  letter-spacing: 0.03em;
+  opacity: 0.95;
 }
 /*
   `--game-cta-ink` es tinta oscura, pensada para el CTA dorado. Con temas de
@@ -20285,6 +20439,15 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 .objective-ring--ready {
   cursor: pointer;
+}
+.objective-ring--fight {
+  cursor: pointer;
+}
+.objective-ring--fight .objective-ring__disc {
+  border-color: color-mix(in srgb, #fbbf24 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 10px rgba(251, 191, 36, 0.28);
 }
 .objective-ring--ready .objective-ring__disc {
   border-color: color-mix(in srgb, var(--obj-accent-soft) 70%, transparent);
