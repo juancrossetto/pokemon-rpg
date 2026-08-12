@@ -12,9 +12,77 @@ import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { formatGymCooldown, gymCooldownRemainingMs } from "@/lib/gym-cooldown";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
-import { areChapterStagesCompleteForGym } from "@/lib/campaign";
+import {
+  areChapterStagesCompleteForGym,
+  canChallengeGym,
+  countTeamReadyAtLevel,
+  GYM_READY_TEAM_SIZE,
+  gymReadyLevel,
+} from "@/lib/campaign";
 import { regionDef } from "@/lib/regions";
 import { gymBattleEnergyCost } from "@/lib/energy";
+import type { ReactNode } from "react";
+
+function TeamNotReadyBanner({
+  title,
+  leadOk,
+  leadLabel,
+  depthOk,
+  depthLabel,
+  ctaLabel,
+}: {
+  title: string;
+  leadOk: boolean;
+  leadLabel: string;
+  depthOk: boolean;
+  depthLabel: string;
+  ctaLabel: string;
+}): ReactNode {
+  return (
+    <div
+      role="status"
+      className="w-full rounded-xl border border-amber-400/35 bg-amber-400/10 px-3 py-2.5 text-left shadow-[0_0_24px_rgba(251,191,36,0.12)] sm:max-w-sm"
+    >
+      <div className="flex items-start gap-2">
+        <span className="material-symbols-outlined mt-0.5 shrink-0 text-[18px]! text-amber-300">
+          warning
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[12px] font-semibold text-amber-100">{title}</p>
+          <ul className="mt-1.5 flex flex-col gap-1">
+            <li
+              className={`flex items-center gap-1.5 text-[11px] leading-snug ${
+                leadOk ? "text-emerald-300/90" : "text-amber-100/80"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[14px]!">
+                {leadOk ? "check_circle" : "radio_button_unchecked"}
+              </span>
+              {leadLabel}
+            </li>
+            <li
+              className={`flex items-center gap-1.5 text-[11px] leading-snug ${
+                depthOk ? "text-emerald-300/90" : "text-amber-100/80"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[14px]!">
+                {depthOk ? "check_circle" : "radio_button_unchecked"}
+              </span>
+              {depthLabel}
+            </li>
+          </ul>
+          <Link
+            href="/battle"
+            className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-200/95 underline-offset-2 hover:underline"
+          >
+            <span className="material-symbols-outlined text-[14px]!">explore</span>
+            {ctaLabel}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default async function GymLeaderPage({
   params,
@@ -52,18 +120,23 @@ export default async function GymLeaderPage({
     return null;
   }
 
-  const [badge, previousBadge, activeRun, lastAttempt, user, progress] = await Promise.all([
-    prisma.badge.findUnique({ where: { userId_gymId: { userId, gymId } } }),
-    gym.order > 1
-      ? prisma.badge.findFirst({
-          where: { userId, gym: { order: gym.order - 1, regionId: gym.regionId } },
-        })
-      : Promise.resolve(true),
-    prisma.gymRun.findFirst({ where: { userId, gymId, status: "ACTIVE" } }),
-    prisma.gymAttempt.findFirst({ where: { userId, gymId }, orderBy: { attemptedAt: "desc" } }),
-    prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { gems: true } }),
-    ensureCampaignProgress(userId),
-  ]);
+  const [badge, previousBadge, activeRun, lastAttempt, user, progress, teamRows] =
+    await Promise.all([
+      prisma.badge.findUnique({ where: { userId_gymId: { userId, gymId } } }),
+      gym.order > 1
+        ? prisma.badge.findFirst({
+            where: { userId, gym: { order: gym.order - 1, regionId: gym.regionId } },
+          })
+        : Promise.resolve(true),
+      prisma.gymRun.findFirst({ where: { userId, gymId, status: "ACTIVE" } }),
+      prisma.gymAttempt.findFirst({ where: { userId, gymId }, orderBy: { attemptedAt: "desc" } }),
+      prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { gems: true } }),
+      ensureCampaignProgress(userId),
+      prisma.pokemonInstance.findMany({
+        where: { ownerId: userId, teamSlot: { not: null } },
+        select: { level: true },
+      }),
+    ]);
 
   const locked = gym.order > 1 && !previousBadge;
   const stagesIncomplete =
@@ -102,6 +175,21 @@ export default async function GymLeaderPage({
     gym.trainers.length > 0 ? "trainer" : "leader",
   );
 
+  const recommendedLevel = Math.max(...levels, 1);
+  const readyLevel = gymReadyLevel(recommendedLevel);
+  const teamLevels = teamRows.map((p) => p.level);
+  const teamMaxLevel = Math.max(...teamLevels, 0);
+  const teamReadyCount = countTeamReadyAtLevel(teamLevels, readyLevel);
+  const teamCanChallenge =
+    Boolean(badge) ||
+    canChallengeGym(gym.order, progress.completedStageIds, {
+      regionId: gym.regionId,
+      teamMaxLevel,
+      teamReadyCount,
+      recommendedLevel,
+    });
+  const showTeamGate = !badge && !locked && !stagesIncomplete && !teamCanChallenge;
+
   const errors = {
     no_lead: tBattle("noLead"),
     fainted_lead: tBattle("faintedLead"),
@@ -112,6 +200,21 @@ export default async function GymLeaderPage({
     stages_incomplete: t("stagesIncompleteHint"),
     team_not_ready: t("teamNotReadyHint"),
   };
+
+  const teamWarning = showTeamGate ? (
+    <TeamNotReadyBanner
+      title={t("teamNotReadyTitle")}
+      leadOk={teamMaxLevel >= recommendedLevel}
+      leadLabel={t("teamNotReadyLead", { leaderLevel: recommendedLevel })}
+      depthOk={teamReadyCount >= GYM_READY_TEAM_SIZE}
+      depthLabel={t("teamNotReadyDepth", {
+        have: teamReadyCount,
+        need: GYM_READY_TEAM_SIZE,
+        readyLevel,
+      })}
+      ctaLabel={t("teamNotReadyCta")}
+    />
+  ) : null;
 
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
@@ -183,6 +286,10 @@ export default async function GymLeaderPage({
           </p>
         </div>
 
+        {/*
+          En mobile el banner de equipo va pegado arriba del CTA para que no
+          quede bajo el botón / nav después de un submit fallido.
+        */}
         <div className="glass-panel border-tertiary/40 p-3 sm:p-6 flex flex-col gap-3 sm:gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <Image src={gymBadgeImageUrl(gym.type)} alt={badgeLabel} width={40} height={40} className="shrink-0" />
@@ -272,6 +379,7 @@ export default async function GymLeaderPage({
               label={t("startChallenge")}
               energyCost={firstBattleEnergyCost}
               errors={errors}
+              warning={teamWarning}
             />
           )}
           </div>

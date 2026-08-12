@@ -103,11 +103,11 @@ export function gymBadgeImageUrl(type: string): string {
   return showdownTypeSymbolUrl(key);
 }
 
-/** Sprite — cards, listas, UI chica. Prefiere avatar *2 (Alto Mando), luego leaders locales, luego CDN. */
+/** Sprite — cards, listas, UI chica. Prefiere avatar *1 (busto Alto Mando), luego leaders locales, luego CDN. */
 export function gymLeaderImageUrl(leaderName: string): string | null {
   const avatarSlug = LEADER_AVATAR_BODY_SLUG[leaderName];
   if (avatarSlug) {
-    return `/avatars/${avatarSlug}2.png`;
+    return `/avatars/${avatarSlug}1.png`;
   }
   const slug = LEADER_SLUGS[leaderName];
   if (!slug) return null;

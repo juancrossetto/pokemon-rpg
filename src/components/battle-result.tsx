@@ -22,6 +22,8 @@ import type { XpSummaryEntry } from "@/actions/battle-move";
 import { XpGainPanel } from "@/components/battle/xp-gain-panel";
 import { playLootCollectFx, rewardToLootPiece } from "@/lib/loot-fly-fx";
 import { flushPendingCoinDelta } from "@/lib/coin-fx";
+import { BattleHighlightReel } from "@/components/battle/battle-highlight-reel";
+import type { BattleHighlight } from "@/lib/battle-highlights";
 
 export type ResultMode = "won" | "lost" | "caught" | "fled" | "trainer_cleared";
 
@@ -36,7 +38,8 @@ type Tag = { label: string; icon: string; tone: "win" | "ko" | "caught" | "neutr
 
 const EXIT_MS = 420;
 const COIN_ICON = itemHdIconUrl("Gold Coin") ?? "/items/hd/gold-coin.png";
-const TROPHY_ICON = "/pvp/win-trophy.png";
+const POKE_BALL_CLOSED = "/items/hd/poke-ball-3d-closed.png";
+const POKE_BALL_OPEN = "/items/hd/poke-ball-3d-open.png";
 
 type LeaveTarget = string | (() => void | Promise<void>);
 
@@ -94,21 +97,21 @@ function FighterCard({
   const t = useTranslations("battle");
 
   return (
-    <div className="flex min-w-0 flex-col items-center gap-2">
-      <div className="relative flex h-24 w-24 items-center justify-center md:h-28 md:w-28">
+    <div className="flex min-w-0 flex-col items-center gap-1">
+      <div className="relative flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20">
         {highlight && (
           <>
-            <span className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-400/20 blur-xl" />
-            <span className="victory-ring pointer-events-none absolute inset-1 rounded-full border border-emerald-300/30" />
+            <span className="pointer-events-none absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-400/18 blur-lg" />
+            <span className="victory-ring pointer-events-none absolute inset-1 rounded-full border border-emerald-300/25" />
           </>
         )}
         <Image
           src={uiSpriteUrl(fighter.spriteUrl)}
           alt={fighter.name}
-          width={128}
-          height={128}
+          width={96}
+          height={96}
           unoptimized
-          className={`relative z-10 h-full w-full object-contain drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)] ${
+          className={`relative z-10 h-full w-full object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.5)] ${
             defeated ? "translate-y-1 opacity-45 grayscale" : ""
           }`}
         />
@@ -117,27 +120,16 @@ function FighterCard({
         )}
       </div>
 
-      <div className="min-w-0 text-center">
-        <p className="truncate text-[13px] font-semibold capitalize text-white">{fighter.name}</p>
-        <p className="text-[11px] text-white/45">{t("level", { level: fighter.level })}</p>
+      <div className="min-w-0 max-w-full text-center">
+        <p className="truncate text-[12px] font-semibold capitalize text-white">{fighter.name}</p>
+        <p className="text-[10px] text-white/45">{t("level", { level: fighter.level })}</p>
       </div>
 
       {tag ? (
         <span
-          className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${TONE_CLASS[tag.tone]}`}
+          className={`inline-flex max-w-full items-center gap-0.5 truncate text-[9px] font-bold uppercase tracking-wider ${TONE_CLASS[tag.tone]}`}
         >
-          {tag.tone === "win" ? (
-            <Image
-              src={TROPHY_ICON}
-              alt=""
-              width={16}
-              height={16}
-              className="h-4 w-4 object-contain"
-              unoptimized
-            />
-          ) : (
-            <span className="material-symbols-outlined text-[14px]!">{tag.icon}</span>
-          )}
+          <span className="material-symbols-outlined text-[12px]!">{tag.icon}</span>
           {tag.label}
         </span>
       ) : null}
@@ -219,6 +211,8 @@ export function BattleResult({
   xpSummary,
   coinsGained,
   pvpRating = null,
+  highlights = [],
+  farmStreak = 0,
   children,
 }: {
   mode: ResultMode;
@@ -232,6 +226,8 @@ export function BattleResult({
   coinsGained: number;
   /** Elo PvP ranked: fila compacta en Recompensas (sin barra). */
   pvpRating?: { before: number; after: number } | null;
+  highlights?: BattleHighlight[];
+  farmStreak?: number;
   children: ReactNode;
 }) {
   const t = useTranslations("battle");
@@ -297,7 +293,7 @@ export function BattleResult({
       });
     }
 
-    const kick = window.setTimeout(playFromOrigin, 380);
+    const kick = window.setTimeout(playFromOrigin, 700);
 
     return () => {
       cancelled = true;
@@ -344,11 +340,11 @@ export function BattleResult({
         : { label: t("koTag"), icon: "close", tone: "ko" }
       : mode === "fled"
         ? { label: t("fledTag"), icon: "directions_run", tone: "neutral" }
-        : { label: t("victoryTag"), icon: "trophy", tone: "win" };
+        : { label: t("victoryTag"), icon: "star", tone: "win" };
 
   const foeTag: Tag =
     mode === "lost"
-      ? { label: t("victoryTag"), icon: "trophy", tone: "win" }
+      ? { label: t("victoryTag"), icon: "star", tone: "win" }
       : mode === "caught"
         ? { label: t("caughtTag"), icon: "sports_baseball", tone: "caught" }
         : mode === "fled"
@@ -375,7 +371,7 @@ export function BattleResult({
         ? "sports_baseball"
         : mode === "fled"
           ? "directions_run"
-          : "trophy";
+          : "star";
 
   const accentGlow = playerWon
     ? "bg-white/6"
@@ -400,7 +396,7 @@ export function BattleResult({
   return createPortal(
     <BattleResultLeaveContext.Provider value={leave}>
       <div
-        className={`battle-result-overlay fixed inset-0 z-[90] flex items-end justify-center overflow-x-clip overflow-y-auto px-margin-mobile pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:items-center${
+        className={`battle-result-overlay fixed inset-0 z-[90] flex items-end justify-center overflow-x-clip overflow-y-auto px-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:items-center sm:px-4${
           leaving ? " is-leaving" : ""
         }`}
         role="dialog"
@@ -420,9 +416,9 @@ export function BattleResult({
           botones no se corten.
         */}
         <div
-          className={`result-in relative z-10 mb-0 flex max-h-[calc(var(--app-vh,100dvh)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1.5rem)] w-full flex-col overflow-hidden rounded-2xl border shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-xl sm:my-auto ${cardSurface} ${
-            hasLevelUpChoices ? "max-w-3xl" : "max-w-lg"
-          }`}
+          className={`result-in relative z-10 mb-0 flex max-h-[calc(var(--app-vh,100dvh)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1.5rem)] w-full min-w-0 flex-col overflow-x-clip overflow-hidden rounded-[1.25rem] border shadow-[0_18px_48px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:my-auto ${
+            playerWon ? "result-in--win" : ""
+          } ${cardSurface} ${hasLevelUpChoices ? "max-w-3xl" : "max-w-md"}`}
         >
           <div
             className={`pointer-events-none absolute inset-x-0 top-0 h-28 ${cardTopGlow} blur-2xl`}
@@ -435,40 +431,35 @@ export function BattleResult({
             />
           ) : null}
 
-          <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-6 md:py-5">
-            <div
-              className={`flex flex-col items-center ${
-                hasLevelUpChoices ? "gap-1.5" : "gap-2.5"
-              }`}
-            >
-              <span
-                className={`result-outcome-mark inline-flex items-center gap-2 result-outcome-mark--${headlineTone}`}
-              >
-                {playerWon ? (
+          <div className="relative min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-contain px-3.5 py-3.5 md:px-5 md:py-4">
+            <div className="result-stagger result-stagger--1 flex flex-col items-center gap-1.5">
+              {playerWon ? (
+                <div className="result-win-seal flex flex-col items-center gap-1.5">
                   <Image
-                    src={TROPHY_ICON}
+                    src={mode === "caught" ? POKE_BALL_OPEN : POKE_BALL_CLOSED}
                     alt=""
-                    width={hasLevelUpChoices ? 28 : 36}
-                    height={hasLevelUpChoices ? 28 : 36}
-                    className={`object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)] ${
-                      hasLevelUpChoices ? "h-7 w-7" : "h-9 w-9"
-                    }`}
+                    width={72}
+                    height={72}
+                    className="result-win-seal__ball h-16 w-16 object-contain sm:h-[4.5rem] sm:w-[4.5rem]"
                     unoptimized
+                    priority
                   />
-                ) : (
-                  <span className="material-symbols-outlined text-[28px]!">
+                  <span className="result-win-seal__label text-[0.7rem] font-bold uppercase tracking-[0.14em] text-emerald-300/95">
+                    {outcomePillLabel}
+                  </span>
+                </div>
+              ) : (
+                <span
+                  className={`result-outcome-pill result-outcome-pill--${headlineTone}`}
+                >
+                  <span className="material-symbols-outlined text-[14px]!">
                     {outcomePillIcon}
                   </span>
-                )}
-                <span className="page-title text-[0.95rem] leading-none tracking-[0.08em]">
                   {outcomePillLabel}
                 </span>
-              </span>
+              )}
               {!hasLevelUpChoices ? (
                 <>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">
-                    {t("resultEyebrow")}
-                  </p>
                   <h1
                     id="battle-result-title"
                     className={`result-title result-title--${headlineTone} text-center`}
@@ -476,10 +467,14 @@ export function BattleResult({
                     {resultText}
                   </h1>
                   {subText ? (
-                    <p className="result-lede mx-auto max-w-sm text-center text-[13px] leading-relaxed text-white/60 md:max-w-md md:text-[0.95rem]">
+                    <p className="result-lede mx-auto max-w-sm text-center text-[12px] leading-snug text-white/55 md:text-[0.88rem]">
                       {subText}
                     </p>
-                  ) : null}
+                  ) : (
+                    <p className="text-[11px] font-medium text-white/40">
+                      {t("resultEyebrow")}
+                    </p>
+                  )}
                 </>
               ) : (
                 <h1
@@ -492,36 +487,66 @@ export function BattleResult({
             </div>
 
             {!hasLevelUpChoices ? (
-              <section className="relative mt-5 overflow-hidden rounded-2xl border border-white/8 bg-black/40 p-3 md:mt-6 md:p-4">
-                <div className="relative grid grid-cols-[1fr_auto_1fr] items-start gap-2 md:gap-3">
-                  <FighterCard
-                    fighter={player}
-                    tag={playerTag}
-                    defeated={mode === "lost" && !idleLoss}
-                    highlight={playerWon}
-                  />
-                  <div className="flex flex-col items-center gap-1 pt-8 md:pt-9">
-                    <span className="page-title text-[0.7rem] tracking-[0.18em] text-white/40">
-                      VS
-                    </span>
-                    <span className="h-8 w-px bg-linear-to-b from-white/15 to-transparent md:h-10" />
+              <section className="result-stagger result-stagger--2 relative mt-3 overflow-hidden rounded-xl border border-white/8 bg-black/35 p-2.5 md:mt-3.5 md:p-3">
+                <div className="relative grid grid-cols-[1fr_auto_1fr] items-start gap-1.5">
+                  <div className="result-duel-player min-w-0">
+                    <FighterCard
+                      fighter={player}
+                      tag={playerWon ? null : playerTag}
+                      defeated={mode === "lost" && !idleLoss}
+                      highlight={playerWon}
+                    />
                   </div>
-                  <FighterCard
-                    fighter={foe}
-                    tag={foeTag}
-                    defeated={mode !== "lost" && mode !== "fled"}
-                    highlight={mode === "lost"}
-                  />
+                  <div className="result-duel-vs flex flex-col items-center gap-1 pt-5">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
+                      vs
+                    </span>
+                    <span className="h-6 w-px bg-linear-to-b from-white/15 to-transparent" />
+                  </div>
+                  <div className="result-duel-foe min-w-0">
+                    <FighterCard
+                      fighter={foe}
+                      tag={foeTag}
+                      defeated={mode !== "lost" && mode !== "fled"}
+                      highlight={mode === "lost"}
+                    />
+                  </div>
                 </div>
               </section>
             ) : null}
 
+            {playerWon && (highlights.length > 0 || farmStreak >= 2) ? (
+              <div className="result-stagger result-stagger--3 mt-3">
+                {farmStreak >= 2 ? (
+                  <p className="battle-farm-streak mb-2 text-center text-[12px] font-semibold text-amber-200/90">
+                    {t("farmStreak", { count: farmStreak })}
+                  </p>
+                ) : null}
+                {highlights.length > 0 ? (
+                  <BattleHighlightReel
+                    title={t("highlightReelTitle")}
+                    items={highlights}
+                    labels={{
+                      crit: t("highlightCrit"),
+                      superEffective: t("highlightSuperEffective"),
+                      ko: t("highlightKo"),
+                      ohko: t("highlightOhko"),
+                      multiHit: (count) => t("highlightMultiHit", { count }),
+                      seStreak: (count) => t("highlightSeStreak", { count }),
+                    }}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+
             {xpSummary && !hasLevelUpChoices ? (
-              <LevelUpFanfare entries={xpSummary} player={player} />
+              <div className="result-stagger result-stagger--4">
+                <LevelUpFanfare entries={xpSummary} player={player} />
+              </div>
             ) : null}
 
             {xpSummary ? (
-              <div className="mt-3">
+              <div className="result-stagger result-stagger--4 mt-3">
                 <LevelUpOffersPanel
                   key={xpSummary
                     .map(
@@ -546,7 +571,7 @@ export function BattleResult({
             ) : null}
 
             {xpSummary && xpSummary.length > 0 && hasLevelUpChoices ? (
-              <div className="mt-3 rounded-2xl border border-white/8 bg-black/40 p-2.5 md:p-3">
+              <div className="result-stagger result-stagger--5 mt-3 rounded-2xl border border-white/8 bg-black/40 p-2.5 md:p-3">
                 <XpGainPanel entries={xpSummary} compact />
               </div>
             ) : null}
@@ -555,7 +580,7 @@ export function BattleResult({
               Boolean(pvpRating) ||
               (xpSummary && xpSummary.length > 0)) &&
               !hasLevelUpChoices && (
-              <section className="mt-3 rounded-2xl border border-white/8 bg-black/40 p-3 md:p-4">
+              <section className="result-stagger result-stagger--5 result-rewards-card mt-3 rounded-2xl border border-white/8 bg-black/40 p-3 md:p-4">
                 <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
                   {t("rewardsTitle")}
                 </p>
@@ -610,7 +635,7 @@ export function BattleResult({
             )}
           </div>
 
-          <div className="relative shrink-0 border-t border-white/8 px-4 py-3 md:px-6 md:py-4">
+          <div className="result-stagger result-stagger--6 relative shrink-0 border-t border-white/8 px-4 py-3 md:px-6 md:py-4">
             <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-2">
               {children}
             </div>

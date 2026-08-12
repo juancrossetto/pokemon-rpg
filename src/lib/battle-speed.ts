@@ -66,12 +66,30 @@ export function subscribeBattleSpeed(listener: () => void): () => void {
 }
 
 /**
+ * AUTO comprime el timeline además de la velocidad elegida: misma pelea,
+ * menos “lunge + banner” muertos entre golpes.
+ */
+let fxCompact = false;
+
+export function setBattleFxCompact(on: boolean) {
+  fxCompact = on;
+}
+
+export function getBattleFxCompact(): boolean {
+  return fxCompact;
+}
+
+/**
  * Espera escalada por la velocidad elegida, con piso de ~1.5 frames: varias
  * pausas cortas del timeline existen para que el navegador alcance a pintar el
  * reset de una animación (el golpe 2 de un multi-hit no se ve si la clase no
  * se limpió antes). Acelerarlas a 13 ms rompía justamente eso.
+ *
+ * Con AUTO (`setBattleFxCompact(true)`) se aplica un extra ~1.65× encima
+ * del multiplicador de velocidad.
  */
 export function scaledDelay(ms: number): number {
   if (ms <= 0) return 0;
-  return Math.max(24, Math.round(ms / current));
+  const div = current * (fxCompact ? 1.65 : 1);
+  return Math.max(24, Math.round(ms / div));
 }

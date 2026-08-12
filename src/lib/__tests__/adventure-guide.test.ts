@@ -8,20 +8,19 @@ describe("buildAdventureGuide", () => {
       stagesDone: 1,
       stagesTotal: 3,
       claimableCount: 2,
-      needsHealing: false,
     });
     expect(steps.find((s) => s.status === "current")?.id).toBe("claim_rewards");
   });
 
-  it("prioriza curar si no hay rewards pendientes", () => {
+  it("no mete curar como paso — eso es el Centro Pokémon", () => {
     const steps = buildAdventureGuide({
       milestoneKind: "stage",
       stagesDone: 1,
       stagesTotal: 3,
       claimableCount: 0,
-      needsHealing: true,
     });
-    expect(steps.find((s) => s.status === "current")?.id).toBe("heal");
+    expect(steps.find((s) => s.id === "heal" as never)).toBeUndefined();
+    expect(steps.find((s) => s.status === "current")?.id).toBe("explore");
   });
 
   it("apunta al gym cuando el hito es gimnasio", () => {
@@ -30,11 +29,21 @@ describe("buildAdventureGuide", () => {
       stagesDone: 3,
       stagesTotal: 3,
       claimableCount: 0,
-      needsHealing: false,
       gymHref: "/gyms/pewter",
     });
     const current = steps.find((s) => s.status === "current");
     expect(current?.id).toBe("challenge_gym");
     expect(current?.href).toBe("/gyms/pewter");
+  });
+
+  it("prioriza gym aunque la zona esté al 100%", () => {
+    const steps = buildAdventureGuide({
+      milestoneKind: "gym",
+      stagesDone: 3,
+      stagesTotal: 3,
+      claimableCount: 0,
+      gymHref: "/gyms/cerulean",
+    });
+    expect(steps.find((s) => s.status === "current")?.id).toBe("challenge_gym");
   });
 });

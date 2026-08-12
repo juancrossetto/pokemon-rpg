@@ -657,7 +657,7 @@ export function GymChallengeCorridor({
                         height={36}
                         className={`object-contain ${isLocked ? "opacity-40 grayscale" : ""} ${
                           isCleared ? "opacity-75" : ""
-                        } ${isActive ? "gym-corridor-idle-sway" : ""}`}
+                        }`}
                         unoptimized
                       />
                     </PathNode>
@@ -755,11 +755,7 @@ export function GymChallengeCorridor({
                       width={36}
                       height={36}
                       className={`object-contain ${
-                        leaderUnlocked
-                          ? leaderJustUnlocked
-                            ? "gym-corridor-leader-reveal"
-                            : "gym-corridor-idle-sway"
-                          : "gym-corridor-silhouette"
+                        leaderUnlocked ? "" : "gym-corridor-silhouette"
                       }`}
                     />
                   ) : (

@@ -107,10 +107,12 @@ function XpGainRow({
   entry,
   staggerMs,
   compact,
+  orbIconSrc = XP_ICON,
 }: {
   entry: XpSummaryEntry;
   staggerMs: number;
   compact: boolean;
+  orbIconSrc?: string;
 }) {
   const t = useTranslations("battle");
   const segments = buildSegments(entry);
@@ -317,7 +319,7 @@ function XpGainRow({
           aria-hidden
         >
           <Image
-            src={XP_ICON}
+            src={orbIconSrc}
             alt=""
             width={36}
             height={36}
@@ -356,7 +358,7 @@ function XpGainRow({
             >
               <span ref={amountIconRef} className="inline-flex">
                 <Image
-                  src={XP_ICON}
+                  src={orbIconSrc}
                   alt=""
                   width={20}
                   height={20}
@@ -439,10 +441,13 @@ export function XpGainPanel({
   entries,
   compact = false,
   showTitle = true,
+  orbIconSrc = XP_ICON,
 }: {
   entries: XpSummaryEntry[];
   compact?: boolean;
   showTitle?: boolean;
+  /** Ícono del orbe/fila de XP (p. ej. Rare Candy en el resumen). */
+  orbIconSrc?: string;
 }) {
   const t = useTranslations("battle");
   if (entries.length === 0) return null;
@@ -464,9 +469,12 @@ export function XpGainPanel({
             entry={entry}
             staggerMs={compact ? 120 + i * 160 : 200 + i * 280}
             compact={compact}
+            orbIconSrc={orbIconSrc}
           />
         ))}
       </div>
     </section>
   );
 }
+
+

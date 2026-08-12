@@ -426,8 +426,6 @@ export function DailyGiftModal({
             }`}
             style={flyStyle}
           >
-            <span aria-hidden className="daily-reward-loot-glow" />
-            <span aria-hidden className="daily-reward-loot-ring" />
             <div className="relative z-10 flex flex-col items-center gap-2">
               <Image
                 src={primary.src}
@@ -435,7 +433,7 @@ export function DailyGiftModal({
                 width={160}
                 height={160}
                 className={[
-                  "h-28 w-28 object-contain sm:h-32 sm:w-32",
+                  "h-28 w-28 object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)] sm:h-32 sm:w-32",
                   primary.pixelated ? "[image-rendering:pixelated]" : "",
                 ].join(" ")}
                 unoptimized
@@ -453,7 +451,7 @@ export function DailyGiftModal({
                         width={56}
                         height={56}
                         className={[
-                          "h-12 w-12 object-contain",
+                          "h-12 w-12 object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.55)]",
                           extra.pixelated ? "[image-rendering:pixelated]" : "",
                         ].join(" ")}
                         unoptimized

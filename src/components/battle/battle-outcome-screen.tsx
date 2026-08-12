@@ -14,6 +14,7 @@ import { startEncounter } from "@/actions/start-encounter";
 import { abandonGymRun } from "@/actions/abandon-gym-run";
 import type { GymFirstWinReward, XpSummaryEntry } from "@/actions/battle-move";
 import type { Outcome } from "@/components/battle/arena-types";
+import type { BattleHighlight } from "@/lib/battle-highlights";
 
 export interface PvpResultInfo {
   matchId: string;
@@ -49,6 +50,8 @@ export function BattleOutcomeScreen({
   gymLeaderName,
   gymBadgeName,
   leaderPortrait,
+  highlights = [],
+  farmStreak = 0,
 }: {
   outcome: Exclude<Outcome, "ongoing">;
   /** Si la derrota fue por reloj, no por debilitación. */
@@ -78,6 +81,8 @@ export function BattleOutcomeScreen({
   gymLeaderName: string | null;
   gymBadgeName: string | null;
   leaderPortrait: string | null;
+  highlights?: BattleHighlight[];
+  farmStreak?: number;
 }) {
   const t = useTranslations("battle");
   const tUx = useTranslations("ux");
@@ -148,6 +153,8 @@ export function BattleOutcomeScreen({
             }
           : null
       }
+      highlights={highlights}
+      farmStreak={farmStreak}
     >
       {isPvpBattle && pvpResult ? (
         <PvpHubAnimPersist

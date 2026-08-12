@@ -552,10 +552,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     ? evaluateObjectives(farmingZoneEarly, new Set(farmingZoneEarly.claimedObjectives))
     : [];
   const claimableCount = zoneObjectivesEarly.filter((o) => o.claimable).length;
-  const teamHurtEarly = pokemon.filter((p) => {
-    const maxHp = calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution);
-    return p.currentHp < maxHp;
-  }).length;
 
   const expeditionProps =
     expedition && milestone
@@ -582,7 +578,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
             stagesDone: locationStagesDone,
             stagesTotal: locationStages.length,
             claimableCount,
-            needsHealing: teamHurtEarly > 0,
             gymHref: eliteGymHref,
           }),
         }

@@ -45,11 +45,18 @@ const EXIT_MS = 750;
 /** Pop del VS cuando los banners ya están casi en sitio. */
 const VS_POP_AT_MS = 620;
 
+/** Cadena de farm: intro más corta (~1.5s) sin perder el gesto. */
+const SHORT_ENTER_MS = 480;
+const SHORT_HOLD_MS = 700;
+const SHORT_EXIT_MS = 420;
+const SHORT_VS_POP_AT_MS = 320;
+
 export function BattleVsIntro({
   mode,
   player,
   foe,
   placeLabel,
+  variant = "full",
   onComplete,
 }: {
   mode: BattleVsMode;
@@ -57,6 +64,8 @@ export function BattleVsIntro({
   foe: BattleVsSide;
   /** Ruta / gimnasio / piso — opcional bajo el VS. */
   placeLabel?: string | null;
+  /** `short` = farm/rematch en la misma zona. */
+  variant?: "full" | "short";
   onComplete: () => void;
 }) {
   const t = useTranslations("battle");
@@ -86,20 +95,25 @@ export function BattleVsIntro({
       return () => clearTimeout(id);
     }
 
+    const enter = variant === "short" ? SHORT_ENTER_MS : ENTER_MS;
+    const hold = variant === "short" ? SHORT_HOLD_MS : HOLD_MS;
+    const exit = variant === "short" ? SHORT_EXIT_MS : EXIT_MS;
+    const vsPop = variant === "short" ? SHORT_VS_POP_AT_MS : VS_POP_AT_MS;
+
     const timers: number[] = [];
     const at = (ms: number, fn: () => void) => {
       timers.push(window.setTimeout(fn, ms));
     };
 
-    at(VS_POP_AT_MS, () => playBattleSfx("badge"));
-    at(ENTER_MS, () => setPhase("hold"));
-    at(ENTER_MS + HOLD_MS, () => setPhase("exit"));
-    at(ENTER_MS + HOLD_MS + EXIT_MS, finish);
+    at(vsPop, () => playBattleSfx("badge"));
+    at(enter, () => setPhase("hold"));
+    at(enter + hold, () => setPhase("exit"));
+    at(enter + hold + exit, finish);
 
     return () => {
       for (const id of timers) clearTimeout(id);
     };
-  }, []);
+  }, [variant]);
 
   if (phase === "gone") return null;
 

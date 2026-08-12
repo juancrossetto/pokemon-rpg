@@ -1,15 +1,16 @@
 /**
  * Pasos guiados de la aventura (puro, sin Prisma).
  *
- * Prioridad del paso actual: cobrar recompensas → curar → gym → explorar.
- * Así no se acumulan premios sin reclamar mientras el jugador grindéa niveles.
+ * Prioridad del paso actual: cobrar recompensas → gym → explorar.
+ * Curar no va acá: el Centro Pokémon del home ya es el CTA de heal, y
+ * hijackear el botón de expedición con "Curar equipo" (href `/`) dejaba
+ * un CTA muerto encima del mapa cuando el equipo estaba herido.
  */
 
 export type AdventureGuideStepId =
   | "explore"
   | "clear_zone"
   | "claim_rewards"
-  | "heal"
   | "challenge_gym";
 
 export type AdventureGuideStepStatus = "done" | "current" | "upcoming";
@@ -25,7 +26,6 @@ export type AdventureGuideContext = {
   stagesDone: number;
   stagesTotal: number;
   claimableCount: number;
-  needsHealing: boolean;
   gymHref?: string | null;
 };
 
@@ -38,7 +38,6 @@ export function buildAdventureGuide(
 
   let currentId: AdventureGuideStepId;
   if (ctx.claimableCount > 0) currentId = "claim_rewards";
-  else if (ctx.needsHealing) currentId = "heal";
   else if (gymReady) currentId = "challenge_gym";
   else currentId = "explore";
 
@@ -69,14 +68,6 @@ export function buildAdventureGuide(
             : "upcoming",
     },
   ];
-
-  if (ctx.needsHealing || currentId === "heal") {
-    steps.push({
-      id: "heal",
-      href: "/",
-      status: currentId === "heal" ? "current" : "upcoming",
-    });
-  }
 
   if (gymReady || ctx.milestoneKind === "complete") {
     steps.push({

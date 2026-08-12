@@ -745,6 +745,7 @@ export default async function BattlePage({
       turnDeadlineAt: battle.turnDeadlineAt?.toISOString() ?? null,
       fleeAttempts: battle.fleeAttempts,
       autoBattleUnlocked,
+      farmingLocationId,
     };
   }
 

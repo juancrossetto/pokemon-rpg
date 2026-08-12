@@ -157,6 +157,8 @@ export interface BattleArenaProps {
    * queda locked y el loop no corre aunque localStorage diga on.
    */
   autoBattleUnlocked?: boolean;
+  /** Zona de farm (salvaje) — cadena de intro corta / rachas. */
+  farmingLocationId?: string | null;
   /** Nivel de entrenador (tope del equipo) — intro VS. */
   trainerLevel: number;
   /** Liga clasificatoria del jugador — intro VS. */

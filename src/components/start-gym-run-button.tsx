@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, type ReactNode } from "react";
 import { startGymRun, type StartGymRunResult } from "@/actions/start-gym-run";
 import {
   announceEnergyDelta,
@@ -16,6 +16,7 @@ export function StartGymRunButton({
   label,
   energyCost,
   errors,
+  warning,
 }: {
   gymId: string;
   locale: string;
@@ -34,6 +35,8 @@ export function StartGymRunButton({
     | "team_not_ready",
     string
   >;
+  /** Banner proactivo (ej. equipo no listo) — va arriba del CTA en mobile. */
+  warning?: ReactNode;
 }) {
   const [state, formAction, pending] = useActionState<StartGymRunResult | null>(
     async () => (await startGymRun(gymId, locale)) ?? null,
@@ -44,14 +47,39 @@ export function StartGymRunButton({
     if (state && !state.success) clearPendingEnergyDelta();
   }, [state]);
 
+  const submitError =
+    state && !state.success
+      ? `${errors[state.error]}${
+          state.error === "on_cooldown" && state.hoursLeft
+            ? ` (${state.hoursLeft}h)`
+            : ""
+        }${
+          state.error === "closed" && state.opensHour !== undefined
+            ? ` (${String(state.opensHour).padStart(2, "0")}:00 – ${String(state.closesHour).padStart(2, "0")}:00)`
+            : ""
+        }`
+      : null;
+
   return (
     <form
       action={formAction}
       onSubmit={() => {
         announceEnergyDelta(-energyCost);
       }}
-      className="flex w-full flex-col items-center gap-2 sm:w-auto"
+      className="flex w-full flex-col items-stretch gap-2.5 sm:w-auto sm:items-end"
     >
+      {warning}
+      {submitError ? (
+        <div
+          role="alert"
+          className="flex w-full items-start gap-2 rounded-xl border border-amber-400/35 bg-amber-400/10 px-3 py-2.5 text-left shadow-[0_0_24px_rgba(251,191,36,0.12)] sm:max-w-sm"
+        >
+          <span className="material-symbols-outlined mt-0.5 shrink-0 text-[18px]! text-amber-300">
+            warning
+          </span>
+          <p className="text-[12px] leading-snug text-amber-100/95">{submitError}</p>
+        </div>
+      ) : null}
       <button
         type="submit"
         disabled={pending}
@@ -71,15 +99,6 @@ export function StartGymRunButton({
           <span>−{energyCost}</span>
         </span>
       </button>
-      {state && !state.success && (
-        <p className="text-label-sm text-error">
-          {errors[state.error]}
-          {state.error === "on_cooldown" && state.hoursLeft ? ` (${state.hoursLeft}h)` : ""}
-          {state.error === "closed" && state.opensHour !== undefined
-            ? ` (${String(state.opensHour).padStart(2, "0")}:00 – ${String(state.closesHour).padStart(2, "0")}:00)`
-            : ""}
-        </p>
-      )}
     </form>
   );
 }

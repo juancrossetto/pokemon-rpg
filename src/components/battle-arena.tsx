@@ -47,9 +47,19 @@ import {
   getBattleSpeed,
   getServerBattleSpeed,
   scaledDelay,
+  setBattleFxCompact,
   subscribeBattleSpeed,
 } from "@/lib/battle-speed";
+import { noteBattleChainStart } from "@/lib/battle-farm";
+import {
+  createHighlightsState,
+  recordFoeBreaksSeStreak,
+  recordPlayerHit,
+  type BattleHighlight,
+  type BattleHighlightsState,
+} from "@/lib/battle-highlights";
 import { pickAutoPlayerMoveId } from "@/lib/battle-ai";
+import { BattleAutoTelegraph } from "@/components/battle/battle-auto-telegraph";
 import { impactFxUrl, resolveMoveFx, showdownBattleBgUrl, showdownFxUrl } from "@/lib/showdown-fx";
 import type { MoveFxGlow, MoveFxStyle } from "@/lib/showdown-fx";
 import { battleAnimatedSpriteUrl } from "@/lib/showdown-sprites";
@@ -353,6 +363,7 @@ export function BattleArena({
   turnDeadlineAt: initialTurnDeadlineAt = null,
   fleeAttempts: initialFleeAttempts = 0,
   autoBattleUnlocked = true,
+  farmingLocationId = null,
   trainerLevel,
   trainerPvpTier,
   trainerPvpDivision,
@@ -365,6 +376,22 @@ export function BattleArena({
   const isGymBattle = battleMode === "gym";
   const isPvpBattle = battleMode === "pvp";
   const isTowerBattle = battleMode === "tower" || Boolean(towerRunId);
+  const farmMode =
+    battleMode === "pvp"
+      ? "pvp"
+      : battleMode === "gym"
+        ? "gym"
+        : isTowerBattle
+          ? "tower"
+          : "wild";
+  const farmLocationKey =
+    farmMode === "wild"
+      ? (farmingLocationId ?? "wild")
+      : farmMode === "tower"
+        ? (towerRunId ?? "tower")
+        : farmMode === "gym"
+          ? (gymId ?? "gym")
+          : "pvp";
   const isDouble =
     (format === "DOUBLE" || Boolean(playerB && wildB)) &&
     Boolean(playerB) &&
@@ -535,6 +562,12 @@ export function BattleArena({
     getServerBattleAuto,
   );
   const autoBattle = autoBattleUnlocked && autoBattlePref;
+
+  useEffect(() => {
+    setBattleFxCompact(autoBattle);
+    return () => setBattleFxCompact(false);
+  }, [autoBattle]);
+
   const [log, setLog] = useState<LogEntry[]>(() => {
     const entries: LogEntry[] = [];
     for (const text of initialLog) {
@@ -554,6 +587,13 @@ export function BattleArena({
     Si el jugador recarga a mitad, saltamos directo al campo operativo.
   */
   const freshBoot = isFreshBattleBoot(initialLog);
+  const [farmChainCount] = useState(() =>
+    freshBoot ? noteBattleChainStart(farmMode, farmLocationKey) : 0,
+  );
+  const vsIntroVariant =
+    freshBoot && farmChainCount >= 2 && (farmMode === "wild" || farmMode === "tower")
+      ? "short"
+      : "full";
   const [vsIntroDone, setVsIntroDone] = useState(!freshBoot);
   /** Contenido del campo (sprites/placas) oculto hasta el send-out. */
   const [fieldRevealed, setFieldRevealed] = useState(!freshBoot);
@@ -616,6 +656,15 @@ export function BattleArena({
     moveType: string;
   } | null>(null);
   const [arenaFlash, setArenaFlash] = useState<string | null>(null);
+  const [arenaShake, setArenaShake] = useState<"soft" | "hard" | null>(null);
+  const [autoTelegraph, setAutoTelegraph] = useState<{
+    moveName: string;
+    moveType: string;
+    key: number;
+  } | null>(null);
+  const [koSting, setKoSting] = useState(false);
+  const highlightsRef = useRef<BattleHighlightsState>(createHighlightsState());
+  const [highlights, setHighlights] = useState<BattleHighlight[]>([]);
   const [effPopup, setEffPopup] = useState<{ text: string; key: number } | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [outcome, setOutcome] = useState<Outcome>("ongoing");
@@ -1474,6 +1523,19 @@ export function BattleArena({
           setShakingLane(targetLane);
           setImpactIntensity(Math.min(1.7, Math.max(0.55, 0.55 + impactRatio * 2.3)));
           setArenaFlash(color);
+          // Sacudida del campo: siempre en hit con daño real (antes sólo SE/crit).
+          if (i === 0 && chunk > 0) {
+            const hard =
+              event.critical ||
+              event.effectiveness > 1 ||
+              impactRatio >= 0.35 ||
+              event.hpAfter <= 0;
+            setArenaShake(hard ? "hard" : "soft");
+            window.setTimeout(
+              () => setArenaShake(null),
+              hard ? 520 : 380,
+            );
+          }
           setDamagePopup({
             side: defenderSide,
             lane: targetLane,
@@ -1506,6 +1568,22 @@ export function BattleArena({
           if (multiHit && i < hitDamages.length - 1) {
             await delay(MULTI_GAP_MS);
           }
+        }
+
+        if (event.side === "player") {
+          const totalDmg = hitDamages.reduce((s, d) => s + d, 0);
+          const causedKo = event.hpAfter <= 0;
+          highlightsRef.current = recordPlayerHit(highlightsRef.current, {
+            moveName: formatMoveName(event.moveName, locale),
+            critical: Boolean(event.critical),
+            effectiveness: event.effectiveness,
+            hitCount: hitDamages.length,
+            damage: totalDmg,
+            defenderMaxHp: defenderMaxHpNow,
+            causedKo,
+          });
+        } else {
+          highlightsRef.current = recordFoeBreaksSeStreak(highlightsRef.current);
         }
 
         if (multiHit) {
@@ -1565,6 +1643,12 @@ export function BattleArena({
       appendLog(tLog("fainted", { name: nameFor(side) }), side);
       playBattleSfx("faint");
       setFaintingSide(side);
+      if (finalOutcome === "won" || finalOutcome === "trainer_cleared") {
+        setArenaShake("hard");
+        setKoSting(true);
+        playBattleSfx("badge");
+        playBattleSfx("crit");
+      }
     }
     if (side === "wild") {
       setOpponentParty((prev) =>
@@ -1579,7 +1663,21 @@ export function BattleArena({
     }
     if (!opts?.skipFaintBeat) await delay(FAINT_MS);
     // Un beat corto para que el KO asiente antes del cartel.
-    await delay(450);
+    const stingExtra =
+      finalOutcome === "won" || finalOutcome === "trainer_cleared" ? 900 : 450;
+    await delay(stingExtra);
+    setKoSting(false);
+    setArenaShake(null);
+    {
+      let items = highlightsRef.current.items;
+      if (
+        (finalOutcome === "won" || finalOutcome === "trainer_cleared") &&
+        items.length === 0
+      ) {
+        items = [{ kind: "ko" }];
+      }
+      setHighlights(items);
+    }
     if (finalOutcome === "lost") setLossReason("faint");
     setOutcome(finalOutcome);
     // No refrescar acá: un refresh RSC (o revalidate de /battle) puede
@@ -2185,6 +2283,11 @@ export function BattleArena({
     enterDoubleFight,
     pickAutoMoveId,
     pickAutoTargetLane,
+    resolveMoveMeta(moveId: number, forB: boolean) {
+      void moveId;
+      void forB;
+      return null as { name: string; type: string } | null;
+    },
   });
   autoActionsRef.current = {
     handleMove,
@@ -2192,6 +2295,11 @@ export function BattleArena({
     enterDoubleFight,
     pickAutoMoveId,
     pickAutoTargetLane,
+    resolveMoveMeta: (moveId: number, forB: boolean) => {
+      const pool = forB ? activeMovesB : activeMoves;
+      const opt = pool.find((m) => m.moveId === moveId);
+      return opt ? { name: opt.name, type: opt.type } : null;
+    },
   };
 
   // AUTO: elige pelea → move (→ target en dobles) sin tocar el menú.
@@ -2220,17 +2328,37 @@ export function BattleArena({
     const timer = window.setTimeout(() => {
       if (cancelled) return;
       const actions = autoActionsRef.current;
+
+      const fireMove = (moveId: number, forB: boolean) => {
+        const meta = actions.resolveMoveMeta(moveId, forB);
+        if (meta && !isDouble) {
+          setAutoTelegraph({
+            moveName: formatMoveName(meta.name, locale),
+            moveType: meta.type,
+            key: Date.now(),
+          });
+          // Reloj real — NO scaledDelay: a 3× AUTO el chip duraba ~80ms.
+          window.setTimeout(() => {
+            if (cancelled) return;
+            setAutoTelegraph(null);
+            void actions.handleMove(moveId);
+          }, 850);
+          return;
+        }
+        void actions.handleMove(moveId);
+      };
+
       if (view === "menu") {
         if (isDouble) {
           void actions.enterDoubleFight();
         } else {
-          void actions.handleMove(actions.pickAutoMoveId(false));
+          fireMove(actions.pickAutoMoveId(false), false);
         }
         return;
       }
       if (view === "moves") {
         const forB = isDouble && pendingDoubleMoveA != null;
-        void actions.handleMove(actions.pickAutoMoveId(forB));
+        fireMove(actions.pickAutoMoveId(forB), forB);
         return;
       }
       if (view === "targets" && isDouble) {
@@ -2412,6 +2540,7 @@ export function BattleArena({
     }
     setCapturedInfo(null);
     setOutcome("caught");
+    setHighlights(highlightsRef.current.items);
   }
 
   async function handleUsePotion(itemId: string) {
@@ -2733,6 +2862,8 @@ export function BattleArena({
         gymLeaderName={gymLeaderName}
         gymBadgeName={gymBadgeName}
         leaderPortrait={leaderPortrait}
+        highlights={highlights}
+        farmStreak={farmChainCount}
       />
     );
   }
@@ -3071,7 +3202,13 @@ export function BattleArena({
             */
             className={`battle-arena-field relative mx-auto max-h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl border border-white/10 max-lg:h-full max-lg:max-h-none max-lg:aspect-auto lg:m-auto lg:aspect-[753/500] ${
               showVsIntro || fieldAssembling ? "battle-arena-field--assembling" : ""
-            } ${arenaFlash ? "arena-type-flash" : ""}`}
+            } ${arenaFlash ? "arena-type-flash" : ""} ${
+              arenaShake === "hard"
+                ? "battle-arena-shake-hard"
+                : arenaShake === "soft"
+                  ? "battle-arena-shake-soft"
+                  : ""
+            } ${koSting ? "battle-arena-ko-sting" : ""}`}
             style={
               arenaFlash
                 ? ({ "--arena-flash-color": arenaFlash } as CSSProperties)
@@ -3089,6 +3226,7 @@ export function BattleArena({
                         ? "tower"
                         : "wild"
                 }
+                variant={vsIntroVariant}
                 player={{
                   name: trainerName,
                   portraitUrl: trainerPortraitUrl,
@@ -3117,6 +3255,19 @@ export function BattleArena({
                 placeLabel={vsPlaceLabel}
                 onComplete={() => setVsIntroDone(true)}
               />
+            ) : null}
+            {autoTelegraph ? (
+              <BattleAutoTelegraph
+                key={autoTelegraph.key}
+                moveName={autoTelegraph.moveName}
+                moveType={autoTelegraph.moveType}
+                label={t("autoTelegraphLabel")}
+              />
+            ) : null}
+            {koSting ? (
+              <div className="battle-ko-sting-label" aria-hidden>
+                <span>{t("koStingLabel")}</span>
+              </div>
             ) : null}
             {isPvpBattle ? (
               <BattleTurnTimer
