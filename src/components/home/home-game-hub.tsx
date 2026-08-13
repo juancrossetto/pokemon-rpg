@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { CurrentExpedition, type CurrentExpeditionProps } from "@/components/current-expedition";
 import { ActiveTeamStrip } from "@/components/home/active-team-strip";
 import { HomeSquadCards } from "@/components/home/home-squad-cards";
@@ -23,7 +23,8 @@ import type {
   HomeRailClanWars,
   HomeRailPvp,
 } from "@/lib/home-hub";
-import { JourneyOnboarding } from "@/components/journey-guidance";
+import { HealTutorial, JourneyOnboarding } from "@/components/journey-guidance";
+import { hasSeen } from "@/lib/journey-ux";
 import {
   HomeDesktopRail,
   type HomeRailRankEntry,
@@ -142,6 +143,15 @@ export function HomeGameHub({
     setCompanionTypes(identity.companionTypes);
   }
 
+  const [healTutorialArmed, setHealTutorialArmed] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      setHealTutorialArmed(hasSeen("journey-onboarding"));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  const hasFainted = squad.members.some((m) => m.currentHp <= 0);
+
   const bannerIdentity: HomeIdentity = {
     ...identity,
     companionTypes,
@@ -149,7 +159,8 @@ export function HomeGameHub({
 
   return (
     <div className="relative flex min-w-0 flex-col overflow-x-clip">
-      <JourneyOnboarding />
+      <JourneyOnboarding onDismiss={() => setHealTutorialArmed(true)} />
+      <HealTutorial active={hasFainted && healTutorialArmed} />
       <div className="relative flex min-w-0 flex-col px-margin-mobile py-2 md:px-margin-desktop md:py-5">
         <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-2.5 md:gap-5 xl:max-w-6xl xl:gap-5 2xl:max-w-7xl">
           {/*

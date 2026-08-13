@@ -72,6 +72,17 @@ export function trainersForLocation(locationId: string): RouteTrainer[] {
   return ROUTE_TRAINERS.filter((t) => t.locationId === locationId);
 }
 
+/** Sin entrenadores en la zona, o todos ya vencidos. */
+export function areLocationTrainersDefeated(
+  locationId: string,
+  defeatedTrainerIds: readonly string[] = [],
+): boolean {
+  const trainers = trainersForLocation(locationId);
+  if (trainers.length === 0) return true;
+  const done = new Set(defeatedTrainerIds);
+  return trainers.every((t) => done.has(t.id));
+}
+
 export function getRouteTrainer(id: string): RouteTrainer | undefined {
   return ROUTE_TRAINERS.find((t) => t.id === id);
 }

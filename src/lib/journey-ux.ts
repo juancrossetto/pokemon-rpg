@@ -33,6 +33,7 @@ export type FirstVisitKey =
   | "coach-explore"
   | "coach-gym"
   | "coach-team-slot"
+  | "coach-heal"
   | "hub-help-campaign"
   | "hub-help-battle"
   | "hub-help-market";

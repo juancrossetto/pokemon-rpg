@@ -1,10 +1,10 @@
 /**
  * Markup estático del splash. Server Component (sin "use client").
  *
- * Siempre sale con `--out` desde React: el soft-nav de idioma remonta este
- * layout y si SSR mandara `pending` se veía una pantalla negra sin spinner.
- * En cold start el script de revelado (justo debajo en el layout) quita
- * `--out` si el warmup aún no corrió.
+ * El nodo siempre se pinta igual (visible en markup). Lo oculta
+ * `html.boot-splash-done` — el script de `<head>` lo pone en cold start
+ * ya hecho / login, y el warmup al terminar. Así el soft-nav de idioma no
+ * remonta un splash "pending" (pantalla negra) ni pelea la hidratación.
  *
  * Mobile: video Charizard (poster estático para el primer paint). Desktop:
  * Pokéball. El % lo anima el warmup.
@@ -16,11 +16,11 @@ export function BootSplashMarkup({ label }: { label: string }) {
   return (
     <div
       id="boot-splash"
-      className="boot-splash boot-splash--out"
+      className="boot-splash"
       role="progressbar"
       aria-live="polite"
-      aria-busy="false"
-      aria-hidden="true"
+      aria-busy="true"
+      aria-hidden="false"
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={0}

@@ -8,6 +8,8 @@ import { allStages, findLocation, regionContent, resolveProgressRegionId } from 
 import type { CampaignMilestone } from "./types";
 import type { Chapter } from "./chapters";
 import type { MapLocation } from "./map-selection";
+import { isZoneStoryCleared } from "./objectives";
+import { trainersForLocation } from "./trainers";
 import { nextMilestone } from "./progress";
 import { milestoneCtaKey, milestoneHref } from "@/lib/journey-ux";
 
@@ -26,6 +28,7 @@ export type CampaignRequirementType =
   | "own_ready_pokemon"
   | "own_previous_badge"
   | "complete_stage"
+  | "defeat_trainers"
   | "visit_location";
 
 /** Cuántos Pokémon del equipo deben llegar al nivel de preparación del gym. */
@@ -100,6 +103,8 @@ export type CampaignActionContext = {
   chapter?: Chapter | null;
   /** Nivel recomendado del gimnasio del milestone, si aplica. */
   gymRecommendedLevel?: number | null;
+  /** Entrenadores de ruta ya vencidos — sin esto el CTA no espera por ellos. */
+  defeatedTrainerIds?: readonly string[];
 };
 
 /**
@@ -193,7 +198,11 @@ export function canChallengeGym(
  * Nivel y equipo listo son hard-gate (igual que los stages del capítulo).
  */
 export function getCampaignPrimaryAction(ctx: CampaignActionContext): CampaignActionState {
-  const milestone = nextMilestone(ctx.progress, ctx.earnedGymOrders);
+  const milestone = nextMilestone(
+    ctx.progress,
+    ctx.earnedGymOrders,
+    ctx.defeatedTrainerIds,
+  );
   const href = milestoneHref(milestone);
   const baseLabel = milestoneCtaKey(milestone);
 
@@ -315,6 +324,7 @@ export function getCampaignActionForZone(opts: {
   gymRecommendedLevel?: number | null;
   /** `/gyms/{id}` cuando el nodo es el gimnasio del capítulo. */
   gymHref?: string | null;
+  defeatedTrainerIds?: readonly string[];
 }): CampaignActionState {
   const {
     zone,
@@ -327,6 +337,7 @@ export function getCampaignActionForZone(opts: {
     storyMilestone,
     gymRecommendedLevel,
     gymHref,
+    defeatedTrainerIds,
   } = opts;
   const milestone = storyMilestone;
   const isGym = zone.kindKey === "kinds.gym";
@@ -340,7 +351,11 @@ export function getCampaignActionForZone(opts: {
       milestone,
       objectiveTitleKey: "objectiveExploreStage",
       locationNameKey: zone.nameKey,
-      missingRequirements: getZoneUnlockRequirements(zone.id, progress),
+      missingRequirements: getZoneUnlockRequirements(
+        zone.id,
+        progress,
+        defeatedTrainerIds,
+      ),
     };
   }
 
@@ -486,11 +501,7 @@ export function recommendedChapterZoneId(opts: {
   const { chapter, farmingLocationId, earnedGymOrders, milestoneLocationId } = opts;
 
   const pending = chapter.zones.filter(
-    (z) =>
-      z.kindKey !== "kinds.gym" &&
-      z.unlocked &&
-      z.totalStages > 0 &&
-      z.completedStages < z.totalStages,
+    (z) => z.kindKey !== "kinds.gym" && z.unlocked && !isZoneStoryCleared(z),
   );
 
   if (pending.some((z) => z.id === farmingLocationId)) return farmingLocationId;
@@ -533,7 +544,7 @@ export function resolveZoneNodeStatus(opts: {
     return chapter.stagesDone < chapter.stagesTotal ? "available" : "current";
   }
 
-  const done = zone.totalStages > 0 && zone.completedStages >= zone.totalStages;
+  const done = isZoneStoryCleared(zone);
   if (done) return "completed";
   if (zone.id === farmingLocationId) return "in_progress";
   if (zone.id === selectedZoneId) return "current";
@@ -552,6 +563,7 @@ export function getMissingRequirements(reqs: CampaignRequirement[]): CampaignReq
 export function getZoneUnlockRequirements(
   locationId: string,
   progress: CampaignProgressRow,
+  defeatedTrainerIds: readonly string[] = [],
 ): CampaignRequirement[] {
   if (isLocationUnlocked(locationId, progress)) return [];
 
@@ -577,7 +589,7 @@ export function getZoneUnlockRequirements(
   if (unlockStage) {
     const from = findLocation(unlockStage.locationId)?.location;
     const done = progress.completedStageIds.includes(unlockStage.id);
-    return [
+    const reqs: CampaignRequirement[] = [
       {
         id: `unlock-${locationId}-via-${unlockStage.id}`,
         type: "complete_stage",
@@ -592,6 +604,27 @@ export function getZoneUnlockRequirements(
         },
       },
     ];
+
+    const routeTrainers = trainersForLocation(unlockStage.locationId);
+    if (routeTrainers.length > 0) {
+      const beaten = routeTrainers.filter((t) =>
+        defeatedTrainerIds.includes(t.id),
+      ).length;
+      reqs.push({
+        id: `unlock-${locationId}-trainers-${unlockStage.locationId}`,
+        type: "defeat_trainers",
+        targetId: unlockStage.locationId,
+        requiredAmount: routeTrainers.length,
+        currentAmount: beaten,
+        completed: beaten >= routeTrainers.length,
+        descriptionKey: "reqDefeatTrainersAt",
+        descriptionParams: {
+          location: from?.nameKey ?? unlockStage.locationId,
+        },
+      });
+    }
+
+    return reqs;
   }
 
   const prior = regionContent(target.regionId)

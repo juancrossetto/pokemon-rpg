@@ -16149,6 +16149,50 @@ html.boot-splash-done .boot-splash,
   }
 }
 
+.gym-gate-toast--in {
+  animation: gym-gate-toast-in 520ms cubic-bezier(0.22, 1.35, 0.36, 1) both;
+}
+
+.gym-gate-toast--out {
+  animation: gym-gate-toast-out 380ms cubic-bezier(0.4, 0, 0.7, 0.2) both;
+}
+
+@keyframes gym-gate-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gym-gate-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+.heal-tutorial {
+  animation: heal-tutorial-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes heal-tutorial-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-toast-in {
     animation: none;
@@ -16156,7 +16200,10 @@ html.boot-splash-done .boot-splash,
 
   .unlock-toast--in,
   .unlock-toast--out,
-  .unlock-toast-icon {
+  .unlock-toast-icon,
+  .gym-gate-toast--in,
+  .gym-gate-toast--out,
+  .heal-tutorial {
     animation: none !important;
   }
 }
@@ -20548,7 +20595,8 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   gap: var(--obj-gap);
   min-width: 0;
   margin: 0;
-  padding: 0.35rem 0.05rem 0.2rem;
+  /* Padding extra: overflow-x:auto recorta el bloom del anillo. */
+  padding: 0.55rem 0.2rem 0.4rem;
   list-style: none;
   overflow-x: auto;
   overflow-y: visible;
@@ -20592,8 +20640,10 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     var(--obj-accent-soft) 100%
   );
   box-shadow:
-    0 0 6px rgba(34, 211, 238, 0.75),
-    0 0 12px rgba(14, 165, 233, 0.45);
+    0 0 4px #fff,
+    0 0 8px rgba(125, 211, 252, 0.95),
+    0 0 16px rgba(34, 211, 238, 0.7),
+    0 0 24px rgba(14, 165, 233, 0.4);
 }
 
 .objective-gift {
@@ -20610,13 +20660,47 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   background: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  isolation: isolate;
 }
 .objective-gift:disabled {
   cursor: default;
 }
+/* Bloom fuera de la máscara: el track enmascarado no puede irradiar solo. */
+.objective-gift::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 0;
+  background: conic-gradient(
+    from -90deg,
+    var(--ring-from) 0%,
+    var(--obj-accent-mid) calc(var(--ring-pct, 0) * 0.55%),
+    var(--ring-to) calc(var(--ring-pct, 0) * 1%),
+    transparent calc(var(--ring-pct, 0) * 1%)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 7px),
+    #000 calc(100% - 6px),
+    #000 calc(100% - 2px),
+    transparent 100%
+  );
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 7px),
+    #000 calc(100% - 6px),
+    #000 calc(100% - 2px),
+    transparent 100%
+  );
+  filter: blur(2.5px) saturate(1.45);
+  opacity: clamp(0, calc(var(--ring-pct, 0) * 0.016), 0.8);
+}
 .objective-gift__track {
   position: absolute;
   inset: 0;
+  z-index: 1;
   border-radius: 9999px;
   background: conic-gradient(
     from -90deg,
@@ -20631,22 +20715,56 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     transparent calc(100% - 4px),
     #000 calc(100% - 4px)
   );
+  filter:
+    drop-shadow(0 0 1px rgba(186, 230, 253, 0.7))
+    drop-shadow(0 0 3px rgba(34, 211, 238, 0.35));
+}
+.objective-gift--done::before {
+  background: conic-gradient(
+    from -90deg,
+    var(--obj-accent-deep) 0%,
+    var(--obj-accent) 22%,
+    #67e8f9 48%,
+    var(--obj-accent-soft) 72%,
+    #e0f2fe 100%
+  );
+  filter: blur(3px) saturate(1.55);
+  opacity: 0.85;
+  animation: objective-neon-pulse 2.4s ease-in-out infinite;
 }
 .objective-gift--done .objective-gift__track {
   background: conic-gradient(
     from -90deg,
     var(--obj-accent-deep) 0%,
-    var(--obj-accent) 28%,
-    var(--obj-accent-mid) 55%,
-    var(--obj-accent-soft) 78%,
+    var(--obj-accent) 22%,
+    var(--obj-accent-mid) 45%,
+    var(--obj-accent-soft) 68%,
+    #e0f2fe 86%,
     var(--obj-accent-glow) 100%
   );
   filter:
-    drop-shadow(0 0 2px rgba(125, 211, 252, 0.95))
-    drop-shadow(0 0 8px rgba(34, 211, 238, 0.85));
+    drop-shadow(0 0 1px #fff)
+    drop-shadow(0 0 2px var(--obj-accent-glow))
+    drop-shadow(0 0 5px var(--obj-accent-soft));
+}
+.objective-gift--ready::before {
+  opacity: 1;
+  animation: objective-neon-pulse 1.8s ease-in-out infinite;
+}
+@keyframes objective-neon-pulse {
+  0%,
+  100% {
+    filter: blur(2.5px) saturate(1.4);
+    opacity: 0.7;
+  }
+  50% {
+    filter: blur(3.5px) saturate(1.6);
+    opacity: 0.92;
+  }
 }
 .objective-gift__disc {
   position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
   width: 82%;
@@ -20677,7 +20795,11 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   filter: grayscale(0.15) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.65));
 }
 .objective-gift--ready .objective-gift__disc {
-  border-color: color-mix(in srgb, var(--obj-accent-soft) 70%, transparent);
+  border-color: color-mix(in srgb, var(--obj-accent-soft) 80%, white);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.55),
+    0 0 10px rgba(34, 211, 238, 0.35);
 }
 .objective-gift--ready .objective-gift__icon {
   animation: objective-gift-bounce 0.85s ease-in-out infinite;
@@ -20697,11 +20819,22 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     transform: translateY(-3px) scale(1.03, 0.98);
   }
 }
+.objective-gift--fight::before {
+  background: conic-gradient(
+    from -90deg,
+    #f59e0b 0%,
+    #fbbf24 calc(var(--ring-pct, 0) * 0.55%),
+    #fde68a calc(var(--ring-pct, 0) * 1%),
+    transparent calc(var(--ring-pct, 0) * 1%)
+  );
+  opacity: 0.95;
+  filter: blur(3px) saturate(1.5);
+}
 .objective-gift--fight .objective-gift__disc {
-  border-color: color-mix(in srgb, #fbbf24 55%, transparent);
+  border-color: color-mix(in srgb, #fbbf24 70%, white);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 10px rgba(251, 191, 36, 0.28);
+    0 0 12px rgba(251, 191, 36, 0.45);
 }
 .objective-gift--settle .objective-gift__icon {
   animation: objective-gift-settle 0.52s ease-out forwards;
@@ -20785,9 +20918,11 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--obj-accent-glow);
-  opacity: 0.9;
-  text-shadow: 0 0 8px rgba(34, 211, 238, 0.45);
+  color: #e0f2fe;
+  opacity: 0.95;
+  text-shadow:
+    0 0 6px rgba(125, 211, 252, 0.95),
+    0 0 14px rgba(34, 211, 238, 0.55);
 }
 
 /* Tip del desafío: hover (desktop) / preview (mobile). */
@@ -20964,6 +21099,8 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   .objective-gift--ready .objective-gift__icon,
   .objective-gift--settle .objective-gift__icon,
   .objective-gift--buzz,
+  .objective-gift--done::before,
+  .objective-gift--ready::before,
   .objective-reward-center__burst,
   .objective-reward-center__art,
   .objective-reward-center__label {

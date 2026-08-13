@@ -3,6 +3,7 @@ import {
   CAMPAIGN_DEFAULTS,
   applyFarmingClear,
   applyStageCompletion,
+  applyTrainerVictoryUnlock,
   resolveFarmingAfterStageComplete,
 } from "@/lib/campaign";
 
@@ -65,5 +66,42 @@ describe("applyFarmingClear", () => {
     expect(second.completed).toBe(true);
     expect(second.patch.completedStageIds).toContain("r1-1");
     expect(second.patch.stageClearCounts?.["r1-1"]).toBeUndefined();
+  });
+});
+
+describe("trainer gate on location unlock", () => {
+  const route1Done = {
+    ...CAMPAIGN_DEFAULTS,
+    highestUnlockedLocationId: "route-1",
+    selectedLocationId: "route-1",
+    farmingLocationId: "route-1",
+    farmingStageId: "r1-3",
+    completedStageIds: ["pallet-1", "r1-1", "r1-2"],
+  };
+
+  it("does not unlock the next location until route trainers are beaten", () => {
+    const patch = applyStageCompletion(route1Done, "r1-3");
+    expect(patch.completedStageIds).toContain("r1-3");
+    expect(patch.highestUnlockedLocationId).toBe("route-1");
+  });
+
+  it("unlocks the next location when the last stage completes and trainers are down", () => {
+    const patch = applyStageCompletion(route1Done, "r1-3", {
+      defeatedTrainerIds: ["route-1-youngster"],
+    });
+    expect(patch.highestUnlockedLocationId).toBe("viridian-city");
+  });
+
+  it("unlocks after the last trainer falls if stages were already done", () => {
+    const afterStages = {
+      ...route1Done,
+      completedStageIds: ["pallet-1", "r1-1", "r1-2", "r1-3"],
+    };
+    expect(applyTrainerVictoryUnlock(afterStages, "route-1", [])).toEqual({});
+
+    const patch = applyTrainerVictoryUnlock(afterStages, "route-1", [
+      "route-1-youngster",
+    ]);
+    expect(patch.highestUnlockedLocationId).toBe("viridian-city");
   });
 });

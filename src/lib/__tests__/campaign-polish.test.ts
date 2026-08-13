@@ -180,6 +180,25 @@ describe("evaluateObjective pokedex", () => {
     expect(claimed?.claimable).toBe(false);
     expect(claimed?.claimed).toBe(true);
   });
+
+  it("marks trainers as a required objective", () => {
+    const z = zone({
+      id: "route-1",
+      trainers: [
+        {
+          id: "route-1-youngster",
+          nameKey: "trainers.youngster",
+          spriteUrl: "",
+          level: 3,
+          coinReward: 50,
+          defeated: false,
+        },
+      ],
+    });
+    const trainers = evaluateObjective(z, "trainers", new Set());
+    expect(trainers?.required).toBe(true);
+    expect(trainers?.done).toBe(false);
+  });
 });
 
 describe("catch-equivalent stage completion farming pointer", () => {

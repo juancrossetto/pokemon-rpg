@@ -326,6 +326,101 @@ export function JourneyOnboarding({
   );
 }
 
+/**
+ * Primera vez que hay un KO en el equipo: Joy al costado de la card,
+ * igual que las otras guías, y apunta al Centro Pokémon del home.
+ */
+export function HealTutorial({ active }: { active: boolean }) {
+  const t = useTranslations("ux");
+  const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  useEffect(() => {
+    if (!active || !mounted) return;
+    if (hasSeen("coach-heal")) return;
+    if (!hasSeen("journey-onboarding")) return;
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, [active, mounted]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const release = lockBodyScroll();
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        markSeen("coach-heal");
+        setVisible(false);
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      release();
+    };
+  }, [visible]);
+
+  function dismiss() {
+    markSeen("coach-heal");
+    setVisible(false);
+  }
+
+  if (!mounted || !visible) return null;
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="heal-tutorial-title"
+      className="fixed inset-0 z-[100] flex items-end justify-center px-3 pt-[max(1rem,env(safe-area-inset-top))] pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.5rem)] sm:items-center sm:p-4 xl:pb-4"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+        aria-label={t("healTutorial.cta")}
+        onClick={dismiss}
+      />
+
+      <div className="heal-tutorial relative z-10 flex w-full max-w-md items-end justify-center">
+        <Image
+          src="/tutorial/nurse-joy.png"
+          alt=""
+          width={240}
+          height={340}
+          className="heal-tutorial__joy pointer-events-none relative z-20 -mb-1 h-[min(38vh,13.75rem)] w-auto max-w-[42%] shrink-0 object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)] sm:h-[16rem] sm:max-w-none"
+          unoptimized
+        />
+        <div className="relative z-10 -ml-7 mb-3 min-w-0 flex-1 overflow-hidden rounded-2xl border border-white/12 bg-[#0c1018]/96 p-4 shadow-[0_20px_48px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:-ml-8">
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
+            {t("healTutorial.eyebrow")}
+          </p>
+          <h2
+            id="heal-tutorial-title"
+            className="mt-1 text-[15px] font-semibold leading-snug text-white"
+          >
+            {t("healTutorial.title")}
+          </h2>
+          <p className="mt-1.5 text-[13px] leading-snug text-white/60">
+            {t("healTutorial.body")}
+          </p>
+          <button
+            type="button"
+            onClick={dismiss}
+            className="ui-btn-primary mt-4 w-full px-4 py-2.5 text-[13px] font-bold"
+          >
+            {t("healTutorial.cta")}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 /** Coach mark puntual anclado a un hotspot. */
 export function CoachMark({
   storageKey,

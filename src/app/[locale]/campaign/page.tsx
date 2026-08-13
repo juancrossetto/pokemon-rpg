@@ -217,7 +217,10 @@ export default async function CampaignPage({
     teamLevels: team.map((p) => p.level),
   };
 
-  const milestone = nextMilestone(progress, earnedOrders);
+  const defeatedTrainerIds = zones.flatMap((z) =>
+    z.trainers.filter((tr) => tr.defeated).map((tr) => tr.id),
+  );
+  const milestone = nextMilestone(progress, earnedOrders, defeatedTrainerIds);
 
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-4 md:py-6">

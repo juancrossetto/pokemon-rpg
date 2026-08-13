@@ -278,6 +278,9 @@ export function CampaignJourney({
     null;
   const farmingZone =
     chapters.flatMap((c) => c.zones).find((z) => z.id === farmingLocationId) ?? null;
+  const defeatedTrainerIds = chapters.flatMap((c) =>
+    c.zones.flatMap((z) => z.trainers.filter((tr) => tr.defeated).map((tr) => tr.id)),
+  );
 
   /** Ambientación de la escena: la toma la zona donde está parado el jugador. */
   const sceneKind = kindOf(farmingZone ?? zone ?? chapter?.zones[0] ?? null);
@@ -327,6 +330,7 @@ export function CampaignJourney({
     teamReadyCount: readyForLevel(gymRecLevel),
     chapter: chapter ?? null,
     gymRecommendedLevel: gymRecLevel,
+    defeatedTrainerIds,
   });
 
   const selectedGymHref =
@@ -354,6 +358,7 @@ export function CampaignJourney({
           storyMilestone: milestone,
           gymRecommendedLevel: selectedGymRec ?? gymRecLevel,
           gymHref: selectedGymHref,
+          defeatedTrainerIds,
         })
       : primaryAction;
 
@@ -775,7 +780,11 @@ export function CampaignJourney({
                       chapter={chapter}
                       teamMaxLevel={summary.teamMaxLevel}
                       nodeStatus={nodeStatus}
-                      unlockRequirements={getZoneUnlockRequirements(z.id, progress)}
+                      unlockRequirements={getZoneUnlockRequirements(
+                        z.id,
+                        progress,
+                        defeatedTrainerIds,
+                      )}
                       onPick={() => pickZone(z.id)}
                     />
                   );
@@ -807,7 +816,11 @@ export function CampaignJourney({
               }
               teamMaxLevel={summary.teamMaxLevel}
               teamLevels={summary.teamLevels}
-              unlockRequirements={getZoneUnlockRequirements(zone.id, progress)}
+              unlockRequirements={getZoneUnlockRequirements(
+                zone.id,
+                progress,
+                defeatedTrainerIds,
+              )}
               onTravel={() => travelTo(zone.id)}
               onFarmStage={farmStage}
               onChallengeTrainer={challengeTrainer}
@@ -1042,7 +1055,9 @@ function ZoneRow({
   /** Solo la card clickeada se expande; el resto queda colapsada. */
   const compact = !selected;
   const caught = zone.encounters.filter((e) => e.caught).length;
-  const pct = zone.totalStages > 0 ? (zone.completedStages / zone.totalStages) * 100 : 0;
+  const trainersDone = zone.trainers.filter((tr) => tr.defeated).length;
+  const storySteps = zone.totalStages + zone.trainers.length;
+  const pct = storySteps > 0 ? ((zone.completedStages + trainersDone) / storySteps) * 100 : 0;
   const pathPct = isGym
     ? chapter.completed || gymWon
       ? 100
@@ -1472,6 +1487,8 @@ function ZoneRowBody({
   requirementsLeft: (string | null)[];
   unlockRequirements: CampaignRequirement[];
 }) {
+  const trainersDone = zone.trainers.filter((tr) => tr.defeated).length;
+  const storySteps = zone.totalStages + zone.trainers.length;
   return (
     <>
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -1551,6 +1568,12 @@ function ZoneRowBody({
                 <span className="text-white">{zone.completedStages}/{zone.totalStages}</span>
               </span>
             )}
+            {zone.trainers.length > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <Image src="/nav/battle-icon.png?v=4" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
+                <span className="text-white">{trainersDone}/{zone.trainers.length}</span>
+              </span>
+            )}
             {zone.encounters.length > 0 && (
               <span className="inline-flex items-center gap-1">
                 <Image src="/nav/collection-icon.png?v=4" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
@@ -1564,7 +1587,7 @@ function ZoneRowBody({
           </div>
         )}
 
-        {!compact && zone.unlocked && zone.totalStages > 0 && (
+        {!compact && zone.unlocked && storySteps > 0 && (
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/40">
             <div
               className={`h-full rounded-full ${zoneBarFill(isGym, done, isFarming || nodeStatus === "current" || nodeStatus === "in_progress")} transition-all duration-500`}
@@ -1763,8 +1786,11 @@ function ZonePanel({
                   hint={
                     obj.id === "pokedex"
                       ? t("obj_pokedexHint")
-                      : undefined
+                      : obj.id === "trainers"
+                        ? t("obj_trainersHint")
+                        : undefined
                   }
+                  roleLabel={obj.required ? t("objRoleRequirement") : undefined}
                   findHereLabel={obj.id === "pokedex" ? t("obj_pokedexFindHere") : undefined}
                   claimLabel={t("claim")}
                   claimedLabel={t("claimed")}
@@ -2108,6 +2134,7 @@ function Objective({
   state,
   label,
   hint,
+  roleLabel,
   findHereLabel,
   claimLabel,
   claimedLabel,
@@ -2118,6 +2145,7 @@ function Objective({
   state: ZoneObjectiveState;
   label: string;
   hint?: string;
+  roleLabel?: string;
   findHereLabel?: string;
   claimLabel: string;
   claimedLabel: string;
@@ -2141,6 +2169,11 @@ function Objective({
           >
             {label}
           </p>
+          {roleLabel && !state.done ? (
+            <span className="shrink-0 rounded-md bg-pokeball-red/16 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-pokeball-red">
+              {roleLabel}
+            </span>
+          ) : null}
           {hint ? (
             <details className="relative shrink-0">
               <summary

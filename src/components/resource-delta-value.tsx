@@ -61,8 +61,7 @@ function writeLastShown(kind: Kind, n: number): void {
   }
 }
 
-function initialDisplay(kind: Kind, value: number): number {
-  if (typeof window === "undefined") return value;
+function resolveClientStart(kind: Kind, value: number): number {
   const pending = peekPending(kind);
   if (pending !== 0) return Math.max(0, value - pending);
   const last = readLastShown(kind);
@@ -88,7 +87,7 @@ export function ResourceDeltaValue({
   value: number;
   suffix?: ReactNode;
 }) {
-  const [display, setDisplay] = useState(() => initialDisplay(kind, value));
+  const [display, setDisplay] = useState(value);
   const [fx, setFx] = useState<"up" | "down" | null>(null);
   const [floater, setFloater] = useState<number | null>(null);
   const displayRef = useRef(display);
@@ -177,10 +176,14 @@ export function ResourceDeltaValue({
   }
 
   useEffect(() => {
-    const start = displayRef.current;
-    const pending = peekPending(kind);
-
     const kick = requestAnimationFrame(() => {
+      const clientStart = resolveClientStart(kind, value);
+      if (clientStart !== displayRef.current) {
+        commitDisplay(clientStart);
+      }
+      const start = displayRef.current;
+      const pending = peekPending(kind);
+
       readyRef.current = true;
       if (pending !== 0 && start !== value) {
         if (pending < 0) {

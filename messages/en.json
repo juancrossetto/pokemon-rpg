@@ -2631,6 +2631,7 @@
     "gymChallengeHint": "Use the main action above when ready to challenge the leader.",
     "gymLockedHint": "You cannot challenge the leader yet.",
     "reqCompleteStageAt": "Clear {stage} in {location}",
+    "reqDefeatTrainersAt": "Defeat the trainers on {location}",
     "reqReachLocation": "Reach {location} first",
     "objRoleMain": "Main",
     "objRoleOptional": "Optional",
@@ -2676,6 +2677,7 @@
     "obj_pokedexHint": "Each zone asks for different species. Encountering them here is enough — you can flee.",
     "obj_pokedexFindHere": "You own it · still need to meet it here",
     "obj_trainers": "Defeat every trainer",
+    "obj_trainersHint": "Required to unlock the next zone.",
     "claim": "Claim",
     "claimed": "Claimed",
     "rewardClaimed": "Reward claimed",
@@ -3281,6 +3283,12 @@
     "coachExplore": "Tap here to explore your zone.",
     "coachGym": "When you're ready, challenge the gym.",
     "coachTeamSlot": "Withdraw a Pokémon from the PC to fill your team.",
+    "healTutorial": {
+      "eyebrow": "Pokémon Center",
+      "title": "Your Pokémon have fainted",
+      "body": "Tap the Pokémon Center on Home to heal your team. It's free at the start.",
+      "cta": "Got it"
+    },
     "youAreHere": "You are here",
     "stretch": "Stretch",
     "stretchProgress": "{done}/{total} stretches",

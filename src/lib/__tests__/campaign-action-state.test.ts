@@ -212,6 +212,29 @@ describe("getZoneUnlockRequirements", () => {
     // Still locked by highestUnlocked, but the stage requirement itself is done.
     expect(reqs[0]?.completed).toBe(true);
   });
+
+  it("also requires beating the previous zone trainers", () => {
+    const reqs = getZoneUnlockRequirements(
+      "viridian-city",
+      progress({
+        highestUnlockedLocationId: "route-1",
+        completedStageIds: ["r1-3"],
+      }),
+    );
+    const trainers = reqs.find((r) => r.type === "defeat_trainers");
+    expect(trainers?.completed).toBe(false);
+    expect(trainers?.descriptionKey).toBe("reqDefeatTrainersAt");
+
+    const beaten = getZoneUnlockRequirements(
+      "viridian-city",
+      progress({
+        highestUnlockedLocationId: "route-1",
+        completedStageIds: ["r1-3"],
+      }),
+      ["route-1-youngster"],
+    );
+    expect(beaten.find((r) => r.type === "defeat_trainers")?.completed).toBe(true);
+  });
 });
 
 describe("resolveZoneNodeStatus", () => {
@@ -252,6 +275,32 @@ describe("resolveZoneNodeStatus", () => {
         badgeEarned: false,
       }),
     ).toBe("completed");
+  });
+
+  it("keeps a zone in progress when stages are done but trainers remain", () => {
+    expect(
+      resolveZoneNodeStatus({
+        zone: zone({
+          id: "route-1",
+          completedStages: 3,
+          totalStages: 3,
+          trainers: [
+            {
+              id: "route-1-youngster",
+              nameKey: "trainers.youngster",
+              spriteUrl: "",
+              level: 3,
+              coinReward: 50,
+              defeated: false,
+            },
+          ],
+        }),
+        farmingLocationId: "route-1",
+        selectedZoneId: "route-1",
+        chapter,
+        badgeEarned: false,
+      }),
+    ).toBe("in_progress");
   });
 
   it("marks farming zone as in_progress", () => {
@@ -422,6 +471,35 @@ describe("recommendedChapterZoneId", () => {
         earnedGymOrders: [],
       }),
     ).toBe("route-3");
+  });
+
+  it("stays on a cleared-stage zone until its trainers fall", () => {
+    const chapter = chapterWith([
+      zone({
+        id: "route-1",
+        completedStages: 3,
+        totalStages: 3,
+        trainers: [
+          {
+            id: "route-1-youngster",
+            nameKey: "trainers.youngster",
+            spriteUrl: "",
+            level: 3,
+            coinReward: 50,
+            defeated: false,
+          },
+        ],
+      }),
+      zone({ id: "route-2", completedStages: 3, totalStages: 3 }),
+      gymZone,
+    ]);
+    expect(
+      recommendedChapterZoneId({
+        chapter,
+        farmingLocationId: "route-2",
+        earnedGymOrders: [],
+      }),
+    ).toBe("route-1");
   });
 
   it("points at the gym once every wild zone is cleared", () => {

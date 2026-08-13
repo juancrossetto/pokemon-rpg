@@ -42,6 +42,7 @@ import { getRouteTrainer } from "@/lib/campaign/trainers";
 import {
   completeFarmingStageOnWildWin,
   syncCampaignAfterGymBadge,
+  syncCampaignAfterRouteTrainerWin,
 } from "@/lib/campaign/sync";
 import type { EvolveOffer, LevelUpMoveInfo, KnownMoveInfo } from "@/lib/level-up";
 import { resolveLevelUpEffects } from "@/lib/level-up";
@@ -1316,6 +1317,8 @@ export async function submitBattleMove(
       if (zone) await grantZoneMastery(userId, zone.locationId);
     } else if (badgeEarned && gym) {
       await syncCampaignAfterGymBadge(userId, gym.order);
+    } else if (routeTrainer) {
+      await syncCampaignAfterRouteTrainerWin(userId, routeTrainer.locationId);
     }
 
     if (battle.gymId) {

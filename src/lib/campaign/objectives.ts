@@ -30,7 +30,20 @@ export type ZoneObjectiveState = {
   claimed: boolean;
   /** Listo para reclamar: completo y sin cobrar. */
   claimable: boolean;
+  /** Cierra la zona / desbloquea la siguiente. Pokédex queda opcional. */
+  required: boolean;
 };
+
+/**
+ * Stages + entrenadores: lo que marca la zona como hecha en el recorrido.
+ * La Pokédex no entra — es un extra cobrable, no un candado.
+ */
+export function isZoneStoryCleared(
+  zone: Pick<MapLocation, "completedStages" | "totalStages" | "trainers">,
+): boolean {
+  const stagesDone = zone.totalStages <= 0 || zone.completedStages >= zone.totalStages;
+  return stagesDone && zone.trainers.every((t) => t.defeated);
+}
 
 /**
  * Recompensa por objetivo, escalada al nivel de la zona.
@@ -102,6 +115,7 @@ export function evaluateObjective(
     reward: objectiveReward(zone, objective),
     claimed,
     claimable: done && !claimed,
+    required: objective === "stages" || objective === "trainers",
   };
 }
 

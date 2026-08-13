@@ -41,15 +41,17 @@ function TeamNotReadyBanner({
   return (
     <div
       role="status"
-      className="w-full rounded-xl border border-amber-400/35 bg-amber-400/10 px-3 py-2.5 text-left shadow-[0_0_24px_rgba(251,191,36,0.12)] sm:max-w-sm"
+      className="w-full rounded-xl border border-amber-400/35 bg-amber-400/10 px-3 py-2.5 text-left shadow-[0_0_24px_rgba(251,191,36,0.12)] sm:px-4"
     >
-      <div className="flex items-start gap-2">
-        <span className="material-symbols-outlined mt-0.5 shrink-0 text-[18px]! text-amber-300">
+      <div className="flex items-start gap-2 sm:items-center sm:gap-3">
+        <span className="material-symbols-outlined mt-0.5 shrink-0 text-[18px]! text-amber-300 sm:mt-0">
           warning
         </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-semibold text-amber-100">{title}</p>
-          <ul className="mt-1.5 flex flex-col gap-1">
+        <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-4">
+          <p className="text-[12px] font-semibold text-amber-100 sm:shrink-0 sm:text-[13px]">
+            {title}
+          </p>
+          <ul className="mt-1.5 flex flex-col gap-1 sm:mt-0 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-1">
             <li
               className={`flex items-center gap-1.5 text-[11px] leading-snug ${
                 leadOk ? "text-emerald-300/90" : "text-amber-100/80"
@@ -73,7 +75,7 @@ function TeamNotReadyBanner({
           </ul>
           <Link
             href="/battle"
-            className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-200/95 underline-offset-2 hover:underline"
+            className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-200/95 underline-offset-2 hover:underline sm:ml-auto sm:mt-0 sm:shrink-0"
           >
             <span className="material-symbols-outlined text-[14px]!">explore</span>
             {ctaLabel}
@@ -216,6 +218,16 @@ export default async function GymLeaderPage({
     />
   ) : null;
 
+  const rewardBlock = (
+    <div className="flex min-w-0 items-center gap-3">
+      <Image src={gymBadgeImageUrl(gym.type)} alt={badgeLabel} width={40} height={40} className="shrink-0" />
+      <div className="min-w-0">
+        <p className="text-label-sm uppercase text-on-surface-variant">{t("targetReward")}</p>
+        <p className="text-headline-md text-on-surface truncate">{badgeLabel}</p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6">
       <div className="mx-auto max-w-3xl">
@@ -286,103 +298,129 @@ export default async function GymLeaderPage({
           </p>
         </div>
 
-        {/*
-          En mobile el banner de equipo va pegado arriba del CTA para que no
-          quede bajo el botón / nav después de un submit fallido.
-        */}
-        <div className="glass-panel border-tertiary/40 p-3 sm:p-6 flex flex-col gap-3 sm:gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <Image src={gymBadgeImageUrl(gym.type)} alt={badgeLabel} width={40} height={40} className="shrink-0" />
-            <div className="min-w-0">
-              <p className="text-label-sm uppercase text-on-surface-variant">{t("targetReward")}</p>
-              <p className="text-headline-md text-on-surface truncate">{badgeLabel}</p>
-            </div>
-          </div>
+        {/* Recompensa + CTA; Equipo no listo queda en la card. El popup es el hint al iniciar. */}
+        <div className="glass-panel border-tertiary/40 p-3 sm:p-6">
+          {(() => {
+            if (badge) {
+              return (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                  {rewardBlock}
+                  <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
+                    <span className="flex items-center gap-1 self-start text-label-md text-tertiary sm:self-end">
+                      <span className="material-symbols-outlined text-[18px]!">check_circle</span>
+                      {t("badgeEarned")}
+                    </span>
+                    {!locked && !activeRun && (
+                      <>
+                        <p className="max-w-full text-label-sm text-on-surface-variant sm:max-w-[220px] sm:text-right">{t("rematchHint")}</p>
+                        <StartGymRunButton
+                          gymId={gymId}
+                          locale={locale}
+                          label={t("rematch")}
+                          energyCost={firstBattleEnergyCost}
+                          errors={errors}
+                        />
+                      </>
+                    )}
+                    {activeRun && (
+                      <Link
+                        href={`/gyms/${gymId}/run`}
+                        className="game-cta game-cta--red w-full sm:w-auto"
+                      >
+                        <span className="material-symbols-outlined game-cta__icon">play_arrow</span>
+                        <span className="game-cta__label">
+                          {t("continueRun", {
+                            cleared: activeRun.clearedTrainerSlots,
+                            total: gym.trainers.length,
+                          })}
+                        </span>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              );
+            }
 
-          <div className="flex flex-col items-stretch sm:items-end gap-2 w-full">
-          {badge ? (
-            <>
-              <span className="flex items-center gap-1 text-label-md text-tertiary self-start sm:self-end">
-                <span className="material-symbols-outlined text-[18px]!">check_circle</span>
-                {t("badgeEarned")}
-              </span>
-              {!locked && !activeRun && (
-                <>
-                  <p className="text-label-sm text-on-surface-variant sm:text-right max-w-full sm:max-w-[220px]">{t("rematchHint")}</p>
-                  <StartGymRunButton
-                    gymId={gymId}
-                    locale={locale}
-                    label={t("rematch")}
-                    energyCost={firstBattleEnergyCost}
-                    errors={errors}
-                  />
-                </>
-              )}
-              {activeRun && (
-                <Link
-                  href={`/gyms/${gymId}/run`}
-                  className="game-cta game-cta--red w-full sm:w-auto"
-                >
-                  <span className="material-symbols-outlined game-cta__icon">play_arrow</span>
-                  <span className="game-cta__label">
-                    {t("continueRun", {
-                      cleared: activeRun.clearedTrainerSlots,
-                      total: gym.trainers.length,
-                    })}
+            if (locked) {
+              return (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                  {rewardBlock}
+                  <span className="flex items-center gap-1 text-label-md text-on-surface-variant">
+                    <span className="material-symbols-outlined text-[18px]!">lock</span>
+                    {t("locked")}
                   </span>
-                </Link>
-              )}
-            </>
-          ) : locked ? (
-            <span className="flex items-center gap-1 text-label-md text-on-surface-variant self-start sm:self-end">
-              <span className="material-symbols-outlined text-[18px]!">lock</span>
-              {t("locked")}
-            </span>
-          ) : stagesIncomplete ? (
-            <div className="flex flex-col items-stretch sm:items-end gap-1.5 self-start sm:self-end">
-              <span className="flex items-center gap-1 text-label-md text-on-surface-variant">
-                <span className="material-symbols-outlined text-[18px]!">hiking</span>
-                {t("stagesIncomplete")}
-              </span>
-              <p className="text-label-sm text-on-surface-variant/80 sm:text-right max-w-full sm:max-w-[260px]">
-                {t("stagesIncompleteHint")}
-              </p>
-              <Link
-                href="/campaign"
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-label-sm font-semibold text-on-surface transition hover:bg-white/10"
+                </div>
+              );
+            }
+
+            if (stagesIncomplete) {
+              return (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                  {rewardBlock}
+                  <div className="flex flex-col items-stretch gap-1.5 sm:items-end">
+                    <span className="flex items-center gap-1 text-label-md text-on-surface-variant">
+                      <span className="material-symbols-outlined text-[18px]!">hiking</span>
+                      {t("stagesIncomplete")}
+                    </span>
+                    <p className="max-w-full text-label-sm text-on-surface-variant/80 sm:max-w-[260px] sm:text-right">
+                      {t("stagesIncompleteHint")}
+                    </p>
+                    <Link
+                      href="/campaign"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-label-sm font-semibold text-on-surface transition hover:bg-white/10"
+                    >
+                      <span className="material-symbols-outlined text-[16px]!">map</span>
+                      {t("goToCampaign")}
+                    </Link>
+                  </div>
+                </div>
+              );
+            }
+
+            if (activeRun) {
+              return (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                  {rewardBlock}
+                  <Link
+                    href={`/gyms/${gymId}/run`}
+                    className="game-cta game-cta--red w-full sm:w-auto"
+                  >
+                    <span className="material-symbols-outlined game-cta__icon">play_arrow</span>
+                    <span className="game-cta__label">
+                      {t("continueRun", { cleared: activeRun.clearedTrainerSlots, total: gym.trainers.length })}
+                    </span>
+                  </Link>
+                </div>
+              );
+            }
+
+            if (onCooldown) {
+              return (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                  {rewardBlock}
+                  <SkipGymCooldownButton
+                    gymId={gymId}
+                    hoursLeft={hoursLeft}
+                    remainingMs={remainingMs}
+                    gems={user.gems}
+                  />
+                </div>
+              );
+            }
+
+            return (
+              <StartGymRunButton
+                gymId={gymId}
+                locale={locale}
+                label={t("startChallenge")}
+                energyCost={firstBattleEnergyCost}
+                errors={errors}
+                warning={teamWarning}
               >
-                <span className="material-symbols-outlined text-[16px]!">map</span>
-                {t("goToCampaign")}
-              </Link>
-            </div>
-          ) : activeRun ? (
-            <Link
-              href={`/gyms/${gymId}/run`}
-              className="game-cta game-cta--red w-full sm:w-auto"
-            >
-              <span className="material-symbols-outlined game-cta__icon">play_arrow</span>
-              <span className="game-cta__label">
-                {t("continueRun", { cleared: activeRun.clearedTrainerSlots, total: gym.trainers.length })}
-              </span>
-            </Link>
-          ) : onCooldown ? (
-            <SkipGymCooldownButton
-              gymId={gymId}
-              hoursLeft={hoursLeft}
-              remainingMs={remainingMs}
-              gems={user.gems}
-            />
-          ) : (
-            <StartGymRunButton
-              gymId={gymId}
-              locale={locale}
-              label={t("startChallenge")}
-              energyCost={firstBattleEnergyCost}
-              errors={errors}
-              warning={teamWarning}
-            />
-          )}
-          </div>
+                {rewardBlock}
+              </StartGymRunButton>
+            );
+          })()}
         </div>
       </div>
     </div>

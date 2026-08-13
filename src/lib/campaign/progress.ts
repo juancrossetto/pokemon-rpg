@@ -12,6 +12,7 @@ import { CAMPAIGN_DEFAULTS as REGION_CAMPAIGN_DEFAULTS } from "./defaults";
 import { campaignMapSrc } from "./maps";
 import { regionMapSrc } from "./regions";
 import { pickWeightedSpecies } from "./rarity";
+import { areLocationTrainersDefeated } from "./trainers";
 import type {
   CampaignLocation,
   CampaignMilestone,
@@ -19,6 +20,11 @@ import type {
   CampaignRegionId,
   CampaignStage,
 } from "./types";
+
+/** IDs de `TrainerDefeat` para decidir si una zona puede abrir la siguiente. */
+export type CampaignUnlockContext = {
+  defeatedTrainerIds?: readonly string[];
+};
 
 export type CampaignProgressRow = {
   currentRegionId: string;
@@ -56,6 +62,7 @@ export function parseStageClearCounts(raw: unknown): Record<string, number> {
 export function applyFarmingClear(
   progress: CampaignProgressRow,
   stageId: string,
+  unlock?: CampaignUnlockContext,
 ): {
   patch: Partial<CampaignProgressRow>;
   completed: boolean;
@@ -87,6 +94,7 @@ export function applyFarmingClear(
   const completion = applyStageCompletion(
     { ...progress, stageClearCounts: nextCounts },
     stageId,
+    unlock,
   );
   return {
     patch: { ...completion, stageClearCounts: nextCounts },
@@ -164,6 +172,7 @@ export function journeyProgressPercent(
 export function nextMilestone(
   progress: CampaignProgressRow,
   earnedGymOrders: number[],
+  defeatedTrainerIds?: readonly string[],
 ): CampaignMilestone {
   const gymSet = new Set(earnedGymOrders);
   const region = regionContent(regionIdOf(progress));
@@ -213,6 +222,23 @@ export function nextMilestone(
           nameKey: stage.nameKey,
         };
       }
+    }
+
+    // Stages limpios no cierran la zona si quedan entrenadores: el CTA
+    // se queda acá en vez de saltar a la siguiente location.
+    if (
+      defeatedTrainerIds &&
+      !areLocationTrainersDefeated(loc.id, defeatedTrainerIds)
+    ) {
+      const lastWild =
+        [...loc.stages].reverse().find((s) => !s.isGymMilestone) ?? loc.stages.at(-1);
+      return {
+        kind: "stage",
+        id: `trainers-${loc.id}`,
+        locationId: loc.id,
+        stageId: lastWild?.id ?? loc.id,
+        nameKey: loc.nameKey,
+      };
     }
   }
 
@@ -281,6 +307,7 @@ export function areChapterStagesCompleteForGym(
 export function applyStageCompletion(
   progress: CampaignProgressRow,
   stageId: string,
+  unlock?: CampaignUnlockContext,
 ): Partial<CampaignProgressRow> {
   const regionId = regionIdOf(progress);
   const stage = getStage(regionId, stageId) ?? findStage(stageId)?.stage;
@@ -298,16 +325,60 @@ export function applyStageCompletion(
     highestCompletedStageId = stageId;
   }
 
-  const highestUnlockedLocationId = unlockLocationIdAfter(
-    progress.highestUnlockedLocationId,
-    stage.unlocksLocationId,
+  const trainersCleared = areLocationTrainersDefeated(
+    stage.locationId,
+    unlock?.defeatedTrainerIds ?? [],
   );
+  const highestUnlockedLocationId = trainersCleared
+    ? unlockLocationIdAfter(
+        progress.highestUnlockedLocationId,
+        stage.unlocksLocationId,
+      )
+    : progress.highestUnlockedLocationId;
 
   return {
     completedStageIds,
     highestCompletedStageId,
     highestUnlockedLocationId,
     lastMilestoneId: stageId,
+  };
+}
+
+/**
+ * Tras vencer al último entrenador de una zona cuyos stages ya están hechos,
+ * abre la location que el último stage tenía pendiente.
+ */
+export function applyTrainerVictoryUnlock(
+  progress: CampaignProgressRow,
+  locationId: string,
+  defeatedTrainerIds: readonly string[],
+): Partial<CampaignProgressRow> {
+  if (!areLocationTrainersDefeated(locationId, defeatedTrainerIds)) {
+    return {};
+  }
+
+  const loc = findLocation(locationId)?.location;
+  if (!loc) return {};
+
+  const wild = loc.stages.filter((s) => !s.isGymMilestone);
+  if (wild.some((s) => !progress.completedStageIds.includes(s.id))) {
+    return {};
+  }
+
+  const unlockStage = [...wild].reverse().find((s) => s.unlocksLocationId);
+  if (!unlockStage?.unlocksLocationId) return {};
+
+  const highestUnlockedLocationId = unlockLocationIdAfter(
+    progress.highestUnlockedLocationId,
+    unlockStage.unlocksLocationId,
+  );
+  if (highestUnlockedLocationId === progress.highestUnlockedLocationId) {
+    return {};
+  }
+
+  return {
+    highestUnlockedLocationId,
+    lastMilestoneId: unlockStage.id,
   };
 }
 

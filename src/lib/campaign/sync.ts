@@ -4,6 +4,7 @@ import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import {
   applyFarmingClear,
   applyGymBadgeUnlock,
+  applyTrainerVictoryUnlock,
   firstFarmableStage,
   parseStageClearCounts,
   resolveFarmingAfterStageComplete,
@@ -49,7 +50,13 @@ export async function completeFarmingStageOnWildWin(userId: string): Promise<voi
     if (!stage || stage.isGymMilestone) return;
 
     const wasEmpty = progress.completedStageIds.length === 0;
-    const { patch, completed } = applyFarmingClear(progress, stage.id);
+    const defeats = await tx.trainerDefeat.findMany({
+      where: { userId },
+      select: { trainerId: true },
+    });
+    const { patch, completed } = applyFarmingClear(progress, stage.id, {
+      defeatedTrainerIds: defeats.map((d) => d.trainerId),
+    });
     if (!Object.keys(patch).length) return;
 
     const farming = completed
@@ -114,6 +121,59 @@ export async function syncCampaignAfterGymBadge(
         selectedLocationId = unlocked.id;
         farmingStageId = first.id;
       } else if (unlocked) {
+        selectedLocationId = unlocked.id;
+      }
+    }
+
+    await tx.campaignProgress.update({
+      where: { userId },
+      data: {
+        ...patch,
+        farmingStageId,
+        farmingLocationId,
+        selectedLocationId,
+      },
+    });
+  });
+}
+
+/** Tras vencer un entrenador de ruta: si la zona ya tenía los stages, abre la siguiente. */
+export async function syncCampaignAfterRouteTrainerWin(
+  userId: string,
+  locationId: string,
+): Promise<void> {
+  await ensureCampaignProgress(userId);
+
+  await prisma.$transaction(async (tx) => {
+    await lockUsers(tx, userId);
+    const progress = rowFromDb(
+      await tx.campaignProgress.findUniqueOrThrow({ where: { userId } }),
+    );
+    const defeats = await tx.trainerDefeat.findMany({
+      where: { userId },
+      select: { trainerId: true },
+    });
+    const defeatedTrainerIds = defeats.map((d) => d.trainerId);
+    const patch = applyTrainerVictoryUnlock(
+      progress,
+      locationId,
+      defeatedTrainerIds,
+    );
+    if (!Object.keys(patch).length) return;
+
+    const merged = { ...progress, ...patch };
+    let farmingStageId = merged.farmingStageId;
+    let farmingLocationId = merged.farmingLocationId;
+    let selectedLocationId = merged.selectedLocationId;
+
+    if (patch.highestUnlockedLocationId) {
+      const unlocked = findLocation(patch.highestUnlockedLocationId)?.location;
+      const first = unlocked ? firstFarmableStage(unlocked.id) : null;
+      if (unlocked && first && unlocked.id !== progress.farmingLocationId) {
+        farmingLocationId = unlocked.id;
+        selectedLocationId = unlocked.id;
+        farmingStageId = first.id;
+      } else if (unlocked && unlocked.id !== progress.farmingLocationId) {
         selectedLocationId = unlocked.id;
       }
     }

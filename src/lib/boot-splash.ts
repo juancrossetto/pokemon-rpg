@@ -80,10 +80,9 @@ export const BOOT_SPLASH_BG = "#0a0806";
 /**
  * CSS crítico del arranque, inline en el `<head>`.
  *
- * El splash es OCULTO por defecto (`--out` desde React) para que el soft-nav
- * de idioma no pinte una pantalla negra. El script de revelado lo muestra
- * sólo en cold start real. Se oculta con `.boot-splash--out` /
- * `html.boot-splash-done`.
+ * El splash se pinta siempre igual. Lo oculta `html.boot-splash-done`
+ * (SSR + script de `<head>` si el warmup ya corrió). `--out` lo agrega
+ * el warmup al cerrar, no React — así no hay mismatch de hidratación.
  */
 export function bootSplashCriticalCss(): string {
   const bg = BOOT_SPLASH_BG;
@@ -142,8 +141,9 @@ html.classList.remove('boot-splash-done');
 }
 
 /**
- * Justo debajo del markup del splash (el nodo ya existe). En cold start
- * revela Charizard; si el warmup ya corrió, deja `--out`.
+ * Justo debajo del markup del splash. No toca class/aria del nodo (eso
+ * pelearía la hidratación). En cold start reproduce el video; si el
+ * warmup ya corrió, sólo confirma `html.boot-splash-done`.
  */
 export function bootSplashRevealScript(): string {
   return `(function(){try{
@@ -151,21 +151,14 @@ var html=document.documentElement;
 var warm=${JSON.stringify(NAV_WARMUP_DONE_KEY)};
 var path=location.pathname||'';
 var splash=document.getElementById('boot-splash');
-if(!splash)return;
 if(/\\/(login|register)(\\/|$)/.test(path)||sessionStorage.getItem(warm)==='1'){
 html.classList.add('boot-splash-done');
 html.classList.remove('boot-splash-pending');
-splash.classList.add('boot-splash--out');
-splash.setAttribute('aria-hidden','true');
-splash.setAttribute('aria-busy','false');
 return;
 }
 html.classList.add('boot-splash-pending');
 html.classList.remove('boot-splash-done');
-splash.classList.remove('boot-splash--out');
-splash.setAttribute('aria-hidden','false');
-splash.setAttribute('aria-busy','true');
-var video=splash.querySelector('video');
-if(video){try{video.autoplay=true;void video.play();}catch(e){}}
+var video=splash&&splash.querySelector('video');
+if(video){try{void video.play();}catch(e){}}
 }catch(e){}})();`;
 }

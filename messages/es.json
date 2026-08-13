@@ -2631,6 +2631,7 @@
     "gymChallengeHint": "Usá la acción principal de arriba cuando puedas desafiar al líder.",
     "gymLockedHint": "Todavía no podés desafiar al líder.",
     "reqCompleteStageAt": "Completá {stage} en {location}",
+    "reqDefeatTrainersAt": "Derrotá a los entrenadores de {location}",
     "reqReachLocation": "Llegá primero a {location}",
     "objRoleMain": "Principal",
     "objRoleOptional": "Opcional",
@@ -2676,6 +2677,7 @@
     "obj_pokedexHint": "Cada zona pide especies distintas. Alcanza con cruzártelas acá — podés huir.",
     "obj_pokedexFindHere": "Ya lo tenés · falta cruzártelo acá",
     "obj_trainers": "Derrotar a los entrenadores",
+    "obj_trainersHint": "Obligatorio para desbloquear la siguiente zona.",
     "claim": "Reclamar",
     "claimed": "Cobrado",
     "rewardClaimed": "Recompensa obtenida",
@@ -3281,6 +3283,12 @@
     "coachExplore": "Tocá acá para salir a explorar tu zona.",
     "coachGym": "Cuando estés listo, desafiá el gimnasio.",
     "coachTeamSlot": "Retirá un Pokémon del PC para llenar el equipo.",
+    "healTutorial": {
+      "eyebrow": "Centro Pokémon",
+      "title": "Tus Pokémon están debilitados",
+      "body": "Tocá el Centro Pokémon en Inicio para curar al equipo. Al principio es gratis.",
+      "cta": "Entendido"
+    },
     "youAreHere": "Estás acá",
     "stretch": "Tramo",
     "stretchProgress": "{done}/{total} tramos",
