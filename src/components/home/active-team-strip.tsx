@@ -333,7 +333,7 @@ function TeamSlot({
           )}
           {member.isShiny ? (
             <div className="pointer-events-none absolute inset-0 z-[1]">
-              <PokeSparks seed={member.id} accent="#FFE566" />
+              <PokeSparks seed={member.id} accent="#FFE566" density="dense" />
             </div>
           ) : null}
 

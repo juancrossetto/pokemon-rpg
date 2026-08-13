@@ -2899,10 +2899,6 @@ export function BattleArena({
     captureBall === "idle" ||
     captureBall === "wobble" ||
     captureBall === "success";
-  const playerIdle =
-    !attackingSide && !shakingSide && !faintingSide && !playerEntering && !healingTarget && !ballAnim;
-  const wildIdle =
-    !attackingSide && !shakingSide && !faintingSide && !wildEntering && !wildAbsorbedByBall && !captureBall;
   // Caja relativa al alto del campo + escala por especie, capeada por ancho
   // para que en mobile alto/angosto no se estiren ni se corten.
   const isAlphaWild = initialLog.some((line) => line === "alpha");
@@ -2988,7 +2984,6 @@ export function BattleArena({
     ballAnim === "recall" ? "sprite-recall" : "",
     playerEntering ? "sprite-materialize" : "",
     healingTarget?.side === "player" && healingTarget.lane === "A" ? "sprite-heal" : "",
-    playerIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -3005,7 +3000,6 @@ export function BattleArena({
       : "",
     faintingSide === "player" && faintingLane === "B" ? "sprite-faint" : "",
     healingTarget?.side === "player" && healingTarget.lane === "B" ? "sprite-heal" : "",
-    playerIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -3025,7 +3019,6 @@ export function BattleArena({
     wildAbsorbedByBall ? "sprite-absorb-ball" : "",
     captureBall === "fail" ? "sprite-materialize" : "",
     healingTarget?.side === "wild" && healingTarget.lane === "A" ? "sprite-heal" : "",
-    wildIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -3042,7 +3035,6 @@ export function BattleArena({
       : "",
     faintingSide === "wild" && faintingLane === "B" ? "sprite-faint" : "",
     healingTarget?.side === "wild" && healingTarget.lane === "B" ? "sprite-heal" : "",
-    wildIdle ? "sprite-idle-bob" : "",
   ]
     .filter(Boolean)
     .join(" ");

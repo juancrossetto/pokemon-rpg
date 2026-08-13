@@ -704,7 +704,9 @@ function SquadCardButton({
 
       <span className="squad-card__art">
         <span className="squad-card__pool" aria-hidden />
-        {m.isShiny ? <PokeSparks seed={m.id} accent="#FFE566" /> : null}
+        {m.isShiny ? (
+          <PokeSparks seed={m.id} accent="#FFE566" density="dense" />
+        ) : null}
         <span className="squad-card__shadow" aria-hidden />
         <Image
           src={m.spriteUrl}

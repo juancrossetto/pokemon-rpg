@@ -11,7 +11,7 @@ import {
   type EvolutionRequirement,
   type EvolutionStage,
 } from "@/lib/evolution-readiness";
-import { isTradeSubstituteItem } from "@/lib/evolution-items";
+import { isTradeSubstituteEvolution } from "@/lib/evolution-items";
 import { confirmEvolve } from "@/actions/level-up-offers";
 // Aliasada a propósito: es una server action, no un hook, pero el nombre
 // empieza con `use` y `react-hooks/rules-of-hooks` la marca como llamada
@@ -375,7 +375,9 @@ function ConnectorRow({
       ? readinessForRequirement(req, currentLevel, ownedSet)
       : null;
   const tradeItemHint =
-    req?.kind === "item" && isTradeSubstituteItem(req.itemName)
+    req?.kind === "item" &&
+    next != null &&
+    isTradeSubstituteEvolution(req.itemName, next.speciesId)
       ? labels.tradeItemHintLabel
       : null;
 

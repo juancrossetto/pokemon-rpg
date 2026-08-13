@@ -5555,23 +5555,7 @@ html.is-standalone .battle-bag-sheet__panel {
   animation: fx-impact-pop 0.45s ease-out forwards;
 }
 
-@keyframes sprite-idle-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-}
-.sprite-idle-bob {
-  animation: sprite-idle-bob 2.4s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .sprite-idle-bob {
-    animation: none;
-  }
   .fx-projectile-right,
   .fx-projectile-left,
   .fx-contact-right,
@@ -5895,7 +5879,7 @@ html.is-standalone .battle-bag-sheet__panel {
 }
 
 /* Velocidad de combate (2x / 3x).
-   Solo se acortan las FX de un disparo; las de bucle (idle bob, badges de
+   Solo se acortan las FX de un disparo; las de bucle (badges de
    estado, pulso de HP crítico) se dejan a 1x porque aceleradas quedan
    frenéticas y no aportan a la lectura del turno. Los popups de texto tienen
    su propio escalón: si bajan igual que un flash, no se llegan a leer. */
@@ -10334,23 +10318,35 @@ html.is-standalone .battle-result-overlay .result-in {
   transition: opacity 200ms ease;
 }
 
-/* Un solo chip para mobile y desktop — el tamaño lo pone el call site. */
+/* Estado plano: punto + texto, sin construir otra superficie dentro de la
+   card. El acento distingue una acción disponible de una ya resuelta. */
 .home-daily-tile__badge {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   border-radius: 999px;
   white-space: nowrap;
 }
 
+.home-daily-tile__status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--daily-accent, currentColor);
+  opacity: 0.55;
+}
+
 .home-daily-tile__badge--hot {
-  color: #fff;
-  background: color-mix(in srgb, var(--daily-accent, #fff) 26%, transparent);
-  border: 1px solid color-mix(in srgb, var(--daily-accent, #fff) 55%, transparent);
+  color: color-mix(in srgb, var(--daily-accent, #fff) 58%, white);
 }
 
 .home-daily-tile__badge--idle {
-  color: rgba(255, 255, 255, 0.62);
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.home-daily-tile__badge--hot .home-daily-tile__status-dot {
+  opacity: 1;
+  box-shadow: 0 0 7px var(--daily-accent, currentColor);
 }
 
 .home-daily-tile:hover,
@@ -14683,8 +14679,8 @@ html.boot-splash-done .boot-splash,
  *
  * Cada destello anima `scale` teniendo dos `box-shadow` difuminadas encima, así
  * que no alcanza con que sea transform: el navegador re-rasteriza la sombra en
- * cada frame. Con 80 estrellas en login/registro y 9 por card de Pokémon (54 en
- * el home con el equipo completo) eso es trabajo continuo de pintado que en un
+ * cada frame. Las cards shiny del equipo usan 15 estrellas y los demás usos 9;
+ * animarlas todas sin límite sería trabajo continuo de pintado que en un
  * teléfono se nota como tirones.
  *
  * En una pantalla de 375px esa densidad tampoco se lee: son estrellas encimadas.
@@ -14693,7 +14689,8 @@ html.boot-splash-done .boot-splash,
  */
 @media (max-width: 767px) {
   .auth-spark:nth-child(n + 31),
-  .poke-spark:nth-child(n + 5) {
+  .poke-sparks--default .poke-spark:nth-child(n + 5),
+  .poke-sparks--dense .poke-spark:nth-child(n + 8) {
     display: none;
   }
 }

@@ -265,61 +265,72 @@ export function JourneyOnboarding({
         onClick={dismiss}
       />
 
-      <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-white/12 bg-[#0c1018]/96 p-4 shadow-[0_20px_48px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
-              {t("onboarding.eyebrow")}
-            </p>
-            <h2
-              id="journey-onboarding-title"
-              className="mt-1 text-[15px] font-semibold leading-snug text-white"
+      <div className="heal-tutorial relative z-10 flex w-full max-w-md items-end justify-center">
+        <Image
+          src="/avatars/oak2.png"
+          alt=""
+          width={336}
+          height={798}
+          className="pointer-events-none relative z-20 -mb-1 h-[min(29vh,9.5rem)] w-auto max-w-[24%] shrink-0 object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)] sm:h-[11rem] sm:max-w-none"
+          unoptimized
+        />
+
+        <div className="relative z-10 -ml-5 mb-2 min-w-0 flex-1 overflow-hidden rounded-2xl border border-white/12 bg-[#0c1018]/96 p-4 shadow-[0_20px_48px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:-ml-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
+                {t("onboarding.eyebrow")}
+              </p>
+              <h2
+                id="journey-onboarding-title"
+                className="mt-1 text-[15px] font-semibold leading-snug text-white"
+              >
+                {t("onboarding.title")}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={dismiss}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/45 transition hover:bg-white/[0.06] hover:text-white"
+              aria-label={t("onboarding.cta")}
             >
-              {t("onboarding.title")}
-            </h2>
+              <span className="material-symbols-outlined text-[18px]!">close</span>
+            </button>
           </div>
+
+          <ol className="mt-4 flex flex-col gap-2.5">
+            {steps.map((s, i) => (
+              <li key={s.title} className="flex items-center gap-3">
+                <span className="relative flex h-12 w-12 shrink-0 items-center justify-center">
+                  <span className="absolute inset-0 rounded-xl bg-white/[0.04]" />
+                  <Image
+                    src={s.iconSrc}
+                    alt=""
+                    width={44}
+                    height={44}
+                    className="relative h-11 w-11 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
+                    unoptimized
+                  />
+                  <span className="absolute -left-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-pokeball-red font-mono text-[9px] font-bold text-white">
+                    {i + 1}
+                  </span>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold leading-tight text-white">{s.title}</p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-white/55">{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+
           <button
             type="button"
             onClick={dismiss}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/45 transition hover:bg-white/[0.06] hover:text-white"
-            aria-label={t("onboarding.cta")}
+            className="ui-btn-primary mt-4 w-full px-4 py-2.5 text-[13px] font-bold"
           >
-            <span className="material-symbols-outlined text-[18px]!">close</span>
+            {t("onboarding.cta")}
           </button>
         </div>
-
-        <ol className="mt-4 flex flex-col gap-2.5">
-          {steps.map((s, i) => (
-            <li key={s.title} className="flex items-center gap-3">
-              <span className="relative flex h-12 w-12 shrink-0 items-center justify-center">
-                <span className="absolute inset-0 rounded-xl bg-white/[0.04]" />
-                <Image
-                  src={s.iconSrc}
-                  alt=""
-                  width={44}
-                  height={44}
-                  className="relative h-11 w-11 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
-                  unoptimized
-                />
-                <span className="absolute -left-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-pokeball-red font-mono text-[9px] font-bold text-white">
-                  {i + 1}
-                </span>
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold leading-tight text-white">{s.title}</p>
-                <p className="mt-0.5 text-[11px] leading-snug text-white/55">{s.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-
-        <button
-          type="button"
-          onClick={dismiss}
-          className="ui-btn-primary mt-4 w-full px-4 py-2.5 text-[13px] font-bold"
-        >
-          {t("onboarding.cta")}
-        </button>
       </div>
     </div>,
     document.body,

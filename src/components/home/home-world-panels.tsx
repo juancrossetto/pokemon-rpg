@@ -307,16 +307,18 @@ export function HomeDailyActions({
 
           const statusChipDesktop = chipInner ? (
             <span
-              className={`home-daily-tile__badge max-w-full px-2 py-0.5 font-mono text-[10px] font-semibold leading-none tabular-nums ${chipTone}`}
+              className={`home-daily-tile__badge max-w-full font-mono text-[9px] font-semibold uppercase leading-none tracking-[0.06em] tabular-nums ${chipTone}`}
             >
+              <span className="home-daily-tile__status-dot shrink-0" aria-hidden />
               {chipInner}
             </span>
           ) : null;
 
           const statusChipMobile = chipInner ? (
             <span
-              className={`home-daily-tile__badge max-w-[110%] px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase leading-none tracking-wide tabular-nums ${chipTone}`}
+              className={`home-daily-tile__badge max-w-[110%] font-mono text-[9px] font-bold uppercase leading-none tracking-wide tabular-nums ${chipTone}`}
             >
+              <span className="home-daily-tile__status-dot shrink-0" aria-hidden />
               {chipInner}
             </span>
           ) : null;
@@ -341,15 +343,15 @@ export function HomeDailyActions({
                   width={56}
                   height={56}
                   draggable={false}
-                  className="h-full w-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.55)] transition duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_14px_color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
+                  className="home-daily-tile__icon h-[86%] w-[86%] object-contain drop-shadow-[0_5px_9px_rgba(0,0,0,0.6)] transition duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_14px_color-mix(in_srgb,var(--daily-accent)_55%,transparent)]"
                   unoptimized
                 />
               </span>
 
-              <span className="relative z-[1] hidden min-w-0 flex-1 flex-col items-start gap-1 sm:flex">
+              <span className="relative z-[1] hidden min-w-0 flex-1 flex-col items-start gap-1.5 sm:flex">
                 <span
-                  className={`max-w-full truncate text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors group-hover:text-white ${
-                    tileHot ? "text-white" : "text-white/70"
+                  className={`max-w-full truncate text-[11px] font-bold uppercase tracking-[0.1em] transition-colors group-hover:text-white ${
+                    tileHot ? "text-white" : "text-white/78"
                   }`}
                 >
                   {label}

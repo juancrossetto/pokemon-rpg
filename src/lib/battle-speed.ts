@@ -3,7 +3,7 @@
 //
 // El multiplicador divide las esperas del timeline (battle-arena) y, vía el
 // atributo data-battle-speed en la raíz de la arena, acorta las animaciones CSS
-// de un solo disparo. Las animaciones en bucle (idle bob, badges de estado)
+// de un solo disparo. Las animaciones en bucle (badges de estado)
 // quedan a 1x a propósito: aceleradas se ven frenéticas.
 
 export const BATTLE_SPEEDS = [1, 2, 3] as const;

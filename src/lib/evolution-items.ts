@@ -10,7 +10,7 @@
  * ítem igual queda en la tienda listo para cuando el dex crezca.
  */
 
-/** Sustituye el trueque puro (Kadabra, Machoke, Graveler, Haunter). */
+/** Sustituye el trueque puro y evoluciones adaptadas a objetos en este RPG. */
 export const LINKING_CORD = "Linking Cord";
 
 /**
@@ -18,11 +18,12 @@ export const LINKING_CORD = "Linking Cord";
  * IDs nacionales PokeAPI (formas regionales aparte cuando existan).
  */
 export const SPECIES_EVOLUTION_ITEM: Readonly<Record<number, string>> = {
-  // Trueque puro → Cordón Unión (SV)
+  // Cordón Unión: trueque puro + amistad adaptada a objeto
   65: LINKING_CORD, // Alakazam
   68: LINKING_CORD, // Machamp
   76: LINKING_CORD, // Golem
   94: LINKING_CORD, // Gengar
+  169: LINKING_CORD, // Crobat
 
   // Piedras clásicas Gen I (también vienen del backfill PokeAPI)
   26: "Thunder Stone", // Raichu
@@ -122,7 +123,7 @@ export const GEM_EVOLUTION_ITEMS: readonly GemEvolutionItemDef[] = [
   {
     name: LINKING_CORD,
     gemPrice: 8,
-    effectText: "Evoluciona a las especies que normalmente requieren intercambio.",
+    effectText: "Evoluciona especies que normalmente requieren intercambio y a Golbat.",
   },
   {
     name: "King's Rock",
@@ -355,6 +356,18 @@ export function isTradeSubstituteItem(name: string): boolean {
 }
 
 /**
+ * El Cordón Unión también cubre evoluciones adaptadas que no eran por
+ * intercambio. La UI usa este helper para no mostrarles el hint de trueque.
+ */
+export function isTradeSubstituteEvolution(
+  itemName: string,
+  toSpeciesId: number,
+): boolean {
+  if (!isTradeSubstituteItem(itemName)) return false;
+  return !(itemName === LINKING_CORD && toSpeciesId === 169);
+}
+
+/**
  * Recetas para el detalle del ítem: `from → ítem → to`.
  *
  * Los `spriteId` son ids de Pokémon en PokeAPI (incluye formas regionales
@@ -411,6 +424,7 @@ export const ITEM_EVOLUTION_RECIPES: readonly ItemEvolutionRecipe[] = [
   { itemName: LINKING_CORD, fromId: 67, fromName: "Machoke", toId: 68, toName: "Machamp" },
   { itemName: LINKING_CORD, fromId: 75, fromName: "Graveler", toId: 76, toName: "Golem" },
   { itemName: LINKING_CORD, fromId: 93, fromName: "Haunter", toId: 94, toName: "Gengar" },
+  { itemName: LINKING_CORD, fromId: 42, fromName: "Golbat", toId: 169, toName: "Crobat" },
   // Trueque + held
   { itemName: "King's Rock", fromId: 61, fromName: "Poliwhirl", toId: 186, toName: "Politoed" },
   { itemName: "King's Rock", fromId: 79, fromName: "Slowpoke", toId: 199, toName: "Slowking" },

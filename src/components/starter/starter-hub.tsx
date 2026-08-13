@@ -102,6 +102,8 @@ function ResourceSpotlight({
     setStepIndex((i) => i + 1);
   }
 
+  const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 344;
+  const tipWidth = Math.min(viewportWidth * 0.94, 384);
   const tipStyle: CSSProperties | undefined = hole
     ? {
         top: Math.min(
@@ -109,8 +111,8 @@ function ResourceSpotlight({
           typeof window !== "undefined" ? window.innerHeight - 200 : hole.top + hole.height + 14,
         ),
         left: Math.min(
-          Math.max(12, hole.left + hole.width / 2 - 160),
-          typeof window !== "undefined" ? window.innerWidth - 332 : hole.left,
+          Math.max(8, hole.left + hole.width / 2 - tipWidth / 2),
+          viewportWidth - tipWidth - 8,
         ),
       }
     : {
@@ -149,56 +151,67 @@ function ResourceSpotlight({
       )}
 
       <div
-        className="absolute z-10 w-[min(92vw,20rem)] overflow-hidden rounded-2xl border border-white/12 bg-[#0c0e14]/96 p-4 shadow-[0_20px_48px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+        className="absolute z-10 flex w-[min(94vw,24rem)] items-center justify-center"
         style={tipStyle}
       >
-        <div className="flex items-start gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5">
-            <Image
-              src={STEP_ICON[step]}
-              alt=""
-              width={36}
-              height={36}
-              className="h-9 w-9 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]"
-              unoptimized
-            />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
-              {t("eyebrow", { step: stepIndex + 1, total: STEPS.length })}
-            </p>
-            <h2
-              id="starter-tutorial-title"
-              className="page-title mt-1 text-[1.05rem] leading-none text-white"
-            >
-              {t(`${step}.title`)}
-            </h2>
-            <p className="mt-1.5 text-[13px] leading-snug text-white/60">
-              {t(`${step}.body`)}
-            </p>
-          </div>
-        </div>
+        <Image
+          src="/avatars/oak2.png"
+          alt=""
+          width={336}
+          height={798}
+          className="pointer-events-none relative z-20 h-28 w-auto max-w-[20%] shrink-0 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.55)] sm:h-36 sm:max-w-none"
+          unoptimized
+        />
 
-        <div className="mt-4 flex items-center gap-2">
-          <div className="flex flex-1 gap-1.5" aria-hidden>
-            {STEPS.map((s, i) => (
-              <span
-                key={s}
-                className={`h-1 flex-1 rounded-full ${
-                  i <= stepIndex ? "bg-pokeball-red" : "bg-white/15"
-                }`}
+        <div className="relative z-10 -ml-5 min-w-0 flex-1 overflow-hidden rounded-2xl border border-white/12 bg-[#0c0e14]/96 p-4 shadow-[0_20px_48px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:-ml-6">
+          <div className="flex items-start gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+              <Image
+                src={STEP_ICON[step]}
+                alt=""
+                width={36}
+                height={36}
+                className="h-9 w-9 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]"
+                unoptimized
               />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={advance}
-            className="game-cta game-cta--red w-auto! min-h-0! shrink-0 px-4 py-2 text-[12px]"
-          >
-            <span className="game-cta__label">
-              {stepIndex >= STEPS.length - 1 ? t("finish") : t("next")}
             </span>
-          </button>
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
+                {t("eyebrow", { step: stepIndex + 1, total: STEPS.length })}
+              </p>
+              <h2
+                id="starter-tutorial-title"
+                className="page-title mt-1 text-[1.05rem] leading-none text-white"
+              >
+                {t(`${step}.title`)}
+              </h2>
+              <p className="mt-1.5 text-[13px] leading-snug text-white/60">
+                {t(`${step}.body`)}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center gap-2">
+            <div className="flex flex-1 gap-1.5" aria-hidden>
+              {STEPS.map((s, i) => (
+                <span
+                  key={s}
+                  className={`h-1 flex-1 rounded-full ${
+                    i <= stepIndex ? "bg-pokeball-red" : "bg-white/15"
+                  }`}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={advance}
+              className="game-cta game-cta--red w-auto! min-h-0! shrink-0 px-4 py-2 text-[12px]"
+            >
+              <span className="game-cta__label">
+                {stepIndex >= STEPS.length - 1 ? t("finish") : t("next")}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>,

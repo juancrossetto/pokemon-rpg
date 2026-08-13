@@ -12,7 +12,12 @@
  *    login, porque acá el objetivo es rodear al Pokémon, no llenar un fondo.
  */
 
-const SPARK_COUNT = 9;
+const SPARK_COUNTS = {
+  default: 9,
+  dense: 15,
+} as const;
+
+type SparkDensity = keyof typeof SPARK_COUNTS;
 
 /** Hash entero estable a partir del id de la instancia. */
 function hashSeed(seed: string): number {
@@ -24,13 +29,13 @@ function hashSeed(seed: string): number {
   return Math.abs(h);
 }
 
-function buildSparks(seed: string) {
+function buildSparks(seed: string, count: number) {
   const base = hashSeed(seed);
-  return Array.from({ length: SPARK_COUNT }, (_, i) => {
+  return Array.from({ length: count }, (_, i) => {
     const n = base + i * 2654435761;
     // Ángulos repartidos con una rotación propia por card, para que dos cards
     // vecinas no muestren la misma constelación.
-    const angle = ((i / SPARK_COUNT) * 360 + (base % 360)) * (Math.PI / 180);
+    const angle = ((i / count) * 360 + (base % 360)) * (Math.PI / 180);
     // Radio entre 30% y 47%: fuera del cuerpo del sprite, dentro de la card.
     const radius = 30 + ((n >>> 3) % 18);
     // toFixed: sin esto SSR y cliente serializan distinto el float (hidratación).
@@ -43,13 +48,21 @@ function buildSparks(seed: string) {
   });
 }
 
-export function PokeSparks({ seed, accent }: { seed: string; accent: string }) {
-  const sparks = buildSparks(seed);
+export function PokeSparks({
+  seed,
+  accent,
+  density = "default",
+}: {
+  seed: string;
+  accent: string;
+  density?: SparkDensity;
+}) {
+  const sparks = buildSparks(seed, SPARK_COUNTS[density]);
 
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      className={`poke-sparks poke-sparks--${density} pointer-events-none absolute inset-0 z-0 overflow-hidden`}
       style={
         {
           "--spark-color": `${accent}e6`,
