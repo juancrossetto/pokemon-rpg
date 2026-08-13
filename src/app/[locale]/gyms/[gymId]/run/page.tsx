@@ -18,7 +18,10 @@ import {
   trainerClassFromName,
   trainerSpriteSlugFromName,
 } from "@/lib/gym-corridor-theme";
-import { npcTrainerPortraitUrl } from "@/lib/avatars";
+import {
+  npcTrainerCardPortraitUrl,
+  npcTrainerPortraitUrl,
+} from "@/lib/avatars";
 import {
   GYM_HELD_ITEM_REWARD_BY_TYPE,
   GYM_TM_REWARD_BY_TYPE,
@@ -143,13 +146,15 @@ export default async function GymRunPage({
     const rewards = subordinateReward(gym.coinReward, trainer.slot, levels);
     const cleared = trainer.slot <= run.clearedTrainerSlots;
     const current = trainer.slot === run.clearedTrainerSlots + 1;
+    const trainerSlug = trainerSpriteSlugFromName(trainer.name);
 
     return {
       id: trainer.id,
       slot: trainer.slot,
       name: trainer.name,
       trainerClass: trainerClassFromName(trainer.name),
-      spriteUrl: npcTrainerPortraitUrl(trainerSpriteSlugFromName(trainer.name), "thumb"),
+      spriteUrl: npcTrainerPortraitUrl(trainerSlug, "thumb"),
+      portraitUrl: npcTrainerCardPortraitUrl(trainerSlug),
       status: cleared ? "cleared" : current ? "active" : "locked",
       difficulty: encounterDifficulty(avg, gym.order),
       rewardCoins: rewards.coins,

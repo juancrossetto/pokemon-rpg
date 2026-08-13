@@ -11,6 +11,7 @@ import { PokeballIcon } from "@/components/pokeball-icon";
 import { ShinyMark } from "@/components/shiny-mark";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { BattleItemUseFx } from "@/components/battle/battle-item-use-fx";
+import { isNpcTrainerPixelPortraitUrl } from "@/lib/avatars";
 import {
   BATTLE_STATS,
   isStatusCondition,
@@ -111,7 +112,7 @@ export function PartySidebar({
   children: ReactNode;
 }) {
   const t = useTranslations("battle");
-  const pixelPortrait = Boolean(portraitUrl?.startsWith("http"));
+  const pixelPortrait = isNpcTrainerPixelPortraitUrl(portraitUrl);
   /** Arte local HD: bust/contain centrado — el fill+cover de avatares de jugador
    *  desplaza NPCs de pose asimétrica (brazo alzado, etc.). */
   const localNpcPortrait = Boolean(portraitUrl && !pixelPortrait);

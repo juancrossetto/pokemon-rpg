@@ -4,12 +4,68 @@
 // Gate de progresión: se desbloquea con ≥3 Pokémon a nivel ≥10 (equipo + PC).
 // Antes de eso el toggle está apagado y no corre el loop automático.
 
+import { getTypeEffectiveness } from "@/lib/type-effectiveness";
+
 const STORAGE_KEY = "battle-auto";
 
 /** Nivel mínimo por Pokémon para desbloquear AUTO. */
 export const BATTLE_AUTO_UNLOCK_LEVEL = 10;
 /** Cuántos Pokémon a ese nivel hacen falta. */
 export const BATTLE_AUTO_UNLOCK_COUNT = 3;
+
+export type AutoSwitchMember = {
+  instanceId: string;
+  level: number;
+  currentHp: number;
+  maxHp: number;
+  types: string[];
+};
+
+function bestStabEffectiveness(attackerTypes: readonly string[], defenderTypes: string[]): number {
+  if (attackerTypes.length === 0 || defenderTypes.length === 0) return 1;
+  return Math.max(...attackerTypes.map((type) => getTypeEffectiveness(type, defenderTypes)));
+}
+
+/**
+ * AUTO sólo cambia cuando hay una mejora táctica inequívoca: el activo no
+ * tiene ventaja y un compañero sano sí puede pegar supereficaz. Así evita
+ * sacrificar integrantes sin rotar ante cada diferencia mínima.
+ */
+export function pickAutoSwitchCandidate<T extends AutoSwitchMember>(
+  party: readonly T[],
+  activeInstanceId: string,
+  defenderTypes: string[],
+): T | null {
+  const active = party.find((member) => member.instanceId === activeInstanceId);
+  if (!active || active.currentHp <= 0 || defenderTypes.length === 0) return null;
+
+  const activeEffectiveness = bestStabEffectiveness(active.types, defenderTypes);
+  if (activeEffectiveness > 1) return null;
+
+  const activeHpRatio = active.maxHp > 0 ? active.currentHp / active.maxHp : 0;
+  const activeScore = activeEffectiveness * active.level * (0.65 + activeHpRatio * 0.35);
+
+  let best: T | null = null;
+  let bestScore = activeScore;
+  for (const member of party) {
+    if (member.instanceId === activeInstanceId || member.currentHp <= 0 || member.maxHp <= 0) {
+      continue;
+    }
+    const hpRatio = member.currentHp / member.maxHp;
+    if (hpRatio < 0.35) continue;
+
+    const effectiveness = bestStabEffectiveness(member.types, defenderTypes);
+    if (effectiveness <= 1) continue;
+
+    const score = effectiveness * member.level * (0.65 + hpRatio * 0.35);
+    if (score >= activeScore * 1.4 && score > bestScore) {
+      best = member;
+      bestScore = score;
+    }
+  }
+
+  return best;
+}
 
 let current = false;
 let hydrated = false;

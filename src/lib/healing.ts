@@ -13,7 +13,7 @@
 export const HEAL_COOLDOWN_MINUTES = 30;
 
 /** Nivel máximo de equipo inclusive: curación gratis sin cooldown ni rush. */
-export const HEAL_FREE_UNTIL_LEVEL = 15;
+export const HEAL_FREE_UNTIL_LEVEL = 20;
 
 /** Costo base por saltear la espera, más un extra por cada Pokémon herido. */
 export const HEAL_RUSH_BASE_COST = 60;

@@ -2018,6 +2018,7 @@ function ZonePanel({
                         width={36}
                         height={36}
                         className={`h-9 w-9 object-contain ${tr.defeated ? "opacity-55 grayscale" : ""}`}
+                        unoptimized
                       />
                       {tr.defeated && (
                         <span className="absolute -right-0.5 -bottom-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">

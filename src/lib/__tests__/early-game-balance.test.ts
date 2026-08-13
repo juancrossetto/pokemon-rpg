@@ -23,8 +23,8 @@ describe("earlyGameBattleMode", () => {
 
 describe("earlyGamePowerMultiplier", () => {
   it("sin efecto a partir del tope", () => {
-    expect(earlyGamePowerMultiplier(12, "player", "wild")).toBe(1);
-    expect(earlyGamePowerMultiplier(15, "wild", "wild")).toBe(1);
+    expect(earlyGamePowerMultiplier(20, "player", "wild")).toBe(1);
+    expect(earlyGamePowerMultiplier(25, "wild", "wild")).toBe(1);
   });
 
   it("suaviza salvajes y ayuda al jugador en Lv.5", () => {
@@ -32,6 +32,11 @@ describe("earlyGamePowerMultiplier", () => {
     const wild = earlyGamePowerMultiplier(5, "wild", "wild");
     expect(player).toBeGreaterThan(1);
     expect(wild).toBeLessThan(1);
+  });
+
+  it("mantiene una ayuda perceptible en el tramo de nivel 16", () => {
+    expect(earlyGamePowerMultiplier(16, "player", "wild")).toBeCloseTo(1.07);
+    expect(earlyGamePowerMultiplier(16, "wild", "wild")).toBeCloseTo(0.93);
   });
 
   it("tutorial es más indulgente", () => {
@@ -47,7 +52,11 @@ describe("capWildLevelForEarlyGame", () => {
     expect(capWildLevelForEarlyGame(4, 5, 5)).toBe(4);
   });
 
-  it("no capa en zonas altas", () => {
-    expect(capWildLevelForEarlyGame(12, 5, 12)).toBe(12);
+  it("extiende la protección hasta Ciudad Celeste", () => {
+    expect(capWildLevelForEarlyGame(18, 14, 16)).toBe(15);
+  });
+
+  it("no capa después del recorrido inicial", () => {
+    expect(capWildLevelForEarlyGame(18, 14, 19)).toBe(18);
   });
 });

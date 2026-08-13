@@ -2497,6 +2497,18 @@ html.is-standalone .battle-bag-sheet__panel {
   }
 }
 
+/*
+ * En monitores Full HD hay ancho libre fuera del tope de 100rem. Usarlo para
+ * que el historial siga siendo legible sin quitarle espacio al campo central.
+ * El umbral conserva intactos los layouts desktop compactos, tablet y mobile.
+ */
+@media (min-width: 1800px) {
+  .battle-layout {
+    max-width: 112rem;
+    grid-template-columns: minmax(15rem, 0.9fr) minmax(0, 1506px) minmax(15rem, 1fr);
+  }
+}
+
 /* Bioma a full-bleed detrás del stage: el aire lateral deja de leerse vacío. */
 .battle-biome-bleed {
   display: none;

@@ -167,10 +167,9 @@ const AVATAR_SLUGS = [
 ] as const;
 
 /**
- * Arte de clase de entrenador sólo para NPCs de ruta / aventura.
- * Siguen en el catálogo (retratos HD vía `npcTrainerPortraitUrl`) pero no
- * entran al picker ni a los desbloqueos de jugador: el encuadre no encaja
- * con el diseño de avatar de perfil.
+ * Arte histórico de clase que sigue disponible para resolver avatares de
+ * cuentas viejas, pero no entra al picker ni a los desbloqueos del jugador.
+ * Los NPCs del juego usan el set uniforme de `public/trainers/adventure`.
  */
 export const AVATAR_ADVENTURE_ONLY_SLUGS = [
   "cazabichos",
@@ -189,48 +188,93 @@ export function isAdventureOnlyAvatar(slug: string): boolean {
   return ADVENTURE_ONLY_SET.has(slug);
 }
 
-/** Sprites de NPCs/gimnasios/torre siguen en Showdown. */
+/** Fallback para NPCs que todavía no tengan arte local curado. */
 export function showdownTrainerSpriteUrl(slug: string): string {
   return `${showdownSpritesBase()}/trainers/${slug}.png`;
 }
 
 /**
+ * Clases de entrenador con sprite local 80×80 de cuarta generación.
+ * Mantener esta lista en paridad con `public/trainers/adventure`.
+ */
+const ADVENTURE_TRAINER_SPRITES = new Set([
+  "backpacker",
+  "beauty",
+  "biker",
+  "birdkeeper",
+  "birdkeeperf",
+  "blackbelt",
+  "bugcatcher",
+  "camper",
+  "dragontamer",
+  "fisherman",
+  "gambler",
+  "gentleman",
+  "hiker",
+  "lady",
+  "lass",
+  "medium",
+  "ninjaboy",
+  "picnicker",
+  "pokemaniac",
+  "pokemonbreeder",
+  "pokemonbreederf",
+  "psychic",
+  "psychicf",
+  "rocketgrunt",
+  "sailor",
+  "scientist",
+  "skier",
+  "skierf",
+  "supernerd",
+  "swimmer",
+  "swimmerf",
+  "worker",
+  "youngster",
+]);
+
+function normalizeNpcTrainerSlug(slug: string): string {
+  return slug.toLowerCase().replace(/[-_]/g, "");
+}
+
+export function isNpcTrainerPixelPortraitUrl(url: string | null | undefined): boolean {
+  return Boolean(
+    url?.includes("/trainers/adventure/") ||
+      (url?.startsWith("http") && url.includes("/trainers/")),
+  );
+}
+
+/**
  * Retrato de NPC de clase (entrenadores de ruta, etc.).
- * Prefiere el arte HD local del catálogo de avatares; si no hay mapeo,
- * cae al sprite pixel de Showdown.
+ * Usa una única familia pixel-art local de 80×80 para que aventura, pasillos
+ * e intro de batalla compartan encuadre, escala y definición.
  */
 export function npcTrainerPortraitUrl(
   showdownSlug: string,
   variant: "thumb" | "profile" = "profile",
 ): string {
-  const key = showdownSlug.toLowerCase().replace(/-/g, "");
-  const localSlug = LEGACY_SHOWDOWN_TO_LOCAL[key];
-  const avatar = localSlug
-    ? AVATAR_OPTIONS.find((a) => a.slug === localSlug) ?? null
-    : null;
-  if (avatar) {
-    return variant === "profile" ? avatar.profileSrc : avatar.src;
+  const key = normalizeNpcTrainerSlug(showdownSlug);
+  if (ADVENTURE_TRAINER_SPRITES.has(key)) {
+    return variant === "thumb"
+      ? `/trainers/portraits/thumbs/${key}.png`
+      : `/trainers/portraits/${key}.png`;
   }
   return showdownTrainerSpriteUrl(showdownSlug);
 }
 
-/**
- * Arte VS de cerca para NPCs de pasillo/gimnasio (`public/trainers/vs/{slug}.png`).
- * El pasillo sigue usando el sprite lejos (Showdown / thumb); la intro VS
- * prefiere este bust cuando existe.
- */
-const NPC_VS_PORTRAIT_SLUGS = new Set(["ninjaboy"]);
-
-export function hasNpcTrainerVsPortrait(showdownSlug: string): boolean {
-  const key = showdownSlug.toLowerCase().replace(/-/g, "");
-  return NPC_VS_PORTRAIT_SLUGS.has(key);
+/** Retrato horizontal que se integra como arte ambiental dentro de una card. */
+export function npcTrainerCardPortraitUrl(showdownSlug: string): string | null {
+  const key = normalizeNpcTrainerSlug(showdownSlug);
+  return ADVENTURE_TRAINER_SPRITES.has(key)
+    ? `/trainers/portraits/${key}.png`
+    : null;
 }
 
+/**
+ * La intro VS reutiliza exactamente el mismo sprite que el pasillo. Evita que
+ * el entrenador cambie de generación, pose o proporción al iniciar el combate.
+ */
 export function npcTrainerVsPortraitUrl(showdownSlug: string): string {
-  const key = showdownSlug.toLowerCase().replace(/-/g, "");
-  if (NPC_VS_PORTRAIT_SLUGS.has(key)) {
-    return `/trainers/vs/${key}.png`;
-  }
   return npcTrainerPortraitUrl(showdownSlug, "profile");
 }
 

@@ -41,6 +41,7 @@ import { BattleSpeedControl } from "@/components/battle/battle-speed-control";
 import {
   getBattleAuto,
   getServerBattleAuto,
+  pickAutoSwitchCandidate,
   subscribeBattleAuto,
 } from "@/lib/battle-auto";
 import {
@@ -2277,11 +2278,18 @@ export function BattleArena({
     return best.lane;
   }
 
+  function pickAutoSwitchMember(): RosterMember | null {
+    if (isDouble || isTrainerStyle) return null;
+    return pickAutoSwitchCandidate(party, activePlayer.instanceId, activeWild.types);
+  }
+
   const autoActionsRef = useRef({
     handleMove,
+    handleSwitchTo,
     handleDoubleTarget,
     enterDoubleFight,
     pickAutoMoveId,
+    pickAutoSwitchMember,
     pickAutoTargetLane,
     resolveMoveMeta(moveId: number, forB: boolean) {
       void moveId;
@@ -2291,9 +2299,11 @@ export function BattleArena({
   });
   autoActionsRef.current = {
     handleMove,
+    handleSwitchTo,
     handleDoubleTarget,
     enterDoubleFight,
     pickAutoMoveId,
+    pickAutoSwitchMember,
     pickAutoTargetLane,
     resolveMoveMeta: (moveId: number, forB: boolean) => {
       const pool = forB ? activeMovesB : activeMoves;
@@ -2352,6 +2362,11 @@ export function BattleArena({
         if (isDouble) {
           void actions.enterDoubleFight();
         } else {
+          const switchTarget = actions.pickAutoSwitchMember();
+          if (switchTarget) {
+            void actions.handleSwitchTo(switchTarget);
+            return;
+          }
           fireMove(actions.pickAutoMoveId(false), false);
         }
         return;

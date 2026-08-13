@@ -26,7 +26,6 @@ import { spriteFor } from "@/lib/shiny";
 import { getRouteTrainer } from "@/lib/campaign/trainers";
 import {
   avatarById,
-  npcTrainerPortraitUrl,
   npcTrainerVsPortraitUrl,
 } from "@/lib/avatars";
 import { gymLeaderPortraitUrl } from "@/lib/gym-art";
@@ -468,9 +467,9 @@ export default async function BattlePage({
       const avId = battle.opponentUser?.avatarId ?? battle.pvpMatch?.opponent.avatarId ?? null;
       opponentPortraitUrl = avatarById(avId)?.src ?? null;
     } else if (routeTrainer) {
-      opponentPortraitUrl = npcTrainerPortraitUrl(routeTrainer.spriteSlug, "thumb");
+      opponentPortraitUrl = npcTrainerVsPortraitUrl(routeTrainer.spriteSlug);
     } else if (battle.gymTrainer?.name) {
-      // Intro VS: bust de cerca si hay arte en /trainers/vs; si no, thumb/Showdown.
+      // El pasillo y la intro VS comparten el mismo sprite de clase 80×80.
       opponentPortraitUrl = npcTrainerVsPortraitUrl(
         trainerSpriteSlugFromName(battle.gymTrainer.name),
       );

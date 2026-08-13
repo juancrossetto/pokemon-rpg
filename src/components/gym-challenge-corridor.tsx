@@ -23,6 +23,7 @@ export type CorridorTrainer = {
   name: string;
   trainerClass: string;
   spriteUrl: string;
+  portraitUrl: string | null;
   status: "cleared" | "active" | "locked";
   difficulty: number;
   rewardCoins: number;
@@ -653,9 +654,9 @@ export function GymChallengeCorridor({
                       <Image
                         src={trainer.spriteUrl || showdownTrainerSpriteUrl("youngster")}
                         alt=""
-                        width={36}
-                        height={36}
-                        className={`object-contain ${isLocked ? "opacity-40 grayscale" : ""} ${
+                        width={80}
+                        height={80}
+                        className={`h-10 w-10 object-contain ${isLocked ? "opacity-40 grayscale" : ""} ${
                           isCleared ? "opacity-75" : ""
                         }`}
                         unoptimized
@@ -664,7 +665,7 @@ export function GymChallengeCorridor({
                   </div>
 
                   <article
-                    className={`min-w-0 flex-1 rounded-2xl border px-3 py-3 sm:px-3.5 ${
+                    className={`relative min-w-0 flex-1 overflow-hidden rounded-2xl border px-3 py-3 sm:px-3.5 ${
                       isActive
                         ? "gym-corridor-card-active bg-[#12141c]/90"
                         : isCleared
@@ -682,7 +683,33 @@ export function GymChallengeCorridor({
                           : undefined
                     }
                   >
-                    <div className="flex items-start justify-between gap-2">
+                    {trainer.portraitUrl ? (
+                      <div
+                        aria-hidden
+                        className={`pointer-events-none absolute top-10 right-1 h-[4.25rem] w-[44%] sm:inset-y-0 sm:right-0 sm:h-auto sm:w-[42%] ${
+                          isLocked ? "grayscale" : ""
+                        }`}
+                      >
+                        <Image
+                          src={trainer.portraitUrl}
+                          alt=""
+                          fill
+                          sizes="(max-width: 640px) 44vw, 360px"
+                          className={`object-contain object-right-center drop-shadow-[-8px_5px_12px_rgba(0,0,0,0.5)] sm:object-right-bottom ${
+                            isLocked ? "opacity-20" : isCleared ? "opacity-20" : "opacity-68"
+                          }`}
+                          unoptimized
+                        />
+                        <span
+                          className="absolute inset-0"
+                          style={{
+                            background: `linear-gradient(90deg, #12141c 0%, #12141ce8 10%, transparent 58%), linear-gradient(0deg, #12141cf2 0%, transparent 35%)`,
+                          }}
+                        />
+                      </div>
+                    ) : null}
+
+                    <div className="relative z-1 flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-white/40">
                           {trainer.trainerClass}
@@ -709,25 +736,27 @@ export function GymChallengeCorridor({
                         coins={trainer.rewardCoins}
                         xp={trainer.rewardXp}
                         prefix="+"
-                        className="mt-2 text-white/55"
+                        className="relative z-1 mt-2 max-w-[58%] text-white/55 sm:max-w-[76%]"
                       />
                     ) : (
                       <div className="mt-2.5 space-y-2.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <TeamIcons team={trainer.team} reveal={!isLocked} />
+                        <div className="relative z-1 max-w-[58%] space-y-2.5 sm:max-w-[76%]">
+                          <div className="flex items-center justify-between gap-2">
+                            <TeamIcons team={trainer.team} reveal={!isLocked} />
+                            {!isLocked ? (
+                              <DifficultyPips value={trainer.difficulty} accent={theme.accent} />
+                            ) : null}
+                          </div>
                           {!isLocked ? (
-                            <DifficultyPips value={trainer.difficulty} accent={theme.accent} />
+                            <RewardBits
+                              coins={trainer.rewardCoins}
+                              xp={trainer.rewardXp}
+                              className="text-white/55"
+                            />
                           ) : null}
                         </div>
-                        {!isLocked ? (
-                          <RewardBits
-                            coins={trainer.rewardCoins}
-                            xp={trainer.rewardXp}
-                            className="text-white/55"
-                          />
-                        ) : null}
                         {isActive ? (
-                          <form action={battleAction}>
+                          <form action={battleAction} className="relative z-1">
                             <CombatButton
                               label={labels.initiateCombat}
                               energyCost={trainerEnergyCost}

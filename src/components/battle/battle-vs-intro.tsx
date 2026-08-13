@@ -14,6 +14,7 @@ import { useTranslations } from "next-intl";
 import { playBattleSfx } from "@/lib/battle-sfx";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
+import { isNpcTrainerPixelPortraitUrl } from "@/lib/avatars";
 import type { PvpDivision, PvpTier } from "@/lib/pvp/tiers";
 
 export type BattleVsMode = "wild" | "gym" | "pvp" | "tower";
@@ -201,6 +202,7 @@ function VsBanner({
 }) {
   const showAvatar = Boolean(portraitUrl) || side === "player";
   const isVsArt = Boolean(portraitUrl?.includes("/trainers/vs/"));
+  const isPixelTrainer = isNpcTrainerPixelPortraitUrl(portraitUrl);
 
   return (
     <div
@@ -218,9 +220,7 @@ function VsBanner({
               size="2xl"
               framed
               contain={side === "foe" || isVsArt}
-              pixel={Boolean(
-                portraitUrl?.includes("/trainers/") && !isVsArt,
-              )}
+              pixel={isPixelTrainer}
             />
           </div>
         ) : null}

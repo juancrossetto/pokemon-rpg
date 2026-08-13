@@ -3,6 +3,7 @@ import {
   BATTLE_AUTO_UNLOCK_COUNT,
   BATTLE_AUTO_UNLOCK_LEVEL,
   isBattleAutoUnlocked,
+  pickAutoSwitchCandidate,
 } from "@/lib/battle-auto";
 
 describe("isBattleAutoUnlocked", () => {
@@ -32,5 +33,32 @@ describe("isBattleAutoUnlocked", () => {
 
   it("acepta niveles por encima del umbral", () => {
     expect(isBattleAutoUnlocked([12, 40, 10, 5])).toBe(true);
+  });
+});
+
+describe("pickAutoSwitchCandidate", () => {
+  const party = [
+    { instanceId: "pidgey", level: 14, currentHp: 28, maxHp: 35, types: ["flying"] },
+    { instanceId: "oddish", level: 16, currentHp: 36, maxHp: 40, types: ["grass", "poison"] },
+    { instanceId: "rattata", level: 14, currentHp: 30, maxHp: 30, types: ["normal"] },
+  ];
+
+  it("cambia a una ventaja clara antes de sacrificar al activo", () => {
+    expect(pickAutoSwitchCandidate(party, "pidgey", ["water"])?.instanceId).toBe("oddish");
+  });
+
+  it("no rota por diferencias neutrales", () => {
+    expect(pickAutoSwitchCandidate(party, "pidgey", ["normal"])).toBeNull();
+  });
+
+  it("no abandona un matchup ya favorable", () => {
+    expect(pickAutoSwitchCandidate(party, "oddish", ["water"])).toBeNull();
+  });
+
+  it("no manda a combatir un reemplazo casi debilitado", () => {
+    const hurt = party.map((member) =>
+      member.instanceId === "oddish" ? { ...member, currentHp: 10 } : member,
+    );
+    expect(pickAutoSwitchCandidate(hurt, "pidgey", ["water"])).toBeNull();
   });
 });
