@@ -69,7 +69,36 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
     return { success: false, error: anyInTeam ? "fainted_lead" : "no_lead" };
   }
 
-  const { speciesId: wildSpeciesId, level: baseLevel } = resolveSpawn(stage);
+  const [recentWildEncounters, seenInZone] = await Promise.all([
+    prisma.battleSession.findMany({
+      where: {
+        userId,
+        status: { not: "ACTIVE" },
+        wildSpeciesId: { in: stage.spawnSpeciesIds },
+        gymId: null,
+        towerRunId: null,
+        pvpMatchId: null,
+        clanWarBattleId: null,
+        routeTrainerId: null,
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 3,
+      select: { wildSpeciesId: true },
+    }),
+    prisma.seenSpecies.findMany({
+      where: {
+        userId,
+        locationId: progress.farmingLocationId,
+        speciesId: { in: stage.spawnSpeciesIds },
+      },
+      select: { speciesId: true },
+    }),
+  ]);
+
+  const { speciesId: wildSpeciesId, level: baseLevel } = resolveSpawn(stage, {
+    recentSpeciesIds: recentWildEncounters.map((encounter) => encounter.wildSpeciesId),
+    seenSpeciesIds: new Set(seenInZone.map((entry) => entry.speciesId)),
+  });
   const event = rollExplorationEvent({ zoneLevelMax: stage.levelMax });
   let wildLevel = event.kind === "alpha" ? baseLevel + event.levelBonus : baseLevel;
   wildLevel = capWildLevelForEarlyGame(wildLevel, lead.level, stage.levelMax);
@@ -82,7 +111,9 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
 
   const foundItem =
     event.kind === "item"
-      ? await prisma.item.findFirst({ where: { name: pickEventItemName() } })
+      ? await prisma.item.findFirst({
+          where: { name: pickEventItemName({ zoneLevelMax: stage.levelMax }) },
+        })
       : null;
 
   const started = await prisma.$transaction(async (tx) => {

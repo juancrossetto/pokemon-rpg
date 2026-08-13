@@ -129,11 +129,13 @@ export function BattleLobbyMobile({
         ...(result.coins > 0
           ? [rewardToLootPiece({ kind: "coins", amount: result.coins })]
           : []),
-        rewardToLootPiece({
-          kind: "item",
-          itemName: result.itemName,
-          quantity: result.quantity,
-        }),
+        ...result.items.map((item) =>
+          rewardToLootPiece({
+            kind: "item",
+            itemName: item.itemName,
+            quantity: item.quantity,
+          }),
+        ),
       ],
     });
     router.refresh();

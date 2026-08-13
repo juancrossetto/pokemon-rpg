@@ -63,9 +63,10 @@ export function LevelUpOffersPanel({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [local, setLocal] = useState(entries);
-  const [picking, setPicking] = useState<{
+  const [replacement, setReplacement] = useState<{
     instanceId: string;
-    move: LevelUpMoveInfo;
+    moveId: number;
+    slot: number;
   } | null>(null);
   const [evolvingId, setEvolvingId] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<{
@@ -160,7 +161,7 @@ export function LevelUpOffersPanel({
   }
 
   function skipMove(instanceId: string, moveId: number) {
-    setPicking(null);
+    setReplacement(null);
     setLocal((prev) => {
       const next = prev.map((e) =>
         e.instanceId === instanceId
@@ -205,7 +206,7 @@ export function LevelUpOffersPanel({
         setError(t(`errors.${result.error}`));
         return;
       }
-      setPicking(null);
+      setReplacement(null);
       const entry = local.find((e) => e.instanceId === instanceId);
       const learnedMove = entry?.pendingMoves.find((m) => m.moveId === moveId);
       if (entry && learnedMove) {
@@ -422,9 +423,11 @@ export function LevelUpOffersPanel({
                     name: entry.name,
                     level: entry.leveledUpTo ?? 0,
                   })}
-                  picking={
-                    picking?.instanceId === entry.instanceId &&
-                    picking.move.moveId === current.moveId
+                  selectedSlot={
+                    replacement?.instanceId === entry.instanceId &&
+                    replacement.moveId === current.moveId
+                      ? replacement.slot
+                      : null
                   }
                   pending={pending}
                   labels={{
@@ -450,11 +453,23 @@ export function LevelUpOffersPanel({
                     category: (c) => t(`category.${c}`),
                   }}
                   onLearnEmpty={() => learn(entry.instanceId, current.moveId, null)}
-                  onStartReplace={() =>
-                    setPicking({ instanceId: entry.instanceId, move: current })
+                  onSelectSlot={(slot) =>
+                    setReplacement((selected) =>
+                      selected?.instanceId === entry.instanceId &&
+                      selected.moveId === current.moveId &&
+                      selected.slot === slot
+                        ? null
+                        : { instanceId: entry.instanceId, moveId: current.moveId, slot },
+                    )
                   }
-                  onReplaceSlot={(slot) => learn(entry.instanceId, current.moveId, slot)}
-                  onCancelPick={() => setPicking(null)}
+                  onConfirmReplace={() => {
+                    if (
+                      replacement?.instanceId === entry.instanceId &&
+                      replacement.moveId === current.moveId
+                    ) {
+                      learn(entry.instanceId, current.moveId, replacement.slot);
+                    }
+                  }}
                   onSkip={() => skipMove(entry.instanceId, current.moveId)}
                   onReject={() => rejectMove(entry.instanceId, current.moveId)}
                 />
@@ -711,13 +726,12 @@ function LearnMoveCard({
   knownMoves,
   hasEmptySlot,
   ownerLabel,
-  picking,
+  selectedSlot,
   pending,
   labels,
   onLearnEmpty,
-  onStartReplace,
-  onReplaceSlot,
-  onCancelPick,
+  onSelectSlot,
+  onConfirmReplace,
   onSkip,
   onReject,
 }: {
@@ -727,13 +741,12 @@ function LearnMoveCard({
   hasEmptySlot: boolean;
   /** "Chikorita · Nv. 12" — va dentro de esta card, no en otra envolvente. */
   ownerLabel: string;
-  picking: boolean;
+  selectedSlot: number | null;
   pending: boolean;
   labels: LearnMoveLabels;
   onLearnEmpty: () => void;
-  onStartReplace: () => void;
-  onReplaceSlot: (slot: number) => void;
-  onCancelPick: () => void;
+  onSelectSlot: (slot: number) => void;
+  onConfirmReplace: () => void;
   onSkip: () => void;
   onReject: () => void;
 }) {
@@ -747,29 +760,39 @@ function LearnMoveCard({
 
   return (
     <div
-      className="overflow-hidden rounded-[1.35rem] border border-white/12 bg-[#121212] shadow-[0_20px_48px_rgba(0,0,0,0.45)]"
-      style={{ boxShadow: `0 20px 48px rgba(0,0,0,0.45), inset 0 0 0 1px ${color}28` }}
+      className="relative overflow-hidden rounded-[1.35rem] border bg-[#101112] shadow-[0_20px_48px_rgba(0,0,0,0.45)]"
+      style={{
+        borderColor: `${color}38`,
+        boxShadow: `0 20px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)`,
+      }}
     >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-px"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${color}cc 28%, ${color}55 72%, transparent)`,
+        }}
+      />
       {/*
         Una sola card: el poder nuevo es el protagonista. El dueño va como
         kicker, no como panel envolvente (eso anidaba cards en la victoria).
       */}
       <div
-        className="relative px-3 pb-2.5 pt-3 sm:px-4 sm:pb-3 sm:pt-4"
+        className="relative px-3 pb-3 pt-3 sm:px-4 sm:pb-3.5 sm:pt-4"
         style={{
-          background: `linear-gradient(165deg, ${color}33 0%, transparent 62%)`,
+          background: `radial-gradient(85% 105% at 0% 0%, ${color}2f 0%, transparent 68%)`,
         }}
       >
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">
           {ownerLabel}
         </p>
-        <div className="mt-2 flex items-start gap-2.5 sm:gap-3">
+        <div className="mt-2.5 flex items-center gap-2.5 sm:gap-3">
           <TypeOrb type={move.type} size="lg" />
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
               {labels.newMove}
             </p>
-            <p className="mt-0.5 truncate text-[17px] font-bold tracking-tight text-white sm:text-[18px]">
+            <p className="mt-0.5 truncate text-[19px] font-bold tracking-tight text-white sm:text-[21px]">
               {formatted}
             </p>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -792,59 +815,63 @@ function LearnMoveCard({
           </div>
         </div>
 
-        <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2">
+        <div className="mt-3 grid grid-cols-3 divide-x divide-white/10 rounded-xl border border-white/8 bg-black/20">
           <MoveStat
             label={labels.power}
             value={move.power == null ? "—" : String(move.power)}
-            accent={color}
           />
           <MoveStat
             label={labels.accuracy}
             value={accuracyText(move.accuracy, labels.neverMisses)}
-            accent={color}
           />
-          <MoveStat label={labels.pp} value={String(move.pp)} accent={color} />
+          <MoveStat label={labels.pp} value={String(move.pp)} />
         </div>
 
         {effect ? (
-          <p className="mt-2.5 line-clamp-3 text-[12px] leading-snug text-white/70 sm:line-clamp-4 sm:text-[13px] sm:leading-relaxed">
+          <p className="mt-3 line-clamp-3 text-[12px] leading-snug text-white/65 sm:line-clamp-4 sm:text-[13px] sm:leading-relaxed">
             {effect}
           </p>
         ) : null}
 
-        <p className="mt-2 text-[12px] leading-snug text-white/65">{labels.wantsToLearn}</p>
+        <p className="sr-only">{labels.wantsToLearn}</p>
         {remaining > 0 && (
           <p className="mt-0.5 text-[10px] text-white/40">{labels.morePending}</p>
         )}
       </div>
 
       {knownMoves.length > 0 ? (
-        <div className="border-t border-white/8 px-3 py-2.5 sm:px-4 sm:py-3">
-          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
-            {picking ? labels.forgetWhich : labels.yourMoves}
+        <div className="border-t border-white/8 px-3 py-3 sm:px-4 sm:py-3.5">
+          <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.16em] text-white/40">
+            {hasEmptySlot ? labels.yourMoves : labels.forgetWhich}
           </p>
-          <ul className="flex flex-col gap-1.5">
+          <ul className="overflow-hidden rounded-xl border border-white/8 bg-white/[0.015] divide-y divide-white/8">
             {knownMoves.map((k) => {
               const delta = powerDelta(move.power, k.power);
+              const selected = !hasEmptySlot && selectedSlot === k.slot;
               return (
                 <li key={k.slot} className="min-w-0">
-                  {picking ? (
+                  {!hasEmptySlot ? (
                     <button
                       type="button"
                       disabled={pending}
-                      onClick={() => onReplaceSlot(k.slot)}
-                      className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2 text-left transition hover:border-pokeball-red/45 hover:bg-pokeball-red/10 disabled:opacity-50"
+                      aria-pressed={selected}
+                      onClick={() => onSelectSlot(k.slot)}
+                      className={`w-full px-2.5 py-2.5 text-left transition disabled:opacity-50 ${
+                        selected
+                          ? "move-replace-selected bg-pokeball-red/12 shadow-[inset_3px_0_0_var(--color-pokeball-red)]"
+                          : "hover:bg-white/[0.04]"
+                      }`}
                     >
                       <KnownMoveRow
                         move={k}
                         labels={labels}
                         powerDelta={delta}
-                        interactive
+                        interactive={!selected}
                         compact
                       />
                     </button>
                   ) : (
-                    <div className="rounded-xl border border-white/8 bg-white/[0.02] px-2.5 py-2">
+                    <div className="px-2.5 py-2.5">
                       <KnownMoveRow
                         move={k}
                         labels={labels}
@@ -857,37 +884,27 @@ function LearnMoveCard({
               );
             })}
           </ul>
-          {picking && (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={onCancelPick}
-              className="mt-2 w-full rounded-xl px-3 py-2 text-[12px] text-white/50 transition hover:bg-white/5 hover:text-white"
-            >
-              {labels.cancel}
-            </button>
-          )}
         </div>
       ) : null}
 
-      {!picking && (
-        <div className="border-t border-white/8 px-3 py-2.5 sm:px-4">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="border-t border-white/8 bg-black/10 px-3 py-3 sm:px-4">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1.35fr_1fr_auto]">
             {hasEmptySlot ? (
               <button
                 type="button"
                 disabled={pending}
                 onClick={onLearnEmpty}
-                className="ui-btn-primary rounded-xl px-4 py-2.5 text-[13px] font-bold tracking-wide"
+                className="ui-btn-primary rounded-xl px-4 py-2.5 text-[13px] font-bold tracking-wide shadow-[0_8px_22px_color-mix(in_srgb,var(--theme-primary)_20%,transparent)]"
               >
                 {labels.learn}
               </button>
             ) : (
               <button
                 type="button"
-                disabled={pending}
-                onClick={onStartReplace}
-                className="ui-btn-primary rounded-xl px-4 py-2.5 text-[13px] font-bold tracking-wide"
+                disabled={pending || selectedSlot == null}
+                onClick={onConfirmReplace}
+                title={selectedSlot == null ? labels.forgetWhich : undefined}
+                className="ui-btn-primary rounded-xl px-4 py-2.5 text-[13px] font-bold tracking-wide shadow-[0_8px_22px_color-mix(in_srgb,var(--theme-primary)_20%,transparent)]"
               >
                 {labels.replace}
               </button>
@@ -897,7 +914,7 @@ function LearnMoveCard({
               disabled={pending}
               onClick={onSkip}
               title={labels.skipMoveHint}
-              className="rounded-xl border border-white/12 bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-white/60 transition hover:border-white/25 hover:text-white disabled:opacity-50"
+              className="rounded-xl border border-white/12 bg-transparent px-4 py-2.5 text-[13px] font-medium text-white/60 transition hover:border-white/25 hover:bg-white/[0.04] hover:text-white disabled:opacity-50"
             >
               {labels.skipMove}
             </button>
@@ -906,18 +923,17 @@ function LearnMoveCard({
               disabled={pending}
               onClick={onReject}
               title={labels.rejectMoveHint}
-              className="rounded-xl border border-white/12 bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-white/55 transition hover:border-rose-400/35 hover:bg-rose-400/10 hover:text-rose-100 disabled:opacity-50"
+              className="rounded-xl px-3 py-2.5 text-[13px] font-medium text-white/40 transition hover:bg-rose-400/10 hover:text-rose-200 disabled:opacity-50"
             >
               {labels.rejectMove}
             </button>
           </div>
-          <p className="mt-1.5 text-center text-[11px] leading-snug text-white/35">
+          <p className="mt-2 text-center text-[10px] leading-snug text-white/30">
             {labels.skipMoveHint}
             <span className="mx-1.5 text-white/20">·</span>
             {labels.rejectMoveHint}
           </p>
         </div>
-      )}
     </div>
   );
 }
@@ -925,22 +941,17 @@ function LearnMoveCard({
 function MoveStat({
   label,
   value,
-  accent,
 }: {
   label: string;
   value: string;
-  accent: string;
 }) {
   return (
-    <div
-      className="rounded-xl border border-white/8 bg-black/30 px-2.5 py-2 text-center"
-      style={{ boxShadow: `inset 0 0 0 1px ${accent}14` }}
-    >
-      <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40">
-        {label}
-      </p>
-      <p className="mt-0.5 font-mono text-[15px] font-bold tabular-nums text-white">
+    <div className="px-2 py-2 text-center sm:py-2.5">
+      <p className="font-mono text-[15px] font-bold tabular-nums text-white sm:text-[16px]">
         {value}
+      </p>
+      <p className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-white/35">
+        {label}
       </p>
     </div>
   );

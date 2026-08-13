@@ -577,17 +577,20 @@ export function HomeEventsProgress({
         ...(result.coins > 0
           ? [rewardToLootPiece({ kind: "coins", amount: result.coins })]
           : []),
-        rewardToLootPiece({
-          kind: "item",
-          itemName: result.itemName,
-          quantity: result.quantity,
-        }),
+        ...result.items.map((item) =>
+          rewardToLootPiece({
+            kind: "item",
+            itemName: item.itemName,
+            quantity: item.quantity,
+          }),
+        ),
       ],
     });
     router.refresh();
+    const featuredItem = result.items.at(-1)!;
     return {
-      src: itemDisplayUrl(result.itemName, "hd"),
-      label: `${result.itemName} ×${result.quantity}`,
+      src: itemDisplayUrl(featuredItem.itemName, "hd"),
+      label: `${featuredItem.itemName} ×${featuredItem.quantity}`,
     };
   }
 
@@ -613,11 +616,13 @@ export function HomeEventsProgress({
           ...(result.coins > 0
             ? [rewardToLootPiece({ kind: "coins", amount: result.coins })]
             : []),
-          rewardToLootPiece({
-            kind: "item",
-            itemName: result.itemName,
-            quantity: result.quantity,
-          }),
+          ...result.items.map((item) =>
+            rewardToLootPiece({
+              kind: "item",
+              itemName: item.itemName,
+              quantity: item.quantity,
+            }),
+          ),
         ],
       });
       router.refresh();

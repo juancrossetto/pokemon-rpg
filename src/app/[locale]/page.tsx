@@ -753,8 +753,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     claimable: o.claimable,
     claimed: o.claimed,
     rewardCoins: o.reward.coins,
-    rewardItem: o.reward.itemName,
-    rewardQty: o.reward.quantity,
+    rewardItems: o.reward.items,
   }));
   const objectiveZoneName = farmingZone
     ? tCampaign(farmingZone.nameKey)

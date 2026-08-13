@@ -71,8 +71,7 @@ export type HomeObjective = {
   claimable: boolean;
   claimed: boolean;
   rewardCoins: number;
-  rewardItem: string;
-  rewardQty: number;
+  rewardItems: Array<{ itemName: string; quantity: number }>;
 };
 
 export type HomeFeedItem = {

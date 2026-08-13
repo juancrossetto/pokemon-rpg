@@ -11,7 +11,7 @@ import {
 import { CAMPAIGN_DEFAULTS as REGION_CAMPAIGN_DEFAULTS } from "./defaults";
 import { campaignMapSrc } from "./maps";
 import { regionMapSrc } from "./regions";
-import { pickWeightedSpecies } from "./rarity";
+import { pickWeightedSpecies, type SpeciesPickOptions } from "./rarity";
 import { areLocationTrainersDefeated } from "./trainers";
 import type {
   CampaignLocation,
@@ -245,10 +245,13 @@ export function nextMilestone(
   return { kind: "complete", id: "region-complete", nameKey: "milestones.region_complete" };
 }
 
-export function resolveSpawn(stage: CampaignStage): { speciesId: number; level: number } {
+export function resolveSpawn(
+  stage: CampaignStage,
+  pickOptions?: SpeciesPickOptions,
+): { speciesId: number; level: number } {
   // Ponderado por rareza: antes todas las especies del stage salían igual, así
   // que un Pikachu aparecía tanto como un Rattata y no había nada que "buscar".
-  const speciesId = pickWeightedSpecies(stage.spawnSpeciesIds) ?? 16;
+  const speciesId = pickWeightedSpecies(stage.spawnSpeciesIds, pickOptions) ?? 16;
   const span = Math.max(0, stage.levelMax - stage.levelMin);
   const level = stage.levelMin + Math.floor(Math.random() * (span + 1));
   return { speciesId, level: Math.max(2, level) };

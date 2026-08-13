@@ -13,7 +13,11 @@ import {
 } from "@/lib/campaign/objectives";
 
 export type ClaimResult =
-  | { ok: true; coins: number; itemName: string; quantity: number }
+  | {
+      ok: true;
+      coins: number;
+      items: Array<{ itemName: string; quantity: number }>;
+    }
   | {
       ok: false;
       error:
@@ -70,11 +74,12 @@ export async function claimZoneObjective(
       return;
     }
 
-    const item = await tx.item.findFirst({
-      where: { name: state.reward.itemName },
-      select: { id: true },
+    const itemNames = state.reward.items.map((reward) => reward.itemName);
+    const items = await tx.item.findMany({
+      where: { name: { in: itemNames } },
+      select: { id: true, name: true },
     });
-    if (!item) {
+    if (items.length !== itemNames.length) {
       failure = { ok: false, error: "missing_item" };
       return;
     }
@@ -84,11 +89,14 @@ export async function claimZoneObjective(
       where: { id: userId },
       data: { coins: { increment: state.reward.coins } },
     });
-    await tx.inventoryItem.upsert({
-      where: { userId_itemId: { userId, itemId: item.id } },
-      create: { userId, itemId: item.id, quantity: state.reward.quantity },
-      update: { quantity: { increment: state.reward.quantity } },
-    });
+    for (const reward of state.reward.items) {
+      const item = items.find((candidate) => candidate.name === reward.itemName)!;
+      await tx.inventoryItem.upsert({
+        where: { userId_itemId: { userId, itemId: item.id } },
+        create: { userId, itemId: item.id, quantity: reward.quantity },
+        update: { quantity: { increment: reward.quantity } },
+      });
+    }
   });
 
   if (failure) return failure;
@@ -98,7 +106,6 @@ export async function claimZoneObjective(
   return {
     ok: true,
     coins: state.reward.coins,
-    itemName: state.reward.itemName,
-    quantity: state.reward.quantity,
+    items: state.reward.items,
   };
 }

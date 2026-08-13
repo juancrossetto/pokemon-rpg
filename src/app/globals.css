@@ -10142,6 +10142,25 @@ html.is-standalone .battle-result-overlay .result-in {
   }
 }
 
+/* Movimiento elegido para olvidar: tiembla hasta confirmar, como una ficha
+   seleccionada, pero sin desplazar el resto de la lista. */
+@keyframes move-replace-selected {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-1.5px);
+  }
+  75% {
+    transform: translateX(1.5px);
+  }
+}
+
+.move-replace-selected {
+  animation: move-replace-selected 0.32s ease-in-out infinite;
+}
+
 /* ── Entrenador sobre el mapa ────────────────────────────────────────── */
 .campaign-hiker {
   /* El centrado va en la base y no sólo en el keyframe: si la animación no
@@ -10230,6 +10249,7 @@ html.is-standalone .battle-result-overlay .result-in {
   .campaign-next-halo,
   .campaign-next-chip,
   .campaign-next-arrow,
+  .move-replace-selected,
   .campaign-objective-in,
   .campaign-objective-sheen::after {
     animation: none !important;
@@ -20017,9 +20037,9 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.625rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.35);
   color: rgba(255, 255, 255, 0.88);
@@ -20037,14 +20057,22 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   color: #fff;
 }
 .heal-chip-btn--rush:not(:disabled) {
-  border-color: rgba(251, 191, 36, 0.45);
-  background: var(--theme-tertiary, var(--color-electric-yellow));
-  color: #111;
+  border-color: rgba(255, 255, 255, 0.16);
+  background: #3a3d43;
+  color: rgba(255, 255, 255, 0.9);
 }
 .heal-chip-btn--disabled,
 .heal-chip-btn:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: #303238 !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  opacity: 1;
+}
+.heal-chip-btn--disabled > .heal-chip-chansey,
+.heal-chip-btn:disabled > .heal-chip-chansey {
+  opacity: 0.58;
+  filter: grayscale(1) saturate(0.15);
 }
 
 /* Rail con snap: se pasa con el pulgar y cada card queda encuadrada. */

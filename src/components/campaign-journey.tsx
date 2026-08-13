@@ -106,12 +106,6 @@ const PATH_DONE_GLOW_STRONG = "color-mix(in srgb, var(--theme-primary-bright) 80
 const PATH_NODE_SM = "h-9 w-9 sm:h-12 sm:w-12";
 const PATH_NODE_GYM = "h-12 w-12 sm:h-16 sm:w-16 lg:h-[4.5rem] lg:w-[4.5rem]"; /* gimnasio */
 
-function zoneBarFill(isGym: boolean, done: boolean, inProgress: boolean): string {
-  if (isGym || inProgress) return PATH_PROGRESS_FILL;
-  if (done) return "bg-pokeball-red";
-  return "bg-white/20";
-}
-
 /**
  * Paleta de la campaña — color solo cuando informa:
  *
@@ -464,11 +458,13 @@ export function CampaignJourney({
           ...(result.coins > 0
             ? [rewardToLootPiece({ kind: "coins", amount: result.coins })]
             : []),
-          rewardToLootPiece({
-            kind: "item",
-            itemName: result.itemName,
-            quantity: result.quantity,
-          }),
+          ...result.items.map((item) =>
+            rewardToLootPiece({
+              kind: "item",
+              itemName: item.itemName,
+              quantity: item.quantity,
+            }),
+          ),
         ],
       });
     });
@@ -770,6 +766,7 @@ export function CampaignJourney({
                       isLast={i === chapter.zones.length - 1}
                       selected={zoneId === z.id}
                       isFarming={z.id === farmingLocationId}
+                      farmingStageId={farmingStageId}
                       isNextStep={z.id === recommendedZoneId}
                       leadsToNextStep={
                         recommendedZoneId != null &&
@@ -1017,6 +1014,7 @@ function ZoneRow({
   isLast,
   selected,
   isFarming,
+  farmingStageId,
   isNextStep,
   leadsToNextStep,
   leadSpriteUrl,
@@ -1033,6 +1031,8 @@ function ZoneRow({
   isLast: boolean;
   selected: boolean;
   isFarming: boolean;
+  /** Stage donde está explorando el jugador, para marcar el tramo activo. */
+  farmingStageId: string;
   /** Único nodo recomendado del capítulo. */
   isNextStep: boolean;
   /** El tramo que sale de este nodo desemboca en el recomendado. */
@@ -1365,8 +1365,8 @@ function ZoneRow({
                 nodeStatus={nodeStatus}
                 style={style}
                 isFarming={isFarming}
+                farmingStageId={farmingStageId}
                 caught={caught}
-                pct={pct}
                 requirementsLeft={requirementsLeft}
                 unlockRequirements={unlockRequirements}
               />
@@ -1439,8 +1439,8 @@ function ZoneRow({
                 nodeStatus={nodeStatus}
                 style={style}
                 isFarming={isFarming}
+                farmingStageId={farmingStageId}
                 caught={caught}
-                pct={pct}
                 requirementsLeft={requirementsLeft}
                 unlockRequirements={unlockRequirements}
               />
@@ -1449,6 +1449,79 @@ function ZoneRow({
         )}
       </button>
     </li>
+  );
+}
+
+function ZoneStageRail({
+  zone,
+  farmingStageId,
+  t,
+}: {
+  zone: MapLocation;
+  farmingStageId: string;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const stages = zone.stages.filter((stage) => !stage.isGym);
+  // Con una sola etapa el estado de la card ya informa todo; dibujar un punto
+  // aislado no agrega progreso secuencial y sólo carga la composición.
+  if (stages.length <= 1) return null;
+
+  const farmingIndex = stages.findIndex(
+    (stage) => stage.id === farmingStageId && stage.unlocked && !stage.done,
+  );
+  const currentIndex =
+    farmingIndex >= 0
+      ? farmingIndex
+      : stages.findIndex((stage) => stage.unlocked && !stage.done);
+  const completedConnectors = stages.slice(0, -1).filter((stage) => stage.done).length;
+  const railProgress = (completedConnectors / (stages.length - 1)) * 100;
+
+  return (
+    <div
+      className="relative mt-2 h-3"
+      aria-label={`${zone.completedStages}/${zone.totalStages} ${t("stagesShort")}`}
+    >
+      <span
+        aria-hidden
+        className="absolute inset-x-1.5 top-1/2 h-px -translate-y-1/2 overflow-hidden bg-white/12"
+      >
+        <span
+          className="block h-full bg-[var(--theme-primary-bright)] shadow-[0_0_6px_color-mix(in_srgb,var(--theme-primary)_55%,transparent)] motion-safe:transition-[width] motion-safe:duration-500"
+          style={{ width: `${railProgress}%` }}
+        />
+      </span>
+
+      <ol
+        className="relative z-[1] flex h-full items-center justify-between"
+      >
+        {stages.map((stage, index) => {
+          const current = index === currentIndex;
+          const stageTitle =
+            current && stage.clearsRequired > 1
+              ? `${t(stage.nameKey)} · ${stage.clearsCurrent}/${stage.clearsRequired}`
+              : t(stage.nameKey);
+
+          return (
+            <li key={stage.id} className="flex items-center" title={stageTitle}>
+              <span
+                aria-hidden
+                className={`block rounded-full motion-safe:transition-all motion-safe:duration-300 ${
+                  stage.done
+                    ? "h-2.5 w-2.5 bg-[var(--theme-primary-bright)] shadow-[0_0_8px_color-mix(in_srgb,var(--theme-primary)_65%,transparent)]"
+                    : current
+                      ? "flex h-3 w-3 items-center justify-center border border-pokeball-red bg-[#171019] shadow-[0_0_8px_color-mix(in_srgb,var(--color-pokeball-red)_45%,transparent)]"
+                      : stage.unlocked
+                        ? "h-2 w-2 border border-white/35 bg-[#171820]"
+                        : "h-2 w-2 border border-white/12 bg-[#111219]"
+                }`}
+              >
+                {current ? <span className="h-1 w-1 rounded-full bg-pokeball-red" /> : null}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 
@@ -1465,8 +1538,8 @@ function ZoneRowBody({
   nodeStatus,
   style,
   isFarming,
+  farmingStageId,
   caught,
-  pct,
   requirementsLeft,
   unlockRequirements,
 }: {
@@ -1482,13 +1555,12 @@ function ZoneRowBody({
   nodeStatus: CampaignNodeStatus;
   style: (typeof KIND_STYLE)[CampaignLocationKind];
   isFarming: boolean;
+  farmingStageId: string;
   caught: number;
-  pct: number;
   requirementsLeft: (string | null)[];
   unlockRequirements: CampaignRequirement[];
 }) {
   const trainersDone = zone.trainers.filter((tr) => tr.defeated).length;
-  const storySteps = zone.totalStages + zone.trainers.length;
   return (
     <>
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -1561,40 +1633,38 @@ function ZoneRowBody({
         </div>
 
         {!compact && zone.unlocked && (
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-label-sm text-white/70 drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)]">
-            {zone.totalStages > 0 && (
-              <span className="inline-flex items-center gap-1">
-                <Image src="/nav/adventure-icon.png?v=4" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
-                <span className="text-white">{zone.completedStages}/{zone.totalStages}</span>
-              </span>
-            )}
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-white/45 sm:text-[11px]">
             {zone.trainers.length > 0 && (
-              <span className="inline-flex items-center gap-1">
-                <Image src="/nav/battle-icon.png?v=4" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
-                <span className="text-white">{trainersDone}/{zone.trainers.length}</span>
+              <span>
+                <strong className="font-mono font-medium tabular-nums text-white/70">
+                  {trainersDone}/{zone.trainers.length}
+                </strong>{" "}
+                {t("trainersTitle")}
               </span>
             )}
+            {zone.trainers.length > 0 && zone.encounters.length > 0 ? (
+              <span aria-hidden className="text-white/20">·</span>
+            ) : null}
             {zone.encounters.length > 0 && (
-              <span className="inline-flex items-center gap-1">
-                <Image src="/nav/collection-icon.png?v=4" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
-                <span className="text-white">{caught}/{zone.encounters.length}</span>
+              <span>
+                <strong className="font-mono font-medium tabular-nums text-white/70">
+                  {caught}/{zone.encounters.length}
+                </strong>{" "}
+                Pokédex
               </span>
             )}
-            <span className="inline-flex items-center gap-1">
-              <Image src="/nav/battle-wild-icon.png?v=4" alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" aria-hidden />
+            {zone.trainers.length > 0 || zone.encounters.length > 0 ? (
+              <span aria-hidden className="text-white/20">·</span>
+            ) : null}
+            <span>
               {t("wildLevels", { min: zone.levelMin, max: zone.levelMax })}
             </span>
           </div>
         )}
 
-        {!compact && zone.unlocked && storySteps > 0 && (
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/40">
-            <div
-              className={`h-full rounded-full ${zoneBarFill(isGym, done, isFarming || nodeStatus === "current" || nodeStatus === "in_progress")} transition-all duration-500`}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-        )}
+        {!compact && zone.unlocked ? (
+          <ZoneStageRail zone={zone} farmingStageId={farmingStageId} t={t} />
+        ) : null}
 
         {!compact && isGym && zone.unlocked && requirementsLeft.length > 0 && (
           <ul className="mt-2 flex flex-col gap-0.5">
@@ -2291,32 +2361,37 @@ function ObjectiveRewardBits({
   state: ZoneObjectiveState;
 }) {
   const tShop = useTranslations("shop");
-  const itemLabel = resolveItemDisplayName(state.reward.itemName, (key) => {
-    const path = `names.${key}`;
-    return tShop.has(path) ? tShop(path) : null;
-  });
-  const itemTitle = `${state.reward.quantity}× ${itemLabel}`;
   const coinsTitle = `${state.reward.coins} ${tShop("coinsUnit")}`;
 
   return (
     <div
       className={`flex items-center gap-2.5 ${state.claimed ? "opacity-45" : ""}`}
     >
-      <span
-        title={itemTitle}
-        className="inline-flex items-center gap-1"
-      >
-        <Image
-          src={itemDisplayUrl(state.reward.itemName, "hd")}
-          alt={itemTitle}
-          width={28}
-          height={28}
-          className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
-        />
-        <span className="font-mono text-[13px] font-semibold tabular-nums text-white">
-          ×{state.reward.quantity}
-        </span>
-      </span>
+      {state.reward.items.map((reward) => {
+        const itemLabel = resolveItemDisplayName(reward.itemName, (key) => {
+          const path = `names.${key}`;
+          return tShop.has(path) ? tShop(path) : null;
+        });
+        const itemTitle = `${reward.quantity}× ${itemLabel}`;
+        return (
+          <span
+            key={reward.itemName}
+            title={itemTitle}
+            className="inline-flex items-center gap-1"
+          >
+            <Image
+              src={itemDisplayUrl(reward.itemName, "hd")}
+              alt={itemTitle}
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
+            />
+            <span className="font-mono text-[13px] font-semibold tabular-nums text-white">
+              ×{reward.quantity}
+            </span>
+          </span>
+        );
+      })}
       <span
         title={coinsTitle}
         className="inline-flex items-center gap-1 font-mono text-[13px] font-semibold tabular-nums text-white"

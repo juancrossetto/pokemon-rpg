@@ -103,14 +103,50 @@ export function topRarity(speciesIds: number[]): Rarity {
   }, "common");
 }
 
-/** Elige una especie respetando los pesos de rareza. */
-export function pickWeightedSpecies(speciesIds: number[]): number | null {
+export type SpeciesPickOptions = {
+  /** Especies ya vistas en esta zona: las faltantes reciben un boost moderado. */
+  seenSpeciesIds?: ReadonlySet<number>;
+  /** Últimos encuentros, del más reciente al más antiguo. */
+  recentSpeciesIds?: readonly number[];
+  /** Inyectable para probar la distribución sin depender de Math.random. */
+  random?: () => number;
+};
+
+const UNSEEN_SPECIES_MULTIPLIER = 2.5;
+const IMMEDIATE_REPEAT_MULTIPLIER = 0.12;
+const RECENT_REPEAT_MULTIPLIER = 0.45;
+
+/**
+ * Elige una especie respetando rareza, variedad reciente y progreso Pokédex.
+ * Los IDs repetidos en la tabla siguen sumando peso (son una decisión de
+ * balance), pero una especie recién encontrada deja lugar al resto del pool.
+ */
+export function pickWeightedSpecies(
+  speciesIds: number[],
+  options: SpeciesPickOptions = {},
+): number | null {
   if (speciesIds.length === 0) return null;
-  const total = speciesIds.reduce((sum, id) => sum + speciesWeight(id), 0);
-  let roll = Math.random() * total;
-  for (const id of speciesIds) {
-    roll -= speciesWeight(id);
-    if (roll <= 0) return id;
+  const uniqueSpeciesCount = new Set(speciesIds).size;
+  const latestSpeciesId = options.recentSpeciesIds?.[0];
+  const olderRecentSpecies = new Set(options.recentSpeciesIds?.slice(1, 3) ?? []);
+  const weighted = speciesIds.map((id) => {
+    let weight = speciesWeight(id);
+    if (options.seenSpeciesIds && !options.seenSpeciesIds.has(id)) {
+      weight *= UNSEEN_SPECIES_MULTIPLIER;
+    }
+    if (uniqueSpeciesCount > 1 && id === latestSpeciesId) {
+      weight *= IMMEDIATE_REPEAT_MULTIPLIER;
+    } else if (uniqueSpeciesCount > 1 && olderRecentSpecies.has(id)) {
+      weight *= RECENT_REPEAT_MULTIPLIER;
+    }
+    return { id, weight };
+  });
+
+  const total = weighted.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = (options.random ?? Math.random)() * total;
+  for (const entry of weighted) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.id;
   }
-  return speciesIds[speciesIds.length - 1];
+  return weighted[weighted.length - 1]?.id ?? null;
 }

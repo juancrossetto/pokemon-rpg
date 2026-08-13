@@ -32,11 +32,14 @@ const MOVE_TO_GYM_LOCATION: Record<string, string> = Object.fromEntries(
 
 const EXPLORE_ITEMS = new Set<string>(EVENT_ITEM_NAMES);
 
-/** Objetivos de zona (Viaje): balls / caramelos / revivir según el hito. */
+/** Objetivos de zona (Viaje): balls / curación / caramelos / revivir. */
 const ZONE_OBJECTIVE_ITEMS = new Set([
   "Poke Ball",
   "Great Ball",
   "Ultra Ball",
+  "Potion",
+  "Super Potion",
+  "Hyper Potion",
   "Rare Candy",
   "Revive",
   "Max Revive",

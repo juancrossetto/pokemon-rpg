@@ -254,15 +254,17 @@ export function HomeObjectivesRail({
                           ? ` · ${claimedLabel}`
                           : null}
                   </p>
-                  {(o.rewardCoins > 0 || o.rewardQty > 0) && (
+                  {(o.rewardCoins > 0 || o.rewardItems.length > 0) && (
                     <p className="objective-tip__reward">
                       {o.rewardCoins > 0
                         ? `${rewardCoinsLabel ?? "Coins"} +${o.rewardCoins}`
                         : null}
-                      {o.rewardCoins > 0 && o.rewardQty > 0 ? " · " : null}
-                      {o.rewardQty > 0
-                        ? `${o.rewardItem} ×${o.rewardQty}`
+                      {o.rewardCoins > 0 && o.rewardItems.length > 0
+                        ? " · "
                         : null}
+                      {o.rewardItems
+                        .map((reward) => `${reward.itemName} ×${reward.quantity}`)
+                        .join(" · ")}
                     </p>
                   )}
                 </div>

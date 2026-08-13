@@ -1,15 +1,15 @@
 /**
  * Variocolor (shiny).
  *
- * Odds de testing (2 jugadores): 1 entre 15. En producción oficial era
- * 1/4096; subir de nuevo cuando haya más población.
+ * Odds adaptadas al ritmo del juego: 1 entre 50 encuentros. Sigue siendo
+ * alcanzable en sesiones normales, pero deja de aparecer como algo habitual.
  *
  * La tirada ocurre **al generar el encuentro**, no al capturar: el jugador
  * tiene que poder ver que es variocolor mientras pelea, que es de donde sale
  * la emoción. El resultado viaja en `BattleSession.wildIsShiny` y se copia a
  * la `PokemonInstance` si lo atrapa.
  */
-export const SHINY_ODDS = 15;
+export const SHINY_ODDS = 50;
 
 /** Bounty inmediato al capturar un shiny (además de los logros). */
 export const SHINY_CATCH_REWARD = { coins: 500, gems: 1 } as const;

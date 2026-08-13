@@ -16,9 +16,8 @@ export const ZONE_OBJECTIVE_IDS: ZoneObjectiveId[] = ["stages", "pokedex", "trai
 
 export type ObjectiveReward = {
   coins: number;
-  /** Nombre exacto del ítem en la tabla `Item` (ver seed). */
-  itemName: string;
-  quantity: number;
+  /** Nombres exactos de los ítems en la tabla `Item` (ver seed). */
+  items: Array<{ itemName: string; quantity: number }>;
 };
 
 export type ZoneObjectiveState = {
@@ -48,10 +47,10 @@ export function isZoneStoryCleared(
 /**
  * Recompensa por objetivo, escalada al nivel de la zona.
  *
- * Los objetos siguen la lógica de los juegos: explorar del todo una ruta te
- * deja balls, registrar las especies de la zona (cruzártelas explorando acá)
- * paga con Caramelo Raro, y limpiar a los entrenadores deja Revivir / Max
- * Revivir para seguir la ruta. Todo sale del catálogo que ya siembra `items.ts`.
+ * Los objetos siguen la lógica de los juegos: completar un recorrido deja
+ * balls y repone pociones antes del siguiente tramo; registrar especies paga
+ * Caramelo Raro y limpiar entrenadores deja Revivir / Max Revivir. Todo sale
+ * del catálogo que ya siembra `items.ts`.
  */
 export function objectiveReward(
   zone: MapLocation,
@@ -65,19 +64,34 @@ export function objectiveReward(
   if (objective === "stages") {
     return {
       coins,
-      itemName: ["Poke Ball", "Great Ball", "Ultra Ball"][tier],
-      quantity: 5,
+      items: [
+        {
+          itemName: ["Poke Ball", "Great Ball", "Ultra Ball"][tier],
+          quantity: 5,
+        },
+        {
+          itemName: ["Potion", "Super Potion", "Hyper Potion"][tier],
+          quantity: [4, 3, 2][tier],
+        },
+      ],
     };
   }
   if (objective === "pokedex") {
     // El premio de completar Pokédex: sube un nivel entero.
-    return { coins, itemName: "Rare Candy", quantity: tier >= 2 ? 2 : 1 };
+    return {
+      coins,
+      items: [{ itemName: "Rare Candy", quantity: tier >= 2 ? 2 : 1 }],
+    };
   }
   // Entrenadores: tras pelear a rajatabla hace falta reanimación, no sólo cura.
   return {
     coins,
-    itemName: ["Revive", "Revive", "Max Revive"][tier],
-    quantity: tier === 2 ? 2 : 3,
+    items: [
+      {
+        itemName: ["Revive", "Revive", "Max Revive"][tier],
+        quantity: tier === 2 ? 2 : 3,
+      },
+    ],
   };
 }
 

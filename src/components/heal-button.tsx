@@ -18,7 +18,7 @@ function ChanseyIcon({ className = "h-5 w-5" }: { className?: string }) {
       alt=""
       width={28}
       height={28}
-      className={`shrink-0 object-contain ${className}`}
+      className={`heal-chip-chansey shrink-0 object-contain ${className}`}
       aria-hidden
     />
   );
@@ -75,6 +75,7 @@ export function HealButton({
   onHealFailed?: () => void;
 }) {
   const t = useTranslations("team");
+  const tShop = useTranslations("shop");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -128,7 +129,7 @@ export function HealButton({
             aria-label={t("autoHealHealthy")}
             className={`${btnSize} opacity-40`}
           >
-            <ChanseyIcon className="h-5 w-5 opacity-80" />
+            <ChanseyIcon className="h-7 w-7 opacity-80" />
           </button>
         </div>
       );
@@ -165,11 +166,27 @@ export function HealButton({
             type="button"
             disabled={pending || !canPay}
             onClick={() => run(true)}
-            title={`${rushTitle} · ${rushCost}`}
-            aria-label={t("healRush")}
-            className={`${btnSize} heal-chip-btn--rush${pending || !canPay ? " heal-chip-btn--disabled" : ""}`}
+            aria-label={`${t("healRush")}. ${rushTitle}. ${rushCost} ${tShop("coinsUnit")}`}
+            className={`${btnSize} group heal-chip-btn--rush${pending || !canPay ? " heal-chip-btn--disabled" : ""}`}
           >
-            <span className="material-symbols-outlined text-[17px]! leading-none">bolt</span>
+            <ChanseyIcon className="h-8 w-8" />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute right-0 bottom-[calc(100%+0.55rem)] z-[80] hidden w-max max-w-[13rem] items-center gap-2 rounded-lg border border-white/12 bg-[#15171c] px-2.5 py-2 text-left text-[10px] leading-tight text-white/65 shadow-[0_8px_24px_rgba(0,0,0,0.65)] group-hover:flex group-focus-visible:flex"
+            >
+              <span>{rushTitle}</span>
+              <span className="inline-flex shrink-0 items-center gap-1 font-mono font-bold tabular-nums text-white">
+                <Image
+                  src="/items/hd/poke-coin.png"
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="h-4 w-4 object-contain"
+                />
+                {rushCost}
+              </span>
+              <span className="absolute top-full right-3 h-0 w-0 border-x-[5px] border-t-[5px] border-x-transparent border-t-[#15171c]" />
+            </span>
           </button>
         ) : (
           <button
@@ -180,7 +197,7 @@ export function HealButton({
             aria-label={t("autoHeal")}
             className={`${btnSize} heal-chip-btn--ready${pending || !freeReady ? " heal-chip-btn--disabled" : ""}`}
           >
-            <ChanseyIcon className="h-[22px] w-[22px]" />
+            <ChanseyIcon className="h-8 w-8" />
           </button>
         )}
         {error ? (
