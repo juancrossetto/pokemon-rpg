@@ -3289,6 +3289,12 @@
       "body": "Toque no Centro Pokémon no Início para curar o time. No começo é de graça.",
       "cta": "Entendi"
     },
+    "marketTutorial": {
+      "eyebrow": "Comércio",
+      "title": "Duas formas de negociar",
+      "body": "A loja vende itens por moedas; no mercado você negocia com outros treinadores. Publicar cobra uma taxa — suas insígnias a reduzem — e cada venda paga comissão.",
+      "cta": "Entendi"
+    },
     "youAreHere": "Você está aqui",
     "stretch": "Trecho",
     "stretchProgress": "{done}/{total} trechos",

@@ -3289,6 +3289,12 @@
       "body": "Tocá el Centro Pokémon en Inicio para curar al equipo. Al principio es gratis.",
       "cta": "Entendido"
     },
+    "marketTutorial": {
+      "eyebrow": "Comercio",
+      "title": "Dos formas de comerciar",
+      "body": "La tienda vende objetos por monedas; en el mercado comerciás con otros entrenadores. Publicar cobra una tarifa —tus medallas la abaratan— y cada venta paga comisión.",
+      "cta": "Entendido"
+    },
     "youAreHere": "Estás acá",
     "stretch": "Tramo",
     "stretchProgress": "{done}/{total} tramos",

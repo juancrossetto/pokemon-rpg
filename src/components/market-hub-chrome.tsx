@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { TradeHelp } from "@/components/trade-help";
+import { MarketTutorial } from "@/components/journey-guidance";
 
 /**
  * Encabezado del mercado.
@@ -36,6 +37,10 @@ export async function MarketHubHero({
           className="absolute inset-0 bg-gradient-to-t from-[#070a12]/70 via-transparent to-black/10 sm:from-[#070a12]/80 sm:to-black/20"
         />
       </div>
+
+      {/* Primera visita: la misma guía que abre la `i`, sola. Vive acá y no en
+          la page para quedar junto al botón que la reabre. */}
+      <MarketTutorial />
 
       <div className="absolute right-2 top-2 z-20 sm:right-4 sm:top-4">
         <TradeHelp />

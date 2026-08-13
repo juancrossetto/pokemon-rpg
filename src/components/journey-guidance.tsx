@@ -327,11 +327,118 @@ export function JourneyOnboarding({
 }
 
 /**
- * Primera vez que hay un KO en el equipo: Joy al costado de la card,
- * igual que las otras guías, y apunta al Centro Pokémon del home.
+ * Guía de primera vez presentada por un NPC: retrato al costado de la card,
+ * como el resto de las guías. Se muestra una sola vez por `storageKey`.
+ *
+ * La comparte la enfermera (KO en el equipo) y la agente del Comercio; el
+ * bloque estaba escrito a mano para Joy y duplicarlo dejaba dos copias del
+ * mismo layout, portal y bloqueo de scroll que después se desincronizan.
  */
-export function HealTutorial({ active }: { active: boolean }) {
-  const t = useTranslations("ux");
+type NpcGuideLabels = { eyebrow: string; title: string; body: string; cta: string };
+
+/**
+ * La card en sí, controlada desde afuera. Separada del disparador porque la
+ * misma guía entra por dos lados: sola en la primera visita y a pedido desde
+ * el botón `i` del hub. Antes eran dos popups distintos con el mismo contenido.
+ */
+function NpcGuideCard({
+  titleId,
+  imageSrc,
+  labels,
+  bullets,
+  handbookChapter,
+  onClose,
+}: {
+  titleId: string;
+  imageSrc: string;
+  labels: NpcGuideLabels;
+  bullets?: string[];
+  handbookChapter?: HandbookChapterId;
+  onClose: () => void;
+}) {
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      className="fixed inset-0 z-[100] flex items-end justify-center px-3 pt-[max(1rem,env(safe-area-inset-top))] pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.5rem)] sm:items-center sm:p-4 xl:pb-4"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+        aria-label={labels.cta}
+        onClick={onClose}
+      />
+
+      <div className="heal-tutorial relative z-10 flex w-full max-w-md items-end justify-center">
+        <Image
+          src={imageSrc}
+          alt=""
+          width={240}
+          height={340}
+          className="heal-tutorial__joy pointer-events-none relative z-20 -mb-1 h-[min(38vh,13.75rem)] w-auto max-w-[42%] shrink-0 object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)] sm:h-[16rem] sm:max-w-none"
+          unoptimized
+        />
+        <div className="relative z-10 -ml-7 mb-3 min-w-0 flex-1 overflow-hidden rounded-2xl border border-white/12 bg-[#0c1018]/96 p-4 shadow-[0_20px_48px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:-ml-8">
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
+            {labels.eyebrow}
+          </p>
+          <h2 id={titleId} className="mt-1 text-[15px] font-semibold leading-snug text-white">
+            {labels.title}
+          </h2>
+          <p className="mt-1.5 text-[13px] leading-snug text-white/60">{labels.body}</p>
+
+          {bullets && bullets.length > 0 ? (
+            <ul className="mt-2.5 space-y-1.5 text-[12px] leading-snug text-white/60">
+              {bullets.map((bullet) => (
+                <li key={bullet} className="flex gap-1.5">
+                  <span className="mt-px text-pokeball-red">•</span>
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {handbookChapter ? (
+            <div className="mt-3 border-t border-white/8 pt-3">
+              <HandbookLink chapter={handbookChapter} />
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="ui-btn-primary mt-4 w-full px-4 py-2.5 text-[13px] font-bold"
+          >
+            {labels.cta}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function NpcTutorial({
+  active,
+  storageKey,
+  /** Guía que tiene que haberse visto antes (evita pisar el onboarding). */
+  requires,
+  imageSrc,
+  titleId,
+  labels,
+  bullets,
+  handbookChapter,
+}: {
+  active: boolean;
+  storageKey: FirstVisitKey;
+  requires?: FirstVisitKey;
+  imageSrc: string;
+  titleId: string;
+  labels: NpcGuideLabels;
+  bullets?: string[];
+  handbookChapter?: HandbookChapterId;
+}) {
   const [visible, setVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -342,18 +449,18 @@ export function HealTutorial({ active }: { active: boolean }) {
 
   useEffect(() => {
     if (!active || !mounted) return;
-    if (hasSeen("coach-heal")) return;
-    if (!hasSeen("journey-onboarding")) return;
+    if (hasSeen(storageKey)) return;
+    if (requires && !hasSeen(requires)) return;
     const raf = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(raf);
-  }, [active, mounted]);
+  }, [active, mounted, storageKey, requires]);
 
   useEffect(() => {
     if (!visible) return;
     const release = lockBodyScroll();
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        markSeen("coach-heal");
+        markSeen(storageKey);
         setVisible(false);
       }
     }
@@ -362,63 +469,144 @@ export function HealTutorial({ active }: { active: boolean }) {
       document.removeEventListener("keydown", onKey);
       release();
     };
-  }, [visible]);
+  }, [visible, storageKey]);
 
   function dismiss() {
-    markSeen("coach-heal");
+    markSeen(storageKey);
     setVisible(false);
   }
 
   if (!mounted || !visible) return null;
 
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="heal-tutorial-title"
-      className="fixed inset-0 z-[100] flex items-end justify-center px-3 pt-[max(1rem,env(safe-area-inset-top))] pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.5rem)] sm:items-center sm:p-4 xl:pb-4"
-    >
+  return (
+    <NpcGuideCard
+      titleId={titleId}
+      imageSrc={imageSrc}
+      labels={labels}
+      bullets={bullets}
+      handbookChapter={handbookChapter}
+      onClose={dismiss}
+    />
+  );
+}
+
+/**
+ * Botón `i` que reabre a pedido la misma guía del NPC. Comparte card con la de
+ * primera visita: si el jugador la cerró y después quiere repasar cómo va la
+ * cosa, ve exactamente lo mismo y no un popup distinto con otro tono.
+ */
+export function NpcGuideButton({
+  imageSrc,
+  labels,
+  bullets,
+  handbookChapter,
+  className,
+}: {
+  imageSrc: string;
+  labels: NpcGuideLabels;
+  bullets?: string[];
+  handbookChapter?: HandbookChapterId;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    const release = lockBodyScroll();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      release();
+    };
+  }, [open]);
+
+  return (
+    <>
       <button
         type="button"
-        className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
-        aria-label={t("healTutorial.cta")}
-        onClick={dismiss}
-      />
-
-      <div className="heal-tutorial relative z-10 flex w-full max-w-md items-end justify-center">
-        <Image
-          src="/tutorial/nurse-joy.png"
-          alt=""
-          width={240}
-          height={340}
-          className="heal-tutorial__joy pointer-events-none relative z-20 -mb-1 h-[min(38vh,13.75rem)] w-auto max-w-[42%] shrink-0 object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)] sm:h-[16rem] sm:max-w-none"
-          unoptimized
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={labels.title}
+        className={
+          className ??
+          "flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white/85 backdrop-blur-md transition hover:border-white/35 hover:bg-black/60 hover:text-white"
+        }
+      >
+        <span className="material-symbols-outlined text-[16px]!">info</span>
+      </button>
+      {open ? (
+        <NpcGuideCard
+          titleId={titleId}
+          imageSrc={imageSrc}
+          labels={labels}
+          bullets={bullets}
+          handbookChapter={handbookChapter}
+          onClose={() => setOpen(false)}
         />
-        <div className="relative z-10 -ml-7 mb-3 min-w-0 flex-1 overflow-hidden rounded-2xl border border-white/12 bg-[#0c1018]/96 p-4 shadow-[0_20px_48px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:-ml-8">
-          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-pokeball-red">
-            {t("healTutorial.eyebrow")}
-          </p>
-          <h2
-            id="heal-tutorial-title"
-            className="mt-1 text-[15px] font-semibold leading-snug text-white"
-          >
-            {t("healTutorial.title")}
-          </h2>
-          <p className="mt-1.5 text-[13px] leading-snug text-white/60">
-            {t("healTutorial.body")}
-          </p>
-          <button
-            type="button"
-            onClick={dismiss}
-            className="ui-btn-primary mt-4 w-full px-4 py-2.5 text-[13px] font-bold"
-          >
-            {t("healTutorial.cta")}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+      ) : null}
+    </>
   );
+}
+
+/**
+ * Primera vez que hay un KO en el equipo: Joy al costado de la card,
+ * igual que las otras guías, y apunta al Centro Pokémon del home.
+ */
+export function HealTutorial({ active }: { active: boolean }) {
+  const t = useTranslations("ux");
+  return (
+    <NpcTutorial
+      active={active}
+      storageKey="coach-heal"
+      requires="journey-onboarding"
+      imageSrc="/tutorial/nurse-joy.png"
+      titleId="heal-tutorial-title"
+      labels={{
+        eyebrow: t("healTutorial.eyebrow"),
+        title: t("healTutorial.title"),
+        body: t("healTutorial.body"),
+        cta: t("healTutorial.cta"),
+      }}
+    />
+  );
+}
+
+/**
+ * Primera visita al Comercio: la agente explica que el hub tiene dos lados
+ * —tienda oficial y mercado entre jugadores— antes de que el jugador se
+ * encuentre con dos pestañas sin saber en qué se diferencian.
+ */
+export function MarketTutorial() {
+  const guide = useMarketGuide();
+  return (
+    <NpcTutorial
+      active
+      storageKey="coach-market"
+      titleId="market-tutorial-title"
+      {...guide}
+    />
+  );
+}
+
+/** Contenido de la guía del Comercio — lo comparten la card y el botón `i`. */
+export function useMarketGuide() {
+  const t = useTranslations("ux");
+  return {
+    imageSrc: "/tutorial/agent-mara.png",
+    labels: {
+      eyebrow: t("marketTutorial.eyebrow"),
+      title: t("marketTutorial.title"),
+      body: t("marketTutorial.body"),
+      cta: t("marketTutorial.cta"),
+    },
+    bullets: (t.raw("help.market") as string[]) ?? [],
+    handbookChapter: "economy" as HandbookChapterId,
+  };
 }
 
 /** Coach mark puntual anclado a un hotspot. */

@@ -1,17 +1,15 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { HubHelpButton } from "@/components/journey-guidance";
+import { NpcGuideButton, useMarketGuide } from "@/components/journey-guidance";
 
 /**
  * Ayuda del comercio: sólo un botón `i` (sin fila).
- * Al tocarlo abre un popup con los tips del hub.
+ *
+ * Abre la misma card que la agente muestra en la primera visita, en vez del
+ * popup genérico de tips: el jugador reconoce la guía que ya vio y no se
+ * encuentra con dos explicaciones distintas del mismo hub.
  */
 export function TradeHelp() {
-  const t = useTranslations("ux");
-  const bullets = (t.raw("help.market") as string[]) ?? [];
-
-  return (
-    <HubHelpButton bullets={bullets} handbookChapter="economy" roleKey="market" />
-  );
+  const guide = useMarketGuide();
+  return <NpcGuideButton {...guide} />;
 }

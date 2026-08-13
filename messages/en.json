@@ -3289,6 +3289,12 @@
       "body": "Tap the Pokémon Center on Home to heal your team. It's free at the start.",
       "cta": "Got it"
     },
+    "marketTutorial": {
+      "eyebrow": "Trade hub",
+      "title": "Two ways to trade",
+      "body": "The shop sells items for coins; the market is where you trade with other trainers. Listing charges a fee — your badges cut it — and every sale pays commission.",
+      "cta": "Got it"
+    },
     "youAreHere": "You are here",
     "stretch": "Stretch",
     "stretchProgress": "{done}/{total} stretches",

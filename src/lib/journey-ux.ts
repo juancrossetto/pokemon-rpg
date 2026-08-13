@@ -34,6 +34,7 @@ export type FirstVisitKey =
   | "coach-gym"
   | "coach-team-slot"
   | "coach-heal"
+  | "coach-market"
   | "hub-help-campaign"
   | "hub-help-battle"
   | "hub-help-market";
