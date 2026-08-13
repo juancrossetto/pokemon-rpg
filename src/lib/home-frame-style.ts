@@ -20,6 +20,12 @@ export function homeFrameSectionStyle(frame: HomeFrameOption): CSSProperties {
  * El ancho del borde queda en CSS con media queries (usa `--hi-frame-weight`).
  */
 export function homeFrameMarcoStyle(frame: HomeFrameOption): CSSProperties {
+  /*
+   * `stretch`, no `round`/`repeat`: el tramo de borde de estos marcos es un
+   * adorno único (una voluta), no un patrón. Al repetirlo aparecen varias
+   * volutas iguales a lo largo del lado. Estirado se lee como un solo trazo,
+   * que es como está dibujado el arte.
+   */
   const borderImage = `url("${frame.src}") ${frame.slice} stretch`;
   return {
     borderStyle: "solid",

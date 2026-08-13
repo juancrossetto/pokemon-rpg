@@ -13106,6 +13106,29 @@ html.boot-splash-done .boot-splash,
   --hi-frame: calc(26px * var(--hi-frame-weight, 1));
 }
 
+/*
+  Va ANTES de las media queries: estaba escrito después y, con la misma
+  especificidad, su `border-width` de 26px le ganaba a los overrides de 640 y
+  1280. El marco se pintaba siempre al ancho de mobile, así que en desktop el
+  trozo de esquina se comprimía 6× y el trazo salía deformado.
+*/
+.home-identity__marco {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  box-sizing: border-box;
+  /* Ancho del borde: media queries + peso del marco. No usar `var(--hi-frame)`
+     acá — en iOS a veces no llega al `border-image` del hijo. */
+  border-style: solid;
+  border-color: transparent;
+  border-width: calc(26px * var(--hi-frame-weight, 1));
+  /* `border-image` completo va inline (Safari iOS ignora var() en slice/source). */
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 @media (min-width: 640px) {
   .home-identity--framed {
     --hi-frame: calc(38px * var(--hi-frame-weight, 1));
@@ -13124,23 +13147,6 @@ html.boot-splash-done .boot-splash,
   .home-identity__marco {
     border-width: calc(44px * var(--hi-frame-weight, 1));
   }
-}
-
-.home-identity__marco {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  z-index: 6;
-  box-sizing: border-box;
-  /* Ancho del borde: media queries + peso del marco. No usar `var(--hi-frame)`
-     acá — en iOS a veces no llega al `border-image` del hijo. */
-  border-style: solid;
-  border-color: transparent;
-  border-width: calc(26px * var(--hi-frame-weight, 1));
-  /* `border-image` completo va inline (Safari iOS ignora var() en slice/source). */
-  transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 
 /*
