@@ -4,7 +4,6 @@ import {
   RAID_BOSS_HP_AT_FIRST_STEP,
   raidBossBattleHp,
   raidBossForWeek,
-  raidNextBossForWeek,
   raidWeekIndex,
 } from "@/lib/raids/config";
 import { raidDamageDealt } from "@/lib/raids/settle";
@@ -20,10 +19,9 @@ describe("escalera de jefes", () => {
     for (const week of ["2026-W01", "2026-W07", "2026-W33", "2026-W52"]) {
       const index = raidWeekIndex(week);
       const current = raidBossForWeek(week);
-      const next = raidNextBossForWeek(week);
       const expected = RAID_BOSSES[(index + 1) % RAID_BOSSES.length];
-      expect(next).toBe(expected);
-      expect(next).not.toBe(current);
+      expect(expected).not.toBe(current);
+      expect(RAID_BOSSES[index % RAID_BOSSES.length]).toBe(current);
     }
   });
 

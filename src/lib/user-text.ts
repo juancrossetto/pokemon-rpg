@@ -100,11 +100,3 @@ export function sanitizeUserTextOrNull(
   const value = sanitizeUserText(raw, options);
   return value.length > 0 ? value : null;
 }
-
-/**
- * ¿Queda algo legible? Un nombre que después de limpiar queda vacío tiene que
- * rechazarse, no guardarse en blanco.
- */
-export function hasVisibleText(raw: string): boolean {
-  return sanitizeUserText(raw, { max: 1 }).length > 0;
-}

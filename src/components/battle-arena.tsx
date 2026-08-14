@@ -1746,6 +1746,37 @@ export function BattleArena({
     // mandar a /run y cortar el resumen. SoftLeave hace el push/refresh.
   }
 
+  /**
+   * Cierre de incursión que llega desde mochila o cambio.
+   *
+   * Curar y cambiar gastan turno, así que el intento puede terminar sin que el
+   * jugador haya atacado. Esos caminos no pasan por `battle-move`, que es
+   * donde vive el resto del cierre, y devuelven sólo `raidTurnsLeft`/`raidEnded`.
+   * Devuelve true si ya cerró, para que el caller no siga con su propio final.
+   */
+  async function settleRaidFromSideAction(result: {
+    raidTurnsLeft?: number | null;
+    raidEnded?: boolean;
+    outcome: "continues" | "lost" | "fainted";
+  }): Promise<boolean> {
+    if (!isRaidBattle) return false;
+    if (result.raidTurnsLeft != null) setRaidTurns(result.raidTurnsLeft);
+    if (!result.raidEnded) return false;
+
+    const teamWiped = result.outcome === "lost";
+    setRaidSummary({
+      damage: Math.max(0, wildMaxHp - wildHpRef.current),
+      bossDefeated: false,
+      teamWiped,
+    });
+    if (teamWiped) {
+      await playFaintAndFinish("player", "raid_ended");
+    } else {
+      setOutcome("raid_ended");
+    }
+    return true;
+  }
+
   async function playFaintThenForceSwitch() {
     appendLog(tLog("fainted", { name: activePlayer.name }), "player");
     playBattleSfx("faint");
@@ -2692,6 +2723,8 @@ export function BattleArena({
     if (result.counterAttack) {
       await playEvent(result.counterAttack);
     }
+    // Sin cierre de incursión acá: `attempt-capture` rechaza las incursiones,
+    // así que este camino nunca corre con un jefe en cancha.
     if (result.outcome === "lost") {
       await playFaintAndFinish("player", "lost");
     } else if (result.outcome === "fainted") {
@@ -2789,6 +2822,10 @@ export function BattleArena({
 
     if (result.counterAttack) {
       await playEvent(result.counterAttack);
+    }
+    if (await settleRaidFromSideAction(result)) {
+      setIsAnimating(false);
+      return;
     }
     if (result.outcome === "lost") {
       await playFaintAndFinish("player", "lost");
@@ -2888,6 +2925,10 @@ export function BattleArena({
 
     if (result.counterAttack) {
       await playEvent(result.counterAttack);
+    }
+    if (await settleRaidFromSideAction(result)) {
+      setIsAnimating(false);
+      return;
     }
     if (result.outcome === "lost") {
       await playFaintAndFinish("player", "lost");
@@ -3002,6 +3043,10 @@ export function BattleArena({
 
     if (result.counterAttack) {
       await playEvent(result.counterAttack);
+    }
+    if (await settleRaidFromSideAction(result)) {
+      setIsAnimating(false);
+      return;
     }
     if (result.outcome === "lost") {
       await playFaintAndFinish("player", "lost");

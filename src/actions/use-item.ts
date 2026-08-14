@@ -26,6 +26,12 @@ export interface UseItemResult {
   revivedTargetId?: string;
   counterAttack: TurnEvent | null;
   outcome: "continues" | "lost" | "fainted";
+  /**
+   * Incursión: turnos que quedan tras gastar éste, y si el intento se cerró.
+   * Curar cuesta turno igual que atacar — ver `finalizeBattleItemTurn`.
+   */
+  raidTurnsLeft?: number | null;
+  raidEnded?: boolean;
 }
 
 export async function applyBattleItem(
@@ -163,6 +169,7 @@ async function finalizeBattleItemTurn(args: {
     log: string[];
     /** Incursión: hace falta la semana y el HP del jefe para acreditar el daño. */
     raidWeekKey?: string | null;
+    raidTurnsLeft?: number | null;
     wildMaxHp: number;
   };
   userId: string;
@@ -204,13 +211,24 @@ async function finalizeBattleItemTurn(args: {
       (await hasHealthyBackup(userId, activeInstanceId)));
   const lostBattle = fainted && !mustSwitch;
   const finalLog = [...battle.log, `item:${itemName}`].slice(-MAX_LOG_LINES);
-  const raidSettle = battle.raidWeekKey
-    ? raidSettleStatement(prisma, {
-        userId,
-        weekKey: battle.raidWeekKey,
-        damage: raidDamageDealt(battle.wildMaxHp, counter.wildHp),
-      })
-    : null;
+  /*
+    En incursión, curar **gasta turno**. Sin esto el jugador con pociones era
+    inmortal durante el intento —el contraataque del jefe no podía matarlo y
+    los diez turnos quedaban de daño puro, sin riesgo—, así que no había nada
+    que decidir. Ahora curar cuesta daño: es el trueque que le faltaba al modo.
+  */
+  const raidTurnsLeft =
+    battle.raidWeekKey != null ? Math.max(0, (battle.raidTurnsLeft ?? 0) - 1) : null;
+  const raidEnded =
+    battle.raidWeekKey != null && (raidTurnsLeft === 0 || lostBattle);
+  const raidSettle =
+    battle.raidWeekKey && raidEnded
+      ? raidSettleStatement(prisma, {
+          userId,
+          weekKey: battle.raidWeekKey,
+          damage: raidDamageDealt(battle.wildMaxHp, counter.wildHp),
+        })
+      : null;
 
   // El objeto se descuenta con guarda de cantidad. La lectura de
   // `itemQuantity` es de antes del contraataque, así que sin la guarda dos
@@ -241,23 +259,19 @@ async function finalizeBattleItemTurn(args: {
     }),
     prisma.battleSession.update({
       where: { id: battle.id },
-      data: lostBattle
-        ? {
-            status: "LOST",
-            log: finalLog,
-            turnDeadlineAt: null,
-            ...counter.statePatch,
-          }
-        : {
-            log: finalLog,
-            turnDeadlineAt: turnDeadlineForBattle(battle),
-            ...counter.statePatch,
-          },
+      data: {
+        log: finalLog,
+        ...counter.statePatch,
+        ...(raidTurnsLeft != null ? { raidTurnsLeft } : {}),
+        ...(lostBattle || raidEnded
+          ? { status: "LOST" as const, turnDeadlineAt: null }
+          : { turnDeadlineAt: turnDeadlineForBattle(battle) }),
+      },
     }),
     // Igual que en el cambio: si el equipo cae durante el contraataque de una
     // incursión, el intento se cierra acá y el daño se acredita en la misma
     // transacción. `BattleLog` se saltea (no es una derrota PvE de ranking).
-    ...(lostBattle && raidSettle ? [raidSettle] : []),
+    ...(raidSettle ? [raidSettle] : []),
     ...(lostBattle && !battle.raidWeekKey
       ? [
           prisma.battleLog.create({
@@ -308,5 +322,7 @@ async function finalizeBattleItemTurn(args: {
     revivedTargetId,
     counterAttack: counter.counterAttack,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
+    raidTurnsLeft,
+    raidEnded,
   };
 }

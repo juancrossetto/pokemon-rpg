@@ -41,6 +41,9 @@ export interface SwitchPokemonResult {
   };
   counterAttack: TurnEvent | null;
   outcome: "continues" | "lost" | "fainted";
+  /** Incursión: turnos restantes tras el cambio, y si el intento se cerró. */
+  raidTurnsLeft?: number | null;
+  raidEnded?: boolean;
   turnDeadlineAt?: string | null;
 }
 
@@ -199,13 +202,19 @@ export async function switchPokemon(
   const mustSwitch = fainted && (await hasHealthyBackup(userId, newInstance.id));
   const lostBattle = fainted && !mustSwitch;
   const finalLog = [...battle.log, `switch:${newName}`].slice(-MAX_LOG_LINES);
-  const raidSettle = battle.raidWeekKey
-    ? raidSettleStatement(prisma, {
-        userId,
-        weekKey: battle.raidWeekKey,
-        damage: raidDamageDealt(battle.wildMaxHp, counter.wildHp),
-      })
-    : null;
+  // Igual que curar: cambiar gasta turno de incursión. Si no, cambiar sería
+  // una forma gratis de esquivar el contraataque del jefe.
+  const raidTurnsLeft =
+    battle.raidWeekKey != null ? Math.max(0, (battle.raidTurnsLeft ?? 0) - 1) : null;
+  const raidEnded = battle.raidWeekKey != null && (raidTurnsLeft === 0 || lostBattle);
+  const raidSettle =
+    battle.raidWeekKey && raidEnded
+      ? raidSettleStatement(prisma, {
+          userId,
+          weekKey: battle.raidWeekKey,
+          damage: raidDamageDealt(battle.wildMaxHp, counter.wildHp),
+        })
+      : null;
 
   await prisma.$transaction([
     // Persistir HP del que sale (por si el último turno no flusheó) y del que entra.
@@ -223,7 +232,8 @@ export async function switchPokemon(
         ...clearPlayerStatus,
         ...counter.statePatch,
         // el statePatch puede pisar playerStatus con el del counter (sobre el que entró)
-        ...(lostBattle
+        ...(raidTurnsLeft != null ? { raidTurnsLeft } : {}),
+        ...(lostBattle || raidEnded
           ? { status: "LOST" as const, turnDeadlineAt: null }
           : { turnDeadlineAt: turnDeadlineForBattle(battle) }),
       },
@@ -231,7 +241,7 @@ export async function switchPokemon(
     // El equipo puede caer durante el contraataque del cambio: si eso pasa en
     // una incursión, el intento se cierra acá y el daño tiene que acreditarse
     // en la misma transacción o se pierde.
-    ...(lostBattle && raidSettle ? [raidSettle] : []),
+    ...(raidSettle ? [raidSettle] : []),
     // La incursión no escribe historial: `BattleLog` alimenta el ranking PvE y
     // un jefe comunitario no es una derrota de ruta.
     ...(lostBattle && !battle.raidWeekKey
@@ -278,6 +288,8 @@ export async function switchPokemon(
     },
     counterAttack: counter.counterAttack,
     outcome: lostBattle ? "lost" : mustSwitch ? "fainted" : "continues",
+    raidTurnsLeft,
+    raidEnded,
     turnDeadlineAt: lostBattle ? null : turnDeadlineForBattle(battle)?.toISOString() ?? null,
   };
 }

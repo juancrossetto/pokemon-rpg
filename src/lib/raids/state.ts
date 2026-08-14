@@ -51,8 +51,6 @@ export async function loadRaidHomeCard(userId: string) {
   };
 }
 
-export type RaidHomeCardData = Awaited<ReturnType<typeof loadRaidHomeCard>>;
-
 export async function loadWeeklyRaid(userId: string) {
   const now = serverNow();
   const key = weekKey(now);

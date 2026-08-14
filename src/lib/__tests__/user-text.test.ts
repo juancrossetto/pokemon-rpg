@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  hasVisibleText,
-  sanitizeUserText,
-  sanitizeUserTextOrNull,
-} from "@/lib/user-text";
+import { sanitizeUserText, sanitizeUserTextOrNull } from "@/lib/user-text";
 
 const ZWSP = "\u200B";
 const RLO = "\u202E";
@@ -76,13 +72,5 @@ describe("sanitizeUserTextOrNull", () => {
   it("null cuando no queda nada visible", () => {
     expect(sanitizeUserTextOrNull(ZWSP + "  ", { max: 20 })).toBeNull();
     expect(sanitizeUserTextOrNull("Rex", { max: 20 })).toBe("Rex");
-  });
-});
-
-describe("hasVisibleText", () => {
-  it("distingue vacío real de vacío disfrazado", () => {
-    expect(hasVisibleText("Rex")).toBe(true);
-    expect(hasVisibleText("   ")).toBe(false);
-    expect(hasVisibleText(ZWSP + BOM)).toBe(false);
   });
 });

@@ -131,9 +131,3 @@ export function raidBossForWeek(key: string): RaidBoss {
   const index = raidWeekIndex(key);
   return RAID_BOSSES[((index % RAID_BOSSES.length) + RAID_BOSSES.length) % RAID_BOSSES.length]!;
 }
-
-/** El siguiente de la escalera — la card lo anuncia como "la próxima semana". */
-export function raidNextBossForWeek(key: string): RaidBoss {
-  const index = raidWeekIndex(key) + 1;
-  return RAID_BOSSES[((index % RAID_BOSSES.length) + RAID_BOSSES.length) % RAID_BOSSES.length]!;
-}
