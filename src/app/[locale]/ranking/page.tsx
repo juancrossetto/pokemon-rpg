@@ -5,12 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { RankingCategorySelect } from "@/components/ranking/ranking-category-select";
 import { RankingScopeFilter } from "@/components/ranking/ranking-scope-filter";
 import { RankingBoardView } from "@/components/ranking/ranking-board-view";
-import { RankedComingSoon } from "@/components/ranking/ranking-empty-state";
+import { RankedSeasonBoard } from "@/components/ranking/ranked-season-board";
 import {
   listActiveRankingCountryCodes,
   loadCombatPowerBoard,
   loadPvpBoard,
+  loadRankedSeasonBoard,
 } from "@/lib/ranking-boards";
+import { nextSeasonReset } from "@/lib/pvp/seasons";
+import { PVP_TIERS } from "@/lib/pvp/tiers";
 import {
   PVP_MIN_MATCHES,
   pickRankingCategory,
@@ -124,16 +127,58 @@ export default async function RankingPage({
             />
           )}
           {category === "ranked" && (
-            <RankedComingSoon
-              eyebrow={t("ranked.eyebrow")}
-              title={t("ranked.title")}
-              body={t("ranked.body")}
-              detail={t("ranked.detail")}
-            />
+            <RankedBoard userId={userId} page={page} />
           )}
         </main>
       </div>
     </div>
+  );
+}
+
+async function RankedBoard({ userId, page }: { userId: string | null; page: number }) {
+  const [t, pvpT, data] = await Promise.all([
+    getTranslations("ranking"),
+    getTranslations("pvp"),
+    loadRankedSeasonBoard(userId),
+  ]);
+  const tierLabels = Object.fromEntries(
+    PVP_TIERS.map((tier) => [tier.id, pvpT(`tiers.${tier.id}`)]),
+  ) as Record<(typeof PVP_TIERS)[number]["id"], string>;
+
+  return (
+    <RankedSeasonBoard
+      data={data}
+      page={page}
+      endsAtIso={nextSeasonReset().toISOString()}
+      tierLabels={tierLabels}
+      labels={{
+        eyebrow: t("ranked.eyebrow"),
+        seasonLabel: t("ranked.season", { key: data.seasonKey }),
+        endsLabel: t("ranked.ends"),
+        live: t("ranked.live"),
+        liveStatus: t("ranked.liveStatus"),
+        yourStanding: t("ranked.yourStanding"),
+        unrankedTitle: t("ranked.unrankedTitle"),
+        unrankedBody: t("ranked.unrankedBody"),
+        playRanked: t("ranked.playRanked"),
+        position: t("ranked.columns.position"),
+        trainer: t("ranked.columns.trainer"),
+        league: t("ranked.columns.league"),
+        record: t("ranked.columns.record"),
+        rating: t("ranked.columns.rating"),
+        winsShort: t("ranked.winsShort"),
+        lossesShort: t("ranked.lossesShort"),
+        you: t("you"),
+        emptyTitle: t("ranked.emptyTitle"),
+        emptyBody: t("ranked.emptyBody"),
+        championsEyebrow: t("ranked.championsEyebrow"),
+        championsTitle: t("ranked.championsTitle"),
+        championsEmpty: t("ranked.championsEmpty"),
+        prev: t("pagination.prev"),
+        next: t("pagination.next"),
+        pageOf: (currentPage, total) => t("pagination.pageOf", { page: currentPage, total }),
+      }}
+    />
   );
 }
 
@@ -170,6 +215,14 @@ async function CombatPowerBoard({
         next: t("pagination.next"),
         pageOf: (p, total) => t("pagination.pageOf", { page: p, total }),
         metricLabel: t("metric.cpLabel"),
+        position: t("table.position"),
+        trainer: t("table.trainer"),
+        team: t("table.team"),
+        league: t("table.league"),
+        record: t("table.record"),
+        medals: t("table.medals"),
+        winsShort: t("ranked.winsShort"),
+        lossesShort: t("ranked.lossesShort"),
       }}
     />
   );
@@ -186,8 +239,14 @@ async function PvpBoardView({
   scope: RankingScope;
   page: number;
 }) {
-  const t = await getTranslations("ranking");
-  const entries = await loadPvpBoard(country, userId);
+  const [t, pvpT, entries] = await Promise.all([
+    getTranslations("ranking"),
+    getTranslations("pvp"),
+    loadPvpBoard(country, userId),
+  ]);
+  const tierLabels = Object.fromEntries(
+    PVP_TIERS.map((tier) => [tier.id, pvpT(`tiers.${tier.id}`)]),
+  ) as Record<(typeof PVP_TIERS)[number]["id"], string>;
 
   return (
     <RankingBoardView
@@ -196,6 +255,7 @@ async function PvpBoardView({
       countryCode={country || undefined}
       page={page}
       entries={entries}
+      tierLabels={tierLabels}
       empty={entries.length === 0}
       formatPrimary={(e) => String(e.rating ?? 0)}
       formatSecondary={(e) =>
@@ -219,6 +279,14 @@ async function PvpBoardView({
         next: t("pagination.next"),
         pageOf: (p, total) => t("pagination.pageOf", { page: p, total }),
         metricLabel: t("metric.eloLabel"),
+        position: t("table.position"),
+        trainer: t("table.trainer"),
+        team: t("table.team"),
+        league: t("table.league"),
+        record: t("table.record"),
+        medals: t("table.medals"),
+        winsShort: t("ranked.winsShort"),
+        lossesShort: t("ranked.lossesShort"),
       }}
     />
   );

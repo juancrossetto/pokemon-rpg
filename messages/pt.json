@@ -1826,7 +1826,7 @@
       },
       "ranked": {
         "title": "Classificatória",
-        "blurb": "Modo por temporadas — em breve."
+        "blurb": "Ranking competitivo da temporada atual."
       }
     },
     "filters": {
@@ -1848,6 +1848,14 @@
     },
     "yourCombatPower": "PC {power} · {badges, plural, =1 {1 medalha} other {# medalhas}}",
     "yourPvp": "Elo {rating} · {wins}V · {losses}D · {winrate}%",
+    "table": {
+      "position": "Posição",
+      "trainer": "Treinador",
+      "team": "Equipe ativa",
+      "league": "Liga",
+      "record": "Histórico",
+      "medals": "Medalhas"
+    },
     "podium": {
       "title": "Top 3"
     },
@@ -1858,9 +1866,28 @@
     },
     "ranked": {
       "eyebrow": "Classificatória",
-      "title": "Em breve",
-      "body": "Estamos preparando um modo competitivo por temporadas.",
-      "detail": "A posição será definida por divisões, pontos e recompensas de temporada."
+      "season": "Temporada {key}",
+      "ends": "Fim da temporada",
+      "live": "Classificação ao vivo",
+      "liveStatus": "Ao vivo",
+      "yourStanding": "Sua posição nesta temporada",
+      "unrankedTitle": "Você ainda não está classificado",
+      "unrankedBody": "Conclua uma batalha classificatória para entrar no ranking desta temporada.",
+      "playRanked": "Jogar classificatória",
+      "columns": {
+        "position": "Posição",
+        "trainer": "Treinador",
+        "league": "Liga",
+        "record": "Histórico",
+        "rating": "Elo"
+      },
+      "winsShort": "V",
+      "lossesShort": "D",
+      "emptyTitle": "A temporada aguarda sua primeira batalha",
+      "emptyBody": "A classificação aparecerá após o primeiro duelo classificatório concluído.",
+      "championsEyebrow": "Salão dos campeões",
+      "championsTitle": "Vencedores das temporadas anteriores",
+      "championsEmpty": "Ainda não há uma temporada anterior com campeão registrado."
     },
     "pvpEmpty": {
       "title": "Ninguém atinge o mínimo ainda",

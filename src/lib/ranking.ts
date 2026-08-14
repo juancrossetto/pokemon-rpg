@@ -1,4 +1,5 @@
 import { calculateMaxHp, calculateStat } from "@/lib/stats";
+import type { PvpDivision, PvpTier } from "@/lib/pvp/tiers";
 
 // Ranking: PC (poder de combate del equipo activo), PvP (Elo) y Clasificatoria
 // (próximamente). El PC usa las mismas fórmulas de combate que stats.ts.
@@ -55,6 +56,38 @@ export type RankingEntry = {
   rating?: number;
   isCurrentPlayer?: boolean;
   createdAt?: Date;
+};
+
+export type RankedSeasonEntry = {
+  playerId: string;
+  playerName: string;
+  countryCode?: string;
+  avatarId?: string | null;
+  position: number;
+  rating: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  tier: PvpTier;
+  division: PvpDivision;
+  isCurrentPlayer: boolean;
+};
+
+export type RankedSeasonChampion = {
+  seasonKey: string;
+  playerId: string;
+  playerName: string;
+  countryCode?: string;
+  avatarId?: string | null;
+  rating: number;
+  tier: PvpTier;
+};
+
+export type RankedSeasonBoardData = {
+  seasonKey: string;
+  entries: RankedSeasonEntry[];
+  currentPlayer: RankedSeasonEntry | null;
+  champions: RankedSeasonChampion[];
 };
 
 export const RANKING_CATEGORIES: RankingCategory[] = ["combat_power", "pvp", "ranked"];

@@ -7,8 +7,13 @@ import {
   winRate,
   type RankingEntry,
   type RankingFeaturedCreature,
+  type RankedSeasonBoardData,
+  type RankedSeasonChampion,
+  type RankedSeasonEntry,
   type RankingTeamSprite,
 } from "@/lib/ranking";
+import { currentSeasonKey } from "@/lib/pvp/seasons";
+import { rankForRating, tierForRating } from "@/lib/pvp/tiers";
 
 const SPECIES_STATS_SELECT = {
   baseHp: true,
@@ -227,6 +232,140 @@ export async function loadPvpBoard(
     );
 
   return withPositions(ranked, userId);
+}
+
+/**
+ * Ladder clasificatorio de la temporada vigente.
+ *
+ * El récord se deriva de partidos RANKED cerrados. Los contadores generales
+ * del usuario también incluyen combates rápidos, por lo que no sirven para
+ * representar una clasificación estacional real.
+ */
+export async function loadRankedSeasonBoard(
+  userId: string | null,
+): Promise<RankedSeasonBoardData> {
+  const seasonKey = currentSeasonKey();
+  const [matches, snapshots, historicalSeasonRows] = await Promise.all([
+    prisma.pvpMatch.findMany({
+      where: {
+        seasonKey,
+        mode: "RANKED",
+        status: { in: ["COMPLETED", "FORFEIT"] },
+      },
+      select: { challengerId: true, opponentId: true, winnerId: true },
+    }),
+    prisma.pvpSeasonStats.findMany({
+      where: { seasonKey },
+      select: {
+        rating: true,
+        createdAt: true,
+        user: {
+          select: { id: true, username: true, country: true, avatarId: true },
+        },
+      },
+    }),
+    prisma.pvpMatch.findMany({
+      where: {
+        seasonKey: { not: null, notIn: [seasonKey] },
+        mode: "RANKED",
+        status: { in: ["COMPLETED", "FORFEIT"] },
+      },
+      distinct: ["seasonKey"],
+      orderBy: { seasonKey: "desc" },
+      take: 6,
+      select: { seasonKey: true },
+    }),
+  ]);
+
+  const records = new Map<string, { wins: number; losses: number }>();
+  const recordFor = (id: string) => {
+    const existing = records.get(id);
+    if (existing) return existing;
+    const created = { wins: 0, losses: 0 };
+    records.set(id, created);
+    return created;
+  };
+
+  for (const match of matches) {
+    const challenger = recordFor(match.challengerId);
+    const opponent = recordFor(match.opponentId);
+    if (match.winnerId === match.challengerId) {
+      challenger.wins += 1;
+      opponent.losses += 1;
+    } else if (match.winnerId === match.opponentId) {
+      opponent.wins += 1;
+      challenger.losses += 1;
+    }
+  }
+
+  const ranked = snapshots
+    .filter((snapshot) => records.has(snapshot.user.id))
+    .map((snapshot) => ({
+      snapshot,
+      record: records.get(snapshot.user.id) ?? { wins: 0, losses: 0 },
+    }))
+    .sort((a, b) => {
+      if (a.snapshot.rating !== b.snapshot.rating) return b.snapshot.rating - a.snapshot.rating;
+      if (a.record.wins !== b.record.wins) return b.record.wins - a.record.wins;
+      const byDate = a.snapshot.createdAt.getTime() - b.snapshot.createdAt.getTime();
+      if (byDate !== 0) return byDate;
+      return a.snapshot.user.id.localeCompare(b.snapshot.user.id);
+    });
+
+  const entries: RankedSeasonEntry[] = ranked.map(({ snapshot, record }, index) => {
+    const standing = rankForRating(snapshot.rating);
+    return {
+      playerId: snapshot.user.id,
+      playerName: snapshot.user.username,
+      countryCode: snapshot.user.country,
+      avatarId: snapshot.user.avatarId,
+      position: index + 1,
+      rating: snapshot.rating,
+      wins: record.wins,
+      losses: record.losses,
+      winRate: winRate(record.wins, record.losses),
+      tier: standing.tier,
+      division: standing.division,
+      isCurrentPlayer: snapshot.user.id === userId,
+    };
+  });
+
+  const champions = (
+    await Promise.all(
+      historicalSeasonRows
+        .map((row) => row.seasonKey)
+        .filter((key): key is string => Boolean(key))
+        .map(async (historicalSeasonKey): Promise<RankedSeasonChampion | null> => {
+          const champion = await prisma.pvpSeasonStats.findFirst({
+            where: { seasonKey: historicalSeasonKey },
+            orderBy: [{ rating: "desc" }, { wins: "desc" }, { createdAt: "asc" }],
+            select: {
+              rating: true,
+              user: {
+                select: { id: true, username: true, country: true, avatarId: true },
+              },
+            },
+          });
+          if (!champion) return null;
+          return {
+            seasonKey: historicalSeasonKey,
+            playerId: champion.user.id,
+            playerName: champion.user.username,
+            countryCode: champion.user.country,
+            avatarId: champion.user.avatarId,
+            rating: champion.rating,
+            tier: tierForRating(champion.rating),
+          };
+        }),
+    )
+  ).filter((champion): champion is RankedSeasonChampion => champion !== null);
+
+  return {
+    seasonKey,
+    entries,
+    currentPlayer: entries.find((entry) => entry.isCurrentPlayer) ?? null,
+    champions,
+  };
 }
 
 /** Códigos ISO de países que tienen al menos un perfil. */

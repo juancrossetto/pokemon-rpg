@@ -1826,7 +1826,7 @@
       },
       "ranked": {
         "title": "Ranked",
-        "blurb": "Seasonal competitive mode — coming soon."
+        "blurb": "Competitive ladder for the current season."
       }
     },
     "filters": {
@@ -1848,6 +1848,14 @@
     },
     "yourCombatPower": "CP {power} · {badges, plural, =1 {1 badge} other {# badges}}",
     "yourPvp": "Elo {rating} · {wins}W · {losses}L · {winrate}%",
+    "table": {
+      "position": "Rank",
+      "trainer": "Trainer",
+      "team": "Active team",
+      "league": "League",
+      "record": "Record",
+      "medals": "Badges"
+    },
     "podium": {
       "title": "Top 3"
     },
@@ -1858,9 +1866,28 @@
     },
     "ranked": {
       "eyebrow": "Ranked",
-      "title": "Coming soon",
-      "body": "We’re preparing a seasonal competitive mode.",
-      "detail": "Placement will use divisions, points, and season rewards."
+      "season": "Season {key}",
+      "ends": "Season ends",
+      "live": "Live standings",
+      "liveStatus": "Live",
+      "yourStanding": "Your standing this season",
+      "unrankedTitle": "You are not ranked yet",
+      "unrankedBody": "Complete a ranked battle to enter this season’s ladder.",
+      "playRanked": "Play ranked",
+      "columns": {
+        "position": "Rank",
+        "trainer": "Trainer",
+        "league": "League",
+        "record": "Record",
+        "rating": "Elo"
+      },
+      "winsShort": "W",
+      "lossesShort": "L",
+      "emptyTitle": "The season awaits its first battle",
+      "emptyBody": "The standings will appear after the first ranked duel is completed.",
+      "championsEyebrow": "Hall of champions",
+      "championsTitle": "Previous season winners",
+      "championsEmpty": "No previous season has a recorded champion yet."
     },
     "pvpEmpty": {
       "title": "No one meets the minimum yet",
