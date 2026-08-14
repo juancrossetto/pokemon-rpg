@@ -103,7 +103,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.safari",
         href: "/safari",
         icon: "travel_explore",
-        iconSrc: "/nav/location-icon.png?v=2",
+        iconSrc: "/safari/tickets/ticket-pink.png",
       },
       {
         id: "events",

@@ -33,7 +33,7 @@ export type SafariActionError =
   | "finished";
 
 export type SafariActionResult =
-  | { ok: true; caught?: boolean; score?: number; finished?: boolean }
+  | { ok: true; caught?: boolean; score?: number; finished?: boolean; finishedRunId?: string }
   | { ok: false; error: SafariActionError };
 
 async function safariUserId(): Promise<string | null> {
@@ -138,7 +138,7 @@ export async function searchSafariEncounter(locale: string): Promise<SafariActio
     }
     if (run.encountersUsed >= SAFARI_ENCOUNTERS_PER_RUN || run.ballsRemaining <= 0) {
       await finishRunInTx(tx, run);
-      result = { ok: true, finished: true };
+      result = { ok: true, finished: true, finishedRunId: run.id };
       return;
     }
     const biome = safariBiome(run.biomeId);
@@ -146,11 +146,12 @@ export async function searchSafariEncounter(locale: string): Promise<SafariActio
       result = { ok: false, error: "invalid_biome" };
       return;
     }
-    const spawn = rollSafariSpawn(biome);
+    const spawn = rollSafariSpawn(biome, Math.random, run.seenSpeciesIds);
     await tx.safariRun.update({
       where: { id: run.id },
       data: {
         encountersUsed: { increment: 1 },
+        seenSpeciesIds: { push: spawn.speciesId },
         encounterSpeciesId: spawn.speciesId,
         encounterLevel: spawn.level,
         encounterIsShiny: spawn.isShiny,
@@ -187,7 +188,7 @@ export async function skipSafariEncounter(locale: string): Promise<SafariActionR
     });
     if (run.encountersUsed >= SAFARI_ENCOUNTERS_PER_RUN) {
       await finishRunInTx(tx, run);
-      result = { ok: true, finished: true };
+      result = { ok: true, finished: true, finishedRunId: run.id };
     }
   });
   refreshSafari(locale);
@@ -242,7 +243,7 @@ export async function throwSafariBall(locale: string): Promise<SafariActionResul
         data: { ballsRemaining },
       });
       if (shouldFinish) await finishRunInTx(tx, run);
-      result = { ok: true, caught: false, finished: shouldFinish };
+      result = { ok: true, caught: false, finished: shouldFinish, ...(shouldFinish ? { finishedRunId: run.id } : {}) };
       return;
     }
 
@@ -313,7 +314,7 @@ export async function throwSafariBall(locale: string): Promise<SafariActionResul
         bestScore: Math.max(run.bestScore, score),
       });
     }
-    result = { ok: true, caught: true, score, finished: shouldFinish };
+    result = { ok: true, caught: true, score, finished: shouldFinish, ...(shouldFinish ? { finishedRunId: run.id } : {}) };
   });
   refreshSafari(locale);
   return result;
@@ -331,6 +332,7 @@ export async function finishSafariRun(locale: string): Promise<SafariActionResul
       return;
     }
     await finishRunInTx(tx, run);
+    result = { ok: true, finished: true, finishedRunId: run.id };
   });
   refreshSafari(locale);
   return result;

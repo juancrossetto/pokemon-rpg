@@ -5,6 +5,7 @@ export const SAFARI_ENCOUNTERS_PER_RUN = 10;
 export const SAFARI_BALLS_PER_RUN = 15;
 
 export type SafariRarity = "common" | "uncommon" | "rare" | "epic";
+export type SafariRewardTier = "none" | "bronze" | "silver" | "gold";
 
 export type SafariBiome = {
   id: string;
@@ -81,6 +82,10 @@ export function safariBiome(id: string): SafariBiome | null {
   return SAFARI_BIOMES.find((biome) => biome.id === id) ?? null;
 }
 
+export function safariSpeciesSprite(speciesId: number, isShiny = false): string {
+  return `/safari/species/${isShiny ? "shiny/" : ""}${speciesId}.png`;
+}
+
 export function safariRarity(biomeId: string, speciesId: number): SafariRarity {
   return safariBiome(biomeId)?.species.find((entry) => entry.speciesId === speciesId)?.rarity ?? "common";
 }
@@ -88,12 +93,22 @@ export function safariRarity(biomeId: string, speciesId: number): SafariRarity {
 export function rollSafariSpawn(
   biome: SafariBiome,
   random: () => number = Math.random,
+  seenSpeciesIds: readonly number[] = [],
 ): { speciesId: number; level: number; rarity: SafariRarity; isShiny: boolean } {
-  const total = biome.species.reduce((sum, entry) => sum + entry.weight, 0);
+  const seen = new Set(seenSpeciesIds);
+  const weighted = biome.species.map((entry) => ({
+    ...entry,
+    // Una especie ya vista puede reaparecer, pero pierde 75% de su peso hasta
+    // que se recorriÃ³ todo el bioma. Evita cadenas repetitivas sin borrar rarezas.
+    effectiveWeight: seen.size < biome.species.length && seen.has(entry.speciesId)
+      ? entry.weight * 0.25
+      : entry.weight,
+  }));
+  const total = weighted.reduce((sum, entry) => sum + entry.effectiveWeight, 0);
   let cursor = Math.min(0.999999, Math.max(0, random())) * total;
-  let chosen = biome.species[0]!;
-  for (const entry of biome.species) {
-    cursor -= entry.weight;
+  let chosen = weighted[0]!;
+  for (const entry of weighted) {
+    cursor -= entry.effectiveWeight;
     if (cursor < 0) {
       chosen = entry;
       break;
@@ -130,7 +145,7 @@ export function safariCatchScore(input: {
   return RARITY_SCORE[input.rarity] + input.level * 8 + difficulty + (input.isShiny ? 1_200 : 0);
 }
 
-export function safariReward(score: number): { coins: number; gems: number; tier: "none" | "bronze" | "silver" | "gold" } {
+export function safariReward(score: number): { coins: number; gems: number; tier: SafariRewardTier } {
   if (score >= 900) return { coins: 1_500, gems: 2, tier: "gold" };
   if (score >= 550) return { coins: 900, gems: 1, tier: "silver" };
   if (score >= 250) return { coins: 500, gems: 0, tier: "bronze" };
@@ -138,8 +153,29 @@ export function safariReward(score: number): { coins: number; gems: number; tier
 }
 
 export function safariRank(score: number): "S" | "A" | "B" | "C" {
-  if (score >= 1_400) return "S";
-  if (score >= 900) return "A";
-  if (score >= 550) return "B";
+  if (score >= 900) return "S";
+  if (score >= 550) return "A";
+  if (score >= 250) return "B";
   return "C";
+}
+
+export function safariRewardProgress(score: number): {
+  rank: "S" | "A" | "B" | "C";
+  reward: ReturnType<typeof safariReward>;
+  next: null | { score: number; rank: "S" | "A" | "B"; coins: number; gems: number };
+  pointsRemaining: number;
+} {
+  const next = score < 250
+    ? { score: 250, rank: "B" as const, coins: 500, gems: 0 }
+    : score < 550
+      ? { score: 550, rank: "A" as const, coins: 900, gems: 1 }
+      : score < 900
+        ? { score: 900, rank: "S" as const, coins: 1_500, gems: 2 }
+        : null;
+  return {
+    rank: safariRank(score),
+    reward: safariReward(score),
+    next,
+    pointsRemaining: next ? next.score - score : 0,
+  };
 }

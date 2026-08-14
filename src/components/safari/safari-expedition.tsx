@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useTransition, type CSSProperties } from "react";
+import { useRef, useState, useTransition, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -12,7 +12,9 @@ import {
   throwSafariBall,
   type SafariActionResult,
 } from "@/actions/safari";
-import { spriteFor } from "@/lib/shiny";
+import { safariRewardProgress } from "@/lib/safari";
+import { avatarById } from "@/lib/avatars";
+import { TrainerAvatar } from "@/components/trainer-avatar";
 
 type SpeciesPreview = { id: number; name: string; spriteUrl: string; rarity: string };
 type SafariActionSuccess = Extract<SafariActionResult, { ok: true }>;
@@ -42,8 +44,9 @@ export type SafariViewData = {
     ballsRemaining: number;
     catches: number;
     bestScore: number;
-    best: null | { name: string; spriteUrl: string; level: number; isShiny: boolean };
+    best: null | { id: number; name: string; spriteUrl: string; level: number; isShiny: boolean };
     encounter: null | {
+      id: number;
       name: string;
       spriteUrl: string;
       level: number;
@@ -53,17 +56,24 @@ export type SafariViewData = {
     };
   };
   lastRun: null | {
+    id: string;
     bestScore: number;
+    rank: "S" | "A" | "B" | "C";
     rewardCoins: number;
     rewardGems: number;
     catches: number;
-    best: null | { name: string; spriteUrl: string; level: number; isShiny: boolean };
+    best: null | { id: number; name: string; spriteUrl: string; level: number; isShiny: boolean };
+    captured: Array<{ id: number; name: string; spriteUrl: string; level: number; isShiny: boolean }>;
   };
+  playerRank: null | { position: number; score: number };
   leaderboard: Array<{
     rank: number;
     username: string;
+    avatarId: string | null;
     score: number;
+    speciesId: number | null;
     speciesName: string | null;
+    speciesSpriteUrl: string | null;
     isShiny: boolean;
   }>;
 };
@@ -78,9 +88,13 @@ function displayName(value: string): string {
 export function SafariExpedition({ locale, data }: { locale: string; data: SafariViewData }) {
   const t = useTranslations("safari");
   const router = useRouter();
+  const biomeCarouselRef = useRef<HTMLDivElement>(null);
   const [pending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [selectedBiome, setSelectedBiome] = useState(data.biomes[0]?.id ?? "verdant");
+  const [capturePhase, setCapturePhase] = useState<"idle" | "throwing" | "caught" | "escaped">("idle");
+  const [confirmFinish, setConfirmFinish] = useState(false);
+  const [finishedRunId, setFinishedRunId] = useState<string | null>(null);
 
   function run(
     action: () => Promise<SafariActionResult>,
@@ -93,6 +107,7 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
         setFeedback(t(`errors.${result.error}`));
         return;
       }
+      if (result.finishedRunId) setFinishedRunId(result.finishedRunId);
       if (success) setFeedback(success(result));
       router.refresh();
     });
@@ -100,10 +115,72 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
 
   const active = data.activeRun;
   const activeBiome = active ? data.biomes.find((biome) => biome.id === active.biomeId) : null;
+  const rewardProgress = active ? safariRewardProgress(active.bestScore) : null;
+
+  function handleThrow() {
+    setFeedback(null);
+    setCapturePhase("throwing");
+    startTransition(async () => {
+      const [result] = await Promise.all([
+        throwSafariBall(locale),
+        new Promise((resolve) => window.setTimeout(resolve, 700)),
+      ]);
+      if (!result.ok) {
+        setCapturePhase("idle");
+        setFeedback(t(`errors.${result.error}`));
+        return;
+      }
+      setCapturePhase(result.caught ? "caught" : "escaped");
+      setFeedback(result.caught ? t("caught", { score: result.score ?? 0 }) : t("escaped"));
+      await new Promise((resolve) => window.setTimeout(resolve, 900));
+      if (result.finishedRunId) setFinishedRunId(result.finishedRunId);
+      setCapturePhase("idle");
+      router.refresh();
+    });
+  }
+
+  function handleFinish() {
+    setConfirmFinish(false);
+    run(() => finishSafariRun(locale), (result) => {
+      if (result.finishedRunId) setFinishedRunId(result.finishedRunId);
+      return t("runClosed");
+    });
+  }
+
+  function syncBiomeFromCarousel() {
+    const carousel = biomeCarouselRef.current;
+    if (!carousel || window.matchMedia("(min-width: 768px)").matches) return;
+
+    const viewportCenter = carousel.scrollLeft + carousel.clientWidth / 2;
+    const cards = Array.from(carousel.children) as HTMLElement[];
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    cards.forEach((card, index) => {
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+      const distance = Math.abs(cardCenter - viewportCenter);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    const nextId = data.biomes[closestIndex]?.id;
+    if (nextId) setSelectedBiome((current) => (current === nextId ? current : nextId));
+  }
+
+  function scrollToBiome(index: number) {
+    const next = data.biomes[index];
+    if (!next) return;
+    setSelectedBiome(next.id);
+    const card = biomeCarouselRef.current?.children.item(index);
+    if (card instanceof HTMLElement) {
+      card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }
 
   return (
     <main className="mx-auto w-full max-w-6xl px-margin-mobile py-5 md:px-margin-desktop md:py-8">
-      <section className="relative overflow-hidden rounded-[26px] border border-emerald-300/25 bg-[#07110e] px-5 py-5 shadow-[0_24px_80px_rgba(0,0,0,0.32)] md:min-h-[13.5rem] md:px-7 md:py-5">
+      <section className="relative overflow-hidden rounded-[26px] border border-emerald-300/25 bg-[#07110e] px-4 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.32)] md:min-h-[13.5rem] md:px-7 md:py-5">
         <Image
           src="/safari/safari-banner.png"
           alt=""
@@ -114,12 +191,12 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,15,12,0.9)_0%,rgba(5,15,12,0.76)_54%,rgba(5,12,10,0.28)_100%)] md:bg-[linear-gradient(90deg,#07110e_0%,rgba(7,17,14,0.96)_45%,rgba(7,17,14,0.48)_72%,rgba(7,17,14,0.08)_100%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(3,9,7,0.66)_0%,transparent_62%)]" />
-        <div className="relative z-10 md:max-w-[74%]">
+        <div className="relative z-10 max-w-[17rem] md:max-w-[74%]">
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300">{t("eyebrow")}</p>
-          <h1 className="page-title mt-1.5 text-3xl text-white md:text-[2.6rem] md:leading-none">{t("title")}</h1>
-          <p className="mt-2.5 text-xs leading-5 text-white/65 md:whitespace-nowrap">{t("subtitle")}</p>
+          <h1 className="page-title mt-1.5 text-[1.85rem] leading-[0.96] text-white md:text-[2.6rem] md:leading-none">{t("title")}</h1>
+          <p className="mt-2 text-[11px] leading-[1.45] text-white/65 md:mt-2.5 md:text-xs md:leading-5 md:whitespace-nowrap">{t("subtitle")}</p>
         </div>
-        <div className="relative z-10 mt-4 flex flex-wrap items-center gap-x-7 gap-y-3">
+        <div className="relative z-10 mt-4 grid grid-cols-3 gap-2 border-t border-white/10 pt-3 md:flex md:flex-wrap md:items-center md:gap-x-7 md:gap-y-3 md:border-t-0 md:pt-0">
           <Metric imageSrc="/safari/tickets/ticket-pink.png" value={`${data.attemptsRemaining}/${data.attemptsMax}`} label={t("attempts")} />
           <Metric imageSrc="/safari/metrics/clock.png" value={new Date(data.resetAt).toLocaleDateString(locale, { weekday: "short", day: "2-digit", month: "short" })} label={t("reset")} />
           <Metric imageSrc="/safari/metrics/encounters.png" value={active ? `${active.encountersUsed}/${active.encountersMax}` : "10"} label={t("encounters")} />
@@ -152,9 +229,11 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
                   <div className="relative mx-auto h-[190px] w-[190px] md:h-[220px] md:w-[220px]">
                     <div className="absolute inset-[16%] rounded-full border border-white/8" style={{ background: `${activeBiome?.accent ?? "#64d98b"}10`, boxShadow: `0 0 52px ${activeBiome?.accent ?? "#64d98b"}28` }} />
                     <div className="absolute inset-x-[17%] bottom-[7%] h-[10%] rounded-[50%] bg-black/75 blur-xl" />
-                    <div className="safari-encounter-reveal absolute inset-0">
-                      <Image src={spriteFor(active.encounter.spriteUrl, active.encounter.isShiny)} alt={displayName(active.encounter.name)} fill sizes="220px" className="object-contain p-2 drop-shadow-[0_20px_20px_rgba(0,0,0,0.55)]" unoptimized />
+                    <div className={`safari-encounter-reveal absolute inset-0 ${capturePhase === "caught" ? "is-caught" : capturePhase === "escaped" ? "is-escaped" : ""}`}>
+                      <SafariSprite species={active.encounter} sizes="220px" className="object-contain p-2 drop-shadow-[0_20px_20px_rgba(0,0,0,0.55)]" />
                     </div>
+                    {capturePhase !== "idle" ? <div className={`safari-capture-ball is-${capturePhase}`}><Image src="/items/hd/safari-ball.png" alt="" width={62} height={62} className="h-full w-full object-contain drop-shadow-[0_8px_10px_rgba(0,0,0,0.6)]" /></div> : null}
+                    {capturePhase === "caught" || capturePhase === "escaped" ? <div className={`safari-capture-result is-${capturePhase}`}>{capturePhase === "caught" ? t("captureSuccess") : t("captureFailed")}</div> : null}
                   </div>
                   <div className="text-center md:text-left">
                     <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
@@ -172,7 +251,7 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
                       </div>
                     </div>
                     <div className="mt-6 grid gap-2 sm:grid-cols-2">
-                    <button disabled={pending || active.ballsRemaining <= 0} onClick={() => run(() => throwSafariBall(locale), (r) => r.caught ? t("caught", { score: r.score ?? 0 }) : t("escaped"))} className="game-cta game-cta--primary min-h-12 disabled:opacity-45">
+                    <button disabled={pending || capturePhase !== "idle" || active.ballsRemaining <= 0} onClick={handleThrow} className="game-cta game-cta--primary min-h-12 disabled:opacity-45">
                       <Image src="/items/hd/safari-ball.png" alt="" width={24} height={24} className="game-cta__icon object-contain" />
                       <span className="game-cta__label">{pending ? t("working") : t("throwBall")}</span>
                     </button>
@@ -208,29 +287,33 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
                       <span className="game-cta__icon material-symbols-outlined">footprint</span>
                       <span className="game-cta__label">{pending ? t("working") : t("search")}</span>
                     </button>
-                    <button disabled={pending} onClick={() => run(() => finishSafariRun(locale))} className="mt-3 text-xs font-bold text-white/45 underline-offset-4 hover:text-white hover:underline">{t("finishEarly")}</button>
+                    <button disabled={pending} onClick={() => setConfirmFinish(true)} className="mt-3 text-xs font-bold text-white/45 underline-offset-4 hover:text-white hover:underline">{t("finishEarly")}</button>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          <aside className="space-y-4">
-            <div className="rounded-[22px] border border-white/10 bg-surface-container-low p-5">
+          <aside className="overflow-hidden rounded-[22px] border border-white/10 bg-surface-container-low">
+            <div className="p-5">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/45">{t("runProgress")}</p>
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/8"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300" style={{ width: `${(active.encountersUsed / active.encountersMax) * 100}%` }} /></div>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div className="mt-4 grid grid-cols-3 gap-3 text-center">
                 <SmallStat value={active.encountersUsed} label={t("seen")} />
                 <SmallStat value={active.catches} label={t("captures")} />
                 <SmallStat value={active.ballsRemaining} label={t("balls")} />
               </div>
             </div>
-            <div className="rounded-[22px] border border-white/10 bg-surface-container-low p-5">
+            <div className="border-t border-white/8 p-5">
+              <div className="flex items-center justify-between gap-3"><p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/45">{t("currentReward")}</p><span className="page-title text-2xl text-white">{rewardProgress?.rank}</span></div>
+              <div className="mt-2 flex items-end justify-between gap-3"><div><p className="font-mono text-xl font-black text-emerald-300">{active.bestScore} pts</p><p className="mt-1 text-xs text-white/42">{rewardProgress?.next ? t("nextRank", { points: rewardProgress.pointsRemaining, rank: rewardProgress.next.rank }) : t("maxRank")}</p></div><div className="text-right font-mono text-sm font-black"><p className="text-amber-300">+{rewardProgress?.reward.coins ?? 0} ●</p>{rewardProgress?.reward.gems ? <p className="text-fuchsia-300">+{rewardProgress.reward.gems} ◆</p> : null}</div></div>
+            </div>
+            <div className="border-t border-white/8 p-5">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/45">{t("bestCatch")}</p>
               {active.best ? <BestCatch best={active.best} score={active.bestScore} /> : <p className="mt-4 text-sm text-white/45">{t("noBest")}</p>}
             </div>
-            <div className="rounded-[22px] border border-amber-300/15 bg-amber-300/5 p-5 text-sm leading-6 text-white/58">
-              <span className="material-symbols-outlined mr-2 align-middle text-[18px]! text-amber-300">lightbulb</span>{t("tip")}
+            <div className="border-t border-white/8 px-5 py-4 text-xs leading-5 text-white/46">
+              <span className="material-symbols-outlined mr-2 align-middle text-[16px]! text-amber-300">lightbulb</span>{t("tip")}
             </div>
           </aside>
         </section>
@@ -242,7 +325,11 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
             <h2 className="mt-1 text-2xl font-black text-white">{t("chooseBiome")}</h2>
             <p className="mt-2 text-xs text-white/45">{t("weeklyLimit", { count: data.attemptsMax })}</p>
           </div>
-          <div className="mt-6 grid gap-x-7 gap-y-10 sm:grid-cols-2 md:mt-8 md:grid-cols-3 lg:gap-x-10">
+          <div
+            ref={biomeCarouselRef}
+            onScroll={syncBiomeFromCarousel}
+            className="no-scrollbar mt-4 flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain md:mt-8 md:grid md:grid-cols-3 md:gap-x-7 md:overflow-visible lg:gap-x-10"
+          >
             {data.biomes.map((biome, index) => {
               const selected = selectedBiome === biome.id;
               const artwork = SAFARI_ARTWORK_BY_BIOME[biome.id];
@@ -252,7 +339,7 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
                   type="button"
                   aria-pressed={selected}
                   onClick={() => setSelectedBiome(biome.id)}
-                  className={`safari-biome-option group relative flex min-w-0 flex-col items-center text-center outline-none transition duration-500 ${selected ? "is-selected" : "opacity-70 hover:opacity-100"}`}
+                  className={`safari-biome-option group relative flex w-full shrink-0 snap-center flex-col items-center text-center outline-none transition duration-500 md:w-auto md:shrink md:[scroll-snap-align:none] ${selected ? "is-selected" : "opacity-70 hover:opacity-100"}`}
                   style={{ "--safari-biome-accent": biome.accent } as CSSProperties}
                 >
                   <div className="relative h-[205px] w-full sm:h-[220px] lg:h-[245px]">
@@ -268,7 +355,7 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
                           alt=""
                           fill
                           priority
-                          sizes="(min-width: 1024px) 350px, (min-width: 640px) 45vw, 92vw"
+                          sizes="(min-width: 1024px) 350px, (min-width: 768px) 30vw, 92vw"
                           className="object-contain drop-shadow-[0_22px_20px_rgba(0,0,0,0.62)] transition duration-500 group-hover:scale-[1.035]"
                         />
                       </div>
@@ -288,26 +375,106 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
                       </span>
                     ))}
                   </div>
-                  <span className={`mt-3 h-1 rounded-full transition-all duration-500 ${selected ? "w-16 opacity-100" : "w-0 opacity-0"}`} style={{ background: biome.accent, boxShadow: `0 0 16px ${biome.accent}` }} />
+                  <span className={`mt-3 hidden h-1 rounded-full transition-all duration-500 md:block ${selected ? "w-16 opacity-100" : "w-0 opacity-0"}`} style={{ background: biome.accent, boxShadow: `0 0 16px ${biome.accent}` }} />
                 </button>
               );
             })}
           </div>
-          <div className="mt-5 flex justify-center">
-            <button disabled={pending || data.attemptsRemaining <= 0} onClick={() => run(() => startSafariRun(locale, selectedBiome))} className="game-cta game-cta--safari min-h-13 w-full max-w-md disabled:opacity-45"><span className="game-cta__icon material-symbols-outlined">explore</span><span className="game-cta__label">{data.attemptsRemaining <= 0 ? t("noAttempts") : pending ? t("working") : t("start")}</span></button>
+          <div className="mt-3 flex items-center justify-center gap-2 md:hidden" aria-label={t("chooseBiome")}>
+            {data.biomes.map((biome, index) => {
+              const selected = selectedBiome === biome.id;
+              return (
+                <button
+                  key={biome.id}
+                  type="button"
+                  aria-label={t(`biomes.${biome.id}.name`)}
+                  aria-current={selected ? "true" : undefined}
+                  onClick={() => scrollToBiome(index)}
+                  className={`h-1.5 rounded-full transition-[width,opacity] duration-300 ${selected ? "w-7 opacity-100" : "w-1.5 bg-white/25 opacity-70"}`}
+                  style={selected ? { background: biome.accent, boxShadow: `0 0 10px ${biome.accent}` } : undefined}
+                />
+              );
+            })}
+          </div>
+          <div className="mt-4 flex justify-center md:mt-5">
+            <button disabled={pending || data.attemptsRemaining <= 0} onClick={() => run(() => startSafariRun(locale, selectedBiome))} className="game-cta game-cta--safari min-h-13 w-full max-w-md disabled:opacity-45"><span className="game-cta__label">{data.attemptsRemaining <= 0 ? t("noAttempts") : pending ? t("working") : t("start")}</span></button>
           </div>
         </section>
       )}
 
-      <section className="mt-6 rounded-[22px] border border-white/10 bg-surface-container-low p-5">
+      <section className="mt-6 rounded-[22px] border border-white/10 bg-surface-container-low p-4 sm:p-5">
         <div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-fuchsia-300">{t("rankingEyebrow")}</p><h2 className="mt-1 text-xl font-black text-white">{t("rankingTitle")}</h2></div>
-        <div className="mt-4 divide-y divide-white/7">{data.leaderboard.length ? data.leaderboard.map((row) => <div key={`${row.rank}-${row.username}`} className="grid grid-cols-[36px_1fr_auto] items-center gap-3 py-3"><span className={`font-mono text-sm font-black ${row.rank <= 3 ? "text-amber-300" : "text-white/35"}`}>#{row.rank}</span><div className="min-w-0"><p className="truncate text-sm font-bold text-white">{row.username}</p><p className="truncate text-[11px] text-white/40">{row.speciesName ? `${displayName(row.speciesName)}${row.isShiny ? " ✦" : ""}` : "—"}</p></div><span className="font-mono text-sm font-black text-emerald-300">{row.score}</span></div>) : <p className="py-5 text-center text-sm text-white/40">{t("rankingEmpty")}</p>}</div>
+        {data.playerRank ? <p className="mt-2 text-xs font-semibold text-white/48">{t("yourRank", { position: data.playerRank.position, score: data.playerRank.score })}</p> : null}
+        {data.leaderboard.length ? (
+          <div className="mt-4 overflow-hidden sm:mt-5 sm:overflow-x-auto">
+            <table className="w-full table-fixed border-collapse text-left sm:min-w-[30rem] sm:table-auto">
+              <colgroup><col className="w-10 sm:w-16" /><col /><col className="w-13 sm:w-32" /><col className="w-14 sm:w-28" /></colgroup>
+              <thead><tr className="border-b border-white/10 text-[7px] font-black uppercase tracking-[0.08em] text-white/32 sm:text-[9px] sm:tracking-[0.16em]"><th className="py-2 pr-1 sm:px-2">{t("rankPosition")}</th><th className="px-1 py-2 sm:px-2">{t("rankTrainer")}</th><th className="px-1 py-2 text-center sm:px-2">{t("rankCatch")}</th><th className="py-2 pl-1 text-right sm:px-2">{t("rankScore")}</th></tr></thead>
+              <tbody className="divide-y divide-white/7">{data.leaderboard.map((row) => {
+                const avatar = avatarById(row.avatarId);
+                return <tr key={`${row.rank}-${row.username}`} className="transition-colors hover:bg-white/3"><td className={`py-3 pr-1 font-mono text-xs font-black sm:px-2 sm:text-sm ${row.rank <= 3 ? "text-amber-300" : "text-white/38"}`}>#{row.rank}</td><td className="min-w-0 px-1 py-3 sm:px-2"><div className="flex min-w-0 items-center gap-1.5 sm:gap-3"><TrainerAvatar name={row.username} src={avatar?.src ?? null} size="xs" framed={false} className="sm:h-11 sm:w-11" /><span className="min-w-0 truncate text-[11px] font-bold text-white sm:text-sm">{row.username}</span></div></td><td className="px-1 py-2 sm:px-2"><div className="mx-auto flex w-fit items-center">{row.speciesId && row.speciesSpriteUrl ? <span className="relative h-9 w-9 sm:h-12 sm:w-12"><SafariSprite species={{ id: row.speciesId, spriteUrl: row.speciesSpriteUrl, isShiny: row.isShiny }} sizes="(min-width: 640px) 48px, 36px" className="object-contain" /></span> : <span className="text-white/25">—</span>}{row.isShiny ? <span className="text-[9px] text-yellow-300 sm:text-xs">✦</span> : null}</div></td><td className="py-3 pl-1 text-right font-mono text-[11px] font-black text-emerald-300 sm:px-2 sm:text-sm">{row.score}</td></tr>;
+              })}</tbody>
+            </table>
+          </div>
+        ) : <p className="py-5 text-center text-sm text-white/40">{t("rankingEmpty")}</p>}
       </section>
+
+      {confirmFinish && active && rewardProgress ? <ConfirmFinishDialog encountersRemaining={Math.max(0, active.encountersMax - active.encountersUsed)} reward={rewardProgress.reward} onCancel={() => setConfirmFinish(false)} onConfirm={handleFinish} pending={pending} /> : null}
+      {finishedRunId && data.lastRun?.id === finishedRunId ? <SafariRunSummary run={data.lastRun} playerRank={data.playerRank} onClose={() => setFinishedRunId(null)} /> : null}
     </main>
   );
 }
 
-function Metric({ icon, imageSrc, value, label }: { icon?: string; imageSrc?: string; value: string; label: string }) { return <div className="inline-flex items-center gap-2">{imageSrc ? <Image src={imageSrc} alt="" width={30} height={30} className="h-7 w-7 shrink-0 object-contain drop-shadow-[0_3px_5px_rgba(0,0,0,0.45)]" /> : <span className="material-symbols-outlined text-[18px]! text-emerald-300">{icon}</span>}<div><p className="font-mono text-xs font-black text-white">{value}</p><p className="text-[9px] font-bold uppercase tracking-wider text-white/40">{label}</p></div></div>; }
-function SmallStat({ value, label }: { value: number; label: string }) { return <div className="rounded-xl bg-black/20 px-2 py-3"><p className="font-mono text-lg font-black text-white">{value}</p><p className="text-[9px] font-bold uppercase tracking-wider text-white/35">{label}</p></div>; }
-function BestCatch({ best, score }: { best: { name: string; spriteUrl: string; level: number; isShiny: boolean }; score: number }) { return <div className="mt-3 flex items-center gap-3"><span className="relative h-16 w-16 shrink-0 rounded-2xl bg-black/25"><Image src={spriteFor(best.spriteUrl, best.isShiny)} alt="" fill sizes="64px" className="object-contain p-1" unoptimized /></span><div className="min-w-0"><p className="truncate font-bold text-white">{displayName(best.name)} {best.isShiny ? <span className="text-yellow-300">✦</span> : null}</p><p className="text-xs text-white/45">Lv. {best.level}</p><p className="mt-1 font-mono text-lg font-black text-emerald-300">{score} pts</p></div></div>; }
-function LastResult({ run }: { run: NonNullable<SafariViewData["lastRun"]> }) { const t = useTranslations("safari"); return <div className="rounded-[22px] border border-emerald-300/20 bg-emerald-300/6 p-5"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">{t("lastResult")}</p><p className="mt-1 text-2xl font-black text-white">{run.bestScore} pts</p><p className="mt-1 text-sm text-white/50">{t("lastSummary", { catches: run.catches })}</p></div><div className="flex items-center gap-4">{run.best ? <BestCatch best={run.best} score={run.bestScore} /> : null}<div className="rounded-xl bg-black/25 px-4 py-3 text-right"><p className="text-xs font-bold text-white/40">{t("reward")}</p><p className="font-mono font-black text-amber-300">+{run.rewardCoins} ●</p>{run.rewardGems ? <p className="font-mono text-sm font-black text-fuchsia-300">+{run.rewardGems} ◆</p> : null}</div></div></div></div>; }
+function Metric({ icon, imageSrc, value, label }: { icon?: string; imageSrc?: string; value: string; label: string }) { return <div className="flex min-w-0 flex-col items-center gap-1 text-center md:inline-flex md:flex-row md:gap-2 md:text-left">{imageSrc ? <Image src={imageSrc} alt="" width={30} height={30} className="h-6 w-6 shrink-0 object-contain drop-shadow-[0_3px_5px_rgba(0,0,0,0.45)] md:h-7 md:w-7" /> : <span className="material-symbols-outlined text-[18px]! text-emerald-300">{icon}</span>}<div className="min-w-0"><p className="truncate font-mono text-[10px] font-black text-white md:text-xs">{value}</p><p className="truncate text-[8px] font-bold uppercase tracking-wider text-white/40 md:text-[9px]">{label}</p></div></div>; }
+function SmallStat({ value, label }: { value: number; label: string }) { return <div className="px-1 py-1"><p className="font-mono text-lg font-black text-white">{value}</p><p className="text-[9px] font-bold uppercase tracking-wider text-white/35">{label}</p></div>; }
+function BestCatch({ best, score }: { best: { id: number; name: string; spriteUrl: string; level: number; isShiny: boolean }; score: number }) { return <div className="mt-3 flex items-center gap-3"><span className="relative h-16 w-16 shrink-0"><SafariSprite species={best} sizes="64px" className="object-contain p-1" /></span><div className="min-w-0"><p className="truncate font-bold text-white">{displayName(best.name)} {best.isShiny ? <span className="text-yellow-300">✦</span> : null}</p><p className="text-xs text-white/45">Lv. {best.level}</p><p className="mt-1 font-mono text-lg font-black text-emerald-300">{score} pts</p></div></div>; }
+function LastResult({ run }: { run: NonNullable<SafariViewData["lastRun"]> }) {
+  const t = useTranslations("safari");
+  return (
+    <div className="rounded-[22px] border border-white/10 bg-surface-container-low px-4 py-4 sm:px-5">
+      <div className="grid grid-cols-2 items-stretch gap-y-3 sm:grid-cols-[minmax(0,1fr)_minmax(210px,0.8fr)_auto] sm:items-center sm:gap-6">
+        <div className="col-span-2 min-w-0 sm:col-span-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/42">{t("lastResult")}</p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <p className="font-mono text-xl font-black text-white">{run.bestScore} pts</p>
+            <p className="text-xs text-white/42">{t("lastSummary", { catches: run.catches })}</p>
+          </div>
+        </div>
+        {run.best ? (
+          <div className="flex min-w-0 items-center gap-2.5 border-t border-white/8 pt-3 pr-3 sm:border-t-0 sm:border-l sm:pt-0 sm:pr-0 sm:pl-6">
+            <span className="relative h-12 w-12 shrink-0 sm:h-14 sm:w-14">
+              <SafariSprite species={run.best} sizes="56px" className="object-contain" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-white">{displayName(run.best.name)} {run.best.isShiny ? <span className="text-yellow-300">✦</span> : null}</p>
+              <p className="mt-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white/38">Lv. {run.best.level}</p>
+            </div>
+          </div>
+        ) : <div />}
+        <div className="border-t border-l border-white/8 pt-3 pl-3 text-right sm:border-t-0 sm:pt-0 sm:pl-6">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-white/38">{t("reward")}</p>
+          <div className="mt-1 flex gap-3 font-mono text-sm font-black sm:justify-end">
+            <span className="text-amber-300">+{run.rewardCoins} ●</span>
+            {run.rewardGems ? <span className="text-fuchsia-300">+{run.rewardGems} ◆</span> : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SafariSprite({ species, sizes, className }: { species: { id: number; spriteUrl: string; isShiny: boolean }; sizes: string; className: string }) {
+  const [failed, setFailed] = useState(false);
+  const fallback = `/safari/species/${species.id}.png`;
+  return <Image src={failed ? fallback : species.spriteUrl} alt="" fill sizes={sizes} className={className} unoptimized onError={() => setFailed(true)} />;
+}
+
+function ConfirmFinishDialog({ encountersRemaining, reward, pending, onCancel, onConfirm }: { encountersRemaining: number; reward: { coins: number; gems: number }; pending: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const t = useTranslations("safari");
+  return <div className="fixed inset-0 z-70 grid place-items-center bg-black/72 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="safari-finish-title"><div className="w-full max-w-md rounded-[24px] border border-white/12 bg-[#17191f] p-6 shadow-2xl"><p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">{t("finishConfirmEyebrow")}</p><h2 id="safari-finish-title" className="page-title mt-2 text-2xl text-white">{t("finishConfirmTitle")}</h2><p className="mt-3 text-sm leading-6 text-white/58">{t("finishConfirmBody", { encounters: encountersRemaining })}</p><div className="mt-4 flex gap-5 font-mono text-sm font-black"><span className="text-amber-300">+{reward.coins} ●</span>{reward.gems ? <span className="text-fuchsia-300">+{reward.gems} ◆</span> : null}</div><div className="mt-6 grid gap-2 sm:grid-cols-2"><button type="button" disabled={pending} onClick={onCancel} className="min-h-11 rounded-xl border border-white/12 bg-white/5 text-sm font-bold text-white/70">{t("cancel")}</button><button type="button" disabled={pending} onClick={onConfirm} className="game-cta game-cta--primary min-h-11"><span className="game-cta__label">{pending ? t("working") : t("finishConfirm")}</span></button></div></div></div>;
+}
+
+function SafariRunSummary({ run, playerRank, onClose }: { run: NonNullable<SafariViewData["lastRun"]>; playerRank: SafariViewData["playerRank"]; onClose: () => void }) {
+  const t = useTranslations("safari");
+  return <div className="fixed inset-0 z-70 grid place-items-center overflow-y-auto bg-black/78 px-4 py-8 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="safari-summary-title"><div className="relative w-full max-w-xl overflow-hidden rounded-[28px] border border-emerald-300/22 bg-[radial-gradient(circle_at_50%_0%,rgba(52,211,153,0.16),transparent_38%),#14171b] p-6 text-center shadow-2xl sm:p-8"><p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300">{t("summaryEyebrow")}</p><div className="page-title mx-auto mt-3 grid h-16 w-16 place-items-center rounded-full border border-white/12 bg-black/30 text-4xl text-white">{run.rank}</div><h2 id="safari-summary-title" className="page-title mt-3 text-3xl text-white">{t("summaryTitle")}</h2><p className="mt-2 font-mono text-xl font-black text-emerald-300">{run.bestScore} pts</p>{run.best ? <div className="mx-auto mt-4 w-fit"><BestCatch best={run.best} score={run.bestScore} /></div> : null}<div className="mt-5 flex flex-wrap justify-center gap-2">{run.captured.map((pokemon, index) => <span key={`${pokemon.id}-${index}`} className="relative h-12 w-12" title={`${displayName(pokemon.name)} Lv. ${pokemon.level}`}><SafariSprite species={pokemon} sizes="48px" className="object-contain" /></span>)}</div><p className="mt-3 text-xs text-white/45">{t("summaryCaptured", { count: run.catches })}</p><div className="mt-5 flex justify-center gap-6 font-mono font-black"><span className="text-amber-300">+{run.rewardCoins} ●</span>{run.rewardGems ? <span className="text-fuchsia-300">+{run.rewardGems} ◆</span> : null}</div>{playerRank ? <p className="mt-3 text-sm font-semibold text-white/55">{t("yourRank", { position: playerRank.position, score: playerRank.score })}</p> : null}<button type="button" onClick={onClose} className="game-cta game-cta--primary mx-auto mt-6 max-w-xs"><span className="game-cta__label">{t("continue")}</span></button></div></div>;
+}

@@ -6,6 +6,7 @@ import {
   safariCatchChance,
   safariCatchScore,
   safariReward,
+  safariRewardProgress,
 } from "@/lib/safari";
 
 describe("safari encounters", () => {
@@ -24,6 +25,14 @@ describe("safari encounters", () => {
   it("uses the shared one-in-fifty shiny rate", () => {
     expect(rollSafariSpawn(biome, sequence(0.5, 0.5, 0)).isShiny).toBe(true);
     expect(rollSafariSpawn(biome, sequence(0.5, 0.5, 0.02)).isShiny).toBe(false);
+  });
+
+  it("reduces repeated species without removing them from the pool", () => {
+    const repeated = rollSafariSpawn(biome, sequence(0.2, 0.5, 0.5), [biome.species[0]!.speciesId]);
+    const allSeen = rollSafariSpawn(biome, sequence(0, 0.5, 0.5), biome.species.map((entry) => entry.speciesId));
+
+    expect(repeated.speciesId).not.toBe(biome.species[0]!.speciesId);
+    expect(allSeen.speciesId).toBe(biome.species[0]!.speciesId);
   });
 });
 
@@ -59,6 +68,11 @@ describe("safari score and rewards", () => {
     expect(safariReward(250)).toEqual({ coins: 500, gems: 0, tier: "bronze" });
     expect(safariReward(550)).toEqual({ coins: 900, gems: 1, tier: "silver" });
     expect(safariReward(900)).toEqual({ coins: 1_500, gems: 2, tier: "gold" });
+  });
+
+  it("reports the live rank and distance to the next reward", () => {
+    expect(safariRewardProgress(300)).toMatchObject({ rank: "B", pointsRemaining: 250, next: { rank: "A", score: 550 } });
+    expect(safariRewardProgress(900)).toMatchObject({ rank: "S", pointsRemaining: 0, next: null });
   });
 });
 

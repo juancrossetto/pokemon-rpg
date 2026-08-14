@@ -3909,9 +3909,15 @@ export function BattleArena({
             })}
             <div ref={logEndRef} />
           </div>
+          {/*
+            `flex-wrap` + `min-w-0` en la pregunta: los chips son `shrink-0`,
+            así que en la columna angosta del log se salían del panel y
+            "Pegás primero" quedaba cortado por el borde. Ahora bajan a su
+            propia línea en vez de desbordar.
+          */}
           {view === "menu" && !combatBusy && outcome === "ongoing" && (
-            <div className="mt-auto hidden items-center justify-between gap-2 border-t border-dashed border-white/15 pt-1 md:flex">
-              <p className="text-label-md font-bold leading-snug break-words [overflow-wrap:anywhere] text-on-surface">
+            <div className="mt-auto hidden flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-dashed border-white/15 pt-1 md:flex">
+              <p className="min-w-0 flex-1 text-label-md font-bold leading-snug break-words [overflow-wrap:anywhere] text-on-surface">
                 {t("whatWillDo", {
                   name: (
                     isDouble && pendingDoubleMoveA != null && playerB
