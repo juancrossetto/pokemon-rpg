@@ -17,6 +17,7 @@ import { markSpeciesSeen } from "@/lib/pokedex-seen";
 import { SHINY_CATCH_REWARD, spriteFor } from "@/lib/shiny";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 import { isTutorialBattle } from "@/lib/battle-tutorial";
+import { consumeInventoryItem } from "@/lib/inventory-consume";
 
 const MAX_LOG_LINES = 20;
 const TEAM_SIZE = 6;
@@ -102,10 +103,9 @@ export async function attemptCapture(
   const ball = inventoryItem.item;
   const instance = battle.pokemonInstance;
 
-  await prisma.inventoryItem.update({
-    where: { userId_itemId: { userId, itemId } },
-    data: { quantity: { decrement: 1 } },
-  });
+  // La ball se descuenta con guarda de cantidad. Sin ella, dos tiros
+  // simultáneos gastaban una sola ball y daban dos chances de captura.
+  if (!(await consumeInventoryItem(prisma, { userId, itemId }))) return null;
 
   // Mastery de la zona: sube la probabilidad de captura donde más farmeaste.
   const zone = battle.gymId ? null : await getZoneContext(userId);

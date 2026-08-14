@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { allowUserAction } from "@/lib/rate-limit";
 import { lockUsers } from "@/lib/db-locks";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { loadMapLocations } from "@/lib/campaign/map-data";
@@ -21,6 +22,7 @@ export type ClaimResult =
   | {
       ok: false;
       error:
+        | "rate_limited"
         | "unauthorized"
         | "invalid"
         | "not_done"
@@ -44,6 +46,11 @@ export async function claimZoneObjective(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
+
+  // Sin límite, un bucle de reintentos martilla la base gratis.
+  if (!allowUserAction("claim", "claim:zone", userId)) {
+    return { ok: false, error: "rate_limited" };
+  }
 
   if (!ZONE_OBJECTIVE_IDS.includes(objective as ZoneObjectiveId)) {
     return { ok: false, error: "invalid" };

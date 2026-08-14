@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { allowUserAction } from "@/lib/rate-limit";
 import { lockUsers } from "@/lib/db-locks";
 import { MAX_PURCHASE_QUANTITY } from "@/lib/shop";
 
@@ -10,7 +11,9 @@ export type BuyItemResult =
   | { ok: true; coinsLeft: number; quantity: number; ownedAfter: number }
   | {
       ok: false;
-      error: "unauthorized" | "not_found" | "no_coins" | "invalid_quantity";
+      error:
+        | "rate_limited"
+        | "unauthorized" | "not_found" | "no_coins" | "invalid_quantity";
       /** Cuánto falta, cuando el motivo es el saldo. Sirve para explicar el bloqueo. */
       missing?: number;
     };
@@ -39,6 +42,11 @@ export async function buyItem(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
+
+  // Sin límite, un bucle de reintentos martilla la base gratis.
+  if (!allowUserAction("purchase", "shop:buy", userId)) {
+    return { ok: false, error: "rate_limited" };
+  }
 
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_PURCHASE_QUANTITY) {
     return { ok: false, error: "invalid_quantity" };

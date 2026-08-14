@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { allowUserAction } from "@/lib/rate-limit";
 import { lockUsers } from "@/lib/db-locks";
 import { grantRewards, writeLedger } from "@/lib/events/grant";
 import type { RewardDef } from "@/lib/events/rewards";
@@ -21,7 +22,9 @@ export type ClaimAchievementResult =
     }
   | {
       ok: false;
-      error: "unauthorized" | "already_claimed" | "not_available" | "invalid";
+      error:
+        | "rate_limited"
+        | "unauthorized" | "already_claimed" | "not_available" | "invalid";
     };
 
 function isUniqueViolation(error: unknown): boolean {
@@ -46,6 +49,11 @@ export async function claimAchievement(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
+
+  // Sin límite, un bucle de reintentos martilla la base gratis.
+  if (!allowUserAction("claim", "claim:achievement", userId)) {
+    return { ok: false, error: "rate_limited" };
+  }
 
   if (achievementId !== "all" && !ACHIEVEMENTS.some((a) => a.id === achievementId)) {
     return { ok: false, error: "invalid" };

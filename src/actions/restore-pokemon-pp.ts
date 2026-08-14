@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { effectivePp } from "@/lib/battle";
 import { blockIfInCombat } from "@/lib/battle-lock";
+import { clearEmptyInventoryRow, consumeInventoryItem } from "@/lib/inventory-consume";
 import { PP_RESTORE_ITEMS } from "@/lib/squad-bag";
 
 export type RestorePpResult =
@@ -95,31 +96,24 @@ export async function restorePokemonPp(
   const target = depleted.reduce((best, m) => (m.deficit > best.deficit ? m : best));
 
   if (pick.spec.allMoves) {
-    const updates = depleted.map((m) => {
-      const nextPp = Math.min(m.max, m.current + pick.spec.amount);
-      return prisma.pokemonMove.update({
-        where: {
-          pokemonInstanceId_slot: {
-            pokemonInstanceId: instance.id,
-            slot: m.slot,
+    // Guarda de cantidad en el descuento: sin ella, dos envíos simultáneos
+    // restauraban el PP dos veces con un solo Elixir.
+    const consumed = await prisma.$transaction(async (tx) => {
+      if (!(await consumeInventoryItem(tx, { userId, itemId: pick.itemId }))) return false;
+      for (const move of depleted) {
+        await tx.pokemonMove.update({
+          where: {
+            pokemonInstanceId_slot: { pokemonInstanceId: instance.id, slot: move.slot },
           },
-        },
-        data: { currentPp: nextPp },
-      });
+          data: { currentPp: Math.min(move.max, move.current + pick.spec.amount) },
+        });
+      }
+      return true;
     });
-
-    await prisma.$transaction([
-      prisma.inventoryItem.update({
-        where: { userId_itemId: { userId, itemId: pick.itemId } },
-        data: { quantity: { decrement: 1 } },
-      }),
-      ...updates,
-    ]);
+    if (!consumed) return { ok: false, error: "no_leppa" };
 
     if (pick.quantity <= 1) {
-      await prisma.inventoryItem.deleteMany({
-        where: { userId, itemId: pick.itemId, quantity: { lte: 0 } },
-      });
+      await clearEmptyInventoryRow(prisma, { userId, itemId: pick.itemId });
     }
 
     revalidatePaths(locale);
@@ -139,12 +133,9 @@ export async function restorePokemonPp(
   const nextPp = Math.min(target.max, target.current + pick.spec.amount);
   const restoredBy = nextPp - target.current;
 
-  await prisma.$transaction([
-    prisma.inventoryItem.update({
-      where: { userId_itemId: { userId, itemId: pick.itemId } },
-      data: { quantity: { decrement: 1 } },
-    }),
-    prisma.pokemonMove.update({
+  const consumed = await prisma.$transaction(async (tx) => {
+    if (!(await consumeInventoryItem(tx, { userId, itemId: pick.itemId }))) return false;
+    await tx.pokemonMove.update({
       where: {
         pokemonInstanceId_slot: {
           pokemonInstanceId: instance.id,
@@ -152,8 +143,10 @@ export async function restorePokemonPp(
         },
       },
       data: { currentPp: nextPp },
-    }),
-  ]);
+    });
+    return true;
+  });
+  if (!consumed) return { ok: false, error: "no_leppa" };
 
   if (pick.quantity <= 1) {
     await prisma.inventoryItem.deleteMany({

@@ -8,7 +8,9 @@ export type ClaimZoneError =
   | "invalid"
   | "not_done"
   | "already_claimed"
-  | "missing_item";
+  | "missing_item"
+  /** Freno de tasa del servidor: el jugador reclamó demasiado seguido. */
+  | "rate_limited";
 
 export type StartTrainerError =
   | "no_lead"
@@ -26,6 +28,8 @@ export function campaignClaimErrorKey(error: ClaimZoneError): string {
       return "rewardClaimAlready";
     case "missing_item":
       return "rewardClaimMissingItem";
+    case "rate_limited":
+      return "rewardClaimRateLimited";
     case "unauthorized":
     case "invalid":
     default:

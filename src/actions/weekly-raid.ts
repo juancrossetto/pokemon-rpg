@@ -7,18 +7,22 @@ import { prisma } from "@/lib/prisma";
 import { lockUsers } from "@/lib/db-locks";
 import { isDatabaseBusyError } from "@/lib/db-errors";
 import { reportActionTiming } from "@/lib/action-metrics";
+import { allowUserAction } from "@/lib/rate-limit";
 import { weekKey } from "@/lib/events/time";
 import { grantRewards, writeLedger } from "@/lib/events/grant";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
 import {
   RAID_ATTEMPTS_PER_WEEK,
-  RAID_BOSS_BATTLE_HP,
   RAID_CLAN_BONUS_COINS,
+  RAID_COMMUNITY_BONUS,
+  RAID_COMMUNITY_HP,
   RAID_REWARD,
   RAID_TURNS_PER_ATTEMPT,
+  raidBossBattleHp,
   raidBossForWeek,
 } from "@/lib/raids/config";
+import { raidDamageDealt, raidSettleStatement } from "@/lib/raids/settle";
 
 export type RaidActionResult =
   | { ok: true; attemptsUsed: number; totalDamage: number; coins?: number }
@@ -32,6 +36,7 @@ export type RaidActionResult =
         | "not_ready"
         | "claimed"
         | "in_battle"
+        | "no_raid"
         | "busy";
     };
 
@@ -53,6 +58,9 @@ export async function startWeeklyRaidBattle(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
+  if (!allowUserAction("battleStart", "raid:start", userId)) {
+    return { ok: false, error: "busy" };
+  }
   const key = weekKey();
   const boss = raidBossForWeek(key);
 
@@ -122,8 +130,8 @@ export async function startWeeklyRaidBattle(
             raidTurnsLeft: RAID_TURNS_PER_ATTEMPT,
             wildSpeciesId: boss.speciesId,
             wildLevel: boss.level,
-            wildCurrentHp: RAID_BOSS_BATTLE_HP,
-            wildMaxHp: RAID_BOSS_BATTLE_HP,
+            wildCurrentHp: raidBossBattleHp(boss.level),
+            wildMaxHp: raidBossBattleHp(boss.level),
             wildMoveIds: bossMoveIds,
             wildMovePp: bossMovePp,
             log: [`appear:${bossSpecies.name}`],
@@ -155,10 +163,68 @@ export async function startWeeklyRaidBattle(
   redirect({ href: "/battle", locale });
 }
 
+/**
+ * Abandona el intento en curso.
+ *
+ * Existe porque una sesión de incursión abierta bloquea **todo** otro combate
+ * (`redirectIfInBattle`): sin salida, cerrar la pestaña a mitad de un intento
+ * dejaba al jugador sin poder pelear nada hasta volver y gastar los turnos.
+ * Gimnasio y torre ya tenían su salida; ésta faltaba.
+ *
+ * El intento **no** se devuelve: se cobró al arrancar. Lo que sí se respeta es
+ * el daño hecho hasta acá, que se acredita igual que en cualquier otro cierre.
+ */
+export async function abandonWeeklyRaidBattle(
+  locale: string,
+): Promise<RaidActionResult | void> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "unauthorized" };
+  const userId = session.user.id;
+
+  const battle = await prisma.battleSession.findFirst({
+    where: { userId, status: "ACTIVE", raidWeekKey: { not: null } },
+    select: {
+      id: true,
+      raidWeekKey: true,
+      wildMaxHp: true,
+      wildCurrentHp: true,
+      pokemonInstanceId: true,
+    },
+  });
+  if (!battle?.raidWeekKey) return { ok: false, error: "no_raid" };
+
+  const damage = raidDamageDealt(battle.wildMaxHp, battle.wildCurrentHp);
+  const settle = raidSettleStatement(prisma, {
+    userId,
+    weekKey: battle.raidWeekKey,
+    damage,
+  });
+
+  try {
+    await prisma.$transaction([
+      prisma.battleSession.update({
+        where: { id: battle.id },
+        data: { status: "LOST", turnDeadlineAt: null },
+      }),
+      ...(settle ? [settle] : []),
+    ]);
+  } catch (error) {
+    if (isDatabaseBusyError(error)) return { ok: false, error: "busy" };
+    throw error;
+  }
+
+  revalidatePath(`/${locale}/raids`);
+  revalidateCombatUi(locale);
+  redirect({ href: "/raids", locale });
+}
+
 export async function claimWeeklyRaidReward(locale: string): Promise<RaidActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
+  if (!allowUserAction("claim", "raid:claim", userId)) {
+    return { ok: false, error: "busy" };
+  }
   const key = weekKey();
   try {
     const result = await prisma.$transaction(
@@ -171,13 +237,23 @@ export async function claimWeeklyRaidReward(locale: string): Promise<RaidActionR
           return { ok: false, error: "not_ready" } as const;
         }
         if (score.rewardClaimedAt) return { ok: false, error: "claimed" } as const;
-        const membership = await tx.clanMember.findUnique({
-          where: { userId },
-          select: { clanId: true },
-        });
-        const rewards = membership
-          ? [...RAID_REWARD, { kind: "coins", amount: RAID_CLAN_BONUS_COINS } as const]
-          : RAID_REWARD;
+        const [membership, community] = await Promise.all([
+          tx.clanMember.findUnique({ where: { userId }, select: { clanId: true } }),
+          tx.weeklyRaidScore.aggregate({
+            where: { weekKey: key },
+            _sum: { totalDamage: true },
+          }),
+        ]);
+        // El bonus comunitario se resuelve **al reclamar**, con el total del
+        // momento: si la barra cae después de que reclamaste, no se retroactiva.
+        const communityDefeated = (community._sum.totalDamage ?? 0) >= RAID_COMMUNITY_HP;
+        const rewards = [
+          ...RAID_REWARD,
+          ...(membership
+            ? [{ kind: "coins", amount: RAID_CLAN_BONUS_COINS } as const]
+            : []),
+          ...(communityDefeated ? RAID_COMMUNITY_BONUS : []),
+        ];
         await tx.weeklyRaidScore.update({
           where: { userId_weekKey: { userId, weekKey: key } },
           data: { rewardClaimedAt: new Date() },

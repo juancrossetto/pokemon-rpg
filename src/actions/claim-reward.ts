@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { allowUserAction } from "@/lib/rate-limit";
 import { lockUsers } from "@/lib/db-locks";
 import { DAILY_CYCLE, nextDay, slotForDay } from "@/lib/events/daily";
 import { WEEKLY_CHALLENGE, weeklyPercent } from "@/lib/events/weekly";
@@ -21,7 +22,9 @@ export type ClaimRewardResult =
   | { ok: true; granted: RewardDef[]; coinsDelta: number; energyDelta: number }
   | {
       ok: false;
-      error: "unauthorized" | "already_claimed" | "not_available" | "invalid";
+      error:
+        | "rate_limited"
+        | "unauthorized" | "already_claimed" | "not_available" | "invalid";
     };
 
 /** Postgres: violación de restricción única. */
@@ -53,6 +56,11 @@ export async function claimDailyReward(locale: string): Promise<ClaimRewardResul
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
+
+  // Sin límite, un bucle de reintentos martilla la base gratis.
+  if (!allowUserAction("claim", "claim:reward", userId)) {
+    return { ok: false, error: "rate_limited" };
+  }
 
   const today = dayKey(serverNow());
   let outcome: ClaimRewardResult | null = null;
@@ -133,6 +141,11 @@ export async function claimWeeklyMilestone(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
+
+  // Sin límite, un bucle de reintentos martilla la base gratis.
+  if (!allowUserAction("claim", "claim:reward", userId)) {
+    return { ok: false, error: "rate_limited" };
+  }
 
   const target = WEEKLY_CHALLENGE.milestones.find((m) => m.percent === milestone);
   if (!target) return { ok: false, error: "invalid" };
@@ -233,6 +246,11 @@ export async function claimEventMission(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
+
+  // Sin límite, un bucle de reintentos martilla la base gratis.
+  if (!allowUserAction("claim", "claim:reward", userId)) {
+    return { ok: false, error: "rate_limited" };
+  }
 
   const now = serverNow();
   const event = activeLimitedEvent(now);

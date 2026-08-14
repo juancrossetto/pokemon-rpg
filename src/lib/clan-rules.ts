@@ -3,6 +3,7 @@
  */
 
 import type { ClanAffinity, ClanFocus, ClanJoinPolicy } from "@/lib/clan-types";
+import { sanitizeUserText } from "@/lib/user-text";
 import {
   DEFAULT_CLAN_EMBLEM,
   parseClanEmblem,
@@ -57,8 +58,14 @@ export const CLAN_FOCUSES: ClanFocus[] = [
 
 export const CLAN_JOIN_POLICIES: ClanJoinPolicy[] = ["OPEN", "REQUEST", "INVITE"];
 
+/**
+ * El nombre de clan es el caso donde el saneamiento más importa: la unicidad
+ * se calcula sobre esto (`canonicalizeClanName` construye encima), así que dos
+ * nombres que se **ven** iguales pero difieren en un ancho cero pasaban los
+ * dos y quedaban indistinguibles en pantalla.
+ */
 export function normalizeClanName(raw: string): string {
-  return raw.trim().replace(/\s+/g, " ");
+  return sanitizeUserText(raw, { max: CLAN_NAME_MAX });
 }
 
 /** Clave de unicidad laxa: minúsculas, sin diacríticos, sin espacios dobles. */
@@ -101,8 +108,12 @@ export function isValidClanJoinPolicy(value: string): value is ClanJoinPolicy {
   return CLAN_JOIN_POLICIES.includes(value as ClanJoinPolicy);
 }
 
+/**
+ * Nombre, tag, lema, descripción y anuncio de clan: todo texto que ven
+ * terceros. Antes era `trim().slice()`, que no ve los invisibles ni el bidi.
+ */
 export function clampClanText(raw: string, max: number): string {
-  return raw.trim().slice(0, max);
+  return sanitizeUserText(raw, { max });
 }
 
 export function resolveEmblem(raw: unknown): ClanEmblem {

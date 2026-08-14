@@ -51,6 +51,8 @@ import type {
 } from "@/lib/home-hub";
 import type { HomeHubLabels } from "@/components/home/home-game-hub";
 import { rankForRating, type PvpTier } from "@/lib/pvp/tiers";
+import { loadRaidHomeCard } from "@/lib/raids/state";
+import { HomeRaidCard } from "@/components/home/home-raid-card";
 
 const TEAM_SIZE = 6;
 
@@ -174,6 +176,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     achievementClaims,
     loginStreak,
     recentPvpMatches,
+    raidCard,
   ] = await Promise.all([
     loadEventsSummary(userId),
     getTranslations("events"),
@@ -226,6 +229,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         opponent: { select: { username: true, country: true, avatarId: true } },
       },
     }),
+    loadRaidHomeCard(userId),
   ]);
 
   const giftLabels = {
@@ -958,6 +962,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           />
         ) : null
       }
+      raidCard={<HomeRaidCard boss={raidCard} />}
       nextStep={nextStep.standalone ? <NextStepCard step={nextStep} /> : null}
       events={{
         daily: eventsSummary.daily,

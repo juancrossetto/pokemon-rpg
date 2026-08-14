@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { consumeInventoryItem } from "@/lib/inventory-consume";
 import { blockIfInCombat } from "@/lib/battle-lock";
 
 export type EquipHeldItemResult =
@@ -71,7 +72,9 @@ export async function equipHeldItem(
   // Ya lo tiene este mon: no-op.
   if (instance.heldItemId === itemId) return { ok: true };
 
-  await prisma.$transaction(async (tx) => {
+  // La transacción devuelve si pudo tomar el objeto: las acciones de este
+  // repo informan lo esperable con una unión discriminada, no con excepción.
+  const equipped = await prisma.$transaction(async (tx) => {
     if (otherHolders.length > 0) {
       await tx.pokemonInstance.updateMany({
         where: { id: { in: otherHolders.map((h) => h.id) } },
@@ -100,17 +103,18 @@ export async function equipHeldItem(
         });
       }
     } else if (canTakeFromBag) {
-      await tx.inventoryItem.update({
-        where: { userId_itemId: { userId, itemId } },
-        data: { quantity: { decrement: 1 } },
-      });
+      // Guarda de cantidad: equipar el mismo objeto desde dos pestañas sacaba
+      // una sola unidad de la mochila y lo dejaba equipado en los dos.
+      if (!(await consumeInventoryItem(tx, { userId, itemId }))) return false;
     }
 
     await tx.pokemonInstance.update({
       where: { id: pokemonInstanceId },
       data: { heldItemId: itemId },
     });
+    return true;
   });
+  if (!equipped) return { ok: false, error: "no_item" };
 
   revalidatePath(`/${locale}/team`);
   revalidatePath(`/${locale}/inventory`);

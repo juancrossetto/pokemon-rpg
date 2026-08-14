@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { allowUserAction } from "@/lib/rate-limit";
 import { calculateMaxHp } from "@/lib/stats";
 import { getCombatLock } from "@/lib/battle-lock";
 import { lockUsers } from "@/lib/db-locks";
@@ -20,6 +21,11 @@ export async function healTeam(
 ): Promise<{ ok: true } | { ok: false; error: "cooldown" | "no_coins" | "unauthorized" }> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
+  // El cooldown de curación ya limita el ritmo, pero no frena el reintento en
+  // bucle contra la base. `cooldown` es el error que el UI ya sabe mostrar.
+  if (!allowUserAction("heal", "team:heal", session.user.id)) {
+    return { ok: false, error: "cooldown" };
+  }
 
   // No se puede curar el equipo en combate ni durante un desafío de gym.
   const lock = await getCombatLock(session.user.id);

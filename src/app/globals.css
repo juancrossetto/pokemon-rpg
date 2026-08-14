@@ -927,7 +927,7 @@ body {
 .battle-bag-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   width: 100%;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -13029,6 +13029,285 @@ html.boot-splash-done .boot-splash,
 */
 .home-identity-wrap {
   min-width: 0;
+  flex: 1 1 auto;
+}
+
+/*
+  Fila superior del hub: card de incursión + banner.
+
+  Hasta xl el rail lateral no existe y la incursión se oculta para no sumar
+  contenido al home mobile. Desde xl el banner cede exactamente el ancho del rail
+  (`w-[16.5rem]` / `2xl:w-[17.5rem]` en `HomeDesktopRail`) para que la card
+  quede en la misma columna que la expedición y el ranking de abajo — si el
+  número se despega del rail, la grilla se ve desalineada.
+*/
+.home-top-row {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.65rem;
+}
+.home-top-row__side {
+  display: none;
+  order: 2;
+  min-width: 0;
+}
+.home-top-row .home-identity-wrap {
+  order: 1;
+}
+@media (min-width: 1280px) {
+  .home-top-row {
+    flex-direction: row;
+    gap: 1.25rem;
+  }
+  .home-top-row__side {
+    display: flex;
+    order: 0;
+    width: 16.5rem;
+    flex-shrink: 0;
+    align-self: stretch;
+    align-items: flex-start;
+    /* El PNG del marco del banner sobresale por arriba de su rectángulo útil.
+       Compensamos sólo ese aire visual sin alterar la altura de la fila. */
+    transform: translateY(1.75rem);
+  }
+  .home-top-row .home-identity-wrap {
+    order: 0;
+  }
+}
+@media (min-width: 1536px) {
+  .home-top-row__side {
+    width: 17.5rem;
+  }
+}
+
+/* ── Card de incursión del home ──────────────────────────────────────── */
+.home-raid {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 6.6rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--raid-accent) 38%, rgba(255, 255, 255, 0.1));
+  background:
+    radial-gradient(
+      ellipse 60% 130% at 18% 55%,
+      color-mix(in srgb, var(--raid-accent) 28%, transparent) 0%,
+      transparent 72%
+    ),
+    linear-gradient(125deg, #18202b, #0b0d13 68%);
+  padding: 0.55rem 0.65rem 0.6rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 12px 28px rgba(0, 0, 0, 0.22);
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.home-raid:hover {
+  border-color: color-mix(in srgb, var(--raid-accent) 70%, transparent);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 15px 32px color-mix(in srgb, var(--raid-accent) 15%, rgba(0, 0, 0, 0.3));
+}
+.home-raid__beam {
+  position: absolute;
+  inset: 0.25rem 1.5rem auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--raid-accent), transparent);
+  opacity: 0.75;
+  pointer-events: none;
+}
+.home-raid__aura {
+  position: absolute;
+  inset: 14% 8%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--raid-accent) 42%, transparent);
+  filter: blur(22px);
+  pointer-events: none;
+}
+.home-raid__head {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.home-raid__eyebrow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.475rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--raid-accent) 55%, #fff);
+}
+/* Intentos disponibles: es el dato que decide si vale la pena entrar. */
+.home-raid__badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.15rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--raid-accent) 34%, transparent);
+  background: color-mix(in srgb, var(--raid-accent) 18%, rgba(0, 0, 0, 0.2));
+  padding: 0.1rem 0.35rem;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.home-raid__badge .material-symbols-outlined {
+  font-size: 0.65rem !important;
+}
+/* Composición horizontal: arte e información comparten una única fila. */
+.home-raid__body {
+  position: relative;
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: minmax(4.7rem, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 0.45rem;
+}
+.home-raid__art {
+  position: relative;
+  display: grid;
+  height: 4.65rem;
+  min-height: 0;
+  place-items: center;
+}
+.home-raid__sprite {
+  position: relative;
+  height: auto;
+  width: auto;
+  max-height: 100%;
+  max-width: 100%;
+  filter: drop-shadow(0 7px 10px rgba(0, 0, 0, 0.58));
+  transition: transform 0.22s ease;
+}
+.home-raid:hover .home-raid__sprite {
+  transform: scale(1.04);
+}
+.home-raid__info {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.22rem;
+}
+.home-raid__name {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex-shrink: 0;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 850;
+  text-transform: capitalize;
+  color: #fff;
+}
+.home-raid__level {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.4);
+}
+.home-raid__bar {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  height: 0.25rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+}
+.home-raid__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--raid-accent) 58%, transparent);
+}
+.home-raid__progress-copy {
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.525rem;
+  font-weight: 700;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.38);
+}
+.home-raid__cta {
+  position: relative;
+  display: flex;
+  min-height: 1.7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 0.25rem 0.45rem;
+  font-size: 0.575rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.home-raid__cta .material-symbols-outlined {
+  font-size: 0.75rem !important;
+  transition: transform 0.18s ease;
+}
+.home-raid:hover .home-raid__cta .material-symbols-outlined {
+  transform: translateX(2px);
+}
+/* Con intentos disponibles el CTA se pinta del color del jefe; sin intentos
+   queda apagado y la card no reclama atención. */
+.home-raid.is-available .home-raid__cta {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--raid-accent) 72%, var(--color-primary)),
+    color-mix(in srgb, var(--raid-accent) 40%, var(--color-secondary))
+  );
+  color: #fff;
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--raid-accent) 22%, transparent);
+}
+.home-raid.is-defeated .home-raid__fill {
+  background: linear-gradient(90deg, #f59e0b, #fde047);
+}
+@media (min-width: 1280px) {
+  .home-raid {
+    min-height: 11rem;
+  }
+  .home-raid__body {
+    grid-template-columns: minmax(5.5rem, 0.9fr) minmax(0, 1.1fr);
+  }
+  .home-raid__art {
+    height: 6rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-raid:hover {
+    transform: none;
+  }
+  .home-raid:hover .home-raid__sprite,
+  .home-raid:hover .home-raid__cta .material-symbols-outlined {
+    transform: none;
+  }
 }
 
 @media (max-width: 639.98px) {
@@ -18420,6 +18699,20 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
 .raid-turn-chip .material-symbols-outlined {
   font-size: 0.85rem !important;
 }
+/* Daño acumulado del intento, pegado al contador de turnos. */
+.raid-turn-chip__damage {
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding-left: 0.4rem;
+  margin-left: 0.15rem;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.raid-turn-chip__damage::before {
+  content: "−";
+  margin-right: 0.1rem;
+  opacity: 0.6;
+}
+
 
 /* ── Incursión semanal ────────────────────────────────────────────────────
    Los nombres de especie se guardan en minúscula (vienen de PokeAPI) y se
@@ -18428,16 +18721,21 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
 .raid-page {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.6rem;
+}
+@media (min-width: 640px) {
+  .raid-page {
+    gap: 1rem;
+  }
 }
 
 .raid-hero {
   position: relative;
   overflow: hidden;
-  border-radius: 26px;
+  border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: linear-gradient(145deg, #171923, #0b0c11);
-  padding: 1.25rem;
+  padding: 0.7rem 0.75rem 0.75rem;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
 }
 @media (min-width: 640px) {
@@ -18477,8 +18775,8 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   color: var(--color-primary);
 }
 .raid-hero__title {
-  margin: 0.25rem 0 0;
-  font-size: 1.875rem;
+  margin: 0.15rem 0 0;
+  font-size: 1.5rem;
   color: #fff;
 }
 @media (min-width: 640px) {
@@ -18486,44 +18784,86 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
     font-size: 3rem;
   }
 }
+/* Sabor: en mobile repetía lo que ya dice la línea de reglas y se comía tres
+   renglones antes del jefe. */
 .raid-hero__subtitle {
-  margin: 0.5rem 0 0;
-  max-width: 36rem;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.55);
+  display: none;
 }
+@media (min-width: 640px) {
+  .raid-hero__subtitle {
+    display: block;
+    margin: 0.5rem 0 0;
+    max-width: 36rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.55);
+  }
+}
+/* Cuatro columnas apretadas en mobile: en 2x2 los chips ocupaban cuatro
+   renglones de alto y empujaban todo el resto fuera de la primera pantalla. */
 .raid-hero__stats {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin-top: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin-top: 0.7rem;
 }
 @media (min-width: 480px) {
   .raid-hero__stats {
     display: flex;
     flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
   }
 }
+/*
+  En mobile son texto sobre el fondo del hero, separados por una línea fina: la
+  card del hero ya es un contenedor, y meter cuatro cajas con borde adentro
+  apilaba marcos sin agregar información. Desde 480px vuelven a ser chips.
+*/
 .raid-stat {
   min-width: 0;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.25);
-  padding: 0.5rem 0.75rem;
+  padding: 0 0.4rem;
+  text-align: center;
+}
+.raid-stat + .raid-stat {
+  border-left: 1px solid rgba(255, 255, 255, 0.09);
+}
+@media (min-width: 480px) {
+  .raid-stat {
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .raid-stat + .raid-stat {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+  }
 }
 .raid-stat__label {
   display: block;
-  font-size: 0.5625rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.5rem;
   font-weight: 900;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.35);
 }
 .raid-stat__value {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
   color: #fff;
+}
+@media (min-width: 480px) {
+  .raid-stat__label {
+    font-size: 0.5625rem;
+    letter-spacing: 0.08em;
+  }
+  .raid-stat__value {
+    font-size: 0.875rem;
+  }
 }
 .raid-hero__portrait {
   position: relative;
@@ -18568,11 +18908,6 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
     animation: none;
   }
 }
-.raid-hero__types {
-  position: relative;
-  display: flex;
-  gap: 0.3rem;
-}
 .raid-type-pill {
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--type-color) 55%, transparent);
@@ -18588,15 +18923,18 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
 .raid-hero__body {
   position: relative;
   z-index: 1;
-  margin-top: 1rem;
+  margin-top: 0.7rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 1rem;
+  padding-top: 0.7rem;
+}
+@media (min-width: 640px) {
+  .raid-hero__body {
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
 }
 .raid-boss-line {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.75rem;
+  min-width: 0;
 }
 .raid-boss-line__label {
   margin: 0;
@@ -18608,13 +18946,18 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
 }
 .raid-boss-line__name {
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
   margin: 0;
   font-size: 1.25rem;
   font-weight: 900;
   text-transform: capitalize;
   color: #fff;
+}
+.raid-boss-line__types {
+  display: flex;
+  gap: 0.25rem;
 }
 .raid-boss-line__level {
   font-size: 0.8125rem;
@@ -18622,30 +18965,6 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   text-transform: none;
   color: rgba(255, 255, 255, 0.35);
 }
-/* Reglas del intento a la vista: cuánto aguanta el jefe y cuántos turnos hay.
-   Sin esto el jugador gasta el primer intento para descubrirlas. */
-.raid-boss-line__specs {
-  display: flex;
-  flex-shrink: 0;
-  gap: 1rem;
-  margin: 0;
-  text-align: right;
-}
-.raid-boss-line__specs dt {
-  font-size: 0.5625rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
-}
-.raid-boss-line__specs dd {
-  margin: 0;
-  font-size: 0.8125rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: rgba(255, 255, 255, 0.75);
-}
-
 .raid-bar {
   margin-top: 0.75rem;
 }
@@ -18657,6 +18976,12 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   border: 1px solid rgba(255, 255, 255, 0.07);
   background: rgba(0, 0, 0, 0.45);
 }
+/*
+  Crece desde 0 al montar en vez de aparecer ya llena. El `scaleX` va sobre el
+  relleno que ya tiene su `width` final, así que la animación no depende de
+  medir nada en JS ni de un `setState` en efecto (que la regla de lint del
+  proyecto marca como error).
+*/
 .raid-bar__fill {
   position: relative;
   display: block;
@@ -18664,7 +18989,118 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   overflow: hidden;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  transform-origin: left center;
   transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: raid-bar-grow 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes raid-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .raid-bar__fill {
+    animation: none;
+  }
+}
+/* Barra completada: se dora y deja de "buscar" progreso. */
+.raid-bar.is-defeated .raid-bar__fill {
+  background: linear-gradient(90deg, #f59e0b, #fde047);
+}
+.raid-bar.is-defeated .raid-bar__track {
+  border-color: rgba(250, 204, 21, 0.35);
+}
+
+/*
+  Cartel de barra comunitaria tumbada.
+
+  Era un recuadro ámbar plano con un ícono al lado — se leía como un aviso más,
+  igual que el de "nivel recomendado" tres líneas abajo. Es el único momento
+  celebratorio del modo (pasa una vez por semana, y sólo si la comunidad
+  entera empuja), así que se distingue: medalla con halo, fondo dorado con
+  profundidad y un barrido de brillo que lo separa de cualquier otro aviso.
+*/
+.raid-victory {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  overflow: hidden;
+  margin-top: 0.75rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  background:
+    radial-gradient(ellipse 60% 140% at 12% 50%, rgba(250, 204, 21, 0.22), transparent 70%),
+    linear-gradient(120deg, rgba(120, 53, 15, 0.55), rgba(20, 16, 8, 0.75));
+  padding: 0.7rem 0.85rem;
+  box-shadow:
+    inset 0 1px 0 rgba(253, 224, 71, 0.25),
+    0 8px 26px rgba(180, 83, 9, 0.25);
+}
+/* Barrido de brillo: un solo pase lento, no un loop que distraiga. */
+.raid-victory__shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.16) 50%,
+    transparent 65%
+  );
+  animation: raid-victory-shine 3.6s ease-in-out 0.4s infinite;
+  pointer-events: none;
+}
+@keyframes raid-victory-shine {
+  0% {
+    transform: translateX(-120%);
+  }
+  45%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+.raid-victory__medal {
+  position: relative;
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #fef3c7, #f59e0b);
+  box-shadow:
+    0 0 0 3px rgba(250, 204, 21, 0.16),
+    0 4px 14px rgba(245, 158, 11, 0.45);
+}
+.raid-victory__medal .material-symbols-outlined {
+  font-size: 1.3rem !important;
+  color: #3b2508;
+}
+.raid-victory__title {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: capitalize;
+  color: #fef3c7;
+  text-shadow: 0 1px 6px rgba(245, 158, 11, 0.4);
+}
+.raid-victory__body {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  text-transform: none;
+  color: rgba(254, 240, 138, 0.7);
+}
+@media (prefers-reduced-motion: reduce) {
+  .raid-victory__shine {
+    animation: none;
+    opacity: 0;
+  }
 }
 .raid-bar__sheen {
   position: absolute;
@@ -18708,7 +19144,7 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 1rem 0 0;
+  margin: 0.6rem 0 0;
   font-size: 0.6875rem;
   line-height: 1.4;
   color: rgba(255, 255, 255, 0.45);
@@ -18741,12 +19177,15 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   background: #15171d;
   padding: 0.9rem;
 }
+/* En mobile el chip de "próxima semana" le comía el ancho al título y
+   "Escalera de legendarios" caía en dos líneas: se apilan y el título toma
+   todo el ancho. Desde 640px vuelven a la misma fila. */
 .raid-ladder__head {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  gap: 0.2rem;
+  margin-bottom: 0.6rem;
 }
 .raid-ladder__next {
   flex-shrink: 0;
@@ -18754,34 +19193,84 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  text-align: right;
   color: rgba(255, 255, 255, 0.35);
 }
+@media (min-width: 640px) {
+  .raid-ladder__head {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .raid-ladder__next {
+    text-align: right;
+  }
+}
+.raid-ladder__title-line {
+  white-space: nowrap;
+}
 /*
-  Grilla que envuelve, no rail con scroll horizontal: con 11 escalones el
-  scroll dejaba la última card cortada al medio y el conjunto se leía como si
-  faltara contenido. Envolviendo entran todos enteros y la escalera se ve
-  completa de una.
+  Mobile: carrusel. Con 11 escalones la grilla se iba a cuatro filas y se comía
+  media pantalla antes de llegar al ranking. Scroll horizontal con snap, y el
+  escalón vigente se centra al montar (ver `LadderRail`).
+
+  Desktop: grilla que envuelve. Ahí sobra ancho y el scroll dejaba la última
+  card cortada al medio, que se leía como si faltara contenido.
 */
 .raid-ladder__rail {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+  display: flex;
   gap: 0.45rem;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0.3rem;
   list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  /*
+    Sangra hasta el borde de la card y vuelve a meter el padding adentro: así
+    la tira arranca y termina al ras, y la card parcial de la derecha se lee
+    como "hay más" y no como una card cortada. Antes había un `mask` que
+    desvanecía ese borde y era, literalmente, lo que las cortaba.
+
+    El padding vertical existe para que la card vigente —que va elevada y con
+    sombra— no quede recortada por el `overflow-x`, que también recorta arriba
+    y abajo.
+  */
+  margin-inline: -0.75rem;
+  padding: 0.25rem 0.75rem 0.5rem;
+  scroll-padding-inline: 0.75rem;
+}
+.raid-ladder__rail::-webkit-scrollbar {
+  display: none;
+}
+@media (min-width: 768px) {
+  .raid-ladder__rail {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+    overflow-x: visible;
+    margin-inline: 0;
+    padding: 0;
+  }
 }
 .raid-step {
   display: flex;
+  flex: 0 0 4.6rem;
   min-width: 0;
   flex-direction: column;
   align-items: center;
   gap: 0.2rem;
+  scroll-snap-align: center;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.25);
   padding: 0.55rem 0.35rem 0.5rem;
   transition: transform 0.2s ease;
+}
+@media (min-width: 768px) {
+  .raid-step {
+    flex: initial;
+  }
 }
 .raid-step__art {
   display: grid;
@@ -18905,103 +19394,94 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   padding: 0;
   list-style: none;
 }
-.raid-leader {
+
+/*
+  Fila de tabla (líderes y clanes comparten estructura).
+
+  Antes cada estado pintaba el fondo entero: el puesto 1 lo teñía de dorado,
+  "sos vos" le sumaba un contorno violeta y encima el nombre también iba en
+  violeta. Tres colores discutiendo en la misma fila y ninguno se leía.
+
+  Ahora hay **una señal por cosa**: el puesto vive en su medalla, "sos vos" en
+  la barra de la izquierda, y el fondo queda neutro para los dos. La barra de
+  proporción (`--share`) es lo único que ocupa el ancho, y va tan tenue que se
+  lee como textura, no como color de fila.
+*/
+.raid-row {
+  position: relative;
   display: grid;
-  grid-template-columns: 1.6rem auto minmax(0, 1fr) auto;
+  grid-template-columns: 1.5rem auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.5rem;
-  border-radius: 0.6rem;
-  border: 1px solid transparent;
-  background: rgba(0, 0, 0, 0.22);
-  padding: 0.4rem 0.6rem;
-}
-.raid-leader__rank {
-  font-size: 0.75rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.35);
-}
-.raid-leader__name {
-  min-width: 0;
+  gap: 0.55rem;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.875rem;
-  color: #fff;
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.45rem 0.65rem;
+  transition: background 0.15s ease;
 }
-.raid-leader__damage {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.8125rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  color: rgba(255, 255, 255, 0.85);
+.raid-row:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
-/* Podio: el color del puesto va en el número y en un borde tenue, no en el
-   nombre — así el resaltado de "sos vos" sigue siendo legible encima. */
-.raid-leader.is-rank-1 {
-  border-color: rgba(250, 204, 21, 0.35);
-  background: rgba(250, 204, 21, 0.08);
+/* Cuánto hizo esta fila respecto del puntero de la tabla. Da lectura de
+   distancia sin sumar una columna de porcentajes. */
+.raid-row__share {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--share, 0%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.075),
+    rgba(255, 255, 255, 0.015)
+  );
+  pointer-events: none;
 }
-.raid-leader.is-rank-1 .raid-leader__rank {
-  color: #facc15;
-}
-.raid-leader.is-rank-2 {
-  border-color: rgba(203, 213, 225, 0.28);
-  background: rgba(203, 213, 225, 0.06);
-}
-.raid-leader.is-rank-2 .raid-leader__rank {
-  color: #cbd5e1;
-}
-.raid-leader.is-rank-3 {
-  border-color: rgba(217, 119, 6, 0.3);
-  background: rgba(217, 119, 6, 0.07);
-}
-.raid-leader.is-rank-3 .raid-leader__rank {
-  color: #d97706;
-}
-.raid-leader.is-you {
-  outline: 1px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
-}
-.raid-leader.is-you .raid-leader__name {
-  color: var(--color-primary);
+.raid-row > *:not(.raid-row__share) {
+  position: relative;
 }
 
-/* Fila de clan: emblema real + nombre/tag/aportantes + daño. El ícono genérico
-   de "grupo" no decía nada; el emblema es lo que identifica al clan en el
-   resto del juego. */
-.raid-clan {
+/* Medalla del puesto: es el único lugar donde vive el oro/plata/bronce. */
+.raid-row__rank {
   display: grid;
-  grid-template-columns: 1rem 2rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: 0.65rem;
-  border: 1px solid transparent;
-  background: rgba(0, 0, 0, 0.22);
-  padding: 0.45rem 0.55rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-.raid-clan__rank {
-  font-size: 0.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 0.6875rem;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.4);
 }
-.raid-clan__emblem {
-  width: 2rem;
-  height: 2rem;
+.raid-row.is-rank-1 .raid-row__rank {
+  background: linear-gradient(160deg, #fde68a, #f59e0b);
+  color: #422006;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
 }
-.raid-clan__name {
+.raid-row.is-rank-2 .raid-row__rank {
+  background: linear-gradient(160deg, #f1f5f9, #94a3b8);
+  color: #1e293b;
+  box-shadow: 0 2px 8px rgba(148, 163, 184, 0.28);
+}
+.raid-row.is-rank-3 .raid-row__rank {
+  background: linear-gradient(160deg, #fdba74, #b45309);
+  color: #3b1a06;
+  box-shadow: 0 2px 8px rgba(180, 83, 9, 0.3);
+}
+
+.raid-row__emblem {
+  width: 1.85rem;
+  height: 1.85rem;
+}
+.raid-row__name {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #fff;
+  color: rgba(255, 255, 255, 0.92);
 }
-.raid-clan__meta {
+.raid-row__meta {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -19010,26 +19490,55 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   font-weight: 600;
   color: rgba(255, 255, 255, 0.35);
 }
-.raid-clan__damage {
+.raid-row__value {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.8125rem;
-  font-weight: 900;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.8);
 }
-.raid-clan.is-lead {
-  border-color: rgba(250, 204, 21, 0.3);
-  background: rgba(250, 204, 21, 0.07);
+
+/* Corte entre el top y tu fila: tres puntos, para que no parezca que sos el
+   11º cuando en realidad hay puestos en el medio sin listar. */
+.raid-leaders__gap {
+  display: grid;
+  height: 0.9rem;
+  place-items: center;
 }
-.raid-clan.is-lead .raid-clan__rank {
-  color: #facc15;
+.raid-leaders__gap > span {
+  width: 1.1rem;
+  height: 2px;
+  border-radius: 999px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.28) 0 2px,
+    transparent 2px 5px
+  );
 }
-.raid-clan.is-you {
-  outline: 1px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+
+/* "Sos vos": barra al ras del borde izquierdo. No pisa la medalla ni el fondo,
+   así que convive con cualquier puesto. */
+.raid-row.is-you::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 999px 0 0 999px;
+  background: var(--color-primary);
 }
-.raid-clan.is-you .raid-clan__name {
-  color: var(--color-primary);
+.raid-row.is-you {
+  background: color-mix(in srgb, var(--color-primary) 9%, rgba(255, 255, 255, 0.035));
+  padding-left: 0.8rem;
 }
+.raid-row.is-you:hover {
+  background: color-mix(in srgb, var(--color-primary) 14%, rgba(255, 255, 255, 0.035));
+}
+
+/* La fila de clan lleva emblema; la de entrenador, avatar. Misma grilla. */
+.raid-row--clan .raid-row__value {
+  font-size: 0.75rem;
+}
+
 
 /* Vacío con cuerpo: la tabla de líderes con un solo jugador dejaba medio panel
    en blanco y parecía que algo no había cargado. */
@@ -19057,138 +19566,302 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   opacity: 0.5;
 }
 
-/*
-  Premio semanal de incursión.
-
-  Era un párrafo de texto que repetía a mano el contenido de `RAID_REWARD`.
-  Ahora los premios se dibujan como fichas con el PNG del objeto —los mismos
-  assets HD del regalo diario— así que se lee de un vistazo qué se lleva uno.
-*/
+/* Premio semanal: una sola superficie, sin subcards alrededor de cada grupo. */
 .raid-reward {
+  position: relative;
   display: flex;
+  container-type: inline-size;
   flex-direction: column;
-  gap: 0.75rem;
-  border-radius: 1rem;
-  border: 1px solid color-mix(in srgb, var(--color-secondary) 24%, transparent);
+  gap: 0.55rem;
+  overflow: hidden;
+  border-radius: 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 32%, transparent);
   background:
     radial-gradient(
-      ellipse 120% 90% at 50% 0%,
-      color-mix(in srgb, var(--color-secondary) 14%, transparent) 0%,
-      transparent 65%
+      ellipse 115% 68% at 15% -5%,
+      color-mix(in srgb, var(--color-secondary) 20%, transparent) 0%,
+      transparent 58%
     ),
-    #15171d;
+    linear-gradient(145deg, #1a1c24, #111318 72%);
   padding: 0.9rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 14px 34px rgba(0, 0, 0, 0.2);
+}
+.raid-reward::before {
+  content: "";
+  position: absolute;
+  inset: 0.35rem 1.25rem auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-secondary) 65%, #fff), transparent);
+  opacity: 0.55;
+  pointer-events: none;
 }
 .raid-reward__head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
+  gap: 0.75rem;
 }
 .raid-reward__eyebrow {
   margin: 0;
-  font-size: 0.625rem;
+  font-size: 0.55rem;
   font-weight: 900;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--color-secondary);
 }
 .raid-reward__title {
-  margin: 0.1rem 0 0;
-  font-size: 1rem;
-  font-weight: 700;
+  margin: 0.05rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 750;
   color: #fff;
 }
-/* Intentos como puntos: se entiende sin leer, y el botón deja de ser el único
-   lugar donde figura el progreso. */
-.raid-reward__dots {
+
+/* Medidor de intentos: segmentos + cifra. Los tres puntos de 0.45rem que
+   había antes no se veían y tampoco decían sobre cuántos iba. */
+.raid-reward__meter {
   display: flex;
   flex-shrink: 0;
-  gap: 0.25rem;
-  padding-top: 0.35rem;
+  align-items: center;
+  gap: 0.35rem;
+  color: rgba(255, 255, 255, 0.48);
 }
-.raid-reward__dot {
-  width: 0.45rem;
-  height: 0.45rem;
+.raid-reward__meter-label {
+  display: none;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.raid-reward__meter-bars {
+  display: flex;
+  gap: 0.12rem;
+}
+.raid-reward__seg {
+  width: 0.85rem;
+  height: 0.25rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.14);
 }
-.raid-reward__dot.is-done {
+.raid-reward__seg.is-done {
   background: var(--color-secondary);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--color-secondary) 60%, transparent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--color-secondary) 55%, transparent);
 }
-/* Reclamable: la card se enciende sola en vez de depender de que el jugador
-   note que el botón dejó de estar gris. */
-.raid-reward.is-ready {
-  border-color: color-mix(in srgb, var(--color-secondary) 55%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-secondary) 25%, transparent),
-    0 12px 34px color-mix(in srgb, var(--color-secondary) 18%, transparent);
+.raid-reward__meter-count {
+  font-size: 0.625rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.4);
 }
+
+/* Los premios quedan sobre la superficie principal. */
+.raid-reward__content {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  padding-block: 0.05rem;
+}
+.raid-reward__content.has-community {
+  grid-template-columns: minmax(0, 3fr) minmax(6.5rem, 2fr);
+  align-items: center;
+}
+.raid-reward__group {
+  min-width: 0;
+}
+/*
+  La grilla ocupa todo el ancho de la bandeja y lo que se capa es el **ícono**,
+  no la columna. Al revés —que era como estaba— los PNG quedaban apretados en
+  una tira de 10,5rem al medio y el resto de la bandeja vacío a los costados:
+  ancho desperdiciado y encima el nombre sin lugar para respirar.
+
+  Los tres premios base y los dos comunitarios comparten una sola franja: cada
+  grupo conserva columnas del mismo ancho y la card no crece otra fila.
+*/
 .raid-reward__grid {
   display: grid;
+  width: 100%;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.4rem;
+  gap: 0.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-/* Sin caja: los PNG ya tienen su propia silueta y sombra, y meterlos en un
-   recuadro oscuro los encajonaba y les robaba tamaño. Sólo aire alrededor. */
 .raid-reward__tile {
   display: flex;
   min-width: 0;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
-  padding: 0.25rem 0.15rem 0;
+  gap: 0.05rem;
+  padding: 0;
+}
+/* Raíz del ícono que dibuja `RewardList` en modo strip: el PNG va al 88% de
+   este ancho, así que éste es el número para agrandar o achicar el botín. */
+.raid-reward__tile > span:first-child {
+  display: block;
+  width: 100%;
+  max-width: 3rem;
+  margin-inline: auto;
 }
 .raid-reward__tile-name {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.52);
+}
+
+/* Extra comunitario: separación tipográfica, no otra caja. */
+.raid-reward__group--community {
+  border-left: 1px solid rgba(250, 204, 21, 0.22);
+  padding-left: 0.45rem;
+}
+.raid-reward__divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  margin: 0 0 0.15rem;
+  font-size: 0.45rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fde047;
+}
+.raid-reward__divider .material-symbols-outlined {
+  font-size: 0.65rem !important;
+}
+.raid-reward__divider::after {
+  display: none;
+}
+.raid-reward__grid--bonus {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: none;
+  margin-inline: auto;
+}
+
+.raid-reward__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8.75rem, 1.12fr);
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 0.5rem;
 }
 .raid-reward__bonus {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   margin: 0;
-  border-radius: 0.6rem;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 0.4rem 0.55rem;
-  font-size: 0.6875rem;
-  line-height: 1.3;
-  color: rgba(255, 255, 255, 0.5);
+  padding: 0;
+  font-size: 0.55rem;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.45);
 }
-.raid-reward__bonus .material-symbols-outlined {
-  font-size: 1rem !important;
+.raid-reward__bonus-icon {
+  position: relative;
+  display: grid;
+  width: 1.15rem;
+  height: 1.15rem;
   flex-shrink: 0;
+  place-items: center;
+}
+.raid-reward__bonus-icon img {
+  width: 1rem;
+  height: 1rem;
+  object-fit: contain;
+}
+.raid-reward__bonus-icon .material-symbols-outlined {
+  position: absolute;
+  right: -0.15rem;
+  bottom: -0.12rem;
+  display: grid;
+  width: 0.72rem;
+  height: 0.72rem;
+  place-items: center;
+  border-radius: 999px;
+  background: #22c55e;
+  font-size: 0.6rem !important;
+  font-weight: 900;
+  color: #07110a;
 }
 .raid-reward__bonus.is-active {
-  background: color-mix(in srgb, var(--color-secondary) 12%, transparent);
   color: color-mix(in srgb, var(--color-secondary) 75%, #fff);
 }
+
 .raid-reward__cta {
-  border-radius: 0.75rem;
-  background: var(--color-secondary);
-  padding: 0.55rem 0.75rem;
-  font-size: 0.8125rem;
+  position: relative;
+  overflow: hidden;
+  min-height: 2.25rem;
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.6875rem;
   font-weight: 900;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.5);
+}
+.raid-reward__cta-label {
+  position: relative;
+}
+/* Reclamable: mismo lenguaje que el cartel de victoria — degradé con cuerpo y
+   un barrido de brillo. Bloqueado queda plano y apagado, sin `grayscale` sobre
+   un color que ya es gris. */
+.raid-reward.is-ready .raid-reward__cta {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-secondary) 85%, #fff) 0%,
+    var(--color-secondary) 55%,
+    color-mix(in srgb, var(--color-secondary) 75%, #000) 100%
+  );
   color: #fff;
-  transition: filter 0.15s ease;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-secondary) 35%, transparent);
+}
+.raid-reward__cta-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 65%
+  );
+  animation: raid-victory-shine 3.6s ease-in-out 0.6s infinite;
 }
 .raid-reward__cta:hover:not(:disabled) {
   filter: brightness(1.1);
 }
 .raid-reward__cta:disabled {
   cursor: not-allowed;
-  filter: grayscale(1);
-  opacity: 0.4;
+}
+.raid-reward.is-ready {
+  border-color: color-mix(in srgb, var(--color-secondary) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 34px color-mix(in srgb, var(--color-secondary) 18%, transparent);
+}
+@container (min-width: 32rem) {
+  .raid-reward__meter-label {
+    display: inline;
+  }
+  .raid-reward__group--community {
+    padding-left: 0.8rem;
+  }
+  .raid-reward__footer {
+    grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.72fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .raid-reward__cta-shine {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 /* Chispa que sube delante del relleno: es lo que lee como "escalando" y no

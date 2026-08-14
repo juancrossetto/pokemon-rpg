@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { blockIfInCombat } from "@/lib/battle-lock";
+import { consumeInventoryItem } from "@/lib/inventory-consume";
 
 export type TeachMoveResult =
   | { ok: true; moveName: string }
@@ -71,17 +72,18 @@ export async function teachMove(
 
   const move = await prisma.move.findUniqueOrThrow({ where: { id: moveId } });
 
-  await prisma.$transaction([
-    prisma.inventoryItem.update({
-      where: { userId_itemId: { userId, itemId } },
-      data: { quantity: { decrement: 1 } },
-    }),
-    prisma.pokemonMove.upsert({
+  // La MT se descuenta con guarda de cantidad: sin eso, dos envíos seguidos
+  // enseñaban el movimiento dos veces gastando una sola copia.
+  const consumed = await prisma.$transaction(async (tx) => {
+    if (!(await consumeInventoryItem(tx, { userId, itemId }))) return false;
+    await tx.pokemonMove.upsert({
       where: { pokemonInstanceId_slot: { pokemonInstanceId, slot } },
       create: { pokemonInstanceId, slot, moveId, currentPp: move.pp },
       update: { moveId, currentPp: move.pp },
-    }),
-  ]);
+    });
+    return true;
+  });
+  if (!consumed) return { ok: false, error: "no_tm" };
 
   revalidatePath(`/${locale}/team`);
   return { ok: true, moveName: move.name };

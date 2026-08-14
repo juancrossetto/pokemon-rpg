@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   RAID_BOSSES,
+  RAID_BOSS_HP_AT_FIRST_STEP,
+  raidBossBattleHp,
   raidBossForWeek,
   raidNextBossForWeek,
   raidWeekIndex,
@@ -40,6 +42,24 @@ describe("escalera de jefes", () => {
 
   it("una clave de semana rota no rompe la rotación", () => {
     expect(RAID_BOSSES).toContain(raidBossForWeek("basura"));
+  });
+});
+
+describe("raidBossBattleHp", () => {
+  it("el primer escalón conserva la bolsa base", () => {
+    expect(raidBossBattleHp(RAID_BOSSES[0]!.level)).toBe(RAID_BOSS_HP_AT_FIRST_STEP);
+  });
+
+  it("aguanta más a medida que sube la escalera", () => {
+    for (let i = 1; i < RAID_BOSSES.length; i += 1) {
+      expect(raidBossBattleHp(RAID_BOSSES[i]!.level)).toBeGreaterThan(
+        raidBossBattleHp(RAID_BOSSES[i - 1]!.level),
+      );
+    }
+  });
+
+  it("un nivel por debajo del primer escalón no baja de la base", () => {
+    expect(raidBossBattleHp(1)).toBe(RAID_BOSS_HP_AT_FIRST_STEP);
   });
 });
 

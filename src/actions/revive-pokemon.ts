@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { blockIfInCombat } from "@/lib/battle-lock";
+import { clearEmptyInventoryRow, consumeInventoryItem } from "@/lib/inventory-consume";
 import { REVIVE_ITEMS, reviveHpFraction } from "@/lib/squad-bag";
 
 export type RevivePokemonResult =
@@ -73,21 +74,20 @@ export async function revivePokemon(
   const fraction = reviveHpFraction(pick.item.name) ?? 0.5;
   const revivedTo = Math.max(1, Math.floor(maxHp * fraction));
 
-  await prisma.$transaction([
-    prisma.inventoryItem.update({
-      where: { userId_itemId: { userId, itemId: pick.itemId } },
-      data: { quantity: { decrement: 1 } },
-    }),
-    prisma.pokemonInstance.update({
+  // El descuento guarda la condición de cantidad: si el revive se gastó en
+  // otra pestaña entre la lectura y acá, no se revive gratis.
+  const consumed = await prisma.$transaction(async (tx) => {
+    if (!(await consumeInventoryItem(tx, { userId, itemId: pick.itemId }))) return false;
+    await tx.pokemonInstance.update({
       where: { id: instance.id },
       data: { currentHp: revivedTo },
-    }),
-  ]);
+    });
+    return true;
+  });
+  if (!consumed) return { ok: false, error: "no_revives" };
 
   if (pick.quantity <= 1) {
-    await prisma.inventoryItem.deleteMany({
-      where: { userId, itemId: pick.itemId, quantity: { lte: 0 } },
-    });
+    await clearEmptyInventoryRow(prisma, { userId, itemId: pick.itemId });
   }
 
   revalidatePath(`/${locale}`);

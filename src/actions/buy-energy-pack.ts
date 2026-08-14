@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { allowUserAction } from "@/lib/rate-limit";
 import { lockUsers } from "@/lib/db-locks";
 import { getCurrentEnergy } from "@/lib/energy";
 import { MAX_PURCHASE_QUANTITY } from "@/lib/shop";
@@ -22,6 +23,7 @@ export type BuyEnergyPackResult =
   | {
       ok: false;
       error:
+        | "rate_limited"
         | "unauthorized"
         | "no_coins"
         | "invalid_quantity"
@@ -41,6 +43,11 @@ export async function buyEnergyPack(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
+
+  // Sin límite, un bucle de reintentos martilla la base gratis.
+  if (!allowUserAction("purchase", "shop:energy", userId)) {
+    return { ok: false, error: "rate_limited" };
+  }
 
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_PURCHASE_QUANTITY) {
     return { ok: false, error: "invalid_quantity" };

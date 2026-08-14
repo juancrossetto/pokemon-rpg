@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+  type CSSProperties,
+} from "react";
 import { useTranslations } from "next-intl";
 import {
   submitBattleMove,
@@ -9,6 +16,8 @@ import {
 } from "@/actions/battle-move";
 import { submitDoubleBattleMoves } from "@/actions/double-battle-move";
 import { fleeBattle } from "@/actions/flee-battle";
+import { abandonWeeklyRaidBattle } from "@/actions/weekly-raid";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { attemptCapture, type CapturedPokemonInfo } from "@/actions/attempt-capture";
 import { switchPokemon } from "@/actions/switch-pokemon";
 import { applyBattleItem } from "@/actions/use-item";
@@ -703,6 +712,8 @@ export function BattleArena({
   /** Incursión: turnos restantes del intento y resumen al cerrarlo. */
   const [raidTurns, setRaidTurns] = useState<number | null>(initialRaidTurnsLeft ?? null);
   const [raidSummary, setRaidSummary] = useState<RaidSummary | null>(null);
+  const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  const [withdrawing, startWithdraw] = useTransition();
   const [turnDeadlineAt, setTurnDeadlineAt] = useState<string | null>(
     initialTurnDeadlineAt ?? null,
   );
@@ -767,7 +778,10 @@ export function BattleArena({
   const arenaFieldRef = useRef<HTMLDivElement>(null);
   const [arenaHeightPx, setArenaHeightPx] = useState(0);
   const [arenaWidthPx, setArenaWidthPx] = useState(0);
-  const bgmKind = isGymBattle || isPvpBattle || opponentName ? "boss" : "wild";
+  // La incursión entra acá: es un legendario de jefe, no un encuentro de ruta.
+  // Sin esto sonaba la música de salvaje contra un Nv.100.
+  const bgmKind =
+    isGymBattle || isPvpBattle || isRaidBattle || opponentName ? "boss" : "wild";
   const showVsIntro = freshBoot && !vsIntroDone;
   const combatBusy = isAnimating || showVsIntro || (freshBoot && !bootFxDone);
   const fieldAssembling = freshBoot && !fieldRevealed;
@@ -3284,6 +3298,25 @@ export function BattleArena({
         className={`battle-biome-bleed${fieldAssembling ? " battle-biome-bleed--assembling" : ""}`}
         aria-hidden
       />
+      {isRaidBattle ? (
+        <ConfirmModal
+          open={confirmWithdraw}
+          title={t("raidWithdrawTitle")}
+          body={t("raidWithdrawBody")}
+          confirmLabel={t("raidWithdrawConfirm")}
+          cancelLabel={t("raidWithdrawCancel")}
+          tone="danger"
+          pending={withdrawing}
+          onCancel={() => {
+            if (!withdrawing) setConfirmWithdraw(false);
+          }}
+          onConfirm={() => {
+            startWithdraw(async () => {
+              await abandonWeeklyRaidBattle(locale);
+            });
+          }}
+        />
+      ) : null}
       {mustSwitch ? (
         <MustSwitchSheet
           isAnimating={combatBusy}
@@ -3492,6 +3525,15 @@ export function BattleArena({
                     timer
                   </span>
                   {t("raidTurnsLeft", { turns: raidTurns })}
+                  {/*
+                    Daño acumulado del intento. La barra del jefe tiene decenas
+                    de miles de HP y casi no se mueve, así que sin este número
+                    el jugador no sabía si estaba haciendo algo hasta el cartel
+                    final.
+                  */}
+                  <span className="raid-turn-chip__damage">
+                    {Math.max(0, wildMaxHp - wildHp).toLocaleString()}
+                  </span>
                 </span>
               ) : null}
               <div className="mt-1 flex flex-col items-start gap-1.5 md:mt-1.5 md:gap-2">
@@ -4188,24 +4230,37 @@ export function BattleArena({
                   </span>
                   <span className="battle-cmd-btn__label">{t("bag")}</span>
                 </button>
+                {/*
+                  En incursión este slot era un botón muerto: `flee-battle`
+                  rechaza las incursiones, así que quedaba habilitado y no hacía
+                  nada. Pasa a ser la retirada del intento — la única salida que
+                  faltaba, porque una sesión de incursión abierta bloquea todo
+                  otro combate.
+                */}
                 <button
                   type="button"
-                  disabled={combatBusy || isGymBattle || (Boolean(opponentName) && !isPvpBattle)}
-                  onClick={handleFlee}
+                  disabled={
+                    combatBusy ||
+                    (!isRaidBattle &&
+                      (isGymBattle || (Boolean(opponentName) && !isPvpBattle)))
+                  }
+                  onClick={() => (isRaidBattle ? setConfirmWithdraw(true) : handleFlee())}
                   className="battle-cmd-btn battle-cmd-run"
                   title={
-                    fleePct != null
+                    !isRaidBattle && fleePct != null
                       ? t("fleeChanceHint", { pct: fleePct })
                       : undefined
                   }
                 >
                   <span className="battle-cmd-btn__icon" aria-hidden>
                     <span className="material-symbols-outlined">
-                      {isPvpBattle ? "flag" : "directions_run"}
+                      {isRaidBattle ? "logout" : isPvpBattle ? "flag" : "directions_run"}
                     </span>
                   </span>
                   <span className="battle-cmd-btn__label">
-                    {isPvpBattle ? (
+                    {isRaidBattle ? (
+                      t("raidWithdraw")
+                    ) : isPvpBattle ? (
                       t("forfeit")
                     ) : fleePct != null ? (
                       <>

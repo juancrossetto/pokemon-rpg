@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
 import { spriteFor } from "@/lib/shiny";
+import { clearEmptyInventoryRow, consumeInventoryItem } from "@/lib/inventory-consume";
 import {
   toKnownMoveInfo,
   toLevelUpMoveInfo,
@@ -560,14 +561,11 @@ export async function evolvePokemonWithItem(opts: {
   });
   if (!evolved.ok) return { ok: false, error: "not_found" };
 
-  await prisma.inventoryItem.update({
-    where: { userId_itemId: { userId: opts.userId, itemId: stone.itemId } },
-    data: { quantity: { decrement: 1 } },
-  });
+  // Guarda de cantidad: la piedra se lee antes de evolucionar, así que sin
+  // esto dos envíos consumían una sola y evolucionaban dos veces.
+  await consumeInventoryItem(prisma, { userId: opts.userId, itemId: stone.itemId });
   if (stone.quantity <= 1) {
-    await prisma.inventoryItem.deleteMany({
-      where: { userId: opts.userId, itemId: stone.itemId, quantity: { lte: 0 } },
-    });
+    await clearEmptyInventoryRow(prisma, { userId: opts.userId, itemId: stone.itemId });
   }
 
   return {

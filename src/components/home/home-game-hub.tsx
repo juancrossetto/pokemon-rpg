@@ -80,6 +80,7 @@ export function HomeGameHub({
   locale,
   expedition,
   routeHero,
+  raidCard,
   nextStep,
   events,
   giftLabels,
@@ -96,6 +97,8 @@ export function HomeGameHub({
   expedition: CurrentExpeditionProps | null;
   /** Hero mobile (Server Component armado en la page). */
   routeHero: ReactNode;
+  /** Card de incursión al costado del banner (xl+). */
+  raidCard?: ReactNode;
   nextStep: ReactNode;
   events: {
     daily: DailyState;
@@ -164,15 +167,20 @@ export function HomeGameHub({
       <div className="relative flex min-w-0 flex-col px-margin-mobile py-2 md:px-margin-desktop md:py-5">
         <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-2.5 md:gap-5 xl:max-w-6xl xl:gap-5 2xl:max-w-7xl">
           {/*
-            Cabecera a todo el ancho del hub: en mobile sangra al viewport; en
-            xl+ cubre rail + columna (más ancha que equipo/eventos de abajo).
+            Cabecera del hub. En mobile sangra al viewport y ocupa todo; en xl+
+            cede el ancho del rail y ahí entra la card de incursión, alineada
+            con la columna de abajo. Debajo de xl el rail no existe, así que el
+            banner vuelve a lo ancho y la card no se monta.
           */}
-          <div className="home-identity-wrap -mx-margin-mobile md:-mx-margin-desktop xl:mx-0">
-            <HomeIdentityBanner
-              identity={bannerIdentity}
-              labels={hubLabels.identity}
-              frameId={bannerIdentity.homeFrameId ?? undefined}
-            />
+          <div className="home-top-row">
+            {raidCard ? <div className="home-top-row__side">{raidCard}</div> : null}
+            <div className="home-identity-wrap -mx-margin-mobile md:-mx-margin-desktop xl:mx-0">
+              <HomeIdentityBanner
+                identity={bannerIdentity}
+                labels={hubLabels.identity}
+                frameId={bannerIdentity.homeFrameId ?? undefined}
+              />
+            </div>
           </div>
 
           {events.showDailyModal && (

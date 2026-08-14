@@ -8,13 +8,59 @@ import {
   raidWeekIndex,
 } from "@/lib/raids/config";
 
+/**
+ * Versión mínima para la card del home.
+ *
+ * `loadWeeklyRaid` hace ocho consultas (líderes, clanes, escalera, equipo…) y
+ * el home no necesita nada de eso: sólo contra quién es, cuántos intentos
+ * quedan y cómo va la barra. Tres consultas en paralelo.
+ */
+export async function loadRaidHomeCard(userId: string) {
+  const now = serverNow();
+  const key = weekKey(now);
+  const bossDef = raidBossForWeek(key);
+  const [boss, score, total] = await Promise.all([
+    prisma.species.findUniqueOrThrow({
+      where: { id: bossDef.speciesId },
+      select: { name: true, spriteUrl: true },
+    }),
+    prisma.weeklyRaidScore.findUnique({
+      where: { userId_weekKey: { userId, weekKey: key } },
+      select: { attemptsUsed: true, totalDamage: true },
+    }),
+    prisma.weeklyRaidScore.aggregate({
+      where: { weekKey: key },
+      _sum: { totalDamage: true },
+    }),
+  ]);
+  const communityDamage = total._sum.totalDamage ?? 0;
+  return {
+    speciesId: bossDef.speciesId,
+    name: boss.name,
+    spriteUrl: boss.spriteUrl,
+    level: bossDef.level,
+    accent: bossDef.accent,
+    attemptsLeft: Math.max(0, RAID_ATTEMPTS_PER_WEEK - (score?.attemptsUsed ?? 0)),
+    attemptsTotal: RAID_ATTEMPTS_PER_WEEK,
+    yourDamage: score?.totalDamage ?? 0,
+    communityPercent: Math.min(
+      100,
+      Math.round((communityDamage / RAID_COMMUNITY_HP) * 100),
+    ),
+    communityDefeated: communityDamage >= RAID_COMMUNITY_HP,
+  };
+}
+
+export type RaidHomeCardData = Awaited<ReturnType<typeof loadRaidHomeCard>>;
+
 export async function loadWeeklyRaid(userId: string) {
   const now = serverNow();
   const key = weekKey(now);
   const bossDef = raidBossForWeek(key);
   // Una sola query para toda la escalera: el rail necesita nombre y sprite de
   // los 11, y pedirlos de a uno serían 11 viajes por render de la página.
-  const [boss, ladderRows, score, total, leaders, clanRows, membership, teamTop] = await Promise.all([
+  const [boss, ladderRows, score, total, leaders, clanRows, membership, teamTop, me] =
+    await Promise.all([
     prisma.species.findUniqueOrThrow({ where: { id: bossDef.speciesId } }),
     prisma.species.findMany({
       where: { id: { in: RAID_BOSSES.map((b) => b.speciesId) } },
@@ -47,6 +93,10 @@ export async function loadWeeklyRaid(userId: string) {
       orderBy: { level: "desc" },
       select: { level: true },
     }),
+  prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { username: true, avatarId: true, country: true },
+    }),
   ]);
   const clanMap = new Map<
     string,
@@ -69,6 +119,41 @@ export async function loadWeeklyRaid(userId: string) {
   }
   const clans = [...clanMap.values()].sort((a, b) => b.damage - a.damage).slice(0, 5);
   const communityDamage = total._sum.totalDamage ?? 0;
+
+  const leaderRows = leaders.map((row, index) => ({
+    position: index + 1,
+    userId: row.userId,
+    username: row.user.username,
+    avatarId: row.user.avatarId,
+    country: row.user.country,
+    damage: row.totalDamage,
+  }));
+
+  /*
+    Tu fila cuando quedás fuera del top 10.
+
+    Una tabla en la que no te podés encontrar no sirve para medirte: estando
+    12º no aparecías en ninguna parte. El puesto sale de contar cuántos te
+    superan —una consulta, no traer la tabla entera— y sólo se pide si hiciste
+    daño y no entraste al top.
+  */
+  const inTop = leaderRows.some((row) => row.userId === userId);
+  const myDamage = score?.totalDamage ?? 0;
+  const myRow =
+    inTop || myDamage <= 0
+      ? null
+      : {
+          position:
+            (await prisma.weeklyRaidScore.count({
+              where: { weekKey: key, totalDamage: { gt: myDamage } },
+            })) + 1,
+          userId,
+          username: me.username,
+          avatarId: me.avatarId,
+          country: me.country,
+          damage: myDamage,
+        };
+
   return {
     weekKey: key,
     resetsAt: nextWeeklyReset(now).toISOString(),
@@ -97,7 +182,9 @@ export async function loadWeeklyRaid(userId: string) {
     communityDamage,
     communityHp: RAID_COMMUNITY_HP,
     communityDefeated: communityDamage >= RAID_COMMUNITY_HP,
-    leaders: leaders.map((row, index) => ({ position: index + 1, userId: row.userId, username: row.user.username, avatarId: row.user.avatarId, country: row.user.country, damage: row.totalDamage })),
+    leaders: leaderRows,
+    /** Tu fila si quedaste fuera del top; null si ya estás en la lista. */
+    myRow,
     clans,
     userClanId: membership?.clanId ?? null,
   };

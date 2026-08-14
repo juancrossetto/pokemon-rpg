@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { clearEmptyInventoryRow, consumeInventoryItem } from "@/lib/inventory-consume";
 import {
   calculateMaxHp,
   MAX_POKEMON_LEVEL,
@@ -135,11 +136,10 @@ export async function useRareCandy(
 
   const knownMoves = instance.moves.map((m) => toKnownMoveInfo(m.slot, m.move));
 
-  await prisma.$transaction(async (tx) => {
-    await tx.inventoryItem.update({
-      where: { userId_itemId: { userId, itemId: candy.itemId } },
-      data: { quantity: { decrement: 1 } },
-    });
+  // Sin la guarda de cantidad, dos clicks seguidos subían dos niveles con un
+  // solo caramelo: la lectura de `candy.quantity` es de antes de la escritura.
+  const consumed = await prisma.$transaction(async (tx) => {
+    if (!(await consumeInventoryItem(tx, { userId, itemId: candy.itemId }))) return false;
     await tx.pokemonInstance.update({
       where: { id: instance.id },
       data: {
@@ -150,11 +150,11 @@ export async function useRareCandy(
       },
     });
     if (candy.quantity <= 1) {
-      await tx.inventoryItem.deleteMany({
-        where: { userId, itemId: candy.itemId, quantity: { lte: 0 } },
-      });
+      await clearEmptyInventoryRow(tx, { userId, itemId: candy.itemId });
     }
+    return true;
   });
+  if (!consumed) return { ok: false, error: "no_candy" };
 
   let autoTaught: LevelUpMoveInfo[] = [];
   let pendingMoves: LevelUpMoveInfo[] = [];

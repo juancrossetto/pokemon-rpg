@@ -68,7 +68,7 @@ export function HomeIdentityBanner({
 
   return (
     <section
-      className={`home-identity relative isolate min-h-[7rem] overflow-visible sm:overflow-hidden rounded-none sm:rounded-[1.25rem] sm:min-h-[11rem] xl:min-h-[14rem] xl:rounded-2xl${frame ? " home-identity--framed" : ""}`}
+      className={`home-identity relative isolate min-h-[7rem] overflow-visible sm:overflow-hidden rounded-none sm:rounded-[1.25rem] sm:min-h-[11rem] xl:min-h-[9.25rem] xl:rounded-2xl${frame ? " home-identity--framed" : ""}`}
       style={
         {
           "--hi-fluor-from": fluorFrom,

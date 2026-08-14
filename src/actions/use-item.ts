@@ -11,6 +11,7 @@ import { turnDeadlineForBattle } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 import { isReviveItemName, reviveHpFraction } from "@/lib/squad-bag";
 import { raidDamageDealt, raidSettleStatement } from "@/lib/raids/settle";
+import { consumeInventoryItem } from "@/lib/inventory-consume";
 
 const MAX_LOG_LINES = 20;
 
@@ -211,11 +212,21 @@ async function finalizeBattleItemTurn(args: {
       })
     : null;
 
+  // El objeto se descuenta con guarda de cantidad. La lectura de
+  // `itemQuantity` es de antes del contraataque, así que sin la guarda dos
+  // envíos seguidos curaban dos veces gastando una sola poción.
+  const consumed = await consumeInventoryItem(prisma, { userId, itemId });
+  if (!consumed) {
+    return {
+      healedTo: counter.playerHp,
+      healedBy: 0,
+      itemName,
+      counterAttack: null,
+      outcome: "continues",
+    };
+  }
+
   await prisma.$transaction([
-    prisma.inventoryItem.update({
-      where: { userId_itemId: { userId, itemId } },
-      data: { quantity: { decrement: 1 } },
-    }),
     ...(revivedTargetId != null && reviveTargetHp != null
       ? [
           prisma.pokemonInstance.update({

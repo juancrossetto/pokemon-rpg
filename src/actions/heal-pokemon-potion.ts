@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateMaxHp } from "@/lib/stats";
 import { blockIfInCombat } from "@/lib/battle-lock";
+import { clearEmptyInventoryRow, consumeInventoryItem } from "@/lib/inventory-consume";
 
 /** Bayas de curación del seed (no tienen healAmount en Item). */
 const BERRY_HEAL: Record<string, number> = {
@@ -105,21 +106,20 @@ export async function healPokemonWithPotion(
   const healedTo = Math.min(maxHp, instance.currentHp + healAmount);
   const healedBy = healedTo - instance.currentHp;
 
-  await prisma.$transaction([
-    prisma.inventoryItem.update({
-      where: { userId_itemId: { userId, itemId } },
-      data: { quantity: { decrement: 1 } },
-    }),
-    prisma.pokemonInstance.update({
+  // El descuento manda: si otra pestaña gastó la última poción entre la
+  // lectura y acá, `consumeInventoryItem` devuelve false y no se cura gratis.
+  const consumed = await prisma.$transaction(async (tx) => {
+    if (!(await consumeInventoryItem(tx, { userId, itemId }))) return false;
+    await tx.pokemonInstance.update({
       where: { id: instance.id },
       data: { currentHp: healedTo },
-    }),
-  ]);
+    });
+    return true;
+  });
+  if (!consumed) return { ok: false, error: "no_potions" };
 
   if (quantity <= 1) {
-    await prisma.inventoryItem.deleteMany({
-      where: { userId, itemId, quantity: { lte: 0 } },
-    });
+    await clearEmptyInventoryRow(prisma, { userId, itemId });
   }
 
   revalidatePath(`/${locale}`);

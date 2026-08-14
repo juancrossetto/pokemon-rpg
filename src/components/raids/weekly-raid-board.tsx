@@ -1,7 +1,8 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import {
   claimWeeklyRaidReward,
@@ -18,13 +19,23 @@ import { ClanEmblemBadge } from "@/components/clans/clan-emblem-badge";
 import { typeColor } from "@/lib/type-colors";
 import {
   RAID_ATTEMPTS_PER_WEEK,
-  RAID_BOSS_BATTLE_HP,
   RAID_CLAN_BONUS_COINS,
+  RAID_COMMUNITY_BONUS,
   RAID_RECOMMENDED_LEVEL,
   RAID_REWARD,
   RAID_TURNS_PER_ATTEMPT,
+  raidBossBattleHp,
 } from "@/lib/raids/config";
 import type { RewardDef } from "@/lib/events/rewards";
+
+type RaidLeader = {
+  position: number;
+  userId: string;
+  username: string;
+  avatarId: string | null;
+  country: string;
+  damage: number;
+};
 
 type LadderEntry = {
   speciesId: number;
@@ -61,14 +72,9 @@ type RaidData = {
   communityDamage: number;
   communityHp: number;
   communityDefeated: boolean;
-  leaders: {
-    position: number;
-    userId: string;
-    username: string;
-    avatarId: string | null;
-    country: string;
-    damage: number;
-  }[];
+  leaders: RaidLeader[];
+  /** Tu fila si quedaste fuera del top; null si ya estás en la lista. */
+  myRow: RaidLeader | null;
   clans: {
     id: string;
     name: string;
@@ -99,6 +105,9 @@ export function WeeklyRaidBoard({
   // que el jugador gaste un intento contra un legendario de Nv.50+.
   const underLevelled = data.teamTopLevel < RAID_RECOMMENDED_LEVEL;
   const nextStep = data.ladder[(data.ladderStep + 1) % data.ladder.length];
+  // Referencia para la barra de proporción de cada fila: el puntero de la tabla.
+  const topLeaderDamage = data.leaders[0]?.damage ?? 0;
+  const topClanDamage = data.clans[0]?.damage ?? 0;
 
   // `void`: la acción termina en `redirect()` a /battle, así que no hay
   // resultado que procesar salvo cuando falla la validación.
@@ -145,42 +154,37 @@ export function WeeklyRaidBoard({
               height={240}
               className="raid-hero__sprite"
             />
-            <figcaption className="raid-hero__types">
-              {data.boss.types.map((type) => (
-                <span
-                  key={type}
-                  className="raid-type-pill"
-                  style={{ "--type-color": typeColor(type) } as CSSProperties}
-                >
-                  {type}
-                </span>
-              ))}
-            </figcaption>
           </figure>
         </div>
 
         <div className="raid-hero__body">
+          {/*
+            Identidad del jefe en una sola línea: nombre, nivel y tipos. Los
+            tipos vivían sueltos bajo el sprite y el HP/turnos en un `dl`
+            aparte, o sea dos bloques más dentro de una card que ya estaba
+            llena. Los números de la pelea se dicen una sola vez, en la línea
+            de abajo.
+          */}
           <div className="raid-boss-line">
-            <div className="min-w-0">
-              <p className="raid-boss-line__label">{t("weeklyBoss")}</p>
-              <h2 className="raid-boss-line__name">
-                {data.boss.name}
-                <span className="raid-boss-line__level">Lv. {data.boss.level}</span>
-              </h2>
-            </div>
-            <dl className="raid-boss-line__specs">
-              <div>
-                <dt>{t("bossHp")}</dt>
-                <dd>{RAID_BOSS_BATTLE_HP.toLocaleString()}</dd>
-              </div>
-              <div>
-                <dt>{t("turns")}</dt>
-                <dd>{RAID_TURNS_PER_ATTEMPT}</dd>
-              </div>
-            </dl>
+            <p className="raid-boss-line__label">{t("weeklyBoss")}</p>
+            <h2 className="raid-boss-line__name">
+              {data.boss.name}
+              <span className="raid-boss-line__level">Lv. {data.boss.level}</span>
+              <span className="raid-boss-line__types">
+                {data.boss.types.map((type) => (
+                  <span
+                    key={type}
+                    className="raid-type-pill"
+                    style={{ "--type-color": typeColor(type) } as CSSProperties}
+                  >
+                    {type}
+                  </span>
+                ))}
+              </span>
+            </h2>
           </div>
 
-          <div className="raid-bar">
+          <div className={`raid-bar${data.communityDefeated ? " is-defeated" : ""}`}>
             <span className="raid-bar__track">
               <span className="raid-bar__fill" style={{ width: `${communityPct}%` }}>
                 <span className="raid-bar__sheen" aria-hidden />
@@ -194,11 +198,35 @@ export function WeeklyRaidBoard({
             </div>
           </div>
 
+          {/* Desenlace de la barra: antes `communityDefeated` se calculaba en el
+              loader y no lo leía nadie, así que llenarla entre todos no cambiaba
+              nada en pantalla ni en el botín. */}
+          {data.communityDefeated ? (
+            <div className="raid-victory" role="status">
+              <span className="raid-victory__shine" aria-hidden />
+              <span className="raid-victory__medal" aria-hidden>
+                <span className="material-symbols-outlined">trophy</span>
+              </span>
+              <span className="min-w-0">
+                <strong className="raid-victory__title">
+                  {t("communityDownTitle", { name: data.boss.name })}
+                </strong>
+                <span className="raid-victory__body">{t("communityDownBody")}</span>
+              </span>
+            </div>
+          ) : null}
+
+          {/* Única línea con las reglas del intento. Antes los turnos se decían
+              dos veces (acá y en un `dl` al lado del jefe) y el HP vivía en ese
+              mismo bloque suelto. */}
           <p className="raid-hint">
             <span className="material-symbols-outlined" aria-hidden>
               swords
             </span>
-            {t("battleHint", { turns: RAID_TURNS_PER_ATTEMPT })}
+            {t("battleHint", {
+              turns: RAID_TURNS_PER_ATTEMPT,
+              hp: raidBossBattleHp(data.boss.level).toLocaleString(),
+            })}
           </p>
           {underLevelled ? (
             <p className="raid-hint raid-hint--warn">
@@ -237,22 +265,24 @@ export function WeeklyRaidBoard({
           </header>
           {data.leaders.length ? (
             <ol className="raid-leaders">
-              {data.leaders.map((row) => {
-                const avatar = avatarById(row.avatarId);
-                return (
-                  <li
-                    key={row.userId}
-                    className={`raid-leader${row.position <= 3 ? ` is-podium is-rank-${row.position}` : ""}${
-                      row.userId === userId ? " is-you" : ""
-                    }`}
-                  >
-                    <span className="raid-leader__rank">{row.position}</span>
-                    <TrainerAvatar name={row.username} src={avatar?.src ?? null} size="xs" />
-                    <strong className="raid-leader__name">{row.username}</strong>
-                    <span className="raid-leader__damage">{row.damage.toLocaleString()}</span>
-                  </li>
-                );
-              })}
+              {data.leaders.map((row) => (
+                <LeaderRow
+                  key={row.userId}
+                  row={row}
+                  isYou={row.userId === userId}
+                  top={topLeaderDamage}
+                />
+              ))}
+              {/* Fuera del top: tu fila se ancla al pie, con un corte que deja
+                  claro que hay puestos en el medio que no se listan. */}
+              {data.myRow ? (
+                <li className="raid-leaders__gap" aria-hidden>
+                  <span />
+                </li>
+              ) : null}
+              {data.myRow ? (
+                <LeaderRow row={data.myRow} isYou top={topLeaderDamage} />
+              ) : null}
             </ol>
           ) : (
             <EmptyState icon="swords" text={t("emptyRanking")} />
@@ -275,26 +305,30 @@ export function WeeklyRaidBoard({
                 {data.clans.map((clan, index) => (
                   <li
                     key={clan.id}
-                    className={`raid-clan${clan.id === data.userClanId ? " is-you" : ""}${
-                      index === 0 ? " is-lead" : ""
+                    className={`raid-row raid-row--clan${index < 3 ? ` is-rank-${index + 1}` : ""}${
+                      clan.id === data.userClanId ? " is-you" : ""
                     }`}
+                    style={
+                      { "--share": `${shareOf(clan.damage, topClanDamage)}%` } as CSSProperties
+                    }
                   >
-                    <span className="raid-clan__rank">{index + 1}</span>
+                    <span className="raid-row__share" aria-hidden />
+                    <span className="raid-row__rank">{index + 1}</span>
                     {/* El emblema real del clan, no un ícono genérico: es lo que
                         identifica al clan en el resto del juego. */}
                     <ClanEmblemBadge
                       emblem={clan.emblem}
                       size={32}
                       title={clan.name}
-                      className="raid-clan__emblem"
+                      className="raid-row__emblem"
                     />
                     <span className="min-w-0">
-                      <span className="raid-clan__name">{clan.name}</span>
-                      <span className="raid-clan__meta">
+                      <span className="raid-row__name">{clan.name}</span>
+                      <span className="raid-row__meta">
                         [{clan.tag}] · {t("clanMembers", { count: clan.members })}
                       </span>
                     </span>
-                    <strong className="raid-clan__damage">{clan.damage.toLocaleString()}</strong>
+                    <span className="raid-row__value">{clan.damage.toLocaleString()}</span>
                   </li>
                 ))}
               </ol>
@@ -307,6 +341,7 @@ export function WeeklyRaidBoard({
             attemptsUsed={data.score.attemptsUsed}
             claimedAt={data.score.rewardClaimedAt}
             inClan={data.userClanId != null}
+            communityDefeated={data.communityDefeated}
             pending={pending}
             onClaim={() => startTransition(async () => handle(await claimWeeklyRaidReward(locale)))}
           />
@@ -336,6 +371,21 @@ function LadderRail({
   nextLevel: number;
 }) {
   const t = useTranslations("raids");
+  const railRef = useRef<HTMLOListElement>(null);
+
+  /*
+    En mobile el rail scrollea, así que el escalón vigente puede quedar fuera
+    de cuadro (en la semana 9 arrancarías viendo sólo siluetas). Se centra a
+    mano con `scrollLeft` en vez de `scrollIntoView`: éste último también
+    mueve el scroll vertical de la página al montar.
+  */
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const step = rail.querySelector<HTMLElement>('[data-current="true"]');
+    if (!step) return;
+    rail.scrollLeft = step.offsetLeft - rail.clientWidth / 2 + step.clientWidth / 2;
+  }, [current]);
 
   return (
     <section className="raid-ladder" aria-label={t("ladder")}>
@@ -346,7 +396,7 @@ function LadderRail({
         </div>
         <span className="raid-ladder__next">{t("nextUp", { level: nextLevel })}</span>
       </header>
-      <ol className="raid-ladder__rail">
+      <ol className="raid-ladder__rail" ref={railRef}>
         {ladder.map((entry) => {
           const state =
             entry.step < current ? "is-past" : entry.step === current ? "is-current" : "is-future";
@@ -363,6 +413,7 @@ function LadderRail({
               className={`raid-step ${state}`}
               style={{ "--step-accent": entry.accent } as CSSProperties}
               aria-current={entry.step === current ? "step" : undefined}
+              data-current={entry.step === current ? "true" : undefined}
             >
               <span className="raid-step__art">
                 <PokemonImage
@@ -387,6 +438,34 @@ function LadderRail({
   );
 }
 
+function LeaderRow({
+  row,
+  isYou,
+  top,
+}: {
+  row: RaidLeader;
+  isYou: boolean;
+  top: number;
+}) {
+  const avatar = avatarById(row.avatarId);
+  return (
+    <li
+      className={`raid-row${row.position <= 3 ? ` is-rank-${row.position}` : ""}${
+        isYou ? " is-you" : ""
+      }`}
+      style={{ "--share": `${shareOf(row.damage, top)}%` } as CSSProperties}
+    >
+      <span className="raid-row__share" aria-hidden />
+      <span className="raid-row__rank">{row.position}</span>
+      <TrainerAvatar name={row.username} src={avatar?.src ?? null} size="xs" />
+      <span className="min-w-0">
+        <span className="raid-row__name">{row.username}</span>
+      </span>
+      <span className="raid-row__value">{row.damage.toLocaleString()}</span>
+    </li>
+  );
+}
+
 function EmptyState({
   icon,
   text,
@@ -404,6 +483,15 @@ function EmptyState({
       {text}
     </p>
   );
+}
+
+/**
+ * Proporción de la fila respecto del puntero, para la barra de fondo.
+ * Con un piso del 6% para que el último de la tabla no quede sin nada visible.
+ */
+function shareOf(value: number, top: number): number {
+  if (top <= 0) return 0;
+  return Math.max(6, Math.min(100, Math.round((value / top) * 100)));
 }
 
 function StatChip({ label, value }: { label: string; value: string }) {
@@ -427,12 +515,15 @@ function RewardCard({
   attemptsUsed,
   claimedAt,
   inClan,
+  communityDefeated,
   pending,
   onClaim,
 }: {
   attemptsUsed: number;
   claimedAt: Date | null;
   inClan: boolean;
+  /** Si la barra global cayó, el reclamo suma el bundle comunitario. */
+  communityDefeated: boolean;
   pending: boolean;
   onClaim: () => void;
 }) {
@@ -452,39 +543,79 @@ function RewardCard({
           <p className="raid-reward__eyebrow">{t("rewardEyebrow")}</p>
           <h2 className="raid-reward__title">{t("reward")}</h2>
         </div>
+        {/* Medidor de intentos: los tres puntitos de antes eran casi invisibles
+            y no decían de cuántos. Segmentos + cifra se leen de un vistazo. */}
         <span
-          className="raid-reward__dots"
+          className="raid-reward__meter"
+          title={t("lockedReward", { current: attemptsUsed })}
           aria-label={t("lockedReward", { current: attemptsUsed })}
         >
-          {Array.from({ length: RAID_ATTEMPTS_PER_WEEK }).map((_, i) => (
-            <span
-              key={i}
-              className={`raid-reward__dot${i < attemptsUsed ? " is-done" : ""}`}
-              aria-hidden
-            />
-          ))}
+          <span className="raid-reward__meter-label">{t("attempts")}</span>
+          <span className="raid-reward__meter-bars" aria-hidden>
+            {Array.from({ length: RAID_ATTEMPTS_PER_WEEK }).map((_, i) => (
+              <span key={i} className={`raid-reward__seg${i < attemptsUsed ? " is-done" : ""}`} />
+            ))}
+          </span>
+          <span className="raid-reward__meter-count">
+            {attemptsUsed}/{RAID_ATTEMPTS_PER_WEEK}
+          </span>
         </span>
       </header>
 
-      <ul className="raid-reward__grid">
-        {RAID_REWARD.map((reward, index) => (
-          <li key={`${reward.kind}-${index}`} className="raid-reward__tile">
-            <RewardList rewards={[reward]} layout="strip" unitLabels={labels} />
-            <span className="raid-reward__tile-name">{rewardName(reward, labels)}</span>
-          </li>
-        ))}
-      </ul>
+      {/* Una composición plana y compacta: los tres premios base y los dos
+          comunitarios comparten una sola franja, sin otra card ni otra fila. */}
+      <div className={`raid-reward__content${communityDefeated ? " has-community" : ""}`}>
+        <section className="raid-reward__group">
+          <ul className="raid-reward__grid">
+            {RAID_REWARD.map((reward, index) => (
+              <li key={`${reward.kind}-${index}`} className="raid-reward__tile">
+                <RewardList rewards={[reward]} layout="strip" unitLabels={labels} />
+                <span className="raid-reward__tile-name">{rewardName(reward, labels)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      <p className={`raid-reward__bonus${inClan ? " is-active" : ""}`}>
-        <span className="material-symbols-outlined" aria-hidden>
-          {inClan ? "check_circle" : "groups"}
-        </span>
-        {t("clanBonus", { coins: RAID_CLAN_BONUS_COINS })}
-      </p>
+        {communityDefeated ? (
+          <section className="raid-reward__group raid-reward__group--community">
+            <p className="raid-reward__divider">
+              <span className="material-symbols-outlined" aria-hidden>
+                trophy
+              </span>
+              {t("communityBonus")}
+            </p>
+            <ul className="raid-reward__grid raid-reward__grid--bonus">
+              {RAID_COMMUNITY_BONUS.map((reward, index) => (
+                <li key={`c-${reward.kind}-${index}`} className="raid-reward__tile">
+                  <RewardList rewards={[reward]} layout="strip" unitLabels={labels} />
+                  <span className="raid-reward__tile-name">{rewardName(reward, labels)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </div>
 
-      <button type="button" disabled={pending || !ready} onClick={onClaim} className="raid-reward__cta">
-        {claimedAt ? t("claimed") : ready ? t("claim") : t("lockedReward", { current: attemptsUsed })}
-      </button>
+      <footer className="raid-reward__footer">
+        <p className={`raid-reward__bonus${inClan ? " is-active" : ""}`}>
+          <span className="raid-reward__bonus-icon" aria-hidden>
+            <Image src="/items/hd/poke-coin.png" alt="" width={18} height={18} unoptimized />
+            {inClan ? <span className="material-symbols-outlined">check</span> : null}
+          </span>
+          {t("clanBonus", { coins: RAID_CLAN_BONUS_COINS })}
+        </p>
+
+        <button type="button" disabled={pending || !ready} onClick={onClaim} className="raid-reward__cta">
+          {ready ? <span className="raid-reward__cta-shine" aria-hidden /> : null}
+          <span className="raid-reward__cta-label">
+            {claimedAt
+              ? t("claimed")
+              : ready
+                ? t("claim")
+                : t("lockedReward", { current: attemptsUsed })}
+          </span>
+        </button>
+      </footer>
     </div>
   );
 }

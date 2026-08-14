@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { allowAction } from "@/lib/rate-limit";
+import { sanitizeUserText } from "@/lib/user-text";
 
 const MESSAGE_MAX = 300;
 const HISTORY_LIMIT = 50;
@@ -59,9 +60,11 @@ export async function sendClanMessage(
 
   if (!(await requireMembership(userId, clanId))) return { ok: false, error: "unauthorized" };
 
-  const text = body.trim();
+  // `too_long` se decide sobre el original: si se midiera después de limpiar,
+  // un mensaje de 5.000 anchos cero pasaría como si fuera corto.
+  if ([...body].length > MESSAGE_MAX) return { ok: false, error: "too_long" };
+  const text = sanitizeUserText(body, { max: MESSAGE_MAX });
   if (!text) return { ok: false, error: "empty" };
-  if (text.length > MESSAGE_MAX) return { ok: false, error: "too_long" };
 
   if (!allowAction(`clan:chat:${userId}`, RATE_LIMIT, RATE_WINDOW_MS)) {
     return { ok: false, error: "rate_limited" };
