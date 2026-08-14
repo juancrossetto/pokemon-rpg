@@ -47,6 +47,7 @@ import {
 import type { EvolveOffer, LevelUpMoveInfo, KnownMoveInfo } from "@/lib/level-up";
 import { resolveLevelUpEffects } from "@/lib/level-up";
 import { lockUsers } from "@/lib/db-locks";
+import { raidDamageDealt, raidSettleStatement } from "@/lib/raids/settle";
 import { notifySettledPvp, settlePvpMatch } from "@/lib/pvp/settle";
 import { settleClanWarSlot } from "@/lib/clan-war/settle-slot";
 import { parseTeamSnap, type PvpTeamMemberSnap } from "@/lib/pvp/team";
@@ -92,7 +93,15 @@ export interface UseMoveResult {
   events: TurnEvent[];
   playerMaxHp: number;
   wildMaxHp: number;
-  outcome: "ongoing" | "won" | "lost" | "fainted" | "gym_continues" | "trainer_cleared";
+  outcome:
+    | "ongoing"
+    | "won"
+    | "lost"
+    | "fainted"
+    | "gym_continues"
+    | "trainer_cleared"
+    /** Incursión: se cerró el intento (por turnos, por caída o por KO al jefe). */
+    | "raid_ended";
   leveledUpTo: number | null;
   xpGained: number | null;
   xpSummary: XpSummaryEntry[] | null;
@@ -134,6 +143,17 @@ export interface UseMoveResult {
   } | null;
   /** ISO del próximo deadline de decisión (si sigue ACTIVE). */
   turnDeadlineAt?: string | null;
+  /**
+   * Estado del intento de incursión. Sólo lo setean los turnos de incursión;
+   * el resto de los returns lo dejan sin definir.
+   */
+  raidResult?: {
+    /** Daño acumulado que se le sacó al jefe en este intento. */
+    damage: number;
+    turnsLeft: number;
+    bossDefeated: boolean;
+    ended: boolean;
+  } | null;
 }
 
 function applyXpGain(
@@ -589,6 +609,20 @@ async function resolveBattleMove(
   const fainted = playerHp <= 0;
   const mustSwitch = fainted && (await hasHealthyBackup(userId, instance.id));
   const lostBattle = fainted && !mustSwitch;
+
+  /*
+    Incursión: el intento dura un número fijo de turnos. El contador baja acá,
+    después de resolver el turno, y sólo si el combate no terminó por otra vía
+    (jefe debilitado o equipo caído) — así el último turno no se "gasta" dos
+    veces. `raidOutOfTurns` es el tercer final posible y se maneja aparte de
+    won/lost porque no es ni victoria ni derrota: es el cierre del intento.
+  */
+  const raidWeekKey = battle.raidWeekKey;
+  const raidTurnsLeft =
+    raidWeekKey != null ? Math.max(0, (battle.raidTurnsLeft ?? 0) - 1) : null;
+  const raidOutOfTurns =
+    raidWeekKey != null && raidTurnsLeft === 0 && !wonBattle && !lostBattle && !mustSwitch;
+  const raidDamage = raidWeekKey != null ? raidDamageDealt(battle.wildMaxHp, wildHp) : 0;
   let playerMaxHp = playerMaxHpBase;
   let leveledUpTo: number | null = null;
   let xpGained: number | null = null;
@@ -630,7 +664,81 @@ async function resolveBattleMove(
     wildChoiceLockMoveId,
     playerChargeMoveId: newPlayerChargeMoveId,
     wildChargeMoveId: newWildChargeMoveId,
+    ...(raidTurnsLeft != null ? { raidTurnsLeft } : {}),
   };
+
+  if (raidWeekKey != null) {
+    /*
+      La incursión cortocircuita el resto del árbol: no reparte XP de zona, no
+      completa tramos de campaña ni escribe `BattleLog` (el historial alimenta
+      el ranking y un jefe comunitario no es una victoria PvE normal). Lo único
+      que se persiste es el daño del intento.
+    */
+    const ended = wonBattle || lostBattle || raidOutOfTurns;
+    const finalLog = [
+      ...battle.log,
+      ...log,
+      ...(wonBattle ? [`fainted:${battle.wildSpecies.name}`] : []),
+      ...(raidOutOfTurns ? ["raid_turns_over"] : []),
+    ].slice(-MAX_LOG_LINES);
+
+    const settle = ended
+      ? raidSettleStatement(prisma, { userId, weekKey: raidWeekKey, damage: raidDamage })
+      : null;
+    await prisma.$transaction([
+      prisma.pokemonInstance.update({
+        where: { id: instance.id },
+        data: { currentHp: Math.max(0, playerHp) },
+      }),
+      prisma.battleSession.update({
+        where: { id: battle.id },
+        data: {
+          ...battleStateData,
+          log: finalLog,
+          ...(ended
+            ? { status: wonBattle ? ("WON" as const) : ("LOST" as const), turnDeadlineAt: null }
+            : { turnDeadlineAt: null }),
+        },
+      }),
+      ...(settle ? [settle] : []),
+    ]);
+
+    if (ended) {
+      revalidatePath(`/${locale}/team`);
+      revalidatePath(`/${locale}/raids`);
+      revalidateCombatUi(locale);
+    }
+
+    return {
+      events,
+      playerMaxHp,
+      wildMaxHp: battle.wildMaxHp,
+      outcome: ended ? "raid_ended" : mustSwitch ? "fainted" : "ongoing",
+      leveledUpTo: null,
+      xpGained: null,
+      xpSummary: null,
+      coinsGained: 0,
+      badgeEarned: false,
+      tmRewardName: null,
+      heldRewardName: null,
+      gymFirstWin: null,
+      rematch: false,
+      playerMovesPp,
+      playerChoiceLockMoveId: newChoiceLockMoveId,
+      playerChargeMoveId: newPlayerChargeMoveId,
+      playerStatus: playerState.status,
+      wildStatus: wildState.status,
+      pvpResult: null,
+      nextOpponent: null,
+      turnDeadlineAt: null,
+      raidResult: {
+        damage: raidDamage,
+        turnsLeft: raidTurnsLeft ?? 0,
+        bossDefeated: wonBattle,
+        ended,
+      },
+    };
+  }
 
   if (wonBattle) {
     log.push(`fainted:${pvpActive?.name ?? battle.wildSpecies.name}`);

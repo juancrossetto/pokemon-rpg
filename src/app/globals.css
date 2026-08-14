@@ -18399,6 +18399,798 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
 }
 .raid-damage-pop { animation: raid-damage-pop .55s cubic-bezier(.2,.9,.2,1) both; }
 
+/* Turnos restantes del intento: el recurso escaso de la incursión va sobre el
+   campo, junto a los controles, y no enterrado en el registro. */
+.raid-turn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 45%, transparent);
+  background: rgba(8, 10, 16, 0.72);
+  padding: 0.2rem 0.55rem;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--color-secondary) 80%, #fff);
+  backdrop-filter: blur(6px);
+}
+.raid-turn-chip .material-symbols-outlined {
+  font-size: 0.85rem !important;
+}
+
+/* ── Incursión semanal ────────────────────────────────────────────────────
+   Los nombres de especie se guardan en minúscula (vienen de PokeAPI) y se
+   capitalizan por CSS en todo el juego; acá faltaba y se leía "articuno".
+   ------------------------------------------------------------------------ */
+.raid-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.raid-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(145deg, #171923, #0b0c11);
+  padding: 1.25rem;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+@media (min-width: 640px) {
+  .raid-hero {
+    padding: 1.75rem;
+  }
+}
+/* Halo del acento del jefe: cambia de color con cada escalón de la escalera. */
+.raid-hero__aura {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 72% 26%,
+    color-mix(in srgb, var(--raid-accent) 24%, transparent) 0%,
+    transparent 42%
+  );
+  pointer-events: none;
+}
+.raid-hero__top {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-items: center;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .raid-hero__top {
+    grid-template-columns: 1fr 240px;
+  }
+}
+.raid-hero__eyebrow {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+.raid-hero__title {
+  margin: 0.25rem 0 0;
+  font-size: 1.875rem;
+  color: #fff;
+}
+@media (min-width: 640px) {
+  .raid-hero__title {
+    font-size: 3rem;
+  }
+}
+.raid-hero__subtitle {
+  margin: 0.5rem 0 0;
+  max-width: 36rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+}
+.raid-hero__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+@media (min-width: 480px) {
+  .raid-hero__stats {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+.raid-stat {
+  min-width: 0;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.5rem 0.75rem;
+}
+.raid-stat__label {
+  display: block;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+.raid-stat__value {
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.raid-hero__portrait {
+  position: relative;
+  display: flex;
+  margin: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.raid-hero__glow {
+  position: absolute;
+  inset: 2rem 2rem 3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--raid-accent) 30%, transparent);
+  filter: blur(40px);
+}
+.raid-hero__sprite {
+  position: relative;
+  height: 11rem;
+  width: 11rem;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 20px rgba(0, 0, 0, 0.7));
+  animation: raid-boss-float 5.5s ease-in-out infinite;
+}
+@media (min-width: 640px) {
+  .raid-hero__sprite {
+    height: 14rem;
+    width: 14rem;
+  }
+}
+@keyframes raid-boss-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .raid-hero__sprite {
+    animation: none;
+  }
+}
+.raid-hero__types {
+  position: relative;
+  display: flex;
+  gap: 0.3rem;
+}
+.raid-type-pill {
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--type-color) 55%, transparent);
+  background: color-mix(in srgb, var(--type-color) 18%, transparent);
+  padding: 0.15rem 0.55rem;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--type-color) 45%, #fff);
+}
+
+.raid-hero__body {
+  position: relative;
+  z-index: 1;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+}
+.raid-boss-line {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.raid-boss-line__label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.raid-boss-line__name {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+  text-transform: capitalize;
+  color: #fff;
+}
+.raid-boss-line__level {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.35);
+}
+/* Reglas del intento a la vista: cuánto aguanta el jefe y cuántos turnos hay.
+   Sin esto el jugador gasta el primer intento para descubrirlas. */
+.raid-boss-line__specs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 1rem;
+  margin: 0;
+  text-align: right;
+}
+.raid-boss-line__specs dt {
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+}
+.raid-boss-line__specs dd {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.raid-bar {
+  margin-top: 0.75rem;
+}
+.raid-bar__track {
+  display: block;
+  height: 0.75rem;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.45);
+}
+.raid-bar__fill {
+  position: relative;
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.raid-bar__sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 80%
+  );
+  animation: raid-bar-sheen 2.6s linear infinite;
+}
+@keyframes raid-bar-sheen {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .raid-bar__sheen {
+    animation: none;
+    opacity: 0;
+  }
+}
+.raid-bar__legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+}
+.raid-bar__count {
+  font-variant-numeric: tabular-nums;
+}
+
+.raid-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.45);
+}
+.raid-hint .material-symbols-outlined {
+  font-size: 1rem !important;
+  flex-shrink: 0;
+}
+.raid-hint--warn {
+  margin-top: 0.4rem;
+  border-radius: 0.5rem;
+  background: rgba(251, 191, 36, 0.1);
+  padding: 0.4rem 0.5rem;
+  color: rgba(253, 230, 138, 0.8);
+}
+.raid-cta {
+  margin-top: 0.75rem;
+  width: 100%;
+}
+.raid-cta:disabled {
+  cursor: not-allowed;
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+/* ── Escalera de jefes ────────────────────────────────────────────────── */
+.raid-ladder {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #15171d;
+  padding: 0.9rem;
+}
+.raid-ladder__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.raid-ladder__next {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: right;
+  color: rgba(255, 255, 255, 0.35);
+}
+/*
+  Grilla que envuelve, no rail con scroll horizontal: con 11 escalones el
+  scroll dejaba la última card cortada al medio y el conjunto se leía como si
+  faltara contenido. Envolviendo entran todos enteros y la escalera se ve
+  completa de una.
+*/
+.raid-ladder__rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.raid-step {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.55rem 0.35rem 0.5rem;
+  transition: transform 0.2s ease;
+}
+.raid-step__art {
+  display: grid;
+  width: 3.4rem;
+  height: 3.4rem;
+  place-items: center;
+}
+.raid-step__sprite {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+.raid-step__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: rgba(255, 255, 255, 0.5);
+}
+.raid-step__level {
+  font-size: 0.625rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.3);
+}
+/* Pasado: cumplido, se apaga. Vigente: se ilumina con su acento. Futuro: a la
+   vista pero atenuado, para que la escalada se lea como progresión. */
+.raid-step.is-past {
+  opacity: 0.4;
+}
+.raid-step.is-past .raid-step__sprite {
+  filter: grayscale(1);
+}
+.raid-step.is-current {
+  border-color: color-mix(in srgb, var(--step-accent) 65%, transparent);
+  background: color-mix(in srgb, var(--step-accent) 14%, rgba(0, 0, 0, 0.3));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--step-accent) 30%, transparent),
+    0 8px 22px color-mix(in srgb, var(--step-accent) 22%, transparent);
+  transform: translateY(-2px);
+}
+.raid-step.is-current .raid-step__name {
+  color: #fff;
+}
+.raid-step.is-current .raid-step__level {
+  color: color-mix(in srgb, var(--step-accent) 60%, #fff);
+}
+/*
+  Futuro: silueta pura, no una versión oscurecida. `brightness(0)` aplana el
+  sprite a negro conservando el alfa, así queda la forma sin ningún detalle
+  legible; el `opacity` lo despega del fondo sin devolverle identidad. El
+  nombre se reemplaza por "???" en el markup.
+*/
+.raid-step.is-future .raid-step__sprite {
+  filter: brightness(0) saturate(0);
+  opacity: 0.55;
+}
+.raid-step.is-future .raid-step__name {
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+/* ── Columnas de ranking ──────────────────────────────────────────────── */
+.raid-columns {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 1024px) {
+  .raid-columns {
+    grid-template-columns: 1.35fr 0.65fr;
+    align-items: start;
+  }
+}
+.raid-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.raid-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #15171d;
+  padding: 0.9rem;
+}
+.raid-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.raid-card__eyebrow {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+.raid-card__eyebrow--secondary {
+  color: var(--color-secondary);
+}
+.raid-card__title {
+  margin: 0.1rem 0 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fff;
+}
+.raid-card__title--sm {
+  font-size: 1rem;
+}
+
+.raid-leaders,
+.raid-clans {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.raid-leader {
+  display: grid;
+  grid-template-columns: 1.6rem auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.6rem;
+  border: 1px solid transparent;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 0.4rem 0.6rem;
+}
+.raid-leader__rank {
+  font-size: 0.75rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+}
+.raid-leader__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  color: #fff;
+}
+.raid-leader__damage {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.85);
+}
+/* Podio: el color del puesto va en el número y en un borde tenue, no en el
+   nombre — así el resaltado de "sos vos" sigue siendo legible encima. */
+.raid-leader.is-rank-1 {
+  border-color: rgba(250, 204, 21, 0.35);
+  background: rgba(250, 204, 21, 0.08);
+}
+.raid-leader.is-rank-1 .raid-leader__rank {
+  color: #facc15;
+}
+.raid-leader.is-rank-2 {
+  border-color: rgba(203, 213, 225, 0.28);
+  background: rgba(203, 213, 225, 0.06);
+}
+.raid-leader.is-rank-2 .raid-leader__rank {
+  color: #cbd5e1;
+}
+.raid-leader.is-rank-3 {
+  border-color: rgba(217, 119, 6, 0.3);
+  background: rgba(217, 119, 6, 0.07);
+}
+.raid-leader.is-rank-3 .raid-leader__rank {
+  color: #d97706;
+}
+.raid-leader.is-you {
+  outline: 1px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+}
+.raid-leader.is-you .raid-leader__name {
+  color: var(--color-primary);
+}
+
+/* Fila de clan: emblema real + nombre/tag/aportantes + daño. El ícono genérico
+   de "grupo" no decía nada; el emblema es lo que identifica al clan en el
+   resto del juego. */
+.raid-clan {
+  display: grid;
+  grid-template-columns: 1rem 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.65rem;
+  border: 1px solid transparent;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 0.45rem 0.55rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+.raid-clan__rank {
+  font-size: 0.75rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.3);
+}
+.raid-clan__emblem {
+  width: 2rem;
+  height: 2rem;
+}
+.raid-clan__name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #fff;
+}
+.raid-clan__meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+}
+.raid-clan__damage {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.85);
+}
+.raid-clan.is-lead {
+  border-color: rgba(250, 204, 21, 0.3);
+  background: rgba(250, 204, 21, 0.07);
+}
+.raid-clan.is-lead .raid-clan__rank {
+  color: #facc15;
+}
+.raid-clan.is-you {
+  outline: 1px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+}
+.raid-clan.is-you .raid-clan__name {
+  color: var(--color-primary);
+}
+
+/* Vacío con cuerpo: la tabla de líderes con un solo jugador dejaba medio panel
+   en blanco y parecía que algo no había cargado. */
+.raid-empty {
+  display: flex;
+  min-height: 9rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0;
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+.raid-empty--compact {
+  min-height: 4.5rem;
+  font-size: 0.75rem;
+}
+.raid-empty .material-symbols-outlined {
+  font-size: 1.5rem !important;
+  opacity: 0.5;
+}
+
+/*
+  Premio semanal de incursión.
+
+  Era un párrafo de texto que repetía a mano el contenido de `RAID_REWARD`.
+  Ahora los premios se dibujan como fichas con el PNG del objeto —los mismos
+  assets HD del regalo diario— así que se lee de un vistazo qué se lleva uno.
+*/
+.raid-reward {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 24%, transparent);
+  background:
+    radial-gradient(
+      ellipse 120% 90% at 50% 0%,
+      color-mix(in srgb, var(--color-secondary) 14%, transparent) 0%,
+      transparent 65%
+    ),
+    #15171d;
+  padding: 0.9rem;
+}
+.raid-reward__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.raid-reward__eyebrow {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+}
+.raid-reward__title {
+  margin: 0.1rem 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+/* Intentos como puntos: se entiende sin leer, y el botón deja de ser el único
+   lugar donde figura el progreso. */
+.raid-reward__dots {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.25rem;
+  padding-top: 0.35rem;
+}
+.raid-reward__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+.raid-reward__dot.is-done {
+  background: var(--color-secondary);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-secondary) 60%, transparent);
+}
+/* Reclamable: la card se enciende sola en vez de depender de que el jugador
+   note que el botón dejó de estar gris. */
+.raid-reward.is-ready {
+  border-color: color-mix(in srgb, var(--color-secondary) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-secondary) 25%, transparent),
+    0 12px 34px color-mix(in srgb, var(--color-secondary) 18%, transparent);
+}
+.raid-reward__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* Sin caja: los PNG ya tienen su propia silueta y sombra, y meterlos en un
+   recuadro oscuro los encajonaba y les robaba tamaño. Sólo aire alrededor. */
+.raid-reward__tile {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.25rem 0.15rem 0;
+}
+.raid-reward__tile-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.45);
+}
+.raid-reward__bonus {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.4rem 0.55rem;
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.5);
+}
+.raid-reward__bonus .material-symbols-outlined {
+  font-size: 1rem !important;
+  flex-shrink: 0;
+}
+.raid-reward__bonus.is-active {
+  background: color-mix(in srgb, var(--color-secondary) 12%, transparent);
+  color: color-mix(in srgb, var(--color-secondary) 75%, #fff);
+}
+.raid-reward__cta {
+  border-radius: 0.75rem;
+  background: var(--color-secondary);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  color: #fff;
+  transition: filter 0.15s ease;
+}
+.raid-reward__cta:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.raid-reward__cta:disabled {
+  cursor: not-allowed;
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
 /* Chispa que sube delante del relleno: es lo que lee como "escalando" y no
    como "una barra que crece". Llega arriba justo cuando el tramo se completa. */
 @keyframes tower-climb-spark {

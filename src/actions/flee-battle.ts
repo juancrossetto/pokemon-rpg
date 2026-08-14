@@ -46,7 +46,9 @@ export async function fleeBattle(sessionId: string, locale: string): Promise<Fle
     },
   });
   if (!battle) return null;
-  if (battle.routeTrainerId || isTutorialBattle(battle)) return null;
+  // Incursión: el intento ya se cobró al arrancar, así que huir sólo serviría
+  // para no gastar turnos. El límite de turnos es la única salida.
+  if (battle.routeTrainerId || battle.raidWeekKey || isTutorialBattle(battle)) return null;
   if (await closeBattleIfIdle(battle, locale)) {
     return {
       fled: false,

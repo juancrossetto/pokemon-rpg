@@ -12,6 +12,7 @@ import { runWildCounterAttack } from "@/lib/wild-counter";
 import { spriteFor } from "@/lib/shiny";
 import { turnDeadlineForBattle } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
+import { raidDamageDealt, raidSettleStatement } from "@/lib/raids/settle";
 
 const MAX_LOG_LINES = 20;
 
@@ -198,6 +199,13 @@ export async function switchPokemon(
   const mustSwitch = fainted && (await hasHealthyBackup(userId, newInstance.id));
   const lostBattle = fainted && !mustSwitch;
   const finalLog = [...battle.log, `switch:${newName}`].slice(-MAX_LOG_LINES);
+  const raidSettle = battle.raidWeekKey
+    ? raidSettleStatement(prisma, {
+        userId,
+        weekKey: battle.raidWeekKey,
+        damage: raidDamageDealt(battle.wildMaxHp, counter.wildHp),
+      })
+    : null;
 
   await prisma.$transaction([
     // Persistir HP del que sale (por si el último turno no flusheó) y del que entra.
@@ -220,7 +228,13 @@ export async function switchPokemon(
           : { turnDeadlineAt: turnDeadlineForBattle(battle) }),
       },
     }),
-    ...(lostBattle
+    // El equipo puede caer durante el contraataque del cambio: si eso pasa en
+    // una incursión, el intento se cierra acá y el daño tiene que acreditarse
+    // en la misma transacción o se pierde.
+    ...(lostBattle && raidSettle ? [raidSettle] : []),
+    // La incursión no escribe historial: `BattleLog` alimenta el ranking PvE y
+    // un jefe comunitario no es una derrota de ruta.
+    ...(lostBattle && !battle.raidWeekKey
       ? [
           prisma.battleLog.create({
             data: {

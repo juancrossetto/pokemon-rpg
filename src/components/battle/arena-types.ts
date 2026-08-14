@@ -71,7 +71,22 @@ export interface BattleMoveOption {
 }
 
 export type View = "menu" | "moves" | "bag" | "team" | "targets" | "reviveTargets";
-export type Outcome = "ongoing" | "won" | "lost" | "fled" | "caught" | "trainer_cleared";
+export type Outcome =
+  | "ongoing"
+  | "won"
+  | "lost"
+  | "fled"
+  | "caught"
+  | "trainer_cleared"
+  /** Incursión: se cerró el intento (turnos agotados, equipo caído o jefe KO). */
+  | "raid_ended";
+
+/** Resumen de un intento de incursión, para la pantalla de cierre. */
+export interface RaidSummary {
+  damage: number;
+  bossDefeated: boolean;
+  teamWiped: boolean;
+}
 export type LogSide = "player" | "wild" | "system";
 
 export interface LogEntry {
@@ -118,8 +133,10 @@ export interface BattleArenaProps {
   gymName: string | null;
   gymLeaderName: string | null;
   gymBadgeName: string | null;
-  /** Modo de batalla: wild | gym | pvp | tower */
-  battleMode: "wild" | "gym" | "pvp" | "tower";
+  /** Modo de batalla: wild | gym | pvp | tower | raid */
+  battleMode: "wild" | "gym" | "pvp" | "tower" | "raid";
+  /** Incursión: turnos que le quedan al intento (null fuera de incursión). */
+  raidTurnsLeft?: number | null;
   /**
    * Lugar del encuentro (mobile strip). Salvaje = ruta/ciudad + tramo;
    * torre = piso. Null en gym/PvP con entrenador.

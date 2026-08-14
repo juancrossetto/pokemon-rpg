@@ -17,7 +17,8 @@ import { PvpHubAnimPersist } from "@/components/pvp/pvp-hub-anim-persist";
 import { startEncounter } from "@/actions/start-encounter";
 import { abandonGymRun } from "@/actions/abandon-gym-run";
 import type { GymFirstWinReward, XpSummaryEntry } from "@/actions/battle-move";
-import type { Outcome } from "@/components/battle/arena-types";
+import type { Outcome, RaidSummary } from "@/components/battle/arena-types";
+import type { ResultMode } from "@/components/battle-result";
 import type { BattleHighlight } from "@/lib/battle-highlights";
 import type { BattleItemUsage } from "@/lib/battle-item-usage";
 import {
@@ -104,6 +105,7 @@ export function BattleOutcomeScreen({
   isPvpBattle,
   isGymBattle,
   isTowerBattle,
+  raidSummary = null,
   pvpResult,
   showBadgePopup,
   onBadgeContinue,
@@ -135,6 +137,8 @@ export function BattleOutcomeScreen({
   isPvpBattle: boolean;
   isGymBattle: boolean;
   isTowerBattle: boolean;
+  /** Resumen del intento de incursión (null fuera de incursión). */
+  raidSummary?: RaidSummary | null;
   pvpResult: PvpResultInfo | null;
   showBadgePopup: boolean;
   onBadgeContinue: () => void;
@@ -161,9 +165,28 @@ export function BattleOutcomeScreen({
   const [confirmLeaveGym, setConfirmLeaveGym] = useState(false);
 
   const idleLoss = outcome === "lost" && lossReason === "idle";
+  const isRaid = outcome === "raid_ended";
 
-  const resultText =
-    outcome === "won"
+  /*
+    `BattleResult` sólo entiende los cinco modos clásicos y ramifica sobre ellos
+    en una veintena de lugares (tono, sprites, animación). El cierre de una
+    incursión no es ninguno de los cinco, así que en vez de sumar un sexto modo
+    a todo ese árbol se mapea al que tiene el **tono** correcto y el copy se
+    pisa con `resultText`/`subText`, que ya son props.
+  */
+  const resultMode: ResultMode = isRaid
+    ? raidSummary?.bossDefeated
+      ? "won"
+      : raidSummary?.teamWiped
+        ? "lost"
+        : "trainer_cleared"
+    : (outcome as ResultMode);
+
+  const resultText = isRaid
+    ? raidSummary?.bossDefeated
+      ? t("raidBossDown")
+      : t("raidAttemptOver")
+    : outcome === "won"
       ? t("resultWon")
       : outcome === "lost"
         ? idleLoss
@@ -175,8 +198,9 @@ export function BattleOutcomeScreen({
             ? t("resultTrainerCleared")
             : t("resultFled");
   // Bajada en tipografía UI (no Grobold): detalles largos fuera del título display.
-  const resultSubText =
-    outcome === "lost"
+  const resultSubText = isRaid
+    ? t("raidDamageDealt", { damage: (raidSummary?.damage ?? 0).toLocaleString() })
+    : outcome === "lost"
       ? idleLoss
         ? t("resultLostIdle")
         : isTowerBattle
@@ -196,7 +220,7 @@ export function BattleOutcomeScreen({
 
   return (
     <BattleResult
-      mode={outcome}
+      mode={resultMode}
       lossReason={lossReason}
       resultText={resultText}
       subText={resultSubText}
@@ -259,7 +283,16 @@ export function BattleOutcomeScreen({
           onContinue={onBadgeContinue}
         />
       )}
-      {outcome === "lost" && isTowerBattle ? (
+      {isRaid ? (
+        <div className="flex w-full max-w-sm flex-col items-center gap-2">
+          <SoftLeaveButton href="/raids" className={ctaPrimary}>
+            {t("backToRaid")}
+          </SoftLeaveButton>
+          <SoftLeaveButton href="/team" className={ctaLink}>
+            {tUx("postBattleHeal")}
+          </SoftLeaveButton>
+        </div>
+      ) : outcome === "lost" && isTowerBattle ? (
         <TowerAutoReturn
           blocked={false}
           buttonLabel={t("backToTower")}

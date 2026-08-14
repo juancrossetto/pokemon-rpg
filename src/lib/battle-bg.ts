@@ -59,7 +59,7 @@ function pickStable(pool: readonly BattleBgId[], seed: string): BattleBgId {
 }
 
 export function resolveBattleBg(opts: {
-  battleMode: "wild" | "gym" | "pvp" | "tower";
+  battleMode: "wild" | "gym" | "pvp" | "tower" | "raid";
   battleId: string;
   locationKind?: CampaignLocationKind | string | null;
   locationId?: string | null;
@@ -68,6 +68,8 @@ export function resolveBattleBg(opts: {
 }): BattleBgId {
   if (opts.battleMode === "pvp") return "mountain";
   if (opts.battleMode === "tower") return "mountain";
+  // Incursión: legendario, escenario de cierre.
+  if (opts.battleMode === "raid") return "mountain";
 
   if (opts.battleMode === "gym") {
     const type = (opts.gymType ?? "").toLowerCase();

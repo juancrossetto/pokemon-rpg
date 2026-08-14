@@ -484,7 +484,9 @@ export default async function BattlePage({
           ? "tower"
           : battle.gymId
             ? "gym"
-            : "wild";
+            : battle.raidWeekKey
+              ? "raid"
+              : "wild";
 
     const progress =
       battleMode === "wild"
@@ -762,6 +764,7 @@ export default async function BattlePage({
       gymLeaderName: battle.gym?.leaderName ?? null,
       gymBadgeName,
       battleMode,
+      raidTurnsLeft: battle.raidTurnsLeft,
       battleBg,
       encounterPlace,
       pvpMatchId: battle.pvpMatchId,

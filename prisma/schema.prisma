@@ -949,6 +949,14 @@ model BattleSession {
   gymTrainerId           String? // entrenador subordinado actual — null = está peleando contra el líder
   gymPokemonSlot         Int? // slot del equipo actual (del entrenador o del líder) que se está peleando
   towerRunId             String? // intento de Torre de Combate (null = no es torre)
+  /// Incursión semanal: clave de semana del intento (null = no es incursión).
+  /// Se guarda en la sesión y no se recalcula al cerrar para que un combate
+  /// que cruza el reinicio del domingo acredite el daño a la semana en la que
+  /// empezó, y no a la siguiente.
+  raidWeekKey            String?
+  /// Turnos que le quedan al intento de incursión. Al llegar a 0 se cierra y
+  /// se acredita el daño acumulado (`wildMaxHp - wildCurrentHp`).
+  raidTurnsLeft          Int?
   // Estado de combate en sesión (se limpia al cambiar de Pokémon / fin de batalla).
   playerStatus           StatusCondition?
   wildStatus             StatusCondition?

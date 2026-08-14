@@ -10,6 +10,7 @@ import { runWildCounterAttack } from "@/lib/wild-counter";
 import { turnDeadlineForBattle } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
 import { isReviveItemName, reviveHpFraction } from "@/lib/squad-bag";
+import { raidDamageDealt, raidSettleStatement } from "@/lib/raids/settle";
 
 const MAX_LOG_LINES = 20;
 
@@ -159,6 +160,9 @@ async function finalizeBattleItemTurn(args: {
     gymRunId: string | null;
     pvpMatchId?: string | null;
     log: string[];
+    /** Incursión: hace falta la semana y el HP del jefe para acreditar el daño. */
+    raidWeekKey?: string | null;
+    wildMaxHp: number;
   };
   userId: string;
   locale: string;
@@ -199,6 +203,13 @@ async function finalizeBattleItemTurn(args: {
       (await hasHealthyBackup(userId, activeInstanceId)));
   const lostBattle = fainted && !mustSwitch;
   const finalLog = [...battle.log, `item:${itemName}`].slice(-MAX_LOG_LINES);
+  const raidSettle = battle.raidWeekKey
+    ? raidSettleStatement(prisma, {
+        userId,
+        weekKey: battle.raidWeekKey,
+        damage: raidDamageDealt(battle.wildMaxHp, counter.wildHp),
+      })
+    : null;
 
   await prisma.$transaction([
     prisma.inventoryItem.update({
@@ -232,7 +243,11 @@ async function finalizeBattleItemTurn(args: {
             ...counter.statePatch,
           },
     }),
-    ...(lostBattle
+    // Igual que en el cambio: si el equipo cae durante el contraataque de una
+    // incursión, el intento se cierra acá y el daño se acredita en la misma
+    // transacción. `BattleLog` se saltea (no es una derrota PvE de ranking).
+    ...(lostBattle && raidSettle ? [raidSettle] : []),
+    ...(lostBattle && !battle.raidWeekKey
       ? [
           prisma.battleLog.create({
             data: {

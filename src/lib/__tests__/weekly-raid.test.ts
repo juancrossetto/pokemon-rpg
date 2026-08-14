@@ -1,26 +1,54 @@
 import { describe, expect, it } from "vitest";
-import { calculateRaidDamage, raidBossForWeek, RAID_BOSSES } from "@/lib/raids/config";
+import {
+  RAID_BOSSES,
+  raidBossForWeek,
+  raidNextBossForWeek,
+  raidWeekIndex,
+} from "@/lib/raids/config";
+import { raidDamageDealt } from "@/lib/raids/settle";
 
-const team = [{
-  level: 25,
-  currentHp: 60,
-  ptStrength: 12,
-  ptIntelligence: 8,
-  ptSpeed: 5,
-  species: { baseAttack: 90, baseSpAtk: 70, baseSpeed: 80 },
-}];
-
-describe("weekly raid", () => {
-  it("rotates to a configured boss deterministically", () => {
+describe("escalera de jefes", () => {
+  it("es determinística por semana", () => {
     const first = raidBossForWeek("2026-W33");
     expect(RAID_BOSSES).toContain(first);
     expect(raidBossForWeek("2026-W33")).toBe(first);
   });
 
-  it("calculates stable positive damage and ignores fainted members", () => {
-    const damage = calculateRaidDamage(team, "2026-W33", 1);
-    expect(damage).toBeGreaterThan(0);
-    expect(calculateRaidDamage(team, "2026-W33", 1)).toBe(damage);
-    expect(calculateRaidDamage([{ ...team[0]!, currentHp: 0 }], "2026-W33", 1)).toBe(0);
+  it("rota en orden, no al azar: la semana siguiente es el siguiente escalón", () => {
+    for (const week of ["2026-W01", "2026-W07", "2026-W33", "2026-W52"]) {
+      const index = raidWeekIndex(week);
+      const current = raidBossForWeek(week);
+      const next = raidNextBossForWeek(week);
+      const expected = RAID_BOSSES[(index + 1) % RAID_BOSSES.length];
+      expect(next).toBe(expected);
+      expect(next).not.toBe(current);
+    }
+  });
+
+  it("el nivel sube monótonamente a lo largo de la escalera", () => {
+    for (let i = 1; i < RAID_BOSSES.length; i += 1) {
+      expect(RAID_BOSSES[i]!.level).toBeGreaterThan(RAID_BOSSES[i - 1]!.level);
+    }
+  });
+
+  it("arranca en Kanto y termina en Johto", () => {
+    expect(RAID_BOSSES[0]!.speciesId).toBeLessThanOrEqual(151);
+    expect(RAID_BOSSES.at(-1)!.speciesId).toBeGreaterThan(151);
+    // Sólo gen 1-2: la gen 3 no está sembrada en todas las bases.
+    for (const boss of RAID_BOSSES) expect(boss.speciesId).toBeLessThanOrEqual(251);
+  });
+
+  it("una clave de semana rota no rompe la rotación", () => {
+    expect(RAID_BOSSES).toContain(raidBossForWeek("basura"));
+  });
+});
+
+describe("raidDamageDealt", () => {
+  it("es lo que se le sacó al jefe, nunca negativo", () => {
+    expect(raidDamageDealt(12_000, 9_500)).toBe(2_500);
+    expect(raidDamageDealt(12_000, 0)).toBe(12_000);
+    expect(raidDamageDealt(12_000, 12_000)).toBe(0);
+    // Curación del jefe por encima del máximo no genera daño negativo.
+    expect(raidDamageDealt(12_000, 13_000)).toBe(0);
   });
 });

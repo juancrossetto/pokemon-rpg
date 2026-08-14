@@ -92,6 +92,7 @@ import type {
   LogSide,
   MoveCategory,
   Outcome,
+  RaidSummary,
   PotionStack,
   RosterMember,
   View,
@@ -366,6 +367,7 @@ export function BattleArena({
   gymLeaderName,
   gymBadgeName,
   battleMode = gymId ? "gym" : towerRunId ? "tower" : "wild",
+  raidTurnsLeft: initialRaidTurnsLeft = null,
   battleBg = "meadow",
   encounterPlace = null,
   format = "SINGLE",
@@ -391,6 +393,7 @@ export function BattleArena({
   const isGymBattle = battleMode === "gym";
   const isPvpBattle = battleMode === "pvp";
   const isTowerBattle = battleMode === "tower" || Boolean(towerRunId);
+  const isRaidBattle = battleMode === "raid";
   const farmMode =
     battleMode === "pvp"
       ? "pvp"
@@ -411,11 +414,14 @@ export function BattleArena({
     (format === "DOUBLE" || Boolean(playerB && wildB)) &&
     Boolean(playerB) &&
     Boolean(wildB);
-  // Gym, PvP, Torre o entrenador de ruta: no captura / no huida “salvaje”.
-  const isTrainerStyle = isGymBattle || isPvpBattle || isTowerBattle || Boolean(opponentName);
+  // Gym, PvP, Torre, incursión o entrenador de ruta: no captura / no huida
+  // “salvaje”. En la incursión además el intento ya se cobró: escaparse sólo
+  // serviría para no gastar turnos, así que el límite de turnos es la salida.
+  const isTrainerStyle =
+    isGymBattle || isPvpBattle || isTowerBattle || isRaidBattle || Boolean(opponentName);
   const leaderPortrait = gymLeaderName ? gymLeaderPortraitUrl(gymLeaderName) : null;
   const foeLabel =
-    opponentName ?? (isTowerBattle ? t("towerFoe") : t("wildFoe"));
+    opponentName ?? (isTowerBattle ? t("towerFoe") : isRaidBattle ? t("raidFoe") : t("wildFoe"));
 
   function translateBootLog(raw: string): string | null {
     // Metadata interna (stage de farming / id de entrenador) — no mostrar.
@@ -694,6 +700,9 @@ export function BattleArena({
   const [outcome, setOutcome] = useState<Outcome>("ongoing");
   /** Distingue derrota por KO vs reloj de inactividad (copy del resultado). */
   const [lossReason, setLossReason] = useState<"faint" | "idle" | null>(null);
+  /** Incursión: turnos restantes del intento y resumen al cerrarlo. */
+  const [raidTurns, setRaidTurns] = useState<number | null>(initialRaidTurnsLeft ?? null);
+  const [raidSummary, setRaidSummary] = useState<RaidSummary | null>(null);
   const [turnDeadlineAt, setTurnDeadlineAt] = useState<string | null>(
     initialTurnDeadlineAt ?? null,
   );
@@ -2150,6 +2159,29 @@ export function BattleArena({
       setTurnDeadlineAt(result.turnDeadlineAt);
     }
 
+    if (result.raidResult) {
+      const raid = result.raidResult;
+      setRaidTurns(raid.turnsLeft);
+      if (raid.ended) {
+        const teamWiped = !raid.bossDefeated && playerHpRef.current <= 0;
+        setRaidSummary({
+          damage: raid.damage,
+          bossDefeated: raid.bossDefeated,
+          teamWiped,
+        });
+        // El KO que corresponda se anima antes del cartel; si el intento se
+        // acabó por turnos no cae nadie y se muestra el resumen directo.
+        if (raid.bossDefeated) {
+          await playFaintAndFinish("wild", "raid_ended");
+        } else if (teamWiped) {
+          await playFaintAndFinish("player", "raid_ended");
+        } else {
+          setOutcome("raid_ended");
+        }
+        return;
+      }
+    }
+
     if (result.outcome === "won") {
       await playFaintAndFinish("wild", "won");
     } else if (result.outcome === "lost") {
@@ -2995,6 +3027,7 @@ export function BattleArena({
         isPvpBattle={isPvpBattle}
         isGymBattle={isGymBattle}
         isTowerBattle={isTowerBattle}
+        raidSummary={raidSummary}
         pvpResult={pvpResult}
         showBadgePopup={showBadgePopup}
         onBadgeContinue={() => setShowBadgePopup(false)}
@@ -3451,6 +3484,16 @@ export function BattleArena({
                   </div>
                 ) : null}
               </div>
+              {/* Incursión: los turnos son el recurso escaso del intento, así
+                  que van sobre el campo y no enterrados en el log. */}
+              {isRaidBattle && raidTurns != null ? (
+                <span className="raid-turn-chip">
+                  <span className="material-symbols-outlined" aria-hidden>
+                    timer
+                  </span>
+                  {t("raidTurnsLeft", { turns: raidTurns })}
+                </span>
+              ) : null}
               <div className="mt-1 flex flex-col items-start gap-1.5 md:mt-1.5 md:gap-2">
                 <BattleSpeedControl />
                 <BattleAutoControl unlocked={autoBattleUnlocked} />

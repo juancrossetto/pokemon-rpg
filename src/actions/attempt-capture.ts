@@ -76,7 +76,15 @@ export async function attemptCapture(
     }),
   ]);
   if (!battle) return null;
-  if (battle.gymId || battle.routeTrainerId || isTutorialBattle(battle)) return null;
+  // La incursión tampoco se captura: el jefe es comunitario, no una presa.
+  if (
+    battle.gymId ||
+    battle.routeTrainerId ||
+    battle.raidWeekKey ||
+    isTutorialBattle(battle)
+  ) {
+    return null;
+  }
   if (!inventoryItem || inventoryItem.quantity < 1) return null;
   if (inventoryItem.item.type !== "POKEBALL") return null;
   if (await closeBattleIfIdle(battle, locale)) {
