@@ -98,6 +98,14 @@ export const NAV_GROUPS: NavGroup[] = [
         iconSrc: "/nav/tower-icon.png?v=4",
       },
       {
+        id: "safari",
+        labelKey: "safari",
+        descriptionKey: "desc.safari",
+        href: "/safari",
+        icon: "travel_explore",
+        iconSrc: "/nav/location-icon.png?v=2",
+      },
+      {
         id: "events",
         labelKey: "events",
         descriptionKey: "desc.events",

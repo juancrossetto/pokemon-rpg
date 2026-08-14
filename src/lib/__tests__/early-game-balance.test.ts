@@ -3,6 +3,7 @@ import {
   capWildLevelForEarlyGame,
   earlyGameBattleMode,
   earlyGamePowerMultiplier,
+  levelAdvantageMultiplier,
 } from "@/lib/early-game-balance";
 import { TUTORIAL_BATTLE_ID } from "@/lib/battle-tutorial";
 
@@ -21,27 +22,46 @@ describe("earlyGameBattleMode", () => {
   });
 });
 
+describe("levelAdvantageMultiplier", () => {
+  it("no cambia nada si el salvaje iguala o supera al jugador", () => {
+    expect(levelAdvantageMultiplier(14, 14, "player")).toBe(1);
+    expect(levelAdvantageMultiplier(14, 20, "wild")).toBe(1);
+  });
+
+  it("premia sacarle niveles al rival", () => {
+    expect(levelAdvantageMultiplier(19, 14, "player")).toBeCloseTo(1.3);
+    expect(levelAdvantageMultiplier(19, 14, "wild")).toBeCloseTo(0.75);
+  });
+
+  it("satura: 20 niveles no pegan más que 5", () => {
+    expect(levelAdvantageMultiplier(34, 14, "player")).toBeCloseTo(
+      levelAdvantageMultiplier(19, 14, "player"),
+    );
+  });
+});
+
 describe("earlyGamePowerMultiplier", () => {
-  it("sin efecto a partir del tope", () => {
-    expect(earlyGamePowerMultiplier(20, "player", "wild")).toBe(1);
-    expect(earlyGamePowerMultiplier(25, "wild", "wild")).toBe(1);
+  it("sin ayuda de onboarding ni ventaja de nivel, no toca nada", () => {
+    expect(earlyGamePowerMultiplier(30, 30, "player", "wild")).toBe(1);
+    expect(earlyGamePowerMultiplier(30, 32, "wild", "wild")).toBe(1);
   });
 
   it("suaviza salvajes y ayuda al jugador en Lv.5", () => {
-    const player = earlyGamePowerMultiplier(5, "player", "wild");
-    const wild = earlyGamePowerMultiplier(5, "wild", "wild");
-    expect(player).toBeGreaterThan(1);
-    expect(wild).toBeLessThan(1);
+    expect(earlyGamePowerMultiplier(5, 5, "player", "wild")).toBeGreaterThan(1);
+    expect(earlyGamePowerMultiplier(5, 5, "wild", "wild")).toBeLessThan(1);
   });
 
-  it("mantiene una ayuda perceptible en el tramo de nivel 16", () => {
-    expect(earlyGamePowerMultiplier(16, "player", "wild")).toBeCloseTo(1.07);
-    expect(earlyGamePowerMultiplier(16, "wild", "wild")).toBeCloseTo(0.93);
+  it("el caso reportado: Lv.19 contra un salvaje Lv.14 queda a favor", () => {
+    const player = earlyGamePowerMultiplier(19, 14, "player", "wild");
+    const wild = earlyGamePowerMultiplier(19, 14, "wild", "wild");
+    // Antes daba 1.02 / 0.98: la ventaja de 5 niveles no se notaba.
+    expect(player).toBeGreaterThan(1.3);
+    expect(wild).toBeLessThan(0.75);
   });
 
   it("tutorial es más indulgente", () => {
-    expect(earlyGamePowerMultiplier(5, "wild", "tutorial")).toBeLessThan(
-      earlyGamePowerMultiplier(5, "wild", "wild"),
+    expect(earlyGamePowerMultiplier(5, 5, "wild", "tutorial")).toBeLessThan(
+      earlyGamePowerMultiplier(5, 5, "wild", "wild"),
     );
   });
 });

@@ -9,7 +9,7 @@
  * Mute = pause + volume 0 (más fiable que sólo `audio.muted` en iOS).
  */
 
-export type WorldBgmKind = "home" | "store";
+export type WorldBgmKind = "home" | "store" | "safari";
 
 const STORAGE_MUTE = "world-bgm-muted";
 const STORAGE_VOLUME = "world-bgm-volume";
@@ -19,6 +19,7 @@ export const WORLD_BGM_MUTE_EVENT = "world-bgm-mute-change";
 const TRACK: Record<WorldBgmKind, string> = {
   home: "/audio/music_home.mp3",
   store: "/audio/music_store.mp3",
+  safari: "/audio/safari-music.mp3",
 };
 
 let audio: HTMLAudioElement | null = null;
@@ -170,6 +171,7 @@ export function worldBgmKindForPath(pathname: string): WorldBgmKind | null {
   const path = pathname.replace(/\/+$/, "") || "/";
   if (path === "/login" || path === "/register") return null;
   if (path === "/battle" || path.startsWith("/battle/")) return null;
+  if (path === "/safari" || path.startsWith("/safari/")) return "safari";
   if (path === "/market" || path.startsWith("/market/")) return "store";
   if (path === "/shop" || path.startsWith("/shop/")) return "store";
   return "home";

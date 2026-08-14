@@ -87,8 +87,9 @@ model User {
   towerProgress      TowerProgress[]
   towerRuns          TowerRun[]
   towerAttemptDays   TowerAttemptDay[]
-  clanWarBattlesA    ClanWarBattle[]     @relation("ClanWarFighterA")
-  clanWarBattlesB    ClanWarBattle[]     @relation("ClanWarFighterB")
+  safariRuns         SafariRun[]
+  clanWarBattlesA    ClanWarBattle[]      @relation("ClanWarFighterA")
+  clanWarBattlesB    ClanWarBattle[]      @relation("ClanWarFighterB")
 }
 
 // ---------- Notificaciones in-app ----------
@@ -143,7 +144,9 @@ model CampaignProgress {
   farmingStageId            String
   highestCompletedStageId   String?
   completedStageIds         String[] @default([])
-  /** Victorias/capturas parciales por stageId mientras no se completa (clearsRequired > 1). */
+  /**
+   * Victorias/capturas parciales por stageId mientras no se completa (clearsRequired > 1).
+   */
   stageClearCounts          Json     @default("{}")
   lastMilestoneId           String?
   updatedAt                 DateTime @updatedAt
@@ -188,6 +191,9 @@ model Species {
   eggs              Egg[]
   pokedexEntries    PokedexEntry[]
   seenBy            SeenSpecies[]
+  safariEncounters  SafariRun[]         @relation("SafariEncounterSpecies")
+  safariBestRuns    SafariRun[]         @relation("SafariBestSpecies")
+  safariCatches     SafariCatch[]
 }
 
 enum MoveCategory {
@@ -277,12 +283,13 @@ model PokemonInstance {
   /// Movimientos LEVEL_UP que el jugador rechazó: no se vuelven a ofrecer.
   declinedMoveIds Int[] @default([])
 
-  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  species        Species         @relation(fields: [speciesId], references: [id])
-  moves          PokemonMove[]
-  listings       MarketListing[]
-  battleSessions BattleSession[]  @relation("BattlePlayerA")
+  owner           User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  species         Species         @relation(fields: [speciesId], references: [id])
+  moves           PokemonMove[]
+  listings        MarketListing[]
+  battleSessions  BattleSession[] @relation("BattlePlayerA")
   battleSessionsB BattleSession[] @relation("BattlePlayerB")
+  safariCatch     SafariCatch?
 
   @@unique([ownerId, teamSlot]) // dos Pokémon no pueden compartir slot. Postgres
   // trata cada NULL como distinto, así que el PC (teamSlot null) no se ve afectado.
@@ -533,9 +540,9 @@ model Item {
   heldStat        String? // "atk" | "spAtk" | "speed" — solo CHOICE_LOCK
   heldBoostType   String? // tipo de movimiento potenciado — solo TYPE_BOOST
 
-  inventoryOf        InventoryItem[]
-  holders            PokemonInstance[]
-  battleWildHeldBy   BattleSession[]   @relation("BattleWildHeldItem")
+  inventoryOf      InventoryItem[]
+  holders          PokemonInstance[]
+  battleWildHeldBy BattleSession[]   @relation("BattleWildHeldItem")
 }
 
 model InventoryItem {
@@ -733,14 +740,14 @@ model Clan {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  leader       User              @relation("ClanLeader", fields: [leaderId], references: [id])
-  members      ClanMember[]
-  messages     ClanMessage[]
-  applications ClanApplication[]
-  invites      ClanInvite[]
+  leader           User                  @relation("ClanLeader", fields: [leaderId], references: [id])
+  members          ClanMember[]
+  messages         ClanMessage[]
+  applications     ClanApplication[]
+  invites          ClanInvite[]
   warRegistrations ClanWarRegistration[]
-  warsAsA          ClanWar[] @relation("ClanWarA")
-  warsAsB          ClanWar[] @relation("ClanWarB")
+  warsAsA          ClanWar[]             @relation("ClanWarA")
+  warsAsB          ClanWar[]             @relation("ClanWarB")
 }
 
 model ClanMember {
@@ -905,7 +912,9 @@ enum BattleSessionStatus {
   CAUGHT
 }
 
-/** SINGLE = 1v1 (default). DOUBLE = 2v2 en campo (Torre elite MVP). */
+/**
+ * SINGLE = 1v1 (default). DOUBLE = 2v2 en campo (Torre elite MVP).
+ */
 enum BattleFormat {
   SINGLE
   DOUBLE
@@ -1161,16 +1170,16 @@ enum TowerRunStatus {
 
 /// Progreso permanente + de temporada por torre/dificultad.
 model TowerProgress {
-  id                   String   @id @default(cuid())
-  userId               String
-  towerId              String
-  difficultyId         String
-  highestFloorAllTime  Int      @default(0)
-  highestFloorSeason   Int      @default(0)
-  seasonKey            String
-  claimedFirstClears   String[] @default([])
-  guardiansDefeated    Int      @default(0)
-  updatedAt            DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  userId              String
+  towerId             String
+  difficultyId        String
+  highestFloorAllTime Int      @default(0)
+  highestFloorSeason  Int      @default(0)
+  seasonKey           String
+  claimedFirstClears  String[] @default([])
+  guardiansDefeated   Int      @default(0)
+  updatedAt           DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1180,27 +1189,27 @@ model TowerProgress {
 
 /// Intento / ascenso en curso o cerrado.
 model TowerRun {
-  id                    String         @id @default(cuid())
-  userId                String
-  towerId               String
-  difficultyId          String
-  status                TowerRunStatus @default(ACTIVE)
-  currentFloor          Int            @default(1)
+  id                   String         @id @default(cuid())
+  userId               String
+  towerId              String
+  difficultyId         String
+  status               TowerRunStatus @default(ACTIVE)
+  currentFloor         Int            @default(1)
   /// Snapshot del equipo del intento (HP/PP/derrotados + restore de Aventura).
-  teamSnapshot          Json
+  teamSnapshot         Json
   /// Si no es null, el ascenso está pausado: Aventura restaurada, se puede salir de /tower.
-  parkedAt              DateTime?
+  parkedAt             DateTime?
   /// Botín acumulado del ascenso, pendiente de reclamar al cerrar.
-  pendingLoot           Json           @default("[]")
-  lootClaimedAt         DateTime?
-  blessingIds           String[]       @default([])
-  offeredBlessingIds    String[]       @default([])
-  teamChangesRemaining  Int            @default(1)
-  attemptsConsumed      Int            @default(1)
-  startedAt             DateTime       @default(now())
-  endedAt               DateTime?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
+  pendingLoot          Json           @default("[]")
+  lootClaimedAt        DateTime?
+  blessingIds          String[]       @default([])
+  offeredBlessingIds   String[]       @default([])
+  teamChangesRemaining Int            @default(1)
+  attemptsConsumed     Int            @default(1)
+  startedAt            DateTime       @default(now())
+  endedAt              DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   battleSessions BattleSession[]
@@ -1220,6 +1229,65 @@ model TowerAttemptDay {
 
   @@unique([userId, dayKey])
   @@index([userId])
+}
+
+// ---------- Expediciones Safari ----------
+// Corridas semanales de captura sin combate, energía ni objetos de la mochila.
+
+enum SafariRunStatus {
+  ACTIVE
+  COMPLETED
+}
+
+model SafariRun {
+  id                 String          @id @default(cuid())
+  userId             String
+  weekKey            String
+  biomeId            String
+  status             SafariRunStatus @default(ACTIVE)
+  encountersUsed     Int             @default(0)
+  ballsRemaining     Int             @default(15)
+  encounterSpeciesId Int?
+  encounterLevel     Int?
+  encounterIsShiny   Boolean         @default(false)
+  bestScore          Int             @default(0)
+  bestSpeciesId      Int?
+  bestLevel          Int?
+  bestIsShiny        Boolean         @default(false)
+  catches            Int             @default(0)
+  rewardCoins        Int             @default(0)
+  rewardGems         Int             @default(0)
+  startedAt          DateTime        @default(now())
+  endedAt            DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  encounterSpecies Species?      @relation("SafariEncounterSpecies", fields: [encounterSpeciesId], references: [id])
+  bestSpecies      Species?      @relation("SafariBestSpecies", fields: [bestSpeciesId], references: [id])
+  captured         SafariCatch[]
+
+  @@index([userId, status])
+  @@index([userId, weekKey])
+  @@index([weekKey, bestScore])
+}
+
+model SafariCatch {
+  id                String   @id @default(cuid())
+  runId             String
+  pokemonInstanceId String?  @unique
+  speciesId         Int
+  level             Int
+  isShiny           Boolean  @default(false)
+  score             Int
+  caughtAt          DateTime @default(now())
+
+  run             SafariRun        @relation(fields: [runId], references: [id], onDelete: Cascade)
+  pokemonInstance PokemonInstance? @relation(fields: [pokemonInstanceId], references: [id], onDelete: SetNull)
+  species         Species          @relation(fields: [speciesId], references: [id])
+
+  @@index([runId, score])
+  @@index([speciesId])
 }
 
 // ---------- Guerras de clan (v1) ----------
@@ -1300,22 +1368,22 @@ model ClanWar {
 }
 
 model ClanWarBattle {
-  id              String              @id @default(cuid())
-  warId           String
-  slot            Int
-  fighterAId      String?
-  fighterBId      String?
-  status          ClanWarBattleStatus @default(OPEN)
+  id             String              @id @default(cuid())
+  warId          String
+  slot           Int
+  fighterAId     String?
+  fighterBId     String?
+  status         ClanWarBattleStatus @default(OPEN)
   /// Clan ganador del slot (clanAId o clanBId del war).
-  winnerClanId    String?
-  winnerUserId    String?
+  winnerClanId   String?
+  winnerUserId   String?
   /// Snapshots PvP (misma forma que PvpMatch) para pelea interactiva / sim.
-  challengerTeam  Json                @default("[]")
-  opponentTeam    Json                @default("[]")
+  challengerTeam Json                @default("[]")
+  opponentTeam   Json                @default("[]")
   /// Quién inició el combate (humano en /battle); null si fue sim bot.
-  startedById     String?
-  koLog           Json                @default("[]")
-  completedAt     DateTime?
+  startedById    String?
+  koLog          Json                @default("[]")
+  completedAt    DateTime?
 
   war           ClanWar        @relation(fields: [warId], references: [id], onDelete: Cascade)
   fighterA      User?          @relation("ClanWarFighterA", fields: [fighterAId], references: [id], onDelete: SetNull)

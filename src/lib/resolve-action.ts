@@ -127,9 +127,19 @@ export function resolveSingleAction(
     earlyGame?: { playerLevel: number; mode: EarlyGameBattleMode };
   },
 ): ActionOutcome {
+  /*
+    El nivel del rival sale del propio estado y no de `opts`: así la ventaja por
+    nivel se aplica sin tocar la firma de ningún llamador, y sigue al Pokémon
+    que esté en cancha aunque el salvaje cambie a mitad del combate.
+  */
   const earlyMult = (side: "player" | "wild") =>
     opts?.earlyGame
-      ? earlyGamePowerMultiplier(opts.earlyGame.playerLevel, side, opts.earlyGame.mode)
+      ? earlyGamePowerMultiplier(
+          opts.earlyGame.playerLevel,
+          wild.baseStats.level,
+          side,
+          opts.earlyGame.mode,
+        )
       : 1;
   const events: TurnEvent[] = [];
   const p: SideBattleState = { ...player, stages: { ...player.stages } };

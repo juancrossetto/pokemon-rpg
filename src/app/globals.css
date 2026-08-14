@@ -346,6 +346,28 @@ body {
     outline-color: var(--color-pokeball-red);
   }
 
+  .game-cta--primary {
+    --game-cta-ink: #ffffff;
+    border-color: color-mix(in srgb, var(--theme-primary) 62%, white);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 50%),
+      linear-gradient(90deg, var(--theme-primary-bright) 0%, var(--theme-primary) 52%, var(--theme-primary-deep) 100%);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.24) inset,
+      0 5px 16px color-mix(in srgb, var(--theme-primary) 36%, transparent);
+  }
+
+  .game-cta--primary:hover:not(.game-cta--disabled):not(:disabled) {
+    border-color: color-mix(in srgb, var(--theme-primary) 72%, white);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.28) inset,
+      0 7px 20px color-mix(in srgb, var(--theme-primary) 44%, transparent);
+  }
+
+  .game-cta--primary:focus-visible {
+    outline-color: var(--theme-primary);
+  }
+
   /* CTA secundario (info / gestionar): mismo cuerpo Grobold, superficie sólida. */
   .game-cta--secondary {
     --game-cta-ink: #ffffff;
@@ -363,6 +385,28 @@ body {
 
   .game-cta--secondary:focus-visible {
     outline-color: rgba(255, 255, 255, 0.55);
+  }
+
+  .game-cta--safari {
+    --game-cta-ink: #ffffff;
+    border-color: color-mix(in srgb, var(--color-secondary) 58%, white);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 52%),
+      var(--color-secondary);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.2) inset,
+      0 5px 16px color-mix(in srgb, var(--color-secondary) 34%, transparent);
+  }
+
+  .game-cta--safari:hover:not(.game-cta--disabled):not(:disabled) {
+    border-color: color-mix(in srgb, var(--color-secondary) 68%, white);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.24) inset,
+      0 7px 20px color-mix(in srgb, var(--color-secondary) 42%, transparent);
+  }
+
+  .game-cta--safari:focus-visible {
+    outline-color: var(--color-secondary);
   }
 
   /* CTA premium (saltar cooldown / gemas): misma carcasa Grobold que torre. */
@@ -2375,7 +2419,18 @@ html.is-standalone .battle-bag-sheet__panel {
 @media (min-width: 1024px) {
   .battle-layout {
     display: grid;
-    grid-template-columns: minmax(12rem, 1fr) minmax(0, 753px) minmax(15rem, 1fr);
+    /*
+      Los laterales escalan con el viewport en vez de tener un piso fijo por
+      breakpoint. Como el centro admite hasta 1506px, absorbe todo el sobrante y
+      las columnas laterales quedan siempre en su mínimo: si ese mínimo es un
+      valor fijo, el log mide lo mismo a 1280 que a 1900, y al cambiar de
+      breakpoint pega saltos (llegó a caer de 350px a 160px al cruzar 1536).
+      Con `clamp` el ancho crece parejo —13rem a 20rem— y nunca retrocede.
+    */
+    grid-template-columns:
+      minmax(clamp(13rem, 15vw, 20rem), 0.9fr)
+      minmax(0, 1506px)
+      minmax(clamp(15rem, 15vw, 20rem), 1fr);
     /* Arena prioriza altura; poderes siguen legibles (~20.5rem). */
     grid-template-rows: minmax(0, 1fr) minmax(20.5rem, 0.42fr);
     grid-template-areas:
@@ -2490,9 +2545,9 @@ html.is-standalone .battle-bag-sheet__panel {
   }
 }
 
+/* Sin plantilla propia: el `clamp` de ≥1024 ya escala los laterales. */
 @media (min-width: 1536px) {
   .battle-layout {
-    grid-template-columns: minmax(10rem, 0.85fr) minmax(0, 1506px) minmax(14rem, 0.95fr);
     gap: 1rem;
   }
 }
@@ -2505,7 +2560,6 @@ html.is-standalone .battle-bag-sheet__panel {
 @media (min-width: 1800px) {
   .battle-layout {
     max-width: 112rem;
-    grid-template-columns: minmax(15rem, 0.9fr) minmax(0, 1506px) minmax(15rem, 1fr);
   }
 }
 
@@ -16292,6 +16346,106 @@ html.boot-splash-done .boot-splash,
   20% { opacity: 0.55; }
   80% { opacity: 0.4; }
   100% { transform: translate3d(12px, -48px, 0); opacity: 0; }
+}
+
+@keyframes safari-zone-artwork-float {
+  0%, 100% {
+    transform: perspective(900px) rotateX(1deg) rotateY(-5deg) translate3d(0, 1px, 0);
+  }
+  50% {
+    transform: perspective(900px) rotateX(-1deg) rotateY(4deg) translate3d(0, -9px, 16px);
+  }
+}
+
+@keyframes safari-search-guide-idle {
+  0%, 100% {
+    transform: translate3d(0, 1px, 0) rotate(-0.8deg);
+  }
+  50% {
+    transform: translate3d(0, -7px, 0) rotate(0.8deg);
+  }
+}
+
+@keyframes safari-encounter-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.88);
+    filter: brightness(1.65) saturate(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+.safari-encounter-reveal {
+  animation: safari-encounter-reveal 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.safari-search-guide {
+  animation: safari-search-guide-idle 5s ease-in-out infinite;
+  transform-origin: 50% 78%;
+  will-change: transform;
+}
+
+.safari-zone-artwork {
+  transform-style: preserve-3d;
+  animation: safari-zone-artwork-float 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.safari-biome-option {
+  --safari-biome-accent: #62d987;
+  perspective: 900px;
+}
+
+.safari-biome-option__aura {
+  background: color-mix(in srgb, var(--safari-biome-accent) 24%, transparent);
+  opacity: 0.18;
+  transition: opacity 450ms ease, transform 450ms ease;
+}
+
+.safari-biome-option__shadow {
+  transition: opacity 450ms ease, transform 450ms ease;
+}
+
+.safari-biome-option__name {
+  filter: saturate(0.78);
+  transition: filter 450ms ease, transform 450ms ease;
+}
+
+.safari-biome-option:hover .safari-biome-option__aura,
+.safari-biome-option.is-selected .safari-biome-option__aura {
+  opacity: 0.62;
+  transform: scale(1.08);
+}
+
+.safari-biome-option:hover .safari-biome-option__shadow,
+.safari-biome-option.is-selected .safari-biome-option__shadow {
+  opacity: 0.86;
+  transform: scaleX(1.08);
+}
+
+.safari-biome-option:hover .safari-biome-option__name,
+.safari-biome-option.is-selected .safari-biome-option__name {
+  filter: saturate(1.2);
+  transform: translateY(-1px);
+}
+
+.safari-biome-option:focus-visible {
+  border-radius: 1rem;
+  outline: 2px solid color-mix(in srgb, var(--safari-biome-accent) 80%, white);
+  outline-offset: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .safari-zone-artwork,
+  .safari-search-guide,
+  .safari-encounter-reveal {
+    animation: none;
+    transform: none;
+  }
 }
 
 @keyframes expedition-beacon-pulse {

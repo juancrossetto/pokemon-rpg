@@ -40,6 +40,7 @@
     "friends": "Amigos",
     "clans": "Clanes",
     "pvp": "PvP",
+    "safari": "Safari",
     "more": "Más",
     "campaign": "Viaje",
     "energy": "Energía",
@@ -76,7 +77,8 @@
       "friends": "Buscá entrenadores, inspeccioná cartas y ampliá tu círculo.",
       "clans": "Uníte a un clan y competí en equipo.",
       "events": "Recompensas diarias y desafíos semanales.",
-      "tower": "Ascendé pisos en un desafío PvE."
+      "tower": "Ascendé pisos en un desafío PvE.",
+      "safari": "Capturá especies raras en expediciones limitadas."
     },
     "battleWild": "Batalla salvaje",
     "menu": "Menú",
@@ -91,7 +93,8 @@
     "swipeGroups": "Deslizá para cambiar de grupo",
     "events": "Eventos",
     "profile": "Mi perfil",
-    "tower": "Torre"
+    "tower": "Torre",
+    "safari": "Safari"
   },
   "notifications": {
     "eyebrow": "Alertas en vivo",
@@ -3530,6 +3533,61 @@
           }
         ]
       }
+    }
+  },
+  "safari": {
+    "eyebrow": "Nuevo modo de juego",
+    "title": "Expedición Safari",
+    "subtitle": "Entrá a un bioma, administrá tus encuentros y Safari Balls, y decidí cuándo asegurar tu mejor captura.",
+    "attempts": "Intentos semanales",
+    "reset": "Reinicio",
+    "encounters": "Encuentros",
+    "chooseEyebrow": "Elegí el terreno",
+    "chooseBiome": "¿Dónde querés explorar?",
+    "weeklyLimit": "Hasta {count} expediciones por semana",
+    "start": "Iniciar expedición",
+    "noAttempts": "Sin expediciones disponibles",
+    "trailTitle": "Rastreá una especie",
+    "encounterTitle": "Encuentro Safari",
+    "searchTitle": "El sendero está en silencio",
+    "searchDescription": "Avanzá para revelar el próximo Pokémon. Si no te convence, podés dejarlo ir sin gastar una Safari Ball.",
+    "search": "Buscar Pokémon",
+    "throwBall": "Lanzar Safari Ball",
+    "leave": "Dejarlo ir",
+    "finishEarly": "Cerrar expedición y cobrar",
+    "working": "Procesando...",
+    "catchChance": "Probabilidad estimada: {chance}%",
+    "caught": "¡Capturado! +{score} puntos. Fue enviado al PC.",
+    "escaped": "Se liberó. Podés volver a lanzar mientras te queden Safari Balls.",
+    "runProgress": "Estado de expedición",
+    "seen": "Vistos",
+    "captures": "Capturas",
+    "balls": "Balls",
+    "bestCatch": "Mejor captura",
+    "noBest": "Todavía no aseguraste ninguna captura.",
+    "tip": "Las especies raras, difíciles de capturar y shiny entregan más puntos. Sólo tu mejor captura define el premio final.",
+    "lastResult": "Última expedición",
+    "lastSummary": "{catches} capturas conservadas en tu PC",
+    "reward": "Premio entregado",
+    "rankingEyebrow": "Competencia semanal",
+    "rankingTitle": "Mejores expedicionarios",
+    "rankingEmpty": "Todavía no hay puntajes esta semana.",
+    "rarity": { "common": "Común", "uncommon": "Poco común", "rare": "Raro", "epic": "Excepcional" },
+    "biomes": {
+      "verdant": { "name": "Reserva Esmeralda", "description": "Bosque húmedo con insectos y especies de planta poco habituales." },
+      "wetlands": { "name": "Humedales Azules", "description": "Canales tranquilos donde aparecen especies acuáticas y criaturas antiguas." },
+      "badlands": { "name": "Cañón Ámbar", "description": "Terreno rocoso con Pokémon resistentes y fósiles extremadamente raros." }
+    },
+    "errors": {
+      "unauthorized": "Necesitás iniciar sesión.",
+      "invalid_biome": "Ese bioma no está disponible.",
+      "active_run": "Ya tenés una expedición activa.",
+      "no_attempts": "Ya utilizaste las expediciones de esta semana.",
+      "no_run": "No hay una expedición activa.",
+      "encounter_pending": "Primero resolvé el encuentro actual.",
+      "no_encounter": "No hay ningún Pokémon frente a vos.",
+      "no_balls": "No quedan Safari Balls.",
+      "finished": "La expedición ya terminó."
     }
   },
   "tower": {
