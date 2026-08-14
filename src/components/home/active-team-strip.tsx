@@ -14,6 +14,7 @@ import {
 } from "@/components/squad-card-context-menu";
 import { SquadCardSheet, type SquadCardSheetLabels } from "@/components/squad-card-sheet";
 import { PokemonShowcaseCard } from "@/components/pokemon-showcase-card";
+import { PokemonImage } from "@/components/pokemon-image";
 import { PokeSparks } from "@/components/poke-sparks";
 import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
 import type { HomeSquadMember } from "@/components/home/squad-types";
@@ -408,12 +409,16 @@ function TeamSlot({
               style={{ background: accent }}
             />
             {member.spriteUrl ? (
-              <Image
+              <PokemonImage
                 src={member.spriteUrl}
+                speciesId={member.speciesId}
+                speciesName={member.speciesName}
+                isShiny={member.isShiny}
                 alt=""
                 width={160}
                 height={160}
                 draggable={false}
+                preload
                 className={`pointer-events-none relative z-[1] h-[88%] w-auto max-h-[72px] max-w-[72px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105 md:h-[130px] md:w-[130px] md:max-h-none md:max-w-none ${
                   fainted ? "grayscale" : ""
                 }`}

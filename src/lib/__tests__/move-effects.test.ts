@@ -88,6 +88,24 @@ describe("tablas de move-effects", () => {
   });
 });
 
+describe("tower aegis", () => {
+  it("blocks the first damaging move that connects", () => {
+    stubRandom([0, 0.5]);
+    const out = resolveSingleAction(
+      "wild",
+      move({ name: "tackle" }),
+      side({ name: "Player" }),
+      side({ name: "Foe" }),
+      false,
+      { blockDamage: true },
+    );
+
+    expect(out.player.hp).toBe(100);
+    expect(out.events[0]?.shielded).toBe(true);
+    expect(out.events[0]?.damage).toBe(0);
+  });
+});
+
 describe("curación", () => {
   it("Recover restaura la mitad del HP máximo", () => {
     const self = side({ hp: 30, maxHp: 100 });

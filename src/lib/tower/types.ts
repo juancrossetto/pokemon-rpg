@@ -58,7 +58,7 @@ export interface TowerDifficulty {
   id: string;
   nameKey: string;
   unlockedByDefault: boolean;
-  /** Stub MVP: Experto no jugable. */
+  /** Puede iniciarse; el desbloqueo progresivo se valida en la acción. */
   playable: boolean;
 }
 

@@ -26,6 +26,7 @@ import type {
 } from "@/lib/tower";
 import { floorNodeVisual, pokeApiSpriteUrl } from "@/lib/tower/icons";
 import { scrollElementIntoViewSafe } from "@/lib/scroll-lock";
+import { playUiSfx } from "@/lib/battle-sfx";
 
 /* ------------------------------------------------------------------ *
  * Tokens visuales por tipo de piso.
@@ -189,12 +190,10 @@ export function TowerBlessingArrival({
     if (!data?.id || !blessingIds.includes(data.id)) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setPayload(data);
-    if (reduced) {
-      setPhase("done");
-      return;
-    }
-    const id = window.requestAnimationFrame(() => setPhase("center"));
+    const id = window.requestAnimationFrame(() => {
+      setPayload(data);
+      setPhase(reduced ? "done" : "center");
+    });
     return () => window.cancelAnimationFrame(id);
   }, [blessingIds]);
 
@@ -305,18 +304,25 @@ export function TowerBlessingArrival({
 function useJustClimbed(currentFloor: number) {
   const [justClimbed, setJustClimbed] = useState(false);
   const currentNodeRef = useRef<HTMLLIElement>(null);
+  // `undefined` distingue “todavía no leí sessionStorage” de “no había piso”.
+  // No se adelanta al piso actual hasta que la animación realmente comienza:
+  // así sobrevive al doble montaje de efectos de React Strict Mode en dev.
+  const previousFloorRef = useRef<number | null | undefined>(undefined);
 
   useEffect(() => {
     if (currentFloor < 1) return;
 
     const KEY = "tower:last-floor";
-    const previous = window.sessionStorage.getItem(KEY);
-    window.sessionStorage.setItem(KEY, String(currentFloor));
+    if (previousFloorRef.current === undefined) {
+      const stored = window.sessionStorage.getItem(KEY);
+      previousFloorRef.current = stored == null ? null : Number(stored);
+    }
+    const previous = previousFloorRef.current;
 
     const node = currentNodeRef.current;
     if (!node) return;
 
-    const climbed = previous != null && Number(previous) < currentFloor;
+    const climbed = previous != null && previous < currentFloor;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scroller = node.closest<HTMLElement>("[data-tower-rail-scroll]");
     const railSection =
@@ -371,6 +377,8 @@ function useJustClimbed(currentFloor: number) {
     });
 
     if (!climbed) {
+      previousFloorRef.current = currentFloor;
+      window.sessionStorage.setItem(KEY, String(currentFloor));
       return () => {
         cancel = true;
         timers.forEach((id) => window.clearTimeout(id));
@@ -381,13 +389,18 @@ function useJustClimbed(currentFloor: number) {
     // seguir midiendo "fuera" mientras el smooth scroll termina.
     timers.push(
       window.setTimeout(() => {
-        if (!cancel) setJustClimbed(true);
-      }, reduced ? 0 : 420),
+        if (!cancel) {
+          previousFloorRef.current = currentFloor;
+          window.sessionStorage.setItem(KEY, String(currentFloor));
+          setJustClimbed(true);
+          if (!reduced) playUiSfx("levelUp");
+        }
+      }, reduced ? 0 : 1100),
     );
     timers.push(
       window.setTimeout(() => {
         if (!cancel) setJustClimbed(false);
-      }, reduced ? 1200 : 5200),
+      }, reduced ? 1200 : 4800),
     );
 
     return () => {
@@ -769,9 +782,9 @@ function RailSegment({
       el piso actual despliega modificadores—. El mínimo garantiza el tramo
       visible y de paso separa los nodos entre sí.
     */
-    <span aria-hidden className="relative min-h-[18px] w-[2px] flex-1 self-center">
+    <span aria-hidden className="relative min-h-[30px] w-[4px] flex-1 self-center">
       {/* Vía */}
-      <span className="absolute inset-0 rounded-full bg-white/[0.09]" />
+      <span className="absolute inset-0 rounded-full border border-white/[0.06] bg-white/[0.08]" />
 
       {/* Relleno. Sin `animate` queda puesto de una: los tramos viejos no
           tienen que volver a llenarse en cada render. */}
@@ -781,18 +794,18 @@ function RailSegment({
             animate ? "tower-climb-fill" : ""
           }`}
           style={{
-            background: `linear-gradient(to top, ${glow}55, ${glow})`,
-            boxShadow: `0 0 8px ${glow}aa, 0 0 16px ${glow}55`,
+            background: `linear-gradient(to top, ${glow}88 0%, #ffffff 55%, ${glow} 100%)`,
+            boxShadow: `0 0 7px ${glow}, 0 0 16px ${glow}dd, 0 0 28px ${glow}88`,
           }}
         />
       )}
 
       {animate && (
         <span
-          className="tower-climb-spark absolute left-1/2 h-[7px] w-[7px] rounded-full"
+          className="tower-climb-spark absolute left-1/2 h-[11px] w-[11px] rounded-full border border-white/80"
           style={{
-            background: glow,
-            boxShadow: `0 0 10px ${glow}, 0 0 20px ${glow}aa`,
+            background: "white",
+            boxShadow: `0 0 8px white, 0 0 16px ${glow}, 0 0 30px ${glow}`,
           }}
         />
       )}
@@ -1201,10 +1214,10 @@ export function TowerSquad({
             className="flex min-w-0 flex-1 items-center justify-end gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label={t("blessing.active")}
           >
-            {blessings.map((b) => {
+            {blessings.map((b, index) => {
               const visual = blessingVisual(b.id);
               return (
-                <li key={b.id} title={b.name} data-tower-blessing={b.id}>
+                <li key={`${b.id}:${index}`} title={b.name} data-tower-blessing={b.id}>
                   <span className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full sm:h-10 sm:w-10">
                     <Image
                       src={visual.src}
@@ -1664,12 +1677,14 @@ function RestOption({
 export function TowerActionBar({
   action,
   locale,
+  difficultyId = "normal",
   resetAtMs,
   canAbandon = false,
   canPark = false,
 }: {
   action: TowerPrimaryAction;
   locale: string;
+  difficultyId?: string;
   /** Epoch ms del próximo domingo 21hs ART; muestra countdown si el CTA está bloqueado. */
   resetAtMs?: number | null;
   /** Muestra “Abandonar intento” bajo el CTA cuando hay corrida activa. */
@@ -1687,20 +1702,20 @@ export function TowerActionBar({
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!resetAtMs || action.enabled) {
-      setNow(null);
-      return;
-    }
+    if (!resetAtMs || action.enabled) return;
     const tick = () => setNow(Date.now());
-    tick();
+    const frame = window.requestAnimationFrame(tick);
     const id = window.setInterval(tick, 1000);
-    return () => window.clearInterval(id);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearInterval(id);
+    };
   }, [resetAtMs, action.enabled]);
 
   const run = () =>
     start(async () => {
       if (action.action === "start_run" || action.action === "restart_run") {
-        await startTowerRun(locale);
+        await startTowerRun(locale, difficultyId);
       } else if (action.action === "challenge_floor" || action.action === "continue_run") {
         await challengeTowerFloor(locale);
       }

@@ -19,6 +19,7 @@ export function RankingScopeFilter({
   scope,
   selectedCountry,
   accountCountry,
+  friendsEnabled,
   countries,
   labels,
 }: {
@@ -27,6 +28,7 @@ export function RankingScopeFilter({
   selectedCountry?: string;
   /** País del perfil logueado; se usa como valor por defecto del select. */
   accountCountry?: string;
+  friendsEnabled: boolean;
   countries: { code: string; name: string }[];
   labels: {
     global: string;
@@ -120,13 +122,23 @@ export function RankingScopeFilter({
         </Select.Root>
       ) : null}
 
-      <span
-        className="rk-scopes__btn rk-scopes__btn--disabled"
-        title={labels.friendsSoon}
-        aria-disabled
-      >
-        {labels.friends}
-      </span>
+      {friendsEnabled ? (
+        <Link
+          href={rankingHref(category, "friends")}
+          className={`rk-scopes__btn ${scope === "friends" ? "rk-scopes__btn--active" : ""}`}
+          aria-current={scope === "friends" ? "page" : undefined}
+        >
+          {labels.friends}
+        </Link>
+      ) : (
+        <span
+          className="rk-scopes__btn rk-scopes__btn--disabled"
+          title={labels.friendsSoon}
+          aria-disabled
+        >
+          {labels.friends}
+        </span>
+      )}
     </div>
   );
 }

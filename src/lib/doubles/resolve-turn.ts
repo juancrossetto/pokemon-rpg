@@ -144,6 +144,7 @@ function resolveHitOnTarget(
   itemB: boolean,
   powerMult: number,
   spreadFollowUp = false,
+  blockDamage = false,
 ): {
   events: TurnEvent[];
   itemA: boolean;
@@ -162,6 +163,7 @@ function resolveHitOnTarget(
     powerMultiplier: powerMult,
     skipResidual: spreadFollowUp,
     assumeCanAct: spreadFollowUp,
+    blockDamage,
   };
 
   let outcome;
@@ -209,6 +211,7 @@ export function resolveDoubleTurn(
   actions: DoubleAction[],
   playerItemConsumedA: boolean,
   playerItemConsumedB: boolean,
+  opts?: { blockFirstPlayerHit?: boolean },
 ): {
   events: TurnEvent[];
   field: DoubleField;
@@ -228,7 +231,34 @@ export function resolveDoubleTurn(
 
   let itemA = playerItemConsumedA;
   let itemB = playerItemConsumedB;
+  let shieldAvailable = opts?.blockFirstPlayerHit === true;
   const events: TurnEvent[] = [];
+
+  const hitTarget = (
+    action: DoubleAction,
+    target: DoubleSlot,
+    powerMult: number,
+    spreadFollowUp = false,
+  ) => {
+    const shouldBlock =
+      shieldAvailable &&
+      slotSide(action.slot) === "wild" &&
+      slotSide(target) === "player";
+    const hit = resolveHitOnTarget(
+      field,
+      action,
+      target,
+      itemA,
+      itemB,
+      powerMult,
+      spreadFollowUp,
+      shouldBlock,
+    );
+    itemA = hit.itemA;
+    itemB = hit.itemB;
+    if (hit.events.some((event) => event.shielded)) shieldAvailable = false;
+    return hit;
+  };
 
   const livingActions = actions.filter((a) => {
     const self = getSlot(field, a.slot);
@@ -290,9 +320,7 @@ export function resolveDoubleTurn(
       void targetKind;
       const bystander = livingFoeOrRedirect(field, defaultTarget(action.slot));
       if (!bystander) continue;
-      const hit = resolveHitOnTarget(field, action, bystander, itemA, itemB, 1);
-      itemA = hit.itemA;
-      itemB = hit.itemB;
+      const hit = hitTarget(action, bystander, 1);
       // El objetivo real es uno mismo: el cliente no debe animar al rival.
       events.push(
         ...hit.events.map((e) => ({
@@ -324,17 +352,7 @@ export function resolveDoubleTurn(
         // Re-check living mid-spread (KO de un hit previo).
         const mon = getSlot(field, t);
         if (!mon || mon.hp <= 0) continue;
-        const hit = resolveHitOnTarget(
-          field,
-          action,
-          t,
-          itemA,
-          itemB,
-          mult,
-          i > 0,
-        );
-        itemA = hit.itemA;
-        itemB = hit.itemB;
+        const hit = hitTarget(action, t, mult, i > 0);
         events.push(...hit.events);
         if (hit.events.some((e) => e.causedFlinch)) flinched.add(t);
         // Si el atacante se saltó el turno (sleep etc.), no seguir pegando.
@@ -390,9 +408,7 @@ export function resolveDoubleTurn(
         );
         continue;
       }
-      const hit = resolveHitOnTarget(field, action, preferred, itemA, itemB, 1);
-      itemA = hit.itemA;
-      itemB = hit.itemB;
+      const hit = hitTarget(action, preferred, 1);
       events.push(...hit.events);
       if (hit.events.some((e) => e.causedFlinch)) flinched.add(preferred);
       continue;
@@ -434,9 +450,7 @@ export function resolveDoubleTurn(
     const targetSlot = livingFoeOrRedirect(field, preferred);
     if (!targetSlot) continue;
 
-    const hit = resolveHitOnTarget(field, action, targetSlot, itemA, itemB, 1);
-    itemA = hit.itemA;
-    itemB = hit.itemB;
+    const hit = hitTarget(action, targetSlot, 1);
     events.push(...hit.events);
     if (hit.events.some((e) => e.causedFlinch)) flinched.add(targetSlot);
 

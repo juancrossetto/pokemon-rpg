@@ -228,7 +228,9 @@ describe("resolveDoubleTurn", () => {
     };
     const { field: after } = resolveDoubleTurn(
       field,
-      [{ slot: "playerA", move: rockSlide }],
+      // Esta prueba verifica el reparto del movimiento, no su tirada de
+      // precisiÃ³n. La fijamos en 100 para que no falle aleatoriamente.
+      [{ slot: "playerA", move: { ...rockSlide, accuracy: 100 } }],
       false,
       false,
     );
@@ -282,7 +284,9 @@ describe("resolveDoubleTurn", () => {
       type: "flying",
       category: "PHYSICAL",
       power: 90,
-      accuracy: 95,
+      // Esta prueba verifica carga/descarga; la precisiÃ³n real de Fly se
+      // cubre en el motor y acÃ¡ se fija para evitar un fallo aleatorio.
+      accuracy: 100,
       priority: 0,
       target: "selected-pokemon",
     };
@@ -450,5 +454,29 @@ describe("resolveDoubleTurn", () => {
     expect(wildEvent?.skipped).toBe("flinch");
     // El rival nunca llegó a pegar.
     expect(out.field.playerA.hp).toBe(100);
+  });
+
+  it("Égida absorbe sólo el primer golpe rival en dobles", () => {
+    const field: DoubleField = {
+      playerA: mon("A", 100, 20),
+      playerB: mon("B", 100, 10),
+      wildA: mon("WA", 100, 200),
+      wildB: mon("WB", 100, 180),
+    };
+
+    const out = resolveDoubleTurn(
+      field,
+      [
+        { slot: "wildA", move: tackle, targetLane: "A" },
+        { slot: "wildB", move: tackle, targetLane: "B" },
+      ],
+      false,
+      false,
+      { blockFirstPlayerHit: true },
+    );
+
+    expect(out.events.filter((event) => event.shielded)).toHaveLength(1);
+    expect(out.field.playerA.hp).toBe(100);
+    expect(out.field.playerB?.hp).toBeLessThan(100);
   });
 });

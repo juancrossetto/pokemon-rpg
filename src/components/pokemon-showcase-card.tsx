@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { CSSProperties, ReactNode } from "react";
+import { PokemonImage } from "@/components/pokemon-image";
 import { typeColor } from "@/lib/type-colors";
 import { useTypeLabel } from "@/hooks/use-type-label";
 import { itemHdIconUrl, itemSpriteUrl } from "@/lib/item-sprites";
@@ -198,8 +199,10 @@ export function PokemonShowcaseCard({
           />
           <div className="absolute bottom-2 h-3 w-[4.5rem] rounded-[100%] bg-black/45 blur-sm" />
           {spriteUrl ? (
-            <Image
+            <PokemonImage
               src={spriteUrl}
+              speciesId={speciesId}
+              speciesName={speciesName}
               alt={speciesName}
               width={128}
               height={128}

@@ -4,7 +4,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 
 // Subí este número cuando cambie el schema y el HMR deje un client viejo
 // en globalThis (p. ej. campos nuevos como currentPp / wildMovePp / evolveLevel / heldItem / declinedMoveIds).
-const PRISMA_CLIENT_EPOCH = 44;
+const PRISMA_CLIENT_EPOCH = 45;
 
 // Patrón singleton: en dev, Next.js recarga módulos en caliente y crearía
 // una PrismaClient nueva (con su propio pool) en cada reload.
@@ -113,7 +113,10 @@ function createPool(): Pool {
   // pooler remoto (~166ms de ida y vuelta) eso es ~1,6s por página. Además una
   // sola conexión colgada bloquea toda la app. Solo session mode necesita 1.
   // Transaction mode (:6543) puede multiplexar — usá eso en DATABASE_URL.
-  const max = localDev || sessionMode ? 1 : isProd ? 10 : 5;
+  // En desarrollo una segunda conexión evita que el RSC del shell bloquee la
+  // mutación de combate. El singleton + idle corto mantienen el consumo bajo;
+  // producción en session mode conserva 1 para no multiplicar slots por pod.
+  const max = localDev ? 2 : sessionMode ? (isProd ? 1 : 2) : isProd ? 10 : 5;
 
   // Idle corto en session mode evita acumular slots en Supavisor. En transaction
   // mode conviene mantener la conexión caliente (TLS+auth a US ~0.5–1s).
@@ -150,12 +153,18 @@ function createPrismaClient(): PrismaClient {
   // Reintento corto ante cortes del proxy / pool lleno momentáneo.
   return base.$extends({
     query: {
-      async $allOperations({ args, query }) {
+      async $allOperations({ args, query, model, operation }) {
         const attempts = 3;
         let lastError: unknown;
         for (let i = 0; i < attempts; i++) {
           try {
-            return await query(args);
+            const startedAt = performance.now();
+            const result = await query(args);
+            const elapsedMs = Math.round(performance.now() - startedAt);
+            if (elapsedMs >= 750) {
+              console.warn("[slow-query]", { model, operation, elapsedMs, attempt: i + 1 });
+            }
+            return result;
           } catch (error) {
             lastError = error;
             if (!isTransientConnectionError(error) || i === attempts - 1) throw error;

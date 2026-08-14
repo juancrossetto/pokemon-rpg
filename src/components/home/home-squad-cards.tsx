@@ -14,6 +14,7 @@ import { Link } from "@/i18n/navigation";
 import { setTeamLayout } from "@/actions/pc";
 import { playPcSfx } from "@/lib/pc-sfx";
 import { ShinyMark } from "@/components/shiny-mark";
+import { PokemonImage } from "@/components/pokemon-image";
 import { PokeSparks } from "@/components/poke-sparks";
 import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
 import { SquadCardContextMenu } from "@/components/squad-card-context-menu";
@@ -201,21 +202,24 @@ export function HomeSquadCards({
     }
     if (Object.keys(flips).length === 0) return;
 
-    setSwapFx(flips);
-    for (const id of Object.keys(flips)) {
-      const prev = swapFxTimers.current.get(id);
-      if (prev) window.clearTimeout(prev);
-      const timer = window.setTimeout(() => {
-        setSwapFx((cur) => {
-          if (!(id in cur)) return cur;
-          const next = { ...cur };
-          delete next[id];
-          return next;
-        });
-        swapFxTimers.current.delete(id);
-      }, SWAP_FX_MS);
-      swapFxTimers.current.set(id, timer);
-    }
+    const frame = window.requestAnimationFrame(() => {
+      setSwapFx(flips);
+      for (const id of Object.keys(flips)) {
+        const prev = swapFxTimers.current.get(id);
+        if (prev) window.clearTimeout(prev);
+        const timer = window.setTimeout(() => {
+          setSwapFx((cur) => {
+            if (!(id in cur)) return cur;
+            const next = { ...cur };
+            delete next[id];
+            return next;
+          });
+          swapFxTimers.current.delete(id);
+        }, SWAP_FX_MS);
+        swapFxTimers.current.set(id, timer);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [members]);
 
   function commit(next: HomeSquadMember[]) {
@@ -708,14 +712,17 @@ function SquadCardButton({
           <PokeSparks seed={m.id} accent="#FFE566" density="dense" />
         ) : null}
         <span className="squad-card__shadow" aria-hidden />
-        <Image
+        <PokemonImage
           src={m.spriteUrl}
+          speciesId={m.speciesId}
+          speciesName={m.speciesName}
+          isShiny={m.isShiny}
           alt=""
           width={140}
           height={140}
           draggable={false}
           className="squad-card__sprite"
-          unoptimized
+          preload
         />
       </span>
 

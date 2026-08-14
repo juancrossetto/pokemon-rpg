@@ -4,17 +4,25 @@ import {
   getFloorStatus,
   getNextTowerAction,
   isTowerUnlocked,
+  autoAscentShouldStop,
+} from "@/lib/tower/selectors";
+import {
   pickBlessingOffers,
   applyHealToSnapshot,
   applyReviveOne,
   livingCount,
   shouldOfferBlessing,
+} from "@/lib/tower/blessings";
+import {
   recommendedPcForFloor,
   getTowerFloor,
-  autoAscentShouldStop,
+} from "@/lib/tower/floors";
+import {
   COMBAT_TOWER_CONFIG,
-} from "@/lib/tower";
-import type { TowerRunCreature } from "@/lib/tower";
+} from "@/lib/tower/config";
+import { scaleEnemyForFloor } from "@/lib/tower/scaling";
+import { nextFloorPayout } from "@/lib/tower/loot";
+import type { TowerRunCreature } from "@/lib/tower/types";
 
 function member(partial: Partial<TowerRunCreature> & { instanceId: string }): TowerRunCreature {
   return {
@@ -155,6 +163,34 @@ describe("scaling and auto-ascent", () => {
     expect(f15).toBeGreaterThan(f1);
     expect(f30).toBeGreaterThan(f15);
     expect(f30 / f1).toBeLessThan(6);
+  });
+
+  it("makes Expert tougher without changing the Normal curve", () => {
+    const normal = scaleEnemyForFloor({
+      floorNumber: 10,
+      baseLevel: 20,
+      baseHp: 80,
+      hpMult: 1,
+      difficultyId: "normal",
+    });
+    const expert = scaleEnemyForFloor({
+      floorNumber: 10,
+      baseLevel: 20,
+      baseHp: 80,
+      hpMult: 1,
+      difficultyId: "expert",
+    });
+    expect(expert.level).toBe(normal.level + 4);
+    expect(expert.maxHp).toBeGreaterThan(normal.maxHp);
+    expect(COMBAT_TOWER_CONFIG.difficulties.find((d) => d.id === "expert")?.playable).toBe(true);
+  });
+
+  it("pays a 50% coin bonus on Expert", () => {
+    const normal = nextFloorPayout(1, 1, [], undefined, "normal");
+    const expert = nextFloorPayout(1, 1, [], undefined, "expert");
+    const coins = (bundle: typeof normal.bundle) =>
+      bundle.find((reward) => reward.kind === "coins")?.amount ?? 0;
+    expect(coins(expert.bundle)).toBe(Math.round(coins(normal.bundle) * 1.5));
   });
 
   it("stops auto-ascent on boss or low HP", () => {

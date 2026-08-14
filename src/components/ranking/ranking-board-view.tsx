@@ -1,10 +1,10 @@
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { FlagIcon } from "@/components/flag-icon";
+import { PokemonImage } from "@/components/pokemon-image";
 import { RankingEmptyState } from "@/components/ranking/ranking-empty-state";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { avatarById } from "@/lib/avatars";
-import { spriteFor } from "@/lib/shiny";
 import {
   divisionRoman,
   rankForRating,
@@ -178,7 +178,7 @@ function CurrentStanding({
             {isPvp ? (
               <p className="mt-0.5 font-mono text-[10px] text-white/45">{entry.wins ?? 0}{labels.winsShort} · {entry.losses ?? 0}{labels.lossesShort} · {entry.winRate ?? 0}%</p>
             ) : (
-              <span className="sm:hidden"><TeamSprites entry={entry} compact /></span>
+              <span className="sm:hidden"><TeamSprites entry={entry} compact preload /></span>
             )}
           </div>
         </div>
@@ -188,7 +188,7 @@ function CurrentStanding({
             <LeagueBadge tier={standing.tier} division={standing.division} label={tierLabels?.[standing.tier] ?? standing.tier} />
           </div>
         ) : (
-          <div className="hidden min-w-40 sm:block"><TeamSprites entry={entry} /></div>
+          <div className="hidden min-w-40 sm:block"><TeamSprites entry={entry} preload /></div>
         )}
 
         <div className="col-start-2 row-start-1 flex h-full min-w-[5.75rem] flex-col justify-center gap-1.5 border-l border-white/8 pl-3 sm:col-auto sm:row-auto sm:block sm:h-auto sm:min-w-0 sm:py-1 sm:pl-5 sm:text-right">
@@ -254,21 +254,23 @@ function BoardRow({
   );
 }
 
-function TeamSprites({ entry, compact = false }: { entry: RankingEntry; compact?: boolean }) {
+function TeamSprites({ entry, compact = false, preload = false }: { entry: RankingEntry; compact?: boolean; preload?: boolean }) {
   const team = entry.teamSprites ?? [];
   if (!team.length) return <span className="text-[10px] text-white/25">—</span>;
   return (
     <span className={`flex items-center ${compact ? "-space-x-1" : "gap-0.5"}`} aria-label={team.map((pokemon) => pokemon.name).join(", ")}>
       {team.map((pokemon, index) => (
-        <Image
+        <PokemonImage
           key={`${pokemon.name}-${index}`}
-          src={spriteFor(pokemon.image, !!pokemon.isShiny)}
+          src={pokemon.image}
+          speciesName={pokemon.name}
+          isShiny={!!pokemon.isShiny}
           alt=""
           width={30}
           height={30}
           title={pokemon.name}
           className={`${compact ? "h-[22px] w-[22px]" : "h-7 w-7"} object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)]`}
-          unoptimized
+          preload={preload}
         />
       ))}
     </span>

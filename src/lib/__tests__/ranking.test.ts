@@ -7,6 +7,7 @@ import {
   isPvpRankingEligible,
   pickRankingCategory,
   pvpMatchesPlayed,
+  rankingHref,
   winRate,
 } from "@/lib/ranking";
 
@@ -94,6 +95,14 @@ describe("pickRankingCategory", () => {
     expect(pickRankingCategory("collectors")).toBe("combat_power");
     expect(pickRankingCategory("pokedex")).toBe("combat_power");
     expect(pickRankingCategory("species")).toBe("combat_power");
+  });
+});
+
+describe("rankingHref", () => {
+  it("preserves the friends scope across ranking navigation", () => {
+    expect(rankingHref("combat_power", "friends", undefined, 2)).toBe(
+      "/ranking?view=combat_power&scope=friends&page=2",
+    );
   });
 });
 

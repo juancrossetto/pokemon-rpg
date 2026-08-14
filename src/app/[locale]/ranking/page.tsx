@@ -8,6 +8,7 @@ import { RankingBoardView } from "@/components/ranking/ranking-board-view";
 import { RankedSeasonBoard } from "@/components/ranking/ranked-season-board";
 import {
   listActiveRankingCountryCodes,
+  listRankingFriendIds,
   loadCombatPowerBoard,
   loadPvpBoard,
   loadRankedSeasonBoard,
@@ -26,7 +27,7 @@ export default async function RankingPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ view?: string; country?: string; page?: string }>;
+  searchParams: Promise<{ view?: string; country?: string; scope?: string; page?: string }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   const [t, session] = await Promise.all([getTranslations("ranking"), auth()]);
@@ -48,9 +49,11 @@ export default async function RankingPage({
   const activeSet = new Set(countryOptions.map((c) => c.code));
 
   const requestedCountry = query.country?.trim().toUpperCase() ?? "";
-  const countryFilter =
+  const resolvedCountryFilter =
     requestedCountry && activeSet.has(requestedCountry) ? requestedCountry : "";
-  const scope: RankingScope = countryFilter ? "country" : "global";
+  const friendsActive = query.scope === "friends" && Boolean(userId);
+  const countryFilter = friendsActive ? "" : resolvedCountryFilter;
+  const scope: RankingScope = friendsActive ? "friends" : countryFilter ? "country" : "global";
 
   const categoryLabels = {
     combat_power: {
@@ -98,6 +101,7 @@ export default async function RankingPage({
                   ? accountCountry
                   : undefined
               }
+              friendsEnabled={Boolean(userId)}
               countries={countryOptions}
               labels={{
                 global: t("filters.global"),
@@ -194,7 +198,10 @@ async function CombatPowerBoard({
   page: number;
 }) {
   const t = await getTranslations("ranking");
-  const entries = await loadCombatPowerBoard(country, userId);
+  const audienceIds = scope === "friends" && userId
+    ? await listRankingFriendIds(userId)
+    : undefined;
+  const entries = await loadCombatPowerBoard(country, userId, audienceIds);
 
   return (
     <RankingBoardView
@@ -208,7 +215,11 @@ async function CombatPowerBoard({
         you: t("you"),
         yourTitle: t("yourCard.title"),
         listTitle: t("list.title"),
-        scopeLabel: scope === "country" ? t("list.scopeCountry") : t("list.scopeGlobal"),
+        scopeLabel: scope === "friends"
+          ? t("list.scopeFriends")
+          : scope === "country"
+            ? t("list.scopeCountry")
+            : t("list.scopeGlobal"),
         emptyTitle: t("emptyCombatPower"),
         emptyIcon: "trophy",
         prev: t("pagination.prev"),
@@ -239,10 +250,13 @@ async function PvpBoardView({
   scope: RankingScope;
   page: number;
 }) {
+  const audienceIds = scope === "friends" && userId
+    ? await listRankingFriendIds(userId)
+    : undefined;
   const [t, pvpT, entries] = await Promise.all([
     getTranslations("ranking"),
     getTranslations("pvp"),
-    loadPvpBoard(country, userId),
+    loadPvpBoard(country, userId, audienceIds),
   ]);
   const tierLabels = Object.fromEntries(
     PVP_TIERS.map((tier) => [tier.id, pvpT(`tiers.${tier.id}`)]),
@@ -269,7 +283,11 @@ async function PvpBoardView({
         you: t("you"),
         yourTitle: t("yourCard.title"),
         listTitle: t("list.title"),
-        scopeLabel: scope === "country" ? t("list.scopeCountry") : t("list.scopeGlobal"),
+        scopeLabel: scope === "friends"
+          ? t("list.scopeFriends")
+          : scope === "country"
+            ? t("list.scopeCountry")
+            : t("list.scopeGlobal"),
         emptyTitle: t("pvpEmpty.title"),
         emptyBody: t("pvpEmpty.body", { min: PVP_MIN_MATCHES }),
         emptyCta: t("pvpEmpty.cta"),

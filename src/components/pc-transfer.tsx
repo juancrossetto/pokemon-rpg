@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { PokemonImage } from "@/components/pokemon-image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { typeColor } from "@/lib/type-colors";
@@ -559,8 +560,9 @@ function DragGhost({ mon, x, y }: { mon: PcMon; x: number; y: number }) {
     >
       <div className="flex items-center gap-2.5 rounded-xl border border-pokeball-red/50 bg-surface-container-high/95 p-2.5 shadow-2xl backdrop-blur-md">
         <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-pokeball-red/40 bg-surface-container-highest">
-          <Image
+          <PokemonImage
             src={mon.spriteUrl}
+            speciesName={mon.speciesName}
             alt=""
             width={44}
             height={44}
@@ -745,8 +747,9 @@ function MonCard({
         </span>
 
         <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface-variant bg-surface-container-high">
-          <Image
+          <PokemonImage
             src={mon.spriteUrl}
+            speciesName={mon.speciesName}
             alt={mon.speciesName}
             width={48}
             height={48}

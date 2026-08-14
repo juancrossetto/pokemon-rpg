@@ -124,6 +124,8 @@ export function resolveSingleAction(
     /** Dobles spread: hits 2..N no reaplican burn/poison ni re-tiran canAct. */
     skipResidual?: boolean;
     assumeCanAct?: boolean;
+    /** Anula el primer movimiento dañino que conecte (Égida de Torre). */
+    blockDamage?: boolean;
     earlyGame?: { playerLevel: number; mode: EarlyGameBattleMode };
   },
 ): ActionOutcome {
@@ -360,8 +362,9 @@ export function resolveSingleAction(
       Math.random() * 100 < ohkoAccuracy(self.baseStats.level, foe.baseStats.level);
     // El daño reportado es el HP que se llevó: así el cliente anima la barra
     // completa en vez de un "-0".
-    const dealt = landed ? foe.hp : 0;
-    if (landed) foe.hp = 0;
+    const shielded = landed && opts?.blockDamage === true;
+    const dealt = landed && !shielded ? foe.hp : 0;
+    if (landed && !shielded) foe.hp = 0;
 
     events.push({
       side: attackerSide,
@@ -376,7 +379,8 @@ export function resolveSingleAction(
       hitDamages: landed ? [dealt] : undefined,
       hitCount: landed ? 1 : undefined,
       statusNote,
-      ohko: landed,
+      ohko: landed && !shielded,
+      shielded,
       noEffect: immune,
       chargePhase: isFinishingCharge ? "finish" : null,
     });
@@ -508,6 +512,24 @@ export function resolveSingleAction(
       chargePhase: isFinishingCharge ? "finish" : null,
     });
   } else {
+    if (opts?.blockDamage) {
+      events.push({
+        side: attackerSide,
+        moveName: move.name,
+        moveType: move.type,
+        category: move.category,
+        hit: true,
+        isStatus: false,
+        damage: 0,
+        effectiveness: result.effectiveness,
+        hpAfter: foe.hp,
+        statusNote,
+        shielded: true,
+        chargePhase: isFinishingCharge ? "finish" : null,
+      });
+      return finishAction();
+    }
+
     // `result` ya confirmó el acierto y el daño del primer golpe.
     const multi = multiHitSpec(move.name);
     const plannedHits = multi ? rollMultiHitCount(multi) : 1;

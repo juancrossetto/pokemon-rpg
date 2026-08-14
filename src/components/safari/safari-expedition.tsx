@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { PokemonImage } from "@/components/pokemon-image";
 import { useRef, useState, useTransition, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
@@ -371,7 +372,7 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
                   <div className="mt-3 flex max-w-full flex-wrap justify-center -space-x-1.5 px-2">
                     {biome.species.map((species) => (
                       <span key={species.id} className="relative h-10 w-10 rounded-full border border-white/12 bg-black/35 transition duration-300 group-hover:-translate-y-0.5">
-                        <Image src={species.spriteUrl} alt="" fill sizes="40px" className="object-contain p-1" unoptimized />
+                        <PokemonImage src={species.spriteUrl} speciesId={species.id} speciesName={species.name} alt="" fill sizes="40px" className="object-contain p-1" />
                       </span>
                     ))}
                   </div>
@@ -463,10 +464,9 @@ function LastResult({ run }: { run: NonNullable<SafariViewData["lastRun"]> }) {
   );
 }
 
-function SafariSprite({ species, sizes, className }: { species: { id: number; spriteUrl: string; isShiny: boolean }; sizes: string; className: string }) {
-  const [failed, setFailed] = useState(false);
+function SafariSprite({ species, sizes, className }: { species: { id: number; name?: string; spriteUrl: string; isShiny: boolean }; sizes: string; className: string }) {
   const fallback = `/safari/species/${species.id}.png`;
-  return <Image src={failed ? fallback : species.spriteUrl} alt="" fill sizes={sizes} className={className} unoptimized onError={() => setFailed(true)} />;
+  return <PokemonImage src={species.spriteUrl} speciesId={species.id} speciesName={species.name} isShiny={species.isShiny} fallbackSrc={fallback} alt="" fill sizes={sizes} className={className} />;
 }
 
 function ConfirmFinishDialog({ encountersRemaining, reward, pending, onCancel, onConfirm }: { encountersRemaining: number; reward: { coins: number; gems: number }; pending: boolean; onCancel: () => void; onConfirm: () => void }) {

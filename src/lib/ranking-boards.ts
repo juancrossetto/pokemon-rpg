@@ -103,9 +103,13 @@ function withPositions(
 export async function loadCombatPowerBoard(
   country: string,
   userId: string | null,
+  playerIds?: string[],
 ): Promise<RankingEntry[]> {
   const users = await prisma.user.findMany({
-    where: country ? { country } : undefined,
+    where: {
+      ...(country ? { country } : {}),
+      ...(playerIds ? { id: { in: playerIds } } : {}),
+    },
     select: {
       id: true,
       username: true,
@@ -174,10 +178,12 @@ export async function loadCombatPowerBoard(
 export async function loadPvpBoard(
   country: string,
   userId: string | null,
+  playerIds?: string[],
 ): Promise<RankingEntry[]> {
   const users = await prisma.user.findMany({
     where: {
       ...(country ? { country } : {}),
+      ...(playerIds ? { id: { in: playerIds } } : {}),
       OR: [{ pvpWins: { gt: 0 } }, { pvpLosses: { gt: 0 } }],
     },
     select: {
@@ -232,6 +238,18 @@ export async function loadPvpBoard(
     );
 
   return withPositions(ranked, userId);
+}
+
+/** El propio jugador más sus amistades aceptadas, sin duplicados. */
+export async function listRankingFriendIds(userId: string): Promise<string[]> {
+  const rows = await prisma.friendship.findMany({
+    where: { OR: [{ userAId: userId }, { userBId: userId }] },
+    select: { userAId: true, userBId: true },
+  });
+  return [
+    userId,
+    ...new Set(rows.map((row) => row.userAId === userId ? row.userBId : row.userAId)),
+  ];
 }
 
 /**

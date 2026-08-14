@@ -41,9 +41,18 @@ import { BattleSpeedControl } from "@/components/battle/battle-speed-control";
 import {
   getBattleAuto,
   getServerBattleAuto,
+  pickAutoPotion,
   pickAutoSwitchCandidate,
+  setBattleAuto,
+  shouldStopAutoBattle,
   subscribeBattleAuto,
 } from "@/lib/battle-auto";
+import {
+  getGameSettings,
+  getServerGameSettings,
+  subscribeGameSettings,
+} from "@/lib/game-settings";
+import { showToast } from "@/lib/app-toast";
 import {
   getBattleSpeed,
   getServerBattleSpeed,
@@ -83,6 +92,7 @@ import type {
   LogSide,
   MoveCategory,
   Outcome,
+  PotionStack,
   RosterMember,
   View,
 } from "@/components/battle/arena-types";
@@ -121,6 +131,10 @@ import {
 } from "@/lib/battle-sprite-scale";
 import { spriteNaturalPx } from "@/lib/battle-sprite-natural";
 import { fleeChancePercent } from "@/lib/flee";
+import {
+  appendBattleItemUsage,
+  type BattleItemUsage,
+} from "@/lib/battle-item-usage";
 
 export type { BattleArenaProps, OpponentPartyMember } from "@/components/battle/arena-types";
 
@@ -426,6 +440,10 @@ export function BattleArena({
     if (raw === "format:double" || raw === "format:single") return null;
     if (raw.startsWith("doubleMove:")) return null;
     if (raw === "towerDoubleWin" || raw === "towerDoubleLoss") return null;
+    if (raw === "towerAegis:ready" || raw === "towerAegis:used") return null;
+    if (raw.startsWith("aegis:")) {
+      return tLog("aegis", { name: raw.slice("aegis:".length) });
+    }
     if (raw.startsWith("challengePvp:")) {
       return tLog("challengeTrainer", { name: raw.slice("challengePvp:".length) });
     }
@@ -561,6 +579,11 @@ export function BattleArena({
     subscribeBattleAuto,
     getBattleAuto,
     getServerBattleAuto,
+  );
+  const gameSettings = useSyncExternalStore(
+    subscribeGameSettings,
+    getGameSettings,
+    getServerGameSettings,
   );
   const autoBattle = autoBattleUnlocked && autoBattlePref;
 
@@ -699,6 +722,7 @@ export function BattleArena({
    */
   const [ballStacks, setBallStacks] = useState(pokeballs);
   const [potionStacks, setPotionStacks] = useState(potions);
+  const [itemUsage, setItemUsage] = useState<BattleItemUsage[]>([]);
   const [pendingReviveItemId, setPendingReviveItemId] = useState<string | null>(null);
   const [party, setParty] = useState(initialParty);
   const [opponentParty, setOpponentParty] = useState(initialOpponentParty);
@@ -715,7 +739,7 @@ export function BattleArena({
   const [chargeMoveIdB, setChargeMoveIdB] = useState<number | null>(
     initialChargeMoveIdB,
   );
-  const logEndRef = useRef<HTMLDivElement>(null);
+  const logEndRef = useRef<HTMLLIElement>(null);
   const [capturedInfo, setCapturedInfo] = useState<CapturedPokemonInfo | null>(null);
   const [caughtSentToPc, setCaughtSentToPc] = useState(false);
   const [nicknameInput, setNicknameInput] = useState("");
@@ -759,7 +783,7 @@ export function BattleArena({
     return () => {
       cancelled = true;
     };
-  }, [moveBanner?.key]);
+  }, [moveBanner]);
 
 
   useEffect(() => {
@@ -1284,7 +1308,7 @@ export function BattleArena({
       side,
       lane: eventLane(event),
       text: abbr ? `${abbr} -${event.residualDamage}` : `-${event.residualDamage}`,
-      key: Date.now(),
+      key: nextItemFxKey(),
     });
     writeHp(side, lane, event.residualHpAfter);
 
@@ -1497,6 +1521,20 @@ export function BattleArena({
         const hitDamages = previewDamages;
 
         appendLog(tLog("used", { name: nameFor(event.side, lane), move: formatMoveName(event.moveName, locale) }), event.side);
+
+        if (event.shielded) {
+          appendLog(tLog("aegis", { name: nameFor(defenderSide, targetLane) }), defenderSide);
+          setEffPopup({ text: tLog("aegis", { name: nameFor(defenderSide, targetLane) }), key: fxKey });
+          setArenaFlash("#a78bfa");
+          await delay(520);
+          setArenaFlash(null);
+          setEffPopup(null);
+          setMoveFx(null);
+          await playResidualBeat(event);
+          appendItemTriggerLog(event);
+          resolve();
+          return;
+        }
 
         let hpCursor = readHp(defenderSide, targetLane);
 
@@ -1743,10 +1781,12 @@ export function BattleArena({
     appendLog(t("trainerSendOut", { name: next.name }), "wild");
   }
 
-  playerHpRef.current = playerHp;
-  playerBHpRef.current = playerBHp;
-  wildHpRef.current = wildHp;
-  wildBHpRef.current = wildBHp;
+  useEffect(() => {
+    playerHpRef.current = playerHp;
+    playerBHpRef.current = playerBHp;
+    wildHpRef.current = wildHp;
+    wildBHpRef.current = wildBHp;
+  }, [playerHp, playerBHp, wildHp, wildBHp]);
 
   function livingFoeLanes(): ("A" | "B")[] {
     const out: ("A" | "B")[] = [];
@@ -2037,7 +2077,16 @@ export function BattleArena({
     setIsAnimating(true);
     setView("menu");
 
-    const result = await submitBattleMove(battleId, moveId, locale);
+    let result;
+    try {
+      result = await submitBattleMove(battleId, moveId, locale);
+    } catch (error) {
+      console.error("[battle] move failed", error);
+      showToast(t("serverBusyRetry"), "info");
+      setView("moves");
+      setIsAnimating(false);
+      return;
+    }
     if (!result) {
       setIsAnimating(false);
       return;
@@ -2117,7 +2166,16 @@ export function BattleArena({
       // 2º turno automático (como en los juegos): no pedimos otro click.
       setView("menu");
       const finishId = result.playerChargeMoveId;
-      const finish = await submitBattleMove(battleId, finishId, locale);
+      let finish;
+      try {
+        finish = await submitBattleMove(battleId, finishId, locale);
+      } catch (error) {
+        console.error("[battle] charged move failed", error);
+        showToast(t("serverBusyRetry"), "info");
+        setView("moves");
+        setIsAnimating(false);
+        return;
+      }
       if (finish) {
         if (finish.coinsGained > 0) {
           setCoinsGained(finish.coinsGained);
@@ -2267,7 +2325,8 @@ export function BattleArena({
     let best = living[0]!;
     let bestScore = -Infinity;
     for (const f of living) {
-      let score = Math.random() * 4;
+      // Desempate estable: AUTO no debe cambiar de objetivo por un re-render.
+      let score = f.lane === "A" ? 0.01 : 0;
       if (f.forecast?.guaranteedKo) score += 1000;
       if (f.forecast) score += f.forecast.maxPct;
       if (score > bestScore) {
@@ -2280,31 +2339,53 @@ export function BattleArena({
 
   function pickAutoSwitchMember(): RosterMember | null {
     if (isDouble || isTrainerStyle) return null;
-    return pickAutoSwitchCandidate(party, activePlayer.instanceId, activeWild.types);
+    return pickAutoSwitchCandidate(
+      party,
+      activePlayer.instanceId,
+      activeWild.types,
+      gameSettings.autoStrategy,
+    );
   }
 
   const autoActionsRef = useRef({
     handleMove,
+    handleUsePotion,
     handleSwitchTo,
     handleDoubleTarget,
     enterDoubleFight,
     pickAutoMoveId,
     pickAutoSwitchMember,
     pickAutoTargetLane,
+    pickAutoPotionItem(): PotionStack | null {
+      return null;
+    },
     resolveMoveMeta(moveId: number, forB: boolean) {
       void moveId;
       void forB;
       return null as { name: string; type: string } | null;
     },
   });
+  // Handlers imperativos consumidos por el timer de AUTO; el ref evita que
+  // cada render cancele/rearme el temporizador por identidades nuevas.
+  // eslint-disable-next-line react-hooks/refs
   autoActionsRef.current = {
     handleMove,
+    handleUsePotion,
     handleSwitchTo,
     handleDoubleTarget,
     enterDoubleFight,
     pickAutoMoveId,
     pickAutoSwitchMember,
     pickAutoTargetLane,
+    pickAutoPotionItem: () =>
+      chargeMoveId == null
+        ? pickAutoPotion(
+            potionStacks,
+            playerHp,
+            playerMaxHp,
+            gameSettings.autoStrategy,
+          )
+        : null,
     resolveMoveMeta: (moveId: number, forB: boolean) => {
       const pool = forB ? activeMovesB : activeMoves;
       const opt = pool.find((m) => m.moveId === moveId);
@@ -2326,13 +2407,25 @@ export function BattleArena({
     if (!autoBattle || combatBusy || outcome !== "ongoing" || mustSwitch) return;
     if (view === "bag" || view === "team") return;
 
+    if (
+      shouldStopAutoBattle(
+        playerHp,
+        playerMaxHp,
+        gameSettings.autoStopHpPercent,
+        potionStacks.some((stack) => stack.kind === "heal" && stack.quantity > 0),
+      )
+    ) {
+      setBattleAuto(false);
+      showToast(t("autoBattleStopped"), "info");
+      return;
+    }
+
     // Antes 2800 ms: se sentía a "AUTO colgado". 900 ms alcanza para cancelar.
     const AUTO_START_GRACE_MS = 900;
     const AUTO_STEP_MS = scaledDelay(220);
-    if (autoGraceUntilRef.current == null) {
-      autoGraceUntilRef.current = Date.now() + AUTO_START_GRACE_MS;
-    }
-    const delay = Math.max(AUTO_STEP_MS, autoGraceUntilRef.current - Date.now());
+    const firstStep = autoGraceUntilRef.current == null;
+    if (firstStep) autoGraceUntilRef.current = 1;
+    const delay = firstStep ? AUTO_START_GRACE_MS : AUTO_STEP_MS;
 
     let cancelled = false;
     const timer = window.setTimeout(() => {
@@ -2345,7 +2438,7 @@ export function BattleArena({
           setAutoTelegraph({
             moveName: formatMoveName(meta.name, locale),
             moveType: meta.type,
-            key: Date.now(),
+            key: nextItemFxKey(),
           });
           // Reloj real — NO scaledDelay: a 3× AUTO el chip duraba ~80ms.
           window.setTimeout(() => {
@@ -2367,12 +2460,24 @@ export function BattleArena({
             void actions.handleSwitchTo(switchTarget);
             return;
           }
+          const potion = actions.pickAutoPotionItem();
+          if (potion) {
+            void actions.handleUsePotion(potion.itemId, true);
+            return;
+          }
           fireMove(actions.pickAutoMoveId(false), false);
         }
         return;
       }
       if (view === "moves") {
         const forB = isDouble && pendingDoubleMoveA != null;
+        if (!isDouble) {
+          const potion = actions.pickAutoPotionItem();
+          if (potion) {
+            void actions.handleUsePotion(potion.itemId, true);
+            return;
+          }
+        }
         fireMove(actions.pickAutoMoveId(forB), forB);
         return;
       }
@@ -2396,6 +2501,12 @@ export function BattleArena({
     view,
     isDouble,
     pendingDoubleMoveA,
+    playerHp,
+    playerMaxHp,
+    potionStacks,
+    gameSettings,
+    t,
+    locale,
   ]);
 
   async function handleFlee() {
@@ -2558,7 +2669,7 @@ export function BattleArena({
     setHighlights(highlightsRef.current.items);
   }
 
-  async function handleUsePotion(itemId: string) {
+  async function handleUsePotion(itemId: string, automatic = false) {
     if (combatBusy || outcome !== "ongoing" || mustSwitch) return;
     setIsAnimating(true);
     setView("menu");
@@ -2613,6 +2724,17 @@ export function BattleArena({
 
     // Confirmar HP real (por si Max Potion / clamp del server difiere).
     writeHp("player", "A", result.healedTo);
+    setItemUsage((current) =>
+      appendBattleItemUsage(current, {
+        itemName: result.itemName ?? itemName,
+        targetInstanceId: activePlayer.instanceId,
+        targetName: activePlayer.name,
+        targetSpriteUrl: activePlayer.spriteUrl,
+        kind: "heal",
+        amount: result.healedBy,
+        automatic,
+      }),
+    );
     appendLog(tLog("usedItem", { name: result.itemName ?? itemName }), "player");
     appendLog(t("healedBy", { name: activePlayer.name, hp: result.healedBy }), "player");
     if (result.statusCured) {
@@ -2700,6 +2822,17 @@ export function BattleArena({
           ? { ...m, currentHp: result.healedTo }
           : m,
       ),
+    );
+    setItemUsage((current) =>
+      appendBattleItemUsage(current, {
+        itemName: result.itemName ?? itemName,
+        targetInstanceId: member.instanceId,
+        targetName: member.name,
+        targetSpriteUrl: member.spriteUrl,
+        kind: "revive",
+        amount: result.healedTo,
+        automatic: false,
+      }),
     );
     appendLog(tLog("usedItem", { name: result.itemName ?? itemName }), "player");
     appendLog(
@@ -2879,6 +3012,7 @@ export function BattleArena({
         leaderPortrait={leaderPortrait}
         highlights={highlights}
         farmStreak={farmChainCount}
+        itemUsage={itemUsage}
       />
     );
   }
@@ -3127,20 +3261,8 @@ export function BattleArena({
           onSwitch={handleSwitchTo}
         />
       ) : null}
-      {view === "bag" ? (
-        <BagView
-          isAnimating={combatBusy}
-          showBalls={!isTrainerStyle}
-          ballStacks={ballStacks}
-          potionStacks={potionStacks}
-          potionsDisabled={playerHp >= playerMaxHp}
-          revivesDisabled={!hasFaintedBench}
-          onThrowBall={handleThrowBall}
-          onUsePotion={handleUsePotion}
-          onUseRevive={handlePickRevive}
-          onBack={() => setView("menu")}
-        />
-      ) : null}
+      {/* La mochila no se monta acá: vive dentro de `.battle-arena-field` para
+          no taparle las placas de HP al jugador. Ver más abajo. */}
       {view === "reviveTargets" ? (
         <ReviveTargetView
           isAnimating={combatBusy}
@@ -3823,6 +3945,27 @@ export function BattleArena({
                 )}
               </div>
             )}
+
+            {/*
+              Mochila: última capa del campo, centrada entre las placas de HP.
+              Vive acá y no junto a las otras hojas porque `inset: 0` tiene que
+              resolver contra el campo — anclada al shell tapaba la placa del
+              jugador (esquina inferior derecha) justo al elegir una poción.
+            */}
+            {view === "bag" ? (
+              <BagView
+                isAnimating={combatBusy}
+                showBalls={!isTrainerStyle}
+                ballStacks={ballStacks}
+                potionStacks={potionStacks}
+                potionsDisabled={playerHp >= playerMaxHp}
+                revivesDisabled={!hasFaintedBench}
+                onThrowBall={handleThrowBall}
+                onUsePotion={handleUsePotion}
+                onUseRevive={handlePickRevive}
+                onBack={() => setView("menu")}
+              />
+            ) : null}
           </div>
           </div>
 
@@ -3875,7 +4018,7 @@ export function BattleArena({
         <div
           aria-live="polite"
           aria-label={t("battleLogLabel")}
-          className={`battle-layout__log glass-panel h-full min-h-0 min-w-0 flex-col overflow-hidden px-2 py-1.5 md:px-4 md:py-3 ${
+          className={`battle-layout__log glass-panel h-full min-h-0 min-w-0 flex-col overflow-hidden px-2 py-1.5 md:px-4 md:py-3 lg:px-3 ${
             commandExpanded ? "hidden md:flex" : "flex"
           }`}
         >
@@ -3884,40 +4027,34 @@ export function BattleArena({
               <YourTurnStatus playerFirst={playerOutspeeds} showOrder={!isDouble} />
             </div>
           )}
-          <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-clip md:gap-0.5">
+          {/* Encabezado sólo en la columna vertical de desktop. */}
+          <p className="battle-log__caption">{t("battleLogLabel")}</p>
+          <ol className="battle-log">
             {log.map((entry, i) => {
               const isLatest = i === log.length - 1;
-              const sideTone =
-                entry.side === "player"
-                  ? "border-l-emerald-400/70 text-white/90"
-                  : entry.side === "wild"
-                    ? "border-l-amber-400/70 text-white/90"
-                    : "border-l-white/25 text-white/55";
               return (
-                <p
+                <li
                   key={`${i}-${entry.text}`}
-                  className={`border-l-2 pl-1.5 text-[10px] leading-[1.35] break-words [overflow-wrap:anywhere] md:border-l-0 md:pl-0 md:text-label-md md:leading-relaxed ${sideTone} ${
-                    isLatest ? "battle-log-line--latest font-medium text-white" : ""
-                  } ${
-                    entry.side === "wild" ? "md:text-right lg:text-left" : "text-left"
+                  className={`battle-log-line battle-log-line--${entry.side}${
+                    isLatest ? " battle-log-line--latest is-latest" : ""
                   }`}
                 >
-                  <span className="mr-1 text-pokeball-red/80 md:inline">&gt;</span>
-                  {entry.text}
-                </p>
+                  <span className="battle-log-line__rail" aria-hidden />
+                  <span className="battle-log-line__text">{entry.text}</span>
+                </li>
               );
             })}
-            <div ref={logEndRef} />
-          </div>
-          {/*
-            `flex-wrap` + `min-w-0` en la pregunta: los chips son `shrink-0`,
-            así que en la columna angosta del log se salían del panel y
-            "Pegás primero" quedaba cortado por el borde. Ahora bajan a su
-            propia línea en vez de desbordar.
-          */}
+            <li ref={logEndRef} aria-hidden />
+          </ol>
           {view === "menu" && !combatBusy && outcome === "ongoing" && (
-            <div className="mt-auto hidden flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-dashed border-white/15 pt-1 md:flex">
-              <p className="min-w-0 flex-1 text-label-md font-bold leading-snug break-words [overflow-wrap:anywhere] text-on-surface">
+            /*
+              En md (franja horizontal) la pregunta y los chips comparten fila;
+              en lg la columna mide ~15rem y no entran los dos, así que se
+              apilan. Antes iban siempre en fila y el chip de orden de turno
+              quedaba cortado por el `overflow-hidden` del panel.
+            */
+            <div className="mt-auto hidden shrink-0 flex-col gap-1.5 border-t border-dashed border-white/15 pt-1.5 md:flex md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-x-2 md:gap-y-1 lg:flex-col lg:items-start">
+              <p className="min-w-0 text-label-md font-bold leading-snug break-words [overflow-wrap:anywhere] text-on-surface md:flex-1 lg:flex-none lg:text-[12px]">
                 {t("whatWillDo", {
                   name: (
                     isDouble && pendingDoubleMoveA != null && playerB

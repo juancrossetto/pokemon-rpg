@@ -31,7 +31,7 @@ import {
 } from "@/lib/gym-tm-rewards";
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import { resolveSingleAction, type SideBattleState } from "@/lib/resolve-action";
-import { earlyGameBattleMode } from "@/lib/early-game-balance";
+import { earlyGameBattleMode, isOnboardingAiMode } from "@/lib/early-game-balance";
 import { applyHeldItemToStats, heldItemSnapshotFromItem } from "@/lib/held-items";
 import { applyStagesToStats, type StatusCondition } from "@/lib/status";
 import { hasHealthyBackup } from "@/lib/team";
@@ -53,6 +53,7 @@ import { parseTeamSnap, type PvpTeamMemberSnap } from "@/lib/pvp/team";
 import { twoTurnSpec } from "@/lib/two-turn";
 import { turnDeadlineForBattle } from "@/lib/battle-turn-timer";
 import { closeBattleIfIdle } from "@/lib/close-battle-if-idle";
+import { reportActionTiming } from "@/lib/action-metrics";
 
 const MAX_LOG_LINES = 20;
 
@@ -177,7 +178,7 @@ function sideSpeed(side: SideBattleState): number {
   ).speed;
 }
 
-export async function submitBattleMove(
+async function resolveBattleMove(
   sessionId: string,
   moveId: number,
   locale: string,
@@ -336,9 +337,11 @@ export async function submitBattleMove(
   const earlyGameOpts = earlyMode
     ? { earlyGame: { playerLevel: instance.level, mode: earlyMode } }
     : undefined;
-  const wildAiCtx = earlyMode
-    ? { attackerHp: wildState.hp, attackerMaxHp: wildState.maxHp, earlyGame: true }
-    : { attackerHp: wildState.hp, attackerMaxHp: wildState.maxHp };
+  const wildAiCtx = {
+    attackerHp: wildState.hp,
+    attackerMaxHp: wildState.maxHp,
+    ...(isOnboardingAiMode(earlyMode) ? { earlyGame: true } : {}),
+  };
 
   const playerPpNow = effectivePp(chosenMove.currentPp, chosenMove.move.pp);
   const allPlayerMovesEmpty = instance.moves.every(
@@ -352,6 +355,11 @@ export async function submitBattleMove(
 
   const events: TurnEvent[] = [];
   const log: string[] = [];
+  const aegisReady = Boolean(
+    battle.towerRunId &&
+    battle.log.includes("towerAegis:ready") &&
+    !battle.log.includes("towerAegis:used"),
+  );
 
   const chance = disobeyChance(instance.level, badgeCount);
   const disobeyed = chance > 0 && Math.random() < chance;
@@ -413,7 +421,7 @@ export async function submitBattleMove(
         playerState,
         wildState,
         playerItemConsumed,
-        earlyGameOpts,
+        { ...earlyGameOpts, blockDamage: aegisReady },
       );
       events.push(...counter.events);
       playerState = counter.player;
@@ -459,7 +467,7 @@ export async function submitBattleMove(
         playerState,
         wildState,
         playerItemConsumed,
-        earlyGameOpts,
+        side === "wild" ? { ...earlyGameOpts, blockDamage: aegisReady } : earlyGameOpts,
       );
       events.push(...outcome.events);
       playerState = outcome.player;
@@ -481,6 +489,8 @@ export async function submitBattleMove(
   }
 
   // Registrar en el log persistente lo mismo que ve el jugador en pantalla.
+  if (events.some((event) => event.shielded)) log.push("towerAegis:used");
+  else if (aegisReady) log.push("towerAegis:ready");
   for (const e of events) {
     const name = e.side === "player" ? playerState.name : wildState.name;
     const foeName = e.side === "player" ? wildState.name : playerState.name;
@@ -497,7 +507,8 @@ export async function submitBattleMove(
       if (e.statusApplied) log.push(`status:${foeName}:${e.statusApplied}`);
     } else if (e.hit && !e.isStatus) {
       log.push(`used:${name}:${e.moveName}`);
-      log.push(`damage:${foeName}:${e.damage}`);
+      if (e.shielded) log.push(`aegis:${foeName}`);
+      else log.push(`damage:${foeName}:${e.damage}`);
       if (e.statusApplied) log.push(`status:${foeName}:${e.statusApplied}`);
     } else if (!e.hit && !e.skipped) {
       log.push(`miss:${name}:${e.moveName}`);
@@ -1545,8 +1556,12 @@ export async function submitBattleMove(
     ]);
   }
 
-  revalidatePath(`/${locale}/team`);
+  // Camino rápido: durante un turno normal el cliente ya aplica HP, PP,
+  // estados y logs del resultado. Invalidar `/team` hacía que Next incluyera
+  // un RSC completo en cada Server Action, aunque esa ruta está bloqueada
+  // mientras la sesión sigue ACTIVE. Sólo refrescamos superficies al cerrar.
   if (wonBattle || lostBattle) {
+    revalidatePath(`/${locale}/team`);
     revalidateCombatUi(locale);
     revalidatePath(`/${locale}`);
     revalidatePath(`/${locale}/campaign`);
@@ -1586,4 +1601,17 @@ export async function submitBattleMove(
         ? turnDeadlineForBattle(battle)?.toISOString() ?? null
         : null,
   };
+}
+
+export async function submitBattleMove(
+  sessionId: string,
+  moveId: number,
+  locale: string,
+): Promise<UseMoveResult | null> {
+  const startedAt = performance.now();
+  try {
+    return await resolveBattleMove(sessionId, moveId, locale);
+  } finally {
+    reportActionTiming("submitBattleMove", startedAt, { sessionId });
+  }
 }

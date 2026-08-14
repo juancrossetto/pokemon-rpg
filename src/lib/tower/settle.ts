@@ -39,11 +39,14 @@ export function buildFloorRewardBundle(input: {
   floorNumber: number;
   blessingIds: string[];
   claimedFirstClears: string[];
+  difficultyId?: string;
 }): { bundle: RewardBundle; claimedFirstClear: boolean; firstClearId: string | null } {
   const floor = getTowerFloor(input.floorNumber, input.towerId);
   if (!floor) return { bundle: [], claimedFirstClear: false, firstClearId: null };
 
-  const coinMult = coinsBlessingMultiplier(input.blessingIds);
+  const coinMult =
+    coinsBlessingMultiplier(input.blessingIds) *
+    (input.difficultyId === "expert" ? 1.5 : 1);
   let bundle: RewardBundle = [];
   let claimedFirstClear = false;
   let firstClearId: string | null = null;
@@ -136,6 +139,7 @@ export async function settleTowerFloorWin(
     floorNumber: clearedFloor,
     blessingIds: run.blessingIds,
     claimedFirstClears: claimed,
+    difficultyId: run.difficultyId,
   });
   const coinsBanked = bundle
     .filter((r): r is { kind: "coins"; amount: number } => r.kind === "coins")

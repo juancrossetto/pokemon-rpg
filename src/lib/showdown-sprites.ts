@@ -49,3 +49,17 @@ export function battleAnimatedSpriteUrl(
   const folder = isShiny ? `${base}-shiny` : base;
   return `${showdownSpritesBase()}/${folder}/${slug}.gif`;
 }
+
+/**
+ * PNG estático alternativo para superficies de UI. Vive en un host distinto a
+ * PokeAPI, por lo que también sirve como último fallback si GitHub tiene una
+ * caída parcial o rechaza alguna de las muchas solicitudes de una grilla.
+ */
+export function showdownStaticSpriteUrl(
+  speciesName: string,
+  isShiny = false,
+): string {
+  const slug = showdownSpeciesSlug(speciesName);
+  const folder = isShiny ? "gen5-shiny" : "gen5";
+  return `${showdownSpritesBase()}/${folder}/${slug}.png`;
+}

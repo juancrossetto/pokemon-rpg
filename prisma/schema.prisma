@@ -90,6 +90,7 @@ model User {
   safariRuns         SafariRun[]
   clanWarBattlesA    ClanWarBattle[]      @relation("ClanWarFighterA")
   clanWarBattlesB    ClanWarBattle[]      @relation("ClanWarFighterB")
+  weeklyRaidScores   WeeklyRaidScore[]
 }
 
 // ---------- Notificaciones in-app ----------
@@ -1154,6 +1155,26 @@ model RewardLedger {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+/// Progreso individual de la incursión cooperativa que rota cada semana.
+/// El total de la comunidad y el ranking se derivan sumando estas filas.
+model WeeklyRaidScore {
+  userId          String
+  weekKey         String
+  bossSpeciesId   Int
+  attemptsUsed    Int      @default(0)
+  totalDamage     Int      @default(0)
+  bestDamage      Int      @default(0)
+  rewardClaimedAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, weekKey])
+  @@index([weekKey, totalDamage])
+  @@index([weekKey, bossSpeciesId])
 }
 
 // ---------- Torre de Combate ----------

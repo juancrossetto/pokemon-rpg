@@ -210,6 +210,15 @@ export function UserMenu({
               </span>
               {musicLabel}
             </button>
+            <Link
+              href="/settings"
+              role="menuitem"
+              onClick={requestClose}
+              className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-[13px] text-on-surface transition-colors hover:bg-white/6"
+            >
+              <span className="material-symbols-outlined text-[18px]! text-primary">settings</span>
+              {t("settings")}
+            </Link>
             {handbookLabel && onHandbook ? (
               <button
                 type="button"

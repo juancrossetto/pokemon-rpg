@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCombatLock } from "@/lib/battle-lock";
@@ -42,6 +42,10 @@ import {
 } from "@/lib/tower/blessings";
 import { climbLoot, nextFloorPayout } from "@/lib/tower/loot";
 import { TowerDevPanel } from "@/components/tower/tower-dev-panel";
+import {
+  TowerAutoControl,
+  TowerAutoFlow,
+} from "@/components/tower/tower-auto-flow";
 
 const TOWER_ERRORS = [
   "locked",
@@ -54,6 +58,7 @@ const TOWER_ERRORS = [
   "no_enemy",
   "bad_blessing",
   "not_rest",
+  "busy",
 ] as const;
 
 export default async function TowerPage({
@@ -61,7 +66,7 @@ export default async function TowerPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ err?: string }>;
+  searchParams: Promise<{ err?: string; difficulty?: string }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   const [t, session] = await Promise.all([getTranslations("tower"), auth()]);
@@ -89,16 +94,10 @@ export default async function TowerPage({
     vuelve a quedar bloqueado con timer.
   */
   const attemptState = await reconcileTowerPeriodAttempts(userId);
-  const [badgeCount, progress, activeRun, lastEndedRun] = await Promise.all([
+  const [badgeCount, progressRows, activeRun, lastEndedRuns] = await Promise.all([
     prisma.badge.count({ where: { userId } }),
-    prisma.towerProgress.findUnique({
-      where: {
-        userId_towerId_difficultyId: {
-          userId,
-          towerId: DEFAULT_TOWER_ID,
-          difficultyId: DEFAULT_DIFFICULTY_ID,
-        },
-      },
+    prisma.towerProgress.findMany({
+      where: { userId, towerId: DEFAULT_TOWER_ID },
     }),
     prisma.towerRun.findFirst({
       where: {
@@ -106,14 +105,26 @@ export default async function TowerPage({
         status: { in: ["ACTIVE", "AWAITING_BLESSING", "RESTING"] },
       },
     }),
-    prisma.towerRun.findFirst({
+    prisma.towerRun.findMany({
       where: {
         userId,
         status: { in: ["FAILED", "COMPLETED", "ABANDONED"] },
       },
       orderBy: [{ currentFloor: "desc" }, { endedAt: "desc" }],
+      take: 12,
     }),
   ]);
+
+  const normalProgress = progressRows.find(
+    (row) => row.difficultyId === DEFAULT_DIFFICULTY_ID,
+  );
+  const expertUnlocked =
+    (normalProgress?.highestFloorAllTime ?? 0) >= COMBAT_TOWER_CONFIG.totalFloors;
+  const requestedDifficulty = query.difficulty === "expert" ? "expert" : DEFAULT_DIFFICULTY_ID;
+  const difficultyId = activeRun?.difficultyId ??
+    (requestedDifficulty === "expert" && expertUnlocked ? "expert" : DEFAULT_DIFFICULTY_ID);
+  const progress = progressRows.find((row) => row.difficultyId === difficultyId) ?? null;
+  const lastEndedRun = lastEndedRuns.find((row) => row.difficultyId === difficultyId) ?? null;
 
   /*
     Ascenso pausado: NO auto-reanudar. Antes, al abrir /tower (p. ej. el tab
@@ -174,7 +185,7 @@ export default async function TowerPage({
   const earnedLoot = activeRun
     ? parsePendingLoot(activeRun.pendingLoot).length > 0
       ? parsePendingLoot(activeRun.pendingLoot)
-      : climbLoot(currentFloor, activeRun.towerId)
+      : climbLoot(currentFloor, activeRun.towerId, activeRun.difficultyId)
     : [];
   const payout = activeRun
     ? nextFloorPayout(
@@ -182,6 +193,7 @@ export default async function TowerPage({
         coinsBlessingMultiplier(activeRun.blessingIds),
         progress?.claimedFirstClears ?? [],
         activeRun.towerId,
+        activeRun.difficultyId,
       )
     : { bundle: [], hasFirstClear: false };
   const rewardUnitLabels = {
@@ -204,7 +216,7 @@ export default async function TowerPage({
           loot:
             endedPending.length > 0
               ? endedPending
-              : climbLoot(lastEndedRun.currentFloor, lastEndedRun.towerId),
+              : climbLoot(lastEndedRun.currentFloor, lastEndedRun.towerId, lastEndedRun.difficultyId),
           /*
             Solo se puede reclamar lo que está en pendingLoot. Si el ascenso
             viejo ya acreditó piso a piso, pending queda vacío → sin botón.
@@ -314,7 +326,7 @@ export default async function TowerPage({
               <p className="page-title text-[10px] tracking-[0.18em] text-secondary">
                 {t("eyebrow")}
                 <span className="text-white/30"> · </span>
-                <span className="text-white/55">{t("difficulties.normal")}</span>
+                <span className="text-white/55">{t(`difficulties.${difficultyId}`)}</span>
               </p>
               <h1 className="page-title mt-0.5 text-[1.35rem] leading-none tracking-tight text-white drop-shadow-sm sm:text-headline-md">
                 {t(COMBAT_TOWER_CONFIG.nameKey)}
@@ -322,8 +334,41 @@ export default async function TowerPage({
             </div>
           </div>
           <p className="hidden max-w-xl text-[13px] text-white/70 sm:block">{t("tagline")}</p>
+          <nav className="mt-1 flex items-center gap-1.5" aria-label={t("difficulties.label")}>
+            {activeRun ? (
+              <span className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] ${difficultyId === "normal" ? "border-secondary/45 bg-secondary/15 text-secondary" : "border-white/10 bg-black/20 text-white/35"}`}>
+                {t("difficulties.normal")}
+              </span>
+            ) : (
+              <Link href="/tower?difficulty=normal" className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] transition ${difficultyId === "normal" ? "border-secondary/45 bg-secondary/15 text-secondary" : "border-white/15 bg-black/20 text-white/55 hover:text-white"}`}>
+                {t("difficulties.normal")}
+              </Link>
+            )}
+            {expertUnlocked && !activeRun ? (
+              <Link href="/tower?difficulty=expert" className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] transition ${difficultyId === "expert" ? "border-fuchsia-300/45 bg-fuchsia-300/15 text-fuchsia-200" : "border-white/15 bg-black/20 text-white/55 hover:text-white"}`}>
+                {t("difficulties.expert")}
+              </Link>
+            ) : (
+              <span className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] ${difficultyId === "expert" ? "border-fuchsia-300/45 bg-fuchsia-300/15 text-fuchsia-200" : "border-white/10 bg-black/20 text-white/25"}`} title={expertUnlocked ? undefined : t("difficulties.expertLocked")}>
+                {t("difficulties.expert")}
+              </span>
+            )}
+            {difficultyId === "expert" ? <span className="ml-1 text-[9px] font-semibold text-fuchsia-200/70">{t("difficulties.expertRule")}</span> : null}
+          </nav>
         </div>
       </header>
+
+      {unlocked ? (
+        <TowerAutoFlow
+          runId={liveRun?.id ?? null}
+          status={liveRun?.status ?? null}
+          currentFloor={liveRun?.currentFloor ?? currentFloor}
+          locale={locale}
+          offeredBlessings={offered}
+          teamHpPct={teamHpPct}
+          canAttune={canAttune}
+        />
+      ) : null}
 
       {process.env.NODE_ENV === "development" ? <TowerDevPanel locale={locale} /> : null}
 
@@ -380,14 +425,18 @@ export default async function TowerPage({
             ) : null}
 
             {showActionBar ? (
-              <div className="order-2">
-                <TowerActionBar
-                  action={primary}
-                  locale={locale}
-                  resetAtMs={showResetTimer ? resetAt.getTime() : null}
-                  canAbandon={Boolean(liveRun)}
-                  canPark={Boolean(liveRun)}
-                />
+              <div className="order-2 flex items-start gap-2 sm:gap-2.5">
+                <div className="min-w-0 flex-1">
+                  <TowerActionBar
+                    action={primary}
+                    locale={locale}
+                    difficultyId={difficultyId}
+                    resetAtMs={showResetTimer ? resetAt.getTime() : null}
+                    canAbandon={Boolean(liveRun)}
+                    canPark={Boolean(liveRun)}
+                  />
+                </div>
+                <TowerAutoControl />
               </div>
             ) : null}
 

@@ -10,7 +10,7 @@ import {
 import { playerCombatantStats, wildCombatantStats } from "@/lib/combatant";
 import { calculateMaxHp } from "@/lib/stats";
 import { resolveWildCounter, type SideBattleState } from "@/lib/resolve-action";
-import { earlyGameBattleMode } from "@/lib/early-game-balance";
+import { earlyGameBattleMode, isOnboardingAiMode } from "@/lib/early-game-balance";
 import { heldItemSnapshotFromItem } from "@/lib/held-items";
 import type { StatusCondition } from "@/lib/status";
 import { twoTurnSpec } from "@/lib/two-turn";
@@ -183,7 +183,7 @@ export async function runWildCounterAttack(battle: BattleWithFighters): Promise<
         {
           attackerHp: wildState.hp,
           attackerMaxHp: wildState.maxHp,
-          earlyGame: Boolean(earlyGameOpts),
+          earlyGame: isOnboardingAiMode(earlyMode),
         },
       );
   const noPp = wildMovePp.length > 0 && wildMovePp.every((pp) => pp <= 0);

@@ -50,14 +50,19 @@ export function mergeBundles(bundles: RewardBundle[]): RewardBundle {
  * saber si una se cobró en ESTE ascenso o en uno anterior. Incluirlas inflaría
  * el número con premios de otra partida.
  */
-export function climbLoot(currentFloor: number, towerId?: string): RewardBundle {
+export function climbLoot(currentFloor: number, towerId?: string, difficultyId = "normal"): RewardBundle {
   const bundles: RewardBundle[] = [];
   for (let n = 1; n < currentFloor; n++) {
     const floor = getTowerFloor(n, towerId);
     if (!floor) continue;
     for (const reward of floor.rewards) bundles.push(reward.bundle);
   }
-  return mergeBundles(bundles);
+  const mult = difficultyId === "expert" ? 1.5 : 1;
+  return mergeBundles(bundles).map((reward) =>
+    reward.kind === "coins"
+      ? { ...reward, amount: Math.round(reward.amount * mult) }
+      : reward,
+  );
 }
 
 export type NextPayout = {
@@ -80,6 +85,7 @@ export function nextFloorPayout(
   coinMultiplier: number,
   claimedFirstClears: string[],
   towerId?: string,
+  difficultyId = "normal",
 ): NextPayout {
   const floor = getTowerFloor(floorNumber, towerId);
   if (!floor) return { bundle: [], hasFirstClear: false };
@@ -94,9 +100,10 @@ export function nextFloorPayout(
     ...pendingFirstClears.map((fc) => fc.bundle),
   ]);
 
+  const difficultyMult = difficultyId === "expert" ? 1.5 : 1;
   const scaled: RewardBundle = merged.map((reward): RewardDef =>
     reward.kind === "coins"
-      ? { kind: "coins", amount: Math.round(reward.amount * coinMultiplier) }
+      ? { kind: "coins", amount: Math.round(reward.amount * coinMultiplier * difficultyMult) }
       : reward,
   );
 

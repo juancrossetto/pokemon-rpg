@@ -71,6 +71,23 @@ export async function startTowerRun(locale: string, difficultyId = DEFAULT_DIFFI
     return;
   }
 
+  if (difficultyId === "expert") {
+    const normalProgress = await prisma.towerProgress.findUnique({
+      where: {
+        userId_towerId_difficultyId: {
+          userId,
+          towerId: DEFAULT_TOWER_ID,
+          difficultyId: DEFAULT_DIFFICULTY_ID,
+        },
+      },
+      select: { highestFloorAllTime: true },
+    });
+    if ((normalProgress?.highestFloorAllTime ?? 0) < COMBAT_TOWER_CONFIG.totalFloors) {
+      redirect({ href: "/tower?err=difficulty", locale });
+      return;
+    }
+  }
+
   await reconcileTowerPeriodAttempts(userId);
 
   const existing = await prisma.towerRun.findFirst({
@@ -233,6 +250,7 @@ export async function challengeTowerFloor(locale: string) {
     baseLevel: enemy.level,
     baseHp: species.baseHp,
     hpMult: enemy.hpMult,
+    difficultyId: run.difficultyId,
   });
   const wildMoveIds = await getMovesetForLevel(enemy.speciesId, scaled.level);
   const wildMoves = await prisma.move.findMany({ where: { id: { in: wildMoveIds } } });
@@ -252,6 +270,7 @@ export async function challengeTowerFloor(locale: string) {
       baseLevel: enemyB.level,
       baseHp: speciesB.baseHp,
       hpMult: enemyB.hpMult,
+      difficultyId: run.difficultyId,
     });
     const wildBMoveIds = await getMovesetForLevel(enemyB.speciesId, scaledB.level);
     const wildBMoves = await prisma.move.findMany({ where: { id: { in: wildBMoveIds } } });
@@ -283,6 +302,7 @@ export async function challengeTowerFloor(locale: string) {
 
   const log = [
     `towerFloor:${floor.floorNumber}`,
+    ...(run.blessingIds.includes("aegis") ? ["towerAegis:ready"] : []),
     wantDoubles ? "format:double" : "format:single",
     `sendOut:${species.name}`,
     ...(speciesBName ? [`sendOut:${speciesBName}`] : []),
@@ -477,19 +497,50 @@ export async function chooseTowerBlessing(blessingId: string, locale: string) {
   const nextFloor = getTowerFloor(run.currentFloor, run.towerId);
   const nextStatus = nextFloor?.type === "rest" ? "RESTING" : "ACTIVE";
 
-  await prisma.$transaction(async (tx) => {
-    await lockUsers(tx, userId);
-    await tx.towerRun.update({
-      where: { id: run.id },
-      data: {
-        status: nextStatus,
-        blessingIds: nextBlessings,
-        offeredBlessingIds: [],
-        teamSnapshot: towerTeamSnapshotJson(team),
+  let applied = false;
+  try {
+    applied = await prisma.$transaction(
+      async (tx) => {
+        await lockUsers(tx, userId);
+
+        // AUTO y un toque manual pueden llegar casi juntos. Revalidar después
+        // del lock evita aplicar dos veces la misma bendición con un snapshot
+        // leído antes de que la primera transacción terminara.
+        const freshRun = await tx.towerRun.findUnique({
+          where: { id: run.id },
+          select: { status: true, offeredBlessingIds: true },
+        });
+        if (
+          freshRun?.status !== "AWAITING_BLESSING" ||
+          !freshRun.offeredBlessingIds.includes(blessingId)
+        ) {
+          return false;
+        }
+
+        await tx.towerRun.update({
+          where: { id: run.id },
+          data: {
+            status: nextStatus,
+            blessingIds: nextBlessings,
+            offeredBlessingIds: [],
+            teamSnapshot: towerTeamSnapshotJson(team),
+          },
+        });
+        await applySnapshotHpToInstances(tx, team);
+        return true;
       },
-    });
-    await applySnapshotHpToInstances(tx, team);
-  });
+      { maxWait: 10_000, timeout: 20_000 },
+    );
+  } catch (error) {
+    console.error("[tower] choose blessing transaction failed", error);
+    redirect({ href: "/tower?err=busy", locale });
+    return;
+  }
+
+  if (!applied) {
+    redirect({ href: "/tower", locale });
+    return;
+  }
 
   revalidatePath(`/${locale}/tower`);
   redirect({ href: "/tower", locale });
@@ -563,6 +614,7 @@ export async function applyTowerRest(
         floorNumber: run.currentFloor,
         blessingIds: run.blessingIds,
         claimedFirstClears: progress?.claimedFirstClears ?? [],
+        difficultyId: run.difficultyId,
       });
       const pendingLoot = mergeBundles([parsePendingLoot(run.pendingLoot), bundle]);
 

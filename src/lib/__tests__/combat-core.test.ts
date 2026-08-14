@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { attemptCapture } from "@/lib/capture";
-import { effectivePp } from "@/lib/battle";
+import { effectivePp, xpForVictory } from "@/lib/battle";
 import { fleeOdds, fleeChancePercent, rollFlee } from "@/lib/flee";
 import {
   multiHitSpec,
@@ -8,7 +8,31 @@ import {
   rollRangeHits,
 } from "@/lib/multi-hit";
 import { getTypeEffectiveness } from "@/lib/type-effectiveness";
-import { unspentPointsForLevel } from "@/lib/stats";
+import { unspentPointsForLevel, xpForLevel } from "@/lib/stats";
+
+/** Peleas necesarias para pasar de `level` a `level + 1` contra rivales `foeLevel`. */
+function battlesPerLevel(level: number, foeLevel = level): number {
+  return (xpForLevel(level + 1) - xpForLevel(level)) / xpForVictory(foeLevel);
+}
+
+describe("xpForVictory", () => {
+  it("mantiene el ritmo parejo en vez de estirarse con el nivel", () => {
+    // Antes: 1.2 peleas por nivel a Lv.5 y 4.7 a Lv.17 (premio lineal contra
+    // curva cúbica). El tope de 3 es la garantía de que no vuelve a pasar.
+    for (const level of [5, 10, 17, 25, 40, 60]) {
+      expect(battlesPerLevel(level)).toBeLessThan(3);
+    }
+  });
+
+  it("el tramo previo al segundo gimnasio deja de ser un muro", () => {
+    // Equipo Nv.18 farmeando rivales Nv.13 (Monte Moon / Celeste).
+    expect(battlesPerLevel(18, 13)).toBeLessThan(3.5);
+  });
+
+  it("premia al rival más fuerte", () => {
+    expect(xpForVictory(20)).toBeGreaterThan(xpForVictory(10) * 2);
+  });
+});
 
 describe("effectivePp", () => {
   it("treats null/undefined as full (legacy)", () => {

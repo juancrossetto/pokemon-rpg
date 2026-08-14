@@ -1307,6 +1307,61 @@ body {
   line-height: 1.3;
   color: rgba(255, 255, 255, 0.5);
 }
+/*
+  Mochila: diálogo centrado dentro del campo, no hoja anclada al fondo.
+
+  `--battle-plate-clear` es el alto de una placa de HP más su offset: el
+  padding vertical reserva esa banda arriba (placa del rival) y abajo (placa
+  del jugador), así que el panel queda en la franja libre del medio y las dos
+  barras de vida se siguen leyendo mientras elegís el objeto — que es
+  justamente cuando hacen falta.
+*/
+.battle-bag-sheet--field {
+  --battle-plate-clear: 3.4rem;
+  justify-content: center;
+  align-items: center;
+  padding-block: var(--battle-plate-clear);
+  padding-inline: 0.5rem;
+}
+.battle-bag-sheet__panel--field {
+  width: min(100%, 27rem);
+  max-height: 100%;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.55rem 0.9rem 0.75rem;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+  animation: battle-bag-dialog-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (min-width: 768px) {
+  .battle-bag-sheet--field {
+    --battle-plate-clear: 4.9rem;
+  }
+}
+/*
+  Campo bajo (teléfono apaisado / pantallas cortas): con la banda completa el
+  panel se quedaba sin alto útil. Se recorta la reserva y el cuerpo scrollea.
+*/
+@media (max-height: 620px) {
+  .battle-bag-sheet--field {
+    --battle-plate-clear: 2.6rem;
+  }
+}
+@keyframes battle-bag-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .battle-bag-sheet__panel--field {
+    animation: none;
+  }
+}
+
 .battle-bag-sheet__close {
   display: grid;
   place-items: center;
@@ -2425,10 +2480,14 @@ html.is-standalone .battle-bag-sheet__panel {
       las columnas laterales quedan siempre en su mínimo: si ese mínimo es un
       valor fijo, el log mide lo mismo a 1280 que a 1900, y al cambiar de
       breakpoint pega saltos (llegó a caer de 350px a 160px al cruzar 1536).
-      Con `clamp` el ancho crece parejo —13rem a 20rem— y nunca retrocede.
+      Con `clamp` el ancho crece parejo —15.5rem a 20rem— y nunca retrocede.
+
+      El piso subió de 13rem a 15.5rem junto con la tipografía más chica del
+      registro: a 13rem casi ninguna acción entraba en un renglón, y el chip de
+      orden de turno no entraba directamente.
     */
     grid-template-columns:
-      minmax(clamp(13rem, 15vw, 20rem), 0.9fr)
+      minmax(clamp(15.5rem, 15vw, 20rem), 0.9fr)
       minmax(0, 1506px)
       minmax(clamp(15rem, 15vw, 20rem), 1fr);
     /* Arena prioriza altura; poderes siguen legibles (~20.5rem). */
@@ -3479,6 +3538,111 @@ html.is-standalone .battle-bag-sheet__panel {
 }
 .sprite-lunge-left-hard {
   animation: lunge-left-hard 0.38s ease-in-out;
+}
+
+/*
+  Registro de combate.
+
+  El `>` de terminal más `text-label-md` no entraban en la columna de desktop
+  (≈15rem): cada acción salía en dos líneas y el registro se leía como un
+  párrafo. Ahora el bando se indica con un rail de color —el mismo lenguaje que
+  los chips— y la tipografía baja a 11px con interlineado ajustado, así la
+  mayoría de las acciones entra en un renglón. La sangría francesa hace que las
+  pocas que igual doblan se lean como continuación y no como entrada nueva.
+*/
+.battle-log {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.05rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  /* El contenido que sale de cuadro se desvanece en vez de cortarse en seco. */
+  mask-image: linear-gradient(to bottom, transparent 0, #000 0.75rem);
+}
+.battle-log::-webkit-scrollbar {
+  display: none;
+}
+.battle-log-line {
+  display: grid;
+  grid-template-columns: 2px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.4rem;
+  border-radius: 0.3rem;
+  padding-block: 0.14rem;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.625rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.88);
+  overflow-wrap: anywhere;
+}
+.battle-log-line__rail {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+.battle-log-line--player .battle-log-line__rail {
+  background: rgba(52, 211, 153, 0.75);
+}
+.battle-log-line--wild .battle-log-line__rail {
+  background: rgba(251, 191, 36, 0.75);
+}
+.battle-log-line--system {
+  color: rgba(255, 255, 255, 0.55);
+}
+.battle-log-line__text {
+  min-width: 0;
+  /* Sangría francesa: la segunda línea entra, la primera no. */
+  padding-left: 0.55rem;
+  text-indent: -0.55rem;
+}
+.battle-log-line.is-latest {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* Título de la columna: sólo existe como rail vertical en desktop. */
+.battle-log__caption {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .battle-log-line {
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+}
+
+@media (min-width: 1024px) {
+  .battle-log__caption {
+    display: block;
+    margin: 0 0 0.35rem;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.3rem;
+    font-family: var(--font-inter), system-ui, sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+  }
+  .battle-log {
+    gap: 0.1rem;
+  }
+  .battle-log-line {
+    padding-inline: 0.3rem;
+    padding-block: 0.18rem;
+    font-size: 0.6875rem;
+    line-height: 1.3;
+    letter-spacing: -0.004em;
+  }
 }
 
 @keyframes battle-log-in {
@@ -18212,8 +18376,28 @@ html.boot-splash-done .boot-splash,
 
 .tower-climb-fill {
   transform-origin: bottom;
-  animation: tower-climb-fill 820ms cubic-bezier(0.33, 0, 0.15, 1) both;
+  animation: tower-climb-fill 1.95s cubic-bezier(0.33, 0, 0.15, 1) both;
 }
+
+/* Preferencias internas: también sirven cuando el SO no tiene reducción activa. */
+html[data-reduce-motion="1"] *,
+html[data-reduce-motion="1"] *::before,
+html[data-reduce-motion="1"] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash, .capture-hit-flash, .capture-seal-flash, .evolve-flash, .rankup-flash) {
+  animation: none !important;
+  opacity: 0 !important;
+}
+@keyframes raid-damage-pop {
+  0% { opacity: 0; transform: translateY(12px) scale(.7); }
+  35% { opacity: 1; transform: translateY(-4px) scale(1.12); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.raid-damage-pop { animation: raid-damage-pop .55s cubic-bezier(.2,.9,.2,1) both; }
 
 /* Chispa que sube delante del relleno: es lo que lee como "escalando" y no
    como "una barra que crece". Llega arriba justo cuando el tramo se completa. */
@@ -18238,7 +18422,7 @@ html.boot-splash-done .boot-splash,
 }
 
 .tower-climb-spark {
-  animation: tower-climb-spark 820ms cubic-bezier(0.33, 0, 0.15, 1) both;
+  animation: tower-climb-spark 1.95s cubic-bezier(0.33, 0, 0.15, 1) both;
 }
 
 /* El nodo al que llega el relleno recibe el impacto. El delay lo sincroniza
@@ -18259,7 +18443,7 @@ html.boot-splash-done .boot-splash,
 }
 
 .tower-node-reached {
-  animation: tower-node-reached 620ms ease-out 740ms both;
+  animation: tower-node-reached 720ms ease-out 1.85s both;
 }
 
 @keyframes tower-climb-toast-in {
@@ -18283,6 +18467,137 @@ html.boot-splash-done .boot-splash,
 
 .tower-climb-toast {
   animation: tower-climb-toast-in 4.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Transición de piso del modo AUTO. Las líneas bajan mientras la torre sube:
+   el contraste de direcciones vende ascenso sin sumar una escena pesada. */
+@keyframes tower-auto-ascent-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tower-auto-ascent-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(52px) scale(0.9);
+  }
+  32% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04);
+  }
+  76% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-42px) scale(0.96);
+  }
+}
+
+@keyframes tower-auto-ascent-lines {
+  from { background-position: 0 -48px; opacity: 0; }
+  20% { opacity: 0.42; }
+  to { background-position: 0 96px; opacity: 0; }
+}
+
+@keyframes tower-auto-ascent-beam {
+  0%, 100% { opacity: 0; transform: translateX(-50%) scaleX(0.35); }
+  35%, 72% { opacity: 0.72; transform: translateX(-50%) scaleX(1); }
+}
+
+@keyframes tower-auto-ascent-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes tower-auto-return-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.tower-auto-ascent {
+  animation: tower-auto-ascent-in 180ms ease-out both;
+}
+
+.tower-auto-ascent__content {
+  animation: tower-auto-ascent-rise 1.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tower-auto-ascent__beam {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--theme-secondary) 20%, transparent), transparent);
+  filter: blur(10px);
+  animation: tower-auto-ascent-beam 1.75s ease-in-out both;
+}
+
+.tower-auto-ascent__lines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 46px,
+    color-mix(in srgb, var(--theme-secondary) 16%, transparent) 47px,
+    transparent 48px
+  );
+  animation: tower-auto-ascent-lines 1.75s linear both;
+}
+
+.tower-auto-ascent__progress,
+.tower-auto-return-progress {
+  transform-origin: left;
+}
+
+.tower-auto-ascent__progress {
+  animation: tower-auto-ascent-progress 1.6s linear both;
+}
+
+.tower-auto-return-progress {
+  animation: tower-auto-return-progress 2.2s linear both;
+}
+
+@keyframes tower-auto-climb-chip-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.94);
+  }
+  14%, 82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.98);
+  }
+}
+
+@keyframes tower-auto-countdown-pop {
+  0% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+  32% {
+    opacity: 1;
+    transform: scale(0.94);
+  }
+  55% {
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.82;
+    transform: scale(0.96);
+  }
+}
+
+.tower-auto-countdown-number {
+  animation: tower-auto-countdown-pop 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tower-auto-climb-chip {
+  animation: tower-auto-climb-chip-in 3.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tower-auto-climb-chip__progress {
+  transform-origin: left;
+  animation: tower-auto-ascent-progress 3s linear both;
 }
 
 @keyframes tower-floor-ticket-climbed {
@@ -18428,6 +18743,32 @@ html.boot-splash-done .boot-splash,
   .tower-blessing-arrival-ring,
   .tower-blessing-pick-hint {
     animation: none;
+  }
+
+  .tower-auto-ascent,
+  .tower-auto-ascent__content,
+  .tower-auto-ascent__beam,
+  .tower-auto-ascent__lines,
+  .tower-auto-ascent__progress,
+  .tower-auto-return-progress {
+    animation: none;
+  }
+
+  .tower-auto-climb-chip,
+  .tower-auto-climb-chip__progress,
+  .tower-auto-countdown-number {
+    animation: none;
+  }
+
+  .tower-auto-ascent__content {
+    opacity: 1;
+    transform: none;
+  }
+
+  .tower-auto-ascent__progress,
+  .tower-auto-return-progress,
+  .tower-auto-climb-chip__progress {
+    transform: scaleX(1);
   }
 
   .tower-blessing-card--invite:not(:disabled)::after {

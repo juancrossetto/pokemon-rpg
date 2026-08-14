@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { PokemonImage } from "@/components/pokemon-image";
 import { neonTypeColor } from "@/lib/type-colors";
-import { spriteFor } from "@/lib/shiny";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";
 import {
   diffNewlyCaught,
@@ -278,7 +278,7 @@ export function PokedexTerminal({
       sorted.sort((a, b) => a.id - b.id);
     }
     return sorted;
-  }, [entries, regionDef.generation, query, type, quick, sort, labels.regions, region]);
+  }, [entries, regionDef.generation, query, type, quick, sort, labels.regions, labels.pokemonTypes, region]);
 
   const completionPct = regionProg
     ? regionProg.total === 0
@@ -707,23 +707,6 @@ function ViewToggle({
 }
 
 /**
- * Banner inferior: un solo color de tipo, semitransparente.
- * Más bajo y suave para no “comerse” el sprite / gris de arriba.
- */
-function typeBannerWash(types: string[]): string {
-  const base = neonTypeColor(types[0] ?? "normal");
-  return [
-    `linear-gradient(0deg,`,
-    `${base}a8 0%,`,
-    `${base}78 20%,`,
-    `${base}48 42%,`,
-    `${base}22 62%,`,
-    `${base}0c 80%,`,
-    `transparent 100%)`,
-  ].join(" ");
-}
-
-/**
  * Celda de grilla sin card (estilo GO): Nº + estrella, sprite suelto, nombre.
  */
 function DexCard({
@@ -798,8 +781,11 @@ function DexCard({
         {/* Sprite suelto sobre el fondo */}
         <div className="relative flex aspect-square w-full max-w-[7.5rem] items-center justify-center self-center">
           {entry.spriteUrl ? (
-            <Image
-              src={spriteFor(entry.spriteUrl, showShinyArt)}
+            <PokemonImage
+              src={entry.spriteUrl}
+              speciesId={entry.id}
+              speciesName={entry.name}
+              isShiny={showShinyArt}
               alt={unseen ? labels.unknown : entry.name}
               width={128}
               height={128}
@@ -913,8 +899,11 @@ function DexListRow({
         ) : null}
         <div className="relative z-10 h-10 w-10 shrink-0">
           {entry.spriteUrl ? (
-            <Image
-              src={spriteFor(entry.spriteUrl, showShinyArt)}
+            <PokemonImage
+              src={entry.spriteUrl}
+              speciesId={entry.id}
+              speciesName={entry.name}
+              isShiny={showShinyArt}
               alt={unseen ? labels.unknown : entry.name}
               width={40}
               height={40}

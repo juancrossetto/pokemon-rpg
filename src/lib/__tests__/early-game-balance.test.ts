@@ -4,6 +4,7 @@ import {
   earlyGameBattleMode,
   earlyGamePowerMultiplier,
   levelAdvantageMultiplier,
+  raiseWildLevelForPlayer,
 } from "@/lib/early-game-balance";
 import { TUTORIAL_BATTLE_ID } from "@/lib/battle-tutorial";
 
@@ -16,9 +17,14 @@ describe("earlyGameBattleMode", () => {
     expect(earlyGameBattleMode({ routeTrainerId: TUTORIAL_BATTLE_ID })).toBe("tutorial");
   });
 
-  it("no aplica en PvP ni ruta", () => {
+  it("entrenador de ruta tiene su propio modo", () => {
+    expect(earlyGameBattleMode({ routeTrainerId: "route-trainer-1" })).toBe("trainer");
+  });
+
+  it("no aplica en PvP, gimnasio ni guerra de clan", () => {
     expect(earlyGameBattleMode({ pvpMatchId: "x" })).toBeNull();
-    expect(earlyGameBattleMode({ routeTrainerId: "route-trainer-1" })).toBeNull();
+    expect(earlyGameBattleMode({ gymRunId: "x" })).toBeNull();
+    expect(earlyGameBattleMode({ clanWarBattleId: "x" })).toBeNull();
   });
 });
 
@@ -29,13 +35,27 @@ describe("levelAdvantageMultiplier", () => {
   });
 
   it("premia sacarle niveles al rival", () => {
-    expect(levelAdvantageMultiplier(19, 14, "player")).toBeCloseTo(1.3);
-    expect(levelAdvantageMultiplier(19, 14, "wild")).toBeCloseTo(0.75);
+    // 5 de 8 niveles de saturación.
+    expect(levelAdvantageMultiplier(19, 14, "player")).toBeCloseTo(1 + 0.55 * (5 / 8));
+    expect(levelAdvantageMultiplier(19, 14, "wild")).toBeCloseTo(1 - 0.45 * (5 / 8));
   });
 
-  it("satura: 20 niveles no pegan más que 5", () => {
-    expect(levelAdvantageMultiplier(34, 14, "player")).toBeCloseTo(
+  it("una ventaja chica pesa más que en la versión anterior (0.06/0.05 por nivel)", () => {
+    // Ampliar la saturación sin subir los coeficientes habría empeorado justo
+    // el caso más común de la aventura: 3 niveles arriba.
+    expect(levelAdvantageMultiplier(16, 13, "player")).toBeGreaterThan(1 + 0.06 * 3);
+    expect(levelAdvantageMultiplier(16, 13, "wild")).toBeLessThan(1 - 0.05 * 3);
+  });
+
+  it("sigue creciendo más allá de 5 niveles (tramo pre-Misty)", () => {
+    expect(levelAdvantageMultiplier(22, 14, "player")).toBeGreaterThan(
       levelAdvantageMultiplier(19, 14, "player"),
+    );
+  });
+
+  it("satura: 20 niveles no pegan más que 8", () => {
+    expect(levelAdvantageMultiplier(34, 14, "player")).toBeCloseTo(
+      levelAdvantageMultiplier(22, 14, "player"),
     );
   });
 });
@@ -64,6 +84,14 @@ describe("earlyGamePowerMultiplier", () => {
       earlyGamePowerMultiplier(5, 5, "wild", "wild"),
     );
   });
+
+  it("entrenador de ruta: sólo ventaja de nivel, sin ayuda de onboarding", () => {
+    expect(earlyGamePowerMultiplier(5, 5, "player", "trainer")).toBe(1);
+    expect(earlyGamePowerMultiplier(5, 5, "wild", "trainer")).toBe(1);
+    expect(earlyGamePowerMultiplier(18, 14, "player", "trainer")).toBeCloseTo(
+      levelAdvantageMultiplier(18, 14, "player"),
+    );
+  });
 });
 
 describe("capWildLevelForEarlyGame", () => {
@@ -78,5 +106,21 @@ describe("capWildLevelForEarlyGame", () => {
 
   it("no capa después del recorrido inicial", () => {
     expect(capWildLevelForEarlyGame(18, 14, 19)).toBe(18);
+  });
+});
+
+describe("raiseWildLevelForPlayer", () => {
+  it("levanta el piso hacia el jugador sin pasar el techo de la zona", () => {
+    // Monte Moon (10-14) con un equipo Nv.18: sale 14, no 10.
+    expect(raiseWildLevelForPlayer(10, 18, 14)).toBe(14);
+    expect(raiseWildLevelForPlayer(12, 16, 16)).toBe(13);
+  });
+
+  it("no baja un salvaje que ya salió alto", () => {
+    expect(raiseWildLevelForPlayer(16, 12, 16)).toBe(16);
+  });
+
+  it("no toca nada cuando el jugador va parejo o por debajo", () => {
+    expect(raiseWildLevelForPlayer(12, 10, 16)).toBe(12);
   });
 });

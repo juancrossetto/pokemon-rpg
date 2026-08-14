@@ -40,6 +40,8 @@
     "friends": "Amigos",
     "clans": "Clãs",
     "pvp": "PvP",
+    "raids": "Incursão semanal",
+    "battleHistory": "Histórico de batalhas",
     "safari": "Safari",
     "more": "Mais",
     "campaign": "Jornada",
@@ -67,6 +69,8 @@
       "gyms": "Ganhe medalhas e desbloqueie o caminho.",
       "battleWild": "Explore selvagens na sua zona.",
       "pvp": "Enfrente outros treinadores.",
+      "raids": "Una forças contra o chefe semanal.",
+      "battleHistory": "Revise resultados e turnos anteriores.",
       "ranking": "Veja sua posição global.",
       "team": "Sua equipe, o PC e a creche",
       "pokedex": "Acompanhe espécies vistas e capturadas.",
@@ -897,9 +901,11 @@
     "struggleName": "Luta",
     "struggleHint": "Sem PP — fere quem usa",
     "animationSpeed": "Velocidade da animação: {speed}x",
-    "autoBattleOn": "Batalha automática: ligada",
+    "autoBattleOn": "Batalha automática: ligada · usa poções com PS baixos",
     "autoBattleOff": "Batalha automática: desligada",
     "autoBattleLocked": "Batalha automática: desbloqueie com {count} Pokémon no Nv. {level}+",
+    "autoBattleStopped": "AUTO parou: PS crítico e sem poções.",
+    "serverBusyRetry": "A conexão está ocupada. Seu turno está seguro: tente novamente.",
     "youMoveFirst": "Você ataca primeiro",
     "foeMovesFirst": "O rival ataca primeiro",
     "turnOrderHint": "Pela Velocidade. Golpes com prioridade podem passar na frente.",
@@ -957,6 +963,7 @@
       "used": "{name} usou {move}!",
       "miss": "{name} usou {move} mas errou!",
       "damage": "{name} recebeu {damage} de dano!",
+      "aegis": "Égide protegeu {name}!",
       "superEffective": "É super efetivo!",
       "notVeryEffective": "Não é muito efetivo...",
       "noEffect": "Não teve efeito...",
@@ -1039,6 +1046,9 @@
     "caughtTag": "Capturado",
     "fledTag": "Fuga",
     "rewardsTitle": "Recompensas",
+    "itemsUsedTitle": "Itens usados",
+    "itemsUsedHealed": "+{hp} PS",
+    "itemsUsedRevived": "Reviveu · {hp} PS",
     "xpGainsTitle": "Experiência",
     "xpBarLabel": "Progresso de experiência de {name}",
     "backHome": "Voltar ao início",
@@ -1833,7 +1843,7 @@
       "global": "Global",
       "myCountry": "Meu país",
       "friends": "Amigos",
-      "friendsSoon": "Amigos — em breve"
+      "friendsSoon": "Entre para comparar com amigos"
     },
     "metric": {
       "pc": "PC {value}",
@@ -1862,7 +1872,8 @@
     "list": {
       "title": "Classificação",
       "scopeGlobal": "Top global",
-      "scopeCountry": "Top país"
+      "scopeCountry": "Top país",
+      "scopeFriends": "Entre amigos"
     },
     "ranked": {
       "eyebrow": "Classificatória",
@@ -3081,6 +3092,7 @@
     },
     "musicMute": "Silenciar música",
     "musicUnmute": "Ativar música",
+    "settings": "Configurações",
     "banner": {
       "change": "Mudar banner",
       "title": "Escolha seu banner",
@@ -3642,9 +3654,12 @@
     "eyebrow": "Modo combate",
     "tagline": "Até qual andar seu time consegue chegar antes de ser derrotado?",
     "difficulties": {
+      "label": "Dificuldade",
       "normal": "Normal",
       "expert": "Especialista",
-      "expertSoon": "Especialista: em breve."
+      "expertSoon": "Especialista",
+      "expertLocked": "Conclua os 30 andares no Normal para desbloquear Especialista.",
+      "expertRule": "+4 níveis · +25% HP · +50% moedas"
     },
     "summary": {
       "current": "Andar atual",
@@ -3681,6 +3696,23 @@
       "locked": "Bloqueado",
       "completed": "Torre concluída",
       "working": "Processando…"
+    },
+    "auto": {
+      "label": "Torre automática",
+      "shortLabel": "AUTO",
+      "on": "ON",
+      "off": "OFF",
+      "hintOn": "Continua batalhas, bênçãos, descansos e andares automaticamente.",
+      "hintOff": "Ative a subida contínua da Torre.",
+      "climbing": "Subida automática",
+      "floor": "Andar {n}",
+      "preparing": "Preparando o próximo desafio…",
+      "returning": "Voltando à Torre para continuar a subida…",
+      "pausedDecision": "AUTO pausado: resolva a decisão de nível antes de continuar.",
+      "stop": "Parar AUTO",
+      "starting": "A Torre AUTO começa em",
+      "nextFloorIn": "Próximo andar automático em",
+      "cancelStart": "Cancelar AUTO"
     },
     "floorTypes": {
       "normal": "Combate",
@@ -3759,6 +3791,7 @@
       "no_enemy": "Não foi possível carregar o inimigo.",
       "bad_blessing": "Bênção inválida.",
       "not_rest": "Você não está em um andar de descanso.",
+      "busy": "A Torre estava processando outra ação. Tente novamente.",
       "unlockBadges": "Você precisa de mais medalhas.",
       "towerCleared": "Você já completou esta Torre.",
       "noAttempts": "Próxima subida: domingo 21h ART."
@@ -3824,7 +3857,7 @@
       },
       "aegis": {
         "name": "Égide",
-        "desc": "O primeiro golpe concede escudo (em breve)."
+        "desc": "Anula completamente o primeiro golpe inimigo de cada batalha."
       },
       "rally": {
         "name": "Reagrupar",
@@ -3879,6 +3912,21 @@
       "nextIn": "Próxima subida em"
     }
   },
+  "settings": {
+    "eyebrow": "Preferências do treinador", "title": "CONFIGURAÇÕES", "subtitle": "Centralize som, acessibilidade e comportamento automático do jogo.",
+    "audio": { "title": "Áudio", "subtitle": "Um nível para a música ambiente e de batalha.", "music": "Música", "effects": "Efeitos", "musicToggle": "Música ativa", "effectsToggle": "Efeitos ativos" },
+    "battle": { "title": "Apresentação da batalha", "subtitle": "Ajuste o ritmo e a intensidade visual.", "speed": "Velocidade", "animations": "Animações", "flashes": "Clarões" },
+    "auto": { "title": "Estratégia AUTO", "subtitle": "Define quando cura, troca e para.", "conservative": "Conservadora", "conservativeHint": "Cura antes e mantém a equipe saudável.", "balanced": "Equilibrada", "balancedHint": "Equilibra dano, trocas e uso de itens.", "aggressive": "Agressiva", "aggressiveHint": "Ataca mais e guarda poções para emergências.", "stop": "Parar sem poções", "stopHint": "Desliga AUTO neste PS quando não puder curar.", "never": "Nunca" }
+  },
+  "battleHistory": {
+    "eyebrow": "Registro do treinador", "title": "HISTÓRICO DE BATALHAS", "subtitle": "Suas últimas 30 batalhas, com resultados e turnos.", "emptyTitle": "Ainda não há batalhas concluídas", "emptyBody": "Sua próxima batalha concluída aparecerá aqui.", "turns": "{count} registros", "damageDealt": "Dano causado", "damageTaken": "Dano recebido", "items": "Itens",
+    "mode": { "wild": "Selvagem", "gym": "Ginásio", "tower": "Torre", "pvp": "PvP" }, "status": { "won": "Vitória", "lost": "Derrota", "fled": "Fuga", "caught": "Capturado" }
+  },
+  "raids": {
+    "eyebrow": "Batalha cooperativa semanal", "title": "INCURSÃO", "subtitle": "Use sua equipe ativa para causar dano ao chefe. Todos empurram a mesma barra e cada tentativa conta para o ranking.", "attempts": "Tentativas", "yourDamage": "Seu dano", "resets": "Reinicia", "weeklyBoss": "Chefe desta semana", "communityProgress": "Progresso global · {percent}%", "attack": "ATACAR CHEFE", "attacking": "ATACANDO...", "noAttempts": "SEM TENTATIVAS", "rankingEyebrow": "Dano individual", "ranking": "Melhores treinadores", "emptyRanking": "Ninguém atacou ainda.", "clansEyebrow": "Esforço conjunto", "clans": "Ranking de clãs", "emptyClans": "Ainda não há dano de clãs.", "rewardEyebrow": "Prêmio semanal", "reward": "750 moedas · 2 gemas · 3 Super Potions", "rewardBody": "Complete as 3 tentativas. Membros de clã ganham 250 moedas extras.", "claim": "RESGATAR PRÊMIO", "claimed": "PRÊMIO RESGATADO", "lockedReward": "TENTATIVAS {current}/3",
+    "errors": { "unauthorized": "Entre novamente.", "no_team": "Monte uma equipe ativa antes de atacar.", "team_fainted": "Sua equipe está debilitada. Cure antes de atacar.", "no_attempts": "Você usou as tentativas desta semana.", "not_ready": "Complete as três tentativas primeiro.", "claimed": "Esse prêmio já foi resgatado.", "busy": "O banco está ocupado. Tente novamente em alguns segundos." }
+  },
+  "pwa": { "updateAvailable": "Uma nova versão está pronta.", "reload": "Atualizar" },
   "nextStep": {
     "eyebrow": "Seu próximo passo",
     "starterTitle": "Escolha seu primeiro Pokémon",

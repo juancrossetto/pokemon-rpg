@@ -45,8 +45,11 @@ const CATEGORY_TONE: Record<MoveCategory, string> = {
 export function TurnOrderChip({ playerFirst }: { playerFirst: boolean }) {
   const t = useTranslations("battle");
   return (
+    // `min-w-0` y no `shrink-0`: en la columna de log de desktop (≈15rem) el
+    // chip medía más que el ancho disponible y `overflow-hidden` del panel lo
+    // cortaba al medio. Ahora encoge y, si hace falta, parte por el espacio.
     <span
-      className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide lg:px-2.5 lg:py-1.5 lg:text-[13px] ${
+      className={`min-w-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide lg:px-2 lg:py-1 lg:text-[11px] ${
         playerFirst
           ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-200"
           : "border-amber-400/40 bg-amber-500/15 text-amber-200"
@@ -68,8 +71,8 @@ export function YourTurnStatus({
 }) {
   const t = useTranslations("battle");
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="rounded-md border border-white/20 bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/90">
+    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+      <span className="shrink-0 rounded-md border border-white/20 bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/90 lg:text-[11px]">
         {t("yourTurn")}
       </span>
       {showOrder ? <TurnOrderChip playerFirst={playerFirst} /> : null}
@@ -321,9 +324,16 @@ export function BagView({
         ? t("bagRevivesDisabled")
         : t("bagPickHint");
 
+  /*
+    A diferencia del resto de las hojas, la mochila se dibuja **dentro** del
+    campo (`.battle-arena-field`) y centrada entre las placas de HP: anclada al
+    fondo del shell tapaba la placa del jugador —esquina inferior derecha del
+    campo— justo cuando hay que decidir qué poción usar. Team/Revive siguen
+    siendo hojas de fondo porque ya listan el HP de todo el equipo.
+  */
   return (
     <div
-      className="battle-bag-sheet"
+      className="battle-bag-sheet battle-bag-sheet--field"
       role="dialog"
       aria-modal="true"
       aria-labelledby="battle-bag-title"
@@ -335,9 +345,8 @@ export function BagView({
         disabled={isAnimating}
         onClick={onBack}
       />
-      <div className="battle-bag-sheet__panel">
+      <div className="battle-bag-sheet__panel battle-bag-sheet__panel--field">
         <header className="battle-bag-sheet__head">
-          <div className="battle-bag-sheet__grab" aria-hidden />
           <div className="battle-bag-sheet__title-row">
             <div className="min-w-0">
               <p id="battle-bag-title" className="battle-bag-sheet__title">

@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  BATTLE_AUTO_POTION_HP_PERCENT,
   BATTLE_AUTO_UNLOCK_COUNT,
   BATTLE_AUTO_UNLOCK_LEVEL,
   isBattleAutoUnlocked,
+  pickAutoPotion,
   pickAutoSwitchCandidate,
+  shouldStopAutoBattle,
 } from "@/lib/battle-auto";
 
 describe("isBattleAutoUnlocked", () => {
@@ -60,5 +63,55 @@ describe("pickAutoSwitchCandidate", () => {
       member.instanceId === "oddish" ? { ...member, currentHp: 10 } : member,
     );
     expect(pickAutoSwitchCandidate(hurt, "pidgey", ["water"])).toBeNull();
+  });
+});
+
+describe("pickAutoPotion", () => {
+  const potions = [
+    { itemId: "potion", quantity: 3, healAmount: 20, kind: "heal" as const },
+    { itemId: "super", quantity: 2, healAmount: 50, kind: "heal" as const },
+    { itemId: "hyper", quantity: 1, healAmount: 200, kind: "heal" as const },
+    { itemId: "revive", quantity: 4, healAmount: 0, kind: "revive" as const },
+  ];
+
+  it("no gasta pociones por encima del umbral", () => {
+    expect(pickAutoPotion(potions, BATTLE_AUTO_POTION_HP_PERCENT + 1, 100)).toBeNull();
+  });
+
+  it("actua exactamente en el umbral", () => {
+    expect(pickAutoPotion(potions, BATTLE_AUTO_POTION_HP_PERCENT, 100)?.itemId).toBe("hyper");
+  });
+
+  it("elige la cura mÃ¡s chica que cubre los PS faltantes", () => {
+    expect(pickAutoPotion(potions, 20, 60)?.itemId).toBe("super");
+  });
+
+  it("usa la mÃ¡s potente si ninguna alcanza", () => {
+    const limited = potions.filter((stack) => stack.itemId !== "hyper");
+    expect(pickAutoPotion(limited, 10, 100)?.itemId).toBe("super");
+  });
+
+  it("ignora revivir, stacks vacÃ­os y PokÃ©mon debilitados", () => {
+    const unusable = [
+      { itemId: "empty", quantity: 0, healAmount: 200, kind: "heal" as const },
+      { itemId: "revive", quantity: 2, healAmount: 0, kind: "revive" as const },
+    ];
+    expect(pickAutoPotion(unusable, 20, 100)).toBeNull();
+    expect(pickAutoPotion(potions, 0, 100)).toBeNull();
+  });
+});
+
+describe("AUTO profiles", () => {
+  it("heals earlier in conservative mode and later in aggressive mode", () => {
+    const potions = [{ itemId: "potion", quantity: 2, healAmount: 20, kind: "heal" as const }];
+    expect(pickAutoPotion(potions, 50, 100, "conservative")).not.toBeNull();
+    expect(pickAutoPotion(potions, 50, 100, "balanced")).toBeNull();
+    expect(pickAutoPotion(potions, 25, 100, "aggressive")).toBeNull();
+  });
+
+  it("stops only at the configured threshold when no healing item exists", () => {
+    expect(shouldStopAutoBattle(15, 100, 15, false)).toBe(true);
+    expect(shouldStopAutoBattle(15, 100, 15, true)).toBe(false);
+    expect(shouldStopAutoBattle(5, 100, 0, false)).toBe(false);
   });
 });

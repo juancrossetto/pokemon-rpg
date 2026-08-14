@@ -40,6 +40,8 @@
     "friends": "Friends",
     "clans": "Clans",
     "pvp": "PvP",
+    "raids": "Weekly raid",
+    "battleHistory": "Battle history",
     "safari": "Safari",
     "more": "More",
     "campaign": "Journey",
@@ -67,6 +69,8 @@
       "gyms": "Earn badges and unlock the path.",
       "battleWild": "Explore wild Pokémon in your zone.",
       "pvp": "Battle other trainers.",
+      "raids": "Join forces against the weekly boss.",
+      "battleHistory": "Review previous results and turns.",
       "ranking": "Check your global standing.",
       "team": "Your squad, PC box, and daycare",
       "pokedex": "Track species seen and caught.",
@@ -897,9 +901,11 @@
     "struggleName": "Struggle",
     "struggleHint": "No PP — hurts the user",
     "animationSpeed": "Animation speed: {speed}x",
-    "autoBattleOn": "Auto battle: on",
+    "autoBattleOn": "Auto battle: on · uses potions at low HP",
     "autoBattleOff": "Auto battle: off",
     "autoBattleLocked": "Auto battle: unlock with {count} Pokémon at Lv. {level}+",
+    "autoBattleStopped": "AUTO stopped: critical HP and no potions left.",
+    "serverBusyRetry": "The connection is busy. Your turn is safe: try again.",
     "youMoveFirst": "You move first",
     "foeMovesFirst": "Foe moves first",
     "turnOrderHint": "Based on Speed. Priority moves can go first anyway.",
@@ -957,6 +963,7 @@
       "used": "{name} used {move}!",
       "miss": "{name} used {move} but it missed!",
       "damage": "{name} took {damage} damage!",
+      "aegis": "Aegis protected {name}!",
       "superEffective": "It's super effective!",
       "notVeryEffective": "It's not very effective...",
       "noEffect": "It had no effect...",
@@ -1039,6 +1046,9 @@
     "caughtTag": "Caught",
     "fledTag": "Fled",
     "rewardsTitle": "Rewards",
+    "itemsUsedTitle": "Items used",
+    "itemsUsedHealed": "+{hp} HP",
+    "itemsUsedRevived": "Revived · {hp} HP",
     "xpGainsTitle": "Experience",
     "xpBarLabel": "Experience progress for {name}",
     "backHome": "Back home",
@@ -1833,7 +1843,7 @@
       "global": "Global",
       "myCountry": "My country",
       "friends": "Friends",
-      "friendsSoon": "Friends — coming soon"
+      "friendsSoon": "Sign in to compare with friends"
     },
     "metric": {
       "pc": "CP {value}",
@@ -1862,7 +1872,8 @@
     "list": {
       "title": "Standings",
       "scopeGlobal": "Top global",
-      "scopeCountry": "Top country"
+      "scopeCountry": "Top country",
+      "scopeFriends": "Among friends"
     },
     "ranked": {
       "eyebrow": "Ranked",
@@ -3081,6 +3092,7 @@
     },
     "musicMute": "Mute music",
     "musicUnmute": "Unmute music",
+    "settings": "Settings",
     "banner": {
       "change": "Change banner",
       "title": "Choose your banner",
@@ -3642,9 +3654,12 @@
     "eyebrow": "Combat mode",
     "tagline": "How far can your team climb before defeat?",
     "difficulties": {
+      "label": "Difficulty",
       "normal": "Normal",
       "expert": "Expert",
-      "expertSoon": "Expert: coming soon."
+      "expertSoon": "Expert",
+      "expertLocked": "Clear all 30 floors on Normal to unlock Expert.",
+      "expertRule": "+4 levels · +25% HP · +50% coins"
     },
     "summary": {
       "current": "Current floor",
@@ -3681,6 +3696,23 @@
       "locked": "Locked",
       "completed": "Tower cleared",
       "working": "Working…"
+    },
+    "auto": {
+      "label": "Auto Tower",
+      "shortLabel": "AUTO",
+      "on": "ON",
+      "off": "OFF",
+      "hintOn": "Continues battles, blessings, rests, and floors automatically.",
+      "hintOff": "Enable a continuous Tower climb.",
+      "climbing": "Automatic climb",
+      "floor": "Floor {n}",
+      "preparing": "Preparing the next challenge…",
+      "returning": "Returning to the Tower to continue the climb…",
+      "pausedDecision": "AUTO paused: resolve the level-up choice before continuing.",
+      "stop": "Stop AUTO",
+      "starting": "Auto Tower starts in",
+      "nextFloorIn": "Next automatic floor in",
+      "cancelStart": "Cancel AUTO"
     },
     "floorTypes": {
       "normal": "Battle",
@@ -3759,6 +3791,7 @@
       "no_enemy": "Could not load the enemy.",
       "bad_blessing": "Invalid blessing.",
       "not_rest": "You are not on a rest floor.",
+      "busy": "The Tower was processing another action. Please try again.",
       "unlockBadges": "You need more badges.",
       "towerCleared": "You already cleared this Tower.",
       "noAttempts": "Next climb: Sunday 9pm ART."
@@ -3824,7 +3857,7 @@
       },
       "aegis": {
         "name": "Aegis",
-        "desc": "First hit of battle grants a shield (soon)."
+        "desc": "Completely blocks the first enemy hit of every battle."
       },
       "rally": {
         "name": "Rally",
@@ -3879,6 +3912,21 @@
       "nextIn": "Next climb in"
     }
   },
+  "settings": {
+    "eyebrow": "Trainer preferences", "title": "SETTINGS", "subtitle": "Keep sound, accessibility, and automatic play behavior in one place.",
+    "audio": { "title": "Audio", "subtitle": "One level for world and battle music.", "music": "Music", "effects": "Effects", "musicToggle": "Music enabled", "effectsToggle": "Effects enabled" },
+    "battle": { "title": "Battle presentation", "subtitle": "Adjust pace and visual intensity.", "speed": "Speed", "animations": "Animations", "flashes": "Flashes" },
+    "auto": { "title": "AUTO strategy", "subtitle": "Controls when AUTO heals, switches, and stops.", "conservative": "Conservative", "conservativeHint": "Heals sooner and keeps the party healthy.", "balanced": "Balanced", "balancedHint": "Balances damage, switches, and item use.", "aggressive": "Aggressive", "aggressiveHint": "Attacks more and saves potions for emergencies.", "stop": "Stop without potions", "stopHint": "Turns AUTO off at this HP when it cannot heal.", "never": "Never" }
+  },
+  "battleHistory": {
+    "eyebrow": "Trainer record", "title": "BATTLE HISTORY", "subtitle": "Your latest 30 battles, with results and turn logs.", "emptyTitle": "No completed battles yet", "emptyBody": "Your next completed battle will appear here.", "turns": "{count} records", "damageDealt": "Damage dealt", "damageTaken": "Damage taken", "items": "Items",
+    "mode": { "wild": "Wild", "gym": "Gym", "tower": "Tower", "pvp": "PvP" }, "status": { "won": "Victory", "lost": "Defeat", "fled": "Fled", "caught": "Caught" }
+  },
+  "raids": {
+    "eyebrow": "Weekly cooperative battle", "title": "RAID", "subtitle": "Use your active party to damage the boss. Every trainer pushes the same bar and every attempt counts toward the ranking.", "attempts": "Attempts", "yourDamage": "Your damage", "resets": "Resets", "weeklyBoss": "This week's boss", "communityProgress": "Global progress · {percent}%", "attack": "ATTACK BOSS", "attacking": "ATTACKING...", "noAttempts": "NO ATTEMPTS", "rankingEyebrow": "Individual damage", "ranking": "Top trainers", "emptyRanking": "Nobody has attacked yet.", "clansEyebrow": "Joint effort", "clans": "Clan ranking", "emptyClans": "No clan damage yet.", "rewardEyebrow": "Weekly reward", "reward": "750 coins · 2 gems · 3 Super Potions", "rewardBody": "Complete all 3 attempts. Clan members earn 250 extra coins.", "claim": "CLAIM REWARD", "claimed": "REWARD CLAIMED", "lockedReward": "ATTEMPTS {current}/3",
+    "errors": { "unauthorized": "Sign in again.", "no_team": "Build an active party before attacking.", "team_fainted": "Your party has fainted. Heal before attacking.", "no_attempts": "You used this week's attempts.", "not_ready": "Complete all three attempts first.", "claimed": "That reward was already claimed.", "busy": "The database is busy. Try again in a few seconds." }
+  },
+  "pwa": { "updateAvailable": "A new version is ready.", "reload": "Update" },
   "nextStep": {
     "eyebrow": "Your next step",
     "starterTitle": "Pick your first Pokémon",

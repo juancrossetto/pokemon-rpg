@@ -157,9 +157,24 @@ export function resolveMoveUse(
   return { hit, damage, effectiveness, critical };
 }
 
-export function xpForVictory(wildLevel: number): number {
-  // ×15: el arranque (Lv 5 vs salvajes 2–6) subía demasiado lento para sentir avance.
-  return wildLevel * 15;
+/** Término lineal histórico: el arranque (Lv 5 vs salvajes 2–6) necesitaba empuje. */
+export const XP_PER_DEFEATED_LEVEL = 15;
+
+/**
+ * XP por victoria.
+ *
+ * La curva de nivel es cúbica (`xpForLevel = level³`), así que el costo del
+ * próximo nivel crece ~3L² mientras que un premio lineal crece ~15L: a Lv.5
+ * alcanzaba con una pelea y a Lv.18 hacían falta cinco. Ese es exactamente el
+ * muro reportado antes del segundo gimnasio — equipos Nv.17-18 contra zonas
+ * Nv.12-14 y una medalla que pide Nv.19+.
+ *
+ * El término cuadrático hace que el premio siga la misma forma que el costo:
+ * ~2-3 peleas por nivel de punta a punta, en vez de 1 al principio y 5+ después.
+ */
+export function xpForVictory(defeatedLevel: number): number {
+  const level = Math.max(1, Math.floor(defeatedLevel));
+  return level * (XP_PER_DEFEATED_LEVEL + level);
 }
 
 /**
@@ -299,6 +314,8 @@ export interface TurnEvent {
   ohko?: boolean;
   /** El golpe hizo retroceder al objetivo: pierde su turno. */
   causedFlinch?: boolean;
+  /** Égida de Torre absorbió por completo este movimiento dañino. */
+  shielded?: boolean;
   residualDamage?: number;
   residualHpAfter?: number;
   recoilDamage?: number;

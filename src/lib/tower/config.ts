@@ -158,7 +158,7 @@ export const COMBAT_TOWER_CONFIG: TowerConfig = {
       id: "expert",
       nameKey: "difficulties.expert",
       unlockedByDefault: false,
-      playable: false,
+      playable: true,
     },
   ],
   blessingOfferFloors: [5, 10, 15, 20, 25],

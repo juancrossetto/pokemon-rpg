@@ -139,6 +139,20 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: "sports_mma",
         iconSrc: "/nav/pvp-icon.png?v=4",
       },
+      {
+        id: "raids",
+        labelKey: "raids",
+        descriptionKey: "desc.raids",
+        href: "/raids",
+        icon: "crisis_alert",
+      },
+      {
+        id: "battleHistory",
+        labelKey: "battleHistory",
+        descriptionKey: "desc.battleHistory",
+        href: "/battle/history",
+        icon: "history",
+      },
     ],
   },
   {

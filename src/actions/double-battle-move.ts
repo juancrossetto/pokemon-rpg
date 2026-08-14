@@ -385,6 +385,9 @@ export async function submitDoubleBattleMoves(
           },
         );
 
+  const aegisReady =
+    battle.log.includes("towerAegis:ready") &&
+    !battle.log.includes("towerAegis:used");
   const resolved = resolveDoubleTurn(
     {
       playerA: playerAState,
@@ -442,6 +445,9 @@ export async function submitDoubleBattleMoves(
     ],
     battle.playerItemConsumed,
     fieldBParsed.player.itemConsumed,
+    {
+      blockFirstPlayerHit: aegisReady,
+    },
   );
 
   const { field, events } = resolved;
@@ -522,6 +528,10 @@ export async function submitDoubleBattleMoves(
   const lost = doublesLost(field);
   const log = [
     `doubleMove:${moveA.snap.name}+${moveB.snap.name}`,
+    ...(events.some((event) => event.shielded) ? ["towerAegis:used"] : []),
+    ...(aegisReady && !events.some((event) => event.shielded)
+      ? ["towerAegis:ready"]
+      : []),
     ...(won ? ["towerDoubleWin"] : []),
     ...(lost ? ["towerDoubleLoss"] : []),
   ];
@@ -758,8 +768,7 @@ export async function submitDoubleBattleMoves(
     });
   });
 
-  revalidatePath(`/${locale}/team`);
-
+  // La arena aplica el resultado optimista; evitar un RSC completo por turno.
   return buildResult({ ...resultBase, outcome: "ongoing" });
 }
 

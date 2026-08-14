@@ -13,6 +13,67 @@ export const BATTLE_AUTO_UNLOCK_LEVEL = 10;
 /** Cuántos Pokémon a ese nivel hacen falta. */
 export const BATTLE_AUTO_UNLOCK_COUNT = 3;
 
+/** AUTO reserva las pociones para una situaciÃ³n realmente comprometida. */
+export const BATTLE_AUTO_POTION_HP_PERCENT = 35;
+
+export const AUTO_STRATEGIES = ["conservative", "balanced", "aggressive"] as const;
+export type AutoStrategy = (typeof AUTO_STRATEGIES)[number];
+
+export type AutoStrategyProfile = {
+  potionHpPercent: number;
+  switchMinHpRatio: number;
+  switchImprovement: number;
+};
+
+export const AUTO_STRATEGY_PROFILES: Record<AutoStrategy, AutoStrategyProfile> = {
+  conservative: { potionHpPercent: 55, switchMinHpRatio: 0.5, switchImprovement: 1.2 },
+  balanced: {
+    potionHpPercent: BATTLE_AUTO_POTION_HP_PERCENT,
+    switchMinHpRatio: 0.35,
+    switchImprovement: 1.4,
+  },
+  aggressive: { potionHpPercent: 20, switchMinHpRatio: 0.25, switchImprovement: 1.65 },
+};
+
+export type AutoPotionStack = {
+  itemId: string;
+  quantity: number;
+  healAmount: number;
+  kind: "heal" | "revive";
+};
+
+/**
+ * Elige una cura sin desperdiciar objetos:
+ * - sÃ³lo actÃºa con 35% de PS o menos;
+ * - usa la cura mÃ¡s chica que cubra los PS faltantes;
+ * - si ninguna alcanza, usa la mÃ¡s potente disponible.
+ *
+ * Revivir queda fuera de AUTO: elegir a quiÃ©n devolver al combate es una
+ * decisiÃ³n de equipo y no debe consumir un objeto caro silenciosamente.
+ */
+export function pickAutoPotion<T extends AutoPotionStack>(
+  stacks: readonly T[],
+  currentHp: number,
+  maxHp: number,
+  strategy: AutoStrategy = "balanced",
+): T | null {
+  if (maxHp <= 0 || currentHp <= 0 || currentHp >= maxHp) return null;
+  if ((currentHp / maxHp) * 100 > AUTO_STRATEGY_PROFILES[strategy].potionHpPercent) return null;
+
+  const missingHp = maxHp - currentHp;
+  const usable = stacks
+    .filter(
+      (stack) =>
+        stack.kind === "heal" &&
+        stack.quantity > 0 &&
+        stack.healAmount > 0,
+    )
+    .sort((a, b) => a.healAmount - b.healAmount);
+  if (usable.length === 0) return null;
+
+  return usable.find((stack) => stack.healAmount >= missingHp) ?? usable.at(-1) ?? null;
+}
+
 export type AutoSwitchMember = {
   instanceId: string;
   level: number;
@@ -35,6 +96,7 @@ export function pickAutoSwitchCandidate<T extends AutoSwitchMember>(
   party: readonly T[],
   activeInstanceId: string,
   defenderTypes: string[],
+  strategy: AutoStrategy = "balanced",
 ): T | null {
   const active = party.find((member) => member.instanceId === activeInstanceId);
   if (!active || active.currentHp <= 0 || defenderTypes.length === 0) return null;
@@ -52,19 +114,30 @@ export function pickAutoSwitchCandidate<T extends AutoSwitchMember>(
       continue;
     }
     const hpRatio = member.currentHp / member.maxHp;
-    if (hpRatio < 0.35) continue;
+    const profile = AUTO_STRATEGY_PROFILES[strategy];
+    if (hpRatio < profile.switchMinHpRatio) continue;
 
     const effectiveness = bestStabEffectiveness(member.types, defenderTypes);
     if (effectiveness <= 1) continue;
 
     const score = effectiveness * member.level * (0.65 + hpRatio * 0.35);
-    if (score >= activeScore * 1.4 && score > bestScore) {
+    if (score >= activeScore * profile.switchImprovement && score > bestScore) {
       best = member;
       bestScore = score;
     }
   }
 
   return best;
+}
+
+export function shouldStopAutoBattle(
+  currentHp: number,
+  maxHp: number,
+  stopHpPercent: number,
+  hasPotion: boolean,
+): boolean {
+  if (stopHpPercent <= 0 || maxHp <= 0 || currentHp <= 0) return false;
+  return !hasPotion && (currentHp / maxHp) * 100 <= stopHpPercent;
 }
 
 let current = false;

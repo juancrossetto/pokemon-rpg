@@ -4,10 +4,14 @@
 // CTAs de salida (seguir gym / volver a curar / explorar de nuevo). El estado
 // del confirm de abandono de gym vive acá porque nadie más lo necesita.
 
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { SoftLeaveButton, BattleResult } from "@/components/battle-result";
+import {
+  SoftLeaveButton,
+  BattleResult,
+  useBattleResultLeave,
+} from "@/components/battle-result";
 import { GymBadgePopup } from "@/components/gym-badge-popup";
 import { PvpHubAnimPersist } from "@/components/pvp/pvp-hub-anim-persist";
 import { startEncounter } from "@/actions/start-encounter";
@@ -15,6 +19,71 @@ import { abandonGymRun } from "@/actions/abandon-gym-run";
 import type { GymFirstWinReward, XpSummaryEntry } from "@/actions/battle-move";
 import type { Outcome } from "@/components/battle/arena-types";
 import type { BattleHighlight } from "@/lib/battle-highlights";
+import type { BattleItemUsage } from "@/lib/battle-item-usage";
+import {
+  getServerTowerAuto,
+  getTowerAuto,
+  setTowerAuto,
+  subscribeTowerAuto,
+} from "@/lib/tower-auto";
+
+const TOWER_AUTO_RETURN_MS = 2200;
+
+function TowerAutoReturn({
+  blocked,
+  buttonLabel,
+  buttonClassName,
+}: {
+  blocked: boolean;
+  buttonLabel: string;
+  buttonClassName: string;
+}) {
+  const t = useTranslations("tower");
+  const leave = useBattleResultLeave();
+  const enabled = useSyncExternalStore(
+    subscribeTowerAuto,
+    getTowerAuto,
+    getServerTowerAuto,
+  );
+
+  useEffect(() => {
+    if (!enabled || blocked) return;
+    const timer = window.setTimeout(() => leave("/tower"), TOWER_AUTO_RETURN_MS);
+    return () => window.clearTimeout(timer);
+  }, [blocked, enabled, leave]);
+
+  return (
+    <div className="flex w-full max-w-sm flex-col items-center gap-2">
+      {enabled ? (
+        <div className="w-full rounded-xl border border-secondary/25 bg-secondary/8 px-3 py-2.5 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-secondary">
+            {t("auto.label")}
+          </p>
+          <p className="mt-0.5 text-[11px] font-semibold text-white/60">
+            {blocked ? t("auto.pausedDecision") : t("auto.returning")}
+          </p>
+          {!blocked ? (
+            <>
+              <span className="mt-2 block h-0.5 w-full overflow-hidden rounded-full bg-white/10">
+                <span className="tower-auto-return-progress block h-full rounded-full bg-secondary" />
+              </span>
+              <button
+                type="button"
+                onClick={() => setTowerAuto(false)}
+                className="mt-2 text-[10px] font-bold text-white/45 underline-offset-2 transition hover:text-white/75 hover:underline"
+              >
+                {t("auto.stop")}
+              </button>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+      <SoftLeaveButton href="/tower" className={buttonClassName}>
+        {buttonLabel}
+      </SoftLeaveButton>
+    </div>
+  );
+}
 
 export interface PvpResultInfo {
   matchId: string;
@@ -52,6 +121,7 @@ export function BattleOutcomeScreen({
   leaderPortrait,
   highlights = [],
   farmStreak = 0,
+  itemUsage = [],
 }: {
   outcome: Exclude<Outcome, "ongoing">;
   /** Si la derrota fue por reloj, no por debilitación. */
@@ -83,12 +153,12 @@ export function BattleOutcomeScreen({
   leaderPortrait: string | null;
   highlights?: BattleHighlight[];
   farmStreak?: number;
+  itemUsage?: BattleItemUsage[];
 }) {
   const t = useTranslations("battle");
   const tUx = useTranslations("ux");
   const router = useRouter();
   const [confirmLeaveGym, setConfirmLeaveGym] = useState(false);
-  void towerRunId;
 
   const idleLoss = outcome === "lost" && lossReason === "idle";
 
@@ -157,6 +227,7 @@ export function BattleOutcomeScreen({
       }
       highlights={highlights}
       farmStreak={farmStreak}
+      itemUsage={itemUsage}
     >
       {isPvpBattle && pvpResult ? (
         <PvpHubAnimPersist
@@ -189,9 +260,11 @@ export function BattleOutcomeScreen({
         />
       )}
       {outcome === "lost" && isTowerBattle ? (
-        <SoftLeaveButton href="/tower" className={ctaPrimary}>
-          {t("backToTower")}
-        </SoftLeaveButton>
+        <TowerAutoReturn
+          blocked={false}
+          buttonLabel={t("backToTower")}
+          buttonClassName={ctaPrimary}
+        />
       ) : outcome === "lost" && isPvpBattle ? (
         <SoftLeaveButton
           href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}
@@ -207,9 +280,16 @@ export function BattleOutcomeScreen({
           <p className="text-center text-[12px] text-white/45">{tUx("postBattleHeal")}</p>
         </div>
       ) : outcome === "won" && isTowerBattle ? (
-        <SoftLeaveButton href="/tower" className={ctaPrimary}>
-          {t("backToTower")}
-        </SoftLeaveButton>
+        <TowerAutoReturn
+          blocked={Boolean(
+            towerRunId &&
+              xpSummary?.some(
+                (entry) => entry.pendingMoves.length > 0 || entry.evolveOffer != null,
+              ),
+          )}
+          buttonLabel={t("backToTower")}
+          buttonClassName={ctaPrimary}
+        />
       ) : outcome === "won" && isPvpBattle ? (
         <SoftLeaveButton
           href={pvpResult ? `/pvp/${pvpResult.matchId}` : "/pvp"}

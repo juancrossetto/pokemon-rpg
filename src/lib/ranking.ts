@@ -211,7 +211,9 @@ export function rankingHref(
   page?: number,
 ): string {
   const params = new URLSearchParams({ view: category });
-  if (scope === "country" && countryCode) {
+  if (scope === "friends") {
+    params.set("scope", "friends");
+  } else if (scope === "country" && countryCode) {
     params.set("country", countryCode);
   }
   if (page && page > 1) params.set("page", String(page));

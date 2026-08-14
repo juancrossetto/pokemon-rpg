@@ -24,6 +24,8 @@ import { playLootCollectFx, rewardToLootPiece } from "@/lib/loot-fly-fx";
 import { flushPendingCoinDelta } from "@/lib/coin-fx";
 import { BattleHighlightReel } from "@/components/battle/battle-highlight-reel";
 import type { BattleHighlight } from "@/lib/battle-highlights";
+import type { BattleItemUsage } from "@/lib/battle-item-usage";
+import { PokemonImage } from "@/components/pokemon-image";
 
 export type ResultMode = "won" | "lost" | "caught" | "fled" | "trainer_cleared";
 
@@ -214,6 +216,82 @@ function LevelUpFanfare({
   );
 }
 
+function BattleItemUsageSummary({ items }: { items: BattleItemUsage[] }) {
+  const t = useTranslations("battle");
+
+  return (
+    <section className="result-stagger result-stagger--5 mt-2 rounded-xl border border-white/8 bg-black/25 px-2.5 py-2 sm:mt-3 sm:px-3 sm:py-2.5">
+      <p className="mb-1.5 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-white/40">
+        <span className="material-symbols-outlined text-[13px]!" aria-hidden>
+          backpack
+        </span>
+        {t("itemsUsedTitle")}
+      </p>
+
+      <div className="divide-y divide-white/6">
+        {items.map((entry) => {
+          const itemIcon = itemHdIconUrl(entry.itemName) ?? "/items/hd/potion.png";
+          return (
+            <div
+              key={`${entry.itemName}:${entry.targetInstanceId}:${entry.kind}:${entry.automatic}`}
+              className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-2 py-1.5 first:pt-0 last:pb-0"
+            >
+              <Image
+                src={itemIcon}
+                alt=""
+                width={32}
+                height={32}
+                unoptimized
+                className="h-8 w-8 object-contain drop-shadow-[0_2px_5px_rgba(0,0,0,0.45)]"
+              />
+
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <p className="truncate text-[11px] font-semibold text-white sm:text-[12px]">
+                    {entry.itemName}
+                  </p>
+                  {entry.quantity > 1 ? (
+                    <span className="shrink-0 font-mono text-[10px] font-bold text-white/55">
+                      x{entry.quantity}
+                    </span>
+                  ) : null}
+                  {entry.automatic ? (
+                    <span className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-1.5 py-0.5 text-[7px] font-black tracking-[0.1em] text-primary">
+                      AUTO
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-0.5 flex min-w-0 items-center gap-1">
+                  <span className="material-symbols-outlined text-[11px]! text-white/30" aria-hidden>
+                    arrow_forward
+                  </span>
+                  <PokemonImage
+                    src={entry.targetSpriteUrl}
+                    alt=""
+                    width={22}
+                    height={22}
+                    unoptimized
+                    className="h-[22px] w-[22px] shrink-0 object-contain"
+                  />
+                  <span className="truncate text-[10px] font-medium capitalize text-white/60">
+                    {entry.targetName}
+                  </span>
+                </div>
+              </div>
+
+              <span className="whitespace-nowrap font-mono text-[11px] font-bold text-emerald-300 sm:text-[12px]">
+                {entry.kind === "revive"
+                  ? t("itemsUsedRevived", { hp: entry.totalAmount })
+                  : t("itemsUsedHealed", { hp: entry.totalAmount })}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function BattleResult({
   mode,
   lossReason = null,
@@ -226,6 +304,7 @@ export function BattleResult({
   pvpRating = null,
   highlights = [],
   farmStreak = 0,
+  itemUsage = [],
   children,
 }: {
   mode: ResultMode;
@@ -241,6 +320,7 @@ export function BattleResult({
   pvpRating?: { before: number; after: number } | null;
   highlights?: BattleHighlight[];
   farmStreak?: number;
+  itemUsage?: BattleItemUsage[];
   children: ReactNode;
 }) {
   const t = useTranslations("battle");
@@ -644,6 +724,10 @@ export function BattleResult({
                 </div>
               </section>
             )}
+
+            {itemUsage.length > 0 ? (
+              <BattleItemUsageSummary items={itemUsage} />
+            ) : null}
               </>
             )}
           </div>
