@@ -5,9 +5,7 @@ import { CurrentExpedition, type CurrentExpeditionProps } from "@/components/cur
 import { ActiveTeamStrip } from "@/components/home/active-team-strip";
 import { HomeSquadCards } from "@/components/home/home-squad-cards";
 import { DailyGiftModal, type GiftModalLabels } from "@/components/events/daily-gift-modal";
-import { HomeIdentityBanner } from "@/components/home/home-identity-banner";
 import {
-  HomeDailyActions,
   HomeEventsProgress,
   type HomeEventsAdventure,
   type HomeEventsLimited,
@@ -18,11 +16,14 @@ import type { HeldItemLabels, OwnedHeldItem } from "@/components/held-item-panel
 import type { DailyState } from "@/lib/events/state";
 import type { SquadBagCounts } from "@/lib/squad-bag";
 import type {
-  HomeDailyAction,
-  HomeIdentity,
   HomeRailClanWars,
   HomeRailPvp,
 } from "@/lib/home-hub";
+import {
+  HomeEventCarousel,
+  HomeEventHero,
+  type HomeEventShowcaseData,
+} from "@/components/home/home-event-showcase";
 import { HealTutorial, JourneyOnboarding } from "@/components/journey-guidance";
 import { hasSeen } from "@/lib/journey-ux";
 import {
@@ -31,27 +32,6 @@ import {
 } from "@/components/home/home-desktop-rail";
 
 export type HomeHubLabels = {
-  identity: {
-    level: string;
-    combatPower: string;
-    clan: string;
-    noClan: string;
-    streak: string;
-    streakDays: string;
-    viewProfile: string;
-    titles: Record<string, string>;
-    pvpTiers: Record<string, string>;
-    lastAchievement: string;
-    achievements: Record<string, string>;
-  };
-  dailyActions: {
-    title: string;
-    items: Record<string, string>;
-    statusReady: string;
-    statusHealthy: string;
-    statusHealthyCooldown: string;
-    statusRush: string;
-  };
   eventsPanel: {
     progressTitle: string;
     objectivesTitle: string;
@@ -80,26 +60,22 @@ export function HomeGameHub({
   locale,
   expedition,
   routeHero,
-  raidCard,
-  nextStep,
+  eventShowcase,
   events,
   giftLabels,
   squad,
   rail,
-  identity,
   adventure,
   weekly,
   limited,
-  dailyActions,
   hubLabels,
 }: {
   locale: string;
   expedition: CurrentExpeditionProps | null;
   /** Hero mobile (Server Component armado en la page). */
   routeHero: ReactNode;
-  /** Card de incursión al costado del banner (xl+). */
-  raidCard?: ReactNode;
-  nextStep: ReactNode;
+  /** Hero superior + carrusel de eventos activos. */
+  eventShowcase: HomeEventShowcaseData;
   events: {
     daily: DailyState;
     showDailyModal: boolean;
@@ -130,22 +106,11 @@ export function HomeGameHub({
     clanWars: HomeRailClanWars;
     top: HomeRailRankEntry[];
   };
-  identity: HomeIdentity;
   adventure: HomeEventsAdventure;
   weekly: HomeEventsWeekly;
   limited: HomeEventsLimited;
-  dailyActions: HomeDailyAction[];
   hubLabels: HomeHubLabels;
 }) {
-  // Acento del banner = tipos del favorito. Vive en estado local para
-  // cambiar al marcar estrella, sin esperar el RSC refresh del home.
-  const [companionTypes, setCompanionTypes] = useState(identity.companionTypes);
-  const [lastServerTypes, setLastServerTypes] = useState(identity.companionTypes);
-  if (lastServerTypes !== identity.companionTypes) {
-    setLastServerTypes(identity.companionTypes);
-    setCompanionTypes(identity.companionTypes);
-  }
-
   const [healTutorialArmed, setHealTutorialArmed] = useState(false);
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
@@ -155,32 +120,17 @@ export function HomeGameHub({
   }, []);
   const hasFainted = squad.members.some((m) => m.currentHp <= 0);
 
-  const bannerIdentity: HomeIdentity = {
-    ...identity,
-    companionTypes,
-  };
-
   return (
     <div className="relative flex min-w-0 flex-col overflow-x-clip">
       <JourneyOnboarding onDismiss={() => setHealTutorialArmed(true)} />
       <HealTutorial active={hasFainted && healTutorialArmed} />
       <div className="relative flex min-w-0 flex-col px-margin-mobile py-2 md:px-margin-desktop md:py-5">
         <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-2.5 md:gap-5 xl:max-w-6xl xl:gap-5 2xl:max-w-7xl">
-          {/*
-            Cabecera del hub. En mobile sangra al viewport y ocupa todo; en xl+
-            cede el ancho del rail y ahí entra la card de incursión, alineada
-            con la columna de abajo. Debajo de xl el rail no existe, así que el
-            banner vuelve a lo ancho y la card no se monta.
-          */}
-          <div className="home-top-row">
-            {raidCard ? <div className="home-top-row__side">{raidCard}</div> : null}
-            <div className="home-identity-wrap -mx-margin-mobile md:-mx-margin-desktop xl:mx-0">
-              <HomeIdentityBanner
-                identity={bannerIdentity}
-                labels={hubLabels.identity}
-                frameId={bannerIdentity.homeFrameId ?? undefined}
-              />
-            </div>
+          {/* El hero es un banner panorámico: en mobile ocupaba media pantalla
+              antes de llegar a cualquier acción. Ahí el carrusel de eventos ya
+              cumple esa función. */}
+          <div className="hidden md:-mx-margin-desktop md:block xl:mx-0">
+            <HomeEventHero data={eventShowcase} locale={locale} />
           </div>
 
           {events.showDailyModal && (
@@ -206,9 +156,9 @@ export function HomeGameHub({
               {/*
                 Mobile lleva el hero de ruta (arte de mapa + CTA único); de lg
                 para arriba sigue `CurrentExpedition`, que aprovecha el ancho.
-                El `NextStepCard` también queda fuera de mobile: el hero ya es
-                el llamado a la acción y dos compitiendo es justo lo que este
-                rediseño vino a sacar.
+                La card de "próximo paso" salió del home: la aventura ya se
+                traza en la card de zona del rail, y dos CTA compitiendo era
+                justo lo que este rediseño vino a sacar.
               */}
               {routeHero}
 
@@ -218,7 +168,7 @@ export function HomeGameHub({
                 </div>
               ) : null}
 
-              {nextStep && <div className="hidden shrink-0 lg:block">{nextStep}</div>}
+              <HomeEventCarousel data={eventShowcase} />
 
               {/*
                 Mobile: squad suelto — las cards ya son el frame. El glass
@@ -235,20 +185,9 @@ export function HomeGameHub({
                 ownedHeldItems={squad.ownedHeldItems}
                 heldLabels={squad.heldLabels}
                 heal={squad.heal}
-                onCompanionTypesChange={setCompanionTypes}
               />
 
               <section className="home-ops-deck game-float-card hidden min-w-0 overflow-visible rounded-[1.25rem] p-2.5 sm:p-3 lg:block">
-                {/* Quick access / acciones diarias: solo desktop; en mobile el
-                    chrome ya cubre esos destinos y ocupaba demasiado el home. */}
-                <div className="hidden xl:block">
-                  <HomeDailyActions
-                    actions={dailyActions}
-                    labels={hubLabels.dailyActions}
-                  />
-                  <div className="home-ops-deck__rule my-2.5 sm:my-3" aria-hidden />
-                </div>
-
                 <ActiveTeamStrip
                   key={squad.layoutKey}
                   locale={locale}
@@ -262,7 +201,6 @@ export function HomeGameHub({
                   title={squad.title}
                   manageHref={squad.manageHref}
                   manageLabel={squad.manageLabel}
-                  onCompanionTypesChange={setCompanionTypes}
                 />
               </section>
 

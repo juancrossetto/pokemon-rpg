@@ -44,6 +44,8 @@ type BoardLabels = {
   medals: string;
   winsShort: string;
   lossesShort: string;
+  /** Plantilla con `{level}` para el tooltip de cada Pokémon del equipo. */
+  teamLevel: string;
 };
 
 export function RankingBoardView({
@@ -178,7 +180,7 @@ function CurrentStanding({
             {isPvp ? (
               <p className="mt-0.5 font-mono text-[10px] text-white/45">{entry.wins ?? 0}{labels.winsShort} · {entry.losses ?? 0}{labels.lossesShort} · {entry.winRate ?? 0}%</p>
             ) : (
-              <span className="sm:hidden"><TeamSprites entry={entry} compact preload /></span>
+              <span className="sm:hidden"><TeamSprites entry={entry} levelLabel={labels.teamLevel} compact preload /></span>
             )}
           </div>
         </div>
@@ -188,7 +190,7 @@ function CurrentStanding({
             <LeagueBadge tier={standing.tier} division={standing.division} label={tierLabels?.[standing.tier] ?? standing.tier} />
           </div>
         ) : (
-          <div className="hidden min-w-40 sm:block"><TeamSprites entry={entry} preload /></div>
+          <div className="hidden min-w-40 sm:block"><TeamSprites entry={entry} levelLabel={labels.teamLevel} preload /></div>
         )}
 
         <div className="col-start-2 row-start-1 flex h-full min-w-[5.75rem] flex-col justify-center gap-1.5 border-l border-white/8 pl-3 sm:col-auto sm:row-auto sm:block sm:h-auto sm:min-w-0 sm:py-1 sm:pl-5 sm:text-right">
@@ -238,13 +240,13 @@ function BoardRow({
             {isPvp ? (
               <p className="truncate text-[9px] text-white/38">{tierLabels?.[standing.tier] ?? standing.tier} {divisionRoman(standing.division)} · {secondaryMetric}</p>
             ) : (
-              <TeamSprites entry={entry} compact />
+              <TeamSprites entry={entry} levelLabel={labels.teamLevel} compact />
             )}
           </div>
         </div>
       </div>
       <div className="hidden sm:block">
-        {isPvp ? <LeagueBadge tier={standing.tier} division={standing.division} label={tierLabels?.[standing.tier] ?? standing.tier} compact /> : <TeamSprites entry={entry} />}
+        {isPvp ? <LeagueBadge tier={standing.tier} division={standing.division} label={tierLabels?.[standing.tier] ?? standing.tier} compact /> : <TeamSprites entry={entry} levelLabel={labels.teamLevel} />}
       </div>
       <p className="hidden text-center font-mono text-[11px] font-bold text-white/50 sm:block">
         {isPvp ? secondaryMetric : String(entry.medals ?? 0)}
@@ -254,11 +256,38 @@ function BoardRow({
   );
 }
 
-function TeamSprites({ entry, compact = false, preload = false }: { entry: RankingEntry; compact?: boolean; preload?: boolean }) {
+function TeamSprites({
+  entry,
+  levelLabel,
+  compact = false,
+  preload = false,
+}: {
+  entry: RankingEntry;
+  /** Plantilla con `{level}`; llega ya traducida desde la página. */
+  levelLabel: string;
+  compact?: boolean;
+  preload?: boolean;
+}) {
   const team = entry.teamSprites ?? [];
   if (!team.length) return <span className="text-[10px] text-white/25">—</span>;
+  /*
+    El tooltip suma el nivel al nombre: el sprite dice *qué* Pokémon es, pero
+    no qué tan fuerte, que es justo lo que se quiere comparar en una tabla
+    ordenada por poder de combate. El `aria-label` de la tira lleva lo mismo,
+    para que no haya dos versiones del dato.
+  */
+  /*
+    El nombre se capitaliza acá y no por CSS: `title` es un atributo de texto
+    plano, así que `text-transform` no lo toca y el tooltip mostraba
+    "gyarados · Nv. 54". Lo mismo vale para el `aria-label`.
+  */
+  const describe = (pokemon: { name: string; level: number }) =>
+    `${pokemon.name.charAt(0).toUpperCase()}${pokemon.name.slice(1)} · ${levelLabel.replace(
+      "{level}",
+      String(pokemon.level),
+    )}`;
   return (
-    <span className={`flex items-center ${compact ? "-space-x-1" : "gap-0.5"}`} aria-label={team.map((pokemon) => pokemon.name).join(", ")}>
+    <span className={`flex items-center ${compact ? "-space-x-1" : "gap-0.5"}`} aria-label={team.map(describe).join(", ")}>
       {team.map((pokemon, index) => (
         <PokemonImage
           key={`${pokemon.name}-${index}`}
@@ -268,7 +297,7 @@ function TeamSprites({ entry, compact = false, preload = false }: { entry: Ranki
           alt=""
           width={30}
           height={30}
-          title={pokemon.name}
+          title={describe(pokemon)}
           className={`${compact ? "h-[22px] w-[22px]" : "h-7 w-7"} object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)]`}
           preload={preload}
         />

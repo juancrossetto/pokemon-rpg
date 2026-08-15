@@ -209,7 +209,7 @@ export function WeeklyRaidBoard({
               </span>
               <span className="min-w-0">
                 <strong className="raid-victory__title">
-                  {t("communityDownTitle", { name: data.boss.name })}
+                  {t("communityDownTitle", { name: capitalizeName(data.boss.name) })}
                 </strong>
                 <span className="raid-victory__body">{t("communityDownBody")}</span>
               </span>
@@ -483,6 +483,15 @@ function EmptyState({
       {text}
     </p>
   );
+}
+
+/**
+ * Los nombres de especie llegan en minúscula desde PokeAPI. En el resto de la
+ * app se capitalizan por CSS, pero acá el nombre va **dentro de una frase**, y
+ * `text-transform: capitalize` la afectaba entera.
+ */
+function capitalizeName(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 /**

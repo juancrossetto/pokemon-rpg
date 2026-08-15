@@ -147,6 +147,13 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: "crisis_alert",
       },
       {
+        id: "factory",
+        labelKey: "factory",
+        descriptionKey: "desc.factory",
+        href: "/factory",
+        icon: "precision_manufacturing",
+      },
+      {
         id: "battleHistory",
         labelKey: "battleHistory",
         descriptionKey: "desc.battleHistory",

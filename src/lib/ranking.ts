@@ -36,6 +36,8 @@ export type RankingTeamSprite = {
   name: string;
   image: string;
   isShiny?: boolean;
+  /** Para el tooltip del equipo: el sprite solo no dice qué tan fuerte es. */
+  level: number;
 };
 
 export type RankingEntry = {

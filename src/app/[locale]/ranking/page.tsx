@@ -197,7 +197,10 @@ async function CombatPowerBoard({
   scope: RankingScope;
   page: number;
 }) {
-  const t = await getTranslations("ranking");
+  const [t, tBattle] = await Promise.all([
+    getTranslations("ranking"),
+    getTranslations("battle"),
+  ]);
   const audienceIds = scope === "friends" && userId
     ? await listRankingFriendIds(userId)
     : undefined;
@@ -234,6 +237,8 @@ async function CombatPowerBoard({
         medals: t("table.medals"),
         winsShort: t("ranked.winsShort"),
         lossesShort: t("ranked.lossesShort"),
+        // Plantilla cruda: `TeamSprites` la resuelve por Pokémon.
+        teamLevel: tBattle("level", { level: "{level}" }),
       }}
     />
   );
@@ -253,9 +258,10 @@ async function PvpBoardView({
   const audienceIds = scope === "friends" && userId
     ? await listRankingFriendIds(userId)
     : undefined;
-  const [t, pvpT, entries] = await Promise.all([
+  const [t, pvpT, tBattle, entries] = await Promise.all([
     getTranslations("ranking"),
     getTranslations("pvp"),
+    getTranslations("battle"),
     loadPvpBoard(country, userId, audienceIds),
   ]);
   const tierLabels = Object.fromEntries(
@@ -305,6 +311,8 @@ async function PvpBoardView({
         medals: t("table.medals"),
         winsShort: t("ranked.winsShort"),
         lossesShort: t("ranked.lossesShort"),
+        // Plantilla cruda: `TeamSprites` la resuelve por Pokémon.
+        teamLevel: tBattle("level", { level: "{level}" }),
       }}
     />
   );

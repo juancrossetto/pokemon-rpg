@@ -74,6 +74,7 @@ function pickTeamSprites(
   team: Array<{
     teamSlot: number | null;
     isShiny: boolean;
+    level: number;
     species: { name: string; spriteUrl: string };
   }>,
 ): RankingTeamSprite[] {
@@ -85,6 +86,7 @@ function pickTeamSprites(
       name: p.species.name,
       image: p.species.spriteUrl,
       isShiny: p.isShiny,
+      level: p.level,
     }));
 }
 

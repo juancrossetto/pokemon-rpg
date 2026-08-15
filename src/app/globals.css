@@ -19084,7 +19084,9 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
   font-size: 0.875rem;
   font-weight: 900;
   line-height: 1.2;
-  text-transform: capitalize;
+  /* Sin `capitalize`: acá el nombre va dentro de una frase, y la regla la
+     pisaba entera — "Articuno Cayó Entre Todos". El nombre llega ya con
+     mayúscula desde el componente. */
   color: #fef3c7;
   text-shadow: 0 1px 6px rgba(245, 158, 11, 0.4);
 }
@@ -23181,4 +23183,586 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   .objective-reward-center__label {
     animation: none;
   }
+}
+/* ---------- Fábrica de Combate ---------- */
+.factory-page {
+  --factory-cyan: #66e8ff;
+  --factory-violet: #b175ff;
+  --factory-panel: rgba(18, 20, 29, 0.94);
+}
+
+.factory-hero {
+  position: relative;
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  border: 1px solid rgba(102, 232, 255, 0.25);
+  border-radius: 26px;
+  padding: 30px 34px;
+  background:
+    linear-gradient(90deg, rgba(6, 9, 16, .98) 3%, rgba(8, 12, 22, .92) 42%, rgba(11, 15, 31, .47) 70%, rgba(24, 13, 42, .24)),
+    url("/factory/factory-banner.jpg") center 39% / cover no-repeat;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.3);
+}
+
+.factory-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0 62px, rgba(255, 255, 255, 0.018) 63px 64px);
+}
+
+.factory-hero__copy { position: relative; z-index: 1; }
+.factory-eyebrow { color: var(--factory-cyan); font-size: 10px; font-weight: 900; letter-spacing: 0.18em; text-transform: uppercase; }
+.factory-chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 7px 11px; color: rgba(255,255,255,.55); background: rgba(0,0,0,.22); }
+.factory-chip span { color: white; }
+.factory-emblem { position: relative; z-index: 1; display: grid; height: 104px; width: 104px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(102,232,255,.42); border-radius: 26px; color: white; transform: rotate(5deg); background: linear-gradient(145deg, rgba(6,16,33,.72), rgba(79,41,115,.62)); backdrop-filter: blur(8px); box-shadow: inset 0 0 28px rgba(102,232,255,.1), 0 12px 38px rgba(0,0,0,.3); }
+.factory-emblem .material-symbols-outlined { font-size: 47px; color: var(--factory-cyan); }
+.factory-emblem b { position: absolute; bottom: 12px; right: 14px; font-size: 16px; letter-spacing: .12em; }
+
+.factory-progress { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 18px auto; max-width: 720px; }
+.factory-progress span { display: grid; height: 34px; place-items: center; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; color: rgba(255,255,255,.35); background: rgba(255,255,255,.025); font-size: 11px; font-weight: 900; }
+.factory-progress .is-cleared { border-color: rgba(102,232,255,.36); color: #07131a; background: linear-gradient(135deg, var(--factory-cyan), #75c8ff); box-shadow: 0 0 15px rgba(102,232,255,.16); }
+.factory-progress .is-current { border-color: rgba(177,117,255,.65); color: white; background: rgba(177,117,255,.16); box-shadow: 0 0 17px rgba(177,117,255,.22); }
+
+.factory-stage, .factory-ranking { border: 1px solid rgba(255,255,255,.1); border-radius: 24px; background: var(--factory-panel); box-shadow: 0 18px 50px rgba(0,0,0,.24); }
+.factory-stage { padding: 26px; }
+.factory-stage-header { display: flex; align-items: center; gap: 14px; }
+.factory-stage-header > span { display: grid; height: 44px; width: 44px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(102,232,255,.28); border-radius: 13px; color: var(--factory-cyan); background: rgba(102,232,255,.07); font-size: 12px; font-weight: 900; }
+.factory-stage-header h2 { color: white; font-size: 21px; font-weight: 850; }
+.factory-stage-header p { margin-top: 2px; color: rgba(255,255,255,.48); font-size: 13px; }
+.factory-empty { display: grid; grid-template-columns: minmax(220px,.8fr) minmax(420px,1.4fr); align-items: center; gap: 22px 32px; }
+.factory-empty__head { display: flex; align-items: center; gap: 14px; }
+.factory-empty__head > .material-symbols-outlined { display: grid; height: 50px; width: 50px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(177,117,255,.3); border-radius: 15px; color: var(--factory-violet); background: rgba(177,117,255,.08); font-size: 27px; }
+.factory-empty h2 { color: white; font-size: 22px; font-weight: 850; }
+.factory-empty p { margin-top: 4px; color: rgba(255,255,255,.5); font-size: 13px; }
+.factory-how { position: relative; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 0; list-style: none; }
+.factory-how::before { content: ""; position: absolute; left: 17%; right: 17%; top: 20px; height: 1px; background: linear-gradient(90deg, var(--factory-violet), var(--factory-cyan)); opacity: .45; }
+.factory-how li { position: relative; z-index: 1; display: flex; align-items: center; gap: 9px; min-width: 0; }
+.factory-how b { display: grid; height: 40px; width: 40px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(102,232,255,.32); border-radius: 50%; color: var(--factory-cyan); background: #141722; font-size: 10px; }
+.factory-how span { display: flex; min-width: 0; flex-direction: column; }
+.factory-how strong { color: white; font-size: 12px; }
+.factory-how small { color: rgba(255,255,255,.36); font-size: 9px; }
+.factory-empty__action { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.07); padding-top: 17px; color: rgba(255,255,255,.35); font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+
+.factory-rental-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.factory-rental { position: relative; display: flex; min-width: 0; flex-direction: column; align-items: center; overflow: hidden; border: 1px solid rgba(255,255,255,.09); border-radius: 17px; padding: 11px 8px 13px; color: white; background: rgba(255,255,255,.025); transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+.factory-rental:hover { transform: translateY(-2px); border-color: rgba(102,232,255,.28); background: rgba(102,232,255,.045); }
+.factory-rental.is-selected { border-color: rgba(177,117,255,.75); background: linear-gradient(180deg, rgba(177,117,255,.14), rgba(102,232,255,.045)); box-shadow: inset 0 0 0 1px rgba(177,117,255,.15), 0 9px 24px rgba(0,0,0,.18); }
+.factory-rental__check { position: absolute; right: 8px; top: 8px; display: grid; height: 23px; width: 23px; place-items: center; border-radius: 50%; color: rgba(255,255,255,.45); background: rgba(0,0,0,.28); font-size: 15px; }
+.factory-rental.is-selected .factory-rental__check { color: white; background: var(--factory-violet); }
+.factory-rental__image { height: 88px; width: 88px; object-fit: contain; filter: drop-shadow(0 8px 10px rgba(0,0,0,.3)); }
+.factory-rental__level { color: var(--factory-cyan); font-size: 9px; font-weight: 900; letter-spacing: .1em; }
+.factory-rental strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; font-size: 14px; }
+.factory-rental__types { margin-top: 3px; color: rgba(255,255,255,.44); text-transform: uppercase; font-size: 8px; font-weight: 800; }
+.factory-rental__moves { margin-top: 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,.38); white-space: nowrap; font-size: 9px; text-transform: capitalize; }
+.factory-action-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; border-top: 1px solid rgba(255,255,255,.07); padding-top: 18px; color: rgba(255,255,255,.45); font-size: 12px; }
+
+.factory-versus { display: grid; grid-template-columns: minmax(0,1fr) 52px minmax(0,1fr); align-items: center; gap: 20px; }
+.factory-side-label { margin-bottom: 9px; color: rgba(255,255,255,.42); font-size: 9px; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
+.factory-team-row { display: flex; gap: 8px; }
+.factory-team-row--rival { justify-content: flex-end; }
+.factory-team-mon, .factory-mystery { display: grid; height: 104px; min-width: 90px; place-items: center; border: 1px solid rgba(255,255,255,.08); border-radius: 16px; background: rgba(255,255,255,.025); }
+.factory-team-mon img { height: 76px; width: 76px; object-fit: contain; }
+.factory-team-mon small { margin-top: -14px; max-width: 80px; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,.64); text-transform: capitalize; white-space: nowrap; font-size: 10px; font-weight: 750; }
+.factory-mystery { color: rgba(255,255,255,.2); font-size: 32px; font-weight: 900; }
+.factory-vs { display: grid; height: 52px; place-items: center; border-radius: 50%; color: white; background: linear-gradient(135deg, var(--factory-violet), #4f69df); box-shadow: 0 0 22px rgba(177,117,255,.2); font-size: 13px; font-weight: 950; }
+.factory-vs--active { animation: factory-versus-pulse .65s ease-in-out infinite alternate; }
+
+.factory-result-line { margin: 16px 0 5px; border-left: 2px solid var(--factory-cyan); padding-left: 10px; color: rgba(255,255,255,.58); font-size: 12px; }
+.factory-swap-row { display: grid; grid-template-columns: 140px 1fr; align-items: center; gap: 14px; margin-top: 14px; }
+.factory-swap-row > p { color: rgba(255,255,255,.48); font-size: 11px; font-weight: 800; }
+.factory-swap-row > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.factory-swap-row button { display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 6px 10px; color: white; background: rgba(255,255,255,.025); text-transform: capitalize; font-size: 12px; font-weight: 750; }
+.factory-swap-row button img { height: 52px; width: 52px; object-fit: contain; }
+.factory-swap-row button.is-selected { border-color: rgba(177,117,255,.7); background: rgba(177,117,255,.13); }
+.factory-feedback { margin-top: 12px; text-align: center; color: var(--factory-cyan); font-size: 12px; font-weight: 750; }
+
+.factory-end { display: flex; min-height: 340px; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.factory-end > .material-symbols-outlined { font-size: 58px; }
+.factory-end h2 { margin-top: 3px; color: white; font-size: 28px; font-weight: 900; }
+.factory-end > p:not(.factory-eyebrow) { margin-top: 5px; color: rgba(255,255,255,.5); font-size: 13px; }
+.factory-points-prize { display: flex; align-items: baseline; gap: 7px; margin: 18px 0; color: var(--factory-cyan); }
+.factory-points-prize b { font-size: 30px; }
+.factory-points-prize span { font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+
+/* Canje de Puntos Fábrica: la salida que le faltaba a la moneda del modo. */
+.factory-exchange {
+  margin-top: 18px;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.22);
+  padding: 22px;
+}
+.factory-exchange__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.factory-exchange__head span {
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+}
+.factory-exchange__head h2 {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+}
+.factory-exchange__balance {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: baseline;
+  gap: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.factory-exchange__balance b {
+  font-size: 0.95rem;
+  color: #fff;
+}
+.factory-exchange__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.factory-exchange__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.75rem 0.5rem 0.6rem;
+  text-align: center;
+}
+.factory-exchange__art {
+  display: grid;
+  height: 3rem;
+  width: 3rem;
+  place-items: center;
+}
+.factory-exchange__art img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5));
+}
+.factory-exchange__item strong {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: #fff;
+}
+.factory-exchange__qty {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+}
+.factory-exchange__cta {
+  margin-top: 0.4rem;
+  width: 100%;
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--color-secondary) 24%, transparent);
+  padding: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 900;
+  color: #fff;
+  transition: filter 0.15s ease;
+}
+.factory-exchange__cta:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+/* Sin puntos suficientes se apaga en vez de desaparecer: el jugador ve para
+   qué le sirve seguir jugando la corrida diaria. */
+.factory-exchange__cta:disabled {
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.factory-ranking { margin-top: 18px; overflow: hidden; padding: 22px; }
+.factory-ranking__head { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.factory-ranking__head h2 { color: white; font-size: 19px; font-weight: 850; }
+.factory-ranking__head > span { color: rgba(255,255,255,.35); font-size: 10px; }
+.factory-ranking__empty { display: flex; min-height: 46px; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid rgba(255,255,255,.06); color: rgba(255,255,255,.35); font-size: 11px; }
+.factory-ranking__empty .material-symbols-outlined { color: var(--factory-violet); font-size: 18px; }
+.factory-ranking__table { display: grid; }
+.factory-ranking__table > div { display: grid; grid-template-columns: 54px minmax(0,1fr) 80px 80px; align-items: center; min-height: 48px; border-top: 1px solid rgba(255,255,255,.06); color: rgba(255,255,255,.62); font-size: 12px; }
+.factory-ranking__table > div.is-me { margin-inline: -10px; border-color: rgba(102,232,255,.12); border-radius: 10px; padding-inline: 10px; background: rgba(102,232,255,.06); }
+.factory-ranking__labels { min-height: 27px !important; border: 0 !important; color: rgba(255,255,255,.3) !important; font-size: 8px !important; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.factory-ranking__table b { color: var(--factory-cyan); }
+.factory-ranking__trainer { display: flex; align-items: center; gap: 8px; color: white; }
+.factory-ranking__trainer i { border-radius: 999px; padding: 2px 6px; color: #73f6bd; background: rgba(115,246,189,.1); font-size: 8px; font-style: normal; }
+
+@keyframes factory-versus-pulse {
+  from { transform: scale(.94); filter: brightness(.9); box-shadow: 0 0 16px rgba(177,117,255,.18); }
+  to { transform: scale(1.08); filter: brightness(1.18); box-shadow: 0 0 36px rgba(102,232,255,.42); }
+}
+
+@media (max-width: 760px) {
+  .factory-page { padding-top: 16px; }
+  .factory-hero { min-height: 204px; padding: 22px 20px; }
+  .factory-hero__copy h1 { max-width: 230px; font-size: 36px; line-height: .95; }
+  .factory-hero__copy > p:not(.factory-eyebrow) { max-width: 245px; font-size: 12px; }
+  .factory-hero { background-position: center 31%; }
+  .factory-emblem { position: absolute; right: -22px; height: 92px; width: 92px; opacity: .72; }
+  .factory-emblem .material-symbols-outlined { font-size: 38px; }
+  .factory-progress { gap: 5px; margin-block: 12px; }
+  .factory-progress span { height: 29px; border-radius: 8px; font-size: 9px; }
+  .factory-stage { border-radius: 20px; padding: 18px 14px; }
+  .factory-stage-header h2 { font-size: 17px; }
+  .factory-stage-header p { font-size: 11px; }
+  .factory-empty { grid-template-columns: 1fr; gap: 18px; }
+  .factory-empty__head { align-items: flex-start; }
+  .factory-empty__head h2 { font-size: 18px; }
+  .factory-empty__head p { font-size: 11px; }
+  .factory-how { width: 100%; }
+  .factory-how li { flex-direction: column; gap: 5px; text-align: center; }
+  .factory-how span { align-items: center; }
+  .factory-how small { max-width: 78px; line-height: 1.2; }
+  .factory-empty__action { align-items: stretch; flex-direction: column; gap: 10px; text-align: center; }
+  .factory-empty__action button { width: 100%; }
+  .factory-rental-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .factory-rental__image { height: 82px; width: 82px; }
+  .factory-action-row { align-items: stretch; flex-direction: column; text-align: center; }
+  .factory-action-row button { width: 100%; }
+  .factory-versus { grid-template-columns: 1fr; gap: 12px; }
+  .factory-vs { height: 38px; width: 38px; justify-self: center; }
+  .factory-side-label, .factory-side-label.text-right { text-align: center; }
+  .factory-team-row, .factory-team-row--rival { justify-content: center; }
+  .factory-team-mon, .factory-mystery { height: 88px; min-width: 76px; }
+  .factory-team-mon img { height: 64px; width: 64px; }
+  .factory-team-mon small { max-width: 66px; font-size: 9px; }
+  .factory-swap-row { grid-template-columns: 1fr; }
+  .factory-swap-row > p { text-align: center; }
+  .factory-swap-row button { flex-direction: column; gap: 0; padding: 5px 3px 7px; }
+  .factory-ranking { border-radius: 20px; padding: 17px 12px; }
+  .factory-ranking__head { align-items: start; flex-direction: column; }
+  .factory-ranking__table > div { grid-template-columns: 34px minmax(0,1fr) 46px 48px; font-size: 10px; }
+  .factory-ranking__trainer { gap: 4px; }
+  .factory-ranking__trainer i { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .factory-vs--active { animation: none; }
+  .factory-rental { transition: none; }
+}
+
+/* ---------- Home 2026 · hero y carrusel de eventos ---------- */
+.home-event-hero {
+  --event-accent: var(--color-primary);
+  position: relative;
+  display: flex;
+  /* Alto suficiente para que el arte del banner se vea y no quede recortado a
+     una franja: el PNG es 2:1 y el hero llegaba a 5,7:1, o sea que `cover`
+     tiraba casi toda la imagen. */
+  min-height: 14rem;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--event-accent) 42%, rgba(255,255,255,.12));
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(circle at 76% 28%, color-mix(in srgb, var(--event-accent) 38%, transparent), transparent 34%),
+    linear-gradient(108deg, #130d25 0%, #24123f 48%, #381557 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.09), 0 20px 55px rgba(0,0,0,.34);
+  isolation: isolate;
+}
+.home-event-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(8,7,18,.96) 0%, rgba(13,8,26,.86) 42%, transparent 72%),
+    repeating-linear-gradient(118deg, transparent 0 44px, rgba(255,255,255,.022) 45px 46px);
+}
+.home-event-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 12% -55% auto;
+  height: 13rem;
+  width: 30rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--event-accent) 25%, transparent);
+  filter: blur(34px);
+  pointer-events: none;
+}
+.home-event-hero__grid {
+  position: absolute;
+  inset: 0;
+  opacity: .26;
+  background-image: linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(90deg, black, transparent 78%);
+}
+.home-event-hero__copy {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  width: 62%;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.45rem 1.8rem 1.3rem;
+}
+.home-event-hero__eyebrow,
+.home-event-carousel__head > div > span,
+.home-event-card__eyebrow {
+  color: color-mix(in srgb, var(--event-accent, var(--color-primary)) 62%, #fff);
+  font-size: .58rem;
+  font-weight: 900;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+}
+/*
+  Envuelve en dos líneas en vez de cortar con puntos suspensivos. El nombre del
+  evento es contenido variable: "Semana del explorador" pedía 775px sobre 655
+  disponibles y se leía "SEMANA DEL EXPLOR…", que es peor que ocupar un renglón
+  más. El `clamp` baja el cuerpo antes de llegar al corte.
+*/
+/*
+  Sin Grobold: el nombre del evento es contenido, no el título de la pantalla.
+  Con la display font se comía el protagonismo del arte y competía con el
+  `page-title` real. Inter en semibold alcanza para jerarquizarlo.
+*/
+.home-event-hero__title {
+  display: -webkit-box;
+  margin-top: .25rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #fff;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: clamp(1.35rem, 2.1vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1.12;
+  text-shadow: 0 4px 16px rgba(0,0,0,.55);
+}
+.home-event-hero__tagline {
+  margin-top: .42rem;
+  max-width: 36rem;
+  color: rgba(255,255,255,.68);
+  font-size: .82rem;
+  line-height: 1.35;
+}
+.home-event-hero__meta {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  margin-top: .75rem;
+  color: rgba(255,255,255,.45);
+  font-size: .62rem;
+  font-weight: 750;
+}
+.home-event-hero__meta > span { display: inline-flex; align-items: center; gap: .25rem; }
+.home-event-hero__meta .material-symbols-outlined { font-size: .8rem !important; }
+.home-event-hero__meta b { border-radius: 999px; background: color-mix(in srgb, var(--event-accent) 22%, transparent); padding: .23rem .48rem; color: #fff; }
+.home-event-hero__progress { display: block; height: .22rem; width: min(19rem, 70%); margin-top: .55rem; overflow: hidden; border-radius: 999px; background: rgba(0,0,0,.45); }
+.home-event-hero__progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--event-accent), var(--color-primary)); box-shadow: 0 0 10px var(--event-accent); }
+.home-event-hero__cta { display: inline-flex; width: fit-content; align-items: center; gap: .3rem; margin-top: .72rem; border: 1px solid rgba(255,255,255,.17); border-radius: .7rem; background: rgba(255,255,255,.09); padding: .42rem .68rem; color: #fff; font-size: .63rem; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; transition: background .18s ease, transform .18s ease; }
+.home-event-hero__cta .material-symbols-outlined { font-size: .85rem !important; }
+.home-event-hero:hover .home-event-hero__cta { transform: translateX(2px); background: color-mix(in srgb, var(--event-accent) 38%, rgba(255,255,255,.09)); }
+/* Arte del hero a sangre completa, con un velo que baja de izquierda a derecha
+   para que el texto se lea sobre cualquier zona de la imagen. */
+.home-event-hero__art { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+/*
+  El PNG viene recortado a la proporción del hero (~5:1), no 2:1 como el arte
+  original: a esta altura panorámica `cover` se comía dos tercios de la imagen
+  y no había `object-position` que lo salvara. Con el recorte hecho en el
+  archivo, `cover` sólo ajusta unos píxeles y la composición se ve entera.
+*/
+.home-event-hero__bg { object-fit: cover; object-position: center; }
+.home-event-hero__art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(95deg, rgba(6,7,12,.94) 0%, rgba(6,7,12,.82) 34%, rgba(6,7,12,.35) 62%, rgba(6,7,12,.12) 100%); }
+
+.home-event-carousel { min-width: 0; overflow: visible; }
+.home-event-carousel__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding: .05rem .15rem .15rem; }
+.home-event-carousel__head > div > span { --event-accent: var(--color-secondary); }
+.home-event-carousel__head h2 { margin-top: .1rem; color: #fff; font-size: 1rem; font-weight: 850; }
+.home-event-carousel__controls { display: flex; gap: .35rem; }
+.home-event-carousel__controls button { display: grid; height: 1.8rem; width: 1.8rem; place-items: center; border: 1px solid rgba(255,255,255,.1); border-radius: 50%; color: rgba(255,255,255,.65); background: rgba(255,255,255,.045); transition: border-color .18s ease, color .18s ease, background .18s ease; }
+.home-event-carousel__controls button:hover { border-color: color-mix(in srgb, var(--color-primary) 60%, transparent); color: #fff; background: color-mix(in srgb, var(--color-primary) 16%, transparent); }
+.home-event-carousel__controls .material-symbols-outlined { font-size: 1.05rem !important; }
+/* El `padding-top` es lo que deja salir al Pokémon por arriba sin que el
+   scroll horizontal lo recorte: `overflow-x: auto` también recorta en el eje Y. */
+.home-event-carousel__rail { display: flex; gap: .85rem; overflow-x: auto; overflow-y: visible; margin-inline: -.25rem; padding: 2.7rem .25rem .75rem; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.home-event-carousel__rail::-webkit-scrollbar { display: none; }
+.home-event-card {
+  --event-card-accent: var(--color-primary);
+  position: relative;
+  display: block;
+  min-height: 8.9rem;
+  /* Tres por fila: con dos, cada card era tan ancha que el personaje quedaba
+     chico contra el bloque de texto y no leía como protagonista. */
+  flex: 0 0 calc(33.333% - .567rem);
+  overflow: visible;
+  border-radius: 1.15rem;
+  scroll-snap-align: start;
+  isolation: isolate;
+  perspective: 900px;
+  transition: transform .24s ease, filter .24s ease;
+}
+.home-event-card:hover { z-index: 4; transform: translateY(-4px); filter: brightness(1.06); }
+/* Bloque de color plano, como la referencia: el degradé apagado con foto
+   detrás competía con el Pokémon y ninguno de los dos se leía. Cada evento
+   lleva su tono, y un velo suave a la izquierda sostiene el texto. */
+/*
+  Fondo intercalado 1 y 1, como la referencia: oscuro, violeta, oscuro, violeta.
+  El acento por evento daba cinco tonos lavados y distintos entre sí; con dos
+  colores fijos que se alternan, la tira se lee como un set.
+*/
+.home-event-card__surface { position: absolute; inset: 0; z-index: -1; overflow: hidden; border: 1px solid rgba(255,255,255,.09); border-radius: inherit; background: #1b1930; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 14px 26px rgba(0,0,0,.34); }
+.home-event-card:nth-child(even) .home-event-card__surface { border-color: rgba(255,255,255,.16); background: linear-gradient(160deg, #a855f7, #7c3aed 55%, #6d28d9); }
+.home-event-card__surface::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,8,18,.55) 0%, rgba(10,8,18,.2) 55%, transparent 88%); }
+.home-event-card:nth-child(even) .home-event-card__surface::after { background: linear-gradient(90deg, rgba(50,20,90,.5) 0%, rgba(50,20,90,.16) 55%, transparent 88%); }
+
+.home-event-card__copy { position: relative; z-index: 2; display: flex; width: 58%; min-width: 0; height: 100%; flex-direction: column; padding: 1.65rem .4rem .85rem .85rem; }
+.home-event-card__eyebrow { --event-accent: var(--event-card-accent); font-size: .47rem; }
+/* Dos líneas en vez de puntos suspensivos: a tres por fila el ancho útil es
+   ~143px y "Semana del explorador" pedía 183 — se cortaba siempre. */
+.home-event-card__copy > strong { display: -webkit-box; margin-top: .22rem; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #fff; font-size: .92rem; font-weight: 850; line-height: 1.12; }
+.home-event-card__subtitle { display: -webkit-box; margin-top: .15rem; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; color: rgba(255,255,255,.48); font-size: .6rem; line-height: 1.3; text-transform: capitalize; }
+.home-event-card__status { width: fit-content; margin-top: auto; border-radius: 999px; background: color-mix(in srgb, var(--event-card-accent) 17%, rgba(0,0,0,.25)); padding: .2rem .42rem; color: color-mix(in srgb, var(--event-card-accent) 54%, #fff); font-size: .52rem; font-weight: 850; }
+.home-event-card__progress-copy { margin-top: .42rem; color: rgba(255,255,255,.36); font-size: .48rem; font-weight: 750; }
+.home-event-card__bar { display: block; height: .2rem; margin-top: .2rem; overflow: hidden; border-radius: 999px; background: rgba(0,0,0,.5); }
+.home-event-card__bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--event-card-accent), color-mix(in srgb, var(--event-card-accent) 42%, #fff)); box-shadow: 0 0 8px var(--event-card-accent); }
+/* El personaje se ancla al piso de la card y crece hacia arriba: así rompe el
+   borde superior en vez de quedar contenido, que es lo que le da el relieve. */
+.home-event-card__art { position: absolute; z-index: 3; right: -.9rem; bottom: -.2rem; display: grid; height: 11.4rem; width: 55%; place-items: end center; pointer-events: none; transform: translateZ(42px); }
+.home-event-card__pokemon { height: 100%; width: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 18px 13px rgba(0,0,0,.7)); transform: translateY(-.35rem) scale(1.08); transition: transform .28s cubic-bezier(.2,.8,.2,1); }
+.home-event-card:hover .home-event-card__pokemon { transform: translateY(-.75rem) scale(1.13) rotate(1deg); }
+/*
+  La torre no es un sprite cuadrado sino un render 2:3. Con el mismo
+  `width:100%` que usa un Pokémon el alto resultante (262px sobre 191 de caja)
+  se iba fuera de la card por arriba y por abajo, y la base quedaba cortada.
+  Se ancla por alto y el ancho lo resuelve la proporción; sin `scale` extra,
+  que en un edificio se lee como desborde y no como relieve.
+*/
+.home-event-card--tower .home-event-card__art { right: -.1rem; bottom: .35rem; height: 11rem; width: 48%; }
+/*
+  Alto en rem, no el `height: 100%` que usan los sprites: el asset de la torre es
+  2:3 y ese porcentaje resolvía 162px sobre una caja de 144, así que la base
+  quedaba colgando fuera de la card. Con el alto fijo el ancho lo deduce la
+  proporción y nada puede desbordar.
+*/
+.home-event-card--tower .home-event-card__pokemon {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  height: 11rem;
+  width: auto;
+  max-width: 100%;
+  transform: none;
+}
+.home-event-card--tower:hover .home-event-card__pokemon { transform: translateY(-.35rem) scale(1.04); }
+/* Estado en vivo: punto + texto corto, arriba a la izquierda. Es lo que dice
+   de un vistazo si la card pide acción o ya está resuelta. */
+/* Sobresale del borde: en la referencia la etiqueta pisa la esquina de la card,
+   no vive adentro. Por eso monta sobre el borde superior izquierdo. */
+.home-event-card__live {
+  position: absolute;
+  z-index: 4;
+  top: -.55rem;
+  left: .7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(0, 0, 0, .45);
+  padding: .16rem .45rem .16rem .38rem;
+  font-size: .47rem;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .82);
+  backdrop-filter: blur(6px);
+}
+.home-event-card__live i {
+  display: block;
+  height: .32rem;
+  width: .32rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+/* Verde sólido y saturado, como el "Online" del ejemplo: es una etiqueta, no
+   un texto teñido. El punto queda en blanco para que resalte sobre el verde. */
+.home-event-card__live.is-on {
+  border-color: rgba(255, 255, 255, .3);
+  background: #3ddc5b;
+  color: #06260f;
+  box-shadow: 0 4px 12px rgba(61, 220, 91, .5);
+}
+.home-event-card__live.is-on i { background: #06260f; }
+/* Completado en fucsia de marca: gris se leía como "deshabilitado" cuando en
+   realidad es un estado logrado. */
+.home-event-card__live.is-off {
+  border-color: rgba(255, 255, 255, .3);
+  background: #e879f9;
+  color: #350c3c;
+  box-shadow: 0 4px 12px rgba(232, 121, 249, .45);
+}
+.home-event-card__live.is-off i { background: #350c3c; }
+
+
+/* Entre tablet y lg tres cards quedan demasiado angostas para el bloque de
+   texto: se vuelve a dos y el personaje mantiene su proporción. */
+@media (min-width: 768px) and (max-width: 1279.98px) {
+  .home-event-card { flex: 0 0 calc(50% - .425rem); }
+  .home-event-card__copy { width: 62%; }
+  .home-event-card__art { width: 52%; }
+}
+
+@media (max-width: 767.98px) {
+  .home-event-hero { min-height: 15.5rem; border-inline: 0; border-radius: 0 0 1.35rem 1.35rem; }
+  .home-event-hero__copy { width: 76%; padding: 1.15rem 1rem; }
+  .home-event-hero__title { font-size: clamp(1.65rem, 8vw, 2.25rem); white-space: normal; }
+  .home-event-hero__tagline { max-width: 16rem; font-size: .68rem; }
+  .home-event-hero__meta { flex-wrap: wrap; gap: .35rem; margin-top: .55rem; }
+  .home-event-hero__progress { width: 72%; }
+  .home-event-hero__bg { object-position: 62% 40%; }
+  .home-event-carousel__head { padding-inline: .05rem; }
+  .home-event-carousel__head h2 { font-size: .9rem; }
+  .home-event-carousel__rail { gap: .7rem; margin-inline: calc(var(--spacing-margin-mobile) * -1); padding-inline: var(--spacing-margin-mobile); scroll-padding-inline: var(--spacing-margin-mobile); }
+  /* A 85vw una sola card se comía el ancho de pantalla y el alto la mitad del
+     scroll útil. A ~72vw se ve que hay una segunda card atrás —que es lo que
+     invita a deslizar— y la tira deja de dominar el home. */
+  .home-event-card { min-height: 8.2rem; flex-basis: min(72vw, 17rem); }
+  .home-event-card__copy { width: 66%; padding-top: 1.35rem; padding-left: .85rem; }
+  .home-event-card__art { right: -.5rem; height: 9.6rem; width: 52%; }
+}
+
+@media (min-width: 768px) and (max-width: 1279.98px) {
+  .home-event-card { flex-basis: min(22rem, calc(50% - .425rem)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-event-hero__cta,
+  .home-event-card,
+  .home-event-card__pokemon { transition: none; }
+  .home-event-hero:hover .home-event-hero__cta,
+  .home-event-card:hover,
+  .home-event-card:hover .home-event-card__pokemon { transform: none; }
 }

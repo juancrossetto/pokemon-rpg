@@ -23,6 +23,7 @@ import {
   raidBossForWeek,
 } from "@/lib/raids/config";
 import { raidDamageDealt, raidSettleStatement } from "@/lib/raids/settle";
+import { buildRaidXpUpdates } from "@/lib/raids/xp";
 
 export type RaidActionResult =
   | { ok: true; attemptsUsed: number; totalDamage: number; coins?: number }
@@ -186,8 +187,10 @@ export async function abandonWeeklyRaidBattle(
     select: {
       id: true,
       raidWeekKey: true,
+      wildLevel: true,
       wildMaxHp: true,
       wildCurrentHp: true,
+      participantIds: true,
       pokemonInstanceId: true,
     },
   });
@@ -200,14 +203,40 @@ export async function abandonWeeklyRaidBattle(
     damage,
   });
 
+  // Retirarse pierde el intento, no la experiencia del daño ya hecho: si no,
+  // la salida que agregamos para no quedar trabado castigaría dos veces.
+  const raidXp = await buildRaidXpUpdates(prisma, {
+    userId,
+    bossLevel: battle.wildLevel,
+    damageDealt: damage,
+    bossMaxHp: battle.wildMaxHp,
+    participantIds: battle.participantIds,
+  });
+
+  /*
+    El cierre va con guarda de estado, no con un `update` a ciegas.
+
+    Con AUTO encendido puede haber un turno en vuelo cuando el jugador se
+    retira: sin la guarda, los dos cierres acreditan daño y XP sobre el mismo
+    intento. `updateMany` con `status: "ACTIVE"` hace que sólo uno gane, y si
+    perdemos la carrera no se acredita nada acá — el turno que ganó ya lo hizo.
+  */
   try {
-    await prisma.$transaction([
-      prisma.battleSession.update({
-        where: { id: battle.id },
+    const closed = await prisma.$transaction(async (tx) => {
+      const result = await tx.battleSession.updateMany({
+        where: { id: battle.id, status: "ACTIVE" },
         data: { status: "LOST", turnDeadlineAt: null },
-      }),
-      ...(settle ? [settle] : []),
-    ]);
+      });
+      if (result.count === 0) return false;
+      if (settle) await settle;
+      for (const update of raidXp.updates) await update;
+      return true;
+    });
+    if (!closed) {
+      revalidateCombatUi(locale);
+      redirect({ href: "/raids", locale });
+      return;
+    }
   } catch (error) {
     if (isDatabaseBusyError(error)) return { ok: false, error: "busy" };
     throw error;

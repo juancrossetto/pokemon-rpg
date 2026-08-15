@@ -11,7 +11,7 @@ import {
   wildStageColumns,
   wildStagesFromSession,
 } from "@/lib/battle-stages";
-import { calculateMaxHp, xpForLevel, UNSPENT_POINTS_PER_LEVEL } from "@/lib/stats";
+import { calculateMaxHp } from "@/lib/stats";
 import {
   distributeVictoryXpShares,
   effectivePp,
@@ -48,6 +48,8 @@ import type { EvolveOffer, LevelUpMoveInfo, KnownMoveInfo } from "@/lib/level-up
 import { resolveLevelUpEffects } from "@/lib/level-up";
 import { lockUsers } from "@/lib/db-locks";
 import { raidDamageDealt, raidSettleStatement } from "@/lib/raids/settle";
+import { applyXpGain } from "@/lib/battle-xp";
+import { buildRaidXpUpdates } from "@/lib/raids/xp";
 import { notifySettledPvp, settlePvpMatch } from "@/lib/pvp/settle";
 import { settleClanWarSlot } from "@/lib/clan-war/settle-slot";
 import { parseTeamSnap, type PvpTeamMemberSnap } from "@/lib/pvp/team";
@@ -154,39 +156,6 @@ export interface UseMoveResult {
     bossDefeated: boolean;
     ended: boolean;
   } | null;
-}
-
-function applyXpGain(
-  currentXp: number,
-  currentLevel: number,
-  currentHp: number,
-  unspentPoints: number,
-  baseHp: number,
-  ptConstitution: number,
-  xpEarned: number,
-) {
-  const newXpTotal = currentXp + xpEarned;
-  let newLevel = currentLevel;
-  let newUnspentPoints = unspentPoints;
-  let newMaxHp = calculateMaxHp(baseHp, newLevel, ptConstitution);
-  let newCurrentHp = currentHp;
-
-  while (newXpTotal >= xpForLevel(newLevel + 1)) {
-    newLevel += 1;
-    newUnspentPoints += UNSPENT_POINTS_PER_LEVEL;
-    const previousMaxHp = newMaxHp;
-    newMaxHp = calculateMaxHp(baseHp, newLevel, ptConstitution);
-    newCurrentHp += newMaxHp - previousMaxHp;
-  }
-
-  return {
-    newXpTotal,
-    newLevel,
-    newUnspentPoints,
-    newMaxHp,
-    newCurrentHp,
-    leveledUpTo: newLevel > currentLevel ? newLevel : null,
-  };
 }
 
 function sideSpeed(side: SideBattleState): number {
@@ -685,6 +654,31 @@ async function resolveBattleMove(
     const settle = ended
       ? raidSettleStatement(prisma, { userId, weekKey: raidWeekKey, damage: raidDamage })
       : null;
+
+    /*
+      XP del intento, proporcional al daño hecho.
+
+      El pozo no sale de un KO: la incursión casi nunca termina con el jefe
+      debilitado, termina cuando se acaban los turnos. Sin esto, diez turnos
+      contra un legendario no daban un solo punto de experiencia. Lo reparte el
+      mismo helper que usa la retirada voluntaria.
+    */
+    const raidXp = ended
+      ? await buildRaidXpUpdates(prisma, {
+          userId,
+          bossLevel: battle.wildLevel,
+          damageDealt: raidDamage,
+          bossMaxHp: battle.wildMaxHp,
+          participantIds: battle.participantIds,
+          activeInstanceId: instance.id,
+          activeHp: playerHp,
+        })
+      : { updates: [], activeGain: null };
+    if (raidXp.activeGain) {
+      playerMaxHp = raidXp.activeGain.maxHp;
+      leveledUpTo = raidXp.activeGain.leveledUpTo;
+      xpGained = raidXp.activeGain.xp;
+    }
     await prisma.$transaction([
       prisma.pokemonInstance.update({
         where: { id: instance.id },
@@ -701,6 +695,7 @@ async function resolveBattleMove(
         },
       }),
       ...(settle ? [settle] : []),
+      ...raidXp.updates,
     ]);
 
     if (ended) {
@@ -714,8 +709,8 @@ async function resolveBattleMove(
       playerMaxHp,
       wildMaxHp: battle.wildMaxHp,
       outcome: ended ? "raid_ended" : mustSwitch ? "fainted" : "ongoing",
-      leveledUpTo: null,
-      xpGained: null,
+      leveledUpTo,
+      xpGained,
       xpSummary: null,
       coinsGained: 0,
       badgeEarned: false,

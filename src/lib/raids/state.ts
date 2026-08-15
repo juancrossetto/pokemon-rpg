@@ -66,12 +66,20 @@ export async function loadWeeklyRaid(userId: string) {
     }),
     prisma.weeklyRaidScore.findUnique({ where: { userId_weekKey: { userId, weekKey: key } } }),
     prisma.weeklyRaidScore.aggregate({ where: { weekKey: key }, _sum: { totalDamage: true } }),
+    // `totalDamage > 0`: la fila del puntaje se crea al **arrancar** el intento,
+    // así que quien abre uno y no llega a pegar aparecía en la tabla con 0.
     prisma.weeklyRaidScore.findMany({
-      where: { weekKey: key }, orderBy: { totalDamage: "desc" }, take: 10,
+      where: { weekKey: key, totalDamage: { gt: 0 } },
+      orderBy: { totalDamage: "desc" },
+      take: 10,
       include: { user: { select: { username: true, avatarId: true, country: true } } },
     }),
     prisma.weeklyRaidScore.findMany({
-      where: { weekKey: key, user: { clanMembership: { isNot: null } } },
+      where: {
+        weekKey: key,
+        totalDamage: { gt: 0 },
+        user: { clanMembership: { isNot: null } },
+      },
       orderBy: { totalDamage: "desc" }, take: 200,
       include: {
         user: {

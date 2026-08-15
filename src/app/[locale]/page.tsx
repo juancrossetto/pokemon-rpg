@@ -13,9 +13,8 @@ import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { buildExpeditionView } from "@/lib/campaign";
 import { loadMapLocations } from "@/lib/campaign/map-data";
 import { loadEventsSummary } from "@/lib/events/state";
-import { getNextStep, isEliteMilestone } from "@/lib/next-step";
+import { isEliteMilestone } from "@/lib/next-step";
 import { HomeGameHub } from "@/components/home/home-game-hub";
-import { NextStepCard } from "@/components/home/next-step-card";
 import { PvpRankUpHost } from "@/components/pvp/pvp-rank-up-host";
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
@@ -23,72 +22,27 @@ import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolu
 import { loadCombatPowerBoard } from "@/lib/ranking-boards";
 import { loadTrainerStats } from "@/lib/achievements/stats";
 import {
-  buildAchievements,
-  rankProgress,
-  trainerTitle,
 } from "@/lib/trainer-profile";
-import { pokemonPower } from "@/lib/ranking";
-import { regionMeta } from "@/lib/campaign/regions";
 import { regionBadgeTarget } from "@/lib/regions";
 import { resolveItemDisplayName } from "@/lib/shop";
 import { evaluateObjectives } from "@/lib/campaign/objectives";
 import { buildAdventureGuide } from "@/lib/adventure-guide";
-import { avatarById } from "@/lib/avatars";
-import { findNavItem } from "@/lib/navigation";
-import { dayKey, serverNow } from "@/lib/events/time";
 import {
   healCooldownMsLeft,
   healRushCost,
-  isPokemonCenterFree,
-  minutesLeft,
 } from "@/lib/healing";
 import type {
-  HomeDailyAction,
-  HomeIdentity,
   HomeObjective,
   HomeRailPvp,
   HomeRailPvpMatch,
 } from "@/lib/home-hub";
 import type { HomeHubLabels } from "@/components/home/home-game-hub";
-import { rankForRating, type PvpTier } from "@/lib/pvp/tiers";
+import { rankForRating } from "@/lib/pvp/tiers";
 import { loadRaidHomeCard } from "@/lib/raids/state";
-import { HomeRaidCard } from "@/components/home/home-raid-card";
+import { loadSafariHomeCard } from "@/lib/safari-home";
+import { loadTowerHomeCard } from "@/lib/tower-home";
 
 const TEAM_SIZE = 6;
-
-/** Racha de días consecutivos con reclamo diario (hoy o ayer como ancla). */
-async function loadLoginStreak(userId: string): Promise<number> {
-  const rows = await prisma.dailyRewardClaim.findMany({
-    where: { userId },
-    select: { dayKey: true },
-    distinct: ["dayKey"],
-    orderBy: { dayKey: "desc" },
-    take: 60,
-  });
-  if (rows.length === 0) return 0;
-  const keys = new Set(rows.map((r) => r.dayKey));
-  const today = dayKey(serverNow());
-  const yesterdayDate = new Date(serverNow().getTime() - 86_400_000);
-  const yesterday = dayKey(yesterdayDate);
-
-  let anchor = "";
-  if (keys.has(today)) anchor = today;
-  else if (keys.has(yesterday)) anchor = yesterday;
-  else return 0;
-
-  let streak = 0;
-  let current = anchor;
-  while (keys.has(current)) {
-    streak += 1;
-    const parts = current.split("-");
-    const year = Number(parts[0]);
-    const month = Number(parts[1]);
-    const day = Number(parts[2]);
-    const previous = new Date(Date.UTC(year, month - 1, day - 1));
-    current = previous.toISOString().slice(0, 10);
-  }
-  return streak;
-}
 
 export default async function Home() {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
@@ -167,23 +121,19 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   const [
     eventsSummary,
     tEvents,
-    tProfile,
     tCampaign,
     tTypes,
-    tPvp,
     userRow,
     trainerStats,
-    achievementClaims,
-    loginStreak,
     recentPvpMatches,
     raidCard,
+    safariCard,
+    towerCard,
   ] = await Promise.all([
     loadEventsSummary(userId),
     getTranslations("events"),
-    getTranslations("profile"),
     getTranslations("campaign"),
     getTranslations("pokedex.pokemonTypes"),
-    getTranslations("pvp"),
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: {
@@ -202,11 +152,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       },
     }),
     loadTrainerStats(prisma, userId),
-    prisma.achievementClaim.findMany({
-      where: { userId },
-      select: { achievementId: true },
-    }),
-    loadLoginStreak(userId),
     prisma.pvpMatch.findMany({
       where: {
         OR: [{ challengerId: userId }, { opponentId: userId }],
@@ -230,6 +175,8 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       },
     }),
     loadRaidHomeCard(userId),
+    loadSafariHomeCard(userId),
+    loadTowerHomeCard(userId),
   ]);
 
   const giftLabels = {
@@ -301,9 +248,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
    * terminada y no ofrece a dónde seguir.
    */
   const badgeTotal = regionBadgeTarget(progress.currentRegionId);
-  const regularBadgeCount = regionBadges.filter(
-    (b) => !b.gym.isElite && b.gym.order <= badgeTotal,
-  ).length;
   const eliteGym =
     milestone && isEliteMilestone(milestone, badgeTotal)
       ? await prisma.gym.findFirst({
@@ -328,13 +272,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           select: { leaderName: true, type: true },
         })
       : null;
-  const nextStep = getNextStep({
-    teamSize: pokemon.length,
-    badgeCount: regularBadgeCount,
-    totalBadges: badgeTotal,
-    milestone: milestone ?? null,
-    eliteGymHref,
-  });
   const topBoard = await loadCombatPowerBoard("", userId);
   const railTop = topBoard.slice(0, 5).map((row) => ({
     position: row.position,
@@ -603,45 +540,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       })()
     : null;
 
-  const combatPower = pokemon.reduce(
-    (sum, p) =>
-      sum +
-      pokemonPower({
-        level: p.level,
-        ptStrength: p.ptStrength,
-        ptDexterity: p.ptDexterity,
-        ptIntelligence: p.ptIntelligence,
-        ptSpeed: p.ptSpeed,
-        ptConstitution: p.ptConstitution,
-        species: {
-          baseHp: p.species.baseHp,
-          baseAttack: p.species.baseAttack,
-          baseDefense: p.species.baseDefense,
-          baseSpAtk: p.species.baseSpAtk,
-          baseSpDef: p.species.baseSpDef,
-          baseSpeed: p.species.baseSpeed,
-        },
-      }),
-    0,
-  );
-
-  const statsWithPower = { ...trainerStats, power: combatPower };
-  const rank = rankProgress(statsWithPower.badges, statsWithPower.totalGyms);
-  const titleId = trainerTitle(statsWithPower);
-  const achievements = buildAchievements(
-    statsWithPower,
-    achievementClaims.map((c) => c.achievementId),
-  );
-  const lastAchievement =
-    achievements.find((a) => a.unlocked)?.id ??
-    achievements.find((a) => a.pct > 0)?.id ??
-    null;
-
-  const region = regionMeta(progress.currentRegionId);
-  const avatar = avatarById(userRow.avatarId);
-  const companion =
-    members.find((m) => m.isFavorite) ?? members[0] ?? null;
-
   const dateLabelFmt = new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "2-digit",
@@ -673,32 +571,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     selfAvatarId: userRow.avatarId,
     selfCountry: userRow.country ?? "",
     recent: railPvpRecent,
-  };
-
-  const identity: HomeIdentity = {
-    username: userRow.username || username,
-    avatarId: userRow.avatarId,
-    avatarSrc: avatar?.src ?? null,
-    avatarProfileSrc: avatar?.profileSrc ?? null,
-    avatarStageSrc: avatar?.stageSrc ?? null,
-    level: statsWithPower.topLevel,
-    titleId,
-    rankTierId: rank.tier.id,
-    pvpTier: pvpStanding.tier,
-    pvpDivision: pvpStanding.division,
-    pvpRating: trainerStats.pvpRating,
-    regionId: region.id,
-    regionLabel: tCampaign(`regions.${region.id}`),
-    combatPower,
-    clanTag: userRow.clanMembership?.clan.tag ?? null,
-    clanName: userRow.clanMembership?.clan.name ?? null,
-    clanEmblem: userRow.clanMembership?.clan.emblem ?? null,
-    loginStreak,
-    lastAchievementId: lastAchievement,
-    country: userRow.country,
-    companionTypes: companion?.types ?? [],
-    homeBannerId: userRow.homeBannerId,
-    homeFrameId: userRow.homeFrameId,
   };
 
   const myClanId = userRow.clanMembership?.clan.id ?? null;
@@ -764,9 +636,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     : null;
   const objectiveZoneId = farmingZone?.id ?? null;
 
-  const gymReady = milestone?.kind === "gym";
-  const dailyCanClaim = eventsSummary.daily.canClaim;
-
   const teamMaxLevel = pokemon.reduce((max, p) => Math.max(max, p.level), 0);
   const hurtCount = pokemon.filter((p) => {
     const maxHp = calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution);
@@ -774,139 +643,9 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   }).length;
   const needsHealing = hurtCount > 0;
   const healCdMs = healCooldownMsLeft(userRow.lastHealAt);
-  const healNoviceFree = isPokemonCenterFree(teamMaxLevel);
-  const healReady = needsHealing && (healNoviceFree || healCdMs <= 0);
   const healRush = healRushCost(hurtCount);
 
-  const dailyActions: HomeDailyAction[] = [
-    {
-      id: "daily",
-      href: null,
-      openDailyGift: true,
-      iconSrc: "/nav/event-icon.png?v=4",
-      labelKey: "daily",
-      status: dailyCanClaim
-        ? t("hub.dailyActions.statusAvailable")
-        : t("hub.dailyActions.statusDone"),
-      hot: dailyCanClaim,
-    },
-    {
-      id: "pvp",
-      href: findNavItem("pvp")?.href ?? "/pvp",
-      iconSrc: findNavItem("pvp")?.iconSrc ?? "/nav/pvp-icon.png?v=4",
-      labelKey: "pvp",
-      status: t("hub.dailyActions.statusBadges", {
-        count: railPvp.wins,
-        total: Math.max(railPvp.wins + railPvp.losses, 1),
-      }),
-      hot: false,
-    },
-    {
-      id: "gyms",
-      href: findNavItem("gyms")?.href ?? "/gyms",
-      iconSrc: findNavItem("gyms")?.iconSrc ?? "/nav/gym-icon.png?v=4",
-      labelKey: "gyms",
-      status: gymReady
-        ? t("hub.dailyActions.statusReady")
-        : t("hub.dailyActions.statusBadges", {
-            count: regularBadgeCount,
-            total: badgeTotal,
-          }),
-      hot: gymReady,
-    },
-    {
-      id: "heal",
-      href: null,
-      iconSrc: "/nav/chansey-icon.png",
-      labelKey: "heal",
-      status: !needsHealing
-        ? healCdMs > 0 && !healNoviceFree
-          ? t("hub.dailyActions.statusHealthyCooldown", {
-              time: `${minutesLeft(healCdMs)}:00`,
-            })
-          : t("hub.dailyActions.statusHealthy")
-        : healReady
-          ? t("hub.dailyActions.statusReady")
-          : t("hub.dailyActions.statusRush", { cost: healRush }),
-      hot:
-        healReady ||
-        (needsHealing &&
-          !healNoviceFree &&
-          healCdMs > 0 &&
-          userRow.coins >= healRush),
-      heal: {
-        needsHealing,
-        cooldownMsLeft: healCdMs,
-        rushCost: healRush,
-        coins: userRow.coins,
-        teamMaxLevel,
-      },
-    },
-    // Amigos y Mercado vivían acá sin `status`: no son acciones diarias sino
-    // atajos, y el navbar ya los tiene (Comunidad / Comercio). Racha pasó al
-    // banner de identidad; el 4º slot es el Centro Pokémon (curar desde home).
-  ];
-
-  const titleKeys = [
-    "rookie",
-    "trainer",
-    "collector",
-    "gymLeaderBane",
-    "researcher",
-    "duelist",
-    "legendTamer",
-    "shinyHunter",
-    "mythKeeper",
-    "champion",
-  ] as const;
-  const achievementLabelEntries = Object.fromEntries(
-    achievements.map((a) => [a.id, tProfile(`achievements.${a.id}.name`)]),
-  );
-
-  const pvpTierKeys = [
-    "beginner",
-    "rising",
-    "advanced",
-    "elite",
-    "bronzeMaster",
-    "crystalMaster",
-    "champion",
-    "legendary",
-  ] as const satisfies readonly PvpTier[];
   const hubLabels: HomeHubLabels = {
-    identity: {
-      level: t("hub.identity.level"),
-      combatPower: t("hub.identity.combatPower"),
-      clan: t("hub.identity.clan"),
-      noClan: t("hub.identity.noClan"),
-      streak: t("hub.identity.streak"),
-      streakDays: t("hub.identity.streakDays", { n: "{n}" }),
-      viewProfile: t("hub.identity.viewProfile"),
-      titles: Object.fromEntries(titleKeys.map((k) => [k, tProfile(`titles.${k}`)])),
-      pvpTiers: Object.fromEntries(
-        pvpTierKeys.map((k) => [k, tPvp(`tiers.${k}`)]),
-      ),
-      lastAchievement: t("hub.identity.lastAchievement"),
-      achievements: achievementLabelEntries,
-    },
-    dailyActions: {
-      title: t("hub.dailyActions.title"),
-      statusReady: t("hub.dailyActions.statusReady"),
-      statusHealthy: t("hub.dailyActions.statusHealthy"),
-      statusHealthyCooldown: t("hub.dailyActions.statusHealthyCooldown", {
-        time: "{time}",
-      }),
-      statusRush: t("hub.dailyActions.statusRush", { cost: "{cost}" }),
-      items: {
-        daily: t("hub.dailyActions.items.daily"),
-        pvp: t("hub.dailyActions.items.pvp"),
-        gyms: t("hub.dailyActions.items.gyms"),
-        heal: t("hub.dailyActions.items.heal"),
-        streak: t("hub.dailyActions.items.streak"),
-        friends: t("hub.dailyActions.items.friends"),
-        market: t("hub.dailyActions.items.market"),
-      },
-    },
     eventsPanel: {
       progressTitle: t("hub.objectives.progressTitle"),
       objectivesTitle: t("hub.objectives.title"),
@@ -962,8 +701,24 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           />
         ) : null
       }
-      raidCard={<HomeRaidCard boss={raidCard} />}
-      nextStep={nextStep.standalone ? <NextStepCard step={nextStep} /> : null}
+      eventShowcase={{
+        hero: {
+          name: tEvents(`limited.catalog.${eventsSummary.limited.nameKey}`),
+          tagline: tEvents(`limited.catalog.${eventsSummary.limited.taglineKey}`),
+          accent: eventsSummary.limited.accent,
+          endsAt: eventsSummary.limited.endsAt,
+          progress: Math.round(
+            eventsSummary.limited.missions.reduce(
+              (sum, mission) => sum + Math.min(1, mission.current / Math.max(1, mission.target)),
+              0,
+            ) / Math.max(1, eventsSummary.limited.missions.length) * 100,
+          ),
+          claimable: eventsSummary.limited.missions.filter((mission) => mission.claimable).length,
+        },
+        raid: raidCard,
+        safari: safariCard,
+        tower: towerCard,
+      }}
       events={{
         daily: eventsSummary.daily,
         showDailyModal: eventsSummary.daily.canClaim,
@@ -996,7 +751,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         clanWars: clanWarsRail,
         top: railTop,
       }}
-      identity={identity}
       adventure={{
         zoneId: objectiveZoneId,
         zoneName: objectiveZoneName,
@@ -1031,7 +785,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           href: m.href,
         })),
       }}
-      dailyActions={dailyActions}
       hubLabels={hubLabels}
     />
     </>
