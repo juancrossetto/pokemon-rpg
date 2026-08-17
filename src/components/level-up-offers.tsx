@@ -1,15 +1,14 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useState, useTransition, type CSSProperties } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { confirmDeclineMove, confirmEvolve, confirmLearnMove } from "@/actions/level-up-offers";
 import { typeColor } from "@/lib/type-colors";
-import {
-  showdownCategoryIconUrl,
-  showdownTypeSymbolUrl,
-} from "@/lib/type-icons";
+import { TypeSymbol } from "@/components/type-symbol";
+import { PokemonImage } from "@/components/pokemon-image";
+import { showdownCategoryIconUrl } from "@/lib/type-icons";
 import { formatMoveName } from "@/lib/format-move-name";
 import { formatMoveEffectText } from "@/lib/format-move-effect";
 import {
@@ -707,15 +706,7 @@ function TypeOrb({
       }}
       title={title ?? type}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={showdownTypeSymbolUrl(type)}
-        alt=""
-        width={px}
-        height={px}
-        className={`${icon} object-contain brightness-125`}
-        decoding="async"
-      />
+      <TypeSymbol type={type} size={px} className={icon} />
     </span>
   );
 }
@@ -1177,13 +1168,14 @@ function EvolveReveal({
       <div className="evolve-reveal-pop relative mx-auto flex flex-col items-center">
         <div className="relative flex h-28 w-28 items-center justify-center">
           <span className="absolute inset-2 rounded-full bg-tertiary/25 blur-xl" />
-          <Image
+          <PokemonImage
             src={spriteFor(spriteUrl, isShiny)}
+            speciesName={name}
+            isShiny={isShiny}
             alt={name}
             width={112}
             height={112}
             className="relative h-28 w-28 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.55)]"
-            unoptimized
           />
         </div>
         <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
@@ -1223,13 +1215,13 @@ function EvolveSpriteSlot({
           <span className="absolute inset-0 rounded-full bg-tertiary/20 blur-md" />
         )}
         {src ? (
-          <Image
+          <PokemonImage
             src={src}
+            speciesName={name}
             alt={name}
             width={px}
             height={px}
             className={`relative ${img} object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.5)]`}
-            unoptimized
           />
         ) : (
           <span className="relative text-label-sm capitalize text-on-surface">{name}</span>

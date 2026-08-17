@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { RewardList } from "@/components/events/reward-chip";
 import type { CalendarLabels } from "@/components/events/daily-calendar";
 import type { DailyDayState } from "@/lib/events/state";

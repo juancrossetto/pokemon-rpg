@@ -1,11 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import type { CSSProperties } from "react";
 import type { DexRarity } from "@/lib/pokedex";
 import { typeColor } from "@/lib/type-colors";
-import { showdownTypeSymbolUrl } from "@/lib/type-icons";
-import { uiSpriteUrl } from "@/lib/sprites";
+import { PokemonImage } from "@/components/pokemon-image";
+import { TypeSymbol } from "@/components/type-symbol";
 import { TypeAura } from "@/components/type-aura";
 import { useTypeLabel } from "@/hooks/use-type-label";
 
@@ -120,12 +119,13 @@ export function TrainerFavoriteCard({
           style={{ background: accent }}
         />
 
-        <Image
-          src={uiSpriteUrl(spriteUrl, isShiny)}
+        <PokemonImage
+          src={spriteUrl}
+          speciesName={name}
+          isShiny={isShiny}
           alt={name}
           width={200}
           height={200}
-          unoptimized
           priority
           className="tp-sprite-float relative z-[1] h-[148px] w-[148px] object-contain drop-shadow-[0_20px_36px_rgba(0,0,0,0.55)] sm:h-[168px] sm:w-[168px]"
         />
@@ -165,14 +165,7 @@ export function TrainerFavoriteCard({
                 }}
                 title={typeLabel(type)}
               >
-                <Image
-                  src={showdownTypeSymbolUrl(type)}
-                  alt=""
-                  width={14}
-                  height={14}
-                  unoptimized
-                  className="h-3.5 w-3.5 object-contain brightness-110"
-                />
+                <TypeSymbol type={type} size={14} className="h-3.5 w-3.5" />
               </span>
             );
           })}

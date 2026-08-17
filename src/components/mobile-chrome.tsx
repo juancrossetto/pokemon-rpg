@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useEffect, useLayoutEffect, useRef, useState, type AnimationEvent, type TouchEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";

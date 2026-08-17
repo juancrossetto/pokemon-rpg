@@ -4,7 +4,7 @@
 // placas de HP y badges de estado. No tienen estado propio — todo lo delicado
 // (timeline de animaciones) queda en battle-arena.tsx.
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { PokemonImage } from "@/components/pokemon-image";
 import { type ReactNode } from "react";
 import { useTranslations } from "next-intl";
@@ -515,8 +515,9 @@ export function PartyIcon({
         }
       >
         {spriteUrl ? (
-          <Image
+          <PokemonImage
             src={spriteUrl}
+            speciesName={name}
             alt={name}
             width={compact ? 72 : 56}
             height={compact ? 72 : 56}

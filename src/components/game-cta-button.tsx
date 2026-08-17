@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 

@@ -39,6 +39,15 @@ export function gymBattleEnergyCost(kind: "trainer" | "leader"): number {
 /** Costo por combate de PvP. */
 export const PVP_BATTLE_ENERGY_COST = 1;
 
+/** Un lance de caña en el Parque. */
+export const FISHING_ENERGY_COST = 1;
+
+/** Una casilla excavada en la mina. */
+export const MINE_DIG_ENERGY_COST = 1;
+
+/** Un combate simulado de Recinto (Palacio o Dome). */
+export const FRONTIER_ENERGY_COST = 1;
+
 /** Cooldown entre avisos in-app de "energía llena" (anti-spam). */
 export const ENERGY_FULL_NOTIFY_COOLDOWN_MS = 6 * 60 * 60 * 1000;
 

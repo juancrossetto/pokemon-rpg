@@ -9,10 +9,11 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { createPortal } from "react-dom";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { PokemonImage } from "@/components/pokemon-image";
 import { itemDisplayUrl } from "@/lib/item-sprites";
 import { formatMoveName } from "@/lib/format-move-name";
 import { formatMoveEffectText } from "@/lib/format-move-effect";
@@ -39,7 +40,6 @@ import { EvolvePopup } from "@/components/evolve-popup";
 import { showToast } from "@/lib/app-toast";
 import { playUiSfx } from "@/lib/battle-sfx";
 import { ItemEvolutionRecipes } from "@/components/item-evolution-recipes";
-import { uiSpriteUrl } from "@/lib/sprites";
 import { lockBodyScroll } from "@/lib/scroll-lock";
 
 export type InventoryLabels = {
@@ -997,8 +997,8 @@ function EquipPickerModal({
                     onClick={() => onPick(target)}
                     className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    <Image
-                      src={uiSpriteUrl(target.spriteUrl)}
+                    <PokemonImage
+                      src={target.spriteUrl}
                       alt=""
                       width={48}
                       height={48}
@@ -1171,14 +1171,14 @@ function EvolveTargetRow({
 
   const body = (
     <>
-      <Image
+      <PokemonImage
         src={target.spriteUrl}
+        speciesName={target.name}
         alt=""
         width={40}
         height={40}
-        unoptimized
         draggable={false}
-        className={`h-10 w-10 shrink-0 object-contain [image-rendering:pixelated] ${
+        className={`h-10 w-10 shrink-0 object-contain ${
           target.canEvolve ? "" : "opacity-40 grayscale"
         }`}
       />
@@ -1253,14 +1253,14 @@ function LearnerRow({
 
   const body = (
     <>
-      <Image
+      <PokemonImage
         src={learner.spriteUrl}
+        speciesName={learner.name}
         alt=""
         width={28}
         height={28}
-        unoptimized
         draggable={false}
-        className={`h-7 w-7 shrink-0 object-contain [image-rendering:pixelated] ${
+        className={`h-7 w-7 shrink-0 object-contain ${
           learner.canLearn ? "" : "opacity-40 grayscale"
         }`}
       />

@@ -1,13 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { FlagIcon } from "@/components/flag-icon";
 import { AvatarImage } from "@/components/avatar-image";
 import { ClanEmblemBadge } from "@/components/clans/clan-emblem-badge";
 import { avatarById } from "@/lib/avatars";
-import { uiSpriteUrl } from "@/lib/sprites";
+import { PokemonImage } from "@/components/pokemon-image";
 import type { HomeRailClanWars, HomeRailPvp, HomeRailPvpMatch } from "@/lib/home-hub";
 import { divisionRoman, type PvpDivision, type PvpTier } from "@/lib/pvp/tiers";
 import {
@@ -413,13 +412,14 @@ export function HomeDesktopRail({
                     </span>
                   </span>
                   {featuredMon ? (
-                    <Image
-                      src={uiSpriteUrl(featuredMon.image, featuredMon.isShiny)}
+                    <PokemonImage
+                      src={featuredMon.image}
+                      speciesName={featuredMon.name}
+                      isShiny={featuredMon.isShiny}
                       alt={featuredMon.name}
                       width={28}
                       height={28}
                       className="h-6 w-6 shrink-0 object-contain"
-                      unoptimized
                     />
                   ) : null}
                 </li>

@@ -4,7 +4,7 @@
 // Mobile: card al alto del contenido (sin hueco vacío por flex-1).
 // Desktop: card ancha 2 columnas + footer en fila.
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useLocale, useTranslations } from "next-intl";
 import type { CapturedPokemonInfo } from "@/actions/attempt-capture";
 import { ShinyMark } from "@/components/shiny-mark";

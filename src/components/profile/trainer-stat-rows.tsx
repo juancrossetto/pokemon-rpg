@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 
 import { ProgressRail } from "@/components/trainer-profile-parts";
 

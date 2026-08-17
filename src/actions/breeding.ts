@@ -9,6 +9,7 @@ import { calculateMaxHp, unspentPointsForLevel, xpForLevel } from "@/lib/stats";
 import { getMovesetForLevel } from "@/lib/moveset";
 import { rollShiny } from "@/lib/shiny";
 import { TEAM_SIZE } from "@/lib/market-rules";
+import { isPokemonBusy } from "@/lib/pokemon-busy";
 import {
   BREEDING_COST,
   BREEDING_MIN_LEVEL,
@@ -55,19 +56,13 @@ export async function breedPair(
     if (parents.some((p) => p.listings.length > 0)) return void (failure = "listed");
     if (parents.some((p) => p.level < BREEDING_MIN_LEVEL)) return void (failure = "too_young");
 
-    // Ya están incubando otro huevo: la misma pareja no produce en serie.
-    const busyEggs = await tx.egg.findMany({
-      where: {
-        ownerId: userId,
-        hatchedAt: null,
-        OR: [
-          { parentAId: { in: [parentAId, parentBId] } },
-          { parentBId: { in: [parentAId, parentBId] } },
-        ],
-      },
-      select: { id: true },
-    });
-    if (busyEggs.length > 0) return void (failure = "busy_parents");
+    // Incubando, pensión o trueque: esos padres no producen en paralelo.
+    if (
+      (await isPokemonBusy(tx, userId, parentAId)) ||
+      (await isPokemonBusy(tx, userId, parentBId))
+    ) {
+      return void (failure = "busy_parents");
+    }
 
     const user = await tx.user.findUniqueOrThrow({
       where: { id: userId },

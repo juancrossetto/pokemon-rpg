@@ -1,10 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import type { DexRarity } from "@/lib/pokedex";
 import { typeColor } from "@/lib/type-colors";
-import { showdownTypeSymbolUrl } from "@/lib/type-icons";
-import { defaultSpriteUrl } from "@/lib/sprites";
+import { PokemonImage } from "@/components/pokemon-image";
+import { TypeSymbol } from "@/components/type-symbol";
 import { ProgressRail } from "@/components/trainer-profile-parts";
 import { useTypeLabel } from "@/hooks/use-type-label";
 
@@ -107,12 +106,13 @@ export function TrainerSquadBand({
                 className="absolute bottom-2 h-5 w-16 rounded-[100%] opacity-40 blur-md"
                 style={{ background: color }}
               />
-              <Image
-                src={defaultSpriteUrl(member.spriteUrl, member.isShiny)}
+              <PokemonImage
+                src={member.spriteUrl}
+                speciesName={member.name}
+                isShiny={member.isShiny}
                 alt={member.name}
                 width={128}
                 height={128}
-                unoptimized
                 className="relative z-[1] h-[100px] w-[100px] object-contain drop-shadow-[0_10px_18px_rgba(0,0,0,0.5)] sm:h-[110px] sm:w-[110px]"
               />
             </div>
@@ -150,14 +150,7 @@ function TypeOrb({ type }: { type: string }) {
       }}
       title={typeLabel(type)}
     >
-      <Image
-        src={showdownTypeSymbolUrl(type)}
-        alt=""
-        width={14}
-        height={14}
-        unoptimized
-        className="h-3 w-3 object-contain brightness-110 sm:h-3.5 sm:w-3.5"
-      />
+      <TypeSymbol type={type} size={14} className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
     </span>
   );
 }

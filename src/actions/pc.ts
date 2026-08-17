@@ -9,6 +9,7 @@ import { allowAction } from "@/lib/rate-limit";
 import { TEAM_SIZE } from "@/lib/market-rules";
 import { blockIfInCombat } from "@/lib/battle-lock";
 import { compactTeamSlots } from "@/lib/team";
+import { busyPokemonIds, isPokemonBusy } from "@/lib/pokemon-busy";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const MOVE_LIMIT = 30;
@@ -74,6 +75,7 @@ export async function withdrawPokemon(locale: string, formData: FormData) {
       );
       if (pendingClaim) throw new PcError("pending_claim");
       if (instance.listings.some((l) => l.status === "ACTIVE")) throw new PcError("listed");
+      if (await isPokemonBusy(tx, userId, instance.id)) throw new PcError("occupied");
 
       const team = await tx.pokemonInstance.findMany({
         where: { ownerId: userId, teamSlot: { not: null } },
@@ -214,6 +216,8 @@ export async function setTeamLayout(
       if (instances.some((i) => i.listings.some((l) => l.status === "ACTIVE"))) {
         throw new PcError("listed");
       }
+      const busy = await busyPokemonIds(tx, userId);
+      if (ids.some((id) => busy.has(id))) throw new PcError("occupied");
 
       // Los que salen del equipo no pueden estar en una batalla activa ni bloqueados.
       const leaving = await tx.pokemonInstance.findMany({

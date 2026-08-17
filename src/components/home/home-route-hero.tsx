@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import type { CSSProperties } from "react";
 import { getTranslations } from "next-intl/server";
 import { GameCtaButton } from "@/components/game-cta-button";

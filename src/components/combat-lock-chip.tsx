@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { Link } from "@/i18n/navigation";
 
 export type CombatLockKind = "battle" | "gym" | "tower";

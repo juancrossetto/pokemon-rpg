@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
-import { showdownTypeSymbolUrl } from "@/lib/type-icons";
+import { TypeSymbol } from "@/components/type-symbol";
 import type { GymMissionItem, GymMissionStatusKind } from "@/lib/gym-mission";
 import { KANTO_MAP_IMAGE, KANTO_MAP_ASPECT } from "@/lib/gym-map";
 import { marketFeeDiscount, obedienceLevelCap } from "@/lib/badge-perks";
@@ -15,6 +15,7 @@ import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
 import { formatGymCooldown } from "@/lib/gym-cooldown";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
 import { GameCtaButton } from "@/components/game-cta-button";
+import { PokemonImage } from "@/components/pokemon-image";
 import { showToast } from "@/lib/app-toast";
 import { scrollElementIntoViewSafe } from "@/lib/scroll-lock";
 import {
@@ -149,14 +150,7 @@ function TypeChip({
           boxShadow: `0 0 10px ${color}33`,
         }}
       >
-        <Image
-          src={showdownTypeSymbolUrl(type)}
-          alt=""
-          width={iconPx}
-          height={iconPx}
-          unoptimized
-          className="object-contain brightness-110 contrast-125"
-        />
+        <TypeSymbol type={type} size={iconPx} />
       </span>
       {!iconOnly && (
         <span
@@ -1283,8 +1277,9 @@ export function GymMissionControl({
                     >
                       <div className="relative h-8 w-8">
                         {member.spriteUrl && (
-                          <Image
+                          <PokemonImage
                             src={member.spriteUrl}
+                            speciesName={member.name}
                             alt={regionLocked ? t("unknownMember") : member.name}
                             fill
                             sizes="32px"
@@ -1384,8 +1379,9 @@ export function GymMissionControl({
                   >
                     <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md bg-surface-container-high">
                       {member.spriteUrl && (
-                        <Image
+                        <PokemonImage
                           src={member.spriteUrl}
+                          speciesName={member.name}
                           alt={regionLocked ? t("unknownMember") : member.name}
                           fill
                           sizes="32px"

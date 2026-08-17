@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { showdownTypeSymbolUrl } from "@/lib/type-icons";
+import { TypeSymbol } from "@/components/type-symbol";
 import { typeColor } from "@/lib/type-colors";
 import type { CampaignMilestone } from "@/lib/campaign";
 import type { AdventureGuideStep } from "@/lib/adventure-guide";
@@ -135,14 +135,7 @@ export function CurrentExpedition({
                         }}
                         title={tTypes(type.toLowerCase() as "normal")}
                       >
-                        <Image
-                          src={showdownTypeSymbolUrl(type)}
-                          alt=""
-                          width={12}
-                          height={12}
-                          unoptimized
-                          className="h-2.5 w-2.5 object-contain brightness-110"
-                        />
+                        <TypeSymbol type={type} size={12} className="h-2.5 w-2.5" />
                       </span>
                     </li>
                   );
@@ -254,14 +247,7 @@ export function CurrentExpedition({
                       aria-label={label}
                       title={label}
                     >
-                      <Image
-                        src={showdownTypeSymbolUrl(type)}
-                        alt=""
-                        width={16}
-                        height={16}
-                        unoptimized
-                        className="h-3 w-3 object-contain brightness-110 sm:h-3.5 sm:w-3.5"
-                      />
+                      <TypeSymbol type={type} size={16} className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     </span>
                   </li>
                 );

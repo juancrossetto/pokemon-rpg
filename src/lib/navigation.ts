@@ -95,7 +95,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.tower",
         href: "/tower",
         icon: "apartment",
-        iconSrc: "/nav/tower-icon.png?v=4",
+        iconSrc: "/events/tower.png?v=1",
       },
       {
         id: "safari",
@@ -104,6 +104,14 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/safari",
         icon: "travel_explore",
         iconSrc: "/safari/tickets/ticket-pink.png",
+      },
+      {
+        id: "park",
+        labelKey: "park",
+        descriptionKey: "desc.park",
+        href: "/park",
+        icon: "park",
+        iconSrc: "/nav/adventure-icon.png?v=4",
       },
       {
         id: "events",
@@ -145,6 +153,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.raids",
         href: "/raids",
         icon: "crisis_alert",
+        iconSrc: "/nav/raid-pass-icon.png?v=1",
       },
       {
         id: "factory",
@@ -152,6 +161,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.factory",
         href: "/factory",
         icon: "precision_manufacturing",
+        iconSrc: "/nav/factory-pass-icon.png?v=1",
       },
       {
         id: "battleHistory",
@@ -159,6 +169,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.battleHistory",
         href: "/battle/history",
         icon: "history",
+        iconSrc: "/pvp/reloj.png?v=1",
       },
     ],
   },

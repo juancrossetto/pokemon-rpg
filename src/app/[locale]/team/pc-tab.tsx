@@ -8,7 +8,7 @@ import { PcTransfer, type PcMon } from "@/components/pc-transfer";
 import { PcAlert } from "@/components/pc-alert";
 import { BreedingPanel } from "@/components/breeding-panel";
 import { BREEDING_MIN_LEVEL, msUntilHatch } from "@/lib/breeding";
-import { breedingParentIds } from "@/lib/breeding-lock";
+import { busyPokemonIds } from "@/lib/pokemon-busy";
 import { spriteFor } from "@/lib/shiny";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 
@@ -63,13 +63,13 @@ export async function PcTab({
   const stored = pokemon.filter((p) => p.teamSlot === null);
 
   // Sólo los de la PC, sin publicar y con nivel suficiente pueden criar.
-  const busyParents = await breedingParentIds(userId);
+  const busyIds = await busyPokemonIds(prisma, userId);
   const breedCandidates = stored
     .filter(
       (p) =>
         p.listings.length === 0 &&
         p.level >= BREEDING_MIN_LEVEL &&
-        !busyParents.has(p.id),
+        !busyIds.has(p.id),
     )
     .map((p) => ({
       id: p.id,
@@ -113,8 +113,8 @@ export async function PcTab({
           .join("|")}
         locale={locale}
         teamSize={TEAM_SIZE}
-        initialTeam={team.map((p) => toPcMon(p, busyParents))}
-        initialBox={stored.map((p) => toPcMon(p, busyParents))}
+        initialTeam={team.map((p) => toPcMon(p, busyIds))}
+        initialBox={stored.map((p) => toPcMon(p, busyIds))}
         initialBagCounts={bagCounts}
         menuLabels={{
           favoriteOn: th("squadMenu.favoriteOn"),

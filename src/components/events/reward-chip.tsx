@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import type { ReactNode } from "react";
 import { itemHdIconUrl, itemSpriteUrl } from "@/lib/item-sprites";
 import type { RewardDef } from "@/lib/events/rewards";

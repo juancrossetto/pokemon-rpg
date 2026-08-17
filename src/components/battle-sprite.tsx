@@ -12,9 +12,7 @@ const LOCAL_FALLBACK = "/items/hd/poke-ball.png";
 
 /**
  * Sprite de batalla: GIF animado Showdown (ani HD) y, si el CDN falla,
- * la misma cadena de PNGs que `PokemonImage` (artwork → pixel → Showdown
- * estático → pokeball local). En prod el GIF a veces no llega; sin esta
- * cascada quedaba el ícono roto del navegador con el alt de la especie.
+ * el dex 2D del mismo host → pokeball local.
  */
 export function BattleSprite({
   speciesName,

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useLocale } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { claimAchievement } from "@/actions/claim-achievement";
@@ -10,7 +10,7 @@ import { announceCoinDelta } from "@/lib/coin-fx";
 import { playRewardCollectFx } from "@/lib/loot-fly-fx";
 import type { RewardDef } from "@/lib/events/rewards";
 import { gymBadgeImageUrl } from "@/lib/gym-art";
-import { uiSpriteUrl } from "@/lib/sprites";
+import { PokemonImage } from "@/components/pokemon-image";
 import type { Achievement, AchievementRarity, CollectionSlice } from "@/lib/trainer-profile";
 
 export type VaultBadge = {
@@ -467,8 +467,10 @@ export function RecentCatchStrip({
               className="absolute bottom-0 h-3 w-10 rounded-[100%] opacity-50 blur-md"
               style={{ background: it.accent }}
             />
-            <Image
-              src={uiSpriteUrl(it.spriteUrl, it.isShiny)}
+            <PokemonImage
+              src={it.spriteUrl}
+              speciesName={it.name}
+              isShiny={it.isShiny}
               alt={it.name}
               width={64}
               height={64}

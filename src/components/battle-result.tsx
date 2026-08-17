@@ -12,9 +12,8 @@ import {
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { LevelUpOffersPanel } from "@/components/level-up-offers";
-import { uiSpriteUrl } from "@/lib/sprites";
 import { playBattleSfx } from "@/lib/battle-sfx";
 import { startResultBgm, stopResultBgm } from "@/lib/battle-bgm";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";
@@ -114,8 +113,9 @@ function FighterCard({
             <span className="victory-ring pointer-events-none absolute inset-1 rounded-full border border-emerald-300/25" />
           </>
         )}
-        <Image
-          src={uiSpriteUrl(fighter.spriteUrl)}
+        <PokemonImage
+          src={fighter.spriteUrl}
+          speciesName={fighter.name}
           alt={fighter.name}
           width={96}
           height={96}
@@ -194,12 +194,13 @@ function LevelUpFanfare({
             className="level-up-chip flex items-center gap-2"
             style={{ animationDelay: `${(0.35 + i * 0.09).toFixed(2)}s` }}
           >
-            <Image
-              src={uiSpriteUrl(entry.fromSpriteUrl, entry.isShiny)}
+            <PokemonImage
+              src={entry.fromSpriteUrl}
+              speciesName={entry.name}
+              isShiny={entry.isShiny}
               alt={entry.name}
               width={40}
               height={40}
-              unoptimized
               className="h-10 w-10 object-contain"
             />
             <div className="text-left">

@@ -1,4 +1,5 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
+import { PokemonImage } from "@/components/pokemon-image";
 import { spriteFor } from "@/lib/shiny";
 
 export type RankingEmblemPokemon = {
@@ -84,13 +85,14 @@ export function RankingEmblem({
           style={{ clipPath: HEX_CLIP }}
         >
           {src ? (
-            <Image
+            <PokemonImage
               src={src}
+              speciesName={speciesName}
+              isShiny={!!pokemon?.isShiny}
               alt={speciesName}
               width={cfg.art}
               height={cfg.art}
               className="object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
-              unoptimized
             />
           ) : (
             <span

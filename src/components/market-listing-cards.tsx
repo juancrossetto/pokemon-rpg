@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { getTranslations } from "next-intl/server";
 import type { ItemType } from "@/generated/prisma/client";
 import { typeColor } from "@/lib/type-colors";
@@ -14,6 +14,7 @@ import {
   trainingPercent,
   type MarketRarity,
 } from "@/lib/market-hub";
+import { PokemonImage } from "@/components/pokemon-image";
 import { spriteFor } from "@/lib/shiny";
 import { localizePokemonType } from "@/lib/pokemon-type-i18n";
 
@@ -72,15 +73,27 @@ function SpriteFrame({
         pixelated ? "market-sprite-pixel" : ""
       }`}
     >
-      <Image
-        src={src}
-        alt={alt}
-        width={96}
-        height={96}
-        sizes="96px"
-        className="drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
-        unoptimized={pixelated}
-      />
+      {pixelated ? (
+        <Image
+          src={src}
+          alt={alt}
+          width={96}
+          height={96}
+          sizes="96px"
+          unoptimized
+          className="drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
+        />
+      ) : (
+        <PokemonImage
+          src={src}
+          speciesName={alt}
+          alt={alt}
+          width={96}
+          height={96}
+          sizes="96px"
+          className="drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
+        />
+      )}
     </div>
   );
 }

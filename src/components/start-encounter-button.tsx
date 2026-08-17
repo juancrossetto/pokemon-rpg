@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useActionState, useEffect, useRef } from "react";
 import { startEncounter, type StartEncounterResult } from "@/actions/start-encounter";
 import { WILD_ENCOUNTER_ENERGY_COST } from "@/lib/energy";

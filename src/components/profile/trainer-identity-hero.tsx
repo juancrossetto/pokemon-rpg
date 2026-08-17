@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useState } from "react";
 
 import { AvatarPicker, type AvatarPickerLabels } from "@/components/avatar-picker";

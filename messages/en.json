@@ -84,7 +84,8 @@
       "clans": "Join a clan and compete as a team.",
       "events": "Daily rewards and weekly challenges.",
       "tower": "Climb floors in a PvE challenge.",
-      "safari": "Catch rare species in limited expeditions."
+      "safari": "Catch rare species in limited expeditions.",
+      "park": "Daycare, fishing, wonder trade, Game Corner, berry farm, mine and frontier."
     },
     "battleWild": "Wild battle",
     "menu": "Menu",
@@ -99,7 +100,8 @@
     "swipeGroups": "Swipe to switch groups",
     "events": "Events",
     "profile": "My profile",
-    "tower": "Tower"
+    "tower": "Tower",
+    "park": "Park"
   },
   "notifications": {
     "eyebrow": "Live alerts",
@@ -1486,7 +1488,8 @@
       "insufficient_coins": "You don't have enough coins.",
       "insufficient_fee": "You don't have enough coins for the listing fee.",
       "rate_limited": "Too many actions in a row. Give it a moment.",
-      "breeding": "It is incubating an egg: cannot be sold."
+      "breeding": "It is incubating an egg: cannot be sold.",
+      "occupied": "That Pokémon is busy (daycare, wonder trade, or breeding)."
     },
     "moves": "Moves",
     "noMovesListed": "No moves",
@@ -1888,6 +1891,7 @@
       "rate_limited": "Too fast — wait a moment",
       "unauthorized": "Session expired",
       "breeding": "Incubating an egg",
+      "occupied": "It's busy (daycare, wonder trade, or breeding)",
       "trade_locked": "It's locked — unlock it before storing in the PC"
     },
     "dragChipReorder": "Reorder",
@@ -1897,7 +1901,7 @@
     "selectedHint": "{name} ready — tap a destination (party or PC)",
     "selectedCancel": "Cancel",
     "emptySlot": "Slot {slot} free",
-    "breedingLocked": "Breeding"
+    "breedingLocked": "Busy"
   },
   "ranking": {
     "title": "Leaderboards",
@@ -4200,5 +4204,109 @@
     "championBody": "The story is over, but the Tower resets every week and the PvP ladder never closes.",
     "championCta": "Climb the Tower",
     "championSecondaryCta": "PvP"
+  },
+  "park": {
+    "eyebrow": "New modes",
+    "title": "Pokémon Park",
+    "subtitle": "Daycare, fishing, wonder trade, Game Corner, berry farm, underground and Battle Frontier — no turn-by-turn fights.",
+    "wallet": "{coins} coins · {energy}/{max} energy",
+    "tabs": {
+      "daycare": "Daycare",
+      "fishing": "Fishing",
+      "wonder": "Wonder Trade",
+      "corner": "Game Corner",
+      "farm": "Farm",
+      "mine": "Mine",
+      "frontier": "Frontier"
+    },
+    "slot": "Slot {n}",
+    "emptySlot": "Empty nest",
+    "emptyBox": "No free Pokémon in the PC.",
+    "pickHint": "Pick one from the PC",
+    "daycareBlurb": "Two nests. Your Pokémon gains levels while you play; collect them whenever you want.",
+    "deposit": "Leave ({cost} ●)",
+    "deposited": "Left at the daycare ({cost} ●).",
+    "collect": "Collect levels",
+    "collected": "Levels collected.",
+    "withdraw": "Take back",
+    "withdrawn": "Returned to the PC.",
+    "pendingLevels": "{n} levels ready · {fee} ●",
+    "fishingBlurb": "A cast costs {energy} energy. Magikarp is common; Dratini and Gyarados are the prize.",
+    "cast": "Cast line",
+    "fishCatch": "You caught {name}!",
+    "fishShiny": "Shiny! You caught {name}.",
+    "fishMiss": "{name} bit and got away.",
+    "wonderBlurb": "Send a PC Pokémon. If a trainer is waiting, the trade is instant; otherwise it queues. A traveler NPC will swap one right away.",
+    "wonderSend": "Trade",
+    "wonderTraveler": "NPC traveler",
+    "wonderQueued": "Waiting in the wonder trade queue.",
+    "wonderPending": "{name} is waiting for a trade.",
+    "wonderCancel": "Cancel trade",
+    "wonderCancelled": "Returned to the PC.",
+    "wonderNpc": "A traveler gave you {name}.",
+    "wonderPlayer": "Trade complete: you received {name}.",
+    "cornerBlurb": "Three reels. Costs {cost} ●. Three sevens hit the jackpot.",
+    "spin": "Spin ({cost} ●)",
+    "cornerWin": "{reels} — you won {coins} ●",
+    "cornerLose": "{reels} — nothing this time",
+    "plot": "Plot {n}",
+    "ready": "Ready to harvest",
+    "growing": "Growing…",
+    "harvest": "Harvest",
+    "harvested": "You harvested {n} berries.",
+    "planted": "Berry planted.",
+    "noBerries": "You need Oran, Sitrus or Leppa berries to plant.",
+    "mineBlurb": "A dig costs {energy} energy. {left} picks left today. Coin finds: {coins} ●. Revive fossils for 500 ●.",
+    "revived": "You revived {name} ({cost} ●).",
+    "challenge": "Challenge",
+    "frontierMeta": "Streak {streak} · wins {wins} · {energy} energy",
+    "frontierWin": "Win: +{coins} ● (streak {streak})",
+    "frontierLose": "Loss. The facility keeps this one.",
+    "loot": {
+      "empty": "Just dirt.",
+      "coins": "Coins.",
+      "potion": "A Potion.",
+      "helix": "Helix Fossil.",
+      "dome": "Dome Fossil.",
+      "amber": "Old Amber.",
+      "stone": "Water Stone."
+    },
+    "fossil": {
+      "helix": "Helix ×{n}",
+      "dome": "Dome ×{n}",
+      "amber": "Amber ×{n}"
+    },
+    "frontier": {
+      "palace": {
+        "title": "Battle Palace",
+        "blurb": "Your team auto-battles rentals. Each win grows the streak and the payout."
+      },
+      "dome": {
+        "title": "Battle Dome",
+        "blurb": "Three quick fights. Win 2 to take the cup."
+      }
+    },
+    "errors": {
+      "unauthorized": "Sign in first.",
+      "busy": "Too fast. Wait a second.",
+      "in_battle": "Finish the battle first.",
+      "not_found": "Not found.",
+      "in_team": "It has to be in the PC.",
+      "listed": "It is listed on the market.",
+      "occupied": "That Pokémon is busy.",
+      "no_coins": "Not enough coins.",
+      "no_energy": "Out of energy.",
+      "slot_taken": "That slot is taken.",
+      "no_levels": "No levels to collect yet.",
+      "full": "You already have a wonder trade open.",
+      "not_ready": "Not ready yet.",
+      "no_berry": "You need berries.",
+      "empty": "Empty.",
+      "no_digs": "No picks left today.",
+      "dug": "Already dug there.",
+      "no_team": "You need a Pokémon on the team.",
+      "no_catalog": "Rental catalog is missing.",
+      "bad_facility": "Invalid facility."
+    }
   }
 }

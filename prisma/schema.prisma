@@ -94,6 +94,11 @@ model User {
   clanWarBattlesB    ClanWarBattle[]      @relation("ClanWarFighterB")
   weeklyRaidScores   WeeklyRaidScore[]
   factoryRuns        FactoryRun[]
+  daycareDeposits    DaycareDeposit[]
+  wonderOffers       WonderTradeOffer[]
+  berryPlots         BerryPlot[]
+  parkMine           ParkMine?
+  frontierAttempts   FrontierAttempt[]
 }
 
 // ---------- Notificaciones in-app ----------
@@ -290,10 +295,12 @@ model PokemonInstance {
   owner           User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   species         Species         @relation(fields: [speciesId], references: [id])
   moves           PokemonMove[]
-  listings        MarketListing[]
-  battleSessions  BattleSession[] @relation("BattlePlayerA")
-  battleSessionsB BattleSession[] @relation("BattlePlayerB")
-  safariCatch     SafariCatch?
+  listings         MarketListing[]
+  battleSessions   BattleSession[] @relation("BattlePlayerA")
+  battleSessionsB  BattleSession[] @relation("BattlePlayerB")
+  safariCatch      SafariCatch?
+  daycareDeposit   DaycareDeposit?
+  wonderOffer      WonderTradeOffer?
 
   @@unique([ownerId, teamSlot]) // dos Pokémon no pueden compartir slot. Postgres
   // trata cada NULL como distinto, así que el PC (teamSlot null) no se ve afectado.
@@ -547,6 +554,7 @@ model Item {
   inventoryOf      InventoryItem[]
   holders          PokemonInstance[]
   battleWildHeldBy BattleSession[]   @relation("BattleWildHeldItem")
+  berryPlots       BerryPlot[]
 }
 
 model InventoryItem {
@@ -1462,4 +1470,74 @@ model ClanWarBattle {
 
   @@unique([warId, slot])
   @@index([warId, status])
+}
+
+// ---------- Parque (pensión, trueque, huerto, mina, recinto) ----------
+// Timers lazy como la energía: se leen al abrir, no hay cron.
+
+model DaycareDeposit {
+  id                String   @id @default(cuid())
+  userId            String
+  slot              Int
+  pokemonInstanceId String   @unique
+  depositedAt       DateTime @default(now())
+  lastCollectedAt   DateTime @default(now())
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pokemon PokemonInstance  @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slot])
+  @@index([userId])
+}
+
+model WonderTradeOffer {
+  id                String    @id @default(cuid())
+  userId            String
+  pokemonInstanceId String    @unique
+  createdAt         DateTime  @default(now())
+  matchedAt         DateTime?
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pokemon PokemonInstance @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
+
+  @@index([matchedAt, createdAt])
+  @@index([userId, matchedAt])
+}
+
+model BerryPlot {
+  userId      String
+  slot        Int
+  berryItemId String?
+  plantedAt   DateTime?
+
+  user  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  berry Item? @relation(fields: [berryItemId], references: [id], onDelete: SetNull)
+
+  @@id([userId, slot])
+}
+
+model ParkMine {
+  userId  String   @id
+  dayKey  String
+  grid    Json
+  bag     Json     @default("{}")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FrontierAttempt {
+  userId    String
+  facility  String
+  dayKey    String
+  streak    Int      @default(0)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  lastWon   Boolean  @default(false)
+  lastLog   Json     @default("[]")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, facility, dayKey])
 }

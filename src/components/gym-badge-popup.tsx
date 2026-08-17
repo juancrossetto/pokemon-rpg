@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { typeColor } from "@/lib/type-colors";
 import { gymBadgeImageUrl } from "@/lib/gym-art";
 import { avatarById, avatarDisplayName } from "@/lib/avatars";

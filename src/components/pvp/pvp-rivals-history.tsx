@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { Link } from "@/i18n/navigation";
 import { FlagIcon } from "@/components/flag-icon";
 import { AvatarImage } from "@/components/avatar-image";

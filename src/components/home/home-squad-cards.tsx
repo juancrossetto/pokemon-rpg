@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   useEffect,
   useLayoutEffect,
@@ -18,7 +17,7 @@ import { PokemonImage } from "@/components/pokemon-image";
 import { PokeSparks } from "@/components/poke-sparks";
 import { SegmentedStatBar, hpBarVariant } from "@/components/segmented-stat-bar";
 import { SquadCardContextMenu } from "@/components/squad-card-context-menu";
-import { showdownTypeSymbolUrl } from "@/lib/type-icons";
+import { TypeSymbol } from "@/components/type-symbol";
 import { typeColor } from "@/lib/type-colors";
 import { calculateMaxHp, calculateStat } from "@/lib/stats";
 import { squadTypeWallpaper } from "@/lib/squad-type-wallpapers";
@@ -753,14 +752,7 @@ function SquadCardButton({
             style={{ "--type-chip": accent } as CSSProperties}
             title={primaryType}
           >
-            <Image
-              src={showdownTypeSymbolUrl(primaryType)}
-              alt=""
-              width={11}
-              height={11}
-              className="squad-card__type"
-              unoptimized
-            />
+            <TypeSymbol type={primaryType} size={11} className="squad-card__type" />
           </span>
           <span className="squad-card__cp">{power.toLocaleString()}</span>
           {m.isShiny ? <ShinyMark className="squad-card__flag" title="" /> : null}

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useState, useTransition, type CSSProperties } from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslations } from "next-intl";

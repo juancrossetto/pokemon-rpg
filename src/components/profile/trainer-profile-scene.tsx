@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import type { TrainerAppearance } from "@/lib/trainer-appearance";
 import { hasAny3dModel } from "@/lib/trainer-appearance";
 import { avatarStageSoftFeet } from "@/lib/avatars";

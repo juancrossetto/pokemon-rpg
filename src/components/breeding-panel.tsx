@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { breedPair, hatchEgg } from "@/actions/breeding";

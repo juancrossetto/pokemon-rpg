@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { playBattleSfx } from "@/lib/battle-sfx";
 import { TrainerAvatar } from "@/components/trainer-avatar";
+import { PokemonImage } from "@/components/pokemon-image";
 import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
 import { isNpcTrainerPixelPortraitUrl } from "@/lib/avatars";
 import type { PvpDivision, PvpTier } from "@/lib/pvp/tiers";
@@ -252,8 +253,7 @@ function VsBanner({
                   key={`${side}-mon-${i}`}
                   className={`battle-vs-banner__slot${mon.fainted ? " is-fainted" : ""}`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={mon.spriteUrl} alt="" draggable={false} />
+                  <PokemonImage src={mon.spriteUrl} alt="" width={40} height={40} draggable={false} />
                 </li>
               ))}
             </ul>

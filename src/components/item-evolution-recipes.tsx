@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import {
   evolutionRecipesForItem,
   type ItemEvolutionRecipe,
@@ -10,7 +10,7 @@ import { homeSpriteById } from "@/lib/sprites";
 
 /**
  * Diagrama estilo Wikidex: `from → ítem → to` en el detalle del objeto.
- * Los sprites salen del CDN HOME por id (no requieren especie en nuestra DB).
+ * Ilustración 2D del Pokédex por id (no requieren especie en nuestra DB).
  */
 export function ItemEvolutionRecipes({
   itemName,

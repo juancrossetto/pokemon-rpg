@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import {
@@ -14,6 +14,7 @@ import {
 } from "@/actions/tower";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { GameCtaButton } from "@/components/game-cta-button";
+import { PokemonImage } from "@/components/pokemon-image";
 import type { TowerBlessing, TowerFloor, TowerPrimaryAction, TowerRunCreature } from "@/lib/tower";
 
 export function TowerPrimaryActionButton({
@@ -159,8 +160,7 @@ export function TowerCurrentTeam({ team }: { team: TowerRunCreature[] }) {
                   : "border-white/10 bg-black/20"
               }`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={m.spriteUrl} alt="" className="h-10 w-10 object-contain" />
+              <PokemonImage src={m.spriteUrl} speciesName={m.speciesName} alt="" width={40} height={40} className="h-10 w-10 object-contain" />
               <span className="mt-1 max-w-full truncate text-[10px] text-on-surface">
                 {m.nickname ?? m.speciesName}
               </span>

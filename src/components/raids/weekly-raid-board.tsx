@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useTransition } from "react";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useTranslations } from "next-intl";
 import {
   claimWeeklyRaidReward,

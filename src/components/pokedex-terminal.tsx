@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { PokemonImage } from "@/components/pokemon-image";
 import { neonTypeColor } from "@/lib/type-colors";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";

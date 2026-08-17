@@ -84,7 +84,8 @@
       "clans": "Entre num clã e compita em equipe.",
       "events": "Recompensas diárias e desafios semanais.",
       "tower": "Suba andares em um desafio PvE.",
-      "safari": "Capture espécies raras em expedições limitadas."
+      "safari": "Capture espécies raras em expedições limitadas.",
+      "park": "Pensão, pesca, troca misteriosa, cassino, horta, mina e recinto."
     },
     "battleWild": "Batalha selvagem",
     "menu": "Menu",
@@ -99,7 +100,8 @@
     "swipeGroups": "Deslize para trocar de grupo",
     "events": "Eventos",
     "profile": "Meu perfil",
-    "tower": "Torre"
+    "tower": "Torre",
+    "park": "Parque"
   },
   "notifications": {
     "eyebrow": "Alertas ao vivo",
@@ -1486,7 +1488,8 @@
       "insufficient_coins": "Suas moedas não são suficientes.",
       "insufficient_fee": "Você não tem moedas suficientes para a taxa de publicação.",
       "rate_limited": "Muitas operações seguidas. Espere um momento.",
-      "breeding": "Está chocando um ovo: não pode ser vendido."
+      "breeding": "Está chocando um ovo: não pode ser vendido.",
+      "occupied": "Esse Pokémon está ocupado (pensão, troca ou cria)."
     },
     "moves": "Movimentos",
     "noMovesListed": "Sem movimentos",
@@ -1888,6 +1891,7 @@
       "rate_limited": "Rápido demais — aguarde um momento",
       "unauthorized": "Sessão expirada",
       "breeding": "Chocando um ovo",
+      "occupied": "Está ocupado (pensão, troca ou cria)",
       "trade_locked": "Está bloqueado — desbloqueie para guardar no PC"
     },
     "dragChipReorder": "Reordenar",
@@ -1897,7 +1901,7 @@
     "selectedHint": "{name} pronto — toque o destino (equipe ou PC)",
     "selectedCancel": "Cancelar",
     "emptySlot": "Slot {slot} livre",
-    "breedingLocked": "Chocando"
+    "breedingLocked": "Ocupado"
   },
   "ranking": {
     "title": "Ranking",
@@ -4200,5 +4204,109 @@
     "championBody": "A história terminou, mas a Torre reinicia toda semana e o ranking PvP nunca fecha.",
     "championCta": "Subir a Torre",
     "championSecondaryCta": "PvP"
+  },
+  "park": {
+    "eyebrow": "Novos modos",
+    "title": "Parque Pokémon",
+    "subtitle": "Pensão, pesca, troca misteriosa, Game Corner, horta, mina e recintos da Frontier. Sem lutar turno a turno.",
+    "wallet": "{coins} moedas · {energy}/{max} energia",
+    "tabs": {
+      "daycare": "Pensão",
+      "fishing": "Pesca",
+      "wonder": "Troca",
+      "corner": "Cassino",
+      "farm": "Horta",
+      "mine": "Mina",
+      "frontier": "Recinto"
+    },
+    "slot": "Slot {n}",
+    "emptySlot": "Ninho livre",
+    "emptyBox": "Não há Pokémon livres no PC.",
+    "pickHint": "Escolha um do PC",
+    "daycareBlurb": "Dois ninhos. O Pokémon ganha níveis enquanto você joga; cobre quando quiser.",
+    "deposit": "Deixar ({cost} ●)",
+    "deposited": "Deixado na pensão ({cost} ●).",
+    "collect": "Coletar níveis",
+    "collected": "Níveis coletados.",
+    "withdraw": "Retirar",
+    "withdrawn": "Voltou ao PC.",
+    "pendingLevels": "{n} níveis prontos · {fee} ●",
+    "fishingBlurb": "Um lance custa {energy} de energia. Magikarp é o mais comum; Dratini e Gyarados, o prêmio.",
+    "cast": "Lançar vara",
+    "fishCatch": "Você pegou {name}!",
+    "fishShiny": "Shiny! Você pegou {name}.",
+    "fishMiss": "{name} mordeu e escapou.",
+    "wonderBlurb": "Envie um do PC. Se houver fila, a troca é na hora; se não, ele espera. O viajante NPC troca na hora.",
+    "wonderSend": "Trocar",
+    "wonderTraveler": "Viajante NPC",
+    "wonderQueued": "Entrou na fila da troca misteriosa.",
+    "wonderPending": "{name} espera uma troca.",
+    "wonderCancel": "Cancelar troca",
+    "wonderCancelled": "Voltou ao PC.",
+    "wonderNpc": "Um viajante te deu {name}.",
+    "wonderPlayer": "Troca feita: você recebeu {name}.",
+    "cornerBlurb": "Três rolos. Custa {cost} ●. Três setes pagam o prêmio máximo.",
+    "spin": "Girar ({cost} ●)",
+    "cornerWin": "{reels} — você ganhou {coins} ●",
+    "cornerLose": "{reels} — nada desta vez",
+    "plot": "Canteiro {n}",
+    "ready": "Pronta para colher",
+    "growing": "Crescendo…",
+    "harvest": "Colher",
+    "harvested": "Você colheu {n} berries.",
+    "planted": "Berry plantada.",
+    "noBerries": "Você precisa de berries Oran, Sitrus ou Leppa para plantar.",
+    "mineBlurb": "Cavar custa {energy} de energia. Restam {left} picaretas hoje. Moedas: {coins} ●. Reviva fósseis por 500 ●.",
+    "revived": "Você reviveu {name} ({cost} ●).",
+    "challenge": "Desafiar",
+    "frontierMeta": "Sequência {streak} · vitórias {wins} · {energy} energia",
+    "frontierWin": "Vitória: +{coins} ● (sequência {streak})",
+    "frontierLose": "Derrota. O recinto ficou com esta.",
+    "loot": {
+      "empty": "Terra.",
+      "coins": "Moedas.",
+      "potion": "Uma poção.",
+      "helix": "Fóssil hélice.",
+      "dome": "Fóssil cúpula.",
+      "amber": "Âmbar velho.",
+      "stone": "Pedra da Água."
+    },
+    "fossil": {
+      "helix": "Hélice ×{n}",
+      "dome": "Cúpula ×{n}",
+      "amber": "Âmbar ×{n}"
+    },
+    "frontier": {
+      "palace": {
+        "title": "Palácio de Batalha",
+        "blurb": "Seu time luta sozinho contra aluguéis. Cada vitória soma sequência e moedas."
+      },
+      "dome": {
+        "title": "Dome",
+        "blurb": "Três combates rápidos. Vença 2 e leve a taça."
+      }
+    },
+    "errors": {
+      "unauthorized": "Entre na conta.",
+      "busy": "Rápido demais. Espere um segundo.",
+      "in_battle": "Termine a batalha primeiro.",
+      "not_found": "Não encontrado.",
+      "in_team": "Precisa estar no PC.",
+      "listed": "Está no mercado.",
+      "occupied": "Esse Pokémon está ocupado.",
+      "no_coins": "Moedas insuficientes.",
+      "no_energy": "Sem energia.",
+      "slot_taken": "Esse espaço está ocupado.",
+      "no_levels": "Ainda não ganhou níveis.",
+      "full": "Você já tem uma troca em andamento.",
+      "not_ready": "Ainda não está pronta.",
+      "no_berry": "Faltam berries.",
+      "empty": "Vazio.",
+      "no_digs": "Sem picaretas hoje.",
+      "dug": "Já cavou aí.",
+      "no_team": "Você precisa de um Pokémon no time.",
+      "no_catalog": "Catálogo de aluguéis ausente.",
+      "bad_facility": "Recinto inválido."
+    }
   }
 }

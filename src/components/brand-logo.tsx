@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 
 // Proporción real del arte (800×381 tras recortar el masterball wordmark).
 const LOGO_WIDTH = 800;

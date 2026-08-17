@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import type { CSSProperties } from "react";
 import { typeColor } from "@/lib/type-colors";
-import { showdownTypeSymbolUrl } from "@/lib/type-icons";
+import { TypeSymbol } from "@/components/type-symbol";
 
 /** Chip rectangular de afinidad — símbolo oficial + color del tipo. */
 export function ClanAffinityChip({
@@ -59,14 +58,7 @@ export function ClanAffinityChip({
           boxShadow: `0 0 12px ${color}33`,
         }}
       >
-        <Image
-          src={showdownTypeSymbolUrl(type)}
-          alt=""
-          width={symbolSize}
-          height={symbolSize}
-          unoptimized
-          className="object-contain brightness-110 contrast-125"
-        />
+        <TypeSymbol type={type} size={symbolSize} />
       </span>
       <span
         className={`${labelClass} truncate`}

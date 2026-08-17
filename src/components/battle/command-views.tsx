@@ -4,7 +4,7 @@
 // Son puramente de presentación — los handlers (que disparan el timeline de
 // animaciones) siguen viviendo en battle-arena.tsx y entran por props.
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { typeColor } from "@/lib/type-colors";

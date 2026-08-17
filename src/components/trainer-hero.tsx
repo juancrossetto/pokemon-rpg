@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { FlagIcon } from "@/components/flag-icon";
 import { Ambience, ProgressRail, RankFrame } from "@/components/trainer-profile-parts";
 import { AvatarPicker, type AvatarPickerLabels } from "@/components/avatar-picker";

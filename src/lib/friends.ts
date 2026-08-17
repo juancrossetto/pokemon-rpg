@@ -28,6 +28,7 @@ export type FriendFilter =
 
 export type FriendFavoriteSnippet = {
   name: string;
+  speciesName: string;
   spriteUrl: string;
   level: number;
   types: string[];
@@ -87,6 +88,7 @@ export type PlayerSearchHit = {
 export type TrainerCardSquadSlot = {
   slot: number;
   name: string;
+  speciesName: string;
   spriteUrl: string;
   level: number;
   currentHp: number;
@@ -127,6 +129,7 @@ export type TrainerCardData = {
   hoursPlayed: number | null;
   favorite: {
     name: string;
+    speciesName: string;
     spriteUrl: string;
     level: number;
     cp: number;

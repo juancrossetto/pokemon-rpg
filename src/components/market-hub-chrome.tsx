@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { getTranslations } from "next-intl/server";
 import { TradeHelp } from "@/components/trade-help";
 import { MarketTutorial } from "@/components/journey-guidance";

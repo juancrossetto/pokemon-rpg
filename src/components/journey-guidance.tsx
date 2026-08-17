@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { hasSeen, markSeen, hasSeenThisSession, markSeenThisSession, type FirstVisitKey } from "@/lib/journey-ux";

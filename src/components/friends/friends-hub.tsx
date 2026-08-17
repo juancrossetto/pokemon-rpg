@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import {
   useEffect,
   useMemo,
@@ -940,7 +940,7 @@ function FriendCard({
                 />
                 <PokemonImage
                   src={companionUrl}
-                  speciesName={friend.favorite?.name}
+                  speciesName={friend.favorite?.speciesName}
                   isShiny={friend.favorite?.isShiny}
                   alt={friend.favorite?.name ?? ""}
                   width={160}
@@ -1403,7 +1403,7 @@ function TrainerCardModal({
                 />
                 <PokemonImage
                   src={uiSpriteUrl(fav.spriteUrl, fav.isShiny)}
-                  speciesName={fav.name}
+                  speciesName={fav.speciesName}
                   isShiny={fav.isShiny}
                   alt={fav.name}
                   width={160}
@@ -1496,7 +1496,7 @@ function TrainerCardModal({
                       >
                         <PokemonImage
                           src={uiSpriteUrl(mon.spriteUrl, mon.isShiny)}
-                          speciesName={mon.name}
+                          speciesName={mon.speciesName}
                           isShiny={mon.isShiny}
                           alt={mon.name}
                           width={40}

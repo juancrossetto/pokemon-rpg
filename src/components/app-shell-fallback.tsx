@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { BrandLogo } from "@/components/brand-logo";
 import { AppShellFallbackMeasure } from "@/components/app-shell-fallback-measure";
 

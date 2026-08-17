@@ -108,7 +108,7 @@ async function loadListMetrics(userIds: string[]) {
       dexCounts: new Map<string, number>(),
       favorites: new Map<
         string,
-        { name: string; spriteUrl: string; level: number; types: string[]; isShiny: boolean }
+        { name: string; speciesName: string; spriteUrl: string; level: number; types: string[]; isShiny: boolean }
       >(),
     };
   }
@@ -159,12 +159,13 @@ async function loadListMetrics(userIds: string[]) {
 
   const favMap = new Map<
     string,
-    { name: string; spriteUrl: string; level: number; types: string[]; isShiny: boolean }
+    { name: string; speciesName: string; spriteUrl: string; level: number; types: string[]; isShiny: boolean }
   >();
   for (const row of favorites) {
     if (favMap.has(row.ownerId)) continue;
     favMap.set(row.ownerId, {
       name: row.nickname ?? row.species.name,
+      speciesName: row.species.name,
       spriteUrl: row.species.spriteUrl,
       level: row.level,
       types: row.species.types,
@@ -175,6 +176,7 @@ async function loadListMetrics(userIds: string[]) {
     if (favMap.has(row.ownerId)) continue;
     favMap.set(row.ownerId, {
       name: row.nickname ?? row.species.name,
+      speciesName: row.species.name,
       spriteUrl: row.species.spriteUrl,
       level: row.level,
       types: row.species.types,
@@ -658,6 +660,7 @@ export async function loadTrainerCard(
   const favorite = favoriteRow
     ? {
         name: favoriteRow.nickname ?? favoriteRow.species.name,
+        speciesName: favoriteRow.species.name,
         spriteUrl: favoriteRow.species.spriteUrl,
         level: favoriteRow.level,
         cp: pokemonPower(favoriteRow),
@@ -677,6 +680,7 @@ export async function loadTrainerCard(
     return {
       slot: p.teamSlot ?? 0,
       name: p.nickname ?? p.species.name,
+      speciesName: p.species.name,
       spriteUrl: p.species.spriteUrl,
       level: p.level,
       currentHp: p.currentHp,

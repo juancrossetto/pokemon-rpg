@@ -18,6 +18,7 @@ export const MARKET_ERRORS = [
   "rate_limited",
   "trade_locked",
   "no_moves",
+  "occupied",
 ] as const;
 
 export const MARKET_NOTICES = [
@@ -40,6 +41,7 @@ export const PC_ERRORS = [
   "last_team_member",
   "rate_limited",
   "trade_locked",
+  "occupied",
 ] as const;
 
 export const PC_NOTICES = ["deposited", "withdrawn"] as const;

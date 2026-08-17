@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import type { CSSProperties, ReactNode } from "react";
 import { PokemonImage } from "@/components/pokemon-image";
 import { typeColor } from "@/lib/type-colors";

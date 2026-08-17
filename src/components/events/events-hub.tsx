@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { Link } from "@/i18n/navigation";
 import { itemHdIconUrl } from "@/lib/item-sprites";
 import {

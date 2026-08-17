@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
@@ -8,6 +8,7 @@ import { useTypeLabel } from "@/hooks/use-type-label";
 import { HubHelpButton } from "@/components/journey-guidance";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
+import { PokemonImage } from "@/components/pokemon-image";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
 import { LobbyLoadoutCard } from "@/components/battle/lobby-loadout-card";
@@ -391,13 +392,14 @@ export function BattleLobbyMobile({
               >
                 <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-black/30">
                   {entry.spriteUrl && (
-                    <Image
+                    <PokemonImage
                       src={entry.spriteUrl}
+                      speciesName={entry.speciesName}
                       alt={entry.speciesName}
                       width={44}
                       height={44}
                       draggable={false}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                     />
                   )}
                 </div>
@@ -454,8 +456,10 @@ export function BattleLobbyMobile({
                 )}
                 <div className="flex h-14 w-14 items-center justify-center">
                   {mon.spriteUrl && (
-                    <Image
+                    <PokemonImage
                       src={mon.spriteUrl}
+                      speciesId={mon.speciesId}
+                      speciesName={mon.name}
                       alt={mon.name}
                       width={56}
                       height={56}

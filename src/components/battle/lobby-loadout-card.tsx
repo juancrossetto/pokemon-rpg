@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { itemDisplayUrl } from "@/lib/item-sprites";

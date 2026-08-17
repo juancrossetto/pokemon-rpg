@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { formatPvpCooldown } from "@/lib/pvp/cooldown";

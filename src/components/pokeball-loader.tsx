@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { PokeballIcon } from "@/components/pokeball-icon";
 
 type LoaderVariant = "svg" | "gif";

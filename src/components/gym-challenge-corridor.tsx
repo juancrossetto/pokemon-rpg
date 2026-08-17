@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { startGymRunBattle } from "@/actions/start-gym-run-battle";
 import { GymRunExitButton } from "@/components/gym-run-exit-button";
@@ -8,7 +8,7 @@ import { showdownTrainerSpriteUrl } from "@/lib/avatars";
 import { gymCorridorTheme } from "@/lib/gym-corridor-theme";
 import { itemDisplayUrl } from "@/lib/item-sprites";
 import { announceEnergyDelta } from "@/lib/resource-fx";
-import { uiSpriteUrl } from "@/lib/sprites";
+import { PokemonImage } from "@/components/pokemon-image";
 
 export type CorridorTeamMember = {
   name: string;
@@ -231,13 +231,13 @@ function TeamIcons({ team, reveal }: { team: CorridorTeamMember[]; reveal: boole
             className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white/[0.04] ring-1 ring-white/10"
             title={`${m.name} Lv.${m.level}`}
           >
-            <Image
-              src={uiSpriteUrl(m.spriteUrl)}
+            <PokemonImage
+              src={m.spriteUrl}
+              speciesName={m.name}
               alt={m.name}
               width={28}
               height={28}
               className="h-7 w-7 object-contain"
-              unoptimized
             />
           </span>
         );

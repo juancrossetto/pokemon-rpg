@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { typeColor } from "@/lib/type-colors";
+import { PokemonImage } from "@/components/pokemon-image";
 import { StartEncounterButton } from "@/components/start-encounter-button";
 import { RegionMapDialog } from "@/components/region-map-dialog";
 import { BattleLobbyMobile } from "@/components/battle-lobby-mobile";
@@ -208,12 +209,13 @@ export function BattleLobby({
                     <div key={entry.id} className="flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-black/30">
                         {entry.spriteUrl && (
-                          <Image
+                          <PokemonImage
                             src={entry.spriteUrl}
+                            speciesName={entry.speciesName}
                             alt={entry.speciesName}
                             width={32}
                             height={32}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-contain"
                           />
                         )}
                       </div>
@@ -292,8 +294,10 @@ export function BattleLobby({
                   )}
                   <div className="mb-0.5 flex h-11 w-11 items-center justify-center">
                     {mon.spriteUrl && (
-                      <Image
+                      <PokemonImage
                         src={mon.spriteUrl}
+                        speciesId={mon.speciesId}
+                        speciesName={mon.name}
                         alt={mon.name}
                         width={44}
                         height={44}

@@ -27,7 +27,7 @@ export function chapterForPath(pathname: string): HandbookChapterId | null {
   if (clean === "/battle" || clean.startsWith("/battle/")) {
     return "battle";
   }
-  if (clean === "/campaign" || clean.startsWith("/gyms") || clean === "/team") {
+  if (clean === "/campaign" || clean.startsWith("/gyms") || clean === "/team" || clean === "/park" || clean.startsWith("/park/")) {
     return "journey";
   }
   if (clean === "/pvp" || clean.startsWith("/pvp/") || clean === "/ranking") {

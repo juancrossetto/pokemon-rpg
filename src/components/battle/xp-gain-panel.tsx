@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useTranslations } from "next-intl";
 import type { XpSummaryEntry } from "@/actions/battle-move";
 import { playUiSfx } from "@/lib/battle-sfx";
-import { uiSpriteUrl } from "@/lib/sprites";
+import { PokemonImage } from "@/components/pokemon-image";
 import { MAX_POKEMON_LEVEL, xpForLevel } from "@/lib/stats";
 
 const XP_ICON = "/ui/exp.png";
@@ -333,12 +333,13 @@ function XpGainRow({
 
       <div className="flex items-center gap-2.5">
         <div className="relative shrink-0">
-          <Image
-            src={uiSpriteUrl(entry.fromSpriteUrl, entry.isShiny)}
+          <PokemonImage
+            src={entry.fromSpriteUrl}
+            speciesName={entry.name}
+            isShiny={entry.isShiny}
             alt=""
             width={compact ? 36 : 44}
             height={compact ? 36 : 44}
-            unoptimized
             className={`object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)] ${
               compact ? "h-9 w-9" : "h-11 w-11"
             }`}

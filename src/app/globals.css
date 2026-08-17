@@ -24313,13 +24313,10 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 
 /* ---------- Columna flotante de amigos conectados ---------- */
 /*
-  Va pegada al borde derecho de la ventana y flota sobre el contenido, no
-  dentro del flujo: vive en el chrome, no en una página. Al ser `fixed` no le
-  saca ni un píxel al layout de ninguna pantalla.
-
-  `xl` es el corte porque es donde aparece el navbar de escritorio y sobra
-  margen a los costados del contenido (`max-w-6xl` centrado). Por debajo no se
-  dibuja: quedaría encima de las cards, no al lado.
+  Va pegada al borde derecho de la ventana (`right` fijo). Un
+  `calc((100vw - Nrem) / 2)` la ancla al cajón centrado: en un laptop
+  coincide con el gutter, en un monitor ancho queda a cientos de px del
+  borde. `xl` es el corte del navbar desktop; por debajo taparía las cards.
 */
 .home-friends-rail {
   display: none;
@@ -24330,7 +24327,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     position: fixed;
     z-index: 30;
     top: 50%;
-    right: max(.9rem, calc((100vw - 82rem) / 2));
+    right: max(.9rem, env(safe-area-inset-right, 0px));
     display: flex;
     max-height: 74vh;
     flex-direction: column;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useTranslations } from "next-intl";
 import { setPvpTeam } from "@/actions/set-pvp-team";
 import type { DexRarity } from "@/lib/pokedex";

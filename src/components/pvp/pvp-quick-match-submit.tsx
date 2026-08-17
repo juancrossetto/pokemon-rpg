@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormStatus } from "react-dom";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 
 const PIKACHU_LOADER = "/pvp/pikachu-loader.gif";
 

@@ -1,4 +1,5 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
+import { PokemonImage } from "@/components/pokemon-image";
 import { getTranslations } from "next-intl/server";
 import { Link, redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
@@ -28,7 +29,6 @@ import {
 } from "@/lib/market-rules";
 import { cancelListing, claimPurchase, listItem, listPokemon } from "@/actions/market";
 import { itemSpriteUrl } from "@/lib/item-sprites";
-import { spriteFor } from "@/lib/shiny";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { unclaimedPurchasesWhere } from "@/lib/market-delivery";
 const TABS = ["shop", "browse", "sell", "mine", "bought"] as const;
@@ -333,8 +333,10 @@ async function SellTab({ locale, userId }: { locale: string; userId: string }) {
                   <input type="hidden" name="pokemonId" value={instance.id} />
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className="w-10 h-10 rounded-full bg-surface-container-high border border-surface-variant flex items-center justify-center overflow-hidden shrink-0">
-                      <Image
-                        src={spriteFor(instance.species.spriteUrl, instance.isShiny)}
+                      <PokemonImage
+                        src={instance.species.spriteUrl}
+                        speciesName={instance.species.name}
+                        isShiny={instance.isShiny}
                         alt={instance.species.name}
                         width={40}
                         height={40}
@@ -717,8 +719,10 @@ function ListingAvatar({
   return (
     <div className="w-10 h-10 rounded-full bg-surface-container-high border border-surface-variant flex items-center justify-center overflow-hidden shrink-0 p-1.5">
       {listing.kind === "POKEMON" && listing.pokemon ? (
-        <Image
-          src={spriteFor(listing.pokemon.species.spriteUrl, listing.pokemon.isShiny)}
+        <PokemonImage
+          src={listing.pokemon.species.spriteUrl}
+          speciesName={listing.pokemon.species.name}
+          isShiny={listing.pokemon.isShiny}
           alt={listing.pokemon.species.name}
           width={40}
           height={40}

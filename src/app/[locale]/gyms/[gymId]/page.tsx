@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { getTranslations } from "next-intl/server";
 import { redirect, Link } from "@/i18n/navigation";
 import { auth } from "@/auth";
@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { typeColor } from "@/lib/type-colors";
 import { typeIcon } from "@/lib/type-icons";
 import { gymBadgeImageUrl, gymLeaderPortraitUrl } from "@/lib/gym-art";
+import { PokemonImage } from "@/components/pokemon-image";
 import { nowMs } from "@/lib/time";
 import { StartGymRunButton } from "@/components/start-gym-run-button";
 import { SkipGymCooldownButton } from "@/components/skip-gym-cooldown-button";
@@ -277,7 +278,7 @@ export default async function GymLeaderPage({
               <div key={member.id} className="flex items-center gap-2.5 bg-surface-container-low p-1.5 sm:p-2 rounded border border-white/5">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0">
                   {member.species.spriteUrl && (
-                    <Image src={member.species.spriteUrl} alt={member.species.name} width={40} height={40} className="w-full h-full object-cover" />
+                    <PokemonImage src={member.species.spriteUrl} speciesName={member.species.name} alt={member.species.name} width={40} height={40} className="w-full h-full object-contain" />
                   )}
                 </div>
                 <span className="text-label-md text-on-surface capitalize flex-1">{member.species.name}</span>

@@ -7,7 +7,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { chooseStarter } from "@/actions/choose-starter";

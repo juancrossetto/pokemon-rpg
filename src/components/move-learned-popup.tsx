@@ -1,13 +1,14 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { battleSfxForMove, playUiSfx } from "@/lib/battle-sfx";
 import { formatMoveName } from "@/lib/format-move-name";
 import { typeColor } from "@/lib/type-colors";
-import { showdownCategoryIconUrl, showdownTypeSymbolUrl } from "@/lib/type-icons";
+import { TypeSymbol } from "@/components/type-symbol";
+import { showdownCategoryIconUrl } from "@/lib/type-icons";
 import type { MoveCategoryKind } from "@/lib/level-up-read";
 
 /** Duración total bloqueada: la celebración no se puede saltear. */
@@ -139,14 +140,7 @@ export function MoveLearnedPopup({
 
         <div className="learned-chips">
           <span className="learned-chip learned-chip--type">
-            <Image
-              src={showdownTypeSymbolUrl(moveType)}
-              alt=""
-              width={18}
-              height={18}
-              className="h-[18px] w-[18px] object-contain"
-              unoptimized
-            />
+            <TypeSymbol type={moveType} size={18} className="h-[18px] w-[18px]" />
             {moveType}
           </span>
           <span className="learned-chip">
