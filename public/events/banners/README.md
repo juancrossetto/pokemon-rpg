@@ -6,7 +6,7 @@ de `src/components/home/home-event-showcase.tsx`:
 | archivo      | posición | slide actual | pantalla  |
 | ------------ | -------- | ------------ | --------- |
 | `slot-1.png` | 1ª       | `limited`    | `/events` |
-| `slot-2.png` | 2ª       | `raid`       | `/raids`  |
+| `slot-2.png` | 2ª       | `stones`     | `/events` |
 | `slot-3.png` | 3ª       | `tower`      | `/tower`  |
 
 Los nombres son posicionales **a propósito**, y no el `id` del slide. Los artes

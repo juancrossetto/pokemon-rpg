@@ -6,10 +6,15 @@ import {
   battleAnimatedSpriteUrl,
   type SpriteFacing,
 } from "@/lib/showdown-sprites";
+import { pokemonSpriteCandidates } from "@/lib/sprites";
+
+const LOCAL_FALLBACK = "/items/hd/poke-ball.png";
 
 /**
- * Sprite de batalla: GIF animado Showdown (ani HD) con fallback al
- * official-artwork si el GIF no existe o falla la red.
+ * Sprite de batalla: GIF animado Showdown (ani HD) y, si el CDN falla,
+ * la misma cadena de PNGs que `PokemonImage` (artwork → pixel → Showdown
+ * estático → pokeball local). En prod el GIF a veces no llega; sin esta
+ * cascada quedaba el ícono roto del navegador con el alt de la especie.
  */
 export function BattleSprite({
   speciesName,
@@ -33,29 +38,41 @@ export function BattleSprite({
   style?: CSSProperties;
 }) {
   const animated = battleAnimatedSpriteUrl(speciesName, facing, isShiny);
-  const [src, setSrc] = useState(animated);
-  const [lastAnimated, setLastAnimated] = useState(animated);
-
-  // Ajuste durante el render en lugar de useEffect: el estado sólo existe para
-  // poder caer al fallback en onError, pero tiene que volver al GIF cuando
-  // cambia el Pokémon. Hacerlo en un efecto pintaba un frame con el sprite
-  // anterior y encadenaba un render de más.
-  if (lastAnimated !== animated) {
-    setLastAnimated(animated);
-    setSrc(animated);
-  }
+  const sources = [
+    animated,
+    ...pokemonSpriteCandidates({
+      src: fallbackUrl,
+      speciesName,
+      isShiny,
+    }),
+    LOCAL_FALLBACK,
+  ].filter((value, index, all) => all.indexOf(value) === index);
+  const sourcesKey = sources.join("|");
+  const [failure, setFailure] = useState({ sourcesKey, index: 0 });
+  const activeIndex = failure.sourcesKey === sourcesKey ? failure.index : 0;
+  const activeSrc = sources[Math.min(activeIndex, sources.length - 1)] ?? LOCAL_FALLBACK;
+  const usingLocalFallback = activeSrc === LOCAL_FALLBACK;
 
   return (
     <Image
-      src={src}
+      src={activeSrc}
       alt={alt}
       width={width}
       height={height}
-      className={`battle-sprite-pixel ${className ?? ""}`.trim()}
+      className={`battle-sprite-pixel ${className ?? ""}${usingLocalFallback ? " opacity-45 grayscale" : ""}`.trim()}
       style={style}
       unoptimized
       onError={() => {
-        if (src !== fallbackUrl) setSrc(fallbackUrl);
+        setFailure((current) => {
+          const currentIndex = current.sourcesKey === sourcesKey ? current.index : 0;
+          if (current.sourcesKey === sourcesKey && currentIndex >= sources.length - 1) {
+            return current;
+          }
+          return {
+            sourcesKey,
+            index: Math.min(currentIndex + 1, sources.length - 1),
+          };
+        });
       }}
     />
   );

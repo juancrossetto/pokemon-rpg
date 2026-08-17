@@ -14,6 +14,7 @@ import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { avatarById } from "@/lib/avatars";
 import { starterAvatarOptions } from "@/lib/avatar-unlocks";
 import { markBootSplashPending } from "@/lib/boot-splash";
+import { writeFriendsRailVisible } from "@/lib/friends-rail-pref";
 
 type Gender = "male" | "female" | "unspecified";
 
@@ -85,6 +86,7 @@ export default function RegisterPage() {
       redirect: false,
     });
     markBootSplashPending();
+    writeFriendsRailVisible(true);
     router.push("/starter");
     router.refresh();
   }

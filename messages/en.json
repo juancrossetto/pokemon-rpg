@@ -183,6 +183,25 @@
     "noTeamTitle": "You haven't chosen your starter yet",
     "noTeamSubtitle": "Choose your first Pokémon to start training and battling.",
     "chooseStarterLink": "Choose starter",
+    "friendsRail": {
+      "title": "My friends",
+      "presence": {
+        "online": "Online",
+        "exploring": "Exploring",
+        "away": "Out",
+        "fighting": "In battle",
+        "gym": "At a gym",
+        "offline": "Offline"
+      },
+      "actions": {
+        "card": "View card",
+        "favorite": "Mark favorite",
+        "unfavorite": "Remove favorite",
+        "all": "See all"
+      },
+      "toggleShow": "Show friends",
+      "toggleHide": "Hide friends"
+    },
     "activeSquad": "Active Squad",
     "manage": "Manage",
     "emptySlot": "Empty slot",
@@ -357,7 +376,16 @@
         }
       },
       "eventShowcase": {
-        "liveOpen": "Available", "liveDone": "Completed", "liveRunning": "In progress", "liveReward": "Reward ready", "towerEyebrow": "Roguelite climb", "towerTitle": "Battle Tower", "towerFloor": "Floor {floor} in progress", "towerBest": "Best: floor {floor}", "towerProgress": "Floor {floor} of {total}", "heroEyebrow": "Featured event",
+        "liveOpen": "Available",
+        "liveDone": "Completed",
+        "liveRunning": "In progress",
+        "liveReward": "Reward ready",
+        "towerEyebrow": "Roguelite climb",
+        "towerTitle": "Battle Tower",
+        "towerFloor": "Floor {floor} in progress",
+        "towerBest": "Best: floor {floor}",
+        "towerProgress": "Floor {floor} of {total}",
+        "heroEyebrow": "Featured event",
         "ends": "Until {date}",
         "rewardsReady": "{count} rewards ready",
         "openEvents": "Open event",
@@ -370,6 +398,11 @@
         "raidDefeated": "Boss defeated",
         "attempts": "{current}/{total} attempts",
         "community": "Community · {percent}%",
+        "stonesEyebrow": "Evolution campaign",
+        "stonesTitle": "Evolution stones",
+        "stonesTagline": "Earn stones to evolve Eevee and more species.",
+        "stonesChip": "Event rewards",
+        "heroCtaStones": "Get stones",
         "safariEyebrow": "Limited expedition",
         "safariTitle": "Safari Zone",
         "safariSubtitle": "Choose a biome and catch rare species",

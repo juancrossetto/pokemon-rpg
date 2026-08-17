@@ -9,6 +9,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { AuthBackdrop } from "@/components/auth-backdrop";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { markBootSplashPending } from "@/lib/boot-splash";
+import { writeFriendsRailVisible } from "@/lib/friends-rail-pref";
 
 export default function LoginPage() {
   const t = useTranslations("auth.login");
@@ -39,6 +40,7 @@ export default function LoginPage() {
       return;
     }
     markBootSplashPending();
+    writeFriendsRailVisible(true);
     router.push("/");
     router.refresh();
   }

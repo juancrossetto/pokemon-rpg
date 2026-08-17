@@ -29,10 +29,24 @@
   revalida en segundo plano, así una entrada mala se corrige sola en la visita
   siguiente en vez de quedarse pegada.
 
+  v3 — no interceptar imágenes de otro origen.
+
+  Los sprites de batalla (Showdown) y los HOME de PokeAPI viven en
+  `play.pokemonshowdown.com` / `raw.githubusercontent.com`. El worker los
+  trataba como `destination: "image"` y los reenviaba con `fetch` no-cors.
+  En producción (el SW sólo se registra ahí) Cloudflare/GitHub a veces
+  responden opaco o fallan, el worker entrega `Response.error()` y el
+  `<img>` queda con el ícono roto + alt ("tentacool", "gyarados"). En local
+  no se ve porque NODE_ENV !== production.
+
+  Las miniaturas del party sí funcionan: van por `/_next/image` (mismo
+  origen). A partir de v3 el worker sólo toca estáticos propios; el
+  navegador pide los CDNs directo, igual que en dev.
+
   El número de versión importa: es lo que borra la caché envenenada de los
-  teléfonos que ya pasaron por la v1. Si se vuelve a tocar la estrategia, subirlo.
+  teléfonos que ya pasaron por v1/v2. Si se vuelve a tocar la estrategia, subirlo.
 */
-const VERSION = "pokerpg-static-v2";
+const VERSION = "pokerpg-static-v3";
 const PRECACHE = [
   "/logo.png",
   "/loaders/pokeball-loader-transparent.webp",
@@ -50,10 +64,12 @@ self.addEventListener("install", (event) => {
   // Uno por uno y tolerante a fallos, no `addAll`: con `addAll`, un solo
   // archivo que falle aborta la instalación y el worker viejo sigue
   // controlando la página — o sea, este arreglo nunca llegaría a activarse.
+  // `skipWaiting` hace que v3 reemplace v2 sin esperar a cerrar todas las
+  // pestañas: si no, los sprites siguen rotos hasta el próximo reload manual.
   event.waitUntil(
     caches.open(VERSION).then((cache) =>
       Promise.all(PRECACHE.map((path) => cache.add(path).catch(() => undefined))),
-    ).catch(() => undefined),
+    ).then(() => self.skipWaiting()).catch(() => self.skipWaiting()),
   );
 });
 
@@ -71,11 +87,13 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || request.mode === "navigate") return;
   const url = new URL(request.url);
+  // Sprites de CDNs externos: no pasarlos por el worker. Ver comentario v3.
+  if (url.origin !== self.location.origin) return;
   const isStatic =
     request.destination === "image" ||
     request.destination === "audio" ||
     request.destination === "font" ||
-    (url.origin === self.location.origin && url.pathname.startsWith("/_next/static/"));
+    url.pathname.startsWith("/_next/static/");
   if (!isStatic) return;
 
   event.respondWith(serveStatic(request));

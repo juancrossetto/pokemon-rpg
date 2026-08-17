@@ -5,6 +5,7 @@
 // (timeline de animaciones) queda en battle-arena.tsx.
 
 import Image from "next/image";
+import { PokemonImage } from "@/components/pokemon-image";
 import { type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { PokeballIcon } from "@/components/pokeball-icon";
@@ -182,13 +183,14 @@ export function PartySidebar({
                   featuredIsShiny ? "bg-[#FFCC00]/35" : "bg-secondary/25"
                 }`}
               />
-              <Image
+              <PokemonImage
                 src={featuredSpriteUrl}
+                speciesName={name}
+                isShiny={featuredIsShiny}
                 alt=""
                 width={56}
                 height={56}
                 className="relative h-9 w-9 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)] md:h-12 md:w-12"
-                unoptimized
               />
             </span>
           ) : null}
@@ -230,13 +232,14 @@ export function PartySidebar({
                 aria-hidden
                 className="pointer-events-none absolute inset-0 rounded-full bg-primary/25 blur-md"
               />
-              <Image
+              <PokemonImage
                 src={featuredSpriteUrl}
+                speciesName={name}
+                isShiny={featuredIsShiny}
                 alt=""
                 width={56}
                 height={56}
                 className="relative h-9 w-9 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)] md:h-12 md:w-12"
-                unoptimized
               />
             </span>
           ) : (
@@ -358,13 +361,14 @@ export function PartySidebar({
               className="pointer-events-none absolute inset-[-6%] rounded-full bg-secondary/14 blur-2xl"
             />
             {featuredSpriteUrl ? (
-              <Image
+              <PokemonImage
                 src={featuredSpriteUrl}
+                speciesName={name}
+                isShiny={featuredIsShiny}
                 alt=""
                 width={96}
                 height={96}
                 className="relative h-[92%] w-[92%] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
-                unoptimized
               />
             ) : (
               <PokeballIcon className="relative h-8 w-8 opacity-35" />

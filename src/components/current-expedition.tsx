@@ -175,8 +175,8 @@ export function CurrentExpedition({
 
             <GameCtaButton
               href={ctaHref}
-              variant="brand"
-              className="expedition-cta relative z-[2] min-h-9 w-full text-[11px]!"
+              variant="red"
+              className="expedition-cta home-rail-cta relative z-[2] min-h-9 w-full text-[11px]!"
             >
               {ctaLabel}
             </GameCtaButton>

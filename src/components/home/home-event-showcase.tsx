@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { PokemonImage } from "@/components/pokemon-image";
+import { itemHdIconUrl } from "@/lib/item-hd-icons";
 
 export type HomeEventShowcaseData = {
   hero: {
@@ -96,6 +97,15 @@ const SLIDE_INTERVAL_MS = 7000;
 /** Cuánto hay que arrastrar para que cuente como cambio de portada. */
 const DRAG_THRESHOLD_PX = 45;
 
+const STONE_REWARD_ICONS = (
+  ["Fire Stone", "Water Stone", "Thunder Stone", "Leaf Stone"] as const
+)
+  .map((name) => {
+    const icon = itemHdIconUrl(name);
+    return icon ? { icon, label: "×1" } : null;
+  })
+  .filter((entry): entry is { icon: string; label: string } => entry !== null);
+
 export function HomeEventBanner({ data, locale }: { data: HomeEventShowcaseData; locale: string }) {
   const t = useTranslations("home.hub.eventShowcase");
   const [index, setIndex] = useState(0);
@@ -152,25 +162,22 @@ export function HomeEventBanner({ data, locale }: { data: HomeEventShowcaseData;
       art: { src: "/events/banners/slot-1.png", fit: "cover", ratio: "2.6 / 1", focus: "70% 56%" },
     },
     {
-      id: "raid",
-      href: "/raids",
+      id: "stones",
+      href: "/events",
+      // Ámbar del arte: los pilares de Flareon / Jolteon dominan el borde
+      // izquierdo del PNG, que es el que se funde con el panel.
       accent: "#fb923c",
       accentDeep: "#fbbf24",
-      eyebrow: t("raidEyebrow"),
-      title: t("raidTitle"),
-      tagline: t("heroRaidTagline", { name: data.raid.name }),
+      eyebrow: t("stonesEyebrow"),
+      title: t("stonesTitle"),
+      tagline: t("stonesTagline"),
       chips: [
-        {
-          icon: "swords",
-          label: data.raid.communityDefeated
-            ? t("raidDefeated")
-            : t("attempts", { current: data.raid.attemptsLeft, total: data.raid.attemptsTotal }),
-        },
-        { icon: "groups", label: t("community", { percent: data.raid.communityPercent }), tone: "accent" },
+        { icon: "auto_awesome", label: t("stonesChip"), tone: "accent" },
+        { icon: "schedule", label: t("ends", { date: ends }) },
       ],
-      progress: { percent: data.raid.communityPercent, label: t("community", { percent: data.raid.communityPercent }) },
-      rewards: [],
-      cta: t("heroCtaRaid"),
+      progress: null,
+      rewards: STONE_REWARD_ICONS,
+      cta: t("heroCtaStones"),
       /*
         Proporción exacta del archivo (393×162): entra completo, sin recortar.
 

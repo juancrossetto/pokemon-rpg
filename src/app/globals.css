@@ -17012,6 +17012,36 @@ html.boot-splash-done .boot-splash,
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
 }
 
+/*
+  CTAs angostos de la columna izquierda del home. Orbitron + el CTA rojo de
+  juego (fucsia saturado): el degradé brand se leía plano sobre las cards
+  oscuras y no invitaba a entrar.
+*/
+.home-rail-cta {
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  filter: saturate(1.12) brightness(1.04);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 3px 10px color-mix(in srgb, var(--theme-primary) 32%, transparent) !important;
+}
+.home-rail-cta:hover:not(.game-cta--disabled):not(:disabled) {
+  filter: saturate(1.18) brightness(1.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 4px 12px color-mix(in srgb, var(--theme-primary) 40%, transparent) !important;
+}
+.home-rail-cta .game-cta__label {
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  color: #fff;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.45),
+    0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
 .expedition-cta--stage {
   border-radius: 9999px !important;
   min-height: 3rem !important;
@@ -21722,19 +21752,26 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   padding-right: 0.15rem;
 }
 .route-hero__region {
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--theme-secondary, #a78bfa) 45%, white);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
 }
 .route-hero__route {
   margin-top: 0.1rem;
-  font-size: clamp(1.2rem, 8.25cqw, 2rem);
-  font-weight: 900;
-  line-height: 1.08;
-  letter-spacing: -0.02em;
+  /*
+    Misma display que el banner de eventos (`--font-title` / Orbitron). Es más
+    ancha que Inter: el cuerpo baja un poco y el tracking va en positivo —si
+    se aprieta, las mayúsculas se pegan.
+  */
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: clamp(1.05rem, 7.2cqw, 1.7rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.012em;
   text-transform: uppercase;
   overflow-wrap: normal;
   word-break: normal;
@@ -21781,9 +21818,11 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   color: rgba(255, 255, 255, 0.5);
 }
 .route-hero__progress-value {
-  font-size: 1.6rem;
-  font-weight: 900;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 1.55rem;
+  font-weight: 800;
   line-height: 1;
+  letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
   color: #fff;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
@@ -21951,8 +21990,10 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 .route-hero__cta-btn {
   width: 100%;
   min-height: 3rem;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
   font-size: 15px !important;
-  letter-spacing: 0.04em;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   /* Flota sobre el mapa: sombra dura + glow suave del tertiary. */
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.18) inset,
@@ -21979,6 +22020,11 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   tertiary azul/violeta el texto queda ilegible, así que acá va blanco con
   sombra: funciona sobre cualquier tema sin tocar el resto de los CTA.
 */
+.route-hero__cta-btn .game-cta__label {
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
 .route-hero__cta-btn .game-cta__label,
 .route-hero__cta-btn .game-cta__icon {
   color: #fff;
@@ -24263,4 +24309,241 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   .home-event-card__pokemon { transition: none; }
   .home-event-card:hover,
   .home-event-card:hover .home-event-card__pokemon { transform: none; }
+}
+
+/* ---------- Columna flotante de amigos conectados ---------- */
+/*
+  Va pegada al borde derecho de la ventana y flota sobre el contenido, no
+  dentro del flujo: vive en el chrome, no en una página. Al ser `fixed` no le
+  saca ni un píxel al layout de ninguna pantalla.
+
+  `xl` es el corte porque es donde aparece el navbar de escritorio y sobra
+  margen a los costados del contenido (`max-w-6xl` centrado). Por debajo no se
+  dibuja: quedaría encima de las cards, no al lado.
+*/
+.home-friends-rail {
+  display: none;
+}
+
+@media (min-width: 1280px) {
+  .home-friends-rail {
+    position: fixed;
+    z-index: 30;
+    top: 50%;
+    right: max(.9rem, calc((100vw - 82rem) / 2));
+    display: flex;
+    max-height: 74vh;
+    flex-direction: column;
+    align-items: center;
+    gap: .55rem;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .home-friends-rail > * { pointer-events: auto; }
+}
+
+/*
+  Sin overflow: el menú y los tooltips salen hacia la izquierda, fuera de la
+  columna. El loader recorta a 8 retratos, así que no hace falta scroll.
+*/
+.home-friends-rail__list {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: .45rem;
+  overflow: visible;
+  padding: .15rem;
+}
+
+.home-friends-rail__friend {
+  position: relative;
+  display: grid;
+  height: 2.75rem;
+  width: 2.75rem;
+  place-items: center;
+  transition: transform .16s ease;
+}
+.home-friends-rail__friend:hover { transform: scale(1.08); }
+
+@keyframes friends-bubble-in {
+  0% { transform: scale(0.12); opacity: 0; }
+  68% { transform: scale(1.14); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes friends-bubble-out {
+  0% { transform: scale(1); opacity: 1; }
+  38% { transform: scale(1.22); opacity: .92; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.home-friends-rail.is-pop-in .home-friends-rail__friend {
+  animation: friends-bubble-in .34s cubic-bezier(.22, 1.18, .36, 1) both;
+  animation-delay: calc(var(--friends-i, 0) * 26ms);
+  pointer-events: none;
+}
+.home-friends-rail.is-pop-out .home-friends-rail__friend {
+  animation: friends-bubble-out .28s ease-in both;
+  animation-delay: calc(var(--friends-i, 0) * 26ms);
+  pointer-events: none;
+}
+.home-friends-rail.is-pop-in .home-friends-rail__friend:hover,
+.home-friends-rail.is-pop-out .home-friends-rail__friend:hover {
+  transform: none;
+}
+
+/* El aro es el borde del retrato, no una card: fondo propio para que el avatar
+   recortado en círculo no deje ver el contenido de atrás. */
+.home-friends-rail__portrait {
+  display: grid;
+  height: 100%;
+  width: 100%;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 999px;
+  background: #14141d;
+  box-shadow: 0 6px 16px -8px rgba(0, 0, 0, .8);
+}
+.home-friends-rail__portrait img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.home-friends-rail__portrait .material-symbols-outlined {
+  color: rgba(255, 255, 255, .4);
+  font-size: 1.1rem !important;
+}
+.home-friends-rail__friend:hover .home-friends-rail__portrait {
+  border-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
+}
+
+/* Punto de presencia: mismo color que usa la pantalla de amigos
+   (`PRESENCE_META`), montado sobre el aro. El `::after` agranda el hit
+   para que el hover del estado no dependa de clavar 9px. */
+.home-friends-rail__dot {
+  position: absolute;
+  z-index: 1;
+  right: .05rem;
+  bottom: .05rem;
+  height: .58rem;
+  width: .58rem;
+  border: 2px solid #0c0c12;
+  border-radius: 999px;
+}
+.home-friends-rail__dot::after {
+  content: "";
+  position: absolute;
+  inset: -.28rem;
+}
+
+/* Tooltips a la izquierda: a la derecha no hay lugar. El nombre cuelga del
+   retrato; el estado, del punto. No comparten `:hover` del botón para que
+   pasar el mouse por el dot no muestre las dos etiquetas a la vez. */
+.home-friends-rail__name,
+.home-friends-rail__status {
+  position: absolute;
+  z-index: 2;
+  right: calc(100% + .5rem);
+  top: 50%;
+  border-radius: .5rem;
+  background: rgba(10, 10, 16, .95);
+  padding: .25rem .5rem;
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: opacity .16s ease;
+  white-space: nowrap;
+}
+.home-friends-rail__status {
+  font-size: .62rem;
+  letter-spacing: .01em;
+}
+.home-friends-rail__portrait:hover ~ .home-friends-rail__name,
+.home-friends-rail__friend:focus-visible .home-friends-rail__name { opacity: 1; }
+.home-friends-rail__dot:hover ~ .home-friends-rail__status { opacity: 1; }
+.home-friends-rail__item:has(.home-friends-rail__menu) .home-friends-rail__name,
+.home-friends-rail__item:has(.home-friends-rail__menu) .home-friends-rail__status {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-friends-rail__friend { transition: none; }
+  .home-friends-rail__friend:hover { transform: none; }
+  .home-friends-rail__name,
+  .home-friends-rail__status { transition: none; }
+  .home-friends-rail.is-pop-in .home-friends-rail__friend,
+  .home-friends-rail.is-pop-out .home-friends-rail__friend {
+    animation: none;
+  }
+}
+
+/*
+  Submenú de la columna de amigos.
+
+  Se abre a la izquierda del retrato —a la derecha está el borde de la
+  ventana— y va anclado al `li`, no al `aside`.
+*/
+.home-friends-rail__item { position: relative; }
+
+.home-friends-rail__menu {
+  position: absolute;
+  z-index: 2;
+  right: calc(100% + .55rem);
+  top: 50%;
+  display: flex;
+  width: 11rem;
+  flex-direction: column;
+  gap: .1rem;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: .85rem;
+  background: rgba(12, 12, 18, .97);
+  padding: .4rem;
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .9);
+  transform: translateY(-50%);
+}
+.home-friends-rail__menu-head {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  margin-bottom: .2rem;
+  padding: .25rem .45rem .4rem;
+}
+.home-friends-rail__menu-head strong {
+  color: #fff;
+  font-size: .74rem;
+  font-weight: 800;
+}
+.home-friends-rail__menu-head span {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+
+.home-friends-rail__action {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: .45rem;
+  border-radius: .55rem;
+  padding: .38rem .45rem;
+  color: rgba(255, 255, 255, .82);
+  font-size: .7rem;
+  font-weight: 600;
+  text-align: left;
+}
+.home-friends-rail__action:hover:not(:disabled) {
+  background: rgba(255, 255, 255, .07);
+  color: #fff;
+}
+.home-friends-rail__action:disabled { opacity: .5; }
+.home-friends-rail__action .material-symbols-outlined {
+  color: rgba(255, 255, 255, .5);
+  font-size: .95rem !important;
+}
+.home-friends-rail__action:hover .material-symbols-outlined {
+  color: color-mix(in srgb, var(--color-primary) 75%, #fff);
 }

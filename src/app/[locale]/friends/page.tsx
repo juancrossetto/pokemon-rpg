@@ -9,7 +9,7 @@ export default async function FriendsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; trainer?: string }>;
 }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   const [t, tNav, tPvp, session] = await Promise.all([
@@ -34,6 +34,13 @@ export default async function FriendsPage({
     filterRaw === "all"
       ? filterRaw
       : "all";
+
+  /*
+    `?trainer=<id>` abre la ficha de ese entrenador al entrar. Es lo que hace
+    utilizable el atajo de la columna flotante de amigos: sin esto, tocar un
+    retrato llevaba a la pantalla y te dejaba buscándolo a mano en la lista.
+  */
+  const initialTrainerId = typeof query.trainer === "string" ? query.trainer : null;
 
   const labels: FriendsLabels = {
     community: tNav("groups.community"),
@@ -173,6 +180,7 @@ export default async function FriendsPage({
       initial={snapshot}
       labels={labels}
       initialFilter={initialFilter}
+      initialTrainerId={initialTrainerId}
     />
   );
 }

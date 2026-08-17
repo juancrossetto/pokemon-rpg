@@ -14,6 +14,7 @@ import {
   CurrentExpedition,
   type CurrentExpeditionProps,
 } from "@/components/current-expedition";
+import { GameCtaButton } from "@/components/game-cta-button";
 
 /** Filtro del escuadrón (opcional en ActiveTeamStrip). */
 export type HomeSquadFilter = "all" | "favorites" | "injured" | "ready";
@@ -65,12 +66,13 @@ function RailAvatar({
 
 function MatchCta({ href, label }: { href: string; label: string }) {
   return (
-    <Link
+    <GameCtaButton
       href={href}
-      className="game-cta mt-2 !min-h-9 w-full px-3 py-2 text-[10px]!"
+      variant="red"
+      className="home-rail-cta mt-2 min-h-9 w-full px-3 py-2 text-[11px]!"
     >
-      <span className="game-cta__label">{label}</span>
-    </Link>
+      {label}
+    </GameCtaButton>
   );
 }
 

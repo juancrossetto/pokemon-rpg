@@ -14,10 +14,10 @@ import { useTypeLabel } from "@/hooks/use-type-label";
 import { useRouter } from "next/navigation";
 import { FlagIcon } from "@/components/flag-icon";
 import { TrainerAvatar } from "@/components/trainer-avatar";
+import { PokemonImage } from "@/components/pokemon-image";
 import { avatarById } from "@/lib/avatars";
 import { uiSpriteUrl } from "@/lib/sprites";
 import { typeColor } from "@/lib/type-colors";
-import { PRESENCE_HEARTBEAT_MS } from "@/lib/friend-rules";
 import {
   PRESENCE_META,
   isPresenceOnlineish,
@@ -36,7 +36,6 @@ import {
   cancelFriendRequest,
   declineFriendRequest,
   fetchTrainerCard,
-  heartbeatPresence,
   removeFriend,
   searchTrainers,
   sendFriendRequest,
@@ -247,11 +246,14 @@ export function FriendsHub({
   initial,
   labels,
   initialFilter = "all",
+  initialTrainerId = null,
 }: {
   locale: string;
   initial: FriendsHubSnapshot;
   labels: FriendsLabels;
   initialFilter?: FriendFilter;
+  /** `?trainer=<id>`: abre esa ficha al montar (atajo desde el home). */
+  initialTrainerId?: string | null;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<FriendFilter>(initialFilter);
@@ -298,13 +300,6 @@ export function FriendsHub({
     observer.observe(root);
     return () => observer.disconnect();
   }, [filter, labels.filters, initial.counts.pendingIncoming, initial.blocked.length]);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      void heartbeatPresence();
-    }, PRESENCE_HEARTBEAT_MS);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -387,6 +382,23 @@ export function FriendsHub({
     }
     setCard(res.card);
   }
+
+  /*
+    Apertura de la ficha por deep link. El `setState` no ocurre en el cuerpo del
+    efecto sino después del `await` de la acción, así que no dispara
+    `react-hooks/set-state-in-effect`.
+  */
+  useEffect(() => {
+    if (!initialTrainerId) return;
+    let alive = true;
+    void (async () => {
+      const res = await fetchTrainerCard(initialTrainerId);
+      if (alive && res.ok) setCard(res.card);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [initialTrainerId]);
 
   const filteredFriends = useMemo(() => {
     let list = [...initial.friends];
@@ -926,13 +938,14 @@ function FriendCard({
                   aria-hidden
                   className="absolute inset-x-1 bottom-0 mx-auto h-2 w-[65%] rounded-[100%] bg-black/50 blur-[2px]"
                 />
-                <Image
+                <PokemonImage
                   src={companionUrl}
+                  speciesName={friend.favorite?.name}
+                  isShiny={friend.favorite?.isShiny}
                   alt={friend.favorite?.name ?? ""}
                   width={160}
                   height={160}
                   className="relative max-h-[5.5rem] w-auto max-w-[4.75rem] object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.5)] sm:max-h-[6rem] sm:max-w-[5rem]"
-                  unoptimized
                 />
               </span>
             ) : null}
@@ -1388,13 +1401,14 @@ function TrainerCardModal({
                   className="friends-fav-glow pointer-events-none absolute h-40 w-40 rounded-full blur-3xl"
                   style={{ background: fav.accent }}
                 />
-                <Image
+                <PokemonImage
                   src={uiSpriteUrl(fav.spriteUrl, fav.isShiny)}
+                  speciesName={fav.name}
+                  isShiny={fav.isShiny}
                   alt={fav.name}
                   width={160}
                   height={160}
                   className="friends-fav-idle relative z-[1] h-36 w-36 object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)]"
-                  unoptimized
                 />
                 <p className="relative z-[1] mt-2 text-title-sm font-semibold text-white">
                   {fav.name}
@@ -1480,13 +1494,14 @@ function TrainerCardModal({
                         className="flex flex-col items-center rounded-xl border border-white/10 bg-black/25 p-1.5"
                         title={mon.name}
                       >
-                        <Image
+                        <PokemonImage
                           src={uiSpriteUrl(mon.spriteUrl, mon.isShiny)}
+                          speciesName={mon.name}
+                          isShiny={mon.isShiny}
                           alt={mon.name}
                           width={40}
                           height={40}
                           className="h-9 w-9 object-contain"
-                          unoptimized
                         />
                         <span className="text-[9px] tabular-nums text-white/80">
                           {labels.level} {mon.level}

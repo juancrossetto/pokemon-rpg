@@ -183,6 +183,25 @@
     "noTeamTitle": "Todavía no elegiste tu inicial",
     "noTeamSubtitle": "Elegí tu primer Pokémon para empezar a entrenar y batallar.",
     "chooseStarterLink": "Elegir inicial",
+    "friendsRail": {
+      "title": "Mis amigos",
+      "presence": {
+        "online": "En línea",
+        "exploring": "Explorando",
+        "away": "Ausente",
+        "fighting": "En combate",
+        "gym": "En un gimnasio",
+        "offline": "Desconectado"
+      },
+      "actions": {
+        "card": "Ver ficha",
+        "favorite": "Marcar favorito",
+        "unfavorite": "Quitar de favoritos",
+        "all": "Ver todos"
+      },
+      "toggleShow": "Mostrar amigos",
+      "toggleHide": "Ocultar amigos"
+    },
     "activeSquad": "Equipo activo",
     "manage": "Administrar",
     "emptySlot": "Espacio vacío",
@@ -357,7 +376,16 @@
         }
       },
       "eventShowcase": {
-        "liveOpen": "Disponible", "liveDone": "Completado", "liveRunning": "En curso", "liveReward": "Premio listo", "towerEyebrow": "Ascenso roguelite", "towerTitle": "Torre de Combate", "towerFloor": "Piso {floor} en curso", "towerBest": "Récord: piso {floor}", "towerProgress": "Piso {floor} de {total}", "heroEyebrow": "Evento destacado",
+        "liveOpen": "Disponible",
+        "liveDone": "Completado",
+        "liveRunning": "En curso",
+        "liveReward": "Premio listo",
+        "towerEyebrow": "Ascenso roguelite",
+        "towerTitle": "Torre de Combate",
+        "towerFloor": "Piso {floor} en curso",
+        "towerBest": "Récord: piso {floor}",
+        "towerProgress": "Piso {floor} de {total}",
+        "heroEyebrow": "Evento destacado",
         "ends": "Hasta {date}",
         "rewardsReady": "{count} premios listos",
         "openEvents": "Abrir evento",
@@ -370,6 +398,11 @@
         "raidDefeated": "Jefe derrotado",
         "attempts": "{current}/{total} intentos",
         "community": "Comunidad · {percent}%",
+        "stonesEyebrow": "Campaña evolutiva",
+        "stonesTitle": "Piedras evolutivas",
+        "stonesTagline": "Conseguí piedras para evolucionar a Eevee y a más especies.",
+        "stonesChip": "Recompensas del evento",
+        "heroCtaStones": "Conseguir piedras",
         "safariEyebrow": "Expedición limitada",
         "safariTitle": "Zona Safari",
         "safariSubtitle": "Elegí un bioma y capturá especies raras",

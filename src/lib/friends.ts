@@ -191,6 +191,11 @@ export function isPresenceOnlineish(status: PresenceStatus): boolean {
   );
 }
 
+/** Vale una burbuja: en sesión o recién inactivo. No quien ya está offline. */
+export function isPresenceOnRail(status: PresenceStatus): boolean {
+  return isPresenceOnlineish(status) || status === "away";
+}
+
 export const PRESENCE_META: Record<
   PresenceStatus,
   { icon: string; dot: string; tone: string }

@@ -14,10 +14,12 @@ import {
 import {
   derivePresence,
   isPresenceOnlineish,
+  isPresenceOnRail,
   type BlockedEntry,
   type FriendListEntry,
   type FriendRequestEntry,
   type FriendsHubSnapshot,
+  type PresenceStatus,
   type PlayerSearchHit,
   type TrainerCardData,
 } from "@/lib/friends";
@@ -215,6 +217,83 @@ export async function touchPresence(userId: string): Promise<void> {
     where: { id: userId },
     data: { lastSeenAt: new Date() },
   });
+}
+
+/**
+ * Amigos conectados para la columna flotante del chrome.
+ *
+ * Loader propio y no `loadFriendsHub` porque ese trae solicitudes, bloqueos,
+ * métricas de ranking, equipos favoritos y el conteo de gimnasios: siete
+ * consultas para dibujar un puñado de retratos de 34px. Acá sólo hacen falta
+ * las amistades, el estado de presencia y el avatar.
+ *
+ * Tampoco toca `touchPresence`: el shell se renderiza en cada navegación y
+ * escribir la fila del usuario en cada una es un write por pantalla. La
+ * presencia propia la marca el heartbeat del chrome (`PresenceHeartbeat`).
+ */
+export type HomeFriendPresence = {
+  userId: string;
+  username: string;
+  avatarId: string | null;
+  presence: PresenceStatus;
+  isFavorite: boolean;
+};
+
+export async function loadOnlineFriends(
+  userId: string,
+  limit = 8,
+): Promise<{ friends: HomeFriendPresence[]; onlineCount: number }> {
+  const friendships = await prisma.friendship.findMany({
+    where: { OR: [{ userAId: userId }, { userBId: userId }] },
+    select: { userAId: true, userBId: true, favoriteForA: true, favoriteForB: true },
+  });
+  const friendIds = friendships.map((f) => (f.userAId === userId ? f.userBId : f.userAId));
+  if (friendIds.length === 0) return { friends: [], onlineCount: 0 };
+  // El favorito se guarda en la columna del lado que corresponda de la amistad.
+  const favorites = new Set(
+    friendships
+      .filter((f) => (f.userAId === userId ? f.favoriteForA : f.favoriteForB))
+      .map((f) => (f.userAId === userId ? f.userBId : f.userAId)),
+  );
+
+  const [rows, flags] = await Promise.all([
+    prisma.user.findMany({
+      where: { id: { in: friendIds } },
+      select: { id: true, username: true, avatarId: true, lastSeenAt: true },
+    }),
+    presenceFlags(friendIds),
+  ]);
+
+  const now = Date.now();
+  const online = rows
+    .map((row) => ({
+      userId: row.id,
+      username: row.username,
+      avatarId: row.avatarId,
+      presence: derivePresence({
+        lastSeenAt: row.lastSeenAt,
+        inBattle: flags.fighting.has(row.id),
+        inGym: flags.gym.has(row.id),
+        now,
+      }),
+      isFavorite: favorites.has(row.id),
+      lastSeenAt: row.lastSeenAt?.getTime() ?? 0,
+    }))
+    .filter((entry) => isPresenceOnRail(entry.presence))
+    // Más reciente primero: si hay más de `limit`, los que se ven son los que
+    // acaban de estar activos, no los que quedaron en el borde de la ventana.
+    .sort((a, b) => b.lastSeenAt - a.lastSeenAt);
+
+  return {
+    friends: online.slice(0, limit).map((entry) => ({
+      userId: entry.userId,
+      username: entry.username,
+      avatarId: entry.avatarId,
+      presence: entry.presence,
+      isFavorite: entry.isFavorite,
+    })),
+    onlineCount: online.length,
+  };
 }
 
 export async function loadFriendsHub(userId: string): Promise<FriendsHubSnapshot> {

@@ -21,6 +21,7 @@ import type { CombatLock } from "@/lib/battle-lock";
 import { getActiveTowerRun } from "@/lib/battle-lock";
 import { HandbookHost } from "@/components/handbook/handbook-modal";
 import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
+import { FriendsRailToggle } from "@/components/friends/friends-rail-toggle";
 import { CombatLockChip, type CombatLockKind } from "@/components/combat-lock-chip";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
@@ -249,6 +250,8 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
           <LocaleSwitcher currentLocale={locale} label={t("language")} />
 
           {session?.user && <HandbookTrigger />}
+
+          {session?.user && <FriendsRailToggle />}
 
           {session?.user && notifications && (
             <NotificationsBell
