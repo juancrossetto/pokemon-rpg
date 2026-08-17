@@ -55,14 +55,17 @@ export async function HomeRouteHero({
     farmingStageId,
     locationKind,
     gymHref,
+    eliteMilestone,
   } = expedition;
 
   const gymReady = milestone.kind === "gym";
   const playHref = gymReady
     ? milestoneHref(milestone, { gymHref })
     : "/battle?play=1";
+  // Los nodos del Alto Mando son gimnasios en el modelo de campaña: sin este
+  // caso el hero mandaba a Agatha diciendo "Desafiar gimnasio".
   const playLabel = gymReady
-    ? t("guide.cta.challenge_gym")
+    ? t(eliteMilestone ? "challengeElite" : "guide.cta.challenge_gym")
     : t("guide.cta.explore");
   const showClaim = claimableCount > 0;
 
@@ -157,7 +160,7 @@ export async function HomeRouteHero({
         <div className={`route-hero__cta${showClaim ? " route-hero__cta--dual" : ""}`}>
           <GameCtaButton
             href={playHref}
-            variant="gold"
+            variant="brand"
             className="route-hero__cta-btn"
           >
             {playLabel}

@@ -12,7 +12,12 @@ type SharedProps = {
   icon?: string;
   className?: string;
   disabled?: boolean;
-  variant?: "gold" | "red" | "secondary" | "gem";
+  /**
+   * `brand` = degradé primary → secondary, plano y saturado. Es el CTA del
+   * home; vive aparte de `red` para no repintar de golpe el botón principal de
+   * gimnasios, torre y combate, que usan la misma clase.
+   */
+  variant?: "gold" | "red" | "brand" | "secondary" | "gem";
 };
 
 type AsLink = SharedProps & {
@@ -46,7 +51,9 @@ export function GameCtaButton(props: GameCtaButtonProps) {
   const variantClass =
     variant === "red"
       ? "game-cta--red"
-      : variant === "secondary"
+      : variant === "brand"
+        ? "game-cta--brand"
+        : variant === "secondary"
         ? "game-cta--secondary"
         : variant === "gem"
           ? "game-cta--gem"

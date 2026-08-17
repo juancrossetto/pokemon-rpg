@@ -771,10 +771,14 @@ export function ActiveTeamStrip({
       className={`relative flex min-w-0 flex-col ${pending ? "opacity-90" : ""}`}
     >
       {title ? (
-        <div className="mb-1.5 flex items-center justify-between gap-2">
-          <p className="page-title text-[10px] leading-none tracking-[0.16em] text-secondary sm:text-white/45">
+        <div className="mb-3.5 flex items-center justify-between gap-2">
+          {/* Mismo tratamiento que el encabezado del riel de eventos: Inter en
+              semibold, caja y color de texto normales. Sin `page-title`, que es
+              Grobold + uppercase y estaba reservado al título de la pantalla —
+              acá competía con él y con el título del banner. */}
+          <h2 className="text-base leading-none font-[850] text-white">
             {title}
-          </p>
+          </h2>
           {manageHref && manageLabel ? (
             <Link
               href={manageHref}

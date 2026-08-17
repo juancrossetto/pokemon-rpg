@@ -33,6 +33,8 @@ export type CurrentExpeditionProps = {
   variant?: "hero" | "rail";
   /** Ruta directa al gimnasio del hito, cuando `/gyms` no lo lista (Alto Mando). */
   gymHref?: string | null;
+  /** El hito es un nodo del Alto Mando: cambia el texto del CTA, no el destino. */
+  eliteMilestone?: boolean;
   /** Checklist paso a paso de la aventura. */
   guideSteps?: AdventureGuideStep[];
 };
@@ -56,6 +58,7 @@ export function CurrentExpedition({
   stagesTotal,
   variant = "hero",
   gymHref,
+  eliteMilestone = false,
   guideSteps = [],
 }: CurrentExpeditionProps) {
   const t = useTranslations("campaign");
@@ -64,9 +67,16 @@ export function CurrentExpedition({
     guideSteps.find((s) => s.status === "current")?.href ??
     milestoneHref(milestone, { gymHref });
   const currentGuide = guideSteps.find((s) => s.status === "current");
-  const ctaLabel = currentGuide
-    ? t(`guide.cta.${currentGuide.id}`)
-    : t(milestoneCtaKey(milestone));
+  /*
+    El paso `challenge_gym` de la guía cubre también a los nodos del Alto Mando
+    —en el modelo de campaña son gimnasios—, así que su copy genérico decía
+    "Desafiar gimnasio" con Agatha del otro lado. El destino siempre estuvo
+    bien; lo que faltaba era nombrar el tramo final por lo que es.
+  */
+  const ctaLabel =
+    currentGuide && !(eliteMilestone && currentGuide.id === "challenge_gym")
+      ? t(`guide.cta.${currentGuide.id}`)
+      : t(milestoneCtaKey(milestone, { elite: eliteMilestone }));
   const stagePct =
     stagesTotal > 0 ? Math.max(0, Math.min(100, (stagesDone / stagesTotal) * 100)) : 0;
 
@@ -165,7 +175,7 @@ export function CurrentExpedition({
 
             <GameCtaButton
               href={ctaHref}
-              variant="red"
+              variant="brand"
               className="expedition-cta relative z-[2] min-h-9 w-full text-[11px]!"
             >
               {ctaLabel}
@@ -332,7 +342,7 @@ export function CurrentExpedition({
             <div className="pointer-events-auto min-w-0 flex-1">
               <GameCtaButton
                 href={ctaHref}
-                variant="red"
+                variant="brand"
                 className="expedition-cta expedition-cta--stage w-full min-h-12! px-3! py-2.5! text-[14px]! sm:min-h-12! sm:px-[1.1rem]! sm:py-[0.55rem]! sm:text-[13px]!"
               >
                 {ctaLabel}

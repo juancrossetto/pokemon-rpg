@@ -378,7 +378,16 @@
         "weeklyMode": "Weekly rotation",
         "limitedEyebrow": "Timed challenge",
         "missionsActive": "Active missions",
-        "progress": "Progress · {percent}%"
+        "progress": "Progress · {percent}%",
+        "heroLabel": "Featured events",
+        "heroPrev": "Previous event",
+        "heroNext": "Next event",
+        "heroGoto": "View event {n}",
+        "heroRaidTagline": "Take {name} down alongside the whole community.",
+        "heroCtaRaid": "Join the raid",
+        "heroTowerTagline": "Climb floor by floor and claim the stacked loot.",
+        "heroRewards": "Rewards",
+        "heroCtaTower": "Climb the tower"
       }
     }
   },
@@ -2458,6 +2467,7 @@
     "journeyGuideShort": "Guide",
     "continueExpedition": "Head out to explore",
     "challengeGym": "Challenge gym",
+    "challengeElite": "Challenge the Elite Four",
     "partyDock": {
       "label": "Party",
       "fainted": "Fainted",
@@ -2785,7 +2795,8 @@
     "movedHere": "You're now in {name}.",
     "stageSet": "Active stretch: {name}.",
     "nextChallenge": "Next challenge",
-    "gymOfType": "{type} Gym"
+    "gymOfType": "{type} Gym",
+    "eliteOfType": "Elite Four · {type}"
   },
   "levelUp": {
     "title": "{name} · Lv. {level}",

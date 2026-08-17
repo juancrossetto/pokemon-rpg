@@ -18,11 +18,19 @@ export function milestoneHref(
   return "/battle";
 }
 
-/** Clave i18n (`campaign.*`) del CTA principal. */
+/**
+ * Clave i18n (`campaign.*`) del CTA principal.
+ *
+ * Los nodos del Alto Mando son gimnasios en el modelo de campaña, así que sin
+ * `opts.elite` el botón decía "Desafiar gimnasio" cuando lo que esperaba del
+ * otro lado era Agatha. Iba al lugar correcto —el href ya se resolvía con
+ * `gymHref`— pero nombraba mal el tramo final del juego.
+ */
 export function milestoneCtaKey(
   milestone: CampaignMilestone,
-): "challengeGym" | "continueExpedition" | "viewJourney" {
-  if (milestone.kind === "gym") return "challengeGym";
+  opts?: { elite?: boolean },
+): "challengeGym" | "challengeElite" | "continueExpedition" | "viewJourney" {
+  if (milestone.kind === "gym") return opts?.elite ? "challengeElite" : "challengeGym";
   if (milestone.kind === "complete") return "viewJourney";
   return "continueExpedition";
 }

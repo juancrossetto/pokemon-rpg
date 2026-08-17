@@ -378,7 +378,16 @@
         "weeklyMode": "Rotação semanal",
         "limitedEyebrow": "Desafio temporário",
         "missionsActive": "Missões ativas",
-        "progress": "Progresso · {percent}%"
+        "progress": "Progresso · {percent}%",
+        "heroLabel": "Eventos em destaque",
+        "heroPrev": "Evento anterior",
+        "heroNext": "Próximo evento",
+        "heroGoto": "Ver evento {n}",
+        "heroRaidTagline": "Derrote {name} junto com toda a comunidade.",
+        "heroCtaRaid": "Entrar na incursão",
+        "heroTowerTagline": "Suba andar por andar e leve o butim acumulado.",
+        "heroRewards": "Recompensas",
+        "heroCtaTower": "Subir a torre"
       }
     }
   },
@@ -2458,6 +2467,7 @@
     "journeyGuideShort": "Guia",
     "continueExpedition": "Sair para explorar",
     "challengeGym": "Desafiar ginásio",
+    "challengeElite": "Desafiar a Elite",
     "partyDock": {
       "label": "Equipe",
       "fainted": "Desmaiado",
@@ -2785,7 +2795,8 @@
     "movedHere": "Agora você está em {name}.",
     "stageSet": "Trecho ativo: {name}.",
     "nextChallenge": "Próximo desafio",
-    "gymOfType": "Ginásio {type}"
+    "gymOfType": "Ginásio {type}",
+    "eliteOfType": "Elite dos Quatro · {type}"
   },
   "levelUp": {
     "title": "{name} · Nv. {level}",

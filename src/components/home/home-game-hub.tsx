@@ -5,12 +5,6 @@ import { CurrentExpedition, type CurrentExpeditionProps } from "@/components/cur
 import { ActiveTeamStrip } from "@/components/home/active-team-strip";
 import { HomeSquadCards } from "@/components/home/home-squad-cards";
 import { DailyGiftModal, type GiftModalLabels } from "@/components/events/daily-gift-modal";
-import {
-  HomeEventsProgress,
-  type HomeEventsAdventure,
-  type HomeEventsLimited,
-  type HomeEventsWeekly,
-} from "@/components/home/home-world-panels";
 import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { HeldItemLabels, OwnedHeldItem } from "@/components/held-item-panel";
 import type { DailyState } from "@/lib/events/state";
@@ -20,8 +14,8 @@ import type {
   HomeRailPvp,
 } from "@/lib/home-hub";
 import {
+  HomeEventBanner,
   HomeEventCarousel,
-  HomeEventHero,
   type HomeEventShowcaseData,
 } from "@/components/home/home-event-showcase";
 import { HealTutorial, JourneyOnboarding } from "@/components/journey-guidance";
@@ -30,31 +24,6 @@ import {
   HomeDesktopRail,
   type HomeRailRankEntry,
 } from "@/components/home/home-desktop-rail";
-
-export type HomeHubLabels = {
-  eventsPanel: {
-    progressTitle: string;
-    objectivesTitle: string;
-    rewardsTitle: string;
-    emptyAdventure: string;
-    emptyWeekly: string;
-    emptyEvent: string;
-    claimable: string;
-    claimAction: string;
-    fightAction: string;
-    claimed: string;
-    openCampaign: string;
-    openEvents: string;
-    tabAdventure: string;
-    tabWeekly: string;
-    tabEvent: string;
-    weeklyReady: string;
-    objectiveLabels: Record<string, string>;
-    weeklyLabels: Record<string, string>;
-    missionLabels: Record<string, string>;
-    rewardCoins: string;
-  };
-};
 
 export function HomeGameHub({
   locale,
@@ -65,10 +34,6 @@ export function HomeGameHub({
   giftLabels,
   squad,
   rail,
-  adventure,
-  weekly,
-  limited,
-  hubLabels,
 }: {
   locale: string;
   expedition: CurrentExpeditionProps | null;
@@ -106,10 +71,6 @@ export function HomeGameHub({
     clanWars: HomeRailClanWars;
     top: HomeRailRankEntry[];
   };
-  adventure: HomeEventsAdventure;
-  weekly: HomeEventsWeekly;
-  limited: HomeEventsLimited;
-  hubLabels: HomeHubLabels;
 }) {
   const [healTutorialArmed, setHealTutorialArmed] = useState(false);
   useEffect(() => {
@@ -130,7 +91,7 @@ export function HomeGameHub({
               antes de llegar a cualquier acción. Ahí el carrusel de eventos ya
               cumple esa función. */}
           <div className="hidden md:-mx-margin-desktop md:block xl:mx-0">
-            <HomeEventHero data={eventShowcase} locale={locale} />
+            <HomeEventBanner data={eventShowcase} locale={locale} />
           </div>
 
           {events.showDailyModal && (
@@ -170,10 +131,9 @@ export function HomeGameHub({
 
               <HomeEventCarousel data={eventShowcase} />
 
-              {/*
-                Mobile: squad suelto — las cards ya son el frame. El glass
-                `home-ops-deck` sólo tiene sentido en lg+ (strip + diarias xl).
-              */}
+              {/* Mobile: carrusel de cards. De lg para arriba lo reemplaza el
+                  strip de abajo, que aprovecha el ancho. Ninguno de los dos va
+                  dentro de un panel: las cards ya son el frame. */}
               <HomeSquadCards
                 locale={locale}
                 initialMembers={squad.members}
@@ -187,7 +147,14 @@ export function HomeGameHub({
                 heal={squad.heal}
               />
 
-              <section className="home-ops-deck game-float-card hidden min-w-0 overflow-visible rounded-[1.25rem] p-2.5 sm:p-3 lg:block">
+              {/* El equipo va suelto sobre el fondo, igual que el riel de
+                  eventos: las cards de cada Pokémon ya son el marco. Acá había
+                  dos capas de contenedor, y sacar `game-float-card` dejaba la
+                  segunda — `home-ops-deck`, que pintaba su propio `#12141c` y
+                  seguía viéndose como panel. Ahora la sección sólo aporta
+                  layout; sus estilos se borraron de `globals.css` porque este
+                  era el único elemento que llevaba esa clase. */}
+              <section className="hidden min-w-0 overflow-visible lg:block">
                 <ActiveTeamStrip
                   key={squad.layoutKey}
                   locale={locale}
@@ -204,12 +171,18 @@ export function HomeGameHub({
                 />
               </section>
 
-              <HomeEventsProgress
-                adventure={adventure}
-                weekly={weekly}
-                limited={limited}
-                labels={hubLabels.eventsPanel}
-              />
+              {/*
+                Acá vivía `HomeEventsProgress` (tabs Aventura/Semanal/Evento con
+                tres barras). Salió del home: era la tercera superficie para lo
+                mismo —el banner ya trae el evento limitado con progreso, premios
+                y CTA, y el riel de eventos trae incursión, safari y torre—, y
+                encima escondía dos tercios de su contenido detrás de tabs. El
+                detalle de misiones vive en `/events`, que es su pantalla.
+
+                Lo reclamable sigue avisándose en el badge de navegación
+                (`pendingCount` de `loadEventsSummary`) y en el chip de premios
+                del banner, así que no se perdió el aviso.
+              */}
             </div>
           </div>
         </div>

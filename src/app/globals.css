@@ -346,6 +346,44 @@ body {
     outline-color: var(--color-pokeball-red);
   }
 
+  /*
+    CTA de marca: degradé primary → secondary, plano.
+
+    Usa `--theme-*` y no `--color-*` porque los semánticos vienen premezclados
+    con blanco (`--color-primary` es `color-mix(--theme-primary 52%, white)`) y
+    sobre un botón grande eso se lee lavado, no sólido. También va sin el
+    barrido blanco superior que llevan las otras variantes: ese brillo es lo
+    que le sacaba cuerpo al color.
+  */
+  .game-cta--brand {
+    --game-cta-ink: #ffffff;
+    border-color: color-mix(in srgb, var(--theme-secondary) 55%, transparent);
+    background: linear-gradient(
+      100deg,
+      var(--theme-primary) 0%,
+      color-mix(in srgb, var(--theme-primary) 60%, var(--theme-secondary)) 52%,
+      var(--theme-secondary) 100%
+    );
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.16) inset,
+      0 6px 18px color-mix(in srgb, var(--theme-primary) 32%, transparent),
+      0 1px 0 rgba(0, 0, 0, 0.28);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+
+  .game-cta--brand:hover:not(.game-cta--disabled):not(:disabled) {
+    filter: brightness(1.1) saturate(1.05);
+    border-color: color-mix(in srgb, var(--theme-secondary) 75%, white);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.22) inset,
+      0 8px 24px color-mix(in srgb, var(--theme-primary) 40%, transparent),
+      0 1px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .game-cta--brand:focus-visible {
+    outline-color: var(--theme-secondary);
+  }
+
   .game-cta--primary {
     --game-cta-ink: #ffffff;
     border-color: color-mix(in srgb, var(--theme-primary) 62%, white);
@@ -10488,50 +10526,6 @@ html.is-standalone .battle-result-overlay .result-in {
   .campaign-objective-sheen::after {
     display: none;
   }
-}
-
-/* Home — deck unificado (acciones diarias + Active Team). */
-.home-ops-deck {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 42%),
-    #12141c;
-}
-
-.home-ops-deck__rule {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.12) 18%,
-    rgba(255, 255, 255, 0.12) 82%,
-    transparent 100%
-  );
-}
-
-.home-ops-deck .home-daily-tile {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, transparent 55%),
-    rgba(255, 255, 255, 0.025);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
-}
-
-.home-ops-deck .home-daily-tile:hover,
-.home-ops-deck .home-daily-tile:focus-visible {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
-    color-mix(in srgb, var(--daily-accent, #fff) 10%, rgba(255, 255, 255, 0.03));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px color-mix(in srgb, var(--daily-accent, #fff) 38%, transparent),
-    0 0 16px color-mix(in srgb, var(--daily-accent, #fff) 16%, transparent);
-}
-
-.home-ops-deck .home-daily-tile--hot {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
-    color-mix(in srgb, var(--daily-accent, #fff) 14%, #161821);
 }
 
 /* Home — tiles de acciones diarias.
@@ -23470,153 +23464,633 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   .factory-rental { transition: none; }
 }
 
-/* ---------- Home 2026 · hero y carrusel de eventos ---------- */
-.home-event-hero {
+/* ---------- Home 2026 · banner destacado y carrusel de eventos ---------- */
+/*
+  Banner de eventos (portadas rotativas).
+
+  Tres reglas sostienen el diseño y conviene no romperlas por separado:
+
+  1. **No hay caja de arte.** La imagen va a sangre sobre todo el banner
+     (`inset: 0`, `object-fit: cover`). La versión anterior la metía en una caja
+     a la derecha y por eso se veía dónde empezaba: cualquier borde de esa caja
+     es un canto. Sin caja no hay canto que disimular.
+  2. **La separación la hace un solo degradé de izquierda a derecha**
+     (`__scrim`), que arranca en tinta plena sobre el texto y llega a
+     transparente antes del sujeto. Es lo único que "divide" el banner, y por
+     ser un degradé no divide nada: transiciona.
+  3. **Flota por sombra, no por movimiento.** El relieve lo dan la sombra
+     proyectada en capas y el halo de acento debajo del panel (`::after`). Sin
+     animaciones ni transiciones: los estados de hover cambian color, nada más.
+*/
+.event-banner {
   --event-accent: var(--color-primary);
+  /* Tinta del panel: casi negra y levemente violácea, el mismo tono con el que
+     terminan los tres artes. Que coincidan es lo que hace invisible el corte. */
+  --event-ink: 7, 6, 14;
   position: relative;
-  display: flex;
-  /* Alto suficiente para que el arte del banner se vea y no quede recortado a
-     una franja: el PNG es 2:1 y el hero llegaba a 5,7:1, o sea que `cover`
-     tiraba casi toda la imagen. */
-  min-height: 14rem;
-  align-items: stretch;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--event-accent) 42%, rgba(255,255,255,.12));
-  border-radius: 1.5rem;
-  background:
-    radial-gradient(circle at 76% 28%, color-mix(in srgb, var(--event-accent) 38%, transparent), transparent 34%),
-    linear-gradient(108deg, #130d25 0%, #24123f 48%, #381557 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.09), 0 20px 55px rgba(0,0,0,.34);
   isolation: isolate;
+  border-radius: 1.65rem;
+  /*
+    Sombra flotante en tres capas: contacto corto, caída larga y un tinte de
+    acento que separa el panel del fondo de la página.
+  */
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, .2),
+    0 8px 18px -14px rgba(0, 0, 0, .4),
+    0 16px 34px -30px color-mix(in srgb, var(--event-accent) 35%, #000);
 }
-.home-event-hero::before {
+/* Halo bajo el panel: la luz que devuelve el "piso". Es lo que termina de
+   despegarlo de la página, y no cuesta un solo frame de animación. */
+.event-banner::after {
   content: "";
   position: absolute;
-  inset: 0;
   z-index: -1;
-  background:
-    linear-gradient(90deg, rgba(8,7,18,.96) 0%, rgba(13,8,26,.86) 42%, transparent 72%),
-    repeating-linear-gradient(118deg, transparent 0 44px, rgba(255,255,255,.022) 45px 46px);
-}
-.home-event-hero::after {
-  content: "";
-  position: absolute;
-  inset: auto 12% -55% auto;
-  height: 13rem;
-  width: 30rem;
+  inset: auto 18% -.4rem 18%;
+  height: 1.2rem;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--event-accent) 25%, transparent);
-  filter: blur(34px);
+  background: color-mix(in srgb, var(--event-accent) 30%, transparent);
+  filter: blur(22px);
+  opacity: .18;
   pointer-events: none;
 }
-.home-event-hero__grid {
+.event-banner__slide {
+  position: relative;
+  display: block;
+  /*
+    Alto fijo, no `min-height`: entre portadas el título pasa de uno a dos
+    renglones y con alto automático el banner —y toda la página debajo— saltaba
+    al cambiar de evento. El bloque de texto va centrado, así que el renglón de
+    más se reparte solo. El tramo 768–1279 lo compacta más abajo.
+  */
+  height: clamp(13rem, 16vw, 15.5rem);
+  overflow: hidden;
+  /* Filo apenas teñido. Con más acento el borde superior se lee como una línea
+     de color sobre el arte — justo el efecto "recortado" que hay que evitar. */
+  border: 1px solid color-mix(in srgb, var(--event-accent) 16%, rgba(255, 255, 255, .13));
+  border-radius: inherit;
+  /* Fondo de reserva mientras carga el arte, en el mismo tono que la tinta del
+     scrim: si el PNG tarda, no se ve un rectángulo de otro color. */
+  background:
+    radial-gradient(120% 130% at 8% 30%, color-mix(in srgb, var(--event-accent) 16%, transparent), transparent 58%),
+    linear-gradient(100deg, #130b24 0%, #0c0718 40%, rgb(var(--event-ink)) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
+}
+/*
+  La caja del arte tiene la proporción del arte (`--art-ratio`), no la del
+  banner, y se ancla a la derecha.
+
+  Es lo que permite bajar el alto sin recortar la escena. Con la caja a sangre
+  el arte se recortaba por alto —Mewtwo quedaba con la cabeza al ras y Mew
+  cortado abajo— y cuanto más bajo el banner, peor. Con la caja en proporción,
+  `cover` no recorta nada: la escena entra entera y el ancho lo deduce el alto.
+
+  Que no vuelva a haber canto lo garantizan dos cosas juntas: la máscara del
+  borde izquierdo de la imagen (abajo) y el scrim del panel. La versión vieja
+  fallaba porque su caja *no* respetaba la proporción y dejaba área vacía: la
+  máscara caía sobre el vacío en vez de sobre el borde real del dibujo.
+*/
+/*
+  Fundido entre portadas.
+
+  Los artes están todos montados, uno encima del otro, y sólo cambia la
+  opacidad: no hay que sincronizar la salida de uno con la entrada del otro ni
+  llevar en estado cuál era el anterior. El que sale y el que entra se cruzan
+  en el mismo tramo, así que en el medio nunca se ve el panel vacío.
+
+  La entrada es un poco más lenta que la salida a propósito (`.6s` contra el
+  arranque inmediato del que se va): el arte nuevo termina de aparecer cuando
+  el texto ya entró, y la portada se lee como una pieza que se arma.
+*/
+.event-banner__art {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  left: auto;
+  z-index: 0;
+  aspect-ratio: var(--art-ratio, 2 / 1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .6s ease;
+}
+.event-banner__art.is-active { opacity: 1; }
+.event-banner__img {
+  object-fit: cover;
+  object-position: var(--art-focus, center);
+  /* Desvanecido del borde izquierdo del dibujo: acá 0% es el filo real del
+     arte, así que el degradé sí funde el fondo de la escena con el panel. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .25) 14%, rgba(0, 0, 0, .72) 30%, #000 46%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .25) 14%, rgba(0, 0, 0, .72) 30%, #000 46%);
+}
+/*
+  Arte con sujeto alto (la torre): no puede ir a sangre porque `cover` sobre un
+  1024×1536 en una franja 4:1 deja un recorte del tronco y nada más. Se ancla a
+  la derecha, se contiene por alto, y se le funde el borde izquierdo para que su
+  fondo negro entre en el panel sin canto.
+*/
+.event-banner__art--subject {
+  inset: -13% 3% -13% auto;
+  width: 40%;
+  aspect-ratio: auto;
+}
+/* Pozo de luz detrás del sujeto. Sin esto la mitad derecha queda en negro
+   plano y el arte parece pegado; el halo le devuelve la atmósfera que el arte
+   panorámico trae de fábrica. */
+.event-banner__art--subject::before {
+  content: "";
+  position: absolute;
+  inset: 6% -6%;
+  background: radial-gradient(closest-side at 52% 52%, color-mix(in srgb, var(--event-accent) 34%, transparent), transparent 78%);
+}
+.event-banner__art--subject .event-banner__img {
+  object-fit: contain;
+  object-position: center;
+  -webkit-mask-image: radial-gradient(closest-side at 55% 55%, #000 52%, transparent 96%);
+  mask-image: radial-gradient(closest-side at 55% 55%, #000 52%, transparent 96%);
+}
+/*
+  El degradé que borra la división.
+
+  Dos capas superpuestas: la horizontal sostiene el texto y suelta antes del
+  sujeto; la vertical apoya la fila de controles de abajo. Ninguna de las dos
+  tiene un borde duro, así que no hay punto donde se lea "acá empieza la foto".
+*/
+.event-banner__scrim {
   position: absolute;
   inset: 0;
-  opacity: .26;
-  background-image: linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
-  background-size: 54px 54px;
-  mask-image: linear-gradient(90deg, black, transparent 78%);
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      95deg,
+      rgba(var(--event-ink), .97) 0%,
+      rgba(var(--event-ink), .94) 24%,
+      rgba(var(--event-ink), .78) 40%,
+      rgba(var(--event-ink), .42) 54%,
+      rgba(var(--event-ink), .12) 68%,
+      rgba(var(--event-ink), 0) 80%
+    ),
+    linear-gradient(0deg, rgba(var(--event-ink), .72) 0%, rgba(var(--event-ink), 0) 34%),
+    /* Vela la esquina superior derecha: es donde viven los controles, y sin
+       cama oscura el contador y las flechas se pierden contra el arte. */
+    radial-gradient(60% 130% at 100% 0%, rgba(var(--event-ink), .8), rgba(var(--event-ink), 0) 62%),
+    radial-gradient(90% 120% at 4% 42%, color-mix(in srgb, var(--event-accent) 26%, transparent), transparent 62%);
 }
-.home-event-hero__copy {
+.event-banner__copy {
   position: relative;
-  z-index: 3;
+  z-index: 2;
   display: flex;
-  width: 62%;
+  /* Más ancho que antes: la fila de acción lleva CTA + progreso + premios, y a
+     34rem el bloque de premios se caía al renglón siguiente. */
+  width: min(72%, 45rem);
   min-width: 0;
+  height: 100%;
+  min-height: inherit;
   flex-direction: column;
   justify-content: center;
-  padding: 1.45rem 1.8rem 1.3rem;
+  padding: 1.15rem 1.4rem 1.15rem 1.9rem;
+  /* Entra apenas desplazado desde la izquierda mientras el arte se funde. El
+     recorrido es corto (10px) a propósito: con más, el texto "vuela" y compite
+     con la imagen en vez de acompañarla. */
+  animation: event-banner-copy-in .45s cubic-bezier(.2, .8, .2, 1) both;
 }
-.home-event-hero__eyebrow,
-.home-event-carousel__head > div > span,
-.home-event-card__eyebrow {
-  color: color-mix(in srgb, var(--event-accent, var(--color-primary)) 62%, #fff);
+
+@keyframes event-banner-copy-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: none; }
+}
+/* Sin esto el contenedor flex encoge el título cuando la copia queda justa —y
+   un `strong` encogido con `overflow: hidden` muestra la segunda línea cortada
+   por la mitad en vez de simplemente no mostrarla. */
+.event-banner__copy > * { flex-shrink: 0; }
+/*
+  Eyebrow como chapa, no como texto suelto.
+
+  Es el elemento que fija el lenguaje del banner: relleno sólido, filo de
+  acento y las esquinas biseladas con `clip-path`. El bisel se repite en chips,
+  CTA y controles — un banner de evento de juego se reconoce por esa familia de
+  formas, y el vidrio translúcido que había antes se leía como panel de
+  dashboard.
+*/
+.event-banner__eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: .45rem;
+  border: 1px solid color-mix(in srgb, var(--event-accent) 62%, transparent);
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--event-accent) 42%, rgba(var(--event-ink), .92)),
+    rgba(var(--event-ink), .92)
+  );
+  clip-path: polygon(0 0, 100% 0, calc(100% - .55rem) 100%, 0 100%);
+  padding: .32rem 1.05rem .32rem .55rem;
+  color: #fff;
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: .58rem;
-  font-weight: 900;
-  letter-spacing: .17em;
+  font-weight: 800;
+  letter-spacing: .2em;
   text-transform: uppercase;
 }
-/*
-  Envuelve en dos líneas en vez de cortar con puntos suspensivos. El nombre del
-  evento es contenido variable: "Semana del explorador" pedía 775px sobre 655
-  disponibles y se leía "SEMANA DEL EXPLOR…", que es peor que ocupar un renglón
-  más. El `clamp` baja el cuerpo antes de llegar al corte.
-*/
-/*
-  Sin Grobold: el nombre del evento es contenido, no el título de la pantalla.
-  Con la display font se comía el protagonismo del arte y competía con el
-  `page-title` real. Inter en semibold alcanza para jerarquizarlo.
-*/
-.home-event-hero__title {
-  display: -webkit-box;
-  margin-top: .25rem;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  color: #fff;
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: clamp(1.35rem, 2.1vw, 1.85rem);
-  font-weight: 700;
-  letter-spacing: -.01em;
-  line-height: 1.12;
-  text-shadow: 0 4px 16px rgba(0,0,0,.55);
+/* Punto de acento con halo: el "LED" de la chapa. */
+.event-banner__eyebrow i {
+  display: block;
+  height: .42rem;
+  width: .42rem;
+  border-radius: 999px;
+  background: var(--event-accent);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--event-accent) 90%, transparent);
 }
-.home-event-hero__tagline {
+/*
+  Sin Grobold: el nombre del evento es contenido variable y la display font no
+  trae glifos acentuados (cae a Inter Black y se mezclan dos tipografías en el
+  mismo renglón). Inter en 900, mayúsculas y tracking negativo alcanza para que
+  compita con el arte.
+
+  Envuelve en dos líneas en vez de cortar con puntos suspensivos: "Semana del
+  explorador" pedía 775px sobre 655 disponibles y se leía "SEMANA DEL EXPLOR…".
+*/
+/*
+  Dos renglones como techo, por `max-height` y no por `-webkit-line-clamp`.
+
+  El clamp no sirve acá: el título es hijo directo de un contenedor flex, y el
+  flex *blockifica* a sus hijos — `display: -webkit-box` se computa como
+  `flow-root` y el clamp deja de funcionar como uno espera. El resultado era un
+  título de dos líneas con la segunda cortada a lo largo ("COMBATE" partido por
+  la mitad). Con un tope de alto exacto de dos líneas nunca aparece media línea:
+  o entra, o se corta el renglón entero.
+*/
+.event-banner__title {
+  display: block;
   margin-top: .42rem;
-  max-width: 36rem;
-  color: rgba(255,255,255,.68);
-  font-size: .82rem;
-  line-height: 1.35;
+  max-height: calc(2.2em + .14em);
+  overflow: hidden;
+  /*
+    Display ancha (`--font-title`, hoy Orbitron; ver el layout). Es una
+    tipografía mucho más ancha que Inter: el mismo título ocupa ~40% más, así
+    que el cuerpo baja y el tracking va en positivo —la geométrica cuadrada
+    pide aire entre letras, apretarla la vuelve ilegible en mayúsculas.
+  */
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: clamp(1.15rem, 1.85vw, 1.72rem);
+  font-weight: 800;
+  letter-spacing: .012em;
+  /*
+    El `line-height` no puede bajar del área de contenido de la fuente cuando
+    hay `-webkit-line-clamp`: el clamp fija el alto en `line-height × líneas` y
+    `overflow: hidden` recorta ahí. Inter Black ocupa ~1.21em (ascendente +
+    descendente), así que con 0.98 la segunda línea se veía cortada por la
+    mitad —"COMBATE" partido a lo largo—. 1.1 más el padding cubre el excedente
+    sin que el título pierda la compacidad de dos renglones pegados.
+  */
+  line-height: 1.1;
+  padding-bottom: .14em;
+  text-transform: uppercase;
+  /*
+    Blanco → acento del evento. `background-clip: text` obliga a
+    `-webkit-text-fill-color: transparent`, y eso apaga el `text-shadow` —no
+    queda glifo que sombrear—: el peso sobre el arte lo pone `drop-shadow`, que
+    sí actúa sobre el recorte. El `color` va como reserva.
+  */
+  color: #fff;
+  background: linear-gradient(
+    96deg,
+    #ffffff 0%,
+    #f4eeff 34%,
+    color-mix(in srgb, var(--event-accent) 62%, #ffffff) 68%,
+    var(--event-accent) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  /*
+    Sombra dura + halo, como un título de cartel de evento: la dura le da cuerpo
+    contra el arte y el halo lo enciende. `text-shadow` no sirve —el recorte a
+    texto deja el glifo transparente y no hay qué sombrear—, así que van dos
+    `drop-shadow`, que actúan sobre el resultado ya recortado.
+  */
+  filter:
+    drop-shadow(0 3px 0 rgba(0, 0, 0, .55))
+    drop-shadow(0 0 26px color-mix(in srgb, var(--event-accent) 55%, transparent));
 }
-.home-event-hero__meta {
+.event-banner__tagline {
+  margin-top: .5rem;
+  max-width: 26rem;
+  /* Un renglón: con el banner bajo, una tagline de dos líneas es la diferencia
+     entre que entre el CTA o que no. */
+  overflow: hidden;
+  color: rgba(255, 255, 255, .74);
+  font-size: .78rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, .7);
+  white-space: nowrap;
+}
+.event-banner__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem;
+  margin-top: .6rem;
+}
+/* Relleno sólido, no vidrio: sobre un arte con mucho detalle el translúcido se
+   ensucia y el dato deja de leerse. Mismo bisel que la chapa del eyebrow. */
+.event-banner__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .34rem;
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(var(--event-ink), .88);
+  clip-path: polygon(.42rem 0, 100% 0, 100% calc(100% - .42rem), calc(100% - .42rem) 100%, 0 100%, 0 .42rem);
+  padding: .32rem .62rem;
+  color: rgba(255, 255, 255, .88);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.event-banner__chip .material-symbols-outlined { font-size: .82rem !important; }
+.event-banner__chip.is-accent {
+  border-color: color-mix(in srgb, var(--event-accent) 75%, transparent);
+  background: color-mix(in srgb, var(--event-accent) 62%, rgb(var(--event-ink)));
+  color: #fff;
+}
+/* Fila de acción: botón + progreso, no uno debajo del otro. */
+.event-banner__actions {
   display: flex;
   align-items: center;
-  gap: .7rem;
-  margin-top: .75rem;
-  color: rgba(255,255,255,.45);
-  font-size: .62rem;
-  font-weight: 750;
+  gap: 1rem;
+  margin-top: .85rem;
 }
-.home-event-hero__meta > span { display: inline-flex; align-items: center; gap: .25rem; }
-.home-event-hero__meta .material-symbols-outlined { font-size: .8rem !important; }
-.home-event-hero__meta b { border-radius: 999px; background: color-mix(in srgb, var(--event-accent) 22%, transparent); padding: .23rem .48rem; color: #fff; }
-.home-event-hero__progress { display: block; height: .22rem; width: min(19rem, 70%); margin-top: .55rem; overflow: hidden; border-radius: 999px; background: rgba(0,0,0,.45); }
-.home-event-hero__progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--event-accent), var(--color-primary)); box-shadow: 0 0 10px var(--event-accent); }
-.home-event-hero__cta { display: inline-flex; width: fit-content; align-items: center; gap: .3rem; margin-top: .72rem; border: 1px solid rgba(255,255,255,.17); border-radius: .7rem; background: rgba(255,255,255,.09); padding: .42rem .68rem; color: #fff; font-size: .63rem; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; transition: background .18s ease, transform .18s ease; }
-.home-event-hero__cta .material-symbols-outlined { font-size: .85rem !important; }
-.home-event-hero:hover .home-event-hero__cta { transform: translateX(2px); background: color-mix(in srgb, var(--event-accent) 38%, rgba(255,255,255,.09)); }
-/* Arte del hero a sangre completa, con un velo que baja de izquierda a derecha
-   para que el texto se lea sobre cualquier zona de la imagen. */
-.home-event-hero__art { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.event-banner__progress {
+  display: flex;
+  min-width: 0;
+  max-width: 15rem;
+  flex: 1;
+  align-items: center;
+  gap: .5rem;
+}
+/* El progreso acompaña al botón; si no hay lugar, desaparece él y no el CTA. */
+.event-banner__progress b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /*
-  El PNG viene recortado a la proporción del hero (~5:1), no 2:1 como el arte
-  original: a esta altura panorámica `cover` se comía dos tercios de la imagen
-  y no había `object-position` que lo salvara. Con el recorte hecho en el
-  archivo, `cover` sólo ajusta unos píxeles y la composición se ve entera.
+  Vitrina de premios, sin sub-card.
+
+  La tentación es meter los premios en un panel con borde, pero un recuadro
+  dentro del banner lo parte en dos y le saca aire al arte. Acá lo que agrupa
+  es el solape de los iconos —se leen como un montón de objetos— más la
+  etiqueta al costado. El único "marco" es un halo de acento por icono, que ya
+  existe alrededor de todo lo demás.
 */
-.home-event-hero__bg { object-fit: cover; object-position: center; }
-.home-event-hero__art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(95deg, rgba(6,7,12,.94) 0%, rgba(6,7,12,.82) 34%, rgba(6,7,12,.35) 62%, rgba(6,7,12,.12) 100%); }
+.event-banner__rewards {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: .55rem;
+}
+.event-banner__rewards > b {
+  color: rgba(255, 255, 255, .42);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .5rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+/* Sin solape: la cantidad va montada en la esquina de cada icono y el que
+   viene al lado se la tapaba. Lo que agrupa es el halo compartido y la
+   etiqueta, no que se pisen. */
+.event-banner__reward-icons { display: flex; align-items: center; gap: .18rem; }
+.event-banner__reward {
+  position: relative;
+  display: grid;
+  height: 2.15rem;
+  width: 2.15rem;
+  place-items: center;
+  border-radius: 999px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--event-accent) 40%, rgba(var(--event-ink), .9)), rgba(var(--event-ink), .55) 82%, transparent);
+}
+.event-banner__reward img {
+  height: 1.5rem;
+  width: 1.5rem;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .75));
+}
+/* La cantidad va montada en la esquina, como en cualquier inventario. */
+.event-banner__reward i {
+  position: absolute;
+  right: -.05rem;
+  bottom: -.05rem;
+  border-radius: 999px;
+  background: rgba(var(--event-ink), .95);
+  padding: 0 .22rem;
+  color: #fff;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .46rem;
+  font-style: normal;
+  font-weight: 700;
+}
+.event-banner__track {
+  display: block;
+  height: .3rem;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .55);
+}
+.event-banner__track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--event-accent) 70%, #fff), var(--event-accent));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--event-accent) 80%, transparent);
+}
+.event-banner__progress b {
+  color: rgba(255, 255, 255, .5);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .53rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+/* CTA sólido con el acento del evento: en la referencia el botón era una caja
+   translúcida y desaparecía contra el arte. Tinta oscura sobre relleno claro
+   para que se lea a cualquier tamaño. */
+.event-banner__cta {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 2.35rem;
+  flex-shrink: 0;
+  align-items: center;
+  gap: .45rem;
+  /*
+    Misma carcasa que los CTA del home (`.game-cta`): rectángulo de esquinas
+    suaves —no pastilla—, degradé y relieve.
+
+    El relieve son tres capas, no una sombra: brillo interior arriba (la luz
+    que pega en la cara), un canto sólido más oscuro abajo (`0 2px 0`, el
+    grosor del botón) y recién después el halo difuso. Con sólo el halo el
+    botón se ve apoyado sobre el banner; con el canto se ve que tiene cuerpo.
+  */
+  border: 1px solid color-mix(in srgb, var(--event-accent) 45%, #fff);
+  border-radius: .7rem;
+  /*
+    Degradé entre dos colores de la paleta, sin blanco de por medio.
+
+    Mezclar con blanco baja la saturación en el tramo claro y el botón se ve
+    lavado, no macizo. Con dos tonos plenos —el acento y `--event-accent-2`, el
+    color vecino del arte— el degradé se lee como color sólido con volumen. El
+    único blanco que queda es la línea de 1px de arriba, que es un filo de luz,
+    no parte del relleno.
+  */
+  background: linear-gradient(
+    118deg,
+    var(--event-accent) 0%,
+    var(--event-accent-2, color-mix(in srgb, var(--event-accent) 55%, var(--theme-primary))) 100%
+  );
+  padding: .5rem 1.25rem;
+  color: #0b0714;
+  /* Misma display que el título, no la mono de los datos: el botón pertenece
+     al bloque de identidad del evento, no a la fila de métricas. */
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .45),
+    0 2px 0 color-mix(in srgb, var(--event-accent-2, var(--event-accent)) 58%, #000),
+    0 6px 14px -6px color-mix(in srgb, var(--event-accent) 45%, transparent);
+}
+.event-banner__cta .material-symbols-outlined { font-size: .95rem !important; }
+.event-banner__slide:hover .event-banner__cta { filter: brightness(1.09); }
+.event-banner__slide:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--event-accent) 80%, #fff);
+  outline-offset: 3px;
+}
+
+/*
+  Controles agrupados en la esquina inferior derecha, no en una fila que cruza
+  el panel de lado a lado.
+
+  Con el banner más bajo esa fila obligaba a reservarle ~50px de padding al
+  bloque de texto, y era justo el alto que faltaba. En la esquina no choca con
+  la copia —que vive a la izquierda— y el texto recupera esa franja.
+
+  Va fuera del `Link` en el markup: un `button` dentro de un `a` es anidamiento
+  inválido y el navegador rompe el árbol.
+*/
+.event-banner__nav {
+  position: absolute;
+  z-index: 3;
+  top: .85rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+}
+.event-banner__dots { display: flex; align-items: center; gap: .38rem; }
+/* Barra, no punto: el indicador activo se alarga y se pinta con el acento, así
+   se lee de un vistazo cuántas portadas hay y en cuál estás. */
+.event-banner__dot {
+  height: .32rem;
+  width: .7rem;
+  border: 0;
+  background: rgba(255, 255, 255, .3);
+  /* Barras inclinadas, no puntos: es la misma diagonal del bisel del CTA y de
+     la chapa, repetida en el indicador. */
+  transform: skewX(-22deg);
+  cursor: pointer;
+}
+.event-banner__dot:hover { background: rgba(255, 255, 255, .5); }
+.event-banner__dot.is-active {
+  width: 1.8rem;
+  background: var(--event-accent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--event-accent) 85%, transparent);
+}
+.event-banner__count {
+  color: rgba(255, 255, 255, .42);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .56rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+}
+.event-banner__count i { padding: 0 .18rem; color: rgba(255, 255, 255, .22); font-style: normal; }
+.event-banner__arrows { display: flex; gap: .35rem; }
+.event-banner__arrows button {
+  display: grid;
+  height: 1.9rem;
+  width: 1.9rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 999px;
+  background: rgba(var(--event-ink), .9);
+  color: rgba(255, 255, 255, .82);
+  cursor: pointer;
+}
+.event-banner__arrows button:hover {
+  border-color: color-mix(in srgb, var(--event-accent) 75%, transparent);
+  background: color-mix(in srgb, var(--event-accent) 55%, rgb(var(--event-ink)));
+  color: #fff;
+}
+.event-banner__arrows button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--event-accent) 80%, #fff);
+  outline-offset: 2px;
+}
+.event-banner__arrows .material-symbols-outlined { font-size: 1.15rem !important; }
 
 .home-event-carousel { min-width: 0; overflow: visible; }
-.home-event-carousel__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding: .05rem .15rem .15rem; }
-.home-event-carousel__head > div > span { --event-accent: var(--color-secondary); }
-.home-event-carousel__head h2 { margin-top: .1rem; color: #fff; font-size: 1rem; font-weight: 850; }
+/*
+  Mismo aire bajo el título que el equipo activo: 14px (`mb-3.5` allá).
+
+  La medida es contra el **primer píxel que se ve**, no contra el borde de la
+  card, porque el riel de abajo reserva 4rem para que el Pokémon sobresalga y
+  esa reserva no es espacio en blanco: la ocupa el arte. Medir contra el borde
+  de la card daba dos huecos muy distintos entre las dos secciones aunque el
+  margen declarado fuera el mismo. El descuento lo hace el `margin-top`
+  negativo del riel.
+*/
+.home-event-carousel__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .05rem .15rem .875rem; }
+.home-event-carousel__head h2 { color: #fff; font-size: 1rem; font-weight: 850; }
 .home-event-carousel__controls { display: flex; gap: .35rem; }
 .home-event-carousel__controls button { display: grid; height: 1.8rem; width: 1.8rem; place-items: center; border: 1px solid rgba(255,255,255,.1); border-radius: 50%; color: rgba(255,255,255,.65); background: rgba(255,255,255,.045); transition: border-color .18s ease, color .18s ease, background .18s ease; }
 .home-event-carousel__controls button:hover { border-color: color-mix(in srgb, var(--color-primary) 60%, transparent); color: #fff; background: color-mix(in srgb, var(--color-primary) 16%, transparent); }
 .home-event-carousel__controls .material-symbols-outlined { font-size: 1.05rem !important; }
 /* El `padding-top` es lo que deja salir al Pokémon por arriba sin que el
    scroll horizontal lo recorte: `overflow-x: auto` también recorta en el eje Y. */
-.home-event-carousel__rail { display: flex; gap: .85rem; overflow-x: auto; overflow-y: visible; margin-inline: -.25rem; padding: 2.7rem .25rem .75rem; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: none; }
+/*
+  El `padding-top` es lo único que deja salir al personaje y a la chapa de
+  estado por arriba: `overflow-x: auto` también recorta en el eje Y, no hay
+  forma de pedirle que recorte sólo en X. Tiene que cubrir lo que sobresale en
+  reposo (~29px de arte) **más** lo que agrega el hover (translate −4px y el
+  `scale(1.13)` del sprite). Medido: en reposo el arte más alto llega a 22px
+  del techo y el hover le suma otros 26 — de ahí las 4rem, que dejan ~10px de
+  aire. A 2,5rem se cortaba justo al pasar el mouse.
+*/
+/*
+  El `margin-top` negativo saca de la maqueta la parte de la reserva que el
+  arte no llega a ocupar, sin tocar el `padding` — que es lo que evita el
+  recorte y no se puede bajar.
+
+  El número sale de lo que ya está medido arriba: en reposo el arte sube 42px
+  por encima del borde de la card (64 de reserva menos los 22 que le sobran al
+  techo). Con −1.4rem (22px), el píxel más alto del Pokémon queda a 14px del
+  título — los mismos 14 que el equipo activo. En hover sube 12px más y llega a
+  2px del título, sin tocarlo.
+*/
+.home-event-carousel__rail { display: flex; gap: 1.35rem; overflow-x: auto; overflow-y: visible; margin-block-start: -1.4rem; margin-inline: -.25rem; padding: 4rem .25rem .9rem; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .home-event-carousel__rail::-webkit-scrollbar { display: none; }
 .home-event-card {
   --event-card-accent: var(--color-primary);
   position: relative;
   display: block;
-  min-height: 8.9rem;
+  min-height: 7.2rem;
   /* Tres por fila: con dos, cada card era tan ancha que el personaje quedaba
-     chico contra el bloque de texto y no leía como protagonista. */
-  flex: 0 0 calc(33.333% - .567rem);
+     chico contra el bloque de texto y no leía como protagonista.
+     El descuento es `gap * 2 / 3` — si cambia el gap del rail, cambia acá. */
+  flex: 0 0 calc(33.333% - .9rem);
   overflow: visible;
   border-radius: 1.15rem;
   scroll-snap-align: start;
@@ -23638,45 +24112,56 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 .home-event-card__surface::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,8,18,.55) 0%, rgba(10,8,18,.2) 55%, transparent 88%); }
 .home-event-card:nth-child(even) .home-event-card__surface::after { background: linear-gradient(90deg, rgba(50,20,90,.5) 0%, rgba(50,20,90,.16) 55%, transparent 88%); }
 
-.home-event-card__copy { position: relative; z-index: 2; display: flex; width: 58%; min-width: 0; height: 100%; flex-direction: column; padding: 1.65rem .4rem .85rem .85rem; }
-.home-event-card__eyebrow { --event-accent: var(--event-card-accent); font-size: .47rem; }
+/* El alto real de la card lo manda este bloque, no el `min-height`: el padding
+   superior deja lugar a la chapa de estado, que monta sobre el borde. */
+.home-event-card__copy { position: relative; z-index: 2; display: flex; width: 58%; min-width: 0; height: 100%; flex-direction: column; padding: 1.2rem .4rem .55rem .8rem; }
+.home-event-card__eyebrow {
+  --event-accent: var(--event-card-accent);
+  color: color-mix(in srgb, var(--event-accent, var(--color-primary)) 62%, #fff);
+  font-size: .47rem;
+  font-weight: 900;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+}
 /* Dos líneas en vez de puntos suspensivos: a tres por fila el ancho útil es
    ~143px y "Semana del explorador" pedía 183 — se cortaba siempre. */
-.home-event-card__copy > strong { display: -webkit-box; margin-top: .22rem; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #fff; font-size: .92rem; font-weight: 850; line-height: 1.12; }
-.home-event-card__subtitle { display: -webkit-box; margin-top: .15rem; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; color: rgba(255,255,255,.48); font-size: .6rem; line-height: 1.3; text-transform: capitalize; }
+.home-event-card__copy > strong { display: -webkit-box; margin-top: .14rem; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #fff; font-size: .8rem; font-weight: 850; line-height: 1.08; }
+.home-event-card__subtitle { display: -webkit-box; margin-top: .1rem; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; color: rgba(255,255,255,.48); font-size: .55rem; line-height: 1.25; text-transform: capitalize; }
 .home-event-card__status { width: fit-content; margin-top: auto; border-radius: 999px; background: color-mix(in srgb, var(--event-card-accent) 17%, rgba(0,0,0,.25)); padding: .2rem .42rem; color: color-mix(in srgb, var(--event-card-accent) 54%, #fff); font-size: .52rem; font-weight: 850; }
-.home-event-card__progress-copy { margin-top: .42rem; color: rgba(255,255,255,.36); font-size: .48rem; font-weight: 750; }
+.home-event-card__progress-copy { margin-top: .26rem; color: rgba(255,255,255,.36); font-size: .46rem; font-weight: 750; }
 .home-event-card__bar { display: block; height: .2rem; margin-top: .2rem; overflow: hidden; border-radius: 999px; background: rgba(0,0,0,.5); }
 .home-event-card__bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--event-card-accent), color-mix(in srgb, var(--event-card-accent) 42%, #fff)); box-shadow: 0 0 8px var(--event-card-accent); }
 /* El personaje se ancla al piso de la card y crece hacia arriba: así rompe el
    borde superior en vez de quedar contenido, que es lo que le da el relieve. */
-.home-event-card__art { position: absolute; z-index: 3; right: -.9rem; bottom: -.2rem; display: grid; height: 11.4rem; width: 55%; place-items: end center; pointer-events: none; transform: translateZ(42px); }
+.home-event-card__art { position: absolute; z-index: 3; right: -.9rem; bottom: -.2rem; display: grid; height: 9.4rem; width: 55%; place-items: end center; pointer-events: none; transform: translateZ(42px); }
 .home-event-card__pokemon { height: 100%; width: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 18px 13px rgba(0,0,0,.7)); transform: translateY(-.35rem) scale(1.08); transition: transform .28s cubic-bezier(.2,.8,.2,1); }
 .home-event-card:hover .home-event-card__pokemon { transform: translateY(-.75rem) scale(1.13) rotate(1deg); }
 /*
-  La torre no es un sprite cuadrado sino un render 2:3. Con el mismo
-  `width:100%` que usa un Pokémon el alto resultante (262px sobre 191 de caja)
-  se iba fuera de la card por arriba y por abajo, y la base quedaba cortada.
-  Se ancla por alto y el ancho lo resuelve la proporción; sin `scale` extra,
-  que en un edificio se lee como desborde y no como relieve.
+  Arte de retrato (torre, Oak): alto fijo en rem, no el `height: 100%` que usan
+  los sprites.
+
+  Los sprites de Pokémon son 1:1 y con `width: 100%` caen justo. Un asset alto
+  —la torre es 2:3, Oak casi 1:2,4— con esa misma regla resuelve un alto mucho
+  mayor que su caja (262px sobre 191 en el caso de la torre): se sale de la card
+  por abajo y le pisa el texto al bloque de copy. Con el alto fijo, el ancho lo
+  deduce la proporción y no hay forma de desbordar.
+
+  Tampoco lleva el `scale` extra del sprite: en un edificio o una persona ese
+  aumento se lee como desborde, no como relieve.
 */
-.home-event-card--tower .home-event-card__art { right: -.1rem; bottom: .35rem; height: 11rem; width: 48%; }
-/*
-  Alto en rem, no el `height: 100%` que usan los sprites: el asset de la torre es
-  2:3 y ese porcentaje resolvía 162px sobre una caja de 144, así que la base
-  quedaba colgando fuera de la card. Con el alto fijo el ancho lo deduce la
-  proporción y nada puede desbordar.
-*/
-.home-event-card--tower .home-event-card__pokemon {
+.home-event-card__art--portrait { right: -.1rem; bottom: .35rem; height: 9rem; width: 48%; }
+.home-event-card__art--portrait .home-event-card__pokemon {
   position: absolute;
   right: 0;
   bottom: 0;
-  height: 11rem;
+  height: 9rem;
   width: auto;
   max-width: 100%;
   transform: none;
 }
-.home-event-card--tower:hover .home-event-card__pokemon { transform: translateY(-.35rem) scale(1.04); }
+.home-event-card:hover .home-event-card__art--portrait .home-event-card__pokemon {
+  transform: translateY(-.35rem) scale(1.04);
+}
 /* Estado en vivo: punto + texto corto, arriba a la izquierda. Es lo que dice
    de un vistazo si la card pide acción o ya está resuelta. */
 /* Sobresale del borde: en la referencia la etiqueta pisa la esquina de la card,
@@ -23730,39 +24215,52 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 /* Entre tablet y lg tres cards quedan demasiado angostas para el bloque de
    texto: se vuelve a dos y el personaje mantiene su proporción. */
 @media (min-width: 768px) and (max-width: 1279.98px) {
-  .home-event-card { flex: 0 0 calc(50% - .425rem); }
+  /*
+    Tramo compacto del banner. No hay bloque para < 768: el banner sólo se
+    dibuja de `md` para arriba (`home-game-hub` lo esconde en mobile, donde el
+    carrusel de cards ya cumple esa función).
+
+    Acá el panel mide ~690px y el texto se le come casi toda la franja: si no
+    se compactan cuerpo y padding, el contenido pasa el alto fijo y `overflow:
+    hidden` se lleva puesto el eyebrow y el CTA.
+  */
+  .event-banner__slide { height: 14.5rem; }
+  .event-banner__copy { width: 68%; padding: 1.1rem .9rem 1.1rem 1.3rem; }
+  .event-banner__title { font-size: clamp(1.05rem, 2.1vw, 1.5rem); }
+  .event-banner__tagline { max-width: 19rem; font-size: .74rem; }
+  .event-banner__progress { width: 90%; }
+  .event-banner__art--subject { width: 46%; }
+
+  .home-event-card { flex: 0 0 calc(50% - .675rem); }
   .home-event-card__copy { width: 62%; }
   .home-event-card__art { width: 52%; }
 }
 
 @media (max-width: 767.98px) {
-  .home-event-hero { min-height: 15.5rem; border-inline: 0; border-radius: 0 0 1.35rem 1.35rem; }
-  .home-event-hero__copy { width: 76%; padding: 1.15rem 1rem; }
-  .home-event-hero__title { font-size: clamp(1.65rem, 8vw, 2.25rem); white-space: normal; }
-  .home-event-hero__tagline { max-width: 16rem; font-size: .68rem; }
-  .home-event-hero__meta { flex-wrap: wrap; gap: .35rem; margin-top: .55rem; }
-  .home-event-hero__progress { width: 72%; }
-  .home-event-hero__bg { object-position: 62% 40%; }
   .home-event-carousel__head { padding-inline: .05rem; }
   .home-event-carousel__head h2 { font-size: .9rem; }
-  .home-event-carousel__rail { gap: .7rem; margin-inline: calc(var(--spacing-margin-mobile) * -1); padding-inline: var(--spacing-margin-mobile); scroll-padding-inline: var(--spacing-margin-mobile); }
+  .home-event-carousel__rail { gap: 1.05rem; margin-inline: calc(var(--spacing-margin-mobile) * -1); padding-inline: var(--spacing-margin-mobile); scroll-padding-inline: var(--spacing-margin-mobile); }
   /* A 85vw una sola card se comía el ancho de pantalla y el alto la mitad del
-     scroll útil. A ~72vw se ve que hay una segunda card atrás —que es lo que
+     scroll útil. A ~68vw se ve que hay una segunda card atrás —que es lo que
      invita a deslizar— y la tira deja de dominar el home. */
-  .home-event-card { min-height: 8.2rem; flex-basis: min(72vw, 17rem); }
-  .home-event-card__copy { width: 66%; padding-top: 1.35rem; padding-left: .85rem; }
-  .home-event-card__art { right: -.5rem; height: 9.6rem; width: 52%; }
+  .home-event-card { min-height: 6.9rem; flex-basis: min(66vw, 15rem); }
+  .home-event-card__copy { width: 66%; padding-top: 1.1rem; padding-left: .8rem; }
+  .home-event-card__art { right: -.5rem; height: 8rem; width: 52%; }
 }
 
 @media (min-width: 768px) and (max-width: 1279.98px) {
-  .home-event-card { flex-basis: min(22rem, calc(50% - .425rem)); }
+  .home-event-card { flex-basis: min(22rem, calc(50% - .675rem)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-event-hero__cta,
+  /* El cambio de portada pasa a ser instantáneo. El carrusel no pierde nada:
+     la rotación automática tampoco corre con esta preferencia (ver
+     `home-event-showcase`), así que el cambio siempre viene de un gesto. */
+  .event-banner__art { transition: none; }
+  .event-banner__copy { animation: none; }
+
   .home-event-card,
   .home-event-card__pokemon { transition: none; }
-  .home-event-hero:hover .home-event-hero__cta,
   .home-event-card:hover,
   .home-event-card:hover .home-event-card__pokemon { transform: none; }
 }

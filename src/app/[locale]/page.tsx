@@ -13,6 +13,8 @@ import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { buildExpeditionView } from "@/lib/campaign";
 import { loadMapLocations } from "@/lib/campaign/map-data";
 import { loadEventsSummary } from "@/lib/events/state";
+import { rewardWeight } from "@/lib/events/rewards";
+import { itemHdIconUrl } from "@/lib/item-hd-icons";
 import { isEliteMilestone } from "@/lib/next-step";
 import { HomeGameHub } from "@/components/home/home-game-hub";
 import { PvpRankUpHost } from "@/components/pvp/pvp-rank-up-host";
@@ -32,17 +34,22 @@ import {
   healRushCost,
 } from "@/lib/healing";
 import type {
-  HomeObjective,
   HomeRailPvp,
   HomeRailPvpMatch,
 } from "@/lib/home-hub";
-import type { HomeHubLabels } from "@/components/home/home-game-hub";
 import { rankForRating } from "@/lib/pvp/tiers";
 import { loadRaidHomeCard } from "@/lib/raids/state";
 import { loadSafariHomeCard } from "@/lib/safari-home";
 import { loadTowerHomeCard } from "@/lib/tower-home";
 
 const TEAM_SIZE = 6;
+
+/** Iconos HD de las monedas del juego, para la vitrina de premios del banner. */
+const REWARD_KIND_ICONS: Record<"coins" | "energy" | "gems", string> = {
+  coins: "/items/hd/poke-coin.png",
+  energy: "/items/hd/energy.png",
+  gems: "/items/hd/gem.png",
+};
 
 export default async function Home() {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
@@ -514,6 +521,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           stagesDone: locationStagesDone,
           stagesTotal: locationStages.length,
           gymHref: eliteGymHref,
+          eliteMilestone: isEliteMilestone(milestone, badgeTotal),
           guideSteps: buildAdventureGuide({
             milestoneKind: milestone.kind,
             stagesDone: locationStagesDone,
@@ -529,9 +537,12 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         const imageUrl = gymLeaderBustUrl(milestoneGym.leaderName);
         return {
           title: milestoneGym.leaderName,
-          subtitle: tCampaign("gymOfType", {
-            type: tTypes(milestoneGym.type.toLowerCase() as "normal"),
-          }),
+          // Agatha no lidera un "gimnasio fantasma": es el Alto Mando. El
+          // modelo los guarda como gimnasios, el copy no tiene por qué.
+          subtitle: tCampaign(
+            isEliteMilestone(milestone ?? null, badgeTotal) ? "eliteOfType" : "gymOfType",
+            { type: tTypes(milestoneGym.type.toLowerCase() as "normal") },
+          ),
           imageUrl,
           imageKind: gymLeaderHeroArtKind(imageUrl),
           portraitScale: gymLeaderPortraitScale(milestoneGym.leaderName),
@@ -618,24 +629,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         : "none") as "none" | "active" | "completed",
   };
 
-  const farmingZone = farmingZoneEarly;
-  const zoneObjectives = zoneObjectivesEarly;
-  const homeObjectives: HomeObjective[] = zoneObjectives.map((o) => ({
-    id: o.id,
-    labelKey: o.id,
-    current: o.current,
-    target: o.target,
-    done: o.done,
-    claimable: o.claimable,
-    claimed: o.claimed,
-    rewardCoins: o.reward.coins,
-    rewardItems: o.reward.items,
-  }));
-  const objectiveZoneName = farmingZone
-    ? tCampaign(farmingZone.nameKey)
-    : null;
-  const objectiveZoneId = farmingZone?.id ?? null;
-
   const teamMaxLevel = pokemon.reduce((max, p) => Math.max(max, p.level), 0);
   const hurtCount = pokemon.filter((p) => {
     const maxHp = calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution);
@@ -645,46 +638,36 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   const healCdMs = healCooldownMsLeft(userRow.lastHealAt);
   const healRush = healRushCost(hurtCount);
 
-  const hubLabels: HomeHubLabels = {
-    eventsPanel: {
-      progressTitle: t("hub.objectives.progressTitle"),
-      objectivesTitle: t("hub.objectives.title"),
-      rewardsTitle: t("hub.objectives.rewards"),
-      emptyAdventure: t("hub.objectives.empty"),
-      emptyWeekly: t("hub.objectives.emptyWeekly"),
-      emptyEvent: t("hub.objectives.emptyEvent"),
-      claimable: t("hub.objectives.claimable"),
-      claimAction: t("hub.objectives.claimAction"),
-      fightAction: t("hub.objectives.fightAction"),
-      claimed: t("hub.objectives.claimed"),
-      openCampaign: t("hub.objectives.openCampaign"),
-      openEvents: t("hub.objectives.openEvents"),
-      tabAdventure: t("hub.objectives.tabAdventure"),
-      tabWeekly: t("hub.objectives.tabWeekly"),
-      tabEvent: t("hub.objectives.tabEvent"),
-      weeklyReady: t("hub.objectives.weeklyReady", { count: "{count}" }),
-      objectiveLabels: {
-        stages: t("hub.objectives.stages"),
-        pokedex: t("hub.objectives.pokedex"),
-        trainers: t("hub.objectives.trainers"),
-      },
-      rewardCoins: t("hub.objectives.rewardCoins"),
-      weeklyLabels: {
-        logins: tEvents("objectives.logins"),
-        battles: tEvents("objectives.battles"),
-        catches: tEvents("objectives.catches"),
-        zones: tEvents("objectives.zones"),
-        shinies: tEvents("objectives.shinies"),
-        gyms: tEvents("objectives.gyms"),
-      },
-      missionLabels: Object.fromEntries(
-        eventsSummary.limited.missions.map((mission) => [
-          mission.id,
-          tEvents(`limited.missions.${mission.id}`),
-        ]),
-      ),
-    },
-  };
+
+  /*
+    Muestra de premios del evento para el banner del home.
+
+    Se juntan las recompensas de todas las misiones de la edición, se suman las
+    repetidas —tres misiones que dan monedas son una sola entrada— y se ordenan
+    por `rewardWeight`, el mismo peso con el que el resto del juego decide qué
+    premio es "el gordo". Se muestran las cuatro primeras: es una vitrina, no
+    la lista completa, que vive en `/events`.
+  */
+  const rewardTotals = new Map<string, { icon: string; amount: number; weight: number }>();
+  for (const mission of eventsSummary.limited.missions) {
+    for (const reward of mission.rewards) {
+      const key = reward.kind === "item" ? `item:${reward.itemName}` : reward.kind;
+      const amount = reward.kind === "item" ? reward.quantity : reward.amount;
+      const previous = rewardTotals.get(key);
+      rewardTotals.set(key, {
+        icon:
+          reward.kind === "item"
+            ? itemHdIconUrl(reward.itemName) ?? "/items/hd/potion.png"
+            : REWARD_KIND_ICONS[reward.kind],
+        amount: (previous?.amount ?? 0) + amount,
+        weight: (previous?.weight ?? 0) + rewardWeight(reward),
+      });
+    }
+  }
+  const limitedRewardPreview = [...rewardTotals.values()]
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 4)
+    .map((reward) => ({ icon: reward.icon, label: `×${reward.amount}` }));
 
   return (
     <>
@@ -714,6 +697,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
             ) / Math.max(1, eventsSummary.limited.missions.length) * 100,
           ),
           claimable: eventsSummary.limited.missions.filter((mission) => mission.claimable).length,
+          rewards: limitedRewardPreview,
         },
         raid: raidCard,
         safari: safariCard,
@@ -751,41 +735,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         clanWars: clanWarsRail,
         top: railTop,
       }}
-      adventure={{
-        zoneId: objectiveZoneId,
-        zoneName: objectiveZoneName,
-        objectives: homeObjectives,
-        trainers: (farmingZone?.trainers ?? []).map((tr) => ({
-          id: tr.id,
-          nameKey: tr.nameKey,
-          spriteUrl: tr.spriteUrl,
-          level: tr.level,
-          defeated: tr.defeated,
-        })),
-      }}
-      weekly={{
-        percent: eventsSummary.weekly.percent,
-        objectives: eventsSummary.weekly.objectives.map((o) => ({
-          id: o.id,
-          current: o.current,
-          target: o.target,
-          href: o.href,
-        })),
-        claimableMilestones: eventsSummary.weekly.milestones.filter((m) => m.claimable)
-          .length,
-      }}
-      limited={{
-        name: tEvents(`limited.catalog.${eventsSummary.limited.nameKey}`),
-        missions: eventsSummary.limited.missions.map((m) => ({
-          id: m.id,
-          current: m.current,
-          target: m.target,
-          claimed: m.claimed,
-          claimable: m.claimable,
-          href: m.href,
-        })),
-      }}
-      hubLabels={hubLabels}
     />
     </>
   );

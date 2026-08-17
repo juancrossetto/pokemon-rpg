@@ -57,6 +57,8 @@ export type CampaignPrimaryActionKind =
 
 export type CampaignActionLabelKey =
   | "challengeGym"
+  /** Mismo destino que `challengeGym`, distinto texto: nodos del Alto Mando. */
+  | "challengeElite"
   | "continueExpedition"
   | "viewJourney"
   | "exploreLocation"

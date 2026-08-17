@@ -378,7 +378,16 @@
         "weeklyMode": "Rotación semanal",
         "limitedEyebrow": "Desafío temporal",
         "missionsActive": "Misiones activas",
-        "progress": "Progreso · {percent}%"
+        "progress": "Progreso · {percent}%",
+        "heroLabel": "Eventos destacados",
+        "heroPrev": "Evento anterior",
+        "heroNext": "Evento siguiente",
+        "heroGoto": "Ver evento {n}",
+        "heroRaidTagline": "Derribá a {name} junto a toda la comunidad.",
+        "heroCtaRaid": "Entrar a la incursión",
+        "heroTowerTagline": "Subí piso por piso y llevate el botín acumulado.",
+        "heroRewards": "Recompensas",
+        "heroCtaTower": "Subir la torre"
       }
     }
   },
@@ -2458,6 +2467,7 @@
     "journeyGuideShort": "Guía",
     "continueExpedition": "Salir a explorar",
     "challengeGym": "Desafiar gimnasio",
+    "challengeElite": "Desafiar al Alto Mando",
     "partyDock": {
       "label": "Equipo",
       "fainted": "Debilitado",
@@ -2785,7 +2795,8 @@
     "movedHere": "Ahora estás en {name}.",
     "stageSet": "Tramo activo: {name}.",
     "nextChallenge": "Próximo desafío",
-    "gymOfType": "Gimnasio {type}"
+    "gymOfType": "Gimnasio {type}",
+    "eliteOfType": "Alto Mando · {type}"
   },
   "levelUp": {
     "title": "{name} · Nv. {level}",

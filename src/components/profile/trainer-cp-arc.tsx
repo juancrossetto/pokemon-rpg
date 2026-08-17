@@ -31,9 +31,21 @@ export function TrainerCpArc({
   const arcOffset = 100 - filled;
   const gradientId = `cp-arc-${from.replace("#", "")}-${to.replace("#", "")}`;
 
+  /*
+    Redondeado a propósito.
+
+    `Math.sin`/`Math.cos` no están especificados bit a bit: la spec sólo pide
+    "an implementation-approximated value", y el libm de Node no coincide con el
+    de Chrome en los últimos ULPs. Sin redondear, el server serializaba
+    `cy="49.984005973213854"` y el cliente calculaba `49.98400597321384` — dos
+    strings distintos para el mismo punto, o sea un mismatch de hidratación en
+    cada carga del perfil. Tres decimales sobre un viewBox de 320 unidades es
+    varios órdenes por debajo de un píxel.
+  */
   const angle = ((180 - 180 * clamped) * Math.PI) / 180;
-  const KNOB_CX = 160 + 144 * Math.cos(angle);
-  const KNOB_CY = 158 - 144 * Math.sin(angle);
+  const round3 = (n: number) => Math.round(n * 1000) / 1000;
+  const KNOB_CX = round3(160 + 144 * Math.cos(angle));
+  const KNOB_CY = round3(158 - 144 * Math.sin(angle));
 
   const mid = from;
   const showValue = mode === "full" || mode === "value";

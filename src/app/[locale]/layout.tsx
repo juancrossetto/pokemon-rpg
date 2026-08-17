@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Orbitron } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { BootSplashMarkup } from "@/components/boot-splash-markup";
 import { InlineScript } from "@/components/inline-script";
@@ -30,6 +30,25 @@ const inter = Inter({
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+});
+
+/*
+  Display ancha para los títulos del banner de eventos.
+
+  El pedido era Ethnocentric, que es una tipografía comercial (Typodermic): no
+  se puede descargar ni empaquetar acá. Orbitron es el reemplazo libre habitual
+  para ese registro —geométrica, cuadrada, ancha, mayúsculas de cartel— y viene
+  y cubre los acentos que necesitan los títulos ("INCURSIÓN") dentro del subset
+  `latin` — no publica `latin-ext`, así que pedirlo rompe el type check.
+
+  Si aparece la licencia de Ethnocentric, el cambio es de una línea: dejar el
+  .woff2 en `public/fonts`, declararlo con `@font-face` como ya se hace con
+  Grobold, y apuntar `--font-title` ahí. Ningún componente se toca.
+*/
+const orbitron = Orbitron({
+  variable: "--font-title",
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
 });
 
 /** Tipografía de la app: Inter (UI) + JetBrains Mono (labels) + Grobold local (títulos). */
@@ -133,6 +152,7 @@ export default async function LocaleLayout({
     "dark",
     inter.variable,
     jetbrainsMono.variable,
+    orbitron.variable,
     "h-full",
     "antialiased",
     "boot-splash-done",
