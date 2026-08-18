@@ -152,11 +152,11 @@ html[data-icons="ready"] .material-symbols-outlined {
     padding-bottom: calc(var(--bottom-nav-h) + 0.25rem);
   }
 
-  /* Torre: padding = tope del dock (sin overhang del FAB ni holgura).
-     `--bottom-sheet-inset` ya incluye el dock + su safe-area. */
+  /* Torre: hueco real sobre el dock. El 0.25rem anterior dejaba “Tu recorrido”
+     debajo de la bottom nav en el teléfono. */
   .app-main:has([data-tower-page]) {
     padding-bottom: calc(
-      var(--bottom-sheet-inset, var(--bottom-nav-h, 5.25rem)) + 0.25rem + var(--vv-gap, 0px)
+      var(--bottom-nav-h, 5.25rem) + 0.75rem + var(--vv-gap, 0px)
     );
   }
 
@@ -10704,10 +10704,35 @@ html.is-standalone .battle-result-overlay .result-in {
 }
 
 .tower-result__floor {
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-weight: 800;
   text-shadow:
     0 0 28px color-mix(in srgb, var(--tower-result-accent, #e879f9) 45%, transparent),
     0 4px 12px rgba(0, 0, 0, 0.55);
   animation: tower-result-floor-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tower-result__status {
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tower-result-accent, #e879f9);
+}
+
+.tower-result__loot-n {
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-weight: 800;
+}
+
+.tower-result__claimed {
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #21CEA1;
 }
 
 .tower-result__mon {
@@ -10741,6 +10766,285 @@ html.is-standalone .battle-result-overlay .result-in {
   .tower-result__mon {
     animation: none;
   }
+}
+
+/* Cabecera de Torre: arte + título + dificultad. En mobile es una tira baja. */
+.tower-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  background: #0b0d13;
+  min-height: 9.25rem;
+}
+.tower-hero__art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.tower-hero__img {
+  object-fit: cover;
+  object-position: center 22%;
+}
+.tower-hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(11, 13, 19, 0.2) 0%, rgba(11, 13, 19, 0.62) 55%, #0b0d13 100%),
+    linear-gradient(90deg, rgba(11, 13, 19, 0.55) 0%, transparent 48%);
+}
+.tower-hero__tools {
+  position: absolute;
+  z-index: 20;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tower-hero__copy {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  min-height: 9.25rem;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  padding: 2.4rem 1.1rem 0.85rem;
+}
+.tower-hero__ident {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.tower-hero__icon {
+  height: 2rem;
+  width: 2rem;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+}
+.tower-hero__eyebrow {
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--theme-secondary) 70%, #fff);
+}
+.tower-hero__title {
+  margin: 0.1rem 0 0;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45), 0 8px 18px rgba(0, 0, 0, 0.45);
+}
+.tower-hero__tagline {
+  display: none;
+  max-width: 36rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+}
+.tower-diff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+.tower-diff__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 0.28rem 0.7rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.tower-diff__btn.is-on {
+  border-color: color-mix(in srgb, var(--theme-secondary) 50%, transparent);
+  background: color-mix(in srgb, var(--theme-secondary) 28%, #0b0d13);
+  color: #fff;
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--theme-secondary) 40%, #000);
+}
+.tower-diff__btn.is-locked {
+  color: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.tower-diff__rule {
+  margin-left: 0.15rem;
+  color: color-mix(in srgb, #e879f9 70%, #fff);
+  font-size: 0.58rem;
+  font-weight: 700;
+}
+.tower-stats dt {
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+.tower-stats dd {
+  margin-top: 0.2rem;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.tower-path-label {
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--theme-secondary, #a78bfa);
+}
+
+@media (min-width: 640px) {
+  .tower-hero__tagline { display: block; }
+  .tower-hero__img { object-position: center 30%; }
+  .tower-hero__copy { padding: 0.9rem 1.25rem 1rem; min-height: 9rem; }
+  .tower-hero__title { font-size: 1.55rem; }
+}
+
+@media (max-width: 639.98px) {
+  .tower-hero {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    border-radius: 1rem;
+  }
+  .tower-hero__img { object-position: 68% 28%; }
+  .tower-hero__scrim {
+    background: linear-gradient(
+      90deg,
+      rgba(10, 12, 20, 0.92) 0%,
+      rgba(10, 12, 20, 0.55) 52%,
+      rgba(10, 12, 20, 0.18) 100%
+    );
+  }
+  .tower-hero__copy {
+    min-height: 0;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-end;
+    gap: 0;
+    padding: 0;
+  }
+  .tower-hero__ident {
+    min-height: 3.55rem;
+    padding: 0.4rem 0.7rem;
+    padding-inline-end: 5.6rem;
+  }
+  .tower-hero__eyebrow,
+  .tower-hero__tagline,
+  .tower-diff__rule { display: none; }
+  .tower-hero__title {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1;
+  }
+  .tower-hero__icon { height: 1.7rem; width: 1.7rem; }
+  .tower-hero__tools { top: 0.4rem; right: 0.45rem; }
+  .tower-diff {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    justify-content: stretch;
+    gap: 0.3rem;
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+    background: rgba(6, 8, 14, 0.55);
+    padding: 0.32rem 0.4rem 0.38rem;
+  }
+  .tower-diff__btn {
+    flex: 1 1 0;
+    justify-content: center;
+    border: 0;
+    border-radius: 0.65rem;
+    background: transparent;
+    box-shadow: none;
+    padding: 0.48rem 0.4rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+  }
+  .tower-diff__btn.is-on {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-secondary) 88%, #fff) 0%,
+      var(--theme-secondary) 100%
+    );
+    color: #fff;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.28) inset,
+      0 3px 0 color-mix(in srgb, var(--theme-secondary) 45%, #000);
+  }
+
+  [data-tower-page] .game-cta,
+  [data-tower-page] .tower-cta {
+    font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    min-height: 3.05rem;
+    border-radius: 0.85rem;
+    border-width: 1.5px;
+    filter: saturate(1.12);
+  }
+  [data-tower-page] .game-cta__label,
+  [data-tower-page] .tower-cta .game-cta__label {
+    font-family: inherit;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+  [data-tower-page] .game-cta--red {
+    box-shadow:
+      0 2px 0 rgba(255, 255, 255, 0.18) inset,
+      0 4px 0 color-mix(in srgb, var(--theme-primary-deep, #7f1d1d) 70%, #000),
+      0 8px 16px color-mix(in srgb, var(--color-pokeball-red) 32%, transparent);
+  }
+  [data-tower-page] .game-cta--gold .game-cta__label {
+    color: #1a1208;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  [data-tower-page] .game-cta--gold {
+    box-shadow:
+      0 2px 0 rgba(255, 255, 255, 0.35) inset,
+      0 4px 0 color-mix(in srgb, var(--theme-tertiary-deep, #b45309) 75%, #000),
+      0 8px 16px color-mix(in srgb, var(--color-electric-yellow) 28%, transparent);
+  }
+  [data-tower-page] .game-cta--disabled,
+  [data-tower-page] .game-cta:disabled {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.1) inset,
+      0 3px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  .tower-result {
+    padding-top: 0.85rem;
+    padding-bottom: 0.95rem;
+  }
+  .tower-stats dt { font-size: 0.68rem; }
+  .tower-stats dd { font-size: 1.55rem; }
+  .tower-path-label { font-size: 0.72rem; }
 }
 
 .tower-locked {
@@ -20091,6 +20395,32 @@ html[data-flashes="0"] :is(.sprite-flash, .sprite-flash-heavy, .arena-type-flash
 
 .tower-auto-countdown-number {
   animation: tower-auto-countdown-pop 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/*
+  Encima del dock (z-index 70). En el teléfono `inset-0` caía detrás de la
+  bottom nav y el botón Cancelar se recortaba; en desktop xl la barra no
+  existe y se veía entero. El padding deja el 3-2-1 en el hueco visible.
+*/
+.tower-auto-countdown-overlay {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.72);
+  padding:
+    max(0.75rem, env(safe-area-inset-top, 0px))
+    1rem
+    calc(var(--bottom-nav-h, 5.25rem) + env(safe-area-inset-bottom, 0px) + var(--vv-gap, 0px) + 0.5rem);
+  backdrop-filter: blur(6px);
+}
+@media (min-width: 1280px) {
+  .tower-auto-countdown-overlay {
+    padding-bottom: 1.5rem;
+  }
 }
 
 .tower-auto-climb-chip {

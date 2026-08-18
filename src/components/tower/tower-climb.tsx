@@ -1,7 +1,7 @@
 "use client";
 
 import { CdnImage as Image } from "@/components/cdn-image";
-import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import {
   applyTowerRest,
@@ -27,6 +27,12 @@ import type {
 import { floorNodeVisual, pokeApiSpriteUrl } from "@/lib/tower/icons";
 import { scrollElementIntoViewSafe } from "@/lib/scroll-lock";
 import { playUiSfx } from "@/lib/battle-sfx";
+import {
+  getServerTowerAuto,
+  getTowerAuto,
+  pickTowerAutoBlessing,
+  subscribeTowerAuto,
+} from "@/lib/tower-auto";
 
 /* ------------------------------------------------------------------ *
  * Tokens visuales por tipo de piso.
@@ -149,6 +155,8 @@ function toneFor(type: string) {
 }
 
 const TOWER_JUST_BLESSING_KEY = "tower:just-blessing";
+/** Tiempo para que se vean las tres cartas antes de que AUTO elija. */
+const AUTO_BLESSING_PICK_MS = 1100;
 
 type JustBlessingPayload = {
   id: string;
@@ -1028,7 +1036,7 @@ export function TowerEndedSummary({
 
   return (
     <section
-      className="tower-result relative isolate overflow-hidden rounded-2xl px-3 py-4 sm:px-4 sm:py-5"
+      className="tower-result relative isolate overflow-hidden rounded-2xl px-3 py-3 sm:px-4 sm:py-5"
       style={
         {
           "--tower-result-accent": accent,
@@ -1039,30 +1047,30 @@ export function TowerEndedSummary({
 
       {/* Status + floor hero */}
       <div className="relative flex flex-col items-center text-center">
-        <p className="page-title text-[11px] tracking-[0.2em] text-[color:var(--tower-result-accent)]">
+        <p className="tower-result__status">
           {t(titleKey)}
         </p>
 
-        <div className="relative mt-3 flex flex-col items-center">
+        <div className="relative mt-2 flex flex-col items-center sm:mt-3">
           <span
             aria-hidden
-            className="tower-result__ring pointer-events-none absolute left-1/2 top-1/2 h-[5.5rem] w-[5.5rem] -translate-x-1/2 -translate-y-1/2 rounded-full sm:h-24 sm:w-24"
+            className="tower-result__ring pointer-events-none absolute left-1/2 top-1/2 h-[5.25rem] w-[5.25rem] -translate-x-1/2 -translate-y-1/2 rounded-full sm:h-24 sm:w-24"
           />
-          <p className="page-title text-[9px] tracking-[0.18em] text-white/40">
+          <p className="hidden page-title text-[9px] tracking-[0.18em] text-white/40 sm:block">
             {t("result.floorReached")}
           </p>
-          <p className="tower-result__floor page-title mt-1 text-[3.25rem] leading-none tracking-[0.02em] text-white sm:text-[3.6rem]">
+          <p className="tower-result__floor mt-0 text-[2.7rem] leading-none tracking-[0.02em] text-white sm:mt-1 sm:text-[3.6rem]">
             {floorReached}
           </p>
         </div>
 
-        <p className="mt-3 w-full truncate px-1 text-center text-[12px] leading-none text-white/50 sm:text-[13px]">
+        <p className="mt-3 hidden w-full truncate px-1 text-center text-[12px] leading-none text-white/50 sm:block sm:text-[13px]">
           {t(bodyKey)}
         </p>
       </div>
 
       {/* Lineup */}
-      <div className="relative mt-5">
+      <div className="relative mt-3.5 sm:mt-5">
         <ul className="flex items-end justify-center gap-1 sm:gap-1.5">
           {team.map((m, i) => {
             const down = m.defeated || m.currentHp <= 0;
@@ -1086,10 +1094,10 @@ export function TowerEndedSummary({
                 <Image
                   src={m.spriteUrl}
                   alt={m.nickname ?? m.speciesName}
-                  width={64}
-                  height={64}
+                  width={72}
+                  height={72}
                   unoptimized
-                  className={`relative z-[1] h-12 w-12 object-contain sm:h-[3.35rem] sm:w-[3.35rem] ${
+                  className={`relative z-[1] h-14 w-14 object-contain sm:h-[3.35rem] sm:w-[3.35rem] ${
                     down ? "opacity-70 grayscale-[0.65] brightness-90" : ""
                   }`}
                 />
@@ -1120,7 +1128,7 @@ export function TowerEndedSummary({
       </div>
 
       {/* Loot — premio protagonista */}
-      <div className="relative mt-5 flex flex-col items-center">
+      <div className="relative mt-3.5 flex flex-col items-center sm:mt-5">
         {loot.length === 0 ? (
           <p className="text-[12px] text-white/40">{t("result.lootEmpty")}</p>
         ) : (
@@ -1132,13 +1140,13 @@ export function TowerEndedSummary({
                   alt=""
                   width={48}
                   height={48}
-                  className={`h-11 w-11 object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.45)] ${
+                  className={`h-14 w-14 object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.45)] sm:h-11 sm:w-11 ${
                     lootClaimed ? "opacity-70" : ""
                   }`}
                   unoptimized
                 />
                 <span
-                  className={`page-title text-[1.65rem] leading-none tracking-[0.04em] tabular-nums sm:text-[1.85rem] ${
+                  className={`tower-result__loot-n text-[1.75rem] leading-none tracking-[0.04em] tabular-nums sm:text-[1.85rem] ${
                     lootClaimed ? "text-white/55" : "text-white"
                   }`}
                 >
@@ -1158,7 +1166,7 @@ export function TowerEndedSummary({
         ) : null}
 
         {lootClaimed ? (
-          <p className="page-title mt-2 text-[9px] tracking-[0.14em] text-[#21CEA1]">
+          <p className="tower-result__claimed mt-2">
             {t("result.lootClaimed")}
           </p>
         ) : !canClaim || alreadyGranted ? (
@@ -1169,7 +1177,7 @@ export function TowerEndedSummary({
           <GameCtaButton
             type="button"
             variant="gold"
-            className="mt-3 w-full max-w-xs"
+            className="tower-cta game-cta--gold mt-3 w-full max-w-xs"
             disabled={pending}
             onClick={(e) => {
               // El FX sale del botón antes de invocar la acción: `claimTowerLoot`
@@ -1292,15 +1300,25 @@ export function TowerSquad({
 export function TowerBlessingDraft({
   blessings,
   locale,
+  teamHpPct,
 }: {
   blessings: TowerBlessing[];
   locale: string;
+  teamHpPct: number;
 }) {
   const t = useTranslations("tower");
+  const auto = useSyncExternalStore(
+    subscribeTowerAuto,
+    getTowerAuto,
+    getServerTowerAuto,
+  );
   const [pending, start] = useTransition();
   const [picked, setPicked] = useState<string | null>(null);
+  const pickingRef = useRef(false);
 
-  const pick = (b: TowerBlessing) => {
+  const pick = useCallback((b: TowerBlessing) => {
+    if (pickingRef.current) return;
+    pickingRef.current = true;
     const visual = blessingVisual(b.id);
     try {
       window.sessionStorage.setItem(
@@ -1317,7 +1335,19 @@ export function TowerBlessingDraft({
     }
     setPicked(b.id);
     start(async () => chooseTowerBlessing(b.id, locale));
-  };
+  }, [locale, start, t]);
+
+  useEffect(() => {
+    if (!auto) return;
+    const best = pickTowerAutoBlessing(blessings, teamHpPct);
+    if (!best) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const id = window.setTimeout(() => {
+      if (!getTowerAuto()) return;
+      pick(best);
+    }, reduced ? 280 : AUTO_BLESSING_PICK_MS);
+    return () => window.clearTimeout(id);
+  }, [auto, blessings, pick, teamHpPct]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/85 px-2 pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+0.75rem)] pt-4 backdrop-blur-md sm:items-center sm:p-4 sm:pb-4">
@@ -1737,11 +1767,13 @@ export function TowerActionBar({
           type="button"
           disabled
           aria-label={`${t(action.labelKey)} — ${t("reset.nextIn")} ${timerLabel}`}
-          className="game-cta game-cta--red game-cta--disabled gap-2 whitespace-nowrap sm:gap-2.5"
+          className="game-cta game-cta--red game-cta--disabled tower-cta min-w-0 w-full flex-wrap gap-x-2 gap-y-1 px-3 sm:gap-2.5"
         >
-          <span className="game-cta__label whitespace-nowrap">{t(action.labelKey)}</span>
-          <span aria-hidden className="h-4 w-px shrink-0 bg-white/30" />
-          <span className="inline-flex shrink-0 items-center gap-1 font-sans text-[13px] font-semibold tabular-nums tracking-normal text-white normal-case">
+          <span className="game-cta__label max-w-full text-center leading-none">
+            {t(action.labelKey)}
+          </span>
+          <span aria-hidden className="hidden h-4 w-px shrink-0 bg-white/30 sm:block" />
+          <span className="inline-flex shrink-0 items-center gap-1 font-sans text-[12px] font-semibold tabular-nums tracking-normal text-white normal-case sm:text-[13px]">
             <span className="material-symbols-outlined text-[15px]! opacity-90">
               schedule
             </span>
@@ -1749,13 +1781,14 @@ export function TowerActionBar({
           </span>
         </button>
       ) : action.destination ? (
-        <GameCtaButton href={action.destination} variant="red" disabled={!action.enabled}>
+        <GameCtaButton href={action.destination} variant="red" className="tower-cta" disabled={!action.enabled}>
           {t(action.labelKey)}
         </GameCtaButton>
       ) : (
         <GameCtaButton
           type="button"
           variant="red"
+          className="tower-cta"
           disabled={!action.enabled || pending}
           onClick={run}
         >
@@ -1763,7 +1796,7 @@ export function TowerActionBar({
         </GameCtaButton>
       )}
       {action.reasonKey && (
-        <p className="px-1 text-center text-[11px] leading-snug text-white/50">
+        <p className="hidden px-1 text-center text-[11px] leading-snug text-white/50 sm:block">
           {t(action.reasonKey)}
         </p>
       )}

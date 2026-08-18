@@ -7,20 +7,18 @@ import {
   useSyncExternalStore,
   useTransition,
 } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import {
   applyTowerRest,
   challengeTowerFloor,
-  chooseTowerBlessing,
 } from "@/actions/tower";
 import { setBattleAuto } from "@/lib/battle-auto";
 import { playUiSfx } from "@/lib/battle-sfx";
 import { GameCtaButton } from "@/components/game-cta-button";
-import type { TowerBlessing } from "@/lib/tower";
 import {
   getServerTowerAuto,
   getTowerAuto,
-  pickTowerAutoBlessing,
   pickTowerAutoRest,
   setTowerAuto,
   subscribeTowerAuto,
@@ -42,32 +40,35 @@ function TowerAutoCountdownOverlay({
 }) {
   const t = useTranslations("tower");
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-[65] flex items-center justify-center bg-black/72 px-4 backdrop-blur-sm"
+      className="tower-auto-countdown-overlay"
       role="alertdialog"
       aria-modal="true"
       aria-label={label}
     >
-      <div className="flex flex-col items-center text-center">
+      <div className="flex max-w-full flex-col items-center text-center">
         <p className="text-[10px] font-black uppercase tracking-[0.26em] text-secondary">
           {label}
         </p>
         <p
           key={count}
-          className="tower-auto-countdown-number page-title mt-2 text-[7rem] leading-none text-white drop-shadow-[0_0_30px_color-mix(in_srgb,var(--theme-primary)_75%,transparent)] sm:text-[9rem]"
+          className="tower-auto-countdown-number page-title mt-1 text-[clamp(4.25rem,28vw,7rem)] leading-none text-white drop-shadow-[0_0_30px_color-mix(in_srgb,var(--theme-primary)_75%,transparent)] sm:mt-2 sm:text-[9rem]"
         >
           {count}
         </p>
         <button
           type="button"
           onClick={onCancel}
-          className="mt-5 rounded-xl border border-white/25 bg-white/8 px-5 py-2.5 text-[12px] font-bold text-white transition hover:border-white/45 hover:bg-white/12"
+          className="mt-4 shrink-0 rounded-xl border border-white/25 bg-white/8 px-5 py-2.5 text-[12px] font-bold text-white transition hover:border-white/45 hover:bg-white/12 sm:mt-5"
         >
           {t("auto.cancelStart")}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -76,7 +77,6 @@ export function TowerAutoFlow({
   status,
   currentFloor,
   locale,
-  offeredBlessings,
   teamHpPct,
   canAttune,
 }: {
@@ -85,7 +85,6 @@ export function TowerAutoFlow({
   status: string | null;
   currentFloor: number;
   locale: string;
-  offeredBlessings: TowerBlessing[];
   teamHpPct: number;
   canAttune: boolean;
 }) {
@@ -140,11 +139,17 @@ export function TowerAutoFlow({
       return;
     }
 
-    const blessing =
-      status === "AWAITING_BLESSING"
-        ? pickTowerAutoBlessing(offeredBlessings, teamHpPct)
-        : null;
-    const actionKey = `${runId}:${currentFloor}:${status}:${blessing?.id ?? "next"}`;
+    /*
+      AWAITING_BLESSING lo resuelve el draft: elige la mejor carta y recorre
+      el mismo pick() (foil, sessionStorage, vuelo al chip). Si AUTO dispara
+      chooseTowerBlessing acá, salta esa animación.
+    */
+    if (status === "AWAITING_BLESSING") {
+      markFloorSeen();
+      return;
+    }
+
+    const actionKey = `${runId}:${currentFloor}:${status}:next`;
     try {
       if (window.sessionStorage.getItem(`tower-auto-action:${actionKey}`) === "1") return;
     } catch {
@@ -168,10 +173,6 @@ export function TowerAutoFlow({
         }
         if (status === "RESTING") {
           await applyTowerRest(locale, pickTowerAutoRest(teamHpPct, canAttune));
-          return;
-        }
-        if (blessing) {
-          await chooseTowerBlessing(blessing.id, locale);
         }
       });
     };
@@ -205,7 +206,7 @@ export function TowerAutoFlow({
       window.clearTimeout(timer);
       if (countdownTimer != null) window.clearInterval(countdownTimer);
     };
-  }, [canAttune, currentFloor, enabled, locale, offeredBlessings, runId, status, teamHpPct]);
+  }, [canAttune, currentFloor, enabled, locale, runId, status, teamHpPct]);
 
   if (entryCountdown == null) return null;
   return (
@@ -281,7 +282,7 @@ export function TowerAutoControl() {
   };
 
   return (
-    <div className="w-[7.25rem] shrink-0 sm:w-[8rem]">
+    <div className="w-full min-w-0 sm:w-[8rem] sm:shrink-0">
       <GameCtaButton
         type="button"
         variant="red"
@@ -290,7 +291,7 @@ export function TowerAutoControl() {
         aria-label={t("auto.label")}
         title={enabled ? t("auto.hintOn") : t("auto.hintOff")}
         onClick={toggle}
-        className={`px-2! text-[0.78rem]! sm:px-3! sm:text-[0.86rem]! ${
+        className={`tower-cta px-2! text-[0.78rem]! sm:px-3! sm:text-[0.86rem]! ${
           enabled
             ? "ring-1 ring-white/35"
             : arming != null
