@@ -101,7 +101,7 @@
     "events": "Eventos",
     "profile": "Meu perfil",
     "tower": "Torre",
-    "park": "Parque"
+    "park": "Minijogos"
   },
   "notifications": {
     "eyebrow": "Alertas ao vivo",
@@ -4246,7 +4246,7 @@
     "fishFragCount": "{have}/{need}",
     "fishShiny": "Shiny! Você pegou {name}.",
     "fishMiss": "{name} mordeu e escapou.",
-    "wonderBlurb": "Envie um do PC. Se houver fila, a troca é na hora; se não, ele espera. O viajante NPC troca na hora.",
+    "wonderBlurb": "Envie um do PC. A troca casa por raridade: um Magikarp não volta como Charizard.",
     "wonderSend": "Trocar",
     "wonderTraveler": "Com o cientista",
     "wonderQueued": "Entrou na fila da troca misteriosa.",
@@ -4255,12 +4255,12 @@
     "wonderCancelled": "Voltou ao PC.",
     "wonderNpc": "Um viajante te deu {name}.",
     "wonderPlayer": "Troca feita: você recebeu {name}.",
-    "wonderHint": "Troca com outros treinadores, ou na hora com o cientista.",
+    "wonderHint": "Troca com outros treinadores ou com o cientista. Você recebe algo do mesmo nível, não um upgrade.",
     "wonderOffer": "Você envia",
     "wonderReturn": "Você recebe",
     "wonderWaiting": "Na fila",
     "wonderEmptyPad": "Escolha um",
-    "wonderHostIdle": "Traga um espécime. Eu abro o portal.",
+    "wonderHostIdle": "Traga um espécime do mesmo nível. Eu abro o portal.",
     "wonderHostSwap": "O reator está carregando a troca…",
     "wonderHostQueued": "{name} espera do outro lado.",
     "wonderHostGot": "Interessante. {name} é seu.",
@@ -4269,6 +4269,8 @@
     "wonderReset": "Grátis de novo em {time}",
     "wonderIdleNudge": "Escolha um e envie",
     "wonderFreeLeft": "{n, plural, one {# grátis} other {# grátis}}",
+    "wonderLocked": "O laboratório está fechado",
+    "wonderLockedBody": "Ganhe {n, plural, one {# insígnia de ginásio} other {# insígnias de ginásio}} para abrir a troca.",
     "cornerBlurb": "Três rolos. {free} giros grátis por dia; depois cada um custa {energy} de energia. Três setes pagam o prêmio máximo.",
     "spin": "Girar",
     "cornerWin": "{reels} — você ganhou {coins} moedas",
@@ -4334,7 +4336,9 @@
       "dug": "Já cavou aí.",
       "no_team": "Você precisa de um Pokémon no time.",
       "no_catalog": "Catálogo de aluguéis ausente.",
-      "bad_facility": "Recinto inválido."
+      "bad_facility": "Recinto inválido.",
+      "locked": "Ganhe a primeira insígnia para usar a troca.",
+      "too_rare": "Valioso demais para o cientista. Envie para a fila."
     },
     "cornerReady": "Tente a sorte",
     "cornerNothing": "Nada desta vez",
@@ -4389,8 +4393,8 @@
       "wonder": {
         "title": "Troca",
         "s1": "As primeiras 3 trocas do dia são grátis; depois cada uma custa 1 de energia.",
-        "s2": "Se houver alguém na fila, a troca é instantânea.",
-        "s3": "Se não houver, fica esperando — ou troque com o cientista."
+        "s2": "Só cruza com quem mandou algo do mesmo nível (estágio e raridade).",
+        "s3": "Se não houver fila, o cientista troca algo parecido — não um upgrade."
       },
       "corner": {
         "title": "Cassino",

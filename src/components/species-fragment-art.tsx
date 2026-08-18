@@ -2,6 +2,7 @@
 
 import { PokemonImage } from "@/components/pokemon-image";
 import type { DexRarity } from "@/lib/pokedex";
+import type { CSSProperties } from "react";
 
 /**
  * Cristal con el sprite recortado adentro.
@@ -33,7 +34,7 @@ export function SpeciesFragmentArt({
   return (
     <span
       className={`frag-art${rarity ? ` is-${rarity}` : ""} ${className}`.trim()}
-      style={{ width: size, height: size }}
+      style={{ "--frag-size": `${size}px` } as CSSProperties}
       aria-hidden={alt === ""}
     >
       <span className="frag-art__poke">

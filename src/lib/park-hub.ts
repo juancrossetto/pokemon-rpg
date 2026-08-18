@@ -10,7 +10,7 @@ import { FOSSIL_KINDS, FOSSIL_SPECIES, generateMineGrid, mineDigsLeft, parseMine
 import { FRONTIER_FACILITIES } from "@/lib/park/frontier";
 import { cornerFreeLeft, cornerSpinsUsedToday } from "@/lib/park/corner";
 import { fishingCastsUsedToday, fishingFreeLeft } from "@/lib/park/fishing";
-import { wonderFreeLeft, wonderTradesUsedToday } from "@/lib/park/wonder";
+import { isWonderUnlocked, wonderFreeLeft, wonderTradesUsedToday } from "@/lib/park/wonder";
 import { migrateLegacyFossilsIfNeeded } from "@/lib/park/fragment-store";
 import type { ParkDaycareSlot, ParkHubData, ParkPlot, ParkFrontierView } from "@/lib/park/view";
 
@@ -19,7 +19,7 @@ export async function loadParkHub(userId: string): Promise<ParkHubData> {
   const now = new Date();
   await migrateLegacyFossilsIfNeeded(userId);
 
-  const [user, deposits, boxRows, plots, berryItems, mine, frontier, corner, fishing, wonderDay, busy, openWonder, fragmentRows] = await Promise.all([
+  const [user, deposits, boxRows, plots, berryItems, mine, frontier, corner, fishing, wonderDay, busy, openWonder, fragmentRows, badgeCount] = await Promise.all([
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { coins: true, energy: true, energyMax: true, energyUpdatedAt: true },
@@ -51,6 +51,7 @@ export async function loadParkHub(userId: string): Promise<ParkHubData> {
       include: { species: true },
       orderBy: { quantity: "desc" },
     }),
+    prisma.badge.count({ where: { userId } }),
   ]);
 
   const bagRows = await prisma.inventoryItem.findMany({
@@ -132,6 +133,7 @@ export async function loadParkHub(userId: string): Promise<ParkHubData> {
         }
       : null,
     wonder: {
+      unlocked: isWonderUnlocked(badgeCount),
       freeLeft: wonderFreeLeft(wonderTradesUsedToday(wonderDay, key)),
       resetAt: resetAt.toISOString(),
       resetMs: Math.max(0, resetAt.getTime() - now.getTime()),

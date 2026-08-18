@@ -110,8 +110,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: "park",
         descriptionKey: "desc.park",
         href: "/park",
-        icon: "park",
-        iconSrc: "/nav/adventure-icon.png?v=4",
+        icon: "sports_esports",
+        iconSrc: "/nav/friends-icon.png?v=5",
       },
       {
         id: "events",
@@ -236,7 +236,7 @@ export const NAV_GROUPS: NavGroup[] = [
         descriptionKey: "desc.friends",
         href: "/friends",
         icon: "handshake",
-        iconSrc: "/nav/friends-icon.png?v=4",
+        iconSrc: "/nav/friends-trainers.png?v=1",
       },
       {
         id: "clans",

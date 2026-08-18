@@ -101,7 +101,7 @@
     "events": "Events",
     "profile": "My profile",
     "tower": "Tower",
-    "park": "Park"
+    "park": "Minigames"
   },
   "notifications": {
     "eyebrow": "Live alerts",
@@ -4246,7 +4246,7 @@
     "fishFragCount": "{have}/{need}",
     "fishShiny": "Shiny! You caught {name}.",
     "fishMiss": "{name} bit and got away.",
-    "wonderBlurb": "Send a PC Pokémon. If a trainer is waiting, the trade is instant; otherwise it queues. A traveler NPC will swap one right away.",
+    "wonderBlurb": "Send a PC Pokémon. Trades match by rarity: a Magikarp will not come back as a Charizard.",
     "wonderSend": "Trade",
     "wonderTraveler": "With the scientist",
     "wonderQueued": "Waiting in the wonder trade queue.",
@@ -4255,12 +4255,12 @@
     "wonderCancelled": "Returned to the PC.",
     "wonderNpc": "A traveler gave you {name}.",
     "wonderPlayer": "Trade complete: you received {name}.",
-    "wonderHint": "Trade with other trainers, or swap on the spot with the scientist.",
+    "wonderHint": "Trade with other trainers or the scientist. You get something in the same tier, not an upgrade.",
     "wonderOffer": "You send",
     "wonderReturn": "You get",
     "wonderWaiting": "In queue",
     "wonderEmptyPad": "Pick one",
-    "wonderHostIdle": "Bring a specimen. I’ll open the portal.",
+    "wonderHostIdle": "Bring a specimen of the same tier. I’ll open the portal.",
     "wonderHostSwap": "The reactor is charging the trade…",
     "wonderHostQueued": "{name} is waiting on the other side.",
     "wonderHostGot": "Interesting. {name} is yours.",
@@ -4269,6 +4269,8 @@
     "wonderReset": "Free again in {time}",
     "wonderIdleNudge": "Pick one and send it",
     "wonderFreeLeft": "{n, plural, one {# free} other {# free}}",
+    "wonderLocked": "The lab is closed",
+    "wonderLockedBody": "Earn {n, plural, one {# gym badge} other {# gym badges}} to unlock wonder trade.",
     "cornerBlurb": "Three reels. {free} free spins a day; after that each spin costs {energy} energy. Three sevens hit the jackpot.",
     "spin": "Spin",
     "cornerWin": "{reels} — you won {coins} coins",
@@ -4334,7 +4336,9 @@
       "dug": "Already dug there.",
       "no_team": "You need a Pokémon on the team.",
       "no_catalog": "Rental catalog is missing.",
-      "bad_facility": "Invalid facility."
+      "bad_facility": "Invalid facility.",
+      "locked": "Earn the first gym badge to use wonder trade.",
+      "too_rare": "Too valuable for the scientist. Send it to the queue."
     },
     "cornerReady": "Try your luck",
     "cornerNothing": "Nothing this time",
@@ -4389,8 +4393,8 @@
       "wonder": {
         "title": "Wonder Trade",
         "s1": "The first 3 trades of the day are free; after that each costs 1 energy.",
-        "s2": "If someone is queued, the trade happens instantly.",
-        "s3": "If nobody is, it waits — or trade with the scientist."
+        "s2": "You only match someone who sent a Pokémon of the same tier (stage and rarity).",
+        "s3": "If nobody is queued, the scientist swaps something similar — not an upgrade."
       },
       "corner": {
         "title": "Game Corner",

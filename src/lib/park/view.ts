@@ -50,7 +50,7 @@ export type ParkHubData = {
   daycare: ParkDaycareSlot[];
   box: ParkMonOption[];
   wonderPending: ParkMonOption | null;
-  wonder: { freeLeft: number; resetAt: string; resetMs: number };
+  wonder: { unlocked: boolean; freeLeft: number; resetAt: string; resetMs: number };
   farm: ParkPlot[];
   berries: Array<{ itemId: string; name: string; quantity: number }>;
   mine: { grid: MineCell[]; bag: MineBag; digsLeft: number; resetAt: string; resetMs: number };

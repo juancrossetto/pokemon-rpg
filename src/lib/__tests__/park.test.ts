@@ -6,7 +6,7 @@ import { CORNER_SPIN_ENERGY_COST, FISHING_ENERGY_COST, MINE_DIG_ENERGY_COST, WON
 import { farmReady, farmYield } from "@/lib/park/farm";
 import { FOSSIL_SPECIES, generateMineGrid, MINE_DROP_SHOW, mineDigsLeft, parseMineBag } from "@/lib/park/mine";
 import { palaceWinPayout } from "@/lib/park/frontier";
-import { wonderEnergyCost, wonderFreeLeft, wonderNpcLevel, wonderNpcSpecies, wonderTradesUsedToday, WONDER_FREE_TRADES_PER_DAY } from "@/lib/park/wonder";
+import { isWonderUnlocked, wonderEnergyCost, wonderFreeLeft, wonderNpcAllowed, wonderNpcLevel, wonderNpcSpecies, wonderTiersMatch, wonderTradeTier, wonderTradesUsedToday, WONDER_FREE_TRADES_PER_DAY, WONDER_MIN_BADGES } from "@/lib/park/wonder";
 import { addTowardAssemble, assembledPokemonLevel, assembledPokemonLevelForSpecies, FISHING_FRAGMENT_YIELD, FRAGMENTS_TO_ASSEMBLE } from "@/lib/park/fragments";
 import { xpForLevel } from "@/lib/stats";
 
@@ -154,9 +154,12 @@ describe("frontier / wonder", () => {
     expect(palaceWinPayout(3)).toBe(110);
   });
 
-  it("picks an NPC species and nearby level", () => {
-    expect(wonderNpcSpecies(0)).toBeGreaterThan(0);
-    expect(wonderNpcLevel(20, 0.5)).toBeGreaterThanOrEqual(18);
+  it("picks an NPC species in the same tier and never raises the level", () => {
+    expect(wonderNpcSpecies(0, 0)).toBeGreaterThan(0);
+    expect(wonderNpcSpecies(0, 0)).toBe(wonderNpcSpecies(0, 0.01));
+    expect(wonderNpcLevel(20, 0.5)).toBeLessThanOrEqual(20);
+    expect(wonderNpcLevel(20, 0.99)).toBe(20);
+    expect(wonderNpcLevel(20, 0)).toBe(18);
   });
 
   it("gives three free trades then charges energy", () => {
@@ -167,5 +170,28 @@ describe("frontier / wonder", () => {
     expect(wonderFreeLeft(3)).toBe(0);
     expect(wonderTradesUsedToday({ dayKey: "2026-08-17", trades: 2 }, "2026-08-17")).toBe(2);
     expect(wonderTradesUsedToday({ dayKey: "2026-08-16", trades: 3 }, "2026-08-17")).toBe(0);
+  });
+
+  it("unlocks after the first gym badge", () => {
+    expect(isWonderUnlocked(0)).toBe(false);
+    expect(isWonderUnlocked(WONDER_MIN_BADGES)).toBe(true);
+  });
+
+  it("keeps junk from matching a strong offer", () => {
+    const magikarp = wonderTradeTier({ speciesId: 129, evolvesFromId: null, evolvesToCount: 1 });
+    const charizard = wonderTradeTier({ speciesId: 6, evolvesFromId: 5, evolvesToCount: 0 });
+    const dragonite = wonderTradeTier({ speciesId: 149, evolvesFromId: 148, evolvesToCount: 0 });
+    const shinyRat = wonderTradeTier({
+      speciesId: 19,
+      evolvesFromId: null,
+      evolvesToCount: 1,
+      isShiny: true,
+    });
+    expect(magikarp).toBe(0);
+    expect(charizard).toBe(3);
+    expect(dragonite).toBe(3);
+    expect(wonderTiersMatch(magikarp, charizard)).toBe(false);
+    expect(wonderNpcAllowed(shinyRat)).toBe(false);
+    expect(wonderNpcAllowed(magikarp)).toBe(true);
   });
 });

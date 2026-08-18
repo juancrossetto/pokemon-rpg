@@ -30,7 +30,7 @@ import {
   WONDER_TRADE_ENERGY_COST,
 } from "@/lib/energy";
 import { FISHING_TABLE, FISHING_FREE_CASTS_PER_DAY } from "@/lib/park/fishing";
-import { WONDER_FREE_TRADES_PER_DAY } from "@/lib/park/wonder";
+import { WONDER_FREE_TRADES_PER_DAY, WONDER_MIN_BADGES } from "@/lib/park/wonder";
 import { FRAGMENTS_TO_ASSEMBLE } from "@/lib/park/fragments";
 import { MINE_COIN_DROP, MINE_FRAGMENTS_TO_ASSEMBLE } from "@/lib/park/mine";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";
@@ -247,6 +247,7 @@ export function ParkHub({ locale, data }: { locale: string; data: ParkHubData })
           selected={selected}
           pendingOffer={data.wonderPending}
           busy={pending}
+          unlocked={data.wonder.unlocked}
           freeLeft={wonderFreeLeft}
           energy={data.energy}
           energyCost={WONDER_TRADE_ENERGY_COST}
@@ -278,6 +279,8 @@ export function ParkHub({ locale, data }: { locale: string; data: ParkHubData })
             resetIn: (time) => t("wonderReset", { time }),
             idleNudge: t("wonderIdleNudge"),
             freeRemaining: (n) => t("wonderFreeLeft", { n }),
+            lockedTitle: t("wonderLocked"),
+            lockedBody: t("wonderLockedBody", { n: WONDER_MIN_BADGES }),
           }}
           onSelect={setPicked}
           onQuota={({ freeLeft, energySpent }) => {

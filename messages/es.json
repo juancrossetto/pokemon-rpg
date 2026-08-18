@@ -101,7 +101,7 @@
     "events": "Eventos",
     "profile": "Mi perfil",
     "tower": "Torre",
-    "park": "Parque"
+    "park": "Minijuegos"
   },
   "notifications": {
     "eyebrow": "Alertas en vivo",
@@ -4246,7 +4246,7 @@
     "fishFragCount": "{have}/{need}",
     "fishShiny": "¡Variocolor! Atrapaste a {name}.",
     "fishMiss": "{name} picó y se escapó.",
-    "wonderBlurb": "Mandás uno de la PC. Si hay cola, el trueque es al instante; si no, queda esperando. El viajero NPC te cambia uno al toque.",
+    "wonderBlurb": "Mandás uno de la PC. El trueque empareja por rareza: un Magikarp no te devuelve un Charizard.",
     "wonderSend": "Intercambiar",
     "wonderTraveler": "Con el científico",
     "wonderQueued": "Quedó en la cola de trueque.",
@@ -4255,12 +4255,12 @@
     "wonderCancelled": "Volvió a la PC.",
     "wonderNpc": "Un viajero te dio a {name}.",
     "wonderPlayer": "Trueque hecho: recibiste a {name}.",
-    "wonderHint": "Un trueque con otros entrenadores, o al toque con el científico.",
+    "wonderHint": "Trueque entre entrenadores o con el científico. Recibís algo de la misma talla, no un upgrade.",
     "wonderOffer": "Tu envío",
     "wonderReturn": "Lo que vuelve",
     "wonderWaiting": "En cola",
     "wonderEmptyPad": "Elegí uno",
-    "wonderHostIdle": "Traé un espécimen. Yo abro el portal.",
+    "wonderHostIdle": "Traé un espécimen de la misma talla. Yo abro el portal.",
     "wonderHostSwap": "El reactor está cargando el intercambio…",
     "wonderHostQueued": "{name} espera del otro lado.",
     "wonderHostGot": "Interesante. {name} es tuyo.",
@@ -4269,6 +4269,8 @@
     "wonderReset": "Gratis de nuevo en {time}",
     "wonderIdleNudge": "Elegí uno y mandalo",
     "wonderFreeLeft": "{n, plural, one {# gratis} other {# gratis}}",
+    "wonderLocked": "El laboratorio está cerrado",
+    "wonderLockedBody": "Ganá {n, plural, one {# medalla de gimnasio} other {# medallas de gimnasio}} para abrir el trueque.",
     "cornerBlurb": "Tres rodillos. {free} giros gratis por día; después cuesta {energy} de energía. Tres sietes pagan el premio gordo.",
     "spin": "Girar",
     "cornerWin": "{reels} — ganaste {coins} monedas",
@@ -4334,7 +4336,9 @@
       "dug": "Ya cavaste ahí.",
       "no_team": "Necesitás un Pokémon en el equipo.",
       "no_catalog": "Falta el catálogo de alquileres.",
-      "bad_facility": "Recinto inválido."
+      "bad_facility": "Recinto inválido.",
+      "locked": "Ganá la primera medalla para usar el trueque.",
+      "too_rare": "Ese es demasiado valioso para el científico. Mandalo a la cola."
     },
     "cornerReady": "Probá tu suerte",
     "cornerNothing": "Nada esta vez",
@@ -4389,8 +4393,8 @@
       "wonder": {
         "title": "Trueque",
         "s1": "Los primeros 3 trueques del día son gratis; después cada uno cuesta 1 de energía.",
-        "s2": "Si hay alguien en cola, el cambio es al instante.",
-        "s3": "Si no hay nadie, queda esperando — o cambiás con el científico."
+        "s2": "Sólo se cruza con alguien que mandó algo de la misma talla (etapa y rareza).",
+        "s3": "Si no hay cola, el científico te cambia uno parecido — no un upgrade."
       },
       "corner": {
         "title": "Casino",

@@ -1,6 +1,7 @@
 "use client";
 
-import Image, { type ImageProps } from "next/image";
+import { type ImageProps } from "next/image";
+import { CdnImage } from "@/components/cdn-image";
 import { useState } from "react";
 import { pokemonSpriteCandidates } from "@/lib/sprites";
 
@@ -42,7 +43,7 @@ export function PokemonImage({
   const usingLocalFallback = activeSrc === fallbackSrc;
 
   return (
-    <Image
+    <CdnImage
       {...imageProps}
       src={activeSrc}
       alt={alt}

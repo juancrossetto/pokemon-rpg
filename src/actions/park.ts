@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import type { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/auth";
@@ -65,10 +66,15 @@ import {
   palaceWinPayout,
 } from "@/lib/park/frontier";
 import {
+  isWonderUnlocked,
+  toWonderSnap,
   wonderEnergyCost,
   wonderFreeLeft,
+  wonderNpcAllowed,
   wonderNpcLevel,
   wonderNpcSpecies,
+  wonderTiersMatch,
+  wonderTradeTier,
   wonderTradesUsedToday,
   type WonderReceipt,
 } from "@/lib/park/wonder";
@@ -93,7 +99,9 @@ export type ParkError =
   | "dug"
   | "no_team"
   | "no_catalog"
-  | "bad_facility";
+  | "bad_facility"
+  | "locked"
+  | "too_rare";
 
 export type ParkOk<T extends object = object> = { ok: true } & T;
 export type ParkResult<T extends object = object> = ParkOk<T> | { ok: false; error: ParkError };
@@ -101,12 +109,21 @@ export type ParkResult<T extends object = object> = ParkOk<T> | { ok: false; err
 const json = (value: unknown) => value as Prisma.InputJsonValue;
 
 function refreshPark(locale: string) {
-  revalidatePath(`/${locale}/park`);
-  revalidatePath(`/${locale}/team`);
-  revalidatePath(`/${locale}/pc`);
-  revalidatePath(`/${locale}/inventory`);
-  revalidatePath(`/${locale}`, "layout");
+  // Diferido: si revalidamos el layout acá, la action no vuelve al celular
+  // hasta que termina el RSC del parque entero y el trueque se queda en
+  // "el reactor está cargando" para siempre.
+  after(() => {
+    revalidatePath(`/${locale}/park`);
+    revalidatePath(`/${locale}/team`);
+    revalidatePath(`/${locale}/pc`);
+    revalidatePath(`/${locale}/inventory`);
+    revalidatePath(`/${locale}`, "layout");
+  });
 }
+
+const WONDER_SPECIES = {
+  include: { evolvesTo: { select: { id: true } } },
+} as const;
 
 async function authed(locale: string) {
   const session = await auth();
@@ -147,6 +164,15 @@ async function takeWonderQuota(
     update: row && row.dayKey === key ? { trades: { increment: 1 } } : { dayKey: key, trades: 1 },
   });
   return { energySpent, usedAfter };
+}
+
+async function assertWonderOpen(
+  tx: Prisma.TransactionClient,
+  userId: string,
+): Promise<ParkError | null> {
+  const badgeCount = await tx.badge.count({ where: { userId } });
+  if (!isWonderUnlocked(badgeCount)) return "locked";
+  return null;
 }
 
 async function assertDepositable(
@@ -401,13 +427,28 @@ export async function submitWonderTrade(
   let usedAfter = 0;
 
   await prisma.$transaction(async (tx) => {
-    const waiting = await tx.wonderTradeOffer.findFirst({
+    const preview = await tx.pokemonInstance.findFirst({
+      where: { id: instanceId, ownerId: gate.userId },
+      include: { species: WONDER_SPECIES },
+    });
+    if (!preview) return void (failure = "not_found");
+    const offeredTier = wonderTradeTier(toWonderSnap(preview));
+
+    const candidates = await tx.wonderTradeOffer.findMany({
       where: { matchedAt: null, userId: { not: gate.userId } },
       orderBy: { createdAt: "asc" },
-      select: { id: true, userId: true },
+      take: 30,
+      include: { pokemon: { include: { species: WONDER_SPECIES } } },
     });
+    const waiting =
+      candidates.find((row) =>
+        wonderTiersMatch(offeredTier, wonderTradeTier(toWonderSnap(row.pokemon))),
+      ) ?? null;
+
     await lockUsers(tx, gate.userId, waiting?.userId);
 
+    const lockedOut = await assertWonderOpen(tx, gate.userId);
+    if (lockedOut) return void (failure = lockedOut);
     const blocked = await assertDepositable(tx, gate.userId, instanceId);
     if (blocked) return void (failure = blocked);
     const existing = await tx.wonderTradeOffer.findFirst({
@@ -422,35 +463,40 @@ export async function submitWonderTrade(
 
     const offered = await tx.pokemonInstance.findUniqueOrThrow({
       where: { id: instanceId },
-      include: { species: true },
+      include: { species: WONDER_SPECIES },
     });
 
     const partner = waiting
       ? await tx.wonderTradeOffer.findFirst({
           where: { id: waiting.id, matchedAt: null },
-          include: { pokemon: { include: { species: true } } },
+          include: { pokemon: { include: { species: WONDER_SPECIES } } },
         })
       : null;
+    const mate =
+      partner &&
+      wonderTiersMatch(wonderTradeTier(toWonderSnap(offered)), wonderTradeTier(toWonderSnap(partner.pokemon)))
+        ? partner
+        : null;
 
-    if (partner) {
+    if (mate) {
       await tx.pokemonInstance.update({
         where: { id: offered.id },
-        data: { ownerId: partner.userId, teamSlot: null, pvpSlot: null },
+        data: { ownerId: mate.userId, teamSlot: null, pvpSlot: null },
       });
       await tx.pokemonInstance.update({
-        where: { id: partner.pokemon.id },
+        where: { id: mate.pokemon.id },
         data: { ownerId: gate.userId, teamSlot: null, pvpSlot: null },
       });
       // La cola sólo guarda ofertas abiertas; el unique de pokemonInstanceId
       // no puede quedarse con historial o ese bicho no se vuelve a truequear.
-      await tx.wonderTradeOffer.delete({ where: { id: partner.id } });
-      receivedName = partner.pokemon.nickname ?? partner.pokemon.species.name;
+      await tx.wonderTradeOffer.delete({ where: { id: mate.id } });
+      receivedName = mate.pokemon.nickname ?? mate.pokemon.species.name;
       received = {
         name: receivedName,
-        speciesName: partner.pokemon.species.name,
-        speciesId: partner.pokemon.speciesId,
-        level: partner.pokemon.level,
-        isShiny: partner.pokemon.isShiny,
+        speciesName: mate.pokemon.species.name,
+        speciesId: mate.pokemon.speciesId,
+        level: mate.pokemon.level,
+        isShiny: mate.pokemon.isShiny,
       };
       return;
     }
@@ -511,22 +557,26 @@ export async function tradeWithTraveler(
 
   await prisma.$transaction(async (tx) => {
     await lockUsers(tx, gate.userId);
+    const lockedOut = await assertWonderOpen(tx, gate.userId);
+    if (lockedOut) return void (failure = lockedOut);
     const blocked = await assertDepositable(tx, gate.userId, instanceId);
     if (blocked) return void (failure = blocked);
     const existing = await tx.wonderTradeOffer.findFirst({
       where: { userId: gate.userId, matchedAt: null },
     });
     if (existing) return void (failure = "full");
+    const offered = await tx.pokemonInstance.findUniqueOrThrow({
+      where: { id: instanceId },
+      include: { species: WONDER_SPECIES },
+    });
+    const tier = wonderTradeTier(toWonderSnap(offered));
+    if (!wonderNpcAllowed(tier)) return void (failure = "too_rare");
     const quota = await takeWonderQuota(tx, gate.userId);
     if ("error" in quota) return void (failure = quota.error);
     energySpent = quota.energySpent;
     usedAfter = quota.usedAfter;
-    const offered = await tx.pokemonInstance.findUniqueOrThrow({
-      where: { id: instanceId },
-      include: { species: true },
-    });
     await tx.pokemonInstance.delete({ where: { id: instanceId } });
-    const speciesId = wonderNpcSpecies(Math.random());
+    const speciesId = wonderNpcSpecies(tier, Math.random());
     const level = wonderNpcLevel(offered.level, Math.random());
     const granted = await grantPokemon(tx, { userId: gate.userId, speciesId, level });
     receivedName = granted.speciesName;

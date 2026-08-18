@@ -42,6 +42,8 @@ export type WonderLabels = {
   idleNudge: string;
   freeRemaining: (n: number) => string;
   received: (name: string) => string;
+  lockedTitle: string;
+  lockedBody: string;
 };
 
 /**
@@ -56,6 +58,7 @@ export function ParkWonder({
   selected,
   pendingOffer,
   busy,
+  unlocked,
   freeLeft,
   energy,
   energyCost,
@@ -74,6 +77,7 @@ export function ParkWonder({
   selected: ParkMonOption | null;
   pendingOffer: ParkMonOption | null;
   busy: boolean;
+  unlocked: boolean;
   freeLeft: number;
   energy: number;
   energyCost: number;
@@ -108,39 +112,46 @@ export function ParkWonder({
   const showReset = freeLeft <= 0;
 
   async function run(kind: "queue" | "npc") {
-    if (busy || swapping || waiting || !selected || blocked) return;
+    if (busy || swapping || waiting || !selected || blocked || !unlocked) return;
     setSwapping(true);
     setReceipt(null);
     setHeldQueue(false);
     setOffered(selected);
 
-    const [outcome] = await Promise.all([
-      kind === "queue" ? onTrade(selected.id) : onTraveler(selected.id),
-      new Promise((resolve) => {
-        timer.current = setTimeout(resolve, SWAP_MS);
-      }),
-    ]);
+    try {
+      const [outcome] = await Promise.all([
+        kind === "queue" ? onTrade(selected.id) : onTraveler(selected.id),
+        new Promise((resolve) => {
+          timer.current = setTimeout(resolve, SWAP_MS);
+        }),
+      ]);
 
-    setSwapping(false);
-    if (!outcome.ok) {
+      if (!outcome.ok) {
+        setOffered(null);
+        return;
+      }
+      onQuota({ freeLeft: outcome.freeLeft, energySpent: outcome.energySpent });
+      if (outcome.queued) {
+        setHeldQueue(true);
+        return;
+      }
+      setReceipt(outcome.received);
+    } catch {
       setOffered(null);
-      return;
+    } finally {
+      setSwapping(false);
     }
-    onQuota({ freeLeft: outcome.freeLeft, energySpent: outcome.energySpent });
-    if (outcome.queued) {
-      setHeldQueue(true);
-      return;
-    }
-    setReceipt(outcome.received);
   }
 
-  const bubble = swapping
-    ? labels.swapping
-    : waiting && queuedMon
-      ? labels.queued(queuedMon.name)
-      : receipt
-        ? labels.got(receipt.name)
-        : labels.idle;
+  const bubble = !unlocked
+    ? labels.lockedTitle
+    : swapping
+      ? labels.swapping
+      : waiting && queuedMon
+        ? labels.queued(queuedMon.name)
+        : receipt
+          ? labels.got(receipt.name)
+          : labels.idle;
 
   const offerFace = waiting
     ? queuedMon
@@ -159,14 +170,16 @@ export function ParkWonder({
         ))}
 
         <header className="wonder__hud">
-          <span className="wonder__ticks" aria-label={labels.tradesLeft(freeLeft, WONDER_FREE_TRADES_PER_DAY)}>
-            {Array.from({ length: WONDER_FREE_TRADES_PER_DAY }, (_, i) => (
-              <i key={i} className={i < spent ? "is-spent" : undefined} aria-hidden>
-                <span className="material-symbols-outlined">swap_horiz</span>
-              </i>
-            ))}
+          <span className="wonder__quota" aria-label={labels.tradesLeft(freeLeft, WONDER_FREE_TRADES_PER_DAY)}>
+            <span className="wonder__ticks" aria-hidden>
+              {Array.from({ length: WONDER_FREE_TRADES_PER_DAY }, (_, i) => (
+                <i key={i} className={i < spent ? "is-spent" : undefined}>
+                  <span className="material-symbols-outlined">swap_horiz</span>
+                </i>
+              ))}
+            </span>
+            <b>{labels.tradesLeft(freeLeft, WONDER_FREE_TRADES_PER_DAY)}</b>
           </span>
-          <b>{labels.tradesLeft(freeLeft, WONDER_FREE_TRADES_PER_DAY)}</b>
           {freeLeft > 0 ? <span className="wonder__nudge">{labels.idleNudge}</span> : null}
           <ParkDailyResetClock
             resetAt={resetAt}
@@ -245,7 +258,7 @@ export function ParkWonder({
                 width={250}
                 height={390}
                 className="wonder__scientist"
-                priority
+                unoptimized
               />
             </div>
           </aside>
@@ -255,7 +268,15 @@ export function ParkWonder({
           <WonderCatch receipt={receipt} level={labels.level} copy={labels.received(receipt.name)} kicker={labels.incoming} />
         ) : null}
 
-        {waiting && queuedMon ? (
+        {!unlocked ? (
+          <div className="wonder__lock">
+            <span className="material-symbols-outlined" aria-hidden>
+              lock
+            </span>
+            <b>{labels.lockedTitle}</b>
+            <p>{labels.lockedBody}</p>
+          </div>
+        ) : waiting && queuedMon ? (
           <div className="wonder__controls">
             <p className="wonder__pending">{labels.pending(queuedMon.name)}</p>
             <button
@@ -459,8 +480,9 @@ function WonderPad({
             speciesName={face.speciesName}
             isShiny={face.isShiny}
             alt={face.name}
-            width={112}
-            height={112}
+            width={96}
+            height={96}
+            className="wonder__mon-art"
           />
           <b>{face.name}</b>
           <em>{level(face.level)}</em>
@@ -510,6 +532,7 @@ function WonderPicker({
                 alt={mon.name}
                 width={48}
                 height={48}
+                loading="lazy"
               />
               <span>{mon.name}</span>
               <em>{level(mon.level)}</em>

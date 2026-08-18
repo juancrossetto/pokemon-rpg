@@ -26397,6 +26397,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   font-weight: 800;
   letter-spacing: .06em;
 }
+.park-reset__short { display: none; }
 .mine__reset .material-symbols-outlined,
 .park-reset .material-symbols-outlined { font-size: .95rem !important; }
 .mine__drops {
@@ -27070,6 +27071,8 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   flex-shrink: 0;
   overflow: hidden;
   isolation: isolate;
+  width: var(--frag-size, 2.5rem);
+  height: var(--frag-size, 2.5rem);
   /*
     Hexágono **simétrico**. El anterior no lo era —vértices en 10% y 93% a los
     costados, y el de abajo en 48%—, así que el centro de la figura no caía en
@@ -27618,35 +27621,55 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 
 @media (max-width: 639.98px) {
-  .fishing__pond { height: 12.5rem; }
-  .fishing__fisher { height: 5.8rem; opacity: .95; }
+  .fishing__pond { height: 11.25rem; }
+  .fishing__fisher { height: 4.85rem; opacity: .95; }
   .fishing__bubble {
-    max-width: 11rem;
+    max-width: 9.2rem;
     font-size: .58rem;
-    padding: .38rem .55rem .4rem;
-    line-height: 1.3;
+    padding: .32rem .48rem .34rem;
+    line-height: 1.25;
   }
   .fishing__bubble::after { right: 1.15rem; }
   /*
-    La ficha no usa el centrado del desktop (`translate -50%`): en el teléfono
-    el pescador está a la derecha y hay que dejarle el hueco.
+    Ficha compacta arriba a la izquierda: el cristal a 128px + el pescador
+    a la derecha no cabían y el hexágono se recortaba.
   */
   .fishing__catch {
-    left: .6rem;
-    right: 6.4rem;
+    top: .45rem;
+    bottom: auto;
+    left: .45rem;
+    right: auto;
+    z-index: 3;
+    max-width: calc(100% - 5.6rem);
     translate: 0;
     flex-direction: row;
     align-items: center;
-    gap: .35rem;
+    gap: .4rem;
+    border: 1px solid rgba(125, 211, 252, .22);
+    border-radius: .85rem;
+    background: rgba(4, 20, 30, .9);
+    padding: .32rem .42rem .32rem .32rem;
+    box-shadow: 0 8px 20px -12px rgba(0, 0, 0, .85);
     animation-name: fishing-surface-m;
   }
+  .fishing__pond:has(.fishing__catch) .fishing__bubble { display: none; }
   .fishing__catch > img,
   .fishing__catch > .frag-art {
-    height: 3.4rem;
-    width: 3.4rem;
+    height: 2.55rem;
+    width: 2.55rem;
+    flex-shrink: 0;
   }
-  .fishing__card { padding: .3rem .4rem; min-width: 0; }
-  .fishing__escape { left: .6rem; translate: 0; }
+  .fishing__card {
+    min-width: 0;
+    flex: 1 1 auto;
+    gap: .12rem;
+    padding: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+  .fishing__card > b { font-size: .7rem; }
+  .fishing__card em { font-size: .52rem; }
+  .fishing__escape { left: .55rem; bottom: 42%; translate: 0; }
 }
 @keyframes fishing-surface-m {
   from { opacity: 0; translate: 0 1.2rem; scale: .8; }
@@ -27763,6 +27786,14 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 .wonder__ticks i { display: grid; place-items: center; color: #c4b5fd; }
 .wonder__ticks i .material-symbols-outlined { font-size: 1.05rem !important; }
 .wonder__ticks i.is-spent { color: rgba(255, 255, 255, .16); }
+.wonder__quota {
+  display: inline-flex;
+  min-width: 0;
+  flex-shrink: 0;
+  align-items: center;
+  gap: .35rem;
+  white-space: nowrap;
+}
 .wonder__hud b {
   color: rgba(255, 255, 255, .85);
   font-family: var(--font-mono), ui-monospace, monospace;
@@ -27877,7 +27908,8 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     0 0 28px -6px rgba(167, 139, 250, .85);
   animation: wonder-pad-hit .9s ease;
 }
-.wonder__pad.is-incoming .wonder__mon img {
+.wonder__pad.is-incoming .wonder__mon img,
+.wonder__pad.is-incoming .wonder__mon-art {
   height: 6.5rem;
   width: 6.5rem;
 }
@@ -27908,11 +27940,17 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   flex-direction: column;
   align-items: center;
   gap: .12rem;
+  min-width: 0;
+  width: 100%;
 }
-.wonder__mon img {
+.wonder__mon img,
+.wonder__mon-art {
+  display: block;
   height: 5.6rem;
   width: 5.6rem;
+  max-width: 100%;
   object-fit: contain;
+  object-position: center;
   filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45));
 }
 .wonder__mon b {
@@ -28251,30 +28289,27 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   text-transform: uppercase;
 }
 .wonder__picker > div {
-  display: flex;
-  gap: .5rem;
-  overflow-x: auto;
-  padding-bottom: .2rem;
-  scrollbar-width: thin;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.4rem, 1fr));
+  gap: .45rem;
 }
 .wonder__picker button {
   display: flex;
-  width: 4.85rem;
-  flex-shrink: 0;
+  min-width: 0;
+  width: auto;
   flex-direction: column;
   align-items: center;
   border: 1px solid rgba(255, 255, 255, .1);
   border-radius: 1rem;
   background: rgba(0, 0, 0, .28);
-  padding: .45rem .35rem;
+  padding: .45rem .3rem .4rem;
   color: rgba(255, 255, 255, .82);
-  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
 }
 .wonder__picker button.is-on {
   border-color: rgba(167, 139, 250, .55);
   background: rgba(109, 40, 217, .22);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px -12px rgba(139, 92, 246, .8);
+  box-shadow: 0 0 0 1px rgba(167, 139, 250, .28), 0 8px 16px -12px rgba(139, 92, 246, .8);
 }
 .wonder__picker button:disabled { opacity: .55; }
 .wonder__picker button img { height: 2.6rem; width: 2.6rem; object-fit: contain; }
@@ -28462,24 +28497,68 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 .wonder__act:disabled { cursor: default; filter: grayscale(.35); opacity: .55; }
 .wonder.is-swapping .wonder__act .material-symbols-outlined { animation: wonder-spin 1s linear infinite; }
 
+.wonder__lock {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  margin-top: .7rem;
+  padding: .85rem .9rem .9rem;
+  border: 1px solid rgba(167, 139, 250, .28);
+  border-radius: 1rem;
+  background: rgba(10, 12, 22, .72);
+  text-align: center;
+}
+.wonder__lock .material-symbols-outlined {
+  font-size: 1.45rem !important;
+  color: #c4b5fd;
+}
+.wonder__lock b {
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 800;
+}
+.wonder__lock p {
+  margin: 0;
+  max-width: 22rem;
+  color: rgba(255, 255, 255, .62);
+  font-size: .72rem;
+  line-height: 1.4;
+}
+
 @media (max-width: 639.98px) {
   /*
     El científico queda parado en el piso del recuadro, no en una franja
     suelta entre el portal y el picker. Pads a todo el ancho; él en el
     delantal de abajo, con el globo a la altura de la cara.
   */
-  .wonder__stage { padding: .8rem .65rem .75rem; }
-  .wonder__nudge { display: none; }
+  .wonder__stage { padding: .65rem .55rem .7rem; }
+  .wonder__nudge,
+  .wonder__hint,
+  .wonder__ticks { display: none; }
   .wonder__hud {
-    gap: .3rem .45rem;
-    padding: .32rem .5rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: .4rem;
+    padding: .16rem .45rem;
     border: 1px solid rgba(167, 139, 250, .18);
-    border-radius: .8rem;
+    border-radius: .7rem;
     background: rgba(0, 0, 0, .32);
   }
-  .wonder__hud b { font-size: .56rem; }
-  .wonder__ticks i .material-symbols-outlined { font-size: .92rem !important; }
-  .wonder__hint { font-size: .62rem; margin-top: .32rem; line-height: 1.3; }
+  .wonder__hud b { font-size: .58rem; letter-spacing: .04em; }
+  .wonder__hud .park-reset {
+    margin-left: 0;
+    flex-shrink: 0;
+    gap: .18rem;
+    padding: .08rem .38rem;
+    font-size: .55rem;
+    white-space: nowrap;
+  }
+  .wonder__hud .park-reset__full { display: none; }
+  .wonder__hud .park-reset__short { display: inline; }
+  .wonder__hud .park-reset .material-symbols-outlined { font-size: .82rem !important; }
   .wonder__floor {
     min-height: 0;
     margin-top: .6rem;
@@ -28515,12 +28594,40 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     bottom: .45rem;
   }
   .wonder__pods { gap: .28rem; }
-  .wonder__pad { min-height: 6.4rem; padding: .38rem .26rem .38rem; border-radius: .95rem; }
-  .wonder__pad.is-incoming .wonder__mon img { height: 3.7rem; width: 3.7rem; }
-  .wonder__pad-title { font-size: .46rem; letter-spacing: .12em; }
-  .wonder__mon img { height: 3.05rem; width: 3.05rem; }
-  .wonder__mon b { font-size: .66rem; max-width: 5.4rem; }
-  .wonder__mon em { font-size: .5rem; }
+  .wonder__pad {
+    overflow: visible;
+    min-height: 6.55rem;
+    padding: 1.05rem .18rem .28rem;
+    border-radius: .95rem;
+  }
+  .wonder__pad::before,
+  .wonder__pad::after { display: none; }
+  .wonder__pad-title {
+    position: absolute;
+    top: .22rem;
+    right: .2rem;
+    left: .2rem;
+    z-index: 2;
+    font-size: .42rem;
+    letter-spacing: .1em;
+    pointer-events: none;
+  }
+  .wonder__pad.is-incoming .wonder__mon img,
+  .wonder__pad.is-incoming .wonder__mon-art {
+    height: 3.15rem !important;
+    width: 3.15rem !important;
+  }
+  .wonder__mon { gap: .06rem; }
+  .wonder__mon img,
+  .wonder__mon-art {
+    height: 2.85rem !important;
+    width: 2.85rem !important;
+    max-width: 100%;
+    max-height: 2.85rem;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .4));
+  }
+  .wonder__mon b { font-size: .62rem; max-width: 100%; }
+  .wonder__mon em { font-size: .48rem; }
   .wonder__portal { height: 2.75rem; width: 2.75rem; }
   .wonder__link { width: 2.95rem; }
   .wonder__act {
@@ -28532,20 +28639,32 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   .wonder__reactor { height: 3.05rem; width: 3.05rem; --orbit-r: 1.28rem; }
   .wonder__picker {
     margin-top: .65rem;
-    padding: .4rem .4rem .32rem;
+    padding: .4rem .4rem .42rem;
     border-radius: .9rem;
   }
   .wonder__picker > div {
-    gap: .4rem;
+    display: flex;
+    grid-template-columns: none;
+    gap: .32rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0;
     scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
   }
+  .wonder__picker > div::-webkit-scrollbar { display: none; }
   .wonder__picker button {
-    width: 4rem;
-    padding: .3rem .2rem;
+    flex: 0 0 calc((100% - .96rem) / 4);
+    width: auto;
+    min-width: 0;
+    padding: .32rem .12rem .36rem;
+    border-radius: .8rem;
     scroll-snap-align: start;
   }
-  .wonder__picker button img { height: 2.25rem; width: 2.25rem; }
+  .wonder__picker button img { height: 2.15rem; width: 2.15rem; }
   .wonder__catch {
     gap: .55rem;
     margin-top: .65rem;
@@ -28556,6 +28675,9 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   .wonder__catch-card b { font-size: .98rem; }
   .wonder__catch-card p { font-size: .72rem; }
   .wonder__controls { gap: .45rem; margin-top: .6rem; }
+  .wonder__mote,
+  .wonder__stage::after { display: none; }
+  .wonder.is-swapping .wonder__scientist { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

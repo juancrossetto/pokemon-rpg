@@ -60,12 +60,16 @@ export function ParkDailyResetClock({
 
   if (!visible) return null;
 
+  const time = formatResetClock(msLeft);
   return (
-    <span className="park-reset">
+    <span className="park-reset" aria-label={label(time)}>
       <span className="material-symbols-outlined" aria-hidden>
         schedule
       </span>
-      {label(formatResetClock(msLeft))}
+      <span className="park-reset__full">{label(time)}</span>
+      <span className="park-reset__short" aria-hidden>
+        {time}
+      </span>
     </span>
   );
 }
