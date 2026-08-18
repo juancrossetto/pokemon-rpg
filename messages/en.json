@@ -152,6 +152,10 @@
     "friendRequestDetail": "{trainer}",
     "friendAcceptedTitle": "New friend",
     "friendAcceptedDetail": "{trainer}",
+    "friendTradeTitle": "Trade",
+    "friendTradeDetail": "{trainer} · {item}",
+    "friendTradeDoneTitle": "Trade complete",
+    "friendTradeDoneDetail": "{trainer} · {item}",
     "marketSold": "{buyer} bought {item}. +{coins} coins were credited to you.",
     "marketExpired": "Your listing for {item} expired and was returned.",
     "gymWon": "You defeated {leader} at {gym}. Badge earned!",
@@ -206,6 +210,11 @@
     },
     "activeSquad": "Active Squad",
     "manage": "Manage",
+    "energyHint": {
+      "title": "Energy for the story",
+      "body": "Spend the bar exploring your route. The Park and the Frontier can wait.",
+      "dismiss": "Got it"
+    },
     "emptySlot": "Empty slot",
     "scrollTeamPrev": "Previous Pokémon",
     "scrollTeamNext": "More Pokémon",
@@ -3336,7 +3345,28 @@
       "already_friends": "You are already friends.",
       "already_sent": "Request already sent.",
       "friends_full": "Friend list is full.",
-      "requests_full": "Too many pending requests."
+      "requests_full": "Too many pending requests.",
+      "not_friends": "You can only challenge or trade with friends.",
+      "in_team": "That Pokémon is on the team. Move it to the PC.",
+      "listed": "That Pokémon is listed on the market.",
+      "occupied": "That Pokémon is busy (daycare, trade, or other).",
+      "trade_locked": "That Pokémon is locked from trading.",
+      "already_offered": "You already have a trade pending.",
+      "incoming_pending": "That trainer already offered you a trade.",
+      "no_energy": "You don't have energy for the battle."
+    },
+    "trade": {
+      "pickOffer": "Pick a Pokémon from the PC",
+      "pickAccept": "Pick what you send back",
+      "pickSubtitle": "PC Pokémon only, no sale lock or pending trade.",
+      "empty": "No free Pokémon in the PC.",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "incomingFrom": "{name} offered you a trade",
+      "outgoingTo": "Offer sent to {name}",
+      "accept": "Accept",
+      "decline": "Decline",
+      "cancelOffer": "Cancel offer"
     },
     "confirmRemove": "Remove this trainer from your friends?",
     "confirmBlock": "Block this trainer? You will also remove the friendship.",
@@ -3344,7 +3374,12 @@
       "sentTitle": "Request sent!",
       "sentDetail": "They will see it in their notifications.",
       "acceptedTitle": "You are friends!",
-      "acceptedDetail": "Your circle just grew."
+      "acceptedDetail": "Your circle just grew.",
+      "offeredTitle": "Trade sent",
+      "offeredDetail": "They will see your offer in Friends.",
+      "tradedTitle": "Trade complete!",
+      "tradedDetail": "The Pokémon swapped trainers.",
+      "cancelledTitle": "Offer cancelled"
     }
   },
   "ux": {
@@ -3362,7 +3397,7 @@
       "step3Title": "Challenge the gym",
       "step3Body": "When the zone is ready, earn the badge to unlock the next stretch.",
       "step4Title": "Manage your energy",
-      "step4Body": "Every battle spends energy and it refills on its own: 1 point every 30 minutes.",
+      "step4Body": "Each Adventure battle spends energy (1 every 30 min). Use it there: the Frontier and the Park don't advance the story.",
       "cta": "Got it"
     },
     "role": {
@@ -4364,7 +4399,7 @@
     "mineReset": "New digs in {time}",
     "mineDrops": "Can drop",
     "mineDrop": {
-      "coins": "+80",
+      "coins": "+{n}",
       "potion": "Potion",
       "stone": "Water Stone",
       "helix": "Omanyte",
@@ -4429,7 +4464,7 @@
     "mineIdle": "Pick a rock and dig",
     "lootName": {
       "empty": "dirt",
-      "coins": "80 coins",
+      "coins": "{n} coins",
       "potion": "a Potion",
       "helix": "a Helix Fossil",
       "dome": "a Dome Fossil",

@@ -32,6 +32,8 @@ export type NotificationPayload = {
   imageKind?: NotificationImageKind;
   /** Retratos liberados al ganar la medalla (primera vez). */
   avatarsUnlocked?: number;
+  /** Trueque entre amigos: la oferta ya se cerró. */
+  tradeDone?: boolean;
 };
 
 async function avatarUrlForUserId(userId: string): Promise<string | undefined> {
@@ -91,6 +93,7 @@ export async function createNotification(input: {
     "CLAN_ROLE_CHANGED",
     "DAILY_REWARD_READY",
     "ENERGY_FULL",
+    "FRIEND_TRADE",
   ];
   if (rawEnumTypes.includes(input.type)) {
     const id = newNotificationId();
@@ -125,6 +128,7 @@ const PERSON_IMAGE_TYPES = new Set<NotificationType>([
   "PVP_LOST",
   "FRIEND_REQUEST",
   "FRIEND_ACCEPTED",
+  "FRIEND_TRADE",
   "CLAN_INVITE",
   "CLAN_APPLICATION",
 ]);
@@ -559,6 +563,31 @@ export async function notifyFriendAccepted(input: {
       imageKind: imageUrl ? "avatar" : undefined,
     },
     href: "/friends",
+    tx: input.tx,
+  });
+}
+
+/** Oferta de trueque 1:1, o aviso de que se cerró. */
+export async function notifyFriendTrade(input: {
+  toUserId: string;
+  trainerName: string;
+  pokemonName: string;
+  href: string;
+  done?: boolean;
+  tx?: Prisma.TransactionClient;
+}) {
+  const imageUrl = await avatarUrlForUsername(input.trainerName);
+  await createNotification({
+    userId: input.toUserId,
+    type: "FRIEND_TRADE",
+    payload: {
+      trainerName: input.trainerName,
+      itemName: input.pokemonName,
+      tradeDone: input.done ?? false,
+      imageUrl,
+      imageKind: imageUrl ? "avatar" : undefined,
+    },
+    href: input.href,
     tx: input.tx,
   });
 }

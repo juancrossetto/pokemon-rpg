@@ -76,6 +76,24 @@ export type BlockedEntry = {
   blockedAt: string;
 };
 
+export type FriendTradePokemon = {
+  instanceId: string;
+  name: string;
+  speciesName: string;
+  spriteUrl: string;
+  level: number;
+  isShiny: boolean;
+};
+
+export type FriendTradeOfferView = {
+  id: string;
+  direction: "incoming" | "outgoing";
+  friendUserId: string;
+  friendUsername: string;
+  pokemon: FriendTradePokemon;
+  createdAt: string;
+};
+
 export type PlayerSearchHit = {
   userId: string;
   username: string;
@@ -153,10 +171,12 @@ export type FriendsHubSnapshot = {
   friends: FriendListEntry[];
   requests: FriendRequestEntry[];
   blocked: BlockedEntry[];
+  trades: FriendTradeOfferView[];
   counts: {
     friends: number;
     online: number;
     pendingIncoming: number;
+    pendingTrades: number;
   };
 };
 

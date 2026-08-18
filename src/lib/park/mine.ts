@@ -14,7 +14,8 @@ export type MineBag = {
   amber: number;
 };
 
-export const MINE_COIN_DROP = 80;
+/** Por debajo del pack (30 ●/energía): 8 picas gratis no imprimen un sueldo. */
+export const MINE_COIN_DROP = 24;
 
 /** Cuántos fósiles del mismo tipo hacen falta para revivir al Pokémon. */
 export { FRAGMENTS_TO_ASSEMBLE as MINE_FRAGMENTS_TO_ASSEMBLE } from "@/lib/park/fragments";

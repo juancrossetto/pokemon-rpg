@@ -152,6 +152,10 @@
     "friendRequestDetail": "{trainer}",
     "friendAcceptedTitle": "Nuevo amigo",
     "friendAcceptedDetail": "{trainer}",
+    "friendTradeTitle": "Trueque",
+    "friendTradeDetail": "{trainer} · {item}",
+    "friendTradeDoneTitle": "Trueque cerrado",
+    "friendTradeDoneDetail": "{trainer} · {item}",
     "marketSold": "{buyer} compró {item}. Se te acreditaron +{coins} monedas.",
     "marketExpired": "Tu publicación de {item} expiró y volvió a tu poder.",
     "gymWon": "Derrotaste a {leader} en {gym}. ¡Medalla obtenida!",
@@ -206,6 +210,11 @@
     },
     "activeSquad": "Equipo activo",
     "manage": "Administrar",
+    "energyHint": {
+      "title": "Energía para la historia",
+      "body": "Gastá la barra explorando tu zona. El Parque y el Recinto pueden esperar.",
+      "dismiss": "Entendido"
+    },
     "emptySlot": "Espacio vacío",
     "scrollTeamPrev": "Ver Pokémon anteriores",
     "scrollTeamNext": "Ver más Pokémon",
@@ -3336,7 +3345,28 @@
       "already_friends": "Ya son amigos.",
       "already_sent": "Solicitud ya enviada.",
       "friends_full": "La lista de amigos está llena.",
-      "requests_full": "Demasiadas solicitudes pendientes."
+      "requests_full": "Demasiadas solicitudes pendientes.",
+      "not_friends": "Sólo podés desafiar o truequear con amigos.",
+      "in_team": "Ese Pokémon está en el equipo. Pasalo al PC.",
+      "listed": "Ese Pokémon está publicado en el mercado.",
+      "occupied": "Ese Pokémon está ocupado (pensión, trueque u otro).",
+      "trade_locked": "Ese Pokémon tiene la venta bloqueada.",
+      "already_offered": "Ya tenés un trueque pendiente.",
+      "incoming_pending": "Ese entrenador ya te ofreció un trueque.",
+      "no_energy": "No tenés energía para el combate."
+    },
+    "trade": {
+      "pickOffer": "Elegí un Pokémon de la PC",
+      "pickAccept": "Elegí con qué responder",
+      "pickSubtitle": "Sólo Pokémon de la PC, sin bloqueo de venta ni trueque pendiente.",
+      "empty": "No hay Pokémon libres en la PC.",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "incomingFrom": "{name} te ofrece un trueque",
+      "outgoingTo": "Oferta enviada a {name}",
+      "accept": "Aceptar",
+      "decline": "Rechazar",
+      "cancelOffer": "Cancelar oferta"
     },
     "confirmRemove": "¿Eliminar a este entrenador de tus amigos?",
     "confirmBlock": "¿Bloquear a este entrenador? También se eliminará la amistad.",
@@ -3344,7 +3374,12 @@
       "sentTitle": "¡Solicitud enviada!",
       "sentDetail": "La verán en sus notificaciones.",
       "acceptedTitle": "¡Ya son amigos!",
-      "acceptedDetail": "Tu círculo acaba de crecer."
+      "acceptedDetail": "Tu círculo acaba de crecer.",
+      "offeredTitle": "Trueque enviado",
+      "offeredDetail": "Van a ver tu oferta en Amigos.",
+      "tradedTitle": "¡Trueque hecho!",
+      "tradedDetail": "Los Pokémon cambiaron de entrenador.",
+      "cancelledTitle": "Oferta cancelada"
     }
   },
   "ux": {
@@ -3362,7 +3397,7 @@
       "step3Title": "Desafiá el gimnasio",
       "step3Body": "Cuando la zona esté lista, ganá la medalla para desbloquear el siguiente tramo.",
       "step4Title": "Manejá tu energía",
-      "step4Body": "Cada combate gasta energía y se recarga sola: 1 punto cada 30 minutos.",
+      "step4Body": "Cada combate de Aventura gasta energía (1 cada 30 min). Usala ahí: el Recinto y el Parque no avanzan la historia.",
       "cta": "Entendido"
     },
     "role": {
@@ -4364,7 +4399,7 @@
     "mineReset": "Nuevas picadas en {time}",
     "mineDrops": "Puede salir",
     "mineDrop": {
-      "coins": "+80",
+      "coins": "+{n}",
       "potion": "Poción",
       "stone": "Piedra Agua",
       "helix": "Omanyte",
@@ -4429,7 +4464,7 @@
     "mineIdle": "Elegí una roca y picá",
     "lootName": {
       "empty": "tierra",
-      "coins": "80 monedas",
+      "coins": "{n} monedas",
       "potion": "una Poción",
       "helix": "un Fósil Hélix",
       "dome": "un Fósil Domo",

@@ -103,6 +103,8 @@ model User {
   parkWonder         ParkWonder?
   frontierAttempts   FrontierAttempt[]
   speciesFragments   SpeciesFragment[]
+  friendTradesFrom   FriendTradeOffer[] @relation("FriendTradeFrom")
+  friendTradesTo     FriendTradeOffer[] @relation("FriendTradeTo")
 }
 
 // ---------- Notificaciones in-app ----------
@@ -126,6 +128,7 @@ enum NotificationType {
   CLAN_ROLE_CHANGED
   DAILY_REWARD_READY
   ENERGY_FULL
+  FRIEND_TRADE
 }
 
 model Notification {
@@ -306,6 +309,7 @@ model PokemonInstance {
   safariCatch      SafariCatch?
   daycareDeposit   DaycareDeposit?
   wonderOffer      WonderTradeOffer?
+  friendTradeOffer FriendTradeOffer?
 
   @@unique([ownerId, teamSlot]) // dos Pokémon no pueden compartir slot. Postgres
   // trata cada NULL como distinto, así que el PC (teamSlot null) no se ve afectado.
@@ -1507,6 +1511,25 @@ model WonderTradeOffer {
 
   @@index([matchedAt, createdAt])
   @@index([userId, matchedAt])
+}
+
+/**
+ * Trueque 1:1 entre amigos. El Pokémon ofertado queda reservado (PC) hasta
+ * que el destinatario responde con uno suyo o alguien cancela.
+ */
+model FriendTradeOffer {
+  id                String   @id @default(cuid())
+  fromUserId        String
+  toUserId          String
+  pokemonInstanceId String   @unique
+  createdAt         DateTime @default(now())
+
+  from    User            @relation("FriendTradeFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  to      User            @relation("FriendTradeTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  pokemon PokemonInstance @relation(fields: [pokemonInstanceId], references: [id], onDelete: Cascade)
+
+  @@index([toUserId, createdAt])
+  @@index([fromUserId])
 }
 
 model BerryPlot {

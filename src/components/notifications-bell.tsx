@@ -55,6 +55,7 @@ const ACTIONABLE_TYPES = new Set<NotificationDTO["type"]>([
   "GYM_TM_REWARD",
   "MARKET_SOLD",
   "FRIEND_REQUEST",
+  "FRIEND_TRADE",
   "CLAN_INVITE",
   "CLAN_APPLICATION",
 ]);
@@ -64,6 +65,7 @@ const PERSON_TYPES = new Set<NotificationDTO["type"]>([
   "PVP_LOST",
   "FRIEND_REQUEST",
   "FRIEND_ACCEPTED",
+  "FRIEND_TRADE",
   "CLAN_INVITE",
   "CLAN_APPLICATION",
 ]);
@@ -103,6 +105,8 @@ function headlineFor(
       return t("friendRequestTitle");
     case "FRIEND_ACCEPTED":
       return t("friendAcceptedTitle");
+    case "FRIEND_TRADE":
+      return p.tradeDone ? t("friendTradeDoneTitle") : t("friendTradeTitle");
     case "CLAN_INVITE":
       return t("clanInviteTitle");
     case "CLAN_APPLICATION":
@@ -161,6 +165,16 @@ function detailFor(
       return t("friendRequestDetail", { trainer: p.trainerName ?? "?" });
     case "FRIEND_ACCEPTED":
       return t("friendAcceptedDetail", { trainer: p.trainerName ?? "?" });
+    case "FRIEND_TRADE":
+      return p.tradeDone
+        ? t("friendTradeDoneDetail", {
+            trainer: p.trainerName ?? "?",
+            item: p.itemName ?? "—",
+          })
+        : t("friendTradeDetail", {
+            trainer: p.trainerName ?? "?",
+            item: p.itemName ?? "—",
+          });
     case "CLAN_INVITE":
       return t("clanInviteDetail", {
         trainer: p.trainerName ?? "?",

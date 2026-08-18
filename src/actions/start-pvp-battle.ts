@@ -21,6 +21,7 @@ import {
 } from "@/lib/pvp/team";
 import { primeChallengerTeamForBattle } from "@/lib/pvp/restore";
 import { nextTurnDeadline } from "@/lib/battle-turn-timer";
+import { friendshipPair } from "@/lib/friend-rules";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const PVP_LIMIT = 15;
@@ -333,4 +334,27 @@ export async function startPvpRematch(locale: string, opponentId: string) {
 
 export async function startPvpRanked(locale: string) {
   await startPvpBattle(locale);
+}
+
+/** Desafío PvP desde la ficha de un amigo. */
+export async function challengeFriend(
+  locale: string,
+  friendUserId: string,
+): Promise<{ ok: false; error: string } | void> {
+  const session = await auth();
+  if (!session?.user) {
+    redirect({ href: "/login", locale });
+    return;
+  }
+  const userId = session.user.id;
+  if (!friendUserId || friendUserId === userId) {
+    return { ok: false, error: "invalid" };
+  }
+  const [a, b] = friendshipPair(userId, friendUserId);
+  const row = await prisma.friendship.findUnique({
+    where: { userAId_userBId: { userAId: a, userBId: b } },
+    select: { userAId: true },
+  });
+  if (!row) return { ok: false, error: "not_friends" };
+  await startPvpBattle(locale, { rematchUserId: friendUserId });
 }

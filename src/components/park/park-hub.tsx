@@ -511,9 +511,11 @@ export function ParkHub({
             dailyHint: t("mineEnergy"),
             resetIn: (time) => t("dailyReset", { time }),
             drops: t("mineDrops"),
-            dropName: (loot) => t(`mineDrop.${loot}`),
+            dropName: (loot) =>
+              loot === "coins" ? t("mineDrop.coins", { n: MINE_COIN_DROP }) : t(`mineDrop.${loot}`),
             empty: t("loot.empty"),
-            lootName: (loot) => t(`lootName.${loot}`),
+            lootName: (loot) =>
+              loot === "coins" ? t("lootName.coins", { n: MINE_COIN_DROP }) : t(`lootName.${loot}`),
             idle: t("mineIdle"),
             bagTitle: t("mineBag"),
             revive: t("mineRevive"),

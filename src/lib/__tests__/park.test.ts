@@ -11,7 +11,7 @@ import { FISHING_FREE_CASTS_PER_DAY, fishingCastsUsedToday, fishingEnergyCost, f
 import { CORNER_FREE_SPINS_PER_DAY, cornerEnergyCost, cornerExpectedPayout, cornerFreeLeft, cornerPayout, cornerSpinsUsedToday, spinCorner } from "@/lib/park/corner";
 import { CORNER_SPIN_ENERGY_COST, FISHING_ENERGY_COST, MINE_DIG_ENERGY_COST, WONDER_TRADE_ENERGY_COST } from "@/lib/energy";
 import { farmReady, farmYield } from "@/lib/park/farm";
-import { FOSSIL_SPECIES, generateMineGrid, MINE_DROP_SHOW, mineDigsLeft, parseMineBag } from "@/lib/park/mine";
+import { FOSSIL_SPECIES, generateMineGrid, MINE_COIN_DROP, MINE_DIGS_PER_DAY, MINE_DROP_SHOW, mineDigsLeft, parseMineBag } from "@/lib/park/mine";
 import { palaceWinPayout, FRONTIER_DOME_CUP_COINS } from "@/lib/park/frontier";
 import { parseParkTab, parkTabHref } from "@/lib/park/tabs";
 import { FRONTIER_ENERGY_COST } from "@/lib/energy";
@@ -71,11 +71,11 @@ describe("fishing", () => {
 
 describe("game corner", () => {
   it("pays jackpot on three sevens and nothing on a mix", () => {
-    expect(cornerPayout(["seven", "seven", "seven"])).toBe(800);
+    expect(cornerPayout(["seven", "seven", "seven"])).toBe(90);
     expect(cornerPayout(["ball", "berry", "star"])).toBe(0);
     const forced = spinCorner(sequence(0, 0, 0));
     expect(forced.reels).toEqual(["ball", "ball", "ball"]);
-    expect(forced.payout).toBe(80);
+    expect(forced.payout).toBe(24);
   });
 
   /*
@@ -88,19 +88,21 @@ describe("game corner", () => {
       ["star", "ball", "star"],
       ["ball", "star", "star"],
     ] as const) {
-      expect(cornerPayout(reels)).toBe(30);
+      expect(cornerPayout(reels)).toBe(10);
     }
     for (const reels of [
       ["seven", "seven", "ball"],
       ["seven", "ball", "seven"],
       ["ball", "seven", "seven"],
     ] as const) {
-      expect(cornerPayout(reels)).toBe(55);
+      expect(cornerPayout(reels)).toBe(16);
     }
   });
 
   it("pays a modest expected value in coins; energy and daily frees gate grinding", () => {
-    expect(cornerExpectedPayout()).toBeCloseTo(17.08, 2);
+    const packGoldPerEnergy = ENERGY_PACK_PRICE / ENERGY_PACK_ENERGY;
+    expect(cornerExpectedPayout()).toBeLessThan(packGoldPerEnergy);
+    expect(cornerPayout(["seven", "seven", "seven"])).toBeLessThan(ENERGY_PACK_PRICE);
   });
 
   it("gives three free spins per day, then charges energy", () => {
@@ -153,6 +155,7 @@ describe("mine", () => {
   it("lists the real prizes, not only coins, and does not charge energy", () => {
     expect(MINE_DROP_SHOW).toEqual(["coins", "potion", "stone", "helix", "dome", "amber"]);
     expect(MINE_DIG_ENERGY_COST).toBe(0);
+    expect(MINE_COIN_DROP * MINE_DIGS_PER_DAY).toBeLessThan(ENERGY_PACK_PRICE);
   });
 });
 

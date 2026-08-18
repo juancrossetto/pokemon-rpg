@@ -9,16 +9,14 @@ import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { HeldItemLabels, OwnedHeldItem } from "@/components/held-item-panel";
 import type { DailyState } from "@/lib/events/state";
 import type { SquadBagCounts } from "@/lib/squad-bag";
-import type {
-  HomeRailClanWars,
-  HomeRailPvp,
-} from "@/lib/home-hub";
+import type { HomeRailClanWars, HomeRailPvp } from "@/lib/home-hub";
 import {
   HomeEventBanner,
   HomeEventCarousel,
   type HomeEventShowcaseData,
 } from "@/components/home/home-event-showcase";
 import { HealTutorial, JourneyOnboarding } from "@/components/journey-guidance";
+import { HomeEnergyHint } from "@/components/home/home-energy-hint";
 import { hasSeen } from "@/lib/journey-ux";
 import {
   HomeDesktopRail,
@@ -34,6 +32,7 @@ export function HomeGameHub({
   giftLabels,
   squad,
   rail,
+  showEnergyHint = false,
 }: {
   locale: string;
   expedition: CurrentExpeditionProps | null;
@@ -71,6 +70,8 @@ export function HomeGameHub({
     clanWars: HomeRailClanWars;
     top: HomeRailRankEntry[];
   };
+  /** Novato (pocas medallas): pista de gastar energía en Aventura. */
+  showEnergyHint?: boolean;
 }) {
   const [healTutorialArmed, setHealTutorialArmed] = useState(false);
   useEffect(() => {
@@ -122,6 +123,8 @@ export function HomeGameHub({
                 justo lo que este rediseño vino a sacar.
               */}
               {routeHero}
+
+              <HomeEnergyHint enabled={showEnergyHint} />
 
               {expedition ? (
                 <div className="hidden lg:block xl:hidden">

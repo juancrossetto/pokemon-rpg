@@ -19,18 +19,6 @@ import { avatarById } from "@/lib/avatars";
 import { uiSpriteUrl } from "@/lib/sprites";
 import { typeColor } from "@/lib/type-colors";
 import {
-  PRESENCE_META,
-  isPresenceOnlineish,
-  type FriendFilter,
-  type FriendListEntry,
-  type FriendRequestEntry,
-  type BlockedEntry,
-  type FriendsHubSnapshot,
-  type PlayerSearchHit,
-  type PresenceStatus,
-  type TrainerCardData,
-} from "@/lib/friends";
-import {
   acceptFriendRequest,
   blockTrainer,
   cancelFriendRequest,
@@ -42,6 +30,30 @@ import {
   toggleFriendFavorite,
   unblockTrainer,
 } from "@/actions/friends";
+import {
+  acceptFriendTrade,
+  cancelFriendTrade,
+  listTradablePokemon,
+  offerFriendTrade,
+} from "@/actions/friend-trade";
+import { challengeFriend } from "@/actions/start-pvp-battle";
+import { FriendTradePicker } from "@/components/friends/friend-trade-picker";
+import { PVP_BATTLE_ENERGY_COST } from "@/lib/energy";
+import { announceEnergyDelta } from "@/lib/resource-fx";
+import {
+  PRESENCE_META,
+  isPresenceOnlineish,
+  type FriendFilter,
+  type FriendListEntry,
+  type FriendRequestEntry,
+  type BlockedEntry,
+  type FriendTradeOfferView,
+  type FriendTradePokemon,
+  type FriendsHubSnapshot,
+  type PlayerSearchHit,
+  type PresenceStatus,
+  type TrainerCardData,
+} from "@/lib/friends";
 import { type RankTierId } from "@/lib/trainer-profile";
 import { PvpRankBadge } from "@/components/pvp/pvp-rank-badge";
 import {
@@ -158,6 +170,20 @@ export type FriendsLabels = {
     block: string;
     unblock: string;
   };
+  trade: {
+    pickOffer: string;
+    pickAccept: string;
+    pickSubtitle: string;
+    empty: string;
+    confirm: string;
+    cancel: string;
+    level: string;
+    incomingFrom: string;
+    outgoingTo: string;
+    accept: string;
+    decline: string;
+    cancelOffer: string;
+  };
   comingSoon: string;
   card: {
     trainerCard: string;
@@ -191,6 +217,11 @@ export type FriendsLabels = {
   toastSentDetail: string;
   toastAcceptedTitle: string;
   toastAcceptedDetail: string;
+  toastOfferedTitle: string;
+  toastOfferedDetail: string;
+  toastTradedTitle: string;
+  toastTradedDetail: string;
+  toastCancelledTitle: string;
 };
 
 const FILTERS: FriendFilter[] = [
@@ -268,6 +299,13 @@ export function FriendsHub({
     detail?: string;
   } | null>(null);
   const [pending, startTransition] = useTransition();
+  const [tradePick, setTradePick] = useState<
+    | { mode: "offer"; friendUserId: string; username: string }
+    | { mode: "accept"; offerId: string; username: string }
+    | null
+  >(null);
+  const [tradeBox, setTradeBox] = useState<FriendTradePokemon[]>([]);
+  const [tradeLoading, setTradeLoading] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterRailRef = useRef<HTMLDivElement>(null);
@@ -346,7 +384,7 @@ export function FriendsHub({
     action: () => Promise<{
       ok: boolean;
       error?: string;
-      notice?: "sent" | "accepted";
+      notice?: "sent" | "accepted" | "offered" | "traded" | "cancelled";
     }>,
   ) {
     startTransition(async () => {
@@ -367,9 +405,49 @@ export function FriendsHub({
           title: labels.toastAcceptedTitle,
           detail: labels.toastAcceptedDetail,
         });
+      } else if (res.notice === "offered") {
+        showToast({
+          kind: "success",
+          title: labels.toastOfferedTitle,
+          detail: labels.toastOfferedDetail,
+        });
+      } else if (res.notice === "traded") {
+        showToast({
+          kind: "success",
+          title: labels.toastTradedTitle,
+          detail: labels.toastTradedDetail,
+        });
+      } else if (res.notice === "cancelled") {
+        showToast({
+          kind: "success",
+          title: labels.toastCancelledTitle,
+        });
       }
       router.refresh();
     });
+  }
+
+  function challenge(friendUserId: string) {
+    announceEnergyDelta(-PVP_BATTLE_ENERGY_COST);
+    startTransition(async () => {
+      const res = await challengeFriend(locale, friendUserId);
+      if (res && !res.ok) flash(res.error);
+    });
+  }
+
+  async function openTradePicker(
+    next: NonNullable<typeof tradePick>,
+  ) {
+    setTradePick(next);
+    setTradeLoading(true);
+    const res = await listTradablePokemon();
+    setTradeLoading(false);
+    if (!res.ok) {
+      setTradePick(null);
+      flash(res.error);
+      return;
+    }
+    setTradeBox(res.pokemon);
   }
 
   async function openCard(userId: string) {
@@ -595,15 +673,55 @@ export function FriendsHub({
           art="/events/friend-cubone.png"
         />
       ) : (
+        <>
+          {initial.trades.length > 0 ? (
+            <TradesStrip
+              trades={initial.trades}
+              labels={labels}
+              pending={pending}
+              onOpen={(id) => void openCard(id)}
+              onAccept={(offer) =>
+                void openTradePicker({
+                  mode: "accept",
+                  offerId: offer.id,
+                  username: offer.friendUsername,
+                })
+              }
+              onCancel={(id) => run(() => cancelFriendTrade(locale, id))}
+            />
+          ) : null}
         <div className="friends-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredFriends.map((friend, index) => (
+          {filteredFriends.map((friend, index) => {
+            const trade = initial.trades.find((t) => t.friendUserId === friend.userId) ?? null;
+            return (
             <FriendCard
               key={friend.userId}
               friend={friend}
+              trade={trade}
               labels={labels}
               style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
               onOpen={() => void openCard(friend.userId)}
               onFavorite={() => run(() => toggleFriendFavorite(locale, friend.userId))}
+              onInvite={() => challenge(friend.userId)}
+              onTrade={() => {
+                if (trade?.direction === "incoming") {
+                  void openTradePicker({
+                    mode: "accept",
+                    offerId: trade.id,
+                    username: friend.username,
+                  });
+                  return;
+                }
+                if (trade?.direction === "outgoing") {
+                  run(() => cancelFriendTrade(locale, trade.id));
+                  return;
+                }
+                void openTradePicker({
+                  mode: "offer",
+                  friendUserId: friend.userId,
+                  username: friend.username,
+                });
+              }}
               onRemove={() => {
                 if (!window.confirm(labels.confirmRemove)) return;
                 run(() => removeFriend(locale, friend.userId));
@@ -613,8 +731,10 @@ export function FriendsHub({
                 run(() => blockTrainer(locale, friend.userId));
               }}
             />
-          ))}
+            );
+          })}
         </div>
+        </>
       )}
 
       {cardLoading ? (
@@ -667,8 +787,63 @@ export function FriendsHub({
               return res;
             })
           }
+          onInvite={() => challenge(card.userId)}
+          onTrade={() => {
+            const trade = initial.trades.find((t) => t.friendUserId === card.userId) ?? null;
+            if (trade?.direction === "incoming") {
+              void openTradePicker({
+                mode: "accept",
+                offerId: trade.id,
+                username: card.username,
+              });
+              return;
+            }
+            if (trade?.direction === "outgoing") {
+              run(() => cancelFriendTrade(locale, trade.id));
+              return;
+            }
+            void openTradePicker({
+              mode: "offer",
+              friendUserId: card.userId,
+              username: card.username,
+            });
+          }}
+          trade={initial.trades.find((t) => t.friendUserId === card.userId) ?? null}
         />
       ) : null}
+
+      <FriendTradePicker
+        open={Boolean(tradePick)}
+        pokemon={tradeBox}
+        loading={tradeLoading}
+        pending={pending}
+        labels={{
+          title:
+            tradePick?.mode === "accept" ? labels.trade.pickAccept : labels.trade.pickOffer,
+          subtitle: labels.trade.pickSubtitle,
+          empty: labels.trade.empty,
+          confirm: labels.trade.confirm,
+          cancel: labels.trade.cancel,
+          level: labels.trade.level,
+        }}
+        onClose={() => setTradePick(null)}
+        onPick={(instanceId) => {
+          if (!tradePick) return;
+          if (tradePick.mode === "offer") {
+            run(async () => {
+              const res = await offerFriendTrade(locale, tradePick.friendUserId, instanceId);
+              if (res.ok) setTradePick(null);
+              return res;
+            });
+            return;
+          }
+          run(async () => {
+            const res = await acceptFriendTrade(locale, tradePick.offerId, instanceId);
+            if (res.ok) setTradePick(null);
+            return res;
+          });
+        }}
+      />
 
       {toast ? (
         <div
@@ -848,20 +1023,108 @@ function SearchRow({
   );
 }
 
+function TradesStrip({
+  trades,
+  labels,
+  pending,
+  onOpen,
+  onAccept,
+  onCancel,
+}: {
+  trades: FriendTradeOfferView[];
+  labels: FriendsLabels;
+  pending: boolean;
+  onOpen: (userId: string) => void;
+  onAccept: (offer: FriendTradeOfferView) => void;
+  onCancel: (id: string) => void;
+}) {
+  return (
+    <ul className="mb-3 flex flex-col gap-2">
+      {trades.map((trade) => (
+        <li
+          key={trade.id}
+          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-glass-surface px-3 py-2.5"
+        >
+          <button
+            type="button"
+            onClick={() => onOpen(trade.friendUserId)}
+            className="flex min-w-0 flex-1 items-center gap-3 text-left"
+          >
+            <PokemonImage
+              src={trade.pokemon.spriteUrl}
+              speciesName={trade.pokemon.speciesName}
+              isShiny={trade.pokemon.isShiny}
+              alt={trade.pokemon.name}
+              width={48}
+              height={48}
+              className="h-10 w-10 object-contain"
+            />
+            <span className="min-w-0">
+              <span className="block truncate text-[12px] font-semibold text-white">
+                {trade.direction === "incoming"
+                  ? labels.trade.incomingFrom.replace("{name}", trade.friendUsername)
+                  : labels.trade.outgoingTo.replace("{name}", trade.friendUsername)}
+              </span>
+              <span className="text-[11px] text-on-surface-variant">
+                {trade.pokemon.name} · {labels.trade.level} {trade.pokemon.level}
+              </span>
+            </span>
+          </button>
+          {trade.direction === "incoming" ? (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => onAccept(trade)}
+                className="rounded-lg bg-emerald-500/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white"
+              >
+                {labels.trade.accept}
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => onCancel(trade.id)}
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant"
+              >
+                {labels.trade.decline}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => onCancel(trade.id)}
+              className="rounded-lg border border-white/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant"
+            >
+              {labels.trade.cancelOffer}
+            </button>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function FriendCard({
   friend,
+  trade,
   labels,
   style,
   onOpen,
   onFavorite,
+  onInvite,
+  onTrade,
   onRemove,
   onBlock,
 }: {
   friend: FriendListEntry;
+  trade: FriendTradeOfferView | null;
   labels: FriendsLabels;
   style?: CSSProperties;
   onOpen: () => void;
   onFavorite: () => void;
+  onInvite: () => void;
+  onTrade: () => void;
   onRemove: () => void;
   onBlock: () => void;
 }) {
@@ -1076,8 +1339,18 @@ function FriendCard({
           icon={friend.isFavorite ? "star" : "star_outline"}
           onClick={onFavorite}
         />
-        <ActionIcon label={labels.actions.invite} icon="swords" disabled title={labels.comingSoon} />
-        <ActionIcon label={labels.actions.trade} icon="sync_alt" disabled title={labels.comingSoon} />
+        <ActionIcon label={labels.actions.invite} icon="swords" onClick={onInvite} />
+        <ActionIcon
+          label={
+            trade?.direction === "incoming"
+              ? labels.trade.accept
+              : trade?.direction === "outgoing"
+                ? labels.trade.cancelOffer
+                : labels.actions.trade
+          }
+          icon="sync_alt"
+          onClick={onTrade}
+        />
         <ActionIcon
           label={labels.actions.gift}
           icon="featured_seasonal_and_gifts"
@@ -1257,6 +1530,7 @@ function BlockedPanel({
 
 function TrainerCardModal({
   card,
+  trade,
   labels,
   pending,
   onClose,
@@ -1264,8 +1538,11 @@ function TrainerCardModal({
   onRemove,
   onBlock,
   onAdd,
+  onInvite,
+  onTrade,
 }: {
   card: TrainerCardData;
+  trade: FriendTradeOfferView | null;
   labels: FriendsLabels;
   pending: boolean;
   onClose: () => void;
@@ -1273,6 +1550,8 @@ function TrainerCardModal({
   onRemove: () => void;
   onBlock: () => void;
   onAdd: () => void;
+  onInvite: () => void;
+  onTrade: () => void;
 }) {
   const typeLabel = useTypeLabel();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -1570,14 +1849,20 @@ function TrainerCardModal({
                   <ModalBtn
                     icon="swords"
                     label={labels.actions.invite}
-                    disabled
-                    title={labels.comingSoon}
+                    onClick={onInvite}
+                    pending={pending}
                   />
                   <ModalBtn
                     icon="sync_alt"
-                    label={labels.actions.trade}
-                    disabled
-                    title={labels.comingSoon}
+                    label={
+                      trade?.direction === "incoming"
+                        ? labels.trade.accept
+                        : trade?.direction === "outgoing"
+                          ? labels.trade.cancelOffer
+                          : labels.actions.trade
+                    }
+                    onClick={onTrade}
+                    pending={pending}
                   />
                   <ModalBtn
                     icon={card.isFavorite ? "star" : "star_outline"}

@@ -735,6 +735,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         clanWars: clanWarsRail,
         top: railTop,
       }}
+      showEnergyHint={badges.filter((b) => !b.gym.isElite).length < 3}
     />
     </>
   );

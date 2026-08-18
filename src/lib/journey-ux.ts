@@ -45,7 +45,8 @@ export type FirstVisitKey =
   | "coach-market"
   | "hub-help-campaign"
   | "hub-help-battle"
-  | "hub-help-market";
+  | "hub-help-market"
+  | "energy-adventure-hint";
 
 const PREFIX = "pokerpg:seen:";
 

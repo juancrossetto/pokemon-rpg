@@ -16,15 +16,15 @@ export const CORNER_REELS: readonly CornerSymbol[] = [
 
 /*
   El giro no cobra monedas: los primeros `CORNER_FREE_SPINS_PER_DAY` del día
-  son gratis y el resto gasta energía. Los premios siguen siendo ●, recortados
-  para que spamear energía no imprima un sueldo — el valor esperado ronda las
-  17 ●, en el mismo orden que una pica de la mina.
+  son gratis y el resto gasta 1 de energía. Los premios están por debajo del
+  pack de la tienda (30 ●/energía): ni el jackpot compra un pack, y el valor
+  esperado de un giro pago queda lejos de imprimir oro.
 */
 export const CORNER_PAYOUT: Record<string, number> = {
-  "ball,ball,ball": 80,
-  "berry,berry,berry": 140,
-  "star,star,star": 250,
-  "seven,seven,seven": 800,
+  "ball,ball,ball": 24,
+  "berry,berry,berry": 40,
+  "star,star,star": 55,
+  "seven,seven,seven": 90,
 };
 
 export function spinCornerReel(roll: number): CornerSymbol {
@@ -34,8 +34,8 @@ export function spinCornerReel(roll: number): CornerSymbol {
 
 /** Premios por combinación parcial (dos símbolos iguales). */
 export const CORNER_PAIR_PAYOUT = {
-  star: 30,
-  seven: 55,
+  star: 10,
+  seven: 16,
 } as const;
 
 export function cornerPayout(reels: readonly CornerSymbol[]): number {

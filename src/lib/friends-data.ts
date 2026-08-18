@@ -4,6 +4,7 @@ import { calculateMaxHp } from "@/lib/stats";
 import { pokemonPower, teamPower } from "@/lib/ranking";
 import { speciesRarity } from "@/lib/pokedex";
 import { typeColor } from "@/lib/type-colors";
+import { spriteFor } from "@/lib/shiny";
 import {
   mergeTimeline,
   rankProgress,
@@ -17,6 +18,7 @@ import {
   type BlockedEntry,
   type FriendListEntry,
   type FriendRequestEntry,
+  type FriendTradeOfferView,
   type FriendsHubSnapshot,
   type PresenceStatus,
   type PlayerSearchHit,
@@ -310,7 +312,7 @@ export async function loadOnlineFriends(
 export async function loadFriendsHub(userId: string): Promise<FriendsHubSnapshot> {
   await touchPresence(userId);
 
-  const [friendships, incoming, outgoing, blocks, totalGyms] = await Promise.all([
+  const [friendships, incoming, outgoing, blocks, totalGyms, tradeRows] = await Promise.all([
     prisma.friendship.findMany({
       where: { OR: [{ userAId: userId }, { userBId: userId }] },
       orderBy: { createdAt: "desc" },
@@ -328,6 +330,17 @@ export async function loadFriendsHub(userId: string): Promise<FriendsHubSnapshot
       orderBy: { createdAt: "desc" },
     }),
     prisma.gym.count(),
+    prisma.friendTradeOffer.findMany({
+      where: { OR: [{ fromUserId: userId }, { toUserId: userId }] },
+      include: {
+        pokemon: {
+          include: { species: { select: { name: true, spriteUrl: true } } },
+        },
+        from: { select: { username: true } },
+        to: { select: { username: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   const friendIds = friendships.map((f) =>
@@ -431,14 +444,35 @@ export async function loadFriendsHub(userId: string): Promise<FriendsHubSnapshot
     })
     .filter((b): b is BlockedEntry => b !== null);
 
+  const trades: FriendTradeOfferView[] = tradeRows.map((row) => {
+    const incoming = row.toUserId === userId;
+    return {
+      id: row.id,
+      direction: incoming ? "incoming" : "outgoing",
+      friendUserId: incoming ? row.fromUserId : row.toUserId,
+      friendUsername: incoming ? row.from.username : row.to.username,
+      pokemon: {
+        instanceId: row.pokemon.id,
+        name: row.pokemon.nickname ?? row.pokemon.species.name,
+        speciesName: row.pokemon.species.name,
+        spriteUrl: spriteFor(row.pokemon.species.spriteUrl, row.pokemon.isShiny),
+        level: row.pokemon.level,
+        isShiny: row.pokemon.isShiny,
+      },
+      createdAt: row.createdAt.toISOString(),
+    };
+  });
+
   return {
     friends,
     requests,
     blocked,
+    trades,
     counts: {
       friends: friends.length,
       online: friends.filter((f) => isPresenceOnlineish(f.presence)).length,
       pendingIncoming: requests.filter((r) => r.direction === "incoming").length,
+      pendingTrades: trades.filter((t) => t.direction === "incoming").length,
     },
   };
 }
