@@ -4229,14 +4229,14 @@
     "emptySlot": "Nido libre",
     "emptyBox": "No hay Pokémon libres en la PC.",
     "pickHint": "Elegí uno de la PC",
-    "daycareBlurb": "Dos nidos. El Pokémon gana niveles mientras vos jugás; cobrás cuando quieras.",
-    "deposit": "Dejar ({cost} ●)",
+    "daycareBlurb": "Dos nidos. Suben despacio mientras jugás otros modos; la Aventura sigue siendo la vía principal.",
+    "deposit": "Dejar",
     "deposited": "Dejado en la pensión ({cost} ●).",
     "collect": "Cobrar niveles",
     "collected": "Niveles cobrados.",
     "withdraw": "Retirar",
     "withdrawn": "Volvió a la PC.",
-    "pendingLevels": "{n} niveles listos · {fee} ●",
+    "pendingLevels": "{n} niveles listos",
     "fishingBlurb": "{free} lances gratis por día; después cada uno cuesta {energy} de energía.",
     "cast": "Lanzar caña",
     "fishCatch": "¡Atrapaste a {name}!",
@@ -4290,8 +4290,10 @@
     "revived": "Reviviste a {name}.",
     "challenge": "Desafiar",
     "frontierMeta": "Racha {streak} · victorias {wins} · {energy} energía",
-    "frontierWin": "Victoria: +{coins} ● (racha {streak})",
-    "frontierLose": "Derrota. El recinto se queda con esta.",
+    "frontierWin": "Victoria: +{coins} · racha {streak}",
+    "frontierWinLead": "Victoria",
+    "frontierWinStreak": "racha {n}",
+    "frontierLose": "Derrota. Probá de nuevo.",
     "loot": {
       "empty": "Tierra.",
       "coins": "Monedas.",
@@ -4338,12 +4340,14 @@
       "no_catalog": "Falta el catálogo de alquileres.",
       "bad_facility": "Recinto inválido.",
       "locked": "Ganá la primera medalla para usar el trueque.",
-      "too_rare": "Ese es demasiado valioso para el científico. Mandalo a la cola."
+      "too_rare": "Ese es demasiado valioso para el científico. Mandalo a la cola.",
+      "daycare_ceiling": "Ya alcanzó el tope de pensión para tus medallas."
     },
     "cornerReady": "Probá tu suerte",
     "cornerNothing": "Nada esta vez",
     "cornerSpins": "{left}/{total} gratis",
     "cornerDailyHint": "{free} giros gratis por día; después {energy} de energía.",
+    "dailyReset": "Reinicia a las 00:00 · {time}",
     "cornerReset": "Gratis de nuevo en {time}",
     "cornerIdleNudge": "Girá la palanca",
     "cornerHostIdle": "Un juego de niños. Dale a la palanca.",
@@ -4381,8 +4385,8 @@
       "daycare": {
         "title": "Pensión",
         "s1": "Dejá un Pokémon en uno de los dos nidos.",
-        "s2": "Sube de nivel solo mientras vos jugás otra cosa.",
-        "s3": "Cobrás los niveles cuando quieras, pagando la tarifa."
+        "s2": "Gana niveles muy despacio (4 h por nivel, tope 3 por estadía).",
+        "s3": "El tope de nivel depende de tus medallas. Cobrás pagando la tarifa."
       },
       "fishing": {
         "title": "Pesca",
@@ -4416,9 +4420,9 @@
       },
       "frontier": {
         "title": "Recinto",
-        "s1": "Cada desafío cuesta energía.",
+        "s1": "Cada desafío cuesta 3 de energía.",
         "s2": "Ganás con tu equipo actual, sin pelear turno a turno.",
-        "s3": "La racha sube con cada victoria y multiplica el premio."
+        "s3": "La racha suma un poco al premio, con tope: no alcanza para comprar más energía."
       }
     },
     "mineFound": "Encontraste {what}",
@@ -4454,6 +4458,21 @@
     "farmReadyBubble": "¡Esa parcela ya está para cosechar!",
     "farmHint": "Cada parcela tarda 2 h y rinde 2 o 3 bayas.",
     "farmSeeds": "Para plantar",
-    "farmOccupancy": "{planted}/{total} plantadas"
+    "farmOccupancy": "{planted}/{total} plantadas",
+    "daycareIdle": "Dejá un Pokémon. Yo lo cuido.",
+    "daycareReadyBubble": "Hay niveles listos para cobrar.",
+    "daycareHint": "4 h/nivel · tope {cap}/estadía · máx. nv. {ceiling}",
+    "daycareOccupancy": "{held}/{total} nidos",
+    "daycareNext": "Próximo en {time}",
+    "daycareMax": "Tope de esta estadía. Cobrá y volvé a dejar.",
+    "daycareCeiling": "Tope nv. {level}. Seguí en Aventura.",
+    "collectedLevels": "{name} subió {n, plural, one {# nivel} other {# niveles}}.",
+    "frontierIdle": "Mandá tu equipo.",
+    "frontierFight": "Se resuelve ahora…",
+    "frontierStreak": "Racha {n}",
+    "frontierWins": "{n} victorias hoy",
+    "frontierWinsShort": "{n} hoy",
+    "frontierLastWon": "Ganaste la última",
+    "frontierLastLost": "Perdiste la última"
   }
 }

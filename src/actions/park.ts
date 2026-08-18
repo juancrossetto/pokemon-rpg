@@ -24,6 +24,7 @@ import {
   DAYCARE_DEPOSIT_COST,
   DAYCARE_SLOTS,
   daycareCollectFee,
+  daycareLevelCeiling,
   pendingDaycareLevels,
   xpForDaycareLevels,
 } from "@/lib/park/daycare";
@@ -61,6 +62,7 @@ import {
 } from "@/lib/park/mine";
 import {
   FRONTIER_DOME_CUP_COINS,
+  FRONTIER_DOME_ROUND_COINS,
   FRONTIER_DOME_ROUNDS,
   isFrontierFacility,
   palaceWinPayout,
@@ -101,7 +103,8 @@ export type ParkError =
   | "no_catalog"
   | "bad_facility"
   | "locked"
-  | "too_rare";
+  | "too_rare"
+  | "daycare_ceiling";
 
 export type ParkOk<T extends object = object> = { ok: true } & T;
 export type ParkResult<T extends object = object> = ParkOk<T> | { ok: false; error: ParkError };
@@ -205,6 +208,15 @@ export async function depositDaycare(
     await lockUsers(tx, gate.userId);
     const blocked = await assertDepositable(tx, gate.userId, instanceId);
     if (blocked) return void (failure = blocked);
+    const [badgeCount, mon] = await Promise.all([
+      tx.badge.count({ where: { userId: gate.userId } }),
+      tx.pokemonInstance.findFirst({
+        where: { id: instanceId, ownerId: gate.userId },
+        select: { level: true },
+      }),
+    ]);
+    if (!mon) return void (failure = "not_found");
+    if (mon.level >= daycareLevelCeiling(badgeCount)) return void (failure = "daycare_ceiling");
     const taken = await tx.daycareDeposit.findUnique({
       where: { userId_slot: { userId: gate.userId, slot } },
     });
@@ -229,10 +241,16 @@ export async function depositDaycare(
   return { ok: true };
 }
 
-export async function collectDaycare(locale: string, depositId: string): Promise<ParkResult> {
+export async function collectDaycare(
+  locale: string,
+  depositId: string,
+): Promise<ParkResult<{ levels: number; fee: number; name: string }>> {
   const gate = await authed(locale);
   if (!gate.ok) return { ok: false, error: gate.error };
   let failure: ParkError | null = null;
+  let levelsGained = 0;
+  let feePaid = 0;
+  let name = "";
   await prisma.$transaction(async (tx) => {
     await lockUsers(tx, gate.userId);
     const row = await tx.daycareDeposit.findFirst({
@@ -240,7 +258,8 @@ export async function collectDaycare(locale: string, depositId: string): Promise
       include: { pokemon: { include: { species: true } } },
     });
     if (!row) return void (failure = "not_found");
-    const levels = pendingDaycareLevels(row.pokemon.level, row.lastCollectedAt);
+    const badgeCount = await tx.badge.count({ where: { userId: gate.userId } });
+    const levels = pendingDaycareLevels(row.pokemon.level, row.lastCollectedAt, badgeCount);
     if (levels <= 0) return void (failure = "no_levels");
     const fee = daycareCollectFee(levels);
     const user = await tx.user.findUniqueOrThrow({ where: { id: gate.userId } });
@@ -269,13 +288,19 @@ export async function collectDaycare(locale: string, depositId: string): Promise
       where: { id: row.id },
       data: { lastCollectedAt: new Date() },
     });
+    levelsGained = levels;
+    feePaid = fee;
+    name = row.pokemon.nickname ?? row.pokemon.species.name;
   });
   if (failure) return { ok: false, error: failure };
   refreshPark(locale);
-  return { ok: true };
+  return { ok: true, levels: levelsGained, fee: feePaid, name };
 }
 
-export async function withdrawDaycare(locale: string, depositId: string): Promise<ParkResult> {
+export async function withdrawDaycare(
+  locale: string,
+  depositId: string,
+): Promise<ParkResult<{ levels: number }>> {
   const collected = await collectDaycare(locale, depositId);
   if (!collected.ok && collected.error !== "no_levels") return collected;
   const gate = await authed(locale);
@@ -285,7 +310,7 @@ export async function withdrawDaycare(locale: string, depositId: string): Promis
     await tx.daycareDeposit.deleteMany({ where: { id: depositId, userId: gate.userId } });
   });
   refreshPark(locale);
-  return { ok: true };
+  return { ok: true, levels: collected.ok ? collected.levels : 0 };
 }
 
 export async function castLine(
@@ -876,7 +901,7 @@ export async function playFrontier(
     } else {
       won = roundWins >= 2;
       streak = existing?.streak ?? 0;
-      coins = won ? FRONTIER_DOME_CUP_COINS : roundWins * 40;
+      coins = won ? FRONTIER_DOME_CUP_COINS : roundWins * FRONTIER_DOME_ROUND_COINS;
     }
     if (coins > 0) {
       await tx.user.update({ where: { id: gate.userId }, data: { coins: { increment: coins } } });

@@ -19,6 +19,11 @@ export type ParkDaycareSlot = {
   spriteUrl: string | null;
   pendingLevels: number;
   fee: number;
+  msUntilNext: number;
+  progress: number;
+  maxed: boolean;
+  atCeiling: boolean;
+  ceiling: number;
 };
 
 export type ParkPlot = {
@@ -33,6 +38,7 @@ export type ParkFrontierView = {
   streak: number;
   wins: number;
   lastWon: boolean;
+  played: boolean;
 };
 
 export type ParkFragment = {

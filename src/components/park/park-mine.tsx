@@ -165,7 +165,7 @@ export function ParkMine({
         <ParkDailyResetClock
           resetAt={resetAt}
           resetMs={resetMs}
-          visible={digsLeft <= 0}
+          visible
           label={labels.resetIn}
           onExpired={onResetExpired}
         />
@@ -266,7 +266,7 @@ export function ParkMine({
               </b>
             </p>
           ) : null}
-          <Image src={MINER_ART} alt="" width={250} height={359} className="mine__miner" priority />
+          <Image src={MINER_ART} alt="" width={250} height={359} className="mine__miner" priority fadeIn />
         </aside>
       </div>
 

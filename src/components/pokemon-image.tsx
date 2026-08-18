@@ -45,6 +45,7 @@ export function PokemonImage({
   return (
     <CdnImage
       {...imageProps}
+      fadeIn
       src={activeSrc}
       alt={alt}
       className={`${className ?? ""}${usingLocalFallback ? " opacity-45 grayscale" : ""}`.trim()}

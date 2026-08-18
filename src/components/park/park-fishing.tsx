@@ -149,7 +149,6 @@ export function ParkFishing({
 
   const spent = FISHING_FREE_CASTS_PER_DAY - freeLeft;
   const blocked = freeLeft <= 0 && energy < energyCost;
-  const showReset = freeLeft <= 0;
 
   return (
     <section className="fishing">
@@ -166,7 +165,7 @@ export function ParkFishing({
         <ParkDailyResetClock
           resetAt={resetAt}
           resetMs={resetMs}
-          visible={showReset}
+          visible
           label={labels.resetIn}
           onExpired={onResetExpired}
         />
@@ -251,7 +250,7 @@ export function ParkFishing({
           <p key={bubble} className="fishing__bubble" aria-live="polite">
             {bubble}
           </p>
-          <Image src={FISHER_ART} alt="" width={250} height={359} className="fishing__fisher" priority />
+          <Image src={FISHER_ART} alt="" width={250} height={359} className="fishing__fisher" priority fadeIn />
         </aside>
       </div>
 

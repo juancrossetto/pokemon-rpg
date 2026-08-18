@@ -4,7 +4,15 @@ import { spriteFor } from "@/lib/shiny";
 import { dayKey, nextDailyReset } from "@/lib/events/time";
 import { busyPokemonIds } from "@/lib/pokemon-busy";
 import { speciesRarity } from "@/lib/pokedex";
-import { DAYCARE_SLOTS, daycareCollectFee, pendingDaycareLevels } from "@/lib/park/daycare";
+import {
+  DAYCARE_MAX_LEVELS_PER_STAY,
+  DAYCARE_SLOTS,
+  daycareCollectFee,
+  daycareLevelCeiling,
+  daycareMsUntilNext,
+  daycareProgressToNext,
+  pendingDaycareLevels,
+} from "@/lib/park/daycare";
 import { FARM_BERRY_NAMES, FARM_PLOT_COUNT, farmMsLeft, farmReady } from "@/lib/park/farm";
 import { FOSSIL_KINDS, FOSSIL_SPECIES, generateMineGrid, mineDigsLeft, parseMineBag, parseMineGrid } from "@/lib/park/mine";
 import { FRONTIER_FACILITIES } from "@/lib/park/frontier";
@@ -12,6 +20,7 @@ import { cornerFreeLeft, cornerSpinsUsedToday } from "@/lib/park/corner";
 import { fishingCastsUsedToday, fishingFreeLeft } from "@/lib/park/fishing";
 import { isWonderUnlocked, wonderFreeLeft, wonderTradesUsedToday } from "@/lib/park/wonder";
 import { migrateLegacyFossilsIfNeeded } from "@/lib/park/fragment-store";
+import { MAX_POKEMON_LEVEL } from "@/lib/stats";
 import type { ParkDaycareSlot, ParkHubData, ParkPlot, ParkFrontierView } from "@/lib/park/view";
 
 export async function loadParkHub(userId: string): Promise<ParkHubData> {
@@ -59,19 +68,36 @@ export async function loadParkHub(userId: string): Promise<ParkHubData> {
   });
   const qty = new Map(bagRows.map((row) => [row.itemId, row.quantity]));
 
+  const ceiling = daycareLevelCeiling(badgeCount);
   const daycare: ParkDaycareSlot[] = [];
   for (let slot = 1; slot <= DAYCARE_SLOTS; slot++) {
     const row = deposits.find((d) => d.slot === slot);
-    const levels = row ? pendingDaycareLevels(row.pokemon.level, row.lastCollectedAt, now) : 0;
+    const levels = row
+      ? pendingDaycareLevels(row.pokemon.level, row.lastCollectedAt, badgeCount, now)
+      : 0;
+    const level = row?.pokemon.level ?? null;
     daycare.push({
       slot,
       depositId: row?.id ?? null,
       name: row ? (row.pokemon.nickname ?? row.pokemon.species.name) : null,
       speciesName: row?.pokemon.species.name ?? null,
-      level: row?.pokemon.level ?? null,
+      level,
       spriteUrl: row ? spriteFor(row.pokemon.species.spriteUrl, row.pokemon.isShiny) : null,
       pendingLevels: levels,
       fee: daycareCollectFee(levels),
+      msUntilNext: row
+        ? daycareMsUntilNext(row.pokemon.level, row.lastCollectedAt, badgeCount, now)
+        : 0,
+      progress: row
+        ? daycareProgressToNext(row.pokemon.level, row.lastCollectedAt, badgeCount, now)
+        : 0,
+      maxed: row
+        ? levels >= DAYCARE_MAX_LEVELS_PER_STAY ||
+          row.pokemon.level >= MAX_POKEMON_LEVEL ||
+          row.pokemon.level >= ceiling
+        : false,
+      atCeiling: row ? row.pokemon.level >= ceiling : false,
+      ceiling,
     });
   }
 
@@ -98,6 +124,7 @@ export async function loadParkHub(userId: string): Promise<ParkHubData> {
       streak: row?.streak ?? 0,
       wins: row?.wins ?? 0,
       lastWon: row?.lastWon ?? false,
+      played: Boolean(row),
     };
   });
 

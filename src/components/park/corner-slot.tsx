@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
+import { CdnImage as Image } from "@/components/cdn-image";
 import { useEffect, useRef, useState } from "react";
-import { CdnImage } from "@/components/cdn-image";
 import { ParkDailyResetClock } from "@/components/park/park-daily-reset-clock";
 import {
   CORNER_FREE_SPINS_PER_DAY,
@@ -206,7 +205,7 @@ export function CornerSlot({
           <ParkDailyResetClock
             resetAt={resetAt}
             resetMs={resetMs}
-            visible={freeLeft <= 0}
+            visible
             label={labels.resetIn}
             onExpired={onResetExpired}
           />
@@ -230,13 +229,13 @@ export function CornerSlot({
                         <div className="corner-slot__strip" style={{ animationDelay: `${i * -0.12}s` }}>
                           {STRIP.map((stripSymbol, index) => (
                             <span key={index} className="corner-slot__cell" aria-hidden>
-                              <Image src={REEL_ART[stripSymbol]} alt="" width={96} height={96} />
+                              <Image src={REEL_ART[stripSymbol]} alt="" width={96} height={96} fadeIn />
                             </span>
                           ))}
                         </div>
                       ) : (
                         <span className="corner-slot__cell corner-slot__cell--landed">
-                          <Image src={REEL_ART[symbol]} alt="" width={96} height={96} priority />
+                          <Image src={REEL_ART[symbol]} alt="" width={96} height={96} priority fadeIn />
                         </span>
                       )}
                     </div>
@@ -269,13 +268,14 @@ export function CornerSlot({
             <p key={bubble} className="corner-slot__bubble" aria-live="polite">
               {bubble}
             </p>
-            <CdnImage
+            <Image
               src={HOST_ART}
               alt=""
               width={150}
               height={249}
               className="corner-slot__host"
               priority
+              fadeIn
             />
           </aside>
         </div>
@@ -290,7 +290,7 @@ export function CornerSlot({
       <ul className="corner-slot__odds">
         {cornerPaytable().map((row) => (
           <li key={`${row.symbol}-${row.count}`} className={row.jackpot ? "is-jackpot" : undefined}>
-            <Image src={REEL_ART[row.symbol]} alt="" width={64} height={64} />
+            <Image src={REEL_ART[row.symbol]} alt="" width={64} height={64} fadeIn />
             <span>{labels.match(row.count)}</span>
             <b>
               <Image src={coinIcon} alt="" width={20} height={20} />

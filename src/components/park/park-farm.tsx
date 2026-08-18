@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { CdnImage as Image } from "@/components/cdn-image";
+import { useEffect, useState, type CSSProperties } from "react";
 import { itemDisplayUrl } from "@/lib/item-sprites";
 import { FARM_GROW_MS } from "@/lib/park/farm";
 import type { ParkPlot } from "@/lib/park/view";
@@ -9,6 +9,8 @@ import type { ParkPlot } from "@/lib/park/view";
 export type FarmBerry = { itemId: string; name: string; quantity: number };
 
 const GARDENER_ART = "/park/gardener.png";
+const HARVEST_MS = 720;
+const HARVEST_SPARKS = 6;
 
 export type FarmLabels = {
   /** Voz del jardinero: qué está pasando en el huerto. */
@@ -38,8 +40,8 @@ export type FarmLabels = {
  * aparece la baya.
  */
 function growthStage(progress: number): 1 | 2 | 3 {
-  if (progress < 0.4) return 1;
-  if (progress < 0.85) return 2;
+  if (progress < 0.32) return 1;
+  if (progress < 0.72) return 2;
   return 3;
 }
 
@@ -147,9 +149,9 @@ export function ParkFarm({
           width={180}
           height={346}
           sizes="180px"
-          unoptimized
           className="farm__gardener"
           priority
+          fadeIn
         />
       </aside>
       </div>
@@ -190,6 +192,7 @@ function FarmPlot({
     intervalos, y acumulando restas la cuenta se atrasa varios minutos.
   */
   const [msLeft, setMsLeft] = useState(plot.msLeft);
+  const [harvesting, setHarvesting] = useState(false);
   // Estado y no un ref para recordar el último valor del servidor: leer o
   // escribir un ref durante el render es error de lint acá (`react-hooks/refs`).
   // Es el mismo ajuste-durante-el-render que usa `battle-sprite.tsx`.
@@ -220,8 +223,20 @@ function FarmPlot({
 
   const state = !plot.berryName ? "empty" : ready ? "ready" : "growing";
 
+  function harvest() {
+    if (busy || !ready || harvesting) return;
+    setHarvesting(true);
+    window.setTimeout(() => {
+      onHarvest();
+      setHarvesting(false);
+    }, HARVEST_MS);
+  }
+
   return (
-    <article className={`farm-plot is-${state}`} data-stage={stage}>
+    <article
+      className={`farm-plot is-${state}${harvesting ? " is-harvesting" : ""}`}
+      data-stage={stage}
+    >
       <header className="farm-plot__head">
         <span>{labels.plot(plot.slot)}</span>
         <b>{plot.berryName ? (ready ? labels.ready : timeLabel) : "\u00a0"}</b>
@@ -233,19 +248,29 @@ function FarmPlot({
 
         {plot.berryName ? (
           <span className="farm-plot__crop">
-            <span className="farm-plot__leaves" aria-hidden>
-              <i />
-              <i />
-              <i />
+            <span className="farm-plot__plant" data-stage={stage}>
+              <span className="farm-plot__stem" aria-hidden />
+              <span className="farm-plot__leaves" aria-hidden>
+                <i />
+                <i />
+                <i />
+              </span>
+              {stage >= 2 ? (
+                <Image
+                  src={itemDisplayUrl(plot.berryName)}
+                  alt=""
+                  width={48}
+                  height={48}
+                  className={`farm-plot__berry${stage === 2 ? " is-bud" : ""}`}
+                />
+              ) : null}
             </span>
-            {stage === 3 ? (
-              <Image
-                src={itemDisplayUrl(plot.berryName)}
-                alt=""
-                width={56}
-                height={56}
-                className="farm-plot__berry"
-              />
+            {harvesting ? (
+              <span className="farm-plot__burst" aria-hidden>
+                {Array.from({ length: HARVEST_SPARKS }, (_, i) => (
+                  <i key={i} style={{ "--i": i } as CSSProperties} />
+                ))}
+              </span>
             ) : null}
           </span>
         ) : (
@@ -263,8 +288,8 @@ function FarmPlot({
         <button
           type="button"
           className="farm-plot__action"
-          disabled={busy || !ready}
-          onClick={onHarvest}
+          disabled={busy || !ready || harvesting}
+          onClick={harvest}
         >
           <span className="material-symbols-outlined" aria-hidden>
             {ready ? "agriculture" : "hourglass_top"}

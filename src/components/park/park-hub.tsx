@@ -1,7 +1,7 @@
 "use client";
 
 import { CdnImage as Image } from "@/components/cdn-image";
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -14,6 +14,10 @@ import {
   harvestPlot,
   digMineCell,
   reviveFossil,
+  depositDaycare,
+  collectDaycare,
+  withdrawDaycare,
+  playFrontier,
 } from "@/actions/park";
 import type { ParkHubData } from "@/lib/park/view";
 import { CORNER_FREE_SPINS_PER_DAY } from "@/lib/park/corner";
@@ -22,27 +26,31 @@ import { ParkFarm } from "@/components/park/park-farm";
 import { ParkFishing } from "@/components/park/park-fishing";
 import { ParkMine } from "@/components/park/park-mine";
 import { ParkWonder } from "@/components/park/park-wonder";
+import { ParkDaycare } from "@/components/park/park-daycare";
+import { ParkFrontier } from "@/components/park/park-frontier";
 import { ParkHowTo } from "@/components/park/park-how-to";
 import { ParkToast, type ParkToastKind } from "@/components/park/park-toast";
 import {
   CORNER_SPIN_ENERGY_COST,
   FISHING_ENERGY_COST,
+  FRONTIER_ENERGY_COST,
   WONDER_TRADE_ENERGY_COST,
 } from "@/lib/energy";
 import { FISHING_TABLE, FISHING_FREE_CASTS_PER_DAY } from "@/lib/park/fishing";
 import { WONDER_FREE_TRADES_PER_DAY, WONDER_MIN_BADGES } from "@/lib/park/wonder";
+import { DAYCARE_DEPOSIT_COST } from "@/lib/park/daycare";
 import { FRAGMENTS_TO_ASSEMBLE } from "@/lib/park/fragments";
-import { MINE_COIN_DROP, MINE_FRAGMENTS_TO_ASSEMBLE } from "@/lib/park/mine";
+import { FOSSIL_SPECIES, MINE_COIN_DROP, MINE_FRAGMENTS_TO_ASSEMBLE } from "@/lib/park/mine";
+import { DEFAULT_PARK_TAB, PARK_TABS, parkTabHref, type ParkTab } from "@/lib/park/tabs";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";
 import { announceEnergyDelta } from "@/lib/resource-fx";
+import {
+  warmParkStaticAssets,
+  warmParkTabAssets,
+  warmSpeciesSprites,
+} from "@/lib/park-assets";
 
-const TABS = ["corner", "mine", "fishing", "wonder", "farm", "daycare", "frontier"] as const;
-type Tab = (typeof TABS)[number];
-
-/** Minijuegos aún no listos: pestaña visible al final, deshabilitada. */
-const COMING_SOON = new Set<Tab>(["daycare", "frontier"]);
-
-const TAB_ICON: Record<Tab, string> = {
+const TAB_ICON: Record<ParkTab, string> = {
   daycare: "cottage",
   fishing: "phishing",
   wonder: "swap_horiz",
@@ -55,14 +63,99 @@ const TAB_ICON: Record<Tab, string> = {
 const COIN_ICON = itemHdIconUrl("Gold Coin") ?? "/items/hd/gold-coin.png";
 const ENERGY_ICON = itemHdIconUrl("Energy") ?? "/items/hd/energy.png";
 
-export function ParkHub({ locale, data }: { locale: string; data: ParkHubData }) {
+function ParkTabBar({
+  tab,
+  onTab,
+  label,
+  ariaLabel,
+}: {
+  tab: ParkTab;
+  onTab: (id: ParkTab) => void;
+  label: (id: ParkTab) => string;
+  ariaLabel: string;
+}) {
+  const navRef = useRef<HTMLElement>(null);
+  const btnRefs = useRef(new Map<ParkTab, HTMLButtonElement>());
+  const [glide, setGlide] = useState({ left: 0, width: 0, ready: false });
+
+  const syncGlide = useCallback(() => {
+    const nav = navRef.current;
+    const btn = btnRefs.current.get(tab);
+    if (!nav || !btn) return;
+    setGlide({ left: btn.offsetLeft, width: btn.offsetWidth, ready: true });
+  }, [tab]);
+
+  useLayoutEffect(() => {
+    syncGlide();
+    btnRefs.current.get(tab)?.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }, [tab, syncGlide]);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const ro = new ResizeObserver(syncGlide);
+    ro.observe(nav);
+    window.addEventListener("resize", syncGlide);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", syncGlide);
+    };
+  }, [syncGlide]);
+
+  return (
+    <nav ref={navRef} className="park-tabs" role="tablist" aria-label={ariaLabel}>
+      <span
+        className={`park-tabs__glide${glide.ready ? " is-ready" : ""}`}
+        style={{ width: glide.width, transform: `translateX(${glide.left}px)` }}
+        aria-hidden
+      />
+      {PARK_TABS.map((id) => (
+        <button
+          key={id}
+          ref={(node) => {
+            if (node) btnRefs.current.set(id, node);
+            else btnRefs.current.delete(id);
+          }}
+          type="button"
+          data-tab={id}
+          onClick={() => onTab(id)}
+          onMouseEnter={() => warmParkTabAssets(id)}
+          onFocus={() => warmParkTabAssets(id)}
+          aria-selected={tab === id}
+          role="tab"
+          className={`park-tabs__btn${tab === id ? " is-on" : ""}`}
+        >
+          <span className="material-symbols-outlined" aria-hidden>
+            {TAB_ICON[id]}
+          </span>
+          {label(id)}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+export function ParkHub({
+  locale,
+  data,
+  initialTab = DEFAULT_PARK_TAB,
+}: {
+  locale: string;
+  data: ParkHubData;
+  initialTab?: ParkTab;
+}) {
   const t = useTranslations("park");
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("corner");
+  const [tab, setTab] = useState<ParkTab>(initialTab);
+  const [lastInitialTab, setLastInitialTab] = useState(initialTab);
+  if (lastInitialTab !== initialTab) {
+    setLastInitialTab(initialTab);
+    setTab(initialTab);
+  }
   const [picked, setPicked] = useState<string>(data.box[0]?.id ?? "");
   const [notice, setNotice] = useState<{
     id: number;
-    tab: Tab;
+    tab: ParkTab;
     message: string;
     kind: ParkToastKind;
   } | null>(null);
@@ -71,6 +164,22 @@ export function ParkHub({ locale, data }: { locale: string; data: ParkHubData })
   const [cornerFreeLeft, setCornerFreeLeft] = useState(data.corner.freeLeft);
   const [fishingFreeLeft, setFishingFreeLeft] = useState(data.fishing.freeLeft);
   const [wonderFreeLeft, setWonderFreeLeft] = useState(data.wonder.freeLeft);
+
+  function selectTab(id: ParkTab) {
+    setTab(id);
+    setNotice((current) => (current && current.tab === id ? current : null));
+    router.replace(parkTabHref(id), { scroll: false });
+  }
+
+  useEffect(() => {
+    warmParkStaticAssets();
+    warmParkTabAssets(tab);
+    const species = new Set<number>();
+    for (const row of data.fragments) species.add(row.speciesId);
+    for (const entry of FISHING_TABLE) species.add(entry.speciesId);
+    for (const id of Object.values(FOSSIL_SPECIES)) species.add(id);
+    warmSpeciesSprites(species);
+  }, [data.fragments, tab]);
 
   const selected = useMemo(
     () => data.box.find((mon) => mon.id === picked) ?? data.box[0] ?? null,
@@ -130,42 +239,12 @@ export function ParkHub({ locale, data }: { locale: string; data: ParkHubData })
       </header>
 
       <div className="park-toolbar">
-        <nav className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {TABS.map((id) => {
-            const soon = COMING_SOON.has(id);
-            return (
-              <button
-                key={id}
-                type="button"
-                disabled={soon}
-                title={soon ? t("comingSoon") : undefined}
-                onClick={() => {
-                  if (soon) return;
-                  setTab(id);
-                  setNotice((current) => (current && current.tab === id ? current : null));
-                }}
-                aria-pressed={!soon && tab === id}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold uppercase tracking-wide transition ${
-                  soon
-                    ? "cursor-not-allowed border-white/6 bg-white/[.03] text-white/28"
-                    : tab === id
-                      ? "border-primary/50 bg-primary/15 text-primary"
-                      : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[16px]!" aria-hidden>
-                  {TAB_ICON[id]}
-                </span>
-                {t(`tabs.${id}`)}
-                {soon ? (
-                  <span className="rounded bg-white/8 px-1 py-px text-[9px] font-bold normal-case tracking-normal text-white/40">
-                    {t("comingSoon")}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </nav>
+        <ParkTabBar
+          tab={tab}
+          ariaLabel={t("title")}
+          label={(id) => t(`tabs.${id}`)}
+          onTab={selectTab}
+        />
 
         <ParkHowTo
           title={t(`howTo.${tab}.title`)}
@@ -185,6 +264,7 @@ export function ParkHub({ locale, data }: { locale: string; data: ParkHubData })
         />
       ) : null}
 
+      <div key={tab} className="park-panel" data-tab={tab}>
       {tab === "fishing" ? (
         <ParkFishing
           busy={pending}
@@ -210,7 +290,7 @@ export function ParkHub({ locale, data }: { locale: string; data: ParkHubData })
               free: FISHING_FREE_CASTS_PER_DAY,
               energy: FISHING_ENERGY_COST,
             }),
-            resetIn: (time) => t("fishReset", { time }),
+            resetIn: (time) => t("dailyReset", { time }),
             freeRemaining: (n) => t("fishFreeLeft", { n }),
             idleNudge: t("fishIdleNudge"),
             level: (n) => t("fishLevel", { n }),
@@ -276,7 +356,7 @@ export function ParkHub({ locale, data }: { locale: string; data: ParkHubData })
               free: WONDER_FREE_TRADES_PER_DAY,
               energy: WONDER_TRADE_ENERGY_COST,
             }),
-            resetIn: (time) => t("wonderReset", { time }),
+            resetIn: (time) => t("dailyReset", { time }),
             idleNudge: t("wonderIdleNudge"),
             freeRemaining: (n) => t("wonderFreeLeft", { n }),
             lockedTitle: t("wonderLocked"),
@@ -350,7 +430,7 @@ export function ParkHub({ locale, data }: { locale: string; data: ParkHubData })
               free: CORNER_FREE_SPINS_PER_DAY,
               energy: CORNER_SPIN_ENERGY_COST,
             }),
-            resetIn: (time) => t("cornerReset", { time }),
+            resetIn: (time) => t("dailyReset", { time }),
             idleNudge: t("cornerIdleNudge"),
             ready: t("cornerHostIdle"),
             spinning: t("cornerHostSpin"),
@@ -429,7 +509,7 @@ export function ParkHub({ locale, data }: { locale: string; data: ParkHubData })
           labels={{
             digsLeft: (left, total) => t("mineDigs", { left, total }),
             dailyHint: t("mineEnergy"),
-            resetIn: (time) => t("mineReset", { time }),
+            resetIn: (time) => t("dailyReset", { time }),
             drops: t("mineDrops"),
             dropName: (loot) => t(`mineDrop.${loot}`),
             empty: t("loot.empty"),
@@ -460,6 +540,110 @@ export function ParkHub({ locale, data }: { locale: string; data: ParkHubData })
         />
       ) : null}
 
+      {tab === "daycare" ? (
+        <ParkDaycare
+          slots={data.daycare}
+          box={data.box}
+          selected={selected}
+          busy={pending}
+          coins={data.coins}
+          labels={{
+            occupancy: (held, total) => t("daycareOccupancy", { held, total }),
+            hint: t("daycareHint", { cap: 3, ceiling: data.daycare[0]?.ceiling ?? 15 }),
+            empty: t("emptySlot"),
+            emptyBox: t("emptyBox"),
+            pickHint: t("pickHint"),
+            nest: (n) => t("slot", { n }),
+            emptySlot: t("emptySlot"),
+            deposit: t("deposit", { cost: DAYCARE_DEPOSIT_COST }),
+            collect: t("collect"),
+            withdraw: t("withdraw"),
+            pending: (n) => t("pendingLevels", { n }),
+            next: (time) => t("daycareNext", { time }),
+            maxed: t("daycareMax"),
+            ceiling: (level) => t("daycareCeiling", { level }),
+            growing: t("growing"),
+            idle: t("daycareIdle"),
+            ready: t("daycareReadyBubble"),
+            level: (n) => t("fishLevel", { n }),
+            timeLeftHm: (h, m) => t("timeLeftHm", { h, m }),
+            timeLeftM: (m) => t("timeLeftM", { m }),
+          }}
+          onSelect={setPicked}
+          onDeposit={(instanceId, slot) =>
+            start(async () => {
+              const r = await depositDaycare(locale, instanceId, slot);
+              flash(r.ok ? t("deposited", { cost: DAYCARE_DEPOSIT_COST }) : t(`errors.${r.error}`), r.ok ? "ok" : "error");
+              if (r.ok) router.refresh();
+            })
+          }
+          onCollect={(depositId) =>
+            start(async () => {
+              const r = await collectDaycare(locale, depositId);
+              flash(
+                r.ok ? t("collectedLevels", { name: r.name, n: r.levels }) : t(`errors.${r.error}`),
+                r.ok ? "ok" : "error",
+              );
+              if (r.ok) router.refresh();
+            })
+          }
+          onWithdraw={(depositId) =>
+            start(async () => {
+              const r = await withdrawDaycare(locale, depositId);
+              if (!r.ok) {
+                flash(t(`errors.${r.error}`), "error");
+                return;
+              }
+              flash(t("withdrawn"), "ok");
+              router.refresh();
+            })
+          }
+        />
+      ) : null}
+
+      {tab === "frontier" ? (
+        <ParkFrontier
+          facilities={data.frontier}
+          busy={pending}
+          energy={data.energy}
+          energyIcon={ENERGY_ICON}
+          resetAt={data.mine.resetAt}
+          resetMs={data.mine.resetMs}
+          labels={{
+            idle: t("frontierIdle"),
+            fighting: t("frontierFight"),
+            winLead: t("frontierWinLead"),
+            winStreak: (n) => t("frontierWinStreak", { n }),
+            lose: t("frontierLose"),
+            challenge: t("challenge"),
+            streak: (n) => t("frontierStreak", { n }),
+            wins: (n) => t("frontierWins", { n }),
+            winsShort: (n) => t("frontierWinsShort", { n }),
+            lastWon: t("frontierLastWon"),
+            lastLost: t("frontierLastLost"),
+            palaceTitle: t("frontier.palace.title"),
+            palaceBlurb: t("frontier.palace.blurb"),
+            domeTitle: t("frontier.dome.title"),
+            domeBlurb: t("frontier.dome.blurb"),
+            resetIn: (time) => t("dailyReset", { time }),
+          }}
+          onResetExpired={() => router.refresh()}
+          onPlay={async (facility) => {
+            const r = await playFrontier(locale, facility);
+            if (!r.ok) {
+              flash(t(`errors.${r.error}`), "error");
+              return r;
+            }
+            if (r.won) flash(t("frontierWin", { coins: r.coins, streak: r.streak }), "ok");
+            else flash(t("frontierLose"), "error");
+            announceEnergyDelta(-FRONTIER_ENERGY_COST);
+            router.refresh();
+            return { ok: true, won: r.won, coins: r.coins, streak: r.streak, energySpent: FRONTIER_ENERGY_COST };
+          }}
+        />
+      ) : null}
+
+      </div>
       </div>
     </div>
   );

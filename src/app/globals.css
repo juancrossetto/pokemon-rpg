@@ -25957,15 +25957,14 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 .farm-plot {
   position: relative;
   display: flex;
-  height: 100%;
+  height: auto;
   min-height: 0;
   flex-direction: column;
-  gap: .5rem;
+  gap: .35rem;
   border: 1px solid rgba(255, 255, 255, .09);
   border-radius: 1.1rem;
-  /* Verde de borde: el pasto alrededor del cantero. */
   background: linear-gradient(180deg, #16281a, #101a13);
-  padding: .6rem;
+  padding: .45rem;
 }
 .farm-plot.is-ready {
   border-color: color-mix(in srgb, #7ae582 45%, transparent);
@@ -25978,7 +25977,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   align-items: flex-start;
   justify-content: space-between;
   gap: .5rem;
-  min-height: 2.5em;
+  min-height: 1.55em;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: .52rem;
   font-weight: 700;
@@ -25998,13 +25997,13 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 .farm-plot__soil {
   position: relative;
   display: grid;
-  /* Un poco más ancha que alta: a tres columnas a todo el cantero un 1:1
-     estiraba el huerto dos pantallas. El 5/4 deja ver crecer la mata. */
-  aspect-ratio: 5 / 4;
+  aspect-ratio: 2 / 1;
+  max-height: 5.25rem;
   height: auto;
+  width: 100%;
   place-items: center;
   overflow: hidden;
-  border-radius: .8rem;
+  border-radius: .7rem;
   background:
     radial-gradient(120% 80% at 50% 0%, #5a3a22 0%, #3d2617 55%, #2a1a10 100%);
   box-shadow:
@@ -26025,65 +26024,129 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 /* Hoyo de siembra en la parcela vacía: invita a plantar ahí. */
 .farm-plot__hole {
-  height: 1.6rem;
-  width: 2.4rem;
+  height: 1.2rem;
+  width: 1.9rem;
   border-radius: 50%;
   background: radial-gradient(closest-side, #1b1009, #2c1c11);
   box-shadow: inset 0 3px 6px rgba(0, 0, 0, .9), 0 1px 0 rgba(255, 255, 255, .05);
 }
 
-/* La planta crece desde el piso del cantero. */
 .farm-plot__crop {
   position: relative;
   display: grid;
   height: 100%;
   width: 100%;
   place-items: end center;
-  padding-bottom: .6rem;
+  padding-bottom: .35rem;
 }
+.farm-plot__plant {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  transform-origin: bottom center;
+  transition: transform .55s cubic-bezier(.2, 1, .35, 1);
+}
+.farm-plot__plant[data-stage="1"] { transform: scale(.5); }
+.farm-plot__plant[data-stage="2"] { transform: scale(.78); }
+.farm-plot__plant[data-stage="3"] { transform: scale(1); }
+.farm-plot.is-growing .farm-plot__plant[data-stage="2"] {
+  animation: farm-grow-nudge 2.4s ease-in-out infinite;
+}
+
+.farm-plot__stem {
+  position: absolute;
+  bottom: 0;
+  height: 1.1rem;
+  width: .18rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #4a9e55, #2f6b38);
+  transform-origin: bottom center;
+  transition: height .45s ease;
+}
+.farm-plot__plant[data-stage="1"] .farm-plot__stem { height: .55rem; }
+.farm-plot__plant[data-stage="2"] .farm-plot__stem { height: .85rem; }
+
 .farm-plot__leaves {
   position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  height: 2.2rem;
-  width: 3.5rem;
-  transform-origin: bottom center;
+  height: 1.75rem;
+  width: 2.8rem;
+  margin-bottom: .15rem;
   animation: farm-sway 4.5s ease-in-out infinite;
 }
 .farm-plot__leaves i {
   position: absolute;
   bottom: 0;
-  height: 1.5rem;
-  width: .85rem;
+  height: 1.15rem;
+  width: .7rem;
   border-radius: 100% 0 100% 0;
   background: linear-gradient(160deg, #6fd47a, #2f8b45);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25);
   transform-origin: bottom center;
+  transition: opacity .4s ease, transform .45s ease;
 }
 .farm-plot__leaves i:nth-child(1) { transform: rotate(-32deg); }
-.farm-plot__leaves i:nth-child(2) { height: 1.9rem; }
+.farm-plot__leaves i:nth-child(2) { height: 1.45rem; }
 .farm-plot__leaves i:nth-child(3) { transform: rotate(32deg) scaleX(-1); }
-
-/*
-  Las tres etapas: el brote asoma, la mata se abre y al final aparece la baya.
-  Es escala sobre el mismo dibujo, así que no hace falta arte por etapa.
-*/
-.farm-plot[data-stage="1"] .farm-plot__leaves { transform: scale(.45); }
-.farm-plot[data-stage="2"] .farm-plot__leaves { transform: scale(.75); }
+.farm-plot__plant[data-stage="1"] .farm-plot__leaves i:nth-child(1),
+.farm-plot__plant[data-stage="1"] .farm-plot__leaves i:nth-child(3) {
+  opacity: 0;
+  transform: scale(.2);
+}
 
 .farm-plot__berry {
-  position: absolute;
-  bottom: 1.5rem;
-  height: 2.4rem;
-  width: 2.4rem;
+  position: relative;
+  z-index: 1;
+  height: 1.85rem;
+  width: 1.85rem;
   object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .6));
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .55));
+  transition: transform .5s cubic-bezier(.2, 1, .35, 1), opacity .35s ease;
 }
-/* Cuando está lista, la baya flota y brilla: es la señal de "vení a buscarme". */
+.farm-plot__berry.is-bud {
+  transform: scale(.42);
+  opacity: .88;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .45)) saturate(.85);
+}
 .farm-plot.is-ready .farm-plot__berry {
   animation: farm-bob 1.8s ease-in-out infinite;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .6)) drop-shadow(0 0 12px rgba(122, 229, 130, .75));
+}
+
+.farm-plot__burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.farm-plot__burst i {
+  position: absolute;
+  left: 50%;
+  bottom: 38%;
+  height: .32rem;
+  width: .32rem;
+  border-radius: 50%;
+  background: #ffe566;
+  box-shadow: 0 0 6px rgba(255, 229, 102, .85);
+  animation: farm-harvest-spark .65s ease-out forwards;
+  animation-delay: calc(var(--i) * 35ms);
+  transform: rotate(calc(var(--i) * 60deg)) translateY(0);
+  opacity: 0;
+}
+.farm-plot.is-harvesting .farm-plot__berry {
+  animation: farm-harvest-pop .68s cubic-bezier(.2, 1.25, .35, 1) forwards;
+}
+.farm-plot.is-harvesting .farm-plot__leaves {
+  animation: farm-harvest-wilt .55s ease forwards;
+}
+.farm-plot.is-harvesting .farm-plot__stem {
+  animation: farm-harvest-wilt .55s ease .08s forwards;
+}
+.farm-plot.is-harvesting .farm-plot__soil {
+  animation: farm-soil-settle .5s ease;
 }
 
 .farm-plot__progress {
@@ -26109,14 +26172,14 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   align-items: center;
   justify-content: center;
   gap: .35rem;
-  min-height: 2.4rem;
+  min-height: 2rem;
   white-space: nowrap;
   border: 1px solid rgba(255, 255, 255, .12);
   border-radius: .7rem;
   background: rgba(255, 255, 255, .05);
-  padding: .45rem .6rem;
+  padding: .32rem .5rem;
   color: rgba(255, 255, 255, .8);
-  font-size: .7rem;
+  font-size: .66rem;
   font-weight: 700;
 }
 .farm-plot__action .material-symbols-outlined { font-size: .95rem !important; }
@@ -26180,7 +26243,27 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 @keyframes farm-bob {
   0%, 100% { translate: 0 0; }
-  50% { translate: 0 -.35rem; }
+  50% { translate: 0 -.28rem; }
+}
+@keyframes farm-grow-nudge {
+  0%, 100% { transform: scale(.78); }
+  50% { transform: scale(.84); }
+}
+@keyframes farm-harvest-pop {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  35% { transform: translateY(-1rem) scale(1.18); opacity: 1; }
+  100% { transform: translateY(-1.65rem) scale(.25); opacity: 0; }
+}
+@keyframes farm-harvest-wilt {
+  to { transform: scaleY(.25); opacity: 0; }
+}
+@keyframes farm-harvest-spark {
+  0% { opacity: 1; transform: rotate(calc(var(--i) * 60deg)) translateY(0) scale(1); }
+  100% { opacity: 0; transform: rotate(calc(var(--i) * 60deg)) translateY(-1.4rem) scale(.3); }
+}
+@keyframes farm-soil-settle {
+  0% { filter: brightness(1.15); }
+  100% { filter: brightness(1); }
 }
 @keyframes farm-picker-in {
   from { opacity: 0; transform: translateY(.4rem); }
@@ -26190,8 +26273,15 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 @media (prefers-reduced-motion: reduce) {
   .farm-plot__leaves,
   .farm-plot.is-ready .farm-plot__berry,
+  .farm-plot.is-growing .farm-plot__plant,
+  .farm-plot.is-harvesting .farm-plot__berry,
+  .farm-plot.is-harvesting .farm-plot__leaves,
+  .farm-plot.is-harvesting .farm-plot__stem,
+  .farm-plot.is-harvesting .farm-plot__soil,
+  .farm-plot__burst i,
   .farm__picker,
   .farm__bubble { animation: none; }
+  .farm-plot__plant { transition: none; }
 }
 
 @media (max-width: 639.98px) {
@@ -26206,11 +26296,11 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   }
   .farm__stage {
     display: grid;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
     overflow: hidden;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto auto;
     grid-template-areas:
       "hud"
       "seeds"
@@ -26239,22 +26329,21 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   .farm__grid {
     grid-area: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: auto auto;
     gap: .35rem;
-    min-height: 0;
-    height: 100%;
-    align-items: stretch;
-    align-content: stretch;
+    height: auto;
+    align-items: start;
+    align-content: start;
   }
   .farm-plot {
-    height: 100%;
+    height: auto;
     min-height: 0;
-    padding: .32rem .32rem .3rem;
-    gap: .2rem;
+    padding: .28rem .28rem .26rem;
+    gap: .18rem;
     border-radius: .85rem;
   }
   .farm-plot__head {
-    min-height: 2.6em;
+    min-height: 1.45em;
     align-items: flex-start;
     font-size: .46rem;
     letter-spacing: .08em;
@@ -26265,22 +26354,23 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
     line-height: 1.2;
   }
   .farm-plot__soil {
-    flex: 1 1 0;
-    aspect-ratio: auto;
+    flex: none;
+    aspect-ratio: 2 / 1;
+    max-height: 4.1rem;
     height: auto;
     min-height: 0;
     border-radius: .55rem;
   }
   .farm-plot__action {
     flex-shrink: 0;
-    min-height: 2.15rem;
-    padding: .32rem .35rem;
-    font-size: .6rem;
+    min-height: 1.95rem;
+    padding: .28rem .32rem;
+    font-size: .58rem;
   }
   .farm-plot.is-ready .farm-plot__action:not(:disabled) {
     box-shadow: 0 2px 0 #2c6b3b;
   }
-  .farm-plot__berry { width: 2.35rem; height: 2.35rem; }
+  .farm-plot__berry { width: 1.65rem; height: 1.65rem; }
   .farm__crew {
     grid-area: crew;
     position: relative;
@@ -26705,6 +26795,96 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   .mine-cell__dust { display: none; }
 }
 
+/* ---------- Parque · selector de minijuegos ---------- */
+.park-tabs {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: .28rem;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: .85rem;
+  background: #0c0d12;
+  padding: .22rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.park-tabs::-webkit-scrollbar { display: none; }
+.park-tabs__glide {
+  position: absolute;
+  top: .22rem;
+  bottom: .22rem;
+  left: 0;
+  z-index: 0;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: .62rem;
+  background: linear-gradient(180deg, #3a3d48 0%, #2a2c34 100%);
+  opacity: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .12),
+    0 2px 0 rgba(0, 0, 0, .4);
+  transition:
+    transform .32s cubic-bezier(.2, 1, .36, 1),
+    width .32s cubic-bezier(.2, 1, .36, 1),
+    opacity .15s ease;
+  will-change: transform, width;
+}
+.park-tabs__glide.is-ready { opacity: 1; }
+.park-tabs__btn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: .38rem;
+  border: 1px solid transparent;
+  border-radius: .62rem;
+  background: transparent;
+  padding: .48rem .72rem;
+  color: rgba(255, 255, 255, .52);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color .18s ease;
+}
+.park-tabs__btn .material-symbols-outlined {
+  font-size: 1rem !important;
+  line-height: 1;
+  transition: color .18s ease;
+}
+.park-tabs__btn:not(.is-on):hover {
+  color: rgba(255, 255, 255, .78);
+  background: rgba(255, 255, 255, .04);
+}
+.park-tabs__btn.is-on { color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .35); }
+
+.park-panel {
+  animation: park-panel-in .34s cubic-bezier(.2, 1, .36, 1) both;
+}
+@keyframes park-panel-in {
+  from { opacity: 0; transform: translateY(.5rem); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 639.98px) {
+  .park-tabs { padding: .18rem; gap: .22rem; border-radius: .75rem; }
+  .park-tabs__glide { top: .18rem; bottom: .18rem; border-radius: .55rem; }
+  .park-tabs__btn {
+    padding: .4rem .55rem;
+    font-size: .58rem;
+    gap: .28rem;
+  }
+  .park-tabs__btn .material-symbols-outlined { font-size: .92rem !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .park-tabs__glide { transition: none !important; }
+  .park-panel { animation: none !important; }
+}
+
 /* ---------- Parque · ayuda por modo ---------- */
 .park-toolbar {
   display: flex;
@@ -26712,7 +26892,8 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   gap: .4rem;
   min-width: 0;
 }
-.park-toolbar nav {
+.park-toolbar nav,
+.park-toolbar .park-tabs {
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -26915,23 +27096,22 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 @media (max-width: 639.98px) {
   .mine { overflow-x: hidden; }
   /*
-    Una pantalla: HUD + muro + (bolsa | minero). El minero ya no es una
-    franja extra debajo del tajo, y los fósiles caben en una fila.
+    HUD + muro + (bolsa | minero). El muro no puede usar `1fr` + `100cqh`:
+    el stage no tiene alto fijo, esa fila colapsa a 0 y el tablero desaparece.
   */
   .mine__stage {
     display: grid;
-    flex: 1 1 auto;
     min-height: 0;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
     grid-template-areas:
       "hud drops"
       "wall wall"
       "bag crew";
-    align-items: stretch;
-    gap: .35rem .45rem;
+    align-items: start;
+    gap: .4rem .45rem;
     overflow-x: hidden;
-    padding: .55rem .55rem .5rem;
+    padding: .55rem .55rem .55rem;
   }
   .mine__hud { grid-area: hud; gap: .3rem; min-width: 0; }
   .mine__hud b { font-size: .58rem; }
@@ -26955,19 +27135,16 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   .mine__board { display: contents; }
   .mine__pit {
     grid-area: wall;
-    display: grid;
+    display: block;
     width: 100%;
-    height: 100%;
     min-width: 0;
-    min-height: 0;
-    place-items: center;
-    container-type: size;
   }
   .mine__wall {
-    width: min(100%, 100cqh);
-    justify-self: center;
-    gap: .18rem;
-    padding: .22rem;
+    width: 100%;
+    max-width: none;
+    justify-self: stretch;
+    gap: .22rem;
+    padding: .28rem;
     border-radius: .85rem;
   }
   .mine-cell { min-width: 0; min-height: 0; border-radius: .4rem; }
@@ -27064,6 +27241,15 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   Un Gyarados entero en la mochila se lee como “ya lo tenés”. El recorte en
   gema deja reconocer la especie y deja claro que todavía es un pedazo.
 */
+
+/* Fade-in de imágenes (parque, sprites CDN) — evita pop-in brusco al cambiar tab. */
+.cdn-img--pending { opacity: 0; }
+.cdn-img--loaded {
+  opacity: 1;
+  transition: opacity 0.22s ease-out;
+}
+img.cdn-img--loaded.opacity-45 { opacity: 0.45; }
+
 .frag-art {
   position: relative;
   display: inline-grid;
@@ -28711,6 +28897,1145 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   .wonder__mon.is-leaving { opacity: .45; }
   .wonder__halo,
   .wonder__mote { display: none; }
+}
+
+/* ---------- Parque · pensión ---------- */
+/*
+  Caja de menú Pokémon: paneles crema opacos, criadores ORAS a la derecha,
+  costos con icono de moneda — nada de cards verdes translúcidas.
+*/
+.daycare { display: flex; flex-direction: column; gap: .85rem; }
+.daycare__stage {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(210, 150, 90, .32);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(70% 55% at 88% 95%, rgba(220, 80, 60, .12), transparent 52%),
+    radial-gradient(55% 40% at 10% 0%, rgba(180, 120, 60, .16), transparent 58%),
+    #16120e;
+  padding: 1rem 1.1rem 1rem;
+  padding-inline-end: clamp(6.5rem, 22vw, 10.5rem);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+.daycare__stage.is-ready { border-color: rgba(245, 198, 80, .55); }
+.daycare__stage.is-growing { border-color: rgba(125, 216, 122, .42); }
+.daycare__stage.is-active::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(70% 50% at 50% 100%, rgba(245, 198, 80, .08), transparent 60%);
+  animation: daycare-stage-glow 4s ease-in-out infinite alternate;
+}
+.daycare__ambience {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.daycare__sparkle {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  height: .22rem;
+  width: .22rem;
+  border-radius: 50%;
+  background: #ffe9a8;
+  box-shadow: 0 0 6px rgba(245, 198, 80, .75);
+  animation: daycare-sparkle 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -.45s);
+  opacity: 0;
+}
+
+.daycare__hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .55rem;
+  margin-bottom: .65rem;
+}
+.daycare__hud b {
+  color: rgba(255, 255, 255, .88);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.daycare__nudge {
+  flex: 1 1 8rem;
+  color: rgba(255, 255, 255, .38);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.daycare__scene {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: .5rem;
+}
+.daycare__nests {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem;
+  min-width: 0;
+}
+
+.daycare__crew {
+  position: absolute;
+  z-index: 2;
+  right: .2rem;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .15rem;
+  pointer-events: none;
+}
+.daycare__bubble {
+  position: relative;
+  max-width: 11rem;
+  border: 2px solid #5c4030;
+  border-radius: .75rem;
+  background: #f7eed8;
+  padding: .38rem .58rem .42rem;
+  color: #2a1f14;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .62rem;
+  font-weight: 700;
+  line-height: 1.35;
+  box-shadow: 0 4px 0 #5c4030, 0 10px 18px -10px rgba(0, 0, 0, .55);
+  animation: daycare-bubble-in .35s cubic-bezier(.2, 1.3, .35, 1) both;
+}
+.daycare__bubble::after {
+  content: "";
+  position: absolute;
+  right: 1.35rem;
+  bottom: -.34rem;
+  height: .55rem;
+  width: .55rem;
+  border-right: 2px solid #5c4030;
+  border-bottom: 2px solid #5c4030;
+  background: #f7eed8;
+  rotate: 45deg;
+}
+.daycare__breeder {
+  display: block;
+  height: clamp(7rem, 18vw, 10.5rem);
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  object-position: bottom right;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .55));
+  animation: daycare-breeder-idle 4.2s ease-in-out infinite;
+}
+
+/* Panel de nido: caja sólida estilo menú del juego. */
+.daycare__nest {
+  display: flex;
+  min-height: 10.5rem;
+  flex-direction: column;
+  gap: .35rem;
+  border: 2px solid #5c4030;
+  border-radius: .75rem;
+  background: linear-gradient(180deg, #f7eed8 0%, #ece3cc 100%);
+  padding: .5rem .45rem .45rem;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, .65),
+    inset 0 -3px 0 rgba(92, 64, 48, .18),
+    0 4px 0 #5c4030;
+  color: #2a1f14;
+}
+.daycare__nest.is-ready {
+  border-color: #b8860b;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, .65),
+    inset 0 -3px 0 rgba(184, 134, 11, .25),
+    0 4px 0 #8b6914,
+    0 0 0 2px rgba(245, 198, 80, .35);
+}
+.daycare__nest-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .35rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.daycare__nest-head span { color: #6b5344; }
+.daycare__nest-head em {
+  color: #8b6914;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.daycare__frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 5.6rem;
+  border: 2px solid #c4b498;
+  border-radius: .55rem;
+  background: #e2d7bc;
+  box-shadow: inset 0 2px 6px rgba(92, 64, 48, .12);
+  padding: .45rem .35rem .62rem;
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.daycare__frame.is-growing {
+  border-color: #7cb86a;
+  box-shadow:
+    inset 0 2px 6px rgba(92, 64, 48, .12),
+    0 0 0 1px rgba(124, 184, 106, .35);
+  animation: daycare-frame-grow 2.4s ease-in-out infinite;
+}
+.daycare__frame.is-ready {
+  border-color: #d4a017;
+  box-shadow:
+    inset 0 2px 6px rgba(92, 64, 48, .12),
+    0 0 0 1px rgba(212, 160, 23, .4);
+}
+.daycare__mon-wrap {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 4.5rem;
+}
+.daycare__vacant-mark {
+  color: #a89878;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.daycare__mon {
+  display: block;
+  height: auto !important;
+  width: auto !important;
+  max-height: 4.65rem;
+  max-width: 100%;
+  object-fit: contain;
+  image-rendering: auto;
+  filter: drop-shadow(0 4px 6px rgba(92, 64, 48, .22));
+}
+.daycare__frame.is-filled .daycare__mon { animation: daycare-mon-idle 3.6s ease-in-out infinite; }
+.daycare__frame.is-ready .daycare__mon { animation: daycare-mon-ready 1s ease-in-out infinite alternate; }
+
+.daycare__bar {
+  position: absolute;
+  right: .35rem;
+  bottom: .35rem;
+  left: .35rem;
+  overflow: hidden;
+  height: .42rem;
+  border: 1px solid #5c4030;
+  border-radius: 999px;
+  background: #c8baa0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .15);
+}
+.daycare__bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #7dd87a, #3a9e3a);
+  transition: width .35s ease;
+}
+.daycare__frame.is-growing .daycare__bar i {
+  background: linear-gradient(90deg, #7dd87a, #5ecf5a, #7dd87a);
+  background-size: 200% 100%;
+  animation: daycare-bar-shimmer 1.8s linear infinite;
+}
+.daycare__frame.is-ready .daycare__bar i {
+  background: linear-gradient(180deg, #ffe066, #d4a017);
+}
+
+.daycare__name {
+  overflow: hidden;
+  font-size: .78rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.daycare__vacant {
+  margin: 0;
+  color: #8b7355;
+  font-size: .68rem;
+  font-weight: 700;
+  text-align: center;
+}
+.daycare__status {
+  margin: 0;
+  min-height: 1.5em;
+  color: #5c4030;
+  font-size: .58rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+}
+.daycare__nest.is-ready .daycare__status { color: #8b6914; }
+.daycare__status-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+}
+
+.daycare__coin {
+  display: inline-flex;
+  align-items: center;
+  gap: .22rem;
+  border: 1px solid #c4a035;
+  border-radius: .45rem;
+  background: #fff8e7;
+  padding: .08rem .38rem .08rem .28rem;
+  color: #5c4030;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.daycare__coin img { height: 1rem; width: 1rem; object-fit: contain; }
+
+.daycare__acts {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: .3rem;
+  margin-top: auto;
+}
+.daycare__btn {
+  display: inline-flex;
+  min-height: 2.35rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  border: 2px solid #5c4030;
+  border-radius: .6rem;
+  font-size: .6rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  transition: transform .1s ease;
+}
+.daycare__btn:not(:disabled):active { transform: translateY(1px); }
+.daycare__btn.is-primary {
+  background: linear-gradient(180deg, #e85d4a, #c0392b);
+  color: #fff8f0;
+  box-shadow: 0 3px 0 #5c4030;
+}
+.daycare__btn.is-primary .daycare__coin {
+  border-color: rgba(255, 255, 255, .35);
+  background: rgba(0, 0, 0, .18);
+  color: #fff8f0;
+}
+.daycare__btn.is-muted {
+  background: #d8cdb4;
+  color: #5c4030;
+  box-shadow: 0 2px 0 #8b7355;
+}
+.daycare__btn:disabled { opacity: .48; }
+
+.daycare__empty {
+  margin: .65rem 0 0;
+  color: rgba(255, 255, 255, .45);
+  font-size: .72rem;
+}
+.daycare__picker {
+  margin-top: .75rem;
+  border: 2px solid #5c4030;
+  border-radius: .75rem;
+  background: #1a1410;
+  padding: .55rem .55rem .5rem;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .35);
+}
+.daycare__picker p {
+  margin-bottom: .42rem;
+  color: rgba(255, 255, 255, .42);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.daycare__picker > div {
+  display: flex;
+  gap: .38rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: .05rem;
+}
+.daycare__picker > div::-webkit-scrollbar { display: none; }
+.daycare__picker button {
+  display: flex;
+  flex: 0 0 calc((100% - 1.14rem) / 4);
+  min-width: 4rem;
+  flex-direction: column;
+  align-items: center;
+  border: 2px solid #5c4030;
+  border-radius: .6rem;
+  background: #f7eed8;
+  padding: .38rem .22rem .34rem;
+  color: #2a1f14;
+  box-shadow: 0 2px 0 #5c4030;
+  transition: transform .1s ease, box-shadow .1s ease;
+}
+.daycare__picker button.is-on {
+  border-color: #b8860b;
+  background: #fff4d6;
+  box-shadow: 0 2px 0 #8b6914, 0 0 0 2px rgba(245, 198, 80, .4);
+}
+.daycare__picker button:not(:disabled):active { transform: translateY(1px); }
+.daycare__picker button img { height: 2.35rem; width: 2.35rem; object-fit: contain; }
+.daycare__picker button span {
+  margin-top: .18rem;
+  width: 100%;
+  overflow: hidden;
+  font-size: .58rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.daycare__picker button em {
+  color: #8b7355;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .48rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+@keyframes daycare-bubble-in {
+  from { opacity: 0; transform: translateY(.3rem); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes daycare-breeder-idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-.14rem); }
+}
+@keyframes daycare-mon-idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-.22rem); }
+}
+@keyframes daycare-mon-ready {
+  from { transform: translateY(-.1rem) scale(1); }
+  to { transform: translateY(.08rem) scale(1.03); }
+}
+@keyframes daycare-frame-grow {
+  0%, 100% { box-shadow: inset 0 2px 6px rgba(92, 64, 48, .12), 0 0 0 1px rgba(124, 184, 106, .28); }
+  50% { box-shadow: inset 0 2px 6px rgba(92, 64, 48, .12), 0 0 0 2px rgba(124, 184, 106, .5); }
+}
+@keyframes daycare-bar-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+@keyframes daycare-stage-glow {
+  from { opacity: .35; }
+  to { opacity: .75; }
+}
+@keyframes daycare-sparkle {
+  0%, 100% { opacity: 0; transform: scale(.6); }
+  45% { opacity: .85; transform: scale(1); }
+  70% { opacity: 0; transform: scale(.4) translateY(-.35rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daycare__breeder,
+  .daycare__frame.is-filled .daycare__mon,
+  .daycare__frame.is-ready .daycare__mon,
+  .daycare__frame.is-growing,
+  .daycare__frame.is-growing .daycare__bar i,
+  .daycare__bubble,
+  .daycare__stage.is-active::before,
+  .daycare__sparkle { animation: none !important; }
+}
+
+/* ---------- Parque · recinto ---------- */
+.frontier { display: flex; flex-direction: column; gap: .85rem; }
+.frontier__stage {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(70% 55% at 12% 0%, rgba(220, 38, 38, .12), transparent 58%),
+    radial-gradient(55% 45% at 88% 100%, rgba(251, 191, 36, .1), transparent 52%),
+    #12141c;
+  padding: 1rem 1.1rem 1.15rem;
+}
+.frontier__hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .55rem;
+  margin-bottom: .65rem;
+}
+.frontier__stats {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem;
+}
+.frontier__stats b {
+  color: rgba(255, 255, 255, .88);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.frontier__stats i {
+  color: rgba(255, 255, 255, .42);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.frontier__arena {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 1.25rem;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .03) 0 1px, transparent 1px 48px),
+    linear-gradient(180deg, #1a1520 0%, #120f16 45%, #0e0c12 100%);
+  box-shadow: inset 0 14px 30px -16px rgba(0, 0, 0, .85);
+}
+
+/* Marquesina propia: las luces no quedan tapadas por las cartas. */
+.frontier__marquee {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  gap: .35rem;
+  border-bottom: 1px solid rgba(251, 191, 36, .12);
+  background: linear-gradient(180deg, rgba(251, 191, 36, .1), rgba(251, 191, 36, .02));
+  padding: .45rem .65rem .55rem;
+  pointer-events: none;
+}
+.frontier__lamp {
+  position: relative;
+  display: block;
+  height: .5rem;
+  width: .5rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #fde68a;
+  box-shadow: 0 0 10px rgba(251, 191, 36, .85);
+  animation: frontier-lamp 1.8s ease-in-out infinite;
+}
+.frontier__lamp::after {
+  content: "";
+  position: absolute;
+  top: calc(100% + .08rem);
+  left: 50%;
+  height: 2.2rem;
+  width: 2px;
+  translate: -50% 0;
+  background: linear-gradient(180deg, rgba(251, 191, 36, .35), transparent);
+  animation: frontier-beam 1.8s ease-in-out infinite;
+}
+@keyframes frontier-lamp {
+  0%, 100% { opacity: .5; scale: .88; }
+  50% { opacity: 1; scale: 1; }
+}
+@keyframes frontier-beam {
+  0%, 100% { opacity: .25; height: 1.6rem; }
+  50% { opacity: .75; height: 2.4rem; }
+}
+
+.frontier__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.frontier__sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, .04) 50%,
+    transparent 58%
+  );
+  background-size: 220% 100%;
+  animation: frontier-sweep 6s ease-in-out infinite;
+}
+@keyframes frontier-sweep {
+  0%, 100% { background-position: 120% 0; }
+  50% { background-position: -20% 0; }
+}
+.frontier__ambience {
+  position: absolute;
+  inset: 0;
+}
+.frontier__spark {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  height: .32rem;
+  width: .32rem;
+  border-radius: 999px;
+  background: #fca5a5;
+  box-shadow: 0 0 8px rgba(248, 113, 113, .85);
+  animation: frontier-spark 2.4s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -.35s);
+}
+@keyframes frontier-spark {
+  0%, 100% { opacity: 0; translate: 0 .2rem; scale: .7; }
+  35%, 65% { opacity: .9; translate: 0 -.4rem; scale: 1; }
+}
+.frontier__clash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, .24), transparent 46%);
+  animation: frontier-clash .55s ease-out infinite;
+}
+@keyframes frontier-clash {
+  0%, 100% { opacity: .12; }
+  50% { opacity: .8; }
+}
+.frontier__burst {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(251, 191, 36, .38), transparent 50%);
+  animation: frontier-burst .65s ease-out both;
+}
+@keyframes frontier-burst {
+  from { opacity: 0; scale: .7; }
+  to { opacity: 1; scale: 1.05; }
+}
+
+.frontier__body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .75rem;
+  padding: .75rem .75rem .65rem;
+}
+.frontier__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+}
+.frontier__card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: .45rem;
+  overflow: hidden;
+  border: 1px solid #c8b496;
+  border-radius: 1rem;
+  background: #f5ead6;
+  padding: .55rem .55rem .58rem;
+  box-shadow: 0 4px 0 #b89a72;
+  animation: frontier-card-in .42s cubic-bezier(.2, 1.1, .35, 1) both;
+}
+@keyframes frontier-card-in {
+  from { opacity: 0; translate: 0 .45rem; }
+  to { opacity: 1; translate: 0; }
+}
+.frontier__card[data-facility="palace"] { border-color: #7eb8a8; }
+.frontier__card[data-facility="dome"] { border-color: #c4a0a0; background: #f7ece8; }
+.frontier__card.is-hot {
+  border-color: #e8b84a;
+  box-shadow: 0 4px 0 #c8942a, 0 0 0 1px rgba(251, 191, 36, .35);
+}
+.frontier__card.is-on {
+  animation: frontier-card-shake .42s ease-in-out infinite;
+  border-color: #dc2626;
+  box-shadow: 0 4px 0 #991b1b, 0 0 14px rgba(220, 38, 38, .4);
+}
+.frontier__card.is-win-flash { animation: frontier-win-pop .55s ease-out both; }
+.frontier__card.is-lose-flash { animation: frontier-lose-dim .55s ease-out both; }
+@keyframes frontier-card-shake {
+  0%, 100% { translate: 0; }
+  25% { translate: -.06rem 0; }
+  75% { translate: .06rem 0; }
+}
+@keyframes frontier-win-pop {
+  0% { scale: 1; }
+  40% { scale: 1.04; }
+  100% { scale: 1; }
+}
+@keyframes frontier-lose-dim {
+  from { filter: brightness(.75); }
+  to { filter: brightness(1); }
+}
+
+.frontier__card-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: .75rem;
+  background: linear-gradient(180deg, #2a2438 0%, #15121c 100%);
+  min-height: 5.5rem;
+  padding: .35rem .25rem .25rem;
+}
+.frontier__facility {
+  height: 4.75rem;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .45));
+  animation: frontier-facility-float 3.6s ease-in-out infinite;
+}
+.frontier__card[data-facility="dome"] .frontier__facility { height: 4.35rem; }
+.frontier__card.is-on .frontier__facility { animation: frontier-facility-fight .55s ease-in-out infinite; }
+@keyframes frontier-facility-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -.12rem; }
+}
+@keyframes frontier-facility-fight {
+  0%, 100% { scale: 1; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .45)); }
+  50% { scale: 1.04; filter: drop-shadow(0 0 10px rgba(220, 38, 38, .55)); }
+}
+.frontier__card-glow {
+  position: absolute;
+  inset: auto 15% -20%;
+  height: 45%;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(251, 191, 36, .28), transparent 70%);
+  animation: frontier-glow-pulse 2.8s ease-in-out infinite;
+}
+@keyframes frontier-glow-pulse {
+  0%, 100% { opacity: .35; scale: .9; }
+  50% { opacity: .75; scale: 1.05; }
+}
+
+.frontier__card-copy { display: flex; min-width: 0; flex-direction: column; gap: .22rem; }
+.frontier__card h2 {
+  margin: 0;
+  color: #3b2410;
+  font-size: .82rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.frontier__card p {
+  margin: 0;
+  color: #6b5344;
+  font-size: .62rem;
+  line-height: 1.35;
+}
+.frontier__card ul {
+  margin: .05rem 0 .1rem;
+  padding: 0;
+  list-style: none;
+  color: #8b6914;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .54rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.frontier__wins-short { display: none; }
+.frontier__act {
+  display: inline-flex;
+  margin-top: auto;
+  min-height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: .32rem;
+  border: 1px solid #8b6914;
+  border-radius: .75rem;
+  background: linear-gradient(180deg, #fde68a, #d97706);
+  color: #3b2410;
+  font-size: .6rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  box-shadow: 0 3px 0 #92400e;
+  transition: transform .12s ease;
+}
+.frontier__act:active:not(:disabled) { translate: 0 2px; box-shadow: 0 1px 0 #92400e; }
+.frontier__act img { height: 1rem; width: 1rem; }
+.frontier__act em { font-style: normal; opacity: .75; }
+.frontier__act:disabled { opacity: .55; filter: grayscale(.25); }
+.frontier.is-fighting .frontier__act .material-symbols-outlined { animation: wonder-spin 1s linear infinite; }
+.frontier__coin-pop {
+  position: absolute;
+  top: .35rem;
+  right: .35rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: .15rem;
+  border-radius: .45rem;
+  background: #3b2410;
+  padding: .12rem .28rem;
+  color: #fde68a;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  animation: frontier-coin-rise .7s ease-out both;
+}
+.frontier__coin-pop img { height: .85rem; width: .85rem; }
+@keyframes frontier-coin-rise {
+  from { opacity: 0; translate: 0 .4rem; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* Crew en su propia fila: el globo no tapa las cartas. */
+.frontier__crew {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: stretch;
+  gap: .55rem;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  padding-top: .55rem;
+  pointer-events: none;
+}
+.frontier__rizzo {
+  height: clamp(5.5rem, 14vw, 7.5rem);
+  width: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .55));
+  animation: frontier-rizzo-idle 3.2s ease-in-out infinite;
+}
+@keyframes frontier-rizzo-idle {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -.18rem; }
+}
+.frontier__bubble {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .28rem .4rem;
+  margin: 0 0 .35rem;
+  border-radius: .85rem;
+  background: #fff7ed;
+  padding: .42rem .58rem .44rem;
+  color: #3b2410;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.25;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .4);
+  animation: fishing-bubble-in .26s cubic-bezier(.2, 1.5, .35, 1) both;
+}
+.frontier__bubble b {
+  font-weight: 800;
+}
+.frontier__bubble i {
+  font-style: normal;
+  opacity: .7;
+  white-space: nowrap;
+}
+.frontier__prize {
+  display: inline-flex;
+  align-items: center;
+  gap: .18rem;
+  border-radius: .45rem;
+  background: #3b2410;
+  padding: .08rem .32rem .08rem .36rem;
+  color: #fde68a;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.frontier__prize img {
+  height: .9rem;
+  width: .9rem;
+  object-fit: contain;
+}
+.frontier__bubble::after {
+  content: "";
+  position: absolute;
+  right: -.14rem;
+  bottom: .85rem;
+  height: .42rem;
+  width: .42rem;
+  background: #fff7ed;
+  rotate: 45deg;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, .12);
+}
+.frontier.is-fighting .frontier__rizzo { animation: frontier-rizzo-cheer .55s ease-in-out infinite; }
+@keyframes frontier-rizzo-cheer {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  50% { translate: 0 -.25rem; rotate: -2deg; }
+}
+.frontier.is-win .frontier__rizzo { animation: frontier-rizzo-win .7s ease-out both; }
+@keyframes frontier-rizzo-win {
+  0% { scale: 1; }
+  35% { scale: 1.05; rotate: 3deg; }
+  100% { scale: 1; rotate: 0deg; }
+}
+
+@media (min-width: 640px) {
+  .frontier__body {
+    grid-template-columns: minmax(0, 1fr) minmax(8.5rem, 10rem);
+    align-items: end;
+    gap: .65rem;
+  }
+  .frontier__crew {
+    flex-direction: column;
+    align-items: flex-end;
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, .08);
+    padding-top: 0;
+    padding-left: .55rem;
+  }
+  .frontier__bubble {
+    margin-bottom: 0;
+    max-width: 9.5rem;
+  }
+  .frontier__bubble::after {
+    right: .9rem;
+    left: auto;
+    bottom: -.2rem;
+  }
+  .frontier__rizzo { height: clamp(6.5rem, 15vw, 9rem); }
+}
+
+@media (max-width: 639.98px) {
+  .daycare__stage {
+    display: grid;
+    grid-template-areas:
+      "hud"
+      "nests"
+      "picker"
+      "crew";
+    gap: 0;
+    padding: .55rem .55rem .5rem;
+    padding-inline-end: .55rem;
+  }
+  .daycare__hud {
+    grid-area: hud;
+    margin-bottom: .4rem;
+    gap: .35rem;
+  }
+  .daycare__nudge { display: none; }
+  .daycare__hud b { font-size: .58rem; }
+  .daycare__scene { display: contents; }
+
+  /* Nidos apilados: una fila por Pokémon. */
+  .daycare__nests {
+    grid-area: nests;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .45rem;
+    margin-bottom: .45rem;
+  }
+  .daycare__nest {
+    display: grid;
+    min-height: 0;
+    grid-template-columns: 5.4rem minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
+    align-items: center;
+    gap: .15rem .45rem;
+    padding: .45rem .42rem .42rem;
+  }
+  .daycare__nest-head {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .daycare__frame {
+    grid-column: 1;
+    grid-row: 2 / span 2;
+    align-self: start;
+    min-height: 5.1rem;
+    width: 100%;
+    padding: .35rem .28rem .52rem;
+  }
+  .daycare__mon-wrap { min-height: 3.85rem; }
+  .daycare__mon { max-height: 3.85rem; }
+  .daycare__name,
+  .daycare__vacant {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: end;
+    margin: 0;
+    text-align: left;
+  }
+  .daycare__status {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: start;
+    min-height: 0;
+    text-align: left;
+  }
+  .daycare__acts {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    flex-direction: row;
+    gap: .32rem;
+    margin-top: .12rem;
+  }
+  .daycare__btn { min-height: 2.15rem; font-size: .54rem; }
+  .daycare__name { font-size: .72rem; }
+
+  .daycare__picker {
+    grid-area: picker;
+    margin-top: 0;
+    margin-bottom: .45rem;
+    padding: .42rem .4rem .4rem;
+  }
+  .daycare__picker button {
+    flex: 0 0 calc((100% - .76rem) / 3);
+    min-width: 0;
+    padding: .3rem .12rem .28rem;
+  }
+  .daycare__picker button img { height: 2.05rem; width: 2.05rem; }
+
+  /* Criadores abajo: burbuja a la izquierda, sprite a la derecha. */
+  .daycare__crew {
+    grid-area: crew;
+    position: relative;
+    right: auto;
+    bottom: auto;
+    z-index: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: stretch;
+    gap: .45rem;
+    width: 100%;
+    margin: 0;
+    padding-top: .15rem;
+    border-top: 1px solid rgba(210, 150, 90, .22);
+    pointer-events: none;
+  }
+  .daycare__bubble {
+    flex: 1 1 auto;
+    max-width: none;
+    min-width: 0;
+    font-size: .66rem;
+    line-height: 1.32;
+    padding: .42rem .55rem;
+  }
+  .daycare__bubble::after {
+    right: -.16rem;
+    left: auto;
+    bottom: 1.05rem;
+  }
+  .daycare__breeder {
+    height: 5.75rem;
+    flex-shrink: 0;
+    object-position: bottom right;
+  }
+
+  .frontier__stage { padding: .55rem .5rem .55rem; }
+  .frontier__hud { margin-bottom: .4rem; gap: .32rem; }
+  .frontier__stats b { font-size: .58rem; }
+  .frontier__stats i { font-size: .5rem; }
+  .frontier__marquee { padding: .32rem .45rem .28rem; }
+  .frontier__lamp { height: .4rem; width: .4rem; }
+  .frontier__lamp::after { display: none; }
+  .frontier__body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: .55rem;
+    padding: .5rem .45rem .55rem;
+  }
+  /* Mobile: fila más alta — el arte y Rizzo llenan el hueco bajo el panel. */
+  .frontier__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: .55rem;
+  }
+  .frontier__card {
+    display: grid;
+    grid-template-columns: 7.4rem minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: .28rem .55rem;
+    padding: .5rem .48rem .48rem;
+    border-radius: .95rem;
+  }
+  .frontier__card-art {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: stretch;
+    min-height: 0;
+    padding: .28rem .16rem .22rem;
+  }
+  .frontier__facility { height: 6.15rem; }
+  .frontier__card[data-facility="dome"] .frontier__facility { height: 5.55rem; }
+  .frontier__card-copy {
+    grid-column: 2;
+    grid-row: 1;
+    gap: .16rem;
+  }
+  .frontier__card h2 { font-size: .82rem; }
+  .frontier__card p,
+  .frontier__last,
+  .frontier__wins-full { display: none; }
+  .frontier__wins-short { display: list-item; }
+  .frontier__card ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .15rem .45rem;
+    margin: 0;
+    font-size: .54rem;
+  }
+  .frontier__act {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 2.25rem;
+    font-size: .54rem;
+    border-radius: .65rem;
+    box-shadow: 0 2px 0 #92400e;
+  }
+  .frontier__coin-pop { top: .28rem; right: .28rem; font-size: .5rem; }
+  .frontier__crew {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: .4rem;
+    padding-top: .4rem;
+  }
+  .frontier__bubble {
+    margin-bottom: .22rem;
+    font-size: .62rem;
+    padding: .38rem .5rem;
+    gap: .2rem .32rem;
+  }
+  .frontier__prize { font-size: .58rem; padding: .06rem .28rem; }
+  .frontier__prize img { height: .9rem; width: .9rem; }
+  .frontier__bubble::after {
+    right: -.12rem;
+    left: auto;
+    bottom: .9rem;
+  }
+  .frontier__rizzo { height: 7.15rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frontier.is-fighting .frontier__act .material-symbols-outlined,
+  .frontier__lamp,
+  .frontier__lamp::after,
+  .frontier__spark,
+  .frontier__sweep,
+  .frontier__clash,
+  .frontier__rizzo,
+  .frontier__facility,
+  .frontier__card-glow,
+  .frontier__card,
+  .frontier__card.is-on { animation: none !important; }
 }
 
 /*

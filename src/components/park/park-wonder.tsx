@@ -109,7 +109,6 @@ export function ParkWonder({
   const waiting = (Boolean(pendingOffer) || heldQueue) && !swapping;
   const spent = WONDER_FREE_TRADES_PER_DAY - freeLeft;
   const blocked = freeLeft <= 0 && energy < energyCost;
-  const showReset = freeLeft <= 0;
 
   async function run(kind: "queue" | "npc") {
     if (busy || swapping || waiting || !selected || blocked || !unlocked) return;
@@ -184,7 +183,7 @@ export function ParkWonder({
           <ParkDailyResetClock
             resetAt={resetAt}
             resetMs={resetMs}
-            visible={showReset}
+            visible
             label={labels.resetIn}
             onExpired={onResetExpired}
           />
@@ -258,7 +257,7 @@ export function ParkWonder({
                 width={250}
                 height={390}
                 className="wonder__scientist"
-                unoptimized
+                fadeIn
               />
             </div>
           </aside>

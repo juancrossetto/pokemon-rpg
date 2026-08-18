@@ -1,11 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { daycareCollectFee, pendingDaycareLevels, xpForDaycareLevels } from "@/lib/park/daycare";
+import {
+  DAYCARE_MAX_LEVELS_PER_STAY,
+  daycareCollectFee,
+  daycareLevelCeiling,
+  daycareMsUntilNext,
+  pendingDaycareLevels,
+  xpForDaycareLevels,
+} from "@/lib/park/daycare";
 import { FISHING_FREE_CASTS_PER_DAY, fishingCastsUsedToday, fishingEnergyCost, fishingFreeLeft, rollFishingEncounter } from "@/lib/park/fishing";
 import { CORNER_FREE_SPINS_PER_DAY, cornerEnergyCost, cornerExpectedPayout, cornerFreeLeft, cornerPayout, cornerSpinsUsedToday, spinCorner } from "@/lib/park/corner";
 import { CORNER_SPIN_ENERGY_COST, FISHING_ENERGY_COST, MINE_DIG_ENERGY_COST, WONDER_TRADE_ENERGY_COST } from "@/lib/energy";
 import { farmReady, farmYield } from "@/lib/park/farm";
 import { FOSSIL_SPECIES, generateMineGrid, MINE_DROP_SHOW, mineDigsLeft, parseMineBag } from "@/lib/park/mine";
-import { palaceWinPayout } from "@/lib/park/frontier";
+import { palaceWinPayout, FRONTIER_DOME_CUP_COINS } from "@/lib/park/frontier";
+import { parseParkTab, parkTabHref } from "@/lib/park/tabs";
+import { FRONTIER_ENERGY_COST } from "@/lib/energy";
+import { ENERGY_PACK_ENERGY, ENERGY_PACK_PRICE } from "@/lib/shop-energy-pack";
 import { isWonderUnlocked, wonderEnergyCost, wonderFreeLeft, wonderNpcAllowed, wonderNpcLevel, wonderNpcSpecies, wonderTiersMatch, wonderTradeTier, wonderTradesUsedToday, WONDER_FREE_TRADES_PER_DAY, WONDER_MIN_BADGES } from "@/lib/park/wonder";
 import { addTowardAssemble, assembledPokemonLevel, assembledPokemonLevelForSpecies, FISHING_FRAGMENT_YIELD, FRAGMENTS_TO_ASSEMBLE } from "@/lib/park/fragments";
 import { xpForLevel } from "@/lib/stats";
@@ -16,19 +26,38 @@ function sequence(...rolls: number[]) {
 }
 
 describe("daycare", () => {
-  it("grants one level every two hours, capped per stay", () => {
+  it("grants one level every four hours, capped per stay", () => {
     const start = new Date("2026-01-01T00:00:00Z");
-    const twoHours = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+    const fourHours = new Date(start.getTime() + 4 * 60 * 60 * 1000);
     const twoDays = new Date(start.getTime() + 48 * 60 * 60 * 1000);
-    expect(pendingDaycareLevels(20, start, twoHours)).toBe(1);
-    expect(pendingDaycareLevels(20, start, twoDays)).toBe(8);
-    expect(pendingDaycareLevels(99, start, twoDays)).toBe(1);
-    expect(pendingDaycareLevels(100, start, twoDays)).toBe(0);
+    expect(pendingDaycareLevels(20, start, 8, fourHours)).toBe(1);
+    expect(pendingDaycareLevels(20, start, 8, twoDays)).toBe(DAYCARE_MAX_LEVELS_PER_STAY);
+    expect(pendingDaycareLevels(46, start, 8, twoDays)).toBe(1);
+    expect(pendingDaycareLevels(47, start, 8, twoDays)).toBe(0);
+    expect(pendingDaycareLevels(100, start, 8, twoDays)).toBe(0);
+  });
+
+  it("respects badge-based level ceiling", () => {
+    const start = new Date("2026-01-01T00:00:00Z");
+    const day = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    expect(daycareLevelCeiling(0)).toBe(15);
+    expect(daycareLevelCeiling(8)).toBe(47);
+    expect(pendingDaycareLevels(15, start, 0, day)).toBe(0);
+    expect(pendingDaycareLevels(14, start, 0, day)).toBe(1);
   });
 
   it("pays XP as the delta to the target level", () => {
     expect(xpForDaycareLevels(xpForLevel(10), 10, 2)).toBe(xpForLevel(12) - xpForLevel(10));
-    expect(daycareCollectFee(3)).toBe(120);
+    expect(daycareCollectFee(3)).toBe(180);
+  });
+
+  it("counts time until the next level and stops at the stay cap", () => {
+    const start = new Date("2026-01-01T00:00:00Z");
+    const twoHours = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+    const twelveHours = new Date(start.getTime() + 12 * 60 * 60 * 1000);
+    expect(daycareMsUntilNext(20, start, 8, twoHours)).toBe(2 * 60 * 60 * 1000);
+    expect(daycareMsUntilNext(20, start, 8, twelveHours)).toBe(0);
+    expect(daycareMsUntilNext(100, start, 8, twoHours)).toBe(0);
   });
 });
 
@@ -149,9 +178,16 @@ describe("park fragments", () => {
 });
 
 describe("frontier / wonder", () => {
-  it("scales palace payout with streak", () => {
-    expect(palaceWinPayout(1)).toBe(80);
-    expect(palaceWinPayout(3)).toBe(110);
+  it("scales palace payout with streak and caps it", () => {
+    expect(palaceWinPayout(1)).toBe(22);
+    expect(palaceWinPayout(3)).toBe(32);
+    expect(palaceWinPayout(20)).toBe(42);
+  });
+
+  it("never pays more gold per energy than the shop pack", () => {
+    const packGoldPerEnergy = ENERGY_PACK_PRICE / ENERGY_PACK_ENERGY;
+    expect(palaceWinPayout(99) / FRONTIER_ENERGY_COST).toBeLessThan(packGoldPerEnergy);
+    expect(FRONTIER_DOME_CUP_COINS / FRONTIER_ENERGY_COST).toBeLessThan(packGoldPerEnergy);
   });
 
   it("picks an NPC species in the same tier and never raises the level", () => {
@@ -193,5 +229,15 @@ describe("frontier / wonder", () => {
     expect(wonderTiersMatch(magikarp, charizard)).toBe(false);
     expect(wonderNpcAllowed(shinyRat)).toBe(false);
     expect(wonderNpcAllowed(magikarp)).toBe(true);
+  });
+});
+
+describe("park tabs", () => {
+  it("defaults to mine and keeps a known tab in the URL", () => {
+    expect(parseParkTab(undefined)).toBe("mine");
+    expect(parseParkTab("fishing")).toBe("fishing");
+    expect(parseParkTab("nope")).toBe("mine");
+    expect(parkTabHref("mine")).toBe("/park");
+    expect(parkTabHref("fishing")).toBe("/park?tab=fishing");
   });
 });

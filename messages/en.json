@@ -4229,14 +4229,14 @@
     "emptySlot": "Empty nest",
     "emptyBox": "No free Pokémon in the PC.",
     "pickHint": "Pick one from the PC",
-    "daycareBlurb": "Two nests. Your Pokémon gains levels while you play; collect them whenever you want.",
-    "deposit": "Leave ({cost} ●)",
+    "daycareBlurb": "Two nests. They level slowly while you play other modes; Adventure stays the main path.",
+    "deposit": "Leave",
     "deposited": "Left at the daycare ({cost} ●).",
     "collect": "Collect levels",
     "collected": "Levels collected.",
     "withdraw": "Take back",
     "withdrawn": "Returned to the PC.",
-    "pendingLevels": "{n} levels ready · {fee} ●",
+    "pendingLevels": "{n} levels ready",
     "fishingBlurb": "{free} free casts a day; then each one costs {energy} energy.",
     "cast": "Cast line",
     "fishCatch": "You caught {name}!",
@@ -4290,8 +4290,10 @@
     "revived": "You revived {name}.",
     "challenge": "Challenge",
     "frontierMeta": "Streak {streak} · wins {wins} · {energy} energy",
-    "frontierWin": "Win: +{coins} ● (streak {streak})",
-    "frontierLose": "Loss. The facility keeps this one.",
+    "frontierWin": "Win: +{coins} · streak {streak}",
+    "frontierWinLead": "Victory",
+    "frontierWinStreak": "streak {n}",
+    "frontierLose": "Defeat. Try again.",
     "loot": {
       "empty": "Just dirt.",
       "coins": "Coins.",
@@ -4338,12 +4340,14 @@
       "no_catalog": "Rental catalog is missing.",
       "bad_facility": "Invalid facility.",
       "locked": "Earn the first gym badge to use wonder trade.",
-      "too_rare": "Too valuable for the scientist. Send it to the queue."
+      "too_rare": "Too valuable for the scientist. Send it to the queue.",
+      "daycare_ceiling": "Already at the daycare cap for your badges."
     },
     "cornerReady": "Try your luck",
     "cornerNothing": "Nothing this time",
     "cornerSpins": "{left}/{total} free",
     "cornerDailyHint": "{free} free spins a day; then {energy} energy.",
+    "dailyReset": "Resets at 00:00 · {time}",
     "cornerReset": "Free again in {time}",
     "cornerIdleNudge": "Pull the lever",
     "cornerHostIdle": "Child's play. Pull the lever.",
@@ -4381,8 +4385,8 @@
       "daycare": {
         "title": "Day Care",
         "s1": "Leave a Pokémon in one of the two nests.",
-        "s2": "It levels up on its own while you play something else.",
-        "s3": "Collect the levels whenever you want, paying the fee."
+        "s2": "Levels up very slowly (4 h per level, cap 3 per stay).",
+        "s3": "The level cap depends on your badges. Collect by paying the fee."
       },
       "fishing": {
         "title": "Fishing",
@@ -4416,9 +4420,9 @@
       },
       "frontier": {
         "title": "Frontier",
-        "s1": "Each challenge costs energy.",
+        "s1": "Each challenge costs 3 energy.",
         "s2": "You win with your current team, without turn-by-turn battles.",
-        "s3": "The streak grows with every win and multiplies the reward."
+        "s3": "The streak adds a little to the payout, capped: it won’t buy more energy."
       }
     },
     "mineFound": "You found {what}",
@@ -4454,6 +4458,21 @@
     "farmReadyBubble": "That plot is ready to harvest!",
     "farmHint": "Each plot takes 2 h and yields 2 or 3 berries.",
     "farmSeeds": "To plant",
-    "farmOccupancy": "{planted}/{total} planted"
+    "farmOccupancy": "{planted}/{total} planted",
+    "daycareIdle": "Leave a Pokémon. I’ll look after it.",
+    "daycareReadyBubble": "There are levels ready to collect.",
+    "daycareHint": "4 h/level · cap {cap}/stay · max lv. {ceiling}",
+    "daycareOccupancy": "{held}/{total} nests",
+    "daycareNext": "Next in {time}",
+    "daycareMax": "Stay cap reached. Collect and deposit again.",
+    "daycareCeiling": "Cap lv. {level}. Keep playing Adventure.",
+    "collectedLevels": "{name} gained {n, plural, one {# level} other {# levels}}.",
+    "frontierIdle": "Send your team.",
+    "frontierFight": "Deciding it now…",
+    "frontierStreak": "Streak {n}",
+    "frontierWins": "{n} wins today",
+    "frontierWinsShort": "{n} today",
+    "frontierLastWon": "Won the last one",
+    "frontierLastLost": "Lost the last one"
   }
 }

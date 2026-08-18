@@ -54,8 +54,8 @@ export const WONDER_TRADE_ENERGY_COST = 1;
  */
 export const MINE_DIG_ENERGY_COST = 0;
 
-/** Un combate simulado de Recinto (Palacio o Dome). */
-export const FRONTIER_ENERGY_COST = 1;
+/** Un combate simulado de Recinto (Palacio o Dome). 3 pts: el pack no imprime oro. */
+export const FRONTIER_ENERGY_COST = 3;
 
 /** Cooldown entre avisos in-app de "energía llena" (anti-spam). */
 export const ENERGY_FULL_NOTIFY_COOLDOWN_MS = 6 * 60 * 60 * 1000;
