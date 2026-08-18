@@ -1,3 +1,4 @@
+import { FISHING_ENERGY_COST } from "@/lib/energy";
 import { SHINY_ODDS } from "@/lib/shiny";
 
 export type FishingSpecies = {
@@ -8,7 +9,8 @@ export type FishingSpecies = {
 
 /**
  * Tabla de caña. Magikarp manda; Dratini/Gyarados son el premio.
- * Niveles los pone el lead del jugador al lance, no esta tabla.
+ * Un lance suma fragmentos (sin nivel). Al armar, el Pokémon sale
+ * con `assembledPokemonLevel` según rareza — no escala con el lead.
  */
 export const FISHING_TABLE: FishingSpecies[] = [
   { speciesId: 129, weight: 40, rarity: "common" }, // Magikarp
@@ -48,7 +50,26 @@ export function rollFishingEncounter(
   return { speciesId: row.speciesId, rarity: row.rarity, isShiny, caught };
 }
 
-export function fishingLevelForLead(leadLevel: number): number {
-  const base = Math.max(5, leadLevel - 2);
-  return Math.min(60, base);
+/**
+ * Los primeros `FISHING_FREE_CASTS_PER_DAY` lances del día son gratis.
+ * El resto cobra `FISHING_ENERGY_COST`, igual que el casino después de los
+ * giros libres. El cupo gratis vuelve con el reset diario.
+ */
+export const FISHING_FREE_CASTS_PER_DAY = 5;
+
+export function fishingCastsUsedToday(
+  row: { dayKey: string; casts: number } | null | undefined,
+  today: string,
+): number {
+  if (!row || row.dayKey !== today) return 0;
+  return Math.max(0, row.casts);
 }
+
+export function fishingEnergyCost(castsUsedToday: number): number {
+  return castsUsedToday < FISHING_FREE_CASTS_PER_DAY ? 0 : FISHING_ENERGY_COST;
+}
+
+export function fishingFreeLeft(castsUsedToday: number): number {
+  return Math.max(0, FISHING_FREE_CASTS_PER_DAY - castsUsedToday);
+}
+

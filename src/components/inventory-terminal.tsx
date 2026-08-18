@@ -14,6 +14,7 @@ import { createPortal } from "react-dom";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { PokemonImage } from "@/components/pokemon-image";
+import { SpeciesFragmentArt } from "@/components/species-fragment-art";
 import { itemDisplayUrl } from "@/lib/item-sprites";
 import { formatMoveName } from "@/lib/format-move-name";
 import { formatMoveEffectText } from "@/lib/format-move-effect";
@@ -24,9 +25,10 @@ import { RARITY_STYLES, itemRarity } from "@/lib/rarity";
 import {
   BACKPACK_CAPACITY,
   CATEGORY_ICON,
-  INVENTORY_CATEGORIES,
+  BAG_CATEGORIES,
   countsByCategory,
   filterEntries,
+  isFragmentEntry,
   totalUnits,
   type CategoryFilter,
   type EquipTarget,
@@ -54,6 +56,7 @@ export type InventoryLabels = {
   quantity: string;
   value: string;
   effect: string;
+  fragmentNeed: string;
   rarity: Record<string, string>;
   teaches: string;
   moveType: string;
@@ -237,7 +240,7 @@ export function InventoryTerminal({
             count={units}
             onClick={() => setCategory("all")}
           />
-          {INVENTORY_CATEGORIES.map((c) => (
+          {BAG_CATEGORIES.map((c) => (
             <CategoryButton
               key={c}
               active={category === c}
@@ -390,6 +393,42 @@ function CategoryButton({
   );
 }
 
+function BagArt({
+  entry,
+  size,
+  alt,
+  className = "",
+}: {
+  entry: InventoryEntry;
+  size: number;
+  alt: string;
+  className?: string;
+}) {
+  if (isFragmentEntry(entry) && entry.speciesId != null) {
+    return (
+      <SpeciesFragmentArt
+        speciesId={entry.speciesId}
+        speciesName={entry.name}
+        size={size}
+        rarity={entry.dexRarity}
+        alt={alt}
+        className={className}
+      />
+    );
+  }
+  return (
+    <Image
+      src={itemDisplayUrl(entry.name)}
+      alt={alt}
+      width={size}
+      height={size}
+      unoptimized
+      draggable={false}
+      className={`object-contain ${className}`.trim()}
+    />
+  );
+}
+
 function ItemCard({
   entry,
   selected,
@@ -425,14 +464,11 @@ function ItemCard({
             className="absolute inset-2 rounded-full opacity-0 blur-lg transition-opacity duration-200 group-hover:opacity-100"
             style={{ background: style.glow }}
           />
-          <Image
-            src={itemDisplayUrl(entry.name)}
+          <BagArt
+            entry={entry}
+            size={44}
             alt=""
-            width={44}
-            height={44}
-            unoptimized
-            draggable={false}
-            className="relative h-11 w-11 object-contain transition-transform duration-200 group-hover:scale-110"
+            className="relative transition-transform duration-200 group-hover:scale-110"
           />
         </span>
         <span className="w-full truncate text-center text-[11px] font-medium leading-tight text-white">
@@ -694,20 +730,20 @@ function DetailPanel({
           className="absolute inset-3 rounded-full opacity-70 blur-xl"
           style={{ background: style.glow }}
         />
-        <Image
-          src={itemDisplayUrl(entry.name)}
-          alt={entry.displayName}
-          width={80}
-          height={80}
-          unoptimized
-          draggable={false}
-          className="relative h-20 w-20 object-contain"
-        />
+        <BagArt entry={entry} size={80} alt={entry.displayName} className="relative" />
       </div>
 
       <dl className="flex flex-col gap-2">
         <Row label={labels.quantity} value={`×${entry.quantity}`} />
-        <Row label={labels.value} value={`${entry.buyPrice}`} mono />
+        {isFragmentEntry(entry) && entry.fragmentNeed != null ? (
+          <Row
+            label={labels.fragmentNeed}
+            value={`${entry.quantity} / ${entry.fragmentNeed}`}
+            mono
+          />
+        ) : (
+          <Row label={labels.value} value={`${entry.buyPrice}`} mono />
+        )}
         {moveLabel && <Row label={labels.teaches} value={moveLabel} />}
         {entry.moveType && (
           <Row
@@ -842,16 +878,18 @@ function DetailPanel({
             {labels.equip}
           </button>
         ) : null}
-        <a
-          href={sellHref}
-          className={`rounded-lg px-3 py-2 text-center text-label-sm ${
-            canUseEvolve || canEquipHeld
-              ? "border border-white/12 text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
-              : "ui-btn-primary"
-          }`}
-        >
-          {labels.sell}
-        </a>
+        {isFragmentEntry(entry) ? null : (
+          <a
+            href={sellHref}
+            className={`rounded-lg px-3 py-2 text-center text-label-sm ${
+              canUseEvolve || canEquipHeld
+                ? "border border-white/12 text-on-surface-variant transition hover:border-white/25 hover:text-on-surface"
+                : "ui-btn-primary"
+            }`}
+          >
+            {labels.sell}
+          </a>
+        )}
         {/*
           Antes apuntaba a `/team` pelado: el botón cumplía con navegar y ahí
           moría, sin decirle a la pantalla de destino qué MT traía el jugador.

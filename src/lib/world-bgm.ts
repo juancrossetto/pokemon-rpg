@@ -27,6 +27,11 @@ let currentKind: WorldBgmKind | null = null;
 let unlocked = false;
 /** Pausa automática al ocultar la pestaña/PWA (no confundir con mute del usuario). */
 let backgroundPaused = false;
+/**
+ * Multiplicador temporal (0–1) sobre el volumen guardado. Lo usa el casino
+ * para dejar oír la ruleta sin reescribir el slider del jugador.
+ */
+let duckFactor = 1;
 
 export function worldBgmUrl(kind: WorldBgmKind): string {
   return TRACK[kind];
@@ -63,14 +68,35 @@ function ensureAudio(): HTMLAudioElement {
   return audio;
 }
 
+function applyVolumeToElement(el: HTMLAudioElement) {
+  const muted = isWorldBgmMuted();
+  el.muted = muted;
+  if (muted) {
+    el.pause();
+    el.volume = 0;
+    return;
+  }
+  el.volume = getWorldBgmVolume() * duckFactor;
+}
+
 function applyMuteToElement(el: HTMLAudioElement, muted: boolean) {
   el.muted = muted;
   if (muted) {
     el.pause();
     el.volume = 0;
   } else {
-    el.volume = getWorldBgmVolume();
+    applyVolumeToElement(el);
   }
+}
+
+/** Baja el ambiental un momento (giro de ruleta) sin tocar el volumen guardado. */
+export function duckWorldBgm(factor = 0.22) {
+  duckFactor = Math.min(1, Math.max(0, factor));
+  if (audio) applyVolumeToElement(audio);
+}
+
+export function unduckWorldBgm() {
+  duckWorldBgm(1);
 }
 
 export function setWorldBgmMuted(muted: boolean) {
@@ -90,8 +116,7 @@ export function setWorldBgmVolume(volume: number) {
   const v = Math.min(1, Math.max(0, volume));
   window.localStorage.setItem(STORAGE_VOLUME, String(v));
   if (audio && !isWorldBgmMuted()) {
-    audio.volume = v;
-    audio.muted = false;
+    applyVolumeToElement(audio);
   }
 }
 

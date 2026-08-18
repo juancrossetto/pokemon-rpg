@@ -1,5 +1,6 @@
 import type { MineBag, MineCell } from "@/lib/park/mine";
 import type { FrontierFacility } from "@/lib/park/frontier";
+import type { DexRarity } from "@/lib/pokedex";
 
 export type ParkMonOption = {
   id: string;
@@ -34,6 +35,14 @@ export type ParkFrontierView = {
   lastWon: boolean;
 };
 
+export type ParkFragment = {
+  speciesId: number;
+  speciesName: string;
+  spriteUrl: string;
+  quantity: number;
+  dexRarity: DexRarity;
+};
+
 export type ParkHubData = {
   coins: number;
   energy: number;
@@ -41,8 +50,12 @@ export type ParkHubData = {
   daycare: ParkDaycareSlot[];
   box: ParkMonOption[];
   wonderPending: ParkMonOption | null;
+  wonder: { freeLeft: number; resetAt: string; resetMs: number };
   farm: ParkPlot[];
   berries: Array<{ itemId: string; name: string; quantity: number }>;
-  mine: { grid: MineCell[]; bag: MineBag; digsLeft: number };
+  mine: { grid: MineCell[]; bag: MineBag; digsLeft: number; resetAt: string; resetMs: number };
+  fragments: ParkFragment[];
   frontier: ParkFrontierView[];
+  corner: { freeLeft: number; resetAt: string; resetMs: number };
+  fishing: { freeLeft: number; resetAt: string; resetMs: number };
 };

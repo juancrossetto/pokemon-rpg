@@ -1,15 +1,28 @@
-import type { ItemType } from "@/generated/prisma/client";
-
 // Rareza y sus estilos. Viven acá y no en market-hub.ts porque ese módulo
 // importa `prisma` para sus consultas, y arrastrarlo desde un client component
 // mete `pg` en el bundle del browser (rompe el build pidiendo `dns`/`fs`).
 // Esto es presentación pura, sin acceso a datos, así que lo puede usar tanto
 // el servidor (mercado) como el cliente (inventario).
-//
-// `import type` se borra en compilación, por eso el tipo del enum no arrastra
-// nada del cliente generado.
+
+import type { DexRarity } from "@/lib/pokedex";
 
 export type MarketRarity = "common" | "rare" | "epic" | "legendary";
+
+/** La ficha de inventario solo tiene 4 peldaños; la Pokédex tiene más. */
+export function marketRarityFromDex(rarity: DexRarity | undefined): MarketRarity {
+  if (rarity === "common") return "common";
+  if (rarity === "rare") return "rare";
+  if (rarity === "epic") return "epic";
+  if (
+    rarity === "legendary" ||
+    rarity === "mythical" ||
+    rarity === "ultraBeast" ||
+    rarity === "paradox"
+  ) {
+    return "legendary";
+  }
+  return "rare";
+}
 
 export const RARITY_STYLES: Record<
   MarketRarity,
@@ -43,9 +56,11 @@ export const RARITY_STYLES: Record<
 
 export function itemRarity(item: {
   name: string;
-  type: ItemType;
+  type: string;
   buyPrice: number;
+  dexRarity?: DexRarity;
 }): MarketRarity {
+  if (item.type === "FRAGMENT") return marketRarityFromDex(item.dexRarity);
   const name = item.name.toLowerCase();
   if (name.includes("master") || name.includes("full restore")) return "legendary";
   if (item.type === "EVOLUTION_STONE" || item.buyPrice >= 2000) return "epic";

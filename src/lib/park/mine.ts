@@ -15,12 +15,33 @@ export type MineBag = {
 };
 
 export const MINE_COIN_DROP = 80;
-export const MINE_REVIVE_COST = 500;
+
+/** Cuántos fósiles del mismo tipo hacen falta para revivir al Pokémon. */
+export { FRAGMENTS_TO_ASSEMBLE as MINE_FRAGMENTS_TO_ASSEMBLE } from "@/lib/park/fragments";
+
+/** Lo que el HUD lista como posible botín — el vacío no es premio. */
+export const MINE_DROP_SHOW = ["coins", "potion", "stone", "helix", "dome", "amber"] as const;
+export type MineDropKind = (typeof MINE_DROP_SHOW)[number];
 
 export const FOSSIL_SPECIES: Record<"helix" | "dome" | "amber", number> = {
   helix: 138, // Omanyte
   dome: 140, // Kabuto
   amber: 142, // Aerodactyl
+};
+export const FOSSIL_KINDS = ["helix", "dome", "amber"] as const;
+
+/*
+  Rareza de cada fósil en la escala de la Pokédex, para pintar el cristal.
+
+  Sale de `speciesRarity`: los tres tienen `captureRate` 45, y la regla manda
+  todo lo que esté en 45 o menos a `epic`. Se deja escrita acá —y no se calcula
+  en el cliente— porque el `captureRate` vive en la base y traerlo para tres
+  especies fijas sería una consulta por cada dibujo.
+*/
+export const FOSSIL_RARITY: Record<"helix" | "dome" | "amber", "epic"> = {
+  helix: "epic",
+  dome: "epic",
+  amber: "epic",
 };
 
 const LOOT_TABLE: Array<{ loot: MineLoot; weight: number }> = [

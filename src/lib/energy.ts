@@ -39,11 +39,20 @@ export function gymBattleEnergyCost(kind: "trainer" | "leader"): number {
 /** Costo por combate de PvP. */
 export const PVP_BATTLE_ENERGY_COST = 1;
 
-/** Un lance de caña en el Parque. */
+/** Un lance de caña en el Parque, después de los lances gratis del día. */
 export const FISHING_ENERGY_COST = 1;
 
-/** Una casilla excavada en la mina. */
-export const MINE_DIG_ENERGY_COST = 1;
+/** Un giro de la ruleta del Game Corner, después de las tiradas gratis del día. */
+export const CORNER_SPIN_ENERGY_COST = 1;
+
+/** Un trueque en el laboratorio, después de los intercambios gratis del día. */
+export const WONDER_TRADE_ENERGY_COST = 1;
+
+/**
+ * La mina no cobra energía: 8 picadas gratis por día (`MINE_DIGS_PER_DAY`).
+ * El cupo vuelve con el reset diario, no con la barra de energía.
+ */
+export const MINE_DIG_ENERGY_COST = 0;
 
 /** Un combate simulado de Recinto (Palacio o Dome). */
 export const FRONTIER_ENERGY_COST = 1;

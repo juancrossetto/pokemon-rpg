@@ -14,7 +14,6 @@ import {
 import {
   derivePresence,
   isPresenceOnlineish,
-  isPresenceOnRail,
   type BlockedEntry,
   type FriendListEntry,
   type FriendRequestEntry,
@@ -222,7 +221,7 @@ export async function touchPresence(userId: string): Promise<void> {
 }
 
 /**
- * Amigos conectados para la columna flotante del chrome.
+ * Amigos para la columna flotante del chrome (también desconectados).
  *
  * Loader propio y no `loadFriendsHub` porque ese trae solicitudes, bloqueos,
  * métricas de ranking, equipos favoritos y el conteo de gimnasios: siete
@@ -241,9 +240,17 @@ export type HomeFriendPresence = {
   isFavorite: boolean;
 };
 
+const RAIL_PRESENCE_RANK: Record<PresenceStatus, number> = {
+  fighting: 0,
+  gym: 0,
+  online: 0,
+  exploring: 0,
+  away: 1,
+  offline: 2,
+};
+
 export async function loadOnlineFriends(
   userId: string,
-  limit = 8,
 ): Promise<{ friends: HomeFriendPresence[]; onlineCount: number }> {
   const friendships = await prisma.friendship.findMany({
     where: { OR: [{ userAId: userId }, { userBId: userId }] },
@@ -267,7 +274,7 @@ export async function loadOnlineFriends(
   ]);
 
   const now = Date.now();
-  const online = rows
+  const listed = rows
     .map((row) => ({
       userId: row.id,
       username: row.username,
@@ -281,20 +288,22 @@ export async function loadOnlineFriends(
       isFavorite: favorites.has(row.id),
       lastSeenAt: row.lastSeenAt?.getTime() ?? 0,
     }))
-    .filter((entry) => isPresenceOnRail(entry.presence))
-    // Más reciente primero: si hay más de `limit`, los que se ven son los que
-    // acaban de estar activos, no los que quedaron en el borde de la ventana.
-    .sort((a, b) => b.lastSeenAt - a.lastSeenAt);
+    .sort((a, b) => {
+      const rank = RAIL_PRESENCE_RANK[a.presence] - RAIL_PRESENCE_RANK[b.presence];
+      if (rank !== 0) return rank;
+      if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1;
+      return b.lastSeenAt - a.lastSeenAt;
+    });
 
   return {
-    friends: online.slice(0, limit).map((entry) => ({
+    friends: listed.map((entry) => ({
       userId: entry.userId,
       username: entry.username,
       avatarId: entry.avatarId,
       presence: entry.presence,
       isFavorite: entry.isFavorite,
     })),
-    onlineCount: online.length,
+    onlineCount: listed.filter((entry) => isPresenceOnlineish(entry.presence)).length,
   };
 }
 

@@ -517,7 +517,7 @@ export function DailyGiftModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="daily-gift-title"
-        className="gift-modal-in daily-reward-popup relative flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-pokeball-red/45 shadow-[0_0_48px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent),0_28px_90px_rgba(0,0,0,0.7)]"
+        className="gift-modal-in daily-reward-popup relative flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-[1.5rem] border border-white/12 shadow-[0_2px_10px_rgba(0,0,0,0.4),0_26px_60px_-24px_rgba(0,0,0,0.85)]"
       >
         <span
           aria-hidden
@@ -528,18 +528,21 @@ export function DailyGiftModal({
           type="button"
           onClick={closeBanner}
           aria-label={labels.close}
-          className="absolute right-1.5 top-1.5 z-30 grid h-7 w-7 place-items-center text-electric-yellow transition hover:text-electric-yellow/80 sm:right-3 sm:top-3 sm:h-10 sm:w-10"
+          className="daily-reward-close absolute right-2.5 top-2.5 z-30 grid h-8 w-8 place-items-center rounded-full sm:right-4 sm:top-4"
         >
           <span
             aria-hidden
-            className="material-symbols-outlined text-[18px]! font-bold drop-shadow-[0_0_8px_color-mix(in_srgb,var(--color-electric-yellow)_65%,transparent)] sm:text-[28px]!"
+            className="material-symbols-outlined text-[17px]! sm:text-[19px]!"
           >
             close
           </span>
         </button>
 
         <div className="relative shrink-0 px-4 pb-0 pt-5 sm:px-8 sm:pt-7">
-          <div className="flex items-center justify-center gap-2 sm:gap-4">
+          {/* Eyebrow mono: el mismo recurso del banner de eventos y de la
+              cabecera del Parque. Da contexto sin competir con el título. */}
+          <p className="daily-reward-eyebrow text-center">{labels.eyebrow}</p>
+          <div className="mt-1 flex items-center justify-center gap-2 sm:gap-4">
             <TitleFlourish side="left" />
             <h2
               id="daily-gift-title"

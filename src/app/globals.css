@@ -12074,22 +12074,28 @@ html.is-standalone .battle-result-overlay .result-in {
   color: color-mix(in srgb, var(--ev-accent) 45%, white);
 }
 
-/* Título del popup Daily Reward: Grobold + brillo primary del theme. */
+/*
+  Título con la display del juego (Orbitron), la misma del banner del home y de
+  la cabecera del Parque. Grobold con tres capas de neón encima era lo que más
+  desentonaba: ninguna otra pantalla grita así.
+*/
 .daily-reward-title {
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0.02em;
-  text-shadow:
-    0 0 10px color-mix(in srgb, var(--color-pokeball-red) 95%, transparent),
-    0 0 28px color-mix(in srgb, var(--color-electric-yellow) 55%, transparent),
-    0 0 48px color-mix(in srgb, var(--color-pokeball-red) 35%, transparent);
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--theme-primary) 55%, transparent);
 }
 
-/* Subtítulo: misma inclinación suave que las cards (apenas). */
+/* Subtítulo derecho, sin la inclinación: era el otro resabio de estilo ajeno. */
 .daily-reward-subtitle {
-  transform: skewX(-5deg);
-  transform-origin: center center;
+  color: rgba(255, 255, 255, .55);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
 }
 
 .daily-reward-day-label {
@@ -12191,55 +12197,60 @@ html.is-standalone .battle-result-overlay .result-in {
   animation: gift-modal-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Banner padre: negro arriba → primary contenido abajo (no lava los labels). */
+/*
+  Fondo del panel, en el lenguaje del resto de la app.
+
+  Antes era un degradé fucsia de punta a punta: contra el home y el Parque
+  —paneles casi negros con un acento puntual— el popup parecía de otro juego.
+  Ahora la tinta manda y el color entra como luz de ambiente en dos focos, que
+  es el mismo recurso del banner de eventos.
+*/
 .daily-reward-popup-bg {
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--theme-primary-deep) 55%, #0a0610) 0%,
-    color-mix(in srgb, var(--color-pokeball-red) 35%, #0a0610) 28%,
-    color-mix(in srgb, var(--theme-primary-deep) 40%, #0a0610) 58%,
-    #0a0610 100%
-  );
+  background:
+    radial-gradient(90% 70% at 12% 0%, color-mix(in srgb, var(--theme-primary) 22%, transparent), transparent 60%),
+    radial-gradient(80% 60% at 100% 100%, color-mix(in srgb, var(--color-pokeball-red) 16%, transparent), transparent 55%),
+    linear-gradient(180deg, #14101f 0%, #0c0a14 45%, #08070d 100%);
 }
 
 /*
-  Cards del strip Daily Reward — inclinadas a la derecha.
-  Borde: Special = verde flúor, Rare = primary, resto = primary flúor.
-  Fondo: degradé oscuro por rareza (el ítem tiene que leerse).
+  Cards del strip, alineadas con las del juego.
+
+  Tres cambios sobre la versión anterior, y los tres por el mismo motivo —que se
+  parezcan al resto de la app—: se va la inclinación de 8°, el borde de 2.5px de
+  neón pasa a filo de 1px, y el halo triple queda en una sombra de apoyo. El
+  color de rareza sigue estando, pero como acento, no como marco fluorescente.
 */
 .daily-reward-card {
-  --dr-skew: -8deg;
+  --dr-skew: 0deg;
   --dr-fluor: var(--color-pokeball-red);
   position: relative;
   display: flex;
   flex-direction: column;
-  border: 2.5px solid var(--dr-fluor);
-  border-radius: 14px;
-  transform: skewX(var(--dr-skew));
-  transform-origin: center center;
+  border: 1px solid color-mix(in srgb, var(--dr-fluor) 42%, rgba(255, 255, 255, .1));
+  border-radius: 1rem;
   background: linear-gradient(
-    165deg,
-    #2a1838 0%,
-    #140a1e 55%,
-    #0a0612 100%
+    170deg,
+    color-mix(in srgb, var(--dr-fluor) 12%, #16121f) 0%,
+    #100d18 55%,
+    #0a0810 100%
   );
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--dr-fluor) 35%, transparent),
-    0 0 14px color-mix(in srgb, var(--dr-fluor) 55%, transparent),
-    0 0 26px color-mix(in srgb, var(--dr-fluor) 30%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, .07),
+    0 10px 24px -14px rgba(0, 0, 0, .9);
 }
 
-/* Pestaña lateral izquierda (detalle tech de la ref.). */
+/* Filo de acento arriba, como las chapas del banner: marca la rareza sin
+   dibujar un marco de neón alrededor de la card. */
 .daily-reward-card::before {
   content: "";
   position: absolute;
-  left: -3px;
-  top: 28%;
-  width: 4px;
-  height: 22%;
-  border-radius: 2px;
+  top: 0;
+  right: 22%;
+  left: 22%;
+  height: 2px;
+  border-radius: 999px;
   background: var(--dr-fluor);
-  box-shadow: 0 0 8px var(--dr-fluor);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--dr-fluor) 80%, transparent);
 }
 
 /* Contenido derecho: deshace el skew para que ícono/texto no se ladeen. */
@@ -24340,8 +24351,9 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 
 /*
-  Sin overflow: el menú y los tooltips salen hacia la izquierda, fuera de la
-  columna. El loader recorta a 8 retratos, así que no hace falta scroll.
+  Sin overflow: el nombre, el estado y el menú salen a la izquierda.
+  Recortar o poner `overflow-y: auto` hace que el hover (escala + tooltip)
+  dibuje el scrollbar nativo del navegador.
 */
 .home-friends-rail__list {
   display: flex;
@@ -24412,6 +24424,11 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 .home-friends-rail__friend:hover .home-friends-rail__portrait {
   border-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
+}
+
+.home-friends-rail__friend.is-offline .home-friends-rail__portrait {
+  filter: grayscale(0.4);
+  opacity: 0.72;
 }
 
 /* Punto de presencia: mismo color que usa la pantalla de amigos
@@ -24543,4 +24560,3736 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 .home-friends-rail__action:hover .material-symbols-outlined {
   color: color-mix(in srgb, var(--color-primary) 75%, #fff);
+}
+
+/* ---------- Parque · Game Corner (tres rodillos) ---------- */
+/*
+  Oro propio del casino, y no `--color-electric-yellow`: pese al nombre, ese
+  token del tema resuelve a `--theme-tertiary`, que es **azul** (#3b82f6). Toda
+  la máquina salía azulada —premios, línea de pago y la palanca— y no pegaba ni
+  con las monedas doradas del juego ni con el arte de los rodillos.
+*/
+.corner-slot {
+  --corner-gold: #f7b733;
+  --corner-gold-deep: #a45c07;
+  --corner-violet: #7c3aed;
+  --reel-cell: 5.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.corner-slot__hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .55rem .85rem;
+}
+.corner-slot__spins { display: flex; gap: .15rem; }
+.corner-slot__spins i { display: grid; place-items: center; color: var(--corner-gold); }
+.corner-slot__spins i .material-symbols-outlined { font-size: 1.15rem !important; }
+.corner-slot__spins i.is-spent { color: rgba(255, 255, 255, .16); }
+.corner-slot__hud b {
+  color: rgba(255, 255, 255, .85);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.corner-slot__nudge {
+  flex: 1 1 8rem;
+  color: rgba(255, 255, 255, .38);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.corner-slot__hint {
+  margin: .35rem 0 0;
+  color: rgba(255, 255, 255, .45);
+  font-size: .76rem;
+  line-height: 1.4;
+}
+
+/*
+  Sala de la máquina: HUD, rodillos y anfitrión en un solo recuadro.
+
+  El padding corto dejaba HUD y palanca pegados a los bordes, y el NPC
+  absoluto encogía la máquina al centro. Ahora el aire está en el recuadro y
+  el Niño Bien comparte el piso en columna, sin tapar los rodillos.
+*/
+.corner-slot__stage {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-primary, #7c3aed) 28%, rgba(255, 255, 255, .1));
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(124, 58, 237, .22), transparent 52%),
+    radial-gradient(80% 50% at 100% 100%, rgba(247, 183, 51, .08), transparent 46%),
+    #101218;
+  padding: 1.2rem 1.25rem 1.15rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+.corner-slot__floor {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem 1.35rem;
+  margin-top: 1.05rem;
+}
+.corner-slot__machine {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.corner-slot__cabinet {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(247, 183, 51, .32);
+  border-radius: 1.45rem;
+  background:
+    linear-gradient(180deg, rgba(247, 183, 51, .18) 0%, rgba(247, 183, 51, 0) 14%),
+    linear-gradient(180deg, #2a2114 0%, #121018 38%, #0a0b12 100%);
+  padding: .85rem .9rem 1rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 223, 138, .35),
+    inset 0 -10px 22px -16px rgba(0, 0, 0, .9),
+    0 18px 36px -22px rgba(247, 183, 51, .45);
+}
+.corner-slot__cabinet::before,
+.corner-slot__cabinet::after {
+  content: "";
+  position: absolute;
+  top: .55rem;
+  width: .42rem;
+  height: .42rem;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, #ffe7a3, var(--corner-gold) 55%, var(--corner-gold-deep));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--corner-gold) 70%, transparent);
+  pointer-events: none;
+}
+.corner-slot__cabinet::before { left: .55rem; }
+.corner-slot__cabinet::after { right: .55rem; }
+
+/*
+  El Niño Bien comparte el piso con la máquina, en columna, no encima.
+*/
+.corner-slot__crew {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  padding-bottom: .15rem;
+  pointer-events: none;
+}
+.corner-slot__host {
+  display: block;
+  height: clamp(7.4rem, 17vw, 11.2rem);
+  width: auto;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .55));
+}
+.corner-slot__bubble {
+  position: relative;
+  max-width: 11rem;
+  border-radius: .85rem;
+  background: #fff6e8;
+  padding: .45rem .7rem .48rem;
+  color: #2a1c00;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.35;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .4);
+  animation: corner-bubble-in .26s cubic-bezier(.2, 1.5, .35, 1) both;
+}
+.corner-slot__bubble::after {
+  content: "";
+  position: absolute;
+  right: .9rem;
+  bottom: -.2rem;
+  height: .42rem;
+  width: .42rem;
+  background: #fff6e8;
+  rotate: 45deg;
+}
+@keyframes corner-bubble-in {
+  from { opacity: 0; transform: translateY(.4rem) scale(.9); }
+  to { opacity: 1; transform: none; }
+}
+
+.corner-slot__marquee {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  margin: .1rem .9rem .65rem;
+}
+.corner-slot__lamp {
+  width: .72rem;
+  height: .72rem;
+  border-radius: 999px;
+  background: radial-gradient(circle at 32% 28%, #fff6c8, #7a5a18 62%, #2a1c08);
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, .55);
+  opacity: .55;
+}
+.corner-slot.is-spinning .corner-slot__lamp {
+  animation: corner-lamp-chase 1.05s ease-in-out infinite;
+}
+.corner-slot.is-win .corner-slot__lamp,
+.corner-slot.is-jackpot .corner-slot__lamp {
+  opacity: 1;
+  background: radial-gradient(circle at 32% 28%, #fff, var(--corner-gold) 58%, var(--corner-gold-deep));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--corner-gold) 80%, transparent);
+}
+.corner-slot.is-jackpot .corner-slot__lamp {
+  animation: corner-lamp-chase .42s ease-in-out infinite;
+}
+.corner-slot.is-lose .corner-slot__lamp { opacity: .32; }
+
+@keyframes corner-lamp-chase {
+  0%, 100% { opacity: .35; filter: saturate(.6); }
+  50% {
+    opacity: 1;
+    filter: saturate(1.2);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--corner-gold) 85%, transparent);
+  }
+}
+/*
+  El giro es una tira vertical trasladándose en bucle, no símbolos cambiando de
+  a saltos. La tira mide tres vueltas de `CORNER_REELS` y el keyframe recorre
+  exactamente una, así el final empalma con el principio y no se ve la costura.
+
+  Cada rodillo arranca con `animation-delay` negativo (lo pone el componente):
+  eso los desfasa desde el frame cero, sin esperar. Con los tres en fase se veía
+  un bloque moviéndose, no tres rodillos.
+*/
+.corner-slot__frame {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .55rem;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--corner-gold) 38%, rgba(255, 255, 255, .12));
+  border-radius: 1.05rem;
+  background:
+    linear-gradient(180deg, rgba(247, 183, 51, .08), transparent 22%),
+    linear-gradient(180deg, #05060b, #0d0f18 45%, #05060b);
+  padding: .7rem .65rem;
+  box-shadow:
+    inset 0 10px 24px -12px rgba(0, 0, 0, .95),
+    inset 0 0 0 1px rgba(0, 0, 0, .55);
+}
+.corner-slot.is-spinning .corner-slot__frame {
+  border-color: color-mix(in srgb, var(--corner-violet) 55%, var(--corner-gold));
+  box-shadow:
+    inset 0 10px 24px -12px rgba(0, 0, 0, .95),
+    0 0 22px -8px color-mix(in srgb, var(--corner-violet) 70%, transparent);
+}
+
+.corner-slot__reel {
+  position: relative;
+  display: grid;
+  height: calc(var(--reel-cell) * 2);
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: .9rem;
+  background: rgba(0, 0, 0, .45);
+}
+/*
+  Sombras arriba y abajo dentro de cada ventana: es lo que hace que la tira
+  parezca curvarse sobre un cilindro en vez de deslizarse sobre un plano. Sin
+  esto el giro se ve como una lista haciendo scroll.
+*/
+.corner-slot__reel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, .85) 0%,
+    rgba(0, 0, 0, .12) 26%,
+    rgba(0, 0, 0, 0) 50%,
+    rgba(0, 0, 0, .12) 74%,
+    rgba(0, 0, 0, .85) 100%
+  );
+}
+
+.corner-slot__strip {
+  display: flex;
+  flex-direction: column;
+  animation: corner-reel-spin .42s linear infinite;
+  /* El desenfoque vertical es lo que vende la velocidad: a esta cadencia, sin
+     él se distinguen los símbolos y el rodillo parece ir lento. */
+  filter: blur(.5px);
+  will-change: transform;
+}
+
+.corner-slot__cell {
+  display: grid;
+  height: var(--reel-cell);
+  flex: 0 0 var(--reel-cell);
+  place-items: center;
+}
+/*
+  El arte viene con su fondo casi negro pegado (ver `corner-slot.tsx`): la
+  máscara radial es la que borra el borde del cuadrado y lo funde con la
+  ventana del rodillo. El 62% deja el dibujo intacto y desvanece sólo el aire
+  que le dejamos alrededor al recortarlo.
+*/
+.corner-slot__cell img {
+  height: 4.4rem;
+  width: 4.4rem;
+  object-fit: contain;
+  -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 97%);
+  mask-image: radial-gradient(closest-side, #000 62%, transparent 97%);
+}
+
+/* Frenada: el símbolo cae en su lugar con un rebote corto. Es el "clic" de la
+   máquina — sin esto el rodillo se detiene en seco y se nota que era un bucle. */
+.corner-slot__cell--landed {
+  animation: corner-reel-land .34s cubic-bezier(.2, 1.5, .35, 1) both;
+}
+
+/*
+  Una vuelta entera de la tira por ciclo: 7 símbolos × 5.25rem = 36.75rem. Al
+  ser exactamente una vuelta, el frame final es idéntico al inicial y el bucle
+  no tiene salto.
+
+  El medio símbolo de arranque (−2.625rem) es lo que deja una celda **centrada**
+  en la ventana en vez de partida al medio. Sin eso la línea de pago cruzaba
+  justo el borde entre dos símbolos mientras el rodillo giraba.
+*/
+@keyframes corner-reel-spin {
+  from { transform: translateY(calc(var(--reel-cell) * -0.5)); }
+  to { transform: translateY(calc(var(--reel-cell) * -7.5)); }
+}
+
+@keyframes corner-reel-land {
+  from { opacity: .3; transform: translateY(-1.4rem) scale(.9); }
+  to { opacity: 1; transform: none; }
+}
+
+.corner-slot.is-win .corner-slot__frame {
+  border-color: color-mix(in srgb, var(--corner-gold) 72%, #fff);
+}
+.corner-slot.is-jackpot .corner-slot__frame {
+  border-color: var(--corner-gold);
+  animation: corner-jackpot-flash .5s ease-in-out 3;
+}
+.corner-slot.is-lose .corner-slot__frame {
+  border-color: rgba(255, 255, 255, .08);
+  filter: saturate(.85);
+}
+.corner-slot.is-spinning .corner-slot__reel {
+  box-shadow: inset 0 0 18px rgba(124, 58, 237, .18);
+}
+
+.corner-slot__jackpot {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: 50%;
+  border-radius: .6rem;
+  background: var(--corner-gold);
+  padding: .3rem .8rem;
+  color: #1a1400;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .8rem;
+  font-weight: 900;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%);
+  animation: corner-reel-land .4s cubic-bezier(.2, 1.6, .35, 1) both;
+}
+
+@keyframes corner-jackpot-flash {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 203, 5, 0); }
+  50% { box-shadow: 0 0 34px rgba(255, 203, 5, .6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Sin giro: el rodillo muestra el símbolo final directo. La tirada sigue
+     funcionando igual, sólo se saltea el espectáculo. */
+  .corner-slot__strip { animation: none; filter: none; }
+  .corner-slot__cell--landed,
+  .corner-slot__jackpot,
+  .corner-slot.is-spinning .corner-slot__lamp,
+  .corner-slot.is-jackpot .corner-slot__lamp { animation: none; }
+  .corner-slot.is-jackpot .corner-slot__frame { animation: none; }
+}
+
+/* ---------- Parque · pantalla ---------- */
+/*
+  El Parque es una pantalla de juego entera, no sólo el casino y el huerto.
+
+  Poner esto por sección dejaba afuera la cabecera, las pestañas, la barra de
+  aviso, la pensión, la pesca, la mina y la Frontier: en todas seguía saliendo
+  el cursor de texto sobre etiquetas y números, y arrastrando se seleccionaba
+  texto. Va en la raíz y vale para todo lo que cuelgue de ella.
+
+  `user-select: none` en toda la pantalla es deliberado: acá no hay nada que
+  el jugador necesite copiar, y sí mucho texto suelto sobre el que arrastrar.
+  Los botones recuperan el cursor de mano.
+*/
+.park-screen {
+  cursor: default;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.park-screen button:not(:disabled),
+.park-screen a,
+.park-screen [role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+/* Los campos de texto son la excepción obvia: ahí el cursor de tipear
+   corresponde y la selección tiene que funcionar. */
+.park-screen input,
+.park-screen textarea,
+.park-screen select {
+  cursor: auto;
+  user-select: auto;
+}
+
+/* ---------- Parque · banner de cabecera ---------- */
+.park-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 12.5rem;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 1.5rem;
+  background: #0a0c14;
+}
+/* Caja con la proporción del archivo (736×420) anclada a la derecha: `cover`
+   no recorta nada y el arte llega entero. */
+.park-hero__art {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  left: auto;
+  z-index: 0;
+  aspect-ratio: 736 / 420;
+  pointer-events: none;
+}
+.park-hero__img {
+  object-fit: cover;
+  object-position: center;
+  /* Desvanecido del borde izquierdo del dibujo, donde se funde con el panel. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .3) 16%, #000 44%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .3) 16%, #000 44%);
+}
+.park-hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      95deg,
+      rgba(10, 12, 20, .97) 0%,
+      rgba(10, 12, 20, .93) 30%,
+      rgba(10, 12, 20, .72) 48%,
+      rgba(10, 12, 20, .3) 66%,
+      rgba(10, 12, 20, 0) 82%
+    ),
+    linear-gradient(0deg, rgba(10, 12, 20, .55), rgba(10, 12, 20, 0) 40%);
+}
+.park-hero__copy {
+  position: relative;
+  z-index: 2;
+  padding: 1.4rem 1.2rem 1.4rem 1.5rem;
+}
+.park-hero__eyebrow {
+  color: color-mix(in srgb, var(--color-primary) 62%, #fff);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .55rem;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+.park-hero__title {
+  margin-top: .45rem;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: clamp(1.35rem, 3.2vw, 2rem);
+  font-weight: 800;
+  letter-spacing: .01em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: #fff;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .5));
+}
+.park-hero__blurb {
+  margin-top: .5rem;
+  max-width: 26rem;
+  color: rgba(255, 255, 255, .72);
+  font-size: .8rem;
+  line-height: 1.4;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, .8);
+}
+.park-hero__stats { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .9rem; }
+.park-hero__stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .5);
+  padding: .22rem .6rem;
+  color: rgba(255, 255, 255, .88);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .66rem;
+  font-weight: 700;
+}
+.park-hero__stats img { height: 1rem; width: 1rem; object-fit: contain; }
+
+@media (max-width: 639.98px) {
+  /* Un poco más de arte; el copy largo sigue plegado. */
+  .park-hero { min-height: 3.65rem; }
+  .park-hero__art { inset-inline: 0; aspect-ratio: auto; }
+  .park-hero__img { -webkit-mask-image: none; mask-image: none; object-position: 70% 42%; }
+  .park-hero__scrim {
+    background: linear-gradient(90deg, rgba(10, 12, 20, .94) 0%, rgba(10, 12, 20, .58) 58%, rgba(10, 12, 20, .22) 100%);
+  }
+  .park-hero__copy {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    padding: .5rem .7rem;
+  }
+  .park-hero__eyebrow,
+  .park-hero__blurb { display: none; }
+  .park-hero__title {
+    margin: 0;
+    font-size: 1.02rem;
+    line-height: 1;
+    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .5));
+  }
+  .park-hero__stats { margin: 0; flex-wrap: nowrap; gap: .28rem; }
+  .park-hero__stats span { padding: .12rem .4rem; font-size: .56rem; }
+
+  /* La mina (y el resto) estiran el panel hasta el dock: el hueco negro
+     pasaba entre el juego y la bottom nav. */
+  .park-screen {
+    min-height: calc(var(--app-vh, 100dvh) - var(--bottom-nav-h, 5.25rem) - 4.5rem);
+  }
+  .park-play,
+  .mine,
+  .farm,
+  .corner-slot {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+  }
+}
+
+/* ---------- Parque · premios, resultado y palanca ---------- */
+/*
+  Los premios ordenados de mayor a menor y con peso visual proporcional al
+  pago: el gordo primero y más grande, el resto degradando. Antes estaban de
+  menor a mayor y todos del mismo tamaño, que es exactamente lo contrario de lo
+  que invita a jugar — lo primero que veías era el premio de 80.
+*/
+.corner-slot__odds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: .45rem .55rem;
+  margin-top: .15rem;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+  padding: 1.05rem .35rem .2rem;
+}
+.corner-slot__odds li {
+  position: relative;
+  display: flex;
+  min-width: 5.1rem;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: .22rem;
+  padding: .25rem .4rem;
+}
+/* Filo entre columnas: toda la separación que hace falta, sin recuadros. */
+.corner-slot__odds li + li::before {
+  content: "";
+  position: absolute;
+  top: 22%;
+  bottom: 18%;
+  left: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, .07);
+}
+.corner-slot__odds > li > img {
+  height: 2.55rem;
+  width: 2.55rem;
+  object-fit: contain;
+  -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 97%);
+  mask-image: radial-gradient(closest-side, #000 62%, transparent 97%);
+}
+.corner-slot__odds span {
+  color: rgba(255, 255, 255, .4);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .55rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+.corner-slot__odds b {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  color: rgba(255, 255, 255, .88);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .8rem;
+  font-weight: 800;
+}
+.corner-slot__odds b img {
+  height: .8rem;
+  width: .8rem;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+/*
+  El gordo pesa más: arte más grande, número en oro y un halo. La jerarquía la
+  da el tamaño y el color, no otro recuadro alrededor.
+*/
+.corner-slot__odds li.is-jackpot { flex-grow: 1.4; }
+.corner-slot__odds li.is-jackpot > img {
+  height: 3.25rem;
+  width: 3.25rem;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--corner-gold) 75%, transparent));
+}
+.corner-slot__odds li.is-jackpot b {
+  color: var(--corner-gold);
+  font-size: 1.02rem;
+  text-shadow: 0 0 16px color-mix(in srgb, var(--corner-gold) 65%, transparent);
+}
+
+/*
+  Resultado de la tirada, dentro de la máquina.
+
+  Ocupa siempre el mismo alto —en reposo lleva el texto de invitación— para que
+  la fila de premios y la palanca no salten cuando aparece el premio.
+*/
+.corner-slot__result {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  margin: .55rem auto 0;
+}
+.corner-slot__result.is-idle { min-height: .85rem; }
+.corner-slot__result-idle {
+  color: rgba(255, 255, 255, .35);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.corner-slot__result b {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--corner-gold);
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--corner-gold) 55%, transparent);
+  animation: corner-reel-land .38s cubic-bezier(.2, 1.5, .35, 1) both;
+}
+.corner-slot__result b img { height: 1.3rem; width: 1.3rem; object-fit: contain; }
+.corner-slot__result em {
+  border-radius: 999px;
+  background: var(--corner-gold);
+  padding: .18rem .5rem;
+  color: #1a1400;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+/*
+  Palanca. Botón propio y no el CTA genérico del juego: es la acción principal
+  de una máquina de casino y tenía que verse como tal — ancho completo, oro
+  encendido y un latido suave cuando está lista.
+*/
+.corner-slot__controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.corner-slot__lever {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  overflow: hidden;
+  margin-top: .55rem;
+  border: 0;
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .38) 0%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(118deg, #ffdf8a 0%, var(--corner-gold) 46%, var(--corner-gold-deep) 100%);
+  padding: .95rem 1.5rem;
+  color: #2a1c00;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .88rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .35);
+  /* El canto de abajo es el grosor del botón; el halo, la luz que tira. */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    inset 0 -1px 0 rgba(0, 0, 0, .25),
+    0 4px 0 var(--corner-gold-deep),
+    0 14px 30px -12px color-mix(in srgb, var(--corner-gold) 80%, transparent);
+  animation: corner-lever-idle 2.6s ease-in-out infinite;
+}
+/*
+  Destello que cruza la cara del botón. Es lo que lo separa de un rectángulo de
+  color plano: sin él, con degradé y todo, seguía leyéndose como una barra.
+*/
+.corner-slot__lever::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  bottom: -60%;
+  left: -30%;
+  width: 22%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent);
+  transform: skewX(-20deg);
+  animation: corner-lever-shine 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.corner-slot__lever .material-symbols-outlined { font-size: 1.2rem !important; }
+.corner-slot__lever-energy {
+  height: 1.25rem;
+  width: 1.25rem;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .4));
+}
+.corner-slot__lever-label,
+.corner-slot__lever-meta {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-shadow: inherit;
+}
+.corner-slot__lever-meta {
+  font-size: .78em;
+  opacity: .52;
+}
+.corner-slot__lever:hover:not(:disabled) { filter: brightness(1.06); }
+/* Se hunde al apretarla: el canto desaparece y el botón baja lo que medía. */
+.corner-slot__lever:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .5),
+    inset 0 -1px 0 rgba(0, 0, 0, .25),
+    0 0 0 var(--corner-gold-deep);
+}
+.corner-slot__lever:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.corner-slot__lever:disabled {
+  animation: none;
+  cursor: default;
+  filter: grayscale(.4);
+  opacity: .55;
+}
+.corner-slot__lever:disabled::after { display: none; }
+
+/* Latido de reposo: sólo el halo, sin mover el botón — un elemento que se
+   mueve solo bajo el cursor se vuelve difícil de apretar. */
+@keyframes corner-lever-idle {
+  0%, 100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .7),
+      inset 0 -1px 0 rgba(0, 0, 0, .25),
+      0 4px 0 var(--corner-gold-deep),
+      0 14px 30px -12px color-mix(in srgb, var(--corner-gold) 60%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .7),
+      inset 0 -1px 0 rgba(0, 0, 0, .25),
+      0 4px 0 var(--corner-gold-deep),
+      0 16px 40px -10px color-mix(in srgb, var(--corner-gold) 100%, transparent);
+  }
+}
+
+/* El destello cruza y descansa: la pausa larga evita que parezca un cargando. */
+@keyframes corner-lever-shine {
+  0%, 62%, 100% { left: -30%; }
+  92% { left: 118%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .corner-slot__lever,
+  .corner-slot__lever::after,
+  .corner-slot__result b,
+  .corner-slot__bubble { animation: none; }
+  .corner-slot__lever::after { display: none; }
+}
+
+@media (max-width: 639.98px) {
+  /*
+    Rodillos, premios a todo el ancho, anfitrión con globo legible, palanca.
+    El NPC ya no roba columna a la tabla de pagos.
+  */
+  .corner-slot {
+    --reel-cell: 3.35rem;
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "hud"
+      "machine"
+      "odds"
+      "crew"
+      "lever";
+    align-items: stretch;
+    gap: .35rem;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-primary, #7c3aed) 28%, rgba(255, 255, 255, .1));
+    border-radius: 1.5rem;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(124, 58, 237, .22), transparent 52%),
+      radial-gradient(80% 50% at 100% 100%, rgba(247, 183, 51, .08), transparent 46%),
+      #101218;
+    padding: .5rem .55rem .5rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  }
+  .corner-slot__stage { display: contents; }
+  .corner-slot__hud { grid-area: hud; gap: .3rem; }
+  .corner-slot__hud b { font-size: .58rem; }
+  .corner-slot__spins i .material-symbols-outlined { font-size: .95rem !important; }
+  .corner-slot__nudge,
+  .corner-slot__hint { display: none; }
+  .corner-slot__floor { display: contents; }
+  .corner-slot__machine { grid-area: machine; min-width: 0; width: 100%; }
+  .corner-slot__cabinet { padding: .4rem .4rem .42rem; border-radius: 1.05rem; }
+  .corner-slot__frame { gap: .26rem; padding: .32rem .3rem; border-radius: .8rem; }
+  .corner-slot__reel { border-radius: .6rem; }
+  .corner-slot__cell img { height: 2.7rem; width: 2.7rem; }
+  .corner-slot__result { margin-top: .2rem; }
+  .corner-slot__result.is-idle { display: none; min-height: 0; }
+  .corner-slot__odds {
+    grid-area: odds;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    align-content: stretch;
+    justify-items: stretch;
+    gap: .15rem .2rem;
+    margin: 0;
+    min-height: 0;
+    padding: .1rem 0;
+    border: 0;
+  }
+  .corner-slot__odds li {
+    min-width: 0;
+    flex: none;
+    justify-content: center;
+    gap: .12rem;
+    padding: .2rem .1rem;
+  }
+  .corner-slot__odds li + li::before { display: none; }
+  .corner-slot__odds li.is-jackpot { flex-grow: 0; }
+  .corner-slot__odds > li > img { height: 2.45rem; width: 2.45rem; }
+  .corner-slot__odds li.is-jackpot > img { height: 2.85rem; width: 2.85rem; }
+  .corner-slot__odds span { font-size: .58rem; }
+  .corner-slot__odds b { font-size: .84rem; }
+  .corner-slot__odds b img { height: .95rem; width: .95rem; }
+  .corner-slot__odds li.is-jackpot b { font-size: .95rem; }
+  .corner-slot__crew {
+    grid-area: crew;
+    position: relative;
+    flex-direction: row;
+    align-items: center;
+    align-self: stretch;
+    justify-content: flex-end;
+    gap: .45rem;
+    max-width: none;
+    width: 100%;
+    padding-bottom: 0;
+  }
+  .corner-slot__host { height: 5.6rem; opacity: .95; flex-shrink: 0; }
+  .corner-slot__bubble {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    flex: 1 1 auto;
+    max-width: none;
+    min-width: 0;
+    padding: .42rem .6rem;
+    font-size: .68rem;
+    line-height: 1.3;
+  }
+  .corner-slot__bubble::after {
+    right: -.14rem;
+    left: auto;
+    bottom: .7rem;
+  }
+  .corner-slot__controls {
+    grid-area: lever;
+    margin: 0;
+  }
+  .corner-slot__lever { margin: 0; padding: .7rem .85rem; width: 100%; }
+}
+
+/* ---------- Parque · huerto (parcelas) ---------- */
+/*
+  Cada parcela es un cantero, no una card con una lista adentro. La tierra se
+  dibuja con degradés —no hay textura que cargar—: un marrón de fondo, surcos
+  en repeating-linear-gradient y una sombra interior que hunde los bordes, que
+  es lo que la hace leer como un hoyo y no como un rectángulo marrón.
+*/
+.farm { display: flex; flex-direction: column; gap: .85rem; }
+/*
+  El huerto es un escenario del parque, no un tapete de césped.
+
+  El verde queda en las parcelas —tierra, pasto del borde, mata—. Pintar todo
+  el panel de verde hacía que el modo se leyera distinto al resto (mina,
+  casino, pesca) y el césped competía con los canteros. El fondo es el mismo
+  oscuro del parque; el jardinero se para a la derecha con padding-inline-end
+  para no tapar las parcelas.
+*/
+.farm__stage {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(75% 90% at 92% 88%, rgba(255, 255, 255, .04), transparent 46%),
+    radial-gradient(55% 45% at 8% 0%, rgba(255, 255, 255, .03), transparent 58%),
+    #12141c;
+  padding: 1rem 1.1rem 1.15rem;
+  padding-inline-end: clamp(5rem, 18vw, 8.75rem);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+.farm__hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+}
+.farm__hud b {
+  color: rgba(255, 255, 255, .85);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.farm__nudge {
+  flex: 1 1 10rem;
+  color: rgba(255, 255, 255, .38);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.farm__seeds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem;
+  margin: .65rem 0 .75rem;
+  padding: 0;
+  list-style: none;
+}
+.farm__seeds-label {
+  margin-right: .2rem;
+  color: rgba(255, 255, 255, .38);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.farm__seeds li:not(.farm__seeds-label) {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: .55rem;
+  background: rgba(0, 0, 0, .28);
+  padding: .18rem .45rem .18rem .22rem;
+  color: rgba(255, 255, 255, .82);
+  font-size: .62rem;
+  font-weight: 700;
+}
+.farm__seeds li.is-empty { opacity: .42; }
+.farm__seeds img {
+  height: 1.25rem;
+  width: 1.25rem;
+  object-fit: contain;
+}
+.farm__seeds em {
+  color: rgba(255, 255, 255, .5);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.farm__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: .75rem;
+}
+
+/* Jardinero del huerto, con el mismo patrón que el minero y el pescador. */
+.farm__crew {
+  position: absolute;
+  z-index: 2;
+  right: .35rem;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .2rem;
+  pointer-events: none;
+}
+.farm__gardener {
+  display: block;
+  height: clamp(6.8rem, 16vw, 10.5rem);
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  object-position: bottom center;
+  image-rendering: auto;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .55));
+}
+.farm__bubble {
+  position: relative;
+  max-width: 10.5rem;
+  border-radius: .85rem;
+  background: #f3fbef;
+  padding: .34rem .55rem .38rem;
+  color: #16281a;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .56rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.3;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .4);
+  animation: farm-bubble-in .26s cubic-bezier(.2, 1.5, .35, 1) both;
+}
+.farm__bubble::after {
+  content: "";
+  position: absolute;
+  right: .9rem;
+  bottom: -.2rem;
+  height: .42rem;
+  width: .42rem;
+  background: #f3fbef;
+  rotate: 45deg;
+}
+@keyframes farm-bubble-in {
+  from { opacity: 0; transform: translateY(.4rem) scale(.9); }
+  to { opacity: 1; transform: none; }
+}
+.farm__empty {
+  margin: -.35rem 0 .55rem;
+  color: rgba(255, 255, 255, .45);
+  font-size: .72rem;
+}
+
+.farm-plot {
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  gap: .5rem;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 1.1rem;
+  /* Verde de borde: el pasto alrededor del cantero. */
+  background: linear-gradient(180deg, #16281a, #101a13);
+  padding: .6rem;
+}
+.farm-plot.is-ready {
+  border-color: color-mix(in srgb, #7ae582 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #7ae582 18%, transparent), 0 10px 30px -18px #7ae582;
+}
+
+.farm-plot__head {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .5rem;
+  min-height: 2.5em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.farm-plot__head span { color: rgba(255, 255, 255, .4); }
+.farm-plot__head b {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: rgba(255, 255, 255, .72);
+  text-align: right;
+  line-height: 1.2;
+}
+.farm-plot.is-ready .farm-plot__head b { color: #9df3a3; }
+
+.farm-plot__soil {
+  position: relative;
+  display: grid;
+  /* Un poco más ancha que alta: a tres columnas a todo el cantero un 1:1
+     estiraba el huerto dos pantallas. El 5/4 deja ver crecer la mata. */
+  aspect-ratio: 5 / 4;
+  height: auto;
+  place-items: center;
+  overflow: hidden;
+  border-radius: .8rem;
+  background:
+    radial-gradient(120% 80% at 50% 0%, #5a3a22 0%, #3d2617 55%, #2a1a10 100%);
+  box-shadow:
+    inset 0 8px 14px -8px rgba(0, 0, 0, .9),
+    inset 0 -10px 16px -10px rgba(0, 0, 0, .8);
+}
+/* Surcos: las líneas de tierra arada. En diagonal suave para que no se lean
+   como rayas de un patrón. */
+.farm-plot__furrows {
+  position: absolute;
+  inset: 0;
+  opacity: .5;
+  background: repeating-linear-gradient(
+    96deg,
+    rgba(0, 0, 0, .22) 0 6px,
+    rgba(255, 255, 255, .035) 6px 12px
+  );
+}
+/* Hoyo de siembra en la parcela vacía: invita a plantar ahí. */
+.farm-plot__hole {
+  height: 1.6rem;
+  width: 2.4rem;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, #1b1009, #2c1c11);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, .9), 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+/* La planta crece desde el piso del cantero. */
+.farm-plot__crop {
+  position: relative;
+  display: grid;
+  height: 100%;
+  width: 100%;
+  place-items: end center;
+  padding-bottom: .6rem;
+}
+.farm-plot__leaves {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 2.2rem;
+  width: 3.5rem;
+  transform-origin: bottom center;
+  animation: farm-sway 4.5s ease-in-out infinite;
+}
+.farm-plot__leaves i {
+  position: absolute;
+  bottom: 0;
+  height: 1.5rem;
+  width: .85rem;
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(160deg, #6fd47a, #2f8b45);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25);
+  transform-origin: bottom center;
+}
+.farm-plot__leaves i:nth-child(1) { transform: rotate(-32deg); }
+.farm-plot__leaves i:nth-child(2) { height: 1.9rem; }
+.farm-plot__leaves i:nth-child(3) { transform: rotate(32deg) scaleX(-1); }
+
+/*
+  Las tres etapas: el brote asoma, la mata se abre y al final aparece la baya.
+  Es escala sobre el mismo dibujo, así que no hace falta arte por etapa.
+*/
+.farm-plot[data-stage="1"] .farm-plot__leaves { transform: scale(.45); }
+.farm-plot[data-stage="2"] .farm-plot__leaves { transform: scale(.75); }
+
+.farm-plot__berry {
+  position: absolute;
+  bottom: 1.5rem;
+  height: 2.4rem;
+  width: 2.4rem;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .6));
+}
+/* Cuando está lista, la baya flota y brilla: es la señal de "vení a buscarme". */
+.farm-plot.is-ready .farm-plot__berry {
+  animation: farm-bob 1.8s ease-in-out infinite;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .6)) drop-shadow(0 0 12px rgba(122, 229, 130, .75));
+}
+
+.farm-plot__progress {
+  position: absolute;
+  right: .5rem;
+  bottom: .4rem;
+  left: .5rem;
+  height: .22rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .55);
+}
+.farm-plot__progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4ba85f, #7ae582);
+}
+
+.farm-plot__action {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  min-height: 2.4rem;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: .7rem;
+  background: rgba(255, 255, 255, .05);
+  padding: .45rem .6rem;
+  color: rgba(255, 255, 255, .8);
+  font-size: .7rem;
+  font-weight: 700;
+}
+.farm-plot__action .material-symbols-outlined { font-size: .95rem !important; }
+.farm-plot__action:disabled { opacity: .45; cursor: default; }
+.farm-plot__action:hover:not(:disabled) { background: rgba(255, 255, 255, .1); }
+/* La parcela lista pide la acción: el botón se pinta de verde maduro. */
+.farm-plot.is-ready .farm-plot__action:not(:disabled) {
+  border-color: transparent;
+  background: linear-gradient(180deg, #7ae582, #3f9d55);
+  color: #06240f;
+  box-shadow: 0 3px 0 #2c6b3b;
+}
+.farm-plot.is-ready .farm-plot__action:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 #2c6b3b;
+}
+
+/* Selector de baya: se abre sobre la parcela tocada. */
+.farm__picker {
+  position: absolute;
+  z-index: 3;
+  right: .5rem;
+  bottom: .5rem;
+  left: .5rem;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: .8rem;
+  background: rgba(10, 14, 11, .97);
+  padding: .4rem;
+  box-shadow: 0 18px 34px -16px rgba(0, 0, 0, .9);
+  animation: farm-picker-in .18s ease both;
+}
+.farm__picker p {
+  padding: .1rem .3rem .3rem;
+  color: rgba(255, 255, 255, .4);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .5rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.farm__picker button {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  border-radius: .5rem;
+  padding: .3rem .35rem;
+  color: rgba(255, 255, 255, .85);
+  font-size: .7rem;
+  text-align: left;
+}
+.farm__picker button:hover:not(:disabled) { background: rgba(255, 255, 255, .08); }
+.farm__picker button img { height: 1.35rem; width: 1.35rem; object-fit: contain; }
+.farm__picker button b { margin-left: auto; color: rgba(255, 255, 255, .45); font-family: var(--font-mono), ui-monospace, monospace; font-size: .6rem; }
+
+@keyframes farm-sway {
+  0%, 100% { rotate: -3deg; }
+  50% { rotate: 3deg; }
+}
+@keyframes farm-bob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -.35rem; }
+}
+@keyframes farm-picker-in {
+  from { opacity: 0; transform: translateY(.4rem); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .farm-plot__leaves,
+  .farm-plot.is-ready .farm-plot__berry,
+  .farm__picker,
+  .farm__bubble { animation: none; }
+}
+
+@media (max-width: 639.98px) {
+  /*
+    2×2 a todo el ancho. El jardinero va en su propia fila, globo al lado,
+    para no tapar la parcela 4.
+  */
+  .farm {
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 0;
+  }
+  .farm__stage {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "hud"
+      "seeds"
+      "grid"
+      "crew";
+    align-items: stretch;
+    gap: .32rem;
+    padding: .5rem .55rem .45rem;
+    padding-inline-end: .55rem;
+  }
+  .farm__hud { grid-area: hud; gap: .3rem; }
+  .farm__hud b { font-size: .58rem; }
+  .farm__nudge { display: none; }
+  .farm__seeds {
+    grid-area: seeds;
+    margin: 0;
+    gap: .28rem;
+  }
+  .farm__seeds-label { display: none; }
+  .farm__seeds li:not(.farm__seeds-label) {
+    padding: .16rem .4rem .16rem .22rem;
+    font-size: .62rem;
+  }
+  .farm__seeds img { height: 1.45rem; width: 1.45rem; }
+  .farm__empty { display: none; }
+  .farm__grid {
+    grid-area: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: 1fr 1fr;
+    gap: .35rem;
+    min-height: 0;
+    height: 100%;
+    align-items: stretch;
+    align-content: stretch;
+  }
+  .farm-plot {
+    height: 100%;
+    min-height: 0;
+    padding: .32rem .32rem .3rem;
+    gap: .2rem;
+    border-radius: .85rem;
+  }
+  .farm-plot__head {
+    min-height: 2.6em;
+    align-items: flex-start;
+    font-size: .46rem;
+    letter-spacing: .08em;
+  }
+  .farm-plot__head b {
+    max-width: 68%;
+    text-align: right;
+    line-height: 1.2;
+  }
+  .farm-plot__soil {
+    flex: 1 1 0;
+    aspect-ratio: auto;
+    height: auto;
+    min-height: 0;
+    border-radius: .55rem;
+  }
+  .farm-plot__action {
+    flex-shrink: 0;
+    min-height: 2.15rem;
+    padding: .32rem .35rem;
+    font-size: .6rem;
+  }
+  .farm-plot.is-ready .farm-plot__action:not(:disabled) {
+    box-shadow: 0 2px 0 #2c6b3b;
+  }
+  .farm-plot__berry { width: 2.35rem; height: 2.35rem; }
+  .farm__crew {
+    grid-area: crew;
+    position: relative;
+    right: auto;
+    bottom: auto;
+    z-index: 1;
+    align-self: stretch;
+    justify-content: flex-end;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: .45rem;
+    margin: 0;
+    max-width: none;
+    width: 100%;
+    pointer-events: none;
+  }
+  .farm__gardener {
+    height: 5.6rem;
+    width: auto;
+    opacity: 1;
+    flex-shrink: 0;
+  }
+  .farm__bubble {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    flex: 1 1 auto;
+    max-width: none;
+    min-width: 0;
+    padding: .4rem .55rem;
+    font-size: .66rem;
+    line-height: 1.3;
+  }
+  .farm__bubble::after {
+    right: -.14rem;
+    left: auto;
+    bottom: .7rem;
+  }
+  .farm__picker { padding: .32rem; }
+  .farm__picker button { padding: .24rem .28rem; font-size: .62rem; }
+}
+
+/* ---------- Parque · mina ---------- */
+/*
+  Muro de roca, no una grilla de botones con "?".
+
+  Cada celda es piedra dibujada con degradés: base marrón-gris, vetas en
+  `repeating-linear-gradient` desplazadas por celda (lo hace el componente, con
+  `background-position`) y un bisel de luz arriba y sombra abajo que le da
+  volumen. Ese desplazamiento es lo que evita que 25 celdas idénticas se lean
+  como un mosaico.
+*/
+.mine { display: flex; flex-direction: column; gap: .85rem; }
+
+/*
+  Un escenario, no piezas sueltas sobre el fondo del parque.
+
+  El muro acotado a 20rem dejaba media pantalla vacía a la derecha: se leía
+  como un widget abandonado. El panel ocupa el ancho del parque; el tajo
+  crece y el minero llena la columna que queda.
+*/
+.mine__stage {
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(75% 90% at 92% 88%, rgba(240, 180, 74, .1), transparent 46%),
+    radial-gradient(55% 45% at 8% 0%, rgba(124, 74, 32, .28), transparent 58%),
+    #12141c;
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.mine__hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+}
+/* Picos, no un número: la munición del día se lee de un vistazo. */
+.mine__picks { display: flex; gap: .1rem; }
+.mine__picks i { display: grid; place-items: center; color: #f0b44a; }
+.mine__picks i .material-symbols-outlined { font-size: 1.05rem !important; }
+.mine__picks i.is-spent { color: rgba(255, 255, 255, .16); }
+.mine__hud b {
+  color: rgba(255, 255, 255, .85);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.mine__nudge {
+  flex: 1 1 8rem;
+  color: rgba(255, 255, 255, .38);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.mine__reset,
+.park-reset {
+  display: inline-flex;
+  margin-left: auto;
+  align-items: center;
+  gap: .3rem;
+  border: 1px solid rgba(240, 180, 74, .35);
+  border-radius: .55rem;
+  background: rgba(0, 0, 0, .28);
+  padding: .2rem .5rem;
+  color: #f0c274;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+.mine__reset .material-symbols-outlined,
+.park-reset .material-symbols-outlined { font-size: .95rem !important; }
+.mine__drops {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem;
+  margin: .55rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.mine__drops-label {
+  color: rgba(255, 255, 255, .38);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-right: .2rem;
+}
+.mine__drops li:not(.mine__drops-label) {
+  display: inline-flex;
+  align-items: center;
+  gap: .22rem;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: .5rem;
+  background: rgba(0, 0, 0, .28);
+  padding: .12rem .38rem .12rem .22rem;
+  color: rgba(255, 255, 255, .78);
+  font-size: .58rem;
+  font-weight: 700;
+}
+.mine__drops img {
+  height: .95rem;
+  width: .95rem;
+  object-fit: contain;
+}
+
+/*
+  El tajo es el juego: centrado y del tamaño de una piedra jugable.
+
+  El minero no tiene columna propia — era medio panel y le robaba el ojo al
+  muro. Queda como detalle en la esquina, el mismo criterio que los PNG de
+  las pestañas: ambientan, no compiten.
+*/
+.mine__board {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-top: .15rem;
+}
+.mine__pit { display: contents; }
+
+.mine__crew {
+  position: absolute;
+  z-index: 2;
+  right: .15rem;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .18rem;
+  pointer-events: none;
+}
+
+.mine__wall {
+  display: grid;
+  width: min(32rem, 100%);
+  min-width: 0;
+  grid-template-columns: repeat(5, 1fr);
+  gap: .4rem;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 1.1rem;
+  background: #0b0a09;
+  padding: .5rem;
+  box-shadow: inset 0 12px 26px -14px rgba(0, 0, 0, .95);
+}
+
+.mine-cell {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  border: 0;
+  border-radius: .55rem;
+}
+.mine-cell__rock {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(112deg, rgba(0, 0, 0, .28) 0 7px, rgba(255, 255, 255, .05) 7px 15px),
+    linear-gradient(180deg, #55483a 0%, #3b3129 55%, #2a231d 100%);
+  background-size: 140% 140%, auto;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, .12),
+    inset 0 -3px 6px rgba(0, 0, 0, .55);
+}
+/* Grietas: se marcan al pasar el mouse, como si la piedra ya cediera. */
+.mine-cell__cracks {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    linear-gradient(74deg, transparent 46%, rgba(0, 0, 0, .5) 47%, transparent 48%),
+    linear-gradient(-58deg, transparent 60%, rgba(0, 0, 0, .38) 61%, transparent 62%);
+  transition: opacity .18s ease;
+}
+.mine-cell:hover:not(:disabled) .mine-cell__cracks { opacity: 1; }
+.mine-cell:hover:not(:disabled) .mine-cell__rock { filter: brightness(1.12); }
+.mine-cell:active:not(:disabled) { transform: translateY(1px); }
+
+/* Celda ya excavada: el hueco en la pared. La roca se va y queda el fondo. */
+.mine-cell.is-empty .mine-cell__rock,
+.mine-cell.is-loot .mine-cell__rock {
+  background: radial-gradient(120% 100% at 50% 0%, #241d18, #120f0c);
+  box-shadow: inset 0 6px 12px rgba(0, 0, 0, .85);
+}
+.mine-cell.is-empty .mine-cell__cracks,
+.mine-cell.is-loot .mine-cell__cracks { display: none; }
+
+.mine-cell__rubble {
+  position: relative;
+  color: rgba(255, 255, 255, .18);
+  font-size: 1.3rem !important;
+}
+.mine-cell__loot {
+  position: relative;
+  height: 68%;
+  width: 68%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  justify-self: center;
+  align-self: center;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .8));
+  animation: mine-loot-in .42s cubic-bezier(.2, 1.5, .35, 1) both;
+}
+/*
+  El cristal trae `width/height` en el style del JSX (72px). En el teléfono
+  la celda mide menos y el inline gana: el hexágono se corta contra el borde
+  del muro. Acá el tamaño lo pone la celda.
+*/
+.mine-cell .frag-art.mine-cell__loot {
+  width: 70% !important;
+  height: 70% !important;
+  max-width: 2.75rem;
+  max-height: 2.75rem;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .55));
+}
+/* El botín bueno deja un resplandor en el hueco. */
+.mine-cell.is-loot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(closest-side, rgba(240, 180, 74, .3), transparent 72%);
+  pointer-events: none;
+}
+
+/*
+  El pico del golpe.
+
+  Entra desde arriba a la izquierda, cae sobre la celda y sale. Es lo que hace
+  que el clic se lea como picar: sin él había temblor y polvo, pero nada que
+  explicara de dónde venían.
+*/
+.mine-cell__pick {
+  position: absolute;
+  z-index: 3;
+  top: -12%;
+  left: -6%;
+  height: 96%;
+  width: 96%;
+  object-fit: contain;
+  transform-origin: 22% 82%;
+  animation: mine-swing .5s cubic-bezier(.35, 0, .2, 1) both;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .7));
+}
+@keyframes mine-swing {
+  0% { opacity: 0; rotate: -75deg; scale: .85; }
+  35% { opacity: 1; rotate: -48deg; scale: 1; }
+  /* El golpe: llega, pega y rebota apenas. */
+  55% { rotate: 6deg; }
+  68% { rotate: -6deg; }
+  100% { opacity: 0; rotate: -30deg; scale: .9; }
+}
+
+/* Polvo del picotazo: seis motas que salen en abanico y se apagan. */
+.mine-cell__dust { position: absolute; inset: 0; }
+.mine-cell__dust i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: .3rem;
+  width: .3rem;
+  border-radius: 999px;
+  background: #b39775;
+  animation: mine-dust .45s ease-out both;
+  /* Arrancan cuando el pico toca, no cuando empieza el swing. */
+  animation-delay: calc(260ms + var(--dust) * 18ms);
+  /* Cada mota sale en su ángulo: 60° de separación. */
+  rotate: calc(var(--dust) * 60deg);
+}
+.mine-cell.is-digging .mine-cell__rock {
+  animation: mine-shake .1s linear 4 .26s;
+}
+/* Fogonazo del impacto, sincronizado con el momento en que el pico llega. */
+.mine-cell.is-digging::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(closest-side at 45% 55%, rgba(255, 232, 180, .55), transparent 70%);
+  animation: mine-impact .34s ease-out .26s both;
+  pointer-events: none;
+}
+@keyframes mine-impact {
+  from { opacity: 1; scale: .5; }
+  to { opacity: 0; scale: 1.25; }
+}
+
+@keyframes mine-dust {
+  from { opacity: .9; translate: 0 0; scale: 1; }
+  to { opacity: 0; translate: 0 -1.6rem; scale: .4; }
+}
+@keyframes mine-shake {
+  0%, 100% { translate: 0 0; }
+  25% { translate: -1px 1px; }
+  75% { translate: 1px -1px; }
+}
+@keyframes mine-loot-in {
+  from { opacity: 0; scale: .5; }
+  to { opacity: 1; scale: 1; }
+}
+
+/* Bolsa de fósiles: cada uno con el Pokémon que revive. */
+.mine__bag {
+  margin-top: .95rem;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+  padding-top: .85rem;
+}
+.mine__bag-head {
+  color: rgba(255, 255, 255, .4);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .55rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.mine__bag-empty { margin-top: .5rem; color: rgba(255, 255, 255, .35); font-size: .78rem; }
+.mine__bag ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: .5rem;
+  margin-top: .6rem;
+}
+.mine__bag li {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: .9rem;
+  background: rgba(255, 255, 255, .035);
+  padding: .45rem .55rem;
+}
+.mine__bag li > .frag-art {
+  height: 2.6rem;
+  width: 2.6rem;
+}
+.mine__bag li > span { display: flex; min-width: 0; flex-direction: column; }
+.mine__bag li b { color: #fff; font-size: .74rem; font-weight: 700; }
+.mine__bag li em {
+  color: rgba(255, 255, 255, .45);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .6rem;
+  font-style: normal;
+}
+.mine__bag li button {
+  margin-left: auto;
+  border-radius: .6rem;
+  background: linear-gradient(180deg, #f0b44a, #b97a1c);
+  padding: .35rem .65rem;
+  color: #2a1c00;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 0 #7d5210;
+}
+.mine__bag li button:disabled { opacity: .5; box-shadow: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mine-cell__loot,
+  .mine-cell__dust i,
+  .mine-cell__pick,
+  .mine-cell.is-digging::before,
+  .mine-cell.is-digging .mine-cell__rock,
+  .mine__bubble { animation: none; }
+  .mine-cell__pick,
+  .mine-cell.is-digging::before { display: none; }
+  .mine-cell__dust { display: none; }
+}
+
+/* ---------- Parque · ayuda por modo ---------- */
+.park-toolbar {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  min-width: 0;
+}
+.park-toolbar nav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.park-toolbar .park-howto { flex-shrink: 0; }
+.park-howto { position: relative; display: flex; justify-content: flex-end; }
+.park-howto__toggle {
+  display: grid;
+  height: 1.9rem;
+  width: 1.9rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .05);
+  color: rgba(255, 255, 255, .6);
+}
+.park-howto__toggle:hover { border-color: color-mix(in srgb, var(--color-primary) 55%, transparent); color: #fff; }
+.park-howto__toggle .material-symbols-outlined { font-size: 1.05rem !important; }
+.park-howto.is-open .park-howto__toggle {
+  border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  color: #fff;
+}
+.park-howto__panel {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + .4rem);
+  right: 0;
+  width: min(22rem, calc(100vw - 3rem));
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 1rem;
+  background: rgba(12, 13, 20, .98);
+  padding: .8rem .9rem;
+  box-shadow: 0 24px 44px -20px rgba(0, 0, 0, .95);
+  animation: park-howto-in .16s ease both;
+}
+.park-howto__title {
+  color: rgba(255, 255, 255, .45);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .55rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.park-howto__panel ol { display: flex; flex-direction: column; gap: .5rem; margin-top: .6rem; }
+.park-howto__panel li {
+  display: flex;
+  align-items: flex-start;
+  gap: .55rem;
+  color: rgba(255, 255, 255, .8);
+  font-size: .78rem;
+  line-height: 1.35;
+}
+/* El número es una ficha, no un bullet: ordena la lectura de un vistazo. */
+.park-howto__panel li b {
+  display: grid;
+  height: 1.15rem;
+  width: 1.15rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  color: color-mix(in srgb, var(--color-primary) 55%, #fff);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-weight: 800;
+}
+@keyframes park-howto-in {
+  from { opacity: 0; transform: translateY(-.3rem); }
+  to { opacity: 1; transform: none; }
+}
+
+/*
+  Toast del minijuego: flota sobre el panel activo y se va solo.
+
+  Antes era una pastilla anclada entre las pestañas y el juego, compartida
+  por los siete modos. Un aviso de pesca seguía ahí al cambiar al casino.
+  El color del borde sigue al tab; el kind sólo marca error / miss.
+*/
+.park-play { position: relative; }
+.park-toast-host {
+  pointer-events: none;
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: .65rem .75rem 0;
+}
+.park-toast {
+  display: inline-flex;
+  max-width: min(26rem, 100%);
+  align-items: center;
+  gap: .45rem;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 999px;
+  background: rgba(10, 12, 18, .92);
+  padding: .42rem .9rem .42rem .48rem;
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 600;
+  line-height: 1.3;
+  box-shadow: 0 10px 28px -12px rgba(0, 0, 0, .85);
+  backdrop-filter: blur(10px);
+}
+.park-toast__icon {
+  flex-shrink: 0;
+  font-size: 1.25rem !important;
+  line-height: 1;
+}
+.park-toast[data-tab="fishing"] { border-color: rgba(56, 189, 248, .45); }
+.park-toast[data-tab="mine"] { border-color: rgba(240, 180, 74, .5); }
+.park-toast[data-tab="corner"] { border-color: rgba(232, 185, 72, .45); }
+.park-toast[data-tab="farm"] { border-color: rgba(74, 222, 128, .4); }
+.park-toast[data-tab="daycare"] { border-color: rgba(251, 146, 60, .45); }
+.park-toast[data-tab="wonder"] { border-color: rgba(167, 139, 250, .45); }
+.park-toast[data-tab="frontier"] { border-color: rgba(248, 113, 113, .45); }
+.park-toast[data-kind="error"] { border-color: rgba(239, 68, 68, .55); background: rgba(40, 12, 14, .94); }
+.park-toast[data-kind="miss"] { opacity: .95; }
+.park-toast.is-in { animation: park-toast-in .28s cubic-bezier(.22, 1, .36, 1) both; }
+.park-toast.is-out { animation: park-toast-out .28s ease both; }
+@keyframes park-toast-in {
+  from { opacity: 0; transform: translateY(.45rem) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes park-toast-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(.35rem) scale(.97); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .park-howto__panel { animation: none; }
+  .park-toast.is-in,
+  .park-toast.is-out { animation: none; }
+}
+
+.mine__miner {
+  display: block;
+  height: clamp(5.25rem, 12vw, 7.25rem);
+  width: auto;
+  object-fit: contain;
+  object-position: bottom center;
+  opacity: .9;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .5));
+}
+
+.mine__bubble {
+  position: relative;
+  display: flex;
+  max-width: 8.2rem;
+  align-items: center;
+  gap: .3rem;
+  border-radius: .85rem;
+  background: #fff8e8;
+  padding: .28rem .45rem .32rem;
+  color: #2a1c00;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .35);
+  animation: mine-bubble-in .28s cubic-bezier(.2, 1.5, .35, 1) both;
+}
+.mine__bubble::after {
+  content: "";
+  position: absolute;
+  right: .85rem;
+  bottom: -.2rem;
+  width: .42rem;
+  height: .42rem;
+  background: #fff8e8;
+  transform: rotate(45deg);
+}
+.mine__bubble img {
+  height: 1.35rem;
+  width: 1.35rem;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.mine__bubble-empty {
+  opacity: .85;
+}
+.mine__bubble b {
+  color: #2a1c00;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+.mine__bubble.is-empty b {
+  color: #6b5d4a;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  letter-spacing: .08em;
+}
+
+@keyframes mine-bubble-in {
+  from { opacity: 0; transform: translateY(.4rem) scale(.88); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 639.98px) {
+  .mine { overflow-x: hidden; }
+  /*
+    Una pantalla: HUD + muro + (bolsa | minero). El minero ya no es una
+    franja extra debajo del tajo, y los fósiles caben en una fila.
+  */
+  .mine__stage {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "hud drops"
+      "wall wall"
+      "bag crew";
+    align-items: stretch;
+    gap: .35rem .45rem;
+    overflow-x: hidden;
+    padding: .55rem .55rem .5rem;
+  }
+  .mine__hud { grid-area: hud; gap: .3rem; min-width: 0; }
+  .mine__hud b { font-size: .58rem; }
+  .mine__picks i .material-symbols-outlined { font-size: .92rem !important; }
+  .mine__nudge { display: none; }
+  .mine__drops {
+    grid-area: drops;
+    margin: 0;
+    justify-content: flex-end;
+    gap: .16rem;
+  }
+  .mine__drops-label,
+  .mine__drops li:not(.mine__drops-label) span { display: none; }
+  .mine__drops li:not(.mine__drops-label) {
+    min-width: 0;
+    padding: .12rem;
+    border-radius: .4rem;
+  }
+  .mine__drops img,
+  .mine__drops .frag-art { height: 1.15rem; width: 1.15rem; }
+  .mine__board { display: contents; }
+  .mine__pit {
+    grid-area: wall;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    place-items: center;
+    container-type: size;
+  }
+  .mine__wall {
+    width: min(100%, 100cqh);
+    justify-self: center;
+    gap: .18rem;
+    padding: .22rem;
+    border-radius: .85rem;
+  }
+  .mine-cell { min-width: 0; min-height: 0; border-radius: .4rem; }
+  .mine-cell .frag-art.mine-cell__loot {
+    width: 58% !important;
+    height: 58% !important;
+    max-width: 1.7rem;
+    max-height: 1.7rem;
+  }
+  .mine__crew {
+    grid-area: crew;
+    position: relative;
+    right: auto;
+    bottom: auto;
+    align-self: end;
+    justify-content: flex-end;
+    margin: 0;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+    max-width: 5.2rem;
+  }
+  .mine__miner { height: 4.1rem; opacity: .95; flex-shrink: 0; }
+  .mine__bubble {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + .12rem);
+    max-width: 5.4rem;
+    min-width: 0;
+    padding: .22rem .32rem;
+    flex-direction: column;
+    text-align: center;
+  }
+  .mine__bubble::after {
+    right: .7rem;
+    left: auto;
+    bottom: -.16rem;
+  }
+  .mine__bubble img,
+  .mine__bubble .frag-art,
+  .mine__bag li > .frag-art { height: 1.7rem; width: 1.7rem; }
+  .mine__bag {
+    grid-area: bag;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .mine__bag-head { display: none; }
+  .mine__bag ul {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .28rem;
+    margin: 0;
+  }
+  .mine__bag li {
+    flex-direction: column;
+    gap: .12rem;
+    padding: .32rem .22rem .28rem;
+    border-radius: .7rem;
+  }
+  .mine__bag li > span { align-items: center; text-align: center; }
+  .mine__bag li b { font-size: .58rem; line-height: 1.15; }
+  .mine__bag li em { font-size: .5rem; }
+  .mine__bag li button {
+    margin: .08rem 0 0;
+    width: 100%;
+    padding: .22rem .2rem;
+    font-size: .48rem;
+    letter-spacing: .04em;
+  }
+}
+
+/*
+  Roca de las celdas vacías.
+
+  Más chica y un poco apagada: "vacío" es el 42% de la tabla, y si brillara
+  igual que una moneda o un fósil el muro excavado se leería lleno de premios.
+  Sin grayscale ni giro: es una piedra, no una herramienta clavada.
+*/
+.mine-cell__empty {
+  position: relative;
+  height: 52%;
+  width: 52%;
+  object-fit: contain;
+  opacity: .72;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .55));
+}
+/* La celda vacía tampoco lleva el resplandor del botín bueno. */
+.mine-cell.is-empty::after { display: none; }
+
+/*
+  Fragmento de especie: cristal irregular con el sprite recortado.
+
+  Un Gyarados entero en la mochila se lee como “ya lo tenés”. El recorte en
+  gema deja reconocer la especie y deja claro que todavía es un pedazo.
+*/
+.frag-art {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  isolation: isolate;
+  /*
+    Hexágono **simétrico**. El anterior no lo era —vértices en 10% y 93% a los
+    costados, y el de abajo en 48%—, así que el centro de la figura no caía en
+    el centro de la caja y el sprite, centrado en 50%, se veía corrido. Con la
+    figura simétrica el centrado deja de depender de compensaciones a ojo.
+  */
+  clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+  background:
+    linear-gradient(155deg, #e0f2fe 0%, #38bdf8 36%, #0369a1 72%, #0c4a6e 100%);
+  /*
+    Relieve de gema: filo de luz en el borde, brillo que baja desde la punta y
+    sombra en la base. Son tres `inset` y es lo que separa una piedra tallada de
+    un polígono de color.
+  */
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, .42),
+    inset 0 12px 20px -10px rgba(255, 255, 255, .85),
+    inset 0 -14px 22px -10px rgba(0, 0, 0, .55);
+  filter: drop-shadow(0 4px 8px rgba(8, 47, 73, .45));
+}
+/*
+  Color del cristal por rareza, en la misma escala que la Pokédex.
+
+  Los tonos siguen a `RARITY_STYLES`: gris para común, celeste raro, violeta
+  épico, oro legendario, rosa mítico, esmeralda Ultra Ente y ámbar paradoja. Sin
+  esto todos los fragmentos eran del mismo azul y un pedazo de Mewtwo se veía
+  igual que uno de Magikarp.
+*/
+.frag-art.is-common {
+  background: linear-gradient(155deg, #f8fafc 0%, #cbd5e1 36%, #64748b 72%, #334155 100%);
+  filter: drop-shadow(0 4px 8px rgba(15, 23, 42, .45));
+}
+.frag-art.is-rare {
+  background: linear-gradient(155deg, #e0f2fe 0%, #38bdf8 36%, #0369a1 72%, #0c4a6e 100%);
+  filter: drop-shadow(0 4px 8px rgba(8, 47, 73, .45));
+}
+.frag-art.is-epic {
+  background: linear-gradient(155deg, #f5e8ff 0%, #a78bfa 36%, #6d28d9 72%, #3b0764 100%);
+  filter:
+    drop-shadow(0 3px 6px rgba(0, 0, 0, .5))
+    drop-shadow(0 0 11px rgba(167, 139, 250, .6));
+}
+.frag-art.is-legendary {
+  background: linear-gradient(155deg, #fffbeb 0%, #fcd34d 34%, #d97706 70%, #78350f 100%);
+  filter:
+    drop-shadow(0 3px 6px rgba(0, 0, 0, .5))
+    drop-shadow(0 0 14px rgba(252, 211, 77, .75));
+}
+.frag-art.is-mythical {
+  background: linear-gradient(155deg, #fdf2f8 0%, #f9a8d4 34%, #db2777 70%, #831843 100%);
+  filter:
+    drop-shadow(0 3px 6px rgba(0, 0, 0, .5))
+    drop-shadow(0 0 14px rgba(244, 114, 182, .75));
+}
+.frag-art.is-ultraBeast {
+  background: linear-gradient(155deg, #ecfdf5 0%, #6ee7b7 34%, #059669 70%, #064e3b 100%);
+  filter: drop-shadow(0 4px 12px rgba(5, 150, 105, .5));
+}
+.frag-art.is-paradox {
+  background: linear-gradient(155deg, #fffbeb 0%, #fbbf24 34%, #b45309 70%, #451a03 100%);
+  filter: drop-shadow(0 4px 12px rgba(180, 83, 9, .5));
+}
+
+.frag-art img,
+.frag-art .frag-art__sprite {
+  /* El tamaño lo pone `.frag-art__poke`. Acá sólo se llena ese hueco: si el
+     img hereda 2.6rem de `.mine__bag li img` el sprite se va a una esquina. */
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 0;
+  min-height: 0;
+  object-fit: contain;
+  object-position: center;
+  transform: scale(1.18);
+  transform-origin: center center;
+  filter: saturate(.85) contrast(1.08) brightness(.97) drop-shadow(0 2px 3px rgba(0, 0, 0, .45));
+}
+/*
+  Hueco cuadrado en el centro geométrico del hexágono. El sprite vive acá y
+  no en el flujo de la gema: así ni el `img` de Next ni las reglas de la
+  fila de la mina pueden desplazarlo.
+*/
+.frag-art__poke {
+  position: absolute;
+  inset: 16%;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+.frag-art__shine,
+.frag-art__crack {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/*
+  Facetas del tallado. Bordes duros y no un degradé suave: una gema refleja por
+  caras planas, y el degradé continuo la hacía ver de plástico.
+*/
+.frag-art__shine {
+  z-index: 1;
+  background:
+    linear-gradient(118deg, rgba(255, 255, 255, .5) 0 22%, transparent 22.5%),
+    linear-gradient(-118deg, rgba(255, 255, 255, .22) 0 16%, transparent 16.5%),
+    linear-gradient(200deg, transparent 62%, rgba(0, 0, 0, .35) 62.5%);
+}
+/*
+  Destello que recorre la piedra. Sólo de épico para arriba: si brillara todo,
+  el brillo dejaría de significar "esto es raro".
+*/
+.frag-art.is-epic .frag-art__crack::after,
+.frag-art.is-legendary .frag-art__crack::after,
+.frag-art.is-mythical .frag-art__crack::after,
+.frag-art.is-ultraBeast .frag-art__crack::after,
+.frag-art.is-paradox .frag-art__crack::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: -35%;
+  width: 26%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .75), transparent);
+  transform: skewX(-18deg);
+  animation: frag-shimmer 3.6s ease-in-out infinite;
+}
+/* La pausa larga entre pasadas evita que parezca un indicador de carga. */
+@keyframes frag-shimmer {
+  0%, 70%, 100% { left: -35%; }
+  95% { left: 115%; }
+}
+.frag-art__crack {
+  background:
+    linear-gradient(108deg, transparent 46%, rgba(255, 255, 255, .7) 48%, transparent 50.5%),
+    linear-gradient(22deg, transparent 54%, rgba(12, 74, 110, .45) 56%, transparent 58%);
+  mix-blend-mode: overlay;
+  z-index: 2;
+}
+
+/*
+  Todos los premios de la fila al mismo tamaño.
+
+  Los objetos entraban como `<img>` a 32px sin regla de CSS y los fragmentos con
+  su propia altura de 1.15rem: en la misma línea se veían de tamaños distintos.
+  El tamaño lo fija la fila, no cada pieza.
+*/
+.mine__drops li img,
+.mine__drops .frag-art {
+  height: 1.5rem;
+  width: 1.5rem;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.mine__bubble .frag-art { height: 1.7rem; width: 1.7rem; }
+.mine__bag li .frag-art { height: 2.6rem; width: 2.6rem; }
+
+/* ---------- Parque · pesca ---------- */
+/*
+  Un estanque, no un párrafo con un botón.
+
+  El agua son tres capas de degradé desplazándose a distinta velocidad: sin ese
+  movimiento lento el panel se lee como un rectángulo azul y el modo vuelve a
+  sentirse un formulario. La orilla oscura de abajo es la que le da profundidad
+  —el agua parece meterse hacia el fondo en vez de estar pintada de frente.
+*/
+.fishing { display: flex; flex-direction: column; gap: .85rem; }
+.fishing__hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+}
+.fishing__casts { display: flex; gap: .1rem; }
+.fishing__casts i { display: grid; place-items: center; color: #7dd3fc; }
+.fishing__casts i .material-symbols-outlined { font-size: 1.05rem !important; }
+.fishing__casts i.is-spent { color: rgba(255, 255, 255, .16); }
+.fishing__hud b {
+  color: rgba(255, 255, 255, .85);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.fishing__nudge {
+  flex: 1 1 8rem;
+  color: rgba(255, 255, 255, .38);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.fishing__hint {
+  margin: -.35rem 0 0;
+  color: rgba(255, 255, 255, .42);
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.fishing__pond {
+  position: relative;
+  height: clamp(11rem, 26vw, 15rem);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, #0b2438 0%, #0e3a55 42%, #0a2a40 100%);
+  box-shadow: inset 0 14px 30px -16px rgba(0, 0, 0, .9);
+}
+.fishing__water {
+  position: absolute;
+  inset: 0;
+  opacity: .5;
+  background:
+    repeating-linear-gradient(97deg, rgba(255, 255, 255, .06) 0 2px, transparent 2px 26px),
+    repeating-linear-gradient(84deg, rgba(120, 220, 255, .07) 0 3px, transparent 3px 38px);
+  animation: fishing-drift 9s linear infinite;
+}
+/* Brillos de superficie: se mueven al revés que el agua, así el ojo lee dos
+   planos y no una textura sola. */
+.fishing__ripples {
+  position: absolute;
+  inset: 0;
+  opacity: .35;
+  background: repeating-linear-gradient(91deg, rgba(255, 255, 255, .1) 0 1px, transparent 1px 54px);
+  animation: fishing-drift 14s linear infinite reverse;
+}
+@keyframes fishing-drift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 120px 0, -90px 0; }
+}
+
+/* Corcho de la caña, en el centro del estanque. */
+.fishing__bobber {
+  position: absolute;
+  top: 52%;
+  left: 38%;
+  display: grid;
+  height: 1rem;
+  width: 1rem;
+  place-items: center;
+  opacity: 0;
+}
+.fishing__bobber i {
+  display: block;
+  height: .7rem;
+  width: .7rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ef4444 50%, #f8fafc 50%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .5), 0 3px 6px rgba(0, 0, 0, .5);
+}
+/* Anillos que se abren donde cayó: es lo que dice "acá está pasando algo". */
+.fishing__bobber::after {
+  content: "";
+  position: absolute;
+  height: 2.4rem;
+  width: 2.4rem;
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 999px;
+  animation: fishing-ring 1.6s ease-out infinite;
+}
+.fishing__bobber.is-floating {
+  opacity: 1;
+  animation: fishing-bob 1.1s ease-in-out infinite;
+}
+@keyframes fishing-bob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 .3rem; }
+}
+@keyframes fishing-ring {
+  from { opacity: .55; scale: .3; }
+  to { opacity: 0; scale: 1.3; }
+}
+
+/* Lo que picó: sale del agua. */
+.fishing__catch {
+  position: absolute;
+  bottom: 12%;
+  left: 36%;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  translate: -50% 0;
+  animation: fishing-surface .5s cubic-bezier(.2, 1.4, .35, 1) both;
+}
+.fishing__catch > img,
+.fishing__catch > .frag-art {
+  height: clamp(5rem, 12vw, 7.5rem);
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .6));
+}
+.fishing__catch > .frag-art {
+  width: clamp(5rem, 12vw, 7.5rem);
+  height: clamp(5rem, 12vw, 7.5rem);
+}
+@keyframes fishing-surface {
+  from { opacity: 0; translate: -50% 2rem; scale: .8; }
+  to { opacity: 1; translate: -50% 0; scale: 1; }
+}
+
+/*
+  Ficha de la captura: sprite a la izquierda, datos a la derecha.
+
+  Con el sprite solo faltaba todo lo que importa —de qué nivel salió, qué tan
+  raro es y a dónde fue—, y el nombre quedaba únicamente en el globito del
+  pescador, que dura lo que dura la lectura.
+*/
+.fishing__card {
+  display: flex;
+  flex-direction: column;
+  gap: .18rem;
+  border-radius: .8rem;
+  background: rgba(4, 20, 30, .82);
+  padding: .4rem .55rem;
+  backdrop-filter: blur(6px);
+}
+.fishing__card > b {
+  color: #fff;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: capitalize;
+}
+.fishing__tags { display: flex; flex-wrap: wrap; gap: .2rem; }
+.fishing__tags i {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  padding: .08rem .35rem;
+  color: rgba(255, 255, 255, .75);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .5rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+/* La rareza se lee por color antes que por texto. */
+.fishing__tags i.is-uncommon { border-color: rgba(56, 189, 248, .55); color: #7dd3fc; }
+.fishing__tags i.is-rare { border-color: rgba(250, 204, 21, .6); color: #fde047; }
+.fishing__tags i.is-fragment {
+  border-color: rgba(56, 189, 248, .5);
+  color: #7dd3fc;
+}
+.fishing__tags i.is-shiny {
+  border-color: transparent;
+  background: linear-gradient(118deg, #fde047, #f472b6);
+  color: #2a1400;
+}
+.fishing__card em {
+  color: rgba(255, 255, 255, .45);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .48rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* La que se escapó: silueta apagada y su cartel. */
+.fishing__escape {
+  position: absolute;
+  bottom: 14%;
+  left: 34%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .25rem;
+  translate: -50% 0;
+  animation: fishing-escape .6s ease-out both;
+}
+.fishing__escape img {
+  height: clamp(3.5rem, 9vw, 5rem);
+  width: auto;
+  object-fit: contain;
+  opacity: .45;
+  filter: grayscale(.7) drop-shadow(0 6px 10px rgba(0, 0, 0, .6));
+}
+.fishing__escape i {
+  border-radius: 999px;
+  background: rgba(4, 20, 30, .85);
+  padding: .12rem .45rem;
+  color: rgba(255, 255, 255, .6);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .5rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+@keyframes fishing-escape {
+  from { opacity: 0; translate: -50% 1.2rem; }
+  60% { opacity: 1; }
+  to { opacity: 1; translate: -50% 0; }
+}
+
+/* Pescador en la orilla, con globito. Mismo patrón que el minero. */
+.fishing__crew {
+  position: absolute;
+  z-index: 2;
+  right: .3rem;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .2rem;
+  pointer-events: none;
+}
+.fishing__fisher {
+  height: clamp(6.5rem, 15vw, 9.5rem);
+  width: auto;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .55));
+}
+.fishing__bubble {
+  position: relative;
+  max-width: 11rem;
+  border-radius: .85rem;
+  background: #f2fbff;
+  padding: .34rem .55rem .38rem;
+  color: #0b2438;
+  /* Orbitron, la display del juego: el globo es voz de personaje, no copy de
+     interfaz. En cuerpo chico pide tracking o se apelmaza. */
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.3;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .4);
+  animation: fishing-bubble-in .26s cubic-bezier(.2, 1.5, .35, 1) both;
+}
+.fishing__bubble::after {
+  content: "";
+  position: absolute;
+  right: .9rem;
+  bottom: -.2rem;
+  height: .42rem;
+  width: .42rem;
+  background: #f2fbff;
+  rotate: 45deg;
+}
+@keyframes fishing-bubble-in {
+  from { opacity: 0; transform: translateY(.4rem) scale(.9); }
+  to { opacity: 1; transform: none; }
+}
+
+.fishing__controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+/* Botón de agua: el modo es azul, y el CTA rojo genérico no pertenecía.
+   Misma anatomía que la palanca del casino: ícono (caña o energía) + label + costo. */
+.fishing__cast {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  border: 0;
+  border-radius: .9rem;
+  background: linear-gradient(118deg, #7dd3fc 0%, #38bdf8 45%, #0369a1 100%);
+  padding: .8rem 1.4rem;
+  color: #04212f;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .6),
+    0 4px 0 #0b4f74,
+    0 12px 26px -12px rgba(56, 189, 248, .8);
+}
+.fishing__cast:hover:not(:disabled) { filter: brightness(1.06); }
+.fishing__cast:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 0 0 #0b4f74;
+}
+.fishing__cast:disabled { cursor: default; filter: grayscale(.4); opacity: .6; }
+.fishing__cast .material-symbols-outlined { font-size: 1.15rem !important; }
+.fishing__cast-energy {
+  height: 1.25rem;
+  width: 1.25rem;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .35));
+}
+.fishing__cast-label,
+.fishing__cast-meta {
+  line-height: 1;
+}
+.fishing__cast-meta {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  opacity: .82;
+}
+.fishing__frags {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+  gap: .4rem;
+  margin: .85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.fishing__frags-label {
+  grid-column: 1 / -1;
+  color: rgba(255, 255, 255, .38);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.fishing__frags li:not(.fishing__frags-label) {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: .3rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: .7rem;
+  background: rgba(0, 0, 0, .28);
+  padding: .2rem .55rem .2rem .25rem;
+}
+.fishing__frags .frag-art { height: 2.1rem; width: 2.1rem; flex-shrink: 0; }
+.fishing__frags img { height: 1.6rem; width: 1.6rem; object-fit: contain; }
+.fishing__frags b {
+  min-width: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fishing__frags em {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: #7dd3fc;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+@media (max-width: 639.98px) {
+  .fishing__pond { height: 12.5rem; }
+  .fishing__fisher { height: 5.8rem; opacity: .95; }
+  .fishing__bubble {
+    max-width: 11rem;
+    font-size: .58rem;
+    padding: .38rem .55rem .4rem;
+    line-height: 1.3;
+  }
+  .fishing__bubble::after { right: 1.15rem; }
+  /*
+    La ficha no usa el centrado del desktop (`translate -50%`): en el teléfono
+    el pescador está a la derecha y hay que dejarle el hueco.
+  */
+  .fishing__catch {
+    left: .6rem;
+    right: 6.4rem;
+    translate: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: .35rem;
+    animation-name: fishing-surface-m;
+  }
+  .fishing__catch > img,
+  .fishing__catch > .frag-art {
+    height: 3.4rem;
+    width: 3.4rem;
+  }
+  .fishing__card { padding: .3rem .4rem; min-width: 0; }
+  .fishing__escape { left: .6rem; translate: 0; }
+}
+@keyframes fishing-surface-m {
+  from { opacity: 0; translate: 0 1.2rem; scale: .8; }
+  to { opacity: 1; translate: 0; scale: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fishing__water,
+  .fishing__ripples,
+  .fishing__bobber.is-floating,
+  .fishing__bobber::after,
+  .fishing__catch,
+  .fishing__escape,
+  .fishing__bubble { animation: none; }
+  .fishing__bobber.is-floating { opacity: 1; }
+  .fishing__catch { translate: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* El destello del cristal es decorativo: sin él la rareza se sigue leyendo
+     por color y aura. */
+  .frag-art .frag-art__crack::after { animation: none; display: none; }
+}
+
+/* ---------- Parque · trueque (laboratorio) ---------- */
+/*
+  Un portal, no un formulario. El científico examina el intercambio; los
+  Pokémon entran por un lado y salen por el otro. El violeta es el del toast
+  de este modo, para que se lea como el mismo lugar. HUD, pads, picker y
+  botones viven en el mismo recuadro: si el selector queda afuera se lee como
+  un form pegado abajo de una postcard.
+*/
+.wonder { display: flex; flex-direction: column; gap: 1.1rem; }
+.wonder__stage {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(167, 139, 250, .32);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(90% 80% at 88% 110%, rgba(167, 139, 250, .2), transparent 52%),
+    radial-gradient(70% 50% at 12% -8%, rgba(56, 189, 248, .12), transparent 48%),
+    radial-gradient(circle at 1px 1px, rgba(196, 181, 253, .07) 1px, transparent 0),
+    #12141c;
+  background-size: auto, auto, 18px 18px, auto;
+  padding: 1.2rem 1.25rem 1.15rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+.wonder__stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 3px,
+    rgba(15, 12, 32, .14) 3px 4px
+  );
+  opacity: .45;
+}
+.wonder__stage::after {
+  content: "";
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 42%;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(167, 139, 250, .16), transparent 70%);
+  animation: wonder-scan 7.5s ease-in-out infinite;
+}
+@keyframes wonder-scan {
+  0%, 100% { transform: translateY(0); opacity: .55; }
+  50% { transform: translateY(18%); opacity: 1; }
+}
+.wonder__mote {
+  position: absolute;
+  z-index: 1;
+  height: .28rem;
+  width: .28rem;
+  border-radius: 999px;
+  background: #ddd6fe;
+  opacity: 0;
+  left: calc(8% + var(--mote) * 13%);
+  top: calc(18% + var(--mote) * 9%);
+  pointer-events: none;
+  animation: wonder-mote 5.6s ease-in-out infinite;
+  animation-delay: calc(var(--mote) * -0.7s);
+  box-shadow: 0 0 8px rgba(196, 181, 253, .7);
+}
+@keyframes wonder-mote {
+  0%, 100% { opacity: 0; transform: translateY(0) scale(.4); }
+  30% { opacity: .7; }
+  100% { opacity: 0; transform: translateY(-1.8rem) scale(.2); }
+}
+
+.wonder__hint {
+  position: relative;
+  z-index: 1;
+  margin: .35rem 0 0;
+  color: rgba(255, 255, 255, .42);
+  font-size: .72rem;
+  line-height: 1.35;
+}
+.wonder__hud {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .55rem;
+}
+.wonder__ticks { display: flex; gap: .1rem; }
+.wonder__ticks i { display: grid; place-items: center; color: #c4b5fd; }
+.wonder__ticks i .material-symbols-outlined { font-size: 1.05rem !important; }
+.wonder__ticks i.is-spent { color: rgba(255, 255, 255, .16); }
+.wonder__hud b {
+  color: rgba(255, 255, 255, .85);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.wonder__nudge {
+  flex: 1 1 8rem;
+  color: rgba(255, 255, 255, .38);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.wonder__floor {
+  position: relative;
+  z-index: 1;
+  margin-top: .95rem;
+  min-height: clamp(10.2rem, 23vw, 13.6rem);
+  overflow: hidden;
+  border: 1px solid rgba(167, 139, 250, .2);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(90% 70% at 88% 100%, rgba(76, 29, 149, .32), transparent 52%),
+    linear-gradient(180deg, rgba(255, 255, 255, .04) 0%, transparent 38%),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 22px,
+      rgba(167, 139, 250, .04) 22px 23px
+    ),
+    #0e1018;
+  padding: .75rem .7rem 0;
+  padding-inline-start: clamp(7.4rem, 21vw, 11.4rem);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+/* El piso del lab: una placa bajo los pads y los pies del científico.
+   Sin esto el PNG queda colgando sobre el grid punteado. */
+.wonder__floor::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  height: 1.15rem;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(6, 5, 14, .92));
+  border-top: 1px solid rgba(167, 139, 250, .12);
+  box-shadow: inset 0 8px 14px -12px rgba(0, 0, 0, .8);
+}
+.wonder__bench { position: relative; z-index: 2; min-width: 0; }
+.wonder__pods {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: .55rem;
+}
+
+.wonder__pad {
+  position: relative;
+  display: flex;
+  min-height: 11.4rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 1.2rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .04), transparent 22%),
+    radial-gradient(90% 80% at 50% 100%, rgba(167, 139, 250, .14), transparent 62%),
+    rgba(0, 0, 0, .34);
+  padding: .75rem .55rem .65rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.wonder__pad::before,
+.wonder__pad::after {
+  content: "";
+  position: absolute;
+  width: .42rem;
+  height: .42rem;
+  border-radius: 2px;
+  border: 1.5px solid rgba(196, 181, 253, .45);
+  pointer-events: none;
+}
+.wonder__pad::before { top: .42rem; left: .42rem; border-right: 0; border-bottom: 0; }
+.wonder__pad::after { top: .42rem; right: .42rem; border-left: 0; border-bottom: 0; }
+.wonder__pad.has-mon {
+  border-color: rgba(167, 139, 250, .4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .06),
+    0 0 0 1px rgba(167, 139, 250, .12);
+}
+.wonder__pad.is-mystery {
+  border-color: rgba(56, 189, 248, .4);
+  background:
+    linear-gradient(180deg, rgba(56, 189, 248, .08), transparent 22%),
+    radial-gradient(90% 80% at 50% 100%, rgba(56, 189, 248, .18), transparent 62%),
+    rgba(0, 0, 0, .34);
+}
+.wonder__pad.is-incoming {
+  z-index: 5;
+  overflow: visible;
+  border-color: rgba(196, 181, 253, .95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .1),
+    0 0 28px -6px rgba(167, 139, 250, .85);
+  animation: wonder-pad-hit .9s ease;
+}
+.wonder__pad.is-incoming .wonder__mon img {
+  height: 6.5rem;
+  width: 6.5rem;
+}
+@keyframes wonder-pad-hit {
+  0% { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 0 0 rgba(167, 139, 250, 0); }
+  40% { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 0 38px rgba(167, 139, 250, .8); }
+  100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .1),
+      0 0 28px -6px rgba(167, 139, 250, .85);
+  }
+}
+.wonder__pad-title {
+  color: rgba(255, 255, 255, .4);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.wonder__vacant {
+  color: rgba(255, 255, 255, .28);
+  font-size: .72rem;
+  font-weight: 600;
+}
+.wonder__mon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .12rem;
+}
+.wonder__mon img {
+  height: 5.6rem;
+  width: 5.6rem;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45));
+}
+.wonder__mon b {
+  max-width: 8rem;
+  overflow: hidden;
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 700;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wonder__mon em {
+  color: rgba(255, 255, 255, .45);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .58rem;
+  font-style: normal;
+  font-weight: 700;
+}
+.wonder__mon.is-leaving { animation: wonder-leave .7s ease both; }
+.wonder__mon.is-arriving {
+  animation: wonder-arrive .9s cubic-bezier(.2, 1.25, .35, 1) both;
+}
+@keyframes wonder-leave {
+  to { opacity: 0; transform: translateX(1.6rem) scale(.45); filter: blur(4px); }
+}
+@keyframes wonder-arrive {
+  0% { opacity: 0; transform: translateX(-2.4rem) scale(.12); filter: blur(10px) brightness(2.6); }
+  55% { opacity: 1; transform: translateX(.1rem) scale(1.16); filter: blur(0) brightness(1.25); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+.wonder__reactor {
+  position: relative;
+  display: grid;
+  height: 5.6rem;
+  width: 5.6rem;
+  place-items: center;
+  --orbit-r: 2.4rem;
+}
+.wonder__reactor-halo,
+.wonder__reactor-ring,
+.wonder__reactor-core {
+  position: absolute;
+  border-radius: 50%;
+}
+.wonder__reactor-halo {
+  inset: -14%;
+  background: radial-gradient(circle, rgba(56, 189, 248, .32), transparent 70%);
+  filter: blur(1px);
+  animation: wonder-throb 1.05s ease-in-out infinite;
+}
+.wonder__reactor-ring {
+  border: 2px solid rgba(125, 211, 252, .55);
+  box-shadow: 0 0 12px rgba(56, 189, 248, .4);
+}
+.wonder__reactor-ring.is-a {
+  inset: 2%;
+  border-style: dashed;
+  animation: wonder-spin 1.55s linear infinite;
+}
+.wonder__reactor-ring.is-b {
+  inset: 16%;
+  border-color: rgba(196, 181, 253, .8);
+  animation: wonder-spin 1.05s linear infinite reverse;
+}
+.wonder__reactor-ring.is-c {
+  inset: 28%;
+  border-width: 1.5px;
+  animation: wonder-spin .72s linear infinite;
+}
+.wonder__reactor-core {
+  inset: 34%;
+  background:
+    radial-gradient(circle at 34% 28%, #fff 0 12%, #7dd3fc 32%, #38bdf8 52%, #6d28d9 100%);
+  box-shadow:
+    0 0 18px rgba(125, 211, 252, .95),
+    inset 0 0 8px rgba(255, 255, 255, .55);
+  animation: wonder-throb .85s ease-in-out infinite;
+}
+.wonder__reactor b {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: .36rem;
+  width: .36rem;
+  margin: -.18rem;
+  border-radius: 999px;
+  background: #e0f2fe;
+  box-shadow: 0 0 8px #7dd3fc;
+  animation: wonder-orbit 1.2s linear infinite;
+  animation-delay: calc(var(--orbit) * -0.15s);
+}
+@keyframes wonder-orbit {
+  from { transform: rotate(calc(var(--orbit) * 45deg)) translateX(var(--orbit-r)); }
+  to { transform: rotate(calc(var(--orbit) * 45deg + 360deg)) translateX(var(--orbit-r)); }
+}
+
+.wonder__link {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 5.4rem;
+}
+.wonder__beam {
+  position: absolute;
+  top: 50%;
+  left: -1.15rem;
+  right: -1.15rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(167, 139, 250, .55), transparent);
+  opacity: .4;
+  pointer-events: none;
+}
+.wonder.is-swapping .wonder__beam {
+  height: 6px;
+  opacity: 1;
+  background: linear-gradient(90deg, transparent, #c4b5fd, #7dd3fc, #c4b5fd, transparent);
+  filter: blur(.4px);
+  animation: wonder-beam .55s ease-in-out infinite;
+}
+.wonder.is-waiting .wonder__beam { opacity: .75; }
+@keyframes wonder-beam {
+  0%, 100% { transform: scaleX(.7); opacity: .55; }
+  50% { transform: scaleX(1); opacity: 1; }
+}
+
+.wonder__portal {
+  position: relative;
+  display: grid;
+  height: 5rem;
+  width: 5rem;
+  place-items: center;
+  color: #ede9fe;
+}
+.wonder__halo,
+.wonder__ring,
+.wonder__core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+.wonder__halo {
+  inset: -18%;
+  border: 1px dashed rgba(167, 139, 250, .35);
+  animation: wonder-spin 12s linear infinite;
+}
+.wonder__ring {
+  border: 2px solid rgba(167, 139, 250, .5);
+  box-shadow: 0 0 18px rgba(167, 139, 250, .4);
+  animation: wonder-spin 8s linear infinite;
+}
+.wonder__core {
+  inset: 18%;
+  background: radial-gradient(circle at 40% 35%, #e9d5ff, #7c3aed 52%, #1e1b4b);
+  opacity: .88;
+  animation: wonder-throb 3.2s ease-in-out infinite;
+}
+.wonder.is-swapping .wonder__halo { animation-duration: 2.4s; border-color: rgba(125, 211, 252, .55); }
+.wonder.is-swapping .wonder__ring {
+  animation-duration: 1.05s;
+  border-color: #c4b5fd;
+  box-shadow: 0 0 22px rgba(167, 139, 250, .7), 0 0 36px rgba(56, 189, 248, .25);
+}
+.wonder.is-swapping .wonder__core { animation-duration: .85s; }
+.wonder.is-waiting .wonder__halo,
+.wonder.is-waiting .wonder__ring { animation-duration: 2.6s; }
+.wonder.is-done .wonder__core {
+  background: radial-gradient(circle at 40% 35%, #f5d0fe, #a78bfa 52%, #4c1d95);
+}
+.wonder__portal .material-symbols-outlined {
+  position: relative;
+  z-index: 2;
+  font-size: 1.35rem !important;
+  filter: drop-shadow(0 0 6px rgba(237, 233, 254, .8));
+}
+.wonder__portal i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: .32rem;
+  width: .32rem;
+  border-radius: 999px;
+  background: #ddd6fe;
+  opacity: 0;
+  transform: rotate(calc(var(--spark) * 51deg)) translateY(-1.85rem);
+}
+.wonder.is-swapping .wonder__portal i {
+  animation: wonder-spark .9s ease-out infinite;
+  animation-delay: calc(var(--spark) * 90ms);
+}
+@keyframes wonder-spin { to { transform: rotate(360deg); } }
+@keyframes wonder-throb {
+  0%, 100% { transform: scale(.92); filter: saturate(.85); }
+  50% { transform: scale(1.1); filter: saturate(1.35) brightness(1.18); }
+}
+@keyframes wonder-spark {
+  0% { opacity: 0; scale: .4; }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(calc(var(--spark) * 51deg)) translateY(-2.6rem); scale: .2; }
+}
+
+.wonder__crew {
+  position: absolute;
+  z-index: 3;
+  left: .05rem;
+  right: auto;
+  bottom: 0;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-end;
+  gap: .35rem;
+  pointer-events: none;
+}
+.wonder__figure {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* Placa + sombra de contacto: el crouch XY tiene los pies bien abiertos. */
+.wonder__figure::before,
+.wonder__figure::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  pointer-events: none;
+  translate: -50% 0;
+}
+.wonder__figure::before {
+  bottom: .02rem;
+  z-index: 0;
+  width: 88%;
+  height: .72rem;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(109, 40, 217, .42) 0%, rgba(12, 10, 24, .85) 62%, transparent 74%);
+  box-shadow: 0 0 18px rgba(167, 139, 250, .28);
+}
+.wonder__figure::after {
+  bottom: .04rem;
+  z-index: 0;
+  width: 82%;
+  height: .42rem;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, .62) 0%, transparent 72%);
+}
+.wonder__glint {
+  position: absolute;
+  z-index: 2;
+  top: 17%;
+  left: 41%;
+  height: .42rem;
+  width: .42rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, #fff 0%, rgba(255, 255, 255, .1) 58%, transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+}
+.wonder.is-swapping .wonder__glint,
+.wonder.is-done .wonder__glint {
+  animation: wonder-glint 1.35s ease-in-out infinite;
+}
+@keyframes wonder-glint {
+  0%, 70%, 100% { opacity: 0; transform: scale(.4); }
+  78% { opacity: 1; transform: scale(1.15); }
+}
+.wonder__scientist {
+  position: relative;
+  z-index: 1;
+  display: block;
+  height: clamp(8.4rem, 20vw, 12.4rem);
+  width: auto;
+  margin-bottom: -.06rem;
+  object-fit: contain;
+  object-position: bottom center;
+  transform-origin: 50% 100%;
+}
+.wonder.is-swapping .wonder__scientist {
+  animation: wonder-lean .7s ease-in-out infinite alternate;
+}
+@keyframes wonder-lean {
+  from { transform: rotate(-2.5deg); }
+  to { transform: rotate(2.5deg); }
+}
+.wonder__bubble {
+  position: relative;
+  max-width: 11.4rem;
+  margin-bottom: clamp(4.4rem, 11vw, 6.6rem);
+  border-radius: .85rem;
+  background: #f3e8ff;
+  padding: .45rem .7rem .48rem;
+  color: #2e1065;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.35;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .4);
+  animation: wonder-bubble-in .26s cubic-bezier(.2, 1.5, .35, 1) both;
+}
+.wonder__bubble::after {
+  content: "";
+  position: absolute;
+  left: -.14rem;
+  right: auto;
+  bottom: .55rem;
+  height: .42rem;
+  width: .42rem;
+  background: #f3e8ff;
+  rotate: 45deg;
+}
+@keyframes wonder-bubble-in {
+  from { opacity: 0; transform: translateY(.4rem) scale(.9); }
+  to { opacity: 1; transform: none; }
+}
+
+.wonder__picker,
+.wonder__controls,
+.wonder__empty {
+  position: relative;
+  z-index: 1;
+}
+.wonder__picker {
+  margin-top: 1rem;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 1.05rem;
+  background: rgba(0, 0, 0, .22);
+  padding: .65rem .65rem .55rem;
+}
+.wonder__picker p {
+  margin-bottom: .45rem;
+  color: rgba(255, 255, 255, .4);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.wonder__picker > div {
+  display: flex;
+  gap: .5rem;
+  overflow-x: auto;
+  padding-bottom: .2rem;
+  scrollbar-width: thin;
+}
+.wonder__picker button {
+  display: flex;
+  width: 4.85rem;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 1rem;
+  background: rgba(0, 0, 0, .28);
+  padding: .45rem .35rem;
+  color: rgba(255, 255, 255, .82);
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+.wonder__picker button.is-on {
+  border-color: rgba(167, 139, 250, .55);
+  background: rgba(109, 40, 217, .22);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -12px rgba(139, 92, 246, .8);
+}
+.wonder__picker button:disabled { opacity: .55; }
+.wonder__picker button img { height: 2.6rem; width: 2.6rem; object-fit: contain; }
+.wonder__picker button span {
+  margin-top: .25rem;
+  width: 100%;
+  overflow: hidden;
+  font-size: .62rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wonder__picker button em {
+  color: rgba(255, 255, 255, .4);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .5rem;
+  font-style: normal;
+}
+
+.wonder__catch {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  margin-top: .9rem;
+  overflow: hidden;
+  border: 1px solid rgba(167, 139, 250, .48);
+  border-radius: 1.15rem;
+  background:
+    radial-gradient(90% 140% at 0% 50%, rgba(167, 139, 250, .32), transparent 58%),
+    linear-gradient(90deg, rgba(76, 29, 149, .4), rgba(12, 10, 24, .92));
+  padding: .7rem .9rem .7rem .7rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .1),
+    0 14px 30px -16px rgba(139, 92, 246, .75);
+  animation: wonder-catch-in .55s cubic-bezier(.2, 1.4, .35, 1) both;
+}
+.wonder__catch > img {
+  height: 6rem;
+  width: 6rem;
+  flex-shrink: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .55));
+  animation: wonder-catch-pop .75s cubic-bezier(.2, 1.5, .35, 1) both;
+}
+.wonder__catch-card {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: .16rem;
+}
+.wonder__catch-card small {
+  color: rgba(196, 181, 253, .85);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.wonder__catch-card b {
+  color: #fff;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: capitalize;
+}
+.wonder__catch-card p {
+  margin: .1rem 0 0;
+  color: rgba(255, 255, 255, .8);
+  font-size: .84rem;
+  line-height: 1.3;
+}
+.wonder__catch-tags { display: flex; flex-wrap: wrap; gap: .25rem; }
+.wonder__catch-tags i {
+  display: inline-flex;
+  align-items: center;
+  gap: .12rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  padding: .08rem .4rem;
+  color: rgba(255, 255, 255, .8);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .55rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+.wonder__catch-tags i.is-shiny {
+  border-color: rgba(250, 204, 21, .55);
+  color: #fde68a;
+}
+.wonder__catch-tags .material-symbols-outlined { font-size: .88rem !important; }
+.wonder__catch.is-shiny {
+  border-color: rgba(250, 204, 21, .5);
+  background:
+    radial-gradient(90% 140% at 0% 50%, rgba(250, 204, 21, .22), transparent 58%),
+    linear-gradient(90deg, rgba(76, 29, 149, .42), rgba(12, 10, 24, .92));
+}
+@keyframes wonder-catch-in {
+  from { opacity: 0; transform: translateY(.75rem) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes wonder-catch-pop {
+  from { opacity: 0; transform: scale(.35) translateX(-1.1rem); filter: blur(8px) brightness(2.2); }
+  to { opacity: 1; transform: none; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .55)); }
+}
+
+.wonder__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem;
+  margin-top: .85rem;
+}
+.wonder__pending {
+  flex: 1 1 12rem;
+  margin: 0;
+  color: rgba(255, 255, 255, .7);
+  font-size: .82rem;
+}
+.wonder__empty {
+  margin: 1rem 0 0;
+  color: rgba(255, 255, 255, .45);
+  font-size: .8rem;
+}
+.wonder__act {
+  display: inline-flex;
+  flex: 1 1 12rem;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  border: 0;
+  border-radius: .9rem;
+  background: linear-gradient(118deg, #c4b5fd 0%, #8b5cf6 48%, #5b21b6 100%);
+  padding: .85rem 1.2rem;
+  color: #1e1b4b;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .55),
+    0 4px 0 #3b0764,
+    0 12px 24px -14px rgba(139, 92, 246, .8);
+}
+.wonder__act.is-lab {
+  background: linear-gradient(118deg, #7dd3fc 0%, #38bdf8 48%, #0369a1 100%);
+  color: #082f49;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .55),
+    0 4px 0 #0c4a6e,
+    0 12px 24px -14px rgba(56, 189, 248, .75);
+}
+.wonder__act.is-ghost {
+  flex: 0 1 auto;
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(255, 255, 255, .05);
+  color: rgba(255, 255, 255, .82);
+  box-shadow: none;
+}
+.wonder__act .material-symbols-outlined { font-size: 1.15rem !important; }
+.wonder__act-energy {
+  height: 1.25rem;
+  width: 1.25rem;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .35));
+}
+.wonder__act-label,
+.wonder__act-meta { line-height: 1; }
+.wonder__act-meta {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  opacity: .82;
+}
+.wonder__act:hover:not(:disabled) { filter: brightness(1.06); }
+.wonder__act:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+.wonder__act:disabled { cursor: default; filter: grayscale(.35); opacity: .55; }
+.wonder.is-swapping .wonder__act .material-symbols-outlined { animation: wonder-spin 1s linear infinite; }
+
+@media (max-width: 639.98px) {
+  /*
+    El científico queda parado en el piso del recuadro, no en una franja
+    suelta entre el portal y el picker. Pads a todo el ancho; él en el
+    delantal de abajo, con el globo a la altura de la cara.
+  */
+  .wonder__stage { padding: .8rem .65rem .75rem; }
+  .wonder__nudge { display: none; }
+  .wonder__hud {
+    gap: .3rem .45rem;
+    padding: .32rem .5rem;
+    border: 1px solid rgba(167, 139, 250, .18);
+    border-radius: .8rem;
+    background: rgba(0, 0, 0, .32);
+  }
+  .wonder__hud b { font-size: .56rem; }
+  .wonder__ticks i .material-symbols-outlined { font-size: .92rem !important; }
+  .wonder__hint { font-size: .62rem; margin-top: .32rem; line-height: 1.3; }
+  .wonder__floor {
+    min-height: 0;
+    margin-top: .6rem;
+    padding: .5rem .4rem 0;
+    padding-inline-start: .4rem;
+    padding-inline-end: .4rem;
+    padding-bottom: 5.85rem;
+    border-radius: 1.05rem;
+  }
+  .wonder__crew {
+    right: .12rem;
+    left: .4rem;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: .3rem;
+    max-width: none;
+  }
+  .wonder__scientist { height: 5.65rem; }
+  .wonder__figure::before { width: 90%; height: .55rem; }
+  .wonder__bubble {
+    max-width: none;
+    min-width: 0;
+    flex: 1 1 auto;
+    margin-bottom: 2.35rem;
+    font-size: .52rem;
+    padding: .32rem .48rem .34rem;
+    line-height: 1.3;
+  }
+  .wonder__bubble::after {
+    right: -.12rem;
+    left: auto;
+    bottom: .45rem;
+  }
+  .wonder__pods { gap: .28rem; }
+  .wonder__pad { min-height: 6.4rem; padding: .38rem .26rem .38rem; border-radius: .95rem; }
+  .wonder__pad.is-incoming .wonder__mon img { height: 3.7rem; width: 3.7rem; }
+  .wonder__pad-title { font-size: .46rem; letter-spacing: .12em; }
+  .wonder__mon img { height: 3.05rem; width: 3.05rem; }
+  .wonder__mon b { font-size: .66rem; max-width: 5.4rem; }
+  .wonder__mon em { font-size: .5rem; }
+  .wonder__portal { height: 2.75rem; width: 2.75rem; }
+  .wonder__link { width: 2.95rem; }
+  .wonder__act {
+    flex: 1 1 100%;
+    padding: .68rem .7rem;
+    font-size: .64rem;
+    letter-spacing: .07em;
+  }
+  .wonder__reactor { height: 3.05rem; width: 3.05rem; --orbit-r: 1.28rem; }
+  .wonder__picker {
+    margin-top: .65rem;
+    padding: .4rem .4rem .32rem;
+    border-radius: .9rem;
+  }
+  .wonder__picker > div {
+    gap: .4rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .wonder__picker button {
+    width: 4rem;
+    padding: .3rem .2rem;
+    scroll-snap-align: start;
+  }
+  .wonder__picker button img { height: 2.25rem; width: 2.25rem; }
+  .wonder__catch {
+    gap: .55rem;
+    margin-top: .65rem;
+    padding: .55rem .6rem .55rem .5rem;
+    border-radius: 1rem;
+  }
+  .wonder__catch > img { height: 4.6rem; width: 4.6rem; }
+  .wonder__catch-card b { font-size: .98rem; }
+  .wonder__catch-card p { font-size: .72rem; }
+  .wonder__controls { gap: .45rem; margin-top: .6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wonder__scientist,
+  .wonder.is-swapping .wonder__scientist,
+  .wonder__halo,
+  .wonder__ring,
+  .wonder.is-swapping .wonder__ring,
+  .wonder.is-waiting .wonder__halo,
+  .wonder.is-waiting .wonder__ring,
+  .wonder__core,
+  .wonder.is-swapping .wonder__core,
+  .wonder.is-swapping .wonder__portal i,
+  .wonder.is-swapping .wonder__beam,
+  .wonder__reactor-halo,
+  .wonder__reactor-ring,
+  .wonder__reactor-core,
+  .wonder__reactor b,
+  .wonder__mon.is-leaving,
+  .wonder__mon.is-arriving,
+  .wonder__pad.is-incoming,
+  .wonder__catch,
+  .wonder__catch > img,
+  .wonder__bubble,
+  .wonder__mote,
+  .wonder__glint,
+  .wonder.is-swapping .wonder__glint,
+  .wonder.is-done .wonder__glint,
+  .wonder__stage::after,
+  .wonder.is-swapping .wonder__act .material-symbols-outlined { animation: none; }
+  .wonder__mon.is-leaving { opacity: .45; }
+  .wonder__halo,
+  .wonder__mote { display: none; }
+}
+
+/*
+  En mobile el NPC y el globo van en fila: la cola tiene que apuntar al
+  personaje (izquierda del globo), no hacia abajo como en desktop.
+*/
+@media (max-width: 639.98px) {
+  .corner-slot__bubble::after {
+    right: -.14rem;
+    left: auto;
+    bottom: .7rem;
+  }
+}
+
+/* Eyebrow y botón de cerrar del popup diario, en el lenguaje del resto. */
+.daily-reward-eyebrow {
+  color: color-mix(in srgb, var(--theme-primary) 60%, #fff);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .52rem;
+  font-weight: 800;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+.daily-reward-close {
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(10, 8, 16, .8);
+  color: rgba(255, 255, 255, .75);
+  backdrop-filter: blur(8px);
+}
+.daily-reward-close:hover {
+  border-color: color-mix(in srgb, var(--theme-primary) 60%, transparent);
+  background: color-mix(in srgb, var(--theme-primary) 24%, rgba(10, 8, 16, .8));
+  color: #fff;
 }

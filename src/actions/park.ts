@@ -9,9 +9,10 @@ import { blockIfInCombat } from "@/lib/battle-lock";
 import { allowUserAction } from "@/lib/rate-limit";
 import { compactTeamSlots } from "@/lib/team";
 import { applyXpGain } from "@/lib/battle-xp";
-import { getCurrentEnergy, FISHING_ENERGY_COST, FRONTIER_ENERGY_COST, MINE_DIG_ENERGY_COST } from "@/lib/energy";
+import { getCurrentEnergy, FRONTIER_ENERGY_COST } from "@/lib/energy";
 import { grantPokemon } from "@/lib/grant-pokemon";
 import { markSpeciesSeen } from "@/lib/pokedex-seen";
+import { speciesRarity, type DexRarity } from "@/lib/pokedex";
 import { isPokemonBusy } from "@/lib/pokemon-busy";
 import { dayKey } from "@/lib/events/time";
 import { simulatePvpBattle } from "@/lib/pvp-battle";
@@ -25,14 +26,31 @@ import {
   pendingDaycareLevels,
   xpForDaycareLevels,
 } from "@/lib/park/daycare";
-import { fishingLevelForLead, rollFishingEncounter } from "@/lib/park/fishing";
-import { CORNER_SPIN_COST, spinCorner, type CornerSymbol } from "@/lib/park/corner";
+import {
+  fishingCastsUsedToday,
+  fishingEnergyCost,
+  fishingFreeLeft,
+  rollFishingEncounter,
+} from "@/lib/park/fishing";
+import {
+  assembledPokemonLevel,
+  FISHING_FRAGMENT_YIELD,
+  FRAGMENTS_TO_ASSEMBLE,
+} from "@/lib/park/fragments";
+import { absorbLegacyFossilBag, creditFragments } from "@/lib/park/fragment-store";
+import {
+  cornerEnergyCost,
+  cornerFreeLeft,
+  cornerSpinsUsedToday,
+  spinCorner,
+  type CornerSymbol,
+} from "@/lib/park/corner";
 import { FARM_BERRY_NAMES, FARM_PLOT_COUNT, farmReady, farmYield } from "@/lib/park/farm";
 import {
   FOSSIL_SPECIES,
   MINE_COIN_DROP,
+  MINE_FRAGMENTS_TO_ASSEMBLE,
   MINE_GRID_SIZE,
-  MINE_REVIVE_COST,
   generateMineGrid,
   mineDigsLeft,
   parseMineBag,
@@ -46,7 +64,14 @@ import {
   isFrontierFacility,
   palaceWinPayout,
 } from "@/lib/park/frontier";
-import { wonderNpcLevel, wonderNpcSpecies } from "@/lib/park/wonder";
+import {
+  wonderEnergyCost,
+  wonderFreeLeft,
+  wonderNpcLevel,
+  wonderNpcSpecies,
+  wonderTradesUsedToday,
+  type WonderReceipt,
+} from "@/lib/park/wonder";
 
 export type ParkError =
   | "unauthorized"
@@ -102,6 +127,26 @@ async function spendEnergy(tx: Prisma.TransactionClient, userId: string, cost: n
     data: { energy: energy - cost, energyUpdatedAt: new Date() },
   });
   return true;
+}
+
+async function takeWonderQuota(
+  tx: Prisma.TransactionClient,
+  userId: string,
+): Promise<{ energySpent: number; usedAfter: number } | { error: ParkError }> {
+  const key = dayKey();
+  const row = await tx.parkWonder.findUnique({ where: { userId } });
+  const used = wonderTradesUsedToday(row, key);
+  const energySpent = wonderEnergyCost(used);
+  if (energySpent > 0 && !(await spendEnergy(tx, userId, energySpent))) {
+    return { error: "no_energy" };
+  }
+  const usedAfter = used + 1;
+  await tx.parkWonder.upsert({
+    where: { userId },
+    create: { userId, dayKey: key, trades: 1 },
+    update: row && row.dayKey === key ? { trades: { increment: 1 } } : { dayKey: key, trades: 1 },
+  });
+  return { energySpent, usedAfter };
 }
 
 async function assertDepositable(
@@ -219,7 +264,25 @@ export async function withdrawDaycare(locale: string, depositId: string): Promis
 
 export async function castLine(
   locale: string,
-): Promise<ParkResult<{ speciesName: string; caught: boolean; shiny: boolean }>> {
+): Promise<
+  ParkResult<{
+    speciesName: string;
+    speciesId: number;
+    /** Nivel al armar / shiny. Los fragmentos no tienen nivel (va 0). */
+    level: number;
+    rarity: "common" | "uncommon" | "rare";
+    /** Rareza de Pokédex: es la que pinta el cristal del fragmento. */
+    dexRarity: DexRarity;
+    caught: boolean;
+    shiny: boolean;
+    gained: number;
+    have: number;
+    need: number;
+    assembled: boolean;
+    energySpent: number;
+    freeLeft: number;
+  }>
+> {
   const gate = await authed(locale);
   if (!gate.ok) return { ok: false, error: gate.error };
   if (!allowUserAction("battleStart", "park:fish", gate.userId)) {
@@ -229,32 +292,67 @@ export async function castLine(
   const lead = await prisma.pokemonInstance.findFirst({
     where: { ownerId: gate.userId, teamSlot: { not: null }, currentHp: { gt: 0 } },
     orderBy: { teamSlot: "asc" },
-    select: { level: true },
+    select: { id: true },
   });
   if (!lead) return { ok: false, error: "no_team" };
 
   const bite = rollFishingEncounter();
-  const level = fishingLevelForLead(lead.level);
+  const level = assembledPokemonLevel(bite.rarity);
   const fishSpecies = await prisma.species.findUnique({
     where: { id: bite.speciesId },
-    select: { name: true },
+    // `captureRate` es lo que necesita `speciesRarity` para decidir la rareza
+    // de Pokédex, que es la que pinta el cristal del fragmento. La rareza de la
+    // tabla de caña es otra escala (qué tan seguido pica), no sirve para eso.
+    select: { name: true, captureRate: true },
   });
   let grantedName: string | null = null;
   let failure: ParkError | null = null;
+  let gained = 0;
+  let have = 0;
+  let assembled = false;
+  let energySpent = 0;
+  let usedAfter = 0;
+  const key = dayKey();
 
   await prisma.$transaction(async (tx) => {
     await lockUsers(tx, gate.userId);
-    if (!(await spendEnergy(tx, gate.userId, FISHING_ENERGY_COST))) {
+    const row = await tx.parkFishing.findUnique({ where: { userId: gate.userId } });
+    const used = fishingCastsUsedToday(row, key);
+    energySpent = fishingEnergyCost(used);
+    if (energySpent > 0 && !(await spendEnergy(tx, gate.userId, energySpent))) {
       return void (failure = "no_energy");
     }
-    if (!bite.caught) return;
-    const granted = await grantPokemon(tx, {
-      userId: gate.userId,
-      speciesId: bite.speciesId,
-      level,
-      isShiny: bite.isShiny,
+    usedAfter = used + 1;
+    await tx.parkFishing.upsert({
+      where: { userId: gate.userId },
+      create: { userId: gate.userId, dayKey: key, casts: 1 },
+      update: row && row.dayKey === key ? { casts: { increment: 1 } } : { dayKey: key, casts: 1 },
     });
-    grantedName = granted.speciesName;
+    if (!bite.caught) return;
+    if (bite.isShiny) {
+      const granted = await grantPokemon(tx, {
+        userId: gate.userId,
+        speciesId: bite.speciesId,
+        level,
+        isShiny: true,
+      });
+      grantedName = granted.speciesName;
+      assembled = true;
+      return;
+    }
+    gained = FISHING_FRAGMENT_YIELD[bite.rarity];
+    const next = await creditFragments(tx, gate.userId, bite.speciesId, gained, true);
+    have = next.quantity;
+    assembled = next.assembled > 0;
+    grantedName = fishSpecies?.name ?? null;
+    for (let i = 0; i < next.assembled; i++) {
+      const granted = await grantPokemon(tx, {
+        userId: gate.userId,
+        speciesId: bite.speciesId,
+        level,
+      });
+      grantedName = granted.speciesName;
+    }
   });
   if (failure) return { ok: false, error: failure };
   if (bite.caught) await markSpeciesSeen(gate.userId, bite.speciesId);
@@ -262,21 +360,45 @@ export async function castLine(
   return {
     ok: true,
     speciesName: grantedName ?? fishSpecies?.name ?? String(bite.speciesId),
+    speciesId: bite.speciesId,
+    dexRarity: fishSpecies
+      ? speciesRarity({ id: bite.speciesId, captureRate: fishSpecies.captureRate })
+      : "common",
+    level: bite.caught && assembled ? level : 0,
+    rarity: bite.rarity,
     caught: bite.caught,
     shiny: bite.isShiny && bite.caught,
+    gained: bite.caught && !bite.isShiny ? gained : 0,
+    have,
+    need: FRAGMENTS_TO_ASSEMBLE,
+    assembled: bite.caught && assembled,
+    energySpent,
+    freeLeft: fishingFreeLeft(usedAfter),
   };
 }
 
 export async function submitWonderTrade(
   locale: string,
   instanceId: string,
-): Promise<ParkResult<{ receivedName: string; npc: boolean; queued: boolean }>> {
+): Promise<
+  ParkResult<{
+    receivedName: string;
+    npc: boolean;
+    queued: boolean;
+    received: WonderReceipt | null;
+    energySpent: number;
+    freeLeft: number;
+  }>
+> {
   const gate = await authed(locale);
   if (!gate.ok) return { ok: false, error: gate.error };
 
   let failure: ParkError | null = null;
   let receivedName = "";
   let queued = false;
+  let received: WonderReceipt | null = null;
+  let energySpent = 0;
+  let usedAfter = 0;
 
   await prisma.$transaction(async (tx) => {
     const waiting = await tx.wonderTradeOffer.findFirst({
@@ -292,6 +414,11 @@ export async function submitWonderTrade(
       where: { userId: gate.userId, matchedAt: null },
     });
     if (existing) return void (failure = "full");
+
+    const quota = await takeWonderQuota(tx, gate.userId);
+    if ("error" in quota) return void (failure = quota.error);
+    energySpent = quota.energySpent;
+    usedAfter = quota.usedAfter;
 
     const offered = await tx.pokemonInstance.findUniqueOrThrow({
       where: { id: instanceId },
@@ -318,6 +445,13 @@ export async function submitWonderTrade(
       // no puede quedarse con historial o ese bicho no se vuelve a truequear.
       await tx.wonderTradeOffer.delete({ where: { id: partner.id } });
       receivedName = partner.pokemon.nickname ?? partner.pokemon.species.name;
+      received = {
+        name: receivedName,
+        speciesName: partner.pokemon.species.name,
+        speciesId: partner.pokemon.speciesId,
+        level: partner.pokemon.level,
+        isShiny: partner.pokemon.isShiny,
+      };
       return;
     }
 
@@ -333,7 +467,15 @@ export async function submitWonderTrade(
 
   if (failure) return { ok: false, error: failure };
   refreshPark(locale);
-  return { ok: true, receivedName, npc: false, queued };
+  return {
+    ok: true,
+    receivedName,
+    npc: false,
+    queued,
+    received,
+    energySpent,
+    freeLeft: wonderFreeLeft(usedAfter),
+  };
 }
 
 export async function cancelWonderTrade(locale: string): Promise<ParkResult> {
@@ -356,13 +498,16 @@ export async function cancelWonderTrade(locale: string): Promise<ParkResult> {
 export async function tradeWithTraveler(
   locale: string,
   instanceId: string,
-): Promise<ParkResult<{ receivedName: string }>> {
+): Promise<ParkResult<{ receivedName: string; received: WonderReceipt; energySpent: number; freeLeft: number }>> {
   const gate = await authed(locale);
   if (!gate.ok) return { ok: false, error: gate.error };
 
   let failure: ParkError | null = null;
   let receivedName = "";
   let npcSpeciesId: number | null = null;
+  let received: WonderReceipt | null = null;
+  let energySpent = 0;
+  let usedAfter = 0;
 
   await prisma.$transaction(async (tx) => {
     await lockUsers(tx, gate.userId);
@@ -372,6 +517,10 @@ export async function tradeWithTraveler(
       where: { userId: gate.userId, matchedAt: null },
     });
     if (existing) return void (failure = "full");
+    const quota = await takeWonderQuota(tx, gate.userId);
+    if ("error" in quota) return void (failure = quota.error);
+    energySpent = quota.energySpent;
+    usedAfter = quota.usedAfter;
     const offered = await tx.pokemonInstance.findUniqueOrThrow({
       where: { id: instanceId },
       include: { species: true },
@@ -382,36 +531,72 @@ export async function tradeWithTraveler(
     const granted = await grantPokemon(tx, { userId: gate.userId, speciesId, level });
     receivedName = granted.speciesName;
     npcSpeciesId = speciesId;
+    received = {
+      name: granted.speciesName,
+      speciesName: granted.speciesName,
+      speciesId,
+      level: granted.level,
+      isShiny: granted.isShiny,
+    };
   });
 
   if (failure) return { ok: false, error: failure };
+  if (!received) return { ok: false, error: "not_found" };
   if (npcSpeciesId) await markSpeciesSeen(gate.userId, npcSpeciesId);
   refreshPark(locale);
-  return { ok: true, receivedName };
+  return { ok: true, receivedName, received, energySpent, freeLeft: wonderFreeLeft(usedAfter) };
 }
 
 export async function spinCornerAction(
   locale: string,
-): Promise<ParkResult<{ reels: [CornerSymbol, CornerSymbol, CornerSymbol]; payout: number }>> {
+): Promise<
+  ParkResult<{
+    reels: [CornerSymbol, CornerSymbol, CornerSymbol];
+    payout: number;
+    energySpent: number;
+    freeLeft: number;
+  }>
+> {
   const gate = await authed(locale);
   if (!gate.ok) return { ok: false, error: gate.error };
   if (!allowUserAction("purchase", "park:corner", gate.userId)) {
     return { ok: false, error: "busy" };
   }
   const spin = spinCorner();
+  const key = dayKey();
   let failure: ParkError | null = null;
+  let energySpent = 0;
+  let usedAfter = 0;
   await prisma.$transaction(async (tx) => {
     await lockUsers(tx, gate.userId);
-    const user = await tx.user.findUniqueOrThrow({ where: { id: gate.userId } });
-    if (user.coins < CORNER_SPIN_COST) return void (failure = "no_coins");
-    await tx.user.update({
-      where: { id: gate.userId },
-      data: { coins: { increment: spin.payout - CORNER_SPIN_COST } },
+    const row = await tx.parkCorner.findUnique({ where: { userId: gate.userId } });
+    const used = cornerSpinsUsedToday(row, key);
+    energySpent = cornerEnergyCost(used);
+    if (energySpent > 0 && !(await spendEnergy(tx, gate.userId, energySpent))) {
+      return void (failure = "no_energy");
+    }
+    usedAfter = used + 1;
+    await tx.parkCorner.upsert({
+      where: { userId: gate.userId },
+      create: { userId: gate.userId, dayKey: key, spins: 1 },
+      update: row && row.dayKey === key ? { spins: { increment: 1 } } : { dayKey: key, spins: 1 },
     });
+    if (spin.payout > 0) {
+      await tx.user.update({
+        where: { id: gate.userId },
+        data: { coins: { increment: spin.payout } },
+      });
+    }
   });
   if (failure) return { ok: false, error: failure };
   refreshPark(locale);
-  return { ok: true, reels: spin.reels, payout: spin.payout };
+  return {
+    ok: true,
+    reels: spin.reels,
+    payout: spin.payout,
+    energySpent,
+    freeLeft: cornerFreeLeft(usedAfter),
+  };
 }
 
 export async function plantBerry(
@@ -489,7 +674,7 @@ export async function digMineCell(
   if (!gate.ok) return { ok: false, error: gate.error };
   if (index < 0 || index >= MINE_GRID_SIZE) return { ok: false, error: "not_found" };
   const key = dayKey();
-  let loot: MineLoot = "empty";
+  let loot: MineLoot | null = null;
   let failure: ParkError | null = null;
 
   await prisma.$transaction(async (tx) => {
@@ -507,13 +692,12 @@ export async function digMineCell(
     if (mineDigsLeft(grid) <= 0) return void (failure = "no_digs");
     const cell = grid[index]!;
     if (cell.dug) return void (failure = "dug");
-    if (!(await spendEnergy(tx, gate.userId, MINE_DIG_ENERGY_COST))) {
-      return void (failure = "no_energy");
-    }
     cell.dug = true;
     loot = cell.loot;
-    const bag = parseMineBag(mine!.bag);
-    if (loot === "helix" || loot === "dome" || loot === "amber") bag[loot] += 1;
+    const bag = await absorbLegacyFossilBag(tx, gate.userId, parseMineBag(mine!.bag));
+    if (loot === "helix" || loot === "dome" || loot === "amber") {
+      await creditFragments(tx, gate.userId, FOSSIL_SPECIES[loot], 1, false);
+    }
     if (loot === "coins") {
       await tx.user.update({ where: { id: gate.userId }, data: { coins: { increment: MINE_COIN_DROP } } });
     }
@@ -533,7 +717,10 @@ export async function digMineCell(
       data: { grid: json(grid), bag: json(bag) },
     });
   });
-  if (failure) return { ok: false, error: failure };
+  if (failure || loot == null) return { ok: false, error: failure ?? "not_found" };
+  if (loot === "helix" || loot === "dome" || loot === "amber") {
+    await markSpeciesSeen(gate.userId, FOSSIL_SPECIES[loot]);
+  }
   refreshPark(locale);
   return { ok: true, loot };
 }
@@ -551,13 +738,21 @@ export async function reviveFossil(
   await prisma.$transaction(async (tx) => {
     await lockUsers(tx, gate.userId);
     const mine = await tx.parkMine.findUnique({ where: { userId: gate.userId } });
-    const bag = parseMineBag(mine?.bag);
-    if (bag[kind] < 1) return void (failure = "empty");
-    const user = await tx.user.findUniqueOrThrow({ where: { id: gate.userId } });
-    if (user.coins < MINE_REVIVE_COST) return void (failure = "no_coins");
-    bag[kind] -= 1;
-    await tx.user.update({ where: { id: gate.userId }, data: { coins: { decrement: MINE_REVIVE_COST } } });
-    const granted = await grantPokemon(tx, { userId: gate.userId, speciesId, level: 20 });
+    const bag = await absorbLegacyFossilBag(tx, gate.userId, parseMineBag(mine?.bag));
+    const row = await tx.speciesFragment.findUnique({
+      where: { userId_speciesId: { userId: gate.userId, speciesId } },
+    });
+    const have = row?.quantity ?? 0;
+    if (have < MINE_FRAGMENTS_TO_ASSEMBLE) return void (failure = "empty");
+    await tx.speciesFragment.update({
+      where: { userId_speciesId: { userId: gate.userId, speciesId } },
+      data: { quantity: have - MINE_FRAGMENTS_TO_ASSEMBLE },
+    });
+    const granted = await grantPokemon(tx, {
+      userId: gate.userId,
+      speciesId,
+      level: assembledPokemonLevel("fossil"),
+    });
     grantedName = granted.speciesName;
     await tx.parkMine.upsert({
       where: { userId: gate.userId },

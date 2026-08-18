@@ -1,4 +1,4 @@
-export const FARM_PLOT_COUNT = 6;
+export const FARM_PLOT_COUNT = 4;
 /** 2 h por parcela. */
 export const FARM_GROW_MS = 2 * 60 * 60 * 1000;
 export const FARM_YIELD_MIN = 2;

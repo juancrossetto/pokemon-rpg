@@ -1,19 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentEnergy } from "@/lib/energy";
 import { spriteFor } from "@/lib/shiny";
-import { dayKey } from "@/lib/events/time";
+import { dayKey, nextDailyReset } from "@/lib/events/time";
 import { busyPokemonIds } from "@/lib/pokemon-busy";
+import { speciesRarity } from "@/lib/pokedex";
 import { DAYCARE_SLOTS, daycareCollectFee, pendingDaycareLevels } from "@/lib/park/daycare";
 import { FARM_BERRY_NAMES, FARM_PLOT_COUNT, farmMsLeft, farmReady } from "@/lib/park/farm";
-import { generateMineGrid, mineDigsLeft, parseMineBag, parseMineGrid } from "@/lib/park/mine";
+import { FOSSIL_KINDS, FOSSIL_SPECIES, generateMineGrid, mineDigsLeft, parseMineBag, parseMineGrid } from "@/lib/park/mine";
 import { FRONTIER_FACILITIES } from "@/lib/park/frontier";
+import { cornerFreeLeft, cornerSpinsUsedToday } from "@/lib/park/corner";
+import { fishingCastsUsedToday, fishingFreeLeft } from "@/lib/park/fishing";
+import { wonderFreeLeft, wonderTradesUsedToday } from "@/lib/park/wonder";
+import { migrateLegacyFossilsIfNeeded } from "@/lib/park/fragment-store";
 import type { ParkDaycareSlot, ParkHubData, ParkPlot, ParkFrontierView } from "@/lib/park/view";
 
 export async function loadParkHub(userId: string): Promise<ParkHubData> {
   const key = dayKey();
   const now = new Date();
+  await migrateLegacyFossilsIfNeeded(userId);
 
-  const [user, deposits, boxRows, plots, berryItems, mine, frontier, busy, openWonder] = await Promise.all([
+  const [user, deposits, boxRows, plots, berryItems, mine, frontier, corner, fishing, wonderDay, busy, openWonder, fragmentRows] = await Promise.all([
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { coins: true, energy: true, energyMax: true, energyUpdatedAt: true },
@@ -32,10 +38,18 @@ export async function loadParkHub(userId: string): Promise<ParkHubData> {
     prisma.item.findMany({ where: { name: { in: [...FARM_BERRY_NAMES] } } }),
     prisma.parkMine.findUnique({ where: { userId } }),
     prisma.frontierAttempt.findMany({ where: { userId, dayKey: key } }),
+    prisma.parkCorner.findUnique({ where: { userId } }),
+    prisma.parkFishing.findUnique({ where: { userId } }),
+    prisma.parkWonder.findUnique({ where: { userId } }),
     busyPokemonIds(prisma, userId),
     prisma.wonderTradeOffer.findFirst({
       where: { userId, matchedAt: null },
       include: { pokemon: { include: { species: true } } },
+    }),
+    prisma.speciesFragment.findMany({
+      where: { userId, quantity: { gt: 0 } },
+      include: { species: true },
+      orderBy: { quantity: "desc" },
     }),
   ]);
 
@@ -86,6 +100,14 @@ export async function loadParkHub(userId: string): Promise<ParkHubData> {
     };
   });
 
+  const resetAt = nextDailyReset(now);
+  const jsonBag = parseMineBag(mine?.bag);
+  const bag = { ...jsonBag };
+  for (const kind of FOSSIL_KINDS) {
+    const row = fragmentRows.find((entry) => entry.speciesId === FOSSIL_SPECIES[kind]);
+    bag[kind] = (row?.quantity ?? 0) + jsonBag[kind];
+  }
+
   return {
     coins: user.coins,
     energy: getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt),
@@ -109,6 +131,11 @@ export async function loadParkHub(userId: string): Promise<ParkHubData> {
           spriteUrl: spriteFor(openWonder.pokemon.species.spriteUrl, openWonder.pokemon.isShiny),
         }
       : null,
+    wonder: {
+      freeLeft: wonderFreeLeft(wonderTradesUsedToday(wonderDay, key)),
+      resetAt: resetAt.toISOString(),
+      resetMs: Math.max(0, resetAt.getTime() - now.getTime()),
+    },
     farm,
     berries: berryItems.map((item) => ({
       itemId: item.id,
@@ -117,9 +144,31 @@ export async function loadParkHub(userId: string): Promise<ParkHubData> {
     })),
     mine: {
       grid,
-      bag: parseMineBag(mine?.bag),
+      bag,
       digsLeft: mineDigsLeft(grid),
+      resetAt: resetAt.toISOString(),
+      resetMs: Math.max(0, resetAt.getTime() - now.getTime()),
     },
+    fragments: fragmentRows.map((row) => ({
+      speciesId: row.speciesId,
+      speciesName: row.species.name,
+      spriteUrl: spriteFor(row.species.spriteUrl, false),
+      quantity: row.quantity,
+      dexRarity: speciesRarity({
+        id: row.species.id,
+        captureRate: row.species.captureRate,
+      }),
+    })),
     frontier: frontierView,
+    corner: {
+      freeLeft: cornerFreeLeft(cornerSpinsUsedToday(corner, key)),
+      resetAt: resetAt.toISOString(),
+      resetMs: Math.max(0, resetAt.getTime() - now.getTime()),
+    },
+    fishing: {
+      freeLeft: fishingFreeLeft(fishingCastsUsedToday(fishing, key)),
+      resetAt: resetAt.toISOString(),
+      resetMs: Math.max(0, resetAt.getTime() - now.getTime()),
+    },
   };
 }

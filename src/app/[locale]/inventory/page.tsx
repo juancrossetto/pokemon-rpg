@@ -4,13 +4,19 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
 import { unclaimedPurchasesWhere } from "@/lib/market-delivery";
-import { INVENTORY_CATEGORIES, isInventoryEvolutionItem, type InventoryEntry } from "@/lib/inventory";
+import { INVENTORY_CATEGORIES, BAG_CATEGORIES, isInventoryEvolutionItem, type InventoryEntry } from "@/lib/inventory";
 import {
   formatItemSource,
   resolveItemSources,
 } from "@/lib/item-sources";
 import { InventoryTerminal, type InventoryLabels } from "@/components/inventory-terminal";
 import { resolveItemDisplayName } from "@/lib/shop";
+import {
+  assembledPokemonLevelForSpecies,
+  FRAGMENTS_TO_ASSEMBLE,
+} from "@/lib/park/fragments";
+import { migrateLegacyFossilsIfNeeded } from "@/lib/park/fragment-store";
+import { speciesRarity } from "@/lib/pokedex";
 
 export default async function InventoryPage({
   params,
@@ -32,8 +38,9 @@ export default async function InventoryPage({
 
   await redirectIfInBattle(session.user.id, locale);
   const userId = session.user.id;
+  await migrateLegacyFossilsIfNeeded(userId);
 
-  const [rows, pendingClaims, team] = await Promise.all([
+  const [rows, pendingClaims, team, fragmentRows] = await Promise.all([
     prisma.inventoryItem.findMany({
       where: { userId, quantity: { gt: 0 } },
       // `move` para poder mostrar qué enseña cada MT/MO en el panel de detalle.
@@ -72,6 +79,11 @@ export default async function InventoryPage({
         moves: { select: { moveId: true } },
       },
       orderBy: { teamSlot: "asc" },
+    }),
+    prisma.speciesFragment.findMany({
+      where: { userId, quantity: { gt: 0 } },
+      include: { species: { select: { id: true, name: true, captureRate: true } } },
+      orderBy: { speciesId: "asc" },
     }),
   ]);
 
@@ -226,7 +238,7 @@ export default async function InventoryPage({
   };
 
   const allowed = new Set<string>(INVENTORY_CATEGORIES);
-  const entries: InventoryEntry[] = rows
+  const itemEntries: InventoryEntry[] = rows
     // Un tipo nuevo en el schema que todavía no tenga categoría no debe
     // desaparecer en silencio: se filtra acá y queda visible en el log.
     .filter((r) => allowed.has(r.item.type))
@@ -281,9 +293,46 @@ export default async function InventoryPage({
       };
     });
 
+  const fragmentEntries: InventoryEntry[] = fragmentRows.map((row) => {
+    const speciesName = row.species.name;
+    const level = assembledPokemonLevelForSpecies(row.speciesId);
+    const dexRarity = speciesRarity({
+      id: row.species.id,
+      captureRate: row.species.captureRate,
+    });
+    return {
+      itemId: `fragment:${row.speciesId}`,
+      name: speciesName,
+      displayName: t("fragmentName", { name: speciesName }),
+      type: "FRAGMENT",
+      quantity: row.quantity,
+      effectText: t("fragmentEffect", {
+        need: FRAGMENTS_TO_ASSEMBLE,
+        name: speciesName,
+        level,
+      }),
+      buyPrice: 0,
+      speciesId: row.speciesId,
+      dexRarity,
+      fragmentNeed: FRAGMENTS_TO_ASSEMBLE,
+      moveName: null,
+      moveType: null,
+      moveCategory: null,
+      movePower: null,
+      moveAccuracy: null,
+      movePp: null,
+      learners: [],
+      evolveTargets: [],
+      equipTargets: [],
+      sources: [t("sources.park")],
+    };
+  });
+
+  const entries: InventoryEntry[] = [...fragmentEntries, ...itemEntries];
+
   const labels: InventoryLabels = {
     categories: Object.fromEntries(
-      INVENTORY_CATEGORIES.map((c) => [c, t(`types.${c}`)]),
+      BAG_CATEGORIES.map((c) => [c, t(`types.${c}`)]),
     ),
     all: t("all"),
     searchPlaceholder: t("searchPlaceholder"),
@@ -295,6 +344,7 @@ export default async function InventoryPage({
     quantity: t("quantity"),
     value: t("value"),
     effect: t("effect"),
+    fragmentNeed: t("fragmentNeed"),
     teaches: t("teaches"),
     moveType: t("moveType"),
     moveCategory: t("moveCategory"),

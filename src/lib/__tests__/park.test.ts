@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { daycareCollectFee, pendingDaycareLevels, xpForDaycareLevels } from "@/lib/park/daycare";
-import { rollFishingEncounter } from "@/lib/park/fishing";
-import { cornerPayout, spinCorner } from "@/lib/park/corner";
+import { FISHING_FREE_CASTS_PER_DAY, fishingCastsUsedToday, fishingEnergyCost, fishingFreeLeft, rollFishingEncounter } from "@/lib/park/fishing";
+import { CORNER_FREE_SPINS_PER_DAY, cornerEnergyCost, cornerExpectedPayout, cornerFreeLeft, cornerPayout, cornerSpinsUsedToday, spinCorner } from "@/lib/park/corner";
+import { CORNER_SPIN_ENERGY_COST, FISHING_ENERGY_COST, MINE_DIG_ENERGY_COST, WONDER_TRADE_ENERGY_COST } from "@/lib/energy";
 import { farmReady, farmYield } from "@/lib/park/farm";
-import { FOSSIL_SPECIES, generateMineGrid, mineDigsLeft, parseMineBag } from "@/lib/park/mine";
+import { FOSSIL_SPECIES, generateMineGrid, MINE_DROP_SHOW, mineDigsLeft, parseMineBag } from "@/lib/park/mine";
 import { palaceWinPayout } from "@/lib/park/frontier";
-import { wonderNpcLevel, wonderNpcSpecies } from "@/lib/park/wonder";
+import { wonderEnergyCost, wonderFreeLeft, wonderNpcLevel, wonderNpcSpecies, wonderTradesUsedToday, WONDER_FREE_TRADES_PER_DAY } from "@/lib/park/wonder";
+import { addTowardAssemble, assembledPokemonLevel, assembledPokemonLevelForSpecies, FISHING_FRAGMENT_YIELD, FRAGMENTS_TO_ASSEMBLE } from "@/lib/park/fragments";
 import { xpForLevel } from "@/lib/stats";
 
 function sequence(...rolls: number[]) {
@@ -40,11 +42,59 @@ describe("fishing", () => {
 
 describe("game corner", () => {
   it("pays jackpot on three sevens and nothing on a mix", () => {
-    expect(cornerPayout(["seven", "seven", "seven"])).toBe(2500);
+    expect(cornerPayout(["seven", "seven", "seven"])).toBe(800);
     expect(cornerPayout(["ball", "berry", "star"])).toBe(0);
     const forced = spinCorner(sequence(0, 0, 0));
     expect(forced.reels).toEqual(["ball", "ball", "ball"]);
     expect(forced.payout).toBe(80);
+  });
+
+  /*
+    Las parejas no dependen de la posición. La estrella exigía que fuera en los
+    dos primeros rodillos y el siete no, así que `★-x-★` no pagaba y `7-x-7` sí.
+  */
+  it("pays pairs in any position", () => {
+    for (const reels of [
+      ["star", "star", "ball"],
+      ["star", "ball", "star"],
+      ["ball", "star", "star"],
+    ] as const) {
+      expect(cornerPayout(reels)).toBe(30);
+    }
+    for (const reels of [
+      ["seven", "seven", "ball"],
+      ["seven", "ball", "seven"],
+      ["ball", "seven", "seven"],
+    ] as const) {
+      expect(cornerPayout(reels)).toBe(55);
+    }
+  });
+
+  it("pays a modest expected value in coins; energy and daily frees gate grinding", () => {
+    expect(cornerExpectedPayout()).toBeCloseTo(17.08, 2);
+  });
+
+  it("gives three free spins per day, then charges energy", () => {
+    expect(cornerSpinsUsedToday(null, "2026-08-17")).toBe(0);
+    expect(cornerSpinsUsedToday({ dayKey: "2026-08-16", spins: 9 }, "2026-08-17")).toBe(0);
+    expect(cornerSpinsUsedToday({ dayKey: "2026-08-17", spins: 2 }, "2026-08-17")).toBe(2);
+    expect(cornerFreeLeft(0)).toBe(CORNER_FREE_SPINS_PER_DAY);
+    expect(cornerEnergyCost(0)).toBe(0);
+    expect(cornerEnergyCost(2)).toBe(0);
+    expect(cornerEnergyCost(3)).toBe(CORNER_SPIN_ENERGY_COST);
+    expect(cornerFreeLeft(3)).toBe(0);
+  });
+});
+
+describe("fishing quota", () => {
+  it("gives five free casts then charges energy", () => {
+    expect(fishingFreeLeft(0)).toBe(FISHING_FREE_CASTS_PER_DAY);
+    expect(fishingEnergyCost(0)).toBe(0);
+    expect(fishingEnergyCost(4)).toBe(0);
+    expect(fishingEnergyCost(5)).toBe(FISHING_ENERGY_COST);
+    expect(fishingFreeLeft(5)).toBe(0);
+    expect(fishingCastsUsedToday({ dayKey: "2026-08-17", casts: 3 }, "2026-08-17")).toBe(3);
+    expect(fishingCastsUsedToday({ dayKey: "2026-08-16", casts: 5 }, "2026-08-17")).toBe(0);
   });
 });
 
@@ -70,6 +120,32 @@ describe("mine", () => {
     expect(FOSSIL_SPECIES.helix).toBe(138);
     expect(parseMineBag({ helix: 2 }).helix).toBe(2);
   });
+
+  it("lists the real prizes, not only coins, and does not charge energy", () => {
+    expect(MINE_DROP_SHOW).toEqual(["coins", "potion", "stone", "helix", "dome", "amber"]);
+    expect(MINE_DIG_ENERGY_COST).toBe(0);
+  });
+});
+
+describe("park fragments", () => {
+  it("assembles a Pokémon every ten fragments and yields more on rare bites", () => {
+    expect(addTowardAssemble(9, 1)).toEqual({ quantity: 0, assembled: 1 });
+    expect(addTowardAssemble(8, 5)).toEqual({ quantity: 3, assembled: 1 });
+    expect(addTowardAssemble(2, 1, FRAGMENTS_TO_ASSEMBLE, false)).toEqual({ quantity: 3, assembled: 0 });
+    expect(FISHING_FRAGMENT_YIELD.common).toBe(1);
+    expect(FISHING_FRAGMENT_YIELD.uncommon).toBe(2);
+    expect(FISHING_FRAGMENT_YIELD.rare).toBe(5);
+  });
+
+  it("assembles park Pokémon at a low fixed level, not the lead's", () => {
+    expect(assembledPokemonLevel("common")).toBe(5);
+    expect(assembledPokemonLevel("uncommon")).toBe(8);
+    expect(assembledPokemonLevel("rare")).toBe(12);
+    expect(assembledPokemonLevel("fossil")).toBe(10);
+    expect(assembledPokemonLevelForSpecies(130)).toBe(12);
+    expect(assembledPokemonLevelForSpecies(129)).toBe(5);
+    expect(assembledPokemonLevelForSpecies(138)).toBe(10);
+  });
 });
 
 describe("frontier / wonder", () => {
@@ -81,5 +157,15 @@ describe("frontier / wonder", () => {
   it("picks an NPC species and nearby level", () => {
     expect(wonderNpcSpecies(0)).toBeGreaterThan(0);
     expect(wonderNpcLevel(20, 0.5)).toBeGreaterThanOrEqual(18);
+  });
+
+  it("gives three free trades then charges energy", () => {
+    expect(wonderFreeLeft(0)).toBe(WONDER_FREE_TRADES_PER_DAY);
+    expect(wonderEnergyCost(0)).toBe(0);
+    expect(wonderEnergyCost(2)).toBe(0);
+    expect(wonderEnergyCost(3)).toBe(WONDER_TRADE_ENERGY_COST);
+    expect(wonderFreeLeft(3)).toBe(0);
+    expect(wonderTradesUsedToday({ dayKey: "2026-08-17", trades: 2 }, "2026-08-17")).toBe(2);
+    expect(wonderTradesUsedToday({ dayKey: "2026-08-16", trades: 3 }, "2026-08-17")).toBe(0);
   });
 });

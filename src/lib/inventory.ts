@@ -1,4 +1,5 @@
 import type { ItemType } from "@/generated/prisma/client";
+import type { DexRarity } from "@/lib/pokedex";
 import { SPECIES_EVOLUTION_ITEM } from "@/lib/evolution-items";
 
 /** Nombres de objetos que disparan evo por uso (Cordón, King's Rock, etc.). */
@@ -17,10 +18,9 @@ export function isInventoryEvolutionItem(item: {
   );
 }
 
-// Categorías del inventario. Son EXACTAMENTE los tipos que existen en el
-// schema — no se inventan pestañas ("Held Items", "Quest", "Materials") que
-// hoy estarían siempre vacías y sólo enseñarían al jugador a ignorarlas.
-// Cuando el schema sume un tipo, se agrega acá y el resto sigue funcionando.
+// Categorías del inventario. Los primeros seis son exactamente los `ItemType`
+// del schema. `FRAGMENT` es extra: los fragmentos viven en `SpeciesFragment`,
+// no en `InventoryItem`, y se listan acá para que se vean en la mochila.
 export const INVENTORY_CATEGORIES = [
   "POTION",
   "POKEBALL",
@@ -32,21 +32,35 @@ export const INVENTORY_CATEGORIES = [
 
 export type InventoryCategory = (typeof INVENTORY_CATEGORIES)[number];
 
+/**
+ * Pestañas de la mochila. `FRAGMENT` no es un `ItemType` del schema: los
+ * fragmentos viven en `SpeciesFragment`, pero se listan acá para que se
+ * vean juntos con el resto del botín.
+ */
+export const BAG_CATEGORIES = [...INVENTORY_CATEGORIES, "FRAGMENT"] as const;
+
+export type BagCategory = (typeof BAG_CATEGORIES)[number];
+
 /** "all" es una vista, no un tipo del schema. */
-export type CategoryFilter = InventoryCategory | "all";
+export type CategoryFilter = BagCategory | "all";
 
 // OJO: tienen que ser ligaduras que existan en Material Symbols. Si el nombre
 // no resuelve, la fuente dibuja el texto crudo ("CATCHING_POKEMON") en vez del
 // glifo. `catching_pokemon` no resuelve acá — por eso Poké Balls usa
 // `sports_baseball`, el mismo que ya usaba el mercado.
-export const CATEGORY_ICON: Record<InventoryCategory, string> = {
+export const CATEGORY_ICON: Record<BagCategory, string> = {
   POTION: "healing",
   POKEBALL: "sports_baseball",
   BERRY: "nutrition",
   EVOLUTION_STONE: "diamond",
   MACHINE: "smart_display",
   HELD: "auto_awesome",
+  FRAGMENT: "extension",
 };
+
+export function isFragmentEntry(entry: { type: string }): boolean {
+  return entry.type === "FRAGMENT";
+}
 
 /**
  * Un Pokémon del equipo frente a un held (p. ej. Exp. Share).
@@ -114,10 +128,16 @@ export type InventoryEntry = {
   name: string;
   /** Etiqueta localizada para UI. */
   displayName: string;
-  type: InventoryCategory;
+  type: BagCategory;
   quantity: number;
   effectText: string | null;
   buyPrice: number;
+  /** FRAGMENT: especie del cristal. */
+  speciesId?: number;
+  /** FRAGMENT: rareza de Pokédex para pintar el cristal. */
+  dexRarity?: DexRarity;
+  /** FRAGMENT: cuántos hacen falta para armar. */
+  fragmentNeed?: number;
   /** Sólo MACHINE: el movimiento que enseña. */
   moveName: string | null;
   /** Sólo MACHINE: stats del movimiento. */
@@ -165,10 +185,10 @@ export function filterEntries(
 
 export function countsByCategory(
   entries: InventoryEntry[],
-): Record<InventoryCategory, number> {
+): Record<BagCategory, number> {
   const counts = Object.fromEntries(
-    INVENTORY_CATEGORIES.map((c) => [c, 0]),
-  ) as Record<InventoryCategory, number>;
+    BAG_CATEGORIES.map((c) => [c, 0]),
+  ) as Record<BagCategory, number>;
   for (const entry of entries) counts[entry.type] += entry.quantity;
   return counts;
 }

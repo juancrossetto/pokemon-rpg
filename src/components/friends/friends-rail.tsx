@@ -15,11 +15,12 @@ import {
 } from "@/lib/friends-rail-pref";
 
 /**
- * Columna flotante de amigos conectados, en el chrome de la app.
+ * Columna flotante de amigos, en el chrome de la app.
  *
  * Retratos circulares y el punto de presencia, nada más: sin encabezado, sin
  * contador y sin pie. Al tocar uno se abre una card chica con las acciones que
- * tienen sentido desde cualquier pantalla.
+ * tienen sentido desde cualquier pantalla. Con el toggle encendido se ven
+ * también los desconectados (punto gris).
  *
  * Lo que **no** está es a propósito: eliminar amigo y bloquear viven en
  * `/friends`. Un destructivo dentro de un menú que se abre al primer clic, en
@@ -117,7 +118,9 @@ export function FriendsRail({
             >
               <button
                 type="button"
-                className="home-friends-rail__friend"
+                className={`home-friends-rail__friend${
+                  friend.presence === "offline" ? " is-offline" : ""
+                }`}
                 aria-haspopup="menu"
                 aria-expanded={open}
                 aria-label={`${friend.username}, ${presenceLabel}`}

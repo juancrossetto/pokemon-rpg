@@ -98,7 +98,11 @@ model User {
   wonderOffers       WonderTradeOffer[]
   berryPlots         BerryPlot[]
   parkMine           ParkMine?
+  parkCorner         ParkCorner?
+  parkFishing        ParkFishing?
+  parkWonder         ParkWonder?
   frontierAttempts   FrontierAttempt[]
+  speciesFragments   SpeciesFragment[]
 }
 
 // ---------- Notificaciones in-app ----------
@@ -203,6 +207,7 @@ model Species {
   safariEncounters  SafariRun[]         @relation("SafariEncounterSpecies")
   safariBestRuns    SafariRun[]         @relation("SafariBestSpecies")
   safariCatches     SafariCatch[]
+  fragments         SpeciesFragment[]
 }
 
 enum MoveCategory {
@@ -1524,6 +1529,50 @@ model ParkMine {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ParkCorner {
+  userId    String   @id
+  dayKey    String
+  spins     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Cupo diario de la caña: los primeros lances del día son gratis.
+model ParkFishing {
+  userId    String   @id
+  dayKey    String
+  casts     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Cupo diario del laboratorio: los primeros trueques del día son gratis.
+model ParkWonder {
+  userId    String   @id
+  dayKey    String
+  trades    Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Fragmentos de una especie ganados en minijuegos (pesca, mina).
+/// A los `FRAGMENTS_TO_ASSEMBLE` (10) se arma el Pokémon.
+model SpeciesFragment {
+  userId    String
+  speciesId Int
+  quantity  Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+
+  @@id([userId, speciesId])
+  @@index([userId])
 }
 
 model FrontierAttempt {
