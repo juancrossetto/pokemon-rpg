@@ -46,7 +46,7 @@ export async function NextStepCard({ step }: { step: NextStep }) {
           />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="page-title text-[10px] tracking-[0.18em] text-electric-yellow">
+          <p className="stamp-title text-[10px] tracking-[0.18em] text-electric-yellow">
             {t("eyebrow")}
           </p>
           <h2 className="page-title mt-0.5 text-[16px] leading-none tracking-tight text-white sm:text-[18px]">

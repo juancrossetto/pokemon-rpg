@@ -105,9 +105,11 @@ html[data-icons="ready"] .material-symbols-outlined {
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
-  /* CTAs uppercase y nombres display → Grobold; identidad UI → Inter. */
-  --font-game: "Grobold", var(--font-inter), system-ui, sans-serif;
-  --font-display: "Grobold", var(--font-inter), system-ui, sans-serif;
+  /* Display y CTAs sólidos → Orbitron (`--font-title` en el layout).
+     Grobold queda como sello (`--font-stamp`): labels chicos, no botones. */
+  --font-game: var(--font-title);
+  --font-display: var(--font-title);
+  --font-stamp: "Grobold", var(--font-inter), system-ui, sans-serif;
   --font-identity: var(--font-inter), system-ui, sans-serif;
 
   /* xs/sm/md/lg/xl NO se agregan acá: Tailwind v4 resuelve max-w-*, w-*, etc.
@@ -205,7 +207,7 @@ body {
       0 0 0 1px color-mix(in srgb, var(--type-accent, var(--color-pokeball-red)) 28%, transparent);
   }
 
-  /* CTA primario de juego: dorado contenido, legible sin dominar la pantalla. */
+  /* CTA primario de juego: sólido, Orbitron — misma voz que el home. */
   .game-cta {
     --game-cta-ink: #111111;
     position: relative;
@@ -233,10 +235,10 @@ body {
       0 4px 12px color-mix(in srgb, var(--color-electric-yellow) 22%, transparent),
       0 1px 0 color-mix(in srgb, var(--theme-tertiary-deep) 40%, transparent);
     color: var(--game-cta-ink);
-    font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
-    font-size: 0.95rem;
-    font-weight: 400;
-    letter-spacing: 0.04em;
+    font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
     line-height: 1;
     text-transform: uppercase;
     text-shadow: none;
@@ -305,6 +307,9 @@ body {
 
   .game-cta__label {
     top: 0.5px;
+    font-family: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
     color: var(--game-cta-ink);
     text-shadow: none;
   }
@@ -406,7 +411,7 @@ body {
     outline-color: var(--theme-primary);
   }
 
-  /* CTA secundario (info / gestionar): mismo cuerpo Grobold, superficie sólida. */
+  /* CTA secundario (info / gestionar): mismo cuerpo Orbitron, superficie sólida. */
   .game-cta--secondary {
     --game-cta-ink: #ffffff;
     border-color: rgba(255, 255, 255, 0.2);
@@ -447,7 +452,7 @@ body {
     outline-color: var(--color-secondary);
   }
 
-  /* CTA premium (saltar cooldown / gemas): misma carcasa Grobold que torre. */
+  /* CTA premium (saltar cooldown / gemas): misma carcasa Orbitron que torre. */
   .game-cta--gem {
     --game-cta-ink: #ffffff;
     border-color: color-mix(in srgb, var(--color-gem) 50%, white);
@@ -486,7 +491,7 @@ body {
   }
 
   /* Botón UI de confirmación (login, comprar, reclamar, aplicar…):
-     rojo sólido, tipografía Inter — distinto del CTA de juego Grobold. */
+     rojo sólido, Orbitron — misma familia que los CTAs del home. */
   .ui-btn-primary {
     display: inline-flex;
     align-items: center;
@@ -496,8 +501,10 @@ body {
     border-radius: 0.5rem;
     background: var(--color-pokeball-red);
     color: #ffffff;
-    font-family: var(--font-sans);
-    font-weight: 600;
+    font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     line-height: 1.2;
     box-shadow: 0 2px 10px color-mix(in srgb, var(--color-pokeball-red) 28%, transparent);
     transition:
@@ -560,8 +567,10 @@ body {
     border-radius: 0.5rem;
     background: var(--color-gem);
     color: var(--color-on-gem);
-    font-family: var(--font-sans);
-    font-weight: 600;
+    font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     box-shadow: 0 2px 10px color-mix(in srgb, var(--color-gem) 35%, transparent);
     transition:
       filter 120ms ease,
@@ -573,6 +582,39 @@ body {
   }
 
   .ui-btn-gem:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Cancelar / dismiss: Inter, borde, no display font. */
+  .ui-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--color-on-surface-variant);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    line-height: 1.2;
+    transition:
+      background 120ms ease,
+      border-color 120ms ease,
+      color 120ms ease,
+      opacity 120ms ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ui-btn-ghost:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+  }
+
+  .ui-btn-ghost:disabled {
     cursor: not-allowed;
     opacity: 0.5;
   }
@@ -690,15 +732,24 @@ body {
 }
 
 /**
- * Título de pantalla / h1 de hubs. Grobold + uppercase.
- * El tamaño lo aporta el caller (`text-headline-lg`, clamp, …).
+ * Título de pantalla / h1 de hubs. Orbitron + uppercase — la misma display
+ * que el banner y la ruta del home. El tamaño lo aporta el caller.
  *
- * Usar con mesura: solo el título hero de la pantalla (y CTAs via `.game-cta`).
- * No en nombres de NPCs/Pokémon, estados, labels de fila ni meta copy —
- * ahí va Inter (`font-semibold` / `text-white`).
+ * Grobold no va acá: para sellos chicos (eyebrow de 10px, VS, KO) usar
+ * `stamp-title`. Nombres de NPCs/Pokémon, estados y labels de fila van en
+ * Inter (`font-semibold` / `text-white`).
  */
 @utility page-title {
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+/** Sello Grobold: sólo labels chicos muy puntuales. Nunca en botones. */
+@utility stamp-title {
+  font-family: var(--font-stamp);
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1155,9 +1206,9 @@ body {
 }
 .battle-switch-sheet__title {
   margin: 0;
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
   font-size: 1.35rem;
-  font-weight: 400;
+  font-weight: 800;
   letter-spacing: 0.04em;
   line-height: 1.1;
   text-transform: uppercase;
@@ -1328,9 +1379,9 @@ body {
 }
 .battle-bag-sheet__title {
   margin: 0;
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
   font-size: 1.15rem;
-  font-weight: 400;
+  font-weight: 800;
   letter-spacing: 0.04em;
   line-height: 1.1;
   text-transform: uppercase;
@@ -3183,7 +3234,7 @@ html.is-standalone .battle-bag-sheet__panel {
 }
 
 .battle-vs-intro__vs-text {
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-stamp), var(--font-inter), system-ui, sans-serif;
   font-size: 1.15rem;
   letter-spacing: 0.06em;
   color: #fff;
@@ -5968,7 +6019,7 @@ html.is-standalone .battle-bag-sheet__panel {
   animation: battle-ko-sting-label 0.85s cubic-bezier(0.34, 1.4, 0.45, 1) both;
 }
 .battle-ko-sting-label span {
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-stamp), var(--font-inter), system-ui, sans-serif;
   font-size: clamp(2.4rem, 14vw, 4.2rem);
   letter-spacing: 0.08em;
   color: #fff;
@@ -9917,9 +9968,9 @@ html.is-standalone .battle-result-overlay .result-in {
   border: 0;
   background: transparent;
   color: #fff;
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
   font-size: 0.68rem;
-  font-weight: 400;
+  font-weight: 800;
   letter-spacing: 0.05em;
   line-height: 1;
   text-transform: uppercase;
@@ -9936,9 +9987,9 @@ html.is-standalone .battle-result-overlay .result-in {
 
 .pvp-mode-field__text {
   color: #fff;
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
   font-size: 0.68rem;
-  font-weight: 400;
+  font-weight: 800;
   letter-spacing: 0.05em;
   line-height: 1;
   text-transform: uppercase;
@@ -10019,10 +10070,18 @@ html.is-standalone .battle-result-overlay .result-in {
 
 /* Entrada escalonada del recorrido: al cambiar de capítulo las cards no
    aparecen de golpe, se leen de arriba hacia abajo (que es el orden a seguir). */
+/*
+  Entrada de los nodos del recorrido.
+
+  Suben, aparecen y asientan con una pizca de escala: el `translate` solo se
+  leía como un salto. El escalonado bajó de 55ms a 38ms — con capítulos de
+  nueve stages, 55ms hacía que el último tardara medio segundo en aparecer y la
+  lista se sentía perezosa.
+*/
 @keyframes campaign-node-in {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(14px) scale(.985);
   }
   to {
     opacity: 1;
@@ -10031,8 +10090,8 @@ html.is-standalone .battle-result-overlay .result-in {
 }
 
 .campaign-node-in {
-  animation: campaign-node-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: calc(var(--campaign-node-i, 0) * 55ms);
+  animation: campaign-node-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--campaign-node-i, 0) * 38ms);
 }
 
 /* Nodo recomendado: halo que respira para que el ojo caiga ahí primero. */
@@ -10231,9 +10290,26 @@ html.is-standalone .battle-result-overlay .result-in {
   position: relative;
   background: #0b0d13;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 18px 44px rgba(0, 0, 0, 0.45);
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 2px 10px rgba(0, 0, 0, .35),
+    0 22px 50px -28px rgba(0, 0, 0, 0.8);
+}
+
+/*
+  Título del recorrido con la display del juego, no el sello genérico.
+
+  Es el mismo criterio que ya se aplicó en el banner del home, la cabecera del
+  Parque y el popup diario: Orbitron en mayúsculas para los títulos de bloque,
+  mono para las etiquetas de dato.
+*/
+.campaign-scene__title {
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .62);
 }
 
 @media (max-width: 1023px) {
@@ -10268,8 +10344,8 @@ html.is-standalone .battle-result-overlay .result-in {
   gap: 0.35rem;
   overflow: visible;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.55rem;
-  background: #161821;
+  border-radius: 0.7rem;
+  background: #14151d;
   padding: 0.45rem 0.75rem 0.55rem;
   font-family: var(--font-inter), system-ui, sans-serif;
   font-size: 0.72rem;
@@ -10283,10 +10359,42 @@ html.is-standalone .battle-result-overlay .result-in {
     box-shadow 0.15s ease;
 }
 .campaign-chapter-tab__label {
+  position: relative;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/*
+  Miniatura circular del banner del capítulo, a la izquierda de la tab.
+
+  Antes el arte iba de fondo a sangre con `opacity: .5` y un velo encima: a ese
+  tamaño y con esa opacidad no se distinguía un capítulo de otro, así que
+  aportaba textura pero no información. Como medallón chico el arte se lee, y
+  el fondo de la tab vuelve a ser plano — que es lo que deja destacar al
+  seleccionado.
+*/
+.campaign-chapter-tab__art {
+  position: relative;
+  height: 1.85rem;
+  width: 1.85rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+.campaign-chapter-tab__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.campaign-chapter-tab--current .campaign-chapter-tab__art {
+  box-shadow:
+    0 0 0 2px var(--theme-primary),
+    0 0 10px color-mix(in srgb, var(--theme-primary) 55%, transparent);
+}
+.campaign-chapter-tab--locked .campaign-chapter-tab__art img {
+  filter: grayscale(0.7) brightness(0.5);
 }
 .campaign-chapter-tab__dot {
   display: inline-block;
@@ -10391,15 +10499,27 @@ html.is-standalone .battle-result-overlay .result-in {
 /* ── Sendero ─────────────────────────────────────────────────────────── */
 
 /* Tramo ya recorrido: se "dibuja" al cambiar el progreso. */
+/*
+  Tramo recorrido: línea, sin halo.
+
+  El sendero venía con `drop-shadow` de color y competía con los nodos —que son
+  el contenido— por ser lo más brillante de la columna. La secuencia ya la
+  comunican la numeración y los tildes; la línea sólo tiene que unir, no
+  iluminar. Es el mismo criterio que se aplicó al banner del home: el color se
+  reserva para lo accionable.
+*/
 .campaign-trail-fill {
-  stroke: var(--theme-primary-bright);
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--theme-primary) 75%, transparent));
+  /* Medido en pantalla: a 4px y color pleno el tramo se leía como un tubo de
+     neón entre nodos, más pesado que los nodos mismos. Fino y a media
+     saturación vuelve a ser un indicador. */
+  stroke: color-mix(in srgb, var(--theme-primary-bright) 72%, transparent);
   transition: stroke-dashoffset 0.75s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Huellas que marchan hacia el próximo nodo. */
+/* Huellas hacia el próximo nodo: el único tramo que sí se destaca, porque
+   señala a dónde ir. */
 .campaign-trail-march {
-  stroke: color-mix(in srgb, var(--color-pokeball-red) 85%, transparent);
+  stroke: color-mix(in srgb, var(--color-pokeball-red) 70%, transparent);
   stroke-dasharray: 1 9;
   animation: campaign-trail-march 1.15s linear infinite;
 }
@@ -12403,15 +12523,15 @@ html.is-standalone .battle-result-overlay .result-in {
 }
 
 .daily-reward-day-label {
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-stamp), var(--font-inter), system-ui, sans-serif;
   font-weight: 400;
   letter-spacing: 0.03em;
   line-height: 1.1;
 }
 
 .daily-reward-qty {
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
-  font-weight: 700;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-weight: 800;
   letter-spacing: 0.02em;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
@@ -12647,9 +12767,9 @@ html.is-standalone .battle-result-overlay .result-in {
   );
 }
 
-/* Pestaña Special/Rare: Grobold + inclinación como las cards. */
+/* Pestaña Special/Rare: sello Grobold + inclinación como las cards. */
 .daily-reward-badge {
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-stamp), var(--font-inter), system-ui, sans-serif;
   font-weight: 400;
   line-height: 1.15;
   border-radius: 4px;
@@ -12766,8 +12886,8 @@ html.is-standalone .battle-result-overlay .result-in {
 }
 
 .daily-reward-claim-title {
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
-  font-weight: 400;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-weight: 800;
   letter-spacing: 0.02em;
   text-shadow:
     0 0 8px color-mix(in srgb, var(--color-pokeball-red) 90%, transparent),
@@ -12777,6 +12897,10 @@ html.is-standalone .battle-result-overlay .result-in {
 .daily-reward-claim-cta {
   border-radius: 10px;
   color: #ffffff;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   text-shadow: none;
   background: linear-gradient(
     to top,
@@ -15650,9 +15774,9 @@ html.boot-splash-done .boot-splash,
 }
 
 .dex-card__name {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: 0.88rem;
-  font-weight: 400;
+  font-weight: 800;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
@@ -17195,7 +17319,7 @@ html.boot-splash-done .boot-splash,
   bottom: -0.75rem;
   transform: translateX(-50%);
   white-space: nowrap;
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-stamp), var(--font-inter), system-ui, sans-serif;
   font-size: 0.8rem;
   color: white;
   text-shadow: 0 2px 8px black;
@@ -18242,8 +18366,8 @@ html.boot-splash-done .boot-splash,
   gap: 0.3rem;
   margin: 0;
   max-width: 100%;
-  font-family: var(--font-display);
-  font-weight: 400;
+  font-family: var(--font-sans);
+  font-weight: 800;
   font-size: 1.05rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -18449,8 +18573,8 @@ html.boot-splash-done .boot-splash,
   align-items: center;
   gap: 0.35rem;
   margin: 0;
-  font-family: var(--font-display);
-  font-weight: 400;
+  font-family: var(--font-sans);
+  font-weight: 800;
   font-size: 1.15rem;
   color: #fff;
   line-height: 1.15;
@@ -21350,8 +21474,8 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 
 /* ── Identidad del banner de /profile ─────────────────────────────────────
-   Misma familia tipográfica que el resto de la app: Grobold (nombre) +
-   Inter (meta) + mono (cifras). */
+   Misma familia que el home: Orbitron (nombre / PC) + Inter (meta) + mono
+   (cifras). */
 
 /* Scrim local detrás del cluster nombre/chips: legible sobre banners claros
    sin oscurecer la escena ni mover márgenes del marco. */
@@ -21385,12 +21509,12 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   justify-content: center;
   margin: 0;
   overflow: visible;
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
-  font-weight: 400;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
+  font-weight: 800;
   font-style: normal;
   font-size: clamp(1.7rem, 9.2vw, 2.6rem);
-  /* Grobold + background-clip recorta con line-height:1; un poco de aire
-     deja ver el trazo superior (la C/R/S de CROSSETTO). */
+  /* Orbitron + background-clip recorta con line-height:1; un poco de aire
+     deja ver el trazo superior. */
   line-height: 1.18;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -21515,7 +21639,7 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   margin-bottom: 0.1rem;
   overflow: visible;
   align-items: center;
-  /* Aire entre PC y meta: Grobold + clip no cabe en line-height:1. */
+  /* Aire entre PC y meta: Orbitron + clip no cabe en line-height:1. */
   gap: 0.35rem 0.65rem;
 }
 
@@ -21529,9 +21653,9 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 
 .tp-id__cp-label {
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
   font-size: clamp(1.55rem, 7.5vw, 2.05rem);
-  font-weight: 400;
+  font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   background-image: linear-gradient(
@@ -21552,9 +21676,9 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
 }
 
 .tp-id__cp-value {
-  font-family: "Grobold", var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-title), var(--font-inter), system-ui, sans-serif;
   font-size: clamp(1.7rem, 8.2vw, 2.35rem);
-  font-weight: 400;
+  font-weight: 800;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
   background-image: linear-gradient(
@@ -30069,4 +30193,507 @@ img.cdn-img--loaded.opacity-45 { opacity: 0.45; }
   border-color: color-mix(in srgb, var(--theme-primary) 60%, transparent);
   background: color-mix(in srgb, var(--theme-primary) 24%, rgba(10, 8, 16, .8));
   color: #fff;
+}
+
+/* ---------- Campaign · tira de datos del viaje ---------- */
+.campaign-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .4rem;
+}
+.campaign-stats li {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: .9rem;
+  background: #101119;
+  padding: .5rem .6rem;
+}
+.campaign-stats img { height: 1.05rem; width: 1.05rem; flex-shrink: 0; object-fit: contain; }
+.campaign-stats span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: rgba(255, 255, 255, .38);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .625rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.campaign-stats b {
+  color: #fff;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: .6875rem;
+  font-weight: 700;
+}
+/* Dos por fila: vive en un rail de ~300px, donde cuatro columnas dejarían
+   70px por celda y no entra ni la etiqueta. */
+.campaign-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* Medallero: una insignia por gimnasio ganado, arriba del "3/8" agregado de
+   .campaign-stats. Sólo dorado (electric-yellow) — la única excepción de
+   color por tipo que el resto de esta pantalla ya se permite. */
+.campaign-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+}
+.campaign-badge-medal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 999px;
+  background: #101119;
+  border: 1px solid color-mix(in srgb, var(--color-electric-yellow) 35%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-electric-yellow) 20%, transparent);
+}
+.campaign-badge-medal img {
+  width: 1.15rem;
+  height: 1.15rem;
+  object-fit: contain;
+}
+
+
+/* El stepper de capítulos ahora es la única navegación entre capítulos, así que
+   se ve en todos los anchos y necesita respirar en escritorio. */
+@media (min-width: 1280px) {
+  .campaign-chapter-tabs { gap: .4rem; }
+  .campaign-chapter-tab { flex: 1 1 0; max-width: none; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Sendero de campaña — el recorrido como mapa, no como lista.
+
+   La lista vertical decía lo mismo pero se leía como un índice: filas de
+   texto de altura pareja donde ninguna parada pesa más que otra. El punto
+   del capítulo es que es un *camino* — hay un antes, un acá y un después—, y
+   eso lo comunica la forma antes que el texto.
+
+   Los nodos van en porcentaje sobre un contenedor de alto calculado, y el
+   trazo es un SVG con `preserveAspectRatio: none` que usa las mismas
+   coordenadas. Así el zigzag se estira con el ancho disponible sin recalcular
+   nada en JS.
+   ───────────────────────────────────────────────────────────────────────── */
+.campaign-path {
+  --path-row: 7.6rem;
+  --path-node: 4.6rem;
+  position: relative;
+  width: 100%;
+}
+.campaign-path__trail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+/* `non-scaling-stroke`: sin esto el estirado del viewBox deforma el grosor
+   del trazo y el guionado, y el camino se ve más fino arriba que abajo. */
+.campaign-path__seg {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1 13;
+  vector-effect: non-scaling-stroke;
+}
+.campaign-path__seg--todo {
+  stroke: rgba(255, 255, 255, 0.16);
+}
+.campaign-path__seg--done {
+  stroke: var(--theme-primary-bright);
+  opacity: 0.9;
+}
+
+.campaign-path__node {
+  position: absolute;
+  display: flex;
+  width: var(--path-node);
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  transform: translate(-50%, -50%);
+}
+/* La burbuja es el elemento con peso; el nombre cuelga debajo sin empujar
+   el centro, por eso el nodo se ancla por su medio y no por el borde. */
+.campaign-path__bubble {
+  position: relative;
+  display: grid;
+  width: var(--path-node);
+  height: var(--path-node);
+  flex-shrink: 0;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  background: #1a1c24;
+  box-shadow: 0 7px 0 0 rgba(0, 0, 0, 0.34), inset 0 2px 0 rgba(255, 255, 255, 0.08);
+  transition: transform 0.14s ease;
+}
+.campaign-path__bubble img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.campaign-path__node:not(.campaign-path__node--locked) .campaign-path__bubble:hover {
+  transform: translateY(-3px);
+}
+
+.campaign-path__node--done .campaign-path__bubble {
+  border-color: color-mix(in srgb, var(--theme-primary-bright) 70%, transparent);
+  box-shadow:
+    0 7px 0 0 rgba(0, 0, 0, 0.34),
+    0 0 10px color-mix(in srgb, var(--theme-primary) 45%, transparent),
+    inset 0 2px 0 rgba(255, 255, 255, 0.08);
+}
+.campaign-path__node--current {
+  --path-node: 5.5rem;
+  z-index: 3;
+}
+.campaign-path__node--current .campaign-path__bubble {
+  border-color: var(--theme-primary);
+  box-shadow:
+    0 7px 0 0 color-mix(in srgb, var(--theme-primary) 55%, black),
+    0 0 0 7px color-mix(in srgb, var(--theme-primary) 20%, transparent);
+  animation: campaign-path-pop 2.4s ease-in-out infinite;
+}
+@keyframes campaign-path-pop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.campaign-path__node--next .campaign-path__bubble {
+  border-color: var(--theme-tertiary);
+  box-shadow:
+    0 7px 0 0 rgba(0, 0, 0, 0.34),
+    0 0 10px color-mix(in srgb, var(--theme-tertiary) 45%, transparent);
+}
+.campaign-path__node--gym {
+  --path-node: 6rem;
+}
+.campaign-path__node--gym .campaign-path__bubble {
+  border-color: color-mix(in srgb, var(--color-electric-yellow) 55%, transparent);
+}
+.campaign-path__node--locked .campaign-path__bubble {
+  box-shadow: 0 5px 0 0 rgba(0, 0, 0, 0.3);
+  cursor: not-allowed;
+}
+.campaign-path__node--locked.campaign-path__node--gym .campaign-path__bubble {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.campaign-path__node--locked .campaign-path__bubble img {
+  filter: grayscale(0.85) brightness(0.45);
+}
+.campaign-path__node--selected .campaign-path__bubble {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 3px;
+}
+.campaign-path__lock {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.campaign-path__label {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  max-width: 8.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+.campaign-path__node--locked .campaign-path__label {
+  color: rgba(255, 255, 255, 0.42);
+}
+/* El requisito vive bajo el nodo bloqueado y no en el panel: es la única
+   información que explica por qué no se puede entrar, y esconderla detrás de
+   un clic convierte el candado en un misterio. */
+.campaign-path__req {
+  display: -webkit-box;
+  max-width: 9.5rem;
+  margin-top: -0.15rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  /* Dos renglones y corta. Sin tope, "Completá Ruta 1 · tramo 3 en Ruta 1"
+     ocupaba cuatro y se metía en el nodo de abajo; el texto completo sigue
+     estando en el panel de zona. */
+  -webkit-line-clamp: 2;
+  font-size: 0.58rem;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.34);
+  text-align: center;
+}
+.campaign-path__chip {
+  position: absolute;
+  top: -0.7rem;
+  right: -0.5rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border-radius: 999px;
+  padding: 0.28rem 0.6rem;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.campaign-path__chip--play {
+  background: var(--theme-primary);
+  color: #2a0730;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 50%, transparent);
+}
+.campaign-path__chip--next {
+  background: var(--theme-tertiary);
+  color: #071226;
+  font-size: 0.53rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 767.98px) {
+  .campaign-path { --path-row: 6.6rem; --path-node: 3.6rem; }
+  .campaign-path__node--current { --path-node: 4.3rem; }
+  .campaign-path__node--gym { --path-node: 4.7rem; }
+  .campaign-path__label { max-width: 6.5rem; font-size: 0.65rem; }
+  .campaign-path__req { max-width: 7rem; font-size: 0.54rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campaign-path__node--current .campaign-path__bubble { animation: none; }
+}
+
+/* El líder del equipo, parado sobre la zona actual. Sale del borde superior
+   de la burbuja: apoyado *sobre* el nodo, no metido adentro. */
+/* Hombro izquierdo, no arriba al centro: la chapa "¡Jugar!" ocupa la esquina
+   derecha del mismo nodo y centrado se tapaban entre sí. */
+.campaign-path__hiker {
+  position: absolute;
+  bottom: calc(var(--path-node) - 0.9rem);
+  left: -0.35rem;
+  z-index: 4;
+  display: block;
+  pointer-events: none;
+}
+.campaign-path__hiker img {
+  height: 2.6rem;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.6));
+  image-rendering: pixelated;
+}
+@media (max-width: 767.98px) {
+  .campaign-path__hiker img { height: 2rem; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Panel de zona — ficha ilustrada, no encabezado de lista.
+
+   Antes abría con un ícono de 44px al lado del nombre: identificaba la zona
+   pero no la mostraba. Ahora abre con el arte real a sangre, y el tipo de zona
+   pinta el panel entero (`--zone-accent`) en vez de repetirse como etiqueta.
+   Cambiar de nodo cambia el color del panel: la respuesta al clic se ve antes
+   de leer nada.
+   ───────────────────────────────────────────────────────────────────────── */
+.campaign-zone-panel {
+  --zone-accent: var(--theme-primary);
+  position: relative;
+  overflow: hidden;
+  /*
+    Color contenido y sombra sin halo.
+
+    El acento identifica la zona, no tiene que gritarla: al 32% de borde más un
+    resplandor de color alrededor, el panel competía con el sendero —que es lo
+    que el jugador está mirando— y la pantalla entera vibraba. Con el tinte
+    bajo y una sombra neutra el color sigue diciendo "esto es una ciudad" sin
+    pelear por atención.
+  */
+  border: 1px solid color-mix(in srgb, var(--zone-accent) 18%, rgba(255, 255, 255, 0.07));
+  border-radius: 1.5rem;
+  background: linear-gradient(
+    168deg,
+    color-mix(in srgb, var(--zone-accent) 7%, #191822) 0%,
+    #16151d 58%
+  );
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  transition:
+    border-color 0.3s ease,
+    background 0.3s ease;
+}
+
+/*
+  Ritmo del panel.
+
+  Lo que lo hacía ver apretado no era la cantidad de datos sino que todo
+  respiraba igual: cada sección a 0,75rem de la anterior, así que nada agrupaba
+  con nada y la vista no encontraba dónde descansar. Separar los bloques y
+  juntar sus filas es lo que da la sensación de calma — el mismo contenido,
+  ordenado en grupos.
+*/
+.campaign-zone-panel > :not(.campaign-zone-panel__art) + * {
+  margin-top: 1.15rem;
+}
+.campaign-zone-panel ul > li + li {
+  margin-top: 0.1rem;
+}
+/* Cajas internas: menos contorno, más relleno. Un recuadro dentro de otro
+   recuadro es lo que hace que una ficha se vea "cargada". */
+.campaign-zone-panel .game-float-tile {
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.022);
+  padding-block: 0.6rem;
+}
+.campaign-zone-panel--town { --zone-accent: #f4b860; }
+.campaign-zone-panel--route { --zone-accent: #38bdf8; }
+.campaign-zone-panel--forest { --zone-accent: #84e1a3; }
+.campaign-zone-panel--dungeon { --zone-accent: #a78bfa; }
+.campaign-zone-panel--gym { --zone-accent: var(--color-electric-yellow); }
+
+.campaign-zone-panel__art {
+  position: relative;
+  height: 7.75rem;
+  /* Tira el padding del panel para que el arte llegue al borde. El panel usa
+     un `p-4` parejo en todos los tamaños justamente para que este margen sea
+     uno solo: con padding responsive había que duplicar la regla. */
+  margin: -1rem -1rem 0;
+  overflow: hidden;
+}
+.campaign-zone-panel__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* El degradé cae al color del panel, no a negro: si cayera a negro se vería
+   un escalón donde termina la foto. */
+.campaign-zone-panel__art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(23, 22, 31, 0) 38%,
+    color-mix(in srgb, var(--zone-accent) 8%, #1a1926) 88%,
+    color-mix(in srgb, var(--zone-accent) 11%, #1b1a27) 100%
+  );
+}
+.campaign-zone-panel__kind {
+  position: absolute;
+  bottom: 0.6rem;
+  left: 0.75rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid color-mix(in srgb, var(--zone-accent) 50%, transparent);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.2rem 0.55rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--zone-accent) 78%, #fff);
+}
+/*
+  El líder se apoya en la esquina derecha del arte, no lo reemplaza.
+
+  El selector va con la clase del contenedor adelante a propósito: la regla de
+  al lado es `.campaign-zone-panel__art img` (0,1,1), que le ganaba en
+  especificidad a una clase sola (0,1,0). El resultado era el retrato estirado
+  a 314×120 con `cover` —tapando el arte del gimnasio con un recorte borroso—
+  en vez del sprite a su tamaño.
+*/
+.campaign-zone-panel__art img.campaign-zone-panel__leader {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0;
+  z-index: 1;
+  height: 4.6rem;
+  width: auto;
+  object-fit: contain;
+  object-position: bottom;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.65));
+}
+/* Los retratos de líder son sprites de 80px: escalados con suavizado quedan
+   lavados, así que se los deja crecer con los píxeles a la vista. */
+.campaign-zone-panel__art img.campaign-zone-panel__leader--pixel {
+  image-rendering: pixelated;
+}
+.campaign-zone-panel__art--locked img {
+  filter: grayscale(0.85) brightness(0.45);
+}
+
+@media (max-width: 767.98px) {
+  .campaign-zone-panel__art { height: 6.5rem; }
+  .campaign-zone-panel__leader { height: 4.3rem; }
+}
+
+/* Card del equipo en el rail de campaña — mismo lenguaje que el panel de zona
+   (radio grande, superficie apenas levantada) para que se lean como columna. */
+.campaign-party-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.012));
+  padding: 0.875rem 0.9rem 0.9rem;
+}
+.campaign-party-card--hurt {
+  border-color: color-mix(in srgb, var(--color-pokeball-red) 30%, transparent);
+}
+
+/*
+  El pedido de la zona: la primera cosa que se lee en la ficha.
+
+  La regla vive acá y no como utilidades sueltas porque la barra de acento a la
+  izquierda tiene que seguir al `--zone-accent` del panel, que cambia por tipo
+  de zona.
+*/
+.campaign-zone-ask {
+  border-left: 2px solid color-mix(in srgb, var(--zone-accent) 55%, transparent);
+  padding-left: 0.8rem;
+}
+.campaign-zone-ask p {
+  margin: 0.55rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+  text-wrap: pretty;
+}
+
+/*
+  Objetivo ya cumplido: presente, pero en voz baja.
+
+  Con la zona cerrada, el bloque del pedido ya dice "Zona terminada" y debajo
+  quedaban tres filas en verde repitiéndolo con el mismo peso que las
+  pendientes. Lo cumplido tiene que poder consultarse, no anunciarse: sirve
+  como registro, no como aviso. Lo pendiente conserva su contraste intacto.
+*/
+.campaign-zone-panel [data-objective-done="true"] {
+  opacity: 0.42;
+  transition: opacity 0.18s ease;
+}
+.campaign-zone-panel [data-objective-done="true"]:hover,
+.campaign-zone-panel [data-objective-done="true"]:focus-within {
+  opacity: 0.9;
+}
+
+/* Las filas de tramo son cinco palabras y un check: no necesitan la caja
+   completa de un tile, que las hacía leer como botones apilados. */
+.campaign-zone-panel .campaign-stage-row {
+  border-color: transparent;
+  background: rgba(255, 255, 255, 0.02);
 }

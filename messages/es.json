@@ -2755,6 +2755,25 @@
     "exploreLocation": "Explorar",
     "viewFullJourney": "Viaje completo",
     "chapterPath": "Recorrido del capítulo",
+    "ask": {
+      "locked": "Esta zona todavía no está abierta. Avanzá por el capítulo para llegar.",
+      "gym": "Cerrá el capítulo y desafiá al líder cuando tu equipo esté listo.",
+      "gymWon": "Ya ganaste esta medalla. Podés volver a desafiar al líder cuando quieras.",
+      "gymChapterFirst": "Terminá las zonas del capítulo y el líder te abre la puerta.",
+      "oneTrainerNamed": "Te falta vencer a {name} para cerrar la zona.",
+      "trainers": "Te faltan {count, plural, one {# entrenador} other {# entrenadores}} para cerrar la zona.",
+      "stagesAndTrainers": "Recorré {stages, plural, one {# tramo} other {# tramos}} más y vencé a {trainers, plural, one {# entrenador} other {# entrenadores}}.",
+      "stages": "Recorré {count, plural, one {# tramo} other {# tramos}} más para terminar la zona.",
+      "pokedexOptional": "La zona ya está cerrada. Si querés el extra, te {count, plural, one {falta # especie} other {faltan # especies}} por cruzarte.",
+      "claim": "Ya está todo hecho: cobrá la recompensa de la zona.",
+      "done": "Zona terminada. Seguí camino por el recorrido."
+    },
+    "partyStripTitle": "Tu equipo",
+    "partyReady": "{count, plural, one {# listo} other {# listos}}",
+    "askTitle": "Lo que pide esta zona",
+    "playChip": "¡Jugar!",
+    "nextChip": "Siguiente",
+    "chapterPathSummary": "{done} de {total} paradas completadas",
     "chapterNames": {
       "elite_four": "Alto Mando"
     },
@@ -2765,6 +2784,7 @@
     "nodeCurrent": "Actual",
     "nodeNext": "Siguiente",
     "backToCurrentChapter": "Volver al actual",
+    "browsingChapterHint": "Tu viaje está en {name}",
     "chapterLockedHint": "Se abre al completar el capítulo anterior.",
     "gymChallengeHint": "Usá la acción principal de arriba cuando puedas desafiar al líder.",
     "gymLockedHint": "Todavía no podés desafiar al líder.",
@@ -2847,7 +2867,8 @@
     "stageSet": "Tramo activo: {name}.",
     "nextChallenge": "Próximo desafío",
     "gymOfType": "Gimnasio {type}",
-    "eliteOfType": "Alto Mando · {type}"
+    "eliteOfType": "Alto Mando · {type}",
+    "doneStagesToggle": "Ver {n} ya completados"
   },
   "levelUp": {
     "title": "{name} · Nv. {level}",

@@ -188,7 +188,7 @@ function MatchSpotlight({
             caption={L.you}
             accent="self"
           />
-          <span className="page-title pvp-vs-neon shrink-0 px-0.5 text-[1.25rem] leading-none">
+          <span className="stamp-title pvp-vs-neon shrink-0 px-0.5 text-[1.25rem] leading-none">
             {L.vsShort}
           </span>
           <SpotlightPortrait
@@ -215,7 +215,7 @@ function MatchSpotlight({
             caption={L.you}
             accent="self"
           />
-          <span className="page-title pvp-vs-neon shrink-0 px-0.5 text-[1.15rem] leading-none sm:text-[1.4rem]">
+          <span className="stamp-title pvp-vs-neon shrink-0 px-0.5 text-[1.15rem] leading-none sm:text-[1.4rem]">
             {L.vsShort}
           </span>
           <SpotlightPortrait

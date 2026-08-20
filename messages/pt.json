@@ -2755,6 +2755,25 @@
     "exploreLocation": "Explorar",
     "viewFullJourney": "Jornada completa",
     "chapterPath": "Percurso do capítulo",
+    "ask": {
+      "locked": "Esta zona ainda não está aberta. Avance pelo capítulo para chegar.",
+      "gym": "Feche o capítulo e desafie o líder quando seu time estiver pronto.",
+      "gymWon": "Você já ganhou esta medalha. Pode desafiar o líder de novo quando quiser.",
+      "gymChapterFirst": "Termine as zonas do capítulo e o líder abre a porta.",
+      "oneTrainerNamed": "Falta vencer {name} para fechar a zona.",
+      "trainers": "{count, plural, one {Falta # treinador} other {Faltam # treinadores}} para fechar a zona.",
+      "stagesAndTrainers": "Percorra mais {stages, plural, one {# trecho} other {# trechos}} e vença {trainers, plural, one {# treinador} other {# treinadores}}.",
+      "stages": "Percorra mais {count, plural, one {# trecho} other {# trechos}} para terminar a zona.",
+      "pokedexOptional": "A zona já está fechada. Para o extra, {count, plural, one {falta # espécie} other {faltam # espécies}} para encontrar.",
+      "claim": "Está tudo pronto: resgate a recompensa da zona.",
+      "done": "Zona concluída. Siga pelo percurso."
+    },
+    "partyStripTitle": "Seu time",
+    "partyReady": "{count, plural, one {# pronto} other {# prontos}}",
+    "askTitle": "O que esta zona pede",
+    "playChip": "Jogar!",
+    "nextChip": "Próximo",
+    "chapterPathSummary": "{done} de {total} paradas concluídas",
     "chapterNames": {
       "elite_four": "Elite dos Quatro"
     },
@@ -2765,6 +2784,7 @@
     "nodeCurrent": "Atual",
     "nodeNext": "Próximo",
     "backToCurrentChapter": "Voltar ao atual",
+    "browsingChapterHint": "Sua jornada está em {name}",
     "chapterLockedHint": "Abre ao concluir o capítulo anterior.",
     "gymChallengeHint": "Use a ação principal acima quando puder desafiar o líder.",
     "gymLockedHint": "Ainda não pode desafiar o líder.",
@@ -2847,7 +2867,8 @@
     "stageSet": "Trecho ativo: {name}.",
     "nextChallenge": "Próximo desafio",
     "gymOfType": "Ginásio {type}",
-    "eliteOfType": "Elite dos Quatro · {type}"
+    "eliteOfType": "Elite dos Quatro · {type}",
+    "doneStagesToggle": "Ver {n} já concluídos"
   },
   "levelUp": {
     "title": "{name} · Nv. {level}",

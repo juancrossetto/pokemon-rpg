@@ -206,10 +206,11 @@ batalla, evolución, torre, perfil...) — revisar ahí antes de escribir una
 animación nueva, y si se agrega una, sumarla también al bloque
 `@media (prefers-reduced-motion: reduce)` correspondiente.
 
-**Grobold / `page-title`:** no abusar. Va en el título hero de la pantalla y en
-CTAs de juego (`.game-cta`). No en nombres de entrenadores/Pokémon, estados
-(“Cleared”, “Awaiting…”), labels de fila ni meta copy — ahí Inter
-(`font-semibold` / tipografía UI normal).
+**Orbitron / `page-title` / `.game-cta`:** la display del juego (botones
+sólidos y títulos de hub) es Orbitron (`--font-title`). Grobold (`stamp-title`)
+queda para sellos chicos muy puntuales — eyebrows de 10px, VS, KO — nunca en
+botones ni en nombres de entrenadores/Pokémon. El resto de la UI va en Inter
+(`font-semibold` / tipografía normal).
 
 ### Hidratación e islas de cliente
 

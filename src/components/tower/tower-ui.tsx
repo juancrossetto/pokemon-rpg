@@ -238,7 +238,7 @@ export function TowerParkButton({
         type="button"
         disabled={pending}
         onClick={() => setOpen(true)}
-        className="page-title min-h-8 text-[10px] tracking-[0.08em] text-white/55 transition hover:text-white disabled:opacity-40"
+        className="ui-btn-ghost min-h-8 border-0 bg-transparent px-0 text-[10px] text-white/55 hover:bg-transparent hover:text-white disabled:opacity-40"
       >
         {t("park.cta")}
       </button>
@@ -346,7 +346,7 @@ export function TowerAbandonButton({
         type="button"
         disabled={pending}
         onClick={() => setOpen(true)}
-        className="page-title min-h-8 text-[10px] tracking-[0.08em] text-error/75 transition hover:text-error disabled:opacity-40"
+        className="ui-btn-ghost min-h-8 border-0 bg-transparent px-0 text-[10px] text-error/75 hover:bg-transparent hover:text-error disabled:opacity-40"
       >
         {t("abandon.cta")}
       </button>
@@ -355,7 +355,7 @@ export function TowerAbandonButton({
         type="button"
         disabled={pending}
         onClick={() => setOpen(true)}
-        className="page-title min-h-11 w-full rounded-xl border border-error/35 bg-error/10 px-4 py-2 text-[12px] tracking-[0.06em] text-error transition hover:bg-error/15 disabled:opacity-40"
+        className="ui-btn-ghost min-h-11 w-full border-error/35 px-4 py-2 text-[12px] text-error hover:bg-error/15 disabled:opacity-40"
       >
         {t("abandon.cta")}
       </button>
@@ -447,7 +447,7 @@ export function TowerLockedState({
             />
           </div>
 
-          <p className="page-title text-[10px] tracking-[0.2em] text-secondary">
+          <p className="stamp-title text-[10px] tracking-[0.2em] text-secondary">
             {t("eyebrow")}
           </p>
           <h2 className="page-title mt-1.5 text-[1.45rem] leading-none tracking-tight text-white sm:text-[1.65rem]">
@@ -460,10 +460,10 @@ export function TowerLockedState({
 
         <div className="flex w-full max-w-sm flex-col items-center gap-3 lg:max-w-xs lg:items-stretch">
           <div className="flex w-full items-center justify-between gap-2 px-0.5">
-            <span className="page-title text-[9px] tracking-[0.14em] text-white/40">
+            <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40">
               {t("locked.requirement")}
             </span>
-            <span className="page-title text-[13px] tabular-nums tracking-wide text-white">
+            <span className="text-[13px] font-bold tabular-nums tracking-wide text-white">
               {clamped}
               <span className="text-white/35">/{minBadges}</span>
             </span>
@@ -509,7 +509,7 @@ export function TowerLockedState({
           </div>
 
           {remaining > 0 ? (
-            <p className="page-title text-[10px] tracking-[0.12em] text-white/45">
+            <p className="stamp-title text-[10px] tracking-[0.12em] text-white/45">
               {t("locked.remaining", { n: remaining })}
             </p>
           ) : null}

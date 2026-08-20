@@ -1,11 +1,12 @@
 "use client";
 
 import { CdnImage as Image } from "@/components/cdn-image";
-import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { CampaignPrimaryObjective, CampaignJourneyMenuTrigger } from "@/components/campaign-primary-objective";
 import {
+  CampaignPartyDock,
   type CampaignDockMember,
   type CampaignPartyHeal,
 } from "@/components/campaign-party-dock";
@@ -27,11 +28,7 @@ import {
 import { type Rarity } from "@/lib/campaign/rarity";
 import { itemDisplayUrl } from "@/lib/item-sprites";
 import { resolveItemDisplayName } from "@/lib/shop";
-import {
-  MasteryIcon,
-  ZoneIcon,
-  type ZoneIconKind,
-} from "@/components/zone-icons";
+import { MasteryIcon, PokeballIcon } from "@/components/zone-icons";
 import { gymBadgeImageUrl } from "@/lib/gym-art";
 import type { Chapter } from "@/lib/campaign/chapters";
 import { activeChapterIndex } from "@/lib/campaign/chapters";
@@ -40,7 +37,6 @@ import type { CampaignLocationKind } from "@/lib/campaign/types";
 import {
   campaignBannerForChapter,
   campaignMapHasArt,
-  campaignMapArtLayout,
   campaignMapSrc,
   countTeamReadyAtLevel,
   GYM_READY_TEAM_SIZE,
@@ -49,8 +45,8 @@ import {
   getZoneUnlockRequirements,
   gymReadyLevel,
   recommendedChapterZoneId,
+  defaultChapterZoneId,
   resolveZoneNodeStatus,
-  type CampaignNodeStatus,
   type CampaignProgressRow,
   type CampaignRequirement,
 } from "@/lib/campaign";
@@ -66,6 +62,8 @@ import { ExpeditionAmbient } from "@/components/home/expedition-ambient";
 import { UnlockCelebration } from "@/components/unlock-celebration";
 import { CampaignUnlockFeedback } from "@/components/campaign-unlock-feedback";
 import { GameCtaButton } from "@/components/game-cta-button";
+import { CampaignPath } from "@/components/campaign/campaign-path";
+import { stageShortName, zoneAsk } from "@/lib/campaign/zone-ask";
 import type { CampaignMilestone } from "@/lib/campaign/types";
 
 function translateRequirement(
@@ -77,7 +75,13 @@ function translateRequirement(
   for (const key of ["location", "stage"] as const) {
     const val = raw[key];
     if (typeof val === "string" && val.includes(".")) {
-      params[key] = t(val);
+      /*
+        El nombre del stage ya trae la zona ("Ruta 1 · tramo 3"), y la frase la
+        vuelve a nombrar: "Completá Ruta 1 · tramo 3 en Ruta 1". Se recorta el
+        prefijo y queda "Completá tramo 3 en Ruta 1", que además entra sin
+        cortarse debajo de un nodo bloqueado.
+      */
+      params[key] = key === "stage" ? stageShortName(t(val)) : t(val);
     }
   }
   return t(req.descriptionKey, params);
@@ -96,15 +100,6 @@ const BADGE_TYPE_BY_ORDER: Record<number, string> = {
 };
 
 const PATH_PROGRESS_FILL = "campaign-warm-bar";
-/** Progreso del riel: un solo acento (primary). Sin mezclar tertiary. */
-const PATH_DONE = "var(--theme-primary-bright)";
-const PATH_DONE_SOFT = "color-mix(in srgb, var(--theme-primary) 18%, transparent)";
-const PATH_DONE_RING = "color-mix(in srgb, var(--theme-primary-bright) 70%, transparent)";
-const PATH_DONE_GLOW = "color-mix(in srgb, var(--theme-primary) 45%, transparent)";
-const PATH_DONE_GLOW_STRONG = "color-mix(in srgb, var(--theme-primary-bright) 80%, transparent)";
-/* Nodos grandes: son paradas ilustradas del mapa, no viñetas de una lista. */
-const PATH_NODE_SM = "h-9 w-9 sm:h-12 sm:w-12";
-const PATH_NODE_GYM = "h-12 w-12 sm:h-16 sm:w-16 lg:h-[4.5rem] lg:w-[4.5rem]"; /* gimnasio */
 
 /**
  * Paleta de la campaña — color solo cuando informa:
@@ -124,56 +119,66 @@ const RARITY_STYLE: Record<Rarity, string> = {
   elite: "border-electric-yellow shadow-[0_0_10px_color-mix(in_srgb,var(--color-electric-yellow)_35%,transparent)]",
 };
 
-/**
- * Identidad por tipo de zona: la lleva el ícono, no el color.
- * El gimnasio es la excepción — cierra el capítulo y se gana el dorado.
- */
-const KIND_STYLE: Record<
-  CampaignLocationKind,
-  { icon: ZoneIconKind; text: string; ring: string; glow: string }
-> = {
-  town: {
-    icon: "town",
-    text: "text-white/55",
-    ring: "border-white/12 bg-[#1a1c24]",
-    glow: "rgba(255,255,255,0.18)",
-  },
-  route: {
-    icon: "route",
-    text: "text-white/55",
-    ring: "border-white/12 bg-[#1a1c24]",
-    glow: "rgba(255,255,255,0.18)",
-  },
-  forest: {
-    icon: "forest",
-    text: "text-white/55",
-    ring: "border-white/12 bg-[#1a1c24]",
-    glow: "rgba(255,255,255,0.18)",
-  },
-  dungeon: {
-    icon: "dungeon",
-    text: "text-white/55",
-    ring: "border-white/12 bg-[#1a1c24]",
-    glow: "rgba(255,255,255,0.18)",
-  },
-  gym: {
-    icon: "gym",
-    text: "text-electric-yellow",
-    ring: "border-electric-yellow/45 bg-[#1a1c24]",
-    glow: "color-mix(in srgb, var(--color-electric-yellow) 45%, transparent)",
-  },
-};
-
+/*
+  Rótulo de sección en mono, con el mismo tracking que el resto de la app
+  (banner del home, Parque, popup diario). Antes era Inter semibold: se leía
+  como un párrafo chiquito y no como una etiqueta de HUD.
+*/
 const SECTION_LABEL =
-  "text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45";
+  "font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-white/40";
 
-/** Escala tipográfica mobile del panel de zona (una sola familia de tamaños). */
-const ZONE_TITLE = "text-[17px] font-bold leading-snug tracking-tight text-white sm:text-headline-md";
-const ZONE_META = "text-[12px] leading-snug text-white/50";
-const ZONE_ROW_TITLE = "text-[13px] font-semibold leading-snug text-white";
-const ZONE_ROW_META = "text-[12px] font-mono tabular-nums text-white/55";
+/*
+  Rótulo dentro del panel de zona: el mismo rol, con la mitad de la voz.
+
+  El panel llegó a tener cinco rótulos en mono, mayúsculas y tracking .18em, y
+  entre ellos apenas dos renglones de contenido. Un rótulo así compite en peso
+  con lo que rotula: se lee la etiqueta antes que el dato, que es al revés de
+  lo que sirve. Más chico, con menos tracking y más apagado, sigue separando
+  secciones sin pedir atención.
+*/
+const ZONE_LABEL =
+  "font-mono text-[9.5px] font-semibold uppercase tracking-[0.1em] text-white/28";
+
+/*
+  Escala tipográfica del panel de zona: cuatro roles y nada más.
+
+  Medido en el navegador, el panel llegó a tener **22 tratamientos de texto
+  distintos en 320px de ancho** — nueve tamaños de mono y siete de Inter. Ese
+  era el desorden real: no la cantidad de información sino que cada dato traía
+  su propio tamaño, peso y color, así que nada agrupaba con nada.
+
+  Los cuatro roles: título de zona, etiqueta de sección, texto de fila y dato
+  numérico. Todo lo que aparezca en el panel tiene que entrar en uno de ellos.
+*/
+const ZONE_TITLE = "text-[19px] font-bold leading-tight tracking-tight text-white";
+const ZONE_META = "font-mono text-[11px] leading-snug tracking-[0.04em] text-white/45";
+const ZONE_ROW_TITLE = "text-[13px] font-semibold leading-snug text-white/85";
+const ZONE_ROW_META = "font-mono text-[11px] font-bold tabular-nums text-white/55";
 const ZONE_CHIP =
-  "inline-flex items-center gap-1 rounded-md bg-pokeball-red/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pokeball-red";
+  "inline-flex items-center gap-1 rounded-md bg-pokeball-red/18 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-pokeball-red";
+
+/**
+ * Traduce los parámetros de `zoneAsk` que son claves i18n.
+ *
+ * `zoneAsk` es puro y no conoce next-intl, así que devuelve `trainers.youngster`
+ * y no "Joven Timmy". Sin este paso la frase salía con la clave cruda a la
+ * vista. Mismo criterio que `translateRequirement`: se traduce lo que parece
+ * una clave (tiene punto y no espacios) y se deja pasar el resto.
+ */
+function resolveAskParams(
+  t: (key: string, values?: Record<string, string | number>) => string,
+  params?: Record<string, string | number>,
+): Record<string, string | number> | undefined {
+  if (!params) return undefined;
+  const out: Record<string, string | number> = {};
+  for (const [key, value] of Object.entries(params)) {
+    out[key] =
+      typeof value === "string" && value.includes(".") && !value.includes(" ")
+        ? t(value)
+        : value;
+  }
+  return out;
+}
 
 function kindOf(zone: MapLocation | null): CampaignLocationKind {
   if (!zone) return "route";
@@ -185,8 +190,6 @@ function kindOf(zone: MapLocation | null): CampaignLocationKind {
  * `preserveAspectRatio="none"` estira el trazo a la altura real de la fila, y
  * `vector-effect="non-scaling-stroke"` evita que ese estirado deforme el grosor.
  */
-const TRAIL_PATH = "M10,0 C3,26 17,62 10,100";
-
 export type JourneySummary = {
   badges: number;
   badgesTotal: number;
@@ -252,8 +255,19 @@ export function CampaignJourney({
   const tUx = useTranslations("ux");
   const router = useRouter();
   const [chapterIndex, setChapterIndex] = useState(initialChapter);
-  /** null = ninguna card del recorrido expandida (todas colapsadas). */
-  const [zoneId, setZoneId] = useState<string | null>(null);
+  /** Zona enfocada en el path y el panel. Nunca `zones[0]` a ciegas. */
+  const [zoneId, setZoneId] = useState<string | null>(() => {
+    const ch = chapters[initialChapter];
+    return ch
+      ? defaultChapterZoneId({
+          chapter: ch,
+          farmingLocationId,
+          earnedGymOrders,
+          milestoneLocationId:
+            milestone.kind === "complete" ? null : milestone.locationId,
+        })
+      : null;
+  });
   const [pending, startTransition] = useTransition();
   const [unlockToast, setUnlockToast] = useState<{ id: string; name: string } | null>(null);
   /** El panel de detalle vive debajo de toda la lista en mobile. */
@@ -264,7 +278,20 @@ export function CampaignJourney({
   const currentChapterIdx = activeChapterIndex(chapters, farmingLocationId);
   const chapter = chapters[chapterIndex] ?? chapters[0];
   const viewingCurrentChapter = chapterIndex === currentChapterIdx;
-  const selectedZone = zoneId ? (chapter?.zones.find((z) => z.id === zoneId) ?? null) : null;
+  const focusZoneId =
+    zoneId ??
+    (chapter
+      ? defaultChapterZoneId({
+          chapter,
+          farmingLocationId,
+          earnedGymOrders,
+          milestoneLocationId:
+            milestone.kind === "complete" ? null : milestone.locationId,
+        })
+      : null);
+  const selectedZone = focusZoneId
+    ? (chapter?.zones.find((z) => z.id === focusZoneId) ?? null)
+    : null;
   const zone =
     selectedZone ??
     chapter?.zones.find((z) => z.id === farmingLocationId) ??
@@ -400,15 +427,21 @@ export function CampaignJourney({
   function openChapter(i: number) {
     setChapterIndex(i);
     const next = chapters[i];
-    if (!next) return;
-    // Al cambiar de capítulo, colapsar el recorrido otra vez.
-    if (!next.zones.some((z) => z.id === zoneId)) {
-      setZoneId(null);
-    }
+    setZoneId(
+      next
+        ? defaultChapterZoneId({
+            chapter: next,
+            farmingLocationId,
+            earnedGymOrders,
+            milestoneLocationId:
+              milestone.kind === "complete" ? null : milestone.locationId,
+          })
+        : null,
+    );
   }
 
   function pickZone(id: string) {
-    setZoneId((prev) => (prev === id ? null : id));
+    setZoneId(id);
   }
 
   function travelTo(id: string) {
@@ -527,6 +560,29 @@ export function CampaignJourney({
     scrollChildIntoHorizontalCenter(nav, tab, smooth ? "smooth" : "auto");
   }, [chapterIndex]);
 
+  const lastPathScrollChapter = useRef<number | null>(null);
+  useEffect(() => {
+    if (!focusZoneId) return;
+    if (lastPathScrollChapter.current === chapterIndex) return;
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      lastPathScrollChapter.current = chapterIndex;
+      return;
+    }
+    const row = document.querySelector<HTMLElement>(
+      `[data-zone-row="${CSS.escape(focusZoneId)}"]`,
+    );
+    if (!row) return;
+    lastPathScrollChapter.current = chapterIndex;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const raf = window.requestAnimationFrame(() => {
+      scrollAppMainToElement(row, {
+        behavior: smooth ? "smooth" : "auto",
+        offsetPx: 88,
+      });
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [chapterIndex, focusZoneId]);
+
   return (
     <div
       className={`touch-pan-y${pending ? " opacity-90 transition-opacity" : ""}`}
@@ -550,11 +606,13 @@ export function CampaignJourney({
               }
             />
             <CampaignPrimaryObjective
-              action={barAction}
-              gymHref={gymChallengeHref}
+              action={viewingCurrentChapter ? barAction : primaryAction}
+              gymHref={viewingCurrentChapter ? gymChallengeHref : storyGymHref}
               gymBadgeSrc={gymChallengeBadgeSrc}
               onTravel={
-                selectedZone ? () => travelAndExplore(selectedZone.id) : undefined
+                viewingCurrentChapter && selectedZone
+                  ? () => travelAndExplore(selectedZone.id)
+                  : undefined
               }
               travelPending={pending}
               bannerSrc={bannerArt.src}
@@ -562,6 +620,11 @@ export function CampaignJourney({
               locationName={t(locationLabelKey)}
               regionLabel={t("regions.kanto")}
               chapterLabel={chapter ? `${t("chapter")} ${chapter.number}` : null}
+              browsingHint={
+                !viewingCurrentChapter && farmingZone
+                  ? t("browsingChapterHint", { name: t(farmingZone.nameKey) })
+                  : null
+              }
               stagesDone={chapter?.stagesDone ?? 0}
               stagesTotal={chapter?.stagesTotal ?? 0}
               party={
@@ -601,6 +664,7 @@ export function CampaignJourney({
                       currentLabel={t("nodeCurrent")}
                     />
                     <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
+                    <BadgeMedalRow earnedGymOrders={earnedGymOrders} />
                     <HubHelpPanel
                       storageKey="hub-help-campaign"
                       bullets={helpBullets}
@@ -618,32 +682,43 @@ export function CampaignJourney({
         Mobile: mapa → detalle (objetivos / premios).
         Desktop lg+: recorrido | panel sticky. xl+: + aside de capítulos.
       */}
-      <div className="mt-4 grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_minmax(280px,340px)] lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
-        <aside className="hidden flex-col gap-3 xl:flex">
-          <div>
-            <p className={`mb-2 ${SECTION_LABEL}`}>{t("chapter")}</p>
-            <nav className="game-float-card rounded-2xl p-2" aria-label={t("chapter")}>
-              {chapters.map((c, i) => (
-                <ChapterNavRow
-                  key={c.number}
-                  chapter={c}
-                  title={t(c.nameKey)}
-                  selected={i === chapterIndex}
-                  isCurrent={i === currentChapterIdx}
-                  currentLabel={t("nodeCurrent")}
-                  onPick={() => openChapter(i)}
-                />
-              ))}
-            </nav>
-          </div>
-          <p className={`px-1 ${SECTION_LABEL}`}>{t("secondaryChapter")}</p>
-          <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
-        </aside>
+      {/*
+        Columna única, de arriba a abajo: objetivo → capítulos → recorrido →
+        puerta del capítulo → datos del viaje.
 
-        <div className="min-w-0 order-1 lg:order-none">
+        Antes eran tres columnas de peso parejo (capítulos | recorrido | líder) y
+        ninguna mandaba: no había orden de lectura, así que la pantalla no
+        respondía la única pregunta que importa, qué hacer ahora. En una columna
+        el orden es el propio avance del jugador.
+      */}
+      {/*
+        Dos columnas en escritorio: recorrido a la izquierda, rail fijo a la
+        derecha.
+
+        La versión de una sola columna ordenó la lectura pero estiró la pantalla:
+        todo pedía scroll. El rail devuelve la compacidad sin volver al problema
+        original —tres bloques de peso parejo— porque tiene un rol claro y único:
+        lo que falta para pasar de capítulo. Al ser `sticky` te acompaña, así que
+        la respuesta a "qué me falta" está siempre a la vista.
+      */}
+      <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(270px,320px)]">
+
+        {/*
+          Columna en flex para que el mapa pueda crecer hasta el alto de la
+          fila; sin esto el contenedor se estiraba pero el mapa se quedaba en su
+          alto de contenido y el sobrante era hueco.
+
+          Sin `order-1`: en mobile esa clase mandaba esta columna al final, así
+          que se leía panel de zona → tabs de capítulo → recorrido. Dos
+          problemas: la ficha de una zona aparecía antes que el mapa donde se
+          elige la zona, y las tabs quedaban partidas del recorrido que
+          controlan. La acción principal ya vive arriba, en la barra de
+          objetivo, así que el panel no necesita adelantarse.
+        */}
+        <div className="min-w-0 lg:flex lg:flex-col">
           <nav
             ref={chapterTabsRef}
-            className="campaign-chapter-tabs mb-3 flex gap-2 overflow-x-auto pb-0.5 xl:hidden"
+            className="campaign-chapter-tabs mb-3 flex gap-2 overflow-x-auto pb-0.5"
             aria-label={t("chapter")}
           >
             {chapters.map((c, i) => {
@@ -672,6 +747,24 @@ export function CampaignJourney({
                           : " campaign-chapter-tab--locked"
                   }`}
                 >
+                  {/*
+                    Portada real del capítulo — “tarjeta de mundo”, no sólo texto.
+                    `loading="eager"`: son ~9 miniaturas como máximo, todas parte
+                    del selector de capítulo siempre relevante en esta pantalla —
+                    no ganan nada difiriéndose, y con lazy (default) las que
+                    arrancan scrolleadas fuera de vista tardaban en cargar.
+                  */}
+                  <span className="campaign-chapter-tab__art" aria-hidden>
+                    <Image
+                      src={campaignBannerForChapter(c.number).src}
+                      alt=""
+                      fill
+                      sizes="220px"
+                      loading="eager"
+                      className="object-cover"
+                      style={{ objectPosition: campaignBannerForChapter(c.number).objectPosition }}
+                    />
+                  </span>
                   {!c.unlocked ? (
                     <span className="material-symbols-outlined text-[13px]!" aria-hidden>
                       lock
@@ -704,7 +797,21 @@ export function CampaignJourney({
           </nav>
 
           {chapter && (
-            <div className="campaign-scene overflow-hidden rounded-2xl p-2.5 sm:p-3.5">
+            <div
+              /*
+                `grow`, no un alto mínimo fijo.
+
+                Un capítulo de dos paradas dibuja un mapa de ~150px al lado de
+                un panel de 700: lo que queda no es un mapa chico sino un
+                agujero. Un `min-height` en rem sólo movía el borde del agujero
+                —el panel cambia de alto según la zona—. Creciendo hasta el alto
+                de la fila el mapa iguala al rail sea cual sea, y cuando el
+                recorrido es el más largo `grow` no lo achica.
+
+                En mobile no aplica: las dos columnas se apilan y no hay hueco.
+              */
+              className="campaign-scene overflow-hidden rounded-2xl p-2.5 sm:p-3.5 lg:grow"
+            >
               {/*
                 El arte del capítulo detrás del recorrido: sin esto la pantalla
                 más "de aventura" del juego era una lista sobre el gris de la app.
@@ -724,7 +831,7 @@ export function CampaignJourney({
 
               <div className="relative z-[1]">
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <p className={`mb-0 ${SECTION_LABEL}`}>{t("chapterPath")}</p>
+                <p className="campaign-scene__title mb-0">{t("chapterPath")}</p>
                 {viewingCurrentChapter ? (
                   <span className="rounded-md bg-pokeball-red/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white">
                     {t("nodeCurrent")}
@@ -740,53 +847,51 @@ export function CampaignJourney({
                   <button
                     type="button"
                     onClick={() => openChapter(currentChapterIdx)}
-                    className="ml-auto inline-flex min-h-7 items-center gap-1 rounded-md bg-pokeball-red/16 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-pokeball-red ring-1 ring-pokeball-red/45 transition hover:bg-pokeball-red/25"
+                    className="ui-btn-primary ml-auto inline-flex min-h-8 items-center gap-1 px-2.5 text-[10px]"
                   >
-                    <span className="material-symbols-outlined text-[13px]!">my_location</span>
+                    <span className="material-symbols-outlined text-[14px]!">my_location</span>
                     {t("backToCurrentChapter")}
                   </button>
                 ) : null}
               </div>
-              {/* `key` por capítulo: al cambiar de capítulo se remonta la lista
-                  y la entrada escalonada vuelve a correr. */}
-              <ol key={chapter.number} className="relative flex flex-col gap-2.5 sm:gap-3.5">
-                {chapter.zones.map((z, i) => {
+              {/* `key` por capítulo: al cambiar de capítulo se remonta el
+                  sendero y la entrada vuelve a correr. */}
+              <CampaignPath
+                key={chapter.number}
+                chapter={chapter}
+                selectedZoneId={focusZoneId}
+                leadSpriteUrl={leadSpriteUrl}
+                onPick={pickZone}
+                nodes={chapter.zones.map((z) => {
                   const nodeStatus = resolveZoneNodeStatus({
                     zone: z,
                     farmingLocationId,
-                    selectedZoneId: zoneId,
+                    selectedZoneId: focusZoneId,
                     chapter,
                     badgeEarned: chapterBadgeEarned,
                   });
-                  return (
-                    <ZoneRow
-                      key={z.id}
-                      zone={z}
-                      stepIndex={i + 1}
-                      isLast={i === chapter.zones.length - 1}
-                      selected={zoneId === z.id}
-                      isFarming={z.id === farmingLocationId}
-                      farmingStageId={farmingStageId}
-                      isNextStep={z.id === recommendedZoneId}
-                      leadsToNextStep={
-                        recommendedZoneId != null &&
-                        chapter.zones[i + 1]?.id === recommendedZoneId
-                      }
-                      leadSpriteUrl={leadSpriteUrl}
-                      gymRequirement={gymRequirements[z.id]}
-                      chapter={chapter}
-                      teamMaxLevel={summary.teamMaxLevel}
-                      nodeStatus={nodeStatus}
-                      unlockRequirements={getZoneUnlockRequirements(
-                        z.id,
-                        progress,
-                        defeatedTrainerIds,
-                      )}
-                      onPick={() => pickZone(z.id)}
-                    />
-                  );
+                  /*
+                    El requisito que se muestra bajo el candado es el primero
+                    sin cumplir, no la lista entera: bajo un nodo hay lugar
+                    para un renglón, y el resto ya está en el panel de zona.
+                  */
+                  const pending = getZoneUnlockRequirements(
+                    z.id,
+                    progress,
+                    defeatedTrainerIds,
+                  ).find((req) => !req.completed);
+                  return {
+                    zone: z,
+                    status: nodeStatus,
+                    isNext: z.id === recommendedZoneId,
+                    isFarming: z.id === farmingLocationId,
+                    requirement:
+                      nodeStatus === "locked" && pending
+                        ? translateRequirement(t, pending)
+                        : null,
+                  };
                 })}
-              </ol>
+              />
               </div>
             </div>
           )}
@@ -796,10 +901,55 @@ export function CampaignJourney({
           `min-w-0`: sin esto el track del grid no puede encoger por debajo del
           contenido más ancho y empuja la columna hermana.
         */}
+        {/*
+          Rail de "qué falta": la puerta del capítulo y los datos del viaje.
+
+          En mobile va debajo del recorrido —el orden del DOM es el de lectura—
+          y en escritorio se pega arriba. Es el mismo contenido que antes vivía
+          en la tercera columna, pero ahora con un rol declarado en vez de ser
+          otro bloque más compitiendo por atención.
+        */}
         <div
           ref={panelRef}
-          className="min-w-0 order-2 scroll-mt-20 touch-pan-y lg:order-none lg:sticky lg:top-20 lg:z-0 lg:self-start"
+          className="flex min-w-0 flex-col gap-3 scroll-mt-20 touch-pan-y lg:sticky lg:top-20 lg:self-start"
         >
+          {/*
+            El equipo, arriba del panel de zona.
+
+            Antes vivía suelto entre la barra de objetivo y los capítulos: un
+            bloque con el mismo peso que el panel pero sin nada que lo agrupe,
+            así que se leía como un widget huérfano. Acá comparte columna con
+            "qué me falta", que es la pregunta que el equipo ayuda a responder.
+          */}
+          {party && party.members.length > 0 ? (
+            <section
+              /* Sólo lg+: en mobile el rail cae debajo del recorrido entero, y
+                 el equipo tan lejos de la acción no le sirve a nadie. Ahí sigue
+                 viviendo bajo el banner (ver `CampaignPrimaryObjective`). */
+              className={`campaign-party-card hidden lg:block${
+                party.heal.needsHealing ? " campaign-party-card--hurt" : ""
+              }`}
+            >
+              <div className="mb-2.5 flex items-baseline justify-between gap-2">
+                <span className={SECTION_LABEL}>{t("partyStripTitle")}</span>
+                <span className="font-mono text-[10px] font-bold text-emerald-400/85">
+                  {t("partyReady", {
+                    count: party.members.filter((m) => m.currentHp > 0).length,
+                  })}
+                </span>
+              </div>
+              <CampaignPartyDock
+                locale={locale}
+                initialMembers={party.members}
+                initialBagCounts={party.bagCounts}
+                ownedHeldItems={party.ownedHeldItems}
+                heal={party.heal}
+                menuLabels={party.menuLabels}
+                heldLabels={party.heldLabels}
+              />
+            </section>
+          ) : null}
+
           {zone && (
             <ZonePanel
               zone={zone}
@@ -824,6 +974,15 @@ export function CampaignJourney({
               onClaim={(objective, origin) => claim(zone.id, objective, origin)}
             />
           )}
+
+          {/*
+            Acá colgaban el medallero y una tira con medallas / Pokédex / zonas
+            / variocolor: los mismos cuatro números que ya muestra
+            `JourneySummaryCard` dentro de "Viaje completo", y ninguno de ellos
+            habla de la zona seleccionada. Estiraban el rail ~200px por debajo
+            del recorrido, que es de donde salía el hueco en capítulos cortos.
+            Se mudaron al menú del viaje, junto a los mismos datos.
+          */}
         </div>
       </div>
     </div>
@@ -832,75 +991,6 @@ export function CampaignJourney({
 
 /* ────────────────────────────────────────────────────────────────────── */
 
-/* ────────────────────────────────────────────────────────────────────── */
-
-function ChapterNavRow({
-  chapter,
-  title,
-  selected,
-  isCurrent,
-  currentLabel,
-  onPick,
-}: {
-  chapter: Chapter;
-  title: string;
-  selected: boolean;
-  isCurrent: boolean;
-  currentLabel: string;
-  onPick: () => void;
-}) {
-  const icon = !chapter.unlocked
-    ? "lock"
-    : isCurrent
-      ? "my_location"
-      : chapter.completed
-        ? "check_circle"
-        : "play_arrow";
-
-  return (
-    <button
-      type="button"
-      onClick={onPick}
-      disabled={!chapter.unlocked}
-      aria-current={isCurrent ? "step" : selected ? "true" : undefined}
-      className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-label-sm transition ${
-        isCurrent
-          ? "bg-pokeball-red/16 text-white ring-1 ring-pokeball-red/70 shadow-[0_0_18px_color-mix(in_srgb,var(--color-pokeball-red)_28%,transparent)]"
-          : selected
-            ? "bg-[#1a1c24] text-white ring-1 ring-white/22"
-            : chapter.unlocked
-              ? "text-white/55 hover:bg-[#1a1c24] hover:text-white"
-              : "text-white/30"
-      }`}
-    >
-      <span
-        className={`material-symbols-outlined text-[16px]! ${
-          isCurrent
-            ? "text-pokeball-red"
-            : chapter.completed
-              ? "text-electric-yellow"
-              : selected
-                ? "text-white/70"
-                : ""
-        }`}
-      >
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1 truncate">
-        {chapter.number}. {title}
-      </span>
-      {isCurrent ? (
-        <span className="shrink-0 rounded-md bg-pokeball-red px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">
-          {currentLabel}
-        </span>
-      ) : chapter.unlocked && !chapter.completed ? (
-        <span className="shrink-0 font-mono text-[10px] tabular-nums text-white/40">
-          {chapter.percent}%
-        </span>
-      ) : null}
-    </button>
-  );
-}
 
 function JourneyStrip({
   chapters,
@@ -1008,694 +1098,6 @@ function JourneyStrip({
   );
 }
 
-function ZoneRow({
-  zone,
-  stepIndex,
-  isLast,
-  selected,
-  isFarming,
-  farmingStageId,
-  isNextStep,
-  leadsToNextStep,
-  leadSpriteUrl,
-  gymRequirement,
-  chapter,
-  teamMaxLevel,
-  nodeStatus,
-  unlockRequirements,
-  onPick,
-}: {
-  zone: MapLocation;
-  /** Posición dentro del capítulo (1-based) — el orden a seguir, explícito. */
-  stepIndex: number;
-  isLast: boolean;
-  selected: boolean;
-  isFarming: boolean;
-  /** Stage donde está explorando el jugador, para marcar el tramo activo. */
-  farmingStageId: string;
-  /** Único nodo recomendado del capítulo. */
-  isNextStep: boolean;
-  /** El tramo que sale de este nodo desemboca en el recomendado. */
-  leadsToNextStep: boolean;
-  /** Sprite del Pokémon que encabeza el equipo — camina el sendero. */
-  leadSpriteUrl: string | null;
-  gymRequirement?: GymRequirement;
-  chapter: Chapter;
-  teamMaxLevel: number;
-  nodeStatus: CampaignNodeStatus;
-  unlockRequirements: CampaignRequirement[];
-  onPick: () => void;
-}) {
-  const t = useTranslations("campaign");
-  const kind = kindOf(zone);
-  const style = KIND_STYLE[kind];
-  const isGym = kind === "gym";
-  const gymWon = isGym && (nodeStatus === "completed" || nodeStatus === "reward_pending");
-  const done = nodeStatus === "completed" || gymWon;
-  /** Solo la card clickeada se expande; el resto queda colapsada. */
-  const compact = !selected;
-  const caught = zone.encounters.filter((e) => e.caught).length;
-  const trainersDone = zone.trainers.filter((tr) => tr.defeated).length;
-  const storySteps = zone.totalStages + zone.trainers.length;
-  const pct = storySteps > 0 ? ((zone.completedStages + trainersDone) / storySteps) * 100 : 0;
-  const pathPct = isGym
-    ? chapter.completed || gymWon
-      ? 100
-      : 0
-    : done
-      ? 100
-      : pct;
-  const hasStageArt = campaignMapHasArt(zone.id);
-  const artLayout = campaignMapArtLayout(zone.id);
-  const artBleed = hasStageArt && artLayout === "bleed";
-  const thumbSrc = campaignMapSrc(zone.id);
-  const nodeClass = isGym ? PATH_NODE_GYM : PATH_NODE_SM;
-  /** Debajo del círculo (mt-1.5/mt-2 + tamaño del nodo). Si hay hiker,
-   *  sumamos el pt reservado para el sprite. */
-  const hikerPad = Boolean(isFarming && leadSpriteUrl);
-  const railLineTop = isGym
-    ? hikerPad
-      ? "top-[calc(2rem+0.375rem+3rem)] sm:top-[calc(2.5rem+0.5rem+4rem)] lg:top-[calc(2.5rem+0.5rem+4.5rem)]"
-      : "top-[calc(0.375rem+3rem)] sm:top-[calc(0.5rem+4rem)] lg:top-[calc(0.5rem+4.5rem)]"
-    : hikerPad
-      ? "top-[calc(2rem+0.375rem+2.25rem)] sm:top-[calc(2.5rem+0.5rem+3rem)]"
-      : "top-[calc(0.375rem+2.25rem)] sm:top-[calc(0.5rem+3rem)]";
-  const lineFilled =
-    done || pathPct >= 100 || isFarming || nodeStatus === "current" || nodeStatus === "in_progress";
-  const lineFillPct = done || pathPct >= 100 ? 100 : Math.min(100, Math.max(0, pathPct));
-
-  const requirementsLeft =
-    isGym && zone.unlocked && !gymWon
-      ? [
-          chapter.stagesDone < chapter.stagesTotal
-            ? t("reqStagesDetail", {
-                done: chapter.stagesDone,
-                total: chapter.stagesTotal,
-              })
-            : null,
-          gymRequirement && teamMaxLevel < gymRequirement.recommendedLevel
-            ? t("reqLevel", { level: gymRequirement.recommendedLevel })
-            : null,
-        ].filter(Boolean)
-      : [];
-
-  const statusLabel =
-    nodeStatus === "locked"
-      ? t("nodeLocked")
-      : gymWon
-        ? t("nodeWon")
-        : nodeStatus === "completed"
-          ? t("nodeCompleted")
-          : nodeStatus === "in_progress"
-            ? t("nodeInProgress")
-            : nodeStatus === "current"
-              ? t("nodeCurrent")
-              : null;
-
-  return (
-    <li
-      className="campaign-node-in relative flex items-stretch gap-2 sm:gap-3"
-      style={{ "--campaign-node-i": stepIndex - 1 } as CSSProperties}
-    >
-      {/* Ancho fijo (= gimnasio) para centrar nodos chicos y el sendero.
-          Con hiker activo reservamos altura arriba del nodo para que el
-          sprite no tape “Recorrido del capítulo”. */}
-      <div
-        className={`relative w-12 shrink-0 self-stretch sm:w-16 lg:w-[4.5rem]${
-          isFarming && leadSpriteUrl ? " pt-8 sm:pt-10" : ""
-        }`}
-      >
-        {/* El entrenador parado en el nodo donde está el jugador. */}
-        {isFarming && leadSpriteUrl ? (
-          <>
-            <span
-              aria-hidden
-              className="campaign-hiker__shadow pointer-events-none absolute left-1/2 top-[1.65rem] z-20 h-1.5 w-7 -translate-x-1/2 rounded-[50%] bg-black/70 blur-[2px] sm:top-[2.1rem] sm:w-9"
-            />
-            <span
-              className="campaign-hiker pointer-events-none absolute left-1/2 top-0 z-20"
-              title={t("farming")}
-            >
-              <Image
-                src={leadSpriteUrl}
-                alt=""
-                width={44}
-                height={44}
-                className="h-8 w-8 object-contain object-bottom drop-shadow-[0_3px_6px_rgba(0,0,0,0.65)] sm:h-11 sm:w-11"
-              />
-            </span>
-          </>
-        ) : null}
-
-        <span
-          className={`relative z-10 mx-auto mt-1.5 flex ${nodeClass} items-center justify-center overflow-hidden rounded-full border sm:mt-2 ${
-            isNextStep && !done ? "campaign-next-halo " : ""
-          }${
-            !zone.unlocked
-              ? "border-white/15 bg-[#12141c] text-white/35"
-              : isFarming || nodeStatus === "current"
-                ? "border-pokeball-red bg-[color-mix(in_srgb,var(--color-pokeball-red)_14%,#0a0610)] text-pokeball-red"
-                : done
-                  ? "bg-[color-mix(in_srgb,var(--theme-primary)_12%,#0a0610)]"
-                  : `${style.ring} ${style.text}`
-          }`}
-          style={
-            done && zone.unlocked
-              ? {
-                  borderColor: PATH_DONE_RING,
-                  color: PATH_DONE,
-                  boxShadow: `0 0 8px ${PATH_DONE_GLOW}, 0 0 16px ${PATH_DONE_GLOW}, inset 0 0 8px ${PATH_DONE_SOFT}`,
-                }
-              : isFarming || nodeStatus === "current"
-                ? { boxShadow: "0 0 12px color-mix(in srgb, var(--color-pokeball-red) 40%, transparent)" }
-                : zone.unlocked && isGym && !done
-                  ? { boxShadow: `0 0 10px ${style.glow}` }
-                  : undefined
-          }
-          aria-current={selected || isFarming ? "step" : undefined}
-        >
-          {/* Arte real de la zona dentro del nodo: cada parada del sendero se
-              reconoce por su paisaje, no por un ícono genérico repetido. */}
-          {zone.unlocked && hasStageArt ? (
-            <>
-              <Image
-                src={thumbSrc}
-                alt=""
-                fill
-                sizes="72px"
-                className={`object-cover ${done ? "opacity-30" : "opacity-55"}`}
-                aria-hidden
-              />
-              <span
-                aria-hidden
-                className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(10,11,16,0.25)_0%,rgba(10,11,16,0.8)_100%)]"
-              />
-            </>
-          ) : null}
-
-          <span className="relative flex items-center justify-center">
-            {!zone.unlocked ? (
-              <span
-                className={`material-symbols-outlined ${isGym ? "text-[20px]! sm:text-[26px]! lg:text-[28px]!" : "text-[15px]! sm:text-[19px]!"}`}
-              >
-                lock
-              </span>
-            ) : done ? (
-              <span
-                className={`campaign-node-seal material-symbols-outlined font-bold ${isGym ? "text-[22px]! sm:text-[30px]! lg:text-[32px]!" : "text-[16px]! sm:text-[21px]!"}`}
-                style={{
-                  color: PATH_DONE,
-                  filter: `drop-shadow(0 0 5px ${PATH_DONE_GLOW_STRONG})`,
-                }}
-              >
-                check
-              </span>
-            ) : isGym && gymRequirement?.leaderSpriteUrl ? (
-              <Image
-                src={gymRequirement.leaderSpriteUrl}
-                alt=""
-                width={72}
-                height={72}
-                className={
-                  gymRequirement.leaderSpriteUrl.includes("/avatars/")
-                    ? "h-9 w-9 object-contain object-bottom drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-[3.25rem] sm:w-[3.25rem] lg:h-[3.6rem] lg:w-[3.6rem]"
-                    : "h-9 w-9 object-contain object-bottom [image-rendering:pixelated] sm:h-[3.25rem] sm:w-[3.25rem] lg:h-[3.6rem] lg:w-[3.6rem]"
-                }
-              />
-            ) : (
-              <ZoneIcon
-                kind={style.icon}
-                className={
-                  isGym
-                    ? "h-6 w-6 sm:h-9 sm:w-9 lg:h-10 lg:w-10"
-                    : "h-4 w-4 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] sm:h-5 sm:w-5"
-                }
-              />
-            )}
-          </span>
-        </span>
-
-        {/* Chevron que cae sobre el nodo recomendado: señala el orden sin
-            depender de leer los chips. */}
-        {isNextStep && !done && stepIndex > 1 ? (
-          <span
-            aria-hidden
-            className="campaign-next-arrow material-symbols-outlined pointer-events-none absolute left-1/2 top-[-0.6rem] z-20 text-[15px]! text-pokeball-red drop-shadow-[0_0_6px_color-mix(in_srgb,var(--color-pokeball-red)_60%,transparent)]"
-          >
-            keyboard_double_arrow_down
-          </span>
-        ) : null}
-
-        {!isLast ? (
-          /*
-            El `<svg>` va envuelto y no posicionado a mano: con `top`/`bottom` y
-            un viewBox 20×100 el ratio intrínseco gana y el tramo se dibuja 5×
-            más largo que la fila, cruzándose con el sendero siguiente. El span
-            resuelve el alto y el svg lo llena.
-          */
-          <span
-            aria-hidden
-            className={`pointer-events-none absolute left-1/2 z-0 w-7 min-h-[1.5rem] -translate-x-1/2 ${railLineTop} -bottom-4 sm:-bottom-[1.375rem]`}
-          >
-          <svg
-            viewBox="0 0 20 100"
-            preserveAspectRatio="none"
-            className="h-full w-full overflow-visible"
-          >
-            {/* Terreno sin recorrer. */}
-            <path
-              d={TRAIL_PATH}
-              fill="none"
-              stroke="rgba(255,255,255,0.10)"
-              strokeWidth={3}
-              strokeLinecap="round"
-              vectorEffect="non-scaling-stroke"
-            />
-            {/* Huellas marchando hacia el próximo paso. */}
-            {leadsToNextStep ? (
-              <path
-                className="campaign-trail-march"
-                d={TRAIL_PATH}
-                fill="none"
-                strokeWidth={3.5}
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            ) : null}
-            {/* Tramo recorrido: `pathLength=100` normaliza el dash a porcentaje,
-                así el mismo cálculo sirve para filas de cualquier alto. */}
-            {lineFilled && lineFillPct > 0 ? (
-              <path
-                className="campaign-trail-fill"
-                d={TRAIL_PATH}
-                pathLength={100}
-                fill="none"
-                strokeWidth={3.5}
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-                style={{ strokeDasharray: 100, strokeDashoffset: 100 - lineFillPct }}
-              />
-            ) : null}
-          </svg>
-          </span>
-        ) : null}
-      </div>
-
-      <button
-        type="button"
-        onClick={onPick}
-        aria-expanded={selected}
-        className={`game-float-card game-float-card--interactive relative min-w-0 flex-1 overflow-hidden rounded-xl text-left transition sm:rounded-2xl ${
-          hasStageArt && zone.unlocked ? "p-0" : compact ? "px-2.5 py-1 sm:px-3 sm:py-1.5" : "p-2.5 sm:p-3"
-        } ${
-          !zone.unlocked
-            ? "opacity-45"
-            : selected
-              ? "ring-2 ring-electric-yellow/80 shadow-[0_0_28px_color-mix(in_srgb,var(--color-electric-yellow)_42%,transparent),0_0_0_1px_color-mix(in_srgb,var(--color-electric-yellow)_25%,transparent)]"
-              : isNextStep && !done
-                ? "ring-2 ring-pokeball-red/70 shadow-[0_0_26px_color-mix(in_srgb,var(--color-pokeball-red)_26%,transparent)]"
-                : isFarming || nodeStatus === "current"
-                  ? "ring-1 ring-pokeball-red/55 shadow-[0_0_20px_color-mix(in_srgb,var(--color-pokeball-red)_18%,transparent)]"
-                  : isGym && !done
-                    ? "ring-1 ring-electric-yellow/40"
-                    : ""
-        }`}
-      >
-        {artBleed && zone.unlocked ? (
-          <div
-            className={`relative isolate ${
-              compact ? "min-h-[4.25rem] sm:min-h-[5.5rem]" : "min-h-[6.25rem] sm:min-h-[8.5rem]"
-            }`}
-          >
-            <div className="pointer-events-none absolute inset-0">
-              <Image
-                src={thumbSrc}
-                alt=""
-                fill
-                sizes="(max-width: 768px) 100vw, 720px"
-                quality={95}
-                className="object-cover object-center"
-                priority={false}
-              />
-              {/* Solo legibilidad a la izquierda — el panorama se ve entero. */}
-              <div className="absolute inset-0 bg-linear-to-r from-[#0a0b10]/75 via-[#0a0b10]/25 to-transparent sm:via-[#0a0b10]/12 sm:w-[55%]" />
-              <div className="absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-[#0a0b10]/35 to-transparent" />
-              {selected ? (
-                <div
-                  aria-hidden
-                  className="absolute inset-0 bg-[radial-gradient(80%_70%_at_20%_50%,color-mix(in_srgb,var(--color-electric-yellow)_22%,transparent)_0%,transparent_65%)]"
-                />
-              ) : null}
-            </div>
-            <div
-              className={`relative z-[1] flex flex-col justify-center ${
-                compact ? "px-2.5 py-2 sm:px-3 sm:py-2.5" : "px-3 py-2.5 sm:px-4 sm:py-3.5"
-              }`}
-            >
-              <ZoneRowBody
-                zone={zone}
-                t={t}
-                stepIndex={stepIndex}
-                isNextStep={isNextStep}
-                compact={compact}
-                isGym={isGym}
-                gymWon={gymWon}
-                done={done}
-                statusLabel={statusLabel}
-                nodeStatus={nodeStatus}
-                style={style}
-                isFarming={isFarming}
-                farmingStageId={farmingStageId}
-                caught={caught}
-                requirementsLeft={requirementsLeft}
-                unlockRequirements={unlockRequirements}
-              />
-            </div>
-          </div>
-        ) : (
-        <div className={`flex ${
-            hasStageArt && zone.unlocked
-              ? compact
-                ? "min-h-[4.25rem] items-stretch sm:min-h-[5.25rem]"
-                : "min-h-[5.75rem] items-stretch sm:min-h-[7.75rem]"
-              : compact
-                ? "items-center gap-2"
-                : "items-start gap-2.5"
-          }`}
-        >
-          {zone.unlocked && (hasStageArt || !compact) ? (
-            <span
-              className={`relative shrink-0 overflow-hidden ${
-                hasStageArt
-                  ? compact
-                    ? "w-[4.25rem] self-stretch sm:w-[5.25rem]"
-                    : "w-[5.25rem] self-stretch sm:w-[7.5rem]"
-                  : "mt-0.5 h-10 w-10 rounded-xl ring-1 ring-white/10 sm:h-12 sm:w-12"
-              }`}
-            >
-              <Image
-                src={thumbSrc}
-                alt=""
-                fill
-                sizes={hasStageArt ? "100px" : "48px"}
-                className="object-cover"
-              />
-              {hasStageArt ? (
-                <>
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 bg-linear-to-r from-transparent via-[#12141c]/25 to-[#12141c]"
-                  />
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-[#12141c]/70 to-transparent"
-                  />
-                </>
-              ) : (
-                <span className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
-              )}
-            </span>
-          ) : null}
-
-          <div
-            className={`min-w-0 flex-1 ${
-              hasStageArt && zone.unlocked
-                ? compact
-                  ? "flex flex-col justify-center py-1.5 pr-2.5 pl-1.5 sm:py-2 sm:pr-3 sm:pl-2"
-                  : "flex flex-col justify-center py-2 pr-2.5 pl-1.5 sm:py-3 sm:pr-3.5 sm:pl-2"
-                : ""
-            }`}
-          >
-              <ZoneRowBody
-                zone={zone}
-                t={t}
-                stepIndex={stepIndex}
-                isNextStep={isNextStep}
-                compact={compact}
-                isGym={isGym}
-                gymWon={gymWon}
-                done={done}
-                statusLabel={statusLabel}
-                nodeStatus={nodeStatus}
-                style={style}
-                isFarming={isFarming}
-                farmingStageId={farmingStageId}
-                caught={caught}
-                requirementsLeft={requirementsLeft}
-                unlockRequirements={unlockRequirements}
-              />
-          </div>
-        </div>
-        )}
-      </button>
-    </li>
-  );
-}
-
-function ZoneStageRail({
-  zone,
-  farmingStageId,
-  t,
-}: {
-  zone: MapLocation;
-  farmingStageId: string;
-  t: ReturnType<typeof useTranslations>;
-}) {
-  const stages = zone.stages.filter((stage) => !stage.isGym);
-  // Con una sola etapa el estado de la card ya informa todo; dibujar un punto
-  // aislado no agrega progreso secuencial y sólo carga la composición.
-  if (stages.length <= 1) return null;
-
-  const farmingIndex = stages.findIndex(
-    (stage) => stage.id === farmingStageId && stage.unlocked && !stage.done,
-  );
-  const currentIndex =
-    farmingIndex >= 0
-      ? farmingIndex
-      : stages.findIndex((stage) => stage.unlocked && !stage.done);
-  const completedConnectors = stages.slice(0, -1).filter((stage) => stage.done).length;
-  const railProgress = (completedConnectors / (stages.length - 1)) * 100;
-
-  return (
-    <div
-      className="relative mt-2 h-3"
-      aria-label={`${zone.completedStages}/${zone.totalStages} ${t("stagesShort")}`}
-    >
-      <span
-        aria-hidden
-        className="absolute inset-x-1.5 top-1/2 h-px -translate-y-1/2 overflow-hidden bg-white/12"
-      >
-        <span
-          className="block h-full bg-[var(--theme-primary-bright)] shadow-[0_0_6px_color-mix(in_srgb,var(--theme-primary)_55%,transparent)] motion-safe:transition-[width] motion-safe:duration-500"
-          style={{ width: `${railProgress}%` }}
-        />
-      </span>
-
-      <ol
-        className="relative z-[1] flex h-full items-center justify-between"
-      >
-        {stages.map((stage, index) => {
-          const current = index === currentIndex;
-          const stageTitle =
-            current && stage.clearsRequired > 1
-              ? `${t(stage.nameKey)} · ${stage.clearsCurrent}/${stage.clearsRequired}`
-              : t(stage.nameKey);
-
-          return (
-            <li key={stage.id} className="flex items-center" title={stageTitle}>
-              <span
-                aria-hidden
-                className={`block rounded-full motion-safe:transition-all motion-safe:duration-300 ${
-                  stage.done
-                    ? "h-2.5 w-2.5 bg-[var(--theme-primary-bright)] shadow-[0_0_8px_color-mix(in_srgb,var(--theme-primary)_65%,transparent)]"
-                    : current
-                      ? "flex h-3 w-3 items-center justify-center border border-pokeball-red bg-[#171019] shadow-[0_0_8px_color-mix(in_srgb,var(--color-pokeball-red)_45%,transparent)]"
-                      : stage.unlocked
-                        ? "h-2 w-2 border border-white/35 bg-[#171820]"
-                        : "h-2 w-2 border border-white/12 bg-[#111219]"
-                }`}
-              >
-                {current ? <span className="h-1 w-1 rounded-full bg-pokeball-red" /> : null}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
-  );
-}
-
-function ZoneRowBody({
-  zone,
-  t,
-  stepIndex,
-  isNextStep,
-  compact,
-  isGym,
-  gymWon,
-  done,
-  statusLabel,
-  nodeStatus,
-  style,
-  isFarming,
-  farmingStageId,
-  caught,
-  requirementsLeft,
-  unlockRequirements,
-}: {
-  zone: MapLocation;
-  t: ReturnType<typeof useTranslations>;
-  stepIndex: number;
-  isNextStep: boolean;
-  compact: boolean;
-  isGym: boolean;
-  gymWon: boolean;
-  done: boolean;
-  statusLabel: string | null;
-  nodeStatus: CampaignNodeStatus;
-  style: (typeof KIND_STYLE)[CampaignLocationKind];
-  isFarming: boolean;
-  farmingStageId: string;
-  caught: number;
-  requirementsLeft: (string | null)[];
-  unlockRequirements: CampaignRequirement[];
-}) {
-  const trainersDone = zone.trainers.filter((tr) => tr.defeated).length;
-  return (
-    <>
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          {/* Ordinal del capítulo: hace explícito que la lista se recorre de
-              arriba hacia abajo, no que son siete opciones sueltas. */}
-          <span
-            className={`font-mono text-[10px] tabular-nums drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)] sm:text-[11px] ${
-              isNextStep ? "text-pokeball-red" : done ? "text-white/45" : "text-white/30"
-            }`}
-            aria-hidden
-          >
-            {String(stepIndex).padStart(2, "0")}
-          </span>
-          <h3
-            className={`${
-              isGym && !compact
-                ? "text-[14px] font-bold leading-tight sm:text-headline-md"
-                : compact
-                  ? "text-[12px] font-semibold leading-tight sm:text-body-sm"
-                  : "text-[13px] font-semibold leading-tight sm:text-body-md"
-            } ${compact ? "text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.65)]" : "text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)]"}`}
-          >
-            {t(zone.nameKey)}
-          </h3>
-          {/* "Siguiente" reemplaza al estado genérico: dos chips compitiendo
-              en la misma fila diluyen justo la señal que importa. Salvo en una
-              zona bloqueada, donde "Siguiente" solo no diría que falta abrirla. */}
-          {isNextStep && !done ? (
-            <span className="campaign-next-chip inline-flex items-center gap-0.5 rounded-md bg-pokeball-red px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white shadow-[0_2px_10px_color-mix(in_srgb,var(--color-pokeball-red)_45%,transparent)] sm:px-2 sm:text-[9px]">
-              <span className="material-symbols-outlined text-[10px]! leading-none sm:text-[11px]!">
-                play_arrow
-              </span>
-              {t("nodeNext")}
-            </span>
-          ) : null}
-          {statusLabel && !(isNextStep && !done && zone.unlocked) && (
-            <span
-              className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider sm:px-2 sm:text-[9px] ${
-                gymWon || (done && !isGym)
-                  ? ""
-                  : nodeStatus === "current" || nodeStatus === "in_progress"
-                    ? "bg-pokeball-red/18 text-pokeball-red"
-                    : "bg-[#1a1c24]/80 text-white/45"
-              }`}
-              style={
-                gymWon || (done && !isGym)
-                  ? { backgroundColor: PATH_DONE_SOFT, color: PATH_DONE }
-                  : undefined
-              }
-            >
-              {(gymWon || (done && !isGym)) && (
-                <span className="material-symbols-outlined text-[10px]! leading-none sm:text-[11px]!">check</span>
-              )}
-              {statusLabel}
-            </span>
-          )}
-          {!compact && (
-            <span
-              className={`rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${style.ring} ${style.text}`}
-            >
-              {t(zone.kindKey)}
-            </span>
-          )}
-          {isFarming && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-pokeball-red/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-pokeball-red">
-              <span className="material-symbols-outlined text-[12px]!">my_location</span>
-              {t("farming")}
-            </span>
-          )}
-        </div>
-
-        {!compact && zone.unlocked && (
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-white/45 sm:text-[11px]">
-            {zone.trainers.length > 0 && (
-              <span>
-                <strong className="font-mono font-medium tabular-nums text-white/70">
-                  {trainersDone}/{zone.trainers.length}
-                </strong>{" "}
-                {t("trainersTitle")}
-              </span>
-            )}
-            {zone.trainers.length > 0 && zone.encounters.length > 0 ? (
-              <span aria-hidden className="text-white/20">·</span>
-            ) : null}
-            {zone.encounters.length > 0 && (
-              <span>
-                <strong className="font-mono font-medium tabular-nums text-white/70">
-                  {caught}/{zone.encounters.length}
-                </strong>{" "}
-                Pokédex
-              </span>
-            )}
-            {zone.trainers.length > 0 || zone.encounters.length > 0 ? (
-              <span aria-hidden className="text-white/20">·</span>
-            ) : null}
-            <span>
-              {t("wildLevels", { min: zone.levelMin, max: zone.levelMax })}
-            </span>
-          </div>
-        )}
-
-        {!compact && zone.unlocked ? (
-          <ZoneStageRail zone={zone} farmingStageId={farmingStageId} t={t} />
-        ) : null}
-
-        {!compact && isGym && zone.unlocked && requirementsLeft.length > 0 && (
-          <ul className="mt-2 flex flex-col gap-0.5">
-            {requirementsLeft.map((r) => (
-              <li key={r} className="flex items-center gap-1 text-[11px] text-white/50">
-                <span className="material-symbols-outlined text-[13px]! text-pokeball-red">
-                  radio_button_unchecked
-                </span>
-                {r}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {!compact && !zone.unlocked && unlockRequirements.length > 0 && (
-          <ul className="mt-2 flex flex-col gap-0.5">
-            {unlockRequirements.map((req) => (
-              <li
-                key={req.id}
-                className="flex items-start gap-1 text-[11px] text-white/45"
-              >
-                <span className="material-symbols-outlined mt-px text-[13px]!">lock</span>
-                <span>{translateRequirement(t, req)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-    </>
-  );
-}
-
 function ZonePanel({
   zone,
   chapter,
@@ -1731,110 +1133,116 @@ function ZonePanel({
   const tUx = useTranslations("ux");
   const tGyms = useTranslations("gyms");
   const kind = kindOf(zone);
-  const style = KIND_STYLE[kind];
   const isGym = kind === "gym";
   const caught = zone.encounters.filter((e) => e.caught).length;
   const seenCount = zone.encounters.filter((e) => e.seen).length;
   const objectives = evaluateObjectives(zone, new Set(zone.claimedObjectives));
-  const trainersDone = zone.trainers.filter((tr) => tr.defeated).length;
   const gymReady = isGym && chapter.stagesDone >= chapter.stagesTotal;
+  const ask = zoneAsk(
+    zone,
+    objectives,
+    isGym
+      ? { won: gymWon, chapterCleared: chapter.stagesDone >= chapter.stagesTotal }
+      : undefined,
+  );
 
   return (
     <section
-      className={`game-float-card rounded-2xl p-3.5 sm:p-4 ${
-        isFarming ? "ring-1 ring-pokeball-red/45 shadow-[0_0_22px_color-mix(in_srgb,var(--color-pokeball-red)_16%,transparent)]" : ""
+      className={`campaign-zone-panel campaign-zone-panel--${kind} p-4 ${
+        isFarming ? "ring-1 ring-pokeball-red/45" : ""
       }`}
     >
-      <div className="flex items-center gap-3">
-        <span
-          className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 sm:h-14 sm:w-14 sm:rounded-2xl ${style.ring} ${style.text}`}
-          style={
-            isGym && gymRequirement?.leaderSpriteUrl
-              ? { boxShadow: `0 0 16px ${style.glow}` }
-              : { boxShadow: "0 0 14px color-mix(in srgb, var(--color-pokeball-red) 18%, transparent)" }
-          }
+      {/*
+        Cabecera ilustrada.
+
+        El arte de la zona a sangre en vez del ícono de 44px que había antes:
+        identificaba la zona pero no la mostraba, y el panel abría igual para
+        una ciudad que para una cueva. Los nodos del sendero ya usan este mismo
+        arte, así que al clickear uno el panel confirma visualmente cuál es.
+      */}
+      {campaignMapHasArt(zone.id) ? (
+        <div
+          className={`campaign-zone-panel__art${!zone.unlocked ? " campaign-zone-panel__art--locked" : ""}`}
         >
+          <Image src={campaignMapSrc(zone.id, true)} alt="" width={640} height={280} />
+          {/* Sólo texto: `ZoneIcon` pinta un sprite isométrico con su propio
+              tamaño y dentro de una chapa de 20px se salía por todos lados.
+              El tipo de zona además ya está dicho por el color del panel. */}
+          <span className="campaign-zone-panel__kind">{t(zone.kindKey)}</span>
           {isGym && gymRequirement?.leaderSpriteUrl ? (
             <Image
               src={gymRequirement.leaderSpriteUrl}
               alt=""
-              width={48}
-              height={48}
-              className={
+              width={140}
+              height={140}
+              className={`campaign-zone-panel__leader${
                 gymRequirement.leaderSpriteUrl.includes("/avatars/")
-                  ? "h-9 w-9 object-contain object-bottom drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] sm:h-11 sm:w-11"
-                  : "h-9 w-9 object-contain object-bottom [image-rendering:pixelated] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] sm:h-11 sm:w-11"
-              }
+                  ? ""
+                  : " campaign-zone-panel__leader--pixel"
+              }`}
             />
-          ) : (
-            <ZoneIcon kind={style.icon} className="h-7 w-7 sm:h-10 sm:w-10" />
-          )}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h3 className={ZONE_TITLE}>{t(zone.nameKey)}</h3>
-            {isFarming && (
-              <span className={ZONE_CHIP}>
-                <span className="material-symbols-outlined text-[12px]!">my_location</span>
-                {tUx("youAreHere")}
-              </span>
-            )}
-          </div>
-          <p className={`mt-0.5 ${ZONE_META}`}>
-            {t("wildLevels", { min: zone.levelMin, max: zone.levelMax })}
-            <span className="mx-1.5 text-white/25">·</span>
-            {t(`encounterRate.${zone.encounterRate}`)}
-          </p>
+          ) : null}
         </div>
+      ) : null}
+
+      <div className="mt-3 min-w-0">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h3 className={`page-title ${ZONE_TITLE}`}>{t(zone.nameKey)}</h3>
+          {isFarming && (
+            <span className={ZONE_CHIP}>
+              <span className="material-symbols-outlined text-[12px]!">my_location</span>
+              {tUx("youAreHere")}
+            </span>
+          )}
+        </div>
+        <p className={`mt-0.5 ${ZONE_META}`}>
+          {t("wildLevels", { min: zone.levelMin, max: zone.levelMax })}
+          <span className="mx-1.5 text-white/25">·</span>
+          {t(`encounterRate.${zone.encounterRate}`)}
+        </p>
       </div>
 
-      {zone.unlocked && zone.trainers.length > 0 && (
-        <p className="game-float-tile mt-3 hidden rounded-xl px-3 py-2 text-label-sm text-white/80 lg:block">
-          <span className="font-bold text-electric-yellow">
-            {trainersDone}/{zone.trainers.length}
-          </span>{" "}
-          <span className="text-white/45">{t("obj_trainers")}</span>
-        </p>
-      )}
+      {/*
+        Lo que la zona te pide, en una frase y antes que cualquier dato.
 
-      {zone.unlocked && (
-        <details className="mt-3 hidden border-t border-white/[0.08] pt-3 open:pb-1 lg:block">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden">
-            <span className="inline-flex items-center gap-1.5 text-label-sm text-pokeball-red">
-              <MasteryIcon className="h-4 w-4" />
-              {t("mastery")} · Lv. {zone.masteryLevel} · {masteryProgressPercent(zone.masteryXp)}%
-            </span>
-            <span className="material-symbols-outlined text-[16px]! text-white/40">
-              expand_more
-            </span>
-          </summary>
-          <div className="mt-2">
-            <div className="h-1.5 overflow-hidden rounded-full bg-black/40">
-              <div
-                className="campaign-warm-bar h-full rounded-full transition-all duration-500"
-                style={{ width: `${masteryProgressPercent(zone.masteryXp)}%` }}
-              />
-            </div>
-            <p className="mt-1.5 text-[10px] text-white/45">
-              {t("masteryBonuses", {
-                xp: masteryBonuses(zone.masteryLevel).xp,
-                capture: masteryBonuses(zone.masteryLevel).capture,
-                coins: masteryBonuses(zone.masteryLevel).coins,
-              })}
-            </p>
-          </div>
-        </details>
-      )}
+        La ficha listaba cinco secciones —objetivos, salvajes, entrenadores,
+        tramos, maestría— y dejaba que el jugador dedujera qué hacer. Deducir es
+        trabajo. La frase se arma de los mismos datos (`zoneAsk`), así que se
+        actualiza sola con el progreso y no hay texto por zona que mantener.
+      */}
+      <div className="campaign-zone-ask">
+        <span className={ZONE_LABEL}>{t("askTitle")}</span>
+        <p>{t(ask.key, resolveAskParams(t, ask.params))}</p>
+      </div>
+
+      {zone.unlocked && !isFarming && !isGym ? (
+        <GameCtaButton
+          icon="explore"
+          variant="red"
+          disabled={pending}
+          onClick={onTravel}
+          className="mt-3 min-h-10! text-[12px]!"
+        >
+          {t("startExploring")}
+        </GameCtaButton>
+      ) : null}
+
+      {/*
+        Acá vivía una fila "Derrotar a los entrenadores 1/1" — exactamente el
+        mismo texto y el mismo contador que el objetivo homónimo, cuatro líneas
+        más abajo. Decirlo dos veces no lo hacía más claro.
+      */}
+
 
       {!zone.unlocked ? (
         <div className="game-float-tile mt-3 rounded-xl border-dashed px-3 py-4">
-          <p className="text-center text-label-sm text-white/45">{t("zoneLocked")}</p>
+          <p className={`text-center ${ZONE_ROW_TITLE} text-white/45`}>{t("zoneLocked")}</p>
           {unlockRequirements.length > 0 && (
             <ul className="mt-3 flex flex-col gap-1.5">
               {unlockRequirements.map((req) => (
                 <li
                   key={req.id}
-                  className="flex items-start gap-2 text-label-sm text-white/50"
+                  className={`flex items-start gap-2 ${ZONE_ROW_TITLE} text-white/50`}
                 >
                   <span className="material-symbols-outlined mt-0.5 text-[16px]!">lock</span>
                   <span>{translateRequirement(t, req)}</span>
@@ -1845,7 +1253,7 @@ function ZonePanel({
         </div>
       ) : (
         <>
-          <p className={`mt-3 mb-1.5 ${SECTION_LABEL}`}>{t("objectives")}</p>
+          <p className={`mt-3 mb-1.5 ${ZONE_LABEL}`}>{t("objectives")}</p>
           <ul className="flex flex-col divide-y divide-white/[0.06]">
             {objectives.map((obj) => {
               return (
@@ -1892,10 +1300,10 @@ function ZonePanel({
                     </span>
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-electric-yellow">
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-electric-yellow">
                       {t("nodeWon")}
                     </p>
-                    <p className="truncate text-label-sm text-white">
+                    <p className={`truncate ${ZONE_ROW_TITLE} text-white`}>
                       {localizedBadgeName(gymRequirement, tGyms) || t("objBadge")}
                     </p>
                   </div>
@@ -1915,10 +1323,10 @@ function ZonePanel({
                     />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-pokeball-red">
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-pokeball-red">
                       {t("objRoleRequirement")}
                     </p>
-                    <p className="truncate text-label-sm text-white">
+                    <p className={`truncate ${ZONE_ROW_TITLE} text-white`}>
                       {localizedBadgeName(gymRequirement, tGyms) || t("objBadge")}
                     </p>
                   </div>
@@ -1931,16 +1339,38 @@ function ZonePanel({
           </ul>
 
           {zone.encounters.length > 0 && (
-            <div className="mt-4 hidden lg:block">
-              <p className={`mb-1.5 flex items-center justify-between ${SECTION_LABEL}`}>
+            /*
+              Plegado, como maestría. La grilla de salvajes ocupaba un tercio
+              del panel con información de consulta —quién vive acá— mientras
+              los objetivos, que son la tarea, quedaban arriba comprimidos. El
+              contador del resumen sigue visible sin abrir nada.
+            */
+            <details className="mt-4 hidden border-t border-white/[0.08] pt-3 lg:block">
+              <summary className={`flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden ${ZONE_LABEL}`}>
                 {t("zoneWilds")}
-                <span className="font-mono normal-case tracking-normal text-white/70">
-                  {caught}/{zone.encounters.length}
-                  <span className="ml-1.5 text-white/40">
-                    ({seenCount} {t("seenShort")})
+                {/*
+                  Con íconos, no con una fracción pelada.
+
+                  Decía "4/4 (4 vistos)" a dos líneas del objetivo "Encontrar
+                  las especies de esta zona 1/1": dos fracciones parecidas que
+                  cuentan cosas distintas —acá capturados sobre el total de la
+                  zona, allá el subconjunto que pide el objetivo—. Una pokébola
+                  y un ojo dicen cuál es cuál sin agregar palabras.
+                */}
+                <span className="flex shrink-0 items-center gap-2.5 font-mono normal-case tracking-normal text-white/70">
+                  <span className="inline-flex items-center gap-1" title={t("obj_pokedex")}>
+                    <PokeballIcon className="h-3 w-3" />
+                    {caught}/{zone.encounters.length}
+                  </span>
+                  <span
+                    className="inline-flex items-center gap-1 text-white/40"
+                    title={t("seenShort")}
+                  >
+                    <span className="material-symbols-outlined text-[13px]!">visibility</span>
+                    {seenCount}
                   </span>
                 </span>
-              </p>
+              </summary>
               <ul className="flex flex-wrap gap-2">
                 {zone.encounters.map((mon) => (
                   <li
@@ -1979,7 +1409,7 @@ function ZonePanel({
                       )}
                     </span>
                     <span
-                      className={`max-w-full truncate text-center text-[9px] capitalize leading-tight ${
+                      className={`max-w-full truncate text-center font-mono text-[9px] leading-tight ${
                         mon.caught
                           ? "text-white"
                           : mon.seen
@@ -1992,23 +1422,33 @@ function ZonePanel({
                   </li>
                 ))}
               </ul>
-            </div>
+            </details>
           )}
 
+          {/*
+            Con todos vencidos, la lista es un registro: los nombres, los
+            niveles y una chapa VENCIDO por cada uno, sin nada que hacer. Se
+            pliega, como ya hacían los salvajes. Mientras quede alguno vivo
+            queda abierta — ahí sí es lo que falta.
+          */}
           {zone.trainers.length > 0 && (
-            <>
-              <p className={`mt-3 mb-1.5 flex items-center justify-between ${SECTION_LABEL}`}>
+            <details open={zone.trainers.some((tr) => !tr.defeated)}>
+              <summary
+                className={`mt-3 mb-1.5 flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden ${ZONE_LABEL}`}
+              >
                 <span>{t("trainersTitle")}</span>
                 <span className="font-mono normal-case tracking-normal text-white/70">
                   {zone.trainers.filter((tr) => tr.defeated).length}/{zone.trainers.length}
                 </span>
-              </p>
+              </summary>
               <ul className="flex flex-col gap-2">
                 {zone.trainers.map((tr) => (
                   <li
                     key={tr.id}
-                    className={`game-float-tile flex items-center gap-2.5 rounded-xl px-2.5 py-2 ${
-                      tr.defeated ? "opacity-60" : ""
+                    className={`game-float-tile flex items-center gap-2.5 rounded-xl px-2.5 py-2 backdrop-blur-md transition ${
+                      tr.defeated
+                        ? "opacity-60"
+                        : "ring-1 ring-[color:color-mix(in_srgb,var(--zone-accent)_24%,transparent)] hover:ring-[color:color-mix(in_srgb,var(--zone-accent)_45%,transparent)]"
                     }`}
                   >
                     <span className="relative shrink-0">
@@ -2033,7 +1473,7 @@ function ZonePanel({
                       <p className={ZONE_ROW_META}>Lv. {tr.level}</p>
                     </div>
                     {tr.defeated ? (
-                      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-emerald-400">
+                      <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-400">
                         {t("trainerBeaten")}
                       </span>
                     ) : (
@@ -2042,6 +1482,9 @@ function ZonePanel({
                         disabled={pending}
                         onClick={() => onChallengeTrainer(tr.id)}
                         className="ui-btn-primary shrink-0 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide"
+                        style={{
+                          boxShadow: `0 0 14px color-mix(in srgb, var(--zone-accent) 30%, transparent)`,
+                        }}
                       >
                         {t("trainerFight")}
                       </button>
@@ -2049,15 +1492,18 @@ function ZonePanel({
                   </li>
                 ))}
               </ul>
-            </>
+            </details>
           )}
 
           <div className="mt-3 flex flex-col gap-2">
-            {isGym ? (
+            {/*
+              Sin la frase de arriba ("Usá la acción principal…"): es la misma
+              instrucción que ya da el bloque del pedido. Queda la lista de
+              requisitos, que sí aporta —dice qué falta— y sólo mientras falte
+              algo: con el gimnasio listo no hay nada que enumerar.
+            */}
+            {isGym && !gymReady ? (
               <div className="game-float-tile hidden rounded-xl px-3 py-2.5 ring-1 ring-tertiary/25 lg:block">
-                <p className="text-label-sm text-white/80">
-                  {gymReady ? t("gymChallengeHint") : t("gymLockedHint")}
-                </p>
                 {!gymReady && (
                   <ul className="mt-2 flex flex-col gap-1">
                     <li
@@ -2123,28 +1569,17 @@ function ZonePanel({
               </div>
             ) : (
               <>
-                {!isFarming ? (
-                  <div className="lg:hidden">
-                    <GameCtaButton
-                      icon="explore"
-                      variant="red"
-                      disabled={pending}
-                      onClick={onTravel}
-                    >
-                      {t("startExploring")}
-                    </GameCtaButton>
-                  </div>
-                ) : (
+                {isFarming ? (
                   <div className="lg:hidden">
                     <GameCtaButton href="/battle" icon="explore" variant="red">
                       {t("continueExpedition")}
                     </GameCtaButton>
                   </div>
-                )}
+                ) : null}
 
                 {/* Stages solo desktop: en mobile el objetivo principal ya marca el progreso. */}
                 <div className="hidden lg:block">
-                  <p className={`mt-1 ${SECTION_LABEL}`}>{t("pickStage")}</p>
+                  <p className={`mt-1 ${ZONE_LABEL}`}>{t("pickStage")}</p>
                   <ul className="flex flex-col gap-1">
                     {zone.stages.map((stage) => {
                       const current = stage.id === farmingStageId;
@@ -2158,7 +1593,7 @@ function ZonePanel({
                               current
                                 ? "bg-[#1a1c24] text-white ring-1 ring-electric-yellow/65 shadow-[0_0_16px_color-mix(in_srgb,var(--color-electric-yellow)_28%,transparent)]"
                                 : stage.unlocked && !stage.isGym
-                                  ? "game-float-tile text-white/80 hover:brightness-110"
+                                  ? "campaign-stage-row game-float-tile text-white/80 hover:brightness-110"
                                   : "bg-[#12141c] text-white/30"
                             }`}
                           >
@@ -2177,7 +1612,7 @@ function ZonePanel({
                                       ? "my_location"
                                       : "radio_button_unchecked"}
                             </span>
-                            <span className="min-w-0 flex-1 truncate">{t(stage.nameKey)}</span>
+                            <span className="min-w-0 flex-1 truncate">{stageShortName(t(stage.nameKey))}</span>
                             {!stage.isGym && stage.clearsRequired > 1 && !stage.done ? (
                               <span className="shrink-0 font-mono text-[10px] text-white/55">
                                 {t("stageClearsProgress", {
@@ -2197,7 +1632,91 @@ function ZonePanel({
           </div>
         </>
       )}
+      {/*
+        Maestría, al final del panel y plegada.
+
+        Estaba entre el CTA y los objetivos —o sea entre "qué puedo hacer acá" y
+        "qué me falta acá"—, cortando la lectura justo en el medio con un dato
+        que no se consulta en cada visita. Los bloques de referencia van abajo;
+        lo accionable, arriba.
+      */}
+      {zone.unlocked && (
+        <details className="mt-3 hidden border-t border-white/[0.08] pt-3 open:pb-1 lg:block">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden">
+            <span className="inline-flex items-center gap-1.5 text-label-sm text-pokeball-red">
+              <MasteryIcon className="h-4 w-4" />
+              {t("mastery")} · Lv. {zone.masteryLevel} · {masteryProgressPercent(zone.masteryXp)}%
+            </span>
+            <span className="material-symbols-outlined text-[16px]! text-white/40">
+              expand_more
+            </span>
+          </summary>
+          <div className="mt-2">
+            <div className="h-1.5 overflow-hidden rounded-full bg-black/40">
+              <div
+                className="campaign-warm-bar h-full rounded-full transition-all duration-500"
+                style={{ width: `${masteryProgressPercent(zone.masteryXp)}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] leading-snug text-white/45">
+              {t("masteryBonuses", {
+                xp: masteryBonuses(zone.masteryLevel).xp,
+                capture: masteryBonuses(zone.masteryLevel).capture,
+                coins: masteryBonuses(zone.masteryLevel).coins,
+              })}
+            </p>
+          </div>
+        </details>
+      )}
     </section>
+  );
+}
+
+/**
+ * Anillo chico de progreso por objetivo — mismo lenguaje que `ObjectiveRing`
+ * en el hero, aplicado en miniatura. Reemplaza la barra lineal que había
+ * debajo del título: mostrar el mismo dato dos veces (barra + "2/4" a la
+ * derecha) era ruido, y el anillo ya lo hace sin ocupar una fila propia.
+ */
+function ObjectiveMiniRing({ pct }: { pct: number }) {
+  const size = 22;
+  const stroke = 2.5;
+  const r = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * r;
+  return (
+    <span className="relative grid h-[22px] w-[22px] shrink-0 place-items-center" aria-hidden>
+      <svg className="absolute inset-0 -rotate-90" viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="rgba(255,255,255,0.12)"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="var(--zone-accent, var(--theme-primary))"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - Math.min(100, Math.max(0, pct)) / 100)}
+          style={{
+            filter:
+              "drop-shadow(0 0 3px color-mix(in srgb, var(--zone-accent, var(--theme-primary)) 60%, transparent))",
+            transition: "stroke-dashoffset 0.5s cubic-bezier(0.22,1,0.36,1)",
+          }}
+        />
+      </svg>
+      {pct >= 100 ? (
+        <span className="material-symbols-outlined relative text-[13px]! leading-none text-[color:var(--zone-accent,var(--theme-primary))]">
+          check
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -2229,12 +1748,50 @@ function Objective({
     ? "rounded-lg bg-pokeball-red/[0.07]"
     : "";
 
+  /*
+    Objetivo ya cobrado: una línea.
+
+    Medido en pantalla, el bloque de objetivos ocupaba 272px de los 851 del
+    panel, y en una zona terminada los tres estaban cobrados: seguían mostrando
+    grilla de especies, barra de progreso y las fichas de premio de algo que ya
+    se pagó. Detalle sólo donde queda algo por hacer — lo cobrado se reduce a su
+    título y el tilde.
+  */
+  if (state.claimed) {
+    return (
+      <li className="flex items-center gap-2 px-0.5 py-1.5">
+        <span className="material-symbols-outlined text-[16px]! text-emerald-400/80" aria-hidden>
+          check_circle
+        </span>
+        <p className={`min-w-0 flex-1 truncate ${ZONE_ROW_TITLE} text-white/45`}>{label}</p>
+        <span className={`shrink-0 ${ZONE_ROW_META} text-white/35`}>
+          {state.current}/{state.target}
+        </span>
+      </li>
+    );
+  }
+
   return (
-    <li className={`px-0.5 py-2.5 transition ${shell}`}>
-      <div className="flex items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-1">
+    /* `data-objective-done` lo consume el CSS del panel para bajarle la voz a
+       lo ya cumplido sin esconderlo. Un objetivo cobrable NO cuenta como
+       cumplido: todavía pide un clic. */
+    <li
+      data-objective-done={state.done && !state.claimable ? "true" : undefined}
+      className={`px-0.5 py-2.5 transition ${shell}`}
+    >
+      <div className="flex items-start gap-2.5">
+        <ObjectiveMiniRing pct={pct} />
+        {/*
+          Envuelve en vez de truncar.
+
+          "Explorar todos los stages" + la chapa REQUISITO + el contador no
+          entran en el ancho del rail, y cortado ("Explorar todos los sta…") el
+          objetivo deja de decir qué hay que hacer, que es su único trabajo. Un
+          renglón más cuesta menos que una frase incompleta.
+        */}
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1 gap-y-0.5">
           <p
-            className={`min-w-0 truncate ${ZONE_ROW_TITLE} ${
+            className={`min-w-0 ${ZONE_ROW_TITLE} ${
               state.claimed ? "text-white/55" : ""
             }`}
           >
@@ -2267,17 +1824,6 @@ function Objective({
           <span className="text-white/40">/{state.target}</span>
         </span>
       </div>
-
-      {!state.done ? (
-        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.08]">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              pct > 0 ? "campaign-warm-bar" : "bg-transparent"
-            }`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      ) : null}
 
       {encounters && encounters.length > 0 ? (
         <ul className="mt-2 flex flex-wrap gap-1.5">
@@ -2332,7 +1878,9 @@ function Objective({
       ) : null}
 
       <div className="mt-2 flex items-center justify-between gap-2">
-        <ObjectiveRewardBits state={state} />
+        <div className="rounded-lg bg-white/[0.03] px-2 py-1">
+          <ObjectiveRewardBits state={state} />
+        </div>
         <ObjectiveClaimControl
           state={state}
           claimLabel={claimLabel}
@@ -2387,7 +1935,7 @@ function ObjectiveRewardBits({
               height={28}
               className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
             />
-            <span className="font-mono text-[13px] font-semibold tabular-nums text-white">
+            <span className="font-mono text-[11px] font-bold tabular-nums text-white">
               ×{reward.quantity}
             </span>
           </span>
@@ -2395,7 +1943,7 @@ function ObjectiveRewardBits({
       })}
       <span
         title={coinsTitle}
-        className="inline-flex items-center gap-1 font-mono text-[13px] font-semibold tabular-nums text-white"
+        className="inline-flex items-center gap-1 font-mono text-[11px] font-bold tabular-nums text-white"
       >
         <Image
           src={OBJECTIVE_COIN_HD}
@@ -2443,12 +1991,51 @@ function ObjectiveClaimControl({
   }
   if (state.claimed) {
     return (
-      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-emerald-400/90">
+      <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-400/90">
         {claimedLabel}
       </span>
     );
   }
   return null;
+}
+
+/**
+ * Datos del viaje en una tira de cuatro, al pie de la pantalla.
+ *
+ * Los mismos números que `JourneySummaryCard` —que sigue viva dentro del menú
+ * de progreso—, pero acá van horizontales y sin arte de fondo: son estadísticas
+ * de consulta, no algo que se mire en cada visita. Como card vertical en la
+ * columna izquierda competían con el recorrido, que es lo que sí importa.
+ */
+/**
+ * Medallero: una por gimnasio ganado, con el arte real de la insignia.
+ *
+ * Vive dentro del menú "Viaje completo", junto a `JourneySummaryCard`, que ya
+ * lleva el contador "8/8": el medallero dice *cuáles*, que es lo que el número
+ * solo no cuenta. En el rail de la derecha estiraba la columna con datos que
+ * no hablan de la zona seleccionada.
+ */
+function BadgeMedalRow({ earnedGymOrders }: { earnedGymOrders: number[] }) {
+  const t = useTranslations("campaign");
+  const tGyms = useTranslations("gyms");
+  const earned = [...earnedGymOrders].sort((a, b) => a - b);
+  if (earned.length === 0) return null;
+
+  return (
+    <ul className="campaign-badge-row" aria-label={t("badges")}>
+      {earned.map((order) => {
+        const type = BADGE_TYPE_BY_ORDER[order];
+        if (!type) return null;
+        const key = `badges.${order}`;
+        const label = tGyms.has(key) ? tGyms(key) : type;
+        return (
+          <li key={order} className="campaign-badge-medal" title={label}>
+            <Image src={gymBadgeImageUrl(type)} alt={label} width={24} height={24} />
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 function JourneySummaryCard({

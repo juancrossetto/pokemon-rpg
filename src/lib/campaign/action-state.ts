@@ -524,6 +524,27 @@ export function recommendedChapterZoneId(opts: {
   return null;
 }
 
+/**
+ * Zona que el panel y el path deben enfocar al abrir un capítulo.
+ *
+ * `recommendedChapterZoneId` puede ser `null` (capítulo cerrado). El panel
+ * igual tiene que mostrar algo, y no puede ser `zones[0]` si esa parada ya
+ * está hecha: eso era abrir Alto Mando y ver Calle Victoria.
+ */
+export function defaultChapterZoneId(opts: {
+  chapter: Chapter;
+  farmingLocationId: string;
+  earnedGymOrders: number[];
+  milestoneLocationId?: string | null;
+}): string | null {
+  const rec = recommendedChapterZoneId(opts);
+  if (rec) return rec;
+  const standing = opts.chapter.zones.find((z) => z.id === opts.farmingLocationId);
+  if (standing) return standing.id;
+  const unlocked = opts.chapter.zones.filter((z) => z.unlocked);
+  return unlocked.at(-1)?.id ?? opts.chapter.zones[0]?.id ?? null;
+}
+
 /** Estado de un nodo del path del capítulo. */
 export function resolveZoneNodeStatus(opts: {
   zone: MapLocation;

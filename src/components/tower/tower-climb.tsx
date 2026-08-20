@@ -1056,7 +1056,7 @@ export function TowerEndedSummary({
             aria-hidden
             className="tower-result__ring pointer-events-none absolute left-1/2 top-1/2 h-[5.25rem] w-[5.25rem] -translate-x-1/2 -translate-y-1/2 rounded-full sm:h-24 sm:w-24"
           />
-          <p className="hidden page-title text-[9px] tracking-[0.18em] text-white/40 sm:block">
+          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/40 sm:block hidden">
             {t("result.floorReached")}
           </p>
           <p className="tower-result__floor mt-0 text-[2.7rem] leading-none tracking-[0.02em] text-white sm:mt-1 sm:text-[3.6rem]">

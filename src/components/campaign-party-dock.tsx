@@ -118,7 +118,7 @@ function DockSlot({
   if (!member) {
     return (
       <div
-        className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-md border border-dashed border-white/12 p-0.5 ${
+        className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-md p-0.5 ${
           isOver ? "ring-1 ring-pokeball-red/50" : ""
         }`}
         onDragOver={(e) => {
@@ -130,7 +130,7 @@ function DockSlot({
         }}
         aria-hidden
       >
-        <div className="flex aspect-square min-h-[2.45rem] w-full items-center justify-center">
+        <div className="flex aspect-square min-h-[2.45rem] w-full items-center justify-center rounded-full border border-dashed border-white/12">
           <Image
             src="/items/hd/poke-ball.png"
             alt=""
@@ -222,11 +222,13 @@ function DockSlot({
           }}
           className={`flex w-full flex-col items-center gap-0.5 rounded-md p-0.5 transition hover:bg-white/[0.04] ${
             fainted ? "opacity-70" : ""
-          } ${
-            index === 0 && !fainted ? "ring-1 ring-primary/35" : ""
-          } ${isOver ? "ring-1 ring-pokeball-red/55" : ""}`}
+          }`}
         >
-          <span className="relative flex aspect-square min-h-[2.45rem] w-full items-center justify-center overflow-hidden">
+          <span
+            className={`relative flex aspect-square min-h-[2.45rem] w-full items-center justify-center overflow-hidden rounded-full bg-[#1a1c24] ring-1 ring-white/10 ${
+              index === 0 && !fainted ? "ring-2 ring-primary/55" : ""
+            } ${isOver ? "ring-2 ring-pokeball-red/65" : ""}`}
+          >
             <Image
               src={member.spriteUrl}
               alt=""

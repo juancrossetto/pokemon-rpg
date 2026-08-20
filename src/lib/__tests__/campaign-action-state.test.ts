@@ -7,6 +7,7 @@ import {
   getMissingRequirements,
   getZoneUnlockRequirements,
   recommendedChapterZoneId,
+  defaultChapterZoneId,
   resolveZoneNodeStatus,
 } from "@/lib/campaign/action-state";
 import { CAMPAIGN_DEFAULTS, chapterWildStagesForGym, type CampaignProgressRow } from "@/lib/campaign/progress";
@@ -528,5 +529,65 @@ describe("recommendedChapterZoneId", () => {
         earnedGymOrders: [1],
       }),
     ).toBeNull();
+  });
+});
+
+describe("defaultChapterZoneId", () => {
+  function chapterWith(zones: MapLocation[], partial: Partial<Chapter> = {}): Chapter {
+    return {
+      number: 9,
+      nameKey: "chapterNames.elite_four",
+      zones,
+      gym: zones.find((z) => z.kindKey === "kinds.gym") ?? null,
+      gymOrder: 9,
+      stagesDone: 7,
+      stagesTotal: 9,
+      speciesCaught: 0,
+      speciesTotal: 0,
+      unlocked: true,
+      completed: false,
+      percent: 88,
+      ...partial,
+    };
+  }
+
+  it("does not fall back to a cleared first zone when a later one is pending", () => {
+    const chapter = chapterWith([
+      zone({ id: "victory-road", completedStages: 3, totalStages: 3 }),
+      zone({ id: "lorelei", completedStages: 0, totalStages: 1 }),
+      zone({
+        id: "elite-gym",
+        kindKey: "kinds.gym",
+        totalStages: 0,
+        gymOrder: 9,
+      }),
+    ]);
+    expect(
+      defaultChapterZoneId({
+        chapter,
+        farmingLocationId: "pewter-gym",
+        earnedGymOrders: [1, 2, 3, 4, 5, 6, 7, 8],
+      }),
+    ).toBe("lorelei");
+  });
+
+  it("falls back to the last unlocked zone when the chapter is done", () => {
+    const gym = zone({
+      id: "elite-gym",
+      kindKey: "kinds.gym",
+      totalStages: 0,
+      gymOrder: 9,
+    });
+    const chapter = chapterWith(
+      [zone({ id: "victory-road", completedStages: 3, totalStages: 3 }), gym],
+      { completed: true, percent: 100 },
+    );
+    expect(
+      defaultChapterZoneId({
+        chapter,
+        farmingLocationId: "route-1",
+        earnedGymOrders: [9],
+      }),
+    ).toBe("elite-gym");
   });
 });

@@ -43,7 +43,7 @@ const BUTTON_OMIT = new Set([
 
 /**
  * CTA principal de juego (Explorar / recompensa):
- * dorado, rojo o secondary, tipografía Grobold uppercase.
+ * dorado, rojo o secondary, tipografía Orbitron uppercase.
  * No usar para chips ni links secundarios de información.
  */
 export function GameCtaButton(props: GameCtaButtonProps) {

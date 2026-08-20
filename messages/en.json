@@ -2755,6 +2755,25 @@
     "exploreLocation": "Explore",
     "viewFullJourney": "Full journey",
     "chapterPath": "Chapter path",
+    "ask": {
+      "locked": "This zone is not open yet. Advance through the chapter to reach it.",
+      "gym": "Finish the chapter and challenge the leader once your team is ready.",
+      "gymWon": "You already earned this badge. Rematch the leader whenever you want.",
+      "gymChapterFirst": "Finish the chapter zones and the leader opens the door.",
+      "oneTrainerNamed": "Beat {name} to close out this zone.",
+      "trainers": "{count, plural, one {# trainer} other {# trainers}} left to close out this zone.",
+      "stagesAndTrainers": "Clear {stages, plural, one {# more stretch} other {# more stretches}} and beat {trainers, plural, one {# trainer} other {# trainers}}.",
+      "stages": "Clear {count, plural, one {# more stretch} other {# more stretches}} to finish this zone.",
+      "pokedexOptional": "The zone is done. For the extra, {count, plural, one {# species} other {# species}} left to run into.",
+      "claim": "Everything is done — claim the zone reward.",
+      "done": "Zone finished. Keep going along the path."
+    },
+    "partyStripTitle": "Your team",
+    "partyReady": "{count, plural, one {# ready} other {# ready}}",
+    "askTitle": "What this zone asks",
+    "playChip": "Play!",
+    "nextChip": "Next",
+    "chapterPathSummary": "{done} of {total} stops completed",
     "chapterNames": {
       "elite_four": "Elite Four"
     },
@@ -2765,6 +2784,7 @@
     "nodeCurrent": "Current",
     "nodeNext": "Next",
     "backToCurrentChapter": "Back to current",
+    "browsingChapterHint": "Your journey is in {name}",
     "chapterLockedHint": "Unlocks when you finish the previous chapter.",
     "gymChallengeHint": "Use the main action above when ready to challenge the leader.",
     "gymLockedHint": "You cannot challenge the leader yet.",
@@ -2847,7 +2867,8 @@
     "stageSet": "Active stretch: {name}.",
     "nextChallenge": "Next challenge",
     "gymOfType": "{type} Gym",
-    "eliteOfType": "Elite Four · {type}"
+    "eliteOfType": "Elite Four · {type}",
+    "doneStagesToggle": "Show {n} already cleared"
   },
   "levelUp": {
     "title": "{name} · Lv. {level}",

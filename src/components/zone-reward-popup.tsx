@@ -51,7 +51,7 @@ export function ZoneRewardPopup({ reward, labels, onContinue }: ZoneRewardPopupP
         />
 
         <div className="relative flex flex-col items-center">
-          <p className="page-title text-[11px] tracking-[0.18em] text-secondary sm:text-[12px]">
+          <p className="stamp-title text-[11px] tracking-[0.18em] text-secondary sm:text-[12px]">
             {labels.title}
           </p>
 

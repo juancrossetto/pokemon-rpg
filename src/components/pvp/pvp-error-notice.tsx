@@ -129,7 +129,7 @@ export function PvpErrorNotice({
         <button
           type="button"
           onClick={dismiss}
-          className="page-title mt-1 w-full rounded-xl border border-white/15 bg-white/6 px-4 py-2.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-white/90 transition hover:border-white/30 hover:bg-white/10"
+          className="ui-btn-ghost mt-1 w-full px-4 py-2.5 text-[13px] uppercase tracking-[0.08em] text-white/90"
         >
           {dismissLabel}
         </button>

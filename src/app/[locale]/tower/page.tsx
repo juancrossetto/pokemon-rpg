@@ -290,7 +290,7 @@ export default async function TowerPage({
                 <span className="material-symbols-outlined text-[20px]!">help</span>
               </summary>
               <div className="absolute right-0 top-[calc(100%+0.4rem)] w-[min(18.5rem,calc(100vw-2rem))] rounded-xl border border-secondary/25 bg-[#12141c]/96 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-                <p className="page-title mb-2 text-[10px] tracking-[0.16em] text-secondary">
+                <p className="stamp-title mb-2 text-[10px] tracking-[0.16em] text-secondary">
                   {t("rules.title")}
                 </p>
                 <ul className="space-y-1.5 text-[12px] leading-snug text-white/65">

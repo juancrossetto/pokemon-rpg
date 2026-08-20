@@ -1084,7 +1084,7 @@ function TradesStrip({
                 type="button"
                 disabled={pending}
                 onClick={() => onCancel(trade.id)}
-                className="rounded-lg border border-white/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant"
+                className="ui-btn-ghost px-3 py-1.5 text-[10px] uppercase tracking-wider"
               >
                 {labels.trade.decline}
               </button>
@@ -1094,7 +1094,7 @@ function TradesStrip({
               type="button"
               disabled={pending}
               onClick={() => onCancel(trade.id)}
-              className="rounded-lg border border-white/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant"
+              className="ui-btn-ghost px-3 py-1.5 text-[10px] uppercase tracking-wider"
             >
               {labels.trade.cancelOffer}
             </button>
@@ -1464,7 +1464,7 @@ function RequestsPanel({
                   type="button"
                   disabled={pending}
                   onClick={() => onDecline(r.id)}
-                  className="rounded-lg border border-white/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant"
+                  className="ui-btn-ghost px-3 py-1.5 text-[10px] uppercase tracking-wider"
                 >
                   {labels.decline}
                 </button>
@@ -1474,7 +1474,7 @@ function RequestsPanel({
                 type="button"
                 disabled={pending}
                 onClick={() => onCancel(r.id)}
-                className="rounded-lg border border-white/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant"
+                className="ui-btn-ghost px-3 py-1.5 text-[10px] uppercase tracking-wider"
               >
                 {labels.cancelRequest}
               </button>
@@ -1517,7 +1517,7 @@ function BlockedPanel({
               type="button"
               disabled={pending}
               onClick={() => onUnblock(b.userId)}
-              className="rounded-lg border border-white/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white"
+              className="ui-btn-ghost px-3 py-1.5 text-[10px] uppercase tracking-wider text-white"
             >
               {labels.actions.unblock}
             </button>
@@ -1955,12 +1955,12 @@ function ModalBtn({
       title={title ?? label}
       disabled={disabled || pending}
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] transition disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`inline-flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.08em] disabled:cursor-not-allowed disabled:opacity-40 ${
         primary
-          ? "ui-btn-primary border-transparent"
+          ? "ui-btn-primary"
           : danger
-            ? "border-pokeball-red/35 text-pokeball-red hover:bg-pokeball-red/10"
-            : "border-white/12 text-white/85 hover:bg-white/8"
+            ? "ui-btn-ghost border-pokeball-red/35 text-pokeball-red hover:bg-pokeball-red/10 hover:text-pokeball-red"
+            : "ui-btn-ghost text-white/85"
       }`}
     >
       <span className="material-symbols-outlined text-[16px]!">{icon}</span>

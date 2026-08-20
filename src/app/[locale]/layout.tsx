@@ -51,7 +51,7 @@ const orbitron = Orbitron({
   weight: ["700", "800", "900"],
 });
 
-/** Tipografía de la app: Inter (UI) + JetBrains Mono (labels) + Grobold local (títulos). */
+/** Tipografía de la app: Inter (UI) + JetBrains Mono (labels) + Orbitron (títulos/CTAs) + Grobold local (sellos). */
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

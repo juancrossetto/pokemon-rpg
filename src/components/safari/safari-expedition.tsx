@@ -242,7 +242,7 @@ export function SafariExpedition({ locale, data }: { locale: string; data: Safar
                       <span className="h-1 w-1 rounded-full bg-white/25" />
                       <span className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-white/45">Lv. {active.encounter.level}</span>
                     </div>
-                    <h3 className="page-title mt-2 text-[2rem] leading-none text-white md:text-[2.35rem]">{displayName(active.encounter.name)}</h3>
+                    <h3 className="mt-2 text-[2rem] font-extrabold leading-none text-white md:text-[2.35rem]">{displayName(active.encounter.name)}</h3>
                     <div className="mt-4">
                       <div className="text-[11px] font-semibold text-white/48">
                         <span>{t("catchChance", { chance: active.encounter.catchChance })}</span>

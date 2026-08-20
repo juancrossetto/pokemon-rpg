@@ -152,7 +152,7 @@ export function PvpMatchReport({
               side="a"
             />
             <div className="pvp-report__vs" aria-hidden>
-              <span className="pvp-report__vs-text page-title">{labels.vsShort}</span>
+              <span className="pvp-report__vs-text stamp-title">{labels.vsShort}</span>
             </div>
             <Combatant
               username={opponent.username}

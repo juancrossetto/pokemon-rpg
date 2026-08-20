@@ -120,6 +120,7 @@ export {
   getCampaignPrimaryAction,
   getCampaignActionForZone,
   recommendedChapterZoneId,
+  defaultChapterZoneId,
   resolveZoneNodeStatus,
   getMissingRequirements,
   getZoneUnlockRequirements,

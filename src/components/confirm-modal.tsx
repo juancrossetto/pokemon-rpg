@@ -104,7 +104,7 @@ export function ConfirmModal({
             type="button"
             disabled={pending}
             onClick={onCancel}
-            className="min-h-11 w-full rounded-lg border border-white/15 px-4 py-2.5 text-label-md text-on-surface-variant transition-colors hover:bg-white/[0.06] disabled:opacity-40"
+            className="ui-btn-ghost min-h-11 w-full px-4 py-2.5 text-label-md disabled:opacity-40"
           >
             {cancelLabel}
           </button>

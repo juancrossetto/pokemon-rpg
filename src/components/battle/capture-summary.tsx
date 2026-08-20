@@ -62,7 +62,7 @@ export function CaptureSummary({
 
   const identityMeta = (
     <>
-      <p className="page-title text-lg capitalize leading-tight text-white lg:text-headline-sm">
+      <p className="text-lg font-extrabold capitalize leading-tight text-white lg:text-headline-sm">
         {info.name}
       </p>
       <div className="mt-1 flex flex-wrap items-center gap-1.5 lg:justify-center">

@@ -773,9 +773,8 @@ export function ActiveTeamStrip({
       {title ? (
         <div className="mb-3.5 flex items-center justify-between gap-2">
           {/* Mismo tratamiento que el encabezado del riel de eventos: Inter en
-              semibold, caja y color de texto normales. Sin `page-title`, que es
-              Grobold + uppercase y estaba reservado al título de la pantalla —
-              acá competía con él y con el título del banner. */}
+              semibold, caja y color de texto normales. Sin `page-title` (Orbitron
+              de hub) ni `stamp-title` (Grobold de sello). */}
           <h2 className="text-base leading-none font-[850] text-white">
             {title}
           </h2>
