@@ -111,3 +111,13 @@
   --color-hp-low-deep: #b91c1c;
   --color-hp-low-bright: #ef4444; /* red-500, sin lavar a rosa */
 }
+
+html[data-high-contrast="1"] {
+  --theme-on-surface: #ffffff;
+  --color-on-surface-variant: #f2edf5;
+  --color-outline: #d9cce0;
+  --color-outline-variant: #a79aad;
+  --theme-surface: #050506;
+  --theme-surface-low: #0d0d10;
+  --theme-surface-high: #25252b;
+}

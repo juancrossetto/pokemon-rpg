@@ -83,6 +83,7 @@
       "friends": "Find trainers, inspect cards and grow your circle.",
       "clans": "Join a clan and compete as a team.",
       "events": "Daily rewards and weekly challenges.",
+      "season": "Complete monthly activity and claim rewards.",
       "tower": "Climb floors in a PvE challenge.",
       "safari": "Catch rare species in limited expeditions.",
       "park": "Daycare, fishing, wonder trade, Game Corner, berry farm, mine and frontier."
@@ -99,6 +100,7 @@
     "emptyNav": "Sign in to see the full navigation.",
     "swipeGroups": "Swipe to switch groups",
     "events": "Events",
+    "season": "Season",
     "profile": "My profile",
     "tower": "Tower",
     "park": "Minigames"
@@ -135,6 +137,8 @@
     "marketSoldDetail": "{buyer} · {item}",
     "marketExpiredTitle": "Expired",
     "marketExpiredDetail": "{item}",
+    "marketWatchTitle": "Price alert",
+    "marketWatchDetail": "{item} · {price} coins",
     "gymWonTitle": "Badge",
     "gymWonDetail": "{leader} · {gym}",
     "gymWonAvatarsDetail": "{leader} · {gym} · +{count} portraits",
@@ -180,6 +184,7 @@
     "deleteAllAction": "Delete all"
   },
   "home": {
+    "johtoUnlock": { "eyebrow": "New league available", "title": "Johto awaits", "body": "Your journey continues with eight chapters, second-generation species, and tougher leaders.", "cta": "Travel to Johto", "traveling": "Travelling…" },
     "eyebrow": "Season 1",
     "title": "Train. Battle. Climb the ranking.",
     "subtitle": "A browser-based capture-and-battle RPG, inspired by the forum games of the 2000s.",
@@ -302,6 +307,7 @@
       "you": "You",
       "clanTitle": "Clan war",
       "clanSubtitle": "Compete against other clans each season.",
+      "clanPrepare": "Prepare season",
       "clanOpen": "Open clan",
       "clanFind": "Find a clan",
       "clanGuest": "No clan",
@@ -365,7 +371,7 @@
         "badge": "You earned the {name} badge.",
         "trainer": "You defeated {name}."
       },
-      "dailyActions": {
+    "dailyActions": {
         "title": "Daily actions",
         "statusAvailable": "New",
         "statusDone": "Done",
@@ -384,9 +390,9 @@
           "streak": "Streak",
           "friends": "Friends",
           "market": "Market"
-        }
-      },
-      "eventShowcase": {
+      }
+    },
+    "eventShowcase": {
         "liveOpen": "Available",
         "liveDone": "Completed",
         "liveRunning": "In progress",
@@ -402,6 +408,11 @@
         "openEvents": "Open event",
         "carouselEyebrow": "Now in Kanto",
         "carouselTitle": "Active events",
+        "carouselViewAll": "View all",
+        "carouselPrev": "Previous event",
+        "carouselNext": "Next event",
+        "carouselPages": "Event pages",
+        "carouselPage": "View event {page}",
         "previous": "Previous events",
         "next": "More events",
         "raidEyebrow": "Cooperative battle",
@@ -530,6 +541,22 @@
       "spe": "Spe",
       "capture": "Capture",
       "evolves": "Evolves"
+    },
+    "detail": {
+      "close": "Close entry",
+      "owned": "Owned",
+      "inTeam": "In team",
+      "inPc": "In PC",
+      "shinyOwned": "Shiny",
+      "baseStats": "Base stats",
+      "evolutionLine": "Evolution line",
+      "habitats": "Where to find it",
+      "noHabitat": "It does not appear in a known wild area yet.",
+      "captureRate": "Capture rate",
+      "researchMilestones": "Regional research milestones",
+      "nextMilestone": "Next: {percent}%",
+      "milestoneComplete": "Research complete",
+      "openHint": "Open research entry"
     },
     "icons": {
       "favorite": "Favorite",
@@ -1323,6 +1350,13 @@
     "corridorFaintedLead": "Your whole team has fainted. Heal on Home or put a healthy Pokémon in the party before fighting."
   },
   "market": {
+    "watch": {
+      "add": "Watch price",
+      "remove": "Stop watching",
+      "saving": "Saving…",
+      "history": "Price history",
+      "sales": "{count} sales"
+    },
     "title": "Commerce",
     "subtitle": "Official shop and player-to-player market.",
     "hub": {
@@ -2191,6 +2225,13 @@
       "activityPower": "Total clan power: {power}.",
       "activityBadges": "Total badges: {count}.",
       "missionsTitle": "Clan missions",
+      "missionsSubtitle": "Weekly goals calculated from every member's real activity.",
+      "missionGo": "Go to objective",
+      "missions": {
+        "wins": { "title": "Collective wins", "desc": "Win battles in any adventure mode." },
+        "catches": { "title": "Collective catches", "desc": "Add new catches throughout the week." },
+        "raids": { "title": "Raid damage", "desc": "Contribute together against the weekly boss." }
+      },
       "demoMissionOneTitle": "Defeat 500 enemies",
       "demoMissionOneDesc": "Weekly collective objective.",
       "demoMissionOneProgress": "342 / 500 · Reward: 500 clan XP",
@@ -2489,6 +2530,12 @@
     "modeRanked": "Ranked",
     "modeQuick": "Quick",
     "coinsAwarded": "+{n} coins",
+    "share": {
+      "action": "Share result",
+      "preparing": "Creating image…",
+      "shared": "Shared",
+      "downloaded": "Image downloaded"
+    },
     "pagination": {
       "prev": "Previous",
       "next": "Next",
@@ -2575,6 +2622,14 @@
       "region_complete": "Kanto complete"
     },
     "locations": {
+      "johto_new_bark": "New Bark Town", "johto_route_29": "Route 29", "johto_cherrygrove": "Cherrygrove City", "johto_route_30": "Route 30", "johto_route_31": "Route 31", "johto_violet_city": "Violet City", "johto_sprout_tower": "Sprout Tower", "johto_violet_gym": "Violet Gym",
+      "johto_route_32": "Route 32", "johto_union_cave": "Union Cave", "johto_azalea_town": "Azalea Town", "johto_slowpoke_well": "Slowpoke Well", "johto_azalea_gym": "Azalea Gym",
+      "johto_ilex_forest": "Ilex Forest", "johto_route_34": "Route 34", "johto_goldenrod_city": "Goldenrod City", "johto_goldenrod_gym": "Goldenrod Gym",
+      "johto_route_35": "Route 35", "johto_national_park": "National Park", "johto_route_36": "Route 36", "johto_ecruteak_city": "Ecruteak City", "johto_burned_tower": "Burned Tower", "johto_ecruteak_gym": "Ecruteak Gym",
+      "johto_route_38": "Route 38", "johto_olivine_city": "Olivine City", "johto_lighthouse": "Olivine Lighthouse", "johto_olivine_gym": "Olivine Gym",
+      "johto_route_40": "Route 40", "johto_whirl_islands": "Whirl Islands", "johto_cianwood_city": "Cianwood City", "johto_cianwood_gym": "Cianwood Gym",
+      "johto_route_42": "Route 42", "johto_mt_mortar": "Mt. Mortar", "johto_mahogany_town": "Mahogany Town", "johto_lake_of_rage": "Lake of Rage", "johto_rocket_hq": "Rocket HQ", "johto_mahogany_gym": "Mahogany Gym",
+      "johto_ice_path": "Ice Path", "johto_blackthorn_city": "Blackthorn City", "johto_dragons_den": "Dragon's Den", "johto_blackthorn_gym": "Blackthorn Gym",
       "pallet_town": "Pallet Town",
       "route_1": "Route 1",
       "viridian_city": "Viridian City",
@@ -2620,6 +2675,8 @@
       "vf_deep": "Deep forest"
     },
     "stages": {
+      "johto_route": "Johto stretch",
+      "johto_gym_milestone": "Gym challenge",
       "pallet_1": "Pallet outskirts",
       "r1_1": "Route 1 · stretch 1",
       "r1_2": "Route 1 · stretch 2",
@@ -2753,7 +2810,7 @@
     "objectiveChallengeGym": "Challenge the gym leader at {name}",
     "objectiveExploreStage": "Explore {name}",
     "exploreLocation": "Explore",
-    "viewFullJourney": "Full journey",
+    "viewFullJourney": "Journey overview",
     "chapterPath": "Chapter path",
     "ask": {
       "locked": "This zone is not open yet. Advance through the chapter to reach it.",
@@ -2776,6 +2833,16 @@
     "chapterPathSummary": "{done} of {total} stops completed",
     "chapterNames": {
       "elite_four": "Elite Four"
+    },
+    "johtoChapters": {
+      "1": "Follow Professor Elm's trail and prove yourself at Sprout Tower.",
+      "2": "Free Slowpoke Well from Team Rocket and cross Ilex Forest.",
+      "3": "Reach Goldenrod City and face Whitney's unpredictable challenge.",
+      "4": "Investigate the Burned Tower and the mysteries surrounding Ecruteak City.",
+      "5": "Help Olivine's lighthouse and prepare for Jasmine's steel defense.",
+      "6": "Cross the sea to Cianwood and master Chuck's raw strength.",
+      "7": "Discover what enraged the lake and dismantle Team Rocket's base.",
+      "8": "Cross Ice Path, overcome Dragon's Den and claim the final badge."
     },
     "nodeLocked": "Locked",
     "nodeCompleted": "Done",
@@ -3048,6 +3115,12 @@
     "companion": "Companion",
     "manageTeam": "Manage team",
     "favorite": "Favourite",
+    "share": {
+      "action": "Share card",
+      "preparing": "Creating image…",
+      "shared": "Shared",
+      "downloaded": "Card downloaded"
+    },
     "nav": {
       "summary": "Overview",
       "badges": "Badges",
@@ -3153,9 +3226,17 @@
         "name": "Researcher",
         "hint": "Register 50 species"
       },
+      "fieldObserver": {
+        "name": "Field observer",
+        "hint": "Spot 100 different species"
+      },
       "taxonomist": {
         "name": "Taxonomist",
         "hint": "Register 151 species"
+      },
+      "regionalScholar": {
+        "name": "Regional scholar",
+        "hint": "Complete all 251 Kanto and Johto sightings"
       },
       "gymGoer": {
         "name": "First badge",
@@ -4072,6 +4153,21 @@
       "nextIn": "Next climb in"
     }
   },
+  "seasonJourney": {
+    "eyebrow": "Season {key}",
+    "title": "SEASON JOURNEY",
+    "subtitle": "All activity counts: catch, win battles, and join cooperative modes to advance.",
+    "xp": "SEASON XP",
+    "ends": "Ends on {date}",
+    "track": "Reward track",
+    "milestone": "{xp} XP milestone",
+    "claim": "Claim",
+    "claiming": "Claiming…",
+    "claimed": "Claimed",
+    "locked": "Locked",
+    "metrics": { "wins": "Wins", "catches": "Catches", "gyms": "Gyms", "pvp": "PvP", "raids": "Raids" },
+    "rewards": { "coins": "{amount} coins", "gems": "{amount} gems", "energy": "{amount} energy" }
+  },
   "settings": {
     "eyebrow": "Trainer preferences",
     "title": "SETTINGS",
@@ -4090,6 +4186,30 @@
       "speed": "Speed",
       "animations": "Animations",
       "flashes": "Flashes"
+    },
+    "accessibility": {
+      "title": "Visual accessibility",
+      "subtitle": "Improve readability without losing the game's identity.",
+      "textSize": "Interface size",
+      "text": {
+        "normal": "Normal",
+        "large": "Large",
+        "xlarge": "Extra large"
+      },
+      "highContrast": "High contrast",
+      "colorCues": "Type patterns"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "subtitle": "Get updates even when the PWA is closed.",
+      "push": "Push notifications",
+      "enabled": "Enabled on this device",
+      "disabled": "Disabled",
+      "blocked": "Blocked by the browser",
+      "unavailable": "Requires a compatible PWA and configured VAPID key",
+      "turnOn": "Enable",
+      "turnOff": "Disable",
+      "saving": "Saving…"
     },
     "auto": {
       "title": "AUTO strategy",
@@ -4247,7 +4367,12 @@
   },
   "pwa": {
     "updateAvailable": "A new version is ready.",
-    "reload": "Update"
+    "reload": "Update",
+    "installTitle": "Install PokeRPG",
+    "installHint": "Open it like an app and get back to your adventure faster.",
+    "installIosHint": "In Safari, tap Share and then Add to Home Screen.",
+    "install": "Install",
+    "later": "Later"
   },
   "nextStep": {
     "eyebrow": "Your next step",

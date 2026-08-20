@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import type { ItemType } from "@/generated/prisma/client";
-import { buyListing, cancelListing } from "@/actions/market";
+import { buyListing, cancelListing, toggleMarketWatch } from "@/actions/market";
 import { MarketSubmitButton } from "@/components/market-submit-button";
 import { itemDisplayUrl } from "@/lib/item-sprites";
 import { CONFIRM_PRICE_THRESHOLD } from "@/lib/market-rules";
@@ -35,6 +35,9 @@ export type MarketExploreItemListing = {
   isOwn: boolean;
   canAfford: boolean;
   rarity: MarketRarity;
+  watchKey: string;
+  watched: boolean;
+  priceHistory: number[];
   item: {
     name: string;
     type: ItemType;
@@ -52,12 +55,16 @@ export type MarketExplorePokemonListing = {
   isOwn: boolean;
   canAfford: boolean;
   rarity: MarketRarity;
+  watchKey: string;
+  watched: boolean;
+  priceHistory: number[];
   displayName: string;
   hp: number;
   atk: number;
   training: number;
   invested: number;
   pokemon: {
+    speciesId: number;
     level: number;
     isShiny: boolean;
     unspentPoints: number;
@@ -420,6 +427,29 @@ function ExploreDetailSheet({
             ) : null}
           </div>
 
+          {listing.priceHistory.length > 1 ? (
+            <div className="market-price-history" aria-label={t("watch.history")}>
+              <div className="flex items-center justify-between gap-2">
+                <span>{t("watch.history")}</span>
+                <span className="font-mono text-white/70">
+                  {t("watch.sales", { count: listing.priceHistory.length })}
+                </span>
+              </div>
+              <div className="market-price-history__bars" aria-hidden>
+                {[...listing.priceHistory].reverse().map((price, index, values) => {
+                  const max = Math.max(...values);
+                  const min = Math.min(...values);
+                  const pct = max === min ? 55 : 20 + ((price - min) / (max - min)) * 80;
+                  return <span key={`${price}-${index}`} style={{ height: `${pct}%` }} />;
+                })}
+              </div>
+              <div className="flex justify-between font-mono text-[9px] text-white/45">
+                <span>{Math.min(...listing.priceHistory).toLocaleString()}</span>
+                <span>{Math.max(...listing.priceHistory).toLocaleString()}</span>
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px] text-on-surface-variant">
             <span className="min-w-0 truncate" title={listing.seller}>
               <span className="material-symbols-outlined mr-0.5 align-[-3px] text-[13px]!">
@@ -451,24 +481,29 @@ function ExploreDetailSheet({
               />
             </form>
           ) : (
-            <form action={buyListing.bind(null, locale)} className="w-full">
-              <input type="hidden" name="listingId" value={listing.id} />
-              <MarketSubmitButton
-                label={
-                  listing.canAfford
-                    ? t("hub.buyNow")
-                    : t("needFunds", { missing: Math.max(0, listing.price - coins) })
-                }
-                pendingLabel={t("buying")}
-                disabled={!listing.canAfford}
-                className="ui-btn-primary market-buy-btn h-11 w-full px-3 text-[11px] font-bold uppercase tracking-[0.12em] disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-on-surface-variant disabled:opacity-100"
-                confirmMessage={
-                  listing.price >= CONFIRM_PRICE_THRESHOLD
-                    ? t("confirmBuy", { name: displayName, price: listing.price })
-                    : undefined
-                }
-              />
-            </form>
+            <div className="grid w-full grid-cols-[auto_minmax(0,1fr)] gap-2">
+              <form action={toggleMarketWatch.bind(null, locale)}>
+                <input type="hidden" name="targetKey" value={listing.watchKey} />
+                <input type="hidden" name="label" value={displayName} />
+                <input type="hidden" name="targetPrice" value={listing.price} />
+                <input type="hidden" name="remove" value={listing.watched ? "1" : "0"} />
+                <MarketSubmitButton
+                  label={listing.watched ? t("watch.remove") : t("watch.add")}
+                  pendingLabel={t("watch.saving")}
+                  className={`flex h-11 min-w-11 items-center justify-center rounded-md border px-3 text-[11px] font-semibold transition ${listing.watched ? "border-electric-yellow/45 bg-electric-yellow/10 text-electric-yellow" : "border-white/15 text-on-surface-variant hover:border-white/30 hover:text-white"}`}
+                />
+              </form>
+              <form action={buyListing.bind(null, locale)} className="w-full">
+                <input type="hidden" name="listingId" value={listing.id} />
+                <MarketSubmitButton
+                  label={listing.canAfford ? t("hub.buyNow") : t("needFunds", { missing: Math.max(0, listing.price - coins) })}
+                  pendingLabel={t("buying")}
+                  disabled={!listing.canAfford}
+                  className="ui-btn-primary market-buy-btn h-11 w-full px-3 text-[11px] font-bold uppercase tracking-[0.12em] disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-on-surface-variant disabled:opacity-100"
+                  confirmMessage={listing.price >= CONFIRM_PRICE_THRESHOLD ? t("confirmBuy", { name: displayName, price: listing.price }) : undefined}
+                />
+              </form>
+            </div>
           )}
         </div>
       </div>

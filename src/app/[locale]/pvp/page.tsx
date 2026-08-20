@@ -33,6 +33,7 @@ import {
 } from "@/lib/pvp/tiers";
 import { getTranslations } from "next-intl/server";
 import { Prisma } from "@/generated/prisma/client";
+import { serverNow } from "@/lib/events/time";
 
 const PAGE_SIZE = 5;
 
@@ -219,7 +220,7 @@ export default async function PvpPage({
   const recentPairMatches = await prisma.pvpMatch.findMany({
     where: {
       OR: [{ challengerId: userId }, { opponentId: userId }],
-      createdAt: { gte: new Date(Date.now() - PVP_CHALLENGE_COOLDOWN_MS) },
+      createdAt: { gte: new Date(serverNow().getTime() - PVP_CHALLENGE_COOLDOWN_MS) },
     },
     select: { challengerId: true, opponentId: true, createdAt: true },
     orderBy: { createdAt: "desc" },

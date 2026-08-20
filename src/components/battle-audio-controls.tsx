@@ -35,10 +35,13 @@ export function BattleAudioControls({ bgmKind }: { bgmKind: BattleBgmKind }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    setMusicMuted(isBattleBgmMuted());
-    setMusicVolume(getBattleBgmVolume());
-    setSfxMutedState(isBattleSfxMuted());
-    setSfxVolumeState(getBattleSfxVolume());
+    const raf = requestAnimationFrame(() => {
+      setMusicMuted(isBattleBgmMuted());
+      setMusicVolume(getBattleBgmVolume());
+      setSfxMutedState(isBattleSfxMuted());
+      setSfxVolumeState(getBattleSfxVolume());
+    });
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   function ensurePlaying() {

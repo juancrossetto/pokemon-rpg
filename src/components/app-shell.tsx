@@ -8,8 +8,9 @@ import { CombatLockGate } from "@/components/combat-lock-gate";
 import { I18nClientProvider } from "@/components/i18n-client-provider";
 import { FriendsRailHost } from "@/components/friends/friends-rail-host";
 import { PresenceHeartbeat } from "@/components/friends/presence-heartbeat";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getAuthSession } from "@/lib/auth-session";
+import { getUserSnapshot } from "@/lib/user-snapshot";
+import { AppShellFallback } from "@/components/app-shell-fallback";
 import { getCombatLock, enforceCombatLockInLayout, stripLocale } from "@/lib/battle-lock";
 
 /**
@@ -22,7 +23,7 @@ export async function AppShell({
   locale: string;
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const session = await getAuthSession();
   let showFriendsRail = false;
   if (session?.user?.id) {
     const headerStore = await headers();
@@ -36,10 +37,7 @@ export async function AppShell({
     const path = stripLocale(pathname);
     const onAuthPage = path === "/login" || path === "/register";
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true },
-    });
+    const user = await getUserSnapshot(session.user.id);
     if (!user && !onAuthPage) {
       const loginPath = `/${locale}/login`;
       redirect(
@@ -61,7 +59,9 @@ export async function AppShell({
     <I18nClientProvider locale={locale} messages={messages}>
       <Providers>
         <CombatLockGate lock={combatLock} />
-        <SiteHeader combatLock={combatLock} />
+        <Suspense fallback={<AppShellFallback locale={locale} />}>
+          <SiteHeader combatLock={combatLock} />
+        </Suspense>
         {showFriendsRail ? <PresenceHeartbeat /> : null}
         {friendsUserId ? (
           <Suspense fallback={null}>

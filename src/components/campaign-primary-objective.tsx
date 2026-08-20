@@ -286,6 +286,7 @@ export function CampaignPrimaryObjective({
   locationName,
   regionLabel,
   chapterLabel,
+  chapterFlavor = null,
   stagesDone,
   stagesTotal,
   journeyMenu,
@@ -305,6 +306,8 @@ export function CampaignPrimaryObjective({
   locationName: string;
   regionLabel: string;
   chapterLabel: string | null;
+  /** Breve arco narrativo regional; no reemplaza el objetivo accionable. */
+  chapterFlavor?: string | null;
   /** Hojeando otro capítulo: dónde está el viaje de verdad. */
   browsingHint?: string | null;
   stagesDone: number;
@@ -406,6 +409,11 @@ export function CampaignPrimaryObjective({
             <h1 className="page-title mt-0.5 line-clamp-2 text-[1.05rem] leading-[1.15] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:line-clamp-none sm:truncate sm:text-[1.35rem] sm:leading-tight lg:text-[1.45rem]">
               {locationName}
             </h1>
+            {chapterFlavor ? (
+              <p className="mt-0.5 hidden max-w-2xl truncate text-[11px] text-white/58 sm:block">
+                {chapterFlavor}
+              </p>
+            ) : null}
             {stagesTotal > 0 ? (
               <p className="mt-0.5 flex items-center gap-1 text-[10px] text-white/70 sm:mt-1 sm:gap-1.5 sm:text-[12px]">
                 <span className="font-mono text-electric-yellow">

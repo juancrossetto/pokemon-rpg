@@ -5,6 +5,7 @@ import { PvpRematchForm } from "@/components/pvp/pvp-rematch-form";
 import { formatMoveName } from "@/lib/format-move-name";
 import type { PvpTeamMemberSnap } from "@/lib/pvp/team";
 import { parseKo } from "@/lib/pvp/ko-log";
+import { ShareCardButton, type ShareCardLabels } from "@/components/share-card-button";
 
 export type PvpMatchReportLabels = {
   backToPvp: string;
@@ -31,6 +32,7 @@ export type PvpMatchReportLabels = {
   modeRanked: string;
   modeQuick: string;
   coinsAwarded: (n: number) => string;
+  share: ShareCardLabels;
 };
 
 export type PvpMatchReportProps = {
@@ -138,6 +140,24 @@ export function PvpMatchReport({
                 ) : null}
               </div>
               <h1 className="pvp-report__title page-title">{outcomeTitle}</h1>
+              {settled ? (
+                <ShareCardButton
+                  fileName={`pvp-${challenger.username}-vs-${opponent.username}`.toLowerCase()}
+                  labels={labels.share}
+                  className="pvp-report__share"
+                  card={{
+                    eyebrow: modeLabel,
+                    title: outcomeTitle,
+                    subtitle: `${challenger.username} ${labels.vsShort} ${opponent.username}`,
+                    accent: outcomeTone === "win" ? "#4ade80" : "#5ef0ff",
+                    stats: [
+                      { label: challenger.username, value: String(challengerRatingAfter) },
+                      { label: opponent.username, value: String(opponentRatingAfter) },
+                      { label: labels.turnLog, value: String(turnLog.length) },
+                    ],
+                  }}
+                />
+              ) : null}
             </div>
           ) : null}
 

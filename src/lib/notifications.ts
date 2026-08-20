@@ -10,6 +10,7 @@ import {
   ENERGY_FULL_NOTIFY_COOLDOWN_MS,
   getCurrentEnergy,
 } from "@/lib/energy";
+import { sendPushToUser } from "@/lib/push";
 
 export type NotificationImageKind = "avatar" | "item" | "pokemon" | "badge" | "leader";
 
@@ -109,10 +110,19 @@ export async function createNotification(input: {
         NOW()
       )
     `;
+    if (!input.tx) {
+      await sendPushToUser(input.userId, {
+        title: "PokeRPG",
+        body: input.payload?.itemName ?? input.payload?.opponentName ?? input.payload?.trainerName ?? "Tenés una novedad en tu aventura.",
+        url: input.href ?? "/",
+        icon: input.payload?.imageUrl,
+        tag: `pokerpg-${input.type.toLowerCase()}`,
+      });
+    }
     return { id };
   }
 
-  return db.notification.create({
+  const created = await db.notification.create({
     data: {
       userId: input.userId,
       type: input.type,
@@ -120,6 +130,16 @@ export async function createNotification(input: {
       href: input.href ?? null,
     },
   });
+  if (!input.tx) {
+    await sendPushToUser(input.userId, {
+      title: "PokeRPG",
+      body: input.payload?.itemName ?? input.payload?.opponentName ?? input.payload?.trainerName ?? "Tenés una novedad en tu aventura.",
+      url: input.href ?? "/",
+      icon: input.payload?.imageUrl,
+      tag: `pokerpg-${input.type.toLowerCase()}`,
+    });
+  }
+  return created;
 }
 
 /** Tipos cuya miniatura es el otro entrenador (no ítem/medalla). */

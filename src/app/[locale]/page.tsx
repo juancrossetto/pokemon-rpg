@@ -1,9 +1,10 @@
 import { getTranslations, getLocale } from "next-intl/server";
+import { Suspense } from "react";
 import { gymLeaderBustUrl, gymLeaderHeroArtKind, gymLeaderPortraitScale } from "@/lib/gym-art";
 import { typeColor } from "@/lib/type-colors";
 import { HomeRouteHero, type HomeNextChallenge } from "@/components/home/home-route-hero";
 import { Link, redirect } from "@/i18n/navigation";
-import { auth } from "@/auth";
+import { getAuthSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { spriteFor } from "@/lib/shiny";
 import { calculateMaxHp, calculateStat, xpForLevel, xpToNextLevel } from "@/lib/stats";
@@ -22,9 +23,6 @@ import type { HomeSquadMember } from "@/components/home/squad-types";
 import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { loadEvolutionChainsForTeam, loadOwnedEvolutionItems } from "@/lib/evolution-chain";
 import { loadCombatPowerBoard } from "@/lib/ranking-boards";
-import { loadTrainerStats } from "@/lib/achievements/stats";
-import {
-} from "@/lib/trainer-profile";
 import { regionBadgeTarget } from "@/lib/regions";
 import { resolveItemDisplayName } from "@/lib/shop";
 import { evaluateObjectives } from "@/lib/campaign/objectives";
@@ -41,6 +39,12 @@ import { rankForRating } from "@/lib/pvp/tiers";
 import { loadRaidHomeCard } from "@/lib/raids/state";
 import { loadSafariHomeCard } from "@/lib/safari-home";
 import { loadTowerHomeCard } from "@/lib/tower-home";
+import { getUserSnapshot } from "@/lib/user-snapshot";
+import {
+  HomeDesktopRail,
+  type HomeRailRankEntry,
+} from "@/components/home/home-desktop-rail";
+import type { CurrentExpeditionProps } from "@/components/current-expedition";
 
 const TEAM_SIZE = 6;
 
@@ -52,7 +56,7 @@ const REWARD_KIND_ICONS: Record<"coins" | "energy" | "gems", string> = {
 };
 
 export default async function Home() {
-  const [session, locale] = await Promise.all([auth(), getLocale()]);
+  const [session, locale] = await Promise.all([getAuthSession(), getLocale()]);
 
   if (!session?.user) {
     redirect({ href: "/login", locale });
@@ -63,8 +67,194 @@ export default async function Home() {
   return <Dashboard username={session.user.name ?? ""} userId={session.user.id} />;
 }
 
+type HomeUserSnapshot = NonNullable<Awaited<ReturnType<typeof getUserSnapshot>>>;
+
+function HomeRailSkeleton() {
+  return (
+    <aside
+      className="sticky top-4 hidden h-fit w-[16.5rem] shrink-0 animate-pulse flex-col gap-2 xl:flex 2xl:w-[17.5rem]"
+      aria-hidden
+    >
+      <div className="h-44 rounded-2xl border border-white/8 bg-white/[0.035]" />
+      <div className="h-52 rounded-2xl border border-white/8 bg-white/[0.035]" />
+      <div className="h-24 rounded-2xl border border-white/8 bg-white/[0.035]" />
+      <div className="h-52 rounded-2xl border border-white/8 bg-white/[0.035]" />
+    </aside>
+  );
+}
+
+/**
+ * Isla secundaria del home. PvP, guerras y ranking no bloquean el banner, la
+ * ruta actual ni el equipo: se consultan y transmiten dentro de su Suspense.
+ */
+async function HomeRailSection({
+  userId,
+  username,
+  locale,
+  user,
+  expedition,
+}: {
+  userId: string;
+  username: string;
+  locale: string;
+  user: HomeUserSnapshot;
+  expedition: CurrentExpeditionProps | null;
+}) {
+  const clanId = user.clanMembership?.clan.id ?? null;
+  const [recentPvpMatches, topBoard, activeClanWar] = await Promise.all([
+    prisma.pvpMatch.findMany({
+      where: {
+        OR: [{ challengerId: userId }, { opponentId: userId }],
+        status: { in: ["COMPLETED", "FORFEIT"] },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: {
+        id: true,
+        challengerId: true,
+        winnerId: true,
+        mode: true,
+        createdAt: true,
+        challengerRatingBefore: true,
+        challengerRatingAfter: true,
+        opponentRatingBefore: true,
+        opponentRatingAfter: true,
+        challenger: { select: { username: true, country: true, avatarId: true } },
+        opponent: { select: { username: true, country: true, avatarId: true } },
+      },
+    }),
+    loadCombatPowerBoard("", userId),
+    clanId
+      ? prisma.clanWar.findFirst({
+          where: {
+            status: { in: ["ACTIVE", "COMPLETED"] },
+            OR: [{ clanAId: clanId }, { clanBId: clanId }],
+          },
+          orderBy: { matchedAt: "desc" },
+          include: {
+            clanA: { select: { id: true, name: true, tag: true, emblem: true } },
+            clanB: { select: { id: true, name: true, tag: true, emblem: true } },
+          },
+        })
+      : Promise.resolve(null),
+  ]);
+
+  const dateLabel = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit" });
+  const recent: HomeRailPvpMatch[] = recentPvpMatches.map((match) => {
+    const asChallenger = match.challengerId === userId;
+    const foe = asChallenger ? match.opponent : match.challenger;
+    const before = asChallenger
+      ? match.challengerRatingBefore
+      : match.opponentRatingBefore;
+    const after = asChallenger
+      ? match.challengerRatingAfter
+      : match.opponentRatingAfter;
+    return {
+      id: match.id,
+      won: match.winnerId === userId,
+      opponentName: foe.username,
+      opponentCountry: foe.country ?? "",
+      opponentAvatarId: foe.avatarId,
+      mode: match.mode === "QUICK" ? "QUICK" : "RANKED",
+      ratingDelta: (after ?? before ?? 0) - (before ?? 0),
+      dateLabel: dateLabel.format(match.createdAt).replace(/\//g, "."),
+    };
+  });
+  const standing = rankForRating(user.pvpRating);
+  const pvp: HomeRailPvp = {
+    rating: user.pvpRating,
+    wins: user.pvpWins,
+    losses: user.pvpLosses,
+    tier: standing.tier,
+    division: standing.division,
+    selfName: user.username || username,
+    selfAvatarId: user.avatarId,
+    selfCountry: user.country ?? "",
+    recent,
+  };
+
+  const selfIsA = activeClanWar?.clanAId === clanId;
+  const rival = activeClanWar
+    ? selfIsA
+      ? activeClanWar.clanB
+      : activeClanWar.clanA
+    : null;
+  const clanWars = {
+    clanId,
+    clanName: user.clanMembership?.clan.name ?? null,
+    clanTag: user.clanMembership?.clan.tag ?? null,
+    clanEmblem: user.clanMembership?.clan.emblem ?? null,
+    scoreSelf: activeClanWar
+      ? selfIsA
+        ? activeClanWar.scoreA
+        : activeClanWar.scoreB
+      : null,
+    scoreRival: activeClanWar
+      ? selfIsA
+        ? activeClanWar.scoreB
+        : activeClanWar.scoreA
+      : null,
+    rivalName: rival?.name ?? null,
+    rivalTag: rival?.tag ?? null,
+    rivalEmblem: rival?.emblem ?? null,
+    status: (activeClanWar?.status === "COMPLETED"
+      ? "completed"
+      : activeClanWar
+        ? "active"
+        : "none") as "none" | "active" | "completed",
+  };
+  const top: HomeRailRankEntry[] = topBoard.slice(0, 5).map((row) => ({
+    position: row.position,
+    playerId: row.playerId,
+    playerName: row.playerName,
+    countryCode: row.countryCode ?? "",
+    avatarId: row.avatarId ?? null,
+    combatPower: row.combatPower ?? 0,
+    isCurrentPlayer: Boolean(row.isCurrentPlayer),
+    featured: row.featuredCreature
+      ? {
+          name: row.featuredCreature.name,
+          image: row.featuredCreature.image,
+          isShiny: Boolean(row.featuredCreature.isShiny),
+        }
+      : null,
+  }));
+
+  return (
+    <HomeDesktopRail
+      pvp={pvp}
+      clanWars={clanWars}
+      top={top}
+      expedition={expedition}
+    />
+  );
+}
+
 async function Dashboard({ username, userId }: { username: string; userId: string }) {
-  const [t, tt, tShop, locale, progress, badges] = await Promise.all([
+  /*
+    Todo lo que no depende de `progress`/`pokemon` arranca junto. Antes el home
+    hacía tres olas seriales y además llamaba `loadTrainerStats` (diez queries)
+    para usar solamente rating/victorias/derrotas, campos que ya viven en User.
+  */
+  const [
+    t,
+    tt,
+    tShop,
+    locale,
+    progress,
+    badges,
+    pokemon,
+    bagCounts,
+    ownedHeldItemsRows,
+    eventsSummary,
+    tEvents,
+    tCampaign,
+    tTypes,
+    userRow,
+    raidCard,
+    safariCard,
+    towerCard,
+  ] = await Promise.all([
     getTranslations("home"),
     getTranslations("team"),
     getTranslations("shop"),
@@ -76,34 +266,44 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
         gym: { select: { order: true, badgeName: true, type: true, isElite: true, regionId: true } },
       },
     }),
-  ]);
-
-  const pokemon = await prisma.pokemonInstance.findMany({
-    where: { ownerId: userId, teamSlot: { not: null } },
-    include: {
-      species: true,
-      heldItem: {
-        select: {
-          id: true,
-          name: true,
-          effectText: true,
-          heldEffect: true,
+    prisma.pokemonInstance.findMany({
+      where: { ownerId: userId, teamSlot: { not: null } },
+      include: {
+        species: true,
+        heldItem: {
+          select: {
+            id: true,
+            name: true,
+            effectText: true,
+            heldEffect: true,
+          },
+        },
+        moves: {
+          include: { move: { select: { name: true, type: true, pp: true } } },
+          orderBy: { slot: "asc" },
         },
       },
-      moves: {
-        include: { move: { select: { name: true, type: true, pp: true } } },
-        orderBy: { slot: "asc" },
-      },
-    },
-    orderBy: { teamSlot: "asc" },
-  });
-  const [bagCounts, ownedHeldItemsRows] = await Promise.all([
+      orderBy: { teamSlot: "asc" },
+    }),
     loadSquadBagCounts(userId),
     prisma.inventoryItem.findMany({
       where: { userId, quantity: { gt: 0 }, item: { type: "HELD" } },
       include: { item: true },
     }),
+    loadEventsSummary(userId),
+    getTranslations("events"),
+    getTranslations("campaign"),
+    getTranslations("pokedex.pokemonTypes"),
+    getUserSnapshot(userId),
+    loadRaidHomeCard(userId),
+    loadSafariHomeCard(userId),
+    loadTowerHomeCard(userId),
   ]);
+
+  if (!userRow) {
+    redirect({ href: "/login", locale });
+    return null;
+  }
 
   if (pokemon.length === 0) {
     return (
@@ -124,67 +324,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       </div>
     );
   }
-
-  const [
-    eventsSummary,
-    tEvents,
-    tCampaign,
-    tTypes,
-    userRow,
-    trainerStats,
-    recentPvpMatches,
-    raidCard,
-    safariCard,
-    towerCard,
-  ] = await Promise.all([
-    loadEventsSummary(userId),
-    getTranslations("events"),
-    getTranslations("campaign"),
-    getTranslations("pokedex.pokemonTypes"),
-    prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: {
-        username: true,
-        avatarId: true,
-        homeBannerId: true,
-        homeFrameId: true,
-        country: true,
-        coins: true,
-        lastHealAt: true,
-        clanMembership: {
-          select: {
-            clan: { select: { id: true, tag: true, name: true, emblem: true } },
-          },
-        },
-      },
-    }),
-    loadTrainerStats(prisma, userId),
-    prisma.pvpMatch.findMany({
-      where: {
-        OR: [{ challengerId: userId }, { opponentId: userId }],
-        status: { in: ["COMPLETED", "FORFEIT"] },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-      select: {
-        id: true,
-        challengerId: true,
-        opponentId: true,
-        winnerId: true,
-        mode: true,
-        createdAt: true,
-        challengerRatingBefore: true,
-        challengerRatingAfter: true,
-        opponentRatingBefore: true,
-        opponentRatingAfter: true,
-        challenger: { select: { username: true, country: true, avatarId: true } },
-        opponent: { select: { username: true, country: true, avatarId: true } },
-      },
-    }),
-    loadRaidHomeCard(userId),
-    loadSafariHomeCard(userId),
-    loadTowerHomeCard(userId),
-  ]);
 
   const giftLabels = {
     eyebrow: tEvents("eyebrow"),
@@ -211,12 +350,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   };
 
   const speciesIds = [...new Set(pokemon.map((p) => p.speciesId))];
-  const [evolutionChains, ownedEvolutionItems] = await Promise.all([
-    loadEvolutionChainsForTeam(userId, speciesIds),
-    loadOwnedEvolutionItems(userId),
-  ]);
-  const ownedEvolutionItemNames = [...ownedEvolutionItems];
-
   const bySlot = new Map(pokemon.map((p) => [p.teamSlot, p]));
   const slots = Array.from({ length: TEAM_SIZE }, (_, i) => bySlot.get(i + 1) ?? null);
   const regionBadges = badges.filter((b) => b.gym.regionId === progress.currentRegionId);
@@ -224,14 +357,42 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     progress,
     regionBadges.map((b) => b.gym.order),
   );
-  const mapLocations = await loadMapLocations(userId, progress);
-
-  const spawnSpecies = expedition
-    ? await prisma.species.findMany({
+  const milestone = expedition?.milestone;
+  const badgeTotal = regionBadgeTarget(progress.currentRegionId);
+  const [
+    evolutionChains,
+    ownedEvolutionItems,
+    mapLocations,
+    spawnSpecies,
+    eliteGym,
+    milestoneGym,
+  ] = await Promise.all([
+    loadEvolutionChainsForTeam(userId, speciesIds),
+    loadOwnedEvolutionItems(userId),
+    loadMapLocations(userId, progress),
+    expedition
+      ? prisma.species.findMany({
         where: { id: { in: expedition.stage.spawnSpeciesIds } },
         select: { types: true },
       })
-    : [];
+      : Promise.resolve([]),
+    milestone && isEliteMilestone(milestone, badgeTotal)
+      ? prisma.gym.findFirst({
+          where: {
+            order: milestone.gymOrder,
+            regionId: progress.currentRegionId,
+          },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
+    milestone?.kind === "gym"
+      ? prisma.gym.findFirst({
+          where: { order: milestone.gymOrder, regionId: progress.currentRegionId },
+          select: { leaderName: true, type: true },
+        })
+      : Promise.resolve(null),
+  ]);
+  const ownedEvolutionItemNames = [...ownedEvolutionItems];
   const wildTypes = Array.from(new Set(spawnSpecies.flatMap((s) => s.types))).slice(0, 4);
 
   const locationStages = expedition
@@ -240,8 +401,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
   const locationStagesDone = locationStages.filter((s) =>
     progress.completedStageIds.includes(s.id),
   ).length;
-
-  const milestone = expedition?.milestone;
 
   /**
    * Próximo paso del jugador.
@@ -254,17 +413,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
    * directo — si no, el CTA del hero aterriza en una pantalla que se ve
    * terminada y no ofrece a dónde seguir.
    */
-  const badgeTotal = regionBadgeTarget(progress.currentRegionId);
-  const eliteGym =
-    milestone && isEliteMilestone(milestone, badgeTotal)
-      ? await prisma.gym.findFirst({
-          where: {
-            order: milestone.gymOrder,
-            regionId: progress.currentRegionId,
-          },
-          select: { id: true },
-        })
-      : null;
   const eliteGymHref = eliteGym ? `/gyms/${eliteGym.id}` : null;
 
   /*
@@ -272,31 +420,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
     consulta más sólo cuando el hito es un gimnasio; en rutas y región
     completa el panel no se dibuja.
   */
-  const milestoneGym =
-    milestone?.kind === "gym"
-      ? await prisma.gym.findFirst({
-          where: { order: milestone.gymOrder, regionId: progress.currentRegionId },
-          select: { leaderName: true, type: true },
-        })
-      : null;
-  const topBoard = await loadCombatPowerBoard("", userId);
-  const railTop = topBoard.slice(0, 5).map((row) => ({
-    position: row.position,
-    playerId: row.playerId,
-    playerName: row.playerName,
-    countryCode: row.countryCode ?? "",
-    avatarId: row.avatarId ?? null,
-    combatPower: row.combatPower ?? 0,
-    isCurrentPlayer: Boolean(row.isCurrentPlayer),
-    featured: row.featuredCreature
-      ? {
-          name: row.featuredCreature.name,
-          image: row.featuredCreature.image,
-          isShiny: Boolean(row.featuredCreature.isShiny),
-        }
-      : null,
-  }));
-
   const members: HomeSquadMember[] = slots
     .filter((instance): instance is NonNullable<typeof instance> => instance !== null)
     .map((instance): HomeSquadMember => {
@@ -551,84 +674,6 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       })()
     : null;
 
-  const dateLabelFmt = new Intl.DateTimeFormat(locale, {
-    day: "2-digit",
-    month: "2-digit",
-  });
-  const railPvpRecent: HomeRailPvpMatch[] = recentPvpMatches.map((m) => {
-    const asChallenger = m.challengerId === userId;
-    const foe = asChallenger ? m.opponent : m.challenger;
-    const before = asChallenger ? m.challengerRatingBefore : m.opponentRatingBefore;
-    const after = asChallenger ? m.challengerRatingAfter : m.opponentRatingAfter;
-    return {
-      id: m.id,
-      won: m.winnerId === userId,
-      opponentName: foe.username,
-      opponentCountry: foe.country ?? "",
-      opponentAvatarId: foe.avatarId,
-      mode: m.mode === "QUICK" ? "QUICK" : "RANKED",
-      ratingDelta: (after ?? before ?? 0) - (before ?? 0),
-      dateLabel: dateLabelFmt.format(m.createdAt).replace(/\//g, "."),
-    };
-  });
-  const pvpStanding = rankForRating(trainerStats.pvpRating);
-  const railPvp: HomeRailPvp = {
-    rating: trainerStats.pvpRating,
-    wins: trainerStats.pvpWins,
-    losses: trainerStats.pvpLosses,
-    tier: pvpStanding.tier,
-    division: pvpStanding.division,
-    selfName: userRow.username || username,
-    selfAvatarId: userRow.avatarId,
-    selfCountry: userRow.country ?? "",
-    recent: railPvpRecent,
-  };
-
-  const myClanId = userRow.clanMembership?.clan.id ?? null;
-  const activeClanWar = myClanId
-    ? await prisma.clanWar.findFirst({
-        where: {
-          status: { in: ["ACTIVE", "COMPLETED"] },
-          OR: [{ clanAId: myClanId }, { clanBId: myClanId }],
-        },
-        orderBy: { matchedAt: "desc" },
-        include: {
-          clanA: { select: { id: true, name: true, tag: true, emblem: true } },
-          clanB: { select: { id: true, name: true, tag: true, emblem: true } },
-        },
-      })
-    : null;
-  const warIsSelfA = activeClanWar?.clanAId === myClanId;
-  const warRival = activeClanWar
-    ? warIsSelfA
-      ? activeClanWar.clanB
-      : activeClanWar.clanA
-    : null;
-  const clanWarsRail = {
-    clanId: myClanId,
-    clanName: userRow.clanMembership?.clan.name ?? null,
-    clanTag: userRow.clanMembership?.clan.tag ?? null,
-    clanEmblem: userRow.clanMembership?.clan.emblem ?? null,
-    scoreSelf: activeClanWar
-      ? warIsSelfA
-        ? activeClanWar.scoreA
-        : activeClanWar.scoreB
-      : null,
-    scoreRival: activeClanWar
-      ? warIsSelfA
-        ? activeClanWar.scoreB
-        : activeClanWar.scoreA
-      : null,
-    rivalName: warRival?.name ?? null,
-    rivalTag: warRival?.tag ?? null,
-    rivalEmblem: warRival?.emblem ?? null,
-    status: (activeClanWar?.status === "COMPLETED"
-      ? "completed"
-      : activeClanWar
-        ? "active"
-        : "none") as "none" | "active" | "completed",
-  };
-
   const teamMaxLevel = pokemon.reduce((max, p) => Math.max(max, p.level), 0);
   const hurtCount = pokemon.filter((p) => {
     const maxHp = calculateMaxHp(p.species.baseHp, p.level, p.ptConstitution);
@@ -678,6 +723,7 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
       routeHero={
         expeditionProps ? (
           <HomeRouteHero
+            key="home-route-hero"
             expedition={expeditionProps}
             nextChallenge={nextChallenge}
             claimableCount={claimableCount}
@@ -730,11 +776,17 @@ async function Dashboard({ username, userId }: { username: string; userId: strin
           teamMaxLevel,
         },
       }}
-      rail={{
-        pvp: railPvp,
-        clanWars: clanWarsRail,
-        top: railTop,
-      }}
+      desktopRail={
+        <Suspense key="home-desktop-rail" fallback={<HomeRailSkeleton />}>
+          <HomeRailSection
+            userId={userId}
+            username={username}
+            locale={locale}
+            user={userRow}
+            expedition={expeditionProps}
+          />
+        </Suspense>
+      }
       showEnergyHint={badges.filter((b) => !b.gym.isElite).length < 3}
     />
     </>

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import {
   CAMPAIGN_DEFAULTS,
@@ -39,13 +40,19 @@ function toRow(row: {
  * salir desde la UI. La reparación es silenciosa y va al primer stage disponible
  * de la zona (o al arranque del juego si la zona entera desapareció).
  */
-export async function ensureCampaignProgress(userId: string): Promise<CampaignProgressRow> {
-  const row = await prisma.campaignProgress.upsert({
-    where: { userId },
-    create: { userId, ...CAMPAIGN_DEFAULTS },
-    // No-op on race / already exists — keep player progress.
-    update: {},
-  });
+async function loadCampaignProgress(userId: string): Promise<CampaignProgressRow> {
+  let row = await prisma.campaignProgress.findUnique({ where: { userId } });
+
+  if (!row) {
+    // Backfill único para cuentas antiguas. `createMany + skipDuplicates`
+    // conserva la seguridad ante dos requests iniciales simultáneos sin
+    // convertir cada lectura normal en un UPSERT (escritura + lock).
+    await prisma.campaignProgress.createMany({
+      data: [{ userId, ...CAMPAIGN_DEFAULTS }],
+      skipDuplicates: true,
+    });
+    row = await prisma.campaignProgress.findUniqueOrThrow({ where: { userId } });
+  }
 
   const repair = repairCampaignProgressPatch(toRow(row));
   if (!repair) return toRow(row);
@@ -56,3 +63,6 @@ export async function ensureCampaignProgress(userId: string): Promise<CampaignPr
   });
   return toRow(fixed);
 }
+
+/** Una sola lectura por usuario y request, aunque layout y página la pidan. */
+export const ensureCampaignProgress = cache(loadCampaignProgress);

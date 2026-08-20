@@ -1,5 +1,6 @@
 import type { CampaignRegionId } from "./types";
 import { findLocation } from "./content";
+import { regionMapSrc as gameRegionMapSrc } from "@/lib/regions";
 
 /** Map asset registry. Missing files fall back to the shared Kanto overview. */
 
@@ -32,7 +33,9 @@ export function campaignBannerForChapter(
   const src =
     regionId === "kanto"
       ? `/campaign/banners/chapter-${pad}.png`
-      : regionPath;
+      : regionId === "johto"
+        ? gameRegionMapSrc(regionId)
+        : regionPath;
   return {
     src,
     objectPosition: "50% 50%",
@@ -129,7 +132,8 @@ export function campaignMapSrc(locationId: string, hasLocalAsset = false): strin
     return campaignMapPath(locationId);
   }
   // Convención: asumimos el path aunque el archivo aún no exista (Johto).
-  if (findLocation(locationId)) return campaignMapPath(locationId);
+  const found = findLocation(locationId);
+  if (found) return found.regionId === "kanto" ? campaignMapPath(locationId) : gameRegionMapSrc(found.regionId);
   return FALLBACK_MAP;
 }
 

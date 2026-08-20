@@ -156,8 +156,9 @@ export function HubHelpPanel({
   useEffect(() => {
     // Primera visita: abierto. Después queda cerrado por defecto.
     if (!hasSeen(storageKey)) {
-      setOpen(true);
       markSeen(storageKey);
+      const raf = requestAnimationFrame(() => setOpen(true));
+      return () => cancelAnimationFrame(raf);
     }
   }, [storageKey]);
 
@@ -214,8 +215,12 @@ export function JourneyOnboarding({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    if (!hasSeen("journey-onboarding")) setVisible(true);
+    const shouldShow = !hasSeen("journey-onboarding");
+    const raf = requestAnimationFrame(() => {
+      setMounted(true);
+      if (shouldShow) setVisible(true);
+    });
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   if (!mounted || !visible) return null;

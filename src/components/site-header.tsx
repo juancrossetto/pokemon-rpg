@@ -1,7 +1,7 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getAuthSession } from "@/lib/auth-session";
+import { getUserSnapshot } from "@/lib/user-snapshot";
 import { getCurrentEnergy } from "@/lib/energy";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/user-menu";
@@ -23,28 +23,24 @@ import { HandbookHost } from "@/components/handbook/handbook-modal";
 import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
 import { FriendsRailToggle } from "@/components/friends/friends-rail-toggle";
 import { CombatLockChip, type CombatLockKind } from "@/components/combat-lock-chip";
+import { countPendingRewards } from "@/lib/events/state";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   const [t, tUx, tHandbook, session, locale] = await Promise.all([
     getTranslations("nav"),
     getTranslations("ux"),
     getTranslations("handbook"),
-    auth(),
+    getAuthSession(),
     getLocale(),
   ]);
-  const user = session?.user
-    ? await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          coins: true,
-          gems: true,
-          avatarId: true,
-          energy: true,
-          energyMax: true,
-          energyUpdatedAt: true,
-        },
-      })
-    : null;
+  const [user, notifications, activeTowerRun, eventsPending] = session?.user
+    ? await Promise.all([
+        getUserSnapshot(session.user.id),
+        listNotifications(session.user.id),
+        getActiveTowerRun(session.user.id, { includeParked: true }),
+        countPendingRewards(session.user.id),
+      ])
+    : [null, null, null, 0];
   const energy = user
     ? getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt)
     : null;
@@ -83,12 +79,6 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
     resources: t("resources"),
     add: t("resourceAdd"),
   };
-  const notifications = session?.user
-    ? await listNotifications(session.user.id)
-    : null;
-  const activeTowerRun = session?.user?.id
-    ? await getActiveTowerRun(session.user.id, { includeParked: true })
-    : null;
   const lock = combatLock;
   const lockedHref =
     lock?.kind === "battle"
@@ -145,9 +135,7 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
     ),
     home: t("home"),
     soon: t("soon"),
-    // Eventos ya no está en la nav: sus pendientes se muestran en el home
-    // (quick action + widget), así que no hay badges que calcular acá.
-    badges: {},
+    badges: { eventsPending },
   };
 
   /**

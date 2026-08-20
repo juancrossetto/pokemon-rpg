@@ -31,6 +31,7 @@ import {
 } from "@/actions/clan";
 import { getClanWarHubState } from "@/actions/clan-war";
 import { ClanWarPanel } from "@/components/clans/clan-war-panel";
+import { serverNow, weekStart } from "@/lib/events/time";
 
 const SPECIES_STATS_SELECT = {
   baseHp: true,
@@ -184,7 +185,19 @@ export default async function ClanDetailPage({
   const headerPrimary = isPresetEmblem(emblem) ? "var(--color-pokeball-red)" : emblem.primaryColor;
   const headerSecondary = isPresetEmblem(emblem) ? "#0a0a0a" : emblem.secondaryColor;
 
-  const warHub = await getClanWarHubState(clanId);
+  const memberIds = members.map((member) => member.userId);
+  const since = weekStart(serverNow());
+  const [warHub, missionWins, missionCatches, raidContribution] = await Promise.all([
+    getClanWarHubState(clanId),
+    prisma.battleLog.count({ where: { userId: { in: memberIds }, userWon: true, createdAt: { gte: since } } }),
+    prisma.pokemonInstance.count({ where: { ownerId: { in: memberIds }, caughtAt: { gte: since } } }),
+    prisma.weeklyRaidScore.aggregate({ where: { userId: { in: memberIds }, updatedAt: { gte: since } }, _sum: { totalDamage: true } }),
+  ]);
+  const clanMissions = [
+    { id: "wins", current: missionWins, target: Math.max(100, members.length * 20), href: "/battle", icon: "swords" },
+    { id: "catches", current: missionCatches, target: Math.max(50, members.length * 10), href: "/campaign", icon: "catching_pokemon" },
+    { id: "raids", current: raidContribution._sum.totalDamage ?? 0, target: Math.max(100_000, members.length * 50_000), href: "/raids", icon: "crisis_alert" },
+  ] as const;
 
   const activeTab: ClanHubTab = myRole === null ? "overview" : tab;
 
@@ -568,17 +581,27 @@ export default async function ClanDetailPage({
         {myRole !== null && activeTab === "missions" && (
           <section className="mb-4 rounded-xl border border-white/10 bg-glass-surface p-4">
             <h2 className="text-headline-md text-on-surface">{t("hub.missionsTitle")}</h2>
+            <p className="mt-1 text-label-sm text-on-surface-variant">{t("hub.missionsSubtitle")}</p>
             <div className="mt-3 flex flex-col gap-2">
-              <article className="rounded-lg border border-white/10 bg-black/20 p-3">
-                <p className="text-label-md text-on-surface">{t("hub.demoMissionOneTitle")}</p>
-                <p className="text-label-sm text-on-surface-variant">{t("hub.demoMissionOneDesc")}</p>
-                <p className="mt-1 text-label-sm text-tertiary">{t("hub.demoMissionOneProgress")}</p>
-              </article>
-              <article className="rounded-lg border border-white/10 bg-black/20 p-3">
-                <p className="text-label-md text-on-surface">{t("hub.demoMissionTwoTitle")}</p>
-                <p className="text-label-sm text-on-surface-variant">{t("hub.demoMissionTwoDesc")}</p>
-                <p className="mt-1 text-label-sm text-tertiary">{t("hub.demoMissionTwoProgress")}</p>
-              </article>
+              {clanMissions.map((mission) => {
+                const pct = Math.min(100, Math.round((mission.current / mission.target) * 100));
+                return (
+                  <article key={mission.id} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                    <div className="flex items-start gap-3">
+                      <span className="material-symbols-outlined rounded-lg bg-white/5 p-2 text-[19px]! text-tertiary">{mission.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <p className="text-label-md font-semibold text-on-surface">{t(`hub.missions.${mission.id}.title`)}</p>
+                          <span className="font-mono text-[11px] text-white/48">{mission.current.toLocaleString(locale)} / {mission.target.toLocaleString(locale)}</span>
+                        </div>
+                        <p className="text-label-sm text-on-surface-variant">{t(`hub.missions.${mission.id}.desc`)}</p>
+                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/7"><span className="block h-full rounded-full bg-tertiary" style={{ width: `${pct}%` }} /></div>
+                      </div>
+                      <Link href={mission.href} aria-label={t("hub.missionGo")} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/10 text-white/55 transition hover:border-tertiary/35 hover:text-tertiary"><span className="material-symbols-outlined text-[18px]!">arrow_forward</span></Link>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </section>
         )}

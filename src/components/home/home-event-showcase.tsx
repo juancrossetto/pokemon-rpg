@@ -323,7 +323,7 @@ export function HomeEventBanner({ data, locale }: { data: HomeEventShowcaseData;
               // Los artes ya vienen comprimidos; con el 75 por defecto se
               // recomprime encima y aparecen bloques en los degradés.
               quality={90}
-              priority={i === 0}
+              loading={i === 0 ? "eager" : "lazy"}
               className="event-banner__img"
             />
           </span>
@@ -424,21 +424,76 @@ export function HomeEventBanner({ data, locale }: { data: HomeEventShowcaseData;
 
 export function HomeEventCarousel({ data }: { data: HomeEventShowcaseData }) {
   const t = useTranslations("home.hub.eventShowcase");
+  const railRef = useRef<HTMLDivElement>(null);
+  const [activeCard, setActiveCard] = useState(0);
+  const cardCount = 4;
+
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    let frame = 0;
+    const syncActiveCard = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const cards = [...rail.children] as HTMLElement[];
+        const center = rail.scrollLeft + rail.clientWidth / 2;
+        let nearest = 0;
+        let distance = Number.POSITIVE_INFINITY;
+        cards.forEach((card, index) => {
+          const nextDistance = Math.abs(card.offsetLeft + card.offsetWidth / 2 - center);
+          if (nextDistance < distance) {
+            distance = nextDistance;
+            nearest = index;
+          }
+        });
+        setActiveCard(nearest);
+      });
+    };
+    rail.addEventListener("scroll", syncActiveCard, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      rail.removeEventListener("scroll", syncActiveCard);
+    };
+  }, []);
+
+  const scrollToCard = (index: number) => {
+    const rail = railRef.current;
+    const card = rail?.children.item(index) as HTMLElement | null;
+    if (!rail || !card) return;
+    rail.scrollTo({
+      left: card.offsetLeft - (rail.clientWidth - card.offsetWidth) / 2,
+      behavior: "smooth",
+    });
+  };
 
   return (
     <section className="home-event-carousel" aria-labelledby="home-events-title">
       <header className="home-event-carousel__head">
-        {/* Sin eyebrow: "Ahora en Kanto" no agregaba nada sobre "Eventos
-            activos" y le comía una línea al encabezado.
-
-            Sin flechas tampoco: quedaban flotando sobre el fondo, sin card que
-            las contuviera, justo debajo de la esquina del banner. El riel ya se
-            recorre arrastrando y con la rueda —tiene `overflow-x: auto` y
-            scroll-snap—, así que no perdió ninguna forma de navegarse. */}
         <h2 id="home-events-title">{t("carouselTitle")}</h2>
+        <div className="flex items-center gap-2">
+          <Link href="/events" className="text-[11px] font-semibold text-white/45 transition hover:text-white">
+            {t("carouselViewAll")}
+          </Link>
+          <span className="home-event-carousel__controls">
+            <button
+              type="button"
+              aria-label={t("carouselPrev")}
+              onClick={() => scrollToCard((activeCard - 1 + cardCount) % cardCount)}
+            >
+              <span className="material-symbols-outlined" aria-hidden>chevron_left</span>
+            </button>
+            <button
+              type="button"
+              aria-label={t("carouselNext")}
+              onClick={() => scrollToCard((activeCard + 1) % cardCount)}
+            >
+              <span className="material-symbols-outlined" aria-hidden>chevron_right</span>
+            </button>
+          </span>
+        </div>
       </header>
 
-      <div className="home-event-carousel__rail">
+      <div ref={railRef} className="home-event-carousel__rail">
         <EventCard
           href="/raids"
           kind="raid"
@@ -535,6 +590,21 @@ export function HomeEventCarousel({ data }: { data: HomeEventShowcaseData }) {
             />
           }
         />
+      </div>
+      <div className="-mt-1 flex justify-center gap-1.5 sm:hidden" aria-label={t("carouselPages")}>
+        {Array.from({ length: cardCount }, (_, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => scrollToCard(index)}
+            aria-label={t("carouselPage", { page: index + 1 })}
+            aria-current={activeCard === index ? "true" : undefined}
+            className={[
+              "h-1.5 rounded-full transition-all",
+              activeCard === index ? "w-5 bg-pokeball-red" : "w-1.5 bg-white/20",
+            ].join(" ")}
+          />
+        ))}
       </div>
     </section>
   );

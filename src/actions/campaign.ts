@@ -10,7 +10,10 @@ import {
   findStage,
   isLocationUnlocked,
   isStageUnlocked,
+  journeyProgressPercent,
 } from "@/lib/campaign";
+import { regionDefaults } from "@/lib/regions";
+import { lockUsers } from "@/lib/db-locks";
 
 export type CampaignActionResult =
   | { success: true }
@@ -103,6 +106,36 @@ export async function setFarmingStage(
 
   revalidateCampaign(locale);
   return { success: true };
+}
+
+/** Abre la segunda liga una vez completado el recorrido y las 8 medallas de Kanto. */
+export async function startJohto(locale: string): Promise<CampaignActionResult> {
+  const userId = await requireUserId();
+  if (!userId) return { success: false, error: "unauthorized" };
+  await ensureCampaignProgress(userId);
+  let unlocked = false;
+  await prisma.$transaction(async (tx) => {
+    await lockUsers(tx, userId);
+    const [progress, badges] = await Promise.all([
+      tx.campaignProgress.findUniqueOrThrow({ where: { userId } }),
+      tx.badge.count({ where: { userId, gym: { regionId: "kanto", isElite: false } } }),
+    ]);
+    if (progress.currentRegionId !== "kanto" || badges < 8 || journeyProgressPercent(progress) < 100) return;
+    const defaults = regionDefaults("johto");
+    await tx.campaignProgress.update({
+      where: { userId },
+      data: { currentRegionId: "johto", ...defaults, lastMilestoneId: "region:johto" },
+    });
+    unlocked = true;
+  });
+  if (!unlocked) return { success: false, error: "locked" };
+  revalidateCampaign(locale);
+  return { success: true };
+}
+
+export async function startJohtoFromForm(locale: string, formData: FormData): Promise<void> {
+  void formData;
+  await startJohto(locale);
 }
 
 export async function devSetCampaignProgress(

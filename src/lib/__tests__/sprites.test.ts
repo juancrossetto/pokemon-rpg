@@ -12,18 +12,18 @@ describe("pokemon sprite fallbacks", () => {
     )).toBe(94);
   });
 
-  it("uses official-artwork for common and shiny, same as production", () => {
+  it("uses the same-origin artwork cache for common and shiny", () => {
     const fromDb =
       "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/27.png";
     expect(uiSpriteUrl(fromDb, false)).toBe(
-      "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/27.png",
+      "/api/pokemon-art/normal/27.png",
     );
     expect(uiSpriteUrl(fromDb, true)).toBe(
-      "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/27.png",
+      "/api/pokemon-art/shiny/27.png",
     );
   });
 
-  it("prefers the DB official-artwork URL and never pixel, HOME or Showdown", () => {
+  it("prefers same-origin art and keeps the DB URL as a remote fallback", () => {
     const original =
       "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/94.png";
     const sources = pokemonSpriteCandidates({
@@ -31,7 +31,8 @@ describe("pokemon sprite fallbacks", () => {
       speciesName: "gengar",
     });
 
-    expect(sources[0]).toBe(original);
+    expect(sources[0]).toBe("/api/pokemon-art/normal/94.png");
+    expect(sources).toContain(original);
     expect(sources).not.toContain(
       "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png",
     );
@@ -47,10 +48,10 @@ describe("pokemon sprite fallbacks", () => {
       isShiny: true,
     });
 
-    expect(sources[0]).toBe(
+    expect(sources[0]).toBe("/api/pokemon-art/shiny/27.png");
+    expect(sources).toContain(
       "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/27.png",
     );
-    expect(sources.every((source) => source.includes("/official-artwork/shiny/"))).toBe(true);
   });
 
   it("keeps local safari sprites ahead of remote art", () => {

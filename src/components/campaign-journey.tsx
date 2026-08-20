@@ -87,16 +87,16 @@ function translateRequirement(
   return t(req.descriptionKey, params);
 }
 
-/** Orden Kanto → tipo de medalla (arte local, no trainers). */
-const BADGE_TYPE_BY_ORDER: Record<number, string> = {
-  1: "rock",
-  2: "water",
-  3: "electric",
-  4: "grass",
-  5: "poison",
-  6: "psychic",
-  7: "fire",
-  8: "ground",
+/** Región + orden → tipo de medalla (arte local, no trainers). */
+const BADGE_TYPE_BY_REGION: Record<string, Record<number, string>> = {
+  kanto: {
+    1: "rock", 2: "water", 3: "electric", 4: "grass",
+    5: "poison", 6: "psychic", 7: "fire", 8: "ground",
+  },
+  johto: {
+    1: "flying", 2: "bug", 3: "normal", 4: "ghost",
+    5: "steel", 6: "fighting", 7: "ice", 8: "dragon",
+  },
 };
 
 const PATH_PROGRESS_FILL = "campaign-warm-bar";
@@ -226,6 +226,7 @@ export function CampaignJourney({
   summary,
   gymRequirements,
   regionMapSrc,
+  regionNameKey,
   milestone,
   progress,
   earnedGymOrders,
@@ -239,6 +240,7 @@ export function CampaignJourney({
   summary: JourneySummary;
   gymRequirements: Record<string, GymRequirement>;
   regionMapSrc: string;
+  regionNameKey: string;
   milestone: CampaignMilestone;
   progress: CampaignProgressRow;
   earnedGymOrders: number[];
@@ -409,7 +411,9 @@ export function CampaignJourney({
           : chapter?.gym?.id ?? null;
     const badgeType =
       (locationId ? gymRequirements[locationId]?.badgeType : null) ??
-      (barAction.gymOrder != null ? BADGE_TYPE_BY_ORDER[barAction.gymOrder] : null);
+      (barAction.gymOrder != null
+        ? BADGE_TYPE_BY_REGION[progress.currentRegionId]?.[barAction.gymOrder]
+        : null);
     return badgeType ? gymBadgeImageUrl(badgeType) : null;
   })();
   const helpBullets = (tUx.raw("help.campaign") as string[]) ?? [];
@@ -419,8 +423,8 @@ export function CampaignJourney({
     zone?.nameKey ??
     farmingZone?.nameKey ??
     primaryAction.locationNameKey ??
-    "regions.kanto";
-  const bannerArt = campaignBannerForChapter(chapter?.number ?? 1);
+    regionNameKey;
+  const bannerArt = campaignBannerForChapter(chapter?.number ?? 1, progress.currentRegionId);
   const chapterBadgeEarned =
     chapter?.gymOrder != null && earnedGymOrders.includes(chapter.gymOrder);
 
@@ -618,8 +622,13 @@ export function CampaignJourney({
               bannerSrc={bannerArt.src}
               bannerObjectPosition={bannerArt.objectPosition}
               locationName={t(locationLabelKey)}
-              regionLabel={t("regions.kanto")}
+              regionLabel={t(regionNameKey)}
               chapterLabel={chapter ? `${t("chapter")} ${chapter.number}` : null}
+              chapterFlavor={
+                progress.currentRegionId === "johto" && chapter
+                  ? t(`johtoChapters.${chapter.number}`)
+                  : null
+              }
               browsingHint={
                 !viewingCurrentChapter && farmingZone
                   ? t("browsingChapterHint", { name: t(farmingZone.nameKey) })
@@ -653,6 +662,7 @@ export function CampaignJourney({
                   <div className="absolute right-0 top-full z-50 mt-2 flex w-[min(100vw-1.5rem,22rem)] flex-col gap-2 sm:w-96">
                     <JourneyStrip
                       chapters={chapters}
+                      regionId={progress.currentRegionId}
                       activeIndex={chapterIndex}
                       currentIndex={currentChapterIdx}
                       onPick={(i) => {
@@ -664,7 +674,10 @@ export function CampaignJourney({
                       currentLabel={t("nodeCurrent")}
                     />
                     <JourneySummaryCard summary={summary} mapSrc={regionMapSrc} />
-                    <BadgeMedalRow earnedGymOrders={earnedGymOrders} />
+                    <BadgeMedalRow
+                      earnedGymOrders={earnedGymOrders}
+                      regionId={progress.currentRegionId}
+                    />
                     <HubHelpPanel
                       storageKey="hub-help-campaign"
                       bullets={helpBullets}
@@ -756,13 +769,13 @@ export function CampaignJourney({
                   */}
                   <span className="campaign-chapter-tab__art" aria-hidden>
                     <Image
-                      src={campaignBannerForChapter(c.number).src}
+                      src={campaignBannerForChapter(c.number, progress.currentRegionId).src}
                       alt=""
                       fill
                       sizes="220px"
                       loading="eager"
                       className="object-cover"
-                      style={{ objectPosition: campaignBannerForChapter(c.number).objectPosition }}
+                      style={{ objectPosition: campaignBannerForChapter(c.number, progress.currentRegionId).objectPosition }}
                     />
                   </span>
                   {!c.unlocked ? (
@@ -994,6 +1007,7 @@ export function CampaignJourney({
 
 function JourneyStrip({
   chapters,
+  regionId,
   activeIndex,
   currentIndex,
   onPick,
@@ -1003,6 +1017,7 @@ function JourneyStrip({
   currentLabel,
 }: {
   chapters: Chapter[];
+  regionId: string;
   activeIndex: number;
   currentIndex: number;
   onPick: (i: number) => void;
@@ -1024,7 +1039,9 @@ function JourneyStrip({
         {chapters.map((c, i) => {
           const selected = i === activeIndex;
           const isCurrent = i === currentIndex;
-          const badgeType = c.gymOrder != null ? BADGE_TYPE_BY_ORDER[c.gymOrder] : null;
+          const badgeType = c.gymOrder != null
+            ? BADGE_TYPE_BY_REGION[regionId]?.[c.gymOrder]
+            : null;
           return (
             <button
               key={c.number}
@@ -2015,7 +2032,13 @@ function ObjectiveClaimControl({
  * solo no cuenta. En el rail de la derecha estiraba la columna con datos que
  * no hablan de la zona seleccionada.
  */
-function BadgeMedalRow({ earnedGymOrders }: { earnedGymOrders: number[] }) {
+function BadgeMedalRow({
+  earnedGymOrders,
+  regionId,
+}: {
+  earnedGymOrders: number[];
+  regionId: string;
+}) {
   const t = useTranslations("campaign");
   const tGyms = useTranslations("gyms");
   const earned = [...earnedGymOrders].sort((a, b) => a - b);
@@ -2024,7 +2047,7 @@ function BadgeMedalRow({ earnedGymOrders }: { earnedGymOrders: number[] }) {
   return (
     <ul className="campaign-badge-row" aria-label={t("badges")}>
       {earned.map((order) => {
-        const type = BADGE_TYPE_BY_ORDER[order];
+        const type = BADGE_TYPE_BY_REGION[regionId]?.[order];
         if (!type) return null;
         const key = `badges.${order}`;
         const label = tGyms.has(key) ? tGyms(key) : type;

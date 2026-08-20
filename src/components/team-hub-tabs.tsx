@@ -60,6 +60,7 @@ export function TeamHubTabs({
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+    const frame = requestAnimationFrame(() => {
 
     function measure(): IndicatorBox | null {
       const node = root?.querySelector<HTMLElement>("[data-active]");
@@ -104,6 +105,8 @@ export function TeamHubTabs({
     setAnimate(true);
     setIndicator(next);
     writeCache(next);
+    });
+    return () => cancelAnimationFrame(frame);
   }, [active]);
 
   useEffect(() => {

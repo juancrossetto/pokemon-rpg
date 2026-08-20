@@ -9,7 +9,6 @@ import type { HomeSquadMember } from "@/components/home/squad-types";
 import type { HeldItemLabels, OwnedHeldItem } from "@/components/held-item-panel";
 import type { DailyState } from "@/lib/events/state";
 import type { SquadBagCounts } from "@/lib/squad-bag";
-import type { HomeRailClanWars, HomeRailPvp } from "@/lib/home-hub";
 import {
   HomeEventBanner,
   HomeEventCarousel,
@@ -18,10 +17,6 @@ import {
 import { HealTutorial, JourneyOnboarding } from "@/components/journey-guidance";
 import { HomeEnergyHint } from "@/components/home/home-energy-hint";
 import { hasSeen } from "@/lib/journey-ux";
-import {
-  HomeDesktopRail,
-  type HomeRailRankEntry,
-} from "@/components/home/home-desktop-rail";
 
 export function HomeGameHub({
   locale,
@@ -31,7 +26,7 @@ export function HomeGameHub({
   events,
   giftLabels,
   squad,
-  rail,
+  desktopRail,
   showEnergyHint = false,
 }: {
   locale: string;
@@ -65,11 +60,8 @@ export function HomeGameHub({
       teamMaxLevel: number;
     } | null;
   };
-  rail: {
-    pvp: HomeRailPvp;
-    clanWars: HomeRailClanWars;
-    top: HomeRailRankEntry[];
-  };
+  /** Isla del servidor: PvP/clanes/ranking se transmite después del contenido principal. */
+  desktopRail: ReactNode;
   /** Novato (pocas medallas): pista de gastar energía en Aventura. */
   showEnergyHint?: boolean;
 }) {
@@ -107,12 +99,7 @@ export function HomeGameHub({
           )}
 
           <div className="flex min-w-0 gap-4 md:gap-5">
-            <HomeDesktopRail
-              pvp={rail.pvp}
-              clanWars={rail.clanWars}
-              top={rail.top}
-              expedition={expedition}
-            />
+            {desktopRail}
 
             <div className="home-body-stack mx-auto flex min-w-0 flex-1 flex-col gap-2.5 md:gap-6 xl:gap-5">
               {/*

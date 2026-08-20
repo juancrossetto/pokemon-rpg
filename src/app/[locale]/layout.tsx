@@ -16,6 +16,7 @@ import {
   bootSplashRevealScript,
 } from "@/lib/boot-splash";
 import { iconsReadyEarlyScript } from "@/lib/icons-ready";
+import { gameSettingsEarlyScript } from "@/lib/game-settings";
 import { standaloneEarlyScript, standaloneNavCriticalCss } from "@/lib/standalone-early";
 import { AppShell } from "@/components/app-shell";
 import { AppShellFallback } from "@/components/app-shell-fallback";
@@ -182,7 +183,7 @@ export default async function LocaleLayout({
         />
         <InlineScript
           id="boot-splash-early"
-          html={`${bootSplashEarlyScript()}(${iconsReadyEarlyScript()})();`}
+          html={`${bootSplashEarlyScript()}(${iconsReadyEarlyScript()})();${gameSettingsEarlyScript()}`}
         />
         {/* PWA iOS: marca is-standalone antes del paint (sólo scroll, no mueve el nav). */}
         <InlineScript id="standalone-early" html={standaloneEarlyScript()} />

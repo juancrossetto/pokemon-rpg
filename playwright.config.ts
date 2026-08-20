@@ -52,9 +52,15 @@ export default defineConfig({
     },
     {
       name: "chromium",
-      testIgnore: /onboarding\.spec\.ts/,
+      testIgnore: /(onboarding|mobile-shell)\.spec\.ts/,
       dependencies: ["setup"],
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+    },
+    {
+      name: "mobile-chromium",
+      testMatch: /mobile-shell\.spec\.ts/,
+      dependencies: ["setup"],
+      use: { ...devices["Pixel 7"], storageState: STORAGE_STATE },
     },
   ],
   webServer: {

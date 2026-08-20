@@ -418,7 +418,7 @@ function TeamSlot({
                 width={160}
                 height={160}
                 draggable={false}
-                preload
+                loading={isLead ? "eager" : "lazy"}
                 className={`pointer-events-none relative z-[1] h-[88%] w-auto max-h-[72px] max-w-[72px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105 md:h-[130px] md:w-[130px] md:max-h-none md:max-w-none ${
                   fainted ? "grayscale" : ""
                 }`}

@@ -24,6 +24,8 @@ import { loadSquadBagCounts } from "@/lib/load-squad-bag";
 import { calculateMaxHp } from "@/lib/stats";
 import { spriteFor } from "@/lib/shiny";
 import { resolveItemDisplayName } from "@/lib/shop";
+import { startJohtoFromForm } from "@/actions/campaign";
+import { SubmitButton } from "@/components/submit-button";
 import {
   healCooldownMsLeft,
   healRushCost,
@@ -221,11 +223,25 @@ export default async function CampaignPage({
     z.trainers.filter((tr) => tr.defeated).map((tr) => tr.id),
   );
   const milestone = nextMilestone(progress, earnedOrders, defeatedTrainerIds);
+  const canStartJohto = progress.currentRegionId === "kanto" && summary.badges >= 8 && summary.journeyPercent >= 100;
 
   return (
     <div className="flex-1 px-margin-mobile md:px-margin-desktop py-4 md:py-6">
       <div className="mx-auto max-w-[1400px]">
+        {canStartJohto ? (
+          <section className="mb-4 flex flex-wrap items-center gap-4 rounded-2xl border border-sky-300/20 bg-[radial-gradient(circle_at_90%_20%,rgba(56,189,248,.16),transparent_38%),#11151c] p-4 sm:p-5">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-300">{tHome("johtoUnlock.eyebrow")}</p>
+              <h2 className="mt-1 text-lg font-bold text-white">{tHome("johtoUnlock.title")}</h2>
+              <p className="mt-1 text-xs text-white/50">{tHome("johtoUnlock.body")}</p>
+            </div>
+            <form action={startJohtoFromForm.bind(null, locale)}>
+              <SubmitButton label={tHome("johtoUnlock.cta")} pendingLabel={tHome("johtoUnlock.traveling")} className="ui-btn-primary min-h-11 px-5 text-xs font-bold" />
+            </form>
+          </section>
+        ) : null}
         <CampaignJourney
+          key={progress.currentRegionId}
           locale={locale}
           chapters={chapters}
           initialChapter={initialChapter}
@@ -234,6 +250,7 @@ export default async function CampaignPage({
           summary={summary}
           gymRequirements={requirementByLocationId}
           regionMapSrc={regionMapSrc(progress.currentRegionId)}
+          regionNameKey={`regions.${progress.currentRegionId}`}
           milestone={milestone}
           progress={progress}
           earnedGymOrders={earnedOrders}

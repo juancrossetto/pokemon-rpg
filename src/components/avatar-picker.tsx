@@ -67,7 +67,8 @@ export function AvatarPicker({
   const storyOptions = useMemo(() => avatarOptionsInStoryOrder(), []);
 
   useEffect(() => {
-    setMounted(true);
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   function openPicker() {

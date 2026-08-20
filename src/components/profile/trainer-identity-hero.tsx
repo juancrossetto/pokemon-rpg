@@ -15,10 +15,12 @@ import { homeFrameById } from "@/lib/home-frames";
 import { homeFrameMarcoStyle, homeFrameSectionStyle } from "@/lib/home-frame-style";
 import type { TrainerAppearance } from "@/lib/trainer-appearance";
 import type { PvpDivision, PvpTier } from "@/lib/pvp/tiers";
+import { ShareCardButton, type ShareCardLabels } from "@/components/share-card-button";
 
 export type IdentityHeroLabels = {
   power: string;
   level: string;
+  share: ShareCardLabels;
 };
 
 /**
@@ -34,7 +36,6 @@ export function TrainerIdentityHero({
   username,
   companionLine,
   sceneLabel,
-  country: _country,
   rankPct,
   rankLabel,
   pvpTier,
@@ -152,6 +153,24 @@ export function TrainerIdentityHero({
       </div>
 
       <div aria-hidden className="home-identity__marco" style={homeFrameMarcoStyle(frame)} />
+
+      <div className="tp-hero__share absolute z-20">
+        <ShareCardButton
+          fileName={`trainer-${username.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+          labels={labels.share}
+          card={{
+            eyebrow: rankLabel,
+            title: username,
+            subtitle: companionLine ?? pvpTierLabel,
+            accent: companionAccent,
+            stats: [
+              { label: labels.power, value: String(power) },
+              { label: labels.level, value: String(topLevel) },
+              { label: pvpTierLabel, value: rankLabel },
+            ],
+          }}
+        />
+      </div>
 
       <div className="tp-hero__body relative z-[1]">
         {/* Cabecera editorial: nombre → liga PvP → metadatos. Ver `.tp-id__*`. */}

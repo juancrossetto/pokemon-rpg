@@ -96,7 +96,10 @@ export function ResourceDeltaValue({
   const readyRef = useRef(false);
   const clearFxRef = useRef<number | null>(null);
   const valueRef = useRef(value);
-  valueRef.current = value;
+
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   function stopTicking() {
     if (rafRef.current !== null) {

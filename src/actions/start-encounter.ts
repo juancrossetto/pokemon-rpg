@@ -12,14 +12,13 @@ import { getActiveGymRun, revalidateCombatUi } from "@/lib/battle-lock";
 import { ensureCampaignProgress } from "@/lib/campaign/ensure";
 import { findStage, isStageUnlocked, resolveSpawn } from "@/lib/campaign";
 import { rollShiny } from "@/lib/shiny";
-import { recordSeenSpecies } from "@/lib/zone-progress";
 import { pickEventItemName, rollExplorationEvent } from "@/lib/campaign/events";
 import {
   capWildLevelForEarlyGame,
   raiseWildLevelForPlayer,
 } from "@/lib/early-game-balance";
-import { markSpeciesSeen } from "@/lib/pokedex-seen";
 import { allowUserAction } from "@/lib/rate-limit";
+import { revalidatePokedex } from "@/lib/pokedex-seen";
 
 export type StartEncounterResult =
   | { success: true }
@@ -176,6 +175,21 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
       },
     });
 
+    // El objetivo de zona y la Pokédex global representan el mismo encuentro.
+    // Guardarlos dentro de la transacción evita que una caída entre escrituras
+    // deje a Johto (o cualquier región futura) visto en una pantalla y oculto
+    // en la otra.
+    await Promise.all([
+      tx.seenSpecies.createMany({
+        data: [{ userId, locationId: progress.farmingLocationId, speciesId: wildSpeciesId }],
+        skipDuplicates: true,
+      }),
+      tx.pokedexEntry.createMany({
+        data: [{ userId, speciesId: wildSpeciesId }],
+        skipDuplicates: true,
+      }),
+    ]);
+
     return { ok: true as const };
   });
 
@@ -186,9 +200,7 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
     return;
   }
 
-  await recordSeenSpecies(userId, progress.farmingLocationId, wildSpeciesId);
-  await markSpeciesSeen(userId, wildSpeciesId);
-
+  revalidatePokedex();
   revalidatePath(`/${locale}/battle`);
   revalidateCombatUi(locale);
   redirect({ href: "/battle", locale });

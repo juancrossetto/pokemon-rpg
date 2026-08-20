@@ -5,6 +5,7 @@ import { CdnImage as Image } from "@/components/cdn-image";
 import { PokemonImage } from "@/components/pokemon-image";
 import { neonTypeColor } from "@/lib/type-colors";
 import { itemHdIconUrl } from "@/lib/item-hd-icons";
+import { useBodyScrollLock } from "@/lib/scroll-lock";
 import {
   diffNewlyCaught,
   markDexEntriesSeen,
@@ -65,6 +66,22 @@ export type PokedexLabels = {
     spe: string;
     capture: string;
     evolves: string;
+  };
+  detail: {
+    close: string;
+    owned: string;
+    inTeam: string;
+    inPc: string;
+    shinyOwned: string;
+    baseStats: string;
+    evolutionLine: string;
+    habitats: string;
+    noHabitat: string;
+    captureRate: string;
+    researchMilestones: string;
+    nextMilestone: string;
+    milestoneComplete: string;
+    openHint: string;
   };
   unknown: string;
   /** Sello de las especies registradas desde la última visita. */
@@ -192,6 +209,21 @@ export function PokedexTerminal({
   const [view, setView] = useState<DexView>("grid");
   const [query, setQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const selectedEntry = useMemo(
+    () => entries.find((entry) => entry.id === selectedId) ?? null,
+    [entries, selectedId],
+  );
+  useBodyScrollLock(selectedEntry !== null);
+
+  useEffect(() => {
+    if (!selectedEntry) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedId(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedEntry]);
 
   // Sobre el dataset completo, no sobre `visible`: una especie nueva sigue
   // siendo nueva aunque el filtro activo no la esté mostrando ahora.
@@ -280,15 +312,17 @@ export function PokedexTerminal({
     return sorted;
   }, [entries, regionDef.generation, query, type, quick, sort, labels.regions, labels.pokemonTypes, region]);
 
-  const completionPct = regionProg
+  const discoveryPct = regionProg
     ? regionProg.total === 0
       ? 0
-      : Math.round((regionProg.caught / regionProg.total) * 1000) / 10
+      : Math.round((regionProg.seen / regionProg.total) * 1000) / 10
     : 0;
 
   const filtersActive = quick !== "all" || Boolean(type) || sort !== "number";
   const primaryQuick: DexQuickFilter[] = ["all", "seen", "caught", "missing"];
   const extraQuick = QUICK_FILTERS.filter((f) => !primaryQuick.includes(f));
+  const researchMilestones = [25, 50, 75, 100] as const;
+  const nextResearchMilestone = researchMilestones.find((value) => discoveryPct < value);
 
   return (
     <div className="flex flex-col gap-3 md:gap-6">
@@ -379,7 +413,7 @@ export function PokedexTerminal({
                     ? labels.comingSoon
                     : locked
                       ? labels.locked
-                      : `${rp?.caught ?? 0}/${rp?.total ?? 0}`}
+                      : `${labels.progress.seen} ${rp?.seen ?? 0}/${rp?.total ?? 0}`}
                 </span>
               </button>
             );
@@ -387,20 +421,37 @@ export function PokedexTerminal({
         </div>
 
         {regionProg && regionProg.total > 0 && !regionLocked ? (
-          <div className="mt-2 hidden space-y-1.5 md:block">
+          <div className="mt-2 space-y-2 rounded-lg border border-white/8 bg-black/20 px-3 py-2.5">
             <div className="flex items-baseline justify-between gap-3">
-              <span className="text-[10px] uppercase tracking-[0.16em] text-on-surface-variant">
-                {labels.completion}
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-on-surface-variant">
+                {labels.detail.researchMilestones}
               </span>
-              <span className="font-mono text-[11px] text-electric-yellow tabular-nums">
-                {completionPct}%
+              <span className="font-mono text-[10px] text-electric-yellow tabular-nums">
+                {nextResearchMilestone
+                  ? labels.detail.nextMilestone.replace("{percent}", String(nextResearchMilestone))
+                  : labels.detail.milestoneComplete}
               </span>
             </div>
-            <div className="h-1 overflow-hidden rounded-sm bg-white/10">
-              <div
-                className="h-full bg-electric-yellow/70 transition-all duration-500"
-                style={{ width: `${completionPct}%` }}
-              />
+            <div className="grid grid-cols-4 gap-1.5">
+              {researchMilestones.map((milestone) => {
+                const reached = discoveryPct >= milestone;
+                return (
+                  <div key={milestone} className="space-y-1">
+                    <div className="h-1 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className={reached ? "h-full w-full bg-electric-yellow" : "h-full bg-electric-yellow/45"}
+                        style={reached ? undefined : { width: `${Math.min(100, discoveryPct / milestone * 100)}%` }}
+                      />
+                    </div>
+                    <p className={[
+                      "text-center font-mono text-[9px] tabular-nums",
+                      reached ? "text-electric-yellow" : "text-white/35",
+                    ].join(" ")}>
+                      {reached ? "✓ " : ""}{milestone}%
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : null}
@@ -564,8 +615,7 @@ export function PokedexTerminal({
         {progress.regions.slice(0, 4).map((r) => {
           const empty = r.total === 0;
           const locked = !empty && !r.playable;
-          const pct =
-            empty || locked ? 0 : Math.round((r.caught / r.total) * 100);
+          const pct = empty || locked ? 0 : Math.round((r.seen / r.total) * 100);
           return (
             <button
               key={r.id}
@@ -576,7 +626,11 @@ export function PokedexTerminal({
               <div className="flex items-baseline justify-between gap-2">
                 <span className="text-label-sm text-on-surface">{labels.regions[r.id]}</span>
                 <span className="font-mono text-[10px] text-on-surface-variant">
-                  {empty ? labels.comingSoon : locked ? labels.locked : `${pct}%`}
+                  {empty
+                    ? labels.comingSoon
+                    : locked
+                      ? labels.locked
+                      : `${labels.progress.seen} ${r.seen}/${r.total}`}
                 </span>
               </div>
               <div className="mt-1.5 h-0.5 overflow-hidden rounded-sm bg-white/10">
@@ -617,7 +671,7 @@ export function PokedexTerminal({
           ) : null}
           {view === "grid" ? (
             <ul className="grid grid-cols-3 gap-x-1 gap-y-4 sm:grid-cols-4 sm:gap-x-2 sm:gap-y-5 md:grid-cols-5 lg:grid-cols-6">
-              {visible.map((entry) => (
+              {visible.map((entry, index) => (
                 <DexCard
                   key={entry.id}
                   entry={entry}
@@ -625,12 +679,18 @@ export function PokedexTerminal({
                   forceLocked={regionLocked}
                   shinyAtlas={quick === "shiny"}
                   isNew={newlyCaught.has(entry.id)}
+                  eager={index === 0}
+                  onOpen={
+                    !regionLocked && entry.status !== "unseen"
+                      ? () => setSelectedId(entry.id)
+                      : undefined
+                  }
                 />
               ))}
             </ul>
           ) : (
             <ul className="flex flex-col gap-1">
-              {visible.map((entry) => (
+              {visible.map((entry, index) => (
                 <DexListRow
                   key={entry.id}
                   entry={entry}
@@ -638,12 +698,26 @@ export function PokedexTerminal({
                   forceLocked={regionLocked}
                   shinyAtlas={quick === "shiny"}
                   isNew={newlyCaught.has(entry.id)}
+                  eager={index === 0}
+                  onOpen={
+                    !regionLocked && entry.status !== "unseen"
+                      ? () => setSelectedId(entry.id)
+                      : undefined
+                  }
                 />
               ))}
             </ul>
           )}
         </>
       )}
+      {selectedEntry ? (
+        <PokedexDetailDialog
+          entry={selectedEntry}
+          entries={entries}
+          labels={labels}
+          onClose={() => setSelectedId(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -715,6 +789,8 @@ function DexCard({
   forceLocked = false,
   shinyAtlas = false,
   isNew = false,
+  eager = false,
+  onOpen,
 }: {
   entry: PokedexSpeciesCard;
   labels: PokedexLabels;
@@ -723,6 +799,9 @@ function DexCard({
   shinyAtlas?: boolean;
   /** Registrada desde la última visita: sello + pulso de entrada. */
   isNew?: boolean;
+  /** Primera imagen visible: candidata a LCP. */
+  eager?: boolean;
+  onOpen?: () => void;
 }) {
   const speciesUnseen = forceLocked || entry.status === "unseen";
   const shinyLocked = shinyAtlas && !entry.hasShiny;
@@ -741,10 +820,15 @@ function DexCard({
 
   return (
     <li>
-      <article
+      <button
+        type="button"
+        onClick={onOpen}
+        disabled={!onOpen}
         title={tip}
+        aria-label={onOpen ? `${entry.name} · ${labels.detail.openHint}` : tip}
         className={[
-          "group relative flex flex-col items-center gap-0.5 px-0.5 py-1 transition",
+          "group relative flex w-full flex-col items-center gap-0.5 px-0.5 py-1 transition",
+          onOpen ? "cursor-pointer rounded-lg hover:bg-white/[0.035] focus-visible:outline-2 focus-visible:outline-pokeball-red/70" : "cursor-default",
           // Sólo las nuevas. Antes el pulso salía en TODAS las capturadas a la
           // vez en cada carga: con la Pokédex avanzada era la pantalla entera
           // latiendo y no señalaba nada.
@@ -789,6 +873,7 @@ function DexCard({
               alt={unseen ? labels.unknown : entry.name}
               width={128}
               height={128}
+              loading={eager ? "eager" : "lazy"}
               className={[
                 "h-[78%] w-[78%] object-contain transition duration-200 group-hover:scale-[1.06] group-active:scale-[0.98]",
                 unseen
@@ -846,7 +931,7 @@ function DexCard({
         >
           {speciesUnseen ? labels.unknown : entry.name}
         </p>
-      </article>
+      </button>
     </li>
   );
 }
@@ -857,6 +942,8 @@ function DexListRow({
   forceLocked = false,
   shinyAtlas = false,
   isNew = false,
+  eager = false,
+  onOpen,
 }: {
   entry: PokedexSpeciesCard;
   labels: PokedexLabels;
@@ -864,6 +951,8 @@ function DexListRow({
   shinyAtlas?: boolean;
   /** Registrada desde la última visita. */
   isNew?: boolean;
+  eager?: boolean;
+  onOpen?: () => void;
 }) {
   const primary = entry.types[0] ?? "normal";
   const glow = neonTypeColor(primary);
@@ -875,10 +964,15 @@ function DexListRow({
 
   return (
     <li className="relative">
-      <div
+      <button
+        type="button"
+        onClick={onOpen}
+        disabled={!onOpen}
+        aria-label={onOpen ? `${entry.name} · ${labels.detail.openHint}` : labels.unknown}
         className={[
           "group relative flex w-full items-center gap-3 overflow-hidden px-2 py-2 text-left transition",
           "hover:bg-white/[0.04] active:bg-white/[0.06]",
+          onOpen ? "cursor-pointer focus-visible:outline-2 focus-visible:outline-pokeball-red/70" : "cursor-default",
           unseen ? "opacity-70" : "",
         ].join(" ")}
         style={
@@ -907,6 +1001,7 @@ function DexListRow({
               alt={unseen ? labels.unknown : entry.name}
               width={40}
               height={40}
+              loading={eager ? "eager" : "lazy"}
               className={[
                 "h-10 w-10 object-contain",
                 unseen ? "brightness-0 invert opacity-[0.5]" : "",
@@ -932,8 +1027,194 @@ function DexListRow({
         <span className="relative z-10">
           <StatusIcons entry={entry} labels={labels} inline />
         </span>
-      </div>
+      </button>
     </li>
+  );
+}
+
+function PokedexDetailDialog({
+  entry,
+  entries,
+  labels,
+  onClose,
+}: {
+  entry: PokedexSpeciesCard;
+  entries: PokedexSpeciesCard[];
+  labels: PokedexLabels;
+  onClose: () => void;
+}) {
+  const relatedIds = [entry.evolvesFromId, entry.id, ...entry.evolvesToIds].filter(
+    (id): id is number => id != null,
+  );
+  const evolutionLine = [...new Set(relatedIds)]
+    .map((id) => entries.find((candidate) => candidate.id === id))
+    .filter((candidate): candidate is PokedexSpeciesCard => candidate != null);
+  const stats = [
+    [labels.stats.hp, entry.baseHp],
+    [labels.stats.atk, entry.baseAttack],
+    [labels.stats.def, entry.baseDefense],
+    [labels.stats.spa, entry.baseSpAtk],
+    [labels.stats.spd, entry.baseSpDef],
+    [labels.stats.spe, entry.baseSpeed],
+  ] as const;
+
+  return (
+    <div
+      className="fixed inset-0 z-80 flex items-end justify-center bg-black/78 p-0 backdrop-blur-sm sm:items-center sm:p-5"
+      role="presentation"
+      onClick={onClose}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pokedex-detail-title"
+        data-testid="pokedex-detail"
+        className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-t-[26px] border border-white/12 bg-[radial-gradient(circle_at_20%_0%,rgba(232,121,249,.13),transparent_34%),#101117] p-5 shadow-2xl sm:rounded-[26px] sm:p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-pokeball-red">
+              #{String(entry.id).padStart(3, "0")} · {labels.research}
+            </p>
+            <h2 id="pokedex-detail-title" className="page-title mt-1 text-2xl capitalize text-white sm:text-3xl">
+              {entry.name}
+            </h2>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {entry.types.map((type) => (
+                <span
+                  key={type}
+                  className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                  style={{ color: neonTypeColor(type), borderColor: `${neonTypeColor(type)}66` }}
+                >
+                  {labels.pokemonTypes[type.toLowerCase()] ?? type}
+                </span>
+              ))}
+              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${RARITY_STYLES[entry.rarity].border} ${RARITY_STYLES[entry.rarity].text}`}>
+                {labels.rarity[entry.rarity] ?? entry.rarity}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={labels.detail.close}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white/60 transition hover:text-white"
+          >
+            <span className="material-symbols-outlined text-[20px]!">close</span>
+          </button>
+        </header>
+
+        <div className="mt-5 grid gap-5 md:grid-cols-[15rem_minmax(0,1fr)]">
+          <div className="space-y-3">
+            <div className="relative mx-auto aspect-square w-full max-w-56 rounded-2xl border border-white/8 bg-black/25">
+              <PokemonImage
+                src={entry.spriteUrl}
+                speciesId={entry.id}
+                speciesName={entry.name}
+                isShiny={entry.hasShiny}
+                alt={entry.name}
+                width={240}
+                height={240}
+                className="h-full w-full object-contain p-4 drop-shadow-[0_18px_18px_rgba(0,0,0,.6)]"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { key: "owned", label: labels.detail.owned, value: entry.ownedCount, icon: "catching_pokemon" },
+                { key: "team", label: labels.detail.inTeam, value: entry.teamCount, icon: "groups" },
+                { key: "pc", label: labels.detail.inPc, value: entry.pcCount, icon: "dns" },
+                { key: "shiny", label: labels.detail.shinyOwned, value: entry.shinyCount, icon: "auto_awesome" },
+              ].map(({ key, label, value, icon }) => (
+                <div
+                  key={key}
+                  data-testid={`pokedex-${key}`}
+                  className="rounded-xl border border-white/8 bg-black/25 px-3 py-2"
+                >
+                  <span className="material-symbols-outlined text-[15px]! text-white/35">{icon}</span>
+                  <p className="font-mono text-lg font-bold tabular-nums text-white">{value}</p>
+                  <p className="text-[10px] text-white/45">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            <section>
+              <div className="mb-2 flex items-baseline justify-between gap-3">
+                <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">
+                  {labels.detail.baseStats}
+                </h3>
+                <span className="font-mono text-[10px] text-white/40">
+                  {labels.detail.captureRate}: {entry.captureRate}/255
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {stats.map(([label, value]) => (
+                  <div key={label}>
+                    <div className="flex justify-between font-mono text-[10px] text-white/55">
+                      <span>{label}</span><span>{value}</span>
+                    </div>
+                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-linear-to-r from-pokeball-red to-secondary"
+                        style={{ width: `${Math.max(4, Math.round(value / 255 * 100))}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">
+                {labels.detail.evolutionLine}
+              </h3>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {evolutionLine.map((candidate, index) => {
+                  const hidden = candidate.status === "unseen";
+                  return (
+                    <div key={candidate.id} className="flex items-center gap-2">
+                      {index > 0 ? <span className="material-symbols-outlined text-[16px]! text-white/25">arrow_forward</span> : null}
+                      <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-black/20 px-2 py-1.5">
+                        <PokemonImage
+                          src={candidate.spriteUrl}
+                          speciesId={candidate.id}
+                          speciesName={candidate.name}
+                          alt={hidden ? labels.unknown : candidate.name}
+                          width={40}
+                          height={40}
+                          className={hidden ? "h-9 w-9 object-contain brightness-0 invert opacity-35" : "h-9 w-9 object-contain"}
+                        />
+                        <span className="text-xs capitalize text-white/75">{hidden ? labels.unknown : candidate.name}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section>
+              <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">
+                {labels.detail.habitats}
+              </h3>
+              {entry.encounterLocations.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {entry.encounterLocations.map((location) => (
+                    <span key={location.id} className="rounded-lg border border-white/10 bg-white/[0.035] px-2.5 py-1.5 text-xs text-white/65">
+                      <span className="mr-1 text-[9px] font-bold uppercase text-pokeball-red">{labels.regions[location.regionId]}</span>
+                      {location.name}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-white/40">{labels.detail.noHabitat}</p>
+              )}
+            </section>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
 

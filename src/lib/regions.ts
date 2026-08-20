@@ -11,7 +11,7 @@
 export type GameRegionId = "kanto" | "johto" | "hoenn" | "sinnoh";
 
 export type RegionDefaults = {
-  unlockedLocationId: string;
+  highestUnlockedLocationId: string;
   selectedLocationId: string;
   farmingLocationId: string;
   farmingStageId: string;
@@ -38,7 +38,7 @@ export type RegionDef = {
 };
 
 const KANTO_DEFAULTS: RegionDefaults = {
-  unlockedLocationId: "route-1",
+  highestUnlockedLocationId: "route-1",
   selectedLocationId: "pallet-town",
   farmingLocationId: "pallet-town",
   farmingStageId: "pallet-1",
@@ -46,7 +46,7 @@ const KANTO_DEFAULTS: RegionDefaults = {
 
 /** Defaults placeholder para regiones sin contenido — ids no deben colisionar con Kanto. */
 const EMPTY_DEFAULTS: RegionDefaults = {
-  unlockedLocationId: "johto-new-bark",
+  highestUnlockedLocationId: "johto-new-bark",
   selectedLocationId: "johto-new-bark",
   farmingLocationId: "johto-new-bark",
   farmingStageId: "johto-new-bark-1",
@@ -74,7 +74,7 @@ export const REGIONS: Record<GameRegionId, RegionDef> = {
     mapSrc: "/campaign/maps/regions/johto.webp",
     badgeTarget: 8,
     speciesRange: [152, 251],
-    playable: false,
+    playable: true,
     // Catálogo sembrado y visible en el hub; playable false → bloqueado.
     gymsAvailable: true,
     // Especies en DB para la Pokédex; la liga sigue cerrada (sin campaña).
@@ -93,7 +93,7 @@ export const REGIONS: Record<GameRegionId, RegionDef> = {
     gymsAvailable: false,
     speciesAvailable: false,
     defaults: {
-      unlockedLocationId: "hoenn-littleroot",
+      highestUnlockedLocationId: "hoenn-littleroot",
       selectedLocationId: "hoenn-littleroot",
       farmingLocationId: "hoenn-littleroot",
       farmingStageId: "hoenn-littleroot-1",
@@ -111,7 +111,7 @@ export const REGIONS: Record<GameRegionId, RegionDef> = {
     gymsAvailable: false,
     speciesAvailable: false,
     defaults: {
-      unlockedLocationId: "sinnoh-twinleaf",
+      highestUnlockedLocationId: "sinnoh-twinleaf",
       selectedLocationId: "sinnoh-twinleaf",
       farmingLocationId: "sinnoh-twinleaf",
       farmingStageId: "sinnoh-twinleaf-1",

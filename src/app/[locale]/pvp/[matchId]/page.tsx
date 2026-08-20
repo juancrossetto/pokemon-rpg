@@ -142,6 +142,12 @@ export default async function PvpMatchPage({
         modeRanked: t("modeRanked"),
         modeQuick: t("modeQuick"),
         coinsAwarded: (n) => t("coinsAwarded", { n }),
+        share: {
+          share: t("share.action"),
+          preparing: t("share.preparing"),
+          shared: t("share.shared"),
+          downloaded: t("share.downloaded"),
+        },
       }}
       formatTurnLine={(raw) => formatPvpTurnLine(raw, tLog, locale)}
     />

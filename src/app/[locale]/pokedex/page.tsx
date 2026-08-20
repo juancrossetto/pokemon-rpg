@@ -1,10 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { redirectIfInBattle } from "@/lib/battle-lock";
-import { syncPokedexSeen } from "@/lib/pokedex-seen";
+import { loadPokedexSpecies, loadPokedexUserState } from "@/lib/pokedex-data";
 import {
+  encounterLocationsForSpecies,
   LEGENDARY_IDS,
   MYTHICAL_IDS,
   POKEDEX_REGIONS,
@@ -24,7 +24,11 @@ export default async function PokedexPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const [t, session] = await Promise.all([getTranslations("pokedex"), auth()]);
+  const [t, tCampaign, session] = await Promise.all([
+    getTranslations("pokedex"),
+    getTranslations("campaign"),
+    auth(),
+  ]);
 
   if (!session?.user) {
     redirect({ href: "/login", locale });
@@ -33,50 +37,50 @@ export default async function PokedexPage({
 
   const userId = session.user.id;
   await redirectIfInBattle(userId, locale);
-  await syncPokedexSeen(userId);
 
-  const [species, owned, seenRows] = await Promise.all([
-    prisma.species.findMany({
-      orderBy: { id: "asc" },
-      select: {
-        id: true,
-        name: true,
-        types: true,
-        spriteUrl: true,
-        generation: true,
-        captureRate: true,
-        baseHp: true,
-        baseAttack: true,
-        baseDefense: true,
-        baseSpAtk: true,
-        baseSpDef: true,
-        baseSpeed: true,
-        evolvesFromId: true,
-        evolvesTo: { select: { id: true } },
-      },
-    }),
-    prisma.pokemonInstance.findMany({
-      where: { ownerId: userId },
-      select: {
-        speciesId: true,
-        isShiny: true,
-        isFavorite: true,
-      },
-    }),
-    prisma.pokedexEntry.findMany({
-      where: { userId },
-      select: { speciesId: true },
-    }),
+  const [species, userState] = await Promise.all([
+    loadPokedexSpecies(),
+    loadPokedexUserState(userId),
   ]);
+  const { owned } = userState;
+  const seenIds = new Set(userState.seenIds);
 
-  const caughtIds = new Set(owned.map((o) => o.speciesId));
-  const seenIds = new Set(seenRows.map((s) => s.speciesId));
-  for (const id of caughtIds) seenIds.add(id);
+  const ownership = new Map<
+    number,
+    { total: number; team: number; pc: number; shiny: number; favorite: boolean }
+  >();
+  for (const pokemon of owned) {
+    const stats = ownership.get(pokemon.speciesId) ?? {
+      total: 0,
+      team: 0,
+      pc: 0,
+      shiny: 0,
+      favorite: false,
+    };
+    stats.total += 1;
+    if (pokemon.teamSlot == null) stats.pc += 1;
+    else stats.team += 1;
+    if (pokemon.isShiny) stats.shiny += 1;
+    if (pokemon.isFavorite) stats.favorite = true;
+    ownership.set(pokemon.speciesId, stats);
+  }
 
-  const shinySpecies = new Set(owned.filter((o) => o.isShiny).map((o) => o.speciesId));
-  const favoriteSpecies = new Set(owned.filter((o) => o.isFavorite).map((o) => o.speciesId));
+  const caughtIds = new Set(ownership.keys());
+  const shinySpecies = new Set(
+    [...ownership].filter(([, stats]) => stats.shiny > 0).map(([speciesId]) => speciesId),
+  );
+  const favoriteSpecies = new Set(
+    [...ownership].filter(([, stats]) => stats.favorite).map(([speciesId]) => speciesId),
+  );
 
   const entries: PokedexSpeciesCard[] = species.map((s) => {
+    const ownedStats = ownership.get(s.id) ?? {
+      total: 0,
+      team: 0,
+      pc: 0,
+      shiny: 0,
+      favorite: false,
+    };
     let status: PokedexSpeciesCard["status"] = "unseen";
     if (caughtIds.has(s.id)) {
       status = "caught";
@@ -110,6 +114,15 @@ export default async function PokedexPage({
       isMythical,
       hasShiny: shinySpecies.has(s.id),
       isFavorite: favoriteSpecies.has(s.id),
+      ownedCount: ownedStats.total,
+      teamCount: ownedStats.team,
+      pcCount: ownedStats.pc,
+      shinyCount: ownedStats.shiny,
+      encounterLocations: encounterLocationsForSpecies(s.id).map((location) => ({
+        id: location.id,
+        name: tCampaign(location.nameKey),
+        regionId: location.regionId,
+      })),
     };
   });
 
@@ -248,6 +261,22 @@ export default async function PokedexPage({
       spe: t("stats.spe"),
       capture: t("stats.capture"),
       evolves: t("stats.evolves"),
+    },
+    detail: {
+      close: t("detail.close"),
+      owned: t("detail.owned"),
+      inTeam: t("detail.inTeam"),
+      inPc: t("detail.inPc"),
+      shinyOwned: t("detail.shinyOwned"),
+      baseStats: t("detail.baseStats"),
+      evolutionLine: t("detail.evolutionLine"),
+      habitats: t("detail.habitats"),
+      noHabitat: t("detail.noHabitat"),
+      captureRate: t("detail.captureRate"),
+      researchMilestones: t("detail.researchMilestones"),
+      nextMilestone: t("detail.nextMilestone", { percent: "{percent}" }),
+      milestoneComplete: t("detail.milestoneComplete"),
+      openHint: t("detail.openHint"),
     },
     unknown: t("unknown"),
     newEntry: t("newEntry"),

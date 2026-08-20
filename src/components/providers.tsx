@@ -7,6 +7,8 @@ import { AppBootWarmup } from "@/components/app-boot-warmup";
 import { WorldBgmController } from "@/components/world-bgm-controller";
 import { GameSettingsRuntime } from "@/components/game-settings-runtime";
 import { PwaUpdateManager } from "@/components/pwa-update-manager";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
+import { WebVitals } from "@/components/web-vitals";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +19,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <WorldBgmController />
         <GameSettingsRuntime />
         <PwaUpdateManager />
+        <PwaInstallPrompt />
+        <WebVitals />
         {children}
       </OptimisticAvatarProvider>
     </SessionProvider>

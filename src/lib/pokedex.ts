@@ -1,6 +1,7 @@
 /** Datos y helpers de la Pokédex de investigación — sin Prisma (usable en client). */
 
 import { listRegions, type GameRegionId } from "@/lib/regions";
+import { REGION_CONTENT } from "@/lib/campaign/content";
 
 export type DexStatus = "unseen" | "seen" | "caught";
 
@@ -147,6 +148,35 @@ export function isLegendarySpecies(id: number): boolean {
   return LEGENDARY_IDS.has(id) || MYTHICAL_IDS.has(id);
 }
 
+export type DexEncounterLocation = {
+  id: string;
+  nameKey: string;
+  regionId: GameRegionId;
+};
+
+const ENCOUNTER_LOCATIONS = (() => {
+  const index = new Map<number, Map<string, DexEncounterLocation>>();
+  for (const region of Object.values(REGION_CONTENT)) {
+    for (const location of region.locations) {
+      for (const speciesId of new Set(location.stages.flatMap((stage) => stage.spawnSpeciesIds))) {
+        const locations = index.get(speciesId) ?? new Map<string, DexEncounterLocation>();
+        locations.set(location.id, {
+          id: location.id,
+          nameKey: location.nameKey,
+          regionId: location.regionId,
+        });
+        index.set(speciesId, locations);
+      }
+    }
+  }
+  return index;
+})();
+
+/** Zonas jugables donde una especie puede aparecer, sin Prisma. */
+export function encounterLocationsForSpecies(speciesId: number): DexEncounterLocation[] {
+  return [...(ENCOUNTER_LOCATIONS.get(speciesId)?.values() ?? [])];
+}
+
 export type PokedexSpeciesCard = {
   id: number;
   name: string;
@@ -172,6 +202,17 @@ export type PokedexSpeciesCard = {
   hasShiny: boolean;
   /** El entrenador marcó favorito algún ejemplar. */
   isFavorite: boolean;
+  /** Ejemplares reales: equipo + PC. */
+  ownedCount: number;
+  teamCount: number;
+  pcCount: number;
+  shinyCount: number;
+  /** Fuentes de captura conocidas dentro de las campañas jugables. */
+  encounterLocations: Array<{
+    id: string;
+    name: string;
+    regionId: GameRegionId;
+  }>;
 };
 
 export type RegionProgress = {

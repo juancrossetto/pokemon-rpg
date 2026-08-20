@@ -120,9 +120,16 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/events",
         icon: "redeem",
         iconSrc: "/nav/event-icon.png?v=4",
-        // El contador queda para cuando el header calcule pendientes; hoy nadie
-        // lo llena, así que no se pinta ningún badge.
+        // Se calcula en el shell y se refleja en desktop, drawer y grupo padre.
         badgeKey: "eventsPending",
+      },
+      {
+        id: "season",
+        labelKey: "season",
+        descriptionKey: "desc.season",
+        href: "/season",
+        icon: "calendar_month",
+        iconSrc: "/nav/trophy-profile.png",
       },
     ],
   },

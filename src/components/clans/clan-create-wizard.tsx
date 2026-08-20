@@ -88,8 +88,7 @@ export function ClanCreateWizard({
 
   const stepLabel = labels.steps[current];
 
-  function CostLine() {
-    return (
+  const costLine = (
       <p className="flex flex-wrap items-center gap-1.5 text-label-md text-on-surface-variant">
         <span>{labels.createCostLead}</span>
         <span className="inline-flex items-center gap-0.5 font-mono font-semibold text-electric-yellow">
@@ -97,8 +96,7 @@ export function ClanCreateWizard({
           {labels.createCostAmount}
         </span>
       </p>
-    );
-  }
+  );
 
   return (
     <form
@@ -352,13 +350,13 @@ export function ClanCreateWizard({
                 </div>
               </div>
             </div>
-            <CostLine />
+            {costLine}
           </div>
         )}
 
         {current === "confirm" && inModal && (
           <div className="flex flex-col gap-4">
-            <CostLine />
+            {costLine}
           </div>
         )}
           </div>

@@ -83,6 +83,7 @@
       "friends": "Buscá entrenadores, inspeccioná cartas y ampliá tu círculo.",
       "clans": "Uníte a un clan y competí en equipo.",
       "events": "Recompensas diarias y desafíos semanales.",
+      "season": "Completá actividad mensual y reclamá premios.",
       "tower": "Ascendé pisos en un desafío PvE.",
       "safari": "Capturá especies raras en expediciones limitadas.",
       "park": "Pensión, pesca, trueque, casino, huerto, mina y recinto."
@@ -99,6 +100,7 @@
     "emptyNav": "Iniciá sesión para ver la navegación completa.",
     "swipeGroups": "Deslizá para cambiar de grupo",
     "events": "Eventos",
+    "season": "Temporada",
     "profile": "Mi perfil",
     "tower": "Torre",
     "park": "Minijuegos"
@@ -135,6 +137,8 @@
     "marketSoldDetail": "{buyer} · {item}",
     "marketExpiredTitle": "Expiró",
     "marketExpiredDetail": "{item}",
+    "marketWatchTitle": "Alerta de precio",
+    "marketWatchDetail": "{item} · {price} monedas",
     "gymWonTitle": "Medalla",
     "gymWonDetail": "{leader} · {gym}",
     "gymWonAvatarsDetail": "{leader} · {gym} · +{count} retratos",
@@ -180,6 +184,7 @@
     "deleteAllAction": "Borrar todas"
   },
   "home": {
+    "johtoUnlock": { "eyebrow": "Nueva liga disponible", "title": "Johto te espera", "body": "Tu viaje continúa con ocho capítulos, especies de segunda generación y líderes más exigentes.", "cta": "Viajar a Johto", "traveling": "Viajando…" },
     "eyebrow": "Temporada 1",
     "title": "Entrená. Batallá. Subí en el ranking.",
     "subtitle": "Un RPG de captura y batalla por navegador, inspirado en los juegos de foro de los 2000.",
@@ -302,6 +307,7 @@
       "you": "Vos",
       "clanTitle": "Guerra de clanes",
       "clanSubtitle": "Competí contra otros clanes en temporada.",
+      "clanPrepare": "Preparar temporada",
       "clanOpen": "Ver clan",
       "clanFind": "Buscar clan",
       "clanGuest": "Sin clan",
@@ -365,7 +371,7 @@
         "badge": "Conseguiste la medalla {name}.",
         "trainer": "Derrotaste a {name}."
       },
-      "dailyActions": {
+    "dailyActions": {
         "title": "Acciones diarias",
         "statusAvailable": "Nuevo",
         "statusDone": "Hecho",
@@ -384,9 +390,9 @@
           "streak": "Racha",
           "friends": "Amigos",
           "market": "Mercado"
-        }
-      },
-      "eventShowcase": {
+      }
+    },
+    "eventShowcase": {
         "liveOpen": "Disponible",
         "liveDone": "Completado",
         "liveRunning": "En curso",
@@ -402,6 +408,11 @@
         "openEvents": "Abrir evento",
         "carouselEyebrow": "Ahora en Kanto",
         "carouselTitle": "Eventos activos",
+        "carouselViewAll": "Ver todos",
+        "carouselPrev": "Evento anterior",
+        "carouselNext": "Evento siguiente",
+        "carouselPages": "Páginas de eventos",
+        "carouselPage": "Ver evento {page}",
         "previous": "Eventos anteriores",
         "next": "Más eventos",
         "raidEyebrow": "Combate cooperativo",
@@ -530,6 +541,22 @@
       "spe": "Vel",
       "capture": "Captura",
       "evolves": "Evoluciona"
+    },
+    "detail": {
+      "close": "Cerrar ficha",
+      "owned": "Ejemplares",
+      "inTeam": "En equipo",
+      "inPc": "En PC",
+      "shinyOwned": "Shiny",
+      "baseStats": "Estadísticas base",
+      "evolutionLine": "Línea evolutiva",
+      "habitats": "Dónde encontrarlo",
+      "noHabitat": "No aparece todavía en una zona salvaje conocida.",
+      "captureRate": "Índice de captura",
+      "researchMilestones": "Hitos de investigación regional",
+      "nextMilestone": "Próximo: {percent}%",
+      "milestoneComplete": "Investigación completa",
+      "openHint": "Abrir ficha de investigación"
     },
     "icons": {
       "favorite": "Favorito",
@@ -1323,6 +1350,13 @@
     "corridorFaintedLead": "Todo tu equipo está debilitado. Curá en Inicio o reordená un Pokémon con HP antes de pelear."
   },
   "market": {
+    "watch": {
+      "add": "Seguir precio",
+      "remove": "Dejar de seguir",
+      "saving": "Guardando…",
+      "history": "Historial de precio",
+      "sales": "{count} ventas"
+    },
     "title": "Comercio",
     "subtitle": "Tienda oficial y mercado entre entrenadores.",
     "hub": {
@@ -2191,6 +2225,13 @@
       "activityPower": "Poder total del clan: {power}.",
       "activityBadges": "Medallas acumuladas: {count}.",
       "missionsTitle": "Misiones del clan",
+      "missionsSubtitle": "Objetivos semanales calculados con la actividad real de todos los miembros.",
+      "missionGo": "Ir al objetivo",
+      "missions": {
+        "wins": { "title": "Victorias colectivas", "desc": "Ganen combates en cualquier modo de aventura." },
+        "catches": { "title": "Capturas colectivas", "desc": "Sumen nuevas capturas durante la semana." },
+        "raids": { "title": "Daño de incursión", "desc": "Aporten juntos contra el jefe semanal." }
+      },
       "demoMissionOneTitle": "Derroten 500 enemigos",
       "demoMissionOneDesc": "Objetivo colectivo de la semana.",
       "demoMissionOneProgress": "342 / 500 · Recompensa: 500 XP de clan",
@@ -2489,6 +2530,12 @@
     "modeRanked": "Ranked",
     "modeQuick": "Rápido",
     "coinsAwarded": "+{n} monedas",
+    "share": {
+      "action": "Compartir resultado",
+      "preparing": "Creando imagen…",
+      "shared": "Compartido",
+      "downloaded": "Imagen descargada"
+    },
     "pagination": {
       "prev": "Anterior",
       "next": "Siguiente",
@@ -2575,6 +2622,14 @@
       "region_complete": "Kanto completado"
     },
     "locations": {
+      "johto_new_bark": "Pueblo Primavera", "johto_route_29": "Ruta 29", "johto_cherrygrove": "Ciudad Cerezo", "johto_route_30": "Ruta 30", "johto_route_31": "Ruta 31", "johto_violet_city": "Ciudad Malva", "johto_sprout_tower": "Torre Bellsprout", "johto_violet_gym": "Gimnasio de Malva",
+      "johto_route_32": "Ruta 32", "johto_union_cave": "Cueva Unión", "johto_azalea_town": "Pueblo Azalea", "johto_slowpoke_well": "Pozo Slowpoke", "johto_azalea_gym": "Gimnasio de Azalea",
+      "johto_ilex_forest": "Encinar", "johto_route_34": "Ruta 34", "johto_goldenrod_city": "Ciudad Trigal", "johto_goldenrod_gym": "Gimnasio de Trigal",
+      "johto_route_35": "Ruta 35", "johto_national_park": "Parque Nacional", "johto_route_36": "Ruta 36", "johto_ecruteak_city": "Ciudad Iris", "johto_burned_tower": "Torre Quemada", "johto_ecruteak_gym": "Gimnasio de Iris",
+      "johto_route_38": "Ruta 38", "johto_olivine_city": "Ciudad Olivo", "johto_lighthouse": "Faro Olivo", "johto_olivine_gym": "Gimnasio de Olivo",
+      "johto_route_40": "Ruta 40", "johto_whirl_islands": "Islas Remolino", "johto_cianwood_city": "Ciudad Orquídea", "johto_cianwood_gym": "Gimnasio de Orquídea",
+      "johto_route_42": "Ruta 42", "johto_mt_mortar": "Monte Mortero", "johto_mahogany_town": "Pueblo Caoba", "johto_lake_of_rage": "Lago de la Furia", "johto_rocket_hq": "Cuartel Rocket", "johto_mahogany_gym": "Gimnasio de Caoba",
+      "johto_ice_path": "Ruta Helada", "johto_blackthorn_city": "Ciudad Endrino", "johto_dragons_den": "Guarida Dragón", "johto_blackthorn_gym": "Gimnasio de Endrino",
       "pallet_town": "Pueblo Paleta",
       "route_1": "Ruta 1",
       "viridian_city": "Ciudad Verde",
@@ -2620,6 +2675,8 @@
       "vf_deep": "Profundidades"
     },
     "stages": {
+      "johto_route": "Tramo de Johto",
+      "johto_gym_milestone": "Desafío de gimnasio",
       "pallet_1": "Afueras de Paleta",
       "r1_1": "Ruta 1 · tramo 1",
       "r1_2": "Ruta 1 · tramo 2",
@@ -2753,7 +2810,7 @@
     "objectiveChallengeGym": "Desafiá al líder en {name}",
     "objectiveExploreStage": "Explorá {name}",
     "exploreLocation": "Explorar",
-    "viewFullJourney": "Viaje completo",
+    "viewFullJourney": "Resumen del viaje",
     "chapterPath": "Recorrido del capítulo",
     "ask": {
       "locked": "Esta zona todavía no está abierta. Avanzá por el capítulo para llegar.",
@@ -2776,6 +2833,16 @@
     "chapterPathSummary": "{done} de {total} paradas completadas",
     "chapterNames": {
       "elite_four": "Alto Mando"
+    },
+    "johtoChapters": {
+      "1": "Seguí los pasos del profesor Elm y demostrá tu valor en la Torre Bellsprout.",
+      "2": "Liberá el Pozo Slowpoke del Team Rocket y cruzá el Bosque Encinar.",
+      "3": "Llegá a Ciudad Trigal y enfrentá el desafío impredecible de Blanca.",
+      "4": "Investigá la Torre Quemada y los misterios que rodean a Ciudad Iris.",
+      "5": "Ayudá al faro de Olivo y preparate para la defensa de acero de Yasmina.",
+      "6": "Cruzá el mar hasta Orquídea y dominá la fuerza de Aníbal.",
+      "7": "Descubrí qué provoca la furia del lago y desarmá la base del Team Rocket.",
+      "8": "Atravesá la Ruta Helada, superá la Guarida Dragón y reclamá la última medalla."
     },
     "nodeLocked": "Bloqueado",
     "nodeCompleted": "Hecho",
@@ -3048,6 +3115,12 @@
     "companion": "Compañero",
     "manageTeam": "Administrar equipo",
     "favorite": "Favorito",
+    "share": {
+      "action": "Compartir carta",
+      "preparing": "Creando imagen…",
+      "shared": "Compartida",
+      "downloaded": "Carta descargada"
+    },
     "nav": {
       "summary": "Resumen",
       "badges": "Insignias",
@@ -3153,9 +3226,17 @@
         "name": "Investigador",
         "hint": "Registrá 50 especies"
       },
+      "fieldObserver": {
+        "name": "Observador de campo",
+        "hint": "Avistá 100 especies distintas"
+      },
       "taxonomist": {
         "name": "Taxonomista",
         "hint": "Registrá 151 especies"
+      },
+      "regionalScholar": {
+        "name": "Erudito regional",
+        "hint": "Completá los 251 avistamientos de Kanto y Johto"
       },
       "gymGoer": {
         "name": "Primera medalla",
@@ -4072,6 +4153,21 @@
       "nextIn": "Próximo ascenso en"
     }
   },
+  "seasonJourney": {
+    "eyebrow": "Temporada {key}",
+    "title": "VIAJE DE TEMPORADA",
+    "subtitle": "Toda tu actividad suma: capturá, ganá combates y participá en modos cooperativos para avanzar.",
+    "xp": "XP DE TEMPORADA",
+    "ends": "Finaliza el {date}",
+    "track": "Camino de recompensas",
+    "milestone": "Hito de {xp} XP",
+    "claim": "Reclamar",
+    "claiming": "Reclamando…",
+    "claimed": "Reclamado",
+    "locked": "Bloqueado",
+    "metrics": { "wins": "Victorias", "catches": "Capturas", "gyms": "Gimnasios", "pvp": "PvP", "raids": "Incursiones" },
+    "rewards": { "coins": "{amount} monedas", "gems": "{amount} gemas", "energy": "{amount} energía" }
+  },
   "settings": {
     "eyebrow": "Preferencias del entrenador",
     "title": "AJUSTES",
@@ -4090,6 +4186,30 @@
       "speed": "Velocidad",
       "animations": "Animaciones",
       "flashes": "Destellos"
+    },
+    "accessibility": {
+      "title": "Accesibilidad visual",
+      "subtitle": "Mejorá la lectura sin perder la identidad del juego.",
+      "textSize": "Tamaño de interfaz",
+      "text": {
+        "normal": "Normal",
+        "large": "Grande",
+        "xlarge": "Muy grande"
+      },
+      "highContrast": "Contraste alto",
+      "colorCues": "Tramas para tipos"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "subtitle": "Recibí avisos aunque la PWA no esté abierta.",
+      "push": "Avisos push",
+      "enabled": "Activos en este dispositivo",
+      "disabled": "Desactivados",
+      "blocked": "Bloqueados por el navegador",
+      "unavailable": "Requiere PWA compatible y clave VAPID configurada",
+      "turnOn": "Activar",
+      "turnOff": "Desactivar",
+      "saving": "Guardando…"
     },
     "auto": {
       "title": "Estrategia AUTO",
@@ -4247,7 +4367,12 @@
   },
   "pwa": {
     "updateAvailable": "Hay una nueva versión lista.",
-    "reload": "Actualizar"
+    "reload": "Actualizar",
+    "installTitle": "Instalá PokeRPG",
+    "installHint": "Abrilo como una app y volvé más rápido a tu aventura.",
+    "installIosHint": "En Safari tocá Compartir y después Agregar a inicio.",
+    "install": "Instalar",
+    "later": "Más tarde"
   },
   "nextStep": {
     "eyebrow": "Tu próximo paso",

@@ -29,6 +29,10 @@ const nextConfig: NextConfig = {
     root: path.join(__dirname),
   },
   images: {
+    // Next 16 restringe quality a esta lista. Los banners usan 90 de forma
+    // intencional; declararlo evita coerción silenciosa y warnings.
+    qualities: [60, 75, 90],
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "assets.pokemon.com" },
       { protocol: "https", hostname: "raw.githubusercontent.com" },

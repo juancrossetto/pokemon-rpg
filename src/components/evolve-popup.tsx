@@ -61,7 +61,8 @@ export function EvolvePopup({
   const [showToSilhouette, setShowToSilhouette] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   useEffect(() => {

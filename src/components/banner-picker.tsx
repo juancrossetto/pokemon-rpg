@@ -47,7 +47,8 @@ export function BannerPicker({
   const [pending, start] = useTransition();
 
   useEffect(() => {
-    setMounted(true);
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   function openPicker() {

@@ -3,9 +3,9 @@ import { spriteFor } from "@/lib/shiny";
 /**
  * Sprites de UI vs batalla.
  *
- * UI (home squad, ranking, parque…): official-artwork de PokeAPI — el mismo
- * CDN que producción. Común: `.../official-artwork/{id}.png`. Shiny:
- * `.../official-artwork/shiny/{id}.png`. Next las sirve con `/_next/image`.
+ * UI (home squad, ranking, parque…): official-artwork de PokeAPI servido por
+ * una ruta same-origin cacheable. Si esa ruta falla, los candidatos conservan
+ * el CDN original como respaldo.
  * Batalla: GIFs Showdown `ani`.
  */
 
@@ -26,12 +26,16 @@ export function isShinySpriteUrl(spriteUrl: string): boolean {
 }
 
 export function officialArtworkUrl(speciesId: number, shiny = false): string {
+  return `/api/pokemon-art/${shiny ? "shiny" : "normal"}/${speciesId}.png`;
+}
+
+function remoteOfficialArtworkUrl(speciesId: number, shiny = false): string {
   return shiny
     ? `${OFFICIAL_ARTWORK_BASE}/shiny/${speciesId}.png`
     : `${OFFICIAL_ARTWORK_BASE}/${speciesId}.png`;
 }
 
-/** Sprite de UI 2D por dex id (mismo CDN que prod). */
+/** Sprite de UI 2D por dex id, cacheado en el mismo origen. */
 export function uiSpriteById(speciesId: number, shiny = false): string {
   if (!Number.isFinite(speciesId) || speciesId <= 0) {
     return officialArtworkUrl(0, shiny);
@@ -70,7 +74,7 @@ function isLocalSrc(src: string): boolean {
 }
 
 /**
- * Fuentes de UI: official-artwork (común y shiny, mismo CDN que prod).
+ * Fuentes de UI: caché same-origin primero y CDN original como respaldo.
  * Sin pixel clásico, HOME 3D, pokemon.com ni GIF de Showdown.
  */
 export function pokemonSpriteCandidates({
@@ -92,17 +96,21 @@ export function pokemonSpriteCandidates({
 
   if (src && isLocalSrc(src)) add(src);
 
-  const preferred = src && !isLocalSrc(src)
-    ? spriteFor(src, shiny)
-    : inferredId && inferredId > 0
-      ? officialArtworkUrl(inferredId, shiny)
-      : null;
-
-  add(preferred);
-  if (preferred) add(retrySpriteUrl(preferred));
-
   if (inferredId && inferredId > 0) {
     add(officialArtworkUrl(inferredId, shiny));
+  }
+
+  const remoteFallback = src && !isLocalSrc(src)
+    ? spriteFor(src, shiny)
+    : inferredId && inferredId > 0
+      ? remoteOfficialArtworkUrl(inferredId, shiny)
+      : null;
+
+  add(remoteFallback);
+  if (remoteFallback) add(retrySpriteUrl(remoteFallback));
+
+  if (inferredId && inferredId > 0) {
+    add(remoteOfficialArtworkUrl(inferredId, shiny));
   }
 
   return candidates;

@@ -131,7 +131,7 @@ export async function MarketBrowseTab({
     ];
   }
 
-  const [total, listings, trending, activity] = await Promise.all([
+  const [total, listings, trending, activity, watches, recentSales] = await Promise.all([
     prisma.marketListing.count({ where }),
     prisma.marketListing.findMany({
       where,
@@ -150,12 +150,46 @@ export async function MarketBrowseTab({
     }),
     fetchTrending(5),
     fetchRecentActivity(8),
+    prisma.marketWatch.findMany({
+      where: { userId },
+      select: { targetKey: true },
+    }),
+    prisma.marketListing.findMany({
+      where: { status: "SOLD" },
+      orderBy: { soldAt: "desc" },
+      take: 240,
+      select: {
+        kind: true,
+        itemId: true,
+        quantity: true,
+        price: true,
+        pokemon: { select: { speciesId: true } },
+      },
+    }),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const itemIds = listings.flatMap((l) => (l.itemId ? [l.itemId] : []));
   const items = await prisma.item.findMany({ where: { id: { in: itemIds } } });
   const itemById = new Map(items.map((i) => [i.id, i]));
+  const watchedKeys = new Set(watches.map((watch) => watch.targetKey));
+  const historyByKey = new Map<string, number[]>();
+  for (const sale of recentSales) {
+    const key = sale.kind === "POKEMON" && sale.pokemon
+      ? `pokemon:${sale.pokemon.speciesId}`
+      : sale.itemId
+        ? `item:${sale.itemId}`
+        : null;
+    if (!key) continue;
+    const prices = historyByKey.get(key) ?? [];
+    if (prices.length >= 12) continue;
+    prices.push(
+      sale.kind === "ITEM"
+        ? Math.round(sale.price / Math.max(1, sale.quantity ?? 1))
+        : sale.price,
+    );
+    historyByKey.set(key, prices);
+  }
 
   const hasFilters =
     filters.q !== "" ||
@@ -249,6 +283,7 @@ export async function MarketBrowseTab({
                 if (listing.kind === "POKEMON" && listing.pokemon) {
                   const { pokemon } = listing;
                   const { species } = pokemon;
+                  const watchKey = `pokemon:${species.id}`;
                   const invested =
                     pokemon.ptStrength +
                     pokemon.ptDexterity +
@@ -265,6 +300,9 @@ export async function MarketBrowseTab({
                       expiresLabel,
                       isOwn,
                       canAfford,
+                      watchKey,
+                      watched: watchedKeys.has(watchKey),
+                      priceHistory: historyByKey.get(watchKey) ?? [],
                       rarity: pokemonRarity({
                         isShiny: pokemon.isShiny,
                         level: pokemon.level,
@@ -284,6 +322,7 @@ export async function MarketBrowseTab({
                       training: trainingPercent(invested, pokemon.level),
                       invested,
                       pokemon: {
+                        speciesId: species.id,
                         level: pokemon.level,
                         isShiny: pokemon.isShiny,
                         unspentPoints: pokemon.unspentPoints,
@@ -299,6 +338,7 @@ export async function MarketBrowseTab({
 
                 const item = listing.itemId ? itemById.get(listing.itemId) : null;
                 if (!item) return [];
+                const watchKey = `item:${item.id}`;
                 return [
                   {
                     kind: "ITEM",
@@ -310,6 +350,9 @@ export async function MarketBrowseTab({
                     expiresLabel,
                     isOwn,
                     canAfford,
+                    watchKey,
+                    watched: watchedKeys.has(watchKey),
+                    priceHistory: historyByKey.get(watchKey) ?? [],
                     rarity: itemRarity(item),
                     item: {
                       name: item.name,

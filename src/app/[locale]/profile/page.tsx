@@ -553,6 +553,12 @@ export default async function ProfilePage({
           labels: {
             power: t("cp"),
             level: t("levelShort"),
+            share: {
+              share: t("share.action"),
+              preparing: t("share.preparing"),
+              shared: t("share.shared"),
+              downloaded: t("share.downloaded"),
+            },
           },
         }}
         hubLabels={{

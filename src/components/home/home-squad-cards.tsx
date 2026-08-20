@@ -721,7 +721,7 @@ function SquadCardButton({
           height={140}
           draggable={false}
           className="squad-card__sprite"
-          preload
+          loading={index === 0 ? "eager" : "lazy"}
         />
       </span>
 

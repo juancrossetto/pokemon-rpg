@@ -42,11 +42,14 @@ export function BattleScreen({
 
   useEffect(() => {
     if (!initialBattle) return;
-    setBattle((prev) => {
-      if (!prev) return initialBattle;
-      if (prev.battleId !== initialBattle.battleId) return initialBattle;
-      return prev;
+    const raf = requestAnimationFrame(() => {
+      setBattle((prev) => {
+        if (!prev) return initialBattle;
+        if (prev.battleId !== initialBattle.battleId) return initialBattle;
+        return prev;
+      });
     });
+    return () => cancelAnimationFrame(raf);
   }, [initialBattle]);
 
   // La batalla es viewport-locked: sin scroll de documento detrás.

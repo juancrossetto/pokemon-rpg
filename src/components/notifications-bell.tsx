@@ -54,6 +54,7 @@ const ACTIONABLE_TYPES = new Set<NotificationDTO["type"]>([
   "DAILY_REWARD_READY",
   "GYM_TM_REWARD",
   "MARKET_SOLD",
+  "MARKET_WATCH",
   "FRIEND_REQUEST",
   "FRIEND_TRADE",
   "CLAN_INVITE",
@@ -91,6 +92,8 @@ function headlineFor(
       return t("marketSoldTitle");
     case "MARKET_EXPIRED":
       return t("marketExpiredTitle");
+    case "MARKET_WATCH":
+      return t("marketWatchTitle");
     case "GYM_WON":
       return p.rematch ? t("gymWonRematchTitle") : t("gymWonTitle");
     case "GYM_LOST":
@@ -139,6 +142,8 @@ function detailFor(
       });
     case "MARKET_EXPIRED":
       return t("marketExpiredDetail", { item: p.itemName ?? "—" });
+    case "MARKET_WATCH":
+      return t("marketWatchDetail", { item: p.itemName ?? "—", price: p.coins ?? 0 });
     case "GYM_WON":
       if (!p.rematch && typeof p.avatarsUnlocked === "number" && p.avatarsUnlocked > 0) {
         return t("gymWonAvatarsDetail", {
@@ -338,6 +343,15 @@ export function NotificationsBell({
     setItems(initialItems);
     setUnread(initialUnread);
   }
+
+  useEffect(() => {
+    const nav = navigator as Navigator & {
+      setAppBadge?: (count?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    const badge = unread > 0 ? nav.setAppBadge?.(unread) : nav.clearAppBadge?.();
+    void badge?.catch(() => undefined);
+  }, [unread]);
 
   function requestClose() {
     if (autoReadTimer.current) {

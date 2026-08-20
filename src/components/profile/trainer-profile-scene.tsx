@@ -43,21 +43,23 @@ export function TrainerProfileScene(props: ProfileSceneProps) {
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
+    const raf = requestAnimationFrame(() => setReducedMotion(mq.matches));
     const onChange = () => setReducedMotion(mq.matches);
     mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
+    return () => {
+      cancelAnimationFrame(raf);
+      mq.removeEventListener("change", onChange);
+    };
   }, []);
 
   useEffect(() => {
+    let supported = false;
     try {
       const canvas = document.createElement("canvas");
-      setWebglOk(
-        Boolean(canvas.getContext("webgl") || canvas.getContext("experimental-webgl")),
-      );
-    } catch {
-      setWebglOk(false);
-    }
+      supported = Boolean(canvas.getContext("webgl") || canvas.getContext("experimental-webgl"));
+    } catch {}
+    const raf = requestAnimationFrame(() => setWebglOk(supported));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   if (want3d && props.appearance) {

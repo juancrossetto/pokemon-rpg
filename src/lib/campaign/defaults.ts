@@ -9,7 +9,7 @@ const kanto = REGIONS.kanto.defaults;
  */
 export const CAMPAIGN_DEFAULTS = {
   currentRegionId: DEFAULT_REGION_ID,
-  highestUnlockedLocationId: kanto.unlockedLocationId,
+  highestUnlockedLocationId: kanto.highestUnlockedLocationId,
   selectedLocationId: kanto.selectedLocationId,
   farmingLocationId: kanto.farmingLocationId,
   farmingStageId: kanto.farmingStageId,

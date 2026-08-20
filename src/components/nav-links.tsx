@@ -120,7 +120,7 @@ export function NavLinks({
       )}
       <Link
         href="/"
-        prefetch
+        prefetch={false}
         data-active={homeActive || undefined}
         aria-current={homeActive ? "page" : undefined}
         className={`${TRIGGER_BASE} ${
@@ -143,7 +143,7 @@ export function NavLinks({
             <Link
               key={group.id}
               href={only.href}
-              prefetch
+              prefetch={false}
               data-active={active || undefined}
               aria-current={active ? "page" : undefined}
               className={`${TRIGGER_BASE} ${
@@ -213,16 +213,21 @@ function NavGroupMenu({
 
   useEffect(() => {
     if (open) {
-      setPanelMounted(true);
-      setPanelPhase("in");
-      return;
+      const raf = requestAnimationFrame(() => {
+        setPanelMounted(true);
+        setPanelPhase("in");
+      });
+      return () => cancelAnimationFrame(raf);
     }
     if (!panelMounted) return;
-    setPanelPhase("out");
+    const raf = requestAnimationFrame(() => setPanelPhase("out"));
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const ms = reduced ? 0 : 160;
     const timer = window.setTimeout(() => setPanelMounted(false), ms);
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
+    };
     // panelMounted intencional: al cerrar necesitamos el valor actual para
     // decidir si hay que animar la salida.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ver arriba
@@ -306,7 +311,7 @@ function NavGroupMenu({
                 <Link
                   key={item.id}
                   href={item.href}
-                  prefetch
+                  prefetch={false}
                   role="menuitem"
                   tabIndex={open ? 0 : -1}
                   aria-current={itemActive ? "page" : undefined}

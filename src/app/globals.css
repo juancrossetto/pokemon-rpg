@@ -184,6 +184,96 @@ body {
   background-size: 40px 40px;
 }
 
+html[data-text-scale="large"] { font-size: 112.5%; }
+html[data-text-scale="xlarge"] { font-size: 125%; }
+
+html[data-high-contrast="1"] [class*="text-white/"] {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+html[data-high-contrast="1"] [class*="border-white/"] {
+  border-color: rgba(255, 255, 255, 0.32) !important;
+}
+
+/* Los modos de color no se apoyan sólo en matiz: suman trama y contorno a
+   chips que identifican tipos en combate, raids, iniciales y el home. */
+html[data-color-cues="1"] :is(
+  .squad-card__type-chip,
+  .battle-move-card__type,
+  .raid-type-pill,
+  .starter-card__type,
+  .move-banner__type,
+  .learned-chip--type
+) {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(255,255,255,.16) 4px 6px) !important;
+}
+
+/* Fallback de ruta: reserva el volumen del dashboard para que el streaming no
+   produzca un salto grande al reemplazarlo. */
+.route-loading-shell {
+  min-height: calc(var(--app-vh, 100dvh) - 3.5rem);
+  background:
+    radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 38%),
+    var(--color-background);
+}
+
+.route-loading-shell__hero,
+.route-loading-shell__panel {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0.035) 8%, rgba(255, 255, 255, 0.09) 18%, rgba(255, 255, 255, 0.035) 33%);
+  background-size: 220% 100%;
+  animation: route-loading-shimmer 1.35s linear infinite;
+}
+
+@keyframes route-loading-shimmer {
+  to { background-position-x: -220%; }
+}
+
+.pwa-install-card {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 125;
+  display: flex;
+  width: min(28rem, calc(100vw - 2rem));
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 36%, transparent);
+  border-radius: 1rem;
+  background: rgba(18, 21, 28, 0.96);
+  padding: 0.7rem 0.75rem;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(20px);
+}
+
+.pwa-install-card__icon { color: var(--color-primary); }
+.pwa-install-card__action {
+  min-height: 2.25rem;
+  border-radius: 0.65rem;
+  background: var(--color-primary);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--color-on-primary);
+}
+.pwa-install-card__dismiss {
+  display: grid;
+  min-height: 2.25rem;
+  min-width: 2.25rem;
+  place-items: center;
+  border-radius: 0.65rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+.pwa-install-card__dismiss .material-symbols-outlined { font-size: 1.15rem; }
+
+@media (max-width: 1279.98px) {
+  .pwa-install-card {
+    right: 0.75rem;
+    bottom: calc(var(--bottom-nav-h, 5.25rem) + 0.75rem);
+  }
+}
+
 @layer utilities {
   .glass-panel {
     background: var(--color-surface-container-low);
@@ -21453,6 +21543,112 @@ html.is-standalone .mobile-bottom-nav--locked .mobile-bottom-nav__dock--status {
   bottom: 0.75rem;
   right: 0.75rem;
   flex-direction: row;
+}
+
+.tp-hero__share {
+  bottom: 0.75rem;
+  left: 0.75rem;
+}
+
+.home-identity--framed .tp-hero__share {
+  bottom: calc(var(--hi-frame) * var(--hi-rail-bottom) + 8px);
+  left: calc(var(--hi-frame) * var(--hi-rail-left) + 8px);
+}
+
+.share-card-button {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(0, 0, 0, 0.34);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.68rem;
+  font-weight: 750;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(10px);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.share-card-button:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+
+.share-card-button:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+.pvp-report__share {
+  margin-top: 0.6rem;
+}
+
+.market-price-history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.55rem 0.65rem;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.65rem;
+}
+
+.market-price-history__bars {
+  display: flex;
+  height: 2.25rem;
+  align-items: end;
+  gap: 3px;
+}
+
+.market-price-history__bars > span {
+  min-width: 3px;
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(to top, rgba(94, 240, 255, 0.3), #5ef0ff);
+}
+
+.season-journey-hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  background: radial-gradient(circle at 90% 0%, rgba(250, 204, 21, 0.14), transparent 38%), #11141b;
+}
+
+.season-journey-hero__xp { text-align: right; }
+.season-journey-hero__xp strong { display: block; font: 800 2rem/1 var(--font-title), sans-serif; color: #facc15; }
+.season-journey-hero__xp span { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.16em; color: rgba(255,255,255,.45); }
+.season-journey-progress { grid-column: 1 / -1; height: 0.55rem; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.07); }
+.season-journey-progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f59e0b, #facc15); box-shadow: 0 0 16px rgba(250,204,21,.35); }
+.season-journey-hero > p { grid-column: 1 / -1; }
+.season-journey-tier { display: flex; flex-wrap: wrap; align-items: center; gap: .9rem; border: 1px solid rgba(255,255,255,.07); border-radius: 1rem; padding: .9rem; background: rgba(255,255,255,.025); opacity: .66; }
+.season-journey-tier.is-unlocked { border-color: rgba(250,204,21,.18); opacity: 1; }
+.season-journey-tier__level { display: grid; width: 2.5rem; height: 2.5rem; place-items: center; border-radius: .75rem; background: rgba(250,204,21,.1); color: #facc15; font: 800 1rem var(--font-title), sans-serif; }
+
+@media (max-width: 420px) {
+  .tp-hero__share .share-card-button__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .tp-hero__share .share-card-button {
+    width: 2.75rem;
+    padding-inline: 0;
+  }
 }
 
 .home-identity--framed .tp-hero__tools {

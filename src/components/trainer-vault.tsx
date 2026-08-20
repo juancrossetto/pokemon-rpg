@@ -92,7 +92,8 @@ export function TrainerVault({
   const [lastGranted, setLastGranted] = useState<RewardDef[] | null>(null);
 
   useEffect(() => {
-    setAchievements(initialAchievements);
+    const raf = requestAnimationFrame(() => setAchievements(initialAchievements));
+    return () => cancelAnimationFrame(raf);
   }, [initialAchievements]);
 
   const claimableCount = achievements.filter((a) => a.claimable).length;

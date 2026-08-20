@@ -553,7 +553,8 @@ import { REGIONS } from "@/lib/regions";
  * Route 1 queda desbloqueada al inicio (Pallet tiene order menor, también
  * entra). El farming arranca en Pallet: el gate del gym 1 exige `pallet-1`.
  */
-export const DEFAULT_UNLOCKED_LOCATION_ID = REGIONS.kanto.defaults.unlockedLocationId;
+export const DEFAULT_UNLOCKED_LOCATION_ID =
+  REGIONS.kanto.defaults.highestUnlockedLocationId;
 export const DEFAULT_SELECTED_LOCATION_ID = REGIONS.kanto.defaults.selectedLocationId;
 export const DEFAULT_FARMING_LOCATION_ID = REGIONS.kanto.defaults.farmingLocationId;
 export const DEFAULT_FARMING_STAGE_ID = REGIONS.kanto.defaults.farmingStageId;

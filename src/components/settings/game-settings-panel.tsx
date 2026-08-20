@@ -22,6 +22,7 @@ import {
   setWorldBgmMuted,
   setWorldBgmVolume,
 } from "@/lib/world-bgm";
+import { PushNotificationsControl } from "@/components/settings/push-notifications-control";
 
 type AudioState = { music: number; effects: number; musicMuted: boolean; effectsMuted: boolean };
 const INITIAL_AUDIO: AudioState = { music: 0.28, effects: 0.4, musicMuted: false, effectsMuted: false };
@@ -35,6 +36,9 @@ export function GameSettingsPanel() {
     autoStopHpPercent: 15,
     reducedMotion: false,
     flashes: true,
+    highContrast: false,
+    textScale: "normal",
+    colorCues: false,
   }));
 
   useEffect(() => {
@@ -109,6 +113,43 @@ export function GameSettingsPanel() {
           <ToggleButton active={!settings.reducedMotion} label={t("battle.animations")} onClick={() => patch({ reducedMotion: !settings.reducedMotion })} />
           <ToggleButton active={settings.flashes} label={t("battle.flashes")} onClick={() => patch({ flashes: !settings.flashes })} />
         </div>
+      </SettingsCard>
+
+      <SettingsCard
+        icon="accessibility_new"
+        title={t("accessibility.title")}
+        subtitle={t("accessibility.subtitle")}
+        wide
+      >
+        <div className="grid gap-2 sm:grid-cols-3">
+          {(["normal", "large", "xlarge"] as const).map((scale) => (
+            <button
+              key={scale}
+              type="button"
+              onClick={() => patch({ textScale: scale })}
+              className={`rounded-xl border p-3 text-left transition ${settings.textScale === scale ? "border-primary/55 bg-primary/12" : "border-white/10 bg-black/20 hover:bg-white/5"}`}
+            >
+              <span className="block text-sm font-bold text-white">{t(`accessibility.text.${scale}`)}</span>
+              <span className="mt-1 block text-[11px] text-white/50">{t("accessibility.textSize")}</span>
+            </button>
+          ))}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <ToggleButton
+            active={settings.highContrast}
+            label={t("accessibility.highContrast")}
+            onClick={() => patch({ highContrast: !settings.highContrast })}
+          />
+          <ToggleButton
+            active={settings.colorCues}
+            label={t("accessibility.colorCues")}
+            onClick={() => patch({ colorCues: !settings.colorCues })}
+          />
+        </div>
+      </SettingsCard>
+
+      <SettingsCard icon="notifications_active" title={t("notifications.title")} subtitle={t("notifications.subtitle")} wide>
+        <PushNotificationsControl />
       </SettingsCard>
 
       <SettingsCard icon="autorenew" title={t("auto.title")} subtitle={t("auto.subtitle")} wide>

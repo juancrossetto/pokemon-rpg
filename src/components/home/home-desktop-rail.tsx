@@ -248,7 +248,7 @@ export function HomeDesktopRail({
               {t("clanTitle")}
             </span>
             <span className="block truncate text-[9px] uppercase tracking-[0.12em] text-white/40">
-              {t("statusSoon")}
+              {t("clanPrepare")}
             </span>
           </span>
           <span className="material-symbols-outlined shrink-0 text-[16px]! text-white/30">

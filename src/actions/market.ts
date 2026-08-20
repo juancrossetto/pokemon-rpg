@@ -16,6 +16,7 @@ import { applyMarketFeeDiscount } from "@/lib/badge-perks";
 import { blockIfInCombat } from "@/lib/battle-lock";
 import { compactTeamSlots } from "@/lib/team";
 import { isPokemonBusy } from "@/lib/pokemon-busy";
+import { revalidatePokedex } from "@/lib/pokedex-seen";
 import type { Prisma } from "@/generated/prisma/client";
 
 // Reglas del dossier (fase 5): auction house con moneda 100% interna,
@@ -30,6 +31,7 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const PUBLISH_LIMIT = 10;
 const BUY_LIMIT = 20;
 const CANCEL_LIMIT = 20;
+const WATCH_LIMIT = 30;
 
 // Errores esperables de negocio — viajan como ?error= en el redirect.
 class MarketError extends Error {
@@ -43,6 +45,45 @@ function parsePrice(raw: FormDataEntryValue | null): number | null {
   return isPriceValid(price) ? price : null;
 }
 
+async function notifyMarketWatchers(
+  tx: Prisma.TransactionClient,
+  input: { sellerId: string; targetKey: string; label: string; price: number; imageUrl?: string; imageKind?: "pokemon" | "item" },
+) {
+  const watches = await tx.marketWatch.findMany({
+    where: {
+      targetKey: input.targetKey,
+      targetPrice: { gte: input.price },
+      userId: { not: input.sellerId },
+    },
+    select: { userId: true },
+  });
+  if (watches.length === 0) return [];
+  await tx.notification.createMany({
+    data: watches.map((watch) => ({
+      userId: watch.userId,
+      type: "MARKET_WATCH" as const,
+      payload: {
+        itemName: input.label,
+        coins: input.price,
+        ...(input.imageUrl ? { imageUrl: input.imageUrl, imageKind: input.imageKind } : {}),
+      },
+      href: `/market?tab=browse&q=${encodeURIComponent(input.label)}`,
+    })),
+  });
+  return watches.map((watch) => watch.userId);
+}
+
+async function sendMarketWatchPush(userIds: string[], label: string, price: number) {
+  if (userIds.length === 0) return;
+  const { sendPushToUser } = await import("@/lib/push");
+  await Promise.all(userIds.map((userId) => sendPushToUser(userId, {
+    title: "PokeRPG · Mercado",
+    body: `${label} · ${price.toLocaleString()} monedas`,
+    url: `/market?tab=browse&q=${encodeURIComponent(label)}`,
+    tag: `market-watch-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+  })));
+}
+
 function backToMarket(
   locale: string,
   tab: string,
@@ -53,6 +94,7 @@ function backToMarket(
   revalidatePath(`/${locale}/market`);
   revalidatePath(`/${locale}/pc`);
   revalidatePath(`/${locale}/team`);
+  revalidatePokedex();
   const param = result.error ? `&error=${result.error}` : `&notice=${result.notice}`;
   // El delta viaja en la URL sólo para animar el contador del header: el saldo
   // real lo pone el revalidate de arriba. Por eso el cliente lo valida y lo
@@ -100,8 +142,10 @@ export async function listPokemon(locale: string, formData: FormData) {
   }
 
   let error: string | undefined;
+  let watchRecipients: string[] = [];
+  let watchLabel = "";
   try {
-    await prisma.$transaction(async (tx) => {
+    watchRecipients = await prisma.$transaction(async (tx) => {
       await lockUsers(tx, userId);
 
       const instance = await tx.pokemonInstance.findFirst({
@@ -118,6 +162,7 @@ export async function listPokemon(locale: string, formData: FormData) {
           },
           battleSessions: { where: { status: "ACTIVE" }, select: { id: true } },
           moves: { select: { moveId: true } },
+          species: { select: { id: true, name: true, spriteUrl: true } },
         },
       });
       if (!instance) throw new MarketError("not_found");
@@ -165,11 +210,21 @@ export async function listPokemon(locale: string, formData: FormData) {
           expiresAt: listingExpiry(),
         },
       });
+      watchLabel = instance.species.name;
+      return notifyMarketWatchers(tx, {
+        sellerId: userId,
+        targetKey: `pokemon:${instance.species.id}`,
+        label: instance.species.name,
+        price,
+        imageUrl: instance.species.spriteUrl,
+        imageKind: "pokemon",
+      });
     });
   } catch (e) {
     if (e instanceof MarketError) error = e.code;
     else throw e;
   }
+  if (!error) await sendMarketWatchPush(watchRecipients, watchLabel, price);
 
   backToMarket(locale, error ? "sell" : "mine", error ? { error } : { notice: "listed" });
 }
@@ -198,8 +253,10 @@ export async function listItem(locale: string, formData: FormData) {
   }
 
   let error: string | undefined;
+  let watchRecipients: string[] = [];
+  let watchLabel = "";
   try {
-    await prisma.$transaction(async (tx) => {
+    watchRecipients = await prisma.$transaction(async (tx) => {
       await lockUsers(tx, userId);
 
       // Escrow atómico: el decremento con guarda de cantidad evita vender
@@ -210,18 +267,58 @@ export async function listItem(locale: string, formData: FormData) {
       });
       if (taken.count === 0) throw new MarketError("not_enough_items");
 
+      const item = await tx.item.findUnique({ where: { id: itemId }, select: { name: true } });
+      if (!item) throw new MarketError("not_found");
+
       await chargeListingFee(tx, userId, price);
 
       await tx.marketListing.create({
         data: { sellerId: userId, kind: "ITEM", itemId, quantity, price, expiresAt: listingExpiry() },
+      });
+      watchLabel = item.name;
+      return notifyMarketWatchers(tx, {
+        sellerId: userId,
+        targetKey: `item:${itemId}`,
+        label: item.name,
+        price,
       });
     });
   } catch (e) {
     if (e instanceof MarketError) error = e.code;
     else throw e;
   }
+  if (!error) await sendMarketWatchPush(watchRecipients, watchLabel, price);
 
   backToMarket(locale, error ? "sell" : "mine", error ? { error } : { notice: "listed" });
+}
+
+/** Guarda o quita una alerta de precio por especie/objeto. */
+export async function toggleMarketWatch(locale: string, formData: FormData) {
+  const session = await auth();
+  if (!session?.user) return;
+  const userId = session.user.id;
+  if (!allowAction(`market:watch:${userId}`, WATCH_LIMIT, RATE_LIMIT_WINDOW_MS)) return;
+
+  const targetKey = String(formData.get("targetKey") ?? "").slice(0, 100);
+  const label = String(formData.get("label") ?? "").trim().slice(0, 80);
+  const targetPrice = Number(formData.get("targetPrice"));
+  const remove = formData.get("remove") === "1";
+  const kind = targetKey.startsWith("pokemon:") ? "POKEMON" : targetKey.startsWith("item:") ? "ITEM" : null;
+  if (!kind || !/^(pokemon:\d+|item:[a-zA-Z0-9_-]+)$/.test(targetKey) || !label || !isPriceValid(targetPrice)) return;
+
+  await prisma.$transaction(async (tx) => {
+    await lockUsers(tx, userId);
+    if (remove) {
+      await tx.marketWatch.deleteMany({ where: { userId, targetKey } });
+      return;
+    }
+    await tx.marketWatch.upsert({
+      where: { userId_targetKey: { userId, targetKey } },
+      create: { userId, targetKey, kind, label, targetPrice },
+      update: { label, targetPrice },
+    });
+  });
+  revalidatePath(`/${locale}/market`);
 }
 
 export async function buyListing(locale: string, formData: FormData) {

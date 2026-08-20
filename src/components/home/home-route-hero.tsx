@@ -82,7 +82,7 @@ export async function HomeRouteHero({
           alt=""
           fill
           className="route-hero__map"
-          sizes="100vw"
+          sizes="(max-width: 767px) calc(100vw - 32px), 1px"
           priority
         />
         <span className="route-hero__scrim" />

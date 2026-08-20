@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { DAILY_CYCLE, nextDay, slotForDay, type DailyRewardVariant } from "./daily";
 import { WEEKLY_CHALLENGE, weeklyPercent, type WeeklyObjectiveId } from "./weekly";
@@ -87,7 +88,7 @@ export type EventsSummary = {
  * el progreso de cada evento por separado, y además el badge de navegación
  * necesita este mismo cálculo en cada render del layout.
  */
-export async function loadEventsSummary(userId: string): Promise<EventsSummary> {
+async function buildEventsSummary(userId: string): Promise<EventsSummary> {
   const now = serverNow();
   const today = dayKey(now);
   const currentWeek = weekKey(now);
@@ -246,6 +247,13 @@ export async function loadEventsSummary(userId: string): Promise<EventsSummary> 
       limitedState.missions.filter((mission) => mission.claimable).length,
   };
 }
+
+/**
+ * Header y página principal consumen exactamente el mismo resumen. Memoizarlo
+ * por request evita repetir sus diez agregaciones cuando ambos se renderizan
+ * en el mismo árbol, sin dejar progreso personal persistido entre requests.
+ */
+export const loadEventsSummary = cache(buildEventsSummary);
 
 /** Solo el contador de pendientes — lo que necesita el badge del navbar. */
 export async function countPendingRewards(userId: string): Promise<number> {

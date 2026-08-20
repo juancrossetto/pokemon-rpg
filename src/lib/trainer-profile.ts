@@ -166,8 +166,11 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: "firstShiny", icon: "auto_awesome", rarity: "rare", goal: 1, metric: "shinies" },
   { id: "shinyHunter", icon: "flare", rarity: "legendary", goal: 10, metric: "shinies" },
   { id: "researcher", icon: "menu_book", rarity: "rare", goal: 50, metric: "species" },
+  { id: "fieldObserver", icon: "visibility", rarity: "rare", goal: 100, metric: "dexSeen" },
   // 151 = tope dex Kanto (`REGIONS.kanto.speciesRange`); 13 = 8 medallas + 5 élite.
   { id: "taxonomist", icon: "biotech", rarity: "epic", goal: 151, metric: "species" },
+  // Kanto + Johto: investigación regional completa, aunque no las haya capturado todas.
+  { id: "regionalScholar", icon: "travel_explore", rarity: "legendary", goal: 251, metric: "dexSeen" },
   { id: "gymGoer", icon: "military_tech", rarity: "common", goal: 1, metric: "badges" },
   { id: "champion", icon: "workspace_premium", rarity: "legendary", goal: 13, metric: "badges" },
   { id: "duelist", icon: "swords", rarity: "rare", goal: 10, metric: "pvpWins" },

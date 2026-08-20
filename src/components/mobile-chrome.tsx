@@ -167,7 +167,7 @@ function DrawerNavRow({
   return (
     <Link
       href={item.href}
-      prefetch
+      prefetch={false}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={rowClass}
@@ -181,7 +181,6 @@ export function MobileChrome({
   brand,
   brandHref = "/login",
   locale,
-  languageLabel: _languageLabel,
   energy,
   energyMax,
   energyUpdatedAt,
@@ -201,13 +200,6 @@ export function MobileChrome({
   primary,
   groups,
   navLabels,
-  moreLabel: _moreLabel,
-  closeLabel: _closeLabel,
-  shortcutsLabel: _shortcutsLabel,
-  retapHint: _retapHint,
-  seeAllNavLabel: _seeAllNavLabel,
-  emptyNavLabel: _emptyNavLabel,
-  swipeGroupsLabel: _swipeGroupsLabel,
   handbookLabel,
   loginLabel,
   registerLabel,
@@ -285,7 +277,8 @@ export function MobileChrome({
   const swipeDraggingRef = useRef(false);
   const groupSwipeStart = useRef<{ x: number; y: number } | null>(null);
   /** Evita que el click fantasma post-cierre (iOS) reabra el drawer. */
-  const closeCooldownUntilRef = useRef(0);
+  const closeCooldownRef = useRef(false);
+  const closeCooldownTimerRef = useRef<number | null>(null);
   /** Mientras el sheet está en el DOM (incluye animación de salida). */
   const moreOpen = drawerPresent;
   /** UI “abierta”: durante el slide-out los tabs vuelven al destino de la ruta. */
@@ -314,7 +307,7 @@ export function MobileChrome({
     // Ignorar mientras sale: un segundo toque/ghost-click en Más reiniciaría
     // la animación de entrada (rebote) y dejaría el menú abierto.
     if (drawerPresent && drawerPhase === "closing") return;
-    if (Date.now() < closeCooldownUntilRef.current) return;
+    if (closeCooldownRef.current) return;
     sheetDragYRef.current = 0;
     swipeDraggingRef.current = false;
     setSheetDragY(0);
@@ -330,7 +323,7 @@ export function MobileChrome({
     setIsSwipeDragging(false);
     sheetDragYRef.current = 0;
     setSheetDragY(0);
-    closeCooldownUntilRef.current = Date.now() + 450;
+    armCloseCooldown();
     if (
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -349,7 +342,7 @@ export function MobileChrome({
     swipeDraggingRef.current = false;
     setSheetDragY(0);
     setIsSwipeDragging(false);
-    closeCooldownUntilRef.current = Date.now() + 450;
+    armCloseCooldown();
     // No devolver foco al botón Más en táctil: iOS dispara un click fantasma
     // que reabre el drawer (parece un “rebote” que no cierra).
     if (
@@ -364,7 +357,7 @@ export function MobileChrome({
 
   function toggleMoreDrawer() {
     if (drawerPhase === "closing") return;
-    if (Date.now() < closeCooldownUntilRef.current) return;
+    if (closeCooldownRef.current) return;
     if (drawerShown && !groupMode) {
       closeMore();
       return;
@@ -372,11 +365,31 @@ export function MobileChrome({
     openMore(null);
   }
 
+  function armCloseCooldown() {
+    closeCooldownRef.current = true;
+    if (closeCooldownTimerRef.current !== null) {
+      window.clearTimeout(closeCooldownTimerRef.current);
+    }
+    closeCooldownTimerRef.current = window.setTimeout(() => {
+      closeCooldownRef.current = false;
+      closeCooldownTimerRef.current = null;
+    }, 450);
+  }
+
+  useEffect(() => () => {
+    if (closeCooldownTimerRef.current !== null) {
+      window.clearTimeout(closeCooldownTimerRef.current);
+    }
+  }, []);
+
   // Fallback si animationend no dispara.
   useEffect(() => {
     if (!drawerPresent || drawerPhase !== "closing") return;
     const t = window.setTimeout(() => finishClose(), 400);
     return () => window.clearTimeout(t);
+    // `finishClose` sólo finaliza la transición vigente; agregarla volvería a
+    // armar el timeout en cada render mientras el sheet está saliendo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawerPresent, drawerPhase]);
 
   /*
@@ -462,10 +475,13 @@ export function MobileChrome({
   // el flag acá: Strict Mode remonta y necesita poder leerlo otra vez.
   useLayoutEffect(() => {
     if (!peekMobileNavDrawerOpen()) return;
-    setSkipSheetMotion(true);
-    setDrawerFocusGroupId(null);
-    setDrawerPhase("open");
-    setDrawerPresent(true);
+    const raf = requestAnimationFrame(() => {
+      setSkipSheetMotion(true);
+      setDrawerFocusGroupId(null);
+      setDrawerPhase("open");
+      setDrawerPresent(true);
+    });
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   // Liberar el flag después de que el remount de Strict Mode ya pasó.
@@ -987,7 +1003,7 @@ export function MobileChrome({
           >
             <Link
               href={lockedHref}
-              prefetch
+              prefetch={false}
               className={`mobile-nav-status${lockedKind ? ` mobile-nav-status--${lockedKind}` : ""}`}
               aria-current="page"
               title={lockedHint ?? lockedLabel}
@@ -1066,7 +1082,7 @@ export function MobileChrome({
                 <Link
                   key={item.href}
                   href={item.href}
-                  prefetch
+                  prefetch={false}
                   data-active={showActive || undefined}
                   data-loot-target={item.lootTarget}
                   aria-current={showActive ? "page" : undefined}

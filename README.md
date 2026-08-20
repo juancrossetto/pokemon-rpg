@@ -34,7 +34,7 @@ Juego web de captura y batalla estilo Pokémon PRO/CemZoo, hecho con Next.js + P
 4. En otra terminal, con el `.env` ya armado:
 
    ```bash
-   npx prisma db push   # crea las tablas
+   npm run db:migrate -- --name initial_local_setup
    npm run db:seed      # siembra especies/movimientos/tipos desde PokeAPI (tarda unos minutos la primera vez)
    npm run dev
    ```
@@ -49,8 +49,16 @@ Juego web de captura y batalla estilo Pokémon PRO/CemZoo, hecho con Next.js + P
 | `npm run build` | Build de producción |
 | `npm run lint` | ESLint |
 | `npm run db:generate` | Regenera el Prisma Client tras cambiar el schema |
-| `npm run db:push` | Sincroniza el schema con la base sin migraciones |
+| `npm run db:migrate -- --name <cambio>` | Crea y aplica una migración versionada |
 | `npm run db:seed` | Vuelve a sembrar especies/movimientos/objetos desde PokeAPI |
+
+## Web Push (opcional)
+
+Generá un par VAPID con `npx web-push generate-vapid-keys` y copiá las claves a
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY`. `VAPID_SUBJECT` debe ser
+un `mailto:` o una URL administrada por el proyecto. Sin esas variables, la
+app y las notificaciones internas siguen funcionando, pero el control push se
+muestra como no disponible.
 
 ## Stack
 
