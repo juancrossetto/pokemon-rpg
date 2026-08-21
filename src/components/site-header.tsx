@@ -24,6 +24,8 @@ import { HandbookTrigger } from "@/components/handbook/handbook-trigger";
 import { FriendsRailToggle } from "@/components/friends/friends-rail-toggle";
 import { CombatLockChip, type CombatLockKind } from "@/components/combat-lock-chip";
 import { countPendingRewards } from "@/lib/events/state";
+import { after } from "next/server";
+import { syncAutomaticNotifications } from "@/lib/notifications";
 
 export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
   const [t, tUx, tHandbook, session, locale] = await Promise.all([
@@ -41,6 +43,10 @@ export async function SiteHeader({ combatLock }: { combatLock: CombatLock }) {
         countPendingRewards(session.user.id),
       ])
     : [null, null, null, 0];
+  if (session?.user) {
+    const userId = session.user.id;
+    after(() => syncAutomaticNotifications(userId));
+  }
   const energy = user
     ? getCurrentEnergy(user.energy, user.energyMax, user.energyUpdatedAt)
     : null;

@@ -4,7 +4,7 @@
  *
  *   node scripts/import-adventure-npc-avatars.mjs
  */
-import { mkdir, writeFile, copyFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
 

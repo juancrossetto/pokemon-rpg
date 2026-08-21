@@ -1,4 +1,3 @@
-import { getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";

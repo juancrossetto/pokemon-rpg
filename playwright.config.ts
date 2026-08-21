@@ -13,7 +13,7 @@ const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
  * Dos decisiones que no son las de un proyecto Playwright típico y conviene
  * dejar escritas:
  *
- * 1. `workers: 1` y `fullyParallel: false`. La única base configurada es la de
+ * 1. `workers: 1` y `fullyParallel: false`. En local la base suele ser la de
  *    Supabase, compartida y detrás de un pooler con pocos slots. Paralelizar no
  *    solo satura Supavisor: las suites empiezan a pisarse en estado global
  *    (rankings, barra comunitaria de incursión). El costo es tiempo de corrida,
@@ -66,7 +66,7 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     url: BASE_URL,
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },
 });

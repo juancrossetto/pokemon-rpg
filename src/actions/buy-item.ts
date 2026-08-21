@@ -44,7 +44,7 @@ export async function buyItem(
   const userId = session.user.id;
 
   // Sin límite, un bucle de reintentos martilla la base gratis.
-  if (!allowUserAction("purchase", "shop:buy", userId)) {
+  if (!(await allowUserAction("purchase", "shop:buy", userId))) {
     return { ok: false, error: "rate_limited" };
   }
 

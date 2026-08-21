@@ -23,7 +23,7 @@ export async function healTeam(
   if (!session?.user) return { ok: false, error: "unauthorized" };
   // El cooldown de curación ya limita el ritmo, pero no frena el reintento en
   // bucle contra la base. `cooldown` es el error que el UI ya sabe mostrar.
-  if (!allowUserAction("heal", "team:heal", session.user.id)) {
+  if (!(await allowUserAction("heal", "team:heal", session.user.id))) {
     return { ok: false, error: "cooldown" };
   }
 

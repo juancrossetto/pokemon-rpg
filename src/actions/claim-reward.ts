@@ -58,7 +58,7 @@ export async function claimDailyReward(locale: string): Promise<ClaimRewardResul
   const userId = session.user.id;
 
   // Sin límite, un bucle de reintentos martilla la base gratis.
-  if (!allowUserAction("claim", "claim:reward", userId)) {
+  if (!(await allowUserAction("claim", "claim:reward", userId))) {
     return { ok: false, error: "rate_limited" };
   }
 
@@ -143,7 +143,7 @@ export async function claimWeeklyMilestone(
   const userId = session.user.id;
 
   // Sin límite, un bucle de reintentos martilla la base gratis.
-  if (!allowUserAction("claim", "claim:reward", userId)) {
+  if (!(await allowUserAction("claim", "claim:reward", userId))) {
     return { ok: false, error: "rate_limited" };
   }
 
@@ -248,7 +248,7 @@ export async function claimEventMission(
   const userId = session.user.id;
 
   // Sin límite, un bucle de reintentos martilla la base gratis.
-  if (!allowUserAction("claim", "claim:reward", userId)) {
+  if (!(await allowUserAction("claim", "claim:reward", userId))) {
     return { ok: false, error: "rate_limited" };
   }
 

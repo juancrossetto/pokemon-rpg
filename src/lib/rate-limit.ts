@@ -59,16 +59,67 @@ export const ACTION_RATE_LIMITS = {
 
 export type ActionRateKind = keyof typeof ACTION_RATE_LIMITS;
 
+const DISTRIBUTED_SCRIPT = `
+local current = redis.call("INCR", KEYS[1])
+if current == 1 then redis.call("PEXPIRE", KEYS[1], ARGV[1]) end
+return current
+`;
+let lastDistributedWarningAt = 0;
+
+async function distributedHit(key: string, windowMs: number): Promise<number | null> {
+  const url = process.env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, "");
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify([
+      "EVAL",
+      DISTRIBUTED_SCRIPT,
+      "1",
+      `pokerpg:rate:${key}`,
+      String(windowMs),
+    ]),
+    cache: "no-store",
+    signal: AbortSignal.timeout(1_500),
+  });
+  const payload = (await response.json()) as { result?: number; error?: string };
+  if (!response.ok || payload.error || typeof payload.result !== "number") {
+    throw new Error(payload.error ?? `redis_${response.status}`);
+  }
+  return payload.result;
+}
+
 /**
  * Igual que `allowAction` pero con el presupuesto de la familia y la clave ya
  * compuesta con el jugador. `action` identifica el punto concreto (`claim:daily`)
  * para que dos acciones de la misma familia no compartan cupo.
  */
-export function allowUserAction(
+export async function allowUserAction(
   kind: ActionRateKind,
   action: string,
   userId: string,
-): boolean {
+): Promise<boolean> {
   const { limit, windowMs } = ACTION_RATE_LIMITS[kind];
-  return allowAction(`${action}:${userId}`, limit, windowMs);
+  const key = `${action}:${userId}`;
+  // El filtro local evita una llamada remota cuando esta misma instancia ya
+  // sabe que el cupo se agotó. Redis agrega la garantía entre réplicas.
+  if (!allowAction(key, limit, windowMs)) return false;
+  try {
+    const distributedCount = await distributedHit(key, windowMs);
+    return distributedCount === null || distributedCount <= limit;
+  } catch (error) {
+    // La protección local sigue activa si Redis tiene una caída. No se bloquea
+    // el juego por una dependencia auxiliar, y el warning se limita a uno/min.
+    const now = Date.now();
+    if (now - lastDistributedWarningAt >= 60_000) {
+      lastDistributedWarningAt = now;
+      console.warn("[rate-limit] distributed fallback", error);
+    }
+    return true;
+  }
 }

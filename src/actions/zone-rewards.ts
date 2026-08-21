@@ -48,7 +48,7 @@ export async function claimZoneObjective(
   const userId = session.user.id;
 
   // Sin límite, un bucle de reintentos martilla la base gratis.
-  if (!allowUserAction("claim", "claim:zone", userId)) {
+  if (!(await allowUserAction("claim", "claim:zone", userId))) {
     return { ok: false, error: "rate_limited" };
   }
 

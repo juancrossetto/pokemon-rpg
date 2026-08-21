@@ -413,7 +413,7 @@ export function StarterHub({
     });
 
     try {
-      const [result] = await Promise.all([chooseStarter(species.id, locale), minReveal]);
+      const [result] = await Promise.all([chooseStarter(species.id), minReveal]);
       setRevealPhase("ready");
 
       if (!result.ok) {

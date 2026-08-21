@@ -6,7 +6,7 @@
  *   node scripts/import-avatar-batch.mjs
  */
 import { readdir, mkdir, writeFile } from "node:fs/promises";
-import { join, basename } from "node:path";
+import { join } from "node:path";
 import sharp from "sharp";
 
 const ASSETS =

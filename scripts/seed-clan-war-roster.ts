@@ -10,7 +10,6 @@ import { prisma } from "../src/lib/prisma";
 import { CAMPAIGN_DEFAULTS } from "../src/lib/campaign";
 
 const LEADER = "Crossetto";
-const NEED = 9;
 const PASSWORD = "warriors1";
 
 const ROSTER = [

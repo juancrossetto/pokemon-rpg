@@ -299,11 +299,6 @@ export async function listNotifications(userId: string, limit = HISTORY_LIMIT): 
   items: NotificationDTO[];
   unreadCount: number;
 }> {
-  await Promise.all([
-    syncDailyRewardNotification(userId),
-    syncEnergyFullNotification(userId),
-  ]);
-
   const [rows, unreadCount] = await Promise.all([
     prisma.notification.findMany({
       where: { userId },
@@ -326,6 +321,14 @@ export async function listNotifications(userId: string, limit = HISTORY_LIMIT): 
     unreadCount,
     items: await enrichPersonImages(base),
   };
+}
+
+/** Sincronizaciones automáticas para ejecutar después de enviar la respuesta. */
+export async function syncAutomaticNotifications(userId: string): Promise<void> {
+  await Promise.all([
+    syncDailyRewardNotification(userId),
+    syncEnergyFullNotification(userId),
+  ]);
 }
 
 export async function markNotificationsRead(userId: string, ids?: string[]) {

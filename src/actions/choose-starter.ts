@@ -27,7 +27,6 @@ export type ChooseStarterResult =
  */
 export async function chooseStarter(
   speciesId: number,
-  _locale: string,
 ): Promise<ChooseStarterResult> {
   const session = await auth();
   if (!session?.user) {

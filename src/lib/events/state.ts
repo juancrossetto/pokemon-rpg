@@ -99,52 +99,60 @@ async function buildEventsSummary(userId: string): Promise<EventsSummary> {
   // mismo `since` que el desafío semanal en vez de repetir tres conteos.
   const limited = activeLimitedEvent(now);
 
-  const [
-    dailyClaims,
-    todayClaim,
-    weeklyClaims,
-    wins,
-    catches,
-    shinies,
-    zoneObjectives,
-    gymWins,
-    limitedClaims,
-  ] = await Promise.all([
-    prisma.dailyRewardClaim.count({ where: { userId, cycleId: DAILY_CYCLE.id } }),
-    prisma.dailyRewardClaim.findFirst({
-      where: { userId, dayKey: today },
-      select: { dayIndex: true },
-    }),
-    prisma.weeklyRewardClaim.findMany({
-      where: { userId, weekKey: currentWeek },
-      select: { milestone: true },
-    }),
-    prisma.battleLog.count({ where: { userId, userWon: true, createdAt: { gte: since } } }),
-    prisma.pokemonInstance.count({ where: { ownerId: userId, caughtAt: { gte: since } } }),
-    prisma.pokemonInstance.count({
-      where: { ownerId: userId, isShiny: true, caughtAt: { gte: since } },
-    }),
-    prisma.zoneObjectiveClaim.count({ where: { userId, claimedAt: { gte: since } } }),
-    prisma.gymAttempt.count({
-      where: { userId, won: true, attemptedAt: { gte: since } },
-    }),
-    prisma.eventMissionClaim.findMany({
-      where: { userId, eventCode: limited.code },
-      select: { missionId: true },
-    }),
-  ]);
+  type MetricsRow = {
+    dailyClaims: bigint;
+    todayDayIndex: number | null;
+    weeklyMilestones: number[];
+    wins: bigint;
+    catches: bigint;
+    shinies: bigint;
+    zoneObjectives: bigint;
+    gymWins: bigint;
+    limitedMissionIds: string[];
+    loginDays: bigint;
+  };
 
-  // Días de login de la semana = días distintos con reclamo diario. Es el dato
-  // más honesto que existe: no hay tabla de sesiones.
-  const loginRows = await prisma.dailyRewardClaim.findMany({
-    where: { userId, claimedAt: { gte: since } },
-    select: { dayKey: true },
-    distinct: ["dayKey"],
-  });
+  /*
+   * Antes eran diez viajes independientes a Supabase. Aunque salieran en
+   * paralelo, cada uno ocupaba un slot del pool y multiplicaba la latencia del
+   * header/home. PostgreSQL puede calcular todos los escalares y arrays en una
+   * sola sentencia; los valores siguen parametrizados por Prisma.
+   */
+  const [metrics] = await prisma.$queryRaw<MetricsRow[]>`
+    SELECT
+      (SELECT COUNT(*) FROM "DailyRewardClaim"
+        WHERE "userId" = ${userId} AND "cycleId" = ${DAILY_CYCLE.id}) AS "dailyClaims",
+      (SELECT MAX("dayIndex") FROM "DailyRewardClaim"
+        WHERE "userId" = ${userId} AND "dayKey" = ${today}) AS "todayDayIndex",
+      COALESCE((SELECT ARRAY_AGG("milestone" ORDER BY "milestone") FROM "WeeklyRewardClaim"
+        WHERE "userId" = ${userId} AND "weekKey" = ${currentWeek}), ARRAY[]::INTEGER[]) AS "weeklyMilestones",
+      (SELECT COUNT(*) FROM "BattleLog"
+        WHERE "userId" = ${userId} AND "userWon" = TRUE AND "createdAt" >= ${since}) AS "wins",
+      (SELECT COUNT(*) FROM "PokemonInstance"
+        WHERE "ownerId" = ${userId} AND "caughtAt" >= ${since}) AS "catches",
+      (SELECT COUNT(*) FROM "PokemonInstance"
+        WHERE "ownerId" = ${userId} AND "isShiny" = TRUE AND "caughtAt" >= ${since}) AS "shinies",
+      (SELECT COUNT(*) FROM "ZoneObjectiveClaim"
+        WHERE "userId" = ${userId} AND "claimedAt" >= ${since}) AS "zoneObjectives",
+      (SELECT COUNT(*) FROM "GymAttempt"
+        WHERE "userId" = ${userId} AND "won" = TRUE AND "attemptedAt" >= ${since}) AS "gymWins",
+      COALESCE((SELECT ARRAY_AGG("missionId") FROM "EventMissionClaim"
+        WHERE "userId" = ${userId} AND "eventCode" = ${limited.code}), ARRAY[]::TEXT[]) AS "limitedMissionIds",
+      (SELECT COUNT(DISTINCT "dayKey") FROM "DailyRewardClaim"
+        WHERE "userId" = ${userId} AND "claimedAt" >= ${since}) AS "loginDays"
+  `;
 
-  const claimedToday = todayClaim !== null;
+  if (!metrics) throw new Error("events_metrics_unavailable");
+
+  const dailyClaims = Number(metrics.dailyClaims);
+  const wins = Number(metrics.wins);
+  const catches = Number(metrics.catches);
+  const shinies = Number(metrics.shinies);
+  const zoneObjectives = Number(metrics.zoneObjectives);
+  const gymWins = Number(metrics.gymWins);
+  const claimedToday = metrics.todayDayIndex !== null;
   const currentDay = claimedToday
-    ? todayClaim.dayIndex
+    ? metrics.todayDayIndex!
     : nextDay(DAILY_CYCLE, dailyClaims);
 
   const days: DailyDayState[] = DAILY_CYCLE.slots.map((slot) => {
@@ -161,7 +169,7 @@ async function buildEventsSummary(userId: string): Promise<EventsSummary> {
   });
 
   const progress: Record<WeeklyObjectiveId, number> = {
-    logins: loginRows.length,
+    logins: Number(metrics.loginDays),
     battles: wins,
     catches,
     zones: zoneObjectives,
@@ -169,7 +177,7 @@ async function buildEventsSummary(userId: string): Promise<EventsSummary> {
     gyms: gymWins,
   };
   const percent = weeklyPercent(WEEKLY_CHALLENGE, progress);
-  const claimedMilestones = new Set(weeklyClaims.map((row) => row.milestone));
+  const claimedMilestones = new Set(metrics.weeklyMilestones);
 
   const milestones: WeeklyMilestoneState[] = WEEKLY_CHALLENGE.milestones.map((milestone) => {
     const unlocked = percent >= milestone.percent;
@@ -212,7 +220,7 @@ async function buildEventsSummary(userId: string): Promise<EventsSummary> {
     shinies,
     zones: zoneObjectives,
   };
-  const claimedMissionIds = new Set(limitedClaims.map((row) => row.missionId));
+  const claimedMissionIds = new Set(metrics.limitedMissionIds);
 
   const limitedState: LimitedEventState = {
     code: limited.code,
@@ -250,7 +258,7 @@ async function buildEventsSummary(userId: string): Promise<EventsSummary> {
 
 /**
  * Header y página principal consumen exactamente el mismo resumen. Memoizarlo
- * por request evita repetir sus diez agregaciones cuando ambos se renderizan
+ * por request evita repetir la consulta consolidada cuando ambos se renderizan
  * en el mismo árbol, sin dejar progreso personal persistido entre requests.
  */
 export const loadEventsSummary = cache(buildEventsSummary);

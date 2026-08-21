@@ -32,7 +32,7 @@ export async function buyItemWithGems(
   const userId = session.user.id;
 
   // Sin límite, un bucle de reintentos martilla la base gratis.
-  if (!allowUserAction("purchase", "shop:buyGems", userId)) {
+  if (!(await allowUserAction("purchase", "shop:buyGems", userId))) {
     return { ok: false, error: "rate_limited" };
   }
 

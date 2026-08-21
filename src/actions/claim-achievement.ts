@@ -51,7 +51,7 @@ export async function claimAchievement(
   const userId = session.user.id;
 
   // Sin límite, un bucle de reintentos martilla la base gratis.
-  if (!allowUserAction("claim", "claim:achievement", userId)) {
+  if (!(await allowUserAction("claim", "claim:achievement", userId))) {
     return { ok: false, error: "rate_limited" };
   }
 

@@ -17,8 +17,8 @@ La primera vez, además: `npx playwright install chromium`.
 
 ## Lo que hay que saber antes de tocarlos
 
-**Corren contra la base compartida.** Es la única configurada (`DATABASE_URL`
-apunta a Supabase), así que la suite está diseñada para no ensuciarla:
+En local corren contra la base indicada por `DATABASE_URL`; si apunta a la base
+compartida, la suite está diseñada para no ensuciarla:
 
 - Cada corrida **crea su propia cuenta** (`e2e-<id>@pokerpg.test`) y nunca toca
   la de nadie más.
@@ -27,6 +27,10 @@ apunta a Supabase), así que la suite está diseñada para no ensuciarla:
 - `workers: 1`. No es por lentitud del runner: paralelizar satura el pooler y
   además hace que los specs se pisen en estado global (rankings, barra
   comunitaria de incursión).
+
+En CI se levanta PostgreSQL 16 como servicio, se aplican las migraciones y se
+siembra el catálogo hasta Johto. Ninguna credencial ni dato de Supabase entra
+en el workflow.
 
 **Los asserts miran la base con SQL directo, no con Prisma.** Si el test
 consultara con el mismo ORM y el mismo esquema que usa la app, un error de mapeo

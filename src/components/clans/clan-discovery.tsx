@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { ClanCard, type ClanCardLabels } from "@/components/clans/clan-card";
 import { CLAN_AFFINITIES, CLAN_FOCUSES, CLAN_JOIN_POLICIES, CLAN_MAX_MEMBERS } from "@/lib/clan-rules";
 import type { ClanAffinity, ClanFocus, ClanJoinPolicy } from "@/lib/clan-types";

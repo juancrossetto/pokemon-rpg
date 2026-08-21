@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { Link, redirect } from "@/i18n/navigation";
+import { redirect } from "@/i18n/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { CLAN_ERRORS, CLAN_NOTICES, pickCode } from "@/lib/feedback-codes";

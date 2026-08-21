@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- sprites remotos animados requieren <img> sin optimizer */
+
 import { CdnImage as Image } from "@/components/cdn-image";
 import { useState } from "react";
 
@@ -56,7 +58,6 @@ export function AvatarImage({
 
   // <img> y no next/image: necesitamos onError para el fallback y, sin saber a
   // qué tamaño se muestra, `next/image` no puede elegir una resolución mejor.
-  // eslint-disable-next-line @next/next/no-img-element
   return (
     <img
       src={src}

@@ -37,7 +37,7 @@ export async function startEncounter(locale: string): Promise<StartEncounterResu
 
   // Arranque de combate: el costo de energía ya limita el ritmo real, pero un
   // bucle igual crea sesiones y consulta la base sin freno.
-  if (!allowUserAction("battleStart", "encounter:start", userId)) {
+  if (!(await allowUserAction("battleStart", "encounter:start", userId))) {
     return { success: false, error: "no_energy" };
   }
 

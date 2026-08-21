@@ -22,6 +22,7 @@ type SharedProps = {
 
 type AsLink = SharedProps & {
   href: string;
+  prefetch?: boolean | null;
   type?: never;
   onClick?: never;
 };
@@ -39,6 +40,7 @@ const BUTTON_OMIT = new Set([
   "disabled",
   "variant",
   "href",
+  "prefetch",
 ]);
 
 /**
@@ -89,7 +91,7 @@ export function GameCtaButton(props: GameCtaButtonProps) {
       );
     }
     return (
-      <Link href={props.href} className={classes}>
+      <Link href={props.href} prefetch={props.prefetch} className={classes}>
         {content}
       </Link>
     );

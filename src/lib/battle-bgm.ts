@@ -25,7 +25,6 @@ let resultCtx: AudioContext | null = null;
 let resultNodes: AudioNode[] = [];
 let resultTimers: number[] = [];
 let resultLoopTimer: number | null = null;
-let resultKind: ResultBgmKind | null = null;
 let resultAudio: HTMLAudioElement | null = null;
 /** Generación de la fanfarria activa — evita que el cleanup de Strict Mode
  *  mate el play del remount siguiente. */
@@ -225,13 +224,10 @@ export function startResultBgm(kind: ResultBgmKind): number {
     resultAudio = null;
   }
   clearResultSchedule();
-  resultKind = null;
-
   if (isBattleBgmMuted()) return playGen;
 
   // Victoria: fanfarria dedicada — una sola pasada, no loop de pantalla de resultado.
   if (kind === "victory") {
-    resultKind = kind;
     const el = new Audio();
     resultAudio = el;
     el.preload = "auto";
@@ -251,7 +247,6 @@ export function startResultBgm(kind: ResultBgmKind): number {
   // Derrota: fanfarria Web Audio (una frase, sin repetir).
   const audioCtx = getResultCtx();
   if (!audioCtx) return playGen;
-  resultKind = kind;
   const vol = Math.max(0.05, getBattleBgmVolume());
   scheduleDefeatPhrase(audioCtx, audioCtx.currentTime + 0.02, vol);
   return playGen;
@@ -266,7 +261,6 @@ export function stopResultBgm(playGen?: number) {
     resultAudio = null;
   }
   clearResultSchedule();
-  resultKind = null;
 }
 
 /*

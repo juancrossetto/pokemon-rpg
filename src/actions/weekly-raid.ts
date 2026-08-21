@@ -59,7 +59,7 @@ export async function startWeeklyRaidBattle(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
-  if (!allowUserAction("battleStart", "raid:start", userId)) {
+  if (!(await allowUserAction("battleStart", "raid:start", userId))) {
     return { ok: false, error: "busy" };
   }
   const key = weekKey();
@@ -251,7 +251,7 @@ export async function claimWeeklyRaidReward(locale: string): Promise<RaidActionR
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
-  if (!allowUserAction("claim", "raid:claim", userId)) {
+  if (!(await allowUserAction("claim", "raid:claim", userId))) {
     return { ok: false, error: "busy" };
   }
   const key = weekKey();

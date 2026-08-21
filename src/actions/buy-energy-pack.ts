@@ -45,7 +45,7 @@ export async function buyEnergyPack(
   const userId = session.user.id;
 
   // Sin límite, un bucle de reintentos martilla la base gratis.
-  if (!allowUserAction("purchase", "shop:energy", userId)) {
+  if (!(await allowUserAction("purchase", "shop:energy", userId))) {
     return { ok: false, error: "rate_limited" };
   }
 

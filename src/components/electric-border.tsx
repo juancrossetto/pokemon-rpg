@@ -13,16 +13,7 @@
  * Padre: `position: relative` + radio. Puede llevar `overflow: hidden`
  * si hace falta — el efecto ya no se sale del borde.
  */
-export function ElectricBorder({
-  // props conservados por compat con callers existentes
-  id: _id = "electric-displace",
-  scale: _scale = 14,
-  forceFallback: _forceFallback = false,
-}: {
-  id?: string;
-  scale?: number;
-  forceFallback?: boolean;
-} = {}) {
+export function ElectricBorder() {
   return (
     <span
       className="electric-border electric-border--fallback pointer-events-none absolute inset-0 rounded-[inherit]"

@@ -98,9 +98,14 @@ export async function reconcileTowerPeriodAttempts(
       },
       { timeout: 20_000 },
     );
-    return getTowerAttemptState(userId, at).then(
-      ({ periodRuns: _ignored, ...rest }) => rest,
-    );
+    const next = await getTowerAttemptState(userId, at);
+    return {
+      periodKey: next.periodKey,
+      periodStart: next.periodStart,
+      attemptsMax: next.attemptsMax,
+      attemptsUsed: next.attemptsUsed,
+      attemptsRemaining: next.attemptsRemaining,
+    };
   }
 
   await prisma.towerAttemptDay.upsert({

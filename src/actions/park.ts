@@ -336,7 +336,7 @@ export async function castLine(
 > {
   const gate = await authed(locale);
   if (!gate.ok) return { ok: false, error: gate.error };
-  if (!allowUserAction("battleStart", "park:fish", gate.userId)) {
+  if (!(await allowUserAction("battleStart", "park:fish", gate.userId))) {
     return { ok: false, error: "busy" };
   }
 
@@ -634,7 +634,7 @@ export async function spinCornerAction(
 > {
   const gate = await authed(locale);
   if (!gate.ok) return { ok: false, error: gate.error };
-  if (!allowUserAction("purchase", "park:corner", gate.userId)) {
+  if (!(await allowUserAction("purchase", "park:corner", gate.userId))) {
     return { ok: false, error: "busy" };
   }
   const spin = spinCorner();
@@ -853,7 +853,7 @@ export async function playFrontier(
   const gate = await authed(locale);
   if (!gate.ok) return { ok: false, error: gate.error };
   if (!isFrontierFacility(facility)) return { ok: false, error: "bad_facility" };
-  if (!allowUserAction("battleStart", "park:frontier", gate.userId)) {
+  if (!(await allowUserAction("battleStart", "park:frontier", gate.userId))) {
     return { ok: false, error: "busy" };
   }
 

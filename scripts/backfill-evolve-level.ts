@@ -33,7 +33,6 @@ function walk(
   out: Map<number, number>,
 ) {
   for (const child of link.evolves_to) {
-    const childId = idFromUrl(child.species.url);
     const levelUp = child.evolution_details.find(
       (d) => d.trigger.name === "level-up" && d.min_level != null,
     );

@@ -168,6 +168,7 @@ export async function HomeRouteHero({
           {showClaim ? (
             <GameCtaButton
               href="/campaign"
+              prefetch={false}
               variant="secondary"
               className="route-hero__cta-secondary"
             >

@@ -48,7 +48,7 @@ export function ConfirmModal({
       document.removeEventListener("keydown", onKey);
       releaseScroll();
     };
-  }, [open, pending, onCancelEvent]);
+  }, [open, pending]);
 
   if (!open || typeof document === "undefined") return null;
 

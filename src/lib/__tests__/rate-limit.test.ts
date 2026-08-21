@@ -84,25 +84,25 @@ describe("allowAction · ventana deslizante", () => {
 });
 
 describe("allowUserAction", () => {
-  it("separa el cupo por jugador", () => {
+  it("separa el cupo por jugador", async () => {
     const action = key("per-user");
     const budget = ACTION_RATE_LIMITS.claim.limit;
     for (let i = 0; i < budget; i += 1) {
-      expect(allowUserAction("claim", action, "user-a")).toBe(true);
+      expect(await allowUserAction("claim", action, "user-a")).toBe(true);
     }
-    expect(allowUserAction("claim", action, "user-a")).toBe(false);
+    expect(await allowUserAction("claim", action, "user-a")).toBe(false);
     // El jugador B no paga por lo que hizo A.
-    expect(allowUserAction("claim", action, "user-b")).toBe(true);
+    expect(await allowUserAction("claim", action, "user-b")).toBe(true);
   });
 
-  it("separa el cupo por acción dentro de la misma familia", () => {
+  it("separa el cupo por acción dentro de la misma familia", async () => {
     const one = key("fam-1");
     const two = key("fam-2");
     const budget = ACTION_RATE_LIMITS.purchase.limit;
-    for (let i = 0; i < budget; i += 1) allowUserAction("purchase", one, "u");
-    expect(allowUserAction("purchase", one, "u")).toBe(false);
+    for (let i = 0; i < budget; i += 1) await allowUserAction("purchase", one, "u");
+    expect(await allowUserAction("purchase", one, "u")).toBe(false);
     // Comprar en la tienda no debe gastar el cupo de comprar energía.
-    expect(allowUserAction("purchase", two, "u")).toBe(true);
+    expect(await allowUserAction("purchase", two, "u")).toBe(true);
   });
 
   it("los presupuestos son holgados para el juego a mano", () => {

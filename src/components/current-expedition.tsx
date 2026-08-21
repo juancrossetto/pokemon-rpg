@@ -336,6 +336,7 @@ export function CurrentExpedition({
             </div>
             <Link
               href="/campaign"
+              prefetch={false}
               aria-label={t("journeyGuide")}
               title={t("journeyGuide")}
               className="expedition-map-fab pointer-events-auto inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-black/45 shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition hover:scale-105 hover:border-white/25 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 sm:h-12 sm:w-12"

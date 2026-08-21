@@ -55,7 +55,7 @@ export async function createFactoryRun(locale: string): Promise<FactoryActionRes
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
-  if (!allowUserAction("battleStart", "factory:create", userId)) {
+  if (!(await allowUserAction("battleStart", "factory:create", userId))) {
     return { ok: false, error: "busy" };
   }
 
@@ -135,7 +135,7 @@ export async function fightFactoryRound(locale: string): Promise<FactoryActionRe
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
-  if (!allowUserAction("battleStart", "factory:fight", userId)) {
+  if (!(await allowUserAction("battleStart", "factory:fight", userId))) {
     return { ok: false, error: "busy" };
   }
   const key = dayKey();
@@ -252,7 +252,7 @@ export async function claimFactoryReward(locale: string): Promise<FactoryActionR
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
-  if (!allowUserAction("claim", "factory:claim", userId)) {
+  if (!(await allowUserAction("claim", "factory:claim", userId))) {
     return { ok: false, error: "busy" };
   }
   const key = dayKey();
@@ -311,7 +311,7 @@ export async function redeemFactoryPoints(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
-  if (!allowUserAction("purchase", "factory:redeem", userId)) {
+  if (!(await allowUserAction("purchase", "factory:redeem", userId))) {
     return { ok: false, error: "busy" };
   }
 
