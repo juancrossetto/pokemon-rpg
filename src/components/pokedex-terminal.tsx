@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { CdnImage as Image } from "@/components/cdn-image";
 import { PokemonImage } from "@/components/pokemon-image";
 import { neonTypeColor } from "@/lib/type-colors";
@@ -325,9 +325,13 @@ export function PokedexTerminal({
   const nextResearchMilestone = researchMilestones.find((value) => discoveryPct < value);
 
   return (
-    <div className="flex flex-col gap-3 md:gap-6">
+    <div className="pokedex-native-terminal relative flex flex-col gap-3 md:gap-6">
+      <div className="pokedex-scan-intro" aria-hidden>
+        <span className="pokedex-scan-intro__reticle" />
+        <span className="pokedex-scan-intro__line" />
+      </div>
       {/* Header: compacto en mobile, completo en desktop */}
-      <header className="space-y-3 md:space-y-4">
+      <header className="pokedex-native-header space-y-3 md:space-y-4">
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
             <h1 className="page-title text-headline-md text-white md:text-display-sm">
@@ -670,7 +674,7 @@ export function PokedexTerminal({
             </p>
           ) : null}
           {view === "grid" ? (
-            <ul className="grid grid-cols-3 gap-x-1 gap-y-4 sm:grid-cols-4 sm:gap-x-2 sm:gap-y-5 md:grid-cols-5 lg:grid-cols-6">
+            <ul className="pokedex-native-grid grid grid-cols-3 gap-x-1 gap-y-4 sm:grid-cols-4 sm:gap-x-2 sm:gap-y-5 md:grid-cols-5 lg:grid-cols-6">
               {visible.map((entry, index) => (
                 <DexCard
                   key={entry.id}
@@ -680,6 +684,7 @@ export function PokedexTerminal({
                   shinyAtlas={quick === "shiny"}
                   isNew={newlyCaught.has(entry.id)}
                   eager={index === 0}
+                  staggerIndex={index}
                   onOpen={
                     !regionLocked && entry.status !== "unseen"
                       ? () => setSelectedId(entry.id)
@@ -689,7 +694,7 @@ export function PokedexTerminal({
               ))}
             </ul>
           ) : (
-            <ul className="flex flex-col gap-1">
+            <ul className="pokedex-native-list flex flex-col gap-1">
               {visible.map((entry, index) => (
                 <DexListRow
                   key={entry.id}
@@ -699,6 +704,7 @@ export function PokedexTerminal({
                   shinyAtlas={quick === "shiny"}
                   isNew={newlyCaught.has(entry.id)}
                   eager={index === 0}
+                  staggerIndex={index}
                   onOpen={
                     !regionLocked && entry.status !== "unseen"
                       ? () => setSelectedId(entry.id)
@@ -790,6 +796,7 @@ function DexCard({
   shinyAtlas = false,
   isNew = false,
   eager = false,
+  staggerIndex = 0,
   onOpen,
 }: {
   entry: PokedexSpeciesCard;
@@ -801,6 +808,7 @@ function DexCard({
   isNew?: boolean;
   /** Primera imagen visible: candidata a LCP. */
   eager?: boolean;
+  staggerIndex?: number;
   onOpen?: () => void;
 }) {
   const speciesUnseen = forceLocked || entry.status === "unseen";
@@ -819,7 +827,10 @@ function DexCard({
   const showShinyArt = shinyAtlas || entry.hasShiny;
 
   return (
-    <li>
+    <li
+      className="pokedex-native-entry"
+      style={{ "--dex-delay": `${Math.min(staggerIndex, 17) * 24}ms` } as CSSProperties}
+    >
       <button
         type="button"
         onClick={onOpen}
@@ -943,6 +954,7 @@ function DexListRow({
   shinyAtlas = false,
   isNew = false,
   eager = false,
+  staggerIndex = 0,
   onOpen,
 }: {
   entry: PokedexSpeciesCard;
@@ -952,6 +964,7 @@ function DexListRow({
   /** Registrada desde la última visita. */
   isNew?: boolean;
   eager?: boolean;
+  staggerIndex?: number;
   onOpen?: () => void;
 }) {
   const primary = entry.types[0] ?? "normal";
@@ -963,7 +976,10 @@ function DexListRow({
   const showShinyArt = shinyAtlas || entry.hasShiny;
 
   return (
-    <li className="relative">
+    <li
+      className="pokedex-native-entry relative"
+      style={{ "--dex-delay": `${Math.min(staggerIndex, 17) * 24}ms` } as CSSProperties}
+    >
       <button
         type="button"
         onClick={onOpen}
@@ -1060,7 +1076,7 @@ function PokedexDetailDialog({
 
   return (
     <div
-      className="fixed inset-0 z-80 flex items-end justify-center bg-black/78 p-0 backdrop-blur-sm sm:items-center sm:p-5"
+      className="pokedex-detail-backdrop fixed inset-0 z-80 flex items-end justify-center bg-black/78 p-0 backdrop-blur-sm sm:items-center sm:p-5"
       role="presentation"
       onClick={onClose}
     >
@@ -1069,7 +1085,7 @@ function PokedexDetailDialog({
         aria-modal="true"
         aria-labelledby="pokedex-detail-title"
         data-testid="pokedex-detail"
-        className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-t-[26px] border border-white/12 bg-[radial-gradient(circle_at_20%_0%,rgba(232,121,249,.13),transparent_34%),#101117] p-5 shadow-2xl sm:rounded-[26px] sm:p-6"
+        className="pokedex-native-detail max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-t-[26px] border border-white/12 bg-[radial-gradient(circle_at_20%_0%,rgba(232,121,249,.13),transparent_34%),#101117] p-5 shadow-2xl sm:rounded-[26px] sm:p-6"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex items-start justify-between gap-4">
@@ -1107,7 +1123,9 @@ function PokedexDetailDialog({
 
         <div className="mt-5 grid gap-5 md:grid-cols-[15rem_minmax(0,1fr)]">
           <div className="space-y-3">
-            <div className="relative mx-auto aspect-square w-full max-w-56 rounded-2xl border border-white/8 bg-black/25">
+            <div className="pokedex-native-detail__stage relative mx-auto aspect-square w-full max-w-56 overflow-hidden rounded-2xl border border-white/8 bg-black/25">
+              <span className="pokedex-native-detail__ring" aria-hidden />
+              <span className="pokedex-native-detail__scan" aria-hidden />
               <PokemonImage
                 src={entry.spriteUrl}
                 speciesId={entry.id}
@@ -1116,7 +1134,7 @@ function PokedexDetailDialog({
                 alt={entry.name}
                 width={240}
                 height={240}
-                className="h-full w-full object-contain p-4 drop-shadow-[0_18px_18px_rgba(0,0,0,.6)]"
+                className="relative z-[2] h-full w-full object-contain p-4 drop-shadow-[0_18px_18px_rgba(0,0,0,.6)]"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">

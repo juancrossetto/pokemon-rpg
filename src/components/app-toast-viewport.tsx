@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { APP_TOAST_EVENT, type AppToastDetail, type AppToastKind } from "@/lib/app-toast";
+import { nativeFeedback } from "@/lib/native-feedback";
 
 type Entry = AppToastDetail & { id: number };
 
@@ -31,6 +32,7 @@ export function AppToastViewport() {
     function onToast(event: Event) {
       const detail = (event as CustomEvent<AppToastDetail>).detail;
       if (!detail?.message) return;
+      nativeFeedback(detail.kind === "success" ? "reward" : detail.kind === "error" ? "error" : "tap");
       const id = nextId++;
       setEntries((prev) => [...prev.slice(-(MAX_STACK - 1)), { ...detail, id }]);
       window.setTimeout(() => {
@@ -53,8 +55,14 @@ export function AppToastViewport() {
         return (
           <div
             key={entry.id}
-            className={`app-toast-in pointer-events-auto flex max-w-full items-center gap-2 rounded-xl border ${style.border} bg-[#0b0d13]/95 px-3.5 py-2.5 shadow-[0_12px_36px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:max-w-sm`}
+            data-kind={entry.kind}
+            className={`app-toast-in app-toast-game pointer-events-auto relative flex max-w-full items-center gap-2 overflow-hidden rounded-xl border ${style.border} bg-[#0b0d13]/95 px-3.5 py-2.5 shadow-[0_12px_36px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:max-w-sm`}
           >
+            {entry.kind === "success" ? (
+              <span className="app-toast-game__sparks" aria-hidden>
+                {Array.from({ length: 6 }, (_, index) => <i key={index} />)}
+              </span>
+            ) : null}
             <span
               aria-hidden
               className={`material-symbols-outlined shrink-0 text-[18px]! ${style.iconColor}`}

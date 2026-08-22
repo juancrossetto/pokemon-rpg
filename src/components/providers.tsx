@@ -9,12 +9,14 @@ import { GameSettingsRuntime } from "@/components/game-settings-runtime";
 import { PwaUpdateManager } from "@/components/pwa-update-manager";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { WebVitals } from "@/components/web-vitals";
+import { GameFeelRuntime } from "@/components/game-feel-runtime";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <OptimisticAvatarProvider>
         <NavigationProgress />
+        <GameFeelRuntime />
         <AppBootWarmup />
         <WorldBgmController />
         <GameSettingsRuntime />

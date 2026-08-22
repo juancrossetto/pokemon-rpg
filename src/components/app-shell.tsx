@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import { getMessages } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -12,6 +12,7 @@ import { getAuthSession } from "@/lib/auth-session";
 import { getUserSnapshot } from "@/lib/user-snapshot";
 import { AppShellFallback } from "@/components/app-shell-fallback";
 import { getCombatLock, enforceCombatLockInLayout, stripLocale } from "@/lib/battle-lock";
+import { GameRouteAtmosphere } from "@/components/game-route-atmosphere";
 
 /**
  * Shell autenticado: auth + header.
@@ -73,7 +74,12 @@ export async function AppShell({
             session?.user ? " pb-bottom-nav" : ""
           }`}
         >
-          {children}
+          <GameRouteAtmosphere />
+          <ViewTransition name="game-route" default="game-route">
+            <div className="game-route-content relative z-[1] flex min-h-0 flex-1 flex-col">
+              {children}
+            </div>
+          </ViewTransition>
         </div>
       </Providers>
     </I18nClientProvider>

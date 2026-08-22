@@ -30671,6 +30671,233 @@ img.cdn-img--loaded.opacity-45 { opacity: 0.45; }
   .campaign-path__node--current .campaign-path__bubble { animation: none; }
 }
 
+/* ====================================================================== */
+/* GAME FEEL — transición nativa, respuesta táctil y mundos ambientales    */
+/* ====================================================================== */
+
+/* El header y el dock quedan fuera del snapshot: son el ancla espacial. */
+::view-transition-group(game-route) {
+  z-index: 20;
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+}
+
+::view-transition-old(game-route) {
+  animation: game-route-out 155ms cubic-bezier(.4, 0, 1, 1) both;
+}
+
+::view-transition-new(game-route) {
+  animation: game-route-in 360ms 80ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+@keyframes game-route-out {
+  to { opacity: 0; scale: .985; filter: blur(2px); }
+}
+
+@keyframes game-route-in {
+  from { opacity: 0; translate: 0 14px; scale: .992; filter: blur(3px); }
+  to { opacity: 1; translate: 0 0; scale: 1; filter: blur(0); }
+}
+
+.app-main {
+  isolation: isolate;
+  overflow-x: clip;
+  background: #09090d;
+}
+
+.game-route-content {
+  min-width: 0;
+}
+
+/* `scale` individual compone con `transform`, no pisa animaciones propias. */
+:where(button, a[href], [role="button"], [role="tab"], [role="switch"]):not(:disabled):not([aria-disabled="true"]):not([data-no-game-feel]) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, a[href], [role="button"], [role="tab"], [role="switch"]):not(:disabled):not([aria-disabled="true"]):not([data-no-game-feel]):active {
+  scale: .975;
+}
+
+.game-atmosphere {
+  --atmo-a: 118 73 255;
+  --atmo-b: 40 190 255;
+  --atmo-grid: 255 255 255;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+  background:
+    radial-gradient(circle at 50% -15%, rgb(var(--atmo-a) / .12), transparent 46%),
+    linear-gradient(180deg, #0b0b11 0%, #08090d 68%, #07080b 100%);
+}
+
+.game-atmosphere--journey {
+  --atmo-a: 70 220 150;
+  --atmo-b: 65 150 255;
+  --atmo-grid: 120 240 190;
+}
+.game-atmosphere--research {
+  --atmo-a: 238 78 138;
+  --atmo-b: 90 205 255;
+  --atmo-grid: 90 210 255;
+}
+.game-atmosphere--nature {
+  --atmo-a: 80 230 135;
+  --atmo-b: 240 190 55;
+  --atmo-grid: 120 220 130;
+}
+.game-atmosphere--neon {
+  --atmo-a: 255 56 155;
+  --atmo-b: 95 100 255;
+  --atmo-grid: 255 90 210;
+}
+.game-atmosphere--lab {
+  --atmo-a: 50 180 255;
+  --atmo-b: 120 245 225;
+  --atmo-grid: 80 205 255;
+}
+.game-atmosphere--arena {
+  --atmo-a: 255 65 85;
+  --atmo-b: 255 175 35;
+  --atmo-grid: 255 100 80;
+}
+.game-atmosphere--event {
+  --atmo-a: 195 80 255;
+  --atmo-b: 255 190 55;
+  --atmo-grid: 220 120 255;
+}
+.game-atmosphere--social {
+  --atmo-a: 80 130 255;
+  --atmo-b: 240 85 180;
+  --atmo-grid: 125 150 255;
+}
+
+.game-atmosphere__aurora {
+  position: absolute;
+  inset: -20% -15% auto;
+  height: 66%;
+  opacity: .42;
+  background:
+    radial-gradient(ellipse at 25% 10%, rgb(var(--atmo-a) / .24), transparent 54%),
+    radial-gradient(ellipse at 75% 5%, rgb(var(--atmo-b) / .18), transparent 52%);
+  filter: blur(34px);
+  transform: translate3d(0, 0, 0);
+  animation: game-atmosphere-breathe 9s ease-in-out infinite alternate;
+}
+
+.game-atmosphere__grid {
+  position: absolute;
+  inset: 0;
+  opacity: .055;
+  background-image:
+    linear-gradient(rgb(var(--atmo-grid) / .42) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--atmo-grid) / .42) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 82%);
+  transform: perspective(480px) rotateX(58deg) scale(1.45) translateY(24%);
+  transform-origin: 50% 100%;
+}
+
+.game-atmosphere__beam {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -16%;
+  width: 16%;
+  opacity: .11;
+  background: linear-gradient(90deg, transparent, rgb(var(--atmo-b) / .7), transparent);
+  filter: blur(10px);
+  transform: skewX(-14deg);
+  animation: game-atmosphere-sweep 10s ease-in-out infinite;
+}
+
+.game-atmosphere__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 38%, rgb(0 0 0 / .28) 100%),
+    linear-gradient(180deg, transparent 65%, rgb(0 0 0 / .2));
+}
+
+.game-atmosphere__motes,
+.game-atmosphere__motes i {
+  position: absolute;
+  inset: 0;
+}
+
+.game-atmosphere__motes i {
+  left: var(--mote-x);
+  top: var(--mote-y);
+  width: var(--mote-size);
+  height: var(--mote-size);
+  border-radius: 999px;
+  opacity: .14;
+  background: rgb(var(--atmo-b));
+  box-shadow: 0 0 10px rgb(var(--atmo-b) / .75);
+  animation: game-atmosphere-mote var(--mote-duration) var(--mote-delay) ease-in-out infinite;
+}
+
+html[data-route-arriving] .game-atmosphere__aurora {
+  animation: game-atmosphere-arrive 520ms cubic-bezier(.16, 1, .3, 1) both,
+    game-atmosphere-breathe 9s 520ms ease-in-out infinite alternate;
+}
+
+@keyframes game-atmosphere-breathe {
+  from { translate: -1.5% -1%; scale: 1; opacity: .34; }
+  to { translate: 1.5% 2%; scale: 1.08; opacity: .5; }
+}
+
+@keyframes game-atmosphere-arrive {
+  from { opacity: 0; scale: 1.12; }
+  to { opacity: .42; scale: 1; }
+}
+
+@keyframes game-atmosphere-sweep {
+  0%, 18% { translate: -10vw 0; opacity: 0; }
+  34%, 48% { opacity: .12; }
+  68%, 100% { translate: 125vw 0; opacity: 0; }
+}
+
+@keyframes game-atmosphere-mote {
+  0%, 100% { translate: 0 12px; opacity: .06; scale: .75; }
+  45% { translate: 7px -18px; opacity: .22; scale: 1.15; }
+  70% { translate: -4px -30px; opacity: .1; }
+}
+
+html[data-high-contrast="1"] .game-atmosphere {
+  opacity: .45;
+}
+
+html[data-flashes="0"] .game-atmosphere__beam {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+  .game-atmosphere * { animation: none !important; }
+  :where(button, a[href], [role="button"], [role="tab"], [role="switch"]):active {
+    scale: 1;
+  }
+}
+
+html[data-reduce-motion="1"]::view-transition-old(*),
+html[data-reduce-motion="1"]::view-transition-new(*),
+html[data-reduce-motion="1"]::view-transition-group(*) {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+}
+
+html[data-reduce-motion="1"] .game-atmosphere * {
+  animation: none !important;
+}
+
 /* El líder del equipo, parado sobre la zona actual. Sale del borde superior
    de la burbuja: apoyado *sobre* el nodo, no metido adentro. */
 /* Hombro izquierdo, no arriba al centro: la chapa "¡Jugar!" ocupa la esquina
@@ -30893,3 +31120,333 @@ img.cdn-img--loaded.opacity-45 { opacity: 0.45; }
   border-color: transparent;
   background: rgba(255, 255, 255, 0.02);
 }
+
+/* ====================================================================== */
+/* Native polish: rewards, Pokédex scanner and living campaign trail       */
+/* ====================================================================== */
+
+.app-toast-game {
+  isolation: isolate;
+}
+.app-toast-game::before {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  content: "";
+  transform-origin: left;
+  background: currentColor;
+  opacity: 0.42;
+  animation: app-toast-game-life 2.6s linear both;
+}
+.app-toast-game[data-kind="success"] {
+  color: rgb(52 211 153);
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.58), 0 0 28px rgba(52, 211, 153, 0.12);
+}
+.app-toast-game[data-kind="success"]::after {
+  position: absolute;
+  inset: -60% auto -60% -35%;
+  width: 28%;
+  content: "";
+  transform: skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent);
+  animation: app-toast-game-sheen 720ms 80ms ease-out both;
+}
+.app-toast-game__sparks {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.app-toast-game__sparks i {
+  --spark-x: 0px;
+  --spark-y: -18px;
+  position: absolute;
+  top: 48%;
+  left: 1.4rem;
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: #fde68a;
+  box-shadow: 0 0 6px currentColor;
+  animation: app-toast-game-spark 760ms cubic-bezier(.18,.74,.21,1) both;
+}
+.app-toast-game__sparks i:nth-child(2) { --spark-x: 17px; --spark-y: -22px; animation-delay: 30ms; }
+.app-toast-game__sparks i:nth-child(3) { --spark-x: 22px; --spark-y: 13px; animation-delay: 60ms; }
+.app-toast-game__sparks i:nth-child(4) { --spark-x: -14px; --spark-y: 16px; animation-delay: 80ms; }
+.app-toast-game__sparks i:nth-child(5) { --spark-x: -20px; --spark-y: -13px; animation-delay: 100ms; }
+.app-toast-game__sparks i:nth-child(6) { --spark-x: 5px; --spark-y: 23px; animation-delay: 120ms; }
+
+@keyframes app-toast-game-life {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@keyframes app-toast-game-sheen {
+  from { transform: translateX(0) skewX(-18deg); opacity: 0; }
+  35% { opacity: 1; }
+  to { transform: translateX(520%) skewX(-18deg); opacity: 0; }
+}
+@keyframes app-toast-game-spark {
+  0% { opacity: 0; transform: translate(0, 0) scale(.4); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--spark-x), var(--spark-y)) scale(0); }
+}
+
+.pokedex-native-terminal {
+  isolation: isolate;
+}
+.pokedex-native-header {
+  position: relative;
+}
+.pokedex-native-header::after {
+  position: absolute;
+  right: 0;
+  bottom: -.5rem;
+  left: 0;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(239,68,68,.55), rgba(34,211,238,.2), transparent);
+  opacity: .72;
+  animation: pokedex-header-signal 4.6s ease-in-out infinite;
+}
+.pokedex-scan-intro {
+  position: absolute;
+  inset: -.5rem;
+  z-index: 20;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  pointer-events: none;
+  animation: pokedex-scan-overlay 920ms ease-out both;
+}
+.pokedex-scan-intro__line {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(34,211,238,.75), rgba(255,255,255,.95), rgba(34,211,238,.75), transparent);
+  box-shadow: 0 0 18px rgba(34,211,238,.8), 0 0 50px rgba(34,211,238,.25);
+  animation: pokedex-scan-line 820ms cubic-bezier(.2,.68,.32,1) both;
+}
+.pokedex-scan-intro__reticle {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 1px solid rgba(34,211,238,.48);
+  border-radius: 50%;
+  box-shadow: inset 0 0 12px rgba(34,211,238,.16);
+  animation: pokedex-reticle-lock 720ms ease-out both;
+}
+.pokedex-scan-intro__reticle::before,
+.pokedex-scan-intro__reticle::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  content: "";
+  background: rgba(34,211,238,.58);
+  transform: translate(-50%, -50%);
+}
+.pokedex-scan-intro__reticle::before { width: 130%; height: 1px; }
+.pokedex-scan-intro__reticle::after { width: 1px; height: 130%; }
+.pokedex-native-entry {
+  animation: pokedex-entry-materialize 380ms var(--dex-delay, 0ms) cubic-bezier(.16,1,.3,1) both;
+}
+.pokedex-native-grid .pokedex-native-entry button {
+  transform-style: preserve-3d;
+}
+.pokedex-detail-backdrop {
+  animation: pokedex-detail-backdrop-in 220ms ease-out both;
+}
+.pokedex-native-detail {
+  animation: pokedex-detail-panel-in 380ms cubic-bezier(.16,1,.3,1) both;
+}
+.pokedex-native-detail__stage {
+  isolation: isolate;
+  background-image:
+    linear-gradient(rgba(34,211,238,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,.035) 1px, transparent 1px),
+    radial-gradient(circle at 50% 54%, rgba(34,211,238,.12), transparent 60%);
+  background-size: 18px 18px, 18px 18px, 100% 100%;
+}
+.pokedex-native-detail__ring {
+  position: absolute;
+  inset: 14%;
+  z-index: 1;
+  border: 1px solid rgba(34,211,238,.28);
+  border-right-color: rgba(239,68,68,.6);
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(34,211,238,.08), inset 0 0 20px rgba(34,211,238,.05);
+  animation: pokedex-detail-ring 9s linear infinite;
+}
+.pokedex-native-detail__scan {
+  position: absolute;
+  right: 5%;
+  left: 5%;
+  z-index: 3;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(34,211,238,.8), transparent);
+  box-shadow: 0 0 12px rgba(34,211,238,.55);
+  animation: pokedex-detail-scan 3.2s ease-in-out infinite;
+}
+
+@keyframes pokedex-header-signal {
+  0%, 100% { opacity: .35; transform: scaleX(.65); }
+  50% { opacity: .85; transform: scaleX(1); }
+}
+@keyframes pokedex-scan-overlay {
+  0%, 75% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+@keyframes pokedex-scan-line {
+  from { top: 0; opacity: 0; }
+  12% { opacity: 1; }
+  to { top: 100%; opacity: 0; }
+}
+@keyframes pokedex-reticle-lock {
+  from { opacity: 0; transform: scale(1.65) rotate(-25deg); }
+  55% { opacity: 1; }
+  to { opacity: 0; transform: scale(1) rotate(0); }
+}
+@keyframes pokedex-entry-materialize {
+  from { opacity: 0; transform: translateY(10px) scale(.96); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes pokedex-detail-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pokedex-detail-panel-in {
+  from { opacity: 0; transform: translateY(28px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes pokedex-detail-ring { to { transform: rotate(360deg); } }
+@keyframes pokedex-detail-scan {
+  0%, 100% { top: 16%; opacity: .15; }
+  50% { top: 84%; opacity: .8; }
+}
+
+.campaign-path__mist,
+.campaign-path__ambient-glow {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.campaign-path__mist {
+  background:
+    radial-gradient(ellipse at 18% 18%, color-mix(in srgb, var(--theme-primary) 10%, transparent), transparent 28%),
+    radial-gradient(ellipse at 82% 62%, color-mix(in srgb, var(--theme-tertiary) 9%, transparent), transparent 30%);
+  filter: blur(12px);
+  animation: campaign-path-mist 11s ease-in-out infinite alternate;
+}
+.campaign-path__ambient-glow {
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--theme-primary) 4%, transparent) 45%, transparent);
+  animation: campaign-path-ambient 7s ease-in-out infinite;
+}
+.campaign-path__seg--flow {
+  stroke: rgba(255,255,255,.88);
+  stroke-width: 2;
+  stroke-dasharray: 2 30;
+  opacity: .7;
+  animation: campaign-path-flow 1.15s linear infinite;
+}
+.campaign-path__node {
+  animation: campaign-path-node-arrive 430ms var(--path-delay, 0ms) cubic-bezier(.16,1,.3,1) both;
+}
+.campaign-path__node--current .campaign-path__bubble::after {
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  border: 1px solid color-mix(in srgb, var(--theme-primary-bright) 68%, transparent);
+  border-radius: 50%;
+  content: "";
+  animation: campaign-current-sonar 2.25s ease-out infinite;
+}
+.campaign-path__hiker::after {
+  position: absolute;
+  right: 9%;
+  bottom: -2px;
+  left: 9%;
+  z-index: -1;
+  height: .38rem;
+  border-radius: 50%;
+  content: "";
+  background: rgba(0,0,0,.42);
+  filter: blur(2px);
+  animation: campaign-hiker-shadow 1.8s ease-in-out infinite;
+}
+.campaign-path__hiker img {
+  animation: campaign-hiker-bob 1.8s ease-in-out infinite;
+}
+
+@keyframes campaign-path-flow { to { stroke-dashoffset: -32; } }
+@keyframes campaign-path-mist {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); opacity: .55; }
+  to { transform: translate3d(2%, 1%, 0) scale(1.06); opacity: .9; }
+}
+@keyframes campaign-path-ambient {
+  0%,100% { opacity: .35; transform: translateY(-3%); }
+  50% { opacity: .75; transform: translateY(3%); }
+}
+@keyframes campaign-path-node-arrive {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 14px)) scale(.9); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes campaign-current-sonar {
+  0% { opacity: .75; transform: scale(.86); }
+  75%,100% { opacity: 0; transform: scale(1.28); }
+}
+@keyframes campaign-hiker-bob {
+  0%,100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-4px) rotate(1deg); }
+}
+@keyframes campaign-hiker-shadow {
+  0%,100% { transform: scaleX(1); opacity: .42; }
+  50% { transform: scaleX(.76); opacity: .24; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-toast-game::before,
+  .app-toast-game::after,
+  .app-toast-game__sparks i,
+  .pokedex-native-header::after,
+  .pokedex-scan-intro,
+  .pokedex-scan-intro__line,
+  .pokedex-scan-intro__reticle,
+  .pokedex-native-entry,
+  .pokedex-detail-backdrop,
+  .pokedex-native-detail,
+  .pokedex-native-detail__ring,
+  .pokedex-native-detail__scan,
+  .campaign-path__mist,
+  .campaign-path__ambient-glow,
+  .campaign-path__seg--flow,
+  .campaign-path__node,
+  .campaign-path__node--current .campaign-path__bubble::after,
+  .campaign-path__hiker::after,
+  .campaign-path__hiker img {
+    animation: none !important;
+  }
+  .pokedex-scan-intro { display: none; }
+}
+
+html[data-reduce-motion="1"] .app-toast-game::before,
+html[data-reduce-motion="1"] .app-toast-game::after,
+html[data-reduce-motion="1"] .app-toast-game__sparks i,
+html[data-reduce-motion="1"] .pokedex-native-header::after,
+html[data-reduce-motion="1"] .pokedex-scan-intro,
+html[data-reduce-motion="1"] .pokedex-native-entry,
+html[data-reduce-motion="1"] .pokedex-detail-backdrop,
+html[data-reduce-motion="1"] .pokedex-native-detail,
+html[data-reduce-motion="1"] .pokedex-native-detail__ring,
+html[data-reduce-motion="1"] .pokedex-native-detail__scan,
+html[data-reduce-motion="1"] .campaign-path__mist,
+html[data-reduce-motion="1"] .campaign-path__ambient-glow,
+html[data-reduce-motion="1"] .campaign-path__seg--flow,
+html[data-reduce-motion="1"] .campaign-path__node,
+html[data-reduce-motion="1"] .campaign-path__node--current .campaign-path__bubble::after,
+html[data-reduce-motion="1"] .campaign-path__hiker::after,
+html[data-reduce-motion="1"] .campaign-path__hiker img {
+  animation: none !important;
+}
+html[data-reduce-motion="1"] .pokedex-scan-intro { display: none; }

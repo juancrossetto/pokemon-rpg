@@ -32,6 +32,7 @@ let backgroundPaused = false;
  * para dejar oír la ruleta sin reescribir el slider del jugador.
  */
 let duckFactor = 1;
+let volumeAnimation = 0;
 
 export function worldBgmUrl(kind: WorldBgmKind): string {
   return TRACK[kind];
@@ -79,7 +80,30 @@ function applyVolumeToElement(el: HTMLAudioElement) {
   el.volume = getWorldBgmVolume() * duckFactor;
 }
 
+function cancelVolumeAnimation() {
+  if (volumeAnimation) cancelAnimationFrame(volumeAnimation);
+  volumeAnimation = 0;
+}
+
+/** Entrada corta para que cambiar de mundo no suene como un corte de menú. */
+function fadeVolume(el: HTMLAudioElement, target: number, durationMs = 420) {
+  cancelVolumeAnimation();
+  const from = el.volume;
+  const startedAt = performance.now();
+
+  const frame = (now: number) => {
+    const progress = Math.min(1, (now - startedAt) / durationMs);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.volume = Math.min(1, Math.max(0, from + (target - from) * eased));
+    if (progress < 1) volumeAnimation = requestAnimationFrame(frame);
+    else volumeAnimation = 0;
+  };
+
+  volumeAnimation = requestAnimationFrame(frame);
+}
+
 function applyMuteToElement(el: HTMLAudioElement, muted: boolean) {
+  cancelVolumeAnimation();
   el.muted = muted;
   if (muted) {
     el.pause();
@@ -92,7 +116,10 @@ function applyMuteToElement(el: HTMLAudioElement, muted: boolean) {
 /** Baja el ambiental un momento (giro de ruleta) sin tocar el volumen guardado. */
 export function duckWorldBgm(factor = 0.22) {
   duckFactor = Math.min(1, Math.max(0, factor));
-  if (audio) applyVolumeToElement(audio);
+  if (audio) {
+    cancelVolumeAnimation();
+    applyVolumeToElement(audio);
+  }
 }
 
 export function unduckWorldBgm() {
@@ -116,6 +143,7 @@ export function setWorldBgmVolume(volume: number) {
   const v = Math.min(1, Math.max(0, volume));
   window.localStorage.setItem(STORAGE_VOLUME, String(v));
   if (audio && !isWorldBgmMuted()) {
+    cancelVolumeAnimation();
     applyVolumeToElement(audio);
   }
 }
@@ -139,7 +167,8 @@ export function startWorldBgm(kind: WorldBgmKind) {
   const el = ensureAudio();
   const muted = isWorldBgmMuted();
 
-  if (!isSameTrack(el, kind)) {
+  const changedTrack = !isSameTrack(el, kind);
+  if (changedTrack) {
     currentKind = kind;
     el.src = worldBgmUrl(kind);
   } else {
@@ -149,15 +178,23 @@ export function startWorldBgm(kind: WorldBgmKind) {
   applyMuteToElement(el, muted);
   if (muted || !unlocked) return;
 
+  if (changedTrack) el.volume = 0;
   if (el.paused) {
-    void el.play().catch(() => {
+    void el.play().then(() => {
+      if (changedTrack && !isWorldBgmMuted()) {
+        fadeVolume(el, getWorldBgmVolume() * duckFactor);
+      }
+    }).catch(() => {
       /* autoplay bloqueado hasta unlockWorldBgm */
     });
+  } else if (changedTrack) {
+    fadeVolume(el, getWorldBgmVolume() * duckFactor);
   }
 }
 
 export function stopWorldBgm() {
   if (!audio) return;
+  cancelVolumeAnimation();
   audio.pause();
   audio.currentTime = 0;
   currentKind = null;
@@ -166,6 +203,7 @@ export function stopWorldBgm() {
 /** Pausa sin perder la pista (p. ej. al entrar a batalla). */
 export function pauseWorldBgm() {
   if (!audio) return;
+  cancelVolumeAnimation();
   audio.pause();
 }
 

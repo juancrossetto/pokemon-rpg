@@ -47,6 +47,9 @@ const nextConfig: NextConfig = {
     localPatterns: [{ pathname: "/**" }],
   },
   experimental: {
+    // React 19 + Next 16: permite que el contenido de cada ruta haga un
+    // crossfade/slide nativo sin desmontar el header ni la bottom bar.
+    viewTransition: true,
     /*
       Sin esto, el client cache de rutas dinámicas dura 0s: cada click a
       team↔inventory↔clans vuelve a esperar el RSC completo y se siente lag.

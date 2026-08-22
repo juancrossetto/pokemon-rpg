@@ -8,6 +8,7 @@ import type { Chapter } from "@/lib/campaign/chapters";
 import type { MapLocation } from "@/lib/campaign/map-selection";
 import type { CampaignLocationKind } from "@/lib/campaign/types";
 import type { CampaignNodeStatus } from "@/lib/campaign";
+import type { CSSProperties } from "react";
 
 /**
  * El recorrido del capítulo, dibujado como camino.
@@ -109,6 +110,8 @@ export function CampaignPath({
         height: `calc(var(--path-row) * ${Math.max(1, total - 1)} + var(--path-row))`,
       }}
     >
+      <span className="campaign-path__mist" aria-hidden />
+      <span className="campaign-path__ambient-glow" aria-hidden />
       <svg
         className="campaign-path__trail"
         viewBox="0 0 100 100"
@@ -124,18 +127,23 @@ export function CampaignPath({
           */
           const done =
             p.node.status === "completed" || p.node.status === "reward_pending";
+          const path = segmentPath(p.x, p.y, next.x, next.y);
           return (
-            <path
-              key={`${p.node.zone.id}-seg`}
+            <g key={`${p.node.zone.id}-seg`}>
+              <path
               className={`campaign-path__seg campaign-path__seg--${done ? "done" : "todo"}`}
-              d={segmentPath(p.x, p.y, next.x, next.y)}
-            />
+                d={path}
+              />
+              {done ? (
+                <path className="campaign-path__seg campaign-path__seg--flow" d={path} />
+              ) : null}
+            </g>
           );
         })}
       </svg>
 
       <ol className="contents">
-        {points.map(({ x, y, node }) => {
+        {points.map(({ x, y, node }, index) => {
           const { zone, status, isNext, isFarming, requirement } = node;
           const kind = kindOf(zone);
           const isGym = kind === "gym";
@@ -171,12 +179,13 @@ export function CampaignPath({
                 .join(" ")}
               style={{
                 left: `${x}%`,
+                "--path-delay": `${Math.min(index, 12) * 46}ms`,
                 // Mismo cálculo que el alto del contenedor: medio tramo de
                 // margen más `y` tramos completos.
                 top: `calc(var(--path-row) * 0.5 + var(--path-row) * ${
                   total === 1 ? 0 : (y / 100) * (total - 1)
                 })`,
-              }}
+              } as CSSProperties}
             >
               {current ? (
                 <span className="campaign-path__chip campaign-path__chip--play">
