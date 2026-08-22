@@ -41,7 +41,7 @@ function RailAvatar({
   const avatar = avatarById(avatarId);
   return (
     <div
-      className={`relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-[#1a1c24] ${
+      className={`relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-[#1a1c24] ${
         glow
           ? "shadow-[0_0_14px_color-mix(in_srgb,var(--color-pokeball-red)_35%,transparent)] ring-1 ring-pokeball-red/50"
           : "ring-1 ring-white/10"
@@ -52,7 +52,7 @@ function RailAvatar({
           src={avatar.src}
           alt={name}
           className="trainer-sprite-fill h-full w-full"
-          size={48}
+          size={40}
         />
       ) : (
         <span className="text-[11px] font-bold text-white/45">
@@ -68,7 +68,7 @@ function MatchCta({ href, label }: { href: string; label: string }) {
     <GameCtaButton
       href={href}
       variant="red"
-      className="home-rail-cta mt-2 min-h-9 w-full px-3 py-2 text-[11px]!"
+      className="home-rail-cta mt-1.5 min-h-8 w-full px-3 py-1.5 text-[10px]!"
     >
       {label}
     </GameCtaButton>
@@ -92,7 +92,6 @@ export function HomeDesktopRail({
   const t = useTranslations("home.rail");
   const tPvp = useTranslations("pvp");
   const featured = pvp.recent[0] ?? null;
-  const schedule = pvp.recent;
   const clanHref = clanWars.clanId ? `/clans/${clanWars.clanId}` : "/clans";
   const clanLabel = clanWars.clanName ?? t("clanGuest");
   const pvpTier = pvp.tier as PvpTier;
@@ -144,17 +143,15 @@ export function HomeDesktopRail({
             </span>
           )}
         </div>
-        <p className="mt-1 text-[10px] text-white/45">
-          {featured
-            ? featured.mode === "RANKED"
-              ? t("modeRankedBlurb")
-              : t("modeQuickBlurb")
-            : t("pvpSubtitle", {
+        {!featured ? (
+          <p className="mt-1 text-[10px] text-white/45">
+            {t("pvpSubtitle", {
                 wins: pvp.wins,
                 losses: pvp.losses,
                 rating: pvp.rating,
               })}
-        </p>
+          </p>
+        ) : null}
 
         {featured ? (
           <PvpVersus
@@ -179,47 +176,6 @@ export function HomeDesktopRail({
           label={featured ? t("matchDetails") : t("pvpPlay")}
         />
 
-        {schedule.length > 0 ? (
-          <ul className="mt-2 flex flex-col gap-0.5">
-            {schedule.slice(0, 2).map((m, i) => (
-              <li key={m.id}>
-                <Link
-                  href={`/pvp/${m.id}`}
-                  className={`flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition hover:bg-white/[0.04] ${
-                    i === 0 ? "bg-white/[0.05] ring-1 ring-pokeball-red/30" : ""
-                  }`}
-                >
-                  <span
-                    className={`shrink-0 rounded-md px-1.5 py-1 font-mono text-[9px] font-bold tabular-nums ${
-                      i === 0
-                        ? "bg-pokeball-red text-white"
-                        : "bg-white/8 text-white/55"
-                    }`}
-                  >
-                    {m.dateLabel}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-[10px] text-white/80">
-                    <span className="font-semibold text-white">{t("you")}</span>
-                    <span className="mx-1 text-pokeball-red">vs</span>
-                    <span className="font-semibold text-white">{m.opponentName}</span>
-                  </span>
-                  <span
-                    className={`shrink-0 font-mono text-[10px] font-bold tabular-nums ${
-                      m.ratingDelta > 0
-                        ? "text-emerald-300"
-                        : m.ratingDelta < 0
-                          ? "text-rose-300"
-                          : "text-white/35"
-                    }`}
-                  >
-                    {m.ratingDelta > 0 ? "+" : ""}
-                    {m.ratingDelta}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </section>
 
       {/*
@@ -373,7 +329,7 @@ export function HomeDesktopRail({
           <p className="text-[11px] text-on-surface-variant/80">{t("topEmpty")}</p>
         ) : (
           <ol className="flex flex-col">
-            {top.map((row, i) => {
+            {top.slice(0, 3).map((row, i) => {
               const avatar = avatarById(row.avatarId);
               const featuredMon = row.featured;
               return (
@@ -454,7 +410,7 @@ function PvpVersus({
       : String(match.ratingDelta);
 
   return (
-    <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-1">
+    <div className="mt-1.5 grid grid-cols-[1fr_auto_1fr] items-center gap-1">
       <div className="flex min-w-0 flex-col items-center gap-0.5 text-center">
         <RailAvatar avatarId={selfAvatarId} name={selfName} glow={match.won} />
         <p className="w-full truncate text-[10px] font-semibold text-white">

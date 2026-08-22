@@ -108,7 +108,7 @@ async function HomeRailSection({
         status: { in: ["COMPLETED", "FORFEIT"] },
       },
       orderBy: { createdAt: "desc" },
-      take: 3,
+      take: 1,
       select: {
         id: true,
         challengerId: true,
@@ -203,7 +203,7 @@ async function HomeRailSection({
         ? "active"
         : "none") as "none" | "active" | "completed",
   };
-  const top: HomeRailRankEntry[] = topBoard.slice(0, 5).map((row) => ({
+  const top: HomeRailRankEntry[] = topBoard.slice(0, 3).map((row) => ({
     position: row.position,
     playerId: row.playerId,
     playerName: row.playerName,

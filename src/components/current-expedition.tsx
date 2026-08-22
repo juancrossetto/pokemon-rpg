@@ -82,7 +82,7 @@ export function CurrentExpedition({
 
   if (variant === "rail") {
     return (
-      <section className="expedition-rail relative flex min-h-[12.25rem] flex-col overflow-hidden rounded-2xl border border-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.45)]">
+      <section className="expedition-rail relative flex min-h-[11rem] flex-col overflow-hidden rounded-2xl border border-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.45)]">
         <div className="pointer-events-none absolute inset-0">
           <Image
             src={mapSrc}
@@ -148,7 +148,7 @@ export function CurrentExpedition({
             Sin pointer-events-auto el CTA hereda el none del panel y el click
             cae en el trigger inset-0 del mapa (cursor lupa).
           */}
-          <div className="pointer-events-auto space-y-2">
+          <div className="pointer-events-auto space-y-1.5">
             {stagesTotal > 0 ? (
               <div>
                 <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-white/60">
@@ -169,7 +169,7 @@ export function CurrentExpedition({
             <GameCtaButton
               href={ctaHref}
               variant="red"
-              className="expedition-cta home-rail-cta relative z-[2] min-h-9 w-full text-[11px]!"
+              className="expedition-cta home-rail-cta relative z-[2] min-h-8 w-full text-[10px]!"
             >
               {ctaLabel}
             </GameCtaButton>
