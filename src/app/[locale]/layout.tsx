@@ -211,9 +211,13 @@ export default async function LocaleLayout({
           crossOrigin="anonymous"
         />
         <link rel="preload" href="/splash/boot.webp" as="image" />
-        <link rel="preload" href="/splash/charizard-boot.mp4" as="video" type="video/mp4" />
         <link rel="preload" href="/logo.png" as="image" />
-        <link rel="preload" href="/loaders/pokeball-loader-transparent.webp" as="image" />
+        <link
+          rel="preload"
+          href="/loaders/pokeball-loader-transparent.webp"
+          as="image"
+          media="(min-width: 1280px)"
+        />
       </head>
       <body
         className="relative flex min-h-full flex-col overflow-x-clip"

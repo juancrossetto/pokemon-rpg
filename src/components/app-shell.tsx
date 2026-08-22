@@ -11,7 +11,12 @@ import { PresenceHeartbeat } from "@/components/friends/presence-heartbeat";
 import { getAuthSession } from "@/lib/auth-session";
 import { getUserSnapshot } from "@/lib/user-snapshot";
 import { AppShellFallback } from "@/components/app-shell-fallback";
-import { getCombatLock, enforceCombatLockInLayout, stripLocale } from "@/lib/battle-lock";
+import {
+  getCombatLock,
+  enforceCombatLockInLayout,
+  stripLocale,
+  type CombatLock,
+} from "@/lib/battle-lock";
 import { GameRouteAtmosphere } from "@/components/game-route-atmosphere";
 
 /**
@@ -24,10 +29,16 @@ export async function AppShell({
   locale: string;
   children: React.ReactNode;
 }) {
-  const session = await getAuthSession();
+  const [session, messages] = await Promise.all([getAuthSession(), getMessages()]);
   let showFriendsRail = false;
+  let combatLock: CombatLock = null;
   if (session?.user?.id) {
-    const headerStore = await headers();
+    const [headerStore, user, lock] = await Promise.all([
+      headers(),
+      getUserSnapshot(session.user.id),
+      getCombatLock(session.user.id),
+    ]);
+    combatLock = lock;
     const raw = headerStore.get("x-pathname") ?? "";
     let pathname = raw;
     try {
@@ -38,7 +49,6 @@ export async function AppShell({
     const path = stripLocale(pathname);
     const onAuthPage = path === "/login" || path === "/register";
 
-    const user = await getUserSnapshot(session.user.id);
     if (!user && !onAuthPage) {
       const loginPath = `/${locale}/login`;
       redirect(
@@ -50,8 +60,6 @@ export async function AppShell({
       showFriendsRail = !onAuthPage;
     }
   }
-  const combatLock = session?.user ? await getCombatLock(session.user.id) : null;
-  const messages = await getMessages();
   // Combate, gimnasio y torre ocupan la pantalla: la columna taparía el ring.
   const friendsUserId =
     showFriendsRail && !combatLock ? session?.user?.id : undefined;

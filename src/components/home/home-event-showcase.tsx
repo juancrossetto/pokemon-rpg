@@ -298,36 +298,26 @@ export function HomeEventBanner({ data, locale }: { data: HomeEventShowcaseData;
       >
         {/* Arte a sangre. Va por `next/image` y no como `background-image` para
             que se sirva optimizado: el PNG de Mew pesa 2,5 MB. */}
-        {/*
-          Los artes de todas las portadas quedan montados y se cruzan por
-          opacidad: eso es lo que da el fundido entre imagen e imagen sin
-          coordinar dos capas por JS ni medir tiempos.
-
-          Efecto de al lado, igual de importante: al cambiar de portada la
-          imagen ya está decodificada, así que no hay un frame de panel vacío
-          mientras carga. Son tres archivos; con muchos más convendría montar
-          sólo la activa y la anterior.
-        */}
-        {slides.map((slide, i) => (
-          <span
-            key={slide.id}
-            className={`event-banner__art event-banner__art--${slide.art.fit}${i === index ? " is-active" : ""}`}
-            style={{ "--art-ratio": slide.art.ratio, "--art-focus": slide.art.focus } as CSSProperties}
-            aria-hidden
-          >
-            <Image
-              src={slide.art.src}
-              alt=""
-              fill
-              sizes="(max-width: 767px) 100vw, 1200px"
-              // Los artes ya vienen comprimidos; con el 75 por defecto se
-              // recomprime encima y aparecen bloques en los degradés.
-              quality={90}
-              loading={i === 0 ? "eager" : "lazy"}
-              className="event-banner__img"
-            />
-          </span>
-        ))}
+        {/* Sólo se monta el arte activo. Antes las tres imágenes grandes
+            ocupaban el mismo rectángulo y el lazy-loader las consideraba
+            visibles: descargaba ~4,5 MB de fuente y durante el crossfade se
+            leían como banners superpuestos. */}
+        <span
+          key={active.id}
+          className={`event-banner__art event-banner__art--${active.art.fit} is-active`}
+          style={{ "--art-ratio": active.art.ratio, "--art-focus": active.art.focus } as CSSProperties}
+          aria-hidden
+        >
+          <Image
+            src={active.art.src}
+            alt=""
+            fill
+            sizes="(max-width: 767px) 100vw, 1200px"
+            quality={80}
+            loading="eager"
+            className="event-banner__img"
+          />
+        </span>
         {/* El degradé que borra la división: tinta plena del lado del texto,
             transparente antes de llegar al sujeto. */}
         <span className="event-banner__scrim" aria-hidden />

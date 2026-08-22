@@ -27,7 +27,7 @@ function worldForPath(pathname: string): RouteWorld | null {
   return "world";
 }
 
-const MOTES = Array.from({ length: 14 }, (_, index) => ({
+const MOTES = Array.from({ length: 8 }, (_, index) => ({
   x: (index * 37 + 11) % 97,
   y: (index * 53 + 19) % 91,
   size: 2 + (index % 4),

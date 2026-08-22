@@ -159,6 +159,8 @@ return;
 html.classList.add('boot-splash-pending');
 html.classList.remove('boot-splash-done');
 var video=splash&&splash.querySelector('video');
-if(video){try{void video.play();}catch(e){}}
+var mobile=matchMedia('(max-width:1279px)').matches;
+var reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+if(video&&mobile&&!reduced){try{void video.play();}catch(e){}}
 }catch(e){}})();`;
 }

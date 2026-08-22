@@ -54,11 +54,16 @@ export type CombatLock =
  * del mismo render. La memoización dura solo lo que dura el request.
  */
 export const getCombatLock = cache(async (userId: string): Promise<CombatLock> => {
-  if (await hasActiveBattle(userId)) return { kind: "battle" };
-  const gym = await getActiveGymRun(userId);
+  // Son lecturas independientes. En un pool remoto hacerlas en serie añadía
+  // hasta tres idas y vueltas antes de poder pintar cualquier página.
+  const [battle, gym, tower] = await Promise.all([
+    hasActiveBattle(userId),
+    getActiveGymRun(userId),
+    getActiveTowerRun(userId, { includeParked: false }),
+  ]);
+  if (battle) return { kind: "battle" };
   if (gym) return { kind: "gym", gymId: gym.gymId };
   // Pausado = se puede salir a Aventura; no bloquea el resto del juego.
-  const tower = await getActiveTowerRun(userId, { includeParked: false });
   if (tower) return { kind: "tower" };
   return null;
 });

@@ -47,7 +47,7 @@ export function BootSplashMarkup({ label }: { label: string }) {
           muted
           loop
           playsInline
-          preload="auto"
+          preload="none"
           poster="/splash/boot.webp"
           aria-hidden
         >

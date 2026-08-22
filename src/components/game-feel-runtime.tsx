@@ -58,6 +58,8 @@ export function GameFeelRuntime() {
 
   useEffect(() => {
     const html = document.documentElement;
+    html.dataset.nativeViewTransitions =
+      "startViewTransition" in document ? "1" : "0";
     html.dataset.routeArriving = "";
     const timer = window.setTimeout(() => {
       delete html.dataset.routeArriving;

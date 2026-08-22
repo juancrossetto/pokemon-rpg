@@ -20,6 +20,7 @@ export function PwaInstallPrompt() {
   const t = useTranslations("pwa");
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);
   const [showIosHint, setShowIosHint] = useState(false);
+  const [eligible, setEligible] = useState(false);
 
   useEffect(() => {
     if (isStandalone()) return;
@@ -37,14 +38,27 @@ export function PwaInstallPrompt() {
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
 
+    let eligibilityTimer = 0;
+    const revealWhenIdle = () => {
+      const overlayOpen = document.documentElement.hasAttribute("data-overlay-open");
+      const navigating = document.documentElement.hasAttribute("data-nav-pending");
+      if (overlayOpen || navigating) {
+        eligibilityTimer = window.setTimeout(revealWhenIdle, 4_000);
+        return;
+      }
+      setEligible(true);
+    };
+    eligibilityTimer = window.setTimeout(revealWhenIdle, 12_000);
+
     const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
     const hintTimer = isIos
-      ? window.setTimeout(() => setShowIosHint(true), 2500)
+      ? window.setTimeout(() => setShowIosHint(true), 12_000)
       : null;
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
       if (hintTimer !== null) window.clearTimeout(hintTimer);
+      window.clearTimeout(eligibilityTimer);
     };
   }, []);
 
@@ -64,7 +78,7 @@ export function PwaInstallPrompt() {
     setPromptEvent(null);
   }
 
-  if (!promptEvent && !showIosHint) return null;
+  if ((!promptEvent && !showIosHint) || !eligible) return null;
   return (
     <aside className="pwa-install-card" aria-live="polite">
       <span className="material-symbols-outlined pwa-install-card__icon" aria-hidden>

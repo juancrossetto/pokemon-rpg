@@ -66,9 +66,12 @@ export function HomeGameHub({
   showEnergyHint?: boolean;
 }) {
   const [healTutorialArmed, setHealTutorialArmed] = useState(false);
+  const [onboardingReady, setOnboardingReady] = useState(false);
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
-      setHealTutorialArmed(hasSeen("journey-onboarding"));
+      const onboardingSeen = hasSeen("journey-onboarding");
+      setHealTutorialArmed(onboardingSeen);
+      setOnboardingReady(onboardingSeen);
     });
     return () => cancelAnimationFrame(raf);
   }, []);
@@ -76,7 +79,12 @@ export function HomeGameHub({
 
   return (
     <div className="relative flex min-w-0 flex-col overflow-x-clip">
-      <JourneyOnboarding onDismiss={() => setHealTutorialArmed(true)} />
+      <JourneyOnboarding
+        onDismiss={() => {
+          setHealTutorialArmed(true);
+          setOnboardingReady(true);
+        }}
+      />
       <HealTutorial active={hasFainted && healTutorialArmed} />
       <div className="relative flex min-w-0 flex-col px-margin-mobile py-2 md:px-margin-desktop md:py-5">
         <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-2.5 md:gap-5 xl:max-w-6xl xl:gap-5 2xl:max-w-7xl">
@@ -87,7 +95,7 @@ export function HomeGameHub({
             <HomeEventBanner data={eventShowcase} locale={locale} />
           </div>
 
-          {events.showDailyModal && (
+          {events.showDailyModal && onboardingReady && (
             <DailyGiftModal
               days={events.daily.days}
               currentDay={events.daily.currentDay}

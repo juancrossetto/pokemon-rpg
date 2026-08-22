@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { hasSeen, markSeen, hasSeenThisSession, markSeenThisSession, type FirstVisitKey } from "@/lib/journey-ux";
 import type { HandbookChapterId } from "@/lib/handbook/chapters";
 import { HandbookLink } from "@/components/handbook/handbook-trigger";
-import { lockBodyScroll } from "@/lib/scroll-lock";
+import { lockBodyScroll, useBodyScrollLock } from "@/lib/scroll-lock";
 
 /**
  * Botón `i` que abre un popup con tips del hub + link al manual.
@@ -213,6 +213,7 @@ export function JourneyOnboarding({
   const t = useTranslations("ux");
   const [visible, setVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
+  useBodyScrollLock(mounted && visible);
 
   useEffect(() => {
     const shouldShow = !hasSeen("journey-onboarding");

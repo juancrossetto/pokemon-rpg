@@ -38,6 +38,7 @@ export function lockBodyScroll(): () => void {
     document.body.style.overflow = "hidden";
   }
   holders += 1;
+  document.documentElement?.setAttribute("data-overlay-open", String(holders));
 
   let released = false;
   return () => {
@@ -49,6 +50,9 @@ export function lockBodyScroll(): () => void {
     if (holders === 0) {
       document.body.style.overflow = restoreBodyOverflow ?? "";
       restoreBodyOverflow = null;
+      document.documentElement?.removeAttribute("data-overlay-open");
+    } else {
+      document.documentElement?.setAttribute("data-overlay-open", String(holders));
     }
   };
 }
@@ -184,4 +188,7 @@ export function scrollChildIntoHorizontalCenter(
 export function __resetScrollLockForTests(): void {
   holders = 0;
   restoreBodyOverflow = null;
+  if (typeof document !== "undefined") {
+    document.documentElement?.removeAttribute("data-overlay-open");
+  }
 }
