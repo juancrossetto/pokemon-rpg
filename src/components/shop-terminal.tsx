@@ -107,6 +107,11 @@ export function ShopTerminal({
   const [query, setQuery] = useState("");
   const [affordableOnly, setAffordableOnly] = useState(false);
   const [target, setTarget] = useState<ShopProduct | null>(null);
+  // El Client Component también se prerenderiza en el servidor. Usar el
+  // locale explícito evita que Node y el navegador produzcan separadores
+  // distintos y aborten la hidratación del catálogo.
+  const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
+  const formatNumber = numberFormatter.format;
 
   const showSearch = products.length > SEARCH_THRESHOLD;
 
@@ -293,6 +298,7 @@ export function ShopTerminal({
                   owned={owned[product.id] ?? 0}
                   wallet={walletOf(product)}
                   labels={labels}
+                  formatNumber={formatNumber}
                   onBuy={() => setTarget(product)}
                 />
               ))}
@@ -308,6 +314,7 @@ export function ShopTerminal({
           wallet={walletOf(target)}
           labels={labels}
           locale={locale}
+          formatNumber={formatNumber}
           onClose={() => setTarget(null)}
           onPurchased={onPurchased}
         />
@@ -422,12 +429,14 @@ function ShopProductTile({
   owned,
   wallet,
   labels,
+  formatNumber,
   onBuy,
 }: {
   product: ShopProduct;
   owned: number;
   wallet: number;
   labels: ShopLabels;
+  formatNumber: (value: number) => string;
   onBuy: () => void;
 }) {
   const meta = SHOP_CATEGORY_META[product.category];
@@ -451,7 +460,7 @@ function ShopProductTile({
           blocked
             ? blocked.label
             : !canAfford
-              ? fill(missingTemplate, { amount: missing.toLocaleString() })
+              ? fill(missingTemplate, { amount: formatNumber(missing) })
               : product.description ?? undefined
         }
         className="group flex w-full flex-col items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-45"
@@ -482,7 +491,7 @@ function ShopProductTile({
               unoptimized
             />
             <span className="font-mono tabular-nums">
-              {product.price.toLocaleString()}
+              {formatNumber(product.price)}
             </span>
             <span className="sr-only">{unitLabel}</span>
           </span>
@@ -559,6 +568,7 @@ function PurchaseDialog({
   wallet,
   labels,
   locale,
+  formatNumber,
   onClose,
   onPurchased,
 }: {
@@ -567,6 +577,7 @@ function PurchaseDialog({
   wallet: number;
   labels: ShopLabels;
   locale: string;
+  formatNumber: (value: number) => string;
   onClose: () => void;
   onPurchased: (
     product: ShopProduct,
@@ -664,7 +675,7 @@ function PurchaseDialog({
       const message =
         (result.error === "no_coins" || result.error === "no_gems") &&
         result.missing !== undefined
-          ? fill(missingTemplate, { amount: result.missing.toLocaleString() })
+          ? fill(missingTemplate, { amount: formatNumber(result.missing) })
           : result.error === "energy_full"
             ? labels.energyFull
             : labels.errorGeneric;
@@ -758,9 +769,9 @@ function PurchaseDialog({
         </div>
 
         <dl className="mt-3 flex flex-col gap-1 text-label-sm">
-          <Row label={labels.unitPrice} value={product.price.toLocaleString()} />
-          <Row label={labels.total} value={total.toLocaleString()} strong />
-          <Row label={labels.balanceAfter} value={balanceAfter.toLocaleString()} />
+          <Row label={labels.unitPrice} value={formatNumber(product.price)} />
+          <Row label={labels.total} value={formatNumber(total)} strong />
+          <Row label={labels.balanceAfter} value={formatNumber(balanceAfter)} />
         </dl>
 
         {error && (
