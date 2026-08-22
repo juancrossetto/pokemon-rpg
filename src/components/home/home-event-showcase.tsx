@@ -303,7 +303,7 @@ export function HomeEventBanner({ data, locale }: { data: HomeEventShowcaseData;
             visibles: descargaba ~4,5 MB de fuente y durante el crossfade se
             leían como banners superpuestos. */}
         <span
-          key={active.id}
+          key={`art-${active.id}`}
           className={`event-banner__art event-banner__art--${active.art.fit} is-active`}
           style={{ "--art-ratio": active.art.ratio, "--art-focus": active.art.focus } as CSSProperties}
           aria-hidden
@@ -325,7 +325,7 @@ export function HomeEventBanner({ data, locale }: { data: HomeEventShowcaseData;
         {/* `key` por portada: al cambiar, React remonta el bloque y la
             animación de entrada vuelve a correr. Sin eso el texto cambiaría de
             golpe mientras el arte se funde. */}
-        <span key={active.id} className="event-banner__copy">
+        <span key={`copy-${active.id}`} className="event-banner__copy">
           <span className="event-banner__eyebrow">
             <i aria-hidden />
             {active.eyebrow}
